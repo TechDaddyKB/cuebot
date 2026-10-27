@@ -4,7 +4,7 @@ using System.Text;
 namespace Cuebot.Twitch.Tests.Support;
 
 /// <summary>A request as seen by <see cref="FakeHttpHandler"/>, with its body already read.</summary>
-public sealed record RecordedRequest(HttpMethod Method, string Path, string? Authorization, string? ClientId, string Body)
+public sealed record RecordedRequest(HttpMethod Method, string Path, string? Authorization, string? ClientId, string Body, string Query = "")
 {
     public IReadOnlyDictionary<string, string> Form =>
         Body.Split('&', StringSplitOptions.RemoveEmptyEntries)
@@ -31,7 +31,8 @@ public sealed class FakeHttpHandler(Func<RecordedRequest, HttpResponseMessage> r
         var recorded = new RecordedRequest(request.Method, request.RequestUri!.AbsolutePath,
             request.Headers.Authorization?.ToString(),
             request.Headers.TryGetValues("Client-Id", out var ids) ? ids.FirstOrDefault() : null,
-            body);
+            body,
+            Uri.UnescapeDataString(request.RequestUri.Query.TrimStart('?')));
         lock (_requests) _requests.Add(recorded);
         return respond(recorded);
     }

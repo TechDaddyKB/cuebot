@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
+             x:Class="Cuebot.App.Views.Twitch.TwitchSettingsView"
+             x:DataType="tw:TwitchSettingsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24" MaxWidth="980" HorizontalAlignment="Left">
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Permissions (scopes)" />
+          <TextBlock Classes="hint"
+                     Text="Choose what Cuebot asks Twitch for at the next broadcaster sign-in. Events and sub-actions whose scope is missing are skipped with a warning in the log." />
+          <TextBlock Text="{Binding RequestedSummary}" />
+          <TextBlock Classes="error" Text="Sign in again on the Accounts tab to apply the new permissions." IsVisible="{Binding NeedsSignIn}" />
+          <WrapPanel Classes="actions">
+            <Button Content="Request everything" Command="{Binding RequestAllCommand}" />
+            <Button Content="Minimal (chat and alerts)" Command="{Binding RequestMinimalCommand}" />
+          </WrapPanel>
+          <ItemsControl ItemsSource="{Binding Scopes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="tw:TwitchScopeItem">
+                <Grid ColumnDefinitions="28,110,*,Auto" Margin="0,2">
+                  <CheckBox IsChecked="{Binding IsRequested}" IsEnabled="{Binding CanChange}" />
+                  <TextBlock Grid.Column="1" Classes="hint" Text="{Binding Group}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+                    <TextBlock Classes="hint" Text="{Binding Scope}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="3" Classes="hint" Text="{Binding State}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Polling" />
+          <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Classes="label" Text="Viewer count every (seconds, 0 = off)" />
+            <NumericUpDown Grid.Row="1" Value="{Binding ViewerCountInterval}" Minimum="0" Maximum="3600" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Present viewers every (seconds, 0 = off)" />
+            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding PresentViewersInterval}" Minimum="0" Maximum="3600" />
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Classes="hint" Margin="0,4,0,0"
+                       Text="Used by the Viewer count update and Present viewers triggers; changes apply at the next connect." />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Event availability" />
+          <TextBlock Classes="hint" Text="{Binding UnavailableEvents}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

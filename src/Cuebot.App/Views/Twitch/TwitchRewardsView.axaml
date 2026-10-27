@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
+             x:Class="Cuebot.App.Views.Twitch.TwitchRewardsView"
+             x:DataType="tw:TwitchRewardsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24" MaxWidth="1180" HorizontalAlignment="Left">
+      <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <Grid ColumnDefinitions="300,12,*">
+        <Border Classes="card" VerticalAlignment="Top">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Channel point rewards" />
+            <WrapPanel DockPanel.Dock="Bottom" Classes="actions" Margin="0,8,0,0">
+              <Button Content="Load from Twitch" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}" />
+              <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" />
+            </WrapPanel>
+            <ListBox Classes="list" ItemsSource="{Binding Rewards}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="560">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="tw:TwitchRewardItem">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                    <TextBlock Classes="hint" Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <StackPanel Grid.Column="2">
+          <Border Classes="card" IsVisible="{Binding !HasSelection}">
+            <TextBlock Classes="hint"
+                       Text="Load your rewards, or add one. Twitch only lets an app edit the rewards it created, so rewards made on the Twitch dashboard are listed read-only (they still trigger actions)." />
+          </Border>
+          <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
+            <ContentControl.ContentTemplate>
+              <DataTemplate DataType="tw:TwitchRewardItem">
+                <Border Classes="card">
+                  <StackPanel Spacing="10">
+                    <TextBlock Classes="hint" Text="Created outside Cuebot: read-only." IsVisible="{Binding IsReadOnly}" />
+                    <Grid ColumnDefinitions="*,16,140,16,140" RowDefinitions="Auto,Auto">
+                      <TextBlock Classes="label" Text="Title" />
+                      <TextBox Grid.Row="1" Text="{Binding Title}" MaxLength="45" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBlock Grid.Column="2" Classes="label" Text="Cost" />
+                      <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding Cost}" Minimum="1" Maximum="100000000" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBlock Grid.Column="4" Classes="label" Text="Colour" />
+                      <TextBox Grid.Column="4" Grid.Row="1" Text="{Binding BackgroundColor}" IsReadOnly="{Binding IsReadOnly}" />
+                    </Grid>
+                    <StackPanel>
+                      <TextBlock Classes="label" Text="Prompt" />
+                      <TextBox Text="{Binding Prompt}" MaxLength="200" IsReadOnly="{Binding IsReadOnly}" />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
+                      <TextBlock Classes="label" Text="Global cooldown (s, 0 = off)" />
+                      <NumericUpDown Grid.Row="1" Value="{Binding GlobalCooldownSeconds}" Minimum="0" Maximum="604800" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBlock Grid.Column="2" Classes="label" Text="Max per stream (0 = off)" />
+                      <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding MaxPerStream}" Minimum="0" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBlock Grid.Column="4" Classes="label" Text="Max per user per stream (0 = off)" />
+                      <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MaxPerUserPerStream}" Minimum="0" IsReadOnly="{Binding IsReadOnly}" />
+                    </Grid>
+                    <WrapPanel IsEnabled="{Binding IsManageable}">
+                      <CheckBox Content="Enabled" IsChecked="{Binding IsEnabled}" Margin="0,0,16,0" />
+                      <CheckBox Content="Paused" IsChecked="{Binding IsPaused}" Margin="0,0,16,0" />
+                      <CheckBox Content="User input required" IsChecked="{Binding IsUserInputRequired}" Margin="0,0,16,0" />
+                      <CheckBox Content="Skip the request queue" IsChecked="{Binding SkipQueue}" />
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+          <WrapPanel Classes="actions" IsVisible="{Binding HasSelection}">
+            <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" />
+            <Button Content="Delete" Command="{Binding DeleteCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
+             x:Class="Cuebot.App.Views.Twitch.TwitchPollsView"
+             x:DataType="tw:TwitchPollsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24" MaxWidth="1180" HorizontalAlignment="Left">
+      <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <Grid ColumnDefinitions="*,12,*">
+        <Border Classes="card" VerticalAlignment="Top">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h2" Text="Poll" />
+            <StackPanel>
+              <TextBlock Classes="label" Text="Question" />
+              <TextBox Text="{Binding PollTitle}" MaxLength="60" />
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Classes="label" Text="Choices (one per line, 2 to 5)" />
+              <TextBox Text="{Binding PollChoices}" AcceptsReturn="True" MinHeight="90" />
+            </StackPanel>
+            <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+              <TextBlock Classes="label" Text="Duration (seconds)" />
+              <NumericUpDown Grid.Row="1" Value="{Binding PollDuration}" Minimum="15" Maximum="1800" />
+              <TextBlock Grid.Column="2" Classes="label" Text="Channel points per extra vote" />
+              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding PollPointsPerVote}" Minimum="0" Maximum="1000000" />
+            </Grid>
+            <WrapPanel Classes="actions">
+              <Button Content="Start poll" Classes="accent" Command="{Binding CreatePollCommand}" />
+              <Button Content="End" Command="{Binding EndPollCommand}" />
+              <Button Content="End and hide" Command="{Binding ArchivePollCommand}" />
+              <Button Content="Show latest" Command="{Binding LoadPollCommand}" />
+            </WrapPanel>
+            <TextBlock Classes="hint" Text="{Binding PollStatus}" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="card" VerticalAlignment="Top">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h2" Text="Prediction" />
+            <StackPanel>
+              <TextBlock Classes="label" Text="Question" />
+              <TextBox Text="{Binding PredictionTitle}" MaxLength="45" />
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Classes="label" Text="Outcomes (one per line, 2 to 10)" />
+              <TextBox Text="{Binding PredictionOutcomes}" AcceptsReturn="True" MinHeight="90" />
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Classes="label" Text="Submission window (seconds)" />
+              <NumericUpDown Value="{Binding PredictionWindow}" Minimum="30" Maximum="1800" />
+            </StackPanel>
+            <WrapPanel Classes="actions">
+              <Button Content="Start prediction" Classes="accent" Command="{Binding CreatePredictionCommand}" />
+              <Button Content="Lock" Command="{Binding LockPredictionCommand}" />
+              <Button Content="Cancel (refund)" Command="{Binding CancelPredictionCommand}" />
+              <Button Content="Show latest" Command="{Binding LoadPredictionCommand}" />
+            </WrapPanel>
+            <Grid ColumnDefinitions="*,8,Auto">
+              <ComboBox ItemsSource="{Binding Outcomes}" SelectedItem="{Binding WinningOutcome}" PlaceholderText="Winning outcome" />
+              <Button Grid.Column="2" Content="Resolve" Command="{Binding ResolvePredictionCommand}" />
+            </Grid>
+            <TextBlock Classes="hint" Text="{Binding PredictionStatus}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
+             x:Class="Cuebot.App.Views.Twitch.TwitchModerationView"
+             x:DataType="tw:TwitchModerationViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24" MaxWidth="1180" HorizontalAlignment="Left">
+      <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <Grid ColumnDefinitions="*,12,*">
+        <Border Classes="card" VerticalAlignment="Top">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h2" Text="User" />
+            <Grid ColumnDefinitions="*,16,140" RowDefinitions="Auto,Auto">
+              <TextBlock Classes="label" Text="User name" />
+              <TextBox Grid.Row="1" Text="{Binding User}" PlaceholderText="login or @name" />
+              <TextBlock Grid.Column="2" Classes="label" Text="Timeout (s)" />
+              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding TimeoutSeconds}" Minimum="1" Maximum="1209600" />
+            </Grid>
+            <StackPanel>
+              <TextBlock Classes="label" Text="Reason" />
+              <TextBox Text="{Binding Reason}" PlaceholderText="Shown to the user (required for warnings)" />
+            </StackPanel>
+            <WrapPanel Classes="actions">
+              <Button Content="Timeout" Command="{Binding TimeoutCommand}" />
+              <Button Content="Ban" Command="{Binding BanCommand}" />
+              <Button Content="Unban / untimeout" Command="{Binding UnbanCommand}" />
+              <Button Content="Warn" Command="{Binding WarnCommand}" />
+            </WrapPanel>
+            <WrapPanel Classes="actions">
+              <Button Content="Add VIP" Command="{Binding AddVipCommand}" />
+              <Button Content="Remove VIP" Command="{Binding RemoveVipCommand}" />
+              <Button Content="Add moderator" Command="{Binding AddModeratorCommand}" />
+              <Button Content="Remove moderator" Command="{Binding RemoveModeratorCommand}" />
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Column="2">
+          <Border Classes="card">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="h2" Text="Chat modes" />
+              <CheckBox Content="Emote-only" IsChecked="{Binding EmoteMode}" />
+              <Grid ColumnDefinitions="*,8,140">
+                <CheckBox Content="Follower-only (minutes followed)" IsChecked="{Binding FollowerMode}" />
+                <NumericUpDown Grid.Column="2" Value="{Binding FollowerMinutes}" Minimum="0" Maximum="129600" />
+              </Grid>
+              <Grid ColumnDefinitions="*,8,140">
+                <CheckBox Content="Slow mode (seconds)" IsChecked="{Binding SlowMode}" />
+                <NumericUpDown Grid.Column="2" Value="{Binding SlowSeconds}" Minimum="3" Maximum="120" />
+              </Grid>
+              <CheckBox Content="Subscriber-only" IsChecked="{Binding SubscriberMode}" />
+              <CheckBox Content="Unique chat" IsChecked="{Binding UniqueChatMode}" />
+              <WrapPanel Classes="actions">
+                <Button Content="Apply" Classes="accent" Command="{Binding ApplyChatSettingsCommand}" />
+                <Button Content="Load current" Command="{Binding LoadChatSettingsCommand}" />
+              </WrapPanel>
+              <Grid ColumnDefinitions="*,8,Auto">
+                <CheckBox Content="Shield mode" IsChecked="{Binding ShieldMode}" />
+                <Button Grid.Column="2" Content="Apply shield mode" Command="{Binding ApplyShieldModeCommand}" />
+              </Grid>
+              <Button Content="Clear chat" Command="{Binding ClearChatCommand}" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="h2" Text="Announcement" />
+              <TextBox Text="{Binding Announcement}" AcceptsReturn="True" MaxLength="500" PlaceholderText="Message" />
+              <Grid ColumnDefinitions="160,8,Auto">
+                <ComboBox ItemsSource="{x:Static tw:TwitchModerationViewModel.Colors}" SelectedItem="{Binding AnnouncementColor}" />
+                <Button Grid.Column="2" Content="Send announcement" Command="{Binding SendAnnouncementCommand}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
