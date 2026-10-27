@@ -13,13 +13,13 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | Area | Streamer.bot | Cuebot today | Status | Phase |
 | --- | --- | --- | --- | --- |
 | Actions, groups, enable/disable, duplicate | ✓ | ✓ | ✅ | — |
-| Triggers → actions, many-to-many, test run | ✓ (+ Test Trigger with custom args, Trigger Viewer) | Run now without args | 🟡 | 2 |
-| Named action queues (blocking, pause/resume, clear, always-run, skip queue) | ✓ | Per-action queued/concurrent only | 🟡 | 2 |
-| Random action / weights, concurrent sub-actions | ✓ | — | ❌ | 2 |
-| Sub-action groups (nestable, coloured, random) | ✓ | Branch containers only | 🟡 | 2 |
-| Logic: If/Else, Switch, While, Loop Break/Continue, Break, Get Input, Random Number | ✓ | If/Else, Stop, Random number | 🟡 | 2 |
-| Signals: local/remote send & wait | ✓ | — | ❌ | 3 |
-| Pending actions + Action History (inspect variables, requeue) | ✓ | Recent runs list | 🟡 | 2 |
+| Triggers → actions, many-to-many, test run | ✓ (+ Test Trigger with custom args, Trigger Viewer) | Test trigger with custom args (engine); Trigger Viewer missing | 🟡 | 2 |
+| Named action queues (blocking, pause/resume, clear, always-run, skip queue) | ✓ | Named queues, blocking, pause/resume/clear, always-run (skip-queue for rewards pending) | ✅ | 2 |
+| Random action / weights, concurrent sub-actions | ✓ | ✓ | ✅ | 2 |
+| Sub-action groups (nestable, coloured, random) | ✓ | ✓ | ✅ | 2 |
+| Logic: If/Else, Switch, While, Loop Break/Continue, Break, Get Input, Random Number | ✓ | ✓ | ✅ | 2 |
+| Signals: local/remote send & wait | ✓ | Local ✓, remote missing | 🟡 | 3 |
+| Pending actions + Action History (inspect variables, requeue) | ✓ | ✓ (engine); page in progress | 🟡 | 2 |
 | Node-graph editor | — | ✓ | ➕ | — |
 | Copy/paste triggers, sub-actions, actions; undo/redo | ✓ | — | ❌ | 2 |
 
@@ -28,20 +28,20 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | Area | Streamer.bot | Cuebot today | Status | Phase |
 | --- | --- | --- | --- | --- |
 | `%arg%` arguments, globals (persisted/temporary) | ✓ | ✓ | ✅ | — |
-| Per-user globals (per platform) | ✓ | — | ❌ | 2 |
-| Increment/decrement, auto type | ✓ | Set only | 🟡 | 2 |
-| Formats (`%date:fmt%`, `%amount:c2%`), built-ins (`%time%`, `%unixtime%`, `%lf%`...) | ✓ | — | ❌ | 2 |
-| Inline functions `$math()$`, `$length()$`, `$parse()$` | ✓ | — | ❌ | 2 |
+| Per-user globals (per platform) | ✓ | ✓ | ✅ | 2 |
+| Increment/decrement, auto type | ✓ | ✓ | ✅ | 2 |
+| Formats (`%date:fmt%`, `%amount:c2%`), built-ins (`%time%`, `%unixtime%`, `%lf%`...) | ✓ | ✓ | ✅ | 2 |
+| Inline functions `$math()$`, `$length()$`, `$parse()$` | ✓ | ✓ (+ text helpers) | ✅ | 2 |
 | Global Variable Viewer (persisted / temporary / per-user tabs) | ✓ | Single list | 🟡 | 2 |
 
 ## 3. Commands, timers, users
 
 | Area | Streamer.bot | Cuebot today | Status | Phase |
 | --- | --- | --- | --- | --- |
-| Commands manager (aliases, Start/Exact/Anywhere, regex, sources, case) | ✓ | Per-trigger Twitch/Rumble command | 🟡 | 2 |
-| Permissions allow/deny users & groups; global/user cooldowns; cooldown trigger; counters | ✓ | Role permission + cooldowns | 🟡 | 2 |
-| Timers (random interval, min chat lines, enable/disable sub-action), cron | ✓ | Fixed interval | 🟡 | 2 |
-| User groups (triggers, sub-actions), present viewers, first words | ✓ | — | ❌ | 2 |
+| Commands manager (aliases, Start/Exact/Anywhere, regex, sources, case) | ✓ | ✓ | ✅ | 2 |
+| Permissions allow/deny users & groups; global/user cooldowns; cooldown trigger; counters | ✓ | ✓ | ✅ | 2 |
+| Timers (random interval, min chat lines, enable/disable sub-action), cron | ✓ | ✓ | ✅ | 2 |
+| User groups (triggers, sub-actions), present viewers, first words | ✓ | ✓ (present viewers inferred from chat) | ✅ | 2 |
 | Points / currency system, leaderboard [1.1α] | ✓ | — | ❌ | 4 |
 | Quotes, Credits | ✓ | — | ❌ | 4 |
 
@@ -78,10 +78,10 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | Area | Status | Phase | Area | Status | Phase |
 | --- | --- | --- | --- | --- | --- |
 | Run program, delay, log | ✅ | — | Hotkey/mouse triggers, keyboard press output (cross-platform hook) | ❌ | 4 |
-| Play sound (file) | 🟡 | 2 | Play from folder, stop sound, output device selection | ❌ | 2 |
-| File/folder watcher, file tails, process watcher, clipboard | ❌ | 4 | Toast notifications + activation | ❌ | 4 |
+| Play sound (file; WAV/MP3/OGG/FLAC, mixed) | ✅ | 2 | Play from folder, stop sound, output device selection | ✅ | 2 |
+| File/folder watcher, file tails, process watcher (clipboard pending) | 🟡 | 2 | Toast notifications + activation | ❌ | 4 |
 | MIDI in/out | ❌ | 5 | Voice control (speech-to-text, Whisper) | ❌ | 5 |
-| Game-controller input [1.1α] | ❌ | 5 | File read/write, HTTP request, JSON sub-actions | ❌ | 2 |
+| Game-controller input [1.1α] | ❌ | 5 | File read/write, HTTP request, JSON sub-actions | ✅ | 2 |
 
 ## 7. Servers, APIs and scripting
 
@@ -117,10 +117,10 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | Area | Status | Phase |
 | --- | --- | --- |
 | Windows + Linux native, Wayland-first, AppImage/Flatpak/AUR | ➕ | — |
-| Tray icon, minimize to tray, start minimized, headless mode, startup switches | ❌ | 2 |
-| Automatic backups (on start / before update), restore | ❌ | 2 |
+| Tray icon, minimize to tray, start minimized, headless mode, startup switches, single instance | ✅ | 2 |
+| Automatic backups (on start / before update), restore | ✅ | 2 |
 | Update checker / release channels | ❌ | 4 |
-| Light/dark theme toggle, keyboard shortcuts | 🟡 dark only | 4 |
+| Light/dark theme toggle, keyboard shortcuts | 🟡 themes ✅, shortcuts pending | 4 |
 
 ## Delivery waves
 
