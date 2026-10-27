@@ -9,8 +9,13 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
 
     public bool Block { get; set; }
 
-    public async Task PlayAsync(byte[] wav, CancellationToken ct)
+    public PlaybackOptions? LastOptions { get; private set; }
+
+    public IReadOnlyList<AudioDevice> GetOutputDevices() => [new("fake-1", "Fake speakers", true), new("fake-2", "Fake headset", false)];
+
+    public async Task PlayAsync(byte[] wav, PlaybackOptions options, CancellationToken ct)
     {
+        LastOptions = options;
         var playback = new Playback(wav);
         _started.Writer.TryWrite(playback);
         if (Block) await playback.Released.Task.WaitAsync(ct);

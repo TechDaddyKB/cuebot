@@ -23,8 +23,12 @@ internal sealed class CommandLineAudioPlayer(string executable, IReadOnlyList<st
         return null;
     }
 
-    public async Task PlayAsync(byte[] wav, CancellationToken ct)
+    public IReadOnlyList<AudioDevice> GetOutputDevices() => [];
+
+    /// <summary>Plays on the default device; the volume is applied to 16-bit PCM samples.</summary>
+    public async Task PlayAsync(byte[] audio, PlaybackOptions options, CancellationToken ct)
     {
+        var wav = Wav.ApplyVolume(audio, options.Volume);
         var file = Path.Combine(Path.GetTempPath(), $"cuebot-{Guid.NewGuid():N}.wav");
         try
         {

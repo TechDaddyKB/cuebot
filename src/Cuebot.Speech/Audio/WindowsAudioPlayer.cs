@@ -12,8 +12,12 @@ internal sealed partial class WindowsAudioPlayer : IAudioPlayer
     private const uint SndNoDefault = 0x0002;
     private const uint SndMemory = 0x0004;
 
-    public Task PlayAsync(byte[] wav, CancellationToken ct)
+    public IReadOnlyList<AudioDevice> GetOutputDevices() => [];
+
+    /// <summary>Plays on the default device; the volume is applied to 16-bit PCM samples.</summary>
+    public Task PlayAsync(byte[] audio, PlaybackOptions options, CancellationToken ct)
     {
+        var wav = Wav.ApplyVolume(audio, options.Volume);
         ct.ThrowIfCancellationRequested();
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var registration = ct.Register(() => PlaySound(null, IntPtr.Zero, 0));
