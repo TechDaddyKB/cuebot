@@ -21,7 +21,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Pages =
         [
             Dashboard,
-            new ChatViewModel(host.Get<Cuebot.Core.Chat.ChatHub>()),
+            new ChatViewModel(host.Get<Cuebot.Core.Chat.ChatHub>(), Cuebot.App.ViewModels.Chat.ChatPageServices.From(host)),
             new ActionsViewModel(host.Get<ProfileService>(), host.Get<Registry>(), host.Get<ActionEngine>()),
             new CommandsViewModel(host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Users.GroupStore>()),
             new QueuesViewModel(host.Get<ProfileService>(), host.Get<ActionEngine>()),

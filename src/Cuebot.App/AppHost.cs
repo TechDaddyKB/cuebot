@@ -10,6 +10,7 @@ using Cuebot.Rumble;
 using Cuebot.Server;
 using Cuebot.Scripting;
 using Cuebot.Speech;
+using Cuebot.Speech.Emotes;
 using Cuebot.Twitch;
 using Cuebot.YouTube;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddTwitch()
             .AddObs()
             .AddSpeech()
+            .AddSpeechEmoteNames()
             .AddScripting()
             .AddRumble()
             .AddYouTube()
@@ -67,6 +69,7 @@ public sealed class AppHost : IAsyncDisposable
         var log = Get<AppLog>();
         log.Info("Cuebot", $"Starting (data folder: {Get<AppPaths>().Root}, display backend: {Program.BackendName})");
         Get<Cuebot.Core.Chat.ChatHub>();   // created before platforms connect, so no chat is missed
+        Get<Cuebot.Core.Chat.Emotes.EmoteService>();   // indexes emote args from the first message on
         Get<ActionEngine>().Start();
         Get<TimerService>().Start();
 

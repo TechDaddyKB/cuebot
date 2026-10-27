@@ -134,9 +134,8 @@ public sealed class ChatExtrasRegistrationTests : IDisposable
     [Fact]
     public async Task Features_register_services_sub_actions_triggers_and_script_functions()
     {
-        await using var services = new ServiceCollection()
+        await using var services = new ServiceCollection() // AddCuebotCore includes AddChatExtrasFeatures
             .AddCuebotCore(new Cuebot.Core.AppPaths(_dir.Path))
-            .AddChatExtrasFeatures()
             .BuildServiceProvider();
         services.GetRequiredService<Cuebot.Core.Chat.Emotes.EmoteService>();
         services.GetRequiredService<ChatModerationService>();
