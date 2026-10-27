@@ -113,6 +113,12 @@ public sealed class DesktopSettings
 
     /// <summary>Poll the clipboard and fire "Clipboard changed" (off by default).</summary>
     public bool WatchClipboard { get; set; }
+
+    /// <summary>
+    /// Linux: the XDG RemoteDesktop portal's restore token for key presses, so the desktop asks for permission only
+    /// once (empty until the user first allows it).
+    /// </summary>
+    public string KeyboardPortalToken { get; set; } = "";
 }
 
 public static class DesktopEvents

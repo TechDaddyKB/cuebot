@@ -174,6 +174,51 @@ public sealed partial class ActionsViewModel : PageViewModel
         ApplyFilter();
     }
 
+    private Guid? _deleteArmedFor;
+    private DateTime _deleteArmedAt;
+
+    /// <summary>
+    /// The Delete key in the action list: the first press asks, a second press within 5 seconds deletes the action
+    /// (an action cannot be undone once deleted).
+    /// </summary>
+    public bool DeleteActionWithConfirm()
+    {
+        if (SelectedAction is not { } action) return false;
+        var now = Clock();
+        if (_deleteArmedFor == action.Definition.Id && now - _deleteArmedAt < TimeSpan.FromSeconds(5))
+        {
+            _deleteArmedFor = null;
+            DeleteAction();
+            EditStatus = $"Deleted '{action.Name}'.";
+            return true;
+        }
+        _deleteArmedFor = action.Definition.Id;
+        _deleteArmedAt = now;
+        EditStatus = $"Press Delete again to delete the action '{action.Name}'.";
+        return false;
+    }
+
+    /// <summary>Ctrl+O: turns the selected action (from the action list) or the selected trigger/sub-action on or off.</summary>
+    public void ToggleEnabled(bool wholeAction)
+    {
+        if (SelectedAction is not { } action) return;
+        switch (wholeAction ? null : action.Selected)
+        {
+            case TriggerItemViewModel trigger:
+                trigger.Enabled = !trigger.Enabled;
+                EditStatus = trigger.Enabled ? "Trigger turned on." : "Trigger turned off.";
+                break;
+            case SubActionItemViewModel step:
+                step.Enabled = !step.Enabled;
+                EditStatus = step.Enabled ? "Sub-action turned on." : "Sub-action turned off.";
+                break;
+            default:
+                action.Enabled = !action.Enabled;
+                EditStatus = action.Enabled ? $"'{action.Name}' turned on." : $"'{action.Name}' turned off.";
+                break;
+        }
+    }
+
     /// <summary>Creates an action started by <paramref name="type"/> (default settings) and selects it (Trigger Viewer).</summary>
     public ActionItemViewModel CreateActionFromTrigger(ITriggerType type)
     {

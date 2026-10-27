@@ -12,7 +12,9 @@ namespace Cuebot.App.Views;
 /// <summary>
 /// Actions page. Editor shortcuts (outside text fields, where the field's own clipboard and undo apply):
 /// Ctrl+C copy (the action when the action list has focus, else the selected trigger/sub-action), Ctrl+V paste,
-/// Ctrl+D duplicate, Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo, Delete removes the selected trigger/sub-action.
+/// Ctrl+D duplicate, Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo, Delete removes the selected trigger/sub-action (in the
+/// action list: the action, on a second press), Ctrl+O turns the selection on/off, Ctrl+Up/Down move a sub-action.
+/// F5 (test trigger) is a window shortcut. The list is <see cref="Cuebot.App.Shell.AppShortcuts.Actions"/>.
 /// </summary>
 public partial class ActionsView : UserControl
 {
@@ -32,6 +34,7 @@ public partial class ActionsView : UserControl
         };
         // Right-click selects what is under the pointer first, so the context menu acts on it.
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
+        AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
     }
 
     private ActionsViewModel? ViewModel => DataContext as ActionsViewModel;
@@ -109,6 +112,32 @@ public partial class ActionsView : UserControl
             case Key.Delete when !inActionList && ListEditor.IsKeyboardFocusWithin:
                 e.Handled = true;
                 vm.DeleteItemCommand.Execute(null);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Shortcuts the lists would otherwise handle first (tunnel): Ctrl+Up/Down move the selected sub-action, Ctrl+O
+    /// turns the selection on/off, Delete in the action list deletes the action (asks for a second press).
+    /// </summary>
+    private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (ViewModel is not { } vm || vm.Picker.IsOpen || vm.Test.IsOpen || IsTextInput(e.Source)) return;
+        var command = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+        var inActionList = ActionList.IsKeyboardFocusWithin;
+        switch (e.Key)
+        {
+            case Key.Up or Key.Down when command && !inActionList && vm.SelectedAction?.Selected is SubActionItemViewModel:
+                e.Handled = true;
+                (e.Key == Key.Up ? vm.MoveUpCommand : vm.MoveDownCommand).Execute(null);
+                break;
+            case Key.O when command:
+                e.Handled = true;
+                vm.ToggleEnabled(wholeAction: inActionList);
+                break;
+            case Key.Delete when inActionList && e.KeyModifiers == KeyModifiers.None:
+                e.Handled = true;
+                vm.DeleteActionWithConfirm();
                 break;
         }
     }

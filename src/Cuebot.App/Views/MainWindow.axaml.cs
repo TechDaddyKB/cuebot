@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using Cuebot.App.Shell;
 using Cuebot.App.ViewModels;
 
 namespace Cuebot.App.Views;
@@ -13,7 +14,30 @@ public partial class MainWindow : Window
         InitializeComponent();
         // Tunnel: the list boxes would otherwise swallow Up/Down at their ends.
         NavHost.AddHandler(KeyDownEvent, OnNavKeyDown, RoutingStrategies.Tunnel);
+        DataContextChanged += (_, _) => BindShortcuts();
     }
+
+    private const string ShortcutTag = "cuebot-shortcut";
+
+    /// <summary>Window KeyBindings for <see cref="AppShortcuts.Window"/> (the list the Settings page shows).</summary>
+    private void BindShortcuts()
+    {
+        foreach (var old in KeyBindings.Where(k => Equals(k.CommandParameter, ShortcutTag)).ToArray()) KeyBindings.Remove(old);
+        if (DataContext is not MainWindowViewModel vm) return;
+        vm.IsTypingText = IsTypingText;
+        foreach (var shortcut in AppShortcuts.Window)
+        {
+            if (!vm.ShortcutCommands.TryGetValue(shortcut.Id, out var command)) continue;
+            KeyBindings.Add(new KeyBinding { Gesture = KeyGesture.Parse(shortcut.Gesture), Command = command, CommandParameter = ShortcutTag });
+        }
+    }
+
+    /// <summary>True when keyboard focus is in a text field or code editor.</summary>
+    private bool IsTypingText() =>
+        FocusManager?.GetFocusedElement() is Avalonia.Visual v
+        && (v.FindAncestorOfType<TextBox>(includeSelf: true) is not null
+            || v.FindAncestorOfType<AutoCompleteBox>(includeSelf: true) is not null
+            || v.FindAncestorOfType<Cuebot.App.Controls.CodeEditor>(includeSelf: true) is not null);
 
     /// <summary>
     /// Sidebar keyboard navigation: each section is its own list, so Up on the first page / Down on the last page moves

@@ -7,8 +7,27 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
       <TextBlock Classes="h1" Text="Points" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="A loyalty currency viewers earn by watching and chatting. Balances are the user variable named below, so the points sub-actions (add, spend, transfer, leaderboard…) and the variable sub-actions share them." />
+                 Text="Loyalty currencies viewers earn by watching and chatting. Each balance is the user variable named below, so the points sub-actions (add, spend, transfer, leaderboard…) and the variable sub-actions share them. Sub-actions use the default currency unless they name another." />
     </StackPanel>
+
+    <!-- Currency picker -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8">
+      <Grid ColumnDefinitions="Auto,8,200,8,Auto,16,*,8,Auto">
+        <TextBlock Text="Currency" VerticalAlignment="Center" FontWeight="SemiBold" />
+        <ComboBox x:Name="CurrencyPicker" Grid.Column="2" ItemsSource="{Binding Currencies}" SelectedItem="{Binding SelectedCurrency}"
+                  HorizontalAlignment="Stretch">
+          <ComboBox.ItemTemplate>
+            <DataTemplate DataType="vm:CurrencyOptionViewModel">
+              <TextBlock Text="{Binding Display}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Button Grid.Column="4" Content="Remove" Command="{Binding RemoveCurrencyCommand}" IsEnabled="{Binding CanRemoveCurrency}"
+                ToolTip.Tip="Remove this currency (its balances stay as user variables)" />
+        <TextBox Grid.Column="6" Text="{Binding NewCurrencyName}" PlaceholderText="New currency name, e.g. gems" />
+        <Button Grid.Column="8" Content="Add currency" Command="{Binding AddCurrencyCommand}" />
+      </Grid>
+    </Border>
 
     <!-- Settings -->
     <ScrollViewer DockPanel.Dock="Right" Width="360" Margin="12,0,0,0">
@@ -67,6 +86,32 @@
                        IsVisible="{Binding ThresholdsError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <TextBlock Text="Never earn automatically (bots)" />
             <TextBox Text="{Binding IgnoredUsers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Nightbot, StreamElements" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Multipliers" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Multiply automatic earnings (watching, chat, bonuses). The highest multiplier that applies wins (1 = none), then a user's own multiplier is applied on top." />
+            <Grid ColumnDefinitions="*,8,110" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto,6,Auto">
+              <TextBlock Text="Subscribers (tier 1)" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="2" Value="{Binding SubscriberMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <TextBlock Grid.Row="2" Text="Tier 2 subscribers" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding Tier2Multiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <TextBlock Grid.Row="4" Text="Tier 3 subscribers" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding Tier3Multiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <TextBlock Grid.Row="6" Text="VIPs" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="6" Grid.Column="2" Value="{Binding VipMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <TextBlock Grid.Row="8" Text="Moderators" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="8" Grid.Column="2" Value="{Binding ModeratorMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+            </Grid>
+            <TextBlock Text="User groups (group=multiplier)" />
+            <TextBox Text="{Binding GroupMultipliers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Regulars=1.5, Supporters=2" />
+            <TextBlock Classes="error" Text="{Binding GroupMultipliersError}"
+                       IsVisible="{Binding GroupMultipliersError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding UserMultipliersSummary}" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Subscriber tiers are learned from subscription events this session; a subscriber of unknown tier counts as tier 1." />
           </StackPanel>
         </Border>
       </StackPanel>

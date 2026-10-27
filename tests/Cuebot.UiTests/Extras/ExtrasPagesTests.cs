@@ -234,6 +234,64 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void Points_page_switches_currencies_and_edits_multipliers()
+    {
+        var points = Get<PointsService>();
+        Bus.Publish(Chat("Alice", "1", "twitch"));
+        points.Set("twitch", "1", "Alice", 1500);
+
+        var vm = new PointsViewModel(points);
+        var window = Open(new PointsView(), vm);
+        Assert.Equal("points (default)", Assert.Single(vm.Currencies).Display);
+        Assert.False(vm.CanRemoveCurrency);
+
+        vm.NewCurrencyName = "gems";
+        vm.AddCurrencyCommand.Execute(null);
+        Pump();
+        Assert.Equal(["points", "gems"], points.CurrencyNames);
+        Assert.Equal("gems", vm.SelectedCurrency.Name);
+        Assert.True(vm.CanRemoveCurrency);
+        Assert.True(vm.IsEmpty);   // the gems leaderboard
+        Assert.Equal("gems", vm.CurrencyName);
+
+        vm.AdjustUser = "alice";
+        vm.AdjustAmount = 40;
+        vm.GiveCommand.Execute(null);
+        Pump();
+        Assert.Equal((1500L, 40L), (points.Get("twitch", "1"), points.Get("twitch", "1", "gems")));
+        Assert.Equal("40 gems", Assert.Single(vm.Leaderboard).Points);
+
+        vm.VipMultiplier = 2;
+        vm.GroupMultipliers = "Regulars=1.5, oops";
+        Assert.Equal(2m, points.GetCurrency("gems")!.VipMultiplier);
+        Assert.Contains("oops", vm.GroupMultipliersError);
+        vm.GroupMultipliers = "Regulars=1.5";
+        Assert.Equal(1.5m, points.GetGroupMultiplier("regulars", "gems"));
+        Assert.Equal(1m, points.Settings.VipMultiplier);   // the default currency is untouched
+
+        vm.CurrencyName = "points";   // taken by the default currency: rejected
+        Assert.Contains("already used", vm.Status);
+        vm.CurrencyName = "rubies";
+        Assert.Equal(["points", "rubies"], points.CurrencyNames);
+        Assert.Equal("rubies", vm.SelectedCurrency.Name);
+        SaveBothThemes(window, "points-currencies");
+
+        vm.SelectedCurrency = vm.Currencies[0];
+        Pump();
+        Assert.Equal("points", vm.CurrencyName);
+        Assert.Equal("1,500 points", Assert.Single(vm.Leaderboard).Points);
+
+        vm.SelectedCurrency = vm.Currencies[1];
+        vm.RemoveCurrencyCommand.Execute(null);
+        Pump();
+        Assert.Single(points.Currencies);
+        Assert.Single(vm.Currencies);
+        Assert.Equal("points", vm.SelectedCurrency.Name);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Hotkeys_page_records_a_combo_and_registers_it()
     {
         var service = Get<HotkeyService>();
