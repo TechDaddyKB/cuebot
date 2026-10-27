@@ -79,7 +79,7 @@ jobs:
           flatpak_data="$HOME/.var/app/io.github.cuebot.Cuebot/config/Cuebot"
           for mode in wayland-weston x11; do
             dbus-run-session -- packaging/linux/smoke-test.sh $mode appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run || status=1
-            SMOKE_APP_DATA="$flatpak_data" dbus-run-session -- packaging/linux/smoke-test.sh $mode flatpak flatpak run io.github.cuebot.Cuebot || status=1
+            SMOKE_STOP="flatpak kill io.github.cuebot.Cuebot" SMOKE_APP_DATA="$flatpak_data" dbus-run-session -- packaging/linux/smoke-test.sh $mode flatpak flatpak run io.github.cuebot.Cuebot || status=1
           done
           dbus-run-session -- packaging/linux/smoke-test.sh fallback appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run || status=1
           exit $status

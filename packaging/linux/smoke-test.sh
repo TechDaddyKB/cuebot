@@ -16,7 +16,12 @@ else
 fi
 pids=()
 
-cleanup() { for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done; }
+# SMOKE_STOP: extra command that stops the app when killing its launcher is not enough (e.g. "flatpak kill <app-id>":
+# the sandboxed process outlives `flatpak run` and would keep holding the single-instance lock).
+cleanup() {
+  [ -n "${SMOKE_STOP:-}" ] && eval "$SMOKE_STOP" >/dev/null 2>&1
+  for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done
+}
 trap cleanup EXIT
 
 start_xvfb() {
