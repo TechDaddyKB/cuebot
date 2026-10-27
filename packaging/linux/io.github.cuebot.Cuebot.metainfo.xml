@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.cuebot.Cuebot</id>
+  <name>Cuebot</name>
+  <summary>Streaming automation with actions, triggers, Twitch, OBS and text-to-speech</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <description>
+    <p>
+      Cuebot reacts to stream events (chat commands, follows, cheers, raids, OBS scene changes, timers)
+      by running actions you build in a list or node-graph editor. Actions can talk in chat, control OBS,
+      speak text aloud and run your own C# or Python code.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.cuebot.Cuebot.desktop</launchable>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.0" date="2026-10-26" />
+  </releases>
+</component>

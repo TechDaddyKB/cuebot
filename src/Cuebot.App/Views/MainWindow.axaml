@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cuebot.App.ViewModels"
+        xmlns:actions="using:Cuebot.App.ViewModels.Actions"
+        xmlns:views="using:Cuebot.App.Views"
+        x:Class="Cuebot.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Cuebot"
+        Icon="avares://Cuebot/Assets/cuebot.ico"
+        Width="1360" Height="860" MinWidth="960" MinHeight="600">
+  <Window.DataTemplates>
+    <DataTemplate DataType="vm:DashboardViewModel"><views:DashboardView /></DataTemplate>
+    <DataTemplate DataType="actions:ActionsViewModel"><views:ActionsView /></DataTemplate>
+    <DataTemplate DataType="vm:TimersViewModel"><views:TimersView /></DataTemplate>
+    <DataTemplate DataType="vm:VariablesViewModel"><views:VariablesView /></DataTemplate>
+    <DataTemplate DataType="vm:TwitchViewModel"><views:TwitchView /></DataTemplate>
+    <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
+    <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
+    <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
+  </Window.DataTemplates>
+
+  <Grid ColumnDefinitions="200,*">
+    <Border Background="{StaticResource CuebotSidebar}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,18,18,14" Spacing="10">
+          <Image Source="avares://Cuebot/Assets/cuebot.png" Width="28" Height="28" />
+          <TextBlock Text="Cuebot" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </StackPanel>
+        <ItemsControl DockPanel.Dock="Bottom" Margin="18,8,18,16" ItemsSource="{Binding Dashboard.Connections}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:ConnectionStatusViewModel">
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,3" ToolTip.Tip="{Binding Message}">
+                <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" />
+                <TextBlock Text="{Binding Name}" Classes="muted" FontSize="13" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ListBox Classes="nav" ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="vm:PageViewModel">
+              <TextBlock Text="{Binding Title}" FontSize="14" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+    <ContentControl Grid.Column="1" Content="{Binding SelectedPage}" />
+  </Grid>
+</Window>

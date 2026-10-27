@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Cuebot
+Comment=Streaming automation: actions, triggers, Twitch, OBS and text-to-speech
+Exec=cuebot
+Icon=io.github.cuebot.Cuebot
+Categories=AudioVideo;Network;Utility;
+Keywords=stream;twitch;obs;tts;bot;
+Terminal=false
+StartupWMClass=Cuebot

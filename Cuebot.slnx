@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Cuebot.App/Cuebot.App.csproj" />
+    <Project Path="src/Cuebot.Core/Cuebot.Core.csproj" />
+    <Project Path="src/Cuebot.Obs/Cuebot.Obs.csproj" />
+    <Project Path="src/Cuebot.Scripting/Cuebot.Scripting.csproj" />
+    <Project Path="src/Cuebot.Speech/Cuebot.Speech.csproj" />
+    <Project Path="src/Cuebot.Twitch/Cuebot.Twitch.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Cuebot.Obs.Tests/Cuebot.Obs.Tests.csproj" />
+    <Project Path="tests/Cuebot.Scripting.Tests/Cuebot.Scripting.Tests.csproj" />
+    <Project Path="tests/Cuebot.Speech.Tests/Cuebot.Speech.Tests.csproj" />
+    <Project Path="tests/Cuebot.Tests/Cuebot.Tests.csproj" />
+    <Project Path="tests/Cuebot.Twitch.Tests/Cuebot.Twitch.Tests.csproj" />
+    <Project Path="tests/Cuebot.UiTests/Cuebot.UiTests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/IconGen/IconGen.csproj" />
+  </Folder>
+</Solution>

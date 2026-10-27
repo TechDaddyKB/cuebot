@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Linux test dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y espeak-ng python3
+      - run: dotnet test Cuebot.slnx -c Release
+
+  windows-package:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: ./build/publish.ps1 -Runtimes win-x64
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cuebot-win-x64
+          path: artifacts/Cuebot-win-x64.zip
+
+  linux-package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: chmod +x build/publish.sh packaging/linux/build-appimage.sh
+      - run: packaging/linux/build-appimage.sh linux-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cuebot-x86_64.AppImage
+          path: artifacts/Cuebot-x86_64.AppImage
+      - name: Build Flatpak
+        run: |
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak-builder --user --install-deps-from=flathub --repo=artifacts/flatpak-repo --force-clean \
+            artifacts/flatpak-build packaging/flatpak/io.github.cuebot.Cuebot.yml
+          flatpak build-bundle artifacts/flatpak-repo artifacts/Cuebot-x86_64.flatpak io.github.cuebot.Cuebot
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cuebot-x86_64.flatpak
+          path: artifacts/Cuebot-x86_64.flatpak

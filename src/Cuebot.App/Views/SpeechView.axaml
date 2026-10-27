@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:speech="using:Cuebot.Speech"
+             x:Class="Cuebot.App.Views.SpeechView"
+             x:DataType="vm:SpeechViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="980" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Speech" />
+
+      <Grid ColumnDefinitions="*,12,*">
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Engines" />
+            <ItemsControl ItemsSource="{Binding Engines}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:EngineStatus">
+                  <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,3">
+                    <Ellipse Classes="status" Classes.good="{Binding IsAvailable}" />
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Detail}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="ElevenLabs API key" />
+            <TextBox Text="{Binding ElevenLabsApiKey}" PasswordChar="•" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Linux: install espeak-ng for offline voices (e.g. sudo apt install espeak-ng)." />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Queue" />
+            <TextBlock Text="{Binding CurrentText, StringFormat='Speaking: {0}'}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding QueueLength, StringFormat='Waiting: {0}'}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Skip" Command="{Binding SkipCommand}" />
+              <Button Content="Clear queue" Command="{Binding ClearQueueCommand}" />
+              <ToggleButton Content="Pause" IsChecked="{Binding Paused}" />
+            </StackPanel>
+            <TextBlock Text="Master volume" />
+            <Slider Minimum="0" Maximum="100" Value="{Binding MasterVolume}" />
+            <Grid ColumnDefinitions="*,8,Auto">
+              <TextBox Text="{Binding TestText}" />
+              <Button Grid.Column="2" Content="Speak" Command="{Binding SpeakCommand}" />
+            </Grid>
+            <TextBlock Classes="error" Text="{Binding Error}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <Border Classes="card">
+        <Grid ColumnDefinitions="220,16,*">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Voice aliases" />
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+              <Button Content="+ Alias" Classes="accent" Command="{Binding AddAliasCommand}" />
+              <Button Content="Remove" Command="{Binding RemoveAliasCommand}" />
+            </StackPanel>
+            <ListBox ItemsSource="{Binding Aliases}" SelectedItem="{Binding SelectedAlias}" MinHeight="160">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:VoiceAliasViewModel">
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+          <ContentControl Grid.Column="2" Content="{Binding SelectedAlias}">
+            <ContentControl.ContentTemplate>
+              <DataTemplate DataType="vm:VoiceAliasViewModel">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Aliases are named voices used by the Speak sub-action and by speak-chat. Change the voice behind an alias without editing actions." />
+                  <TextBlock Text="Name" />
+                  <TextBox Text="{Binding Name}" />
+                  <TextBlock Text="Engine" />
+                  <ComboBox ItemsSource="{Binding EngineIds}" SelectedItem="{Binding EngineId}" HorizontalAlignment="Stretch" />
+                  <TextBlock Text="Voice" />
+                  <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding Voice}" HorizontalAlignment="Stretch">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate DataType="speech:VoiceInfo">
+                        <TextBlock>
+                          <Run Text="{Binding Name}" /><Run Text="  " /><Run Text="{Binding Language}" Foreground="{StaticResource CuebotMuted}" />
+                        </TextBlock>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <TextBlock Classes="error" Text="{Binding VoiceError}" />
+                  <TextBlock Text="{Binding Rate, StringFormat='Rate: {0:0}'}" />
+                  <Slider Minimum="-10" Maximum="10" Value="{Binding Rate}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                  <TextBlock Text="{Binding Volume, StringFormat='Volume: {0:0}%'}" />
+                  <Slider Minimum="0" Maximum="100" Value="{Binding Volume}" />
+                  <Button Content="Test voice" Command="{Binding $parent[UserControl].((vm:SpeechViewModel)DataContext).TestAliasCommand}" />
+                </StackPanel>
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+        </Grid>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Speak chat" />
+          <CheckBox Content="Read Twitch chat messages aloud" IsChecked="{Binding SpeakChatEnabled}" />
+          <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto">
+            <TextBlock Text="Voice alias" />
+            <TextBlock Grid.Column="2" Text="Template" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding AliasNames}" SelectedItem="{Binding SpeakChatAlias}" HorizontalAlignment="Stretch" />
+            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding SpeakChatTemplate}" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <CheckBox Content="Ignore !commands" IsChecked="{Binding IgnoreCommands}" />
+            <CheckBox Content="Replace links with 'link'" IsChecked="{Binding SkipLinks}" />
+            <TextBlock Text="Max length" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding MaxLength}" Minimum="10" Maximum="2000" Increment="10" FormatString="0" Width="140" />
+          </StackPanel>
+          <TextBlock Text="Ignored users (comma separated)" />
+          <TextBox Text="{Binding IgnoredUsers}" Watermark="nightbot, streamelements" />
+          <TextBlock Text="Word replacements — one per line: find => replace (prefix re: for regex)" />
+          <TextBox Text="{Binding Replacements}" AcceptsReturn="True" MinHeight="80" Watermark="lol => laughing out loud" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

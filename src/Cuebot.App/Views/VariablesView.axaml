@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.VariablesView"
+             x:DataType="vm:VariablesViewModel"
+             x:Name="Root">
+  <DockPanel Margin="24">
+    <StackPanel DockPanel.Dock="Top" MaxWidth="900" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Global variables" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
+                 Text="Use ~name~ in any sub-action. Persisted variables are kept after a restart." />
+      <Border Classes="card">
+        <Grid ColumnDefinitions="200,12,*,12,Auto,12,Auto">
+          <TextBox Text="{Binding NewName}" Watermark="Name" />
+          <TextBox Grid.Column="2" Text="{Binding NewValue}" Watermark="Value" />
+          <CheckBox Grid.Column="4" Content="Persisted" IsChecked="{Binding NewPersisted}" />
+          <Button Grid.Column="6" Content="Set" Classes="accent" Command="{Binding SetVariableCommand}" />
+        </Grid>
+      </Border>
+    </StackPanel>
+    <ListBox ItemsSource="{Binding Variables}" Background="Transparent" MaxWidth="900" HorizontalAlignment="Left">
+      <ListBox.ItemTemplate>
+        <DataTemplate DataType="vm:GlobalVariableRow">
+          <Grid ColumnDefinitions="200,*,Auto,Auto">
+            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding Value}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <Button Grid.Column="2" Content="Edit" Margin="8,0" Command="{Binding #Root.((vm:VariablesViewModel)DataContext).EditCommand}" CommandParameter="{Binding}" />
+            <Button Grid.Column="3" Content="Remove" Command="{Binding #Root.((vm:VariablesViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

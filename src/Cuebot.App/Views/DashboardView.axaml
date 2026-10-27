@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:log="using:Cuebot.Core.Logging"
+             xmlns:actions="using:Cuebot.Core.Actions"
+             x:Class="Cuebot.App.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+  <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+    <TextBlock Classes="h1" Text="Dashboard" />
+    <ItemsControl Grid.Row="1" ItemsSource="{Binding Connections}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate DataType="vm:ConnectionStatusViewModel">
+          <Border Classes="card" Width="260" Margin="0,0,12,12">
+            <StackPanel Spacing="4">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" />
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
+              </StackPanel>
+              <TextBlock Text="{Binding State}" />
+              <TextBlock Text="{Binding Message}" Classes="muted" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <Grid Grid.Row="2" ColumnDefinitions="2*,12,*">
+      <Border Classes="card" Margin="0">
+        <DockPanel>
+          <DockPanel DockPanel.Dock="Top">
+            <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearLogCommand}" />
+            <TextBlock Classes="h2" Text="Log" />
+          </DockPanel>
+          <ListBox ItemsSource="{Binding Log}" Background="Transparent" AutoScrollToSelectedItem="False">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="log:LogEntry">
+                <TextBlock Text="{Binding}" FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+      <Border Grid.Column="2" Classes="card" Margin="0">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Recent action runs" />
+          <ListBox ItemsSource="{Binding Runs}" Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="actions:ActionRunRecord">
+                <StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Ellipse Classes="status" Classes.good="{Binding Success}" Classes.bad="{Binding !Success}" Width="8" Height="8" />
+                    <TextBlock Text="{Binding ActionName}" FontWeight="SemiBold" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding Source}" />
+                  <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" FontSize="12" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Required by the LibraryImport source generator for the winmm PlaySound binding. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.Speech.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Speech" />
+  </ItemGroup>
+</Project>

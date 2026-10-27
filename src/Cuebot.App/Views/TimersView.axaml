@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.TimersView"
+             x:DataType="vm:TimersViewModel"
+             x:Name="Root">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Timers" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
+                 Text="A timer fires the 'Timer' trigger on every action that selects it, at a fixed interval." />
+      <Button Content="+ Timer" Classes="accent" Command="{Binding AddTimerCommand}" Margin="0,0,0,12" />
+      <ItemsControl ItemsSource="{Binding Timers}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="vm:TimerItemViewModel">
+            <Border Classes="card">
+              <Grid ColumnDefinitions="*,12,160,12,Auto,12,Auto">
+                <TextBox Text="{Binding Name}" Watermark="Timer name" />
+                <NumericUpDown Grid.Column="2" Value="{Binding IntervalSeconds}" Minimum="1" Increment="10" FormatString="0"
+                               ToolTip.Tip="Interval in seconds" />
+                <CheckBox Grid.Column="4" Content="Enabled" IsChecked="{Binding Enabled}" />
+                <Button Grid.Column="6" Content="Remove"
+                        Command="{Binding #Root.((vm:TimersViewModel)DataContext).RemoveTimerCommand}" CommandParameter="{Binding}" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

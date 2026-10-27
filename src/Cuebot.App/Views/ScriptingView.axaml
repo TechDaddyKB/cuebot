@@ -1,0 +1,77 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:scripting="using:Cuebot.Scripting"
+             x:Class="Cuebot.App.Views.ScriptingView"
+             x:DataType="vm:ScriptingViewModel"
+             x:Name="Root">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="980" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Scripting" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
+                 Text="Add 'Execute C# code' or 'Execute Python code' sub-actions to run your own code. Scripts are trusted code with full access to your computer — only run code you understand." />
+
+      <Grid ColumnDefinitions="*,12,*">
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Python runtime" />
+            <TextBlock>
+              <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding Version}" />
+            </TextBlock>
+            <TextBlock Text="{Binding StatusMessage}" Classes="muted" TextWrapping="Wrap" />
+            <Button Content="Install built-in Python" Classes="accent" Command="{Binding InstallRuntimeCommand}"
+                    IsVisible="{Binding CanInstall}" IsEnabled="{Binding !IsBusy}" />
+            <TextBlock Text="Advanced: use an existing Python interpreter instead" Classes="muted" />
+            <TextBox Text="{Binding CustomPythonPath}" Watermark="/usr/bin/python3 or C:\Python313\python.exe" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="card">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Python packages" />
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto,8,Auto" Margin="0,0,0,8" IsEnabled="{Binding IsReady}">
+              <TextBox Text="{Binding PackageSpec}" Watermark="requests or numpy==2.1.0" />
+              <Button Grid.Column="2" Content="Install" Command="{Binding InstallPackageCommand}" IsEnabled="{Binding !IsBusy}" />
+              <Button Grid.Column="4" Content="Refresh" Command="{Binding RefreshPackagesCommand}" />
+            </Grid>
+            <ListBox ItemsSource="{Binding Packages}" MaxHeight="240" Background="Transparent">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="scripting:PythonPackage">
+                  <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Version}" Classes="muted" VerticalAlignment="Center" Margin="8,0" />
+                    <Button Grid.Column="2" Content="Remove" Command="{Binding #Root.((vm:ScriptingViewModel)DataContext).UninstallPackageCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <Border Classes="card">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="h2" Text="Output" />
+          <TextBox Text="{Binding Output}" IsReadOnly="True" AcceptsReturn="True" MinHeight="100" MaxHeight="240"
+                   FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="h2" Text="Script API" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="C#: await Cb.Call(&quot;name&quot;, new { ... }), Args[&quot;user&quot;]. Python: cb.call(&quot;name&quot;, key=value), cb.get_arg(&quot;user&quot;). Return false to stop the action." />
+          <ItemsControl ItemsSource="{Binding Functions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" Margin="0,2" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,43 @@
+# Flatpak manifest packaging a prebuilt self-contained linux-x64 publish.
+#   build/publish.sh linux-x64
+#   flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.github.cuebot.Cuebot.yml
+app-id: io.github.cuebot.Cuebot
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: cuebot
+finish-args:
+  - --share=network        # Twitch, OBS websocket, cloud TTS, Python package downloads
+  - --share=ipc
+  - --socket=x11           # Avalonia renders through X11 (XWayland on Wayland sessions)
+  - --socket=pulseaudio    # speech and sound playback
+  - --device=dri
+  - --filesystem=xdg-music:ro   # sound files used by "Play sound"
+modules:
+  - name: espeak-ng
+    buildsystem: autotools
+    no-autogen: false
+    config-opts: [--disable-static, --without-mbrola, --without-sonic]
+    sources:
+      - type: git
+        url: https://github.com/espeak-ng/espeak-ng.git
+        tag: '1.52.0'
+  - name: cuebot
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/cuebot /app/bin
+      - cp -a publish/. /app/lib/cuebot/
+      - ln -s /app/lib/cuebot/Cuebot /app/bin/cuebot
+      - install -Dm644 io.github.cuebot.Cuebot.desktop /app/share/applications/io.github.cuebot.Cuebot.desktop
+      - install -Dm644 io.github.cuebot.Cuebot.metainfo.xml /app/share/metainfo/io.github.cuebot.Cuebot.metainfo.xml
+      - install -Dm644 cuebot-256.png /app/share/icons/hicolor/256x256/apps/io.github.cuebot.Cuebot.png
+    sources:
+      - type: dir
+        path: ../../artifacts/publish/linux-x64
+        dest: publish
+      - type: file
+        path: ../linux/io.github.cuebot.Cuebot.desktop
+      - type: file
+        path: ../linux/io.github.cuebot.Cuebot.metainfo.xml
+      - type: file
+        path: ../icons/cuebot-256.png

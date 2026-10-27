@@ -1,0 +1,247 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Actions"
+             xmlns:graph="using:Cuebot.App.Graph"
+             xmlns:controls="using:Cuebot.App.Controls"
+             x:Class="Cuebot.App.Views.ActionsView"
+             x:DataType="vm:ActionsViewModel">
+  <UserControl.DataTemplates>
+    <!-- Flow tree rows (list editor). Branch templates recurse through these. -->
+    <DataTemplate DataType="vm:SubActionItemViewModel">
+      <StackPanel>
+        <Button Classes="row" Classes.selected="{Binding IsSelected}" Click="OnItemClick">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" ToolTip.Tip="Enabled" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Summary}" Classes="muted" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <TextBlock Grid.Column="2" Text="{Binding Category}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
+          </Grid>
+        </Button>
+        <ItemsControl ItemsSource="{Binding Branches}" Margin="28,0,0,4" IsVisible="{Binding HasBranches}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="vm:BranchViewModel">
+      <StackPanel>
+        <Button Classes="row" Classes.selected="{Binding IsSelected}" Click="OnItemClick" Padding="8,3">
+          <TextBlock>
+            <Run Text="↳ " /><Run Text="{Binding Name}" FontWeight="SemiBold" />
+          </TextBlock>
+        </Button>
+        <ItemsControl ItemsSource="{Binding Steps.Items}" Margin="20,0,0,0" />
+      </StackPanel>
+    </DataTemplate>
+
+    <!-- Parameter editors, generated from module parameter descriptors. -->
+    <DataTemplate DataType="vm:TextParameterViewModel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Label}" />
+        <TextBox Text="{Binding Value}" Watermark="{Binding Watermark}" IsVisible="{Binding !HasSuggestions}" />
+        <AutoCompleteBox Text="{Binding Value}" ItemsSource="{Binding Suggestions}" FilterMode="ContainsOrdinal"
+                         MinimumPrefixLength="0" IsVisible="{Binding HasSuggestions}" />
+        <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="vm:MultilineParameterViewModel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Label}" />
+        <TextBox Text="{Binding Value}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" />
+        <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="vm:CodeParameterViewModel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Label}" />
+        <Border BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="1" CornerRadius="4">
+          <controls:CodeEditor Text="{Binding Value, Mode=TwoWay}" Language="{Binding Language}" Height="380" />
+        </Border>
+        <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="vm:BoolParameterViewModel">
+      <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ChoiceParameterViewModel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Label}" />
+        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <Grid>
+    <Grid ColumnDefinitions="280,*,4,380">
+      <!-- Action list -->
+      <Border Background="#1C1E24" BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="0,0,1,0">
+        <DockPanel Margin="12">
+          <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Actions" />
+          <TextBox DockPanel.Dock="Top" Watermark="Search actions" Text="{Binding Filter}" Margin="0,0,0,8" />
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
+            <Button Content="New" Command="{Binding NewActionCommand}" Classes="accent" />
+            <Button Content="Duplicate" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
+            <Button Content="Delete" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" />
+          </StackPanel>
+          <ListBox ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="vm:ActionItemViewModel">
+                <StackPanel Opacity="{Binding Enabled, Converter={x:Static vm:EditorConverters.EnabledOpacity}}">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                  <TextBlock Classes="muted">
+                    <Run Text="{Binding Group}" /><Run Text="  " /><Run Text="{Binding TriggerSummary}" />
+                  </TextBlock>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+
+      <!-- Selected action -->
+      <DockPanel Grid.Column="1" IsVisible="{Binding HasSelection}">
+        <Border DockPanel.Dock="Top" Padding="16,12" BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="0,0,0,1">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="2*,8,*,Auto">
+              <TextBox Text="{Binding SelectedAction.Name}" FontSize="16" Watermark="Action name" />
+              <TextBox Grid.Column="2" Text="{Binding SelectedAction.Group}" Watermark="Group" />
+              <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" Margin="12,0,0,0">
+                <RadioButton GroupName="view" Content="List" IsChecked="{Binding !IsGraphView}" />
+                <RadioButton GroupName="view" Content="Graph" IsChecked="{Binding IsGraphView}" />
+              </StackPanel>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <CheckBox Content="Enabled" IsChecked="{Binding SelectedAction.Enabled}" />
+              <CheckBox Content="Allow concurrent runs" IsChecked="{Binding SelectedAction.Concurrent}"
+                        ToolTip.Tip="Off: runs are queued and execute one at a time" />
+              <Button Content="▶ Run now" Command="{Binding RunActionCommand}" />
+              <TextBlock Text="{Binding LastRunResult}" Classes="muted" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Grid>
+          <!-- List editor -->
+          <ScrollViewer IsVisible="{Binding !IsGraphView}" Padding="16,12">
+            <StackPanel>
+              <DockPanel Margin="0,0,0,6">
+                <Button DockPanel.Dock="Right" Content="+ Trigger" Command="{Binding AddTriggerCommand}" />
+                <TextBlock Classes="h2" Text="Triggers" VerticalAlignment="Center" />
+              </DockPanel>
+              <ItemsControl ItemsSource="{Binding SelectedAction.Triggers}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:TriggerItemViewModel">
+                    <Button Classes="row" Classes.selected="{Binding IsSelected}" Click="OnItemClick">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" />
+                        <StackPanel Grid.Column="1">
+                          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                          <TextBlock Text="{Binding Summary}" Classes="muted" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding Category}" Classes="muted" VerticalAlignment="Center" />
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <DockPanel Margin="0,18,0,6">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                  <Button Content="↑" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up" />
+                  <Button Content="↓" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down" />
+                  <Button Content="Delete" Command="{Binding DeleteItemCommand}" />
+                  <Button Content="+ Sub-action" Command="{Binding AddStepCommand}" Classes="accent" />
+                </StackPanel>
+                <TextBlock Classes="h2" Text="Sub-actions" VerticalAlignment="Center" />
+              </DockPanel>
+              <TextBlock Classes="muted" Margin="0,0,0,6" TextWrapping="Wrap"
+                         Text="New sub-actions are inserted after the selected one, or into the selected branch." />
+              <ItemsControl ItemsSource="{Binding SelectedAction.Steps.Items}" />
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- Node graph editor -->
+          <DockPanel IsVisible="{Binding IsGraphView}">
+            <Border DockPanel.Dock="Top" Padding="12,6" Background="#1C1E24">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Auto-arrange" Command="{Binding AutoArrangeCommand}" />
+                <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="Click + on a port to add a step there · drag a node onto a port to rewire it · drag the background to pan · wheel to zoom · Del deletes" />
+              </DockPanel>
+            </Border>
+            <graph:FlowGraphControl Action="{Binding SelectedAction}" />
+          </DockPanel>
+        </Grid>
+      </DockPanel>
+      <TextBlock Grid.Column="1" IsVisible="{Binding !HasSelection}" Classes="muted" FontSize="14"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" Text="Create or select an action" />
+
+      <GridSplitter Grid.Column="2" Background="{StaticResource CuebotCardBorder}" ResizeDirection="Columns" />
+
+      <!-- Properties of the selected trigger / sub-action -->
+      <ScrollViewer Grid.Column="3" Padding="16" Background="#1C1E24">
+        <ContentControl Content="{Binding SelectedAction.Selected}">
+          <ContentControl.DataTemplates>
+            <DataTemplate DataType="vm:TriggerItemViewModel">
+              <StackPanel Spacing="12">
+                <StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding Category, StringFormat='TRIGGER · {0}'}" />
+                  <TextBlock Classes="h2" Text="{Binding Title}" />
+                </StackPanel>
+                <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                <ItemsControl ItemsSource="{Binding Parameters}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:SubActionItemViewModel">
+              <StackPanel Spacing="12">
+                <StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding Category, StringFormat='SUB-ACTION · {0}'}" />
+                  <TextBlock Classes="h2" Text="{Binding Title}" />
+                </StackPanel>
+                <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                <ItemsControl ItemsSource="{Binding Parameters}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Use %argument% for action arguments (e.g. %user%, %message%) and ~name~ for global variables." />
+              </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="vm:BranchViewModel">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="muted" Text="BRANCH" />
+                <TextBlock Classes="h2" Text="{Binding Name}" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Sub-actions added now go into this branch. After the branch finishes, the action continues with the next sub-action." />
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+      </ScrollViewer>
+    </Grid>
+
+    <!-- Type picker overlay -->
+    <Border IsVisible="{Binding Picker.IsOpen}" Background="#99000000">
+      <Border Classes="card" Width="520" Height="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="h2" Text="{Binding Picker.Title}" />
+          <TextBox DockPanel.Dock="Top" x:Name="PickerSearch" Watermark="Search (e.g. 'twitch chat', 'obs scene')"
+                   Text="{Binding Picker.Search}" Margin="0,0,0,8" KeyDown="OnPickerKeyDown" />
+          <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button Content="Cancel" Command="{Binding Picker.CancelCommand}" />
+            <Button Content="Add" Classes="accent" Command="{Binding Picker.ConfirmCommand}" />
+          </StackPanel>
+          <ListBox ItemsSource="{Binding Picker.Options}" SelectedItem="{Binding Picker.Selected}" DoubleTapped="OnPickerDoubleTapped">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="vm:TypeOption">
+                <TextBlock>
+                  <Run Text="{Binding Category}" Foreground="{StaticResource CuebotMuted}" /><Run Text="  " /><Run Text="{Binding Name}" />
+                </TextBlock>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+    </Border>
+  </Grid>
+</UserControl>

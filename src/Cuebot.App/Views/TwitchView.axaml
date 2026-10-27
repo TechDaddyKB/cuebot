@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.TwitchView"
+             x:DataType="vm:TwitchViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Twitch" />
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Status" />
+          <TextBlock>
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Text="{Binding Account, StringFormat='Account: {0}'}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding IsAuthorized}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Sign out" Command="{Binding SignOutCommand}" IsEnabled="{Binding IsAuthorized}" />
+          </StackPanel>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <TextBlock Classes="error" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Sign in" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Register an application at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID. Cuebot signs in with the device-code flow, so no client secret is needed." />
+          <TextBox Text="{Binding ClientId}" Watermark="Twitch application Client ID" />
+          <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}" />
+          <StackPanel Spacing="8" IsVisible="{Binding IsAuthorizing}">
+            <TextBlock TextWrapping="Wrap" Text="A browser window has opened. Confirm this code on Twitch:" />
+            <TextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
+              <Button Content="Cancel" Command="{Binding CancelAuthorizeCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Send a test message" />
+          <Grid ColumnDefinitions="*,8,Auto">
+            <TextBox Text="{Binding TestMessage}" Watermark="Message" />
+            <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
