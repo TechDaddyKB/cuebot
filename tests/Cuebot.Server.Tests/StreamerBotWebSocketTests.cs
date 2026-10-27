@@ -202,8 +202,10 @@ public sealed class StreamerBotWebSocketTests : IAsyncLifetime
     [Fact]
     public async Task Credits_emotes_broadcasts_and_pronouns_return_empty_shapes()
     {
-        Assert.NotNull((await _client.RequestAsync("GetCredits"))["credits"]);
-        Assert.NotNull((await _client.RequestAsync("TestCredits"))["credits"]);
+        Assert.NotNull((await _client.RequestAsync("GetCredits"))["credits"]!["events"]);
+        var test = (await _client.RequestAsync("TestCredits"))["credits"]!;
+        Assert.True(test["cuebot"]!["isTest"]!.GetValue<bool>());
+        Assert.Contains(test["events"]!.AsObject(), section => section.Value!.AsArray().Count > 0);
         Assert.Equal("ok", S((await _client.RequestAsync("ClearCredits"))["status"]));
         Assert.NotNull((await _client.RequestAsync("TwitchGetEmotes"))["emotes"]);
         Assert.NotNull((await _client.RequestAsync("YouTubeGetEmotes"))["emotes"]);

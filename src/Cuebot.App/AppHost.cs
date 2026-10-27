@@ -42,6 +42,9 @@ public sealed class AppHost : IAsyncDisposable
             .AddYouTube()
             .AddKick()
             .AddServers();
+        // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
+        services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
+        services.AddSingleton<Cuebot.Core.Desktop.Notifications.IToastPresenter, Cuebot.App.Views.Extras.Desktop.AvaloniaToastPresenter>();
         services.AddSingleton(settings);
         services.AddSingleton(_ => new BackupService(paths, () => settings.Settings.Backups.Keep));
         var host = new AppHost(services.BuildServiceProvider());
@@ -80,6 +83,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "YouTube", () => Get<Cuebot.YouTube.YouTubeService>().StartAsync()),
             StartSafely(log, "Kick", () => Get<Cuebot.Kick.KickService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
+            StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),
             StartSafely(log, "Python", () => Get<PythonRuntime>().StartAsync()),
             StartSafely(log, "Watchers", () => Get<Cuebot.Core.SystemTools.WatcherService>().StartAsync()),

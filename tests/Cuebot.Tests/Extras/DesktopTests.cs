@@ -372,7 +372,7 @@ public sealed class Wave4WiringTests : IDisposable
     [Fact]
     public async Task Core_plus_wave4_resolves_every_service_once()
     {
-        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection().AddCuebotCore(new AppPaths(_dir)).AddWave4Features();
+        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection().AddCuebotCore(new AppPaths(_dir)); // includes AddWave4Features
         await using var provider = Microsoft.Extensions.DependencyInjection.ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(services);
         T Get<T>() where T : notnull => Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<T>(provider);
 

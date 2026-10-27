@@ -36,7 +36,8 @@ public static class CoreServiceCollectionExtensions
             .AddVariableFeatures()
             .AddCommandAndUserFeatures()
             .AddSystemFeatures()
-            .AddChatExtrasFeatures();
+            .AddChatExtrasFeatures()
+            .AddWave4Features();
     }
 
     /// <summary>Registers a module's settings file (e.g. "twitch.json") as a singleton JsonFile.</summary>

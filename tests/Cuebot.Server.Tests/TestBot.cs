@@ -42,6 +42,7 @@ internal sealed class TestBot : IAsyncDisposable
         {
             Engine = Engine, Profile = Profile, Globals = Globals, Bus = Bus, Log = Log, UserVariables = UserVariables,
             Users = Users, Commands = Commands, Chat = Chat, CodeTriggers = CodeTriggers, Speaker = Speaker,
+            Credits = Credits,
             Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
         };
         Manager = new ServerManager(null, Services);
@@ -50,6 +51,8 @@ internal sealed class TestBot : IAsyncDisposable
     }
 
     public AppLog Log { get; } = new();
+    public Cuebot.Core.Credits.CreditsCollector Credits => _credits ??= new Cuebot.Core.Credits.CreditsCollector(null, Bus, Log);
+    private Cuebot.Core.Credits.CreditsCollector? _credits;
     public EventBus Bus { get; }
     public ProfileService Profile { get; }
     public GlobalVariables Globals { get; }

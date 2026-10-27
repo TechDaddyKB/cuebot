@@ -32,6 +32,7 @@ public sealed class ServerServices
     private CodeTriggerRegistry? _codeTriggers;
     private ISpeakerBackend? _speaker;
     private IReadOnlyList<IConnectionStatus>? _connections;
+    private Cuebot.Core.Credits.ICreditsSource? _credits;
 
     public ServerServices()
     {
@@ -56,6 +57,13 @@ public sealed class ServerServices
     }
 
     public ISpeakerBackend? Speaker { get => _speaker ??= _provider?.GetService<ISpeakerBackend>(); init => _speaker = value; }
+
+    /// <summary>The stream credits (wave 4) for GetCredits / TestCredits / ClearCredits.</summary>
+    public Cuebot.Core.Credits.ICreditsSource? Credits
+    {
+        get => _credits ??= _provider?.GetService<Cuebot.Core.Credits.ICreditsSource>();
+        init => _credits = value;
+    }
 
     /// <summary>Platform connections (Twitch, YouTube, Kick, OBS...) for GetBroadcaster.</summary>
     public IReadOnlyList<IConnectionStatus> Connections

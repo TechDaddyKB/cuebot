@@ -61,9 +61,9 @@ public sealed class StreamerBotRequests(ServerServices services)
             case "youtubegetuserglobal": return GetUserGlobal("youtube", message);
             case "kickgetuserglobals": return GetUserGlobals("kick", message);
             case "kickgetuserglobal": return GetUserGlobal("kick", message);
-            case "getcredits":
-            case "testcredits": return new JsonObject { ["credits"] = new JsonObject() };   // Cuebot has no credits roll yet
-            case "clearcredits": return [];
+            case "getcredits": return CreditsResponse(services.Credits?.Snapshot());
+            case "testcredits": return CreditsResponse(services.Credits?.Test());
+            case "clearcredits": services.Credits?.Reset(); return [];
             case "sendmessage": return await SendMessageAsync(message, ct).ConfigureAwait(false);
             case "twitchgetemotes":
             case "youtubegetemotes":
@@ -231,6 +231,20 @@ public sealed class StreamerBotRequests(ServerServices services)
         var args = ToArgs(message.ValueKind == JsonValueKind.Object && message.TryGetProperty("args", out var raw) ? raw : default);
         services.Bus.Publish(CodeTriggerRegistry.CreateEvent(name, args));
         return [];
+    }
+
+    /// <summary>
+    /// Credits as <c>{credits: {events: {section: [user...]}, cuebot: snapshot}}</c>: user names per section for simple
+    /// rolls, and Cuebot's full snapshot (counts, amounts, platforms) for richer overlays.
+    /// </summary>
+    private static JsonObject CreditsResponse(Cuebot.Core.Credits.CreditsSnapshot? snapshot)
+    {
+        var events = new JsonObject();
+        foreach (var section in snapshot?.Sections ?? [])
+            events[section.Id] = new JsonArray([.. section.Entries.Select(e => (JsonNode?)JsonValue.Create(e.User))]);
+        var credits = new JsonObject { ["events"] = events };
+        if (snapshot is not null) credits["cuebot"] = JsonSerializer.SerializeToNode(snapshot, Cuebot.Core.Storage.Json.Options);
+        return new JsonObject { ["credits"] = credits };
     }
 
     private JsonObject GetCommands()
