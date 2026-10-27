@@ -7,7 +7,8 @@
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
         Icon="avares://Cuebot/Assets/cuebot.ico"
-        Width="1360" Height="860" MinWidth="960" MinHeight="600">
+        Width="1360" Height="860" MinWidth="960" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
   <Window.DataTemplates>
     <DataTemplate DataType="vm:DashboardViewModel"><views:DashboardView /></DataTemplate>
     <DataTemplate DataType="vm:ChatViewModel"><views:ChatView /></DataTemplate>
@@ -19,10 +20,11 @@
     <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel"><views:SettingsView /></DataTemplate>
   </Window.DataTemplates>
 
   <Grid ColumnDefinitions="200,*">
-    <Border Background="{StaticResource CuebotSidebar}">
+    <Border Background="{DynamicResource CuebotSidebar}">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,18,18,14" Spacing="10">
           <Image Source="avares://Cuebot/Assets/cuebot.png" Width="28" Height="28" />

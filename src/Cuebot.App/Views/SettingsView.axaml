@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <Grid>
+    <DockPanel Margin="24,24,24,0">
+      <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Settings" />
+      <TabControl x:Name="Sections">
+        <TabControl.Styles>
+          <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="MinHeight" Value="40" />
+          </Style>
+        </TabControl.Styles>
+        <TabItem Header="General">
+          <ScrollViewer>
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,12,0,24">
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Window and tray" />
+                  <CheckBox Content="Show an icon in the system tray" IsChecked="{Binding ShowTrayIcon}" />
+                  <CheckBox Content="Closing the window keeps Cuebot running in the tray" IsChecked="{Binding CloseToTray}"
+                            IsEnabled="{Binding ShowTrayIcon}" />
+                  <CheckBox Content="Start minimized (same as --minimized)" IsChecked="{Binding StartMinimized}" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding TrayStatus}" />
+                </StackPanel>
+              </Border>
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Appearance" />
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="Theme" VerticalAlignment="Center" />
+                    <ComboBox x:Name="ThemePicker" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="System follows the desktop's light or dark preference." />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Backups">
+          <DockPanel Margin="0,12,0,24" MaxWidth="900" HorizontalAlignment="Left">
+            <Border DockPanel.Dock="Top" Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Automatic backups" />
+                <CheckBox Content="Back up the data folder every time Cuebot starts" IsChecked="{Binding BackupOnStart}" />
+                <CheckBox Content="Back up before an import replaces data" IsChecked="{Binding BackupBeforeImport}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <TextBlock Text="Keep the newest" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding BackupKeep}" Minimum="1" Maximum="1000" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="backups" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Backups are zip files of the data folder. Logs and the downloaded Python runtime are not included." />
+              </StackPanel>
+            </Border>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+              <Button Content="Back up now" Classes="accent" Command="{Binding BackUpNowCommand}" />
+              <Button Content="Open folder" Command="{Binding OpenBackupFolderCommand}" ToolTip.Tip="{Binding BackupFolder}" />
+              <Button Content="Restore..." Command="{Binding RestoreCommand}" />
+              <TextBlock Text="{Binding BackupStatus}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </StackPanel>
+            <Border DockPanel.Dock="Top" Classes="card" IsVisible="{Binding PendingRestore, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="{Binding PendingRestore}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <Button Content="Cancel restore" Command="{Binding CancelPendingRestoreCommand}" />
+              </StackPanel>
+            </Border>
+            <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding BackupsSummary}" Margin="0,0,0,6" />
+            <ListBox ItemsSource="{Binding Backups}" SelectedItem="{Binding SelectedBackup}" MinHeight="120">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:BackupRowViewModel">
+                  <Grid ColumnDefinitions="170,120,90,*">
+                    <TextBlock Text="{Binding Created}" />
+                    <TextBlock Grid.Column="1" Text="{Binding Reason}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding Size}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{Binding Name}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="About">
+          <ScrollViewer>
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,12,0,24">
+              <Border Classes="card">
+                <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                  <TextBlock Classes="muted" Text="Version" Margin="0,4" />
+                  <TextBlock Grid.Column="1" Text="{Binding Version}" Margin="0,4" />
+                  <TextBlock Grid.Row="1" Classes="muted" Text="Data folder" Margin="0,4" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,4">
+                    <SelectableTextBlock Text="{Binding DataFolder}" VerticalAlignment="Center" />
+                    <Button Content="Open" Command="{Binding OpenDataFolderCommand}" Padding="8,2" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="2" Classes="muted" Text="Display backend" Margin="0,4" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DisplayBackend}" Margin="0,4" />
+                  <TextBlock Grid.Row="3" Classes="muted" Text="Runtime" Margin="0,4" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Runtime}" Margin="0,4" />
+                  <TextBlock Grid.Row="4" Classes="muted" Text="System" Margin="0,4" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding OsDescription}" Margin="0,4" TextWrapping="Wrap" />
+                  <TextBlock Grid.Row="5" Classes="muted" Text="License" Margin="0,4" />
+                  <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,4" TextWrapping="Wrap"
+                             Text="MIT. Cuebot is a clean-room project, not affiliated with Streamer.bot or Speaker.bot." />
+                </Grid>
+              </Border>
+              <Border Classes="card">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="h2" Text="Startup switches" />
+                  <SelectableTextBlock FontFamily="monospace" FontSize="12" TextWrapping="Wrap"
+                                       Text="--headless   --minimized   --data &lt;folder&gt;   --reset-window   --backend=wayland|x11" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+    </DockPanel>
+
+    <!-- Restore confirmation -->
+    <Border IsVisible="{Binding IsConfirmingRestore}" Background="{DynamicResource CuebotOverlay}">
+      <Border Classes="card" Width="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="h2" Text="Restore this backup?" />
+          <TextBlock TextWrapping="Wrap" Classes="muted" Text="{Binding SelectedBackupName}" />
+          <TextBlock TextWrapping="Wrap"
+                     Text="Your current data is replaced by the backup's. A safety backup of the current data is made first, so this can be undone by restoring that one. The restore is applied while Cuebot restarts." />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Cancel" Command="{Binding CancelRestoreCommand}" />
+            <Button Content="On next start" Command="{Binding ConfirmRestoreCommand}" CommandParameter="false" />
+            <Button Content="Restore and restart" Classes="accent" Command="{Binding ConfirmRestoreCommand}" CommandParameter="true"
+                    IsVisible="{Binding CanRestart}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Grid>
+</UserControl>

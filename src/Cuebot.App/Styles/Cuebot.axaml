@@ -1,13 +1,49 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Theme-aware brushes. Each Cuebot* brush is one shared instance whose colour follows the active theme:
+    Shell/ThemeBrushes copies the current variant's Cuebot*Color into it, so StaticResource and DynamicResource users
+    alike update in place when the theme changes at runtime. The brushes start out with the dark colours.
+  -->
   <Styles.Resources>
-    <SolidColorBrush x:Key="CuebotSidebar" Color="#16181D" />
-    <SolidColorBrush x:Key="CuebotCard" Color="#22252C" />
-    <SolidColorBrush x:Key="CuebotCardBorder" Color="#30343E" />
-    <SolidColorBrush x:Key="CuebotMuted" Color="#9AA1AE" />
-    <SolidColorBrush x:Key="CuebotAccent" Color="#6CA8FF" />
-    <SolidColorBrush x:Key="CuebotGood" Color="#4CAF50" />
-    <SolidColorBrush x:Key="CuebotBad" Color="#E5534B" />
+    <ResourceDictionary>
+      <SolidColorBrush x:Key="CuebotSidebar" Color="#16181D" />
+      <SolidColorBrush x:Key="CuebotPanel" Color="#1C1E24" />
+      <SolidColorBrush x:Key="CuebotCard" Color="#22252C" />
+      <SolidColorBrush x:Key="CuebotCardBorder" Color="#30343E" />
+      <SolidColorBrush x:Key="CuebotMuted" Color="#9AA1AE" />
+      <SolidColorBrush x:Key="CuebotAccent" Color="#6CA8FF" />
+      <SolidColorBrush x:Key="CuebotGood" Color="#4CAF50" />
+      <SolidColorBrush x:Key="CuebotBad" Color="#E5534B" />
+      <SolidColorBrush x:Key="CuebotSelected" Color="#2F3B52" />
+      <SolidColorBrush x:Key="CuebotOverlay" Color="#99000000" />
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <Color x:Key="CuebotSidebarColor">#16181D</Color>
+          <Color x:Key="CuebotPanelColor">#1C1E24</Color>
+          <Color x:Key="CuebotCardColor">#22252C</Color>
+          <Color x:Key="CuebotCardBorderColor">#30343E</Color>
+          <Color x:Key="CuebotMutedColor">#9AA1AE</Color>
+          <Color x:Key="CuebotAccentColor">#6CA8FF</Color>
+          <Color x:Key="CuebotGoodColor">#4CAF50</Color>
+          <Color x:Key="CuebotBadColor">#E5534B</Color>
+          <Color x:Key="CuebotSelectedColor">#2F3B52</Color>
+          <Color x:Key="CuebotOverlayColor">#99000000</Color>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <Color x:Key="CuebotSidebarColor">#E9ECF1</Color>
+          <Color x:Key="CuebotPanelColor">#F3F5F8</Color>
+          <Color x:Key="CuebotCardColor">#FFFFFF</Color>
+          <Color x:Key="CuebotCardBorderColor">#D3D8E0</Color>
+          <Color x:Key="CuebotMutedColor">#5C6370</Color>
+          <Color x:Key="CuebotAccentColor">#2563C9</Color>
+          <Color x:Key="CuebotGoodColor">#2E7D32</Color>
+          <Color x:Key="CuebotBadColor">#C62828</Color>
+          <Color x:Key="CuebotSelectedColor">#D6E3F8</Color>
+          <Color x:Key="CuebotOverlayColor">#66000000</Color>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
   </Styles.Resources>
 
   <Style Selector="TextBlock.h1">
@@ -21,16 +57,16 @@
     <Setter Property="Margin" Value="0,0,0,8" />
   </Style>
   <Style Selector="TextBlock.muted">
-    <Setter Property="Foreground" Value="{StaticResource CuebotMuted}" />
+    <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
     <Setter Property="FontSize" Value="12" />
   </Style>
   <Style Selector="TextBlock.error">
-    <Setter Property="Foreground" Value="{StaticResource CuebotBad}" />
+    <Setter Property="Foreground" Value="{DynamicResource CuebotBad}" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
   <Style Selector="Border.card">
-    <Setter Property="Background" Value="{StaticResource CuebotCard}" />
-    <Setter Property="BorderBrush" Value="{StaticResource CuebotCardBorder}" />
+    <Setter Property="Background" Value="{DynamicResource CuebotCard}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotCardBorder}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="16" />
@@ -39,14 +75,14 @@
   <Style Selector="Ellipse.status">
     <Setter Property="Width" Value="10" />
     <Setter Property="Height" Value="10" />
-    <Setter Property="Fill" Value="{StaticResource CuebotMuted}" />
+    <Setter Property="Fill" Value="{DynamicResource CuebotMuted}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="Ellipse.status.good">
-    <Setter Property="Fill" Value="{StaticResource CuebotGood}" />
+    <Setter Property="Fill" Value="{DynamicResource CuebotGood}" />
   </Style>
   <Style Selector="Ellipse.status.bad">
-    <Setter Property="Fill" Value="{StaticResource CuebotBad}" />
+    <Setter Property="Fill" Value="{DynamicResource CuebotBad}" />
   </Style>
 
   <!-- Selectable rows in the action list editor -->
@@ -59,10 +95,10 @@
     <Setter Property="CornerRadius" Value="6" />
   </Style>
   <Style Selector="Button.row.selected">
-    <Setter Property="Background" Value="#2F3B52" />
+    <Setter Property="Background" Value="{DynamicResource CuebotSelected}" />
   </Style>
   <Style Selector="Button.row.selected /template/ ContentPresenter">
-    <Setter Property="Background" Value="#2F3B52" />
+    <Setter Property="Background" Value="{DynamicResource CuebotSelected}" />
   </Style>
 
   <!-- Navigation -->
