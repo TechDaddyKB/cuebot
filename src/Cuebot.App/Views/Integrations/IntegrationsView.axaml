@@ -1,0 +1,144 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Integrations"
+             x:Class="Cuebot.App.Views.Integrations.IntegrationsView"
+             x:DataType="vm:IntegrationsViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Integrations" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="VTube Studio, Voicemod and heart rate monitors become triggers, sub-actions and script functions. Settings are stored in integrations.json; tokens and keys are masked here and never written to the log. Nothing connects automatically unless you tick the box." />
+
+      <!-- VTube Studio -->
+      <Border Classes="card" DataContext="{Binding VTubeStudio}" x:DataType="vm:VtsCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="VTube Studio" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In VTube Studio open Settings and switch on &quot;Start API (allow plugins)&quot;. Click Connect here, then click Allow on the Cuebot plugin popup in VTube Studio; the plugin token is saved for next time." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Text="{Binding Host}" PlaceholderText="localhost" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+          </Grid>
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" TextWrapping="Wrap" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Forget plugin token" Command="{Binding ResetTokenCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Text="Current model" FontWeight="SemiBold" Margin="0,4,0,0" />
+          <TextBlock Name="VtsModel" Text="{Binding CurrentModel}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding SelectedModel}" MinWidth="200" PlaceholderText="Model" />
+            <Button Content="Load model" Command="{Binding LoadModelCommand}" />
+            <Button Content="Refresh" Command="{Binding RefreshLiveCommand}" />
+          </StackPanel>
+          <TextBlock Text="Hotkeys" FontWeight="SemiBold" Margin="0,4,0,0" />
+          <TextBlock Classes="muted" Text="Connect to list the current model's hotkeys." IsVisible="{Binding HasNoHotkeys}" />
+          <ItemsControl Name="VtsHotkeys" ItemsSource="{Binding Hotkeys}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtsHotkeyRowViewModel">
+                <Grid ColumnDefinitions="*,160,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Type}" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="Test" Command="{Binding TestCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Voicemod -->
+      <Border Classes="card" DataContext="{Binding Voicemod}" x:DataType="vm:VoicemodCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Voicemod" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Needs the Voicemod desktop app (Windows) and a Control API client key, which Voicemod issues on request through its developer program (control-api.voicemod.net). Paste the key below. Cuebot tries port 59129 and Voicemod's other documented ports." />
+          <TextBox Name="VoicemodKey" Text="{Binding ClientKey}" PasswordChar="•" PlaceholderText="Client key (API key)" />
+          <TextBlock Classes="muted" Text="{Binding MaskedKey}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Port (0 = automatic)" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding Port}" Minimum="0" Maximum="65535" FormatString="0" Width="140" />
+          </StackPanel>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="VoicemodVoice" TextWrapping="Wrap">
+            <Run Text="Current voice: " FontWeight="SemiBold" /><Run Text="{Binding CurrentVoice}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="{Binding Switches}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding Voices}" SelectedItem="{Binding SelectedVoice}" MinWidth="200" PlaceholderText="Voice" />
+            <Button Content="Select voice" Command="{Binding ApplyVoiceCommand}" />
+            <Button Content="Random voice" Command="{Binding RandomVoiceCommand}" />
+            <Button Content="Toggle voice changer" Command="{Binding ToggleVoiceChangerCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Pulsoid -->
+      <Border Classes="card" DataContext="{Binding Pulsoid}" x:DataType="vm:PulsoidCardViewModel">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="Pulsoid" />
+            <TextBlock Grid.Column="1" Name="PulsoidBpm" Text="{Binding Bpm}" FontSize="22" FontWeight="SemiBold" />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On pulsoid.net open Account → Tokens (pulsoid.net/ui/keys), create a token with the data:heart_rate:read scope and paste it here. The token is sent as an Authorization header, never in a URL." />
+          <TextBox Name="PulsoidToken" Text="{Binding AccessToken}" PasswordChar="•" PlaceholderText="Access token" />
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Use the legacy v1 realtime endpoint" IsChecked="{Binding UseLegacyV1}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- HypeRate -->
+      <Border Classes="card" DataContext="{Binding HypeRate}" x:DataType="vm:HypeRateCardViewModel">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="HypeRate" />
+            <TextBlock Grid.Column="1" Name="HypeRateBpm" Text="{Binding Bpm}" FontSize="22" FontWeight="SemiBold" />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Request a websocket API key at hyperate.io/api and paste it here, then enter the HypeRate ID shown in the HypeRate app. The ID internal-testing sends fake data for trying things out." />
+          <TextBox Name="HypeRateKey" Text="{Binding ApiKey}" PasswordChar="•" PlaceholderText="API key" />
+          <TextBlock Classes="muted" Text="{Binding MaskedKey}" />
+          <TextBox Text="{Binding SessionId}" PlaceholderText="HypeRate ID (e.g. 12AB)" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Also receive &quot;Twitch clip created&quot; events" IsChecked="{Binding SubscribeClips}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
