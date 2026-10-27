@@ -20,7 +20,9 @@ public static class SpeechServiceCollectionExtensions
             var settings = sp.GetRequiredService<JsonFile<SpeechSettings>>();
             return new ElevenLabsEngine(sp.GetRequiredService<HttpClient>(), () => settings.Value.ElevenLabsApiKey);
         });
-        services.AddSingleton(_ => AudioPlayerFactory.Create());
+        services.AddSingleton(sp => AudioPlayerFactory.Create(sp.GetRequiredService<Cuebot.Core.Logging.AppLog>()));
+        services.AddSingleton<IAudioPlayer>(sp => sp.GetRequiredService<AudioOutput>());
+        services.AddSingleton<IAudioInput>(sp => sp.GetRequiredService<AudioOutput>());
         services.AddSingleton<SpeechService>();
         services.AddSingleton<AudioService>();
 
@@ -29,6 +31,8 @@ public static class SpeechServiceCollectionExtensions
         services.AddSingleton<ISubActionHandler, ClearSpeechQueueSubAction>();
         services.AddSingleton<ISubActionHandler, PauseSpeechSubAction>();
         services.AddSingleton<ISubActionHandler, PlaySoundSubAction>();
+        services.AddSingleton<ISubActionHandler, PlaySoundFromFolderSubAction>();
+        services.AddSingleton<ISubActionHandler, StopSoundsSubAction>();
         services.AddSingleton<ITriggerProvider, SpeechTriggers>();
         services.AddSingleton<IScriptFunctionProvider, SpeechScriptFunctions>();
         return services;
