@@ -5,10 +5,13 @@ using Cuebot.Core.BuiltIn;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Obs;
+using Cuebot.Kick;
 using Cuebot.Rumble;
+using Cuebot.Server;
 using Cuebot.Scripting;
 using Cuebot.Speech;
 using Cuebot.Twitch;
+using Cuebot.YouTube;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.App;
@@ -33,7 +36,10 @@ public sealed class AppHost : IAsyncDisposable
             .AddObs()
             .AddSpeech()
             .AddScripting()
-            .AddRumble();
+            .AddRumble()
+            .AddYouTube()
+            .AddKick()
+            .AddServers();
         services.AddSingleton(settings);
         services.AddSingleton(_ => new BackupService(paths, () => settings.Settings.Backups.Keep));
         var host = new AppHost(services.BuildServiceProvider());

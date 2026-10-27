@@ -28,6 +28,9 @@
     <ProjectReference Include="..\Cuebot.Speech\Cuebot.Speech.csproj" />
     <ProjectReference Include="..\Cuebot.Scripting\Cuebot.Scripting.csproj" />
     <ProjectReference Include="..\Cuebot.Rumble\Cuebot.Rumble.csproj" />
+    <ProjectReference Include="..\Cuebot.YouTube\Cuebot.YouTube.csproj" />
+    <ProjectReference Include="..\Cuebot.Kick\Cuebot.Kick.csproj" />
+    <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.UiTests" />

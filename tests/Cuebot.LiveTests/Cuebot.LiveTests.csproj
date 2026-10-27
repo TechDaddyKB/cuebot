@@ -14,5 +14,8 @@
     <ProjectReference Include="..\..\src\Cuebot.Twitch\Cuebot.Twitch.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Obs\Cuebot.Obs.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Rumble\Cuebot.Rumble.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.YouTube\Cuebot.YouTube.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.Kick\Cuebot.Kick.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.Speech\Cuebot.Speech.csproj" />
   </ItemGroup>
 </Project>
