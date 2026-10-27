@@ -123,6 +123,10 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
         Assert.Contains("Voicemod", statuses);
         Assert.Contains("Pulsoid", statuses);
         Assert.Contains("HypeRate", statuses);
+        Assert.Contains("StreamLoots", statuses);
+        Assert.Contains("Crowd Control", statuses);
+        Assert.Contains(_services.GetServices<Cuebot.Core.Chat.IChatEventAdapter>(), a => a.Platform == "StreamLoots");
+        Assert.Contains(_services.GetServices<Cuebot.Core.Chat.IChatEventAdapter>(), a => a.Platform == "Crowd Control");
         Assert.Same(_services.GetRequiredService<HeartRateHub>(), _services.GetRequiredService<PulsoidService>().Hub);
         Assert.Same(_services.GetRequiredService<HeartRateHub>(), _services.GetRequiredService<HypeRateService>().Hub);
 
@@ -130,15 +134,17 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
         var set = _services.GetRequiredService<IntegrationsServiceCollectionExtensions.SubActionSet>();
         Assert.Equal(set.All.Select(h => h.TypeId).Order(), IntegrationsServiceCollectionExtensions.SubActionSet.TypeIds.Order());
         foreach (var id in IntegrationsServiceCollectionExtensions.SubActionSet.TypeIds) Assert.NotNull(registry.GetSubAction(id));
-        Assert.All(set.All, h => Assert.Contains(h.Category, new[] { "VTube Studio", "Voicemod", "Heart Rate" }));
+        Assert.All(set.All, h => Assert.Contains(h.Category, new[] { "VTube Studio", "Voicemod", "Heart Rate", "StreamLoots", "Crowd Control" }));
         foreach (var id in new[] { "vtubestudio.hotkeyTriggered", "vtubestudio.modelLoaded", "vtubestudio.trackingLost", "vtubestudio.itemAdded",
                      "voicemod.voiceChanged", "voicemod.voiceChangerToggled", "pulsoid.heartRate", "pulsoid.heartRateAbove",
-                     "hyperate.heartRateChanged", "hyperate.heartRateBelow", "hyperate.clipCreated" })
+                     "hyperate.heartRateChanged", "hyperate.heartRateBelow", "hyperate.clipCreated",
+                     "streamloots.cardRedeemed", "streamloots.packGifted", "crowdcontrol.effectSuccess", "crowdcontrol.coinExchange" })
             Assert.NotNull(registry.GetTrigger(id));
 
         var functions = _services.GetRequiredService<ScriptApi>().Functions.Select(f => f.Name).ToArray();
         foreach (var name in new[] { "vtubestudio.triggerHotkey", "vtubestudio.loadModel", "vtubestudio.injectParameters", "voicemod.selectVoice",
-                     "voicemod.playSound", "voicemod.setVoiceChanger", "heartrate.get", "pulsoid.isConnected", "hyperate.isConnected" })
+                     "voicemod.playSound", "voicemod.setVoiceChanger", "heartrate.get", "pulsoid.isConnected", "hyperate.isConnected",
+                     "streamloots.isConnected", "crowdcontrol.getSession" })
             Assert.Contains(name, functions);
 
         // Defaults: auto-connect off, so StartAsync never connects.
@@ -147,6 +153,8 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
         Assert.False(settings.Voicemod.AutoConnect);
         Assert.False(settings.Pulsoid.AutoConnect);
         Assert.False(settings.HypeRate.AutoConnect);
+        Assert.False(settings.StreamLoots.AutoConnect);
+        Assert.False(settings.CrowdControl.AutoConnect);
         Assert.Equal(8001, settings.VTubeStudio.Port);
         await _services.GetRequiredService<VTubeStudioService>().StartAsync();
         await _services.GetRequiredService<PulsoidService>().StartAsync();

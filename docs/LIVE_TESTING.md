@@ -87,6 +87,15 @@ nothing reaches viewers. Streamlabs needs `CUEBOT_LIVE_STREAMLABS_SOCKET_TOKEN`,
 `CUEBOT_LIVE_VTS=1` and the API turned on (Settings → "Start API"); the first run waits up to two minutes for you to
 click **Allow** on VTube Studio's plugin popup, and the plugin token is kept for later runs.
 
+### StreamLoots, Crowd Control
+
+`InteractiveLiveTests` connects read-only and disconnects; nothing is sent. StreamLoots needs
+`CUEBOT_LIVE_STREAMLOOTS_ALERT_URL` (your Alerts widget URL); the test keeps the alerts stream open through one 30 s
+keep-alive. StreamLoots opens the stream for any id, so the test proves the endpoint, not your id: click **Test** on
+the StreamLoots alerts page while Cuebot is connected to see a real alert arrive. Crowd Control needs
+`CUEBOT_LIVE_CROWDCONTROL_OVERLAY_URL` (Overlays & Assets in the Crowd Control app); it passes only when Crowd Control
+accepts the overlay key for the private topic.
+
 ## Running
 
 ```powershell

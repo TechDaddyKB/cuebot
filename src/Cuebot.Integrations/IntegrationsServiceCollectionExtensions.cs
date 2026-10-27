@@ -1,4 +1,5 @@
 using Cuebot.Core;
+using Cuebot.Core.Chat;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
@@ -7,6 +8,8 @@ using Cuebot.Core.Storage;
 using Cuebot.Integrations.HeartRate;
 using Cuebot.Integrations.HeartRate.HypeRate;
 using Cuebot.Integrations.HeartRate.Pulsoid;
+using Cuebot.Integrations.CrowdControl;
+using Cuebot.Integrations.StreamLoots;
 using Cuebot.Integrations.VTubeStudio;
 using Cuebot.Integrations.Voicemod;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,13 +17,13 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Cuebot.Integrations;
 
-/// <summary>Registers the stream-app integrations: VTube Studio, Voicemod, Pulsoid and HypeRate.</summary>
+/// <summary>Registers the stream-app integrations: VTube Studio, Voicemod, Pulsoid, HypeRate, StreamLoots and Crowd Control.</summary>
 public static class IntegrationsServiceCollectionExtensions
 {
     /// <summary>
     /// Adds settings (integrations.json), <see cref="VTubeStudioService"/>, <see cref="VoicemodService"/>,
-    /// <see cref="PulsoidService"/> and <see cref="HypeRateService"/> (all <see cref="IConnectionStatus"/>), the shared
-    /// <see cref="HeartRateHub"/>, triggers, sub-actions and script functions. Call <c>StartAsync</c> on the four services
+    /// <see cref="PulsoidService"/>, <see cref="HypeRateService"/>, <see cref="StreamLootsService"/> and <see cref="CrowdControlService"/> (all <see cref="IConnectionStatus"/>), the shared
+    /// <see cref="HeartRateHub"/>, triggers, sub-actions and script functions. Call <c>StartAsync</c> on the six services
     /// at startup; each connects only when its auto-connect option is on (default off).
     /// </summary>
     public static IServiceCollection AddIntegrations(this IServiceCollection services)
@@ -38,6 +41,12 @@ public static class IntegrationsServiceCollectionExtensions
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<VoicemodService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PulsoidService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<HypeRateService>());
+        services.AddSingleton(sp => new StreamLootsService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton(sp => new CrowdControlService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<StreamLootsService>());
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<CrowdControlService>());
+        services.AddSingleton<IChatEventAdapter, StreamLootsFeedAdapter>();
+        services.AddSingleton<IChatEventAdapter, CrowdControlFeedAdapter>();
 
         services.AddSingleton<ITriggerProvider>(sp => new VTubeStudioTriggers(sp.GetRequiredService<VTubeStudioService>()));
         services.AddSingleton<ITriggerProvider>(sp => new VoicemodTriggers(sp.GetRequiredService<VoicemodService>()));
@@ -45,12 +54,16 @@ public static class IntegrationsServiceCollectionExtensions
             sp.GetRequiredService<TimeProvider>(), clips: false));
         services.AddSingleton<ITriggerProvider>(sp => new HeartRateTriggers("HypeRate", HeartRateEventTypes.HypeRate,
             sp.GetRequiredService<TimeProvider>(), clips: true));
+        services.AddSingleton<ITriggerProvider, StreamLootsTriggers>();
+        services.AddSingleton<ITriggerProvider, CrowdControlTriggers>();
 
         services.AddSingleton<SubActionSet>(sp => new SubActionSet(
         [
             .. VTubeStudioSubActions.Create(sp.GetRequiredService<VTubeStudioService>()),
             .. VoicemodSubActions.Create(sp.GetRequiredService<VoicemodService>()),
             .. HeartRateSubActions.Create(sp.GetRequiredService<HeartRateHub>(), sp.GetRequiredService<TimeProvider>()),
+            .. StreamLootsSubActions.Create(sp.GetRequiredService<StreamLootsService>()),
+            .. CrowdControlSubActions.Create(sp.GetRequiredService<CrowdControlService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -58,7 +71,8 @@ public static class IntegrationsServiceCollectionExtensions
 
         services.AddSingleton<IScriptFunctionProvider>(sp => new IntegrationsScriptFunctions(
             sp.GetRequiredService<VTubeStudioService>(), sp.GetRequiredService<VoicemodService>(), sp.GetRequiredService<PulsoidService>(),
-            sp.GetRequiredService<HypeRateService>(), sp.GetRequiredService<HeartRateHub>()));
+            sp.GetRequiredService<HypeRateService>(), sp.GetRequiredService<HeartRateHub>(),
+            sp.GetRequiredService<StreamLootsService>(), sp.GetRequiredService<CrowdControlService>()));
         return services;
     }
 
@@ -80,6 +94,7 @@ public static class IntegrationsServiceCollectionExtensions
             "voicemod.setHearMyself", "voicemod.setBackgroundEffects", "voicemod.setMute", "voicemod.playSound", "voicemod.stopAllSounds",
             "voicemod.getSounds", "voicemod.setCensorBeep",
             "heartrate.get",
+            "streamloots.sendTestEvent", "crowdcontrol.getSession", "crowdcontrol.sendTestEvent",
         ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;

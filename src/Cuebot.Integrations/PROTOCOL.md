@@ -1,13 +1,15 @@
 # Cuebot.Integrations: protocols
 
-This module talks to four stream apps and services over websockets (`ClientWebSocket` only, no SDKs). Everything here
-comes from the vendors' public documentation; no Streamer.bot code or binaries were used. "Verified" means checked
-against the public docs while writing this module. Every protocol is covered by in-memory fake-server tests in
-`tests/Cuebot.Integrations.Tests`. None of them has been tried against the real app or service yet.
+This module talks to six stream apps and services. Five use websockets (`ClientWebSocket`); StreamLoots uses a
+server-sent-events stream (`HttpClient`, `Common/SseTransport.cs`). No SDKs are used. Everything here comes from the
+vendors' public documentation and, where noted, open-source clients (wire format only); no Streamer.bot code or
+binaries were used. "Verified" means checked against the public docs while writing this module. Every protocol is
+covered by in-memory fake-server tests in `tests/Cuebot.Integrations.Tests`. Sections 1 to 4 have not been tried
+against the real service yet. Sections 5 and 6 were partly checked live (see each section).
 
 Settings live in `integrations.json`. Secrets (VTube Studio plugin token, Voicemod client key, Pulsoid access token,
-HypeRate API key) are masked in the UI and redacted (also in URL-encoded form) from every log line and status message.
-Auto-connect is off by default for all four.
+HypeRate API key, StreamLoots alert id, Crowd Control overlay key) are masked in the UI and redacted (also in
+URL-encoded form) from every log line and status message. Auto-connect is off by default for all of them.
 
 Shared behaviour (`Common/IntegrationConnection.cs`): a background loop connects, tries each endpoint in turn, runs a
 session and reconnects with backoff (2 s doubling to 30 s; it resets after a session that connected). It stops when
@@ -141,3 +143,139 @@ source are:
 
 The "Get heart rate" sub-action and the `heartrate.get` script function read the latest value (Latest, Pulsoid or
 HypeRate).
+
+---
+
+## 5. StreamLoots: alerts event stream (SSE)
+
+Sources: StreamLoots help center ("Is There a Developer API in Streamloots?": there is no public API); docs.streamer.bot
+(guide/integrations/streamloots: paste the Alerts Widget URL; trigger names only). Open-source clients were used for
+the wire format only, no code copied: Firebot (`src/backend/integrations/builtin/streamloots`), Mix It Up
+(`MixItUp.Base/Services/External/StreamlootsService.cs`), Entrivax/Streamloots-Plugin. Checked live 2026-10-27.
+
+### Options considered
+
+| Option | Real-time | Official | User provides | Verdict |
+| --- | --- | --- | --- | --- |
+| Public developer API / OAuth app | — | does not exist (help center) | — | not available |
+| Webhooks (through the Cuebot relay) | — | StreamLoots offers none | — | not available |
+| StreamLoots chatbot messages | chat only | yes | chat parsing | lossy: text only, and card alerts are limited to epic and legendary by default |
+| **Alerts widget event stream** `widgets.streamloots.com/alerts/<id>/media-stream` | yes (SSE push) | the stream StreamLoots' own alert overlay uses | Alerts widget URL | **chosen**: the only structured real-time source; same input as Streamer.bot |
+
+Compared with Streamer.bot's documented approach, Cuebot uses the same source but adds three things:
+
+- It watches the 30 s keep-alive comments and reconnects after 95 s of silence. Without this, a half-open stream looks
+  connected forever.
+- It maps community gifts.
+- It publishes every other alert type (for example reactions) as "Other alert" instead of dropping it.
+
+### Wire format
+
+- Request: `GET https://widgets.streamloots.com/alerts/<alert id>/media-stream` with `Accept: text/event-stream`.
+- The answer is `200 text/event-stream` for any id. Observed: an all-zero GUID opens a stream too. So a typo cannot be
+  detected; the Test button on the StreamLoots dashboard sends a real alert through the stream to check it. HTTP
+  400/401/403/404 is treated as a rejected id (fatal).
+- Keep-alive: a comment line `:` every 30 s (observed). No `id:` lines are sent, so nothing is replayed on reconnect.
+- Each `message` event's data is one alert:
+  `{ imageUrl, soundUrl, videoUrl?, message (alert text), data: { type, fields: [{ name, value }], cardName?, cardId?,
+  cardSetId?, cardRarity?, description? } }`. Field values may be numbers or strings (`quantity`).
+- `data.type` maps as follows:
+  - `purchase` (fields `username`, `quantity`, optional `giftee`) → `streamloots.packPurchased`, or
+    `streamloots.packGifted` when `giftee` is set.
+  - `random-community-gift` (fields `username`, `quantity`) → `streamloots.packGifted` with `communityGift = true`.
+  - `redemption` (`cardName`; fields `username`, `message` / `longMessage`, `rarity`) → `streamloots.cardRedeemed`.
+  - Anything else → `streamloots.alert` (alertType, fields). Streamer.bot lists a "Reaction" event whose shape is not
+    public; it arrives here.
+- Args on every event: user, userName, message, alertMessage, alertType, imageUrl, soundUrl, videoUrl, fields (JSON of
+  name → value), isTest.
+  - Purchases and gifts add quantity, giftee, recipient, isGift, communityGift.
+  - Redemptions add cardName, cardId, cardSetId, cardDescription, cardRarity (lower case), longMessage, hasVideo.
+  - Streamer.bot's trigger pages do not document their variables, so these names follow Cuebot's conventions.
+- Activity feed:
+  - Redemptions are `Redemption` ("Dave redeemed Hydrate"), so they reach the credits' redemptions list.
+  - Purchases and gifts are `Other`, with "3 chests" as the amount; the stream carries no money amount.
+- Test alerts: purchase, gift, communityGift, redemption.
+
+## 6. Crowd Control: PubSub websocket
+
+Sources:
+
+- developer.crowdcontrol.live/sockets: the PubSub overview, `reference/pub.html`, `reference/prv.html` and
+  `reference/schemas.html`.
+- The public OpenAPI description at openapi-docs.crowdcontrol.live (`openapi.json`).
+- Crowd Control's own overlay client at overlay.crowdcontrol.live, for the wire format only (the topics and the `key`
+  field).
+- Open-source clients, for the wire format only: WarpWorld/CrowdControlWebSocketExample, qixils/countdown
+  (`crowdcontrol-bar`), jayo-exe/CrowdControlVNyanPlugin, Mix It Up (`CrowdControlService.cs`).
+- docs.streamer.bot: the Overlay URL setup, and trigger names only.
+
+The refused-key reply below was captured live on 2026-10-27.
+
+### Options considered
+
+| Option | Real-time | Official | User provides | Verdict |
+| --- | --- | --- | --- | --- |
+| Application login (`generate-auth-code` + PKCE, scoped JWT with `session:control`, `effect-request:write`) | yes | yes, documented | browser sign-in | not available: needs an application id that Crowd Control's developers issue by hand, and Cuebot has none yet. It would add effect responses, session start/stop/pause and requesting effects (Max sub) |
+| Legacy browser login (`whoami` connection id → auth.crowdcontrol.live) | yes | undocumented | browser sign-in | not used: 24 h JWT with unclear scopes (Cuebot does accept a pasted JWT) |
+| Public topic `pub/<ccUID>` (ccUID from `GET /user/{platform}/{id}/id`) | yes | yes | nothing | too little data: no prices and no coin purchases (only `prv` carries them) |
+| **Overlay key** (`subscribe` with `key`, topics `pub/self`, `prv/self`, `overlay/self`) | yes | what Crowd Control's own overlay does | Overlay URL | **chosen**: full private data, long-lived key, no sign-in; same input as Streamer.bot |
+| Webhooks | — | none offered | — | not available |
+
+Compared with Streamer.bot's documented approach, Cuebot uses the same input and adds:
+
+- Refunds, retries and session pause as extra triggers.
+- A keep-alive that follows the documented rule: ping, and reconnect when the pong is missing.
+- A refused key stops the connection instead of retrying.
+- A "Get session" sub-action that includes the running timed effects.
+- A pasted JWT as an alternative credential.
+
+Control features (answering effects, starting or pausing sessions, requesting effects) need the application login
+above. Cuebot does not offer them until Crowd Control issues it an application id.
+
+### Wire format
+
+- Endpoint: `wss://pubsub.crowdcontrol.live/`. A `User-Agent` is required; Cuebot sends `Cuebot`.
+- Overlay URL: `https://overlay.crowdcontrol.live/<page>?key=<overlay key>`.
+  - Cuebot takes `key` from the query, or from a `#…?key=` fragment, and also accepts a bare key.
+  - A value with three dot-separated parts is treated as a JWT and sent as `token` instead of `key`, as the overlay
+    client does.
+- Subscribe request: `{"action":"subscribe","data":{"topics":["pub/self","prv/self","overlay/self"],"key":"<key>"}}`.
+  - Reply: `{"domain":"direct","type":"subscription-result","payload":{"success":[...],"failure":[...]}}`.
+  - Captured for a wrong key: `success: []`, `failure: ["pub/self","prv/self","overlay/self"]`.
+  - Cuebot counts as connected only when `prv/self` succeeded. Otherwise the key is refused (fatal, no retry).
+  - No reply within 10 s → reconnect.
+- Keep-alive: `{"action":"ping"}` is answered with the text `pong`.
+  - The docs say to ping after 9 minutes of inactivity and to reconnect if no pong arrives within 15 s.
+  - Cuebot pings every 8 minutes and reconnects when nothing arrives within 10 s of a ping.
+  - The service ends sockets after 2 h; Cuebot reconnects and subscribes again.
+- Messages have the shape `{ domain, type, payload, timestamp }`.
+  - Effect and coin events are read from `prv` only. It adds `price`, `unitPrice` and `payments`, and the `pub` copies
+    would duplicate them.
+  - Exact repeats (same event, id and timestamp) are dropped.
+- Event mapping:
+  - `prv/effect-request`, `effect-success`, `effect-failure`, `effect-refund`, `effect-retry` →
+    `crowdcontrol.effectRequest`, `effectSuccess`, `effectFailure` (+ `temporary`), `effectRefund`, `effectRetry`.
+  - `prv/timed-effect-update` with `status` begin / end / pause / resume → `timedEffectStarted`, `timedEffectEnded`,
+    `timedEffectUpdated` (+ timedStatus, timeRemaining in ms, timeRemainingSeconds).
+  - `prv/coin-exchange` → `crowdcontrol.coinExchange` (transactionId, coinType paid/free, amount, bonus, source such
+    as stripe or twitch-bits, user…, recipientName).
+  - `pub/game-session-start`, `game-session-stop`, `game-session-pause` → `gameSessionStart`, `gameSessionEnd`,
+    `gameSessionPaused` (+ paused, pausedUntil).
+- Effect args:
+  - Effect: requestId, effectId, effectName (names may arrive as `{ public, sort }`), effectDescription, effectType,
+    effectImage, effectDuration (as sent), effectCategory.
+  - Game: gameId, gameName, gamePackId, gamePackName, gamePackPlatform.
+  - Viewer: user, userName, userId (platform id), userPlatform, userCcUid, userImage, anonymous, targetName,
+    targetPlatform.
+  - Request: quantity, price and unitPrice (coins), message, parameters ("Title: value, …"), sourceType, pooled,
+    admin, timestamp, isTest.
+  - Streamer.bot's trigger pages do not document their variables, so these names follow Cuebot's conventions.
+- Activity feed:
+  - `effectSuccess` → `Redemption` ("Alice redeemed Spawn Creeper", amount "150 coins"), so it reaches the credits'
+    redemptions list.
+  - Paid coin exchanges and session start/end → `Other` (coins are not money).
+- Sub-actions:
+  - "Get session" sets ccSessionActive, ccGameName, ccTimedEffects and related args.
+  - "Send test event" publishes a local sample.
+- The session state comes from the start/stop events seen since connecting. The public "active session" lookup needs a
+  username or a scoped token.

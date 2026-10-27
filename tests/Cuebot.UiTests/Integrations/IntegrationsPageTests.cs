@@ -177,6 +177,55 @@ public sealed class IntegrationsPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public async Task StreamLoots_and_Crowd_Control_cards_mask_urls_and_show_test_events()
+    {
+        const string alertId = "1a2b3c4d-5e6f-4a1b-9c8d-0123456789ab";
+        const string overlayKey = "ovk_9f8e7d6c5b4a39281706";
+        TestApp.BindingErrors.Clear();
+        var vm = new IntegrationsViewModel(Get<VTubeStudioService>(), Get<VoicemodService>(), Get<PulsoidService>(), Get<HypeRateService>(),
+            Get<Cuebot.Integrations.StreamLoots.StreamLootsService>(), Get<Cuebot.Integrations.CrowdControl.CrowdControlService>());
+        var window = Show(vm);
+        Assert.True(vm.HasStreamLoots && vm.HasCrowdControl);
+        var sl = vm.StreamLoots!;
+        var cc = vm.CrowdControl!;
+
+        await sl.ConnectCommand.ExecuteAsync(null);
+        Assert.Contains("Alerts widget URL", sl.Error);
+        await cc.ConnectCommand.ExecuteAsync(null);
+        Assert.Contains("Overlay URL", cc.Error);
+
+        sl.AlertsUrl = " https://widgets.streamloots.com/alerts/" + alertId + " ";
+        cc.OverlayUrl = "https://overlay.crowdcontrol.live/events?key=" + overlayKey;
+        var settings = Get<JsonFile<IntegrationsSettings>>().Value;
+        Assert.Equal("https://widgets.streamloots.com/alerts/" + alertId, settings.StreamLoots.AlertsUrl);
+        Assert.Equal("Saved alert id: ••••••••89ab", sl.MaskedUrl);
+        Assert.Equal("Saved overlay key: ••••••••1706", cc.MaskedUrl);
+        sl.AutoConnect = true;
+        Assert.True(settings.StreamLoots.AutoConnect);
+
+        sl.SelectedTestKind = "redemption";
+        sl.SendTestCommand.Execute(null);
+        Assert.Equal("[Test] Cuebot Tester redeemed Hydrate", sl.LastAlert);
+        cc.SelectedTestKind = "gameSessionStart";
+        cc.SendTestCommand.Execute(null);
+        cc.SelectedTestKind = "timedEffectStarted";
+        cc.SendTestCommand.Execute(null);
+        UiPump.Pump();
+        Assert.Equal("Minecraft (Minecraft (Server))", cc.SessionText);
+        Assert.Contains("Spawn Creeper (begin, 30 s, Cuebot Tester)", cc.TimedEffectsText);
+
+        UiPump.Pump();
+        var boxes = window.GetVisualDescendants().OfType<TextBox>().Where(t => t.Name is "StreamLootsUrl" or "CrowdControlUrl").ToArray();
+        Assert.Equal(2, boxes.Length);
+        Assert.All(boxes, b => Assert.Equal('•', b.PasswordChar));
+        var texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Inlines?.Text ?? t.Text ?? "").ToArray();
+        Assert.DoesNotContain(texts, t => t.Contains(alertId, StringComparison.Ordinal) || t.Contains(overlayKey, StringComparison.Ordinal));
+        UiPump.Save(window, "integrations-streamloots-crowdcontrol");
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Connect_without_credentials_shows_an_error()
     {
         var vm = CreateViewModel();

@@ -7,7 +7,7 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Integrations" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="VTube Studio, Voicemod and heart rate monitors become triggers, sub-actions and script functions. Settings are stored in integrations.json; tokens and keys are masked here and never written to the log. Nothing connects automatically unless you tick the box." />
+                 Text="VTube Studio, Voicemod, heart rate monitors, StreamLoots and Crowd Control become triggers, sub-actions and script functions. Settings are stored in integrations.json; tokens and keys are masked here and never written to the log. Nothing connects automatically unless you tick the box." />
 
       <!-- VTube Studio -->
       <Border Classes="card" DataContext="{Binding VTubeStudio}" x:DataType="vm:VtsCardViewModel">
@@ -136,6 +136,68 @@
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- StreamLoots -->
+      <Border Classes="card" IsVisible="{Binding HasStreamLoots}">
+        <StackPanel Spacing="8" DataContext="{Binding StreamLoots}" x:DataType="vm:StreamLootsCardViewModel">
+          <TextBlock Classes="h2" Text="StreamLoots" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On streamloots.com open your dashboard → Alerts &amp; Widgets → Alerts, reveal the alerts URL (https://widgets.streamloots.com/alerts/...) and paste it here. Chest purchases, gifts and card redemptions become triggers; StreamLoots' own Test button sends real test alerts through this connection." />
+          <TextBox Name="StreamLootsUrl" Text="{Binding AlertsUrl}" PasswordChar="•" PlaceholderText="Alerts widget URL" />
+          <TextBlock Classes="muted" Text="{Binding MaskedUrl}" TextWrapping="Wrap" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="StreamLootsLast" TextWrapping="Wrap">
+            <Run Text="Last alert: " FontWeight="SemiBold" /><Run Text="{Binding LastAlert}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="200" />
+            <Button Content="Send test alert" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Crowd Control -->
+      <Border Classes="card" IsVisible="{Binding HasCrowdControl}">
+        <StackPanel Spacing="8" DataContext="{Binding CrowdControl}" x:DataType="vm:CrowdControlCardViewModel">
+          <TextBlock Classes="h2" Text="Crowd Control" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In the Crowd Control app open Overlays &amp; Assets, copy your private overlay URL (it ends in ?key=...) and paste it here. Cuebot listens the way the overlay does: effect requests, successes, failures, refunds, timed effects, coin purchases and game sessions. Reconnects automatically." />
+          <TextBox Name="CrowdControlUrl" Text="{Binding OverlayUrl}" PasswordChar="•" PlaceholderText="Overlay URL" />
+          <TextBlock Classes="muted" Text="{Binding MaskedUrl}" TextWrapping="Wrap" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="CrowdControlSession" TextWrapping="Wrap">
+            <Run Text="Game session: " FontWeight="SemiBold" /><Run Text="{Binding SessionText}" />
+          </TextBlock>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="Timed effects: " FontWeight="SemiBold" /><Run Text="{Binding TimedEffectsText}" />
+          </TextBlock>
+          <TextBlock Name="CrowdControlLast" TextWrapping="Wrap">
+            <Run Text="Last event: " FontWeight="SemiBold" /><Run Text="{Binding LastEvent}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="200" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
         </StackPanel>
       </Border>
