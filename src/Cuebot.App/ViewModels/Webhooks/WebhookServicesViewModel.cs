@@ -11,12 +11,12 @@ namespace Cuebot.App.ViewModels.Webhooks;
 /// Ko-fi, Patreon, Fourthwall, Shopify and Throne, the custom hook list and the last events. The URLs to paste into
 /// each service are shown by the relay page.
 /// </summary>
-public sealed partial class WebhooksViewModel : PageViewModel
+public sealed partial class WebhookServicesViewModel : PageViewModel
 {
     private const int RecentShown = 50;
     private readonly WebhookServices _services;
 
-    public WebhooksViewModel(WebhookServices services) : base("Webhooks")
+    public WebhookServicesViewModel(WebhookServices services) : base("Webhooks")
     {
         _services = services;
         Services =
@@ -134,7 +134,7 @@ public sealed partial class WebhookCardViewModel : ObservableObject
         }
     }
 
-    public string LastDelivery => WebhooksViewModel.Describe(_service.LastDelivery);
+    public string LastDelivery => WebhookServicesViewModel.Describe(_service.LastDelivery);
 
     public IReadOnlyList<string> TestKinds { get; }
 
@@ -178,7 +178,7 @@ public sealed partial class CustomHooksViewModel : ObservableObject
 
     public bool HasNoHooks => Hooks.Count == 0;
 
-    public string LastDelivery => WebhooksViewModel.Describe(_handler.LastDelivery);
+    public string LastDelivery => WebhookServicesViewModel.Describe(_handler.LastDelivery);
 
     [ObservableProperty] private string _newName = "";
     [ObservableProperty] private string _error = "";

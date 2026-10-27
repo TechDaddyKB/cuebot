@@ -18,13 +18,13 @@ namespace Cuebot.UiTests.Webhooks;
 /// list and the activity feed, custom hooks can be added and removed, and the page renders without binding errors in
 /// both themes (screenshots tests/Cuebot.UiTests/screenshots/webhooks-*.png).
 /// </summary>
-public sealed class WebhooksPageTests : IAsyncDisposable
+public sealed class WebhookServicesPageTests : IAsyncDisposable
 {
     private const string KofiToken = "kofi-verification-token-ABCD1234";
     private readonly string _dataDir = Directory.CreateTempSubdirectory("cuebot-ui-webhooks-").FullName;
     private readonly ServiceProvider _services;
 
-    public WebhooksPageTests() =>
+    public WebhookServicesPageTests() =>
         _services = new ServiceCollection().AddCuebotCore(new AppPaths(_dataDir)).AddWebhooks().BuildServiceProvider();
 
     private T Get<T>() where T : notnull => _services.GetRequiredService<T>();
@@ -39,10 +39,10 @@ public sealed class WebhooksPageTests : IAsyncDisposable
             TestApp.BindingErrors.Clear();
             var hub = Get<ChatHub>();
             var services = Get<WebhookServices>();
-            var vm = new WebhooksViewModel(services);
+            var vm = new WebhookServicesViewModel(services);
             var window = new Window
             {
-                Content = new WebhooksView { DataContext = vm },
+                Content = new WebhookServicesView { DataContext = vm },
                 Width = 1100,
                 Height = 2200,
                 Background = app.FindResource("CuebotPanel") as Avalonia.Media.IBrush,

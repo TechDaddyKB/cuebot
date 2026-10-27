@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels.Webhooks"
-             x:Class="Cuebot.App.Views.Webhooks.WebhooksView"
-             x:DataType="vm:WebhooksViewModel">
+             x:Class="Cuebot.App.Views.Webhooks.WebhookServicesView"
+             x:DataType="vm:WebhookServicesViewModel">
   <ScrollViewer Padding="24">
     <StackPanel MaxWidth="760" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Webhook services" />
