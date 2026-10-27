@@ -1,0 +1,33 @@
+{
+  "testMode": false,
+  "id": "weve_gift_1",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "GIFT_PURCHASE",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-27T15:08:00.000+00:00",
+  "data": {
+    "id": "giv_voWcDCtfQUygxpuYx1HtNg",
+    "friendlyId": "F2LGPYCV",
+    "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+    "offer": { "id": "b2c201d3-8104-4b2a-b2c9-1f6b335b650a", "name": "New T-shirt", "slug": "new-t-shirt", "description": "", "primaryImage": { "id": "img_1", "url": "https://cdn.fourthwall.com/tee.jpeg" } },
+    "amounts": {
+      "subtotal": { "value": 10, "currency": "USD" },
+      "tax": { "value": 1, "currency": "USD" },
+      "total": { "value": 17, "currency": "USD" },
+      "profit": { "value": 4, "currency": "USD" },
+      "prepaidShipping": { "value": 5, "currency": "USD" }
+    },
+    "email": "gifter@example.com",
+    "username": "GenerousGifter",
+    "message": "Shirts for everyone",
+    "quantity": 4,
+    "gifts": [
+      { "id": "gft_1", "status": "REDEEMED", "orderId": "7b83a86f-9221-4416-b739-ef88870f999b", "orderFriendlyId": "F2LGPYCV", "winner": { "email": "w@example.com", "username": "supporter-username", "selectedAt": "2026-10-27T15:09:00.000+00:00" } },
+      { "id": "gft_2", "status": "AVAILABLE", "winner": { "username": "winner-1" } },
+      { "id": "gft_3", "status": "CANCELLED", "winner": null },
+      { "id": "gft_4", "status": "CHANGED_TO_PROMOTION", "promotionId": "prm_EdJvIXu3SEiXe_QkPavHSA", "winner": { "username": "winner-3" } }
+    ],
+    "createdAt": "2026-10-27T15:07:59.000+00:00"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "data": {
+    "attributes": {
+      "campaign_lifetime_support_cents": 0,
+      "currently_entitled_amount_cents": 500,
+      "email": "jane@example.com",
+      "full_name": "Jane Patron",
+      "is_follower": false,
+      "last_charge_date": "2026-10-27T12:00:00.000+00:00",
+      "last_charge_status": "Paid",
+      "lifetime_support_cents": 500,
+      "next_charge_date": "2026-11-27T00:00:00.000+00:00",
+      "note": "",
+      "patron_status": "active_patron",
+      "pledge_cadence": 1,
+      "pledge_relationship_start": "2026-10-27T12:00:00.000+00:00",
+      "will_pay_amount_cents": 500
+    },
+    "id": "03ca69c3-ebea-4b9a-8fac-e4a837873254",
+    "relationships": {
+      "address": { "data": null },
+      "campaign": { "data": { "id": "123456", "type": "campaign" }, "links": { "related": "https://www.patreon.com/api/oauth2/v2/campaigns/123456" } },
+      "currently_entitled_tiers": { "data": [ { "id": "7654321", "type": "tier" } ] },
+      "user": { "data": { "id": "98765432", "type": "user" }, "links": { "related": "https://www.patreon.com/api/oauth2/v2/user/98765432" } }
+    },
+    "type": "member"
+  },
+  "included": [
+    {
+      "attributes": { "created_at": "2020-01-01T00:00:00.000+00:00", "creation_name": "streams", "is_monthly": true, "patron_count": 42, "url": "https://www.patreon.com/streams" },
+      "id": "123456",
+      "type": "campaign"
+    },
+    {
+      "attributes": {
+        "amount_cents": 500, "created_at": "2020-01-01T00:00:00.000+00:00", "description": "Thanks for the support!", "discord_role_ids": null,
+        "edited_at": "2020-01-01T00:00:00.000+00:00", "image_url": null, "patron_count": 10, "post_count": 3, "published": true,
+        "published_at": "2020-01-01T00:00:00.000+00:00", "remaining": null, "requires_shipping": false, "title": "Supporter",
+        "unpublished_at": null, "url": "/join/streams/checkout?rid=7654321", "user_limit": null
+      },
+      "id": "7654321",
+      "type": "tier"
+    },
+    {
+      "attributes": {
+        "about": null, "created": "2019-05-01T00:00:00.000+00:00", "first_name": "Jane", "full_name": "Jane Patron", "hide_pledges": false,
+        "image_url": "https://c8.patreon.com/2/200/98765432", "is_creator": false, "last_name": "Patron", "like_count": 0,
+        "social_connections": { "discord": null, "twitch": { "url": "https://twitch.tv/janepatron", "user_id": "janepatron" } },
+        "thumb_url": "https://c8.patreon.com/2/200/98765432", "url": "https://www.patreon.com/user?u=98765432", "vanity": null
+      },
+      "id": "98765432",
+      "type": "user"
+    }
+  ],
+  "links": { "self": "https://www.patreon.com/api/oauth2/v2/members/03ca69c3-ebea-4b9a-8fac-e4a837873254" }
+}

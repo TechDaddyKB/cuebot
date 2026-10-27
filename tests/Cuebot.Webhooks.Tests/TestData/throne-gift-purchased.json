@@ -1,0 +1,15 @@
+{
+  "type": "gift_purchased",
+  "data": {
+    "creator_id": "twitch:12345678",
+    "creator_username": "twitchuser123",
+    "gifter_username": "Lyfesaver74",
+    "message": "Happy Birthday!",
+    "item_name": "AirPods Max",
+    "item_thumbnail_url": "https://m.media-amazon.com/images/I/81jqUPkIVRL._AC_SX522_.jpg",
+    "is_surprise_gift": false,
+    "price": 54900,
+    "currency": "USD",
+    "created_at": "2026-10-27T15:01:00Z"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "testMode": true,
+  "id": "weve_donation_1",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "DONATION",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-27T15:06:00.000+00:00",
+  "data": {
+    "id": "don_xyz",
+    "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+    "status": "COMPLETED",
+    "email": "kind@example.com",
+    "username": "KindSupporter",
+    "message": "Keep it up!",
+    "amounts": { "total": { "value": 5.5, "currency": "EUR" } },
+    "createdAt": "2026-10-27T15:05:59.000+00:00",
+    "updatedAt": "2026-10-27T15:05:59.000+00:00"
+  }
+}

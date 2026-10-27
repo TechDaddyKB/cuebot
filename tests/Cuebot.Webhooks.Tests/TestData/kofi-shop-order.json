@@ -1,0 +1,31 @@
+{
+  "verification_token": "8e7f3a2b-1c4d-4e5f-9a8b-7c6d5e4f3a2b",
+  "message_id": "4c2fac0c-f960-4506-a60e-824979a74e70",
+  "timestamp": "2026-10-27T15:00:00Z",
+  "type": "Shop Order",
+  "is_public": true,
+  "from_name": "Merch Buyer",
+  "message": null,
+  "amount": "18.00",
+  "url": "https://ko-fi.com/Home/CoffeeShop?txid=22222222-1111-2222-3333-444444444444",
+  "email": "buyer@example.com",
+  "currency": "USD",
+  "is_subscription_payment": false,
+  "is_first_subscription_payment": false,
+  "kofi_transaction_id": "22222222-1111-2222-3333-444444444444",
+  "shop_items": [
+    { "direct_link_code": "1a2b3c4d5e", "variation_name": "Sticker pack", "quantity": 2 },
+    { "direct_link_code": "9z8y7x6w5v", "variation_name": "Poster", "quantity": 1 }
+  ],
+  "tier_name": null,
+  "shipping": {
+    "full_name": "Merch Buyer",
+    "street_address": "123 Example St",
+    "city": "Exampleville",
+    "state_or_province": "EX",
+    "postal_code": "12345",
+    "country": "United States",
+    "country_code": "US",
+    "telephone": "+1 555 0100"
+  }
+}
