@@ -11,6 +11,8 @@
         xmlns:srvv="using:Cuebot.App.Views.Servers"
         xmlns:xvm="using:Cuebot.App.ViewModels.Extras"
         xmlns:xviews="using:Cuebot.App.Views.Extras"
+        xmlns:tvm="using:Cuebot.App.ViewModels.Transfer"
+        xmlns:tviews="using:Cuebot.App.Views.Transfer"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
@@ -39,6 +41,7 @@
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
     <DataTemplate DataType="srvvm:ServersViewModel"><srvv:ServersView /></DataTemplate>
+    <DataTemplate DataType="tvm:ImportExportViewModel"><tviews:ImportExportView /></DataTemplate>
     <DataTemplate DataType="vm:SettingsViewModel"><views:SettingsView /></DataTemplate>
   </Window.DataTemplates>
 
