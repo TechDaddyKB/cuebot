@@ -155,8 +155,8 @@ public sealed class KickServiceTests : IAsyncLifetime
         SignedIn();
         await _service.ConnectAsync();
         var conn = await _pusher.NextConnectionAsync();
-        Assert.Equal(new Uri("wss://realtime.test/connection/websocket"), conn.Url); // from the discovery call
         Assert.Equal("rt-token", (await conn.EstablishAsync()).GetProperty("token").GetString());
+        Assert.Equal(new Uri("wss://realtime.test/connection/websocket"), conn.Url); // from the discovery call
         var channels = new List<string>();
         for (var i = 0; i < 4; i++) channels.Add(await conn.NextSubscribedChannelAsync());
         Assert.Equal(["chatrooms.5678.v2", "chatroom_5678", "channel.1234", "channel_1234"], channels);

@@ -471,11 +471,12 @@ public sealed class VTubeStudioService : IntegrationConnection
             mode = add ? "add" : "set",
             parameterValues = values.Select(v => new { id = v.Id, value = v.Value, weight = v.Weight }).ToArray(),
         };
-        var until = DateTime.UtcNow + hold;
+        DateTime? until = null;
         while (true)
         {
             await RequestAsync("InjectParameterDataRequest", request, ct).ConfigureAwait(false);
-            var left = until - DateTime.UtcNow;
+            until ??= DateTime.UtcNow + hold; // counted from when VTube Studio has the values
+            var left = until.Value - DateTime.UtcNow;
             // VTube Studio keeps the last values for about a second, so a remainder this short needs no resend; it would
             // also make Task.Delay return at once and spin out a burst of requests.
             if (left < MinimumResendWait) return;
