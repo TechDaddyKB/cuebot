@@ -70,8 +70,10 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 Webhook-based services (Kick events, Ko-fi, Patreon, ...) need a publicly reachable endpoint. Streamer.bot relays them
 through its website. **Cuebot's decision:** use each service's direct API (WebSocket, polling or SDK) wherever one exists;
 only where a service delivers events exclusively by webhook, use a **self-hosted Cloudflare relay** shipped in `relay/`:
-a Worker + Durable Object that verifies each service's webhook signature and forwards events to Cuebot over an
-outbound, token-authenticated WebSocket (no port forwarding; short offline buffering), deployed with `wrangler deploy`.
+a Worker + Durable Object (free Cloudflare plan) that forwards each raw webhook to Cuebot over an outbound,
+token-authenticated WebSocket (no port forwarding; up to 500 deliveries / 24 h buffered while Cuebot is offline),
+deployed with `relay/setup.ps1` or `relay/setup.sh`. The relay does not verify signatures: each `IWebhookHandler` in
+Cuebot does, with secrets that stay on the PC. See `relay/README.md`.
 
 ## 6. System, input and services
 

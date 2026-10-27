@@ -7,8 +7,10 @@ using Cuebot.Core.Logging;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Storage;
 using Cuebot.Core.Users;
+using Cuebot.Core.Webhooks;
 using Cuebot.Kick.SubActions;
 using Cuebot.Kick.Triggers;
+using Cuebot.Kick.Webhooks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Kick;
@@ -18,7 +20,8 @@ public static class KickServiceCollectionExtensions
 {
     /// <summary>
     /// Adds Kick settings (kick.json), <see cref="KickService"/>, its combined-chat adapter and sender, the Kick
-    /// channel for the shared emote service, triggers, sub-actions and script functions.
+    /// channel for the shared emote service, triggers, sub-actions, script functions and the "kick" webhook handler
+    /// (<see cref="KickWebhookHandler"/>) for the webhook relay.
     /// </summary>
     public static IServiceCollection AddKick(this IServiceCollection services)
     {
@@ -63,6 +66,9 @@ public static class KickServiceCollectionExtensions
             services.AddSingleton<ISubActionHandler>(sp =>
                 UpdateRewardSubAction.All(sp.GetRequiredService<KickService>()).Single(s => s.TypeId == typeId));
         services.AddSingleton<IScriptFunctionProvider, KickScriptFunctions>();
+        // Kick webhooks arrive through the webhook relay (Cuebot.Relay), which dispatches route "kick" here.
+        services.AddSingleton<IWebhookHandler>(sp =>
+            new KickWebhookHandler(sp.GetRequiredService<KickService>().Webhooks, sp.GetRequiredService<EventBus>()));
         return services;
     }
 

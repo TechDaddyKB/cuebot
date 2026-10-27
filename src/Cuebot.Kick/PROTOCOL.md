@@ -72,8 +72,25 @@ title/category changes without a public URL.
 ## 3. Webhooks (official) — `Webhooks/`
 
 Kick delivers events **only** by HTTP POST to the webhook URL configured in the app, i.e. a public URL. Cuebot
-will receive them through the user-hosted Cloudflare relay (see docs/PARITY.md, "Webhook-based services"); the
-module already contains everything the relay connection needs: `KickWebhookEventSource.HandleAsync(delivery)`.
+receives them through the user-hosted Cloudflare relay (`relay/README.md`): Kick posts to the relay, the relay
+forwards the raw request over Cuebot's outbound websocket (`Cuebot.Relay.RelayClient`), and
+`Webhooks/KickWebhookHandler` (route `kick`, registered by `AddKick()`) maps the `Kick-Event-*` headers to a
+`KickWebhookDelivery` and calls `KickWebhookEventSource.HandleAsync`. The relay answers Kick with an empty 200 at
+once (Kick expects a quick 2xx and retries otherwise); verification happens in Cuebot, so nothing secret is needed on
+the relay. Handler outcomes: accepted → Handled, duplicate/unsupported type → Ignored, bad or missing signature →
+Rejected, unparsable body → Failed. While the relay is connected the "Webhook relay" event source shows as connected.
+
+Setting it up (once, after deploying the relay with `relay/setup.ps1` or `relay/setup.sh`):
+
+1. In Cuebot open **Webhooks**, enter the relay URL, connect token and route secret, enable the relay and connect.
+   Copy the URL shown for **Kick**: `https://<relay>/hook/<route secret>/kick`.
+2. On <https://kick.com/settings/developer> edit the Cuebot developer app (the one whose client id/secret are in
+   Cuebot's Kick settings), switch on **Enable webhooks** and paste that URL as the **Webhook URL**. Save.
+3. On Cuebot's Kick page tick **Register webhook events** and reconnect Kick: connecting lists the app's event
+   subscriptions (`GET /public/v1/events/subscriptions`) and subscribes the missing ones below with
+   `method: "webhook"`. Kick sends every subscribed event to the app's single webhook URL.
+
+Kick's webhook URL is per app, not per user, so each streamer uses their own developer app and their own relay.
 
 Headers: `Kick-Event-Message-Id`, `Kick-Event-Subscription-Id`, `Kick-Event-Signature`,
 `Kick-Event-Message-Timestamp`, `Kick-Event-Type`, `Kick-Event-Version`.

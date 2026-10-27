@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Webhooks"
+             x:Class="Cuebot.App.Views.Webhooks.WebhooksView"
+             x:DataType="vm:WebhooksViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="900" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Webhooks" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Ko-fi, Patreon, Kick events and other services can only send events to a public web address. Cuebot uses a small relay you deploy once to your own free Cloudflare account: services post to the relay, and Cuebot picks the events up over an outgoing connection, so no port forwarding is needed. The relay keeps events for up to 24 hours while Cuebot is closed. Signatures are checked here in Cuebot; the relay never sees your service secrets." />
+
+      <!-- Relay -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Relay" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Deploy it with relay/setup.ps1 (Windows) or relay/setup.sh (Linux) from the Cuebot source folder; it signs you in to Cloudflare in the browser and prints the three values below. See relay/README.md." />
+          <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock Text="Relay URL" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Name="RelayUrl" Text="{Binding Url}" PlaceholderText="https://cuebot-relay.yourname.workers.dev" />
+            <TextBlock Grid.Row="1" Text="Connect token" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Name="RelayToken" Text="{Binding ConnectToken}" PasswordChar="•" PlaceholderText="Connect token" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Classes="muted" Text="{Binding MaskedToken}" />
+            <TextBlock Grid.Row="3" Text="Route secret" VerticalAlignment="Center" />
+            <TextBox Grid.Row="3" Grid.Column="1" Name="RelayRouteSecret" Text="{Binding RouteSecret}" PasswordChar="•" PlaceholderText="Route secret (part of every webhook URL)" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Classes="muted" Text="{Binding MaskedRouteSecret}" />
+          </Grid>
+          <CheckBox Content="Use the webhook relay" IsChecked="{Binding Enabled}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock Name="RelayStatus" TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Missing}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Routes -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Webhook URLs" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Paste each URL into that service's webhook settings (for Kick: your developer app, &quot;Enable webhooks&quot;). Treat them like passwords: anyone with a URL can send fake events, which Cuebot then rejects because the signature does not match." />
+          <TextBlock Classes="muted" Text="No services with webhooks are installed." IsVisible="{Binding HasNoRoutes}" />
+          <ItemsControl Name="WebhookRoutes" ItemsSource="{Binding Routes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WebhookRouteViewModel">
+                <Grid ColumnDefinitions="130,*,Auto" Margin="0,3">
+                  <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="1" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                  <Button Grid.Column="2" Content="Copy" Command="{Binding CopyCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Recent deliveries -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Recent deliveries" />
+          <TextBlock Classes="muted" Text="Nothing received since Cuebot started." IsVisible="{Binding HasNoDeliveries}" />
+          <ItemsControl Name="WebhookDeliveries" ItemsSource="{Binding Deliveries}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WebhookDeliveryRowViewModel">
+                <Grid ColumnDefinitions="80,140,120,*" Margin="0,2">
+                  <TextBlock Classes="muted" Text="{Binding Time}" />
+                  <TextBlock Grid.Column="1" TextTrimming="CharacterEllipsis">
+                    <Run Text="{Binding Service}" /><Run Text="{Binding Path}" Foreground="{StaticResource CuebotMuted}" />
+                  </TextBlock>
+                  <TextBlock Grid.Column="2" Text="{Binding Outcome}" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="3" Classes="muted" Text="{Binding Detail}" TextTrimming="CharacterEllipsis" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

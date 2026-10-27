@@ -1,0 +1,23 @@
+// Cuebot webhook relay. Deploy with setup.ps1 / setup.sh (or `npx wrangler deploy` after setting the secrets).
+// Secrets are NOT in this file: set them with `npx wrangler secret put ROUTE_SECRET` and `... CONNECT_TOKEN`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cuebot-relay",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "RELAY", "class_name": "RelayHub" }]
+  },
+  // SQLite-backed Durable Objects are available on the Workers Free plan.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RelayHub"] }],
+  "vars": {
+    // Buffer caps for deliveries Cuebot has not acknowledged yet (oldest dropped first).
+    "MAX_BUFFERED": "500",
+    "MAX_AGE_HOURS": "24",
+    "MAX_BUFFER_BYTES": "268435456",
+    // Largest accepted webhook body.
+    "MAX_BODY_BYTES": "1048576"
+  },
+  "observability": { "enabled": false }
+}
