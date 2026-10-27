@@ -1,0 +1,80 @@
+using System.Net;
+using Cuebot.Donations.StreamElements;
+using Cuebot.Donations.Tests.Support;
+
+namespace Cuebot.Donations.Tests;
+
+public sealed class StreamElementsApiTests
+{
+    private const string Jwt = "jwt-SECRET-value-0123456789";
+    private const string Channel = "5ad23dcc18fff500d78c5348";
+    private readonly FakeHttpHandler _http;
+    private readonly StreamElementsApi _api;
+
+    public StreamElementsApiTests()
+    {
+        _http = new FakeHttpHandler(Respond);
+        _api = new StreamElementsApi(new HttpClient(_http), new Uri("https://api.test/kappa/v2/"));
+    }
+
+    private static HttpResponseMessage Respond(RecordedRequest r) => (r.Method.Method, r.Uri.PathAndQuery) switch
+    {
+        ("GET", "/kappa/v2/channels/me") => FakeHttpHandler.Json($$"""{"_id":"{{Channel}}","username":"techdaddy","displayName":"TechDaddy"}"""),
+        ("GET", $"/kappa/v2/points/{Channel}/alice") =>
+            FakeHttpHandler.Json($$"""{"channel":"{{Channel}}","username":"alice","points":1500,"pointsAlltime":4200,"rank":3}"""),
+        ("PUT", $"/kappa/v2/points/{Channel}/alice/-50") =>
+            FakeHttpHandler.Json($$"""{"channel":"{{Channel}}","username":"alice","amount":-50,"newAmount":1450,"message":"Removed 50 points"}"""),
+        ("GET", $"/kappa/v2/points/{Channel}/top?limit=2") =>
+            FakeHttpHandler.Json("""{"_total":40,"users":[{"username":"alice","points":1500},{"username":"bob","points":900}]}"""),
+        ("GET", $"/kappa/v2/tips/{Channel}?limit=2&sort=-createdAt") => FakeHttpHandler.Json($$"""
+            {"docs":[{"donation":{"user":{"username":"Styler","geo":"ZZ","email":"styler@example.com"},"message":"gg","amount":4.2,"currency":"USD",
+            "paymentMethod":"scheme"},"_id":"t1","channel":"{{Channel}}","provider":"paypal","approved":"allowed","status":"success",
+            "createdAt":"2025-02-19T15:07:09.302Z"}],"total":1,"limit":2,"offset":0}
+            """),
+        ("GET", $"/kappa/v2/tips/{Channel}/leaderboard?limit=3") =>
+            FakeHttpHandler.Json("""[{"username":"Styler","total":104.2},{"_id":"bob","amount":20}]"""),
+        _ => FakeHttpHandler.Json("""{"statusCode":401,"error":"Unauthorized","message":"Invalid jwt-SECRET-value-0123456789"}""", HttpStatusCode.Unauthorized),
+    };
+
+    [Fact]
+    public async Task Requests_use_the_kappa_v2_paths_and_a_bearer_jwt()
+    {
+        var channel = await _api.GetMyChannelAsync(Jwt, default);
+        Assert.Equal(new StreamElementsChannel(Channel, "techdaddy", "TechDaddy"), channel);
+
+        Assert.Equal(new StreamElementsPoints("alice", 1500, 4200, 3), await _api.GetUserPointsAsync(Jwt, Channel, "alice", default));
+        Assert.Equal(1450, await _api.AddUserPointsAsync(Jwt, Channel, "alice", -50, default));
+        Assert.Equal([new StreamElementsRank("alice", 1500), new StreamElementsRank("bob", 900)],
+            await _api.GetPointsLeaderboardAsync(Jwt, Channel, 2, default));
+
+        var tip = Assert.Single(await _api.GetTipsAsync(Jwt, Channel, 2, default));
+        Assert.Equal(("t1", "Styler", 4.2, "USD", "gg", "$4.20"), (tip.Id, tip.UserName, tip.Amount, tip.Currency, tip.Message, tip.FormattedAmount));
+
+        Assert.Equal([new StreamElementsRank("Styler", 104.2), new StreamElementsRank("bob", 20)],
+            await _api.GetTipLeaderboardAsync(Jwt, Channel, 3, default));
+
+        Assert.All(_http.Requests, r => Assert.Equal("Bearer " + Jwt, r.Authorization));
+        Assert.Equal(HttpMethod.Put, _http.Requests[2].Method);
+    }
+
+    [Fact]
+    public async Task Errors_never_contain_the_token()
+    {
+        var ex = await Assert.ThrowsAsync<StreamElementsApiException>(() => _api.GetUserPointsAsync(Jwt, Channel, "nobody", default));
+        Assert.Equal(401, ex.Status);
+        Assert.Contains("rejected", ex.Message);
+        Assert.DoesNotContain(Jwt, ex.Message, StringComparison.Ordinal);
+
+        await Assert.ThrowsAsync<StreamElementsApiException>(() => _api.GetMyChannelAsync(" ", default));
+        Assert.Single(_http.Requests);   // a blank token never reaches the network
+    }
+
+    [Fact]
+    public async Task User_names_are_escaped_and_limits_clamped()
+    {
+        await Assert.ThrowsAsync<StreamElementsApiException>(() => _api.GetUserPointsAsync(Jwt, Channel, "a b/c", default));
+        await Assert.ThrowsAsync<StreamElementsApiException>(() => _api.GetTipsAsync(Jwt, Channel, 1000, default));
+        Assert.Equal($"/kappa/v2/points/{Channel}/a%20b%2Fc", _http.Requests[0].Uri.AbsolutePath);
+        Assert.Contains("limit=100", _http.Requests[1].Uri.Query);
+    }
+}

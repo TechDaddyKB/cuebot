@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Cuebot.App/Cuebot.App.csproj" />
     <Project Path="src/Cuebot.Core/Cuebot.Core.csproj" />
+    <Project Path="src/Cuebot.Donations/Cuebot.Donations.csproj" />
     <Project Path="src/Cuebot.Kick/Cuebot.Kick.csproj" />
     <Project Path="src/Cuebot.Obs/Cuebot.Obs.csproj" />
     <Project Path="src/Cuebot.Rumble/Cuebot.Rumble.csproj" />
@@ -12,6 +13,7 @@
     <Project Path="src/Cuebot.YouTube/Cuebot.YouTube.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Cuebot.Donations.Tests/Cuebot.Donations.Tests.csproj" />
     <Project Path="tests/Cuebot.Kick.Tests/Cuebot.Kick.Tests.csproj" />
     <Project Path="tests/Cuebot.LiveTests/Cuebot.LiveTests.csproj" />
     <Project Path="tests/Cuebot.Obs.Tests/Cuebot.Obs.Tests.csproj" />
