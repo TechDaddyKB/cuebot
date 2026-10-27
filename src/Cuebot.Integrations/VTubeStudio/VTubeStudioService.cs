@@ -14,6 +14,9 @@ namespace Cuebot.Integrations.VTubeStudio;
 /// </summary>
 public sealed class VTubeStudioService : IntegrationConnection
 {
+    /// <summary>Held parameter injections stop instead of waiting less than this for one more resend.</summary>
+    private static readonly TimeSpan MinimumResendWait = TimeSpan.FromMilliseconds(15);
+
     private readonly JsonFile<IntegrationsSettings> _settings;
     private readonly PendingRequests _pending = new();
     private readonly VtsTrackingState _tracking = new();
@@ -473,7 +476,9 @@ public sealed class VTubeStudioService : IntegrationConnection
         {
             await RequestAsync("InjectParameterDataRequest", request, ct).ConfigureAwait(false);
             var left = until - DateTime.UtcNow;
-            if (left <= TimeSpan.Zero) return;
+            // VTube Studio keeps the last values for about a second, so a remainder this short needs no resend; it would
+            // also make Task.Delay return at once and spin out a burst of requests.
+            if (left < MinimumResendWait) return;
             await Task.Delay(left < Timings.InjectInterval ? left : Timings.InjectInterval, ct).ConfigureAwait(false);
         }
     }
