@@ -5,7 +5,7 @@ using Cuebot.Core.Events;
 namespace Cuebot.Donations;
 
 /// <summary>
-/// Shows Streamlabs / StreamElements events in the activity feed. Tips become <see cref="FeedKind.Tip"/> items with
+/// Shows donation service events in the activity feed. Tips become <see cref="FeedKind.Tip"/> items with
 /// a formatted amount and the donor's message, which is also what event speech reads ("chat.activity").
 /// </summary>
 internal abstract class DonationChatAdapter(string platform, string prefix) : IChatEventAdapter
@@ -51,6 +51,30 @@ internal abstract class DonationChatAdapter(string platform, string prefix) : IC
             StreamlabsEventTypes.Host or StreamElementsEventTypes.Host => Item(FeedKind.Raid, $"{user} hosted with {Get(a, "viewers")} viewers"),
             StreamlabsEventTypes.Superchat or StreamElementsEventTypes.Superchat => Item(FeedKind.Tip, $"{user} sent a {amount} Super Chat", amount),
             StreamElementsEventTypes.Activity => Item(FeedKind.Other, $"{user}: {Get(a, "activityType")}"),
+            TipeeeStreamEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount}", amount),
+            TipeeeStreamEventTypes.Follow => Item(FeedKind.Follow, $"{user} followed"),
+            TipeeeStreamEventTypes.Subscription => Item(FeedKind.Subscription, $"{user} subscribed"),
+            TipeeeStreamEventTypes.Cheer => Item(FeedKind.Tip, $"{user} cheered {Get(a, "bits")} bits", amount),
+            TipeeeStreamEventTypes.Raid => Item(FeedKind.Raid, $"{user} raided with {Get(a, "viewers")} viewers"),
+            TipeeeStreamEventTypes.Host => Item(FeedKind.Raid, $"{user} hosted with {Get(a, "viewers")} viewers"),
+            DonorDriveEventTypes.Donation => Item(FeedKind.Tip,
+                amount.Length > 0 ? $"{user} donated {amount} to charity" : $"{user} donated to charity", amount),
+            // Treats have no amount; the treat ("Pizza") is what the credits list.
+            TreatStreamEventTypes.Treat => Item(FeedKind.Tip, $"{user} sent a {Get(a, "type")} treat", Get(a, "type")),
+            PallyEventTypes.CampaignTip => Item(FeedKind.Tip,
+                Get(a, "campaignTitle") is { Length: > 0 } campaign ? $"{user} tipped {amount} to {campaign}" : $"{user} tipped {amount}", amount),
+            _ => null,
+        };
+    }
+
+    /// <summary>A "last events" line for events that are not feed items (they would duplicate a donation's).</summary>
+    internal static string? Summary(BotEvent e)
+    {
+        var a = e.Args;
+        return e.Type switch
+        {
+            DonorDriveEventTypes.Incentive => $"{Test(a)}{Get(a, "user")} claimed the incentive \"{Get(a, "incentive.description")}\"",
+            DonorDriveEventTypes.ProfileUpdated => $"{Test(a)}{Get(a, "profileName")}: {Get(a, "formattedRaised")} of {Get(a, "formattedGoal")} raised",
             _ => null,
         };
     }
@@ -68,3 +92,11 @@ internal abstract class DonationChatAdapter(string platform, string prefix) : IC
 internal sealed class StreamlabsChatAdapter() : DonationChatAdapter(Streamlabs.StreamlabsEventMapper.Service, "streamlabs.");
 
 internal sealed class StreamElementsChatAdapter() : DonationChatAdapter(StreamElements.StreamElementsEventMapper.Service, "streamelements.");
+
+internal sealed class TipeeeStreamChatAdapter() : DonationChatAdapter(TipeeeStream.TipeeeStreamEventMapper.Service, "tipeeestream.");
+
+internal sealed class DonorDriveChatAdapter() : DonationChatAdapter(DonorDrive.DonorDriveEventMapper.Service, "donordrive.");
+
+internal sealed class TreatStreamChatAdapter() : DonationChatAdapter(TreatStream.TreatStreamEventMapper.Service, "treatstream.");
+
+internal sealed class PallyChatAdapter() : DonationChatAdapter(Pally.PallyEventMapper.Service, "pally.");

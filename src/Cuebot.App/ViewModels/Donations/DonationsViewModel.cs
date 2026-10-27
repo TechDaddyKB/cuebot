@@ -4,20 +4,42 @@ using CommunityToolkit.Mvvm.Input;
 using Cuebot.Donations;
 using Cuebot.Donations.StreamElements;
 using Cuebot.Donations.Streamlabs;
+using Cuebot.Donations.TipeeeStream;
+using Cuebot.Donations.DonorDrive;
+using Cuebot.Donations.TreatStream;
+using Cuebot.Donations.Pally;
 
 namespace Cuebot.App.ViewModels.Donations;
 
-/// <summary>Donations page: Streamlabs and StreamElements tokens, connection, options, test events and the last events.</summary>
+/// <summary>Donations page: one card per donation service (keys, connection, options, test events) and the last events.</summary>
 public sealed partial class DonationsViewModel : PageViewModel
 {
     private const int RecentShown = 50;
     private readonly DonationServiceBase[] _services;
 
-    public DonationsViewModel(StreamlabsService streamlabs, StreamElementsService streamElements) : base("Donations")
+    public DonationsViewModel(StreamlabsService streamlabs, StreamElementsService streamElements)
+        : this(streamlabs, streamElements, null)
+    {
+    }
+
+    /// <summary>All six services (Streamlabs, StreamElements, TipeeeStream, DonorDrive, TreatStream, Pally.gg).</summary>
+    public DonationsViewModel(DonationServices services)
+        : this(services.Streamlabs, services.StreamElements, services)
+    {
+    }
+
+    private DonationsViewModel(StreamlabsService streamlabs, StreamElementsService streamElements, DonationServices? all) : base("Donations")
     {
         Streamlabs = new StreamlabsCardViewModel(streamlabs);
         StreamElements = new StreamElementsCardViewModel(streamElements);
-        _services = [streamlabs, streamElements];
+        if (all is not null)
+        {
+            TipeeeStream = new TipeeeStreamCardViewModel(all.TipeeeStream);
+            DonorDrive = new DonorDriveCardViewModel(all.DonorDrive);
+            TreatStream = new TreatStreamCardViewModel(all.TreatStream);
+            Pally = new PallyCardViewModel(all.Pally);
+        }
+        _services = all is null ? [streamlabs, streamElements] : [.. all.All];
         foreach (var service in _services) service.RecentChanged += () => OnUi(RefreshRecent);
         RefreshRecent();
     }
@@ -25,7 +47,13 @@ public sealed partial class DonationsViewModel : PageViewModel
     public StreamlabsCardViewModel Streamlabs { get; }
     public StreamElementsCardViewModel StreamElements { get; }
 
-    /// <summary>Newest first, both services.</summary>
+    /// <summary>Null when the page was built with only Streamlabs and StreamElements.</summary>
+    public TipeeeStreamCardViewModel? TipeeeStream { get; }
+    public DonorDriveCardViewModel? DonorDrive { get; }
+    public TreatStreamCardViewModel? TreatStream { get; }
+    public PallyCardViewModel? Pally { get; }
+
+    /// <summary>Newest first, every service.</summary>
     public ObservableCollection<DonationRecordViewModel> RecentEvents { get; } = [];
 
     public bool HasNoEvents => RecentEvents.Count == 0;
@@ -125,7 +153,7 @@ public abstract partial class DonationCardViewModel : ObservableObject
             : $"Unknown test event '{SelectedTestKind}'";
     }
 
-    private static void OnUi(Action action)
+    protected static void OnUi(Action action)
     {
         if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess()) action();
         else Avalonia.Threading.Dispatcher.UIThread.Post(action);
@@ -184,4 +212,216 @@ public sealed class StreamElementsCardViewModel(StreamElementsService service) :
     }
 
     public string Channel => S.ChannelName.Length > 0 ? S.ChannelName : "—";
+}
+
+public sealed class TipeeeStreamCardViewModel(TipeeeStreamService service) : DonationCardViewModel(service)
+{
+    private TipeeeStreamSettings S => service.Settings;
+
+    protected override string GetToken() => S.ApiKey;
+    protected override void SetToken(string token) => S.ApiKey = token;
+
+    public string Username
+    {
+        get => S.Username;
+        set { S.Username = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; Save(); OnPropertyChanged(); }
+    }
+
+    public bool RelayPlatformEvents
+    {
+        get => S.RelayPlatformEvents;
+        set { S.RelayPlatformEvents = value; Save(); OnPropertyChanged(); }
+    }
+}
+
+public sealed partial class DonorDriveCardViewModel : DonationCardViewModel
+{
+    private readonly DonorDriveService _service;
+
+    public DonorDriveCardViewModel(DonorDriveService service) : base(service)
+    {
+        _service = service;
+        service.ProfileChanged += () => OnUi(() => OnPropertyChanged(nameof(ProfileSummary)));
+    }
+
+    private DonorDriveSettings S => _service.Settings;
+
+    /// <summary>The participant or team id (public, shown in clear).</summary>
+    protected override string GetToken() => S.ProfileId;
+    protected override void SetToken(string token) => S.ProfileId = token;
+
+    public IReadOnlyList<string> Programs { get; } = ["Extra Life", "DonorDrive test site", "Other DonorDrive charity (custom site)"];
+
+    public int ProgramIndex
+    {
+        get => (int)S.Program;
+        set
+        {
+            if (value < 0 || value == (int)S.Program) return;
+            S.Program = (DonorDriveProgram)value;
+            Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCustom));
+            OnPropertyChanged(nameof(ApiBase));
+        }
+    }
+
+    public bool IsCustom => S.Program == DonorDriveProgram.Custom;
+
+    public string CustomBaseUrl
+    {
+        get => S.CustomBaseUrl;
+        set { S.CustomBaseUrl = value.Trim(); Save(); OnPropertyChanged(); OnPropertyChanged(nameof(ApiBase)); }
+    }
+
+    /// <summary>The API root that will be polled, or why the custom site is not usable.</summary>
+    public string ApiBase
+    {
+        get
+        {
+            try { return $"API: {_service.ApiBase.AbsoluteUri}"; }
+            catch (DonorDriveApiException ex) { return ex.Message; }
+        }
+    }
+
+    public bool IsTeam
+    {
+        get => S.ProfileType == DonorDriveProfileType.Team;
+        set { S.ProfileType = value ? DonorDriveProfileType.Team : DonorDriveProfileType.Participant; Save(); OnPropertyChanged(); }
+    }
+
+    public decimal PollSeconds
+    {
+        get => S.PollSeconds;
+        set { S.PollSeconds = Math.Max((int)value, (int)DonorDriveService.MinimumInterval.TotalSeconds); Save(); OnPropertyChanged(); }
+    }
+
+    public string Currency
+    {
+        get => S.Currency;
+        set { S.Currency = value.Trim().ToUpperInvariant(); Save(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; Save(); OnPropertyChanged(); }
+    }
+
+    public string ProfileSummary => _service.Profile is { } p
+        ? $"{p.Name}{(p.EventName.Length > 0 ? $" ({p.EventName})" : "")}: {p.Raised:0.##} of {p.Goal:0.##} {S.Currency} raised, {p.NumDonations} donations"
+        : "Not read yet";
+}
+
+public sealed partial class TreatStreamCardViewModel : DonationCardViewModel
+{
+    private readonly TreatStreamService _service;
+    private readonly Action<string> _openBrowser;
+
+    public TreatStreamCardViewModel(TreatStreamService service, Action<string>? openBrowser = null) : base(service)
+    {
+        _service = service;
+        _openBrowser = openBrowser ?? Cuebot.App.Shell.UrlLauncher.Open;
+    }
+
+    private TreatStreamSettings S => _service.Settings;
+
+    /// <summary>The access token (from signing in, or pasted).</summary>
+    protected override string GetToken() => S.AccessToken;
+    protected override void SetToken(string token) => S.AccessToken = token;
+
+    public string ClientId
+    {
+        get => S.ClientId;
+        set { S.ClientId = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    /// <summary>The client secret; the view masks it.</summary>
+    public string ClientSecret
+    {
+        get => S.ClientSecret;
+        set { S.ClientSecret = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    public decimal RedirectPort
+    {
+        get => S.RedirectPort;
+        set { S.RedirectPort = Math.Clamp((int)value, 1024, 65535); Save(); OnPropertyChanged(); OnPropertyChanged(nameof(RedirectUri)); }
+    }
+
+    public string RedirectUri => _service.RedirectUri;
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; Save(); OnPropertyChanged(); }
+    }
+
+    public string SignInState => _service.IsSignedIn
+        ? S.AccessTokenExpiresAt is { } expires ? $"Signed in (token valid until {expires.ToLocalTime():yyyy-MM-dd})" : "Signed in (pasted token)"
+        : "Not signed in";
+
+    [ObservableProperty] private bool _isSigningIn;
+
+    [RelayCommand]
+    private async Task SignIn()
+    {
+        Error = "";
+        IsSigningIn = true;
+        try
+        {
+            await _service.SignInAsync(_openBrowser);
+            Info = "Signed in to TreatStream.";
+            OnPropertyChanged(nameof(Token));
+            OnPropertyChanged(nameof(MaskedToken));
+            await _service.ConnectAsync();
+        }
+        catch (Exception ex) { Error = ex.Message; }
+        finally { IsSigningIn = false; }
+        OnPropertyChanged(string.Empty);
+    }
+
+    [RelayCommand]
+    private async Task SignOut()
+    {
+        Error = "";
+        await _service.SignOutAsync();
+        OnPropertyChanged(string.Empty);
+    }
+}
+
+public sealed partial class PallyCardViewModel(PallyService service) : DonationCardViewModel(service)
+{
+    private PallySettings S => service.Settings;
+
+    protected override string GetToken() => S.ApiKey;
+    protected override void SetToken(string token) => S.ApiKey = token;
+
+    public string PageSlug
+    {
+        get => S.PageSlug;
+        set { S.PageSlug = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; Save(); OnPropertyChanged(); }
+    }
+
+    /// <summary>Asks Pally's server to echo a sample tip back (tests the real connection; arrives with isTest = true).</summary>
+    [RelayCommand]
+    private async Task EchoTest()
+    {
+        Error = "";
+        Info = await service.SendEchoTestAsync()
+            ? "Asked Pally.gg to echo a test tip; it should appear in the last events in a moment (isTest = true)."
+            : "Connect to Pally.gg first.";
+    }
 }

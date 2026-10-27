@@ -96,6 +96,16 @@ the StreamLoots alerts page while Cuebot is connected to see a real alert arrive
 `CUEBOT_LIVE_CROWDCONTROL_OVERLAY_URL` (Overlays & Assets in the Crowd Control app); it passes only when Crowd Control
 accepts the overlay key for the private topic.
 
+### TipeeeStream, DonorDrive, TreatStream, Pally.gg
+
+`CharityLiveTests` connects to each of these whose variable is set, checks it answers and disconnects; nothing reaches
+viewers. TipeeeStream needs `CUEBOT_LIVE_TIPEEESTREAM_API_KEY` (optional `CUEBOT_LIVE_TIPEEESTREAM_USERNAME`).
+DonorDrive needs only a public `CUEBOT_LIVE_DONORDRIVE_PARTICIPANT_ID` (Extra Life by default; `CUEBOT_LIVE_DONORDRIVE_TEAM=1`
+for a team id, `CUEBOT_LIVE_DONORDRIVE_BASE_URL` for another DonorDrive charity) and makes two or three requests.
+TreatStream needs `CUEBOT_LIVE_TREATSTREAM_TOKEN` (an access token from signing in on the Donations page) and
+`CUEBOT_LIVE_TREATSTREAM_CLIENT_ID` (your TreatStream app). Pally.gg needs `CUEBOT_LIVE_PALLY_API_KEY`; the test also asks
+Pally's server to echo a sample tip and checks it arrives as a test campaign tip.
+
 ## Running
 
 ```powershell

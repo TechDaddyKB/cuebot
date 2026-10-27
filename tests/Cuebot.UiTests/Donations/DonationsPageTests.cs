@@ -118,6 +118,66 @@ public sealed class DonationsPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void Charity_cards_mask_keys_write_options_and_send_test_events()
+    {
+        var app = Application.Current!;
+        var original = app.RequestedThemeVariant;
+        try
+        {
+            TestApp.BindingErrors.Clear();
+            var all = Get<DonationServices>();
+            var vm = new DonationsViewModel(all);
+            var window = Show(vm);
+            Assert.NotNull(vm.TipeeeStream);
+            var cards = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("card") && b.IsVisible).ToArray();
+            Assert.Equal(7, cards.Length);   // six services + last events
+
+            vm.TipeeeStream!.Token = " TIPEEE-key-ABCDEFGHIJ5678 ";
+            vm.Pally!.Token = "PALLY-key-ABCDEFGHIJKL9999";
+            vm.TreatStream!.ClientSecret = "TREAT-secret-ABCDEFGH0000";
+            Assert.Equal("TIPEEE-key-ABCDEFGHIJ5678", all.TipeeeStream.Settings.ApiKey);
+            Assert.Equal("Saved token: ••••••••9999", vm.Pally.MaskedToken);
+            UiPump.Pump();
+            var secrets = window.GetVisualDescendants().OfType<TextBox>()
+                .Where(t => t.Name is "TipeeeStreamKey" or "PallyKey" or "TreatStreamSecret" or "TreatStreamToken").ToArray();
+            Assert.Equal(4, secrets.Length);
+            Assert.All(secrets, b => Assert.Equal('•', b.PasswordChar));
+
+            vm.DonorDrive!.ProgramIndex = (int)Cuebot.Donations.DonorDriveProgram.Custom;
+            Assert.True(vm.DonorDrive.IsCustom);
+            vm.DonorDrive.CustomBaseUrl = "www.example-charity.org";
+            Assert.Equal("API: https://www.example-charity.org/api/", vm.DonorDrive.ApiBase);
+            vm.DonorDrive.PollSeconds = 5;
+            Assert.Equal(15, all.DonorDrive.Settings.PollSeconds);   // DonorDrive's floor
+            vm.DonorDrive.IsTeam = true;
+            Assert.Equal(Cuebot.Donations.DonorDriveProfileType.Team, all.DonorDrive.Settings.ProfileType);
+            vm.Pally.PageSlug = " my-page ";
+            Assert.Equal("my-page", all.Pally.Settings.PageSlug);
+            Assert.Equal("http://localhost:8913/callback", vm.TreatStream.RedirectUri);
+
+            foreach (var card in new DonationCardViewModel[] { vm.TipeeeStream, vm.DonorDrive, vm.TreatStream, vm.Pally })
+                card.SendTestCommand.Execute(null);
+            UiPump.Pump();
+            Assert.Equal(4, vm.RecentEvents.Count);
+            Assert.Contains(vm.RecentEvents, r => r.Service == "Pally.gg" && r.Summary.StartsWith("[Test] Someone tipped $5.00", StringComparison.Ordinal));
+            Assert.Contains(vm.RecentEvents, r => r.Service == "TreatStream" && r.Summary == "[Test] TestViewer sent a Pizza treat");
+
+            foreach (var (theme, name) in new[] { (ThemeVariant.Dark, "dark"), (ThemeVariant.Light, "light") })
+            {
+                app.RequestedThemeVariant = theme;
+                UiPump.Pump();
+                UiPump.Save(window, $"donations-charity-{name}");
+            }
+            Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+            window.Close();
+        }
+        finally
+        {
+            app.RequestedThemeVariant = original;
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Connect_without_a_token_shows_an_error()
     {
         var vm = new DonationsViewModel(Get<StreamlabsService>(), Get<StreamElementsService>());
