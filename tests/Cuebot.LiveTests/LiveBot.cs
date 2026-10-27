@@ -125,11 +125,25 @@ public sealed class LiveBot : IAsyncLifetime
             streamServiceType = "rtmp_custom",
             streamServiceSettings = new { server = target.Url, key = target.Key },
         });
-        return new Restore(() => Obs.RequestAsync("SetStreamServiceSettings", new
+        return new Restore(async () =>
         {
-            streamServiceType = previous.GetProperty("streamServiceType").GetString(),
-            streamServiceSettings = previous.GetProperty("streamServiceSettings"),
-        }));
+            await StopStreamIfActiveAsync();   // OBS refuses to change stream settings while live
+            await Obs.RequestAsync("SetStreamServiceSettings", new
+            {
+                streamServiceType = previous.GetProperty("streamServiceType").GetString(),
+                streamServiceSettings = previous.GetProperty("streamServiceSettings"),
+            });
+        });
+    }
+
+    /// <summary>Stops the stream (if live) and waits until OBS reports it inactive.</summary>
+    public async Task StopStreamIfActiveAsync()
+    {
+        if (!Obs.IsConnected || !(await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean()) return;
+        await Obs.ControlStreamAsync(OutputCommand.Stop);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while ((await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean() && DateTime.UtcNow < deadline)
+            await Task.Delay(500);
     }
 
     private sealed class Restore(Func<Task> restore) : IAsyncDisposable
@@ -168,8 +182,7 @@ public sealed class LiveBot : IAsyncLifetime
         if (_services is null) return;
         // Leave the Twitch sign-in in the data directory so the next run needs no approval.
         // Revoke it any time by deleting the directory and disconnecting the app on twitch.tv/settings/connections.
-        if (Obs.IsConnected && (await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean())
-            await Obs.ControlStreamAsync(OutputCommand.Stop);
+        await StopStreamIfActiveAsync();
         Get<ProfileService>().Flush();
         await _services.DisposeAsync();
     }

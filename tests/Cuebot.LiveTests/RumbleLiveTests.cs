@@ -39,7 +39,19 @@ public sealed class RumbleLiveTests(RumbleLiveBot bot)
         await bot.Obs.ControlStreamAsync(OutputCommand.Start);
         await bot.WaitForEventAsync(ObsEvents.StreamStarted, since, ObsTimeout);
 
-        var online = await bot.WaitForEventAsync(RumbleEventTypes.StreamOnline, since, StreamEventTimeout);
+        BotEvent online;
+        try
+        {
+            online = await bot.WaitForEventAsync(RumbleEventTypes.StreamOnline, since, StreamEventTimeout);
+        }
+        catch (TimeoutException ex)
+        {
+            // Seen in practice: Rumble accepted the stream (dashboard showed it LIVE) but the Live Stream API never
+            // listed it. The API omits streams it doesn't consider part of the key's scope or visibility.
+            throw new TimeoutException(ex.Message + ". OBS streamed, but Rumble's Live Stream API never listed a live stream. " +
+                "Check that the stream setup is Public (unlisted streams appear to be omitted) and that the API key's " +
+                "scope (user vs channel) matches the profile or channel the stream key belongs to.", ex);
+        }
         Assert.False(string.IsNullOrEmpty(online.Args["streamId"] as string));
         await RumbleLiveBot.WaitUntilAsync(() => bot.Rumble.IsChatAttached, ChatAttachTimeout, "the Rumble live chat to attach");
         await Task.Delay(LiveEnvironment.StreamDuration);
@@ -98,11 +110,25 @@ public sealed class RumbleLiveBot : IAsyncLifetime
             streamServiceType = "rtmp_custom",
             streamServiceSettings = new { server = target.Url, key = target.Key },
         });
-        return new Restore(() => Obs.RequestAsync("SetStreamServiceSettings", new
+        return new Restore(async () =>
         {
-            streamServiceType = previous.GetProperty("streamServiceType").GetString(),
-            streamServiceSettings = previous.GetProperty("streamServiceSettings"),
-        }));
+            await StopStreamIfActiveAsync();   // OBS refuses to change stream settings while live
+            await Obs.RequestAsync("SetStreamServiceSettings", new
+            {
+                streamServiceType = previous.GetProperty("streamServiceType").GetString(),
+                streamServiceSettings = previous.GetProperty("streamServiceSettings"),
+            });
+        });
+    }
+
+    /// <summary>Stops the stream (if live) and waits until OBS reports it inactive.</summary>
+    public async Task StopStreamIfActiveAsync()
+    {
+        if (!Obs.IsConnected || !(await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean()) return;
+        await Obs.ControlStreamAsync(OutputCommand.Stop);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while ((await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean() && DateTime.UtcNow < deadline)
+            await Task.Delay(500);
     }
 
     public async Task<BotEvent> WaitForEventAsync(string type, DateTimeOffset since, TimeSpan timeout)
@@ -125,8 +151,7 @@ public sealed class RumbleLiveBot : IAsyncLifetime
     public async Task DisposeAsync()
     {
         if (_services is null) return;
-        if (Obs.IsConnected && (await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean())
-            await Obs.ControlStreamAsync(OutputCommand.Stop);
+        await StopStreamIfActiveAsync();
         await _services.DisposeAsync();
     }
 
