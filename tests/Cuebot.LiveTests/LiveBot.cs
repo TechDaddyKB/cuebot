@@ -119,6 +119,15 @@ public sealed class LiveBot : IAsyncLifetime
     /// </summary>
     public async Task<IAsyncDisposable> UseStreamTargetAsync(StreamTarget target)
     {
+        // A stream that is still shutting down (e.g. from an interrupted run) gets a moment to finish. One that stays
+        // live may be a real stream, so the tests never stop it: they fail with a clear message instead.
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while ((await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean())
+        {
+            if (DateTime.UtcNow > deadline)
+                throw new InvalidOperationException("OBS is already streaming. Live streaming tests never interrupt a stream; stop it in OBS and run them again.");
+            await Task.Delay(500);
+        }
         var previous = await Obs.RequestAsync("GetStreamServiceSettings");
         await Obs.RequestAsync("SetStreamServiceSettings", new
         {
