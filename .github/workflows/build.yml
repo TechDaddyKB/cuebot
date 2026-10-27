@@ -96,7 +96,7 @@ jobs:
     steps:
       - name: Install build and test tools
         run: |
-          pacman -Syu --noconfirm --needed git dotnet-sdk namcap sway grim jq xorg-server-xvfb xdotool scrot mesa dbus
+          pacman -Syu --noconfirm --needed git dotnet-sdk aspnet-targeting-pack aspnet-runtime namcap sway grim jq xorg-server-xvfb xdotool scrot mesa dbus
           # sway ships with a file capability (cap_sys_nice) that containers refuse to exec; a plain copy works
           install -m755 /usr/bin/sway /usr/local/bin/sway
           useradd -m builder
