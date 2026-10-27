@@ -119,7 +119,7 @@ public sealed partial class KickViewModel : PageViewModel
             await _kick.SignInAsync(account, url =>
             {
                 OnUi(() => SignInUrl = url.ToString());
-                OpenBrowser(url.ToString());
+                Cuebot.App.Shell.UrlLauncher.Open(url.ToString());
             }, _signIn.Token);
             Info = account == KickAccount.Bot ? "Bot account signed in." : "Signed in. Connect to start receiving events.";
         }
@@ -139,7 +139,7 @@ public sealed partial class KickViewModel : PageViewModel
     [RelayCommand]
     private void OpenSignInPage()
     {
-        if (SignInUrl.Length > 0) OpenBrowser(SignInUrl);
+        if (SignInUrl.Length > 0) Cuebot.App.Shell.UrlLauncher.Open(SignInUrl);
     }
 
     [RelayCommand]
@@ -201,10 +201,4 @@ public sealed partial class KickViewModel : PageViewModel
 
     private static long ParseId(string text) =>
         long.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) && id > 0 ? id : 0;
-
-    private static void OpenBrowser(string url)
-    {
-        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
-        catch { /* the link stays visible on the page */ }
-    }
 }

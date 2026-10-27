@@ -88,16 +88,34 @@ public sealed class ChatHub : IDisposable
         if (e.Type is MessageEvent or ActivityEvent) return;
         foreach (var adapter in _adapters)
         {
-            if (adapter.ToChatMessage(e) is { } message) Add(message);
+            if (adapter.ToChatMessage(e) is { } message) Add(message, e);
             if (adapter.ToFeedItem(e) is { } item) Add(item);
         }
     }
 
-    private void Add(ChatMessage message)
+    /// <summary>
+    /// Platform event args that "chat.message" carries over when the platform sets them, so commands, speech and
+    /// emotes can tell whispers, bot and Cuebot's own messages, first-time chatters and emote positions apart.
+    /// </summary>
+    internal static readonly string[] ForwardedArgs =
+    [
+        "messageKind", "isBot", "isBotAccount", "isInternal", "userName",
+        "emotes", "emoteNames", "emoteList",
+        "isFirstMessage", "firstMessage", "isFirstTime", "firstTime",
+        "isSharedChat", "sourceBroadcasterId", "broadcasterId", "isHighlighted",
+    ];
+
+    private void Add(ChatMessage message, BotEvent source)
     {
         lock (_gate) Push(_messages, message);
         MessageReceived?.Invoke(message);
-        _bus.Publish(new BotEvent(MessageEvent, new Dictionary<string, object?>
+        var args = MessageArgs(message);
+        foreach (var name in ForwardedArgs)
+            if (source.Args.TryGetValue(name, out var value) && !args.ContainsKey(name)) args[name] = value;
+        _bus.Publish(new BotEvent(MessageEvent, args));
+    }
+
+    private static Dictionary<string, object?> MessageArgs(ChatMessage message) => new()
         {
             ["platform"] = message.Platform,
             ["user"] = message.User,
@@ -110,8 +128,7 @@ public sealed class ChatHub : IDisposable
             ["isVip"] = message.Roles.HasFlag(ChatRoles.Vip),
             ["isSubscriber"] = message.Roles.HasFlag(ChatRoles.Subscriber),
             ["amount"] = message.Amount ?? "",
-        }));
-    }
+        };
 
     private void Add(FeedItem item)
     {

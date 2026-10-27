@@ -56,6 +56,19 @@ public static class FolderLauncher
     }
 }
 
+/// <summary>Opens a web page (sign-in links, docs) in the default browser. Only http(s) URLs are opened.</summary>
+public static class UrlLauncher
+{
+    public static void Open(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+            return;
+        // On Linux .NET hands this to xdg-open, which also goes through the portal in Flatpak.
+        try { Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose(); }
+        catch { /* pages keep the link visible so it can be opened by hand */ }
+    }
+}
+
 /// <summary>Used where there is no real shell (tests, designer): applies the theme, cannot restart.</summary>
 public sealed class DetachedShellHost(AppSettingsStore settings) : IShellHost
 {

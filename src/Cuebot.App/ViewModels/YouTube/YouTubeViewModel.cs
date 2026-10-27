@@ -171,13 +171,13 @@ public sealed partial class YouTubeViewModel : PageViewModel
     [RelayCommand]
     private void OpenVerificationPage()
     {
-        if (VerificationUrl is not null) TwitchViewModel.OpenBrowser(VerificationUrl);
+        if (VerificationUrl is not null) Cuebot.App.Shell.UrlLauncher.Open(VerificationUrl);
     }
 
     [RelayCommand]
     private void OpenBroadcast()
     {
-        if (BroadcastUrl.Length > 0) TwitchViewModel.OpenBrowser(BroadcastUrl);
+        if (BroadcastUrl.Length > 0) Cuebot.App.Shell.UrlLauncher.Open(BroadcastUrl);
     }
 
     [RelayCommand]
@@ -208,7 +208,7 @@ public sealed partial class YouTubeViewModel : PageViewModel
             var auth = await _youtube.BeginDeviceSignInAsync(account, ct);
             UserCode = auth.UserCode;
             VerificationUrl = auth.VerificationUrl;
-            TwitchViewModel.OpenBrowser(auth.VerificationUrl);
+            Cuebot.App.Shell.UrlLauncher.Open(auth.VerificationUrl);
             await _youtube.CompleteDeviceSignInAsync(auth, ct);
         });
     }
@@ -219,7 +219,7 @@ public sealed partial class YouTubeViewModel : PageViewModel
         await SigningIn(account, async ct =>
         {
             IsWaitingForBrowser = true;
-            await _youtube.SignInWithBrowserAsync(account, uri => TwitchViewModel.OpenBrowser(uri.AbsoluteUri), ct);
+            await _youtube.SignInWithBrowserAsync(account, uri => Cuebot.App.Shell.UrlLauncher.Open(uri.AbsoluteUri), ct);
         });
     }
 

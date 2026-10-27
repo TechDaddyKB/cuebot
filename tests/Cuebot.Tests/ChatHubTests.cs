@@ -37,6 +37,27 @@ public class ChatHubTests : IDisposable
     }
 
     [Fact]
+    public void Neutral_message_carries_platform_flags_but_not_arbitrary_args()
+    {
+        BotEvent? neutral = null;
+        _bus.Subscribe(e => { if (e.Type == ChatHub.MessageEvent) neutral = e; });
+
+        _bus.Publish(new BotEvent("alpha.chatMessage", new Dictionary<string, object?>
+        {
+            ["user"] = "ann", ["message"] = "hi", ["messageKind"] = "Whisper", ["isBot"] = true,
+            ["emotes"] = "25:0-1", ["isFirstMessage"] = true, ["secretThing"] = "x",
+            ["platform"] = "spoofed",
+        }));
+
+        Assert.Equal("Whisper", neutral!.Args["messageKind"]);
+        Assert.Equal(true, neutral.Args["isBot"]);
+        Assert.Equal("25:0-1", neutral.Args["emotes"]);
+        Assert.Equal(true, neutral.Args["isFirstMessage"]);
+        Assert.False(neutral.Args.ContainsKey("secretThing"));
+        Assert.Equal("Alpha", neutral.Args["platform"]); // the hub's own fields win
+    }
+
+    [Fact]
     public void Activity_goes_to_the_feed()
     {
         FeedItem? added = null;

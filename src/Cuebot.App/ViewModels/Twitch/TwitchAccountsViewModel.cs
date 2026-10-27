@@ -78,7 +78,7 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
             var auth = await Twitch.BeginAuthorizationAsync(_authorizing.Token);
             UserCode = auth.UserCode;
             VerificationUri = auth.VerificationUri;
-            OpenBrowser(auth.VerificationUri);
+            Cuebot.App.Shell.UrlLauncher.Open(auth.VerificationUri);
             await Twitch.CompleteAuthorizationAsync(auth, _authorizing.Token);
         }
         catch (OperationCanceledException) { }
@@ -97,7 +97,7 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
     [RelayCommand]
     private void OpenVerificationPage()
     {
-        if (VerificationUri is not null) OpenBrowser(VerificationUri);
+        if (VerificationUri is not null) Cuebot.App.Shell.UrlLauncher.Open(VerificationUri);
     }
 
     [RelayCommand]
@@ -116,7 +116,7 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
             var auth = await Twitch.BeginBotAuthorizationAsync(_botAuthorizing.Token);
             BotUserCode = auth.UserCode;
             BotVerificationUri = auth.VerificationUri;
-            OpenBrowser(auth.VerificationUri);
+            Cuebot.App.Shell.UrlLauncher.Open(auth.VerificationUri);
             await Twitch.CompleteBotAuthorizationAsync(auth, _botAuthorizing.Token);
         }
         catch (OperationCanceledException) { }
@@ -135,7 +135,7 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
     [RelayCommand]
     private void OpenBotVerificationPage()
     {
-        if (BotVerificationUri is not null) OpenBrowser(BotVerificationUri);
+        if (BotVerificationUri is not null) Cuebot.App.Shell.UrlLauncher.Open(BotVerificationUri);
     }
 
     [RelayCommand]
@@ -170,10 +170,4 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
         TestMessage = "";
         Info = $"Sent as the {(sentAs == TwitchSender.Bot ? "bot account" : "broadcaster")}.";
     });
-
-    internal static void OpenBrowser(string url)
-    {
-        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
-        catch { /* the code and link stay visible on the page */ }
-    }
 }
