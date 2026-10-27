@@ -15,6 +15,8 @@
         xmlns:xviews="using:Cuebot.App.Views.Extras"
         xmlns:tvm="using:Cuebot.App.ViewModels.Transfer"
         xmlns:tviews="using:Cuebot.App.Views.Transfer"
+        xmlns:supvm="using:Cuebot.App.ViewModels.Support"
+        xmlns:supv="using:Cuebot.App.Views.Support"
         xmlns:hvm="using:Cuebot.App.ViewModels.History"
         xmlns:hv="using:Cuebot.App.Views.History"
         x:Class="Cuebot.App.Views.MainWindow"
@@ -64,6 +66,7 @@
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
     <DataTemplate DataType="srvvm:ServersViewModel"><srvv:ServersView /></DataTemplate>
     <DataTemplate DataType="tvm:ImportExportViewModel"><tviews:ImportExportView /></DataTemplate>
+    <DataTemplate DataType="supvm:SupportViewModel"><supv:SupportView /></DataTemplate>
     <DataTemplate DataType="vm:SettingsViewModel"><views:SettingsView /></DataTemplate>
   </Window.DataTemplates>
 
@@ -116,6 +119,9 @@
         </ScrollViewer>
       </DockPanel>
     </Border>
-    <ContentControl Grid.Column="1" Content="{Binding SelectedPage}" />
+    <DockPanel Grid.Column="1">
+      <supv:CrashBannerView DockPanel.Dock="Top" DataContext="{Binding Support.CrashBanner}" />
+      <ContentControl Content="{Binding SelectedPage}" />
+    </DockPanel>
   </Grid>
 </Window>

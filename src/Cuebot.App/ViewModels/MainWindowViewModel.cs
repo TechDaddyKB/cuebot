@@ -25,7 +25,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Quotes", "Credits", "Points"]),
         ("Platforms", ["Twitch", "Rumble", "YouTube", "Kick"]),
         ("Apps", ["OBS", "Speech", "Donations"]),
-        ("System", ["Import / Export", "Scripting", "Servers", "Settings"]),
+        ("System", ["Import / Export", "Scripting", "Servers", "Support", "Settings"]),
     ];
 
     /// <summary>Section for pages missing from <see cref="NavLayout"/> (shown before System).</summary>
@@ -35,7 +35,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(AppHost host, IShellHost? shell = null)
     {
-        Settings = new SettingsViewModel(host, shell ?? new DetachedShellHost(host.Settings));
+        var shellHost = shell ?? new DetachedShellHost(host.Settings);
+        Settings = new SettingsViewModel(host, shellHost);
+        Support = new Cuebot.App.ViewModels.Support.SupportViewModel(Cuebot.App.ViewModels.Support.SupportServices.From(host, shellHost));
         var log = host.Get<AppLog>();
         Dashboard = new DashboardViewModel(log, host.Get<ActionEngine>(), host.GetAll<IConnectionStatus>());
         var actions = new ActionsViewModel(host.Get<ProfileService>(), host.Get<Registry>(), host.Get<ActionEngine>());
@@ -72,11 +74,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
             new Cuebot.App.ViewModels.Servers.ServersViewModel(host.Get<Cuebot.Server.ServerManager>()),
+            Support,
             Settings,
         ];
 
         // Cross-page links from the History page.
         history.OpenQueuesRequested += () => SelectedPage = queues;
+        Support.CrashBanner.ReportRequested += () => SelectedPage = Support;
         history.OpenActionRequested += id =>
         {
             if (actions.SelectAction(id)) SelectedPage = actions;
@@ -95,6 +99,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public DashboardViewModel Dashboard { get; }
     public SettingsViewModel Settings { get; }
+
+    /// <summary>Problem reports, crash banner and update checks.</summary>
+    public Cuebot.App.ViewModels.Support.SupportViewModel Support { get; }
 
     /// <summary>Every page, flat (registration order).</summary>
     public IReadOnlyList<PageViewModel> Pages { get; }
