@@ -35,6 +35,7 @@
     <ProjectReference Include="..\Cuebot.YouTube\Cuebot.YouTube.csproj" />
     <ProjectReference Include="..\Cuebot.Kick\Cuebot.Kick.csproj" />
     <ProjectReference Include="..\Cuebot.Donations\Cuebot.Donations.csproj" />
+    <ProjectReference Include="..\Cuebot.Integrations\Cuebot.Integrations.csproj" />
     <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
   </ItemGroup>
   <ItemGroup>
