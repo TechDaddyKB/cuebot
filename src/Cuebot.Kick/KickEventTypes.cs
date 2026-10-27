@@ -21,6 +21,8 @@ public static class KickEventTypes
     public const string UserBanned = "kick.userBanned";
     public const string UserTimedOut = "kick.userTimedOut";
     public const string UserUnbanned = "kick.userUnbanned";
+    public const string SevenTvEmoteAdded = "kick.sevenTvEmoteAdded";
+    public const string SevenTvEmoteRemoved = "kick.sevenTvEmoteRemoved";
     public const string BroadcasterAuthenticated = "kick.broadcasterAuthenticated";
     public const string ChatConnected = "kick.chatConnected";
     public const string ChatDisconnected = "kick.chatDisconnected";

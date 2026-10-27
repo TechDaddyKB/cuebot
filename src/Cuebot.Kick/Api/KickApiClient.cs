@@ -116,6 +116,123 @@ internal sealed class KickApiClient(HttpClient http, KickEndpoints endpoints, IK
         using var _ = await SendAsync(account, HttpMethod.Delete, "public/v1/moderation/bans", body, ct).ConfigureAwait(false);
     }
 
+    // ---- channel rewards ----
+
+    public const int MaxRewardTitleLength = 50;
+    public const int MaxRewardDescriptionLength = 200;
+    public const int MaxRedemptionIdsPerCall = 25;
+
+    /// <summary>GET /channels/rewards: every reward of the broadcaster's channel (up to 50, enabled and disabled).</summary>
+    public async Task<IReadOnlyList<KickReward>> GetRewardsAsync(CancellationToken ct)
+    {
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, "public/v1/channels/rewards", null, ct).ConfigureAwait(false);
+        return doc.RootElement.Items("data").Select(ParseReward).ToArray();
+    }
+
+    /// <summary>POST /channels/rewards (title and cost are required). Needs <c>channel:rewards:write</c>.</summary>
+    public async Task<KickReward> CreateRewardAsync(KickRewardUpdate reward, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(reward.Title)) throw new ArgumentException("A reward needs a title");
+        if (reward.Cost is not > 0) throw new ArgumentException("A reward needs a cost of at least 1");
+        var body = RewardBody(reward with { IsPaused = null });
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Post, "public/v1/channels/rewards", body, ct).ConfigureAwait(false);
+        return doc.RootElement.Prop("data") is { } data ? ParseReward(data) : throw new KickApiException("Kick returned no reward");
+    }
+
+    /// <summary>PATCH /channels/rewards/{id}. Kick only lets the app that created a reward change it.</summary>
+    public async Task<KickReward?> UpdateRewardAsync(string rewardId, KickRewardUpdate update, CancellationToken ct)
+    {
+        var body = RewardBody(update);
+        if (body.Count == 0) throw new ArgumentException("Nothing to change on the reward");
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Patch, "public/v1/channels/rewards/" + Uri.EscapeDataString(rewardId.Trim()),
+            body, ct).ConfigureAwait(false);
+        return doc.RootElement.Prop("data") is { } data ? ParseReward(data) : null;
+    }
+
+    /// <summary>DELETE /channels/rewards/{id}. Kick only lets the app that created a reward delete it.</summary>
+    public async Task DeleteRewardAsync(string rewardId, CancellationToken ct)
+    {
+        using var _ = await SendAsync(KickAccount.Broadcaster, HttpMethod.Delete, "public/v1/channels/rewards/" + Uri.EscapeDataString(rewardId.Trim()),
+            null, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>GET /channels/rewards/redemptions (one page per call; Kick's default status is pending).</summary>
+    public async Task<(IReadOnlyList<KickRedemption> Items, string NextCursor)> GetRedemptionsAsync(string? rewardId, string? status, string? cursor,
+        CancellationToken ct)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(rewardId)) query.Add("reward_id=" + Uri.EscapeDataString(rewardId.Trim()));
+        if (!string.IsNullOrWhiteSpace(status)) query.Add("status=" + Uri.EscapeDataString(status.Trim().ToLowerInvariant()));
+        if (!string.IsNullOrWhiteSpace(cursor)) query.Add("cursor=" + Uri.EscapeDataString(cursor));
+        var path = "public/v1/channels/rewards/redemptions" + (query.Count > 0 ? "?" + string.Join('&', query) : "");
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, path, null, ct).ConfigureAwait(false);
+        var items = new List<KickRedemption>();
+        foreach (var group in doc.RootElement.Items("data"))
+        {
+            var reward = group.Prop("reward");
+            foreach (var r in group.Items("redemptions"))
+            {
+                var at = r.Str("redeemed_at");
+                items.Add(new KickRedemption(r.Str("id"), reward.Str("id"), reward.Str("title"), r.Prop("redeemer").Long("user_id"), r.Str("status"),
+                    r.Str("user_input"),
+                    DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t) ? t : null));
+            }
+        }
+        return (items, doc.RootElement.Prop("pagination").Str("next_cursor"));
+    }
+
+    /// <summary>
+    /// POST /channels/rewards/redemptions/accept or /reject, 25 ids per call. Returns the redemptions Kick could not
+    /// update (for example already handled, or a reward another app owns).
+    /// </summary>
+    public async Task<IReadOnlyList<KickRedemptionFailure>> UpdateRedemptionsAsync(IEnumerable<string> redemptionIds, bool accept, CancellationToken ct)
+    {
+        var ids = redemptionIds.Select(i => i.Trim()).Where(i => i.Length > 0).Distinct(StringComparer.Ordinal).ToArray();
+        if (ids.Length == 0) throw new ArgumentException("No redemption id given");
+        var failures = new List<KickRedemptionFailure>();
+        foreach (var chunk in ids.Chunk(MaxRedemptionIdsPerCall))
+        {
+            using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Post,
+                "public/v1/channels/rewards/redemptions/" + (accept ? "accept" : "reject"), new Dictionary<string, object> { ["ids"] = chunk }, ct)
+                .ConfigureAwait(false);
+            failures.AddRange(doc.RootElement.Items("data").Select(f => new KickRedemptionFailure(f.Str("id"), f.Str("reason"))));
+        }
+        return failures;
+    }
+
+    private static Dictionary<string, object> RewardBody(KickRewardUpdate r)
+    {
+        var body = new Dictionary<string, object>();
+        if (r.Title is { } title)
+        {
+            title = title.Trim();
+            if (title.Length == 0) throw new ArgumentException("The reward title is empty");
+            body["title"] = title.Length > MaxRewardTitleLength ? title[..MaxRewardTitleLength] : title;
+        }
+        if (r.Description is { } description)
+            body["description"] = description.Trim().Length > MaxRewardDescriptionLength ? description.Trim()[..MaxRewardDescriptionLength] : description.Trim();
+        if (r.Cost is { } cost) body["cost"] = cost >= 1 ? cost : throw new ArgumentException("The reward cost must be at least 1");
+        if (r.BackgroundColor is { } color) body["background_color"] = NormalizeColor(color);
+        if (r.IsEnabled is { } enabled) body["is_enabled"] = enabled;
+        if (r.IsPaused is { } paused) body["is_paused"] = paused;
+        if (r.IsUserInputRequired is { } input) body["is_user_input_required"] = input;
+        if (r.SkipsRequestQueue is { } skip) body["should_redemptions_skip_request_queue"] = skip;
+        return body;
+    }
+
+    /// <summary>"#RRGGBB" (accepts "RRGGBB", "#RGB" and any case).</summary>
+    internal static string NormalizeColor(string color)
+    {
+        var hex = color.Trim().TrimStart('#');
+        if (hex.Length == 3) hex = string.Concat(hex.Select(c => $"{c}{c}"));
+        if (hex.Length != 6 || !hex.All(Uri.IsHexDigit)) throw new ArgumentException($"'{color}' is not a colour like #00E701");
+        return "#" + hex.ToUpperInvariant();
+    }
+
+    internal static KickReward ParseReward(JsonElement r) => new(
+        r.Str("id"), r.Str("title"), r.Str("description"), (int)r.Long("cost"), r.Str("background_color"), r.Bool("is_enabled"),
+        r.Bool("is_paused"), r.Bool("is_user_input_required"), r.Bool("should_redemptions_skip_request_queue"));
+
     // ---- webhooks (used with the relay) ----
 
     /// <summary>GET /public-key: the PEM key Kick signs webhooks with. Needs no token.</summary>

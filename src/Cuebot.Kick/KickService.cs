@@ -1,5 +1,6 @@
 using System.Globalization;
 using Cuebot.Core;
+using Cuebot.Core.Chat.Emotes;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
@@ -8,6 +9,7 @@ using Cuebot.Kick.Auth;
 using Cuebot.Kick.Events;
 using Cuebot.Kick.Pusher;
 using Cuebot.Kick.Realtime;
+using Cuebot.Kick.SevenTv;
 using Cuebot.Kick.Webhooks;
 
 namespace Cuebot.Kick;
@@ -33,17 +35,23 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private CancellationTokenSource? _pollStop;
     private Task _poll = Task.CompletedTask;
+    private readonly SevenTvEventSource? _sevenTv;
+    private readonly IDisposable _emoteBridge;
     private KickChannel? _channel;
+    private IReadOnlyList<KickReward> _rewards = [];
     private bool _connected;
+    private int _emoteRefreshQueued;
 
     public KickService(JsonFile<KickSettings> settings, HttpClient http, EventBus bus, AppLog log)
         : this(settings, http, bus, log, KickEndpoints.Production, KickTimings.Default, TimeProvider.System,
-            () => new ClientWebSocketTransport(), port => new LoopbackReceiver(port))
+            () => new ClientWebSocketTransport(), port => new LoopbackReceiver(port), () => new ClientWebSocketTransport(), SevenTvEndpoints.Production)
     {
     }
 
+    /// <param name="sevenTvTransports">Websockets for 7TV's EventAPI; null leaves real-time 7TV events off (tests).</param>
     internal KickService(JsonFile<KickSettings> settings, HttpClient http, EventBus bus, AppLog log, KickEndpoints endpoints,
-        KickTimings timings, TimeProvider time, Func<IPusherTransport> transports, Func<int, IOAuthReceiver> receivers)
+        KickTimings timings, TimeProvider time, Func<IPusherTransport> transports, Func<int, IOAuthReceiver> receivers,
+        Func<IPusherTransport>? sevenTvTransports = null, SevenTvEndpoints? sevenTvEndpoints = null)
     {
         _settings = settings;
         _bus = bus;
@@ -61,6 +69,70 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _hub.Attach(_realtime);
         Webhooks = new KickWebhookEventSource(ct => _api.GetWebhookPublicKeyAsync(ct));
         _hub.Attach(Webhooks);
+        if (sevenTvTransports is not null)
+        {
+            _sevenTv = new SevenTvEventSource(sevenTvTransports, http, sevenTvEndpoints ?? SevenTvEndpoints.Production, timings, log);
+            _sevenTv.EmoteSetChanged += QueueEmoteRefresh;
+            _sevenTv.ConnectionChanged += (_, _) => StatusChanged?.Invoke();
+            _hub.Attach(_sevenTv);
+        }
+        _emoteBridge = bus.Subscribe(OnEmoteServiceEvent);
+    }
+
+    /// <summary>
+    /// Reloads the shared emote cache (set by the module registration to the core emote service), so emotes 7TV
+    /// reported in real time also show in chat.
+    /// </summary>
+    public Func<CancellationToken, Task>? EmoteRefresh { get; set; }
+
+    /// <summary>The 7TV EventAPI source, when real-time 7TV events are available.</summary>
+    internal SevenTvEventSource? SevenTv => _sevenTv;
+
+    /// <summary>7TV emote watcher status for the Kick page.</summary>
+    public string SevenTvStatus => !Settings.UseSevenTvEvents || _sevenTv is null ? "Off"
+        : _sevenTv.IsConnected ? "Watching 7TV emote set " + _sevenTv.EmoteSetId
+        : _sevenTv.Problem ?? (_connected ? "Connecting..." : "Not connected");
+
+    /// <summary>
+    /// The core emote service reports 7TV set changes it notices when it refreshes (stream start, cache expiry,
+    /// "Refresh emotes"). While the EventAPI is not connected, those become the Kick 7TV triggers too; the hub drops
+    /// any duplicate of an EventAPI report.
+    /// </summary>
+    private void OnEmoteServiceEvent(BotEvent e)
+    {
+        if (e.Type is not (EmoteService.EmoteAddedEvent or EmoteService.EmoteRemovedEvent)) return;
+        if (!_connected || _sevenTv?.IsConnected == true) return;
+        if (!string.Equals(e.Args.GetString("provider"), EmoteProviders.SevenTv, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(e.Args.GetString("platform"), KickArgs.Platform, StringComparison.OrdinalIgnoreCase)) return;
+        var args = KickArgs.New("emotes");
+        var id = e.Args.GetString("emoteId");
+        var name = e.Args.GetString("emote");
+        args["emoteId"] = id;
+        args["emoteName"] = name;
+        args["emote"] = name;
+        args["provider"] = EmoteProviders.SevenTv;
+        args["imageUrl"] = e.Args.GetString("imageUrl");
+        _hub.Handle(new KickEvent(e.Type == EmoteService.EmoteAddedEvent ? KickEventTypes.SevenTvEmoteAdded : KickEventTypes.SevenTvEmoteRemoved,
+            args, SevenTvEventSource.DedupeKey(id, name)));
+    }
+
+    private void QueueEmoteRefresh()
+    {
+        if (EmoteRefresh is not { } refresh || Interlocked.Exchange(ref _emoteRefreshQueued, 1) == 1) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);   // coalesce a burst of changes
+                Interlocked.Exchange(ref _emoteRefreshQueued, 0);
+                await refresh(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Interlocked.Exchange(ref _emoteRefreshQueued, 0);
+                _log.Warn("Kick", $"Emote refresh after a 7TV change failed: {ex.Message}");
+            }
+        });
     }
 
     public string Name => "Kick";
@@ -76,7 +148,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     public KickWebhookEventSource Webhooks { get; }
 
     /// <summary>Every event source, for status display.</summary>
-    public IReadOnlyList<IKickEventSource> EventSources => [_realtime, Webhooks];
+    public IReadOnlyList<IKickEventSource> EventSources => _sevenTv is null ? [_realtime, Webhooks] : [_realtime, Webhooks, _sevenTv];
 
     public bool IsBroadcasterSignedIn => Settings.Broadcaster.IsSignedIn;
     public bool IsBotSignedIn => Settings.Bot.IsSignedIn;
@@ -178,6 +250,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
             if (_channel is not null) _hub.SetInitialLive(_channel.IsLive);
             PublishAuthenticated();
             await StartRealtimeAsync(ct).ConfigureAwait(false);
+            if (_sevenTv is not null && Settings.UseSevenTvEvents) await _sevenTv.StartAsync(Settings.Broadcaster.UserId).ConfigureAwait(false);
             if (Settings.UseWebhookRelay) await RegisterWebhooksAsync(ct).ConfigureAwait(false);
             _pollStop = new CancellationTokenSource();
             _poll = PollLoopAsync(_pollStop.Token);
@@ -327,6 +400,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
             }
             stop.Dispose();
         }
+        if (_sevenTv is not null) await _sevenTv.StopAsync().ConfigureAwait(false);
         await _realtime.StopAsync().ConfigureAwait(false);
         return wasConnected;
     }
@@ -520,10 +594,88 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         ["botUserId"] = Settings.Bot.UserId > 0 ? KickArgs.Id(Settings.Bot.UserId) : "",
     };
 
+    /// <summary>A Kick user id already seen in chat or events for <paramref name="userName"/> (no network lookup).</summary>
+    public string? FindKnownUserId(string userName) => _hub.FindUserId(userName);
+
+    // ---- channel rewards ----
+
+    /// <summary>The rewards from the last <see cref="GetRewardsAsync"/>.</summary>
+    public IReadOnlyList<KickReward> Rewards => _rewards;
+
+    /// <summary>Reads every reward of the channel (and remembers them for <see cref="Rewards"/>).</summary>
+    public async Task<IReadOnlyList<KickReward>> GetRewardsAsync(CancellationToken ct = default)
+    {
+        _rewards = await _api.GetRewardsAsync(ct).ConfigureAwait(false);
+        StatusChanged?.Invoke();
+        return _rewards;
+    }
+
+    /// <summary>A reward by id or (case-insensitive) title, read fresh from Kick.</summary>
+    public async Task<KickReward> FindRewardAsync(string reward, CancellationToken ct = default)
+    {
+        reward = reward.Trim();
+        if (reward.Length == 0) throw new ArgumentException("No reward given");
+        var all = await GetRewardsAsync(ct).ConfigureAwait(false);
+        return all.FirstOrDefault(r => string.Equals(r.Id, reward, StringComparison.OrdinalIgnoreCase))
+               ?? all.FirstOrDefault(r => string.Equals(r.Title, reward, StringComparison.OrdinalIgnoreCase))
+               ?? throw new KickApiException($"No Kick reward matches '{reward}'");
+    }
+
+    public async Task<KickReward> CreateRewardAsync(KickRewardUpdate reward, CancellationToken ct = default)
+    {
+        var created = await _api.CreateRewardAsync(reward, ct).ConfigureAwait(false);
+        _rewards = [.. _rewards.Where(r => r.Id != created.Id), created];
+        _log.Info("Kick", $"Reward created: {created.Title}");
+        StatusChanged?.Invoke();
+        return created;
+    }
+
+    /// <summary>Changes a reward (id or title). Kick only allows this for rewards created by the same Kick app.</summary>
+    public async Task<KickReward> UpdateRewardAsync(string reward, KickRewardUpdate update, CancellationToken ct = default)
+    {
+        var target = await FindRewardAsync(reward, ct).ConfigureAwait(false);
+        var updated = await _api.UpdateRewardAsync(target.Id, update, ct).ConfigureAwait(false) ?? target;
+        _rewards = _rewards.Select(r => r.Id == updated.Id ? updated : r).ToArray();
+        StatusChanged?.Invoke();
+        return updated;
+    }
+
+    public async Task<KickReward> DeleteRewardAsync(string reward, CancellationToken ct = default)
+    {
+        var target = await FindRewardAsync(reward, ct).ConfigureAwait(false);
+        await _api.DeleteRewardAsync(target.Id, ct).ConfigureAwait(false);
+        _rewards = _rewards.Where(r => r.Id != target.Id).ToArray();
+        _log.Info("Kick", $"Reward deleted: {target.Title}");
+        StatusChanged?.Invoke();
+        return target;
+    }
+
+    /// <summary>Pending redemptions (all rewards, or one reward by id or title), every page.</summary>
+    public async Task<IReadOnlyList<KickRedemption>> GetPendingRedemptionsAsync(string? reward = null, CancellationToken ct = default)
+    {
+        var rewardId = string.IsNullOrWhiteSpace(reward) ? null : (await FindRewardAsync(reward, ct).ConfigureAwait(false)).Id;
+        var all = new List<KickRedemption>();
+        string? cursor = null;
+        for (var page = 0; page < 50; page++)
+        {
+            var (items, next) = await _api.GetRedemptionsAsync(rewardId, "pending", cursor, ct).ConfigureAwait(false);
+            all.AddRange(items);
+            if (next.Length == 0 || next == cursor) break;
+            cursor = next;
+        }
+        return all;
+    }
+
+    /// <summary>Accepts (fulfils) or rejects (refunds) redemptions. Returns the ones Kick refused, with the reason.</summary>
+    public Task<IReadOnlyList<KickRedemptionFailure>> UpdateRedemptionsAsync(IEnumerable<string> redemptionIds, bool accept,
+        CancellationToken ct = default) => _api.UpdateRedemptionsAsync(redemptionIds, accept, ct);
+
     /// <summary>Disconnects. Safe to call more than once.</summary>
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync().ConfigureAwait(false);
         await _realtime.DisposeAsync().ConfigureAwait(false);
+        if (_sevenTv is not null) await _sevenTv.DisposeAsync().ConfigureAwait(false);
+        _emoteBridge.Dispose();
     }
 }

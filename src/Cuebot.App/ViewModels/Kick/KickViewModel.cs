@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.Kick;
+using Cuebot.Kick.Api;
 using Cuebot.Kick.Auth;
 
 namespace Cuebot.App.ViewModels.Kick;
@@ -60,6 +61,14 @@ public sealed partial class KickViewModel : PageViewModel
         set { S.UseWebhookRelay = value; Save(); }
     }
 
+    public bool UseSevenTvEvents
+    {
+        get => S.UseSevenTvEvents;
+        set { S.UseSevenTvEvents = value; Save(); }
+    }
+
+    public string SevenTvStatus => _kick.SevenTvStatus;
+
     public decimal PollSeconds
     {
         get => S.PollSeconds;
@@ -100,6 +109,8 @@ public sealed partial class KickViewModel : PageViewModel
     [ObservableProperty] private string _newCategory = "";
     [ObservableProperty] private string _testMessage = "";
     [ObservableProperty] private bool _testAsBot;
+    [ObservableProperty] private string _newRewardTitle = "";
+    [ObservableProperty] private decimal _newRewardCost = 100;
     [ObservableProperty] private string _error = "";
     [ObservableProperty] private string _info = "";
 
@@ -185,6 +196,40 @@ public sealed partial class KickViewModel : PageViewModel
         TestMessage = "";
     });
 
+    // ---- channel rewards ----
+
+    /// <summary>The channel's rewards as last read from Kick.</summary>
+    public IReadOnlyList<KickRewardRow> Rewards => _kick.Rewards.Select(r => new KickRewardRow(r, this)).ToArray();
+
+    public bool HasRewards => _kick.Rewards.Count > 0;
+
+    [RelayCommand]
+    private Task RefreshRewards() => Run(async () =>
+    {
+        var rewards = await _kick.GetRewardsAsync();
+        Info = rewards.Count == 0 ? "This channel has no rewards yet." : $"{rewards.Count} reward(s).";
+    });
+
+    [RelayCommand]
+    private Task CreateReward() => Run(async () =>
+    {
+        if (NewRewardTitle.Trim().Length == 0) return;
+        var created = await _kick.CreateRewardAsync(new KickRewardUpdate { Title = NewRewardTitle, Cost = (int)Math.Max(1, NewRewardCost) });
+        NewRewardTitle = "";
+        Info = $"Reward \"{created.Title}\" created.";
+    });
+
+    internal Task ToggleReward(KickReward reward, bool pause) => Run(async () =>
+    {
+        await _kick.UpdateRewardAsync(reward.Id, pause ? new KickRewardUpdate { IsPaused = !reward.IsPaused } : new KickRewardUpdate { IsEnabled = !reward.IsEnabled });
+    });
+
+    internal Task DeleteReward(KickReward reward) => Run(async () =>
+    {
+        await _kick.DeleteRewardAsync(reward.Id);
+        Info = $"Reward \"{reward.Title}\" deleted.";
+    });
+
     private async Task Run(Func<Task> operation)
     {
         Error = "";
@@ -201,4 +246,23 @@ public sealed partial class KickViewModel : PageViewModel
 
     private static long ParseId(string text) =>
         long.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) && id > 0 ? id : 0;
+}
+
+/// <summary>One reward on the Kick page, with its own buttons.</summary>
+public sealed partial class KickRewardRow(KickReward reward, KickViewModel owner)
+{
+    public string Title => reward.Title;
+    public string Details => $"{reward.Cost} points · {(reward.IsEnabled ? reward.IsPaused ? "paused" : "enabled" : "disabled")}"
+                             + (reward.IsUserInputRequired ? " · viewer input" : "") + (reward.SkipsRequestQueue ? " · skips queue" : "");
+    public string EnableLabel => reward.IsEnabled ? "Disable" : "Enable";
+    public string PauseLabel => reward.IsPaused ? "Resume" : "Pause";
+
+    [RelayCommand]
+    private Task ToggleEnabled() => owner.ToggleReward(reward, pause: false);
+
+    [RelayCommand]
+    private Task TogglePaused() => owner.ToggleReward(reward, pause: true);
+
+    [RelayCommand]
+    private Task Delete() => owner.DeleteReward(reward);
 }

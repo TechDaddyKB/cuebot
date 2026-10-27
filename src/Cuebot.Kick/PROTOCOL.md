@@ -34,8 +34,9 @@ Tokens are refreshed when they expire within a minute, and once more after any `
 A refresh rejected with 400/401 clears the account (sign in again).
 
 Scopes requested — broadcaster: `user:read channel:read channel:write chat:write events:subscribe moderation:ban
-moderation:chat_message:manage kicks:read channel:rewards:read`; optional bot account: `user:read chat:write
-moderation:ban moderation:chat_message:manage`.
+moderation:chat_message:manage kicks:read channel:rewards:read channel:rewards:write`; optional bot account: `user:read chat:write
+moderation:ban moderation:chat_message:manage`. `channel:rewards:write` was added with reward management (Oct 2026): broadcasters
+who signed in before must **sign in again** (Kick page) to grant it; until then reward changes fail with 403.
 
 ## 2. Public API (official) — `Api/KickApiClient.cs`
 
@@ -54,6 +55,11 @@ Base `https://api.kick.com`, `Authorization: Bearer <user token>`, JSON bodies, 
 | Unban / untimeout | `DELETE /public/v1/moderation/bans` `{broadcaster_user_id, user_id}` |
 | Webhook public key | `GET /public/v1/public-key` → `data.public_key` (PEM) |
 | Event subscriptions | `GET/POST/DELETE /public/v1/events/subscriptions`; POST `{method:"webhook", events:[{name, version}]}` |
+| Rewards | `GET /public/v1/channels/rewards` (`channel:rewards:read`) → `id (ulid), title, description, cost, background_color, is_enabled, is_paused, is_user_input_required, should_redemptions_skip_request_queue` (max 50 per channel) |
+| Create reward | `POST /public/v1/channels/rewards` `{title (≤50), cost (≥1), description? (≤200), background_color? (#hex, default #00e701), is_enabled?, is_user_input_required?, should_redemptions_skip_request_queue?}` (`channel:rewards:write`) |
+| Update / delete reward | `PATCH /public/v1/channels/rewards/{id}` (only changed fields, plus `is_paused`) → reward; `DELETE /public/v1/channels/rewards/{id}` → 204. Only the app that created a reward may change or delete it (403 otherwise). |
+| Redemptions | `GET /public/v1/channels/rewards/redemptions?reward_id&status (pending default)&id&cursor` → `data[{reward{id,title,…}, redemptions[{id, redeemed_at, redeemer{user_id}, status, user_input}]}], pagination.next_cursor` |
+| Accept / reject | `POST /public/v1/channels/rewards/redemptions/accept` or `/reject` `{ids: [1..25 ulids]}` → `data` = only the failures `[{id, reason: UNKNOWN / NOT_PENDING / NOT_FOUND / NOT_OWNED}]` |
 
 Cuebot splits long chat messages into Kick-sized parts at word boundaries. "Send as bot" uses the separately
 signed-in bot account with `type: "user"` into the broadcaster's chat (falls back to the broadcaster when
@@ -177,8 +183,36 @@ reward redemptions** (including accepted/rejected status updates), follows with 
 when the website's websocket or its id lookup is unavailable. All of them are parsed and verified already; the
 relay only has to forward deliveries.
 
-## 7. Not implemented
+## 7. 7TV emote events (public 7TV APIs, not Kick) — `SevenTv/`
 
-- 7TV emote added/removed triggers (need 7TV's event API, not Kick).
-- Kick channel-reward management sub-actions (the API has `channel:rewards:write`; planned with the rewards UI).
+The 7TV emote added/removed triggers (`kick.sevenTvEmoteAdded` / `kick.sevenTvEmoteRemoved`) come from 7TV, which
+links a 7TV account to the Kick **user id** of the broadcaster. Written from 7TV's public API and EventAPI
+documentation (<https://7tv.io/docs>, <https://github.com/SevenTV/EventAPI>).
+
+1. **Emote set:** `GET https://7tv.io/v3/users/kick/{broadcaster user id}` → `emote_set.id` (the active set). 404 means
+   the channel has no 7TV account; Cuebot retries at the maximum reconnect delay. The set is looked up again on every
+   connection, so switching sets on 7tv.app is picked up after the next reconnect.
+2. **EventAPI:** websocket `wss://events.7tv.io/v3`, JSON messages `{op, t, d}`. The server starts with Hello
+   (`op 1`, `d.heartbeat_interval` ms, `session_id`); Cuebot subscribes with
+   `{"op":35,"d":{"type":"emote_set.update","condition":{"object_id":"<set id>"}}}`.
+3. **Changes:** Dispatch (`op 0`) with `d.type = "emote_set.update"` and `d.body` = change map
+   `{id (set), actor{id, username, display_name}, pushed[{key:"emotes", value{id, name, data{animated, host{url}}}}],
+   pulled[{key:"emotes", old_value{…}}], updated[…]}`. Each pushed emote is an "added", each pulled one a "removed"
+   (renames in `updated` are ignored). Args: `emoteId, emoteName, emote, imageUrl (host url + /1x.webp), isAnimated,
+   emoteSetId, provider "7TV", sevenTvUser/sevenTvUserName/sevenTvUserId` (the 7TV editor; deliberately not
+   `user`/`userId`, which would be taken for a Kick user).
+4. **Keep-alive / reconnect:** heartbeats (`op 2`) every interval; three missed intervals, Reconnect (`op 4`), End of
+   stream (`op 7`) or a closed socket reconnect with the module's backoff (1 s to 60 s).
+5. **Emote cache:** after a change Cuebot asks the shared emote service (7TV/BTTV/FFZ, `Cuebot.Core`) to reload, so
+   the new emote shows in chat. While the EventAPI is off or not connected, the emote service's own set diffs
+   (`chat.emoteAdded` / `chat.emoteRemoved` with provider 7TV, platform Kick, noticed when it refreshes) are
+   turned into the same Kick triggers; the hub's de-duplication key (`7tv:{emote id}:{name}`) keeps one trigger per
+   change. The Kick module also tells the emote service the broadcaster's user id (`IEmoteChannelSource`), so
+   7TV channel emotes load for Kick without entering the id in the chat settings.
+
+## 8. Not implemented
+
+- Reward groups and persistent per-reward redemption counters from Streamer.bot's rewards manager (the Kick page
+  lists, creates, enables/pauses and deletes rewards; sub-actions cover every field the API exposes). Kick has no
+  reward cooldowns or per-stream limits in its API, so those Twitch-style settings do not exist for Kick.
 - `type: "bot"` chat (posting as the app's own bot user) is supported by the API client but not exposed in the UI.

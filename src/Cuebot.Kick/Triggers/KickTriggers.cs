@@ -51,10 +51,18 @@ internal sealed class KickTriggers : ITriggerProvider
         Event(KickEventTypes.Host, "Host (raid)",
             [new("minViewers", "Minimum viewers", ParameterKind.Number) { DefaultValue = "0" }],
             (e, s) => e.Args.GetDouble("viewers") >= s.GetDouble("minViewers")),
+        Event(KickEventTypes.SevenTvEmoteAdded, "7TV emote added", EmoteName, EmoteMatches),
+        Event(KickEventTypes.SevenTvEmoteRemoved, "7TV emote removed", EmoteName, EmoteMatches),
         Event(KickEventTypes.BroadcasterAuthenticated, "Broadcaster authenticated"),
         Event(KickEventTypes.ChatConnected, "Chat connected"),
         Event(KickEventTypes.ChatDisconnected, "Chat disconnected"),
     ];
+
+    private static readonly IReadOnlyList<ParameterDescriptor> EmoteName =
+        [new("emote", "Emote name") { Help = "Leave empty for every emote" }];
+
+    private static bool EmoteMatches(BotEvent e, ParameterValues s) =>
+        s["emote"].Trim().Length == 0 || string.Equals(e.Args.GetString("emoteName"), s["emote"].Trim(), StringComparison.Ordinal);
 
     /// <summary>Trigger whose type id equals the event type it listens to.</summary>
     private static EventTriggerType Event(string eventType, string displayName,
