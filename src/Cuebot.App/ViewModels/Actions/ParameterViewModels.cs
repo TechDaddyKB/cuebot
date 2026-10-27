@@ -52,7 +52,7 @@ public sealed class TextParameterViewModel(ParameterDescriptor d, Dictionary<str
 
     public bool HasSuggestions => Descriptor.Suggestions is not null;
 
-    public string Watermark => Descriptor.Kind == ParameterKind.Number ? "Number or %variable%" : "";
+    public string Placeholder => Descriptor.Kind == ParameterKind.Number ? "Number or %variable%" : "";
 }
 
 public sealed class MultilineParameterViewModel(ParameterDescriptor d, Dictionary<string, string> store, Action changed)

@@ -16,6 +16,7 @@ public static class TestApp
         Logger.Sink = BindingErrors;
         return AppBuilder.Configure<Cuebot.App.App>()
             .UseSkia()
+            .UseHarfBuzz()
             .WithInterFont()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
     }

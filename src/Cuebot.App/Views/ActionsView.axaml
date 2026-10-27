@@ -37,7 +37,7 @@
     <DataTemplate DataType="vm:TextParameterViewModel">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Label}" />
-        <TextBox Text="{Binding Value}" Watermark="{Binding Watermark}" IsVisible="{Binding !HasSuggestions}" />
+        <TextBox Text="{Binding Value}" PlaceholderText="{Binding Placeholder}" IsVisible="{Binding !HasSuggestions}" />
         <AutoCompleteBox Text="{Binding Value}" ItemsSource="{Binding Suggestions}" FilterMode="ContainsOrdinal"
                          MinimumPrefixLength="0" IsVisible="{Binding HasSuggestions}" />
         <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
@@ -76,7 +76,7 @@
       <Border Background="#1C1E24" BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="0,0,1,0">
         <DockPanel Margin="12">
           <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Actions" />
-          <TextBox DockPanel.Dock="Top" Watermark="Search actions" Text="{Binding Filter}" Margin="0,0,0,8" />
+          <TextBox DockPanel.Dock="Top" PlaceholderText="Search actions" Text="{Binding Filter}" Margin="0,0,0,8" />
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
             <Button Content="New" Command="{Binding NewActionCommand}" Classes="accent" />
             <Button Content="Duplicate" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
@@ -102,8 +102,8 @@
         <Border DockPanel.Dock="Top" Padding="16,12" BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="0,0,0,1">
           <StackPanel Spacing="8">
             <Grid ColumnDefinitions="2*,8,*,Auto">
-              <TextBox Text="{Binding SelectedAction.Name}" FontSize="16" Watermark="Action name" />
-              <TextBox Grid.Column="2" Text="{Binding SelectedAction.Group}" Watermark="Group" />
+              <TextBox Text="{Binding SelectedAction.Name}" FontSize="16" PlaceholderText="Action name" />
+              <TextBox Grid.Column="2" Text="{Binding SelectedAction.Group}" PlaceholderText="Group" />
               <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" Margin="12,0,0,0">
                 <RadioButton GroupName="view" Content="List" IsChecked="{Binding !IsGraphView}" />
                 <RadioButton GroupName="view" Content="Graph" IsChecked="{Binding IsGraphView}" />
@@ -225,7 +225,7 @@
       <Border Classes="card" Width="520" Height="520" HorizontalAlignment="Center" VerticalAlignment="Center">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Classes="h2" Text="{Binding Picker.Title}" />
-          <TextBox DockPanel.Dock="Top" x:Name="PickerSearch" Watermark="Search (e.g. 'twitch chat', 'obs scene')"
+          <TextBox DockPanel.Dock="Top" x:Name="PickerSearch" PlaceholderText="Search (e.g. 'twitch chat', 'obs scene')"
                    Text="{Binding Picker.Search}" Margin="0,0,0,8" KeyDown="OnPickerKeyDown" />
           <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
             <Button Content="Cancel" Command="{Binding Picker.CancelCommand}" />

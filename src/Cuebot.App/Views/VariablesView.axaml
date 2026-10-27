@@ -11,8 +11,8 @@
                  Text="Use ~name~ in any sub-action. Persisted variables are kept after a restart." />
       <Border Classes="card">
         <Grid ColumnDefinitions="200,12,*,12,Auto,12,Auto">
-          <TextBox Text="{Binding NewName}" Watermark="Name" />
-          <TextBox Grid.Column="2" Text="{Binding NewValue}" Watermark="Value" />
+          <TextBox Text="{Binding NewName}" PlaceholderText="Name" />
+          <TextBox Grid.Column="2" Text="{Binding NewValue}" PlaceholderText="Value" />
           <CheckBox Grid.Column="4" Content="Persisted" IsChecked="{Binding NewPersisted}" />
           <Button Grid.Column="6" Content="Set" Classes="accent" Command="{Binding SetVariableCommand}" />
         </Grid>

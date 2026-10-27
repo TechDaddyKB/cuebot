@@ -28,6 +28,7 @@ public sealed partial class ObsService : IConnectionStatus, IAsyncDisposable
     private volatile ObsClient? _client;
     private Task? _keepConnected;
     private volatile bool _manuallyDisconnected;
+    private int _disposed;
     private string? _lastFailure;
     private string[] _scenes = [];
     private string[] _inputs = [];
@@ -107,6 +108,8 @@ public sealed partial class ObsService : IConnectionStatus, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        // DI disposes this instance twice (as ObsService and as IConnectionStatus).
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         _manuallyDisconnected = true;
         await _lifetime.CancelAsync().ConfigureAwait(false);
         if (_keepConnected is { } loop) await loop.ConfigureAwait(false);

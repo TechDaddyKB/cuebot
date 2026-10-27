@@ -1,0 +1,45 @@
+# Maintainer: TechDaddyKB <camarokris at gmail dot com>
+# Repackages the self-contained Cuebot release build (no .NET runtime needed).
+pkgname=cuebot-bin
+_pkgname=cuebot
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Streaming automation: actions and triggers for Twitch and OBS, text-to-speech, C# and Python scripting (prebuilt)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/TechDaddyKB/cuebot"
+license=('LicenseRef-Cuebot')
+depends=('fontconfig' 'gcc-libs' 'glibc' 'hicolor-icon-theme' 'icu' 'libglvnd' 'libice' 'libsm' 'libx11'
+         'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'openssl' 'wayland' 'zlib')
+optdepends=('espeak-ng: offline text-to-speech voices'
+            'pipewire-audio: audio playback through pw-play'
+            'libpulse: audio playback through paplay'
+            'alsa-utils: audio playback through aplay')
+provides=('cuebot')
+conflicts=('cuebot')
+options=('!strip' '!debug')
+source_x86_64=("Cuebot-$pkgver-linux-x64.tar.gz::$url/releases/download/v$pkgver/Cuebot-$pkgver-linux-x64.tar.gz")
+source_aarch64=("Cuebot-$pkgver-linux-arm64.tar.gz::$url/releases/download/v$pkgver/Cuebot-$pkgver-linux-arm64.tar.gz")
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+  local dir
+  case "$CARCH" in
+    x86_64) dir="Cuebot-$pkgver-linux-x64" ;;
+    aarch64) dir="Cuebot-$pkgver-linux-arm64" ;;
+  esac
+  cd "$dir"
+
+  install -d "$pkgdir/usr/lib/$_pkgname"
+  cp -a lib/. "$pkgdir/usr/lib/$_pkgname/"
+  chmod 755 "$pkgdir/usr/lib/$_pkgname/Cuebot"
+  install -d "$pkgdir/usr/bin"
+  ln -s "/usr/lib/$_pkgname/Cuebot" "$pkgdir/usr/bin/$_pkgname"
+
+  install -Dm644 share/io.github.cuebot.Cuebot.desktop -t "$pkgdir/usr/share/applications"
+  install -Dm644 share/io.github.cuebot.Cuebot.metainfo.xml -t "$pkgdir/usr/share/metainfo"
+  for size in 16 32 48 64 128 256 512; do
+    install -Dm644 "share/icons/cuebot-$size.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/io.github.cuebot.Cuebot.png"
+  done
+}

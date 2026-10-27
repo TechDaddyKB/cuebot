@@ -1,0 +1,58 @@
+# Maintainer: TechDaddyKB <camarokris at gmail dot com>
+# Builds Cuebot from source against the system .NET runtime.
+pkgname=cuebot
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Streaming automation: actions and triggers for Twitch and OBS, text-to-speech, C# and Python scripting"
+arch=('x86_64' 'aarch64')
+url="https://github.com/TechDaddyKB/cuebot"
+license=('LicenseRef-Cuebot')
+depends=('dotnet-runtime>=10.0' 'fontconfig' 'hicolor-icon-theme' 'libglvnd' 'libice' 'libsm' 'libx11'
+         'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'wayland')
+makedepends=('dotnet-sdk>=10.0')
+optdepends=('espeak-ng: offline text-to-speech voices'
+            'pipewire-audio: audio playback through pw-play'
+            'libpulse: audio playback through paplay'
+            'alsa-utils: audio playback through aplay')
+provides=('cuebot')
+conflicts=('cuebot-bin')
+options=('!strip' '!debug')   # .NET assemblies must not be stripped
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+_rid() {
+  case "$CARCH" in
+    x86_64) echo linux-x64 ;;
+    aarch64) echo linux-arm64 ;;
+  esac
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+  dotnet publish src/Cuebot.App/Cuebot.App.csproj -c Release -r "$(_rid)" --self-contained false \
+    -p:UseAppHost=false -p:DebugType=none -p:Version="$pkgver" -o out
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  dotnet test tests/Cuebot.Tests/Cuebot.Tests.csproj -c Release
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -d "$pkgdir/usr/lib/$pkgname"
+  cp -a out/. "$pkgdir/usr/lib/$pkgname/"
+
+  install -Dm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<'EOF'
+#!/bin/sh
+exec /usr/bin/dotnet /usr/lib/cuebot/Cuebot.dll "$@"
+EOF
+
+  install -Dm644 packaging/linux/io.github.cuebot.Cuebot.desktop -t "$pkgdir/usr/share/applications"
+  install -Dm644 packaging/linux/io.github.cuebot.Cuebot.metainfo.xml -t "$pkgdir/usr/share/metainfo"
+  for size in 16 32 48 64 128 256 512; do
+    install -Dm644 "packaging/icons/cuebot-$size.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/io.github.cuebot.Cuebot.png"
+  done
+}

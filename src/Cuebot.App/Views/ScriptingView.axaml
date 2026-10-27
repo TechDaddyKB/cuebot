@@ -22,7 +22,7 @@
             <Button Content="Install built-in Python" Classes="accent" Command="{Binding InstallRuntimeCommand}"
                     IsVisible="{Binding CanInstall}" IsEnabled="{Binding !IsBusy}" />
             <TextBlock Text="Advanced: use an existing Python interpreter instead" Classes="muted" />
-            <TextBox Text="{Binding CustomPythonPath}" Watermark="/usr/bin/python3 or C:\Python313\python.exe" />
+            <TextBox Text="{Binding CustomPythonPath}" PlaceholderText="/usr/bin/python3 or C:\Python313\python.exe" />
           </StackPanel>
         </Border>
 
@@ -30,7 +30,7 @@
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Python packages" />
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto,8,Auto" Margin="0,0,0,8" IsEnabled="{Binding IsReady}">
-              <TextBox Text="{Binding PackageSpec}" Watermark="requests or numpy==2.1.0" />
+              <TextBox Text="{Binding PackageSpec}" PlaceholderText="requests or numpy==2.1.0" />
               <Button Grid.Column="2" Content="Install" Command="{Binding InstallPackageCommand}" IsEnabled="{Binding !IsBusy}" />
               <Button Grid.Column="4" Content="Refresh" Command="{Binding RefreshPackagesCommand}" />
             </Grid>

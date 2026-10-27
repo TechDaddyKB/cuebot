@@ -3,13 +3,14 @@
 #   flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.github.cuebot.Cuebot.yml
 app-id: io.github.cuebot.Cuebot
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 command: cuebot
 finish-args:
   - --share=network        # Twitch, OBS websocket, cloud TTS, Python package downloads
   - --share=ipc
-  - --socket=x11           # Avalonia renders through X11 (XWayland on Wayland sessions)
+  - --socket=wayland       # Wayland first (native Avalonia Wayland backend)
+  - --socket=fallback-x11  # X11 only when no Wayland compositor is available
   - --socket=pulseaudio    # speech and sound playback
   - --device=dri
   - --filesystem=xdg-music:ro   # sound files used by "Play sound"

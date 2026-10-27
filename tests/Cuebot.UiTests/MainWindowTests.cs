@@ -47,7 +47,7 @@ public sealed class MainWindowTests : IAsyncDisposable
     private static void Save(Window window, string name)
     {
         Pump();
-        window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, name + ".png"));
+        window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, name + ".png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
     }
 
     [AvaloniaFact]

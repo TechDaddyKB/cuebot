@@ -2,7 +2,13 @@ name: build
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_call:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
 
 jobs:
   test:
@@ -44,32 +50,91 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
-      - run: chmod +x build/publish.sh packaging/linux/build-appimage.sh
-      - run: packaging/linux/build-appimage.sh linux-x64
+      - name: Install packaging and smoke-test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder xvfb xdotool scrot sway grim jq dbus-x11
+      - name: Build AppImage
+        run: packaging/linux/build-appimage.sh linux-x64
       - uses: actions/upload-artifact@v5
         with:
           name: Cuebot-x86_64.AppImage
           path: artifacts/Cuebot-x86_64.AppImage
       - name: Build Flatpak
         run: |
-          sudo apt-get install -y flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --user --install-deps-from=flathub --repo=artifacts/flatpak-repo --force-clean \
             artifacts/flatpak-build packaging/flatpak/io.github.cuebot.Cuebot.yml
           flatpak build-bundle artifacts/flatpak-repo artifacts/Cuebot-x86_64.flatpak io.github.cuebot.Cuebot
+          flatpak install --user -y --noninteractive artifacts/Cuebot-x86_64.flatpak
       - uses: actions/upload-artifact@v5
         with:
           name: Cuebot-x86_64.flatpak
           path: artifacts/Cuebot-x86_64.flatpak
-      - name: Smoke test packages
+      - name: Smoke test on Wayland (native backend, no X server)
         run: |
-          sudo apt-get install -y xvfb imagemagick xdotool libfuse2t64 || sudo apt-get install -y xvfb imagemagick xdotool libfuse2
-          chmod +x packaging/linux/smoke-test.sh artifacts/Cuebot-x86_64.AppImage
-          packaging/linux/smoke-test.sh appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run
-          flatpak install --user -y --noninteractive artifacts/Cuebot-x86_64.flatpak
-          packaging/linux/smoke-test.sh flatpak flatpak run --env=CUEBOT_DATA="$RUNNER_TEMP/cuebot-flatpak" io.github.cuebot.Cuebot
+          dbus-run-session -- packaging/linux/smoke-test.sh wayland appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run
+          SMOKE_APP_DATA="$HOME/.var/app/io.github.cuebot.Cuebot/config/Cuebot" dbus-run-session -- packaging/linux/smoke-test.sh wayland flatpak flatpak run io.github.cuebot.Cuebot
+      - name: Smoke test on X11
+        if: always()
+        run: |
+          dbus-run-session -- packaging/linux/smoke-test.sh x11 appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run
+          SMOKE_APP_DATA="$HOME/.var/app/io.github.cuebot.Cuebot/config/Cuebot" dbus-run-session -- packaging/linux/smoke-test.sh x11 flatpak flatpak run io.github.cuebot.Cuebot
       - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: linux-smoke-test
           path: artifacts/smoke-*
+
+  arch-package:
+    needs: test
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install build and test tools
+        run: |
+          pacman -Syu --noconfirm --needed git dotnet-sdk namcap sway grim jq xorg-server-xvfb xdotool scrot mesa dbus
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+      - uses: actions/checkout@v5
+      - name: Build both AUR packages from this commit
+        run: |
+          git config --global --add safe.directory '*'
+          version=$(grep -m1 '^pkgver=' packaging/aur/cuebot/PKGBUILD | cut -d= -f2)
+          work=/tmp/aur; mkdir -p "$work/cuebot" "$work/cuebot-bin"
+
+          # cuebot: source build from a tarball of this commit, in place of the release tag archive
+          git archive --format=tar.gz --prefix="cuebot-$version/" -o "$work/cuebot/cuebot-$version.tar.gz" HEAD
+          sed -e "s|^source=.*|source=(\"cuebot-$version.tar.gz\")|" packaging/aur/cuebot/PKGBUILD > "$work/cuebot/PKGBUILD"
+
+          # cuebot-bin: the self-contained release tarball built from this commit
+          packaging/linux/build-tarball.sh "$version" linux-x64
+          cp "artifacts/Cuebot-$version-linux-x64.tar.gz" "$work/cuebot-bin/"
+          sed -e "s|^source_x86_64=.*|source_x86_64=(\"Cuebot-$version-linux-x64.tar.gz\")|" packaging/aur/cuebot-bin/PKGBUILD > "$work/cuebot-bin/PKGBUILD"
+
+          chown -R builder "$work"
+          for pkg in cuebot cuebot-bin; do
+            su builder -c "cd $work/$pkg && makepkg --syncdeps --noconfirm"
+            namcap "$work/$pkg/PKGBUILD" "$work/$pkg"/*.pkg.tar.zst | tee "artifacts/namcap-$pkg.txt"
+          done
+          cp "$work"/*/*.pkg.tar.zst artifacts/
+      - name: Install and smoke test cuebot
+        run: |
+          pacman -U --noconfirm artifacts/cuebot-[0-9]*.pkg.tar.zst
+          chown -R builder artifacts
+          su builder -c "dbus-run-session -- packaging/linux/smoke-test.sh wayland arch cuebot"
+          su builder -c "dbus-run-session -- packaging/linux/smoke-test.sh x11 arch cuebot"
+      - name: Install and smoke test cuebot-bin
+        run: |
+          pacman -Rns --noconfirm cuebot
+          pacman -U --noconfirm artifacts/cuebot-bin-*.pkg.tar.zst
+          su builder -c "dbus-run-session -- packaging/linux/smoke-test.sh wayland arch-bin cuebot"
+          su builder -c "dbus-run-session -- packaging/linux/smoke-test.sh x11 arch-bin cuebot"
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: arch-packages
+          path: |
+            artifacts/*.pkg.tar.zst
+            artifacts/namcap-*.txt
+            artifacts/smoke-*

@@ -1,0 +1,89 @@
+name: release
+
+# Push a tag like v0.1.0 to publish a GitHub release and prepare the AUR packages.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
+  tarballs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - run: |
+          version="${GITHUB_REF_NAME#v}"
+          packaging/linux/build-tarball.sh "$version" linux-x64
+          packaging/linux/build-tarball.sh "$version" linux-arm64
+      - uses: actions/upload-artifact@v5
+        with:
+          name: linux-tarballs
+          path: artifacts/Cuebot-*-linux-*.tar.gz
+
+  publish:
+    needs: [build, tarballs]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la dist
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Cuebot $GITHUB_REF_NAME" --generate-notes \
+            dist/Cuebot-win-x64.zip dist/Cuebot-x86_64.AppImage dist/Cuebot-x86_64.flatpak dist/Cuebot-*-linux-*.tar.gz
+
+  aur:
+    needs: publish
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - run: pacman -Syu --noconfirm --needed git openssh
+      - uses: actions/checkout@v5
+      - name: Pin versions and checksums, write .SRCINFO
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global --add safe.directory '*'
+          pacman -S --noconfirm --needed github-cli
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dl
+          # The exact files the PKGBUILDs download, so the checksums match.
+          gh api "repos/$GITHUB_REPOSITORY/tarball/$GITHUB_REF_NAME" > /dev/null   # warm the archive
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -o "dl/cuebot-$version.tar.gz" \
+            "https://github.com/$GITHUB_REPOSITORY/archive/refs/tags/$GITHUB_REF_NAME.tar.gz"
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir dl --pattern 'Cuebot-*-linux-*.tar.gz'
+          useradd -m builder && chown -R builder .
+          su builder -c "packaging/aur/prepare.sh $version dl/cuebot-$version.tar.gz dl/Cuebot-$version-linux-x64.tar.gz dl/Cuebot-$version-linux-arm64.tar.gz"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: aur-packages
+          path: artifacts/aur
+          include-hidden-files: true
+      - name: Push to the AUR
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        if: env.AUR_SSH_PRIVATE_KEY != ''
+        run: |
+          install -dm700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur && chmod 600 ~/.ssh/aur
+          ssh-keyscan -t ed25519 aur.archlinux.org >> ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur"
+          for pkg in cuebot cuebot-bin; do
+            git clone "ssh://aur@aur.archlinux.org/$pkg.git" "aur-$pkg"
+            cp "artifacts/aur/$pkg/PKGBUILD" "artifacts/aur/$pkg/.SRCINFO" "aur-$pkg/"
+            git -C "aur-$pkg" -c user.name="TechDaddyKB" -c user.email="camarokris@gmail.com" add PKGBUILD .SRCINFO
+            git -C "aur-$pkg" -c user.name="TechDaddyKB" -c user.email="camarokris@gmail.com" commit -m "Update to ${GITHUB_REF_NAME#v}" || true
+            git -C "aur-$pkg" push origin HEAD:master
+          done

@@ -29,7 +29,7 @@
           <TextBlock Classes="h2" Text="Sign in" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Register an application at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID. Cuebot signs in with the device-code flow, so no client secret is needed." />
-          <TextBox Text="{Binding ClientId}" Watermark="Twitch application Client ID" />
+          <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID" />
           <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}" />
           <StackPanel Spacing="8" IsVisible="{Binding IsAuthorizing}">
             <TextBlock TextWrapping="Wrap" Text="A browser window has opened. Confirm this code on Twitch:" />
@@ -46,7 +46,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Send a test message" />
           <Grid ColumnDefinitions="*,8,Auto">
-            <TextBox Text="{Binding TestMessage}" Watermark="Message" />
+            <TextBox Text="{Binding TestMessage}" PlaceholderText="Message" />
             <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" />
           </Grid>
         </StackPanel>

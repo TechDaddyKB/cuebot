@@ -54,10 +54,28 @@ a Flatpak bundle.
 
 User data lives in `%APPDATA%\Cuebot` (Windows) or `~/.config/Cuebot` (Linux); set `CUEBOT_DATA` to override.
 
-## Linux runtime notes
+## Linux
+
+Cuebot is **Wayland-first**: when a Wayland compositor is running it uses Avalonia's native Wayland backend,
+otherwise X11. If the Wayland backend cannot start, Cuebot relaunches itself once on X11 (XWayland). Force a
+backend with `--backend=wayland` / `--backend=x11` or `CUEBOT_BACKEND=wayland|x11`; the startup log line records
+which backend is in use.
+
+Packages: AppImage, Flatpak (Wayland socket with X11 fallback), and the AUR: `cuebot` builds from source on the
+system .NET runtime, `cuebot-bin` repackages the self-contained release. See `packaging/aur`.
 
 - Audio playback uses `pw-play`, `paplay` or `aplay` (whichever is installed).
 - Offline TTS on Linux uses `espeak-ng` (bundled in the Flatpak).
+
+CI smoke-tests every Linux package on a headless Wayland compositor (sway, no X server) and on X11 (Xvfb),
+and builds and installs both AUR packages in an Arch Linux container.
+
+## Releases
+
+Push a tag such as `v0.1.0`. The release workflow builds and tests everything, publishes a GitHub release
+(Windows zip, AppImage, Flatpak, Linux tarballs) and produces pinned AUR `PKGBUILD`/`.SRCINFO` files. It pushes
+them to the AUR when the repository has an `AUR_SSH_PRIVATE_KEY` secret. The AUR needs a publicly downloadable
+source, so the repository (or at least its releases) must be public before publishing there.
 
 ## Variables
 

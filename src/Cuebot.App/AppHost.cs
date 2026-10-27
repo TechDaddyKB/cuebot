@@ -45,7 +45,7 @@ public sealed class AppHost : IAsyncDisposable
     public async Task StartAsync()
     {
         var log = Get<AppLog>();
-        log.Info("Cuebot", $"Starting (data folder: {Get<AppPaths>().Root})");
+        log.Info("Cuebot", $"Starting (data folder: {Get<AppPaths>().Root}, display backend: {Program.BackendName})");
         Get<ActionEngine>().Start();
         Get<TimerService>().Start();
 

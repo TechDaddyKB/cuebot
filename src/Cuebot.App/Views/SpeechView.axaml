@@ -117,9 +117,9 @@
             <NumericUpDown Value="{Binding MaxLength}" Minimum="10" Maximum="2000" Increment="10" FormatString="0" Width="140" />
           </StackPanel>
           <TextBlock Text="Ignored users (comma separated)" />
-          <TextBox Text="{Binding IgnoredUsers}" Watermark="nightbot, streamelements" />
+          <TextBox Text="{Binding IgnoredUsers}" PlaceholderText="nightbot, streamelements" />
           <TextBlock Text="Word replacements — one per line: find => replace (prefix re: for regex)" />
-          <TextBox Text="{Binding Replacements}" AcceptsReturn="True" MinHeight="80" Watermark="lol => laughing out loud" />
+          <TextBox Text="{Binding Replacements}" AcceptsReturn="True" MinHeight="80" PlaceholderText="lol => laughing out loud" />
         </StackPanel>
       </Border>
     </StackPanel>
