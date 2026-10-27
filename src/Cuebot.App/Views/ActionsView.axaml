@@ -7,20 +7,30 @@
              x:DataType="vm:ActionsViewModel">
   <UserControl.DataTemplates>
     <!-- Flow tree rows (list editor). Branch templates recurse through these. -->
+    <!-- Group sub-actions render as a container tinted by their colour (transparent for other steps). -->
     <DataTemplate DataType="vm:SubActionItemViewModel">
-      <StackPanel>
-        <Button Classes="row" Classes.selected="{Binding IsSelected}" Click="OnItemClick">
-          <Grid ColumnDefinitions="Auto,*,Auto">
-            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" ToolTip.Tip="Enabled" />
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding Summary}" Classes="muted" TextTrimming="CharacterEllipsis" />
-            </StackPanel>
-            <TextBlock Grid.Column="2" Text="{Binding Category}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
-          </Grid>
-        </Button>
-        <ItemsControl ItemsSource="{Binding Branches}" Margin="28,0,0,4" IsVisible="{Binding HasBranches}" />
-      </StackPanel>
+      <Border Background="{Binding ContainerBackground}" BorderBrush="{Binding ContainerBorderBrush}"
+              BorderThickness="{Binding ContainerBorderThickness}" Padding="{Binding ContainerPadding}"
+              Margin="{Binding ContainerMargin}" CornerRadius="6">
+        <StackPanel>
+          <Button Classes="row" Classes.selected="{Binding IsSelected}" Click="OnItemClick">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+              <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" ToolTip.Tip="Enabled" />
+              <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Summary}" Classes="muted" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <Border Grid.Column="2" IsVisible="{Binding ShowsWeight}" Background="{DynamicResource CuebotSelected}"
+                      CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center"
+                      ToolTip.Tip="Chance of being the one sub-action picked at random">
+                <TextBlock Text="{Binding WeightLabel}" FontSize="11" />
+              </Border>
+              <TextBlock Grid.Column="3" Text="{Binding Category}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </Grid>
+          </Button>
+          <ItemsControl ItemsSource="{Binding Branches}" Margin="28,0,0,4" IsVisible="{Binding HasBranches}" />
+        </StackPanel>
+      </Border>
     </DataTemplate>
     <DataTemplate DataType="vm:BranchViewModel">
       <StackPanel>
@@ -53,7 +63,7 @@
     <DataTemplate DataType="vm:CodeParameterViewModel">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Label}" />
-        <Border BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="1" CornerRadius="4">
+        <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="1" CornerRadius="4">
           <controls:CodeEditor Text="{Binding Value, Mode=TwoWay}" Language="{Binding Language}" Height="380" />
         </Border>
         <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
@@ -73,7 +83,7 @@
   <Grid>
     <Grid ColumnDefinitions="280,*,4,380">
       <!-- Action list -->
-      <Border Background="#1C1E24" BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="0,0,1,0">
+      <Border Background="{DynamicResource CuebotPanel}" BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,0,1,0">
         <DockPanel Margin="12">
           <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Actions" />
           <TextBox DockPanel.Dock="Top" PlaceholderText="Search actions" Text="{Binding Filter}" Margin="0,0,0,8" />
@@ -99,7 +109,7 @@
 
       <!-- Selected action -->
       <DockPanel Grid.Column="1" IsVisible="{Binding HasSelection}">
-        <Border DockPanel.Dock="Top" Padding="16,12" BorderBrush="{StaticResource CuebotCardBorder}" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Padding="16,12" BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,0,0,1">
           <StackPanel Spacing="8">
             <Grid ColumnDefinitions="2*,8,*,Auto">
               <TextBox Text="{Binding SelectedAction.Name}" FontSize="16" PlaceholderText="Action name" />
@@ -109,12 +119,34 @@
                 <RadioButton GroupName="view" Content="Graph" IsChecked="{Binding IsGraphView}" />
               </StackPanel>
             </Grid>
-            <StackPanel Orientation="Horizontal" Spacing="16">
+            <WrapPanel Orientation="Horizontal" ItemSpacing="16" LineSpacing="4">
               <CheckBox Content="Enabled" IsChecked="{Binding SelectedAction.Enabled}" />
-              <CheckBox Content="Allow concurrent runs" IsChecked="{Binding SelectedAction.Concurrent}"
-                        ToolTip.Tip="Off: runs are queued and execute one at a time" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Queue" VerticalAlignment="Center" />
+                <ComboBox x:Name="QueuePicker" ItemsSource="{Binding SelectedAction.QueueOptions}"
+                          SelectedItem="{Binding SelectedAction.Queue}" MinWidth="140"
+                          ToolTip.Tip="Runs wait in this queue. Pause, resume and blocking are set on the Queues page." />
+              </StackPanel>
+              <CheckBox Content="Allow concurrent runs (Default queue only)" IsChecked="{Binding SelectedAction.Concurrent}"
+                        IsEnabled="{Binding !SelectedAction.HasQueue}"
+                        ToolTip.Tip="Only for actions in the Default queue. Off: runs of this action wait for each other. Actions in a named queue follow that queue's Blocking setting instead." />
+            </WrapPanel>
+            <WrapPanel Orientation="Horizontal" ItemSpacing="16" LineSpacing="4">
+              <CheckBox Content="Random action" IsChecked="{Binding SelectedAction.RandomAction}"
+                        ToolTip.Tip="Run only ONE enabled top-level sub-action, picked by weight" />
+              <CheckBox Content="Concurrent sub-actions" IsChecked="{Binding SelectedAction.ConcurrentSubActions}"
+                        IsEnabled="{Binding !SelectedAction.RandomAction}"
+                        ToolTip.Tip="Run all top-level sub-actions at the same time (ignored with Random action)" />
+              <CheckBox Content="Always run" IsChecked="{Binding SelectedAction.AlwaysRun}"
+                        ToolTip.Tip="Start even while the action's queue is paused" />
+              <CheckBox Content="Exclude from history" IsChecked="{Binding SelectedAction.ExcludeFromHistory}"
+                        ToolTip.Tip="Keep runs out of the Pending and History lists" />
+            </WrapPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Content="▶ Run now" Command="{Binding RunActionCommand}" />
-              <TextBlock Text="{Binding LastRunResult}" Classes="muted" VerticalAlignment="Center" />
+              <Button Content="Test trigger…" Command="{Binding TestTriggerCommand}"
+                      ToolTip.Tip="Run the action as if a trigger fired, with arguments you type" />
+              <TextBlock Text="{Binding LastRunResult}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
             </StackPanel>
           </StackPanel>
         </Border>
@@ -161,7 +193,7 @@
 
           <!-- Node graph editor -->
           <DockPanel IsVisible="{Binding IsGraphView}">
-            <Border DockPanel.Dock="Top" Padding="12,6" Background="#1C1E24">
+            <Border DockPanel.Dock="Top" Padding="12,6" Background="{DynamicResource CuebotPanel}">
               <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Auto-arrange" Command="{Binding AutoArrangeCommand}" />
                 <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
@@ -175,10 +207,10 @@
       <TextBlock Grid.Column="1" IsVisible="{Binding !HasSelection}" Classes="muted" FontSize="14"
                  HorizontalAlignment="Center" VerticalAlignment="Center" Text="Create or select an action" />
 
-      <GridSplitter Grid.Column="2" Background="{StaticResource CuebotCardBorder}" ResizeDirection="Columns" />
+      <GridSplitter Grid.Column="2" Background="{DynamicResource CuebotCardBorder}" ResizeDirection="Columns" />
 
       <!-- Properties of the selected trigger / sub-action -->
-      <ScrollViewer Grid.Column="3" Padding="16" Background="#1C1E24">
+      <ScrollViewer Grid.Column="3" Padding="16" Background="{DynamicResource CuebotPanel}">
         <ContentControl Content="{Binding SelectedAction.Selected}">
           <ContentControl.DataTemplates>
             <DataTemplate DataType="vm:TriggerItemViewModel">
@@ -200,6 +232,15 @@
                   <TextBlock Classes="h2" Text="{Binding Title}" />
                 </StackPanel>
                 <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                <StackPanel Spacing="4" IsVisible="{Binding ShowsWeight}">
+                  <TextBlock Text="Weight" />
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <NumericUpDown x:Name="WeightEditor" Value="{Binding Weight}" Minimum="0" Increment="1" FormatString="0.##" Width="140" />
+                    <TextBlock Text="{Binding WeightLabel}" Classes="muted" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="One sub-action of this list runs, picked at random: higher weight, higher chance. 0 = never picked." />
+                </StackPanel>
                 <ItemsControl ItemsSource="{Binding Parameters}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 </ItemsControl>
@@ -220,8 +261,39 @@
       </ScrollViewer>
     </Grid>
 
+    <!-- Test trigger overlay -->
+    <Border IsVisible="{Binding Test.IsOpen}" Background="{DynamicResource CuebotOverlay}">
+      <Border Classes="card" Width="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="{Binding Test.ActionName, StringFormat='Test trigger · {0}'}" />
+          <StackPanel Spacing="4">
+            <TextBlock Text="Run as if this trigger fired" />
+            <ComboBox ItemsSource="{Binding Test.Options}" SelectedItem="{Binding Test.Selected}" HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:TestTriggerOption">
+                  <TextBlock Text="{Binding Display}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="Arguments (one name=value per line)" />
+            <TextBox x:Name="TestArguments" Text="{Binding Test.Arguments}" AcceptsReturn="True" TextWrapping="NoWrap"
+                     FontFamily="monospace" MinHeight="140" MaxHeight="260" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Available as %name% in the sub-actions, plus triggerType, triggerName, eventType and isTest=true. The trigger's filter settings are not checked; the run goes through the action's queue." />
+            <TextBlock Classes="error" Text="{Binding Test.Error}" IsVisible="{Binding Test.Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Cancel" Command="{Binding Test.CancelCommand}" />
+            <Button Content="Run test" Classes="accent" Command="{Binding Test.RunCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+
     <!-- Type picker overlay -->
-    <Border IsVisible="{Binding Picker.IsOpen}" Background="#99000000">
+    <Border IsVisible="{Binding Picker.IsOpen}" Background="{DynamicResource CuebotOverlay}">
       <Border Classes="card" Width="520" Height="520" HorizontalAlignment="Center" VerticalAlignment="Center">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Classes="h2" Text="{Binding Picker.Title}" />
@@ -235,7 +307,7 @@
             <ListBox.ItemTemplate>
               <DataTemplate DataType="vm:TypeOption">
                 <TextBlock>
-                  <Run Text="{Binding Category}" Foreground="{StaticResource CuebotMuted}" /><Run Text="  " /><Run Text="{Binding Name}" />
+                  <Run Text="{Binding Category}" Foreground="{DynamicResource CuebotMuted}" /><Run Text="  " /><Run Text="{Binding Name}" />
                 </TextBlock>
               </DataTemplate>
             </ListBox.ItemTemplate>

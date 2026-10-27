@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.UsersView"
+             x:DataType="vm:UsersViewModel"
+             x:Name="Root">
+  <DockPanel Margin="24,24,24,16">
+    <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Users &amp; Groups" />
+    <TabControl x:Name="Sections">
+      <TabItem Header="Users">
+        <DockPanel Margin="0,8,0,0">
+          <!-- Settings -->
+          <Border DockPanel.Dock="Right" Classes="card" Width="320" Margin="12,0,0,0" VerticalAlignment="Top">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="h2" Text="First words" />
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="'First words' fires for a user's first message since Cuebot started, the stream went live, or the list was reset." />
+              <CheckBox Content="Reset when a stream goes live" IsChecked="{Binding ResetFirstWordsOnStreamOnline}" />
+              <Button Content="Reset first words now" Command="{Binding ResetFirstWordsCommand}"
+                      ToolTip.Tip="Forget who has spoken on the platform chosen in the filter (All = everywhere)" />
+              <TextBlock Classes="h2" Text="Present viewers" Margin="0,8,0,0" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Present if they chatted in the last" VerticalAlignment="Center" TextWrapping="Wrap" Width="130" />
+                <NumericUpDown Value="{Binding PresentMinutes}" Minimum="0" Increment="1" FormatString="0" Width="110" />
+                <TextBlock Text="min" Classes="muted" VerticalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Fire 'Present viewers' every" VerticalAlignment="Center" TextWrapping="Wrap" Width="130" />
+                <NumericUpDown Value="{Binding PresentIntervalMinutes}" Minimum="0" Increment="1" FormatString="0" Width="110" />
+                <TextBlock Text="min" Classes="muted" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="0 turns the Present viewers trigger off." />
+            </StackPanel>
+          </Border>
+
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="160,8,*,8,Auto,8,160,8,Auto" Margin="0,0,0,8">
+            <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Platform" />
+            <TextBox Grid.Column="2" Text="{Binding Search}" PlaceholderText="Search name or id" />
+            <TextBlock Grid.Column="4" Text="Add to" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="6" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" HorizontalAlignment="Stretch"
+                      PlaceholderText="Group">
+              <ComboBox.ItemTemplate>
+                <DataTemplate DataType="vm:GroupRowViewModel">
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Grid.Column="8" Content="Add user" Command="{Binding AddSelectedUserToGroupCommand}"
+                    ToolTip.Tip="Add the selected user to the chosen group" />
+          </Grid>
+          <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding UsersStatus}" Classes="muted" />
+            <TextBlock Text="{Binding UsersSummary}" Classes="muted" />
+          </DockPanel>
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,90,140,140,90,*" Margin="12,4,12,4">
+            <TextBlock Classes="muted" Text="USER" />
+            <TextBlock Grid.Column="1" Classes="muted" Text="PLATFORM" />
+            <TextBlock Grid.Column="2" Classes="muted" Text="FIRST SEEN" />
+            <TextBlock Grid.Column="3" Classes="muted" Text="LAST SEEN" />
+            <TextBlock Grid.Column="4" Classes="muted" Text="MESSAGES" />
+            <TextBlock Grid.Column="5" Classes="muted" Text="ROLES" />
+          </Grid>
+          <Grid>
+            <ListBox ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:UserRowViewModel">
+                  <Grid ColumnDefinitions="*,90,140,140,90,*" ToolTip.Tip="{Binding Tip}">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1" Text="{Binding Platform}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding FirstSeen}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{Binding LastSeen}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="4" Text="{Binding Messages}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="5" Text="{Binding Roles}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Classes="muted" IsVisible="{Binding !Users.Count}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Text="Users appear here when they chat on a connected platform." />
+          </Grid>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Groups">
+        <Grid ColumnDefinitions="340,16,*" Margin="0,8,0,0">
+          <DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto" Margin="0,0,0,8">
+              <TextBox Text="{Binding NewGroupName}" PlaceholderText="New group name" />
+              <Button Grid.Column="2" Content="Create" Classes="accent" Command="{Binding AddGroupCommand}" />
+            </Grid>
+            <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding GroupsSummary}" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <ListBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:GroupRowViewModel">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding CountText}" Classes="muted" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+
+          <TextBlock Grid.Column="2" Classes="muted" IsVisible="{Binding !HasSelectedGroup}" FontSize="14"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Text="Create or select a group" />
+          <DockPanel Grid.Column="2" IsVisible="{Binding HasSelectedGroup}">
+            <Border DockPanel.Dock="Top" Classes="card">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="Auto,8,*,8,Auto,8,Auto">
+                  <TextBlock Text="Name" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Content="{Binding SelectedGroup}">
+                    <ContentControl.ContentTemplate>
+                      <DataTemplate DataType="vm:GroupRowViewModel">
+                        <StackPanel>
+                          <TextBox x:Name="GroupName" Text="{Binding NameText}" />
+                          <TextBlock Classes="error" Text="{Binding NameError}"
+                                     IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                  </ContentControl>
+                  <Button Grid.Column="4" Content="Clear members" Command="{Binding ClearGroupCommand}" />
+                  <Button Grid.Column="6" Content="Delete group" Command="{Binding DeleteGroupCommand}" />
+                </Grid>
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Renaming a group does not update commands that allow or deny it by name; check those on the Commands page." />
+                <TextBlock Classes="h2" Text="Add a member" Margin="0,6,0,0" />
+                <Grid ColumnDefinitions="120,8,*,8,160,8,Auto">
+                  <AutoCompleteBox Text="{Binding MemberPlatform}" ItemsSource="{Binding Platforms}" MinimumPrefixLength="0"
+                                   FilterMode="ContainsOrdinal" PlaceholderText="Platform" />
+                  <TextBox Grid.Column="2" Text="{Binding MemberName}" PlaceholderText="User name" />
+                  <TextBox Grid.Column="4" Text="{Binding MemberId}" PlaceholderText="User id (optional)" />
+                  <Button Grid.Column="6" Content="Add" Classes="accent" Command="{Binding AddMemberCommand}" />
+                </Grid>
+                <TextBlock Classes="muted" Text="{Binding GroupsStatus}" />
+              </StackPanel>
+            </Border>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="100,*,*,Auto" Margin="12,0,12,4">
+              <TextBlock Classes="muted" Text="PLATFORM" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="USER" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="ID" />
+            </Grid>
+            <ListBox ItemsSource="{Binding Members}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:GroupMemberRow">
+                  <Grid ColumnDefinitions="100,*,*,Auto">
+                    <TextBlock Text="{Binding Platform}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding UserName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding UserId}" Classes="muted" VerticalAlignment="Center" />
+                    <Button Grid.Column="3" Content="Remove" Padding="8,2"
+                            Command="{Binding RemoveCommand}" CommandParameter="{Binding}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

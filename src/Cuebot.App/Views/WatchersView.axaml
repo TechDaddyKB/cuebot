@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.WatchersView"
+             x:DataType="vm:WatchersViewModel"
+             x:Name="Root">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top">
+      <DockPanel Margin="0,0,0,8">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+          <Button Content="+ Folder watcher" Command="{Binding AddFileWatcherCommand}" />
+          <Button Content="+ File tail" Command="{Binding AddFileTailCommand}" />
+          <Button Content="+ Process watcher" Command="{Binding AddProcessWatcherCommand}" />
+        </StackPanel>
+        <TextBlock Classes="h1" Text="Watchers" Margin="0" VerticalAlignment="Center" />
+      </DockPanel>
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Watchers fire triggers when files change, when lines are appended to a file, or when a program starts or stops. Pick the watcher by name in the trigger's settings. New watchers start disabled: fill them in, then enable them." />
+    </StackPanel>
+
+    <TabControl x:Name="Kinds" SelectedIndex="{Binding SelectedTabIndex}">
+      <TabItem Header="Folders">
+        <ScrollViewer Margin="0,8,0,0">
+          <StackPanel MaxWidth="980" HorizontalAlignment="Left">
+            <TextBlock Classes="muted" IsVisible="{Binding !FileWatchers.Count}" Margin="0,8"
+                       Text="No folder watchers. They fire File created / changed / deleted / renamed." />
+            <ItemsControl ItemsSource="{Binding FileWatchers}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:FileWatcherItemViewModel">
+                  <Border Classes="card">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="*,12,Auto,12,Auto,8,Auto">
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" />
+                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                        <Button Grid.Column="4" Content="Duplicate"
+                                Command="{Binding DuplicateCommand}" />
+                        <Button Grid.Column="6" Content="Remove"
+                                Command="{Binding RemoveCommand}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="Auto,8,*,8,Auto,12,Auto,8,200">
+                        <TextBlock Text="Folder" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="2" Text="{Binding Folder}" PlaceholderText="Folder to watch" />
+                        <Button Grid.Column="4" Content="Browse…" Click="OnBrowseFolder" />
+                        <TextBlock Grid.Column="6" Text="Files" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="8" Text="{Binding Filter}" PlaceholderText="*.txt;*.log (empty = all)" />
+                      </Grid>
+                      <WrapPanel ItemSpacing="16" LineSpacing="4">
+                        <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" />
+                        <TextBlock Text="Fire on:" Classes="muted" VerticalAlignment="Center" FontSize="13" />
+                        <CheckBox Content="Created" IsChecked="{Binding Created}" />
+                        <CheckBox Content="Changed" IsChecked="{Binding Changed}" />
+                        <CheckBox Content="Deleted" IsChecked="{Binding Deleted}" />
+                        <CheckBox Content="Renamed" IsChecked="{Binding Renamed}" />
+                      </WrapPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Classes="status" Classes.good="{Binding IsRunning}" Classes.bad="{Binding IsError}" />
+                        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="File tails">
+        <ScrollViewer Margin="0,8,0,0">
+          <StackPanel MaxWidth="980" HorizontalAlignment="Left">
+            <TextBlock Classes="muted" IsVisible="{Binding !FileTails.Count}" Margin="0,8"
+                       Text="No file tails. A file tail fires 'File tail line' for every line appended to a text file (e.g. a game log)." />
+            <ItemsControl ItemsSource="{Binding FileTails}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:FileTailItemViewModel">
+                  <Border Classes="card">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="*,12,Auto,12,Auto,8,Auto">
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" />
+                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                        <Button Grid.Column="4" Content="Duplicate"
+                                Command="{Binding DuplicateCommand}" />
+                        <Button Grid.Column="6" Content="Remove"
+                                Command="{Binding RemoveCommand}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+                        <TextBlock Text="File" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="2" Text="{Binding FilePath}" PlaceholderText="Text file to follow" />
+                        <Button Grid.Column="4" Content="Browse…" Click="OnBrowseFile" />
+                      </Grid>
+                      <CheckBox Content="Skip empty lines" IsChecked="{Binding SkipEmptyLines}" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Classes="status" Classes.good="{Binding IsRunning}" Classes.bad="{Binding IsError}" />
+                        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Processes">
+        <ScrollViewer Margin="0,8,0,0">
+          <StackPanel MaxWidth="980" HorizontalAlignment="Left">
+            <TextBlock Classes="muted" IsVisible="{Binding !ProcessWatchers.Count}" Margin="0,8"
+                       Text="No process watchers. They fire 'Process started' (first instance) and 'Process stopped' (last instance)." />
+            <ItemsControl ItemsSource="{Binding ProcessWatchers}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:ProcessWatcherItemViewModel">
+                  <Border Classes="card">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="*,12,Auto,12,Auto,8,Auto">
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" />
+                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                        <Button Grid.Column="4" Content="Duplicate"
+                                Command="{Binding DuplicateCommand}" />
+                        <Button Grid.Column="6" Content="Remove"
+                                Command="{Binding RemoveCommand}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="Auto,8,320,12,*">
+                        <TextBlock Text="Process" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="2" Text="{Binding ProcessName}" PlaceholderText="e.g. obs64 (with or without .exe)" />
+                        <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   Text="Programs already running when Cuebot starts do not fire 'started'." />
+                      </Grid>
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Classes="status" Classes.good="{Binding IsRunning}" Classes.bad="{Binding IsError}" />
+                        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

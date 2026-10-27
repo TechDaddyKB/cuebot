@@ -4,31 +4,133 @@
              x:Class="Cuebot.App.Views.VariablesView"
              x:DataType="vm:VariablesViewModel"
              x:Name="Root">
-  <DockPanel Margin="24">
-    <StackPanel DockPanel.Dock="Top" MaxWidth="900" HorizontalAlignment="Left">
-      <TextBlock Classes="h1" Text="Global variables" />
-      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                 Text="Use ~name~ in any sub-action. Persisted variables are kept after a restart." />
-      <Border Classes="card">
-        <Grid ColumnDefinitions="200,12,*,12,Auto,12,Auto">
-          <TextBox Text="{Binding NewName}" PlaceholderText="Name" />
-          <TextBox Grid.Column="2" Text="{Binding NewValue}" PlaceholderText="Value" />
-          <CheckBox Grid.Column="4" Content="Persisted" IsChecked="{Binding NewPersisted}" />
-          <Button Grid.Column="6" Content="Set" Classes="accent" Command="{Binding SetVariableCommand}" />
-        </Grid>
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:VariableRow">
+      <Grid ColumnDefinitions="200,*,80,150,Auto">
+        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   ToolTip.Tip="{Binding Name}" />
+        <TextBlock Grid.Column="1" Text="{Binding Value}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                   ToolTip.Tip="{Binding Value}" Margin="0,0,8,0" />
+        <TextBlock Grid.Column="2" Text="{Binding Type}" Classes="muted" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="3" Text="{Binding LastWrite}" Classes="muted" VerticalAlignment="Center" />
+        <Button Grid.Column="4" Content="Delete" Padding="8,2"
+                Click="OnDeleteRow" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <Grid>
+    <DockPanel Margin="24,24,24,16">
+      <StackPanel DockPanel.Dock="Top">
+        <TextBlock Classes="h1" Text="Variables" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
+                   Text="Use ~name~ for global variables in any sub-action; user variables are read and written by the user variable sub-actions. Persisted variables are kept after a restart; temporary ones live until Cuebot exits." />
+
+        <!-- Editor -->
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="200,12,*,12,Auto,12,Auto,12,Auto,8,Auto">
+              <TextBox Text="{Binding EditName}" PlaceholderText="Name" />
+              <TextBox Grid.Column="2" Text="{Binding EditValue}" PlaceholderText="Value" />
+              <CheckBox Grid.Column="4" Content="Persisted" IsChecked="{Binding EditPersisted}" />
+              <CheckBox Grid.Column="6" Content="Auto type" IsChecked="{Binding AutoType}"
+                        ToolTip.Tip="Store '5' as a number and 'true' as a boolean; off keeps everything as text" />
+              <Button Grid.Column="8" Content="Set" Classes="accent" Command="{Binding SetCommand}" />
+              <Button Grid.Column="10" Content="New" Command="{Binding NewCommand}" ToolTip.Tip="Clear the editor" />
+            </Grid>
+            <Grid ColumnDefinitions="120,12,*,12,*" IsVisible="{Binding IsUsersTab}">
+              <AutoCompleteBox Text="{Binding EditPlatform}" ItemsSource="{Binding Platforms}" MinimumPrefixLength="0"
+                               FilterMode="ContainsOrdinal" PlaceholderText="Platform" />
+              <TextBox Grid.Column="2" Text="{Binding EditUserId}" PlaceholderText="User id" />
+              <TextBox Grid.Column="4" Text="{Binding EditUserName}" PlaceholderText="User name (optional)" />
+            </Grid>
+            <TextBlock Classes="muted" Text="{Binding Status}" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <TabControl x:Name="Tabs" SelectedIndex="{Binding SelectedTabIndex}">
+        <TabControl.Styles>
+          <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+          </Style>
+        </TabControl.Styles>
+        <TabItem Header="Persisted">
+          <DockPanel Margin="0,8,0,0">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+              <Button DockPanel.Dock="Right" Content="Delete all…" Command="{Binding DeleteAllCommand}" />
+              <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding Persisted.Count, StringFormat='{}{0} persisted variable(s)'}" />
+            </DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="200,*,80,150,Auto" Margin="12,0,12,4">
+              <TextBlock Classes="muted" Text="NAME" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="VALUE" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="TYPE" />
+              <TextBlock Grid.Column="3" Classes="muted" Text="LAST WRITE" />
+            </Grid>
+            <ListBox ItemsSource="{Binding Persisted}" SelectedItem="{Binding SelectedPersisted}" />
+          </DockPanel>
+        </TabItem>
+        <TabItem Header="Temporary">
+          <DockPanel Margin="0,8,0,0">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+              <Button DockPanel.Dock="Right" Content="Delete all…" Command="{Binding DeleteAllCommand}" />
+              <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding Temporary.Count, StringFormat='{}{0} temporary variable(s)'}" />
+            </DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="200,*,80,150,Auto" Margin="12,0,12,4">
+              <TextBlock Classes="muted" Text="NAME" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="VALUE" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="TYPE" />
+              <TextBlock Grid.Column="3" Classes="muted" Text="LAST WRITE" />
+            </Grid>
+            <ListBox ItemsSource="{Binding Temporary}" SelectedItem="{Binding SelectedTemporary}" />
+          </DockPanel>
+        </TabItem>
+        <TabItem Header="Users">
+          <DockPanel Margin="0,8,0,0">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                <Button Content="Delete for all users" Command="{Binding DeleteForAllUsersCommand}"
+                        ToolTip.Tip="Remove the selected variable's name from every user (of the chosen platform)" />
+                <Button Content="Delete all…" Command="{Binding DeleteAllCommand}" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" MinWidth="140" ToolTip.Tip="Platform" />
+                <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding UserVariables.Count, StringFormat='{}{0} user variable(s)'}" />
+              </StackPanel>
+            </DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="90,180,*" Margin="12,0,12,4">
+              <TextBlock Classes="muted" Text="PLATFORM" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="USER" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="NAME · VALUE · TYPE · LAST WRITE" />
+            </Grid>
+            <ListBox ItemsSource="{Binding UserVariables}" SelectedItem="{Binding SelectedUserVariable}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:VariableRow">
+                  <Grid ColumnDefinitions="90,180,*">
+                    <TextBlock Text="{Binding Platform}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding User}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <ContentControl Grid.Column="2" Content="{Binding}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </TabItem>
+      </TabControl>
+    </DockPanel>
+
+    <!-- Delete all confirmation -->
+    <Border IsVisible="{Binding IsConfirmingDeleteAll}" Background="{DynamicResource CuebotOverlay}">
+      <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="h2" Text="{Binding DeleteAllText}" TextWrapping="Wrap" />
+          <TextBlock TextWrapping="Wrap" Text="This cannot be undone (backups on the Settings page include persisted variables)." />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Cancel" Command="{Binding CancelDeleteAllCommand}" />
+            <Button Content="Delete all" Classes="accent" Command="{Binding ConfirmDeleteAllCommand}" />
+          </StackPanel>
+        </StackPanel>
       </Border>
-    </StackPanel>
-    <ListBox ItemsSource="{Binding Variables}" Background="Transparent" MaxWidth="900" HorizontalAlignment="Left">
-      <ListBox.ItemTemplate>
-        <DataTemplate DataType="vm:GlobalVariableRow">
-          <Grid ColumnDefinitions="200,*,Auto,Auto">
-            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding Value}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-            <Button Grid.Column="2" Content="Edit" Margin="8,0" Command="{Binding #Root.((vm:VariablesViewModel)DataContext).EditCommand}" CommandParameter="{Binding}" />
-            <Button Grid.Column="3" Content="Remove" Command="{Binding #Root.((vm:VariablesViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
-          </Grid>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
-  </DockPanel>
+    </Border>
+  </Grid>
 </UserControl>

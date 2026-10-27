@@ -1,6 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using Avalonia;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Cuebot.Core.Actions;
+using Cuebot.Core.BuiltIn;
 
 namespace Cuebot.App.ViewModels.Actions;
 
@@ -54,6 +58,9 @@ public sealed partial class TriggerItemViewModel : EditorItemViewModel
 
 public sealed partial class SubActionItemViewModel : EditorItemViewModel
 {
+    /// <summary>Colour of a Group whose "color" parameter is blank or not a colour.</summary>
+    public static readonly Color DefaultGroupColor = Color.Parse("#7C8496");
+
     private readonly ActionItemViewModel _owner;
 
     public SubActionItemViewModel(SubActionDefinition definition, ActionItemViewModel owner, StepListViewModel parent)
@@ -64,7 +71,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
         Handler = owner.Registry.GetSubAction(definition.Type);
         Parameters = Handler?.Parameters.Select(d => ParameterViewModel.Create(d, definition.Parameters, OnParameterChanged)).ToArray() ?? [];
         Branches = new ObservableCollection<BranchViewModel>(
-            CurrentBranchNames().Select(name => new BranchViewModel(this, name, new StepListViewModel(definition.Branch(name), owner))));
+            CurrentBranchNames().Select(name => new BranchViewModel(this, name, new StepListViewModel(definition.Branch(name), owner, this))));
     }
 
     /// <summary>Declared branches, or for dynamic handlers (e.g. Switch cases) the ones its parameters define now.</summary>
@@ -81,7 +88,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
         if (names.SequenceEqual(Branches.Select(b => b.Name))) return false;
         Branches.Clear();
         foreach (var name in names)
-            Branches.Add(new BranchViewModel(this, name, new StepListViewModel(Definition.Branch(name), _owner)));
+            Branches.Add(new BranchViewModel(this, name, new StepListViewModel(Definition.Branch(name), _owner, this)));
         OnPropertyChanged(nameof(HasBranches));
         return true;
     }
@@ -92,9 +99,18 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
     public override IReadOnlyList<ParameterViewModel> Parameters { get; }
     public ObservableCollection<BranchViewModel> Branches { get; }
     public bool HasBranches => Branches.Count > 0;
-    public override string Title => Handler?.DisplayName ?? $"Unknown ({Definition.Type})";
-    public string Category => Handler?.Category ?? "Missing";
-    public override string Summary => Summaries.Describe(Handler?.Parameters, Definition.Parameters);
+    public override string Title => IsGroup ? GroupName : Handler?.DisplayName ?? $"Unknown ({Definition.Type})";
+    public string Category => IsGroup ? (IsRandomGroup ? "Group · one at random" : "Group") : Handler?.Category ?? "Missing";
+
+    public override string Summary
+    {
+        get
+        {
+            if (!IsGroup) return Summaries.Describe(Handler?.Parameters, Definition.Parameters);
+            var count = Branches.Sum(b => b.Steps.Items.Count);
+            return IsRandomGroup ? $"Runs one of {count} sub-action(s), picked by weight" : $"{count} sub-action(s), run in order";
+        }
+    }
 
     public bool Enabled
     {
@@ -108,6 +124,73 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
         }
     }
 
+    // ---- Group containers ----
+
+    /// <summary>A "Group" sub-action: shown as a named container tinted by its colour.</summary>
+    public bool IsGroup => Definition.Type == GroupSubAction.Id;
+
+    public string GroupName =>
+        Definition.Parameters.TryGetValue("name", out var n) && !string.IsNullOrWhiteSpace(n) ? n.Trim() : "Group";
+
+    /// <summary>A group with "random" on runs one enabled child, picked by weight.</summary>
+    public bool IsRandomGroup =>
+        IsGroup && Definition.Parameters.TryGetValue("random", out var r) && string.Equals(r, "true", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The group's editor colour (its "color" parameter), or a neutral default.</summary>
+    public Color GroupColor =>
+        Definition.Parameters.TryGetValue("color", out var c) && !string.IsNullOrWhiteSpace(c) && Color.TryParse(c.Trim(), out var parsed)
+            ? parsed
+            : DefaultGroupColor;
+
+    public IBrush ContainerBackground => IsGroup ? new SolidColorBrush(GroupColor, 0.14) : Brushes.Transparent;
+    public IBrush ContainerBorderBrush => IsGroup ? new SolidColorBrush(GroupColor) : Brushes.Transparent;
+    public Thickness ContainerBorderThickness => IsGroup ? new Thickness(3, 0, 0, 0) : default;
+    public Thickness ContainerPadding => IsGroup ? new Thickness(2, 2, 4, 4) : default;
+    public Thickness ContainerMargin => IsGroup ? new Thickness(0, 2, 0, 4) : default;
+
+    // ---- Weight (random picks) ----
+
+    /// <summary>True when the parent runs ONE random child (Random action, or a random Group), so weight matters.</summary>
+    public bool ShowsWeight => Parent.PicksRandomChild;
+
+    /// <summary>Relative chance of being picked. 0 means never (unless every candidate is 0).</summary>
+    public decimal? Weight
+    {
+        get => (decimal)Definition.Weight;
+        set
+        {
+            if (value is not { } v) return;
+            var weight = (double)Math.Max(0, v);
+            if (Definition.Weight.Equals(weight)) return;
+            Definition.Weight = weight;
+            OnPropertyChanged();
+            _owner.MarkChanged(structural: false);
+        }
+    }
+
+    /// <summary>"Weight 2 · 40%": the chance among the enabled sub-actions of the same list.</summary>
+    public string WeightLabel
+    {
+        get
+        {
+            if (!ShowsWeight) return "";
+            var weight = Definition.Weight.ToString("0.##", CultureInfo.InvariantCulture);
+            if (!Enabled) return $"Weight {weight} · disabled";
+            var candidates = Parent.Items.Where(i => i.Enabled).ToArray();
+            var total = candidates.Sum(i => Math.Max(0, i.Definition.Weight));
+            var chance = total <= 0 ? 1.0 / candidates.Length : Math.Max(0, Definition.Weight) / total;
+            return string.Create(CultureInfo.InvariantCulture, $"Weight {weight} · {chance * 100:0.#}%");
+        }
+    }
+
+    /// <summary>Re-reads values that depend on siblings or the parent (weights, random mode, group summary).</summary>
+    internal void RefreshDerived()
+    {
+        OnPropertyChanged(nameof(ShowsWeight));
+        OnPropertyChanged(nameof(WeightLabel));
+        if (IsGroup) OnPropertyChanged(nameof(Summary));
+    }
+
     /// <summary>Every step list nested under this step's branches, at any depth.</summary>
     public IEnumerable<StepListViewModel> OwnedLists() =>
         Branches.SelectMany(b => b.Steps.Items.SelectMany(s => s.OwnedLists()).Prepend(b.Steps));
@@ -115,6 +198,12 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
     private void OnParameterChanged()
     {
         OnPropertyChanged(nameof(Summary));
+        if (IsGroup)
+        {
+            foreach (var name in (string[])[nameof(Title), nameof(Category), nameof(GroupName), nameof(IsRandomGroup), nameof(GroupColor),
+                         nameof(ContainerBackground), nameof(ContainerBorderBrush)])
+                OnPropertyChanged(name);
+        }
         _owner.MarkChanged(structural: RefreshBranches());
     }
 }
@@ -133,15 +222,22 @@ public sealed class StepListViewModel
 {
     private readonly ActionItemViewModel _owner;
 
-    public StepListViewModel(List<SubActionDefinition> model, ActionItemViewModel owner)
+    public StepListViewModel(List<SubActionDefinition> model, ActionItemViewModel owner, SubActionItemViewModel? ownerStep = null)
     {
         Model = model;
         _owner = owner;
+        OwnerStep = ownerStep;
         Items = new ObservableCollection<SubActionItemViewModel>(model.Select(d => new SubActionItemViewModel(d, owner, this)));
     }
 
     public List<SubActionDefinition> Model { get; }
     public ObservableCollection<SubActionItemViewModel> Items { get; }
+
+    /// <summary>The step whose branch this list is; null for the action's top-level list.</summary>
+    public SubActionItemViewModel? OwnerStep { get; }
+
+    /// <summary>The engine runs ONE child of this list, picked by weight (Random action, or a random Group).</summary>
+    public bool PicksRandomChild => OwnerStep is null ? _owner.RandomAction : OwnerStep.IsRandomGroup;
 
     public SubActionItemViewModel Insert(int index, SubActionDefinition definition)
     {

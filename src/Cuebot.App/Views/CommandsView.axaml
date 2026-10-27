@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.CommandsView"
+             x:DataType="vm:CommandsViewModel"
+             x:Name="Root">
+  <Grid ColumnDefinitions="320,*">
+    <!-- Command list, grouped -->
+    <Border Background="{DynamicResource CuebotPanel}" BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,0,1,0">
+      <DockPanel Margin="12">
+        <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Commands" />
+        <TextBox DockPanel.Dock="Top" PlaceholderText="Search commands" Text="{Binding Filter}" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
+          <Button Content="New" Classes="accent" Command="{Binding NewCommandCommand}" />
+          <Button Content="Duplicate" Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" />
+          <Button Content="Delete" Command="{Binding DeleteCommandCommand}" IsEnabled="{Binding HasSelection}" />
+        </StackPanel>
+        <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,6" />
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding Groups}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:CommandGroupViewModel">
+                <StackPanel Margin="0,0,0,8">
+                  <CheckBox IsChecked="{Binding Enabled}" IsThreeState="False" Margin="4,0"
+                            ToolTip.Tip="Enable or disable every command in this group">
+                    <TextBlock Text="{Binding Header}" FontWeight="SemiBold" Classes="muted" FontSize="13" />
+                  </CheckBox>
+                  <ItemsControl ItemsSource="{Binding Commands}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vm:CommandRowViewModel">
+                        <Button Classes="row" Classes.selected="{Binding IsSelected}"
+                                Command="{Binding SelectCommand}">
+                          <Grid ColumnDefinitions="Auto,*">
+                            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" ToolTip.Tip="Enabled" />
+                            <StackPanel Grid.Column="1">
+                              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                              <TextBlock Text="{Binding Aliases}" Classes="muted" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                          </Grid>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <TextBlock Grid.Column="1" IsVisible="{Binding !HasSelection}" Classes="muted" FontSize="14"
+               HorizontalAlignment="Center" VerticalAlignment="Center" Text="Create or select a command" />
+
+    <!-- Editor -->
+    <ScrollViewer Grid.Column="1" IsVisible="{Binding HasSelection}" Padding="24,16">
+      <ContentControl Content="{Binding Editor}">
+        <ContentControl.DataTemplates>
+          <DataTemplate DataType="vm:CommandEditorViewModel">
+            <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <Grid ColumnDefinitions="2*,12,*">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Name" />
+                      <TextBox x:Name="CommandName" Text="{Binding Name}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="Group" />
+                      <AutoCompleteBox Text="{Binding Group}" ItemsSource="{Binding GroupSuggestions}" FilterMode="ContainsOrdinal"
+                                       MinimumPrefixLength="0" />
+                    </StackPanel>
+                  </Grid>
+                  <WrapPanel ItemSpacing="16" LineSpacing="4">
+                    <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                    <CheckBox Content="Listed by 'Get commands'" IsChecked="{Binding Include}" />
+                  </WrapPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Classes="muted" Text="Id" VerticalAlignment="Center" />
+                    <SelectableTextBlock Text="{Binding IdText}" FontFamily="monospace" FontSize="12" VerticalAlignment="Center" />
+                    <Button Content="Copy id" Padding="8,2" Click="OnCopyId" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Matching" />
+                  <Grid ColumnDefinitions="*,12,*">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Mode" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Modes}" SelectedItem="{Binding Mode}" HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="Location" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Locations}" SelectedItem="{Binding Location}" HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                  </Grid>
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Commands (one per line; aliases share the cooldown and counter)" />
+                    <TextBox Text="{Binding AliasesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="80" FontFamily="monospace" />
+                    <TextBlock Classes="error" Text="{Binding RegexErrors}" IsVisible="{Binding HasRegexErrors}" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap"
+                               Text="Start: the message begins with the command. Exact: the whole message is the command. Anywhere: the command appears as a separate word. Regex: each line is a .NET regular expression; named groups become arguments." />
+                  </StackPanel>
+                  <WrapPanel ItemSpacing="16" LineSpacing="4">
+                    <CheckBox Content="Case sensitive" IsChecked="{Binding CaseSensitive}" />
+                    <CheckBox Content="Ignore the bot account" IsChecked="{Binding IgnoreBotAccount}" />
+                    <CheckBox Content="Ignore messages sent from Cuebot" IsChecked="{Binding IgnoreInternal}" />
+                  </WrapPanel>
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Sources (one per line, e.g. Twitch or Twitch:Whisper; empty = every chat)" />
+                    <TextBox Text="{Binding SourcesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="56" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Cooldowns" />
+                  <WrapPanel ItemSpacing="24" LineSpacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Global" VerticalAlignment="Center" />
+                      <NumericUpDown Value="{Binding GlobalCooldownSeconds}" Minimum="0" Increment="5" FormatString="0.##" Width="140" />
+                      <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Per user" VerticalAlignment="Center" />
+                      <NumericUpDown Value="{Binding UserCooldownSeconds}" Minimum="0" Increment="5" FormatString="0.##" Width="140" />
+                      <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Permissions" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Minimum role" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Roles}" SelectedItem="{Binding MinimumRole}" MinWidth="160" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="The broadcaster can always run a command. Deny lists win over everything else; allow lists let people below the minimum role in. To restrict a command to listed people only, set the minimum role to Broadcaster." />
+                  <Grid ColumnDefinitions="*,12,*">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Allowed users (name or id, one per line)" />
+                      <TextBox Text="{Binding AllowedUsersText}" AcceptsReturn="True" MinHeight="64" />
+                      <TextBlock Text="Allowed groups" Margin="0,6,0,0" />
+                      <ItemsControl ItemsSource="{Binding AllowedGroups}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="vm:GroupChoiceViewModel">
+                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="Denied users (name or id, one per line)" />
+                      <TextBox Text="{Binding DeniedUsersText}" AcceptsReturn="True" MinHeight="64" />
+                      <TextBlock Text="Denied groups" Margin="0,6,0,0" />
+                      <ItemsControl ItemsSource="{Binding DeniedGroups}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="vm:GroupChoiceViewModel">
+                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Classes="muted" IsVisible="{Binding !HasGroups}" TextWrapping="Wrap"
+                             Text="Create groups on the Users &amp; Groups page to allow or deny whole groups." />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Counters" />
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="Used" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Counter}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Text="time(s)" Classes="muted" VerticalAlignment="Center" />
+                    <Button Content="Reset counter" Command="{Binding ResetCounterCommand}" Margin="12,0,0,0" />
+                    <Button Content="Reset user counters" Command="{Binding ResetUserCountersCommand}" />
+                    <TextBlock Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <WrapPanel ItemSpacing="16" LineSpacing="4">
+                    <CheckBox Content="Keep the counter after a restart" IsChecked="{Binding PersistCounter}" />
+                    <CheckBox Content="Keep per-user counters after a restart" IsChecked="{Binding PersistUserCounter}" />
+                  </WrapPanel>
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="The trigger gets %counter% and %userCounter%: how many times the command, and this user, ran it." />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Media;
 using Cuebot.App.ViewModels.Actions;
 using Cuebot.Core.Actions;
 
@@ -25,12 +26,24 @@ public sealed class GraphNode(GraphNodeKind kind, object item, Rect bounds, stri
     public bool Enabled { get; } = enabled;
     public List<GraphPort> Ports { get; } = [];
 
+    /// <summary>Group sub-actions: their colour (stripe and frame) and a "GROUP" label instead of the category.</summary>
+    public Color? Tint { get; init; }
+
+    /// <summary>Overrides the small label above the title (e.g. "GROUP · RANDOM").</summary>
+    public string? KindLabel { get; init; }
+
     public GraphPort? InPort => Ports.FirstOrDefault(p => p.Kind == GraphPortKind.In);
 }
 
 public sealed record GraphEdge(GraphPort From, GraphPort To);
 
-public sealed record FlowGraph(IReadOnlyList<GraphNode> Nodes, IReadOnlyList<GraphEdge> Edges);
+/// <summary>A tinted frame drawn behind a Group sub-action and everything inside it.</summary>
+public sealed record GraphFrame(Rect Bounds, Color Color, string Label);
+
+public sealed record FlowGraph(IReadOnlyList<GraphNode> Nodes, IReadOnlyList<GraphEdge> Edges)
+{
+    public IReadOnlyList<GraphFrame> Frames { get; init; } = [];
+}
 
 /// <summary>
 /// Projects an action's flow tree onto a canvas. Flow runs top to bottom; branches fan out to the right.
@@ -43,6 +56,7 @@ public static class FlowGraphLayout
     public const double ColumnGap = 50;
     public const double RowGap = 44;
     private const double BranchPortSpacing = 20;
+    private const double FramePadding = 12;
 
     public static FlowGraph Build(ActionItemViewModel action)
     {
@@ -66,7 +80,7 @@ public static class FlowGraphLayout
 
         var entryPos = Position(action.Definition.Layout, 0, NodeHeight + RowGap);
         var entry = new GraphNode(GraphNodeKind.Entry, action, new Rect(entryPos, Size), action.Name,
-            action.Concurrent ? "Runs concurrently" : "Runs queued", "Action", action.Enabled);
+            action.RunSummary, "Action", action.Enabled);
         var entryIn = new GraphPort(entry, GraphPortKind.In, TopCenter(entry.Bounds));
         var entryNext = new GraphPort(entry, GraphPortKind.Next, BottomCenter(entry.Bounds), Target: new StepInsertTarget(action.Steps, 0));
         entry.Ports.Add(entryIn);
@@ -76,13 +90,14 @@ public static class FlowGraphLayout
         nodes.Add(entry);
         edges.AddRange(triggerOuts.Select(t => new GraphEdge(t, entryIn)));
 
-        PlaceChain(action.Steps, entryPos.X, entry.Bounds.Bottom + RowGap, entryNext, action.Enabled, nodes, edges);
-        return new FlowGraph(nodes, edges);
+        var frames = new List<GraphFrame>();
+        PlaceChain(action.Steps, entryPos.X, entry.Bounds.Bottom + RowGap, entryNext, action.Enabled, nodes, edges, frames);
+        return new FlowGraph(nodes, edges) { Frames = frames };
     }
 
     /// <returns>The lowest Y and rightmost X used by the chain and everything under it.</returns>
     private static (double Bottom, double Right) PlaceChain(StepListViewModel list, double x, double y, GraphPort incoming,
-        bool enabled, List<GraphNode> nodes, List<GraphEdge> edges)
+        bool enabled, List<GraphNode> nodes, List<GraphEdge> edges, List<GraphFrame> frames)
     {
         var cursorY = y;
         var previous = incoming;
@@ -93,7 +108,15 @@ public static class FlowGraphLayout
             var step = list.Items[i];
             var stepEnabled = enabled && step.Enabled;
             var pos = Position(step.Definition.Layout, x, cursorY);
-            var node = new GraphNode(GraphNodeKind.Step, step, new Rect(pos, Size), step.Title, step.Summary, step.Category, stepEnabled);
+            var node = new GraphNode(GraphNodeKind.Step, step, new Rect(pos, Size), step.Title,
+                step.ShowsWeight ? string.Join(" · ", new[] { step.WeightLabel, step.Summary }.Where(s => s.Length > 0)) : step.Summary,
+                step.Category, stepEnabled)
+            {
+                Tint = step.IsGroup ? step.GroupColor : null,
+                KindLabel = step.IsGroup ? (step.IsRandomGroup ? "GROUP · ONE AT RANDOM" : "GROUP") : null,
+            };
+            var frameIndex = frames.Count;
+            var firstChild = nodes.Count + 1;
             var input = new GraphPort(node, GraphPortKind.In, TopCenter(node.Bounds));
             var next = new GraphPort(node, GraphPortKind.Next, BottomCenter(node.Bounds), Target: new StepInsertTarget(list, i + 1));
             node.Ports.Add(input);
@@ -110,9 +133,17 @@ public static class FlowGraphLayout
                 var port = new GraphPort(node, GraphPortKind.Branch, portPos, branch.Name, new StepInsertTarget(branch.Steps, 0));
                 node.Ports.Add(port);
                 var (branchBottom, branchRight) = PlaceChain(branch.Steps, branchX, node.Bounds.Bottom + RowGap / 2, port,
-                    stepEnabled, nodes, edges);
+                    stepEnabled, nodes, edges, frames);
                 nodeBottom = Math.Max(nodeBottom, branchBottom);
                 branchX = Math.Max(branchX + NodeWidth, branchRight) + ColumnGap;
+            }
+
+            if (step.IsGroup)
+            {
+                var area = node.Bounds;
+                for (var n = firstChild; n < nodes.Count; n++) area = area.Union(nodes[n].Bounds);
+                // Inserted before any nested group's frame, so outer frames draw first and nested ones on top.
+                frames.Insert(frameIndex, new GraphFrame(area.Inflate(FramePadding), step.GroupColor, step.GroupName));
             }
 
             bottom = Math.Max(bottom, nodeBottom);

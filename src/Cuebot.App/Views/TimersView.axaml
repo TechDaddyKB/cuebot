@@ -5,23 +5,62 @@
              x:DataType="vm:TimersViewModel"
              x:Name="Root">
   <ScrollViewer Padding="24">
-    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+    <StackPanel MaxWidth="900" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Timers" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                 Text="A timer fires the 'Timer' trigger on every action that selects it, at a fixed interval." />
+                 Text="A timer fires the 'Timer' trigger on every action that selects it: at a fixed interval, at a random interval between a minimum and maximum, or on a cron schedule. 'Set timer state' changes made by actions show here live but are not saved." />
       <Button Content="+ Timer" Classes="accent" Command="{Binding AddTimerCommand}" Margin="0,0,0,12" />
       <ItemsControl ItemsSource="{Binding Timers}">
         <ItemsControl.ItemTemplate>
           <DataTemplate DataType="vm:TimerItemViewModel">
             <Border Classes="card">
-              <Grid ColumnDefinitions="*,12,160,12,Auto,12,Auto">
-                <TextBox Text="{Binding Name}" PlaceholderText="Timer name" />
-                <NumericUpDown Grid.Column="2" Value="{Binding IntervalSeconds}" Minimum="1" Increment="10" FormatString="0"
-                               ToolTip.Tip="Interval in seconds" />
-                <CheckBox Grid.Column="4" Content="Enabled" IsChecked="{Binding Enabled}" />
-                <Button Grid.Column="6" Content="Remove"
-                        Command="{Binding #Root.((vm:TimersViewModel)DataContext).RemoveTimerCommand}" CommandParameter="{Binding}" />
-              </Grid>
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,12,Auto,12,Auto,12,Auto">
+                  <TextBox Text="{Binding Name}" PlaceholderText="Timer name" FontWeight="SemiBold" />
+                  <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                  <CheckBox Grid.Column="4" Content="Repeat" IsChecked="{Binding Repeat}"
+                            ToolTip.Tip="Off: fires once after it is enabled (or Cuebot starts), then waits to be enabled again" />
+                  <Button Grid.Column="6" Content="Remove"
+                          Command="{Binding RemoveCommand}" />
+                </Grid>
+                <WrapPanel ItemSpacing="20" LineSpacing="8">
+                  <CheckBox Content="Random interval" IsChecked="{Binding RandomInterval}" IsEnabled="{Binding !HasCron}" />
+                  <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowsFixedInterval}">
+                    <TextBlock Text="Every" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding IntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="140" />
+                    <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowsRandomInterval}">
+                    <TextBlock Text="Between" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding MinIntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="130" />
+                    <TextBlock Text="and" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding MaxIntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="130" />
+                    <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Min chat lines" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding MinChatLines}" Minimum="0" Increment="1" FormatString="0" Width="120"
+                                   ToolTip.Tip="Skip a cycle unless this many chat messages arrived since the timer last fired (0 = always fire)" />
+                  </StackPanel>
+                </WrapPanel>
+                <TextBlock Classes="error" Text="{Binding IntervalError}"
+                           IsVisible="{Binding IntervalError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <Grid ColumnDefinitions="Auto,8,260,12,*">
+                  <TextBlock Text="Cron" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="2" Text="{Binding Cron}" PlaceholderText="e.g. */15 * * * * (optional)" FontFamily="monospace" />
+                  <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                    <TextBlock Classes="error" Text="{Binding CronError}" IsVisible="{Binding HasCronError}" />
+                    <TextBlock Classes="muted" Text="{Binding CronNext}" />
+                    <TextBlock Classes="muted" IsVisible="{Binding !HasCron}"
+                               Text="minute hour day month weekday, local time. Overrides the interval when set." />
+                  </StackPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Ellipse Classes="status" Classes.good="{Binding Enabled}" />
+                  <TextBlock Text="{Binding LiveStatus}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding ScheduleSummary, StringFormat='· {0}'}" Classes="muted" VerticalAlignment="Center" />
+                </StackPanel>
+              </StackPanel>
             </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>

@@ -22,10 +22,21 @@ public sealed partial class ActionsViewModel : PageViewModel
         _all = profile.Profile.Actions.Select(Wrap).ToList();
         ApplyFilter();
         SelectedAction = Actions.FirstOrDefault();
+        profile.Changed += () => OnUi(OnProfileChanged);
     }
 
     public ObservableCollection<ActionItemViewModel> Actions { get; } = [];
     public TypePickerViewModel Picker { get; } = new();
+    public TestTriggerViewModel Test { get; } = new();
+
+    /// <summary>
+    /// The live profile can change outside this page: "Set action state" toggles Enabled, the Queues page adds or
+    /// renames queues. Re-read what each action shows.
+    /// </summary>
+    private void OnProfileChanged()
+    {
+        foreach (var action in _all) action.RefreshFromProfile();
+    }
 
     [ObservableProperty] private string _filter = "";
     [ObservableProperty]
@@ -109,8 +120,27 @@ public sealed partial class ActionsViewModel : PageViewModel
         LastRunResult = $"Running '{action.Name}'...";
         // Run the engine's snapshot copy, so the run reflects saved state like a real trigger would.
         var snapshot = _profile.Snapshot.Actions.FirstOrDefault(a => a.Id == action.Definition.Id) ?? action.Definition;
-        var ok = await _engine.RunAsync(snapshot);
+        bool ok;
+        try { ok = await _engine.RunAsync(snapshot); }
+        catch (OperationCanceledException) { ok = false; }
         LastRunResult = ok ? $"'{action.Name}' completed" : $"'{action.Name}' failed — see Dashboard log";
+    }
+
+    /// <summary>Opens the "Test trigger" overlay for the selected action.</summary>
+    [RelayCommand]
+    private void TestTrigger()
+    {
+        if (SelectedAction is not { } action) return;
+        Test.Open(action, async (option, args) =>
+        {
+            var snapshot = _profile.Snapshot.Actions.FirstOrDefault(a => a.Id == action.Definition.Id) ?? action.Definition;
+            var trigger = option.Trigger is null ? null : snapshot.Triggers.FirstOrDefault(t => t.Id == option.Trigger.Id) ?? option.Trigger;
+            LastRunResult = $"Testing '{action.Name}'...";
+            bool ok;
+            try { ok = await _engine.TestTriggerAsync(snapshot, trigger, args); }
+            catch (OperationCanceledException) { ok = false; }
+            LastRunResult = ok ? $"Test of '{action.Name}' completed" : $"Test of '{action.Name}' failed or was cancelled — see Dashboard log";
+        });
     }
 
     [RelayCommand]

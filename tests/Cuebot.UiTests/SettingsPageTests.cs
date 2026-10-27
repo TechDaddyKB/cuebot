@@ -62,7 +62,7 @@ public sealed class SettingsPageTests : IAsyncDisposable
         Assert.Single(vm.Settings.Backups);
 
         var tabs = window.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "Sections");
-        var names = new[] { "general", "backups", "about" };
+        var names = new[] { "general", "audio-text", "backups", "about" };
         for (var i = 0; i < names.Length; i++)
         {
             tabs.SelectedIndex = i;
@@ -70,7 +70,7 @@ public sealed class SettingsPageTests : IAsyncDisposable
         }
 
         // Back up now adds a row; Restore asks for confirmation first.
-        tabs.SelectedIndex = 1;
+        tabs.SelectedIndex = 2;
         await vm.Settings.BackUpNowCommand.ExecuteAsync(null);
         Pump();
         Assert.Equal(2, vm.Settings.Backups.Count);

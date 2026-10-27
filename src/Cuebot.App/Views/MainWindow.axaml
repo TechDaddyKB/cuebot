@@ -13,8 +13,12 @@
     <DataTemplate DataType="vm:DashboardViewModel"><views:DashboardView /></DataTemplate>
     <DataTemplate DataType="vm:ChatViewModel"><views:ChatView /></DataTemplate>
     <DataTemplate DataType="actions:ActionsViewModel"><views:ActionsView /></DataTemplate>
+    <DataTemplate DataType="vm:CommandsViewModel"><views:CommandsView /></DataTemplate>
+    <DataTemplate DataType="vm:QueuesViewModel"><views:QueuesView /></DataTemplate>
     <DataTemplate DataType="vm:TimersViewModel"><views:TimersView /></DataTemplate>
+    <DataTemplate DataType="vm:UsersViewModel"><views:UsersView /></DataTemplate>
     <DataTemplate DataType="vm:VariablesViewModel"><views:VariablesView /></DataTemplate>
+    <DataTemplate DataType="vm:WatchersViewModel"><views:WatchersView /></DataTemplate>
     <DataTemplate DataType="vm:TwitchViewModel"><views:TwitchView /></DataTemplate>
     <DataTemplate DataType="vm:RumbleViewModel"><views:RumbleView /></DataTemplate>
     <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
