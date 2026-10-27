@@ -45,10 +45,15 @@
                       <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
                       <TextBlock Classes="hint" Text="{Binding Meta}" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="Stop user" VerticalAlignment="Center" IsVisible="{Binding HasUser}"
-                            ToolTip.Tip="Drop everything this user has waiting"
-                            Command="{Binding $parent[ItemsControl].((sp:SpeechOverviewViewModel)DataContext).StopUserCommand}"
-                            CommandParameter="{Binding}" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <Button Content="Remove" ToolTip.Tip="Drop this text"
+                              Command="{Binding $parent[ItemsControl].((sp:SpeechOverviewViewModel)DataContext).RemoveQueuedCommand}"
+                              CommandParameter="{Binding}" />
+                      <Button Content="Stop user" IsVisible="{Binding HasUser}"
+                              ToolTip.Tip="Drop everything this user has waiting"
+                              Command="{Binding $parent[ItemsControl].((sp:SpeechOverviewViewModel)DataContext).StopUserCommand}"
+                              CommandParameter="{Binding}" />
+                    </StackPanel>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>

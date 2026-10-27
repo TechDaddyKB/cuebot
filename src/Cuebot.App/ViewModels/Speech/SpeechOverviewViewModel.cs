@@ -178,6 +178,13 @@ public sealed partial class SpeechOverviewViewModel : ObservableObject
     [RelayCommand]
     private void ClearQueue() => Speech.ClearQueue();
 
+    /// <summary>Drops just this waiting text.</summary>
+    [RelayCommand]
+    private void RemoveQueued(QueueItemViewModel? item)
+    {
+        if (item is not null) Speech.RemoveQueued(item.Id);
+    }
+
     /// <summary>Drops everything waiting from this item's user (and stops them if speaking).</summary>
     [RelayCommand]
     private void StopUser(QueueItemViewModel? item)

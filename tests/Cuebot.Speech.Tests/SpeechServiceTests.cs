@@ -85,6 +85,30 @@ public class SpeechServiceTests
     }
 
     [Fact]
+    public async Task RemoveQueued_drops_only_that_text()
+    {
+        await using var h = await SpeechHarness.StartAsync();
+        h.Player.Block = true;
+
+        var current = h.Service.SpeakAsync("current", wait: true);
+        var first = h.Service.SpeakAsync("first", wait: true);
+        var second = h.Service.SpeakAsync("second", wait: true);
+        var playback = await h.Player.NextAsync();
+
+        var id = h.Service.Queue.Single(q => q.Text == "first").Id;
+        Assert.True(h.Service.RemoveQueued(id));
+        Assert.False(h.Service.RemoveQueued(id));
+
+        Assert.Equal(["second"], h.Service.Queue.Select(q => q.Text));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        h.Player.Block = false;
+        playback.Release();
+        await current;
+        await second;
+        Assert.Equal(["current", "second"], h.Engine.History.Select(c => c.Text));
+    }
+
+    [Fact]
     public async Task Paused_queue_waits_until_resumed()
     {
         await using var h = await SpeechHarness.StartAsync();

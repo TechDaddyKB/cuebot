@@ -217,6 +217,15 @@ public sealed class SpeechService : IAsyncDisposable
         RaiseStateChanged();
     }
 
+    /// <summary>Drops one waiting text by its <see cref="QueuedSpeech.Id"/>. Returns false when it already started or is gone.</summary>
+    public bool RemoveQueued(long id)
+    {
+        var removed = _queue.RemoveAll(r => r.Id == id);
+        foreach (var request in removed) request.Cancel();
+        if (removed.Count > 0) RaiseStateChanged();
+        return removed.Count > 0;
+    }
+
     /// <summary>Drops a user's waiting texts and stops theirs if it is playing. Returns how many were affected.</summary>
     public int StopUser(string? platform, string? userId, string? userName)
     {
