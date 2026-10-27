@@ -19,10 +19,13 @@ public sealed partial class CphProxy
     private readonly ScriptApi _api;
     private readonly ActionRunContext? _context;
     private readonly CancellationToken _ct;
+    private readonly CphInlineHost? _inline;
 
     /// <param name="context">The action run; null while a script's Init() runs outside any action.</param>
-    internal CphProxy(CphServices services, ScriptApi api, ActionRunContext? context, CancellationToken ct)
+    /// <param name="inline">The hosted CPHInline classes, for <see cref="ExecuteMethod"/>; null where there are none.</param>
+    internal CphProxy(CphServices services, ScriptApi api, ActionRunContext? context, CancellationToken ct, CphInlineHost? inline = null)
     {
+        _inline = inline;
         _services = services;
         _api = api;
         _context = context;
@@ -108,10 +111,32 @@ public sealed partial class CphProxy
     {
         if (!_api.Functions.Any(f => string.Equals(f.Name, function, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new NotSupportedException($"CPH.{method} needs the '{function}' script function, which no loaded Cuebot module provides");
+            throw new NotSupportedException(
+                $"CPH.{method} is not supported without the '{function}' script function, which no loaded Cuebot module provides");
         }
-        var result = _api.CallAsync(_context!, function, args, _ct).GetAwaiter().GetResult();
+        var result = _api.CallAsync(RequireContext(method), function, args, _ct).GetAwaiter().GetResult();
         return JsonSerializer.SerializeToElement(result);
+    }
+
+    /// <summary>
+    /// Calls a script function that reports results by writing action arguments (the sub-action style "get"
+    /// functions) and returns the arguments as they were right after the call. The run's arguments are then put
+    /// back, so a CPH method that returns data does not also leave the sub-action's arguments behind.
+    /// </summary>
+    private Dictionary<string, object?> CallForArgs(string function, object? args, [CallerMemberName] string method = "")
+    {
+        var context = RequireContext(method);
+        var before = new Dictionary<string, object?>(context.Args, StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            Call(function, args, method);
+            return new Dictionary<string, object?>(context.Args, StringComparer.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            foreach (var key in context.Args.Keys.Where(k => !before.ContainsKey(k)).ToList()) context.Args.Remove(key);
+            foreach (var (key, value) in before) context.Args[key] = value;
+        }
     }
 
     private bool HasFunction(string function) =>

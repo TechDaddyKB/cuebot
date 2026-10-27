@@ -29,7 +29,15 @@ public sealed class CSharpCodeSubAction(CSharpScriptEngine engine) : ISubActionH
             Help = "Script body using Args, Cb and CancellationToken. Scripts run inside Cuebot with full access to your computer; only use code you trust.",
         },
         ScriptSubActions.TimeoutParameter,
+        new(NameParameter, "Code name")
+        {
+            DefaultValue = "",
+            Help = "Optional. Lets other scripts call a public method of this code's CPHInline class with CPH.ExecuteMethod(name, method).",
+        },
     ];
+
+    /// <summary>Parameter holding the name <c>CPH.ExecuteMethod</c> finds this code by.</summary>
+    internal const string NameParameter = "name";
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues parameters, CancellationToken ct)
     {
