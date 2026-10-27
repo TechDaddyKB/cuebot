@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechUsersView"
+             x:DataType="sp:SpeechUsersViewModel">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" MaxWidth="1180" />
+    </Grid.ColumnDefinitions>
+  <Grid ColumnDefinitions="340,12,*" Margin="0,12,0,24">
+    <Border Classes="card">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Users" />
+        <TextBox DockPanel.Dock="Top" Text="{Binding Search}" PlaceholderText="Search name, nickname, platform, alias" Margin="0,0,0,8" />
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,6,Auto" Margin="0,8,0,0">
+          <TextBlock Classes="hint" Text="{Binding CountText}" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" />
+          <Button Grid.Column="3" Content="Remove" Command="{Binding RemoveCommand}" />
+        </Grid>
+        <ListBox Classes="list" ItemsSource="{Binding Users}" SelectedItem="{Binding Selected}">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="sp:SpeechUserViewModel">
+              <StackPanel>
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                <TextBlock Classes="hint" Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <ScrollViewer Grid.Column="2">
+      <StackPanel>
+        <Border Classes="card" IsVisible="{Binding IsEmpty}">
+          <TextBlock Classes="hint"
+                     Text="Chatters appear here once they have been read aloud or a moderator used !tts on them. Per-user voices, nicknames and flags are stored in speech-users.json." />
+        </Border>
+        <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
+          <ContentControl.ContentTemplate>
+            <DataTemplate DataType="sp:SpeechUserViewModel">
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <StackPanel>
+                    <TextBlock Classes="h2" Text="{Binding Title}" Margin="0" />
+                    <TextBlock Classes="hint" Text="{Binding Details}" />
+                  </StackPanel>
+                  <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto">
+                    <TextBlock Classes="label" Text="Voice alias" />
+                    <ComboBox Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+                    <TextBlock Grid.Column="2" Classes="label" Text="Nickname (spoken instead of the name)" />
+                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding Nickname}" PlaceholderText="None" />
+                    <TextBlock Grid.Row="3" Classes="label" Text="Rate override (-10..10, empty keeps the alias rate)" />
+                    <NumericUpDown Grid.Row="4" Value="{Binding Rate}" Minimum="-10" Maximum="10" Increment="1" />
+                    <TextBlock Grid.Column="2" Grid.Row="3" Classes="label" Text="Pitch override (-10..10)" />
+                    <NumericUpDown Grid.Column="2" Grid.Row="4" Value="{Binding Pitch}" Minimum="-10" Maximum="10" Increment="1" />
+                  </Grid>
+                  <WrapPanel>
+                    <CheckBox Content="Ignored" IsChecked="{Binding Ignored}" Margin="0,0,16,0" ToolTip.Tip="Never read aloud" />
+                    <CheckBox Content="Forced" IsChecked="{Binding Forced}" Margin="0,0,16,0" ToolTip.Tip="Always read aloud, bypassing permissions" />
+                    <CheckBox Content="Regular" IsChecked="{Binding Regular}" Margin="0,0,16,0" ToolTip.Tip="Counts as a regular for permissions" />
+                    <CheckBox Content="Opted out" IsChecked="{Binding OptedOut}" ToolTip.Tip="The user turned speech off with !tts me off" />
+                  </WrapPanel>
+                  <Grid ColumnDefinitions="Auto,8,*,Auto">
+                    <TextBlock Classes="label" Text="Sticky random voice" VerticalAlignment="Center" Margin="0" />
+                    <TextBlock Grid.Column="2" Classes="mono" Text="{Binding RandomVoice}" VerticalAlignment="Center" />
+                    <Button Grid.Column="3" Content="Reset" Command="{Binding ResetRandomVoiceCommand}" IsEnabled="{Binding HasRandomVoice}" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ContentControl.ContentTemplate>
+        </ContentControl>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+  </Grid>
+</UserControl>

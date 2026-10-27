@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechGateView"
+             x:DataType="sp:SpeechGateViewModel">
+  <UserControl.Styles>
+    <Style Selector="ProgressBar#LevelMeter">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotGood}" />
+    </Style>
+    <Style Selector="ProgressBar#LevelMeter.hot">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotBad}" />
+    </Style>
+  </UserControl.Styles>
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="1180" />
+      </Grid.ColumnDefinitions>
+    <StackPanel Margin="0,12,0,24">
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="VoiceGate" />
+          <TextBlock Classes="hint" Text="Holds the speech queue while your microphone is louder than the threshold, so TTS does not talk over you. The text that is already playing finishes." />
+          <Grid ColumnDefinitions="Auto,10,*">
+            <Ellipse Classes="status" Classes.good="{Binding IsListening}" Classes.bad="{Binding IsHolding}" />
+            <TextBlock Grid.Column="2" Text="{Binding AvailabilityText}" TextWrapping="Wrap" />
+          </Grid>
+          <StackPanel Spacing="3">
+            <TextBlock Classes="label" Text="Active profile" />
+            <ComboBox ItemsSource="{Binding ActiveChoices}" SelectedItem="{Binding ActiveProfile}" MaxWidth="360" MinWidth="240" HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <Grid ColumnDefinitions="220,12,*">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                <Button Content="+ Profile" Classes="accent" Command="{Binding AddCommand}" />
+                <Button Content="Remove" Command="{Binding RemoveCommand}" />
+              </StackPanel>
+              <ListBox Classes="list" ItemsSource="{Binding Profiles}" SelectedItem="{Binding Selected}" MinHeight="140">
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="sp:VoiceGateProfileViewModel">
+                    <TextBlock Text="{Binding Name}" />
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </DockPanel>
+
+            <StackPanel Grid.Column="2" Spacing="10">
+              <TextBlock Classes="hint" Text="Add a profile for each microphone setup." IsVisible="{Binding !HasSelection}" />
+              <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
+                <ContentControl.ContentTemplate>
+                  <DataTemplate DataType="sp:VoiceGateProfileViewModel">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Classes="label" Text="Name" />
+                        <TextBox Grid.Row="1" Text="{Binding Name}" />
+                        <TextBlock Grid.Column="2" Classes="label" Text="Microphone" />
+                        <Grid Grid.Column="2" Grid.Row="1" ColumnDefinitions="*,6,Auto">
+                          <ComboBox ItemsSource="{Binding InputDevices}"
+                                    SelectedItem="{Binding Device}" />
+                          <Button Grid.Column="2" Content="Refresh"
+                                  Command="{Binding RefreshDevicesCommand}" />
+                        </Grid>
+                      </Grid>
+                      <Grid ColumnDefinitions="2*,16,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Classes="label" Text="{Binding ThresholdDb, StringFormat='Threshold: {0:0} dBFS'}" />
+                        <Slider Grid.Row="1" Minimum="-96" Maximum="0" Value="{Binding ThresholdDb}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                        <TextBlock Grid.Column="2" Classes="label" Text="Release delay (ms)" />
+                        <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding ReleaseMilliseconds}" Minimum="0" Maximum="60000" Increment="100" VerticalAlignment="Center" />
+                      </Grid>
+                    </StackPanel>
+                  </DataTemplate>
+                </ContentControl.ContentTemplate>
+              </ContentControl>
+
+              <Border Classes="inset" IsVisible="{Binding HasSelection}">
+                <StackPanel Spacing="6">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="label" Text="Live level" VerticalAlignment="Center" />
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsMonitoring}" OnContent="Meter on" OffContent="Meter off"
+                                  IsEnabled="{Binding IsAvailable}" />
+                  </Grid>
+                  <ProgressBar x:Name="LevelMeter" Minimum="-96" Maximum="0" Value="{Binding LevelDb}" Height="10" MinHeight="10"
+                               Classes.hot="{Binding IsAboveThreshold}" />
+                  <TextBlock Classes="hint" Text="{Binding LevelText}" />
+                  <TextBlock Classes="error" Text="{Binding MonitorError}" IsVisible="{Binding MonitorError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="Queue" />
+          <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Classes="label" Text="Most texts waiting (0: unlimited)" />
+            <NumericUpDown Grid.Row="1" Value="{Binding MaxQueueLength}" Minimum="0" Maximum="10000" />
+            <TextBlock Grid.Column="2" Classes="label" Text="When the queue is full" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding DropPolicies}" SelectedItem="{Binding DropPolicy}" />
+            <TextBlock Grid.Column="2" Grid.Row="2" Classes="hint" Margin="0,4,0,0"
+                       Text="DropNewest ignores the new text; DropOldest removes the longest-waiting one." />
+          </Grid>
+          <StackPanel Spacing="3">
+            <TextBlock Classes="label" Text="Save every spoken text to this folder (empty: off)" />
+            <Grid ColumnDefinitions="*,8,Auto">
+              <TextBox Text="{Binding SaveFolder}" PlaceholderText="No folder" />
+              <Button Grid.Column="2" Content="Browse…" Click="OnBrowseSaveFolder" />
+            </Grid>
+            <TextBlock Classes="hint" Text="Files are WAV, or the engine's own format (MP3/OGG) for cloud voices." />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.AudiencePicker"
+             x:DataType="sp:AudienceViewModel">
+  <!-- Who may do something in chat; the broadcaster always may. -->
+  <WrapPanel Orientation="Horizontal">
+    <WrapPanel.Styles>
+      <Style Selector="CheckBox">
+        <Setter Property="Margin" Value="0,0,14,0" />
+        <Setter Property="MinHeight" Value="28" />
+      </Style>
+    </WrapPanel.Styles>
+    <CheckBox Content="Everyone" IsChecked="{Binding Everyone}" />
+    <CheckBox Content="Moderators" IsChecked="{Binding Moderators}" IsEnabled="{Binding IsRestricted}" />
+    <CheckBox Content="VIPs" IsChecked="{Binding Vips}" IsEnabled="{Binding IsRestricted}" />
+    <CheckBox Content="Subscribers" IsChecked="{Binding Subscribers}" IsEnabled="{Binding IsRestricted}" />
+    <CheckBox Content="Regulars" IsChecked="{Binding Regulars}" IsEnabled="{Binding IsRestricted}" />
+  </WrapPanel>
+</UserControl>

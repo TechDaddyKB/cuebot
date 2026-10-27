@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechEnginesView"
+             x:DataType="sp:SpeechEnginesViewModel">
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="sp:CredentialFieldViewModel">
+      <StackPanel Margin="0,0,12,8">
+        <TextBlock Classes="label" Text="{Binding Label}" />
+        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsText}">
+          <TextBox Text="{Binding Value}" PasswordChar="{Binding PasswordChar}" RevealPassword="{Binding Revealed}"
+                   PlaceholderText="{Binding Placeholder}" />
+          <ToggleButton Grid.Column="1" Content="Show" Margin="6,0,0,0" IsVisible="{Binding IsSecret}"
+                        IsChecked="{Binding Revealed}" />
+        </Grid>
+        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding SelectedChoice}" IsVisible="{Binding IsChoice}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="sp:EngineCardViewModel">
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Ellipse Classes="status" Classes.good="{Binding IsAvailable}" Margin="0,0,10,0" />
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
+              <TextBlock Classes="hint" Text="{Binding Status}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Classes="hint" Text="{Binding TestResult}" VerticalAlignment="Center" />
+              <Button Content="Test" Command="{Binding TestCommand}" ToolTip.Tip="List this engine's voices" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Classes="hint" Text="{Binding Hint}" IsVisible="{Binding HasHint}" />
+          <ItemsControl ItemsSource="{Binding Fields}" IsVisible="{Binding HasFields}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="2" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+          <TextBlock Classes="error" Text="{Binding TestError}" IsVisible="{Binding TestError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <ListBox Classes="list" ItemsSource="{Binding Voices}" IsVisible="{Binding HasVoices}" MaxHeight="220">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="sp:EngineVoiceRow">
+                <Grid ColumnDefinitions="2*,3*,2*">
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="1" Classes="hint" Text="{Binding Detail}" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="2" Classes="hint" Text="{Binding Styles}" TextTrimming="CharacterEllipsis" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="980" />
+      </Grid.ColumnDefinitions>
+    <StackPanel Margin="0,12,0,24">
+      <TextBlock Classes="h2" Text="On this computer" />
+      <ItemsControl ItemsSource="{Binding LocalEngines}" />
+      <TextBlock Classes="h2" Text="Cloud engines" Margin="0,8,0,4" />
+      <TextBlock Classes="hint" Margin="0,0,0,10"
+                 Text="Credentials are stored in speech.json in your data folder. They are masked here and never written to the log." />
+      <ItemsControl ItemsSource="{Binding CloudEngines}" />
+    </StackPanel>
+  </Grid>
+  </ScrollViewer>
+</UserControl>
