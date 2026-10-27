@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Donations"
+             x:Class="Cuebot.App.Views.Donations.DonationsView"
+             x:DataType="vm:DonationsViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Donations" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Tips, merch and store redemptions from Streamlabs and StreamElements become triggers, activity feed items and event speech. Tokens are stored in donations.json, masked here and never written to the log." />
+
+      <Border Classes="card" DataContext="{Binding Streamlabs}" x:DataType="vm:StreamlabsCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Streamlabs" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On streamlabs.com open Settings → API Settings → API Tokens and copy the Socket API Token. Cuebot connects to the Streamlabs Socket API for donations, charity donations, merch, loyalty store redemptions and Prime gifts." />
+          <TextBox Name="StreamlabsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Socket API token" />
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Also publish the Twitch/YouTube events Streamlabs relays (follows, subs, bits, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" DataContext="{Binding StreamElements}" x:DataType="vm:StreamElementsCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="StreamElements" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On streamelements.com open your account → Channels, choose Show secrets and copy the JWT Token. Cuebot subscribes to your channel's activities (tips, merch, store redemptions) and uses the REST API for points and tips sub-actions." />
+          <TextBox Name="StreamElementsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="JWT token" />
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
+          <TextBlock Text="{Binding Channel, StringFormat='Channel: {0}'}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Also publish relayed platform activities (follows, subs, cheers, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" />
+          <CheckBox Content="Use the legacy realtime socket instead of Astro (fallback)" IsChecked="{Binding UseLegacyRealtime}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Last events" />
+          <TextBlock Classes="muted" Text="No events yet. Send a test event to try your triggers." IsVisible="{Binding HasNoEvents}" />
+          <ItemsControl ItemsSource="{Binding RecentEvents}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DonationRecordViewModel">
+                <Grid ColumnDefinitions="70,120,*,Auto" Margin="0,2">
+                  <TextBlock Classes="muted" Text="{Binding Time}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Service}" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="2" Text="{Binding Summary}" TextWrapping="Wrap" />
+                  <TextBlock Grid.Column="3" Classes="muted" Text="{Binding EventType}" Margin="8,0,0,0" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
