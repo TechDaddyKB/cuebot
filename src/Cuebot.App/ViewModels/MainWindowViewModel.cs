@@ -36,6 +36,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new ObsViewModel(host.Get<ObsService>()),
             new SpeechViewModel(host.Get<SpeechService>(), host.Get<IAudioInput>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
+            new Cuebot.App.ViewModels.Servers.ServersViewModel(host.Get<Cuebot.Server.ServerManager>()),
             Settings,
         ];
         _selectedPage = Dashboard;
