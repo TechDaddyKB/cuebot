@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Launches a packaged Cuebot on a headless display server, checks the window appears and the expected
 # display backend was used, and saves a screenshot.
-#   packaging/linux/smoke-test.sh <x11|wayland> <name> <command...>
-# x11 needs: xvfb xdotool scrot.  wayland needs: sway grim jq (runs sway headless, no X server).
+#   packaging/linux/smoke-test.sh <x11|wayland|wayland-weston|fallback> <name> <command...>
+# x11: xvfb xdotool scrot. wayland: sway grim jq. wayland-weston: weston. fallback: sway + x11 tools.
 # Writes artifacts/smoke-<name>-<mode>.png and .log.
 set -uo pipefail
 mode="$1"; name="$2"; shift 2
@@ -19,34 +19,72 @@ pids=()
 cleanup() { for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done; }
 trap cleanup EXIT
 
+start_xvfb() {
+  Xvfb :99 -screen 0 1600x1000x24 >/dev/null 2>&1 & pids+=($!)
+  export DISPLAY=:99
+}
+
+start_sway() {
+  conf="$(mktemp)"
+  printf 'output HEADLESS-1 resolution 1600x1000\nxwayland disable\n' > "$conf"
+  WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 sway -c "$conf" >"$out.compositor.log" 2>&1 & pids+=($!)
+  # Wait until sway answers on its IPC socket: the Wayland socket appears before its globals are ready.
+  for _ in $(seq 1 40); do
+    export SWAYSOCK="$(ls "$XDG_RUNTIME_DIR"/sway-ipc.*.sock 2>/dev/null | head -1)"
+    [ -n "$SWAYSOCK" ] && swaymsg -t get_version >/dev/null 2>&1 && break
+    sleep 0.5
+  done
+  use_wayland_socket
+}
+
+start_weston() {
+  weston --backend=headless --renderer=pixman --width=1600 --height=1000 --debug >"$out.compositor.log" 2>&1 & pids+=($!)
+  for _ in $(seq 1 40); do ls "$XDG_RUNTIME_DIR" | grep -qE '^wayland-[0-9]+$' && break; sleep 0.5; done
+  sleep 2
+  use_wayland_socket
+}
+
+use_wayland_socket() {
+  sock="$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)"
+  [ -n "$sock" ] || { echo "Wayland compositor did not start:" >&2; cat "$out.compositor.log" >&2; exit 1; }
+  export WAYLAND_DISPLAY="$sock"
+  export LIBGL_ALWAYS_SOFTWARE=1   # Mesa software rendering; the CI runner has no GPU
+}
+
+app_logged_backend() { grep -qs "display backend: $expected" "$data"/logs/*.log; }
+
 case "$mode" in
   x11)
-    Xvfb :99 -screen 0 1600x1000x24 >/dev/null 2>&1 & pids+=($!)
-    export DISPLAY=:99
+    start_xvfb
     unset WAYLAND_DISPLAY
     expected="X11"
     window_up() { xdotool search --name '^Cuebot$' >/dev/null 2>&1; }
     screenshot() { scrot --overwrite "$out.png"; }
     ;;
-  wayland)
+  wayland)          # native Wayland on sway; no X server, so XWayland cannot mask a failure
     export XDG_RUNTIME_DIR="$(mktemp -d)"; chmod 700 "$XDG_RUNTIME_DIR"
-    unset DISPLAY   # no X server at all: a broken Wayland path cannot hide behind XWayland
-    conf="$(mktemp)"
-    printf 'output HEADLESS-1 resolution 1600x1000\nxwayland disable\n' > "$conf"
-    WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 sway -c "$conf" >"$out.compositor.log" 2>&1 & pids+=($!)
-    # Wait until sway answers on its IPC socket: the Wayland socket appears before its globals are ready.
-    for _ in $(seq 1 40); do
-      export SWAYSOCK="$(ls "$XDG_RUNTIME_DIR"/sway-ipc.*.sock 2>/dev/null | head -1)"
-      [ -n "$SWAYSOCK" ] && swaymsg -t get_version >/dev/null 2>&1 && break
-      sleep 0.5
-    done
-    sock="$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)"
-    [ -n "$sock" ] || { echo "sway did not start:" >&2; cat "$out.compositor.log" >&2; exit 1; }
-    export WAYLAND_DISPLAY="$sock"
-    export LIBGL_ALWAYS_SOFTWARE=1   # Mesa software rendering; the CI runner has no GPU
+    unset DISPLAY
+    start_sway
     expected="Wayland"
     window_up() { swaymsg -t get_tree 2>/dev/null | jq -e '.. | objects | select(.name? == "Cuebot")' >/dev/null; }
     screenshot() { grim "$out.png"; }
+    ;;
+  wayland-weston)   # native Wayland on weston (has no window IPC: rely on the app log, then screenshot)
+    export XDG_RUNTIME_DIR="$(mktemp -d)"; chmod 700 "$XDG_RUNTIME_DIR"
+    unset DISPLAY
+    start_weston
+    expected="Wayland"
+    window_up() { app_logged_backend; }
+    screenshot() { (cd "$(dirname "$out")" && weston-screenshooter >/dev/null 2>&1 \
+                     && mv -f wayland-screenshot*.png "$out.png" 2>/dev/null) || true; }
+    ;;
+  fallback)         # a Wayland compositor Avalonia cannot use, plus an X server: expect a relaunch on X11
+    export XDG_RUNTIME_DIR="$(mktemp -d)"; chmod 700 "$XDG_RUNTIME_DIR"
+    start_sway
+    start_xvfb
+    expected="X11"
+    window_up() { xdotool search --name '^Cuebot$' >/dev/null 2>&1; }
+    screenshot() { scrot --overwrite "$out.png"; }
     ;;
   *) echo "unknown mode $mode" >&2; exit 2 ;;
 esac
@@ -75,6 +113,11 @@ cat "$data"/logs/*.log 2>/dev/null >>"$out.log"
 if ! grep -q "display backend: $expected" "$out.log"; then
   echo "Expected the $expected display backend; app log:" >&2
   cat "$data"/logs/*.log >&2 2>/dev/null
+  ok=0
+fi
+if [ "$mode" = fallback ] && ! grep -q "relaunching with X11" "$out.log"; then
+  echo "Expected a Wayland failure followed by an X11 relaunch; output:" >&2
+  cat "$out.log" >&2
   ok=0
 fi
 [ "$ok" = 1 ]

@@ -64,6 +64,11 @@ which backend is in use.
 Packages: AppImage, Flatpak (Wayland socket with X11 fallback), and the AUR: `cuebot` builds from source on the
 system .NET runtime, `cuebot-bin` repackages the self-contained release. See `packaging/aur`.
 
+Avalonia's Wayland backend needs a compositor offering `xdg_wm_base` v3 or newer (GNOME, KDE Plasma, current
+sway/Hyprland all do; sway 1.9 does not). On older compositors Cuebot relaunches on XWayland automatically.
+Inside the Flatpak sandbox X11 is only granted when no Wayland socket exists, so on such a compositor run
+`flatpak override --user --socket=x11 io.github.cuebot.Cuebot` once (or launch with `--backend=x11`).
+
 - Audio playback uses `pw-play`, `paplay` or `aplay` (whichever is installed).
 - Offline TTS on Linux uses `espeak-ng` (bundled in the Flatpak).
 
