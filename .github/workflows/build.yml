@@ -44,7 +44,7 @@ jobs:
 
   linux-package:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: its sway 1.9 is what makes Avalonia fail on Wayland for the X11-fallback smoke test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
