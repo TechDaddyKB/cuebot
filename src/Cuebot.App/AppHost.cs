@@ -78,6 +78,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "OBS", () => Get<ObsService>().StartAsync()),
             StartSafely(log, "Rumble", () => Get<RumbleService>().StartAsync()),
             StartSafely(log, "YouTube", () => Get<Cuebot.YouTube.YouTubeService>().StartAsync()),
+            StartSafely(log, "Kick", () => Get<Cuebot.Kick.KickService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),
             StartSafely(log, "Python", () => Get<PythonRuntime>().StartAsync()),
             StartSafely(log, "Watchers", () => Get<Cuebot.Core.SystemTools.WatcherService>().StartAsync()),

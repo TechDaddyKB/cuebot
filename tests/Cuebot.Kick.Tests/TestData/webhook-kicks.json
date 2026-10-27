@@ -1,0 +1,6 @@
+{
+  "broadcaster": { "user_id": 100, "username": "CuebotDev", "is_verified": true, "profile_picture": "", "channel_slug": "cuebotdev" },
+  "sender": { "user_id": 777, "username": "KickFan", "is_verified": false, "profile_picture": "", "channel_slug": "kickfan" },
+  "gift": { "amount": 100, "name": "Full Send", "type": "BASIC", "tier": "BASIC", "message": "w stream", "pinned_time_seconds": 0 },
+  "created_at": "2025-10-20T04:00:08.634Z"
+}

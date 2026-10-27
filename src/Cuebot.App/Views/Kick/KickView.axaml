@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Kick"
+             x:Class="Cuebot.App.Views.Kick.KickView"
+             x:DataType="vm:KickViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Kick" />
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Status" />
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Text="{Binding BroadcasterAccount, StringFormat='Broadcaster: {0}'}" />
+          <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" />
+          <TextBlock TextWrapping="Wrap" Text="{Binding RealtimeStatus, StringFormat='Real-time chat: {0}'}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Channel" />
+          <TextBlock Text="{Binding ChannelSlug, StringFormat='Channel: {0}'}" />
+          <TextBlock Text="{Binding LiveStatus, StringFormat='Stream: {0}'}" />
+          <TextBlock TextWrapping="Wrap" Text="{Binding StreamTitle, StringFormat='Title: {0}'}" />
+          <TextBlock Text="{Binding Category, StringFormat='Category: {0}'}" />
+          <Button Content="Refresh" Command="{Binding RefreshChannelCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
+          <Grid ColumnDefinitions="*,8,Auto">
+            <TextBox Text="{Binding NewTitle}" PlaceholderText="New stream title" />
+            <Button Grid.Column="2" Content="Set title" Command="{Binding UpdateTitleCommand}" />
+          </Grid>
+          <Grid ColumnDefinitions="*,8,Auto">
+            <TextBox Text="{Binding NewCategory}" PlaceholderText="Category name or id" />
+            <Button Grid.Column="2" Content="Set category" Command="{Binding UpdateCategoryCommand}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Kick app and sign-in" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Create an app at kick.com → Settings → Developer, add the redirect URL below exactly, and paste the app's Client ID and Client Secret. Sign-in opens your browser; Kick sends you back to Cuebot on this computer (OAuth 2.1 with PKCE)." />
+          <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
+          <TextBox Text="{Binding ClientSecret}" PlaceholderText="Client Secret" PasswordChar="•" />
+          <Grid ColumnDefinitions="Auto,8,140,16,*">
+            <TextBlock VerticalAlignment="Center" Text="Redirect port" />
+            <NumericUpDown Grid.Column="2" Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" />
+            <SelectableTextBlock Grid.Column="4" VerticalAlignment="Center" Text="{Binding RedirectUri}" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsSigningIn}">
+            <Button Content="Sign in broadcaster" Classes="accent" Command="{Binding SignInBroadcasterCommand}" />
+            <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
+            <Button Content="Sign in bot account" Command="{Binding SignInBotCommand}" />
+            <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsEnabled="{Binding IsBotSignedIn}" />
+          </StackPanel>
+          <StackPanel Spacing="8" IsVisible="{Binding IsSigningIn}">
+            <TextBlock TextWrapping="Wrap" Text="Approve Cuebot in the browser window that opened (sign in to the right Kick account first). Waiting..." />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Open page again" Command="{Binding OpenSignInPageCommand}" />
+              <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Events" />
+          <CheckBox Content="Real-time chat and channel events (Kick's website websocket, unofficial)" IsChecked="{Binding UseRealtimeChat}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Cuebot looks up your channel's internal ids on kick.com. If kick.com blocks that, open kick.com/api/v2/channels/YOURNAME in your browser and copy &quot;id&quot; and &quot;chatroom&quot; → &quot;id&quot; here." />
+          <Grid ColumnDefinitions="*,8,*">
+            <TextBox Text="{Binding ChannelId}" PlaceholderText="Channel id (automatic)" />
+            <TextBox Grid.Column="2" Text="{Binding ChatroomId}" PlaceholderText="Chatroom id (automatic)" />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,8,140">
+            <TextBlock VerticalAlignment="Center" Text="Check channel (live, viewers, title) every (seconds)" />
+            <NumericUpDown Grid.Column="2" Value="{Binding PollSeconds}" Minimum="15" Maximum="3600" Increment="5" FormatString="0" />
+          </Grid>
+          <CheckBox Content="Register webhook events for the Cuebot relay (only with a deployed relay)" IsChecked="{Binding UseWebhookRelay}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Send a test message" />
+          <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+            <TextBox Text="{Binding TestMessage}" PlaceholderText="Message" />
+            <CheckBox Grid.Column="2" Content="As bot" IsChecked="{Binding TestAsBot}" IsEnabled="{Binding IsBotSignedIn}" />
+            <Button Grid.Column="4" Content="Send" Command="{Binding SendTestCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -5,6 +5,8 @@
         xmlns:views="using:Cuebot.App.Views"
         xmlns:ytvm="using:Cuebot.App.ViewModels.YouTube"
         xmlns:ytv="using:Cuebot.App.Views.YouTube"
+        xmlns:kickvm="using:Cuebot.App.ViewModels.Kick"
+        xmlns:kickv="using:Cuebot.App.Views.Kick"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
@@ -24,6 +26,7 @@
     <DataTemplate DataType="vm:TwitchViewModel"><views:TwitchView /></DataTemplate>
     <DataTemplate DataType="vm:RumbleViewModel"><views:RumbleView /></DataTemplate>
     <DataTemplate DataType="ytvm:YouTubeViewModel"><ytv:YouTubeView /></DataTemplate>
+    <DataTemplate DataType="kickvm:KickViewModel"><kickv:KickView /></DataTemplate>
     <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>

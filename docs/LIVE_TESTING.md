@@ -10,6 +10,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › YouTube / Kick | The platform's ingest accepts a stream Cuebot starts and stops: live, data flowing, no reconnects, no dropped frames | Stream key (and Kick ingest URL), OBS, streaming enabled |
 | `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
 | `Cuebot.LiveTests` › YouTube API | Device-code sign-in (approved once), connection and channel info; with `CUEBOT_LIVE_YOUTUBE_CHAT=1` while live: a sent message comes back through the chat poll | Google OAuth client ID + secret; for chat a live broadcast |
+| `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Pusher) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -57,6 +58,15 @@ API v3 enabled; steps in `src/Cuebot.YouTube/YOUTUBE.md`) and put its ID and sec
 The read-only test costs a few quota units. The chat round trip (`CUEBOT_LIVE_YOUTUBE_CHAT=1`) needs a broadcast
 that is live (started by you, or by the YouTube going-live test) and posts one visible "dev testing" message
 (50 units).
+
+### Kick
+
+Create a Kick app (kick.com → Settings → Developer), register the redirect URL `http://localhost:47582/callback`
+(or set `CUEBOT_LIVE_KICK_REDIRECT_PORT` and register that port instead), and put its Client ID and Client Secret
+in `CUEBOT_LIVE_KICK_CLIENT_ID` / `CUEBOT_LIVE_KICK_CLIENT_SECRET`. The first run opens the browser for the OAuth
+sign-in; the tokens are kept in `CUEBOT_LIVE_DATA/kick/kick.json` for later runs. The real-time chat uses Kick's
+unofficial website websocket (see `src/Cuebot.Kick/PROTOCOL.md`); if kick.com blocks the automatic channel-id
+lookup, set `CUEBOT_LIVE_KICK_CHANNEL_ID` and `CUEBOT_LIVE_KICK_CHATROOM_ID`.
 
 ## Running
 
