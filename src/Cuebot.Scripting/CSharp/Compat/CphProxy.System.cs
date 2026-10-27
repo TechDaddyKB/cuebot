@@ -1,3 +1,4 @@
+using Cuebot.Core.Desktop.Input;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat.Moderation;
 
@@ -38,7 +39,7 @@ public sealed partial class CphProxy
     {
         var keyboard = _services.Keyboard ?? throw Unsupported("no keyboard output service is loaded");
         if (string.IsNullOrEmpty(keyPress)) return;
-        Sync(keyboard.SendKeysAsync(keyPress, _ct));
+        Sync(keyboard.PressAsync(keyPress, _ct));   // accepts Streamer.bot's SendKeys syntax
     }
 
     /// <summary>

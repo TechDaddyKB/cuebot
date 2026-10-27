@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat.Moderation;
+using Cuebot.Core.Desktop.Hotkeys;
+using Cuebot.Core.Desktop.Input;
 using Cuebot.Core.Events;
 using Cuebot.Core.Scripting;
 using Cuebot.Scripting.Compat;
@@ -262,11 +264,16 @@ public sealed class CphPlatformTests : IDisposable
     {
         public List<string> Keys { get; } = [];
 
-        public Task SendKeysAsync(string keys, CancellationToken ct = default)
+        public string BackendName => "Fake";
+        public string Status => "";
+
+        public Task PressAsync(string keys, CancellationToken ct = default)
         {
             Keys.Add(keys);
             return Task.CompletedTask;
         }
+
+        public Task PressAsync(IReadOnlyList<HotkeyGesture> combos, CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private sealed class FakeAnnouncer : IChatAnnouncer

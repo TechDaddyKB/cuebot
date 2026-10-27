@@ -4,6 +4,7 @@ using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Desktop.Input;
 using Cuebot.Core.Users;
 using Cuebot.Core.Variables;
 using Microsoft.Extensions.DependencyInjection;

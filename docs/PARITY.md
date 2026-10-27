@@ -98,7 +98,7 @@ has an enabled Mouse Click trigger.
 | --- | --- | --- | --- |
 | C# code sub-action | ✅ | — | Roslyn; `Cb` API |
 | Python code sub-action + package manager | ➕ | — | beyond Streamer.bot |
-| **CPH compatibility layer** (Streamer.bot C# method names) | 🟡 | 3 | ~175 methods; `CPHInline` scripts compile unchanged; Twitch user/moderation/clip/marker/channel, YouTube latest broadcast, Kick accounts, ExecuteMethod, TriggerEvent and SendAction map onto the modules with Streamer.bot's data classes; KeyboardPress needs an `IKeyboardOutput` registered; only TwitchClientId/TwitchOAuthToken throw NotSupported by design (see `docs/SERVERS.md`) |
+| **CPH compatibility layer** (Streamer.bot C# method names) | ✅ | 3 | ~175 methods; `CPHInline` scripts compile unchanged; Twitch user/moderation/clip/marker/channel, YouTube latest broadcast, Kick accounts, ExecuteMethod, TriggerEvent and SendAction map onto the modules with Streamer.bot's data classes; KeyboardPress uses the keyboard output (§6); only TwitchClientId/TwitchOAuthToken throw NotSupported by design (see `docs/SERVERS.md`) |
 | WebSocket server (22 requests, ~500 event types, auth) | ✅ | 3 | all requests; events mapped to Streamer.bot source/type names; verified against the real `@streamerbot/client` |
 | HTTP server (6 endpoints), UDP server (`DoAction`) | ✅ | 3 | localhost-only and off by default; origin checks |
 | Custom WebSocket servers/clients | ✅ | 3 | triggers, sub-actions, script functions |
@@ -140,8 +140,8 @@ has an enabled Mouse Click trigger.
    feature set (engines, aliases, per-user voices, `!tts`, filters, event speech, audio backend with device choice).
 3. **Done (gaps in the tables above) — platforms & APIs:** full Twitch, YouTube, Kick; OBS completion; Streamer.bot-compatible WebSocket/HTTP/UDP servers,
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
-4. **Mostly done — services:** points, quotes, credits, hotkeys, toasts, donations, import/export, action history and copy/paste/undo; still to do:
-   mouse/keyboard output, multiple point currencies, Streamer.bot type-code mapping.
+4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
+   import/export, action history and copy/paste/undo, app shortcuts; left: Streamer.bot type-code mapping (needs real exports).
 5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅; still to do: Meld, Elgato, MIDI, voice control, Ko-fi/Patreon and the other webhook services (Cloudflare relay), the remaining apps.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
