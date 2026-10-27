@@ -158,6 +158,33 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         Assert.Equal("", _service.Settings.Login);
         Assert.Equal("client", _service.Settings.ClientId);
     }
+
+    [Fact]
+    public async Task Disposing_right_after_sign_out_still_revokes_the_token()
+    {
+        // Found in a live test: DI disposed the shared HttpClient (after this service) before the background
+        // revoke finished. Reproduce that order with a slow revoke endpoint.
+        var http = new HttpClient(new SlowRevokeHandler(_http));
+        var service = new TwitchService(_settings, http, new EventBus(_log), _log,
+            new TwitchEndpoints(new Uri("https://id.test/oauth2/"), new Uri("https://api.test/helix/"), _server.Url()),
+            TimeProvider.System, EventSubTimeouts.Default);
+
+        service.SignOut();
+        await service.DisposeAsync();
+        http.Dispose();
+
+        Assert.Contains(_http.Requests, r => r.Path == "/oauth2/revoke" && r.Body.Contains("token=expired-token"));
+        Assert.DoesNotContain(_log.Recent(), e => e.Message.Contains("Could not revoke"));
+    }
+
+    private sealed class SlowRevokeHandler(HttpMessageHandler inner) : DelegatingHandler(inner)
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/revoke", StringComparison.Ordinal)) await Task.Delay(300, ct);
+            return await base.SendAsync(request, ct);
+        }
+    }
 }
 
 public sealed class TwitchRegistrationTests

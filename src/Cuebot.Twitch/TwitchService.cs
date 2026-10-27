@@ -15,6 +15,7 @@ namespace Cuebot.Twitch;
 public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
 {
     private static readonly TimeSpan ValidationInterval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan SignOutGrace = TimeSpan.FromSeconds(5);
 
     private readonly JsonFile<TwitchSettings> _settings;
     private readonly EventBus _bus;
@@ -27,6 +28,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     private readonly HelixClient _helix;
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private ActiveConnection? _connection;
+    private Task _pendingSignOut = Task.CompletedTask;
 
     public TwitchService(JsonFile<TwitchSettings> settings, HttpClient http, EventBus bus, AppLog log)
         : this(settings, http, bus, log, TwitchEndpoints.Production, TimeProvider.System, EventSubTimeouts.Default)
@@ -124,13 +126,19 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     }
 
     /// <summary>Forgets the stored tokens and account, disconnects, and revokes the token in the background.</summary>
-    public void SignOut()
+    public void SignOut() => _ = SignOutAsync();
+
+    /// <summary>
+    /// Like <see cref="SignOut"/>, but completes once the token has been revoked. Disposal also waits for a
+    /// pending revocation, so signing out right before shutdown still revokes the token.
+    /// </summary>
+    public Task SignOutAsync()
     {
         var clientId = Settings.ClientId.Trim();
         var token = Settings.AccessToken;
         _tokens.Clear();
-        _ = SignOutInBackgroundAsync(clientId, token);
         _log.Info("Twitch", "Signed out");
+        return _pendingSignOut = SignOutInBackgroundAsync(clientId, token);
     }
 
     /// <summary>
@@ -159,8 +167,22 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         }
     }
 
-    /// <summary>Disconnects. Safe to call more than once (DI disposes each registration of this singleton).</summary>
-    public async ValueTask DisposeAsync() => await DisconnectAsync().ConfigureAwait(false);
+    /// <summary>
+    /// Finishes a pending sign-out (bounded), then disconnects. Safe to call more than once (DI disposes each
+    /// registration of this singleton).
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await _pendingSignOut.WaitAsync(SignOutGrace).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            _log.Warn("Twitch", "Shutting down before the Twitch token could be revoked");
+        }
+        await DisconnectAsync().ConfigureAwait(false);
+    }
 
     private ActiveConnection StartConnection()
     {
