@@ -69,4 +69,7 @@ public sealed class KickSettings
     /// the user-hosted relay (configured separately, see PROTOCOL.md).
     /// </summary>
     public bool UseWebhookRelay { get; set; }
+
+    /// <summary>Watch the channel's 7TV emote set in real time (7TV EventAPI) for the 7TV emote added/removed triggers.</summary>
+    public bool UseSevenTvEvents { get; set; } = true;
 }

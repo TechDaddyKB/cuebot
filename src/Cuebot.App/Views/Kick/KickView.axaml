@@ -47,6 +47,35 @@
 
       <Border Classes="card">
         <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Channel rewards" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Kick lets Cuebot change, pause, delete and accept or reject redemptions only for rewards Cuebot created (with your Kick app). Rewards made on kick.com are listed but read-only. Signed in before rewards were supported? Sign in again to grant the reward permission." />
+          <Button Content="Refresh rewards" Command="{Binding RefreshRewardsCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
+          <ItemsControl ItemsSource="{Binding Rewards}" IsVisible="{Binding HasRewards}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:KickRewardRow">
+                <Grid ColumnDefinitions="*,8,Auto,8,Auto,8,Auto" Margin="0,2">
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                    <TextBlock Classes="muted" Text="{Binding Details}" />
+                  </StackPanel>
+                  <Button Grid.Column="2" Content="{Binding EnableLabel}" Command="{Binding ToggleEnabledCommand}" />
+                  <Button Grid.Column="4" Content="{Binding PauseLabel}" Command="{Binding TogglePausedCommand}" />
+                  <Button Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Grid ColumnDefinitions="*,8,120,8,Auto">
+            <TextBox Text="{Binding NewRewardTitle}" PlaceholderText="New reward title" MaxLength="50" />
+            <NumericUpDown Grid.Column="2" Value="{Binding NewRewardCost}" Minimum="1" Increment="10" FormatString="0" />
+            <Button Grid.Column="4" Content="Create reward" Command="{Binding CreateRewardCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Kick app and sign-in" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Create an app at kick.com → Settings → Developer, add the redirect URL below exactly, and paste the app's Client ID and Client Secret. Sign-in opens your browser; Kick sends you back to Cuebot on this computer (OAuth 2.1 with PKCE)." />
@@ -88,6 +117,8 @@
             <NumericUpDown Grid.Column="2" Value="{Binding PollSeconds}" Minimum="15" Maximum="3600" Increment="5" FormatString="0" />
           </Grid>
           <CheckBox Content="Register webhook events for the Cuebot relay (only with a deployed relay)" IsChecked="{Binding UseWebhookRelay}" />
+          <CheckBox Content="Watch this channel's 7TV emote set in real time (7TV EventAPI, for the 7TV emote triggers)" IsChecked="{Binding UseSevenTvEvents}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SevenTvStatus, StringFormat='7TV: {0}'}" />
         </StackPanel>
       </Border>
 

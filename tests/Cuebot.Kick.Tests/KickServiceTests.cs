@@ -309,6 +309,8 @@ public sealed class KickServiceTests : IAsyncLifetime
         services.AddSingleton(new HttpClient(_http));
         services.AddSingleton(_settings);
         services.AddSingleton(_service);
+        services.AddSingleton(new Cuebot.Core.Users.GroupStore(null, _log));
+        services.AddSingleton(sp => new Cuebot.Core.Users.UserRegistry(null, sp.GetRequiredService<EventBus>(), _log));
         // AddKick registers its own settings file and service; the test overrides them with the fakes above.
         var registered = new ServiceCollection();
         registered.AddKick();
@@ -317,6 +319,7 @@ public sealed class KickServiceTests : IAsyncLifetime
         Assert.Contains(registered, d => d.ServiceType == typeof(IChatEventAdapter));
         Assert.Contains(registered, d => d.ServiceType == typeof(IChatSender));
         Assert.Contains(registered, d => d.ServiceType == typeof(IScriptFunctionProvider));
+        Assert.Contains(registered, d => d.ServiceType == typeof(Cuebot.Core.Chat.Emotes.IEmoteChannelSource));
 
         foreach (var d in registered.Where(d => d.ServiceType == typeof(ISubActionHandler) || d.ServiceType == typeof(ITriggerProvider)
                                                || d.ServiceType == typeof(IScriptFunctionProvider) || d.ServiceType == typeof(IChatSender)))
@@ -327,6 +330,10 @@ public sealed class KickServiceTests : IAsyncLifetime
         [
             "kick.sendMessage", "kick.replyToMessage", "kick.deleteMessage", "kick.setTitle", "kick.setCategory", "kick.banUser",
             "kick.timeoutUser", "kick.unbanUser", "kick.untimeoutUser", "kick.addBroadcasterInfo", "kick.getUserInfo",
+            "kick.addRandomUsers", "kick.addUserToGroup", "kick.removeUserFromGroup", "kick.userInGroup",
+            "kick.createReward", "kick.deleteReward", "kick.getRewardInfo", "kick.updateRedemption", "kick.updatePendingRedemptions",
+            "kick.setRewardEnabled", "kick.setRewardPaused", "kick.setRewardTitle", "kick.setRewardCost", "kick.setRewardDescription",
+            "kick.setRewardColor", "kick.setRewardUserInput", "kick.setRewardSkipQueue",
         ];
         Assert.Equal(expected.Order(), handlers.Select(h => h.TypeId).Order());
         Assert.All(handlers, h => Assert.Equal("Kick", h.Category));

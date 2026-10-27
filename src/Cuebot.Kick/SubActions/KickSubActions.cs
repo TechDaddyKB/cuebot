@@ -11,6 +11,7 @@ internal abstract class KickSubAction(KickService kick) : ISubActionHandler
     public string Category => KickTriggers.Category;
     public abstract string DisplayName { get; }
     public abstract IReadOnlyList<ParameterDescriptor> Parameters { get; }
+    public virtual IReadOnlyList<string> Branches => [];
     public abstract Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct);
 
     protected static ParameterDescriptor UseBot { get; } =
