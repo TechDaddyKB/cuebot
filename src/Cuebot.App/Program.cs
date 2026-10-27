@@ -52,6 +52,8 @@ internal static class Program
         }
 
         var ctx = Prepare(options, paths, instance);
+        // Crash capture: unhandled exceptions are saved to crashes/crash-*.json (never sent); notes a previous crash.
+        Cuebot.App.Diagnostics.CrashCapture.Install(ctx);
         try
         {
             if (options.Headless)
@@ -150,7 +152,8 @@ internal static class Program
         var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace();
+            .LogToTrace()
+            .AfterSetup(_ => Cuebot.App.Diagnostics.CrashCapture.InstallUiThreadHandler());   // UI-thread crashes too
         BackendName = OperatingSystem.IsLinux() ? backend.ToString() : "native";
         return backend == DisplayBackend.Wayland ? builder.UseWayland() : builder;
     }
