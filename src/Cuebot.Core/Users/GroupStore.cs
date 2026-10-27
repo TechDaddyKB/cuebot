@@ -68,6 +68,9 @@ public sealed class GroupStore : IDisposable
 
     public event Action? Changed;
 
+    /// <summary>Raised after a rename with (old name, new name), so stores that reference groups by name can follow.</summary>
+    public event Action<string, string>? Renamed;
+
     public IReadOnlyList<string> Names
     {
         get { lock (_gate) return _groups.Select(g => g.Name).Order(StringComparer.OrdinalIgnoreCase).ToArray(); }
@@ -124,9 +127,11 @@ public sealed class GroupStore : IDisposable
             if (found is null) return false;
             var clash = Find(newName);
             if (clash is not null && clash != found) return false;
+            oldName = found.Name;
             found.Name = newName;
             Save();
         }
+        Renamed?.Invoke(oldName, newName);
         Changed?.Invoke();
         return true;
     }

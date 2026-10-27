@@ -31,6 +31,7 @@ public sealed class CommandService : IPeriodicService, IDisposable
         _bus = bus;
         _log = log;
         Cooldowns = new CooldownTracker(time);
+        groups.Renamed += OnGroupRenamed;
         _subscription = bus.Subscribe(OnEvent);
     }
 
@@ -186,5 +187,12 @@ public sealed class CommandService : IPeriodicService, IDisposable
 
     void IPeriodicService.Tick(DateTimeOffset now) => Cooldowns.Prune();
 
-    public void Dispose() => _subscription.Dispose();
+    // Commands name the user groups they allow or deny, so a rename in the Users & Groups page carries over.
+    private void OnGroupRenamed(string oldName, string newName) => _store.RenameUserGroup(oldName, newName);
+
+    public void Dispose()
+    {
+        _groups.Renamed -= OnGroupRenamed;
+        _subscription.Dispose();
+    }
 }

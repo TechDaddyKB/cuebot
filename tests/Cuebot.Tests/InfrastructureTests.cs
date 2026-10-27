@@ -181,6 +181,18 @@ public class TimerServiceTests
     }
 
     [Fact]
+    public void Firing_raises_state_changed_so_the_page_can_show_the_new_due_time()
+    {
+        using var h = new Harness(timers: new TimerDefinition { Name = "Tick", IntervalSeconds = 5 });
+        var changed = new List<Guid>();
+        h.Timers.StateChanged += changed.Add;
+        h.Timers.Tick(); // arm: no fire, no change
+        Assert.Empty(changed);
+        Assert.Equal(1, h.Run(5));
+        Assert.Equal([h.Profile.Profile.Timers[0].Id], changed);
+    }
+
+    [Fact]
     public void Old_timer_json_loads_with_defaults()
     {
         var timer = System.Text.Json.JsonSerializer.Deserialize<TimerDefinition>(
@@ -289,7 +301,7 @@ public class TimerServiceTests
         Assert.Equal(20, h.Timers.GetState("T")!.IntervalSeconds);
 
         Assert.False(h.Timers.SetState("missing", enabled: true));
-        Assert.Equal(2, changed.Count);
+        Assert.Equal(5, changed.Count); // two SetState calls and three fires
     }
 
     [Fact]

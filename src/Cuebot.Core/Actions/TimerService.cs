@@ -50,7 +50,7 @@ public sealed class TimerService : IDisposable
         _subscription = bus.Subscribe(OnEvent);
     }
 
-    /// <summary>Raised when a timer's runtime state changes through <see cref="SetState"/>.</summary>
+    /// <summary>Raised when a timer's runtime state changes: through <see cref="SetState"/>, or when it fires and re-arms.</summary>
     public event Action<Guid>? StateChanged;
 
     public void Start() => _loop ??= Task.Run(LoopAsync);
@@ -60,16 +60,20 @@ public sealed class TimerService : IDisposable
     {
         var now = _time.GetUtcNow();
         var due = new List<BotEvent>();
+        var fired = new List<Guid>();
         lock (_gate)
         {
             var timers = _profile.Snapshot.Timers;
             foreach (var stale in _state.Keys.Where(id => timers.All(t => t.Id != id)).ToArray()) _state.Remove(stale);
             foreach (var timer in timers)
             {
-                if (Evaluate(timer, now) is { } e) due.Add(e);
+                if (Evaluate(timer, now) is not { } e) continue;
+                due.Add(e);
+                fired.Add(timer.Id);
             }
         }
         foreach (var e in due) _bus.Publish(e);
+        foreach (var id in fired) StateChanged?.Invoke(id);
 
         foreach (var service in _periodic)
         {

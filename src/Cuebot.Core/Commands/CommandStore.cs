@@ -140,6 +140,29 @@ public sealed class CommandStore : IDisposable
         return count;
     }
 
+    /// <summary>Renames a user group (groups.json) in every command's allowed and denied group lists.</summary>
+    public int RenameUserGroup(string oldName, string newName)
+    {
+        var count = 0;
+        Mutate(list =>
+        {
+            foreach (var command in list)
+            {
+                var changed = false;
+                foreach (var groups in new[] { command.AllowedGroups, command.DeniedGroups })
+                    for (var i = 0; i < groups.Count; i++)
+                        if (string.Equals(groups[i].Trim(), oldName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            groups[i] = newName;
+                            changed = true;
+                        }
+                if (changed) count++;
+            }
+            return count > 0;
+        });
+        return count;
+    }
+
     // ---- counters ----
 
     public long GetCounter(Guid id)

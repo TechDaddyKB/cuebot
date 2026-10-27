@@ -291,6 +291,23 @@ public class CommandServiceTests : IDisposable
         Assert.Equal(2, _store.All().Count);
     }
 
+    [Fact]
+    public void Renaming_a_user_group_updates_commands_that_allow_or_deny_it()
+    {
+        _groups.Add("Regulars");
+        _groups.AddUser("Regulars", "twitch", "1", "alice");
+        var allow = Add(c => { c.MinimumRole = ChatPermission.Moderator; c.AllowedGroups = ["regulars"]; }, "!vip");
+        var deny = Add(c => c.DeniedGroups = ["Regulars", "Other"], "!pleb");
+        var unrelated = Add(c => c.AllowedGroups = ["Other"], "!other");
+
+        Assert.True(_groups.Rename("REGULARS", "Friends"));
+
+        Assert.Equal(["Friends"], _store.Get(allow.Id)!.AllowedGroups);
+        Assert.Equal(["Friends", "Other"], _store.Get(deny.Id)!.DeniedGroups);
+        Assert.Equal(["Other"], _store.Get(unrelated.Id)!.AllowedGroups);
+        Assert.Single(Triggered("!vip", roles: ChatRoles.None)); // alice is still let in through the renamed group
+    }
+
     public void Dispose()
     {
         _service.Dispose();
