@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:vmc="using:Cuebot.App.ViewModels.Chat"
+             xmlns:chat="using:Cuebot.App.Views.Chat"
              x:Class="Cuebot.App.Views.ChatView"
              x:DataType="vm:ChatViewModel">
   <Grid ColumnDefinitions="2*,12,*" Margin="24">
@@ -8,30 +10,69 @@
     <Border Classes="card" Margin="0">
       <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-          <ComboBox DockPanel.Dock="Right" ItemsSource="{Binding PlatformFilters}" SelectedItem="{Binding Filter}" MinWidth="130" />
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+            <ToggleButton x:Name="OptionsToggle" Content="Options" IsChecked="{Binding ShowOptions}" ToolTip.Tip="Chat options: emotes, pronouns, highlights, quick actions" />
+            <ComboBox ItemsSource="{Binding PlatformFilters}" SelectedItem="{Binding Filter}" MinWidth="130" />
+          </StackPanel>
           <TextBlock Classes="h2" Text="Chat" VerticalAlignment="Center" Margin="0" />
         </DockPanel>
+
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
+          <!-- Quick actions -->
+          <ItemsControl x:Name="QuickActionBar" ItemsSource="{Binding QuickActions}" IsVisible="{Binding HasQuickActions}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:QuickActionButtonViewModel">
+                <Button Content="{Binding Label}" Command="{Binding RunCommand}" IsEnabled="{Binding CanRun}"
+                        ToolTip.Tip="{Binding ToolTip}" Margin="0,0,6,4" Padding="10,3" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Emote autocomplete (opens while typing ":name") -->
+          <Border x:Name="SuggestionPanel" Classes="card" Padding="4" Margin="0" IsVisible="{Binding IsSuggesting}" MaxHeight="220">
+            <ListBox x:Name="SuggestionList" ItemsSource="{Binding Suggestions}" SelectedItem="{Binding SelectedSuggestion}"
+                     Background="Transparent" Tapped="OnSuggestionTapped">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:EmoteSuggestionViewModel">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Panel Width="28" Height="28">
+                      <Image Source="{Binding Image}" IsVisible="{Binding HasImage}" Stretch="Uniform" />
+                    </Panel>
+                    <TextBlock Text="{Binding Code}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Provider}" VerticalAlignment="Center" Classes="muted" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Border>
+
           <Grid ColumnDefinitions="Auto,8,*,8,Auto">
             <ComboBox ItemsSource="{Binding SendTargets}" SelectedItem="{Binding SendTarget}" MinWidth="110" ToolTip.Tip="Send to" />
-            <TextBox Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message" KeyDown="OnDraftKeyDown" />
+            <TextBox x:Name="DraftBox" Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message (type : for emotes, /help for commands)" />
             <Button Grid.Column="4" Content="Send" Classes="accent" Command="{Binding SendCommand}" />
           </Grid>
-          <TextBlock Text="{Binding Status}" Classes="muted" />
+          <TextBlock x:Name="StatusText" Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
         </StackPanel>
-        <ListBox x:Name="ChatList" ItemsSource="{Binding Messages}" Background="Transparent">
+
+        <ListBox x:Name="ChatList" ItemsSource="{Binding Messages}" SelectedItem="{Binding SelectedLine}" Background="Transparent"
+                 ContextRequested="OnChatContextRequested">
           <ListBox.ItemTemplate>
             <DataTemplate DataType="vm:ChatLineViewModel">
-              <Grid ColumnDefinitions="Auto,Auto,*">
-                <Border Background="{Binding PlatformBrush}" CornerRadius="3" Padding="5,0" Margin="0,2,8,0" VerticalAlignment="Top"
-                        ToolTip.Tip="{Binding Platform}">
-                  <TextBlock Text="{Binding Platform}" FontSize="10" FontWeight="Bold" Foreground="#111" />
-                </Border>
-                <TextBlock Grid.Column="1" Text="{Binding Time}" Classes="muted" Margin="0,2,8,0" VerticalAlignment="Top" />
-                <TextBlock Grid.Column="2" TextWrapping="Wrap">
-                  <Run Text="{Binding Badges}" /><Run Text="{Binding User}" FontWeight="SemiBold" Foreground="{Binding UserBrush}" /><Run Text=": " /><Run Text="{Binding Text}" />
-                </TextBlock>
-              </Grid>
+              <Border Background="{Binding HighlightBrush}" CornerRadius="4" Padding="4,1" ToolTip.Tip="{Binding HighlightReason}">
+                <Grid ColumnDefinitions="Auto,Auto,*">
+                  <Border Background="{Binding PlatformBrush}" CornerRadius="3" Padding="5,0" Margin="0,2,8,0" VerticalAlignment="Top"
+                          ToolTip.Tip="{Binding Platform}">
+                    <TextBlock Text="{Binding Platform}" FontSize="10" FontWeight="Bold" Foreground="#111" />
+                  </Border>
+                  <TextBlock Grid.Column="1" Text="{Binding Time}" Classes="muted" Margin="0,2,8,0" VerticalAlignment="Top" />
+                  <chat:ChatMessageText Grid.Column="2" Line="{Binding}" />
+                </Grid>
+              </Border>
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
@@ -39,7 +80,7 @@
     </Border>
 
     <!-- Activity feed -->
-    <Border Grid.Column="2" Classes="card" Margin="0">
+    <Border Grid.Column="2" Classes="card" Margin="0" IsVisible="{Binding !ShowOptions}">
       <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
           <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearFeedCommand}" />
@@ -61,6 +102,71 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Options -->
+    <Border x:Name="OptionsPanel" Grid.Column="2" Classes="card" Margin="0" IsVisible="{Binding ShowOptions}">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <Button DockPanel.Dock="Right" Content="Close" Command="{Binding ToggleOptionsCommand}" />
+          <TextBlock Classes="h2" Text="Chat options" VerticalAlignment="Center" Margin="0" />
+        </DockPanel>
+        <ScrollViewer DataContext="{Binding Options}" x:DataType="vmc:ChatOptionsViewModel">
+          <StackPanel Spacing="6" Margin="0,0,8,0">
+            <TextBlock Text="Display" FontWeight="SemiBold" />
+            <CheckBox x:Name="ShowEmotesBox" Content="Show emotes as images" IsChecked="{Binding ShowEmotes}" />
+            <CheckBox Content="Show pronouns (Twitch, alejo.io)" IsChecked="{Binding ShowPronouns}" />
+
+            <TextBlock Text="Highlights" FontWeight="SemiBold" Margin="0,8,0,0" />
+            <CheckBox Content="Mentions of these names" IsChecked="{Binding HighlightMentions}" />
+            <TextBox Text="{Binding MentionNames}" PlaceholderText="Your names, comma separated" />
+            <TextBlock Text="Keywords" Classes="muted" />
+            <TextBox Text="{Binding Keywords}" PlaceholderText="Words or phrases, comma separated" />
+            <CheckBox Content="First-time chatters (when the platform flags them)" IsChecked="{Binding HighlightFirstTime}" />
+
+            <DockPanel Margin="0,8,0,0">
+              <Button DockPanel.Dock="Right" Content="Add" Command="{Binding AddQuickActionCommand}" />
+              <TextBlock Text="Quick actions" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Buttons under the chat that run an action with the selected message (platform, user, userName, userId, message, messageId, rawInput). Also in each message's right-click menu." />
+            <ItemsControl ItemsSource="{Binding QuickActions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vmc:QuickActionEditViewModel">
+                  <Grid ColumnDefinitions="*,6,*,6,Auto,6,Auto" Margin="0,0,0,4">
+                    <TextBox Text="{Binding Label}" PlaceholderText="Label" />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding ActionNames}" SelectedItem="{Binding ActionName}"
+                              PlaceholderText="Action" HorizontalAlignment="Stretch" />
+                    <ComboBox Grid.Column="4" ItemsSource="{Binding Scopes}" SelectedItem="{Binding Scope}" MinWidth="96" />
+                    <Button Grid.Column="6" Content="Remove" Command="{Binding RemoveCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <DockPanel Margin="0,8,0,0">
+              <Button DockPanel.Dock="Right" Content="Refresh emotes" Command="{Binding RefreshEmotesCommand}" IsEnabled="{Binding HasEmoteService}" />
+              <TextBlock Text="Emotes" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <WrapPanel>
+              <CheckBox Content="7TV" IsChecked="{Binding SevenTv}" Margin="0,0,12,0" />
+              <CheckBox Content="BTTV" IsChecked="{Binding Bttv}" Margin="0,0,12,0" />
+              <CheckBox Content="FFZ" IsChecked="{Binding Ffz}" />
+            </WrapPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Channel ids load channel emote sets. Leave empty when the platform reports its channel." />
+            <Grid ColumnDefinitions="Auto,8,*" RowDefinitions="Auto,4,Auto,4,Auto">
+              <TextBlock Text="Twitch user id" VerticalAlignment="Center" />
+              <TextBox Grid.Column="2" Text="{Binding TwitchChannelId}" />
+              <TextBlock Grid.Row="2" Text="YouTube channel id" VerticalAlignment="Center" />
+              <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding YouTubeChannelId}" />
+              <TextBlock Grid.Row="4" Text="Kick user id" VerticalAlignment="Center" />
+              <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding KickChannelId}" />
+            </Grid>
+            <TextBlock x:Name="EmoteStatusText" Text="{Binding EmoteStatus}" Classes="muted" TextWrapping="Wrap" />
+          </StackPanel>
+        </ScrollViewer>
       </DockPanel>
     </Border>
   </Grid>
