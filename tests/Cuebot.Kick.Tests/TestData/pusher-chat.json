@@ -1,0 +1,11 @@
+{
+  "id": "4c1f0f0a-6c69-4d8c-9d3e-2b8f3a1d7e55",
+  "chatroom_id": 2345678,
+  "content": "first! [emote:37226:KEKW]",
+  "type": "message",
+  "created_at": "2025-01-14T16:08:06+00:00",
+  "sender": {
+    "id": 333, "username": "ModAlice", "slug": "modalice",
+    "identity": { "color": "#FF5733", "badges": [ { "type": "moderator", "text": "Moderator" }, { "type": "og", "text": "OG" }, { "type": "subscriber", "text": "Subscriber", "count": 3 } ] }
+  }
+}

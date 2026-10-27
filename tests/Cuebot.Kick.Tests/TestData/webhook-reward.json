@@ -1,0 +1,9 @@
+{
+  "id": "01HZ8XK4N9Q7V6",
+  "user_input": "play the song",
+  "status": "pending",
+  "redeemed_at": "2025-10-20T04:00:08Z",
+  "reward": { "id": "01HZ8XJ0REWARD", "title": "Song request", "cost": 500, "description": "Pick a song" },
+  "redeemer": { "user_id": 888, "username": "Requester", "is_verified": false, "profile_picture": "", "channel_slug": "requester" },
+  "broadcaster": { "user_id": 100, "username": "CuebotDev", "is_verified": true, "profile_picture": "", "channel_slug": "cuebotdev" }
+}
