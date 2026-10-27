@@ -301,9 +301,9 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
     {
         await _service.ConnectAsync();
         var conn = await _sevenTv.NextConnectionAsync();
-        Assert.Equal(SevenTvHosts.Events, conn.Url);
         conn.Push("""{"op":1,"t":0,"d":{"heartbeat_interval":30000,"session_id":"s","subscription_limit":500}}""");
         var subscribe = await conn.NextSentAsync();
+        Assert.Equal(SevenTvHosts.Events, conn.Url); // set once connected; the fake hands the connection over earlier
         Assert.Equal(35, subscribe.GetProperty("op").GetInt32());
         Assert.Equal("emote_set.update", subscribe.GetProperty("d").GetProperty("type").GetString());
         Assert.Equal("SET1", subscribe.GetProperty("d").GetProperty("condition").GetProperty("object_id").GetString());
@@ -315,7 +315,8 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
         conn.Push("""{"op":2,"d":{"count":1}}""");
         conn.Push($$$"""{"op":0,"d":{"type":"emote_set.update","body":{{{SevenTvChange}}}}}""");
         conn.Push($$$"""{"op":0,"d":{"type":"emote_set.update","body":{{{SevenTvChange.Replace("\"SET1\"", "\"OTHER\"")}}}}}"""); // another set
-        await Wait.UntilAsync(() => _published.Any(e => e.Type == KickEventTypes.SevenTvEmoteRemoved), "7TV removal");
+        await Wait.UntilAsync(() => _published.Any(e => e.Type == KickEventTypes.SevenTvEmoteRemoved)
+                                    && _published.Any(e => e.Type == KickEventTypes.SevenTvEmoteAdded), "7TV addition and removal");
         Assert.Single(_published, e => e.Type == KickEventTypes.SevenTvEmoteAdded);
         await Wait.UntilAsync(() => Volatile.Read(ref refreshed) == 1, "emote cache refresh");
 

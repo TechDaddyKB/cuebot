@@ -5,6 +5,7 @@ using Cuebot.Core.BuiltIn;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Obs;
+using Cuebot.Relay;
 using Cuebot.Kick;
 using Cuebot.Donations;
 using Cuebot.Integrations;
@@ -14,6 +15,7 @@ using Cuebot.Scripting;
 using Cuebot.Speech;
 using Cuebot.Speech.Emotes;
 using Cuebot.Twitch;
+using Cuebot.Webhooks;
 using Cuebot.YouTube;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -45,7 +47,9 @@ public sealed class AppHost : IAsyncDisposable
             .AddKick()
             .AddDonations()
             .AddIntegrations()
-            .AddServers();
+            .AddWebhooks()
+            .AddServers()
+            .AddRelay();   // after every module, so it sees all IWebhookHandlers
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
         services.AddSingleton<Cuebot.Core.Desktop.Notifications.IToastPresenter, Cuebot.App.Views.Extras.Desktop.AvaloniaToastPresenter>();
@@ -93,6 +97,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Pulsoid", () => Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>().StartAsync()),
             StartSafely(log, "HypeRate", () => Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
+            StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),
             StartSafely(log, "Python", () => Get<PythonRuntime>().StartAsync()),

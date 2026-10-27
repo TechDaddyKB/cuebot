@@ -82,8 +82,8 @@ public sealed class RealtimeProtocolTests
         var run = client.RunAsync(["chatrooms.1.v2", "channel.2"], cts.Token);
 
         var conn = await _server.NextConnectionAsync();
-        Assert.Equal(Url, conn.Url);
         Assert.Equal("token-1", (await conn.EstablishAsync()).GetProperty("token").GetString());
+        Assert.Equal(Url, conn.Url); // set once connected
         var first = await conn.NextSentAsync();
         var second = await conn.NextSentAsync();
         Assert.Equal("chatrooms.1.v2", first.GetProperty("subscribe").GetProperty("channel").GetString());

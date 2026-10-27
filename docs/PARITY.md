@@ -63,7 +63,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | OBS Studio (9 triggers, 29 sub-actions) | ✅ 36 triggers, 47 sub-actions, multiple connections | 3 | Streamlabs Desktop | 🟡 8 triggers, 14 sub-actions (some calls unverified) | 3 |
 | Meld Studio | ❌ | 5 | VTube Studio | ✅ 11/11 triggers, 10/10 sub-actions (+ extras); live-tested against the real app | 5 |
 | Voicemod | ✅ 4/4 triggers, 11/12 sub-actions (Set Censor State removed from Voicemod V3); live-tested against the real app | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; both connect live (no real tip received yet) | 4 |
-| Ko-fi (5), Patreon (5 + 2 extra), Fourthwall (13), Shopify (2), Throne (3), Custom Webhooks | ✅ all documented triggers, signature/token verified, dedupe, feed + credits, test events (`src/Cuebot.Webhooks`); not tried against the real services | 5 | TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 |
+| Ko-fi (5), Patreon (5 + 2 extra), Fourthwall (13), Shopify (2), Throne (3), Custom Webhooks | ✅ all documented triggers, signature/token verified, dedupe, feed + credits, test events (`src/Cuebot.Webhooks`); the relay path is live-tested end to end (custom webhook), the services themselves not yet tried with real deliveries | 5 | TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 |
 | Pulsoid, HypeRate | ✅ + threshold triggers; not yet tried against the real services | 5 | | | |
 | Crowd Control | ❌ | 5 | Elgato (Stream Deck, Camera Hub, Control Center, Wave Link, Studio: 105 triggers) | ❌ | 5 |
 | T.I.T.S., Lumia, Pally.gg, StreamFog, Mtion, PolyPop, OBSBOT | ❌ | 5 | Pronouns (alejo.io) | ✅ | 3 |
@@ -74,7 +74,8 @@ only where a service delivers events exclusively by webhook, use a **self-hosted
 a Worker + Durable Object (free Cloudflare plan) that forwards each raw webhook to Cuebot over an outbound,
 token-authenticated WebSocket (no port forwarding; up to 500 deliveries / 24 h buffered while Cuebot is offline),
 deployed with `relay/setup.ps1` or `relay/setup.sh`. The relay does not verify signatures: each `IWebhookHandler` in
-Cuebot does, with secrets that stay on the PC. See `relay/README.md`.
+Cuebot does, with secrets that stay on the PC. See `relay/README.md`. Live-tested: a webhook posted to a deployed relay reaches
+Cuebot and fires its trigger; a wrong token is rejected (`RelayLiveTests`).
 
 ## 6. System, input and services
 
@@ -145,7 +146,7 @@ has an enabled Mouse Click trigger.
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
    import/export, action history and copy/paste/undo, app shortcuts; left: Streamer.bot type-code mapping (needs real exports).
-5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅; still to do: Meld, Elgato, MIDI, voice control, Ko-fi/Patreon and the other webhook services (Cloudflare relay), the remaining apps.
+5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅; still to do: TipeeeStream, DonorDrive, StreamLoots, TreatStream, Pally.gg, Crowd Control, Meld, PolyPop, Elgato, MIDI, voice control, the remaining apps.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.

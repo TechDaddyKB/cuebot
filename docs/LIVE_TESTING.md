@@ -72,6 +72,13 @@ lookup, set `CUEBOT_LIVE_KICK_CHANNEL_ID` and `CUEBOT_LIVE_KICK_CHATROOM_ID`. Th
 and is often blocked; open `https://kick.com/api/v2/channels/<your slug>` in a browser and copy `id` and
 `chatroom.id`. The sign-in URL is also printed, in case the browser that opens is not the one you are signed in to.
 
+### Webhook relay
+
+Deploy the relay once (`relay/setup.ps1` or `relay/setup.sh`, see `relay/README.md`) and put the three values it prints in
+`CUEBOT_LIVE_RELAY_URL`, `CUEBOT_LIVE_RELAY_CONNECT_TOKEN` and `CUEBOT_LIVE_RELAY_ROUTE_SECRET`. `RelayLiveTests` connects to it,
+posts a custom webhook to the public URL with a throw-away hook, checks the trigger fires with the posted fields, and
+checks that a wrong hook token is rejected in Cuebot. Nothing reaches viewers.
+
 ### Streamlabs, StreamElements, VTube Studio, Voicemod
 
 `ServicesLiveTests` connects to each service whose setting is filled in, checks it answers, and disconnects;

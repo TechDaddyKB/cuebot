@@ -18,7 +18,7 @@ public sealed partial class WebhooksViewModel : PageViewModel
     private readonly RelayClient _relay;
     private readonly IClipboardService? _clipboard;
 
-    public WebhooksViewModel(RelayClient relay, IClipboardService? clipboard = null) : base("Webhooks")
+    public WebhooksViewModel(RelayClient relay, IClipboardService? clipboard = null) : base("Webhook relay")
     {
         _relay = relay;
         _clipboard = clipboard;

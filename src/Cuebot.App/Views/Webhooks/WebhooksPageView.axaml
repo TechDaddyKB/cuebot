@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Webhooks"
+             xmlns:views="using:Cuebot.App.Views.Webhooks"
+             x:Class="Cuebot.App.Views.Webhooks.WebhooksPageView"
+             x:DataType="vm:WebhooksPageViewModel">
+  <!-- Each tab brings its own heading, scrolling and padding. -->
+  <TabControl Margin="12,8,12,0">
+    <TabItem Header="Services">
+      <views:WebhookServicesView DataContext="{Binding Services}" />
+    </TabItem>
+    <TabItem Header="Relay">
+      <views:WebhooksView DataContext="{Binding Relay}" />
+    </TabItem>
+  </TabControl>
+</UserControl>

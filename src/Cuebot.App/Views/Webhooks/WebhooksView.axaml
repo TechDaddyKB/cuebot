@@ -5,7 +5,7 @@
              x:DataType="vm:WebhooksViewModel">
   <ScrollViewer Padding="24">
     <StackPanel MaxWidth="900" HorizontalAlignment="Left">
-      <TextBlock Classes="h1" Text="Webhooks" />
+      <TextBlock Classes="h1" Text="Webhook relay" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
                  Text="Ko-fi, Patreon, Kick events and other services can only send events to a public web address. Cuebot uses a small relay you deploy once to your own free Cloudflare account: services post to the relay, and Cuebot picks the events up over an outgoing connection, so no port forwarding is needed. The relay keeps events for up to 24 hours while Cuebot is closed. Signatures are checked here in Cuebot; the relay never sees your service secrets." />
 
