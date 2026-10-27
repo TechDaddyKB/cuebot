@@ -1,0 +1,163 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Transfer"
+             x:Class="Cuebot.App.Views.Transfer.ImportExportView"
+             x:DataType="vm:ImportExportViewModel">
+  <Grid RowDefinitions="Auto,*" Margin="24,24,24,8">
+    <StackPanel>
+      <TextBlock Classes="h1" Text="Import / Export" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Share actions with their steps, triggers and queues, plus commands, timers and global variables. Imports accept Cuebot strings (CUEBOT1:…), .cuebot files and Streamer.bot import strings. Nothing is run while importing." />
+    </StackPanel>
+    <TabControl Grid.Row="1" x:Name="Tabs">
+      <TabItem Header="Import">
+        <Grid ColumnDefinitions="*,16,360" RowDefinitions="Auto,Auto,*" Margin="0,8,0,0">
+          <TextBox x:Name="ImportBox" Text="{Binding ImportText}" AcceptsReturn="True" TextWrapping="Wrap" Height="90"
+                   FontFamily="monospace" PlaceholderText="Paste a Cuebot or Streamer.bot import string here, or open a file" />
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8">
+            <Button Content="Preview" Classes="accent" Command="{Binding PreviewCommand}" />
+            <Button Content="Paste" Command="{Binding PasteCommand}" />
+            <Button Content="Open file…" Click="OnOpenFile" />
+            <Button Content="Clear" Command="{Binding ClearImportCommand}" />
+            <Button Content="Import selected" Classes="accent" Command="{Binding ImportCommand}" />
+          </StackPanel>
+          <Grid Grid.Row="2" RowDefinitions="Auto,Auto,*">
+            <TextBlock Text="{Binding ImportStatus}" TextWrapping="Wrap" Margin="0,0,0,4" />
+            <TextBlock Grid.Row="1" Classes="h2" Text="{Binding PreviewHeader}" TextWrapping="Wrap" IsVisible="{Binding HasPlan}" />
+            <TreeView Grid.Row="2" x:Name="PreviewTree" ItemsSource="{Binding PreviewGroups}" Margin="0,8,0,0">
+              <TreeView.DataTemplates>
+                <TreeDataTemplate DataType="vm:ImportGroupViewModel" ItemsSource="{Binding Items}">
+                  <CheckBox IsChecked="{Binding IncludeAll}" IsThreeState="False" Content="{Binding Header}" FontWeight="SemiBold" />
+                </TreeDataTemplate>
+                <TreeDataTemplate DataType="vm:ImportItemViewModel" ItemsSource="{Binding Details}">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <CheckBox IsChecked="{Binding Include}" Content="{Binding Name}" />
+                    <TextBlock Classes="muted" Text="{Binding GroupText}" VerticalAlignment="Center" />
+                    <Border Classes="pill" Padding="6,1" CornerRadius="8" VerticalAlignment="Center"
+                            Background="#33D29922" IsVisible="{Binding HasConflict}">
+                      <TextBlock Text="{Binding ConflictText}" FontSize="12" />
+                    </Border>
+                    <ComboBox ItemsSource="{x:Static vm:ImportItemViewModel.ModeChoices}" SelectedItem="{Binding Mode}"
+                              IsVisible="{Binding HasConflict}" MinWidth="120" />
+                    <TextBlock Text="C#" FontWeight="Bold" Foreground="#D29922" VerticalAlignment="Center" IsVisible="{Binding ContainsCode}"
+                               ToolTip.Tip="Contains script code: read it before enabling the action" />
+                    <TextBlock Text="⚠" Foreground="#D29922" VerticalAlignment="Center" IsVisible="{Binding HasWarnings}"
+                               ToolTip.Tip="{Binding WarningText}" />
+                  </StackPanel>
+                </TreeDataTemplate>
+                <DataTemplate DataType="vm:ImportDetailViewModel">
+                  <TextBlock Text="{Binding Text}" Classes="muted" Classes.error="{Binding IsWarning}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </TreeView.DataTemplates>
+            </TreeView>
+          </Grid>
+          <ScrollViewer Grid.Column="2" Grid.RowSpan="3">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="h2" Text="Import report" />
+              <TextBlock Classes="muted" Text="Nothing to report yet." IsVisible="{Binding !HasPlan}" />
+              <StackPanel IsVisible="{Binding HasMapped}" Spacing="2">
+                <TextBlock Text="Converted" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding ReportMapped}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" TextWrapping="Wrap" Classes="muted" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+              <StackPanel IsVisible="{Binding HasPlaceholders}" Spacing="2">
+                <TextBlock Text="Kept as disabled placeholders" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding ReportPlaceholders}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" TextWrapping="Wrap" Classes="muted" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+              <StackPanel IsVisible="{Binding HasReportWarnings}" Spacing="2">
+                <TextBlock Text="Please check" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding ReportWarnings}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" TextWrapping="Wrap" Classes="error" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Export">
+        <Grid ColumnDefinitions="*,16,380" Margin="0,8,0,0">
+          <ScrollViewer>
+            <StackPanel Spacing="12">
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <CheckBox Content="Include what the selected actions use (run actions, queues, commands, timers)"
+                          IsChecked="{Binding IncludeDependencies}" />
+                <Button Content="Refresh" Command="{Binding RefreshExportCommand}" />
+              </StackPanel>
+              <TextBlock Classes="h2" Text="Actions" />
+              <ItemsControl x:Name="ExportActionList" ItemsSource="{Binding ExportActions}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:ExportChoiceViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Name}" />
+                      <TextBlock Classes="muted" Text="{Binding Group}" VerticalAlignment="Center" IsVisible="{Binding HasGroup}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="h2" Text="Commands" />
+              <ItemsControl ItemsSource="{Binding ExportCommands}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:ExportChoiceViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Name}" />
+                      <TextBlock Classes="muted" Text="{Binding Group}" VerticalAlignment="Center" IsVisible="{Binding HasGroup}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="h2" Text="Timers" />
+              <ItemsControl ItemsSource="{Binding ExportTimers}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:ExportChoiceViewModel">
+                    <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Name}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Classes="h2" Text="Global variables" />
+              <ItemsControl ItemsSource="{Binding ExportGlobals}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:ExportChoiceViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Name}" />
+                      <TextBlock Classes="muted" Text="{Binding Group}" VerticalAlignment="Center" IsVisible="{Binding HasGroup}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </ScrollViewer>
+          <StackPanel Grid.Column="2" Spacing="8">
+            <TextBlock Classes="h2" Text="Details" />
+            <TextBox Text="{Binding ExportName}" PlaceholderText="Name" />
+            <TextBox Text="{Binding ExportAuthor}" PlaceholderText="Author" />
+            <TextBox Text="{Binding ExportVersion}" PlaceholderText="Version (optional)" />
+            <TextBox Text="{Binding ExportDescription}" PlaceholderText="Description" AcceptsReturn="True" TextWrapping="Wrap" Height="70" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Build string" Classes="accent" Command="{Binding BuildExportCommand}" />
+              <Button Content="Copy" Command="{Binding CopyExportCommand}" />
+              <Button Content="Save file…" Click="OnSaveFile" />
+            </StackPanel>
+            <TextBlock Text="{Binding ExportStatus}" TextWrapping="Wrap" Classes="muted" />
+            <TextBox Text="{Binding ExportString, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Height="160" FontFamily="monospace"
+                     PlaceholderText="The import string appears here" />
+          </StackPanel>
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</UserControl>
