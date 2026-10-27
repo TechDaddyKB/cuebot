@@ -7,6 +7,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Obs;
 using Cuebot.Kick;
 using Cuebot.Donations;
+using Cuebot.Integrations;
 using Cuebot.Rumble;
 using Cuebot.Server;
 using Cuebot.Scripting;
@@ -43,6 +44,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddYouTube()
             .AddKick()
             .AddDonations()
+            .AddIntegrations()
             .AddServers();
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
@@ -86,6 +88,10 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Kick", () => Get<Cuebot.Kick.KickService>().StartAsync()),
             StartSafely(log, "Streamlabs", () => Get<Cuebot.Donations.Streamlabs.StreamlabsService>().StartAsync()),
             StartSafely(log, "StreamElements", () => Get<Cuebot.Donations.StreamElements.StreamElementsService>().StartAsync()),
+            StartSafely(log, "VTube Studio", () => Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>().StartAsync()),
+            StartSafely(log, "Voicemod", () => Get<Cuebot.Integrations.Voicemod.VoicemodService>().StartAsync()),
+            StartSafely(log, "Pulsoid", () => Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>().StartAsync()),
+            StartSafely(log, "HypeRate", () => Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),

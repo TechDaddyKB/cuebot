@@ -61,9 +61,9 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | Integration | Status | Phase | Integration | Status | Phase |
 | --- | --- | --- | --- | --- | --- |
 | OBS Studio (9 triggers, 29 sub-actions) | ✅ 36 triggers, 47 sub-actions, multiple connections | 3 | Streamlabs Desktop | 🟡 8 triggers, 14 sub-actions (some calls unverified) | 3 |
-| Meld Studio | ❌ | 5 | VTube Studio | ❌ | 5 |
-| Voicemod | ❌ | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; not yet tried against the real services | 4 |
-| Ko-fi, Patreon, Fourthwall, Shopify, Throne, TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 | Pulsoid, HypeRate | ❌ | 5 |
+| Meld Studio | ❌ | 5 | VTube Studio | ✅ 11/11 triggers, 10/10 sub-actions (+ extras); not yet tried against the real app | 5 |
+| Voicemod | ✅ 4/4 triggers, 11/12 sub-actions (Set Censor State removed from Voicemod V3); not yet tried against the real app | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; not yet tried against the real services | 4 |
+| Ko-fi, Patreon, Fourthwall, Shopify, Throne, TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 | Pulsoid, HypeRate | ✅ + threshold triggers; not yet tried against the real services | 5 |
 | Crowd Control | ❌ | 5 | Elgato (Stream Deck, Camera Hub, Control Center, Wave Link, Studio: 105 triggers) | ❌ | 5 |
 | T.I.T.S., Lumia, Pally.gg, StreamFog, Mtion, PolyPop, OBSBOT | ❌ | 5 | Pronouns (alejo.io) | ✅ | 3 |
 
@@ -133,7 +133,7 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Mostly done — services:** points, quotes, credits, hotkeys, toasts, donations, import/export, action history and copy/paste/undo; still to do:
    mouse/keyboard output, multiple point currencies, Streamer.bot type-code mapping.
-5. **Integrations:** stream apps, Elgato, VTube Studio, Voicemod, MIDI, voice control and the remaining services.
+5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅; still to do: Meld, Elgato, MIDI, voice control, Ko-fi/Patreon and the other webhook services (Cloudflare relay), the remaining apps.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.

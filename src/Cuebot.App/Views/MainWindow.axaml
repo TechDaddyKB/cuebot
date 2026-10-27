@@ -9,6 +9,8 @@
         xmlns:kickv="using:Cuebot.App.Views.Kick"
         xmlns:donvm="using:Cuebot.App.ViewModels.Donations"
         xmlns:donv="using:Cuebot.App.Views.Donations"
+        xmlns:intvm="using:Cuebot.App.ViewModels.Integrations"
+        xmlns:intv="using:Cuebot.App.Views.Integrations"
         xmlns:srvvm="using:Cuebot.App.ViewModels.Servers"
         xmlns:srvv="using:Cuebot.App.Views.Servers"
         xmlns:xvm="using:Cuebot.App.ViewModels.Extras"
@@ -28,7 +30,7 @@
   <Window.Styles>
     <!-- Sidebar: compact rows so every section fits expanded at 860 px. -->
     <Style Selector="ListBox.nav ListBoxItem">
-      <Setter Property="Padding" Value="14,3" />
+      <Setter Property="Padding" Value="14,2" />
       <Setter Property="Margin" Value="6,0" />
       <Setter Property="MinHeight" Value="0" />
     </Style>
@@ -57,6 +59,7 @@
     <DataTemplate DataType="ytvm:YouTubeViewModel"><ytv:YouTubeView /></DataTemplate>
     <DataTemplate DataType="kickvm:KickViewModel"><kickv:KickView /></DataTemplate>
     <DataTemplate DataType="donvm:DonationsViewModel"><donv:DonationsView /></DataTemplate>
+    <DataTemplate DataType="intvm:IntegrationsViewModel"><intv:IntegrationsView /></DataTemplate>
     <DataTemplate DataType="xvm:QuotesViewModel"><xviews:QuotesView /></DataTemplate>
     <DataTemplate DataType="xvm:CreditsViewModel"><xviews:CreditsView /></DataTemplate>
     <DataTemplate DataType="xvm:PointsViewModel"><xviews:PointsView /></DataTemplate>

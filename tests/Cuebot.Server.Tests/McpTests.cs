@@ -485,10 +485,9 @@ public sealed class McpTests : IAsyncLifetime
     [Fact]
     public async Task Stdio_bridge_reports_unreachable_cuebot_and_bad_tokens()
     {
-        using var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var freePort = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
+        // Port 1 (tcpmux) is never served here, so the connection is refused; a "free" port picked at runtime could be
+        // taken by another test running in parallel before the bridge connects.
+        const int freePort = 1;
 
         using var input = new StringReader("""{"jsonrpc":"2.0","id":1,"method":"ping"}""" + "\n" + """{"jsonrpc":"2.0","method":"notifications/initialized"}""" + "\n");
         using var output = new StringWriter();

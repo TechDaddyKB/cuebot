@@ -154,6 +154,7 @@ public static class McpStdioBridge
     private sealed class Bridge(HttpClient http, McpBridgeTarget target, TextWriter output, TextWriter log)
     {
         private readonly SemaphoreSlim _write = new(1, 1);
+        private readonly SemaphoreSlim _logWrite = new(1, 1);
         private string? _session;
         private string? _protocol;
 
@@ -168,6 +169,20 @@ public static class McpStdioBridge
             finally
             {
                 _write.Release();
+            }
+        }
+
+        // Messages are forwarded concurrently, so log lines (stderr) are serialized like stdout replies.
+        private async Task LogAsync(string line)
+        {
+            await _logWrite.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await log.WriteLineAsync(line).ConfigureAwait(false);
+            }
+            finally
+            {
+                _logWrite.Release();
             }
         }
 
@@ -193,7 +208,7 @@ public static class McpStdioBridge
                 }
                 catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
                 {
-                    await log.WriteLineAsync($"cuebot --mcp-stdio: {target.Endpoint}: {ex.Message}").ConfigureAwait(false);
+                    await LogAsync($"cuebot --mcp-stdio: {target.Endpoint}: {ex.Message}").ConfigureAwait(false);
                     await ReplyErrorAsync(message, NotReachable,
                         $"Cannot reach Cuebot at {target.Endpoint} ({ex.Message}). Is Cuebot running with the MCP server enabled on the Servers page?").ConfigureAwait(false);
                     return;
@@ -204,7 +219,7 @@ public static class McpStdioBridge
                     if (response.StatusCode == HttpStatusCode.NotFound && !isInitialize && _session is not null && attempt == 0)
                     {
                         // Cuebot restarted and forgot the session: continue without one.
-                        await log.WriteLineAsync("cuebot --mcp-stdio: session expired, continuing without it").ConfigureAwait(false);
+                        await LogAsync("cuebot --mcp-stdio: session expired, continuing without it").ConfigureAwait(false);
                         _session = null;
                         continue;
                     }
@@ -235,7 +250,7 @@ public static class McpStdioBridge
                             HttpStatusCode.Forbidden => "Cuebot refused the request (origin not allowed).",
                             _ => $"Cuebot answered HTTP {(int)response.StatusCode}.",
                         };
-                        await log.WriteLineAsync($"cuebot --mcp-stdio: {reason}").ConfigureAwait(false);
+                        await LogAsync($"cuebot --mcp-stdio: {reason}").ConfigureAwait(false);
                         await ReplyErrorAsync(message, NotReachable, reason).ConfigureAwait(false);
                     }
                     return;

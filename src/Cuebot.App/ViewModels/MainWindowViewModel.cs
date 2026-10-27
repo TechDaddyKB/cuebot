@@ -24,7 +24,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ("Main", ["Dashboard", "Chat", "Actions", "Commands", "History"]),
         ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Quotes", "Credits", "Points"]),
         ("Platforms", ["Twitch", "Rumble", "YouTube", "Kick"]),
-        ("Apps", ["OBS", "Speech", "Donations"]),
+        ("Apps", ["OBS", "Speech", "Donations", "Integrations"]),
         ("System", ["Import / Export", "Scripting", "Servers", "Support", "Settings"]),
     ];
 
@@ -61,6 +61,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new Cuebot.App.ViewModels.Kick.KickViewModel(host.Get<Cuebot.Kick.KickService>()),
             new Cuebot.App.ViewModels.Donations.DonationsViewModel(host.Get<Cuebot.Donations.Streamlabs.StreamlabsService>(),
                 host.Get<Cuebot.Donations.StreamElements.StreamElementsService>()),
+            new Cuebot.App.ViewModels.Integrations.IntegrationsViewModel(
+                host.Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>(), host.Get<Cuebot.Integrations.Voicemod.VoicemodService>(),
+                host.Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>(), host.Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>()),
             new Extras.QuotesViewModel(host.Get<Cuebot.Core.Quotes.QuoteStore>()),
             new Extras.CreditsViewModel(host.Get<Cuebot.Core.Credits.CreditsCollector>()),
             new Extras.PointsViewModel(host.Get<Cuebot.Core.Points.PointsService>()),
