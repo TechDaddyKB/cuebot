@@ -11,5 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Speech" />
+    <PackageReference Include="SoundFlow" />
+    <PackageReference Include="NVorbis" />
   </ItemGroup>
 </Project>
