@@ -67,7 +67,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 host.Get<Cuebot.Donations.StreamElements.StreamElementsService>()),
             new Cuebot.App.ViewModels.Integrations.IntegrationsViewModel(
                 host.Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>(), host.Get<Cuebot.Integrations.Voicemod.VoicemodService>(),
-                host.Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>(), host.Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>()),
+                host.Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>(), host.Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>(),
+                host.Get<Cuebot.Integrations.StreamLoots.StreamLootsService>(), host.Get<Cuebot.Integrations.CrowdControl.CrowdControlService>()),
             new Cuebot.App.ViewModels.Webhooks.WebhooksPageViewModel(
                 new Cuebot.App.ViewModels.Webhooks.WebhookServicesViewModel(host.Get<Cuebot.Webhooks.WebhookServices>()),
                 new Cuebot.App.ViewModels.Webhooks.WebhooksViewModel(host.Get<Cuebot.Relay.RelayClient>(), host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>())),

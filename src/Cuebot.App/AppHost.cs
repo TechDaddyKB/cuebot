@@ -96,6 +96,8 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Voicemod", () => Get<Cuebot.Integrations.Voicemod.VoicemodService>().StartAsync()),
             StartSafely(log, "Pulsoid", () => Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>().StartAsync()),
             StartSafely(log, "HypeRate", () => Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>().StartAsync()),
+            StartSafely(log, "StreamLoots", () => Get<Cuebot.Integrations.StreamLoots.StreamLootsService>().StartAsync()),
+            StartSafely(log, "Crowd Control", () => Get<Cuebot.Integrations.CrowdControl.CrowdControlService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
