@@ -61,7 +61,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         {
             Assert.Equal(
                 ["Dashboard", "Chat", "Actions", "Commands", "Queues", "Timers", "Users & Groups", "Variables", "Watchers",
-                 "Twitch", "Rumble", "OBS", "Speech", "Scripting", "Settings"],
+                 "Twitch", "Rumble", "YouTube", "OBS", "Speech", "Scripting", "Settings"],
                 vm.Pages.Select(p => p.Title));
             foreach (var (theme, suffix) in new[] { (Cuebot.App.Shell.AppTheme.Dark, ""), (Cuebot.App.Shell.AppTheme.Light, "-light") })
             {

@@ -31,6 +31,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new WatchersViewModel(host.Get<Cuebot.Core.SystemTools.WatcherService>()),
             new TwitchViewModel(host.Get<TwitchService>()),
             new RumbleViewModel(host.Get<Cuebot.Rumble.RumbleService>()),
+            new Cuebot.App.ViewModels.YouTube.YouTubeViewModel(host.Get<Cuebot.YouTube.YouTubeService>()),
             new ObsViewModel(host.Get<ObsService>()),
             new SpeechViewModel(host.Get<SpeechService>(), host.Get<IAudioInput>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
