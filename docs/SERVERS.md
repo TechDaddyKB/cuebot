@@ -178,3 +178,112 @@ missing throws `NotSupportedException` naming the method and the script function
 Limitations: scripts target .NET 10, not .NET Framework 4.8 (Windows Forms, `System.Web`, etc. are unavailable);
 Newtonsoft.Json is not bundled (use System.Text.Json); "Precompile on application start" is not implemented, so
 `Init()` (and `RegisterCustomTrigger` in it) runs before the script's first execution.
+
+## REST API (default 127.0.0.1:7475, prefix `/api/v1`)
+
+Module: `src/Cuebot.Server/Api` (`ApiServer` routing, `ApiOperations` shared with MCP, `ActionValidator`,
+`CatalogJson`, `OpenApiDocument`). Settings: `servers.json` → `api {enabled, address, port, token}`. UI: Servers page,
+"REST API" card.
+
+- **Off by default.** Binds 127.0.0.1; another address only with `allowLan` (else downgraded with a warning). One
+  listener serves the REST API and MCP (`/mcp`); each half answers 404 while switched off.
+- **Bearer token for every request** (`Authorization: Bearer cb_...`). Generated (32 random bytes, base64url) when the
+  API or MCP is first enabled or started; shown masked on the Servers page with Show / Copy / Regenerate. Compared in
+  constant time (SHA-256 of both, `FixedTimeEquals`), never logged. Wrong or missing token → 401 with
+  `WWW-Authenticate: Bearer`.
+- **Origins** as for the other servers (no Origin, `null`, loopback and same-IP pages; others only when listed in
+  `allowedOrigins`); `Sec-Fetch-Site: cross-site` without Origin is refused → 403. CORS preflights answered for allowed
+  origins (Authorization, Content-Type, Mcp-Session-Id, MCP-Protocol-Version).
+- Never exposed: settings files (twitch.json, youtube.json, servers.json...), platform tokens, the API token. Action
+  parameters are user content and are returned as stored. Edits are logged ("Action 'X' updated") without values.
+- 1 MB request body limit. Errors are `{error, details?: [{path, message}]}`.
+
+JSON shapes are those of actions.json / commands.json (camelCase, enums as strings). All edits go through
+`ProfileService.EditAsync`, `CommandStore` and `GlobalVariables`, so the UI updates at once.
+
+| Endpoint | Behaviour |
+| --- | --- |
+| `GET /status` | app version, runtime, OS, platform connections, server statuses, counts, chat platforms |
+| `GET /openapi.json` | OpenAPI 3.1 description of everything below |
+| `GET /actions?group=&search=` / `POST /actions` | summaries / create (201) |
+| `GET` / `PUT` / `PATCH` / `DELETE /actions/{id or name}` | full definition / replace / change given top-level fields / delete |
+| `POST /actions/{id}/run` `{args, wait, timeoutSeconds}` | 202 queued, or 200 with the run (state, error, args) when `wait` |
+| `POST /actions/{id}/enable`, `/disable` | |
+| `GET /triggers?category=&search=`, `GET /triggers/{type}` | trigger types; one type adds `settingsSchema` (JSON Schema) and live suggestions |
+| `GET /subactions?category=&search=`, `GET /subactions/{type}` | sub-action types (parameters, branches); one type adds `parametersSchema` |
+| `GET /scriptfunctions?search=` | functions for C#/Python code |
+| `GET` / `POST /commands`, `GET` / `PUT` / `PATCH` / `DELETE /commands/{id or name}` | GET one adds `linkedActions` (actions with a `command.triggered` trigger for it); regex commands are compiled to check them |
+| `GET` / `POST /timers`, `GET` / `PUT` / `PATCH` / `DELETE /timers/{id or name}` | with runtime `state`; cron and intervals validated |
+| `POST /timers/{id}/state` `{enabled, intervalSeconds}` | runtime override (like "Set timer state", not saved) |
+| `GET /globals?persisted=`, `GET` / `PUT` / `DELETE /globals/{name}` | PUT `{value, persisted (default true)}` |
+| `GET /history?limit=&action=&includeArgs=` | recent and pending runs, newest first |
+| `GET /chat?limit=`, `POST /chat` `{message, platform (default All)}` | combined chat + activity feed / send (409 when nothing can send) |
+| `POST /import/preview` `{data}`, `POST /import/apply` `{data, mode, items}` | Cuebot bundles and Streamer.bot exports; `mode` overwrite / addAsNew / skip; `items: [{kind, name or sourceId, include, mode}]` |
+| `GET /export?actions=&commands=&timers=&globals=&includeDependencies=&name=` | `{data: "CUEBOT1:...", counts}` (comma separated ids or names) |
+| `GET /events?types=` | Server-Sent Events: `event: <type>`, `data: {type, time, args}` for every bus event plus `action.runCompleted`; `types` filter with `prefix.*`; `: ping` every 15 s; max 16 streams (429) |
+
+Validation (`ActionValidator`): unknown trigger / sub-action types and values that do not fit their descriptor (Number
+not a number, Boolean not true/false, Choice not one of the choices) → 400 with one `details` entry per problem, e.g.
+`subActions[4].branches.True[0].type`. Values containing `%`, `~` or `$` (templates) are not checked. Unknown parameter
+keys and branches the step does not offer are only `warnings` (imports and older files carry them). Empty or duplicate
+ids are replaced; on create an existing id is 409.
+
+## MCP server (`/mcp` on the API listener)
+
+Module: `src/Cuebot.Server/Mcp`. Settings: `servers.json` → `mcp {enabled, requireConfirmation (default true)}`; uses the
+API's port and token. UI: Servers page, "MCP server" card with the URL and copyable client configs. No SDK: JSON-RPC 2.0
+implemented in `McpServer`.
+
+- Protocol revision **2025-06-18** (also answers 2025-11-25, 2025-03-26 and 2024-11-05 clients in their revision; an
+  unknown one gets 2025-06-18). Capabilities: `tools`, `resources`, `prompts` (no list-changed notifications, no
+  subscriptions). Methods: `initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`,
+  `resources/templates/list`, `resources/read`, `prompts/list`, `prompts/get`; notifications (`initialized`,
+  `cancelled`...) are accepted and need no answer; batches are answered too.
+- **Streamable HTTP**: `POST /mcp` with one message or a batch → `application/json` (or a single SSE event when the
+  client accepts only `text/event-stream`); notifications → 202. The initialize response carries `Mcp-Session-Id`;
+  later requests may send it (unknown → 404, so clients re-initialize); `DELETE /mcp` ends a session; `GET /mcp` → 405
+  (no server-initiated stream). Unsupported `MCP-Protocol-Version` → 400. Same token and origin rules as the REST API.
+- **stdio**: `Cuebot --mcp-stdio` (`McpStdioBridge`) does not start Cuebot: it reads `servers.json` in the data folder
+  (`--data` / `CUEBOT_DATA` respected), forwards each stdin line to the running instance's `/mcp` with the token and
+  writes the answers to stdout (diagnostics on stderr). `CUEBOT_MCP_URL` / `CUEBOT_API_TOKEN` override. When Cuebot is
+  not running, requests get JSON-RPC error -32000 "Cannot reach Cuebot ..."; an expired session is dropped and retried.
+- Tool calls are logged as `MCP: Tool call: <name>`, never with argument values.
+
+Tools (all backed by the REST operations; schemas include JSON Schemas built from the registry descriptors where it
+helps: `describe_*`, `create_action` with a recursive `$defs/subAction`):
+
+| Tool | Notes |
+| --- | --- |
+| list_actions, get_action, create_action, update_action (merge, or `replace`), delete_action (destructive), run_action (waits by default), set_action_enabled | |
+| list_trigger_types, describe_trigger_type, list_subaction_types (category / search), describe_subaction_type, list_script_functions | read-only |
+| list_commands, get_command, create_command, update_command, delete_command (destructive) | |
+| list_timers, create_timer, update_timer, set_timer_state, delete_timer (destructive) | |
+| get_globals (all or one), set_global, delete_global (destructive) | |
+| get_status, get_history, get_recent_chat, send_chat_message (destructive) | |
+| preview_import, apply_import (destructive), export_bundle | |
+
+Annotations: read-only tools `readOnlyHint: true`; destructive tools `destructiveHint: true`; everything else
+`destructiveHint: false`; run_action, get_recent_chat and send_chat_message `openWorldHint: true`. With
+`requireConfirmation` on, a destructive tool first answers `{confirmationRequired: true, action: "Delete the action 'X'",
+confirmationToken, expiresInSeconds: 300}` and does nothing; calling it again with the same arguments plus
+`confirmationToken` performs it. Tokens are single-use, bound to the tool and its exact arguments, and expire after 5
+minutes. Tool failures are results with `isError: true` and `{error, details?}`; unknown tools and methods are JSON-RPC
+errors (-32602 / -32601).
+
+Resources: `cuebot://actions` (summaries), `cuebot://actions/{id}` (template; every action is also listed),
+`cuebot://catalog/subactions`, `cuebot://catalog/triggers` (full catalogue with schemas), `cuebot://docs/variables`
+(%arguments%, ~globals~, formats, $functions()$), `cuebot://docs/actions` (how actions, branches, commands and timers
+fit together). Unknown → -32002.
+
+Prompts: `create_action_from_description {description, trigger?}` (a step-by-step recipe using the catalogue tools) and
+`troubleshoot_action {action, problem?}` (embeds the action JSON and its last 10 runs with arguments).
+
+### Client setup
+
+- Claude Code: `claude mcp add --transport http cuebot http://127.0.0.1:7475/mcp --header "Authorization: Bearer TOKEN"`
+- HTTP clients (.mcp.json style): `{"mcpServers": {"cuebot": {"type": "http", "url": "http://127.0.0.1:7475/mcp",
+  "headers": {"Authorization": "Bearer TOKEN"}}}}`
+- Claude Desktop and other stdio clients: `{"mcpServers": {"cuebot": {"command": "<path to Cuebot>", "args":
+  ["--mcp-stdio"]}}}` (add `"--data", "<folder>"` for a non-default data folder). Cuebot must be running with MCP on.
+
+The Servers page fills in the real URL, path and token (masked on screen unless Show is on; Copy copies the real one).
