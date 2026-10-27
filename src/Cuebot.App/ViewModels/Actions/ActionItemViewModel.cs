@@ -21,7 +21,7 @@ public sealed partial class ActionItemViewModel : ObservableObject
         Registry = registry;
         _profile = profile;
         Triggers = new ObservableCollection<TriggerItemViewModel>(
-            definition.Triggers.Select(t => new TriggerItemViewModel(t, registry.GetTrigger(t.Type), () => MarkChanged(false))));
+            definition.Triggers.Select(t => new TriggerItemViewModel(t, registry.GetTrigger(t.Type), key => MarkChanged(false, key))));
         Steps = new StepListViewModel(definition.SubActions, this);
         RefreshFromProfile();
     }
@@ -33,6 +33,12 @@ public sealed partial class ActionItemViewModel : ObservableObject
 
     /// <summary>Raised after any edit (structure, layout or parameters), so views can refresh.</summary>
     public event Action? Changed;
+
+    /// <summary>
+    /// Raised after each edit, before the profile publishes it, with a coalesce key: edits sharing a non-null key in
+    /// quick succession (typing in one field) form one undo step. Inside <see cref="Batch"/> it is raised once at the end.
+    /// </summary>
+    public event Action<string?>? Edited;
 
     /// <summary>Raised when a view asks to add a step at a specific place (the page shows the type picker).</summary>
     public event Action<StepInsertTarget>? AddStepRequested;
@@ -141,12 +147,46 @@ public sealed partial class ActionItemViewModel : ObservableObject
         _ => $"{Triggers[0].Title} +{Triggers.Count - 1}",
     };
 
-    public void MarkChanged(bool structural = true)
+    private int _batchDepth;
+    private bool _batchStructural;
+    private bool _batchChanged;
+
+    public void MarkChanged(bool structural = true, string? coalesceKey = null)
     {
+        if (_batchDepth > 0)
+        {
+            _batchChanged = true;
+            _batchStructural |= structural;
+            return;
+        }
+        Edited?.Invoke(coalesceKey);
         _profile.NotifyChanged();
         if (structural) OnPropertyChanged(nameof(TriggerSummary));
         foreach (var step in Steps.Descendants()) step.RefreshDerived();
         Changed?.Invoke();
+    }
+
+    /// <summary>Groups several edits (a multi-step paste) into one change notification and one undo step.</summary>
+    public IDisposable Batch()
+    {
+        _batchDepth++;
+        return new BatchScope(this);
+    }
+
+    private sealed class BatchScope(ActionItemViewModel owner) : IDisposable
+    {
+        private bool _done;
+
+        public void Dispose()
+        {
+            if (_done) return;
+            _done = true;
+            if (--owner._batchDepth > 0 || !owner._batchChanged) return;
+            owner._batchChanged = false;
+            var structural = owner._batchStructural;
+            owner._batchStructural = false;
+            owner.MarkChanged(structural);
+        }
     }
 
     /// <summary>
@@ -172,12 +212,58 @@ public sealed partial class ActionItemViewModel : ObservableObject
     {
         var definition = new TriggerDefinition { Type = type.TypeId };
         foreach (var p in type.Parameters) definition.Settings[p.Key] = p.DefaultValue;
-        Definition.Triggers.Add(definition);
-        var item = new TriggerItemViewModel(definition, type, () => MarkChanged(false));
-        Triggers.Add(item);
+        return AddTriggerDefinition(definition);
+    }
+
+    /// <summary>Adds an existing trigger definition (pasted or duplicated) at <paramref name="index"/> (default: the end).</summary>
+    public TriggerItemViewModel AddTriggerDefinition(TriggerDefinition definition, int? index = null)
+    {
+        var at = Math.Clamp(index ?? Definition.Triggers.Count, 0, Definition.Triggers.Count);
+        Definition.Triggers.Insert(at, definition);
+        var item = new TriggerItemViewModel(definition, Registry.GetTrigger(definition.Type), key => MarkChanged(false, key));
+        Triggers.Insert(at, item);
         MarkChanged();
         Selected = item;
         return item;
+    }
+
+    /// <summary>Inserts existing step definitions (pasted or duplicated) in order at the target, as one edit.</summary>
+    public IReadOnlyList<SubActionItemViewModel> InsertSteps(IReadOnlyList<SubActionDefinition> steps, StepInsertTarget target)
+    {
+        var added = new List<SubActionItemViewModel>();
+        using (Batch())
+        {
+            var index = Math.Clamp(target.Index, 0, target.List.Items.Count);
+            foreach (var step in steps) added.Add(target.List.Insert(index++, step));
+        }
+        if (added.Count > 0) Selected = added[^1];
+        return added;
+    }
+
+    /// <summary>Every selectable item: triggers, steps at any depth, and their branch headers.</summary>
+    public IEnumerable<EditorItemViewModel> AllItems() =>
+        Triggers.Cast<EditorItemViewModel>()
+            .Concat(Steps.Descendants().SelectMany(s => s.Branches.Cast<EditorItemViewModel>().Prepend(s)));
+
+    /// <summary>Id of the selected trigger or step (a branch reports its owner step and name), to restore selection after undo.</summary>
+    public EditorItemKey? SelectedKey => Selected switch
+    {
+        TriggerItemViewModel t => new EditorItemKey(t.Definition.Id, null),
+        SubActionItemViewModel s => new EditorItemKey(s.Definition.Id, null),
+        BranchViewModel b => new EditorItemKey(b.Owner.Definition.Id, b.Name),
+        _ => null,
+    };
+
+    public void Select(EditorItemKey? key)
+    {
+        if (key is not { } k) return;
+        Selected = AllItems().FirstOrDefault(i => i switch
+        {
+            TriggerItemViewModel t => k.Branch is null && t.Definition.Id == k.Id,
+            SubActionItemViewModel s => k.Branch is null && s.Definition.Id == k.Id,
+            BranchViewModel b => b.Name == k.Branch && b.Owner.Definition.Id == k.Id,
+            _ => false,
+        });
     }
 
     public SubActionItemViewModel AddStep(ISubActionHandler handler, StepInsertTarget target)
@@ -248,6 +334,10 @@ public sealed partial class ActionItemViewModel : ObservableObject
         assign(value);
         OnPropertyChanged(name);
         OnPropertyChanged(nameof(RunSummary));
-        MarkChanged(structural: false);
+        // Typing a name or group is one undo step per pause; each toggle is its own step.
+        MarkChanged(structural: false, coalesceKey: typeof(T) == typeof(string) ? name : null);
     }
 }
+
+/// <summary>Identifies a trigger or step (or a step's branch) across view model rebuilds.</summary>
+public readonly record struct EditorItemKey(Guid Id, string? Branch);

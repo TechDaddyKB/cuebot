@@ -11,13 +11,32 @@
         xmlns:srvv="using:Cuebot.App.Views.Servers"
         xmlns:xvm="using:Cuebot.App.ViewModels.Extras"
         xmlns:xviews="using:Cuebot.App.Views.Extras"
+        xmlns:hvm="using:Cuebot.App.ViewModels.History"
+        xmlns:hv="using:Cuebot.App.Views.History"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
         Icon="avares://Cuebot/Assets/cuebot.ico"
         Width="1360" Height="860" MinWidth="960" MinHeight="600"
         WindowStartupLocation="CenterScreen">
+  <Window.Styles>
+    <!-- Sidebar: compact rows so every section fits expanded at 860 px. -->
+    <Style Selector="ListBox.nav ListBoxItem">
+      <Setter Property="Padding" Value="14,4" />
+      <Setter Property="Margin" Value="6,0" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="Button.navgroup">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="14,7,14,3" />
+      <Setter Property="Margin" Value="6,2,6,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+  </Window.Styles>
   <Window.DataTemplates>
+    <DataTemplate DataType="hvm:HistoryViewModel"><hv:HistoryView /></DataTemplate>
     <DataTemplate DataType="vm:DashboardViewModel"><views:DashboardView /></DataTemplate>
     <DataTemplate DataType="vm:ChatViewModel"><views:ChatView /></DataTemplate>
     <DataTemplate DataType="actions:ActionsViewModel"><views:ActionsView /></DataTemplate>
@@ -49,23 +68,46 @@
           <Image Source="avares://Cuebot/Assets/cuebot.png" Width="28" Height="28" />
           <TextBlock Text="Cuebot" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
         </StackPanel>
-        <ItemsControl DockPanel.Dock="Bottom" Margin="18,8,18,16" ItemsSource="{Binding Dashboard.Connections}">
+        <!-- Connection status: two compact columns so the navigation keeps its room at 860 px. -->
+        <ItemsControl DockPanel.Dock="Bottom" Margin="14,6,10,12" ItemsSource="{Binding Dashboard.Connections}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate DataType="vm:ConnectionStatusViewModel">
-              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,3" ToolTip.Tip="{Binding Message}">
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" ToolTip.Tip="{Binding Message}" Background="Transparent">
                 <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" />
-                <TextBlock Text="{Binding Name}" Classes="muted" FontSize="13" />
+                <TextBlock Text="{Binding Name}" Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="72" />
               </StackPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <ListBox Classes="nav" ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}">
-          <ListBox.ItemTemplate>
-            <DataTemplate DataType="vm:PageViewModel">
-              <TextBlock Text="{Binding Title}" FontSize="14" />
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+        <Border DockPanel.Dock="Bottom" Height="1" Margin="12,0" Background="{DynamicResource CuebotCardBorder}" />
+        <ScrollViewer x:Name="NavScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <ItemsControl x:Name="NavHost" ItemsSource="{Binding NavGroups}" Margin="0,0,0,6">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:NavGroupViewModel">
+                <StackPanel>
+                  <Button Classes="navgroup" Command="{Binding ToggleCommand}" HorizontalAlignment="Stretch"
+                          AutomationProperties.Name="{Binding Name}" ToolTip.Tip="Show or hide this section">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="{Binding Chevron}" Width="10" FontSize="11" Classes="muted" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Header}" FontSize="11" FontWeight="SemiBold" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+                  <ListBox Classes="nav" ItemsSource="{Binding Pages}" SelectedItem="{Binding Selected}" IsVisible="{Binding IsExpanded}"
+ ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate DataType="vm:PageViewModel">
+                        <TextBlock Text="{Binding Title}" FontSize="13.5" />
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
       </DockPanel>
     </Border>
     <ContentControl Grid.Column="1" Content="{Binding SelectedPage}" />

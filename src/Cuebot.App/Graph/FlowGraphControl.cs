@@ -11,7 +11,8 @@ namespace Cuebot.App.Graph;
 /// <summary>
 /// Node-graph editor for one action. Click a node to edit it, drag to move it, drop it on another node's
 /// output port to rewire it there, click a "+" port to add a step at that point. Drag the background to pan,
-/// mouse wheel to zoom, Delete to remove the selected node.
+/// mouse wheel to zoom, Delete to remove the selected node. Right-click selects the node under the pointer for the
+/// context menu; Ctrl+C/V/D/Z/Y bubble to the Actions page, which handles them for both editors.
 /// </summary>
 public sealed class FlowGraphControl : Control
 {
@@ -257,6 +258,14 @@ public sealed class FlowGraphControl : Control
         var world = ToWorld(screen);
         _lastPointer = screen;
         var point = e.GetCurrentPoint(this);
+
+        if (point.Properties.IsRightButtonPressed)
+        {
+            // Select what the context menu (copy, paste, duplicate, delete) will act on; the entry node means the action.
+            Action.Selected = NodeAt(world)?.Item as EditorItemViewModel;
+            InvalidateVisual();
+            return;
+        }
 
         if (point.Properties.IsLeftButtonPressed && OutputPortAt(world) is { } port)
         {
