@@ -65,11 +65,19 @@ public sealed class WebhookServicesPageTests : IAsyncDisposable
             Assert.All(secrets, b => Assert.Equal('•', b.PasswordChar));
             Assert.DoesNotContain(window.GetVisualDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains(KofiToken, StringComparison.Ordinal));
 
-            // Throne: a generated token is shown once so it can be put in the URL.
+            // Throne works without a secret (its signature is checked); the URL token is optional and, once generated, shown
+            // once so it can be put in the URL.
             var throne = vm.Services[4];
+            Assert.True(services.Throne.IsConfigured);
+            Assert.Equal("URL token (optional)", throne.SecretLabel);
+            Assert.Equal("No URL token — Throne's signature alone is checked", throne.MaskedSecret);
+            Assert.Contains("signs every delivery", throne.Help, StringComparison.Ordinal);
+            Assert.Contains("JSON", vm.Services[3].Help, StringComparison.Ordinal);
+            Assert.Equal("No webhook secret saved — deliveries are refused", vm.Services[1].MaskedSecret);
             throne.GenerateCommand.Execute(null);
             Assert.Equal(services.Throne.Settings.Secret, throne.GeneratedToken);
             Assert.Equal(32, throne.GeneratedToken.Length);
+            Assert.StartsWith("Saved: ", throne.MaskedSecret, StringComparison.Ordinal);
 
             kofi.SelectedTestKind = "donation";
             kofi.SendTestCommand.Execute(null);

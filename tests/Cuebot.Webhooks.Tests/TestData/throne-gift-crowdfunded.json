@@ -1,0 +1,16 @@
+{
+  "contract_version": "1",
+  "event_id": "c2e4a6b8-0d1f-4e3a-9b5c-7d9f1a3c5e70",
+  "event_type": "gift_crowdfunded",
+  "data": {
+    "creator_id": "8f3c1a2b4d5e6f708192a3b4",
+    "creator_username": "twitchuser123",
+    "gifter_username": "Chipper",
+    "message": "We did it!",
+    "item_name": "Streaming PC",
+    "item_thumbnail_url": "https://example.com/pc.jpg",
+    "price": 149900,
+    "currency": "EUR",
+    "is_surprise_gift": true
+  }
+}

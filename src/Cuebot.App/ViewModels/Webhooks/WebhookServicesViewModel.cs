@@ -28,10 +28,10 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
             new WebhookCardViewModel(services.Fourthwall, services.Fourthwall.Settings, "Webhook secret",
                 "In your Fourthwall admin open Settings → For developers → Webhooks, create a webhook with the Cuebot URL for Fourthwall for the events you want and copy the shop's webhook secret key here."),
             new WebhookCardViewModel(services.Shopify, services.Shopify.Settings, "Signing key / client secret",
-                "In the Shopify admin open Settings → Notifications → Webhooks and create Order creation and Order payment webhooks (JSON) with the Cuebot URL for Shopify. Paste the key shown under 'Your webhooks will be signed with' (or your app's client secret)."),
-            new WebhookCardViewModel(services.Throne, services.Throne.Settings, "URL token",
-                "Throne does not sign webhooks, so Cuebot checks a token in the URL. Generate one, then on throne.com open Account → Settings → Integrations → Webhooks and add the Cuebot URL for Throne with /<token> appended (or ?token=<token>).",
-                canGenerate: true),
+                "In the Shopify admin open Settings → Notifications → Webhooks and create Order creation and Order payment webhooks with the Cuebot URL for Shopify. Choose the JSON format: XML webhooks are refused. Paste the key shown under 'Your webhooks will be signed with' (or your app's client secret)."),
+            new WebhookCardViewModel(services.Throne, services.Throne.Settings, "URL token (optional)",
+                "On throne.com open Settings → Integrations → Webhooks and add the Cuebot URL for Throne. Throne signs every delivery and Cuebot checks that signature, so no secret is needed. Throne uses one signing key for every creator, though, so for extra safety you can generate a URL token and add /<token> to the URL (or ?token=<token>); once set, deliveries without it are refused.",
+                canGenerate: true, secretOptional: "No URL token — Throne's signature alone is checked"),
         ];
         Custom = new CustomHooksViewModel(services.Custom);
         foreach (var service in services.All) service.Changed += () => OnUi(Refresh);
@@ -87,10 +87,15 @@ public sealed partial class WebhookCardViewModel : ObservableObject
     private readonly WebhookServiceBase _service;
     private readonly WebhookServiceSettings _settings;
 
-    public WebhookCardViewModel(WebhookServiceBase service, WebhookServiceSettings settings, string secretLabel, string help, bool canGenerate = false)
+    private readonly string? _noSecretText;
+
+    /// <param name="secretOptional">For a service that works without a secret (Throne): the text shown while none is saved.</param>
+    public WebhookCardViewModel(WebhookServiceBase service, WebhookServiceSettings settings, string secretLabel, string help, bool canGenerate = false,
+        string? secretOptional = null)
     {
         _service = service;
         _settings = settings;
+        _noSecretText = secretOptional;
         SecretLabel = secretLabel;
         Help = help;
         CanGenerate = canGenerate;
@@ -120,7 +125,8 @@ public sealed partial class WebhookCardViewModel : ObservableObject
     }
 
     /// <summary>"Saved: ••••••••abcd", never the secret itself (except a generated Throne token, which must go in the URL).</summary>
-    public string MaskedSecret => _settings.Secret.Length == 0 ? $"No {SecretLabel.ToLowerInvariant()} saved — deliveries are refused" : $"Saved: {WebhookSecrets.Mask(_settings.Secret)}";
+    public string MaskedSecret => _settings.Secret.Length > 0 ? $"Saved: {WebhookSecrets.Mask(_settings.Secret)}"
+        : _noSecretText ?? $"No {SecretLabel.ToLowerInvariant()} saved — deliveries are refused";
 
     public bool Enabled
     {

@@ -41,8 +41,9 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
     /// <summary>The bot event type for a Patreon event name, or null when Cuebot ignores it.</summary>
     internal static string? EventType(string topic, JsonElement member) => topic.ToLowerInvariant() switch
     {
-        // A new paying patron also gets members:pledge:create, so members:create is a follow only for free members.
-        "members:create" => IsPatron(member) ? null : PatreonEventTypes.FollowCreated,
+        // A new paying patron also gets members:pledge:create, so members:create is a follow only for free members, and
+        // for gifted / free-trial memberships, which arrive as active patrons with no pledge event.
+        "members:create" => IsPatron(member) && !IsGiftOrTrial(member) ? null : PatreonEventTypes.FollowCreated,
         "members:delete" => PatreonEventTypes.FollowDeleted,
         "members:update" => PatreonEventTypes.MemberUpdated,
         "members:pledge:create" => PatreonEventTypes.PledgeCreated,
@@ -54,6 +55,12 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
 
     private static bool IsPatron(JsonElement member) =>
         member.Path("attributes.patron_status") is { } s && JsonReaders.Text(s) == "active_patron";
+
+    private static bool IsGiftOrTrial(JsonElement member) =>
+        member.Child("attributes") is { } attributes && (attributes.Bool("is_gifted") || attributes.Bool("is_free_trial"));
+
+    /// <summary>Post URLs are site-relative (<c>/posts/…</c>); make them absolute.</summary>
+    internal static string AbsoluteUrl(string url) => url.StartsWith('/') ? "https://www.patreon.com" + url : url;
 
     internal static WebhookEvent? Map(string topic, JsonElement root, bool isTest)
     {
@@ -75,7 +82,7 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
             var title = data.PathStr("attributes.title");
             Common(a, "", 0, "", title, isTest);
             a["title"] = title;
-            a["url"] = data.PathStr("attributes.url");
+            a["url"] = AbsoluteUrl(data.PathStr("attributes.url"));
             return new WebhookEvent(type, [], a);
         }
 
@@ -88,7 +95,8 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
         var tiers = data.Path("relationships.currently_entitled_tiers.data") is { ValueKind: JsonValueKind.Array } refs
             ? refs.EnumerateArray().ToArray()
             : [];
-        var tierTitles = new List<string>();
+        // Tiers referenced but missing from "included" keep their ids and add no title.
+        var tierTitles = new List<(string Title, double Cents)>();
         for (var i = 0; i < tiers.Length; i++)
         {
             a[$"entitledTiers[{i}].id"] = tiers[i].Str("id");
@@ -96,17 +104,23 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
             if (Included(tiers[i])?.Child("attributes") is { } tierAttributes)
             {
                 JsonReaders.Flatten(tierAttributes, $"entitledTiers[{i}].Attributes", a, maxDepth: 1);
-                if (tierAttributes.Str("title") is { Length: > 0 } t) tierTitles.Add(t);
+                if (tierAttributes.Str("title") is { Length: > 0 } t) tierTitles.Add((t, tierAttributes.Number("amount_cents")));
             }
         }
+        // Members of a paid tier are usually entitled to the campaign's Free tier too; name only the paid one(s).
+        if (tierTitles.Any(t => t.Cents > 0)) tierTitles.RemoveAll(t => t.Cents <= 0);
 
         var name = data.PathStr("attributes.full_name") is { Length: > 0 } n ? n : user.Child("attributes").Str("full_name");
         var cents = data.PathNumber("attributes.currently_entitled_amount_cents") is > 0 and var c ? c
             : data.PathNumber("attributes.will_pay_amount_cents");
         // Patreon reports amounts in the campaign's currency but does not name it in the member resource.
-        Common(a, name.Length > 0 ? name : "A patron", cents / 100.0, "", data.PathStr("attributes.note"), isTest);
-        a["tier"] = string.Join(", ", tierTitles);
+        // attributes.note is the creator's private note about the member, never a message from them: not published.
+        Common(a, name.Length > 0 ? name : "A patron", cents / 100.0, "", "", isTest);
+        a["note"] = data.PathStr("attributes.note");
+        a["tier"] = string.Join(", ", tierTitles.Select(t => t.Title));
         a["patronStatus"] = data.PathStr("attributes.patron_status");
+        a["isFreeTrial"] = data.Child("attributes") is { } m1 && m1.Bool("is_free_trial");
+        a["isGifted"] = data.Child("attributes") is { } m2 && m2.Bool("is_gifted");
         return new WebhookEvent(type, [], a);
     }
 

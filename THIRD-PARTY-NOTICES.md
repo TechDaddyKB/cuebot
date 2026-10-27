@@ -20,6 +20,7 @@ Each keeps its own license; full license texts are available from the linked pro
 | [SoundFlow](https://github.com/LSXPrime/SoundFlow) | Audio playback and capture | MIT |
 | [miniaudio](https://github.com/mackron/miniaudio) (native library inside SoundFlow) | Audio backend | MIT No Attribution or public domain (Unlicense), at your choice |
 | [NVorbis](https://github.com/NVorbis/NVorbis) | Ogg Vorbis decoding | MIT |
+| [BouncyCastle.Cryptography](https://github.com/bcgit/bc-csharp) | Ed25519 verification of Throne webhooks | MIT |
 | [.NET runtime](https://github.com/dotnet/runtime) (self-contained builds) | Runtime | MIT |
 
 ## Downloaded on demand

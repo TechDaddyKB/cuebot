@@ -60,10 +60,141 @@ public sealed class HandlerTests : IDisposable
         Assert.Equal(WebhookOutcome.Ignored, patreon.Handle(Harness.Delivery("patreon", body, H("members:pledge:create"))));
         Assert.Equal(WebhookOutcome.Handled, patreon.Handle(Harness.Delivery("patreon", body, H("members:update"))));   // same body, other event
 
-        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "t" } };
+        var signer = new ThroneSigner();
+        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, signer.PublicKey);
         var gift = Harness.Data("throne-gift-purchased.json");
-        Assert.Equal(WebhookOutcome.Handled, throne.Handle(Harness.Delivery("throne", gift, path: "t")));
-        Assert.Equal(WebhookOutcome.Ignored, throne.Handle(Harness.Delivery("throne", gift, path: "t")));
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(gift)));
+        Assert.Equal(WebhookOutcome.Ignored, throne.Handle(signer.Delivery(gift)));
+    }
+
+    [Fact]
+    public void Throne_dedupes_on_event_id_even_when_the_body_differs()
+    {
+        var signer = new ThroneSigner();
+        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, signer.PublicKey);
+        var gift = Harness.Data("throne-gift-purchased.json");
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(gift)));
+        var resent = gift.Replace("Happy Birthday!", "Happy Birthday!!", StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Ignored, throne.Handle(signer.Delivery(resent)));
+        var other = gift.Replace("4b6f2d1e", "4b6f2d1f", StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(other)));
+        Assert.Equal(2, _h.Published.Count);
+    }
+
+    [Fact]
+    public void Blank_service_ids_never_dedupe_unrelated_deliveries()
+    {
+        var fw = new FourthwallWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "f" } };
+        WebhookDelivery D(string body) => Harness.Delivery("fourthwall", body,
+            new Dictionary<string, string> { ["X-Fourthwall-Hmac-SHA256"] = WebhookVerification.HmacSha256Base64("f", Encoding.UTF8.GetBytes(body)) });
+        var first = Harness.Data("fourthwall-donation.json").Replace("\"id\": \"weve_", "\"id\": \"\", \"old\": \"weve_", StringComparison.Ordinal);
+        Assert.Contains("\"id\": \"\"", first, StringComparison.Ordinal);
+        var second = first.Replace("KindSupporter", "OtherSupporter", StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Handled, fw.Handle(D(first)));
+        Assert.Equal(WebhookOutcome.Handled, fw.Handle(D(second)));
+        Assert.Equal(2, _h.Published.Count);
+
+        // Shopify without X-Shopify-Webhook-Id or X-Shopify-Event-Id: only the relay delivery id dedupes.
+        var shopify = new ShopifyWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "k" } };
+        var order = Harness.Data("shopify-order.json");
+        var h = new Dictionary<string, string>
+        {
+            ["X-Shopify-Topic"] = "orders/create", ["X-Shopify-Hmac-Sha256"] = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(order)),
+        };
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", order, h, id: "s1")));
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", order, h, id: "s2")));
+        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", order, h, id: "s1")));
+    }
+
+    [Fact]
+    public void Shopify_dedupes_on_the_webhook_id_then_topic_and_event_id()
+    {
+        var shopify = new ShopifyWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "k" } };
+        var body = Harness.Data("shopify-order.json");
+        Dictionary<string, string> H(string topic, string? webhookId, string eventId)
+        {
+            var h = new Dictionary<string, string>
+            {
+                ["X-Shopify-Topic"] = topic, ["X-Shopify-Event-Id"] = eventId,
+                ["X-Shopify-Hmac-Sha256"] = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(body)),
+            };
+            if (webhookId is not null) h["X-Shopify-Webhook-Id"] = webhookId;
+            return h;
+        }
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", "wh-1", "evt-1"))));
+        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", "wh-1", "evt-9"))));   // retry
+        // The same event id for another topic's subscription is a different delivery.
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", "wh-2", "evt-1"))));
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", null, "evt-1"))));
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", null, "evt-1"))));
+        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", null, "evt-1"))));
+        Assert.Equal(4, _h.Published.Count);
+    }
+
+    [Fact]
+    public void Shopify_xml_webhooks_fail_with_a_clear_message()
+    {
+        var shopify = new ShopifyWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "k" } };
+        const string xml = """<?xml version="1.0" encoding="UTF-8"?><order><id type="integer">820982911946154508</id></order>""";
+        var sig = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(xml));
+        Assert.Equal(WebhookOutcome.Failed, shopify.Handle(Harness.Delivery("shopify", xml, new Dictionary<string, string>
+        {
+            ["X-Shopify-Topic"] = "orders/create", ["X-Shopify-Hmac-Sha256"] = sig, ["Content-Type"] = "application/xml",
+        })));
+        Assert.Equal("Shopify webhook is set to XML; choose JSON in Shopify's webhook settings", shopify.LastDelivery!.Detail);
+        Assert.Contains(_h.Log.Recent(), e => e.Message.Contains("choose JSON", StringComparison.Ordinal));
+        // Detected from the body too, when no content type is forwarded.
+        Assert.Equal(WebhookOutcome.Failed, shopify.Handle(Harness.Delivery("shopify", xml, new Dictionary<string, string>
+        {
+            ["X-Shopify-Topic"] = "orders/create", ["X-Shopify-Hmac-Sha256"] = sig,
+        })));
+        Assert.Empty(_h.Published);
+    }
+
+    [Fact]
+    public void Shopify_test_sends_reuse_one_order_id_but_all_show_in_the_feed()
+    {
+        var shopify = new ShopifyWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "k" } };
+        var body = Harness.Data("shopify-test-order.json");
+        Dictionary<string, string> H(string topic) => new()
+        {
+            ["X-Shopify-Topic"] = topic, ["X-Shopify-Test"] = "true", ["X-Shopify-Webhook-Id"] = Guid.NewGuid().ToString(),
+            ["X-Shopify-Hmac-Sha256"] = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(body)),
+        };
+        foreach (var topic in new[] { "orders/create", "orders/paid", "orders/create" })
+            Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H(topic))));
+        Assert.Equal(3, _h.Published.Count);
+        Assert.All(_h.Published, e => Assert.Equal(false, e.Args["isRepeatOrder"]));
+        Assert.All(_h.Published, e => Assert.NotNull(WebhookChatAdapter.Describe(e)));
+
+        // Real orders: the paid event after created is a repeat (not fed again).
+        var real = Harness.Data("shopify-order.json");
+        Dictionary<string, string> R(string topic) => new()
+        {
+            ["X-Shopify-Topic"] = topic, ["X-Shopify-Webhook-Id"] = Guid.NewGuid().ToString(),
+            ["X-Shopify-Hmac-Sha256"] = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(real)),
+        };
+        shopify.Handle(Harness.Delivery("shopify", real, R("orders/create")));
+        shopify.Handle(Harness.Delivery("shopify", real, R("orders/paid")));
+        Assert.Equal([false, true], _h.Published.Skip(3).Select(e => (bool)e.Args["isRepeatOrder"]!));
+    }
+
+    [Fact]
+    public void Kofi_test_buttons_reuse_one_transaction_id_and_are_all_published_as_tests()
+    {
+        var kofi = new KofiWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "8e7f3a2b-1c4d-4e5f-9a8b-7c6d5e4f3a2b" } };
+        var real = Harness.Data("kofi-donation.json");
+        var test = real.Replace("5f8d0c2e-7b4a-4c1e-9e3d-2a6b8c4d1f07", KofiWebhookHandler.TestTransactionId, StringComparison.Ordinal);
+        foreach (var messageId in new[] { "aaaaaaaa-0000-4000-8000-000000000001", "aaaaaaaa-0000-4000-8000-000000000002" })
+        {
+            var body = test.Replace("3a1fac0c-f960-4506-a60e-824979a74e74", messageId, StringComparison.Ordinal);
+            Assert.Equal(WebhookOutcome.Handled, kofi.Handle(Harness.Delivery("kofi", "data=" + WebUtility.UrlEncode(body))));
+        }
+        Assert.Equal(2, _h.Published.Count);
+        Assert.All(_h.Published, e => Assert.Equal(true, e.Args["isTest"]));
+
+        Assert.Equal(WebhookOutcome.Handled, kofi.Handle(Harness.Delivery("kofi", "data=" + WebUtility.UrlEncode(real))));
+        Assert.Equal(false, _h.Published.Last().Args["isTest"]);
     }
 
     [Fact]
@@ -97,10 +228,11 @@ public sealed class HandlerTests : IDisposable
     [Fact]
     public async Task HandleAsync_reports_through_the_contract_and_records_recent_events()
     {
-        IWebhookHandler handler = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "t" } };
+        var signer = new ThroneSigner();
+        IWebhookHandler handler = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, signer.PublicKey);
         Assert.Equal("throne", handler.Service);
         Assert.Equal("Throne", handler.DisplayName);
-        var outcome = await handler.HandleAsync(Harness.Delivery("throne", Harness.Data("throne-gift-purchased.json"), path: "t"), default);
+        var outcome = await handler.HandleAsync(signer.Delivery(Harness.Data("throne-gift-purchased.json")), default);
         Assert.Equal(WebhookOutcome.Handled, outcome);
         var record = Assert.Single(((WebhookServiceBase)handler).RecentEvents());
         Assert.Equal(("Throne", ThroneEventTypes.GiftPurchased, false), (record.Service, record.Type, record.IsTest));

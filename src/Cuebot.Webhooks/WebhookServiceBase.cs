@@ -85,6 +85,7 @@ public abstract class WebhookServiceBase : IWebhookHandler
         catch (Exception ex) when (ex is FormatException or System.Text.Json.JsonException) { verified = false; }
         if (!verified) return (WebhookOutcome.Rejected, $"The {SecretName} did not match; the delivery was dropped.");
         if (!Enabled) return (WebhookOutcome.Ignored, $"{DisplayName} is switched off.");
+        if (Unsupported(delivery) is { } problem) return (WebhookOutcome.Failed, problem);
 
         IReadOnlyList<WebhookEvent> events;
         try
@@ -100,7 +101,9 @@ public abstract class WebhookServiceBase : IWebhookHandler
         var published = 0;
         foreach (var e in events)
         {
-            var keys = e.Keys.Select(k => $"{Service}:{k}").Append($"delivery:{delivery.Id}").ToArray();
+            // Blank ids (a service that sent none) are dropped, so they never make unrelated deliveries look like duplicates.
+            var keys = e.Keys.Where(k => !string.IsNullOrWhiteSpace(k)).Select(k => $"{Service}:{k.Trim()}")
+                .Concat(string.IsNullOrWhiteSpace(delivery.Id) ? [] : [$"delivery:{delivery.Id}"]).ToArray();
             if (Publish(e with { Keys = keys }, dedupe: true)) published++;
         }
         return published > 0
@@ -122,6 +125,11 @@ public abstract class WebhookServiceBase : IWebhookHandler
 
     /// <summary>Whether this delivery can be verified (custom hooks: its hook exists and has a token).</summary>
     private protected virtual bool IsConfiguredFor(WebhookDelivery delivery) => IsConfigured;
+
+    /// <summary>
+    /// A reason a verified delivery cannot be read at all (e.g. Shopify set to XML), reported as Failed; null when fine.
+    /// </summary>
+    private protected virtual string? Unsupported(WebhookDelivery delivery) => null;
 
     /// <summary>The "last events" line for events the activity feed does not show.</summary>
     private protected virtual string Summarize(BotEvent e) => e.Type;

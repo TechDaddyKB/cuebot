@@ -22,8 +22,9 @@ public sealed class WebhooksSettings
     public WebhookServiceSettings Shopify { get; set; } = new();
 
     /// <summary>
-    /// Throne does not sign its webhooks, so Cuebot makes up a token that must be part of the URL pasted into Throne:
-    /// <c>…/throne/&lt;token&gt;</c> (or <c>?token=&lt;token&gt;</c>).
+    /// Throne signs its webhooks (Ed25519, checked with Throne's public key), so no secret is needed. The secret here is
+    /// an optional Cuebot-made URL token: when set, deliveries must also carry it as <c>…/throne/&lt;token&gt;</c> (or
+    /// <c>?token=&lt;token&gt;</c>), since Throne's key is shared by every creator.
     /// </summary>
     public WebhookServiceSettings Throne { get; set; } = new();
 

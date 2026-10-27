@@ -3,6 +3,8 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 
 namespace Cuebot.Webhooks;
 
@@ -44,6 +46,35 @@ public static class WebhookVerification
     {
         if (expected.Length == 0 || given.Length == 0) return false;
         return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(given));
+    }
+
+    /// <summary>
+    /// True when <paramref name="signature"/> (64 bytes) is a valid Ed25519 signature of <paramref name="message"/> by
+    /// <paramref name="publicKey"/> (32 raw bytes). The .NET 10 BCL has no Ed25519, so BouncyCastle does the check.
+    /// </summary>
+    public static bool CheckEd25519(byte[] publicKey, byte[] message, byte[] signature)
+    {
+        if (publicKey.Length != Ed25519PublicKeyParameters.KeySize || signature.Length != Ed25519Signature) return false;
+        var verifier = new Ed25519Signer();
+        verifier.Init(false, new Ed25519PublicKeyParameters(publicKey));
+        verifier.BlockUpdate(message, 0, message.Length);
+        return verifier.VerifySignature(signature);
+    }
+
+    /// <summary>Length of an Ed25519 signature in bytes.</summary>
+    public const int Ed25519Signature = 64;
+
+    /// <summary>The raw 32-byte Ed25519 key in a <c>-----BEGIN PUBLIC KEY-----</c> (SPKI) PEM block.</summary>
+    public static byte[] Ed25519PublicKeyFromPem(string pem)
+    {
+        var base64 = string.Concat(pem.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Where(line => !line.StartsWith("-----", StringComparison.Ordinal)));
+        var der = Convert.FromBase64String(base64);
+        // SubjectPublicKeyInfo for id-Ed25519 (1.3.101.112): 30 2a 30 05 06 03 2b 65 70 03 21 00, then the 32 key bytes.
+        ReadOnlySpan<byte> prefix = [0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00];
+        if (der.Length != prefix.Length + Ed25519PublicKeyParameters.KeySize || !der.AsSpan(0, prefix.Length).SequenceEqual(prefix))
+            throw new FormatException("Not an Ed25519 public key");
+        return der[prefix.Length..];
     }
 
     /// <summary>A random URL-safe token for Throne and custom hooks (32 characters).</summary>

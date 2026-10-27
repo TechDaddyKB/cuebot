@@ -9,8 +9,9 @@ namespace Cuebot.Webhooks.Services;
 /// <summary>
 /// Shopify order webhooks (<c>orders/create</c>, <c>orders/paid</c>). <c>X-Shopify-Hmac-Sha256</c> is the base64
 /// HMAC-SHA256 of the raw body keyed with the store's webhook signing key (admin-created webhooks) or the app's
-/// client secret; <c>X-Shopify-Topic</c> names the event; dedupe on <c>X-Shopify-Event-Id</c> /
-/// <c>X-Shopify-Webhook-Id</c>. The order is flattened to <c>shopify.*</c> arguments like Streamer.bot's.
+/// client secret; <c>X-Shopify-Topic</c> names the event; dedupe on <c>X-Shopify-Webhook-Id</c> (else topic +
+/// <c>X-Shopify-Event-Id</c>). Test deliveries carry <c>X-Shopify-Test: true</c> and/or <c>"test": true</c>. Only
+/// JSON-format webhooks are read. The order is flattened to <c>shopify.*</c> arguments like Streamer.bot's.
 /// </summary>
 public sealed class ShopifyWebhookHandler(JsonFile<WebhooksSettings> settings, EventBus bus, AppLog log)
     : WebhookServiceBase(settings, bus, log)
@@ -31,14 +32,32 @@ public sealed class ShopifyWebhookHandler(JsonFile<WebhooksSettings> settings, E
     private protected override bool Verify(WebhookDelivery delivery) =>
         WebhookVerification.CheckHmacSha256Base64(Settings.Secret.Trim(), delivery.Body, delivery.Header("X-Shopify-Hmac-Sha256"));
 
+    /// <summary>Message for a webhook created with the XML format, which Cuebot does not read.</summary>
+    internal const string XmlNotSupported = "Shopify webhook is set to XML; choose JSON in Shopify's webhook settings";
+
+    private protected override string? Unsupported(WebhookDelivery delivery) =>
+        delivery.Header("Content-Type").Contains("xml", StringComparison.OrdinalIgnoreCase) || delivery.BodyText.TrimStart().StartsWith('<')
+            ? XmlNotSupported
+            : null;
+
     private protected override IReadOnlyList<WebhookEvent> Map(WebhookDelivery delivery)
     {
         var topic = delivery.Header("X-Shopify-Topic").Trim();
-        var e = Map(topic, delivery.BodyText, isTest: false);
+        var headerTest = string.Equals(delivery.Header("X-Shopify-Test").Trim(), "true", StringComparison.OrdinalIgnoreCase);
+        var e = Map(topic, delivery.BodyText, isTest: headerTest);
         if (e is null) return [];
-        var id = delivery.Header("X-Shopify-Event-Id") is { Length: > 0 } eventId ? eventId : delivery.Header("X-Shopify-Webhook-Id");
         MarkRepeat(e);
-        return [e with { Keys = [id] }];
+        return [e with { Keys = [DedupeKey(delivery, topic)] }];
+    }
+
+    /// <summary>
+    /// <c>X-Shopify-Webhook-Id</c> (one per delivery, kept on retries: Shopify's documented dedupe key), else
+    /// <c>topic:X-Shopify-Event-Id</c>; "" when neither is sent (then only the relay delivery id dedupes).
+    /// </summary>
+    internal static string DedupeKey(WebhookDelivery delivery, string topic)
+    {
+        if (delivery.Header("X-Shopify-Webhook-Id").Trim() is { Length: > 0 } webhookId) return webhookId;
+        return delivery.Header("X-Shopify-Event-Id").Trim() is { Length: > 0 } eventId ? $"{topic}:{eventId}" : "";
     }
 
     private protected override IReadOnlyList<WebhookEvent>? Sample(string kind)
@@ -47,9 +66,17 @@ public sealed class ShopifyWebhookHandler(JsonFile<WebhooksSettings> settings, E
         return topic is null ? null : Map(topic, SampleOrder, isTest: true) is { } e ? [e] : null;
     }
 
-    /// <summary>The second event for an order (created, then paid) is not shown in the feed again.</summary>
+    /// <summary>
+    /// The second event for an order (created, then paid) is not shown in the feed again. Test deliveries are exempt:
+    /// Shopify's "Send test" always uses the same sample order id, so every test must still show.
+    /// </summary>
     private void MarkRepeat(WebhookEvent e)
     {
+        if (e.Args["isTest"] is true)
+        {
+            e.Args["isRepeatOrder"] = false;
+            return;
+        }
         var order = Convert.ToString(e.Args.GetValueOrDefault("shopify.id"), System.Globalization.CultureInfo.InvariantCulture) ?? "";
         e.Args["isRepeatOrder"] = order.Length > 0 && !_fedOrders.AddAll([order]);
     }
@@ -79,6 +106,11 @@ public sealed class ShopifyWebhookHandler(JsonFile<WebhooksSettings> settings, E
         a["itemCount"] = items.Sum(i => i.Number("quantity") is > 0 and var q ? q : 1);
         a["items"] = string.Join(", ", items.Select(i => i.First("name", "title")));
         a["isRepeatOrder"] = false;
+        // What the buyer paid in their own currency (the order's currency fields are the shop's).
+        var presentment = order.Path("total_price_set.presentment_money");
+        a["presentmentAmount"] = presentment.Child("amount") is { } p ? JsonReaders.Number(p) : order.Number("total_price");
+        a["presentmentCurrency"] = presentment.Str("currency_code") is { Length: > 0 } pc ? pc
+            : order.Str("presentment_currency") is { Length: > 0 } oc ? oc : currency;
         return new WebhookEvent(type, [], a);
     }
 
@@ -88,7 +120,8 @@ public sealed class ShopifyWebhookHandler(JsonFile<WebhooksSettings> settings, E
          "closed_at":null,"confirmed":false,"created_at":"2026-10-27T12:00:00-05:00","currency":"USD","current_total_price":"254.98",
          "email":"jon@example.com","financial_status":"paid","landing_site":null,"name":"#9999","note":"Love the stream!","number":234,
          "order_number":1234,"referring_site":null,"subtotal_price":"244.98","test":false,"total_discounts":"5.00",
-         "total_line_items_price":"249.98","total_price":"254.98","total_price_usd":"254.98","total_tax":"0.00","updated_at":"2026-10-27T12:00:00-05:00",
+         "total_line_items_price":"249.98","total_price":"254.98",
+         "total_price_set":{"shop_money":{"amount":"254.98","currency_code":"USD"},"presentment_money":{"amount":"254.98","currency_code":"USD"}},"total_tax":"0.00","updated_at":"2026-10-27T12:00:00-05:00",
          "billing_address":{"first_name":"Steve","last_name":"Shipper","name":"Steve Shipper","city":"Shippington","country":"United States"},
          "customer":{"id":115310627314723954,"email":"john@example.com","first_name":"John","last_name":"Smith"},
          "line_items":[

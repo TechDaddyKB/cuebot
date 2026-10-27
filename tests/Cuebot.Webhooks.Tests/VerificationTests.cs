@@ -107,22 +107,102 @@ public sealed class VerificationTests : IDisposable
     }
 
     [Fact]
-    public void Throne_needs_the_url_token_in_the_path_query_or_header()
+    public void Fourthwall_accepts_a_delivery_when_either_signature_header_verifies()
+    {
+        var fw = new FourthwallWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "fw-secret" } };
+        var body = Harness.Data("fourthwall-donation.json");
+        var good = WebhookVerification.HmacSha256Base64("fw-secret", Encoding.UTF8.GetBytes(body));
+        var bad = WebhookVerification.HmacSha256Base64("app-client-secret", Encoding.UTF8.GetBytes(body));
+
+        // Both headers sent: the shop one is signed with another key (the app's), the apps one with the stored secret.
+        Assert.Equal(WebhookOutcome.Handled, fw.Handle(Harness.Delivery("fourthwall", body, new Dictionary<string, string>
+        {
+            ["X-Fourthwall-Hmac-SHA256"] = bad, ["X-Fourthwall-Hmac-Apps-SHA256"] = good,
+        })));
+        Assert.Equal(WebhookOutcome.Rejected, fw.Handle(Harness.Delivery("fourthwall", body, new Dictionary<string, string>
+        {
+            ["X-Fourthwall-Hmac-SHA256"] = bad, ["X-Fourthwall-Hmac-Apps-SHA256"] = bad,
+        })));
+        Assert.Single(_h.Published);
+    }
+
+    [Fact]
+    public void Ed25519_helpers_parse_throne_key_and_check_signatures()
+    {
+        Assert.Equal(32, WebhookVerification.Ed25519PublicKeyFromPem(ThroneWebhookHandler.PublicKeyPem).Length);
+        Assert.Throws<FormatException>(() => WebhookVerification.Ed25519PublicKeyFromPem(
+            "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\n-----END PUBLIC KEY-----"));
+        var signer = new ThroneSigner();
+        var signature = Convert.FromHexString(signer.Sign("1", "x"));
+        Assert.True(WebhookVerification.CheckEd25519(signer.PublicKey, "1.x"u8.ToArray(), signature));
+        Assert.False(WebhookVerification.CheckEd25519(signer.PublicKey, "1.y"u8.ToArray(), signature));
+        Assert.False(WebhookVerification.CheckEd25519(new ThroneSigner().PublicKey, "1.x"u8.ToArray(), signature));
+        Assert.False(WebhookVerification.CheckEd25519(signer.PublicKey, "1.x"u8.ToArray(), signature[..63]));
+    }
+
+    [Fact]
+    public void Throne_needs_no_secret_and_checks_the_ed25519_signature()
+    {
+        var signer = new ThroneSigner();
+        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, signer.PublicKey);
+        var body = Harness.Data("throne-gift-purchased.json");
+        Assert.True(throne.IsConfigured);
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(body)));
+        Assert.Single(_h.Published);
+
+        var now = ThroneSigner.Now();
+        var sig = signer.Sign(now, body);
+        WebhookDelivery With(string? ts, string? signature, string b) => Harness.Delivery("throne", b, new Dictionary<string, string?>
+            {
+                ["X-Signature-Timestamp"] = ts, ["X-Signature-Ed25519"] = signature,
+            }.Where(h => h.Value is not null).ToDictionary(h => h.Key, h => h.Value!));
+        var changed = body.Replace("54900", "100", StringComparison.Ordinal).Replace("4b6f2d1e", "4b6f2d1f", StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(now, signer.Sign(now, body), changed)));            // body changed
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(null, sig, changed)));                              // no timestamp
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(now, null, changed)));                              // no signature
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With("12ab", signer.Sign("12ab", changed), changed)));  // not a number
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With("-5", signer.Sign("-5", changed), changed)));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(now, signer.Sign(now, changed)[..126], changed)));  // 63 bytes
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(now, "zz" + signer.Sign(now, changed)[2..], changed)));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(now, new ThroneSigner().Sign(now, changed), changed)));  // other key
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(With(now, sig, body.Replace("\n", "\r\n", StringComparison.Ordinal))));
+
+        // More than ten minutes from the delivery's arrival, either way, is a replay; just inside is fine.
+        string At(TimeSpan offset) => DateTimeOffset.UtcNow.Add(offset).ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(signer.Delivery(changed, At(TimeSpan.FromMinutes(-11)))));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(signer.Delivery(changed, At(TimeSpan.FromMinutes(11)))));
+        Assert.Single(_h.Published);
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(changed, At(TimeSpan.FromMinutes(-9)))));
+        Assert.Equal(2, _h.Published.Count);
+    }
+
+    [Fact]
+    public void Throne_rejects_with_the_real_key_when_signed_by_anyone_else()
     {
         var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log);
-        var body = Harness.Data("throne-gift-purchased.json");
-        Assert.Equal(WebhookOutcome.NotConfigured, throne.Handle(Harness.Delivery("throne", body, path: "anything")));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(new ThroneSigner().Delivery(Harness.Data("throne-gift-purchased.json"))));
+        Assert.Contains("Throne signature", throne.LastDelivery!.Detail, StringComparison.Ordinal);
+        Assert.Empty(_h.Published);
+    }
 
-        throne.Settings.Secret = "throne-token-123";
-        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(Harness.Delivery("throne", body)));
-        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(Harness.Delivery("throne", body, path: "throne-token-12")));
-        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(Harness.Delivery("throne", body, query: "token=nope")));
+    [Fact]
+    public void Throne_also_needs_the_optional_url_token_once_one_is_set()
+    {
+        var signer = new ThroneSigner();
+        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, signer.PublicKey) { Settings = { Secret = "throne-token-123" } };
+        var body = Harness.Data("throne-gift-purchased.json");
+        string Body(int n) => body.Replace("4b6f2d1e", $"4b6f2d{n:x2}", StringComparison.Ordinal);
+
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(signer.Delivery(Body(1))));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(signer.Delivery(Body(2), path: "throne-token-12")));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(signer.Delivery(Body(3), query: "token=nope")));
+        Assert.Equal(WebhookOutcome.Rejected, throne.Handle(Harness.Delivery("throne", Body(4), path: "throne-token-123")));   // token but no signature
         Assert.Empty(_h.Published);
 
-        Assert.Equal(WebhookOutcome.Handled, throne.Handle(Harness.Delivery("throne", body, path: "throne-token-123")));
-        Assert.Equal(WebhookOutcome.Handled, throne.Handle(Harness.Delivery("throne", Harness.Data("throne-contribution-flat.json"), query: "?token=throne-token-123")));
-        Assert.Equal(WebhookOutcome.Handled, throne.Handle(Harness.Delivery("throne", body.Replace("54900", "100", StringComparison.Ordinal),
-            new Dictionary<string, string> { ["X-Cuebot-Token"] = "throne-token-123" })));
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(Body(5), path: "throne-token-123")));
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(Body(6), query: "?token=throne-token-123")));
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(signer.Delivery(Body(7), extra: new Dictionary<string, string> { ["X-Cuebot-Token"] = "throne-token-123" })));
+        Assert.Equal(3, _h.Published.Count);
     }
 
     [Fact]
