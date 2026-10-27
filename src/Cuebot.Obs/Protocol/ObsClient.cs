@@ -19,6 +19,7 @@ public sealed class ObsClient : IAsyncDisposable
     private static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan CloseTimeout = TimeSpan.FromSeconds(3);
     private static readonly JsonElement EmptyObject = JsonDocument.Parse("{}").RootElement.Clone();
+    private static readonly JsonElement EmptyArray = JsonDocument.Parse("[]").RootElement.Clone();
 
     private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonElement>> _pending = new();
     private readonly CancellationTokenSource _shutdown = new();
@@ -37,6 +38,9 @@ public sealed class ObsClient : IAsyncDisposable
 
     /// <summary>Raised once, on the receive thread, when an identified session ends, with a human-readable reason.</summary>
     public event Action<string>? Disconnected;
+
+    /// <summary>The obs-websocket version OBS announced in its Hello message, once connected.</summary>
+    public string? ServerVersion { get; private set; }
 
     /// <summary>True between a successful handshake and the end of the session.</summary>
     public bool IsConnected => _receiveLoop is { IsCompleted: false } && _closeReason is null;
@@ -58,7 +62,7 @@ public sealed class ObsClient : IAsyncDisposable
         try
         {
             await webSocket.ConnectAsync(uri, handshake.Token).ConfigureAwait(false);
-            await IdentifyAsync(socket, password, handshake.Token).ConfigureAwait(false);
+            ServerVersion = await IdentifyAsync(socket, password, handshake.Token).ConfigureAwait(false);
             if (_disposed == 1) throw new ObsConnectionException("Disconnected from OBS.");
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested && _disposed == 0)
@@ -111,6 +115,45 @@ public sealed class ObsClient : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Sends a RequestBatch (op 8) and returns its <c>results</c> array: one object per request with
+    /// <c>requestType</c>, <c>requestStatus</c> and optional <c>responseData</c>. Individual failures do not throw.
+    /// </summary>
+    /// <param name="requests">Each item is <c>{ "requestType": ..., "requestData": ... }</c>, serialized as-is.</param>
+    /// <param name="haltOnFailure">Stop processing the batch at the first failed request.</param>
+    public async Task<JsonElement> RequestBatchAsync(IReadOnlyList<object> requests, bool haltOnFailure = false,
+        CancellationToken ct = default)
+    {
+        var socket = _socket;
+        if (socket is null || !IsConnected) throw new ObsConnectionException(_closeReason ?? "Not connected to OBS.");
+
+        var requestId = Guid.NewGuid().ToString("N");
+        var response = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pending[requestId] = response;
+        try
+        {
+            if (_closeReason is { } reason) throw new ObsConnectionException(reason);
+            var payload = new Dictionary<string, object>
+            {
+                ["requestId"] = requestId, ["haltOnFailure"] = haltOnFailure, ["requests"] = requests,
+            };
+            await socket.SendAsync(ObsOpCode.RequestBatch, payload, ct).ConfigureAwait(false);
+            return await response.Task.WaitAsync(_requestTimeout * Math.Max(1, requests.Count), ct).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            throw new TimeoutException("OBS did not answer the request batch in time.");
+        }
+        catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException)
+        {
+            throw new ObsConnectionException(_closeReason ?? "The connection to OBS was lost.", ex);
+        }
+        finally
+        {
+            _pending.TryRemove(requestId, out _);
+        }
+    }
+
     /// <summary>Closes the session gracefully (aborting it if OBS does not answer) and waits for it to end.</summary>
     public async ValueTask DisposeAsync()
     {
@@ -132,7 +175,7 @@ public sealed class ObsClient : IAsyncDisposable
         _shutdown.Dispose();
     }
 
-    private static async Task IdentifyAsync(ObsSocket socket, string password, CancellationToken ct)
+    private static async Task<string?> IdentifyAsync(ObsSocket socket, string password, CancellationToken ct)
     {
         var hello = await ReceiveHandshakeMessageAsync(socket, ObsOpCode.Hello, ct).ConfigureAwait(false);
         var identify = new Dictionary<string, object>
@@ -149,6 +192,9 @@ public sealed class ObsClient : IAsyncDisposable
         }
         await socket.SendAsync(ObsOpCode.Identify, identify, ct).ConfigureAwait(false);
         await ReceiveHandshakeMessageAsync(socket, ObsOpCode.Identified, ct).ConfigureAwait(false);
+        return hello.Data.TryGetProperty("obsWebSocketVersion", out var version) && version.ValueKind == JsonValueKind.String
+            ? version.GetString()
+            : null;
     }
 
     private static async Task<ObsMessage> ReceiveHandshakeMessageAsync(ObsSocket socket, ObsOpCode expected, CancellationToken ct)
@@ -204,7 +250,17 @@ public sealed class ObsClient : IAsyncDisposable
             case ObsOpCode.RequestResponse:
                 CompleteRequest(message.Data);
                 break;
+            case ObsOpCode.RequestBatchResponse:
+                CompleteBatch(message.Data);
+                break;
         }
+    }
+
+    private void CompleteBatch(JsonElement response)
+    {
+        var requestId = response.GetProperty("requestId").GetString() ?? "";
+        if (!_pending.TryRemove(requestId, out var pending)) return;
+        pending.TrySetResult(response.TryGetProperty("results", out var results) ? results : EmptyArray);
     }
 
     private void CompleteRequest(JsonElement response)

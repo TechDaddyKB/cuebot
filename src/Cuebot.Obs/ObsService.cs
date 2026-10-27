@@ -1,43 +1,45 @@
-using System.Net.WebSockets;
 using System.Text.Json;
 using Cuebot.Core;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 using Cuebot.Obs.Protocol;
+using Cuebot.Obs.Streamlabs;
 
 namespace Cuebot.Obs;
 
 /// <summary>
-/// The app's connection to OBS: owns the obs-websocket session, reconnects automatically, caches scene and
-/// input names for editors, and republishes OBS activity as bot events. Commands live in ObsService.Commands.cs.
+/// The app's OBS connections: the default one (stored at the top level of obs.json) plus any additional named ones.
+/// Members that do not take a connection act on the default connection, so single-OBS code keeps working.
 /// </summary>
-public sealed partial class ObsService : IConnectionStatus, IAsyncDisposable
+public sealed class ObsService : IConnectionStatus, IAsyncDisposable
 {
-    private const string LogSource = "OBS";
     private static readonly TimeSpan DefaultReconnectDelay = TimeSpan.FromSeconds(5);
 
     private readonly JsonFile<ObsSettings> _settingsFile;
     private readonly EventBus _bus;
     private readonly AppLog _log;
     private readonly TimeSpan _reconnectDelay;
-
-    // Serializes connection attempts with the handling of a session's end, so their status updates never interleave.
-    private readonly SemaphoreSlim _connectionGate = new(1, 1);
-    private readonly CancellationTokenSource _lifetime = new();
-    private volatile ObsClient? _client;
-    private Task? _keepConnected;
-    private volatile bool _manuallyDisconnected;
+    private readonly object _gate = new();
+    private ObsConnection[] _connections;
+    private bool _started;
     private int _disposed;
-    private string? _lastFailure;
-    private string[] _scenes = [];
-    private string[] _inputs = [];
-    private string? _currentScene;
 
     public ObsService(JsonFile<ObsSettings> settings, EventBus bus, AppLog log)
         : this(settings, bus, log, DefaultReconnectDelay)
     {
     }
+
+    /// <summary>
+    /// DI constructor: also carries the Streamlabs Desktop service so the OBS page can show it and
+    /// <see cref="StartAsync"/> starts it (the app host only starts <see cref="ObsService"/>).
+    /// </summary>
+    public ObsService(JsonFile<ObsSettings> settings, EventBus bus, AppLog log, StreamlabsDesktopService streamlabsDesktop)
+        : this(settings, bus, log, DefaultReconnectDelay) =>
+        StreamlabsDesktop = streamlabsDesktop;
+
+    /// <summary>The Streamlabs Desktop connection registered alongside OBS, when the module was added through DI.</summary>
+    public StreamlabsDesktopService? StreamlabsDesktop { get; }
 
     internal ObsService(JsonFile<ObsSettings> settings, EventBus bus, AppLog log, TimeSpan reconnectDelay)
     {
@@ -45,273 +47,179 @@ public sealed partial class ObsService : IConnectionStatus, IAsyncDisposable
         _bus = bus;
         _log = log;
         _reconnectDelay = reconnectDelay;
+        if (string.IsNullOrWhiteSpace(settings.Value.Name)) settings.Value.Name = "OBS";
+        Default = Create(settings.Value, isDefault: true);
+        _connections = [Default, .. settings.Value.Connections.Select(c => Create(c, isDefault: false))];
     }
 
+    /// <summary>The connection used when no connection name is given.</summary>
+    public ObsConnection Default { get; }
+
+    /// <summary>All connections, the default first.</summary>
+    public IReadOnlyList<ObsConnection> Connections => _connections;
+
+    /// <summary>Raised when a connection is added, removed or renamed.</summary>
+    public event Action? ConnectionsChanged;
+
+    // ---- IConnectionStatus: the default connection, plus a summary of the others ----
+
     public string Name => "OBS";
-    public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
-    public string StatusMessage { get; private set; } = "Not connected";
+    public ConnectionState State => Default.State;
+
+    public string StatusMessage
+    {
+        get
+        {
+            var others = _connections.Skip(1).ToArray();
+            if (others.Length == 0) return Default.StatusMessage;
+            var connected = others.Count(c => c.State == ConnectionState.Connected);
+            return $"{Default.StatusMessage} (+{connected}/{others.Length} other connections up)";
+        }
+    }
+
     public event Action? StatusChanged;
 
-    /// <summary>Live settings; call <see cref="SaveSettings"/> after changing them. Changes apply on the next connect.</summary>
+    // ---- Default-connection shortcuts ----
+
+    /// <summary>Live settings of the default connection (and the list of extra ones); call <see cref="SaveSettings"/> after changing them.</summary>
     public ObsSettings Settings => _settingsFile.Value;
 
-    /// <summary>Scene names in OBS order. Kept after a disconnect so editors still offer suggestions.</summary>
-    public IReadOnlyList<string> Scenes => _scenes;
+    public IReadOnlyList<string> Scenes => Default.Scenes;
+    public IReadOnlyList<string> Inputs => Default.Inputs;
+    public string? CurrentScene => Default.CurrentScene;
 
-    /// <summary>Input (source) names. Kept after a disconnect so editors still offer suggestions.</summary>
-    public IReadOnlyList<string> Inputs => _inputs;
-
-    /// <summary>The current program scene, or null while disconnected.</summary>
-    public string? CurrentScene => _currentScene;
-
-    /// <summary>Raised (on a background thread) when <see cref="Scenes"/>, <see cref="Inputs"/> or <see cref="CurrentScene"/> change.</summary>
+    /// <summary>Raised when the default connection's cached lists change.</summary>
     public event Action? ScenesChanged;
 
-    public bool IsConnected => _client?.IsConnected == true;
+    public bool IsConnected => Default.IsConnected;
 
     public void SaveSettings() => _settingsFile.ScheduleSave();
 
-    /// <summary>
-    /// Starts the background loop that connects while <see cref="ObsSettings.AutoConnect"/> is on, retrying every
-    /// few seconds, until the user disconnects manually or the service is disposed. Returns immediately.
-    /// </summary>
+    /// <summary>Starts the auto-connect loop of every connection. Returns immediately.</summary>
     public Task StartAsync(CancellationToken ct = default)
     {
-        _keepConnected ??= Task.Run(() => KeepConnectedAsync(_lifetime.Token), CancellationToken.None);
+        ObsConnection[] connections;
+        lock (_gate)
+        {
+            _started = true;
+            connections = _connections;
+        }
+        foreach (var connection in connections) connection.StartAsync(ct);
+        StreamlabsDesktop?.StartAsync(ct);
         return Task.CompletedTask;
     }
 
-    /// <summary>Connects now (no-op when already connected) and re-enables auto-reconnect.</summary>
-    /// <exception cref="ObsAuthenticationException">The password is wrong or missing.</exception>
-    /// <exception cref="ObsConnectionException">OBS could not be reached or refused the session.</exception>
-    public Task ConnectAsync(CancellationToken ct = default)
+    public Task ConnectAsync(CancellationToken ct = default) => Default.ConnectAsync(ct);
+    public Task DisconnectAsync() => Default.DisconnectAsync();
+
+    public Task<JsonElement> RequestAsync(string requestType, object? requestData = null, CancellationToken ct = default) =>
+        Default.RequestAsync(requestType, requestData, ct);
+
+    public Task SetCurrentSceneAsync(string sceneName, CancellationToken ct = default) => Default.SetCurrentSceneAsync(sceneName, ct);
+
+    public Task<bool> SetSourceVisibilityAsync(string sceneName, string sourceName, VisibilityMode mode, CancellationToken ct = default) =>
+        Default.SetSourceVisibilityAsync(sceneName, sourceName, mode, ct);
+
+    public Task<bool> SetInputMuteAsync(string inputName, MuteMode mode, CancellationToken ct = default) =>
+        Default.SetInputMuteAsync(inputName, mode, ct);
+
+    public Task SetInputTextAsync(string inputName, string text, CancellationToken ct = default) =>
+        Default.SetInputTextAsync(inputName, text, ct);
+
+    public Task ControlStreamAsync(OutputCommand command, CancellationToken ct = default) => Default.ControlStreamAsync(command, ct);
+    public Task ControlRecordAsync(OutputCommand command, CancellationToken ct = default) => Default.ControlRecordAsync(command, ct);
+
+    // ---- Connection management ----
+
+    /// <summary>The connection named <paramref name="name"/> (case-insensitive); the default one when empty.</summary>
+    /// <exception cref="ObsConnectionException">No connection has that name.</exception>
+    public ObsConnection Get(string? name)
     {
-        _manuallyDisconnected = false;
-        return ConnectCoreAsync(ct);
+        if (string.IsNullOrWhiteSpace(name)) return Default;
+        var trimmed = name.Trim();
+        return _connections.FirstOrDefault(c => string.Equals(c.Name, trimmed, StringComparison.OrdinalIgnoreCase))
+               ?? throw new ObsConnectionException($"There is no OBS connection named '{trimmed}'.");
     }
 
-    /// <summary>Closes the session and pauses auto-reconnect until <see cref="ConnectAsync"/> is called.</summary>
-    public async Task DisconnectAsync()
+    /// <summary>Names of all connections, the default first (for editor suggestions).</summary>
+    public IEnumerable<string> ConnectionNames => _connections.Select(c => c.Name);
+
+    /// <summary>Distinct values of a cached list across all connections (for editor suggestions).</summary>
+    public IEnumerable<string> All(Func<ObsConnection, IEnumerable<string>> list) =>
+        _connections.SelectMany(list).Distinct(StringComparer.Ordinal);
+
+    /// <summary>Adds a connection with a unique name derived from <paramref name="name"/>, saves, and starts it when the service runs.</summary>
+    public ObsConnection AddConnection(string name = "OBS 2", string host = "127.0.0.1", int port = 4455)
     {
-        _manuallyDisconnected = true;
-        if (_client is { } client) await client.DisposeAsync().ConfigureAwait(false);
+        ObsConnection connection;
+        bool started;
+        lock (_gate)
+        {
+            var settings = new ObsConnectionSettings { Name = UniqueName(name), Host = host, Port = port };
+            Settings.Connections.Add(settings);
+            connection = Create(settings, isDefault: false);
+            _connections = [.. _connections, connection];
+            started = _started;
+        }
+        SaveSettings();
+        if (started) connection.StartAsync();
+        ConnectionsChanged?.Invoke();
+        StatusChanged?.Invoke();
+        return connection;
     }
 
-    /// <summary>Sends a raw obs-websocket request and returns its <c>responseData</c>.</summary>
-    /// <exception cref="ObsConnectionException">OBS is not connected.</exception>
-    /// <exception cref="ObsRequestException">OBS reported a failure.</exception>
-    public async Task<JsonElement> RequestAsync(string requestType, object? requestData = null, CancellationToken ct = default)
+    /// <summary>Disconnects and removes an additional connection. The default connection cannot be removed.</summary>
+    public async Task RemoveConnectionAsync(ObsConnection connection)
     {
-        if (_client is not { IsConnected: true } client) throw new ObsConnectionException("OBS is not connected.");
-        return await client.RequestAsync(requestType, requestData, ct).ConfigureAwait(false);
+        if (connection.IsDefault) throw new InvalidOperationException("The default OBS connection cannot be removed.");
+        lock (_gate)
+        {
+            if (!_connections.Contains(connection)) return;
+            _connections = _connections.Where(c => c != connection).ToArray();
+            Settings.Connections.Remove(connection.Settings);
+        }
+        SaveSettings();
+        await connection.DisposeAsync().ConfigureAwait(false);
+        ConnectionsChanged?.Invoke();
+        StatusChanged?.Invoke();
+    }
+
+    /// <summary>Renames a connection; fails when another connection already has the name.</summary>
+    public void RenameConnection(ObsConnection connection, string name)
+    {
+        var trimmed = name.Trim();
+        if (trimmed.Length == 0) throw new ArgumentException("A connection needs a name.");
+        lock (_gate)
+        {
+            if (_connections.Any(c => c != connection && string.Equals(c.Name, trimmed, StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException($"Another OBS connection is already named '{trimmed}'.");
+            connection.Settings.Name = trimmed;
+        }
+        SaveSettings();
+        ConnectionsChanged?.Invoke();
     }
 
     public async ValueTask DisposeAsync()
     {
         // DI disposes this instance twice (as ObsService and as IConnectionStatus).
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
-        _manuallyDisconnected = true;
-        await _lifetime.CancelAsync().ConfigureAwait(false);
-        if (_keepConnected is { } loop) await loop.ConfigureAwait(false);
-        if (_client is { } client) await client.DisposeAsync().ConfigureAwait(false);
-        _lifetime.Dispose();
+        foreach (var connection in _connections) await connection.DisposeAsync().ConfigureAwait(false);
     }
 
-    private async Task KeepConnectedAsync(CancellationToken ct)
+    private string UniqueName(string name)
     {
-        while (!ct.IsCancellationRequested)
-        {
-            if (Settings.AutoConnect && !_manuallyDisconnected && _client is null)
-            {
-                try
-                {
-                    await ConnectCoreAsync(ct).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    // Already reported through the status and the log; try again after the delay.
-                }
-            }
-            try
-            {
-                await Task.Delay(_reconnectDelay, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-        }
+        var baseName = string.IsNullOrWhiteSpace(name) ? "OBS" : name.Trim();
+        var candidate = baseName;
+        for (var i = 2; _connections.Any(c => string.Equals(c.Name, candidate, StringComparison.OrdinalIgnoreCase)); i++)
+            candidate = $"{baseName} ({i})";
+        return candidate;
     }
 
-    private async Task ConnectCoreAsync(CancellationToken ct)
+    private ObsConnection Create(ObsConnectionSettings settings, bool isDefault)
     {
-        await _connectionGate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            if (_client is not null) return;
-
-            var endpoint = $"{Settings.Host}:{Settings.Port}";
-            SetStatus(ConnectionState.Connecting, $"Connecting to {endpoint}...");
-            var client = new ObsClient();
-            client.EventReceived += OnObsEvent;
-            client.Disconnected += reason => OnSessionEnded(client, reason);
-            _client = client;
-            try
-            {
-                await client.ConnectAsync(new UriBuilder("ws", Settings.Host, Settings.Port).Uri, Settings.Password, ct)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _client = null;
-                await client.DisposeAsync().ConfigureAwait(false);
-                ReportConnectFailure(ex, endpoint);
-                throw;
-            }
-
-            _lastFailure = null;
-            SetStatus(ConnectionState.Connected, $"Connected to {endpoint}");
-            _log.Info(LogSource, $"Connected to {endpoint}");
-            await RefreshCachesAsync(ct).ConfigureAwait(false);
-            _bus.Publish(new BotEvent(ObsEvents.Connected));
-        }
-        finally
-        {
-            _connectionGate.Release();
-        }
-    }
-
-    private void ReportConnectFailure(Exception ex, string endpoint)
-    {
-        if (ex is OperationCanceledException)
-        {
-            SetStatus(ConnectionState.Disconnected, "Not connected");
-            return;
-        }
-
-        var message = ex switch
-        {
-            ObsConnectionException => ex.Message,
-            WebSocketException => $"Could not reach OBS at {endpoint}. Is OBS running with its WebSocket server enabled?",
-            _ => $"Could not connect to OBS: {ex.Message}",
-        };
-        SetStatus(ConnectionState.Error, message);
-        // The reconnect loop retries every few seconds; log each distinct failure once.
-        if (message != _lastFailure) _log.Warn(LogSource, message);
-        _lastFailure = message;
-    }
-
-    // Runs on the session's receive thread after the session ended, so no request can be pending on it.
-    private void OnSessionEnded(ObsClient client, string reason)
-    {
-        _connectionGate.Wait();
-        try
-        {
-            if (_client != client) return;
-            _client = null;
-        }
-        finally
-        {
-            _connectionGate.Release();
-        }
-
-        _currentScene = null;
-        ScenesChanged?.Invoke();
-        if (_manuallyDisconnected)
-        {
-            SetStatus(ConnectionState.Disconnected, "Disconnected");
-            _log.Info(LogSource, "Disconnected");
-        }
-        else
-        {
-            SetStatus(ConnectionState.Error, Settings.AutoConnect ? $"{reason} Reconnecting..." : reason);
-            _log.Warn(LogSource, reason);
-        }
-        _bus.Publish(new BotEvent(ObsEvents.Disconnected, new Dictionary<string, object?> { ["reason"] = reason }));
-    }
-
-    private void OnObsEvent(ObsEvent e)
-    {
-        try
-        {
-            switch (e.EventType)
-            {
-                case "CurrentProgramSceneChanged":
-                    OnProgramSceneChanged(e.EventData.GetStringOrNull("sceneName"));
-                    break;
-                case "SceneListChanged":
-                    _scenes = ObsResponseParser.ParseScenes(e.EventData);
-                    ScenesChanged?.Invoke();
-                    break;
-                case "SceneCreated" or "SceneRemoved" or "SceneNameChanged":
-                    RefreshInBackground("scenes", RefreshScenesAsync);
-                    break;
-                case "InputCreated" or "InputRemoved" or "InputNameChanged":
-                    RefreshInBackground("inputs", RefreshInputsAsync);
-                    break;
-                default:
-                    if (ObsEventMapper.MapOutputEvent(e) is { } botEvent) _bus.Publish(botEvent);
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            _log.Error(LogSource, $"Failed to handle OBS event {e.EventType}", ex);
-        }
-    }
-
-    private void OnProgramSceneChanged(string? sceneName)
-    {
-        if (sceneName is null) return;
-        var previous = Interlocked.Exchange(ref _currentScene, sceneName);
-        ScenesChanged?.Invoke();
-        _bus.Publish(ObsEventMapper.SceneChanged(sceneName, previous));
-    }
-
-    private async Task RefreshCachesAsync(CancellationToken ct)
-    {
-        try
-        {
-            await RefreshScenesAsync(ct).ConfigureAwait(false);
-            await RefreshInputsAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _log.Warn(LogSource, $"Could not load scenes and inputs: {ex.Message}");
-        }
-    }
-
-    // Event handlers run on the receive thread, which must keep reading to deliver the response: never await there.
-    private void RefreshInBackground(string what, Func<CancellationToken, Task> refresh) => _ = Task.Run(async () =>
-    {
-        try
-        {
-            await refresh(_lifetime.Token).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _log.Warn(LogSource, $"Could not refresh {what}: {ex.Message}");
-        }
-    });
-
-    private async Task RefreshScenesAsync(CancellationToken ct)
-    {
-        var data = await RequestAsync("GetSceneList", ct: ct).ConfigureAwait(false);
-        _scenes = ObsResponseParser.ParseScenes(data);
-        _currentScene = data.GetStringOrNull("currentProgramSceneName") ?? _currentScene;
-        ScenesChanged?.Invoke();
-    }
-
-    private async Task RefreshInputsAsync(CancellationToken ct)
-    {
-        _inputs = ObsResponseParser.ParseInputs(await RequestAsync("GetInputList", ct: ct).ConfigureAwait(false));
-        ScenesChanged?.Invoke();
-    }
-
-    private void SetStatus(ConnectionState state, string message)
-    {
-        State = state;
-        StatusMessage = message;
-        StatusChanged?.Invoke();
+        var connection = new ObsConnection(settings, SaveSettings, _bus, _log, _reconnectDelay, isDefault);
+        connection.StatusChanged += () => StatusChanged?.Invoke();
+        if (isDefault) connection.ScenesChanged += () => ScenesChanged?.Invoke();
+        return connection;
     }
 }

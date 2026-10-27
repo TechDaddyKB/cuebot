@@ -1,0 +1,184 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:obs="using:Cuebot.App.ViewModels.Obs"
+             x:Class="Cuebot.App.Views.ObsView"
+             x:DataType="vm:ObsViewModel"
+             x:Name="Root">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="1000" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="OBS Studio" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
+                 Text="In OBS open Tools → WebSocket Server Settings, enable the server and copy the port and password. Add a connection per OBS instance; sub-actions and triggers pick one by name (empty = the default connection)." />
+
+      <!-- Connection picker -->
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+        <ListBox ItemsSource="{Binding Connections}" SelectedItem="{Binding SelectedConnection}" Classes="nav"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto">
+          <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="obs:ObsConnectionViewModel">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Classes="status" Classes.good="{Binding IsGood}" Classes.bad="{Binding IsBad}" />
+                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Content="+ Connection" Command="{Binding AddConnectionCommand}" VerticalAlignment="Center" />
+      </StackPanel>
+      <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <ContentControl Content="{Binding SelectedConnection}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="obs:ObsConnectionViewModel">
+            <StackPanel>
+              <Border Classes="card">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="h2" Text="Connection" />
+                  <Grid ColumnDefinitions="*,12,*,12,140" RowDefinitions="Auto,Auto">
+                    <TextBlock Text="Name" />
+                    <TextBlock Grid.Column="2" Text="Host" />
+                    <TextBlock Grid.Column="4" Text="Port" />
+                    <TextBox Grid.Row="1" Text="{Binding Name}" />
+                    <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Host}" />
+                    <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+                  </Grid>
+                  <TextBlock Classes="error" Text="{Binding NameError}" IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="Password" />
+                  <TextBox Text="{Binding Password}" PasswordChar="•" />
+                  <CheckBox Content="Connect automatically and reconnect when OBS restarts" IsChecked="{Binding AutoConnect}" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+                    <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+                    <Button Content="Remove connection" Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Ellipse Classes="status" Classes.good="{Binding IsGood}" Classes.bad="{Binding IsBad}" />
+                    <TextBlock VerticalAlignment="Center" TextWrapping="Wrap">
+                      <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
+                    </TextBlock>
+                  </StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding Version}" />
+                  <TextBlock Classes="muted" Text="{Binding Details}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card" IsVisible="{Binding IsConnected}">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="h2" Text="Controls" />
+                  <WrapPanel ItemSpacing="8" LineSpacing="8">
+                    <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" />
+                    <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" />
+                    <Button Content="Save replay" Command="{Binding SaveReplayCommand}" />
+                    <Button Content="Studio mode on / off" Command="{Binding ToggleStudioModeCommand}" />
+                    <Button Content="Transition preview → program" Command="{Binding StudioTransitionCommand}" IsVisible="{Binding StudioModeEnabled}" />
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                  </WrapPanel>
+                  <TextBlock>
+                    <Run Text="Program: " /><Run Text="{Binding CurrentScene}" FontWeight="SemiBold" /><Run Text="   Preview: " /><Run Text="{Binding PreviewScene}" FontWeight="SemiBold" />
+                  </TextBlock>
+                  <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="h2" Text="Scenes and sources" />
+                  <TextBlock Classes="muted" Text="Pick a scene to see its sources; tick a source to show it. The arrow button switches the program scene." />
+                  <Grid ColumnDefinitions="280,16,*">
+                    <ListBox x:Name="SceneList" ItemsSource="{Binding Scenes}" SelectedItem="{Binding SelectedScene}" MaxHeight="420">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="obs:ObsSceneViewModel">
+                          <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" Classes="muted" Margin="6,0" VerticalAlignment="Center"
+                                       Text="{Binding Badge}" />
+                            <Button Grid.Column="2" Content="▶" Padding="8,2" ToolTip.Tip="Switch to this scene"
+                                    Command="{Binding #SceneList.((obs:ObsConnectionViewModel)DataContext).SwitchSceneCommand}"
+                                    CommandParameter="{Binding}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                    <ItemsControl Grid.Column="2" ItemsSource="{Binding Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="obs:ObsSceneItemViewModel">
+                          <StackPanel Orientation="Horizontal" Spacing="8" Margin="{Binding Indent}">
+                            <CheckBox IsChecked="{Binding Visible}" Content="{Binding Name}" />
+                            <TextBlock Classes="muted" Text="{Binding Kind}" VerticalAlignment="Center" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Grid>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card" IsVisible="{Binding IsConnected}">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="h2" Text="Audio" />
+                  <ItemsControl ItemsSource="{Binding Audio}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel ItemSpacing="16" LineSpacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="obs:ObsAudioViewModel">
+                        <CheckBox IsChecked="{Binding Muted}" Content="{Binding Name, StringFormat='{}{0} muted'}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+
+      <!-- Streamlabs Desktop -->
+      <ContentControl Content="{Binding Streamlabs}" IsVisible="{Binding HasStreamlabs}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="obs:StreamlabsViewModel">
+            <Border Classes="card" x:Name="SlobsCard">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h2" Text="Streamlabs Desktop" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="In Streamlabs Desktop open Settings → Remote Control, click the QR code to show details and copy the port and API token." />
+                <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
+                  <TextBlock Text="Host" />
+                  <TextBlock Grid.Column="2" Text="Port" />
+                  <TextBox Grid.Row="1" Text="{Binding Host}" />
+                  <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+                </Grid>
+                <TextBlock Text="API token" />
+                <TextBox Text="{Binding Token}" PasswordChar="•" />
+                <CheckBox Content="Connect automatically and reconnect" IsChecked="{Binding AutoConnect}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+                  <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" IsVisible="{Binding IsGood}" />
+                  <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" IsVisible="{Binding IsGood}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Ellipse Classes="status" Classes.good="{Binding IsGood}" Classes.bad="{Binding IsBad}" />
+                  <TextBlock VerticalAlignment="Center" TextWrapping="Wrap">
+                    <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
+                  </TextBlock>
+                </StackPanel>
+                <TextBlock Text="{Binding CurrentScene, StringFormat='Current scene: {0}'}" IsVisible="{Binding IsGood}" />
+                <ItemsControl ItemsSource="{Binding Scenes}" IsVisible="{Binding IsGood}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <Button Content="{Binding}" Margin="0,0,6,6"
+                              Command="{Binding #SlobsCard.((obs:StreamlabsViewModel)DataContext).SwitchSceneCommand}" CommandParameter="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
