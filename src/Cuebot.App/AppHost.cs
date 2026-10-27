@@ -37,6 +37,7 @@ public sealed class AppHost : IAsyncDisposable
         services.AddSingleton(settings);
         services.AddSingleton(_ => new BackupService(paths, () => settings.Settings.Backups.Keep));
         var host = new AppHost(services.BuildServiceProvider());
+        TextCulture.Apply(host.Get<Cuebot.Core.Variables.TextEnvironment>(), settings.Settings.Text.Culture);
         if (firstRun)
         {
             var profile = host.Get<ProfileService>();

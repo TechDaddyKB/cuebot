@@ -11,6 +11,7 @@ public sealed class AppSettings
 {
     public GeneralSettings General { get; set; } = new();
     public BackupSettings Backups { get; set; } = new();
+    public TextSettings Text { get; set; } = new();
     public WindowPlacement? Window { get; set; }
 }
 
@@ -26,6 +27,16 @@ public sealed class GeneralSettings
     public bool StartMinimized { get; set; }
 
     public AppTheme Theme { get; set; } = AppTheme.Dark;
+}
+
+/// <summary>How text templates format values (applied to the shared <c>TextEnvironment</c>).</summary>
+public sealed class TextSettings
+{
+    /// <summary>
+    /// Culture name for format specifiers and %date%/%time% (e.g. "de-DE"). Empty: culture-neutral with "$" as the
+    /// currency symbol.
+    /// </summary>
+    public string Culture { get; set; } = "";
 }
 
 public sealed class BackupSettings
@@ -109,6 +120,7 @@ public sealed class AppSettingsStore
             var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Json.Options) ?? new AppSettings();
             settings.General ??= new GeneralSettings();
             settings.Backups ??= new BackupSettings();
+            settings.Text ??= new TextSettings();
             if (settings.Backups.Keep < 1) settings.Backups.Keep = BackupSettings.DefaultKeep;
             return settings;
         }

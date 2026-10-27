@@ -23,6 +23,7 @@ public sealed partial class ActionItemViewModel : ObservableObject
         Triggers = new ObservableCollection<TriggerItemViewModel>(
             definition.Triggers.Select(t => new TriggerItemViewModel(t, registry.GetTrigger(t.Type), () => MarkChanged(false))));
         Steps = new StepListViewModel(definition.SubActions, this);
+        RefreshFromProfile();
     }
 
     public ActionDefinition Definition { get; }
@@ -64,10 +65,73 @@ public sealed partial class ActionItemViewModel : ObservableObject
         set => Set(Definition.Enabled, value, v => Definition.Enabled = v);
     }
 
+    /// <summary>Only used without a queue: runs of this action may overlap instead of waiting for each other.</summary>
     public bool Concurrent
     {
         get => Definition.Concurrent;
         set => Set(Definition.Concurrent, value, v => Definition.Concurrent = v);
+    }
+
+    /// <summary>Queue name as shown in the dropdown: "Default" for actions without a queue.</summary>
+    public string? Queue
+    {
+        get => QueueService.Normalize(Definition.Queue);
+        set
+        {
+            if (value is null) return;   // the dropdown clears its selection while its items are replaced
+            var stored = string.Equals(QueueService.Normalize(value), QueueService.DefaultQueue, StringComparison.OrdinalIgnoreCase)
+                ? ""
+                : value.Trim();
+            if (Definition.Queue == stored) return;
+            Definition.Queue = stored;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasQueue));
+            OnPropertyChanged(nameof(RunSummary));
+            MarkChanged(structural: false);
+        }
+    }
+
+    /// <summary>The action waits in a named queue, so "Allow concurrent runs" does not apply.</summary>
+    public bool HasQueue => !string.IsNullOrWhiteSpace(Definition.Queue);
+
+    /// <summary>"Default" followed by the profile's queues (and the action's own queue if it no longer exists).</summary>
+    public IReadOnlyList<string> QueueOptions { get; private set; } = [];
+
+    public bool RandomAction
+    {
+        get => Definition.RandomAction;
+        set => Set(Definition.RandomAction, value, v => Definition.RandomAction = v);
+    }
+
+    public bool ConcurrentSubActions
+    {
+        get => Definition.ConcurrentSubActions;
+        set => Set(Definition.ConcurrentSubActions, value, v => Definition.ConcurrentSubActions = v);
+    }
+
+    public bool AlwaysRun
+    {
+        get => Definition.AlwaysRun;
+        set => Set(Definition.AlwaysRun, value, v => Definition.AlwaysRun = v);
+    }
+
+    public bool ExcludeFromHistory
+    {
+        get => Definition.ExcludeFromHistory;
+        set => Set(Definition.ExcludeFromHistory, value, v => Definition.ExcludeFromHistory = v);
+    }
+
+    /// <summary>Short description of how the action runs, for the graph's entry node.</summary>
+    public string RunSummary
+    {
+        get
+        {
+            var parts = new List<string> { HasQueue ? $"Queue: {Queue}" : Concurrent ? "Runs concurrently" : "Runs queued" };
+            if (RandomAction) parts.Add("one random step");
+            else if (ConcurrentSubActions) parts.Add("steps in parallel");
+            if (AlwaysRun) parts.Add("always runs");
+            return string.Join(" · ", parts);
+        }
     }
 
     public string TriggerSummary => Triggers.Count switch
@@ -81,7 +145,27 @@ public sealed partial class ActionItemViewModel : ObservableObject
     {
         _profile.NotifyChanged();
         if (structural) OnPropertyChanged(nameof(TriggerSummary));
+        foreach (var step in Steps.Descendants()) step.RefreshDerived();
         Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Re-reads values that can change outside this editor: Enabled (the "Set action state" sub-action edits the
+    /// live profile) and the queue list (Queues page).
+    /// </summary>
+    public void RefreshFromProfile()
+    {
+        OnPropertyChanged(nameof(Enabled));
+        var options = new List<string> { QueueService.DefaultQueue };
+        foreach (var q in _profile.Profile.Queues)
+        {
+            if (!options.Contains(q.Name, StringComparer.OrdinalIgnoreCase)) options.Add(q.Name);
+        }
+        if (Queue is { } current && !options.Contains(current, StringComparer.OrdinalIgnoreCase)) options.Add(current);
+        if (options.SequenceEqual(QueueOptions)) return;
+        QueueOptions = options;
+        OnPropertyChanged(nameof(QueueOptions));
+        OnPropertyChanged(nameof(Queue));
     }
 
     public TriggerItemViewModel AddTrigger(ITriggerType type)
@@ -163,6 +247,7 @@ public sealed partial class ActionItemViewModel : ObservableObject
         if (EqualityComparer<T>.Default.Equals(current, value)) return;
         assign(value);
         OnPropertyChanged(name);
+        OnPropertyChanged(nameof(RunSummary));
         MarkChanged(structural: false);
     }
 }

@@ -51,11 +51,93 @@ public sealed partial class SettingsViewModel : PageViewModel
         _backupOnStart = s.Backups.OnStart;
         _backupBeforeImport = s.Backups.BeforeImport;
         _backupKeep = s.Backups.Keep;
+        _textCulture = CultureOptions.FirstOrDefault(c => string.Equals(c.Name, s.Text.Culture, StringComparison.OrdinalIgnoreCase))
+                       ?? CultureOptions[0];
         _loading = false;
 
         _backups.Changed += () => OnUi(RefreshBackups);
         shell.TrayAvailabilityChanged += () => OnUi(() => OnPropertyChanged(nameof(TrayStatus)));
         RefreshBackups();
+        _ = RefreshAudio();
+    }
+
+    // ---- Audio (read-only for now) ----
+
+    [ObservableProperty] private string _audioBackend = "Loading...";
+    [ObservableProperty] private string _audioStatus = "";
+    [ObservableProperty] private string _audioError = "";
+
+    /// <summary>True once the backend and device lists have been read (or failed).</summary>
+    [ObservableProperty] private bool _audioLoaded;
+
+    public ObservableCollection<string> OutputDevices { get; } = [];
+    public ObservableCollection<string> InputDevices { get; } = [];
+
+    /// <summary>Opening the backend and listing devices can take a moment (native audio), so it runs off the UI thread.</summary>
+    [RelayCommand]
+    private async Task RefreshAudio()
+    {
+        AudioStatus = "Listing devices...";
+        AudioError = "";
+        try
+        {
+            var audio = _host.Get<Cuebot.Speech.AudioOutput>();
+            var (backend, outputs, inputs) = await Task.Run(() => (audio.BackendName, audio.GetOutputDevices(), audio.GetInputDevices()));
+            AudioBackend = backend;
+            Fill(OutputDevices, outputs);
+            Fill(InputDevices, inputs);
+            AudioStatus = "";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DllNotFoundException or IOException or ObjectDisposedException)
+        {
+            AudioBackend = "Unavailable";
+            AudioStatus = "";
+            AudioError = ex.Message;
+        }
+        AudioLoaded = true;
+
+        static void Fill(ObservableCollection<string> target, IReadOnlyList<Cuebot.Speech.AudioDevice> devices)
+        {
+            target.Clear();
+            foreach (var d in devices) target.Add(d.IsDefault ? $"{d.Name} (default)" : d.Name);
+            if (target.Count == 0) target.Add("(no devices found)");
+        }
+    }
+
+    // ---- Text ----
+
+    /// <summary>"" (neutral, $) followed by every specific culture.</summary>
+    public static IReadOnlyList<CultureOption> CultureOptions { get; } = BuildCultureOptions();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CulturePreview))]
+    private CultureOption _textCulture;
+
+    partial void OnTextCultureChanged(CultureOption value)
+    {
+        if (value is null) return;
+        Update(s => s.Text.Culture = value.Name);
+        if (!_loading) Shell.TextCulture.Apply(_host.Get<Cuebot.Core.Variables.TextEnvironment>(), value.Name);
+    }
+
+    /// <summary>What %amount:c2%, %n:N2% and %date% look like with the chosen culture.</summary>
+    public string CulturePreview
+    {
+        get
+        {
+            var culture = Shell.TextCulture.Resolve(TextCulture?.Name);
+            var now = DateTime.Now;
+            return string.Create(culture, $"%amount:c2% → {1234.5m:C2}    %n:N2% → {1234.5m:N2}    %date% → {now:d}    %time% → {now:t}");
+        }
+    }
+
+    private static IReadOnlyList<CultureOption> BuildCultureOptions()
+    {
+        var list = new List<CultureOption> { new("", "Neutral (invariant, $ currency) — default") };
+        list.AddRange(System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.SpecificCultures)
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(c => new CultureOption(c.Name, $"{c.Name} — {c.EnglishName}")));
+        return list;
     }
 
     public IReadOnlyList<AppTheme> Themes { get; } = Enum.GetValues<AppTheme>();
@@ -220,3 +302,6 @@ public sealed partial class SettingsViewModel : PageViewModel
     public string Runtime => $"{RuntimeInformation.FrameworkDescription} ({RuntimeInformation.RuntimeIdentifier})";
     public string OsDescription => RuntimeInformation.OSDescription;
 }
+
+/// <summary>A text culture choice: its name ("" = default) and how it is shown.</summary>
+public sealed record CultureOption(string Name, string Display);

@@ -54,14 +54,40 @@ public sealed class MainWindowTests : IAsyncDisposable
     public void Every_page_renders_without_binding_errors()
     {
         TestApp.BindingErrors.Clear();
+        var app = Avalonia.Application.Current!;
+        var original = app.RequestedThemeVariant;
         var (window, vm) = Open();
-        foreach (var page in vm.Pages)
+        try
         {
-            vm.SelectedPage = page;
-            Save(window, $"page-{page.Title.ToLowerInvariant()}");
+            Assert.Equal(
+                ["Dashboard", "Chat", "Actions", "Commands", "Queues", "Timers", "Users & Groups", "Variables", "Watchers",
+                 "Twitch", "Rumble", "OBS", "Speech", "Scripting", "Settings"],
+                vm.Pages.Select(p => p.Title));
+            foreach (var (theme, suffix) in new[] { (Cuebot.App.Shell.AppTheme.Dark, ""), (Cuebot.App.Shell.AppTheme.Light, "-light") })
+            {
+                vm.Settings.Theme = theme;
+                foreach (var page in vm.Pages)
+                {
+                    vm.SelectedPage = page;
+                    Save(window, $"page-{FileName(page.Title)}{suffix}");
+                }
+            }
         }
-        Assert.Empty(TestApp.BindingErrors.Errors);
+        finally
+        {
+            vm.Settings.Theme = Cuebot.App.Shell.AppTheme.Dark;
+            app.RequestedThemeVariant = original;
+        }
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();
+    }
+
+    /// <summary>"Users &amp; Groups" → "users-groups".</summary>
+    internal static string FileName(string title)
+    {
+        var name = string.Concat(title.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-'));
+        while (name.Contains("--")) name = name.Replace("--", "-");
+        return name.Trim('-');
     }
 
     [AvaloniaFact]

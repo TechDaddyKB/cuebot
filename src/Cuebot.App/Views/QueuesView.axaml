@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.QueuesView"
+             x:DataType="vm:QueuesViewModel"
+             x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.state">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.state.good">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotGood}" />
+    </Style>
+    <Style Selector="TextBlock.state.bad">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotBad}" />
+    </Style>
+    <Style Selector="TextBlock.state.active">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+    </Style>
+  </UserControl.Styles>
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:RunRowViewModel">
+      <Grid ColumnDefinitions="90,*,130,170,74,74,80">
+        <TextBlock Text="{Binding StateText}" Classes="state" Classes.good="{Binding IsDone}" Classes.bad="{Binding IsFailed}"
+                   Classes.active="{Binding IsActive}" />
+        <TextBlock Grid.Column="1" Text="{Binding ActionName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2" Text="{Binding Queue}" Classes="muted" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="3" Text="{Binding Source}" Classes="muted" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="4" Text="{Binding Queued}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Queued at" />
+        <TextBlock Grid.Column="5" Text="{Binding Started}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Started at" />
+        <TextBlock Grid.Column="6" Text="{Binding Duration}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Run time" />
+      </Grid>
+    </DataTemplate>
+    <DataTemplate DataType="vm:NameValueRow">
+      <Grid ColumnDefinitions="130,*">
+        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+        <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <DockPanel Margin="24,24,24,16">
+    <!-- Queues -->
+    <StackPanel DockPanel.Dock="Top">
+      <DockPanel Margin="0,0,0,8">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+          <Button Content="+ Queue" Classes="accent" Command="{Binding AddQueueCommand}" />
+          <Button Content="Pause all" Command="{Binding PauseAllCommand}" />
+          <Button Content="Resume all" Command="{Binding ResumeAllCommand}" />
+        </StackPanel>
+        <TextBlock Classes="h1" Text="Queues" Margin="0" VerticalAlignment="Center" />
+      </DockPanel>
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Every action run waits in its queue until it may start. A paused queue holds its runs (except actions marked Always run); a blocking queue runs one action at a time, in arrival order. Pick an action's queue on the Actions page." />
+      <Border Classes="card" Padding="8">
+        <ScrollViewer MaxHeight="230">
+          <ItemsControl ItemsSource="{Binding Queues}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:QueueRowViewModel">
+                <Grid ColumnDefinitions="220,12,90,12,70,12,*,Auto" Margin="4,3">
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBox Text="{Binding NameText}" IsVisible="{Binding IsEditable}" PlaceholderText="Queue name" />
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" IsVisible="{Binding !IsEditable}" Margin="10,0,0,0" />
+                    <TextBlock Classes="error" Text="{Binding NameError}"
+                               IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  </StackPanel>
+                  <CheckBox Grid.Column="2" Content="Blocking" IsChecked="{Binding Blocking}" IsEnabled="{Binding IsEditable}"
+                            ToolTip.Tip="Run one action at a time, in arrival order" />
+                  <TextBlock Grid.Column="4" Text="{Binding StatusText}" Classes="state" Classes.bad="{Binding Paused}" />
+                  <StackPanel Grid.Column="6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Counts}" />
+                    <TextBlock Text="{Binding Kind}" Classes="muted" IsVisible="{Binding Kind, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button Content="Pause" IsVisible="{Binding !Paused}"
+                            Command="{Binding PauseCommand}" />
+                    <Button Content="Resume" IsVisible="{Binding Paused}" Classes="accent"
+                            Command="{Binding ResumeCommand}" />
+                    <Button Content="Clear" ToolTip.Tip="Cancel every pending run in this queue"
+                            Command="{Binding ClearCommand}" />
+                    <Button Content="Delete" IsEnabled="{Binding IsEditable}" ToolTip.Tip="Delete the queue; its actions move to Default"
+                            Command="{Binding DeleteCommand}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Border>
+      <TextBlock Classes="muted" Text="{Binding Status}" Margin="0,0,0,8" />
+    </StackPanel>
+
+    <!-- Runs + inspector -->
+    <Grid ColumnDefinitions="*,12,360">
+      <TabControl x:Name="RunTabs" Padding="0,8,0,0">
+        <TabItem Header="Pending">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding PendingSummary}" Margin="0,0,0,6" />
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="90,*,130,170,74,74,80" Margin="12,0,12,4">
+              <TextBlock Classes="muted" Text="STATE" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="ACTION" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="QUEUE" />
+              <TextBlock Grid.Column="3" Classes="muted" Text="SOURCE" />
+              <TextBlock Grid.Column="4" Classes="muted" Text="QUEUED" />
+              <TextBlock Grid.Column="5" Classes="muted" Text="STARTED" />
+              <TextBlock Grid.Column="6" Classes="muted" Text="TIME" />
+            </Grid>
+            <ListBox ItemsSource="{Binding Pending}" SelectedItem="{Binding SelectedPending}" />
+          </DockPanel>
+        </TabItem>
+        <TabItem Header="History">
+          <DockPanel>
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+              <Button DockPanel.Dock="Right" Content="Clear history" Command="{Binding ClearHistoryCommand}" />
+              <TextBlock Classes="muted" Text="{Binding HistorySummary}" VerticalAlignment="Center" />
+            </DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="90,*,130,170,74,74,80" Margin="12,0,12,4">
+              <TextBlock Classes="muted" Text="STATE" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="ACTION" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="QUEUE" />
+              <TextBlock Grid.Column="3" Classes="muted" Text="SOURCE" />
+              <TextBlock Grid.Column="4" Classes="muted" Text="QUEUED" />
+              <TextBlock Grid.Column="5" Classes="muted" Text="STARTED" />
+              <TextBlock Grid.Column="6" Classes="muted" Text="TIME" />
+            </Grid>
+            <ListBox ItemsSource="{Binding History}" SelectedItem="{Binding SelectedHistory}" />
+          </DockPanel>
+        </TabItem>
+      </TabControl>
+
+      <Border Grid.Column="2" Classes="card" Margin="0">
+        <Grid>
+          <TextBlock Classes="muted" IsVisible="{Binding !HasSelectedRun}" TextWrapping="Wrap" VerticalAlignment="Center"
+                     HorizontalAlignment="Center" TextAlignment="Center" Text="Select a run to see its arguments" />
+          <DockPanel IsVisible="{Binding HasSelectedRun}">
+            <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+              <TextBlock Classes="h2" Text="{Binding SelectedTitle}" TextWrapping="Wrap" Margin="0" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Requeue" Command="{Binding RequeueCommand}"
+                        ToolTip.Tip="Run the action again with the arguments it had when it was queued" />
+                <Button Content="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding CanCancelSelected}" />
+              </StackPanel>
+            </StackPanel>
+            <ScrollViewer>
+              <StackPanel Spacing="6">
+                <TextBlock Text="Arguments when queued" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding ArgsWhenQueued}" />
+                <TextBlock Text="Arguments after the run" FontWeight="SemiBold" Margin="0,10,0,0" IsVisible="{Binding HasArgsAfterRun}" />
+                <ItemsControl ItemsSource="{Binding ArgsAfterRun}" IsVisible="{Binding HasArgsAfterRun}" />
+              </StackPanel>
+            </ScrollViewer>
+          </DockPanel>
+        </Grid>
+      </Border>
+    </Grid>
+  </DockPanel>
+</UserControl>

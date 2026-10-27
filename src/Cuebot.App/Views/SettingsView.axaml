@@ -40,6 +40,72 @@
           </ScrollViewer>
         </TabItem>
 
+        <TabItem Header="Audio &amp; text">
+          <ScrollViewer>
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,12,0,24">
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshAudioCommand}" />
+                    <TextBlock Classes="h2" Text="Audio" VerticalAlignment="Center" Margin="0" />
+                  </DockPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Classes="muted" Text="Backend" VerticalAlignment="Center" Width="120" FontSize="14" />
+                    <TextBlock Text="{Binding AudioBackend}" FontWeight="SemiBold" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding AudioStatus}"
+                             IsVisible="{Binding AudioStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Classes="error" Text="{Binding AudioError}"
+                             IsVisible="{Binding AudioError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <Grid ColumnDefinitions="*,16,*">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Output devices" FontWeight="SemiBold" />
+                      <ItemsControl ItemsSource="{Binding OutputDevices}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" Margin="0,2" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Text="Input devices" FontWeight="SemiBold" />
+                      <ItemsControl ItemsSource="{Binding InputDevices}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" Margin="0,2" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Sound and speech sub-actions pick a device by name; blank uses the default device." />
+                </StackPanel>
+              </Border>
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Text formatting" />
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="Culture" VerticalAlignment="Center" />
+                    <ComboBox x:Name="CulturePicker" ItemsSource="{x:Static vm:SettingsViewModel.CultureOptions}"
+                              SelectedItem="{Binding TextCulture}" Width="420">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="vm:CultureOption">
+                          <TextBlock Text="{Binding Display}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                  <SelectableTextBlock Text="{Binding CulturePreview}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Used by format specifiers such as %amount:c2% and by %date% / %time%. Values without a format are always written culture-neutral (5.5, true)." />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
         <TabItem Header="Backups">
           <DockPanel Margin="0,12,0,24" MaxWidth="900" HorizontalAlignment="Left">
             <Border DockPanel.Dock="Top" Classes="card">

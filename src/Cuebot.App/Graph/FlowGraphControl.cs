@@ -97,6 +97,7 @@ public sealed class FlowGraphControl : Control
         DrawGrid(context);
         using (context.PushTransform(_view))
         {
+            foreach (var frame in _graph.Frames) DrawFrame(context, frame);
             foreach (var edge in _graph.Edges) DrawEdge(context, edge);
             foreach (var node in _graph.Nodes) DrawNode(context, node);
         }
@@ -115,6 +116,13 @@ public sealed class FlowGraphControl : Control
         for (var x = offsetX; x < Bounds.Width; x += spacing)
         for (var y = offsetY; y < Bounds.Height; y += spacing)
             context.FillRectangle(GridDot, new Rect(x, y, 1.5, 1.5));
+    }
+
+    private static void DrawFrame(DrawingContext context, GraphFrame frame)
+    {
+        var fill = new SolidColorBrush(frame.Color, 0.12);
+        var pen = new Pen(new SolidColorBrush(frame.Color, 0.7), 1.5, new DashStyle([4, 3], 0));
+        context.DrawRectangle(fill, pen, frame.Bounds, 10, 10);
     }
 
     private static void DrawEdge(DrawingContext context, GraphEdge edge)
@@ -143,9 +151,9 @@ public sealed class FlowGraphControl : Control
             var rect = node.Bounds;
             context.DrawRectangle(NodeFill, selected ? SelectedPen : NodePen, rect, 8, 8);
             var header = new Rect(rect.X, rect.Y, 6, rect.Height);
-            context.DrawRectangle(CategoryBrush(node), null, header, 3, 3);
+            context.DrawRectangle(node.Tint is { } tint ? new SolidColorBrush(tint) : CategoryBrush(node), null, header, 3, 3);
 
-            var kindLabel = node.Kind switch
+            var kindLabel = node.KindLabel ?? node.Kind switch
             {
                 GraphNodeKind.Trigger => "TRIGGER · " + node.Category.ToUpperInvariant(),
                 GraphNodeKind.Entry => "ACTION",
