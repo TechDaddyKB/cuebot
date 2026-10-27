@@ -49,7 +49,7 @@ package() {
 exec /usr/bin/dotnet /usr/lib/cuebot/Cuebot.dll "$@"
 EOF
 
-  install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
+  install -Dm644 LICENSE THIRD-PARTY-NOTICES.md -t "$pkgdir/usr/share/licenses/$pkgname"
   install -Dm644 packaging/linux/io.github.cuebot.Cuebot.desktop -t "$pkgdir/usr/share/applications"
   install -Dm644 packaging/linux/io.github.cuebot.Cuebot.metainfo.xml -t "$pkgdir/usr/share/metainfo"
   for size in 16 32 48 64 128 256 512; do
