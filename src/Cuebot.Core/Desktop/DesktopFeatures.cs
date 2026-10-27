@@ -2,6 +2,7 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Desktop.Clipboard;
 using Cuebot.Core.Desktop.Hotkeys;
+using Cuebot.Core.Desktop.Input;
 using Cuebot.Core.Desktop.Notifications;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
@@ -45,6 +46,9 @@ public static class DesktopFeatures
         services.AddSingleton<ISubActionHandler, SetClipboardSubAction>();
         services.AddSingleton<ISubActionHandler, GetClipboardSubAction>();
         services.AddSingleton<IScriptFunctionProvider, DesktopScriptFunctions>();
+
+        // Keyboard output (IKeyboardOutput) and mouse click triggers.
+        services.AddInputFeatures();
         return services;
     }
 }

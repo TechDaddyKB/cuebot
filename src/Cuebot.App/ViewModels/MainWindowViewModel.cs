@@ -32,10 +32,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public const string FallbackGroup = "More";
 
     private bool _syncingSelection;
+    private readonly AppHost _host;
+    private readonly IShellHost _shell;
 
     public MainWindowViewModel(AppHost host, IShellHost? shell = null)
     {
         var shellHost = shell ?? new DetachedShellHost(host.Settings);
+        _host = host;
+        _shell = shellHost;
         Settings = new SettingsViewModel(host, shellHost);
         Support = new Cuebot.App.ViewModels.Support.SupportViewModel(Cuebot.App.ViewModels.Support.SupportServices.From(host, shellHost));
         var log = host.Get<AppLog>();
@@ -98,6 +102,61 @@ public sealed partial class MainWindowViewModel : ObservableObject
         NavGroups = BuildGroups(Pages);
         _selectedPage = Dashboard;
         SyncGroupSelection(Dashboard);
+
+        PageViewModel Page(string title) => Pages.First(p => p.Title == title);
+        ShortcutCommands = new Dictionary<string, System.Windows.Input.ICommand>
+        {
+            ["save"] = new RelayCommand(SaveAll),
+            ["help"] = new RelayCommand(() => SelectedPage = Support),
+            ["testTrigger"] = new RelayCommand(() => actions.TestTriggerCommand.Execute(null),
+                () => SelectedPage == actions && actions.HasSelection && !actions.Test.IsOpen),
+            ["import"] = new RelayCommand(() => SelectedPage = Page("Import / Export"), NotTyping),
+            ["export"] = new RelayCommand(() => SelectedPage = Page("Import / Export"), NotTyping),
+            ["chat"] = new RelayCommand(() => SelectedPage = Page("Chat"), NotTyping),
+            ["variables"] = new RelayCommand(() => SelectedPage = Page("Variables"), NotTyping),
+            ["logs"] = new RelayCommand(() => _shell.OpenFolder(_host.Get<AppPaths>().Logs), NotTyping),
+        };
+    }
+
+    /// <summary>
+    /// The window shortcuts' commands by <see cref="AppShortcut.Id"/> (<see cref="AppShortcuts.Window"/>); the window
+    /// turns them into KeyBindings.
+    /// </summary>
+    public IReadOnlyDictionary<string, System.Windows.Input.ICommand> ShortcutCommands { get; }
+
+    /// <summary>
+    /// True while a text field has focus (set by the window). The Ctrl+Alt shortcuts then stay out of the way: on many
+    /// layouts AltGr arrives as Ctrl+Alt (AltGr+E types €), so a KeyBinding would swallow the character.
+    /// </summary>
+    public Func<bool> IsTypingText { get; set; } = () => false;
+
+    private bool NotTyping() => !IsTypingText();
+
+    /// <summary>Result of the last Ctrl+S (also shown as an in-app toast when available).</summary>
+    [ObservableProperty] private string _saveStatus = "";
+
+    /// <summary>Ctrl+S: writes every pending change to disk now (stores also save on their own within a second).</summary>
+    public void SaveAll()
+    {
+        var log = _host.Get<AppLog>();
+        try
+        {
+            _host.Get<ProfileService>().Flush();
+            _host.Get<Cuebot.Core.Users.GroupStore>().Flush();
+            _host.Get<Cuebot.Core.Users.UserRegistry>().Flush();
+            SaveStatus = _host.Settings.TrySave()
+                ? $"Saved at {DateTime.Now:HH:mm:ss}"
+                : "Saved, but the app settings could not be written (see the log)";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ObjectDisposedException)
+        {
+            SaveStatus = "Save failed: " + ex.Message;
+            log.Error("Cuebot", "Save failed", ex);
+        }
+        log.Info("Cuebot", SaveStatus);
+        var toast = _host.Get<Cuebot.Core.Desktop.Notifications.IToastPresenter>();
+        if (toast.IsAvailable)
+            toast.Show(new Cuebot.Core.Desktop.Notifications.DesktopNotification("Cuebot", SaveStatus) { DurationSeconds = 2 }, () => { });
     }
 
     public DashboardViewModel Dashboard { get; }

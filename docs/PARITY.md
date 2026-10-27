@@ -42,7 +42,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | Permissions allow/deny users & groups; global/user cooldowns; cooldown trigger; counters | ✓ | ✓ | ✅ | 2 |
 | Timers (random interval, min chat lines, enable/disable sub-action), cron | ✓ | ✓ | ✅ | 2 |
 | User groups (triggers, sub-actions), present viewers, first words | ✓ | ✓ (present viewers inferred from chat) | ✅ | 2 |
-| Points / currency system, leaderboard [1.1α] | ✓ | Earn rates, bonuses, spend/transfer, leaderboard, thresholds (stored as user variables); multiple currencies and multipliers pending | 🟡 | 4 |
+| Points / currency system, leaderboard [1.1α] | ✓ | Multiple named currencies (the first is the default; a version-1 `points.json` loads as it unchanged, balances kept), each with its own user variable, earn rates, bonuses, cap, thresholds and multipliers (moderator, VIP, subscriber tier 1/2/3, user groups, per user; highest applies, then the user's own). Sub-actions, threshold trigger and script functions take an optional currency (empty = default, so existing actions are unchanged), plus award to group / present viewers and get/set multipliers. Not yet: payout rules limited to platforms/groups, tier remembered across restarts | ✅ | 4 |
 | Quotes, Credits | ✓ | Quotes (CRUD, random, import/export) and per-stream credits from every platform | ✅ | 4 |
 
 ## 4. Platforms
@@ -77,11 +77,20 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 
 | Area | Status | Phase | Area | Status | Phase |
 | --- | --- | --- | --- | --- | --- |
-| Run program, delay, log | ✅ | — | Hotkey triggers (Windows, XDG portal, X11); mouse triggers and key press output pending | 🟡 | 4 |
+| Run program, delay, log | ✅ | — | Hotkey triggers (Windows, XDG portal, X11); Keyboard Press sub-action (Windows SendInput; Linux XDG RemoteDesktop portal, asks once, X11 XTest fallback); Mouse Click trigger (Windows low-level hook; X11 XInput 2 raw events). See note below | ✅ | 4 |
 | Play sound (file; WAV/MP3/OGG/FLAC, mixed) | ✅ | 2 | Play from folder, stop sound, output device selection | ✅ | 2 |
 | File/folder watcher, file tails, process watcher, clipboard get/set/changed | ✅ | 2–4 | Toast notifications + activation (in-app, notify-send) | ✅ | 4 |
 | MIDI in/out | ❌ | 5 | Voice control (speech-to-text, Whisper) | ❌ | 5 |
 | Game-controller input [1.1α] | ❌ | 5 | File read/write, HTTP request, JSON sub-actions | ✅ | 2 |
+
+**Input on Wayland.** Key presses work on Wayland through the RemoteDesktop portal (KDE Plasma, GNOME, and other
+desktops whose portal offers a remote keyboard); the desktop shows a permission dialog at the first press and the
+permission is kept with a restore token (portal version 2+; older portals ask once per Cuebot start). **Mouse Click
+triggers are not possible for native Wayland applications:** Wayland only tells a program about the pointer over its
+own windows, and no portal reports clicks made elsewhere (the InputCapture portal takes the input away from other
+applications instead of observing it). Under a Wayland session the X11 backend still sees clicks in X11 (XWayland)
+windows; with no X server the trigger reports why it is unavailable. The mouse hook only runs while an enabled action
+has an enabled Mouse Click trigger.
 
 ## 7. Servers, APIs and scripting
 
@@ -121,7 +130,7 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | Tray icon, minimize to tray, start minimized, headless mode, startup switches, single instance | ✅ | 2 |
 | Automatic backups (on start / before update), restore | ✅ | 2 |
 | Update checker / release channels | ✅ (stable + pre-release; notifies, no auto-install) | 5 |
-| Light/dark theme toggle, keyboard shortcuts | 🟡 themes ✅, shortcuts pending | 4 |
+| Light/dark theme toggle, keyboard shortcuts | ✅ themes; shortcuts Ctrl+S save, F1 support, F5 test trigger, Ctrl+Alt+I/E import/export, Ctrl+Alt+C chat, Ctrl+Alt+V variables, Ctrl+Alt+L log folder; Actions page Delete, Ctrl+D, Ctrl+O, Ctrl+Up/Down, copy/paste, undo/redo (listed under Settings > About) | 4 |
 
 ## Delivery waves
 

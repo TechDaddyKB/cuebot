@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:shell="using:Cuebot.App.Shell"
              x:Class="Cuebot.App.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <Grid>
@@ -178,6 +179,24 @@
                   <TextBlock Classes="h2" Text="Startup switches" />
                   <SelectableTextBlock FontFamily="monospace" FontSize="12" TextWrapping="Wrap"
                                        Text="--headless   --minimized   --data &lt;folder&gt;   --reset-window   --backend=wayland|x11" />
+                </StackPanel>
+              </Border>
+              <Border Classes="card">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="h2" Text="Keyboard shortcuts" />
+                  <ItemsControl x:Name="ShortcutList" ItemsSource="{x:Static shell:AppShortcuts.All}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="shell:AppShortcut">
+                        <Grid ColumnDefinitions="170,*,110" Margin="0,2">
+                          <TextBlock Text="{Binding Gesture}" FontFamily="monospace" FontSize="12" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" />
+                          <TextBlock Grid.Column="2" Text="{Binding Where}" Classes="muted" FontSize="12" VerticalAlignment="Center" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="The Ctrl+Alt shortcuts are ignored while typing in a text field (AltGr types characters there). Page shortcuts work when the page's lists have focus." />
                 </StackPanel>
               </Border>
             </StackPanel>
