@@ -40,6 +40,10 @@ internal static class Program
             return 1;
         }
 
+        // AI clients spawn "Cuebot --mcp-stdio"; it only bridges stdio to the running instance's MCP endpoint.
+        if (Cuebot.Server.Mcp.McpStdioBridge.IsRequested(args))
+            return Cuebot.Server.Mcp.McpStdioBridge.Run(paths.Root);
+
         // One instance per data folder: a second launch brings the first one forward and exits.
         var instance = SingleInstance.TryAcquire(paths.Root);
         if (instance is null)

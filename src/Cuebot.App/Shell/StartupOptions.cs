@@ -38,6 +38,7 @@ public sealed record StartupOptions
           --data <folder>      Use this data folder (overrides CUEBOT_DATA).
           --reset-window       Forget the saved window size and position.
           --backend=<name>     Linux display backend: wayland or x11 (default: Wayland when available).
+          --mcp-stdio          Run as an MCP stdio server for a running Cuebot (for AI apps).
           --help               Show this help.
         """;
 

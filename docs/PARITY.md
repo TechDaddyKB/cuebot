@@ -94,8 +94,9 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | HTTP server (6 endpoints), UDP server (`DoAction`) | ✅ | 3 | localhost-only and off by default; origin checks |
 | Custom WebSocket servers/clients | ✅ | 3 | triggers, sub-actions, script functions |
 | Import/export (own format) + Streamer.bot import string importer | 🟡 | 4 | Cuebot bundles ✅ (string + .cuebot file, preview, conflicts, remapping). Streamer.bot strings: the wrapper is read, but its numeric type codes are undocumented, so most items import as disabled placeholders (extendable via `streamerbot-mapping.json`) |
-| MCP server, local REST API, in-app AI assistant | ➕ | 6 | roadmap |
-| Crash / problem reporting with info gatherer | ➕ | 6 | roadmap |
+| Local REST API (`/api/v1`, OpenAPI 3.1, SSE events) + MCP server (2025-06-18; 32 tools, resources, prompts; HTTP + `--mcp-stdio`) | ➕ ✅ | 5 | off by default, localhost, bearer token, confirmation for destructive tools |
+| In-app AI assistant (user connects their own AI provider) | ➕ | 6 | builds on the MCP tools |
+| Crash / problem reporting with info gatherer | ➕ ✅ | 5 | crash file + next-start banner, scrubbed report preview, GitHub issue link or `gh` |
 
 ## 8. Speaker.bot (text-to-speech)
 
@@ -119,7 +120,7 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | Windows + Linux native, Wayland-first, AppImage/Flatpak/AUR | ➕ | — |
 | Tray icon, minimize to tray, start minimized, headless mode, startup switches, single instance | ✅ | 2 |
 | Automatic backups (on start / before update), restore | ✅ | 2 |
-| Update checker / release channels | ❌ | 4 |
+| Update checker / release channels | ✅ (stable + pre-release; notifies, no auto-install) | 5 |
 | Light/dark theme toggle, keyboard shortcuts | 🟡 themes ✅, shortcuts pending | 4 |
 
 ## Delivery waves
@@ -131,8 +132,8 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 3. **Done (gaps in the tables above) — platforms & APIs:** full Twitch, YouTube, Kick; OBS completion; Streamer.bot-compatible WebSocket/HTTP/UDP servers,
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Mostly done — services:** points, quotes, credits, hotkeys, toasts, donations, import/export, action history and copy/paste/undo; still to do:
-   updater, mouse/keyboard output, multiple point currencies, Streamer.bot type-code mapping.
+   mouse/keyboard output, multiple point currencies, Streamer.bot type-code mapping.
 5. **Integrations:** stream apps, Elgato, VTube Studio, Voicemod, MIDI, voice control and the remaining services.
-6. **Beyond parity:** MCP server + REST API, in-app AI assistant, crash/problem reporting.
+6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.
