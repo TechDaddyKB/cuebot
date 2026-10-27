@@ -1,0 +1,114 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechEventsView"
+             x:DataType="sp:SpeechEventsViewModel">
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="1180" />
+      </Grid.ColumnDefinitions>
+    <StackPanel Margin="0,12,0,24">
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="Speak events" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="On" OffContent="Off" />
+          </Grid>
+          <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Voice alias" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Filter profile for viewer-written text" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding FilterProfiles}" SelectedItem="{Binding FilterProfile}" />
+          </Grid>
+          <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Minimum raid viewers" />
+            <NumericUpDown Grid.Row="1" Value="{Binding MinRaidViewers}" Minimum="0" Maximum="1000000" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Minimum cheer bits" />
+            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding MinCheerBits}" Minimum="0" Maximum="10000000" Increment="100" />
+            <TextBlock Grid.Column="4" Classes="label" Text="Minimum tip amount" />
+            <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MinTipAmount}" Minimum="0" Maximum="1000000" FormatString="0.00" Increment="1" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <CheckBox Content="Speak each follower only once per session" IsChecked="{Binding SuppressDuplicateFollows}" />
+            <Button Grid.Column="1" Content="Reset session" Command="{Binding ResetSessionCommand}"
+                    ToolTip.Tip="Forget which users already followed this session" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Grid ColumnDefinitions="240,12,*">
+        <Border Classes="card" VerticalAlignment="Top">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Event kinds" />
+            <ListBox Classes="list" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="sp:EventKindViewModel">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Label}" />
+                    <TextBlock Grid.Column="1" Classes="hint" Text="{Binding Summary}" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <StackPanel Grid.Column="2">
+          <ContentControl Content="{Binding SelectedKind}">
+            <ContentControl.ContentTemplate>
+              <DataTemplate DataType="sp:EventKindViewModel">
+                <Border Classes="card">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Classes="h2" Text="{Binding Label}" />
+                      <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="Spoken" OffContent="Silent" />
+                    </Grid>
+                    <StackPanel Spacing="3">
+                      <TextBlock Classes="label" Text="Voice alias" />
+                      <ComboBox ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" MaxWidth="360" HorizontalAlignment="Left" MinWidth="240" />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel>
+                        <TextBlock Classes="label" Text="Messages" />
+                        <TextBlock Classes="hint" Text="One enabled message is picked at random, weighted." />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Button Content="+ Message" Command="{Binding AddMessageCommand}" />
+                        <Button Content="Reset to default" Command="{Binding ResetToDefaultCommand}" IsEnabled="{Binding IsCustomized}" />
+                      </StackPanel>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Messages}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="sp:EventMessageViewModel">
+                          <Grid ColumnDefinitions="Auto,8,*,8,Auto,8,Auto" Margin="0,0,0,6">
+                            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" ToolTip.Tip="Enabled" />
+                            <TextBox Grid.Column="2" Text="{Binding Text}" />
+                            <NumericUpDown Grid.Column="4" Value="{Binding Weight}" Minimum="1" Maximum="100" Width="110"
+                                           ToolTip.Tip="Weight" />
+                            <Button Grid.Column="6" Content="Remove"
+                                    Command="{Binding $parent[ItemsControl].((sp:EventKindViewModel)DataContext).RemoveMessageCommand}"
+                                    CommandParameter="{Binding}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="label" Text="Variables" />
+              <SelectableTextBlock Classes="mono" Text="{Binding Variables}" TextWrapping="Wrap" />
+              <TextBlock Classes="hint" Text="%name% is the user, %gift% the number of gifted subs, %title% the reward, %input% the viewer's text. Missing values are left empty." />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </Grid>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechAliasesView"
+             x:DataType="sp:SpeechAliasesViewModel">
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="1180" />
+      </Grid.ColumnDefinitions>
+    <StackPanel Margin="0,12,0,24">
+      <Border Classes="card">
+        <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Classes="label" Text="Default alias" />
+          <ComboBox Grid.Row="1" x:Name="DefaultAliasPicker" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding DefaultAlias}" />
+          <TextBlock Grid.Row="2" Classes="hint" Text="Used whenever no alias is given or the given one does not exist." Margin="0,4,0,0" />
+          <TextBlock Grid.Column="2" Classes="label" Text="Highlighted messages alias" />
+          <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding HighlightChoices}" SelectedItem="{Binding HighlightAlias}" />
+          <TextBlock Grid.Column="2" Grid.Row="2" Classes="hint" Text="Channel-point highlighted chat messages speak with this voice." Margin="0,4,0,0" />
+        </Grid>
+      </Border>
+
+      <Grid ColumnDefinitions="260,12,*">
+        <Border Classes="card" VerticalAlignment="Top">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Voice aliases" />
+            <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+              <Button Content="+ Alias" Classes="accent" Command="{Binding AddCommand}" Margin="0,0,6,6" />
+              <Button Content="Duplicate" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" />
+              <Button Content="Remove" Command="{Binding RemoveCommand}" Margin="0,0,6,6" />
+            </WrapPanel>
+            <ListBox Classes="list" ItemsSource="{Binding Aliases}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="520">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="sp:VoiceAliasEditorViewModel">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Classes="hint" Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <StackPanel Grid.Column="2">
+          <Border Classes="card" IsVisible="{Binding !HasSelection}">
+            <TextBlock Classes="hint" Text="Add an alias: a named voice used by Speak sub-actions, chat reading, events and scripts. Change the voice behind an alias without editing actions." />
+          </Border>
+          <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
+            <ContentControl.ContentTemplate>
+              <DataTemplate DataType="sp:VoiceAliasEditorViewModel">
+                <Border Classes="card">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+                      <TextBlock Classes="label" Text="Name" />
+                      <TextBox Grid.Row="1" Text="{Binding Name}" />
+                      <TextBlock Grid.Column="2" Classes="label" Text="Output device" />
+                      <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding Devices}" SelectedItem="{Binding Device}" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Classes="h2" Text="Voices" Margin="0,6,0,0" />
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="label" Text="Pick" VerticalAlignment="Center" IsVisible="{Binding IsMultiVoice}" />
+                        <ComboBox ItemsSource="{Binding Selections}" SelectedItem="{Binding Selection}" MinWidth="140"
+                                  IsVisible="{Binding IsMultiVoice}" />
+                        <Button Content="+ Voice" Command="{Binding AddVoiceCommand}" />
+                      </StackPanel>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Voices}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="sp:AliasVoiceViewModel">
+                          <Border Classes="inset" Margin="0,0,0,6">
+                            <StackPanel Spacing="4">
+                              <Grid ColumnDefinitions="240,8,*,8,Auto,8,Auto">
+                                <ComboBox ItemsSource="{Binding EngineChoices}" SelectedItem="{Binding Engine}" />
+                                <ComboBox Grid.Column="2" ItemsSource="{Binding VoiceOptions}" SelectedItem="{Binding SelectedVoice}"
+                                          PlaceholderText="Voice">
+                                  <ComboBox.ItemTemplate>
+                                    <DataTemplate DataType="sp:VoiceOption">
+                                      <TextBlock>
+                                        <Run Text="{Binding Name}" /><Run Text="   " /><Run Text="{Binding Detail}" Foreground="{DynamicResource CuebotMuted}" />
+                                      </TextBlock>
+                                    </DataTemplate>
+                                  </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowWeight}">
+                                  <TextBlock Classes="label" Text="Weight" VerticalAlignment="Center" Margin="0" />
+                                  <NumericUpDown Value="{Binding Weight}" Minimum="1" Maximum="100" Width="110"
+                                                 ToolTip.Tip="Relative chance in random selection" />
+                                </StackPanel>
+                                <Button Grid.Column="6" Content="Remove" IsVisible="{Binding CanRemove}"
+                                        Command="{Binding $parent[ItemsControl].((sp:VoiceAliasEditorViewModel)DataContext).RemoveVoiceCommand}"
+                                        CommandParameter="{Binding}" />
+                              </Grid>
+                              <TextBlock Classes="hint" Text="{Binding Status}" IsVisible="{Binding HasStatus}" />
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
+                      <TextBlock Classes="label" Text="{Binding Volume, StringFormat='Volume: {0:0}%'}" />
+                      <Slider Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding Volume}" />
+                      <TextBlock Grid.Column="2" Classes="label" Text="{Binding Rate, StringFormat='Rate: {0:0}'}" />
+                      <Slider Grid.Column="2" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Rate}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                      <TextBlock Grid.Column="4" Classes="label" Text="{Binding Pitch, StringFormat='Pitch: {0:0}'}" />
+                      <Slider Grid.Column="4" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Pitch}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                    </Grid>
+                    <StackPanel Spacing="3" IsVisible="{Binding HasStyles}">
+                      <TextBlock Classes="label" Text="Speaking style" />
+                      <ComboBox ItemsSource="{Binding Styles}" SelectedItem="{Binding Style}" MaxWidth="320" HorizontalAlignment="Left" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+
+          <Border Classes="card" IsVisible="{Binding HasSelection}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="h2" Text="Test this alias" />
+              <Grid ColumnDefinitions="*,8,Auto">
+                <TextBox Text="{Binding TestText}" />
+                <Button Grid.Column="2" Content="Test voice" Classes="accent" Command="{Binding TestCommand}" />
+              </Grid>
+              <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </Grid>
+  </ScrollViewer>
+</UserControl>

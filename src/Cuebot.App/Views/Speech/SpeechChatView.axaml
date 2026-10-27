@@ -1,0 +1,155 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             xmlns:sv="using:Cuebot.App.Views.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechChatView"
+             x:DataType="sp:SpeechChatViewModel">
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="1180" />
+      </Grid.ColumnDefinitions>
+    <StackPanel Margin="0,12,0,24">
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="Read chat aloud" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding SpeakChatEnabled}" OnContent="On" OffContent="Off" />
+          </Grid>
+          <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Mode" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}"
+                      ToolTip.Tip="All: every message. Command: only speaking commands." />
+            <TextBlock Grid.Column="2" Classes="label" Text="Voice alias" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+            <TextBlock Grid.Column="4" Classes="label" Text="Filter profile" />
+            <ComboBox Grid.Column="4" Grid.Row="1" ItemsSource="{Binding FilterProfiles}" SelectedItem="{Binding FilterProfile}" />
+          </Grid>
+          <StackPanel Spacing="3">
+            <TextBlock Classes="label" Text="Who is read aloud" />
+            <sv:AudiencePicker DataContext="{Binding Permission}" />
+            <CheckBox Content="Always read users marked Forced" IsChecked="{Binding AllowForced}" />
+          </StackPanel>
+          <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto">
+            <TextBlock Classes="label" Text="Message template" />
+            <TextBox Grid.Row="1" Text="{Binding Template}" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Template when the same user speaks again soon" />
+            <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding RepeatTemplate}" />
+            <TextBlock Grid.Row="3" Classes="label" Text="Platforms (comma separated, empty for all)" />
+            <TextBox Grid.Row="4" Text="{Binding Platforms}" PlaceholderText="All platforms (e.g. Twitch, Rumble)" />
+            <TextBlock Grid.Column="2" Grid.Row="3" Classes="label" Text="Seconds the repeat template applies (0 is off)" />
+            <NumericUpDown Grid.Column="2" Grid.Row="4" Value="{Binding NameGraceSeconds}" Minimum="0" Maximum="3600" />
+          </Grid>
+          <TextBlock Classes="hint" Text="{Binding TemplateVariables, StringFormat='Variables: {0} and every chat trigger argument.'}" />
+          <WrapPanel>
+            <CheckBox Content="Speak nicknames instead of names" IsChecked="{Binding UseNicknames}" Margin="0,0,16,0" />
+            <CheckBox Content="Random voice per user" IsChecked="{Binding RandomVoices}" Margin="0,0,16,0"
+                      ToolTip.Tip="Users without an alias get a random voice (minus the active voice ignore profile)" />
+            <CheckBox Content="Keep a user's random voice (sticky)" IsChecked="{Binding StickyRandom}" IsEnabled="{Binding RandomVoices}" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="The !tts command" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CommandsEnabled}" OnContent="On" OffContent="Off" />
+          </Grid>
+          <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Command word" />
+            <TextBox Grid.Row="1" Text="{Binding Prefix}" PlaceholderText="!tts" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Viewer cooldown (seconds)" />
+            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding ViewerCooldownSeconds}" Minimum="0" Maximum="3600" />
+            <TextBlock Grid.Column="4" Classes="label" Text="Aliases viewers may pick (empty: all)" />
+            <TextBox Grid.Column="4" Grid.Row="1" Text="{Binding ViewerAliases}" PlaceholderText="All aliases" />
+          </Grid>
+          <StackPanel Spacing="3">
+            <TextBlock Classes="label" Text="Reply when not allowed (empty for none)" />
+            <TextBox Text="{Binding NotAllowedText}" />
+          </StackPanel>
+          <WrapPanel>
+            <CheckBox Content="Silence chat replies" IsChecked="{Binding SilenceOutput}" Margin="0,0,16,0" />
+            <CheckBox Content="Viewers may set their own nickname" IsChecked="{Binding AllowViewerNicknames}" />
+          </WrapPanel>
+
+          <TextBlock Classes="label" Text="Sub-commands" Margin="0,6,0,0" />
+          <TextBlock Classes="hint" Text="Unticked sub-commands are left to the broadcaster. Moderators skip cooldowns; an empty cooldown uses the viewer cooldown." />
+          <Grid ColumnDefinitions="200,90,*,140,70" Margin="10,4,10,0">
+            <TextBlock Classes="label" Text="Command" />
+            <TextBlock Grid.Column="1" Classes="label" Text="Kind" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Allowed for" />
+            <TextBlock Grid.Column="3" Classes="label" Text="Cooldown" />
+          </Grid>
+          <Border Classes="inset" Padding="10,4">
+            <ItemsControl ItemsSource="{Binding SubCommands}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="sp:SubCommandRowViewModel">
+                  <Grid ColumnDefinitions="200,90,*,140,70" Margin="0,3">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" VerticalAlignment="Center" />
+                      <StackPanel VerticalAlignment="Center">
+                        <TextBlock Classes="mono" Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Classes="hint" Text="{Binding Usage}" TextTrimming="CharacterEllipsis" MaxWidth="160" />
+                      </StackPanel>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="hint" Text="{Binding Kind}" VerticalAlignment="Center" />
+                    <Panel Grid.Column="2" IsEnabled="{Binding Enabled}" VerticalAlignment="Center">
+                      <sv:AudiencePicker DataContext="{Binding Audience}" />
+                    </Panel>
+                    <NumericUpDown Grid.Column="3" Value="{Binding Cooldown}" Minimum="0" Maximum="3600" Margin="0,0,8,0"
+                                   IsVisible="{Binding IsViewerCommand}" VerticalAlignment="Center" />
+                    <Button Grid.Column="4" Content="Reset" Command="{Binding ResetCommand}" IsEnabled="{Binding IsCustomized}"
+                            VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="Speaking commands" />
+          <Grid ColumnDefinitions="*,16,2*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Prefixes whose text is spoken" />
+            <TextBox Grid.Row="1" Text="{Binding SpeakCommands}" PlaceholderText="!say, !&quot;" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Who may use them" />
+            <sv:AudiencePicker Grid.Column="2" Grid.Row="1" DataContext="{Binding SpeakCommandPermission}" VerticalAlignment="Center" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="label" Text="Custom commands with their own voice" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="+ Command" Command="{Binding AddCustomCommandCommand}" />
+          </Grid>
+          <ItemsControl ItemsSource="{Binding CustomCommands}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="sp:CustomCommandViewModel">
+                <Border Classes="inset" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="160,8,200,12,*,8,Auto">
+                    <TextBox Text="{Binding Text}" PlaceholderText="!pirate" />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+                    <sv:AudiencePicker Grid.Column="4" DataContext="{Binding Audience}" VerticalAlignment="Center" />
+                    <Button Grid.Column="6" Content="Remove"
+                            Command="{Binding $parent[ItemsControl].((sp:SpeechChatViewModel)DataContext).RemoveCustomCommandCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="h2" Text="Moderation" />
+          <CheckBox Content="Stop a message when a moderator deletes it" IsChecked="{Binding SkipOnMessageDeleted}" />
+          <CheckBox Content="Stop a user's messages when they are timed out" IsChecked="{Binding SkipOnTimeout}" />
+          <CheckBox Content="Stop a user's messages when they are banned" IsChecked="{Binding SkipOnBan}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+  </ScrollViewer>
+</UserControl>

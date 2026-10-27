@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechOverviewView"
+             x:DataType="sp:SpeechOverviewViewModel">
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="1180" />
+      </Grid.ColumnDefinitions>
+    <Grid ColumnDefinitions="*,12,*" Margin="0,12,0,24">
+      <StackPanel>
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h2" Text="Switches" />
+            <ToggleSwitch x:Name="EnabledSwitch" Content="Speech enabled" IsChecked="{Binding Enabled}"
+                          OnContent="On — texts are spoken" OffContent="Off — new texts are ignored" />
+            <ToggleSwitch Content="Speak events (follows, subs, raids...)" IsChecked="{Binding EventsEnabled}" />
+            <TextBlock Classes="hint" Text="Turning speech off stops the current text and clears the queue." />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="h2" Text="{Binding QueueHeader}" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                <ToggleButton Content="Pause" IsChecked="{Binding Paused}" />
+                <Button Content="Skip" Command="{Binding SkipCommand}" />
+                <Button Content="Clear" Command="{Binding ClearQueueCommand}" />
+              </StackPanel>
+            </Grid>
+            <Border Classes="inset">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="label" Text="Now speaking" />
+                <TextBlock Text="{Binding CurrentText}" TextWrapping="Wrap" Classes.hint="{Binding !IsSpeaking}" />
+              </StackPanel>
+            </Border>
+            <TextBlock Classes="hint" Text="Nothing is waiting." IsVisible="{Binding !HasQueue}" />
+            <ItemsControl ItemsSource="{Binding Queue}" IsVisible="{Binding HasQueue}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="sp:QueueItemViewModel">
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Classes="hint" Text="{Binding Meta}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Stop user" VerticalAlignment="Center" IsVisible="{Binding HasUser}"
+                            ToolTip.Tip="Drop everything this user has waiting"
+                            Command="{Binding $parent[ItemsControl].((sp:SpeechOverviewViewModel)DataContext).StopUserCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <StackPanel Grid.Column="2">
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Test" />
+            <TextBox Text="{Binding TestText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" />
+            <Grid ColumnDefinitions="*,8,Auto">
+              <ComboBox ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding TestAlias}" />
+              <Button Grid.Column="2" Content="Speak" Classes="accent" Command="{Binding SpeakCommand}" />
+            </Grid>
+            <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Output" />
+            <TextBlock Classes="label" Text="{Binding MasterVolume, StringFormat='Master volume: {0:0}%'}" />
+            <Slider Minimum="0" Maximum="100" Value="{Binding MasterVolume}" />
+            <TextBlock Classes="label" Text="Output device" />
+            <Grid ColumnDefinitions="*,8,Auto">
+              <ComboBox ItemsSource="{Binding OutputDevices}" SelectedItem="{Binding OutputDevice}" />
+              <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshDevicesCommand}" />
+            </Grid>
+            <TextBlock Classes="hint" Text="Aliases can pick their own device; the rest play here." />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="h2" Text="Recent history" />
+            <TextBlock Classes="hint" Text="Nothing has been spoken yet this session." IsVisible="{Binding !HasHistory}" />
+            <ScrollViewer MaxHeight="360" IsVisible="{Binding HasHistory}">
+              <ItemsControl ItemsSource="{Binding History}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="sp:HistoryItemViewModel">
+                    <Grid ColumnDefinitions="64,*" Margin="0,3">
+                      <TextBlock Classes="mono hint" Text="{Binding Time}" />
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Classes.hint="{Binding Skipped}" />
+                        <TextBlock Classes="hint" Text="{Binding Meta}" />
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+  </Grid>
+  </ScrollViewer>
+</UserControl>

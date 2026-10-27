@@ -1,0 +1,195 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             x:Class="Cuebot.App.Views.Speech.SpeechFiltersView"
+             x:DataType="sp:SpeechFiltersViewModel">
+  <ScrollViewer>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MaxWidth="1180" />
+      </Grid.ColumnDefinitions>
+    <StackPanel Margin="0,12,0,24">
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Which profile applies" />
+          <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Chat messages" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding FilterProfileChoices}" SelectedItem="{Binding ChatProfile}" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Events (viewer-written parts)" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding FilterProfileChoices}" SelectedItem="{Binding EventsProfile}" />
+          </Grid>
+          <TextBlock Classes="hint" Text="Speak sub-actions choose a profile per action. Sources without one use the Default profile." />
+        </StackPanel>
+      </Border>
+
+      <Grid ColumnDefinitions="220,12,*">
+        <Border Classes="card" VerticalAlignment="Top">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Filter profiles" />
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+              <Button Content="+ Profile" Classes="accent" Command="{Binding AddProfileCommand}" />
+              <Button Content="Remove" Command="{Binding RemoveProfileCommand}" />
+            </StackPanel>
+            <ListBox Classes="list" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" MinHeight="200">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="sp:FilterProfileViewModel">
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <ContentControl Grid.Column="2" Content="{Binding SelectedProfile}">
+          <ContentControl.ContentTemplate>
+            <DataTemplate DataType="sp:FilterProfileViewModel">
+              <Border Classes="card">
+                <StackPanel Spacing="10">
+                  <StackPanel Spacing="3">
+                    <TextBlock Classes="label" Text="Name" />
+                    <TextBox Text="{Binding Name}" IsEnabled="{Binding CanRename}" MaxWidth="320" HorizontalAlignment="Left" MinWidth="240" />
+                  </StackPanel>
+
+                  <TextBlock Classes="h2" Text="Bad words" Margin="0,4,0,0" />
+                  <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="label" Text="Words (one per line or comma separated)" />
+                    <TextBox Grid.Row="1" Text="{Binding BadWords}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" MaxHeight="160" />
+                    <TextBlock Grid.Column="2" Classes="label" Text="When a message contains one" />
+                    <StackPanel Grid.Column="2" Grid.Row="1" Spacing="6">
+                      <ComboBox ItemsSource="{Binding BadWordActions}" SelectedItem="{Binding BadWordAction}" />
+                      <TextBox Text="{Binding BadWordReplacement}" PlaceholderText="Spoken instead (e.g. beep)" IsVisible="{Binding IsReplacingBadWords}" />
+                      <TextBlock Classes="hint" Text="Strip removes the word, Skip drops the message, Replace speaks the replacement." />
+                    </StackPanel>
+                  </Grid>
+
+                  <TextBlock Classes="h2" Text="Links and length" Margin="0,4,0,0" />
+                  <Grid ColumnDefinitions="*,16,*,16,*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto,Auto">
+                    <TextBlock Classes="label" Text="Links" />
+                    <ComboBox Grid.Row="1" ItemsSource="{Binding UrlModes}" SelectedItem="{Binding UrlMode}" />
+                    <TextBlock Grid.Column="2" Classes="label" Text="Link word" IsVisible="{Binding IsReplacingUrls}" />
+                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding UrlWord}" IsVisible="{Binding IsReplacingUrls}" />
+                    <TextBlock Grid.Column="4" Classes="label" Text="Max words (0: off)" />
+                    <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MaxWords}" Minimum="0" Maximum="10000" />
+                    <TextBlock Grid.Column="6" Classes="label" Text="Max characters" />
+                    <NumericUpDown Grid.Column="6" Grid.Row="1" Value="{Binding MaxCharacters}" Minimum="0" Maximum="100000" Increment="10" />
+                    <TextBlock Grid.Row="3" Grid.ColumnSpan="3" Classes="label" Text="Shorten repeated characters to (0: off)" />
+                    <NumericUpDown Grid.Row="4" Value="{Binding MaxRepeatedCharacters}" Minimum="0" Maximum="100" />
+                    <TextBlock Grid.Column="4" Grid.Row="3" Grid.ColumnSpan="3" Classes="label" Text="Shorten repeated words to (0: off)" />
+                    <NumericUpDown Grid.Column="4" Grid.Row="4" Value="{Binding MaxRepeatedWords}" Minimum="0" Maximum="100" />
+                    <TextBlock Grid.Column="6" Grid.Row="5" Classes="hint" Text="{Binding MaxCharactersHint}" Margin="0,4,0,0" />
+                  </Grid>
+
+                  <TextBlock Classes="h2" Text="Emotes and emoji" Margin="0,4,0,0" />
+                  <WrapPanel>
+                    <CheckBox Content="Strip emotes" IsChecked="{Binding StripEmotes}" Margin="0,0,16,0" />
+                    <CheckBox Content="Keep the first of each emote" IsChecked="{Binding AllowFirstEmote}" IsEnabled="{Binding StripEmotes}" Margin="0,0,16,0" />
+                    <CheckBox Content="Strip emoji" IsChecked="{Binding StripEmoji}" />
+                  </WrapPanel>
+                  <StackPanel Spacing="3">
+                    <TextBlock Classes="label" Text="Emotes never stripped" />
+                    <TextBox Text="{Binding AllowedEmotes}" PlaceholderText="Kappa, LUL" />
+                  </StackPanel>
+
+                  <TextBlock Classes="h2" Text="Ignore" Margin="0,4,0,0" />
+                  <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto">
+                    <TextBlock Classes="label" Text="Messages starting with" />
+                    <TextBox Grid.Row="1" Text="{Binding IgnoredPrefixes}" PlaceholderText="!, #" />
+                    <TextBlock Grid.Column="2" Classes="label" Text="Users" />
+                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding IgnoredUsers}" PlaceholderText="Comma separated" />
+                    <StackPanel Grid.Row="3" Spacing="3">
+                      <CheckBox Content="Ignore chat bots" IsChecked="{Binding IgnoreBots}" />
+                      <TextBlock Classes="hint" Text="{Binding KnownBots, StringFormat='Known bots: {0}'}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Grid.Row="3" Spacing="3">
+                      <TextBlock Classes="label" Text="More bot names" />
+                      <TextBox Text="{Binding BotNames}" IsEnabled="{Binding IgnoreBots}" PlaceholderText="mybot" />
+                    </StackPanel>
+                    <CheckBox Grid.Row="4" Grid.ColumnSpan="3" Content="Ignore Twitch shared-chat messages from other channels"
+                              IsChecked="{Binding IgnoreSharedChat}" Margin="0,6,0,0" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ContentControl.ContentTemplate>
+        </ContentControl>
+      </Grid>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <TextBlock Classes="h2" Text="Replacements" Margin="0" />
+              <TextBlock Classes="hint" Text="Applied to every spoken text, after the profile filters. Literal matches ignore case." />
+            </StackPanel>
+            <Button Grid.Column="1" Content="+ Replacement" Command="{Binding AddReplacementCommand}" VerticalAlignment="Center" />
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Replacements}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="sp:ReplacementViewModel">
+                <StackPanel Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,8,Auto,8,*,8,Auto,8,Auto">
+                    <TextBox Text="{Binding Find}" PlaceholderText="Find" />
+                    <TextBlock Grid.Column="2" Text="→" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="4" Text="{Binding Replace}" PlaceholderText="Replace with" />
+                    <CheckBox Grid.Column="6" Content="Regex" IsChecked="{Binding IsRegex}" />
+                    <Button Grid.Column="8" Content="Remove"
+                            Command="{Binding $parent[ItemsControl].((sp:SpeechFiltersViewModel)DataContext).RemoveReplacementCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                  <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding HasError}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Voice ignore profiles" />
+          <TextBlock Classes="hint" Text="Voices and locales left out when a user gets a random voice." />
+          <Grid ColumnDefinitions="220,12,*">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Top" Spacing="3" Margin="0,0,0,8">
+                <TextBlock Classes="label" Text="Active profile" />
+                <ComboBox ItemsSource="{Binding IgnoreChoices}" SelectedItem="{Binding ActiveIgnoreProfile}" />
+              </StackPanel>
+              <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                <Button Content="+ Profile" Command="{Binding AddIgnoreProfileCommand}" />
+                <Button Content="Remove" Command="{Binding RemoveIgnoreProfileCommand}" />
+              </StackPanel>
+              <ListBox Classes="list" ItemsSource="{Binding IgnoreProfiles}" SelectedItem="{Binding SelectedIgnoreProfile}" MinHeight="100">
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="sp:VoiceIgnoreProfileViewModel">
+                    <TextBlock Text="{Binding Name}" />
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </DockPanel>
+            <ContentControl Grid.Column="2" Content="{Binding SelectedIgnoreProfile}" IsVisible="{Binding HasIgnoreProfile}">
+              <ContentControl.ContentTemplate>
+                <DataTemplate DataType="sp:VoiceIgnoreProfileViewModel">
+                  <StackPanel Spacing="8">
+                    <StackPanel Spacing="3">
+                      <TextBlock Classes="label" Text="Name" />
+                      <TextBox Text="{Binding Name}" />
+                    </StackPanel>
+                    <StackPanel Spacing="3">
+                      <TextBlock Classes="label" Text="Voices (one per line: engine|voice id, or a voice id)" />
+                      <TextBox Text="{Binding Voices}" AcceptsReturn="True" MinHeight="70" MaxHeight="160" PlaceholderText="windows|Microsoft David" />
+                    </StackPanel>
+                    <StackPanel Spacing="3">
+                      <TextBlock Classes="label" Text="Locales (comma separated prefixes)" />
+                      <TextBox Text="{Binding Locales}" PlaceholderText="de, en-GB" />
+                    </StackPanel>
+                  </StackPanel>
+                </DataTemplate>
+              </ContentControl.ContentTemplate>
+            </ContentControl>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+  </ScrollViewer>
+</UserControl>
