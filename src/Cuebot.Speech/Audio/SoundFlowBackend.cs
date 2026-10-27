@@ -24,12 +24,12 @@ internal sealed class SoundFlowBackend : IAudioBackend
     private static readonly TimeSpan IdleClose = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan DeviceCacheTime = TimeSpan.FromSeconds(2);
 
-    private static readonly AudioFormat OutputFormat = new()
+    private static readonly SoundFlow.Structs.AudioFormat OutputFormat = new()
     {
         Format = SampleFormat.F32, Channels = Channels, SampleRate = SampleRate, Layout = ChannelLayout.Stereo,
     };
 
-    private static readonly AudioFormat CaptureFormat = new()
+    private static readonly SoundFlow.Structs.AudioFormat CaptureFormat = new()
     {
         Format = SampleFormat.F32, Channels = 1, SampleRate = SampleRate, Layout = ChannelLayout.Mono,
     };

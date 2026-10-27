@@ -30,14 +30,25 @@ internal sealed class EspeakEngine : ITtsEngine
         return EspeakVoiceParser.Parse(Encoding.UTF8.GetString(result.Output));
     }
 
-    public async Task<byte[]> SynthesizeAsync(string text, string voiceId, int rate, CancellationToken ct)
+    public async Task<SynthesizedAudio> SynthesizeAsync(SynthesisRequest request, CancellationToken ct)
     {
-        List<string> arguments = ["-b", "1", "-s", RateToWordsPerMinute(rate).ToString(CultureInfo.InvariantCulture), "--stdout", "--stdin"];
-        if (!string.IsNullOrWhiteSpace(voiceId)) arguments.InsertRange(0, ["-v", voiceId]);
         // Text goes over stdin so input starting with '-' is never parsed as an option.
-        var result = await RunAsync(arguments, text, ct).ConfigureAwait(false);
+        var result = await RunAsync(BuildArguments(request), request.Text, ct).ConfigureAwait(false);
         // espeak streams to stdout with placeholder sizes; rebuilding gives a header players accept.
-        return Wav.Normalize(result.Output);
+        return SynthesizedAudio.Wav(Wav.Normalize(result.Output));
+    }
+
+    internal static List<string> BuildArguments(SynthesisRequest request)
+    {
+        List<string> arguments =
+        [
+            "-b", "1",
+            "-s", RateToWordsPerMinute(request.Rate).ToString(CultureInfo.InvariantCulture),
+            "-p", PitchToEspeak(request.Pitch).ToString(CultureInfo.InvariantCulture),
+            "--stdout", "--stdin",
+        ];
+        if (!string.IsNullOrWhiteSpace(request.VoiceId)) arguments.InsertRange(0, ["-v", request.VoiceId]);
+        return arguments;
     }
 
     /// <summary>Maps the -10..10 rate scale to espeak's words per minute (80..450, 175 normal).</summary>
@@ -49,6 +60,9 @@ internal sealed class EspeakEngine : ITtsEngine
             : (MaximumWordsPerMinute - NormalWordsPerMinute) / 10.0;
         return (int)Math.Round(NormalWordsPerMinute + clamped * step);
     }
+
+    /// <summary>Maps the -10..10 pitch scale to espeak's 0..99 (50 normal).</summary>
+    internal static int PitchToEspeak(int pitch) => Math.Clamp(50 + Math.Clamp(pitch, -10, 10) * 5, 0, 99);
 
     private async Task<ProcessResult> RunAsync(IEnumerable<string> arguments, string? input, CancellationToken ct)
     {

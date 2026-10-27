@@ -110,4 +110,17 @@ public class ElevenLabsEngineTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => engine.GetVoicesAsync(CancellationToken.None));
         Assert.Null(handler.Request);
     }
+
+    [Fact]
+    public async Task Pitch_maps_to_stability_like_speakerbot()
+    {
+        var (engine, handler) = Create(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) });
+
+        await engine.SynthesizeAsync(new SynthesisRequest("hi", "v") { Pitch = -4 }, CancellationToken.None);
+
+        using var body = JsonDocument.Parse(handler.Body!);
+        var settings = body.RootElement.GetProperty("voice_settings");
+        Assert.Equal(0.3, settings.GetProperty("stability").GetDouble());
+        Assert.False(settings.TryGetProperty("speed", out _));
+    }
 }

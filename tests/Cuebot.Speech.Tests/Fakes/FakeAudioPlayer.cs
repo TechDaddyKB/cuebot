@@ -16,7 +16,7 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public async Task PlayAsync(byte[] wav, PlaybackOptions options, CancellationToken ct)
     {
         LastOptions = options;
-        var playback = new Playback(wav);
+        var playback = new Playback(wav, options);
         _started.Writer.TryWrite(playback);
         if (Block) await playback.Released.Task.WaitAsync(ct);
     }
@@ -24,11 +24,15 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     /// <summary>Waits for the next playback to start.</summary>
     public async Task<Playback> NextAsync() =>
         await _started.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+    /// <summary>Number of started playbacks not yet taken with <see cref="NextAsync"/>.</summary>
+    public int Pending => _started.Reader.Count;
 }
 
-internal sealed class Playback(byte[] wav)
+internal sealed class Playback(byte[] wav, PlaybackOptions options)
 {
     public byte[] Wav { get; } = wav;
+    public PlaybackOptions Options { get; } = options;
     public TaskCompletionSource Released { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public void Release() => Released.TrySetResult();
 }
