@@ -25,6 +25,9 @@ public partial class App : Application
             var ctx = ShellContext.Current ??= CreateDefaultContext();
             var host = ctx.Host = AppHost.Create(ctx.Paths, ctx.Settings);
             ctx.FlushNotes(host.Get<AppLog>());
+            // Sub-actions that edit the live profile (e.g. "Set action state") run on the UI thread, where view models read it.
+            host.Get<Cuebot.Core.Actions.ProfileService>().EditDispatcher =
+                edit => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(edit).GetTask();
             _shell = new DesktopShell(this, desktop, ctx, host);
             _shell.Start();
             // Begin flushing as soon as shutdown starts, without blocking the UI thread (no deadlock on async

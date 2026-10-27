@@ -100,7 +100,7 @@ public sealed partial class ActionItemViewModel : ObservableObject
     {
         var definition = new SubActionDefinition { Type = handler.TypeId };
         foreach (var p in handler.Parameters) definition.Parameters[p.Key] = p.DefaultValue;
-        foreach (var branch in handler.Branches) definition.Branch(branch);
+        foreach (var branch in SubActionBranches.For(handler, definition)) definition.Branch(branch);
         var item = target.List.Insert(target.Index, definition);
         Selected = item;
         return item;

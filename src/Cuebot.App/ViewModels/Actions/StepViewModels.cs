@@ -64,7 +64,26 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
         Handler = owner.Registry.GetSubAction(definition.Type);
         Parameters = Handler?.Parameters.Select(d => ParameterViewModel.Create(d, definition.Parameters, OnParameterChanged)).ToArray() ?? [];
         Branches = new ObservableCollection<BranchViewModel>(
-            (Handler?.Branches ?? []).Select(name => new BranchViewModel(this, name, new StepListViewModel(definition.Branch(name), owner))));
+            CurrentBranchNames().Select(name => new BranchViewModel(this, name, new StepListViewModel(definition.Branch(name), owner))));
+    }
+
+    /// <summary>Declared branches, or for dynamic handlers (e.g. Switch cases) the ones its parameters define now.</summary>
+    private IReadOnlyList<string> CurrentBranchNames() =>
+        Handler is null ? [] : SubActionBranches.For(Handler, Definition);
+
+    /// <summary>
+    /// Re-syncs branch view models after a parameter edit changed a dynamic handler's branches. Child steps of a
+    /// branch that disappears stay in the JSON (they reappear if the case comes back) but are no longer shown.
+    /// </summary>
+    private bool RefreshBranches()
+    {
+        var names = CurrentBranchNames();
+        if (names.SequenceEqual(Branches.Select(b => b.Name))) return false;
+        Branches.Clear();
+        foreach (var name in names)
+            Branches.Add(new BranchViewModel(this, name, new StepListViewModel(Definition.Branch(name), _owner)));
+        OnPropertyChanged(nameof(HasBranches));
+        return true;
     }
 
     public SubActionDefinition Definition { get; }
@@ -96,7 +115,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
     private void OnParameterChanged()
     {
         OnPropertyChanged(nameof(Summary));
-        _owner.MarkChanged(structural: false);
+        _owner.MarkChanged(structural: RefreshBranches());
     }
 }
 
