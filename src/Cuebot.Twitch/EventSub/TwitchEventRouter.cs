@@ -31,7 +31,8 @@ internal sealed class SentMessageTracker(int capacity = 200)
 
 /// <summary>
 /// Turns EventSub notifications into the events Cuebot publishes: the mapped Twitch event plus what needs memory
-/// across events (untimeouts, chat mode changes, hype train level ups, pyramids, bot/internal flags) and the
+/// across events (untimeouts, chat mode changes, hype train level ups, pyramids, sub and reward counters,
+/// bot/internal flags) and the
 /// platform-neutral moderation events ("chat.messageDeleted", "chat.userBanned", "chat.userTimedOut").
 /// </summary>
 internal sealed class TwitchEventRouter(
@@ -39,7 +40,8 @@ internal sealed class TwitchEventRouter(
     Func<string> broadcasterId,
     Func<string> botUserId,
     SentMessageTracker sent,
-    Func<int>? pyramidMinWidth = null)
+    Func<int>? pyramidMinWidth = null,
+    TwitchCounters? counters = null)
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, DateTimeOffset> _timeouts = new(StringComparer.Ordinal);
@@ -133,6 +135,21 @@ internal sealed class TwitchEventRouter(
                 lock (_gate) _hypeTrainLevel = 0;
                 events.Add(primary);
                 break;
+            case TwitchEventTypes.RewardRedemption when counters is not null:
+                var (counter, userCounter) = counters.CountRedemption(Str(primary, "rewardId"), Str(primary, "userId"));
+                events.Add(Retype(primary, primary.Type, a =>
+                {
+                    a["counter"] = counter;
+                    a["userCounter"] = userCounter;
+                }));
+                break;
+            case TwitchEventTypes.Sub or TwitchEventTypes.Resub when counters is not null:
+                events.AddRange(CountSub(primary, counters));
+                break;
+            case TwitchEventTypes.StreamOnline:
+                counters?.ResetStreamCounters();
+                events.Add(primary);
+                break;
             default:
                 events.Add(primary);
                 break;
@@ -155,6 +172,17 @@ internal sealed class TwitchEventRouter(
             yield return after.SubscriberMode ? TwitchEventTypes.SubscriberModeOn : TwitchEventTypes.SubscriberModeOff;
         if (before.UniqueChatMode != after.UniqueChatMode)
             yield return after.UniqueChatMode ? TwitchEventTypes.UniqueModeOn : TwitchEventTypes.UniqueModeOff;
+    }
+
+    /// <summary>A sub or resub: remembered as the latest subscriber, counted, plus the rollover event when due.</summary>
+    private IEnumerable<BotEvent> CountSub(BotEvent sub, TwitchCounters counters)
+    {
+        var isResub = sub.Type == TwitchEventTypes.Resub;
+        var isGift = sub.Args.GetValueOrDefault("isGift") is true;
+        counters.SetLatestSubscriber(Str(sub, "userId"), Str(sub, "userName"), Str(sub, "user"), Str(sub, "tier"), isGift, time.GetUtcNow());
+        var (state, rollover) = counters.CountSub(isResub, isGift);
+        yield return state is null ? sub : Retype(sub, sub.Type, a => a["subCounter"] = state.Count);
+        if (rollover is not null) yield return rollover;
     }
 
     private IEnumerable<BotEvent> Pyramids(BotEvent message)

@@ -8,14 +8,21 @@ namespace Cuebot.App.ViewModels.Twitch;
 /// <summary>One reward in the Rewards tab, editable when Cuebot created it.</summary>
 public sealed partial class TwitchRewardItem : ObservableObject
 {
-    public TwitchRewardItem(TwitchReward? reward = null)
+    private readonly TwitchCounters _counters;
+
+    /// <param name="counters">Where the group and counter settings live; without it they are kept only in memory.</param>
+    public TwitchRewardItem(TwitchReward? reward = null, TwitchCounters? counters = null)
     {
+        _counters = counters ??= new TwitchCounters(() => new TwitchSettings(), () => { });
         if (reward is null)
         {
             IsNew = true;
             IsManageable = true;
             return;
         }
+        // Set before Id, so loading them does not save them back.
+        Group = counters.GetGroup(reward.Id);
+        (PersistCounter, PersistUserCounter) = counters.GetPersistence(reward.Id);
         Id = reward.Id;
         IsManageable = reward.IsManageable;
         Title = reward.Title;
@@ -48,8 +55,41 @@ public sealed partial class TwitchRewardItem : ObservableObject
     [ObservableProperty] private decimal _maxPerUserPerStream;
     [ObservableProperty] private decimal _globalCooldownSeconds;
 
+    // Cuebot-side settings: saved right away, for every reward (also ones made on the Twitch dashboard).
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(Summary))] private string _group = "";
+    [ObservableProperty] private bool _persistCounter;
+    [ObservableProperty] private bool _persistUserCounter;
+
+    public string CounterSummary => Id.Length == 0
+        ? ""
+        : $"Redeemed {_counters.GetRewardCounter(Id).Counter} times (%counter%); per-user counts are in %userCounter%.";
+
     public string Summary =>
-        $"{Cost} points{(IsEnabled ? "" : " · disabled")}{(IsPaused ? " · paused" : "")}{(IsManageable ? "" : " · not editable")}";
+        $"{Cost} points{(IsEnabled ? "" : " · disabled")}{(IsPaused ? " · paused" : "")}{(IsManageable ? "" : " · not editable")}"
+        + (Group.Trim().Length > 0 ? $" · {Group.Trim()}" : "");
+
+    partial void OnGroupChanged(string value)
+    {
+        if (Id.Length > 0) _counters.SetGroup(Id, value);
+    }
+
+    partial void OnPersistCounterChanged(bool value) => SavePersistence();
+
+    partial void OnPersistUserCounterChanged(bool value) => SavePersistence();
+
+    private void SavePersistence()
+    {
+        if (Id.Length > 0) _counters.SetPersistence(Id, PersistCounter, PersistUserCounter);
+    }
+
+    [RelayCommand]
+    private void ResetCounters()
+    {
+        if (Id.Length == 0) return;
+        _counters.ResetRewardCounter(Id);
+        _counters.ResetRewardUserCounters(Id);
+        OnPropertyChanged(nameof(CounterSummary));
+    }
 
     public RewardUpdate ToUpdate() => new()
     {
@@ -68,8 +108,13 @@ public sealed partial class TwitchRewardItem : ObservableObject
 
     internal void Saved(TwitchReward reward)
     {
+        var wasNew = IsNew;
         Id = reward.Id;
         IsNew = false;
+        if (!wasNew) return;
+        if (Group.Trim().Length > 0) _counters.SetGroup(Id, Group);
+        SavePersistence();
+        OnPropertyChanged(nameof(CounterSummary));
     }
 }
 
@@ -87,14 +132,14 @@ public sealed partial class TwitchRewardsViewModel(TwitchService twitch) : Twitc
     {
         var rewards = await Api.GetRewardsAsync();
         Rewards.Clear();
-        foreach (var reward in rewards.OrderBy(r => r.Cost)) Rewards.Add(new TwitchRewardItem(reward));
+        foreach (var reward in rewards.OrderBy(r => r.Cost)) Rewards.Add(new TwitchRewardItem(reward, Api.Counters));
         Info = $"{rewards.Count} rewards; {rewards.Count(r => r.IsManageable)} created by Cuebot can be edited here.";
     });
 
     [RelayCommand]
     private void New()
     {
-        var item = new TwitchRewardItem();
+        var item = new TwitchRewardItem(counters: Api.Counters);
         Rewards.Add(item);
         Selected = item;
     }

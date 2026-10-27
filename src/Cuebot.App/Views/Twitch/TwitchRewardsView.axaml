@@ -65,6 +65,19 @@
                       <CheckBox Content="User input required" IsChecked="{Binding IsUserInputRequired}" Margin="0,0,16,0" />
                       <CheckBox Content="Skip the request queue" IsChecked="{Binding SkipQueue}" />
                     </WrapPanel>
+                    <Separator />
+                    <TextBlock Classes="hint" TextWrapping="Wrap"
+                               Text="Cuebot settings (for every reward, saved right away): the group used by the reward group and Configure rewards sub-actions, and whether the redemption counters survive going live." />
+                    <Grid ColumnDefinitions="*,16,Auto" RowDefinitions="Auto,Auto">
+                      <TextBlock Classes="label" Text="Group" />
+                      <TextBox Grid.Row="1" Text="{Binding Group}" PlaceholderText="Not configured" />
+                      <Button Grid.Column="2" Grid.Row="1" Content="Reset counters" Command="{Binding ResetCountersCommand}" />
+                    </Grid>
+                    <WrapPanel>
+                      <CheckBox Content="Persist counter" IsChecked="{Binding PersistCounter}" Margin="0,0,16,0" />
+                      <CheckBox Content="Persist per-user counters" IsChecked="{Binding PersistUserCounter}" />
+                    </WrapPanel>
+                    <TextBlock Classes="hint" Text="{Binding CounterSummary}" />
                   </StackPanel>
                 </Border>
               </DataTemplate>

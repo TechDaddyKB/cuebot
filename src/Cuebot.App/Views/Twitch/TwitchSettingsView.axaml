@@ -45,6 +45,29 @@
             <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Classes="hint" Margin="0,4,0,0"
                        Text="Used by the Viewer count update and Present viewers triggers; changes apply at the next connect." />
           </Grid>
+          <CheckBox Content="Upcoming ad warnings (each minute from 5 minutes before a scheduled ad, while live)"
+                    IsChecked="{Binding UpcomingAdWarnings}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Sub counter" />
+          <TextBlock Classes="hint" TextWrapping="Wrap"
+                     Text="Counts new subscriptions. Each time it reaches the rollover it starts over and the Sub counter rollover trigger runs. Read and set it with the sub counter sub-actions." />
+          <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="label" Text="Count" />
+            <NumericUpDown Grid.Row="1" Value="{Binding SubCount}" Minimum="0" Maximum="1000000" />
+            <TextBlock Grid.Column="2" Classes="label" Text="Rollover (0 = never)" />
+            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding SubRollover}" Minimum="0" Maximum="100000" />
+            <TextBlock Grid.Column="4" Classes="label" Text="Rollovers so far" />
+            <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding SubRolloverCount}" Minimum="0" Maximum="1000000" />
+          </Grid>
+          <WrapPanel>
+            <CheckBox Content="Count resubs" IsChecked="{Binding SubCountResubs}" Margin="0,0,16,0" />
+            <CheckBox Content="Count gifted subs" IsChecked="{Binding SubCountGifts}" Margin="0,0,16,0" />
+            <Button Content="Reset" Command="{Binding ResetSubCounterCommand}" />
+          </WrapPanel>
         </StackPanel>
       </Border>
 

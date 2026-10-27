@@ -102,6 +102,7 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         Assert.Contains("channel.follow", _service.UnavailableEvents);
         Assert.Contains(_log.Recent(), e => e.Message.Contains("moderator:read:followers"));
         Assert.Contains(_published, e => e.Type == TwitchEventTypes.BroadcasterConnected);
+        Assert.Contains(_published, e => e.Type == TwitchEventTypes.BroadcasterChatConnected);
 
         await connection.SendAsync(EventSubMessages.Notification("n1", "channel.follow", EventSubMessages.FollowEvent));
         await WaitUntilAsync(() => _published.Any(e => e.Type == TwitchEventTypes.Follow));
@@ -114,6 +115,7 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         Assert.Equal(ConnectionState.Disconnected, _service.State);
         Assert.Null(_service.ConnectedLogin);
         Assert.Contains(_published, e => e.Type == TwitchEventTypes.BroadcasterDisconnected);
+        Assert.Contains(_published, e => e.Type == TwitchEventTypes.BroadcasterChatDisconnected);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SendChatMessageAsync("hello"));
     }
 

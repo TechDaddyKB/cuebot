@@ -25,6 +25,8 @@ public static class TwitchEventTypes
     public const string SubscriberModeOff = "twitch.subscriberModeOff";
     public const string UniqueModeOn = "twitch.uniqueModeOn";
     public const string UniqueModeOff = "twitch.uniqueModeOff";
+    public const string WatchStreak = "twitch.watchStreak";
+    public const string Modiversary = "twitch.modiversary";
     public const string Pyramid = "twitch.pyramid";
     public const string PyramidBroken = "twitch.pyramidBroken";
 
@@ -48,6 +50,7 @@ public static class TwitchEventTypes
     public const string Cheer = "twitch.cheer";
     public const string BitsUsed = "twitch.bitsUsed";
     public const string PowerUp = "twitch.powerUp";
+    public const string SubCounterRollover = "twitch.subCounterRollover";
 
     // Raids
     public const string Raid = "twitch.raid";
@@ -90,6 +93,7 @@ public static class TwitchEventTypes
 
     // Ads, shoutouts, shield mode, shared chat
     public const string AdRun = "twitch.adRun";
+    public const string UpcomingAd = "twitch.upcomingAd";
     public const string ShoutoutCreated = "twitch.shoutoutCreated";
     public const string ShoutoutReceived = "twitch.shoutoutReceived";
     public const string ShieldModeBegin = "twitch.shieldModeBegin";
@@ -106,6 +110,18 @@ public static class TwitchEventTypes
     public const string SharedChatPayItForward = "twitch.sharedChatPayItForward";
     public const string SharedChatRaid = "twitch.sharedChatRaid";
     public const string SharedChatAnnouncement = "twitch.sharedChatAnnouncement";
+    public const string SharedChatModiversary = "twitch.sharedChatModiversary";
+    public const string SharedChatMessageDeleted = "twitch.sharedChatMessageDeleted";
+    public const string SharedChatUserBanned = "twitch.sharedChatUserBanned";
+    public const string SharedChatUserTimedOut = "twitch.sharedChatUserTimedOut";
+    public const string SharedChatUserUnbanned = "twitch.sharedChatUserUnbanned";
+    public const string SharedChatUserUntimedOut = "twitch.sharedChatUserUntimedOut";
+
+    // Guest Star (a Twitch beta API)
+    public const string GuestStarSessionBegin = "twitch.guestStarSessionBegin";
+    public const string GuestStarSessionEnd = "twitch.guestStarSessionEnd";
+    public const string GuestStarGuestUpdate = "twitch.guestStarGuestUpdate";
+    public const string GuestStarSettingsUpdate = "twitch.guestStarSettingsUpdate";
 
     // Moderation
     public const string UserBanned = "twitch.userBanned";
@@ -134,6 +150,8 @@ public static class TwitchEventTypes
     public const string BroadcasterAuthenticated = "twitch.broadcasterAuthenticated";
     public const string BroadcasterConnected = "twitch.broadcasterConnected";
     public const string BroadcasterDisconnected = "twitch.broadcasterDisconnected";
+    public const string BroadcasterChatConnected = "twitch.broadcasterChatConnected";
+    public const string BroadcasterChatDisconnected = "twitch.broadcasterChatDisconnected";
     public const string BotConnected = "twitch.botConnected";
     public const string BotDisconnected = "twitch.botDisconnected";
 }

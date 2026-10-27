@@ -115,6 +115,31 @@ public sealed record TwitchCharityCampaign(
 
 public sealed record TwitchChatter(string UserId, string UserLogin, string UserName);
 
+/// <summary>The moderator-pinned chat message; <see cref="EndsAt"/> is null when it stays pinned until the stream ends.</summary>
+public sealed record TwitchPinnedMessage(
+    string MessageId, string Text, string SenderUserId, string SenderUserLogin, string SenderUserName,
+    string PinnedByUserName, DateTimeOffset? StartsAt, DateTimeOffset? EndsAt);
+
+public sealed record TwitchGuestStarSettings(
+    bool IsModeratorSendLiveEnabled, int SlotCount, bool IsBrowserSourceAudioEnabled, string GroupLayout, string BrowserSourceToken);
+
+/// <summary>Guest Star settings to change; null leaves a field unchanged.</summary>
+public sealed record GuestStarSettingsUpdate
+{
+    public bool? IsModeratorSendLiveEnabled { get; init; }
+    public int? SlotCount { get; init; }
+    public bool? IsBrowserSourceAudioEnabled { get; init; }
+    public string? GroupLayout { get; init; }
+    public bool? RegenerateBrowserSources { get; init; }
+}
+
+public sealed record TwitchGuestStarGuest(
+    string SlotId, bool IsLive, string UserId, string UserLogin, string UserDisplayName, int Volume, bool AudioEnabled, bool VideoEnabled);
+
+public sealed record TwitchGuestStarSession(string Id, IReadOnlyList<TwitchGuestStarGuest> Guests);
+
+public sealed record TwitchGuestStarInvite(string UserId, string Status, DateTimeOffset? InvitedAt, bool IsAudioEnabled, bool IsVideoEnabled);
+
 internal static class HelixParse
 {
     public static DateTimeOffset? Time(JsonElement e, string name) =>

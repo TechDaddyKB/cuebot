@@ -41,6 +41,9 @@ public static class TwitchScopes
     public const string ManageAutomod = "moderator:manage:automod";
     public const string ManageBlockedTerms = "moderator:manage:blocked_terms";
     public const string ReadChatters = "moderator:read:chatters";
+    public const string ReadModerators = "moderator:read:moderators";
+    public const string ReadVips = "moderator:read:vips";
+    public const string ManageGuestStar = "channel:manage:guest_star";
 
     /// <summary>Every scope Cuebot knows, grouped for the Settings tab.</summary>
     public static IReadOnlyList<TwitchScopeInfo> Catalog { get; } =
@@ -70,7 +73,7 @@ public static class TwitchScopes
         new(ChannelModerate, "Moderation", "Ban and unban events"),
         new(ModerationRead, "Moderation", "Moderator added and removed events"),
         new(ManageBannedUsers, "Moderation", "Ban, unban and time out users"),
-        new(ManageChatMessages, "Moderation", "Delete messages and clear chat"),
+        new(ManageChatMessages, "Moderation", "Delete messages, clear chat and pin messages"),
         new(ManageWarnings, "Moderation", "Warn users and warning events"),
         new(ManageVips, "Moderation", "Add and remove VIPs, VIP events"),
         new(ManageModerators, "Moderation", "Add and remove moderators"),
@@ -80,6 +83,9 @@ public static class TwitchScopes
         new(ReadSuspiciousUsers, "Moderation", "Suspicious user events"),
         new(ManageAutomod, "Moderation", "AutoMod held messages and term list events"),
         new(ManageBlockedTerms, "Moderation", "Add and remove blocked terms"),
+        new(ReadModerators, "Moderation", "Shared chat moderation events (with the ban, chat message, chat mode, term, unban request and warning scopes)"),
+        new(ReadVips, "Moderation", "Shared chat moderation events (see above)"),
+        new(ManageGuestStar, "Channel", "Guest Star: events, sessions, invites and slots (Twitch beta)"),
     ];
 
     /// <summary>Everything Cuebot can use (the default).</summary>

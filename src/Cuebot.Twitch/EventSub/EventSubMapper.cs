@@ -134,6 +134,29 @@ internal static class EventSubMapper
             a["status"] = e.Str("status");
         }),
         "automod.terms.update" => AutomodTerms(e),
+        "channel.moderate" => SharedChatModeration(e),
+
+        // Guest Star
+        "channel.guest_star_session.begin" => Event(TwitchEventTypes.GuestStarSessionBegin, User(e, "broadcaster_user"), a =>
+        {
+            a["sessionId"] = e.Str("session_id");
+            a["startedAt"] = e.Str("started_at");
+        }),
+        "channel.guest_star_session.end" => Event(TwitchEventTypes.GuestStarSessionEnd, User(e, "broadcaster_user"), a =>
+        {
+            a["sessionId"] = e.Str("session_id");
+            a["startedAt"] = e.Str("started_at");
+            a["endedAt"] = e.Str("ended_at");
+            Host(a, e);
+        }),
+        "channel.guest_star_guest.update" => GuestStarGuest(e),
+        "channel.guest_star_settings.update" => Event(TwitchEventTypes.GuestStarSettingsUpdate, User(e, "broadcaster_user"), a =>
+        {
+            a["isModeratorSendLiveEnabled"] = e.Bool("is_moderator_send_live_enabled");
+            a["slotCount"] = e.Int("slot_count");
+            a["isBrowserSourceAudioEnabled"] = e.Bool("is_browser_source_audio_enabled");
+            a["groupLayout"] = e.Str("group_layout");
+        }),
         _ => null,
     };
 
@@ -246,6 +269,14 @@ internal static class EventSubMapper
                 return new BotEvent(TwitchEventTypes.SharedChatRaid, args);
             case "unraid" when !shared:
                 return new BotEvent(TwitchEventTypes.RaidCancelled, args);
+            case "watch_streak" when !shared:
+                args["streak"] = detail.Int("streak_count");
+                args["watchStreak"] = detail.Int("streak_count");
+                args["channelPointsAwarded"] = detail.Int("channel_points_awarded");
+                return new BotEvent(TwitchEventTypes.WatchStreak, args);
+            case "modiversary":
+                args["months"] = detail.Int("months");
+                return new BotEvent(shared ? TwitchEventTypes.SharedChatModiversary : TwitchEventTypes.Modiversary, args);
             default:
                 // sub, resub, raid and charity donations have dedicated EventSub types.
                 return null;
@@ -724,6 +755,70 @@ internal static class EventSubMapper
         args["termCount"] = terms.Count;
         args["fromAutomod"] = e.Bool("from_automod");
         return new BotEvent(type, args);
+    }
+
+    /// <summary>
+    /// channel.moderate: only the shared_chat_* actions (moderation in another channel of the shared chat session);
+    /// the broadcaster's own bans, timeouts and deletions arrive through their dedicated subscriptions.
+    /// </summary>
+    private static BotEvent? SharedChatModeration(JsonElement e)
+    {
+        var action = e.Str("action");
+        var type = action switch
+        {
+            "shared_chat_ban" => TwitchEventTypes.SharedChatUserBanned,
+            "shared_chat_timeout" => TwitchEventTypes.SharedChatUserTimedOut,
+            "shared_chat_unban" => TwitchEventTypes.SharedChatUserUnbanned,
+            "shared_chat_untimeout" => TwitchEventTypes.SharedChatUserUntimedOut,
+            "shared_chat_delete" => TwitchEventTypes.SharedChatMessageDeleted,
+            _ => null,
+        };
+        if (type is null) return null;
+        var detail = e.Child(action) ?? default;
+        var args = User(detail, "user");
+        Moderator(args, e);
+        args["action"] = action;
+        args["reason"] = detail.Str("reason");
+        args["broadcasterId"] = e.Str("broadcaster_user_id");
+        args["sourceBroadcasterId"] = e.Str("source_broadcaster_user_id");
+        args["sourceBroadcasterUserName"] = e.Str("source_broadcaster_user_login");
+        args["sourceBroadcaster"] = e.Str("source_broadcaster_user_name");
+        args["isSharedChat"] = true;
+        if (type == TwitchEventTypes.SharedChatUserTimedOut)
+        {
+            args["expiresAt"] = detail.Str("expires_at");
+            args["duration"] = DateTimeOffset.TryParse(detail.Str("expires_at"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+                out var expires) ? Math.Max(0, (int)Math.Round((expires - DateTimeOffset.UtcNow).TotalSeconds)) : 0;
+        }
+        if (type == TwitchEventTypes.SharedChatMessageDeleted)
+        {
+            args["messageId"] = detail.Str("message_id");
+            args["message"] = detail.Str("message_body");
+        }
+        return new BotEvent(type, args);
+    }
+
+    // ---------------------------------------------------------------- guest star
+
+    private static BotEvent GuestStarGuest(JsonElement e)
+    {
+        var args = User(e, "guest_user");
+        Moderator(args, e);
+        Host(args, e);
+        args["sessionId"] = e.Str("session_id");
+        args["slotId"] = e.Str("slot_id");
+        args["state"] = e.Str("state");
+        args["hostVideoEnabled"] = e.Bool("host_video_enabled");
+        args["hostAudioEnabled"] = e.Bool("host_audio_enabled");
+        args["hostVolume"] = e.Int("host_volume");
+        return new BotEvent(TwitchEventTypes.GuestStarGuestUpdate, args);
+    }
+
+    private static void Host(Dictionary<string, object?> args, JsonElement e)
+    {
+        args["host"] = e.Str("host_user_name");
+        args["hostUserName"] = e.Str("host_user_login");
+        args["hostUserId"] = e.Str("host_user_id");
     }
 
     private static void Moderator(Dictionary<string, object?> args, JsonElement e)

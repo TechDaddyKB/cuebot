@@ -38,8 +38,30 @@ public sealed class SubActionTests : IDisposable
           .On("GET /helix/polls", ActivePoll)
           .On("GET /helix/predictions", ActivePrediction)
           .On("GET /helix/games", """{"data":[{"id":"509658","name":"Just Chatting","box_art_url":""}]}""")
-          .On("GET /helix/channels", """{"data":[{"broadcaster_id":"1337","title":"Old","game_name":"Art","game_id":"1","tags":["Cozy","English"]}]}""");
+          .On("GET /helix/channels", """{"data":[{"broadcaster_id":"1337","title":"Old","game_name":"Art","game_id":"1","tags":["Cozy","English"]}]}""")
+          .On("GET /helix/chat/pins", PinnedMessage)
+          .On("GET /helix/guest_star/session", GuestStarSession)
+          .On("POST /helix/guest_star/session", GuestStarSession);
+        _h.Api.Counters.SetGroup("r1", "Drinks");
     }
+
+    private const string PinnedMessage =
+        """
+        {"data":[{"message_id":"pin-1","broadcaster_id":"1337","sender_user_id":"4242","sender_user_login":"target","sender_user_name":"Target",
+          "pinned_by_user_id":"1337","pinned_by_user_login":"streamer","pinned_by_user_name":"Streamer",
+          "message":{"text":"Read the rules","fragments":[]},"starts_at":"2026-01-01T12:00:00Z","ends_at":null,"updated_at":"2026-01-01T12:00:00Z"}]}
+        """;
+
+    private const string GuestStarSession =
+        """
+        {"data":[{"id":"s1","guests":[
+          {"slot_id":"0","is_live":true,"user_id":"1337","user_display_name":"Streamer","user_login":"streamer","volume":100,
+           "audio_settings":{"is_host_enabled":true,"is_guest_enabled":true,"is_available":true},
+           "video_settings":{"is_host_enabled":true,"is_guest_enabled":true,"is_available":true}},
+          {"slot_id":"1","is_live":false,"user_id":"55","user_display_name":"Guest","user_login":"guest","volume":70,
+           "audio_settings":{"is_host_enabled":true,"is_guest_enabled":false,"is_available":true},
+           "video_settings":{"is_host_enabled":true,"is_guest_enabled":true,"is_available":true}}]}]}
+        """;
 
     public void Dispose()
     {
@@ -166,6 +188,53 @@ public sealed class SubActionTests : IDisposable
         { "twitch.getCharityCampaign", "", "GET", "/helix/charity/campaigns", "broadcaster_id=1337", "" },
         { "twitch.getBroadcasterInfo", "", "GET", "/helix/users", "id=1337", "" },
         { "twitch.getRandomUsers", "count=2", "GET", "/helix/chat/chatters", "broadcaster_id=1337&moderator_id=1337&first=1000", "" },
+        { "twitch.getPresentUser", "index=0", "GET", "/helix/chat/chatters", "broadcaster_id=1337&moderator_id=1337&first=1000", "" },
+
+        // Pinned messages
+        { "twitch.pinMessage", "duration=60", "PUT", "/helix/chat/pins", "broadcaster_id=1337&moderator_id=1337&message_id=msg-9&duration_seconds=60", "" },
+        { "twitch.pinMessage", "messageId=m2;duration=5000", "PUT", "/helix/chat/pins",
+            "broadcaster_id=1337&moderator_id=1337&message_id=m2&duration_seconds=1800", "" },
+        { "twitch.unpinMessage", "", "DELETE", "/helix/chat/pins", "broadcaster_id=1337&moderator_id=1337&message_id=pin-1", "" },
+        { "twitch.updatePinnedDuration", "messageId=pin-2;duration=120", "PATCH", "/helix/chat/pins",
+            "broadcaster_id=1337&moderator_id=1337&message_id=pin-2&duration_seconds=120", "" },
+        { "twitch.updatePinnedDuration", "duration=0", "PATCH", "/helix/chat/pins", "broadcaster_id=1337&moderator_id=1337&message_id=pin-1", "" },
+        { "twitch.getPinnedMessage", "", "GET", "/helix/chat/pins", "broadcaster_id=1337&moderator_id=1337", "" },
+
+        // Reward update, counters and groups ("Hydrate" is in the group "Drinks")
+        { "twitch.updateReward", "reward=Hydrate;title=Water;cost=2;operator=Multiply", "PATCH", "/helix/channel_points/custom_rewards",
+            "broadcaster_id=1337&id=r1", "title=\"Water\";cost=1000;!prompt" },
+        { "twitch.updateReward", "reward=Hydrate;prompt=Sip", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "prompt=\"Sip\";!cost;!title" },
+        { "twitch.getRewardCounter", "reward=Hydrate", "GET", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&only_manageable_rewards=true", "" },
+        { "twitch.resetRewardCounter", "reward=Hydrate", "GET", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&only_manageable_rewards=true", "" },
+        { "twitch.resetRewardUserCounters", "reward=r1", "GET", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&only_manageable_rewards=true", "" },
+        { "twitch.setRewardGroupEnabled", "group=Drinks;state=Disabled", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "is_enabled=false;!is_paused" },
+        { "twitch.setRewardGroupPaused", "group=drinks;state=Toggle", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "is_paused=true;!is_enabled" },
+        { "twitch.configureRewards", "disable=Drinks;pause=Hydrate", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "is_enabled=false;is_paused=true" },
+
+        // Guest Star
+        { "twitch.getGuestStarSettings", "", "GET", "/helix/guest_star/channel_settings", "broadcaster_id=1337&moderator_id=1337", "" },
+        { "twitch.updateGuestStarSettings", "slotCount=4;layout=TILED_LAYOUT;moderatorSendLive=On", "PUT", "/helix/guest_star/channel_settings",
+            "broadcaster_id=1337", "slot_count=4;group_layout=\"TILED_LAYOUT\";is_moderator_send_live_enabled=true;!is_browser_source_audio_enabled;!regenerate_browser_sources" },
+        { "twitch.getGuestStarSession", "", "GET", "/helix/guest_star/session", "broadcaster_id=1337&moderator_id=1337", "" },
+        { "twitch.createGuestStarSession", "", "POST", "/helix/guest_star/session", "broadcaster_id=1337", "" },
+        { "twitch.endGuestStarSession", "", "DELETE", "/helix/guest_star/session", "broadcaster_id=1337&session_id=s1", "" },
+        { "twitch.getGuestStarInvites", "", "GET", "/helix/guest_star/invites", "broadcaster_id=1337&moderator_id=1337&session_id=s1", "" },
+        { "twitch.sendGuestStarInvite", "user=target", "POST", "/helix/guest_star/invites",
+            "broadcaster_id=1337&moderator_id=1337&session_id=s1&guest_id=4242", "" },
+        { "twitch.deleteGuestStarInvite", "user=id:55;sessionId=s9", "DELETE", "/helix/guest_star/invites",
+            "broadcaster_id=1337&moderator_id=1337&session_id=s9&guest_id=55", "" },
+        { "twitch.assignGuestStarSlot", "user=id:55;slot=2", "POST", "/helix/guest_star/slot",
+            "broadcaster_id=1337&moderator_id=1337&session_id=s1&guest_id=55&slot_id=2", "" },
+        { "twitch.updateGuestStarSlot", "slot=1;toSlot=3", "PATCH", "/helix/guest_star/slot",
+            "broadcaster_id=1337&moderator_id=1337&session_id=s1&source_slot_id=1&destination_slot_id=3", "" },
+        { "twitch.deleteGuestStarSlot", "user=id:55;slot=2;reinvite=true", "DELETE", "/helix/guest_star/slot",
+            "broadcaster_id=1337&moderator_id=1337&session_id=s1&guest_id=55&slot_id=2&should_reinvite_guest=true", "" },
+        { "twitch.updateGuestStarSlotSettings", "slot=2;audio=Off;volume=50", "PATCH", "/helix/guest_star/slot_settings",
+            "broadcaster_id=1337&moderator_id=1337&session_id=s1&slot_id=2&is_audio_enabled=false&volume=50", "" },
     };
 
     [Theory]
@@ -196,10 +265,13 @@ public sealed class SubActionTests : IDisposable
         }
     }
 
+    /// <summary>Sub-actions on Cuebot's own state (no Helix call); covered by <see cref="Local_state_sub_actions"/>.</summary>
+    private static readonly string[] LocalSubActions = ["twitch.getLatestSubscriber", "twitch.getSubCounter", "twitch.setSubCounter"];
+
     [Fact]
     public void Every_sub_action_is_covered_by_a_request_format_case()
     {
-        var covered = HelixCases.Select(row => (string)row[0]).ToHashSet();
+        var covered = HelixCases.Select(row => (string)row[0]).Concat(LocalSubActions).ToHashSet();
         Assert.All(TwitchSubActions.All, s => Assert.Contains(s.TypeId, covered));
         Assert.Equal(TwitchSubActions.All.Count, TwitchSubActions.All.Select(s => s.TypeId).Distinct().Count());
     }
@@ -245,6 +317,97 @@ public sealed class SubActionTests : IDisposable
         Assert.Equal("Win?", prediction["predictionTitle"]);
         Assert.Equal("No", prediction["predictionOutcome1"]);
     }
+
+    [Fact]
+    public async Task New_get_actions_write_results_into_arguments()
+    {
+        var pinned = (await RunAsync("twitch.getPinnedMessage")).Args;
+        Assert.Equal(true, pinned["isPinned"]);
+        Assert.Equal("pin-1", pinned["pinnedMessageId"]);
+        Assert.Equal("Read the rules", pinned["pinnedMessage"]);
+        Assert.Equal("Target", pinned["pinnedUser"]);
+        Assert.Equal("", pinned["pinnedUntil"]);
+
+        var session = (await RunAsync("twitch.getGuestStarSession")).Args;
+        Assert.Equal("s1", session["guestStarSessionId"]);
+        Assert.Equal(2, session["guestStarGuestCount"]);
+        Assert.Equal("Guest", session["guestStarGuest1"]);
+        Assert.Equal("1", session["guestStarGuest1Slot"]);
+        Assert.Equal(70, session["guestStarGuest1Volume"]);
+
+        _h.On("GET /helix/guest_star/invites", """{"data":[{"user_id":"55","invited_at":"2026-01-01T12:00:00Z","status":"READY","is_video_enabled":true}]}""");
+        var invites = (await RunAsync("twitch.getGuestStarInvites")).Args;
+        Assert.Equal(1, invites["guestStarInviteCount"]);
+        Assert.Equal("READY", invites["guestStarInvite0Status"]);
+
+        _h.On("GET /helix/chat/chatters", """{"data":[{"user_id":"5","user_login":"a","user_name":"A"},{"user_id":"6","user_login":"b","user_name":"B"}],"pagination":{}}""");
+        var present = (await RunAsync("twitch.getPresentUser", new() { ["index"] = "1" })).Args;
+        Assert.Equal("B", present["presentUser"]);
+        Assert.Equal("6", present["presentUserId"]);
+        Assert.Equal(2, present["presentUsersCount"]);
+        Assert.Equal(false, (await RunAsync("twitch.getPresentUser", new() { ["index"] = "7" })).Args["presentUser"]);
+
+        _h.Api.Counters.CountRedemption("r1", "4242");
+        _h.Api.Counters.CountRedemption("r1", "4242");
+        _h.Api.Counters.CountRedemption("r1", "1");
+        var counters = (await RunAsync("twitch.getRewardCounter", new() { ["reward"] = "Hydrate" })).Args;
+        Assert.Equal(3, counters["counter"]);
+        Assert.Equal(2, counters["userCounter"]);
+        await RunAsync("twitch.resetRewardUserCounters", new() { ["reward"] = "Hydrate" });
+        Assert.Equal((3, 0), _h.Api.Counters.GetRewardCounter("r1", "4242"));
+        await RunAsync("twitch.resetRewardCounter", new() { ["reward"] = "Hydrate" });
+        Assert.Equal((0, 0), _h.Api.Counters.GetRewardCounter("r1", "4242"));
+    }
+
+    [Fact]
+    public async Task Local_state_sub_actions()
+    {
+        _h.Settings.Value.SubCounter.Rollover = 50;
+        var set = (await RunAsync("twitch.setSubCounter", new() { ["count"] = "12", ["rolloverCount"] = "3" })).Args;
+        Assert.Equal(true, set["setResult"]);
+        var get = (await RunAsync("twitch.getSubCounter")).Args;
+        Assert.Equal(12, get["subCounter.count"]);
+        Assert.Equal(50, get["subCounter.rollover"]);
+        Assert.Equal(3, get["subCounter.rolloverCount"]);
+        Assert.Equal(false, (await RunAsync("twitch.setSubCounter", new() { ["count"] = "lots" })).Args["setResult"]);
+        Assert.Equal(12, _h.Api.Counters.SubCounter.Count);
+
+        _h.Api.Counters.SetLatestSubscriber("4242", "target", "Target", "2", true, DateTimeOffset.UnixEpoch);
+        var latest = (await RunAsync("twitch.getLatestSubscriber")).Args;
+        Assert.Equal("Target", latest["latestSubscriber.userName"]);
+        Assert.Equal("target", latest["latestSubscriber.userLogin"]);
+        Assert.Equal("Tier2", latest["latestSubscriber.tier"]);
+        Assert.Equal(true, latest["latestSubscriber.isGift"]);
+        Assert.Empty(_h.Http.Requests);
+    }
+
+    [Fact]
+    public async Task Reward_groups_skip_rewards_already_in_the_state_and_report_unknown_names()
+    {
+        var (_, enabled, _) = await RunAsync("twitch.setRewardGroupEnabled", new() { ["group"] = "Drinks", ["state"] = "Enabled" });
+        Assert.Equal(0, enabled["rewardsChanged"]);
+        Assert.DoesNotContain(_h.Http.Requests, r => r.Method == HttpMethod.Patch);
+
+        var (ok, _, log) = await RunAsync("twitch.configureRewards", new() { ["enable"] = "No such reward" });
+        Assert.False(ok);
+        Assert.Contains(log.Recent(), e => e.Message.Contains("No such reward"));
+
+        var (_, none, _) = await RunAsync("twitch.configureRewards", new() { ["disableNotConfigured"] = "true" });
+        Assert.Equal(0, none["rewardsChanged"]);
+        _h.Api.Counters.SetGroup("r1", "");
+        var (_, notConfigured, _) = await RunAsync("twitch.configureRewards", new() { ["disableNotConfigured"] = "true" });
+        Assert.Equal(1, notConfigured["rewardsChanged"]);
+    }
+
+    [Theory]
+    [InlineData(500, 100, "Set", 100)]
+    [InlineData(500, 100, "Add", 600)]
+    [InlineData(500, 600, "Subtract", 1)]
+    [InlineData(500, 1.5, "Multiply", 750)]
+    [InlineData(500, 4, "Divide", 125)]
+    [InlineData(500, 0, "Divide", 500)]
+    public void Reward_cost_operators(int current, double amount, string op, int expected) =>
+        Assert.Equal(expected, TwitchSubActions.ApplyCost(current, amount, op));
 
     [Fact]
     public async Task Missing_scope_fails_the_action_with_a_clear_message_and_sends_nothing()

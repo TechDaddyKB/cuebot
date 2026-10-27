@@ -27,8 +27,10 @@ public sealed class TwitchApi
     private readonly SentMessageTracker _sent;
 
     internal TwitchApi(HelixClient helix, TwitchTokenManager tokens, HelixClient botHelix, TwitchTokenManager botTokens,
-        Func<TwitchSettings> settings, Func<bool> isConnected, Action<BotEvent> publish, SentMessageTracker sent)
+        Func<TwitchSettings> settings, Func<bool> isConnected, Action<BotEvent> publish, SentMessageTracker sent,
+        TwitchCounters? counters = null)
     {
+        Counters = counters ?? new TwitchCounters(settings, () => { });
         _helix = helix;
         _tokens = tokens;
         _botHelix = botHelix;
@@ -46,6 +48,9 @@ public sealed class TwitchApi
 
     /// <summary>The signed-in bot account (empty when there is none).</summary>
     public (string UserId, string Login) Bot => (_botTokens.UserId, _botTokens.Login);
+
+    /// <summary>Sub counter, reward counters and groups, latest subscriber (local state, no Helix calls).</summary>
+    public TwitchCounters Counters { get; }
 
     /// <summary>True when the bot account is signed in.</summary>
     public bool IsBotReady => _botTokens.HasToken && _botTokens.UserId.Length > 0;
@@ -106,6 +111,41 @@ public sealed class TwitchApi
         Require(TwitchScopes.ManageChatMessages);
         return _helix.RequestAsync(HttpMethod.Delete, "moderation/chat",
             Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)), null, "Clearing chat", ct);
+    }
+
+    /// <summary>The moderator-pinned message of the channel; null when none is pinned.</summary>
+    public async Task<TwitchPinnedMessage?> GetPinnedMessageAsync(CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageChatMessages);
+        var json = await _helix.RequestAsync(HttpMethod.Get, "chat/pins", Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)),
+            null, "Getting pinned message", ct).ConfigureAwait(false);
+        return json.Items("data").Select(p => new TwitchPinnedMessage(p.Str("message_id"), (p.Child("message") ?? default).Str("text"),
+            p.Str("sender_user_id"), p.Str("sender_user_login"), p.Str("sender_user_name"), p.Str("pinned_by_user_name"),
+            HelixParse.Time(p, "starts_at"), HelixParse.Time(p, "ends_at"))).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Pins a chat message (replacing the current pin) for 30 to 1800 seconds; 0 keeps it pinned until the stream ends.
+    /// </summary>
+    public Task PinMessageAsync(string messageId, int durationSeconds = 0, CancellationToken ct = default) =>
+        PinCoreAsync(HttpMethod.Put, messageId, durationSeconds, "Pinning chat message", ct);
+
+    /// <summary>Changes how long the pinned message stays, counted from now (0: until the stream ends).</summary>
+    public Task UpdatePinnedMessageAsync(string messageId, int durationSeconds = 0, CancellationToken ct = default) =>
+        PinCoreAsync(HttpMethod.Patch, messageId, durationSeconds, "Updating pinned message", ct);
+
+    public Task UnpinMessageAsync(string messageId, CancellationToken ct = default) =>
+        PinCoreAsync(HttpMethod.Delete, messageId, null, "Unpinning chat message", ct);
+
+    private Task PinCoreAsync(HttpMethod method, string messageId, int? durationSeconds, string operation, CancellationToken ct)
+    {
+        Require(TwitchScopes.ManageChatMessages);
+        if (string.IsNullOrWhiteSpace(messageId)) throw new ArgumentException("No chat message id given.");
+        var query = new List<KeyValuePair<string, string>>(Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId),
+            ("message_id", messageId.Trim())));
+        if (durationSeconds is { } seconds && seconds > 0)
+            query.Add(new("duration_seconds", Math.Clamp(seconds, 30, 1800).ToString(CultureInfo.InvariantCulture)));
+        return _helix.RequestAsync(method, "chat/pins", query, null, operation, ct);
     }
 
     public async Task<IReadOnlyList<TwitchChatter>> GetChattersAsync(CancellationToken ct = default)
@@ -720,6 +760,124 @@ public sealed class TwitchApi
             Q(("broadcaster_id", BroadcasterId), ("reward_id", rewardId.Trim()), ("id", redemptionId.Trim())),
             new { status = fulfil ? "FULFILLED" : "CANCELED" }, fulfil ? "Fulfilling redemption" : "Cancelling redemption", ct);
     }
+
+    // ---------------------------------------------------------------- guest star (Twitch beta)
+
+    public async Task<TwitchGuestStarSettings> GetGuestStarSettingsAsync(CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageGuestStar);
+        var json = await _helix.RequestAsync(HttpMethod.Get, "guest_star/channel_settings",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)), null, "Getting Guest Star settings", ct).ConfigureAwait(false);
+        var s = json.Items("data").FirstOrDefault();
+        return new TwitchGuestStarSettings(s.Bool("is_moderator_send_live_enabled"), s.Int("slot_count"), s.Bool("is_browser_source_audio_enabled"),
+            s.Str("group_layout"), s.Str("browser_source_token"));
+    }
+
+    public Task UpdateGuestStarSettingsAsync(GuestStarSettingsUpdate update, CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageGuestStar);
+        var body = new Dictionary<string, object?>();
+        if (update.IsModeratorSendLiveEnabled is { } sendLive) body["is_moderator_send_live_enabled"] = sendLive;
+        if (update.SlotCount is { } slots) body["slot_count"] = Math.Clamp(slots, 1, 6);
+        if (update.IsBrowserSourceAudioEnabled is { } audio) body["is_browser_source_audio_enabled"] = audio;
+        if (update.GroupLayout is { Length: > 0 } layout) body["group_layout"] = layout.Trim().ToUpperInvariant();
+        if (update.RegenerateBrowserSources is true) body["regenerate_browser_sources"] = true;
+        if (body.Count == 0) return Task.CompletedTask;
+        return _helix.RequestAsync(HttpMethod.Put, "guest_star/channel_settings", Q(("broadcaster_id", BroadcasterId)), body,
+            "Updating Guest Star settings", ct);
+    }
+
+    /// <summary>The active Guest Star session; null when there is none.</summary>
+    public async Task<TwitchGuestStarSession?> GetGuestStarSessionAsync(CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageGuestStar);
+        var json = await _helix.RequestAsync(HttpMethod.Get, "guest_star/session", Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)),
+            null, "Getting Guest Star session", ct).ConfigureAwait(false);
+        return json.Items("data").Select(GuestStarSession).FirstOrDefault(s => s.Id.Length > 0);
+    }
+
+    public async Task<TwitchGuestStarSession> CreateGuestStarSessionAsync(CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageGuestStar);
+        var json = await _helix.RequestAsync(HttpMethod.Post, "guest_star/session", Q(("broadcaster_id", BroadcasterId)), null,
+            "Creating Guest Star session", ct).ConfigureAwait(false);
+        return GuestStarSession(json.Items("data").FirstOrDefault());
+    }
+
+    /// <summary>Ends <paramref name="sessionId"/>, or the active session when it is empty.</summary>
+    public async Task EndGuestStarSessionAsync(string? sessionId = null, CancellationToken ct = default)
+    {
+        var id = await GuestStarSessionIdAsync(sessionId, ct).ConfigureAwait(false);
+        await _helix.RequestAsync(HttpMethod.Delete, "guest_star/session", Q(("broadcaster_id", BroadcasterId), ("session_id", id)), null,
+            "Ending Guest Star session", ct).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<TwitchGuestStarInvite>> GetGuestStarInvitesAsync(string? sessionId = null, CancellationToken ct = default)
+    {
+        var id = await GuestStarSessionIdAsync(sessionId, ct).ConfigureAwait(false);
+        var json = await _helix.RequestAsync(HttpMethod.Get, "guest_star/invites",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId), ("session_id", id)), null, "Getting Guest Star invites", ct)
+            .ConfigureAwait(false);
+        return json.Items("data").Select(i => new TwitchGuestStarInvite(i.Str("user_id"), i.Str("status"), HelixParse.Time(i, "invited_at"),
+            i.Bool("is_audio_enabled"), i.Bool("is_video_enabled"))).ToArray();
+    }
+
+    public Task SendGuestStarInviteAsync(string guestId, string? sessionId = null, CancellationToken ct = default) =>
+        GuestStarCallAsync(HttpMethod.Post, "guest_star/invites", sessionId, [("guest_id", guestId)], "Sending Guest Star invite", ct);
+
+    public Task DeleteGuestStarInviteAsync(string guestId, string? sessionId = null, CancellationToken ct = default) =>
+        GuestStarCallAsync(HttpMethod.Delete, "guest_star/invites", sessionId, [("guest_id", guestId)], "Deleting Guest Star invite", ct);
+
+    /// <summary>Puts an invited, ready guest into slot 1..N.</summary>
+    public Task AssignGuestStarSlotAsync(string guestId, string slotId, string? sessionId = null, CancellationToken ct = default) =>
+        GuestStarCallAsync(HttpMethod.Post, "guest_star/slot", sessionId, [("guest_id", guestId), ("slot_id", slotId)], "Assigning Guest Star slot", ct);
+
+    /// <summary>Moves a guest to another slot (swapping with whoever is there).</summary>
+    public Task MoveGuestStarSlotAsync(string sourceSlotId, string destinationSlotId, string? sessionId = null, CancellationToken ct = default) =>
+        GuestStarCallAsync(HttpMethod.Patch, "guest_star/slot", sessionId,
+            [("source_slot_id", sourceSlotId), ("destination_slot_id", destinationSlotId)], "Moving Guest Star slot", ct);
+
+    /// <summary>Removes a guest from their slot, optionally sending them back to the invite queue.</summary>
+    public Task RemoveGuestStarSlotAsync(string guestId, string slotId, bool reinvite, string? sessionId = null, CancellationToken ct = default) =>
+        GuestStarCallAsync(HttpMethod.Delete, "guest_star/slot", sessionId,
+            [("guest_id", guestId), ("slot_id", slotId), ("should_reinvite_guest", reinvite ? "true" : "false")], "Removing Guest Star guest", ct);
+
+    /// <summary>Changes a slot's audio, video, live state or volume (null leaves it unchanged).</summary>
+    public Task UpdateGuestStarSlotSettingsAsync(string slotId, bool? audio, bool? video, bool? live, int? volume, string? sessionId = null,
+        CancellationToken ct = default)
+    {
+        var query = new List<(string, string)> { ("slot_id", slotId) };
+        if (audio is { } a) query.Add(("is_audio_enabled", a ? "true" : "false"));
+        if (video is { } v) query.Add(("is_video_enabled", v ? "true" : "false"));
+        if (live is { } l) query.Add(("is_live", l ? "true" : "false"));
+        if (volume is { } vol) query.Add(("volume", Math.Clamp(vol, 0, 100).ToString(CultureInfo.InvariantCulture)));
+        return GuestStarCallAsync(HttpMethod.Patch, "guest_star/slot_settings", sessionId, query, "Updating Guest Star slot settings", ct);
+    }
+
+    private async Task GuestStarCallAsync(HttpMethod method, string path, string? sessionId, IReadOnlyList<(string Key, string Value)> extra,
+        string operation, CancellationToken ct)
+    {
+        if (extra.FirstOrDefault(p => p.Key is "guest_id" or "slot_id" or "source_slot_id" && string.IsNullOrWhiteSpace(p.Value)) is { Key: { } missing })
+            throw new ArgumentException($"No {missing.Replace('_', ' ')} given.");
+        var id = await GuestStarSessionIdAsync(sessionId, ct).ConfigureAwait(false);
+        var query = Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId), ("session_id", id))
+            .Concat(extra.Where(p => p.Value.Length > 0).Select(p => new KeyValuePair<string, string>(p.Key, p.Value.Trim())));
+        await _helix.RequestAsync(method, path, query, null, operation, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The given session id, or the active session's.</summary>
+    private async Task<string> GuestStarSessionIdAsync(string? sessionId, CancellationToken ct)
+    {
+        Require(TwitchScopes.ManageGuestStar);
+        if (!string.IsNullOrWhiteSpace(sessionId)) return sessionId.Trim();
+        var session = await GetGuestStarSessionAsync(ct).ConfigureAwait(false);
+        return session?.Id ?? throw new TwitchApiException("There is no active Guest Star session.");
+    }
+
+    private static TwitchGuestStarSession GuestStarSession(JsonElement s) => new(s.Str("id"), s.Items("guests").Select(g =>
+        new TwitchGuestStarGuest(g.Str("slot_id"), g.Bool("is_live"), g.Str("user_id"), g.Str("user_login"), g.Str("user_display_name"),
+            g.Int("volume"), (g.Child("audio_settings") ?? default).Bool("is_guest_enabled"),
+            (g.Child("video_settings") ?? default).Bool("is_guest_enabled"))).ToArray());
 
     // ---------------------------------------------------------------- helpers
 
