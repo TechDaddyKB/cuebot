@@ -42,6 +42,9 @@ $suites = @(
     @{ Project = "tests/Cuebot.Scripting.Tests"; Filter = "FullyQualifiedName~Python" }
 )
 $failed = 0
+# Windows PowerShell 5.1 turns a native command's stderr lines into errors; with "Stop" the first one would end the run.
+# Failures are counted from exit codes instead.
+$ErrorActionPreference = "Continue"
 foreach ($suite in $suites) {
     $name = Split-Path -Leaf $suite.Project
     $filters = @($suite.Filter, $(if ($Filter) { "FullyQualifiedName~$Filter" })) | Where-Object { $_ }
