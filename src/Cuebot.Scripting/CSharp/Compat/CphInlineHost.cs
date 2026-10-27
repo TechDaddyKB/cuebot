@@ -27,7 +27,9 @@ internal sealed partial class CphInlineHost : IDisposable
     private static readonly Lazy<IReadOnlyList<MetadataReference>> References = new(LoadReferences);
 
     private static readonly string GlobalUsings =
-        "global using System;\nglobal using System.Collections.Generic;\nglobal using System.Linq;\n";
+        "global using System;\nglobal using System.Collections.Generic;\nglobal using System.Linq;\n"
+        // Streamer.bot's documented examples use its data classes (TwitchUserInfo, ...) with only `using System;`.
+        + "global using Streamer.bot.Plugin.Interface.Model;\n";
 
     private readonly Dictionary<string, Compiled> _compiled = [];
     private readonly LinkedList<string> _order = new();
@@ -57,6 +59,19 @@ internal sealed partial class CphInlineHost : IDisposable
             compiled.EnsureInitialized();
             return compiled.Execute();
         }, ct);
+
+    /// <summary>
+    /// Runs the public parameterless method <paramref name="methodName"/> of the code's CPHInline instance (the
+    /// same long-lived instance its Execute() uses), with the caller's CPH and args, for <c>CPH.ExecuteMethod</c>.
+    /// Returns the method's bool result (true for void methods), or null when there is no such method.
+    /// </summary>
+    internal bool? InvokeMethod(string code, string methodName, CphProxy proxy, Dictionary<string, object?> args)
+    {
+        var compiled = Get(code);
+        CPHInlineBase.Enter(proxy, args);
+        compiled.EnsureInitialized();
+        return compiled.Invoke(methodName);
+    }
 
     /// <summary>Compiles (or returns the cached) script. Throws <see cref="ScriptException"/> with the compile errors.</summary>
     internal Compiled Get(string code)
@@ -211,6 +226,27 @@ internal sealed partial class CphInlineHost : IDisposable
         }
 
         public bool Execute() => _execute();
+
+        /// <summary>Calls a public parameterless instance method by name (exact case first). Null when there is none.</summary>
+        public bool? Invoke(string methodName)
+        {
+            var type = _instance.GetType();
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+            var method = type.GetMethod(methodName, flags, Type.EmptyTypes)
+                         ?? type.GetMethod(methodName, flags | BindingFlags.IgnoreCase, Type.EmptyTypes);
+            if (method is null || method.IsSpecialName || method.DeclaringType == typeof(object)) return null;
+            object? result;
+            try
+            {
+                result = method.Invoke(_instance, null);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is not null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw;
+            }
+            return result is not false;
+        }
 
         /// <summary>Runs Init() once, on the first run (with that run's CPH and args available).</summary>
         public void EnsureInitialized()

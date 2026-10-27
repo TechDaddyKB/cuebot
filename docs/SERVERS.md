@@ -167,10 +167,21 @@ Two shapes run in "Execute C# code":
 | Commands | EnableCommand, DisableCommand, GetCommands, CommandGetCounter, CommandResetCounter, CommandResetAllUserCounters, CommandResetGlobalCooldown, CommandResetAllUserCooldowns, CommandSetGlobalCooldownDuration, CommandSetUserCooldownDuration | cooldown resets clear global and user cooldowns together |
 | Groups | AddGroup, DeleteGroup, GetGroups, GroupExists, AddUserToGroup, AddUserIdToGroup, RemoveUserFromGroup, RemoveUserIdFromGroup, UserInGroup, UserIdInGroup, UsersInGroup, ClearUsersFromGroup (+ platform-less Twitch overloads) | |
 | Timers | EnableTimer, DisableTimer, EnableTimerById, DisableTimerById, GetTimerState, SetTimerInterval | |
-| Triggers | RegisterCustomTrigger, TriggerCodeEvent(name, useArgs), TriggerCodeEvent(name, args) | "Custom code event" trigger |
+| Triggers | RegisterCustomTrigger, TriggerCodeEvent(name, useArgs), TriggerCodeEvent(name, args), TriggerEvent(name, useArgs) | "Custom code event" trigger; TriggerEvent is the same as TriggerCodeEvent (Cuebot has one custom event trigger) |
+| Other code | ExecuteMethod(codeName, methodName) | runs a public parameterless method on another C# sub-action's CPHInline instance (same instance its Execute() uses) with this run's args; the code is found by the sub-action's "Code name", else as the first CPHInline code in the action named `codeName`; returns the method's bool (void → true), false when not found |
+| Twitch chat | SendWhisper (bool), TwitchAnnounce, SendAction | whisper uses the bot when `bot` and it is signed in; announcements are sent by the broadcaster (colour `default` → primary); SendAction sends a /me line through the Twitch action announcer when one is registered, otherwise as a plain chat message |
+| Twitch users | TwitchGetBroadcaster, TwitchGetBot, TwitchGetUserInfoByLogin/ById → `TwitchUserInfo`; TwitchGetExtendedUserInfoByLogin/ById → `TwitchUserInfoEx` | null when not found. Roles and LastActive come from Cuebot's user list (what chat showed); PreviousActive is not tracked. Ex: follow/subscription filled when the scopes allow; GameId and Tags stay empty; AccountAge is in seconds |
+| Twitch moderation / stream | TwitchTimeoutUser, TwitchBanUser, TwitchUnbanUser, TwitchRunCommercial (bool, 30-180 s), SetChannelTitle (bool), SetChannelGame → `GameInfo`, CreateStreamMarker → `StreamMarker`, CreateClip() / CreateClip(title, duration) → `ClipData` | done as the broadcaster (`useBot` ignored); failures return false/null and log a warning. Clip title/duration are not sent (Twitch's API has no such fields); ClipData carries what Twitch returns on creation (id, url, edit/embed url, broadcaster) |
+| YouTube | YouTubeGetLatestMonitoredBroadcast (alias YouTubeGetLatestBroadcast), YouTubeGetMonitoredBroadcasts → `YouTubeBroadcastInfo` | id, channel, live chat id, title, description, privacy, status, url; category, tags, languages and dates stay empty |
+| Kick | KickGetBroadcaster, KickGetBot → `KickUserInfo` | null when not signed in |
+| Keyboard | KeyboardPress (SendKeys syntax: `{W}`, `+{W}`, `^{W}`, `%{W}`) | needs a registered `Cuebot.Scripting.Compat.IKeyboardOutput`; throws NotSupported without one |
 | WebSocket | WebsocketBroadcastJson/String, WebsocketConnect/Disconnect/IsConnected/Send, WebsocketGetConnectionByName, WebsocketCustomServer{Start,Stop,IsListening,Broadcast,CloseSession,CloseAllSessions,GetConnectionByName} | needs the Servers module |
 | Integrations | DiscordPostTextToWebhook | |
-| **Unsupported** (throw `NotSupportedException: CPH.<Name> is not supported by Cuebot`) | TwitchClientId, TwitchOAuthToken, SendWhisper, TwitchAnnounce, TwitchGetBroadcaster, TwitchGetBot, TwitchGetUserInfoByLogin/ById, TwitchGetExtendedUserInfoByLogin/ById, TwitchTimeoutUser, TwitchBanUser, TwitchUnbanUser, TwitchRunCommercial, CreateStreamMarker, CreateClip, SetChannelTitle, SetChannelGame, YouTubeGetLatestBroadcast, KickGetBroadcaster, KeyboardPress, TriggerEvent, ExecuteMethod, SendAction | data-returning ones are typed `dynamic` so member access compiles |
+| **Unsupported** (throw `NotSupportedException: CPH.<Name> is not supported by Cuebot`) | TwitchClientId, TwitchOAuthToken | Cuebot never hands platform credentials to scripts |
+
+Data classes use Streamer.bot's names and namespaces: `TwitchUserInfo`, `TwitchUserInfoEx`, `GameInfo`,
+`YouTubeBroadcastInfo`, `KickUserInfo` in `Streamer.bot.Plugin.Interface.Model` (imported globally, as Streamer.bot's
+examples assume), `ClipData` and `StreamMarker` in `Twitch.Common.Models.Api`.
 
 Methods not listed do not exist and fail at compile time with the usual C# error. A method whose Cuebot module is
 missing throws `NotSupportedException` naming the method and the script function it needs.

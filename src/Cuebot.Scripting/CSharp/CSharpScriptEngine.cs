@@ -25,7 +25,7 @@ public sealed class CSharpScriptEngine(ScriptApi api, CphServices? cph = null) :
         {
             await Task.Run(() => _inline.Get(code), ct).ConfigureAwait(false);
             return await RunWithTimeoutAsync(
-                token => _inline.ExecuteAsync(code, new CphProxy(_cph, api, context, token), context, token), timeout, ct)
+                token => _inline.ExecuteAsync(code, new CphProxy(_cph, api, context, token, _inline), context, token), timeout, ct)
                 .ConfigureAwait(false);
         }
 
@@ -33,7 +33,7 @@ public sealed class CSharpScriptEngine(ScriptApi api, CphServices? cph = null) :
         return await RunWithTimeoutAsync(async token =>
         {
             var globals = new CSharpScriptGlobals(context.Args, new CuebotHelpers(api, context, token), token,
-                new CphProxy(_cph, api, context, token));
+                new CphProxy(_cph, api, context, token, _inline));
             var result = await Task.Run(() => runner(globals, token), token).ConfigureAwait(false);
             return result is not false;
         }, timeout, ct).ConfigureAwait(false);

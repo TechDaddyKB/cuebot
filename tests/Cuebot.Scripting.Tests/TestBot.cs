@@ -10,15 +10,23 @@ namespace Cuebot.Scripting.Tests;
 internal sealed class TestBot : IDisposable
 {
     public TestBot(Func<ScriptApi, AppLog, IEnumerable<ISubActionHandler>> handlers)
+        : this((bot, api) => handlers(api, bot.Log))
     {
+    }
+
+    /// <param name="extraFunctions">More script function providers (fake platform modules).</param>
+    public TestBot(Func<TestBot, ScriptApi, IEnumerable<ISubActionHandler>> handlers, params IScriptFunctionProvider[] extraFunctions)
+    {
+        Bus = new EventBus(Log);
         Profile = new ProfileService(null, Log);
         Globals = new GlobalVariables(null, Log);
-        var api = new ScriptApi([new CoreScriptFunctions(), Functions]);
-        Engine = new ActionEngine(new EventBus(Log), Profile, new Registry([.. handlers(api, Log), Capture], []), Globals, Log);
+        var api = new ScriptApi([new CoreScriptFunctions(), Functions, .. extraFunctions]);
+        Engine = new ActionEngine(Bus, Profile, new Registry([.. handlers(this, api), Capture], []), Globals, Log);
         Engine.RunCompleted += record => LastRun = record;
     }
 
     public AppLog Log { get; } = new();
+    public EventBus Bus { get; }
     public GlobalVariables Globals { get; }
     public ProfileService Profile { get; }
     public ActionEngine Engine { get; }

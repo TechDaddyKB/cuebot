@@ -1,5 +1,6 @@
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat;
+using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
@@ -33,6 +34,8 @@ public sealed class CphServices
     private HttpClient? _http;
     private AppLog? _log;
     private CodeTriggerRegistry? _codeTriggers;
+    private ChatModerationService? _chatModeration;
+    private IKeyboardOutput? _keyboard;
 
     public CphServices()
     {
@@ -54,6 +57,12 @@ public sealed class CphServices
     public ChatHub? Chat { get => _chat ??= Get<ChatHub>(); init => _chat = value; }
     public HttpClient? Http { get => _http ??= Get<HttpClient>(); init => _http = value; }
     public AppLog? Log { get => _log ??= Get<AppLog>(); init => _log = value; }
+
+    /// <summary>Platform announcers (used for /me lines by CPH.SendAction).</summary>
+    public ChatModerationService? ChatModeration { get => _chatModeration ??= Get<ChatModerationService>(); init => _chatModeration = value; }
+
+    /// <summary>Key presses for CPH.KeyboardPress, from whichever module registers <see cref="IKeyboardOutput"/>.</summary>
+    public IKeyboardOutput? Keyboard { get => _keyboard ??= Get<IKeyboardOutput>(); init => _keyboard = value; }
 
     public CodeTriggerRegistry CodeTriggers
     {

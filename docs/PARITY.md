@@ -89,7 +89,7 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | --- | --- | --- | --- |
 | C# code sub-action | ✅ | — | Roslyn; `Cb` API |
 | Python code sub-action + package manager | ➕ | — | beyond Streamer.bot |
-| **CPH compatibility layer** (Streamer.bot C# method names) | 🟡 | 3 | ~150 methods; `CPHInline` scripts compile unchanged; 22 methods throw NotSupported (see `docs/SERVERS.md`) |
+| **CPH compatibility layer** (Streamer.bot C# method names) | 🟡 | 3 | ~175 methods; `CPHInline` scripts compile unchanged; Twitch user/moderation/clip/marker/channel, YouTube latest broadcast, Kick accounts, ExecuteMethod, TriggerEvent and SendAction map onto the modules with Streamer.bot's data classes; KeyboardPress needs an `IKeyboardOutput` registered; only TwitchClientId/TwitchOAuthToken throw NotSupported by design (see `docs/SERVERS.md`) |
 | WebSocket server (22 requests, ~500 event types, auth) | ✅ | 3 | all requests; events mapped to Streamer.bot source/type names; verified against the real `@streamerbot/client` |
 | HTTP server (6 endpoints), UDP server (`DoAction`) | ✅ | 3 | localhost-only and off by default; origin checks |
 | Custom WebSocket servers/clients | ✅ | 3 | triggers, sub-actions, script functions |
