@@ -50,7 +50,8 @@ public sealed class RumbleLiveTests(RumbleLiveBot bot)
             // listed it. The API omits streams it doesn't consider part of the key's scope or visibility.
             throw new TimeoutException(ex.Message + ". OBS streamed, but Rumble's Live Stream API never listed a live stream. " +
                 "Check that the stream setup is Public (unlisted streams appear to be omitted) and that the API key's " +
-                "scope (user vs channel) matches the profile or channel the stream key belongs to.", ex);
+                "scope (user vs channel) matches the profile or channel the stream key belongs to. With a static stream key, " +
+                "Rumble creates each stream from the key's template, so set the channel (not \"User Profile\") on the template itself.", ex);
         }
         Assert.False(string.IsNullOrEmpty(online.Args["streamId"] as string));
         await RumbleLiveBot.WaitUntilAsync(() => bot.Rumble.IsChatAttached, ChatAttachTimeout, "the Rumble live chat to attach");

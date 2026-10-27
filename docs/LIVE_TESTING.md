@@ -45,7 +45,9 @@ reports a stream going live or ending with a delay, so that test allows up to fi
 profile or one of your channels (the API response's `type` field says which). In the stream setup (Live Streams →
 Edit → Settings → *Channel*) pick that same profile or channel, and set Visibility to Public. Otherwise Rumble
 accepts the stream (the dashboard shows it LIVE) but the Live Stream API never lists it, so no
-`rumble.streamOnline` event or chat arrives. The live
+`rumble.streamOnline` event or chat arrives. With a **static stream key**, Rumble starts every session as a new stream
+built from the key's template (Live Streams → Templates / Static Stream Keys), so set the channel and visibility on the
+template itself: editing one stream only fixes that session. The live
 chat endpoints Cuebot uses are unofficial (see `src/Cuebot.Rumble/PROTOCOL.md`); if the API works but the chat
 never attaches, Rumble has probably changed them.
 
