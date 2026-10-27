@@ -80,7 +80,9 @@ public sealed class ProcessWatchTracker
 
     private static string Normalize(string name)
     {
-        var trimmed = Path.GetFileName(name.Trim());
+        // Accept both separators on every OS: watchers may be configured with Windows paths and run on Linux.
+        var trimmed = name.Trim();
+        trimmed = trimmed[(trimmed.LastIndexOfAny(['/', '\\']) + 1)..];
         return trimmed.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? trimmed[..^4] : trimmed;
     }
 }
