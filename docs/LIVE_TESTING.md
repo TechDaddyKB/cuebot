@@ -37,7 +37,13 @@ of the solution go live. To run that suite directly, set `CUEBOT_LIVE_TESTS=1` y
 Put your Live Stream API URL (rumble.com → Account → Live Stream API; it contains a private key) in
 `CUEBOT_LIVE_RUMBLE_API_URL`. That alone runs the read-only test. For the going-live test also set
 `CUEBOT_LIVE_RUMBLE_RTMP_URL` and `CUEBOT_LIVE_RUMBLE_STREAM_KEY` from Rumble's stream setup page. Rumble's API
-reports a stream going live or ending with a delay, so that test allows up to five minutes for each. The live
+reports a stream going live or ending with a delay, so that test allows up to five minutes for each.
+
+**The stream and the API key must belong to the same owner.** Rumble API keys are scoped to either your user
+profile or one of your channels (the API response's `type` field says which). In the stream setup (Live Streams →
+Edit → Settings → *Channel*) pick that same profile or channel, and set Visibility to Public. Otherwise Rumble
+accepts the stream (the dashboard shows it LIVE) but the Live Stream API never lists it, so no
+`rumble.streamOnline` event or chat arrives. The live
 chat endpoints Cuebot uses are unofficial (see `src/Cuebot.Rumble/PROTOCOL.md`); if the API works but the chat
 never attaches, Rumble has probably changed them.
 
