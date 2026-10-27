@@ -1,0 +1,115 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.PointsView"
+             x:DataType="vm:PointsViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+      <TextBlock Classes="h1" Text="Points" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="A loyalty currency viewers earn by watching and chatting. Balances are the user variable named below, so the points sub-actions (add, spend, transfer, leaderboard…) and the variable sub-actions share them." />
+    </StackPanel>
+
+    <!-- Settings -->
+    <ScrollViewer DockPanel.Dock="Right" Width="360" Margin="12,0,0,0">
+      <StackPanel Spacing="10">
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Currency" />
+            <Grid ColumnDefinitions="Auto,8,*" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto">
+              <TextBlock Text="Name" VerticalAlignment="Center" />
+              <TextBox Grid.Column="2" Text="{Binding CurrencyName}" PlaceholderText="points" />
+              <TextBlock Grid.Row="2" Text="One" VerticalAlignment="Center" />
+              <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding SingularName}" PlaceholderText="point" />
+              <TextBlock Grid.Row="4" Text="Symbol" VerticalAlignment="Center" />
+              <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Symbol}" PlaceholderText="optional, replaces the name" />
+              <TextBlock Grid.Row="6" Text="Variable" VerticalAlignment="Center" />
+              <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding VariableName, UpdateSourceTrigger=LostFocus}" FontFamily="monospace"
+                       ToolTip.Tip="User variable that stores each balance (no spaces)" />
+            </Grid>
+            <TextBlock Text="{Binding Preview}" Classes="muted" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Earning" />
+            <CheckBox Content="Earning on" IsChecked="{Binding Enabled}" />
+            <CheckBox Content="Only while live" IsChecked="{Binding OnlyWhileLive}"
+                      ToolTip.Tip="Presence and chat pay only while a platform reports the stream online" />
+            <TextBlock Text="{Binding LiveStatus}" Classes="muted" TextWrapping="Wrap" />
+            <Grid ColumnDefinitions="*,8,110,8,Auto" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto,6,Auto,6,Auto,6,Auto,6,Auto">
+              <TextBlock Text="Watching: amount" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="2" Value="{Binding PresentAmount}" Minimum="0" FormatString="0" />
+              <TextBlock Grid.Row="2" Text="… every" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding PresentIntervalMinutes}" Minimum="1" FormatString="0" />
+              <TextBlock Grid.Row="2" Grid.Column="4" Text="min" Classes="muted" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="4" Text="Chat message" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding MessageAmount}" Minimum="0" FormatString="0" />
+              <TextBlock Grid.Row="6" Text="… at most every" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="6" Grid.Column="2" Value="{Binding MessageCooldownSeconds}" Minimum="0" Increment="10" FormatString="0" />
+              <TextBlock Grid.Row="6" Grid.Column="4" Text="s" Classes="muted" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="8" Text="Follow bonus" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="8" Grid.Column="2" Value="{Binding FollowBonus}" Minimum="0" FormatString="0" />
+              <TextBlock Grid.Row="10" Text="Subscription bonus" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="10" Grid.Column="2" Value="{Binding SubscriptionBonus}" Minimum="0" FormatString="0" />
+              <TextBlock Grid.Row="12" Text="Per gifted sub" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="12" Grid.Column="2" Value="{Binding GiftBonusPerSub}" Minimum="0" FormatString="0" />
+              <TextBlock Grid.Row="14" Text="Raid bonus" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="14" Grid.Column="2" Value="{Binding RaidBonus}" Minimum="0" FormatString="0" />
+            </Grid>
+            <Grid ColumnDefinitions="*,8,110">
+              <TextBlock Text="Maximum balance (0 = none)" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="2" Value="{Binding MaxBalance}" Minimum="0" Increment="100" FormatString="0" />
+            </Grid>
+            <TextBlock Text="Thresholds ('Points threshold reached' trigger)" />
+            <TextBox Text="{Binding Thresholds, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. 100, 1000, 10000" />
+            <TextBlock Classes="error" Text="{Binding ThresholdsError}"
+                       IsVisible="{Binding ThresholdsError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock Text="Never earn automatically (bots)" />
+            <TextBox Text="{Binding IgnoredUsers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Nightbot, StreamElements" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Adjust -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8">
+      <Grid ColumnDefinitions="110,8,*,8,120,8,Auto,8,Auto">
+        <ComboBox ItemsSource="{Binding AdjustPlatforms}" SelectedItem="{Binding AdjustPlatform}" HorizontalAlignment="Stretch" />
+        <TextBox Grid.Column="2" Text="{Binding AdjustUser}" PlaceholderText="User name" />
+        <NumericUpDown Grid.Column="4" Value="{Binding AdjustAmount}" Minimum="0" Increment="10" FormatString="0" />
+        <Button Grid.Column="6" Content="Give" Classes="accent" Command="{Binding GiveCommand}" />
+        <Button Grid.Column="8" Content="Take" Command="{Binding TakeCommand}" />
+      </Grid>
+    </Border>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="140,8,Auto,8,Auto,12,*" Margin="0,0,0,6">
+      <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" HorizontalAlignment="Stretch" ToolTip.Tip="Platform" />
+      <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshLeaderboardCommand}" />
+      <Button Grid.Column="4" Content="Reset balances" Command="{Binding ResetAllCommand}"
+              ToolTip.Tip="Delete every balance of the selected platform (asks for a second click)" />
+      <TextBlock Grid.Column="6" Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+    </Grid>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="60,*,100,160" Margin="12,4,12,4">
+      <TextBlock Classes="muted" Text="RANK" />
+      <TextBlock Grid.Column="1" Classes="muted" Text="USER" />
+      <TextBlock Grid.Column="2" Classes="muted" Text="PLATFORM" />
+      <TextBlock Grid.Column="3" Classes="muted" Text="BALANCE" HorizontalAlignment="Right" />
+    </Grid>
+    <Grid>
+      <ListBox ItemsSource="{Binding Leaderboard}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:PointsRowViewModel">
+            <Grid ColumnDefinitions="60,*,100,160">
+              <TextBlock Text="{Binding Rank}" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="1" Text="{Binding UserName}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="2" Text="{Binding Platform}" Classes="muted" />
+              <TextBlock Grid.Column="3" Text="{Binding Points}" HorizontalAlignment="Right" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Classes="muted" IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                 Text="No balances yet. Viewers earn while the stream is live." />
+    </Grid>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.CreditsView"
+             x:DataType="vm:CreditsViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+      <TextBlock Classes="h1" Text="Credits" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Everyone who followed, subscribed, gifted, cheered, tipped, raided, redeemed or chatted this stream, from every connected platform. Overlays read the same data (JSON below) through the 'Get credits' sub-action or the server API." />
+    </StackPanel>
+
+    <!-- Settings -->
+    <Border DockPanel.Dock="Right" Classes="card" Width="320" Margin="12,0,0,0" VerticalAlignment="Top">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="h2" Text="Collecting" />
+        <CheckBox Content="Start fresh when a stream goes live" IsChecked="{Binding ResetOnStreamOnline}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="Reset after" VerticalAlignment="Center" />
+          <NumericUpDown Value="{Binding AutoResetHours}" Minimum="0" Increment="1" FormatString="0" Width="110" />
+          <TextBlock Text="idle hours" Classes="muted" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="0 = never reset automatically." />
+        <CheckBox Content="Credit everyone who chatted" IsChecked="{Binding RecordChatters}" />
+        <TextBlock Text="Never credit (bots)" />
+        <TextBox Text="{Binding IgnoredUsers}" PlaceholderText="e.g. Nightbot, StreamElements" />
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+          <Button Content="Reset credits" Command="{Binding ResetCommand}" />
+          <ToggleButton Content="Show test data" IsChecked="{Binding ShowTestData}"
+                        ToolTip.Tip="Preview sample credits (for designing an overlay) without changing the real ones" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" Classes="muted" Margin="0,0,0,8" />
+    <Expander DockPanel.Dock="Bottom" Header="Overlay JSON" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+      <TextBox Text="{Binding Json}" IsReadOnly="True" FontFamily="monospace" MaxHeight="240" TextWrapping="NoWrap" AcceptsReturn="True" />
+    </Expander>
+    <Grid>
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Sections}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel ItemSpacing="12" LineSpacing="12" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:CreditsSectionViewModel">
+              <Border Classes="card" Width="250" Margin="0">
+                <StackPanel Spacing="4">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Classes="muted" />
+                    <TextBlock Classes="h2" Text="{Binding Title}" />
+                  </DockPanel>
+                  <ItemsControl ItemsSource="{Binding Names}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="x:String">
+                        <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+      <TextBlock Classes="muted" IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                 Text="Nothing yet. Credits fill in as events arrive; 'Show test data' previews what an overlay would get." />
+    </Grid>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.QuotesView"
+             x:DataType="vm:QuotesViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4">
+      <TextBlock Classes="h1" Text="Quotes" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Quotes are added and shown by actions ('Add quote', 'Get quote' — e.g. from !addquote and !quote commands) or here. Each one remembers who added it and the game or category being streamed." />
+    </StackPanel>
+
+    <!-- Add a quote -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
+      <Grid ColumnDefinitions="*,8,150,8,190,8,Auto">
+        <TextBox Text="{Binding NewText}" PlaceholderText="New quote text" />
+        <TextBox Grid.Column="2" Text="{Binding NewUser}" PlaceholderText="User (optional)" />
+        <TextBox Grid.Column="4" Text="{Binding NewGame}" PlaceholderText="{Binding CurrentGameHint}" />
+        <Button Grid.Column="6" Content="+ Quote" Classes="accent" Command="{Binding AddQuoteCommand}" />
+      </Grid>
+    </Border>
+
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto" Margin="0,0,0,6">
+      <TextBox Text="{Binding Search}" PlaceholderText="Search text, user, game or #id" />
+      <Button Grid.Column="2" Content="Import…" Click="OnImport"
+              ToolTip.Tip="Add quotes from a JSON or CSV file (a CSV needs a header row with at least a 'text' column)" />
+      <CheckBox Grid.Column="4" Content="Replace all" IsChecked="{Binding ReplaceOnImport}"
+                ToolTip.Tip="Importing replaces every quote (keeping the file's ids) instead of adding to them" />
+      <Button Grid.Column="6" Content="Export JSON…" Click="OnExportJson" />
+      <Button Grid.Column="8" Content="Export CSV…" Click="OnExportCsv" />
+      <Button Grid.Column="10" Content="Re-index" Command="{Binding ReindexCommand}"
+              ToolTip.Tip="Renumber the quotes 1, 2, 3… in order (closes gaps left by deleted quotes)" />
+      <TextBlock Grid.Column="12" Text="{Binding Summary}" Classes="muted" VerticalAlignment="Center" />
+    </Grid>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,0,0,6"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="60,*,150,170,90,80,Auto" Margin="12,4,12,4">
+      <TextBlock Classes="muted" Text="ID" />
+      <TextBlock Grid.Column="1" Classes="muted" Text="QUOTE" />
+      <TextBlock Grid.Column="2" Classes="muted" Text="USER" />
+      <TextBlock Grid.Column="3" Classes="muted" Text="GAME / CATEGORY" />
+      <TextBlock Grid.Column="4" Classes="muted" Text="DATE" />
+      <TextBlock Grid.Column="5" Classes="muted" Text="PLATFORM" />
+    </Grid>
+    <Grid>
+      <ListBox ItemsSource="{Binding Quotes}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:QuoteRowViewModel">
+            <Grid ColumnDefinitions="60,*,150,170,90,80,Auto">
+              <TextBlock Text="{Binding IdText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <TextBox Grid.Column="1" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" Margin="0,0,8,0" />
+              <TextBox Grid.Column="2" Text="{Binding User, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
+              <TextBox Grid.Column="3" Text="{Binding Game, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
+              <TextBlock Grid.Column="4" Text="{Binding Date}" Classes="muted" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="5" Text="{Binding Platform}" Classes="muted" VerticalAlignment="Center" />
+              <Button Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Classes="muted" IsVisible="{Binding !Quotes.Count}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                 TextWrapping="Wrap" Text="No quotes yet. Add one above, import a file, or use the 'Add quote' sub-action in a command." />
+    </Grid>
+  </DockPanel>
+</UserControl>
