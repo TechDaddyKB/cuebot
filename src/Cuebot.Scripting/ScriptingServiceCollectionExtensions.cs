@@ -1,5 +1,7 @@
 using Cuebot.Core;
 using Cuebot.Core.Actions;
+using Cuebot.Core.Scripting;
+using Cuebot.Scripting.Compat;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Scripting;
@@ -12,7 +14,13 @@ public static class ScriptingServiceCollectionExtensions
         services.AddSettingsFile<ScriptingSettings>("scripting.json");
         services.AddSingleton<PythonRuntime>();
         services.AddSingleton<PythonScriptHost>();
-        services.AddSingleton<CSharpScriptEngine>();
+
+        // Streamer.bot compatibility: CPH object, CPHInline classes and custom code triggers.
+        services.AddSingleton<CodeTriggerRegistry>();
+        services.AddSingleton<ITriggerProvider, CodeTriggerProvider>();
+        services.AddSingleton(sp => new CphServices(sp));
+        services.AddSingleton(sp => new CSharpScriptEngine(sp.GetRequiredService<ScriptApi>(), sp.GetRequiredService<CphServices>()));
+
         services.AddSingleton<ISubActionHandler, CSharpCodeSubAction>();
         services.AddSingleton<ISubActionHandler, PythonCodeSubAction>();
         return services;

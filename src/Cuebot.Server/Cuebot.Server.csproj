@@ -1,6 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <!-- Kestrel (shared framework, no package): cross-platform, binds localhost or LAN without admin rights or URL ACLs
+         (unlike HttpListener/http.sys on Windows), and has WebSockets built in. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+    <ProjectReference Include="..\Cuebot.Speech\Cuebot.Speech.csproj" />
+    <ProjectReference Include="..\Cuebot.Scripting\Cuebot.Scripting.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Http\Feeds\*.html" LogicalName="Cuebot.Server.Feeds.%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Server.Tests" />

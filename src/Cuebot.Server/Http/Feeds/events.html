@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuebot activity</title>
+<style>
+  :root { --bg: rgba(18, 18, 24, 0.92); --fg: #f2f2f5; --muted: #9a9aa8; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, "Segoe UI", sans-serif; }
+  body.transparent { background: transparent; }
+  #status { position: fixed; top: 0; left: 0; right: 0; padding: 4px 10px; font-size: 12px; color: var(--muted); background: rgba(0,0,0,.4); }
+  #status:empty { display: none; }
+  #list { padding: 8px 10px; display: flex; flex-direction: column-reverse; }
+  .item { padding: 6px 8px; margin: 3px 0; border-left: 3px solid #8ab4ff; background: rgba(255,255,255,.05); border-radius: 3px; animation: in .25s ease-out; }
+  .item.Follow { border-color: #4dabf7; } .item.Subscription, .item.GiftSubscription { border-color: #b197fc; }
+  .item.Tip { border-color: #ffd166; } .item.Raid { border-color: #ff6b6b; } .item.Redemption { border-color: #63e6be; }
+  .title { font-weight: 600; } .detail { color: var(--muted); font-size: 13px; }
+  .meta { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  @keyframes in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="status">Connecting...</div>
+<div id="list"></div>
+<script>
+const CONFIG = /*CUEBOT_CONFIG*/{};
+const MAX = 50;
+const list = document.getElementById('list');
+function add(data) {
+  const row = document.createElement('div');
+  row.className = 'item ' + (data.kind || '');
+  row.innerHTML = '<div class="meta"></div><div class="title"></div><div class="detail"></div>';
+  row.children[0].textContent = [data.platform, data.kind, new Date().toLocaleTimeString()].filter(Boolean).join(' · ');
+  row.children[1].textContent = data.title || data.userName || '';
+  row.children[2].textContent = [data.amount, data.detail].filter(Boolean).join(' ');
+  list.appendChild(row);
+  while (list.children.length > MAX) list.removeChild(list.firstChild);
+}
+/*CUEBOT_CLIENT*/
+cuebotConnect({ Chat: ['Activity'] }, (event, data) => add(data));
+</script>
+</body>
+</html>

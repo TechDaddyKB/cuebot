@@ -51,7 +51,7 @@ internal sealed class CSharpScriptCompiler
         return runner;
     }
 
-    private static string FormatErrors(IReadOnlyList<Diagnostic> errors)
+    internal static string FormatErrors(IReadOnlyList<Diagnostic> errors)
     {
         var lines = errors.Take(MaxReportedErrors).Select(FormatDiagnostic).ToList();
         if (errors.Count > MaxReportedErrors) lines.Add($"...and {errors.Count - MaxReportedErrors} more");
@@ -77,5 +77,7 @@ internal sealed class CSharpScriptCompiler
         typeof(Uri).Assembly,
         typeof(Console).Assembly,
         typeof(CSharpScriptGlobals).Assembly,
+        typeof(Microsoft.CSharp.RuntimeBinder.Binder).Assembly,
+        typeof(Cuebot.Core.Actions.ActionEngine).Assembly,
     ];
 }
