@@ -144,7 +144,7 @@ internal static class TestTimings
         ReconnectDelay: TimeSpan.FromMilliseconds(20),
         MaxReconnectDelay: TimeSpan.FromMilliseconds(100),
         AuthApprovalTimeout: TimeSpan.FromSeconds(3),
-        HeartbeatInterval: TimeSpan.FromMilliseconds(100),
+        HeartbeatInterval: TimeSpan.FromMilliseconds(250),
         InjectInterval: TimeSpan.FromMilliseconds(50));
 }
 

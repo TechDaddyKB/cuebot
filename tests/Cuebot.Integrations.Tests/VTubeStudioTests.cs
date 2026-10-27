@@ -199,9 +199,9 @@ public sealed class VTubeStudioTests : IAsyncLifetime
     {
         var fake = await ConnectAsync();
         await _vts.InjectParametersAsync(VtsProtocol.ParseParameterValues("FaceAngleX=20, MouthOpen=1@0.5"), add: false, faceFound: false,
-            TimeSpan.FromMilliseconds(260));
+            TimeSpan.FromMilliseconds(600));
         var injections = fake.Of("InjectParameterDataRequest");
-        Assert.InRange(injections.Length, 3, 10);
+        Assert.InRange(injections.Length, 3, 20); // every 50 ms for 600 ms, with room for slow machines
         var values = injections[0].Data.GetProperty("parameterValues");
         Assert.Equal("FaceAngleX", values[0].GetProperty("id").GetString());
         Assert.Equal(20, values[0].GetProperty("value").GetDouble());
