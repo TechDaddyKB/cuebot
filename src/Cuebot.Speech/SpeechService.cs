@@ -269,6 +269,69 @@ public sealed class SpeechService : IAsyncDisposable
     public SpeechUser SetUserVoice(string platform, string userId, string userName, string alias) =>
         Users.Update(platform, userId, userName, u => u.Alias = alias.Trim());
 
+    /// <summary>Sticky random voices: a user keeps their first random voice until it is reset.</summary>
+    public bool StickyRandom
+    {
+        get => Settings.SpeakChat.StickyRandom;
+        set
+        {
+            if (Settings.SpeakChat.StickyRandom == value) return;
+            Settings.SpeakChat.StickyRandom = value;
+            SaveSettings();
+        }
+    }
+
+    /// <summary>
+    /// Speaker.bot "assign last": makes the voice a user was last heard with their permanent voice. A random pick
+    /// or a multi-voice alias is pinned in a new alias named after the user. Returns the alias, or null when the
+    /// user has not spoken yet.
+    /// </summary>
+    public VoiceAlias? AssignLastVoice(string platform, string userName)
+    {
+        var user = Users.Find(platform, null, userName.Trim().TrimStart('@'));
+        if (user is null || user.LastVoice.Split('|') is not [var aliasName, var engineId, var voiceId]) return null;
+        var alias = VoiceResolver.FindAlias(aliasName, Settings.Aliases);
+        if (alias is null || alias.EffectiveVoices().Count > 1)
+        {
+            var name = UniqueAliasName($"{(user.UserName.Length > 0 ? user.UserName : userName.Trim().TrimStart('@'))} voice");
+            alias = new VoiceAlias { Name = name, EngineId = engineId, VoiceId = voiceId };
+            Settings.Aliases.Add(alias);
+            SaveSettings();
+        }
+        SetUserVoice(platform, user.UserId, user.UserName, alias.Name);
+        return alias;
+    }
+
+    /// <summary>Whether one event kind (or Speaker.bot event name, see <see cref="EventSpeech.ResolveKind"/>) is spoken; null when unknown.</summary>
+    public bool? IsEventEnabled(string name) =>
+        EventSpeech.ResolveKind(name) is { } kind ? EventSpeech.FindTemplate(Settings.Events, kind)?.Enabled : null;
+
+    /// <summary>Turns speech for one event kind on or off (Speaker.bot UDP "events"). False when the name is unknown.</summary>
+    public bool SetEventEnabled(string name, bool enabled)
+    {
+        if (EventSpeech.ResolveKind(name) is not { } kind) return false;
+        var events = Settings.Events;
+        var template = events.Templates.FirstOrDefault(t => string.Equals(t.Kind, kind, StringComparison.OrdinalIgnoreCase));
+        if (template is null)
+        {
+            // Store the built-in default so the switch persists without changing its messages.
+            template = EventSpeech.DefaultTemplate(kind);
+            if (template is null) return false;
+            events.Templates.Add(template);
+        }
+        template.Enabled = enabled;
+        SaveSettings();
+        RaiseStateChanged();
+        return true;
+    }
+
+    private string UniqueAliasName(string baseName)
+    {
+        var name = baseName;
+        for (var i = 2; VoiceResolver.FindAlias(name, Settings.Aliases) is not null; i++) name = $"{baseName} {i}";
+        return name;
+    }
+
     /// <summary>Activates a VoiceGate profile by name; empty or "none" switches VoiceGate off. False when unknown.</summary>
     public bool ActivateVoiceGateProfile(string? name)
     {
@@ -361,6 +424,11 @@ public sealed class SpeechService : IAsyncDisposable
             case SpeechEvents.ChatActivity:
                 HandleActivity(e.Args);
                 return;
+        }
+        if (SpeechEvents.Merch.Contains(e.Type, StringComparer.OrdinalIgnoreCase))
+        {
+            HandleActivity(EventSpeech.MerchArgs(e.Args));
+            return;
         }
         var moderation = Settings.Moderation;
         if (SpeechEvents.MessageDeleted.Contains(e.Type, StringComparer.OrdinalIgnoreCase))

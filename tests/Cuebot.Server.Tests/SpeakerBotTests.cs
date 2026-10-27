@@ -105,4 +105,42 @@ public sealed class SpeakerBotTests : IAsyncLifetime
         Assert.True(_bot.Speaker.Paused);
         Assert.Contains("nick:ann:Annie", _bot.Speaker.Log);
     }
+
+    [Fact]
+    public async Task Udp_single_event_toggles_sticky_and_assign_last()
+    {
+        using var udp = new UdpClient();
+        var target = new IPEndPoint(IPAddress.Loopback, _bot.Manager.SpeakerBotUdp!.Port);
+        async Task Send(string json) => await udp.SendAsync(Encoding.UTF8.GetBytes(json), target);
+
+        await Send("""{"command":"events","value":"Follow","state":"off"}""");
+        await Send("""{"command":"events","value":"Dance","state":"off"}""");
+        await Send("""{"command":"set","method":"sticky","value":false}""");
+        await Send("""{"command":"assign","method":"last","username":"ann"}""");
+        await StreamerBotWebSocketTests.WaitUntil(() => _bot.Speaker.Log.Contains("assign:ann"));
+
+        Assert.False(_bot.Speaker.EventStates["Follow"]);
+        Assert.True(_bot.Speaker.EventsEnabled);
+        Assert.False(_bot.Speaker.StickyRandom);
+    }
+
+    [Fact]
+    public async Task WebSocket_single_event_toggles_sticky_and_assign_last()
+    {
+        var merch = await _client.RequestAsync("Events", new { value = "Merch", state = "toggle" });
+        Assert.False(merch["eventEnabled"]!.GetValue<bool>());
+        Assert.True(merch["eventsEnabled"]!.GetValue<bool>());
+        Assert.Equal("error", S((await _client.RequestAsync("Events", new { value = "Dance", state = "on" }))["status"]));
+
+        Assert.False((await _client.RequestAsync("Set", new { method = "sticky", value = false }))["sticky"]!.GetValue<bool>());
+        Assert.True((await _client.RequestAsync("Set", new { method = "sticky", value = "on" }))["sticky"]!.GetValue<bool>());
+        await _client.RequestAsync("Set", new { method = "nickname", username = "bob", nickname = "Bobby" });
+        Assert.Contains("nick:bob:Bobby", _bot.Speaker.Log);
+
+        var assigned = await _client.RequestAsync("Assign", new { method = "last", username = "@ann" });
+        Assert.True(assigned["success"]!.GetValue<bool>());
+        Assert.Equal("ann voice", S(assigned["alias"]));
+        Assert.False((await _client.RequestAsync("Assign", new { method = "last", username = "nobody" }))["success"]!.GetValue<bool>());
+        Assert.Equal("error", S((await _client.RequestAsync("Assign", new { method = "last" }))["status"]));
+    }
 }

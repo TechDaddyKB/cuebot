@@ -47,6 +47,7 @@ public static class SpeechDefaults
         ("GiftSubscription", "Gift subscription", "%name% gifted %gift% subs!", true),
         ("Cheer", "Cheer (bits)", "%name% cheered %bits% bits! %message%", true),
         ("Tip", "Tip / donation", "%name% tipped %amount%! %message%", true),
+        ("Merch", "Merch purchase", "%name% bought %product%! %message%", true),
         ("Raid", "Raid", "%name% is raiding with %viewers% viewers!", true),
         ("Redemption", "Reward redemption", "%name% redeemed %title%. %input%", true),
         ("StreamOnline", "Stream online", "The stream is live!", false),
@@ -56,7 +57,7 @@ public static class SpeechDefaults
     public static IReadOnlyList<string> EventVariables { get; } =
     [
         "name", "user", "platform", "kind", "description", "level", "gift", "subtier", "tier", "title", "cost", "bits",
-        "amount", "percent", "currency", "recipient", "cumulative", "message", "input", "viewers",
+        "amount", "percent", "currency", "recipient", "cumulative", "message", "input", "viewers", "product", "quantity",
     ];
 
     public static IReadOnlyList<string> ChatVariables { get; } = ["user", "message", "platform", "userId", "nickname"];
