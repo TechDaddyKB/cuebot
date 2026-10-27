@@ -34,9 +34,15 @@ case "$mode" in
     conf="$(mktemp)"
     printf 'output HEADLESS-1 resolution 1600x1000\nxwayland disable\n' > "$conf"
     WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 sway -c "$conf" >"$out.compositor.log" 2>&1 & pids+=($!)
-    for _ in $(seq 1 20); do [ -S "$XDG_RUNTIME_DIR/wayland-1" ] && break; sleep 0.5; done
-    export WAYLAND_DISPLAY=wayland-1
-    export SWAYSOCK="$(ls "$XDG_RUNTIME_DIR"/sway-ipc.*.sock 2>/dev/null | head -1)"
+    # Wait until sway answers on its IPC socket: the Wayland socket appears before its globals are ready.
+    for _ in $(seq 1 40); do
+      export SWAYSOCK="$(ls "$XDG_RUNTIME_DIR"/sway-ipc.*.sock 2>/dev/null | head -1)"
+      [ -n "$SWAYSOCK" ] && swaymsg -t get_version >/dev/null 2>&1 && break
+      sleep 0.5
+    done
+    sock="$(ls "$XDG_RUNTIME_DIR" | grep -E '^wayland-[0-9]+$' | head -1)"
+    [ -n "$sock" ] || { echo "sway did not start:" >&2; cat "$out.compositor.log" >&2; exit 1; }
+    export WAYLAND_DISPLAY="$sock"
     export LIBGL_ALWAYS_SOFTWARE=1   # Mesa software rendering; the CI runner has no GPU
     expected="Wayland"
     window_up() { swaymsg -t get_tree 2>/dev/null | jq -e '.. | objects | select(.name? == "Cuebot")' >/dev/null; }
