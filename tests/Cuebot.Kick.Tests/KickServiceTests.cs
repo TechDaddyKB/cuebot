@@ -320,9 +320,11 @@ public sealed class KickServiceTests : IAsyncLifetime
         Assert.Contains(registered, d => d.ServiceType == typeof(IChatSender));
         Assert.Contains(registered, d => d.ServiceType == typeof(IScriptFunctionProvider));
         Assert.Contains(registered, d => d.ServiceType == typeof(Cuebot.Core.Chat.Emotes.IEmoteChannelSource));
+        Assert.Contains(registered, d => d.ServiceType == typeof(Cuebot.Core.Webhooks.IWebhookHandler));
 
         foreach (var d in registered.Where(d => d.ServiceType == typeof(ISubActionHandler) || d.ServiceType == typeof(ITriggerProvider)
-                                               || d.ServiceType == typeof(IScriptFunctionProvider) || d.ServiceType == typeof(IChatSender)))
+                                               || d.ServiceType == typeof(IScriptFunctionProvider) || d.ServiceType == typeof(IChatSender)
+                                               || d.ServiceType == typeof(Cuebot.Core.Webhooks.IWebhookHandler)))
             services.Add(d);
         using var provider = services.BuildServiceProvider();
         var handlers = provider.GetServices<ISubActionHandler>().ToArray();
@@ -341,6 +343,7 @@ public sealed class KickServiceTests : IAsyncLifetime
         var functions = provider.GetServices<IScriptFunctionProvider>().SelectMany(p => p.GetFunctions()).Select(f => f.Name).ToArray();
         Assert.Contains("kick.sendMessage", functions);
         Assert.Contains("kick.timeout", functions);
+        Assert.Equal("kick", Assert.Single(provider.GetServices<Cuebot.Core.Webhooks.IWebhookHandler>()).Service);
 
         SignedIn();
         var sender = provider.GetServices<IChatSender>().Single();

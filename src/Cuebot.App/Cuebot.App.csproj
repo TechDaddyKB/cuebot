@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Cuebot.Donations\Cuebot.Donations.csproj" />
     <ProjectReference Include="..\Cuebot.Integrations\Cuebot.Integrations.csproj" />
     <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
+    <ProjectReference Include="..\Cuebot.Relay\Cuebot.Relay.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.UiTests" />
