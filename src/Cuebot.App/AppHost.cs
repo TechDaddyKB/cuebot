@@ -1,3 +1,4 @@
+using Cuebot.App.Shell;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.BuiltIn;
@@ -16,12 +17,16 @@ namespace Cuebot.App;
 public sealed class AppHost : IAsyncDisposable
 {
     private readonly ServiceProvider _services;
+    private Task? _disposal;
 
     private AppHost(ServiceProvider services) => _services = services;
 
-    public static AppHost Create(AppPaths paths)
+    /// <param name="paths">Data folder.</param>
+    /// <param name="settings">The shell's already-loaded app.json; loaded from the data folder when null.</param>
+    public static AppHost Create(AppPaths paths, AppSettingsStore? settings = null)
     {
         var firstRun = !File.Exists(paths.File("actions.json"));
+        settings ??= new AppSettingsStore(paths);
         var services = new ServiceCollection()
             .AddCuebotCore(paths)
             .AddTwitch()
@@ -29,6 +34,8 @@ public sealed class AppHost : IAsyncDisposable
             .AddSpeech()
             .AddScripting()
             .AddRumble();
+        services.AddSingleton(settings);
+        services.AddSingleton(_ => new BackupService(paths, () => settings.Settings.Backups.Keep));
         var host = new AppHost(services.BuildServiceProvider());
         if (firstRun)
         {
@@ -42,6 +49,10 @@ public sealed class AppHost : IAsyncDisposable
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     public IEnumerable<T> GetAll<T>() => _services.GetServices<T>();
+
+    public AppSettingsStore Settings => Get<AppSettingsStore>();
+
+    public BackupService Backups => Get<BackupService>();
 
     /// <summary>Starts the engine and auto-connects platforms. Never throws; failures are logged.</summary>
     public async Task StartAsync()
@@ -68,9 +79,38 @@ public sealed class AppHost : IAsyncDisposable
         catch (Exception ex) { log.Error(name, "Failed to start", ex); }
     }
 
-    public async ValueTask DisposeAsync()
+    /// <summary>
+    /// Flushes every store, then disposes all services. Safe to call more than once and from any thread: later calls
+    /// return the first call's task. Callers on the UI thread should not block on it (see <see cref="ShutDown"/>).
+    /// </summary>
+    public ValueTask DisposeAsync()
     {
-        Get<ProfileService>().Flush();
+        lock (_services) _disposal ??= Task.Run(DisposeCoreAsync);
+        return new ValueTask(_disposal);
+    }
+
+    /// <summary>Synchronous shutdown for the end of <c>Main</c>: runs the disposal off any UI context, with a time limit.</summary>
+    public bool ShutDown(TimeSpan timeout)
+    {
+        try
+        {
+            return DisposeAsync().AsTask().Wait(timeout);
+        }
+        catch (AggregateException)
+        {
+            return true;   // disposal failed but finished; errors were logged where possible
+        }
+    }
+
+    private async Task DisposeCoreAsync()
+    {
+        try
+        {
+            Get<AppLog>().Info("Cuebot", "Shutting down");
+            Get<ProfileService>().Flush();
+            Get<AppSettingsStore>().TrySave();
+        }
+        catch (ObjectDisposedException) { }
         await _services.DisposeAsync();
     }
 }

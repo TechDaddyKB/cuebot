@@ -14,6 +14,7 @@ finish-args:
   - --socket=pulseaudio    # speech and sound playback
   - --device=dri
   - --filesystem=xdg-music:ro   # sound files used by "Play sound"
+  - --talk-name=org.kde.StatusNotifierWatcher   # tray icon (StatusNotifierItem); without it Cuebot runs trayless
 modules:
   - name: espeak-ng
     buildsystem: autotools

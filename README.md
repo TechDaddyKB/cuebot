@@ -52,7 +52,31 @@ flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.gi
 CI (`.github/workflows/build.yml`) tests on Windows and Ubuntu and produces the Windows zip, the AppImage and
 a Flatpak bundle.
 
-User data lives in `%APPDATA%\Cuebot` (Windows) or `~/.config/Cuebot` (Linux); set `CUEBOT_DATA` to override.
+User data lives in `%APPDATA%\Cuebot` (Windows) or `~/.config/Cuebot` (Linux); set `CUEBOT_DATA` or pass
+`--data <folder>` to override.
+
+## Startup switches
+
+| Switch | What |
+| --- | --- |
+| `--headless` | No window: every service starts, the log goes to the console and the log file; Ctrl+C, SIGTERM or SIGHUP shuts down cleanly (stores are flushed). No display server needed. |
+| `--minimized` | Start hidden in the tray (minimized when no tray is available). Same as Settings > General > Start minimized. |
+| `--data <folder>` | Use this data folder (overrides `CUEBOT_DATA`). |
+| `--reset-window` | Forget the saved window size and position. |
+| `--backend=wayland\|x11` | Linux display backend (see below). |
+| `--help` | List the switches. |
+
+Streamer.bot-style `/headless` and `/resetwindow` are accepted too. Only one Cuebot runs per data folder: a second
+launch brings the running window to the front (or is ignored by a headless instance) and exits, so two instances
+can never write the same files. Different data folders can run side by side.
+
+Shell settings live in `app.json` in the data folder (Settings page): tray icon, close-to-tray, start minimized,
+theme (Dark, Light or System), backups and the saved window placement.
+
+Backups: on every start (and before imports) the data folder is zipped into `backups/`
+(`cuebot-yyyyMMdd-HHmmss-<reason>-v<version>.zip`, without logs, the Python runtime and older backups); the newest 10
+are kept (configurable). Settings > Backups backs up on demand, opens the folder and restores: a restore is applied
+while Cuebot restarts, before anything is loaded, after a safety backup of the current data.
 
 ## Linux
 
@@ -68,6 +92,11 @@ Avalonia's Wayland backend needs a compositor offering `xdg_wm_base` v3 or newer
 sway/Hyprland all do; sway 1.9 does not). On older compositors Cuebot relaunches on XWayland automatically.
 Inside the Flatpak sandbox X11 is only granted when no Wayland socket exists, so on such a compositor run
 `flatpak override --user --socket=x11 io.github.cuebot.Cuebot` once (or launch with `--backend=x11`).
+
+Tray icon: on Linux it is a StatusNotifierItem, shown by KDE Plasma, waybar and most wlroots bars, XFCE, Cinnamon and
+GNOME with the AppIndicator extension. Plain GNOME and some minimal Wayland sessions have no tray; Cuebot detects that
+(no `org.kde.StatusNotifierWatcher` on the session bus) and then minimizes instead of hiding to the tray, so the window
+is never lost. Launching Cuebot again always brings the window back.
 
 - Audio playback uses `pw-play`, `paplay` or `aplay` (whichever is installed).
 - Offline TTS on Linux uses `espeak-ng` (bundled in the Flatpak).

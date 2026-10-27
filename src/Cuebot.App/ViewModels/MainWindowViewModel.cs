@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Cuebot.App.Shell;
 using Cuebot.App.ViewModels.Actions;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
@@ -12,8 +13,9 @@ namespace Cuebot.App.ViewModels;
 
 public sealed partial class MainWindowViewModel : ObservableObject
 {
-    public MainWindowViewModel(AppHost host)
+    public MainWindowViewModel(AppHost host, IShellHost? shell = null)
     {
+        Settings = new SettingsViewModel(host, shell ?? new DetachedShellHost(host.Settings));
         var log = host.Get<AppLog>();
         Dashboard = new DashboardViewModel(log, host.Get<ActionEngine>(), host.GetAll<IConnectionStatus>());
         Pages =
@@ -28,11 +30,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new ObsViewModel(host.Get<ObsService>()),
             new SpeechViewModel(host.Get<SpeechService>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
+            Settings,
         ];
         _selectedPage = Dashboard;
     }
 
     public DashboardViewModel Dashboard { get; }
+    public SettingsViewModel Settings { get; }
     public IReadOnlyList<PageViewModel> Pages { get; }
 
     [ObservableProperty] private PageViewModel _selectedPage;
