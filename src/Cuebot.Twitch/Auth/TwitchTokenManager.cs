@@ -3,31 +3,46 @@ using Cuebot.Core.Storage;
 
 namespace Cuebot.Twitch.Auth;
 
-/// <summary>Owns the tokens stored in <see cref="TwitchSettings"/>: storing, refreshing (single-flight) and validating.</summary>
-internal sealed class TwitchTokenManager(JsonFile<TwitchSettings> settings, TwitchAuthClient auth, AppLog log) : ITwitchTokenSource
+/// <summary>
+/// Owns the tokens of one account (broadcaster or bot) stored in <see cref="TwitchSettings"/>: storing,
+/// refreshing (single-flight) and validating.
+/// </summary>
+internal sealed class TwitchTokenManager(
+    JsonFile<TwitchSettings> settings,
+    TwitchAuthClient auth,
+    AppLog log,
+    Func<TwitchSettings, ITwitchAccount>? account = null,
+    string label = "Twitch") : ITwitchTokenSource
 {
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
+    private readonly Func<TwitchSettings, ITwitchAccount> _account = account ?? (s => new BroadcasterAccount(s));
 
-    private TwitchSettings Settings => settings.Value;
+    private ITwitchAccount Account => _account(settings.Value);
 
-    public string ClientId => Settings.ClientId.Trim();
-    public string AccessToken => Settings.AccessToken;
+    public string ClientId => settings.Value.ClientId.Trim();
+    public string AccessToken => Account.AccessToken;
+    public string UserId => Account.UserId;
+    public string Login => Account.Login;
+    public IReadOnlyList<string> Scopes => Account.Scopes;
+    public bool HasToken => Account.AccessToken.Length > 0;
 
     public void Store(TwitchTokens tokens)
     {
-        Settings.AccessToken = tokens.AccessToken;
-        Settings.RefreshToken = tokens.RefreshToken;
-        Settings.Scopes = [.. tokens.Scopes];
+        var account = Account;
+        account.AccessToken = tokens.AccessToken;
+        account.RefreshToken = tokens.RefreshToken;
+        account.Scopes = [.. tokens.Scopes];
         settings.ScheduleSave();
     }
 
     public void Clear()
     {
-        Settings.AccessToken = "";
-        Settings.RefreshToken = "";
-        Settings.UserId = "";
-        Settings.Login = "";
-        Settings.Scopes = [];
+        var account = Account;
+        account.AccessToken = "";
+        account.RefreshToken = "";
+        account.UserId = "";
+        account.Login = "";
+        account.Scopes = [];
         settings.ScheduleSave();
     }
 
@@ -36,10 +51,11 @@ internal sealed class TwitchTokenManager(JsonFile<TwitchSettings> settings, Twit
         await _refreshGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (Settings.AccessToken != rejectedToken) return true;
-            if (string.IsNullOrEmpty(Settings.RefreshToken)) return false;
-            Store(await auth.RefreshAsync(ClientId, Settings.RefreshToken, ct).ConfigureAwait(false));
-            log.Info("Twitch", "Access token refreshed");
+            var account = Account;
+            if (account.AccessToken != rejectedToken) return true;
+            if (string.IsNullOrEmpty(account.RefreshToken)) return false;
+            Store(await auth.RefreshAsync(ClientId, account.RefreshToken, ct).ConfigureAwait(false));
+            log.Info("Twitch", $"{label} access token refreshed");
             return true;
         }
         catch (TwitchApiException ex)
@@ -64,11 +80,12 @@ internal sealed class TwitchTokenManager(JsonFile<TwitchSettings> settings, Twit
         if (validation is null && await TryRefreshAsync(token, ct).ConfigureAwait(false))
             validation = await auth.ValidateAsync(AccessToken, ct).ConfigureAwait(false);
         if (validation is null)
-            throw new TwitchApiException("Twitch sign-in has expired. Please sign in again.", 401);
+            throw new TwitchApiException($"{label} sign-in has expired. Please sign in again.", 401);
 
-        Settings.UserId = validation.UserId;
-        Settings.Login = validation.Login;
-        Settings.Scopes = [.. validation.Scopes];
+        var account = Account;
+        account.UserId = validation.UserId;
+        account.Login = validation.Login;
+        account.Scopes = [.. validation.Scopes];
         settings.ScheduleSave();
         return validation;
     }

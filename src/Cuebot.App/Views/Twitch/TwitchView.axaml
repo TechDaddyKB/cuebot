@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:tv="using:Cuebot.App.Views.Twitch"
+             x:Class="Cuebot.App.Views.TwitchView"
+             x:DataType="vm:TwitchViewModel">
+  <!-- Styles shared by every Twitch tab (they cascade into the tab views). -->
+  <UserControl.Styles>
+    <Style Selector="TabControl#Tabs > TabItem">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,3" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.info">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotGood}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.pill">
+      <Setter Property="Background" Value="{DynamicResource CuebotSelected}" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ListBox.list">
+      <Setter Property="Background" Value="{DynamicResource CuebotPanel}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CuebotCardBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="FormatString" Value="0" />
+    </Style>
+    <Style Selector="WrapPanel.actions > Button">
+      <Setter Property="Margin" Value="0,0,6,6" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Margin="24,24,24,0">
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12">
+      <TextBlock Classes="h1" Text="Twitch" />
+      <Border Classes="pill" Margin="0,0,0,12">
+        <TextBlock x:Name="Status" Text="{Binding StatusText}" FontSize="12" />
+      </Border>
+    </StackPanel>
+    <TabControl x:Name="Tabs" SelectedIndex="{Binding SelectedTab}">
+      <TabItem Header="Accounts">
+        <tv:TwitchAccountsView DataContext="{Binding Accounts}" />
+      </TabItem>
+      <TabItem Header="Channel">
+        <tv:TwitchChannelView DataContext="{Binding Channel}" />
+      </TabItem>
+      <TabItem Header="Rewards">
+        <tv:TwitchRewardsView DataContext="{Binding Rewards}" />
+      </TabItem>
+      <TabItem Header="Polls &amp; predictions">
+        <tv:TwitchPollsView DataContext="{Binding Polls}" />
+      </TabItem>
+      <TabItem Header="Moderation">
+        <tv:TwitchModerationView DataContext="{Binding Moderation}" />
+      </TabItem>
+      <TabItem Header="Settings">
+        <tv:TwitchSettingsView DataContext="{Binding Settings}" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

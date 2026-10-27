@@ -23,7 +23,8 @@ public static class TwitchServiceCollectionExtensions
             sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<TwitchService>());
         services.AddSingleton<ITriggerProvider, TwitchTriggers>();
-        services.AddSingleton<ISubActionHandler, SendChatMessageSubAction>();
+        foreach (var spec in TwitchSubActions.All)
+            services.AddSingleton<ISubActionHandler>(sp => new TwitchSubAction(spec, () => sp.GetRequiredService<TwitchService>().Api));
         services.AddSingleton<IScriptFunctionProvider, TwitchScriptFunctions>();
         services.AddSingleton<Cuebot.Core.Chat.IChatEventAdapter, TwitchChatAdapter>();
         services.AddSingleton<Cuebot.Core.Chat.IChatSender, TwitchChatSender>();

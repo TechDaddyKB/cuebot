@@ -192,14 +192,49 @@ public sealed class EventTriggerTests
     [Fact]
     public void Every_event_type_has_a_trigger_in_the_Twitch_category()
     {
-        string[] expected =
-        [
-            "twitch.chatMessage", "twitch.command", "twitch.follow", "twitch.sub", "twitch.resub", "twitch.giftSub",
-            "twitch.cheer", "twitch.raid", "twitch.rewardRedemption", "twitch.streamOnline", "twitch.streamOffline",
-        ];
+        var expected = typeof(TwitchEventTypes).GetFields()
+            .Where(f => f.IsLiteral)
+            .Select(f => (string)f.GetRawConstantValue()!)
+            .Append("twitch.command");
 
-        Assert.Equal(expected.Order(), _triggers.Select(t => t.TypeId).Order());
+        Assert.Equal(expected.Order(StringComparer.Ordinal), _triggers.Select(t => t.TypeId).Order(StringComparer.Ordinal));
         Assert.All(_triggers, t => Assert.Equal("Twitch", t.Category));
+        Assert.Equal(_triggers.Count, _triggers.Select(t => t.DisplayName).Distinct().Count());
+    }
+
+    [Fact]
+    public void Tier_months_and_title_filters()
+    {
+        Assert.True(Matches("twitch.sub", new() { ["tier"] = "2" }));
+        Assert.False(Matches("twitch.sub", new() { ["tier"] = "2" }, new() { ["tier"] = "3" }));
+        Assert.True(Matches("twitch.resub", new() { ["tier"] = "1", ["cumulativeMonths"] = 12 }, new() { ["minMonths"] = "12" }));
+        Assert.False(Matches("twitch.resub", new() { ["tier"] = "1", ["cumulativeMonths"] = 11 }, new() { ["minMonths"] = "12" }));
+        Assert.True(Matches("twitch.pollCreated", new() { ["title"] = "Which GAME next?" }, new() { ["title"] = "game" }));
+        Assert.False(Matches("twitch.predictionLocked", new() { ["title"] = "Win?" }, new() { ["title"] = "lose" }));
+        Assert.True(Matches("twitch.hypeTrainLevelUp", new() { ["level"] = 3 }, new() { ["minLevel"] = "3" }));
+        Assert.False(Matches("twitch.giftBomb", new() { ["total"] = 4, ["tier"] = "1" }, new() { ["minTotal"] = "5" }));
+    }
+
+    [Fact]
+    public void Chat_message_can_ignore_the_bot_and_shared_chat()
+    {
+        var settings = new Dictionary<string, string> { ["ignoreBot"] = "true", ["ignoreSharedChat"] = "true" };
+        Assert.False(Matches("twitch.chatMessage", new() { ["message"] = "x", ["isBot"] = true }, settings));
+        Assert.False(Matches("twitch.chatMessage", new() { ["message"] = "x", ["isSharedChat"] = true }, settings));
+        Assert.True(Matches("twitch.chatMessage", new() { ["message"] = "x" }, settings));
+    }
+
+    [Fact]
+    public void Ad_kind_and_redemption_status_filters()
+    {
+        Assert.True(Matches("twitch.adRun", new() { ["isAutomatic"] = true }, new() { ["kind"] = "Automatic" }));
+        Assert.False(Matches("twitch.adRun", new() { ["isAutomatic"] = true }, new() { ["kind"] = "Manual" }));
+        Assert.True(Matches("twitch.rewardRedemptionUpdated", new() { ["rewardTitle"] = "Hydrate", ["status"] = "canceled" },
+            new() { ["rewardTitle"] = "hydrate", ["status"] = "canceled" }));
+        Assert.False(Matches("twitch.rewardRedemptionUpdated", new() { ["rewardTitle"] = "Hydrate", ["status"] = "fulfilled" },
+            new() { ["status"] = "canceled" }));
+        Assert.True(Matches("twitch.powerUp", new() { ["powerUpType"] = "celebration" }, new() { ["powerUpType"] = "celebration" }));
+        Assert.False(Matches("twitch.powerUp", new() { ["powerUpType"] = "message_effect" }, new() { ["powerUpType"] = "celebration" }));
     }
 
     [Fact]

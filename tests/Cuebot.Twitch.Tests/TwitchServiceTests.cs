@@ -89,13 +89,23 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         // Only subscriptions whose scope was granted (or that need none) are created.
         var subscribed = _http.Requests.Where(r => r.Path == "/helix/eventsub/subscriptions")
             .Select(r => JsonSerializer.Deserialize<JsonElement>(r.Body).GetProperty("type").GetString())
-            .Order();
-        Assert.Equal(["channel.chat.message", "channel.raid", "stream.offline", "stream.online"], subscribed);
+            .Order(StringComparer.Ordinal);
+        string[] expected =
+        [
+            "channel.chat.clear", "channel.chat.clear_user_messages", "channel.chat.message", "channel.chat.message_delete",
+            "channel.chat.notification", "channel.chat_settings.update", "channel.raid", "channel.raid",
+            "channel.shared_chat.begin", "channel.shared_chat.end", "channel.shared_chat.update", "channel.update",
+            "stream.offline", "stream.online",
+        ];
+        Assert.Equal(expected.Order(StringComparer.Ordinal), subscribed);
         Assert.Contains("streamer", _service.StatusMessage);
+        Assert.Contains("channel.follow", _service.UnavailableEvents);
+        Assert.Contains(_log.Recent(), e => e.Message.Contains("moderator:read:followers"));
+        Assert.Contains(_published, e => e.Type == TwitchEventTypes.BroadcasterConnected);
 
         await connection.SendAsync(EventSubMessages.Notification("n1", "channel.follow", EventSubMessages.FollowEvent));
-        await WaitUntilAsync(() => !_published.IsEmpty);
-        Assert.Equal(TwitchEventTypes.Follow, Assert.Single(_published).Type);
+        await WaitUntilAsync(() => _published.Any(e => e.Type == TwitchEventTypes.Follow));
+        Assert.Single(_published, e => e.Type == TwitchEventTypes.Follow);
 
         await _service.SendChatMessageAsync("hello");
         Assert.Contains(_http.Requests, r => r.Path == "/helix/chat/messages" && r.Authorization == "Bearer fresh-token");
@@ -103,7 +113,62 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         await _service.DisconnectAsync();
         Assert.Equal(ConnectionState.Disconnected, _service.State);
         Assert.Null(_service.ConnectedLogin);
+        Assert.Contains(_published, e => e.Type == TwitchEventTypes.BroadcasterDisconnected);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SendChatMessageAsync("hello"));
+    }
+
+    [Fact]
+    public async Task Bot_account_connects_its_own_session_for_whispers_and_sends_chat()
+    {
+        _settings.Value.Bot.AccessToken = "bot-token";
+        _settings.Value.Bot.RefreshToken = "bot-refresh";
+        var http = new FakeHttpHandler(r => (r.Path, r.Authorization) switch
+        {
+            ("/oauth2/validate", "OAuth bot-token") => FakeHttpHandler.Json(HttpStatusCode.OK,
+                """{"client_id":"client","login":"mybot","scopes":["user:read:chat","user:write:chat","user:manage:whispers"],"user_id":"777","expires_in":14000}"""),
+            _ => Respond(r),
+        });
+        var bus = new EventBus(_log);
+        var published = new ConcurrentQueue<BotEvent>();
+        bus.Subscribe(published.Enqueue);
+        await using var service = new TwitchService(_settings, new HttpClient(http), bus, _log,
+            new TwitchEndpoints(new Uri("https://id.test/oauth2/"), new Uri("https://api.test/helix/"), _server.Url()),
+            TimeProvider.System, EventSubTimeouts.Default with { InitialRetryDelay = TimeSpan.FromMilliseconds(50) });
+
+        await service.ConnectAsync();
+        var first = await _server.NextConnectionAsync();
+        var second = await _server.NextConnectionAsync();
+        await first.SendAsync(EventSubMessages.Welcome("session-1"));
+        await second.SendAsync(EventSubMessages.Welcome("session-2"));
+        await WaitUntilAsync(() => service.State == ConnectionState.Connected && service.BotState == ConnectionState.Connected);
+
+        var botSubscriptions = http.Requests.Where(r => r.Path == "/helix/eventsub/subscriptions" && r.Authorization == "Bearer bot-token").ToArray();
+        var whisper = JsonSerializer.Deserialize<JsonElement>(Assert.Single(botSubscriptions).Body);
+        Assert.Equal("user.whisper.message", whisper.GetProperty("type").GetString());
+        Assert.Equal("777", whisper.GetProperty("condition").GetProperty("user_id").GetString());
+        Assert.Contains(published, e => e.Type == TwitchEventTypes.BotConnected);
+        var bot = whisper.GetProperty("transport").GetProperty("session_id").GetString() == "session-1" ? first : second;
+
+        await bot.SendAsync(EventSubMessages.Notification("w1", "user.whisper.message",
+            """
+            {"from_user_id":"423374343","from_user_login":"glowingfish","from_user_name":"glowingfish",
+             "to_user_id":"777","to_user_login":"mybot","to_user_name":"MyBot","whisper_id":"some-whisper-id","whisper":{"text":"a secret"}}
+            """));
+        await WaitUntilAsync(() => published.Any(e => e.Type == TwitchEventTypes.BotWhisper));
+        var botWhisper = published.First(e => e.Type == TwitchEventTypes.BotWhisper);
+        Assert.Equal("a secret", botWhisper.Args["message"]);
+        Assert.Equal("Whisper", botWhisper.Args["messageKind"]);
+
+        await service.SendChatMessageAsync("from the bot");
+        var send = http.Requests.Last(r => r.Path == "/helix/chat/messages");
+        Assert.Equal("Bearer bot-token", send.Authorization);
+        var body = JsonSerializer.Deserialize<JsonElement>(send.Body);
+        Assert.Equal("777", body.GetProperty("sender_id").GetString());
+        Assert.Equal("1337", body.GetProperty("broadcaster_id").GetString());
+
+        _settings.Value.SendChatAsBot = false;
+        await service.SendChatMessageAsync("from the broadcaster");
+        Assert.Equal("Bearer fresh-token", http.Requests.Last(r => r.Path == "/helix/chat/messages").Authorization);
     }
 
     [Fact]
@@ -207,7 +272,10 @@ public sealed class TwitchRegistrationTests
                 var send = registry.GetSubAction("twitch.sendMessage");
                 Assert.NotNull(send);
                 Assert.Equal("Send chat message", send.DisplayName);
-                Assert.Equal(ParameterKind.Multiline, Assert.Single(send.Parameters).Kind);
+                Assert.Equal(ParameterKind.Multiline, send.Parameters[0].Kind);
+                Assert.Equal("sendAs", send.Parameters[1].Key);
+                Assert.NotNull(registry.GetSubAction("twitch.ban"));
+                Assert.NotNull(registry.GetTrigger("twitch.pollCreated"));
 
                 Assert.Contains(provider.GetRequiredService<ScriptApi>().Functions, f => f.Name == "twitch.sendMessage");
             }

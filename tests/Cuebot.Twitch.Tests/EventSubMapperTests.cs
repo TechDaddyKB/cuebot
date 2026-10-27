@@ -232,7 +232,7 @@ public sealed class EventSubMapperTests
 
     [Fact]
     public void Unknown_type_is_not_mapped() =>
-        Assert.Null(EventSubMapper.Map("channel.ban", JsonSerializer.Deserialize<JsonElement>("{}")));
+        Assert.Null(EventSubMapper.Map("channel.not_a_type", JsonSerializer.Deserialize<JsonElement>("{}")));
 
     [Fact]
     public void Args_are_case_insensitive() =>

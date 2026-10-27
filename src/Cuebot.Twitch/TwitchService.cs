@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cuebot.Core;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
@@ -9,8 +10,9 @@ using Cuebot.Twitch.Helix;
 namespace Cuebot.Twitch;
 
 /// <summary>
-/// The Twitch connection: device-code sign-in, EventSub WebSocket for incoming events, Helix for sending chat,
-/// and the periodic token validation Twitch requires.
+/// The Twitch connection: device-code sign-in of the broadcaster (and an optional bot account), the EventSub
+/// WebSocket for incoming events, Helix (<see cref="Api"/>) for everything Cuebot does on Twitch, and the periodic
+/// token validation Twitch requires.
 /// </summary>
 public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
 {
@@ -25,10 +27,15 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     private readonly EventSubTimeouts _eventSubTimeouts;
     private readonly TwitchAuthClient _auth;
     private readonly TwitchTokenManager _tokens;
+    private readonly TwitchTokenManager _botTokens;
     private readonly HelixClient _helix;
+    private readonly HelixClient _botHelix;
+    private readonly TwitchEventRouter _router;
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private ActiveConnection? _connection;
+    private ActiveConnection? _botConnection;
     private Task _pendingSignOut = Task.CompletedTask;
+    private bool _announcedConnected;
 
     public TwitchService(JsonFile<TwitchSettings> settings, HttpClient http, EventBus bus, AppLog log)
         : this(settings, http, bus, log, TwitchEndpoints.Production, TimeProvider.System, EventSubTimeouts.Default)
@@ -46,30 +53,50 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         _eventSubTimeouts = eventSubTimeouts;
         _auth = new TwitchAuthClient(http, endpoints.Auth, time);
         _tokens = new TwitchTokenManager(settings, _auth, log);
+        _botTokens = new TwitchTokenManager(settings, _auth, log, s => new BotAccount(s), "Twitch bot");
         _helix = new HelixClient(http, endpoints.Helix, _tokens);
+        _botHelix = new HelixClient(http, endpoints.Helix, _botTokens);
+        var sent = new SentMessageTracker();
+        _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent);
+        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, bus.Publish, sent);
     }
 
     public string Name => "Twitch";
     public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
     public string StatusMessage { get; private set; } = "Not connected";
+
+    /// <summary>Raised when the broadcaster or bot connection state changes (from background threads).</summary>
     public event Action? StatusChanged;
+
+    /// <summary>Every Helix operation: channel, chat, moderation, rewards, polls, predictions...</summary>
+    public TwitchApi Api { get; }
 
     public TwitchSettings Settings => _settings.Value;
 
     /// <summary>True when a Client ID and an access token are stored.</summary>
     public bool IsAuthorized => Settings.ClientId.Trim().Length > 0 && Settings.AccessToken.Length > 0;
 
+    /// <summary>True when the bot account has a stored token.</summary>
+    public bool IsBotAuthorized => Settings.ClientId.Trim().Length > 0 && Settings.Bot.AccessToken.Length > 0;
+
     /// <summary>Login of the account while a connection is active; otherwise null.</summary>
     public string? ConnectedLogin { get; private set; }
 
+    public ConnectionState BotState { get; private set; } = ConnectionState.Disconnected;
+    public string BotStatusMessage { get; private set; } = "No bot account";
+
+    /// <summary>Event types the broadcaster session could not subscribe to (missing scopes or refused).</summary>
+    public IReadOnlyList<string> UnavailableEvents { get; private set; } = [];
+
     public void SaveSettings() => _settings.ScheduleSave();
 
-    /// <summary>Starts sign-in with the configured Client ID. Show the returned code to the user.</summary>
+    // ---------------------------------------------------------------- broadcaster sign-in
+
+    /// <summary>Starts sign-in with the configured Client ID and requested scopes. Show the returned code to the user.</summary>
     public Task<DeviceAuthorization> BeginAuthorizationAsync(CancellationToken ct = default)
     {
-        var clientId = Settings.ClientId.Trim();
-        if (clientId.Length == 0) throw new InvalidOperationException("Enter your Twitch application's Client ID first.");
-        return _auth.StartDeviceFlowAsync(clientId, TwitchScopes.All, ct);
+        var clientId = RequireClientId();
+        return _auth.StartDeviceFlowAsync(clientId, TwitchScopes.ForBroadcaster(Settings.RequestedScopes), ct);
     }
 
     /// <summary>Waits for the user to approve the code, stores the tokens and account, then connects.</summary>
@@ -78,8 +105,43 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         _tokens.Store(await _auth.PollDeviceTokenAsync(auth, ct).ConfigureAwait(false));
         var account = await _tokens.ValidateAsync(ct).ConfigureAwait(false);
         _log.Info("Twitch", $"Signed in as {account.Login}");
+        _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterAuthenticated, AccountArgs(account.Login, account.UserId)));
         await ConnectAsync(ct).ConfigureAwait(false);
     }
+
+    // ---------------------------------------------------------------- bot sign-in
+
+    /// <summary>Starts the bot account's sign-in. The user must log in to Twitch as the bot in the browser.</summary>
+    public Task<DeviceAuthorization> BeginBotAuthorizationAsync(CancellationToken ct = default) =>
+        _auth.StartDeviceFlowAsync(RequireClientId(), TwitchScopes.Bot, ct);
+
+    /// <summary>Waits for approval, stores the bot tokens and, when the broadcaster is connected, connects the bot too.</summary>
+    public async Task CompleteBotAuthorizationAsync(DeviceAuthorization auth, CancellationToken ct = default)
+    {
+        _botTokens.Store(await _auth.PollDeviceTokenAsync(auth, ct).ConfigureAwait(false));
+        var account = await _botTokens.ValidateAsync(ct).ConfigureAwait(false);
+        if (account.UserId == Settings.UserId && Settings.UserId.Length > 0)
+        {
+            _botTokens.Clear();
+            throw new InvalidOperationException(
+                "That is the broadcaster account. Log out of Twitch in the browser (or use a private window), log in as the bot and try again.");
+        }
+        _log.Info("Twitch", $"Bot account signed in as {account.Login}");
+        SetBotStatus(ConnectionState.Disconnected, $"Signed in as {account.Login}");
+        if (_connection is not null) await ConnectBotAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Forgets the bot account and revokes its token in the background.</summary>
+    public Task SignOutBotAsync()
+    {
+        var clientId = Settings.ClientId.Trim();
+        var token = Settings.Bot.AccessToken;
+        _botTokens.Clear();
+        _log.Info("Twitch", "Bot account signed out");
+        return _pendingSignOut = Task.WhenAll(_pendingSignOut, SignOutBotInBackgroundAsync(clientId, token));
+    }
+
+    // ---------------------------------------------------------------- connection
 
     /// <summary>Validates the sign-in and starts the EventSub connection, which then reconnects on its own.</summary>
     public async Task ConnectAsync(CancellationToken ct = default)
@@ -109,6 +171,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         {
             _connectGate.Release();
         }
+        if (IsBotAuthorized) await ConnectBotSafelyAsync(ct).ConfigureAwait(false);
     }
 
     public async Task DisconnectAsync()
@@ -122,6 +185,37 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         finally
         {
             _connectGate.Release();
+        }
+    }
+
+    /// <summary>Connects the bot account's EventSub session (for its whispers). Throws when its sign-in is invalid.</summary>
+    public async Task ConnectBotAsync(CancellationToken ct = default)
+    {
+        if (!IsBotAuthorized) throw new InvalidOperationException("Sign in the bot account first.");
+        await StopBotConnectionAsync().ConfigureAwait(false);
+        SetBotStatus(ConnectionState.Connecting, "Checking bot sign-in...");
+        try
+        {
+            await _botTokens.ValidateAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            SetBotStatus(ConnectionState.Error, ex.Message);
+            throw;
+        }
+        _botConnection = StartBotConnection();
+        SetBotStatus(ConnectionState.Connecting, "Connecting the bot to EventSub...");
+    }
+
+    private async Task ConnectBotSafelyAsync(CancellationToken ct)
+    {
+        try
+        {
+            await ConnectBotAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _log.Warn("Twitch", $"Bot account could not connect: {ex.Message}");
         }
     }
 
@@ -142,16 +236,12 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     }
 
     /// <summary>
-    /// Posts to the signed-in broadcaster's chat. Blank messages are ignored. Throws
-    /// <see cref="InvalidOperationException"/> when not connected and <see cref="TwitchApiException"/> when Twitch
-    /// rejects or drops the message.
+    /// Posts to the broadcaster's chat, from the bot account when it is signed in and "send chat as bot" is on.
+    /// Blank messages are ignored. Throws <see cref="InvalidOperationException"/> when not connected and
+    /// <see cref="TwitchApiException"/> when Twitch rejects or drops the message.
     /// </summary>
-    public Task SendChatMessageAsync(string message, CancellationToken ct = default)
-    {
-        if (_connection is null) throw new InvalidOperationException("Twitch is not connected.");
-        if (string.IsNullOrWhiteSpace(message)) return Task.CompletedTask;
-        return _helix.SendChatMessageAsync(Settings.UserId, Settings.UserId, message, ct);
-    }
+    public Task SendChatMessageAsync(string message, CancellationToken ct = default) =>
+        Api.SendChatMessageAsync(message, TwitchSender.Default, null, ct);
 
     /// <summary>Connects automatically when signed in and auto-connect is enabled. Never throws.</summary>
     public async Task StartAsync(CancellationToken ct = default)
@@ -187,17 +277,42 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     private ActiveConnection StartConnection()
     {
         var cts = new CancellationTokenSource();
-        var listener = new TwitchEventSubListener(_helix, Settings, _bus, _log, (state, message) =>
+        var account = new EventSubAccount("Twitch", () => Settings.UserId, () => Settings.Login, () => Settings.Scopes,
+            EventSubSubscriptions.All);
+        TwitchEventSubListener? listener = null;
+        listener = new TwitchEventSubListener(_helix, account, _router, _bus, _log, (state, message) =>
         {
-            if (!cts.IsCancellationRequested) SetStatus(state, message);
-        });
+            if (cts.IsCancellationRequested) return;
+            if (listener is not null) UnavailableEvents = listener.Unavailable;
+            SetStatus(state, message);
+        }, SeedChatSettingsAsync);
         var eventSub = new EventSubClient(_endpoints.EventSub, listener, _log, _eventSubTimeouts);
-        var run = Task.WhenAll(eventSub.RunAsync(cts.Token), ValidatePeriodicallyAsync(cts));
+        var poller = new TwitchPoller(Api, Settings, _bus, _log, _time);
+        var run = Task.WhenAll(eventSub.RunAsync(cts.Token), ValidatePeriodicallyAsync(_tokens, cts, SetStatus), poller.RunAsync(cts.Token));
         return new ActiveConnection(cts, run);
     }
 
+    private ActiveConnection StartBotConnection()
+    {
+        var cts = new CancellationTokenSource();
+        var account = new EventSubAccount("Twitch bot", () => Settings.Bot.UserId, () => Settings.Bot.Login, () => Settings.Bot.Scopes,
+            EventSubSubscriptions.Bot, IsBot: true);
+        var listener = new TwitchEventSubListener(_botHelix, account, _router, _bus, _log, (state, message) =>
+        {
+            if (!cts.IsCancellationRequested) SetBotStatus(state, message);
+        });
+        var eventSub = new EventSubClient(_endpoints.EventSub, listener, _log, _eventSubTimeouts);
+        var run = Task.WhenAll(eventSub.RunAsync(cts.Token), ValidatePeriodicallyAsync(_botTokens, cts, SetBotStatus));
+        return new ActiveConnection(cts, run);
+    }
+
+    /// <summary>Gives the router the current chat modes so the first change can be reported as on/off.</summary>
+    private async Task SeedChatSettingsAsync(CancellationToken ct) =>
+        _router.SeedChatSettings(await Api.GetChatSettingsAsync(ct).ConfigureAwait(false));
+
     /// <summary>Twitch requires hourly validation of tokens used by a long-running connection.</summary>
-    private async Task ValidatePeriodicallyAsync(CancellationTokenSource connection)
+    private async Task ValidatePeriodicallyAsync(TwitchTokenManager tokens, CancellationTokenSource connection,
+        Action<ConnectionState, string> report)
     {
         using var timer = new PeriodicTimer(ValidationInterval, _time);
         try
@@ -206,12 +321,12 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
             {
                 try
                 {
-                    await _tokens.ValidateAsync(connection.Token).ConfigureAwait(false);
+                    await tokens.ValidateAsync(connection.Token).ConfigureAwait(false);
                 }
                 catch (TwitchApiException ex) when (ex.StatusCode == 401)
                 {
-                    SetStatus(ConnectionState.Error, ex.Message);
-                    ConnectedLogin = null;
+                    report(ConnectionState.Error, ex.Message);
+                    if (tokens == _tokens) ConnectedLogin = null;
                     await connection.CancelAsync().ConfigureAwait(false);
                     return;
                 }
@@ -230,10 +345,26 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     /// <summary>Returns true when a connection was running.</summary>
     private async Task<bool> StopConnectionAsync()
     {
+        await StopBotConnectionAsync().ConfigureAwait(false);
         var connection = _connection;
         if (connection is null) return false;
         _connection = null;
         ConnectedLogin = null;
+        await StopAsync(connection).ConfigureAwait(false);
+        return true;
+    }
+
+    private async Task StopBotConnectionAsync()
+    {
+        var connection = _botConnection;
+        if (connection is null) return;
+        _botConnection = null;
+        await StopAsync(connection).ConfigureAwait(false);
+        SetBotStatus(ConnectionState.Disconnected, IsBotAuthorized ? $"Signed in as {Settings.Bot.Login}" : "No bot account");
+    }
+
+    private async Task StopAsync(ActiveConnection connection)
+    {
         await connection.Cancellation.CancelAsync().ConfigureAwait(false);
         try
         {
@@ -244,13 +375,24 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
             _log.Error("Twitch", "Error while disconnecting", ex);
         }
         connection.Cancellation.Dispose();
-        return true;
     }
 
     private async Task SignOutInBackgroundAsync(string clientId, string token)
     {
         await DisconnectAsync().ConfigureAwait(false);
         SetStatus(ConnectionState.Disconnected, "Signed out");
+        await RevokeAsync(clientId, token).ConfigureAwait(false);
+    }
+
+    private async Task SignOutBotInBackgroundAsync(string clientId, string token)
+    {
+        await StopBotConnectionAsync().ConfigureAwait(false);
+        SetBotStatus(ConnectionState.Disconnected, "No bot account");
+        await RevokeAsync(clientId, token).ConfigureAwait(false);
+    }
+
+    private async Task RevokeAsync(string clientId, string token)
+    {
         if (clientId.Length == 0 || token.Length == 0) return;
         try
         {
@@ -262,12 +404,112 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         }
     }
 
+    private string RequireClientId()
+    {
+        var clientId = Settings.ClientId.Trim();
+        if (clientId.Length == 0) throw new InvalidOperationException("Enter your Twitch application's Client ID first.");
+        return clientId;
+    }
+
     private void SetStatus(ConnectionState state, string message)
     {
+        var wasConnected = _announcedConnected;
         State = state;
         StatusMessage = message;
+        _announcedConnected = state == ConnectionState.Connected;
         StatusChanged?.Invoke();
+        if (_announcedConnected && !wasConnected)
+            _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterConnected, AccountArgs(Settings.Login, Settings.UserId)));
+        else if (wasConnected && !_announcedConnected)
+            _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
+    }
+
+    private void SetBotStatus(ConnectionState state, string message)
+    {
+        var wasConnected = BotState == ConnectionState.Connected;
+        BotState = state;
+        BotStatusMessage = message;
+        StatusChanged?.Invoke();
+        var connected = state == ConnectionState.Connected;
+        if (connected && !wasConnected)
+            _bus.Publish(new BotEvent(TwitchEventTypes.BotConnected, AccountArgs(Settings.Bot.Login, Settings.Bot.UserId)));
+        else if (wasConnected && !connected)
+            _bus.Publish(new BotEvent(TwitchEventTypes.BotDisconnected, AccountArgs(Settings.Bot.Login, Settings.Bot.UserId, message)));
+    }
+
+    private static Dictionary<string, object?> AccountArgs(string login, string userId, string? reason = null)
+    {
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["user"] = login,
+            ["userName"] = login,
+            ["userId"] = userId,
+        };
+        if (reason is not null) args["reason"] = reason;
+        return args;
     }
 
     private sealed record ActiveConnection(CancellationTokenSource Cancellation, Task Run);
+}
+
+/// <summary>
+/// While connected: publishes the viewer count when live and the list of present viewers, at the intervals in
+/// <see cref="TwitchSettings"/>. Failures are logged once per kind and never stop the connection.
+/// </summary>
+internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, EventBus bus, AppLog log, TimeProvider time)
+{
+    public Task RunAsync(CancellationToken ct) => Task.WhenAll(
+        LoopAsync(settings.ViewerCountIntervalSeconds, PollViewersAsync, "viewer count", ct),
+        LoopAsync(settings.PresentViewersIntervalSeconds, PollPresentAsync, "present viewers", ct));
+
+    private async Task LoopAsync(int seconds, Func<CancellationToken, Task> poll, string what, CancellationToken ct)
+    {
+        if (seconds <= 0) return;
+        var warned = false;
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(Math.Max(15, seconds)), time);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
+            {
+                try
+                {
+                    await poll(ct).ConfigureAwait(false);
+                    warned = false;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    if (!warned) log.Warn("Twitch", $"Could not update the {what}: {ex.Message}");
+                    warned = true;
+                }
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+    }
+
+    private async Task PollViewersAsync(CancellationToken ct)
+    {
+        if (await api.GetStreamAsync(null, ct).ConfigureAwait(false) is not { } stream) return;
+        bus.Publish(new BotEvent(TwitchEventTypes.ViewerCountUpdate, new Dictionary<string, object?>
+        {
+            ["viewers"] = stream.ViewerCount,
+            ["viewerCount"] = stream.ViewerCount,
+            ["title"] = stream.Title,
+            ["gameName"] = stream.GameName,
+            ["startedAt"] = stream.StartedAt?.ToString("o", CultureInfo.InvariantCulture) ?? "",
+        }));
+    }
+
+    private async Task PollPresentAsync(CancellationToken ct)
+    {
+        if (!settings.Scopes.Contains(TwitchScopes.ReadChatters)) return;
+        var chatters = await api.GetChattersAsync(ct).ConfigureAwait(false);
+        bus.Publish(new BotEvent(TwitchEventTypes.PresentViewers, new Dictionary<string, object?>
+        {
+            ["count"] = chatters.Count,
+            ["users"] = string.Join(",", chatters.Select(c => c.UserLogin)),
+            ["userIds"] = string.Join(",", chatters.Select(c => c.UserId)),
+        }));
+    }
 }
