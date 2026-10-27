@@ -14,7 +14,7 @@ using Cuebot.Server.Udp;
 namespace Cuebot.Server;
 
 /// <summary>Which built-in server a status or restart refers to.</summary>
-public enum ServerKind { WebSocket, Http, Udp, SpeakerBotWebSocket, SpeakerBotUdp }
+public enum ServerKind { WebSocket, Http, Udp, SpeakerBotWebSocket, SpeakerBotUdp, Api }
 
 /// <summary>State of one built-in server, for the UI.</summary>
 public sealed record ServerStatus(ServerKind Kind, string Name, bool Enabled, bool Running, string Address, int Port, int Clients, string Message);
@@ -52,6 +52,9 @@ public sealed class ServerManager : IAsyncDisposable
         CustomClients = new CustomWebSocketClients(() => Settings, services.Bus, services.Log);
         CustomServers.Changed += RaiseChanged;
         CustomClients.Changed += RaiseChanged;
+        ApiOperations = new Cuebot.Server.Api.ApiOperations(services, () => Statuses);
+        Mcp = new Cuebot.Server.Mcp.McpServer(ApiOperations, services, () => Settings.Mcp);
+        Api = new Cuebot.Server.Api.ApiServer(() => Settings, services, ApiOperations, Mcp);
     }
 
     /// <summary>Raised (from any thread) when a server starts, stops or its clients change.</summary>
@@ -69,7 +72,50 @@ public sealed class ServerManager : IAsyncDisposable
     public CustomWebSocketServers CustomServers { get; }
     public CustomWebSocketClients CustomClients { get; }
 
+    /// <summary>The REST API (<c>/api/v1</c>) and MCP (<c>/mcp</c>) listener.</summary>
+    public Cuebot.Server.Api.ApiServer Api { get; private set; }
+
+    /// <summary>The operations behind the REST API and the MCP tools.</summary>
+    public Cuebot.Server.Api.ApiOperations ApiOperations { get; }
+
+    /// <summary>The MCP server (protocol handling; served by <see cref="Api"/>).</summary>
+    public Cuebot.Server.Mcp.McpServer Mcp { get; }
+
     public void SaveSettings() => _file?.ScheduleSave();
+
+    /// <summary>The API/MCP bearer token, generated (and saved) when there is none yet.</summary>
+    public string EnsureApiToken()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.Api.Token))
+        {
+            Settings.Api.Token = Cuebot.Server.Api.ApiToken.Generate();
+            SaveSettings();
+        }
+        return Settings.Api.Token;
+    }
+
+    /// <summary>Replaces the API/MCP token; clients using the old one get 401 from the next request on.</summary>
+    public string RegenerateApiToken()
+    {
+        Settings.Api.Token = Cuebot.Server.Api.ApiToken.Generate();
+        SaveSettings();
+        _services.Log.Info(LogSource, "API token regenerated");
+        return Settings.Api.Token;
+    }
+
+    /// <summary>Base URL of the API/MCP listener as clients on this computer reach it (http://127.0.0.1:7475).</summary>
+    public string ApiBaseUrl
+    {
+        get
+        {
+            IPAddress? bound;
+            lock (_errors) bound = _bound.GetValueOrDefault(ServerKind.Api);
+            var host = bound is not null && !IPAddress.Any.Equals(bound) && !IPAddress.IPv6Any.Equals(bound)
+                ? (bound.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{bound}]" : bound.ToString())
+                : "127.0.0.1";
+            return $"http://{host}:{(Api.IsRunning ? Api.Port : Settings.Api.Port)}";
+        }
+    }
 
     private IReadOnlyCollection<string> Origins() => Settings.AllowedOrigins;
 
@@ -89,6 +135,8 @@ public sealed class ServerManager : IAsyncDisposable
                     SpeakerBotWebSocket?.ClientCount ?? 0),
                 Status(ServerKind.SpeakerBotUdp, "Speaker.bot UDP API", s.SpeakerBot.UdpEnabled, SpeakerBotUdp is not null,
                     SpeakerBotUdp?.Port ?? s.SpeakerBot.UdpPort, 0),
+                Status(ServerKind.Api, "REST API and MCP server", s.Api.Enabled || s.Mcp.Enabled, Api.IsRunning,
+                    Api.IsRunning ? Api.Port : s.Api.Port, 0),
             ];
         }
     }
@@ -151,6 +199,7 @@ public sealed class ServerManager : IAsyncDisposable
         ServerKind.Udp => Settings.Udp.Enabled,
         ServerKind.SpeakerBotWebSocket => Settings.SpeakerBot.WebSocketEnabled,
         ServerKind.SpeakerBotUdp => Settings.SpeakerBot.UdpEnabled,
+        ServerKind.Api => Settings.Api.Enabled || Settings.Mcp.Enabled,
         _ => false,
     };
 
@@ -162,6 +211,7 @@ public sealed class ServerManager : IAsyncDisposable
             ServerKind.WebSocket => s.WebSocket.Address,
             ServerKind.Http => s.Http.Address,
             ServerKind.Udp => s.Udp.Address,
+            ServerKind.Api => s.Api.Address,
             _ => s.SpeakerBot.Address,
         };
         try
@@ -191,6 +241,11 @@ public sealed class ServerManager : IAsyncDisposable
                     var api = SpeakerApi();
                     SpeakerBotUdp = UdpJsonListener.Start(address, s.SpeakerBot.UdpPort, "Speaker.bot UDP", m => api.HandleCommandAsync(m), _services.Log);
                     break;
+                case ServerKind.Api:
+                    EnsureApiToken();
+                    Api = new Cuebot.Server.Api.ApiServer(() => Settings, _services, ApiOperations, Mcp);
+                    await Api.StartAsync(address, ct).ConfigureAwait(false);
+                    break;
             }
             lock (_errors)
             {
@@ -216,6 +271,7 @@ public sealed class ServerManager : IAsyncDisposable
         ServerKind.Http => Http.Port,
         ServerKind.Udp => Udp?.Port ?? 0,
         ServerKind.SpeakerBotWebSocket => SpeakerBotWebSocket?.Port ?? 0,
+        ServerKind.Api => Api.Port,
         _ => SpeakerBotUdp?.Port ?? 0,
     };
 
@@ -225,6 +281,7 @@ public sealed class ServerManager : IAsyncDisposable
         ServerKind.Http => Settings.Http.Port,
         ServerKind.Udp => Settings.Udp.Port,
         ServerKind.SpeakerBotWebSocket => Settings.SpeakerBot.WebSocketPort,
+        ServerKind.Api => Settings.Api.Port,
         _ => Settings.SpeakerBot.UdpPort,
     };
 
@@ -253,6 +310,9 @@ public sealed class ServerManager : IAsyncDisposable
             case ServerKind.SpeakerBotUdp:
                 if (SpeakerBotUdp is { } sudp) await sudp.DisposeAsync().ConfigureAwait(false);
                 SpeakerBotUdp = null;
+                break;
+            case ServerKind.Api:
+                await Api.DisposeAsync().ConfigureAwait(false);
                 break;
         }
         lock (_errors) _bound.Remove(kind);

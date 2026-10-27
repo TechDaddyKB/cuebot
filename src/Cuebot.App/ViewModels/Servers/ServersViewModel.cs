@@ -98,6 +98,92 @@ public sealed partial class ServersViewModel : PageViewModel
     public decimal SpeakerWebSocketPort { get => Settings.SpeakerBot.WebSocketPort; set { Settings.SpeakerBot.WebSocketPort = (int)value; Changed(); } }
     public decimal SpeakerUdpPort { get => Settings.SpeakerBot.UdpPort; set { Settings.SpeakerBot.UdpPort = (int)value; Changed(); } }
 
+    // ---- REST API and MCP ------------------------------------------------------------------------------------------
+
+    private const string Masked = "••••••••••••••••";
+
+    public bool ApiEnabled
+    {
+        get => Settings.Api.Enabled;
+        set { Settings.Api.Enabled = value; if (value) _servers.EnsureApiToken(); Changed(); RaiseApiChanged(); }
+    }
+
+    public string ApiAddress { get => Settings.Api.Address; set { Settings.Api.Address = value.Trim(); Changed(); RaiseApiChanged(); } }
+    public decimal ApiPort { get => Settings.Api.Port; set { Settings.Api.Port = (int)value; Changed(); RaiseApiChanged(); } }
+
+    public bool McpEnabled
+    {
+        get => Settings.Mcp.Enabled;
+        set { Settings.Mcp.Enabled = value; if (value) _servers.EnsureApiToken(); Changed(); RaiseApiChanged(); }
+    }
+
+    /// <summary>Read on every tool call, so it applies without a restart.</summary>
+    public bool McpRequireConfirmation
+    {
+        get => Settings.Mcp.RequireConfirmation;
+        set { Settings.Mcp.RequireConfirmation = value; Save(); OnPropertyChanged(); }
+    }
+
+    /// <summary>Show the token in clear text (masked by default, e.g. while the screen is streamed).</summary>
+    [ObservableProperty] private bool _showToken;
+
+    partial void OnShowTokenChanged(bool value) => RaiseApiChanged();
+
+    public bool HasToken => Settings.Api.Token.Length > 0;
+    public string TokenDisplay => !HasToken ? "(created when the API or MCP is enabled)" : ShowToken ? Settings.Api.Token : Masked;
+    private string DisplayToken => ShowToken && HasToken ? Settings.Api.Token : "<TOKEN>";
+
+    public string ApiUrl => _servers.ApiBaseUrl + Cuebot.Server.Api.ApiServer.Prefix;
+    public string McpUrl => _servers.ApiBaseUrl + Cuebot.Server.Api.ApiServer.McpPath;
+
+    // Shown with the token masked unless "Show token" is on; the copy buttons always copy the real token.
+    public string ClaudeCodeCommand => Cuebot.Server.Mcp.McpClientConfig.ClaudeCodeCommand(McpUrl, DisplayToken);
+    public string HttpConfigJson => Cuebot.Server.Mcp.McpClientConfig.HttpJson(McpUrl, DisplayToken);
+    public string StdioConfigJson => StdioJson();
+
+    private static string StdioJson()
+    {
+        var (command, args) = Cuebot.Server.Mcp.McpClientConfig.StdioLaunch(Environment.ProcessPath,
+            System.Reflection.Assembly.GetEntryAssembly()?.Location, Environment.GetEnvironmentVariable("CUEBOT_DATA"));
+        return Cuebot.Server.Mcp.McpClientConfig.StdioJson(command, args);
+    }
+
+    /// <summary>The real text behind a copy button (token included even while it is masked on screen).</summary>
+    internal string CopyText(string what)
+    {
+        var token = _servers.EnsureApiToken();
+        RaiseApiChanged();
+        return what switch
+        {
+            "token" => token,
+            "apiUrl" => ApiUrl,
+            "mcpUrl" => McpUrl,
+            "claude" => Cuebot.Server.Mcp.McpClientConfig.ClaudeCodeCommand(McpUrl, token),
+            "http" => Cuebot.Server.Mcp.McpClientConfig.HttpJson(McpUrl, token),
+            "stdio" => StdioJson(),
+            _ => "",
+        };
+    }
+
+    [RelayCommand]
+    private void RegenerateToken()
+    {
+        _servers.RegenerateApiToken();
+        RaiseApiChanged();
+        Message = "New API token created. AI clients and scripts using the old one must be updated.";
+    }
+
+    private void RaiseApiChanged()
+    {
+        OnPropertyChanged(nameof(HasToken));
+        OnPropertyChanged(nameof(TokenDisplay));
+        OnPropertyChanged(nameof(ApiUrl));
+        OnPropertyChanged(nameof(McpUrl));
+        OnPropertyChanged(nameof(ClaudeCodeCommand));
+        OnPropertyChanged(nameof(HttpConfigJson));
+        OnPropertyChanged(nameof(StdioConfigJson));
+    }
+
     // ---- Status ----------------------------------------------------------------------------------------------------
 
     public ObservableCollection<ServerStatusViewModel> Statuses { get; } = [];
@@ -142,6 +228,7 @@ public sealed partial class ServersViewModel : PageViewModel
         {
             Clients.Add($"{c.Remote}  ·  since {c.ConnectedAt:HH:mm:ss}  ·  {(c.Authenticated ? "authenticated" : "not authenticated")}  ·  {c.Subscriptions} subscriptions");
         }
+        RaiseApiChanged();
         foreach (var item in CustomServers) item.Refresh();
         foreach (var item in CustomClients) item.Refresh();
         OnPropertyChanged(nameof(DockUrls));

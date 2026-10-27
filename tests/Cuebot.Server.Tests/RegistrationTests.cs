@@ -25,6 +25,14 @@ public sealed class RegistrationTests
                 Assert.Contains(provider.GetRequiredService<ScriptApi>().Functions, f => f.Name == "websocket.clientSend");
                 var manager = provider.GetRequiredService<ServerManager>();
                 Assert.False(manager.Settings.WebSocket.Enabled);
+                Assert.False(manager.Settings.Api.Enabled);
+                Assert.False(manager.Settings.Mcp.Enabled);
+                var services = provider.GetRequiredService<ServerServices>();
+                Assert.Same(registry, services.Registry);
+                Assert.NotNull(services.Timers);
+                Assert.NotNull(services.Transfer);
+                Assert.NotNull(services.Scripts);
+                Assert.True(manager.ApiOperations.ListSubActions()["count"]!.GetValue<int>() > 10);
                 Assert.NotNull(provider.GetRequiredService<CSharpScriptEngine>());
             }
         }

@@ -161,6 +161,75 @@
         </StackPanel>
       </Border>
 
+      <!-- REST API -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="REST API" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Manage actions, commands, timers and variables from scripts and other apps: JSON over HTTP at /api/v1, described by /api/v1/openapi.json, with live events at /api/v1/events. Every request needs the token below (Authorization: Bearer ...)." />
+          <CheckBox Content="Enabled" IsChecked="{Binding ApiEnabled}" />
+          <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
+            <TextBlock Text="Address" />
+            <TextBlock Grid.Column="2" Text="Port (shared with MCP)" />
+            <TextBox Grid.Row="1" Text="{Binding ApiAddress}" />
+            <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding ApiPort}" Minimum="1" Maximum="65535" FormatString="0" />
+          </Grid>
+          <Grid ColumnDefinitions="140,*,8,Auto">
+            <TextBlock Text="API URL" VerticalAlignment="Center" />
+            <SelectableTextBlock Grid.Column="1" Text="{Binding ApiUrl}" VerticalAlignment="Center" />
+            <Button Grid.Column="3" Content="Copy" Tag="apiUrl" Click="OnCopyText" />
+          </Grid>
+          <Grid ColumnDefinitions="140,*,8,Auto,8,Auto,8,Auto">
+            <TextBlock Text="Token" VerticalAlignment="Center" />
+            <SelectableTextBlock Grid.Column="1" Text="{Binding TokenDisplay}" VerticalAlignment="Center" FontFamily="monospace" TextWrapping="Wrap" />
+            <ToggleButton Grid.Column="3" Content="Show" IsChecked="{Binding ShowToken}" />
+            <Button Grid.Column="5" Content="Copy" Tag="token" Click="OnCopyText" />
+            <Button Grid.Column="7" Content="Regenerate" Command="{Binding RegenerateTokenCommand}" />
+          </Grid>
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="Treat the token like a password: anyone with it can change and run your actions. Regenerate it if it leaks. Platform logins (Twitch, YouTube...) are never available through the API." />
+        </StackPanel>
+      </Border>
+
+      <!-- MCP -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="MCP server (AI assistants)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Lets the AI of your choice manage Cuebot through the Model Context Protocol: list and build actions, look up triggers and sub-actions, create commands and timers, run and troubleshoot actions. Uses the API port and token." />
+          <CheckBox Content="Enabled" IsChecked="{Binding McpEnabled}" />
+          <CheckBox Content="Confirm destructive tools (delete, import, send chat): the AI has to ask you and pass back a confirmation token"
+                    IsChecked="{Binding McpRequireConfirmation}" />
+          <Grid ColumnDefinitions="140,*,8,Auto">
+            <TextBlock Text="MCP URL" VerticalAlignment="Center" />
+            <SelectableTextBlock Grid.Column="1" Text="{Binding McpUrl}" VerticalAlignment="Center" />
+            <Button Grid.Column="3" Content="Copy" Tag="mcpUrl" Click="OnCopyText" />
+          </Grid>
+
+          <DockPanel Margin="0,4,0,0">
+            <Button DockPanel.Dock="Right" Content="Copy" Tag="claude" Click="OnCopyText" />
+            <TextBlock Text="Claude Code (terminal)" FontWeight="SemiBold" VerticalAlignment="Center" />
+          </DockPanel>
+          <SelectableTextBlock Text="{Binding ClaudeCodeCommand}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
+
+          <DockPanel Margin="0,4,0,0">
+            <Button DockPanel.Dock="Right" Content="Copy" Tag="stdio" Click="OnCopyText" />
+            <TextBlock Text="Claude Desktop and other apps that start an MCP process (stdio)" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" />
+          </DockPanel>
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="Add this to the app's MCP config (Claude Desktop: Settings → Developer → Edit Config). It starts 'Cuebot --mcp-stdio', which connects to this running Cuebot, so keep Cuebot open with MCP enabled." />
+          <SelectableTextBlock Text="{Binding StdioConfigJson}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
+
+          <DockPanel Margin="0,4,0,0">
+            <Button DockPanel.Dock="Right" Content="Copy" Tag="http" Click="OnCopyText" />
+            <TextBlock Text="Other clients with HTTP support (.mcp.json and similar)" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" />
+          </DockPanel>
+          <SelectableTextBlock Text="{Binding HttpConfigJson}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="The token is hidden in these snippets unless Show is on; Copy always copies the complete snippet including the token." />
+        </StackPanel>
+      </Border>
+
       <!-- Custom servers -->
       <Border Classes="card">
         <StackPanel Spacing="8">

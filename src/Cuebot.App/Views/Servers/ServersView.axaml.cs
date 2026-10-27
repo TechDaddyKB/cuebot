@@ -23,4 +23,20 @@ public partial class ServersView : UserControl
             page.Message = "Could not copy the URL.";
         }
     }
+
+    /// <summary>Copy buttons of the API / MCP sections: the button's Tag names what to copy.</summary>
+    private async void OnCopyText(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control { Tag: string what } || DataContext is not ServersViewModel page) return;
+        if (TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) return;
+        try
+        {
+            await clipboard.SetTextAsync(page.CopyText(what));
+            page.Message = what == "token" ? "Copied the token." : "Copied.";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or PlatformNotSupportedException)
+        {
+            page.Message = "Could not copy.";
+        }
+    }
 }

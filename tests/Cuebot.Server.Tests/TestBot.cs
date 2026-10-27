@@ -32,8 +32,10 @@ internal sealed class TestBot : IAsyncDisposable
 
         Api = new ScriptApi([new CoreScriptFunctions(), new VariableScriptFunctions(UserVariables), Functions]);
         Scripts = new CSharpScriptEngine(Api, new CphServices(new LateProvider(this)));
-        Registry = new Registry([Capture, new CSharpCodeSubAction(Scripts), new LogSubAction()],
-            [], [new CodeTriggerProvider(CodeTriggers)]);
+        Registry = new Registry([Capture, new CSharpCodeSubAction(Scripts), new LogSubAction(), new IfSubAction(), new DelaySubAction()],
+            [], [new CodeTriggerProvider(CodeTriggers), new CommandTriggers(Commands), new CoreTriggers(Profile)]);
+        Timers = new TimerService(Profile, Bus);
+        Transfer = new Cuebot.Core.Transfer.TransferService(Profile, Commands, Globals, () => Registry);
         Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log);
         Engine.Start();
         Engine.RunCompleted += r => Runs.Enqueue(r);
@@ -42,7 +44,7 @@ internal sealed class TestBot : IAsyncDisposable
         {
             Engine = Engine, Profile = Profile, Globals = Globals, Bus = Bus, Log = Log, UserVariables = UserVariables,
             Users = Users, Commands = Commands, Chat = Chat, CodeTriggers = CodeTriggers, Speaker = Speaker,
-            Credits = Credits,
+            Credits = Credits, Registry = Registry, Timers = Timers, Transfer = Transfer, Scripts = Api,
             Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
         };
         Manager = new ServerManager(null, Services);
@@ -65,6 +67,8 @@ internal sealed class TestBot : IAsyncDisposable
     public ScriptApi Api { get; }
     public CSharpScriptEngine Scripts { get; }
     public Registry Registry { get; }
+    public TimerService Timers { get; }
+    public Cuebot.Core.Transfer.TransferService Transfer { get; }
     public ActionEngine Engine { get; }
     public ServerServices Services { get; }
     public ServerManager Manager { get; }
@@ -85,6 +89,8 @@ internal sealed class TestBot : IAsyncDisposable
         to.SpeakerBot = from.SpeakerBot;
         to.CustomServers = from.CustomServers;
         to.CustomClients = from.CustomClients;
+        to.Api = from.Api;
+        to.Mcp = from.Mcp;
     }
 
     /// <summary>Adds an action that ends with a capture step (optionally after a C# step and with triggers).</summary>
@@ -131,6 +137,7 @@ internal sealed class TestBot : IAsyncDisposable
         await Manager.DisposeAsync();
         Scripts.Dispose();
         Engine.Dispose();
+        Timers.Dispose();
         Chat.Dispose();
         Users.Dispose();
         Profile.Dispose();

@@ -25,6 +25,12 @@ public sealed class ServerSettings
     public SpeakerBotSettings SpeakerBot { get; set; } = new();
     public List<CustomWebSocketServerDefinition> CustomServers { get; set; } = [];
     public List<CustomWebSocketClientDefinition> CustomClients { get; set; } = [];
+
+    /// <summary>The local REST API (<c>/api/v1</c>, bearer token). Its listener also serves MCP.</summary>
+    public Api.ApiServerSettings Api { get; set; } = new();
+
+    /// <summary>The MCP endpoint (<c>/mcp</c>) on the API listener.</summary>
+    public Mcp.McpServerSettings Mcp { get; set; } = new();
 }
 
 /// <summary>The Streamer.bot-compatible WebSocket server (for @streamerbot/client overlays and tools).</summary>

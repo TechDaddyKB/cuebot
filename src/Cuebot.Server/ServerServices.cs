@@ -33,6 +33,10 @@ public sealed class ServerServices
     private ISpeakerBackend? _speaker;
     private IReadOnlyList<IConnectionStatus>? _connections;
     private Cuebot.Core.Credits.ICreditsSource? _credits;
+    private Registry? _registry;
+    private TimerService? _timers;
+    private Cuebot.Core.Transfer.TransferService? _transfer;
+    private Cuebot.Core.Scripting.ScriptApi? _scripts;
 
     public ServerServices()
     {
@@ -70,6 +74,26 @@ public sealed class ServerServices
     {
         get => _connections ??= _provider?.GetServices<IConnectionStatus>().ToArray() ?? [];
         init => _connections = value;
+    }
+
+    /// <summary>Trigger and sub-action types, for the REST API / MCP catalogue and action validation.</summary>
+    public Registry? Registry { get => _registry ??= _provider?.GetService<Registry>(); init => _registry = value; }
+
+    /// <summary>Timer runtime state (REST API / MCP).</summary>
+    public TimerService? Timers { get => _timers ??= _provider?.GetService<TimerService>(); init => _timers = value; }
+
+    /// <summary>Import/export (REST API / MCP).</summary>
+    public Cuebot.Core.Transfer.TransferService? Transfer
+    {
+        get => _transfer ??= _provider?.GetService<Cuebot.Core.Transfer.TransferService>();
+        init => _transfer = value;
+    }
+
+    /// <summary>Script functions, listed by the REST API / MCP catalogue.</summary>
+    public Cuebot.Core.Scripting.ScriptApi? Scripts
+    {
+        get => _scripts ??= _provider?.GetService<Cuebot.Core.Scripting.ScriptApi>();
+        init => _scripts = value;
     }
 
     private T Required<T>() where T : notnull =>
