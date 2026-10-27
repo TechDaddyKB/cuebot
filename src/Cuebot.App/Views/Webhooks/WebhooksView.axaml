@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Webhooks"
+             x:Class="Cuebot.App.Views.Webhooks.WebhooksView"
+             x:DataType="vm:WebhooksViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Webhook services" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Ko-fi, Patreon, Fourthwall, Shopify, Throne and your own hooks reach Cuebot through your relay. Each delivery is verified here with the secret you enter (deliveries that do not match are dropped), then becomes triggers, activity feed items, event speech and credits. Secrets are stored in webhooks.json, masked here and never written to the log." />
+
+      <ItemsControl ItemsSource="{Binding Services}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:WebhookCardViewModel">
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="h2" Text="{Binding Name}" />
+                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="Enabled" OffContent="Off" />
+                </Grid>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Help}" />
+                <TextBox Name="Secret" Text="{Binding Secret}" PasswordChar="•" PlaceholderText="{Binding SecretLabel}" />
+                <TextBlock Classes="muted" Text="{Binding MaskedSecret}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding CanGenerate}">
+                  <Button Content="Generate token" Command="{Binding GenerateCommand}" />
+                  <SelectableTextBlock Text="{Binding GeneratedToken}" VerticalAlignment="Center" FontFamily="monospace" />
+                </StackPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding LastDelivery}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="180" />
+                  <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+                </StackPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <Border Classes="card" DataContext="{Binding Custom}" x:DataType="vm:CustomHooksViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Custom webhooks" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Your own hooks for IFTTT, Zapier, scripts or other apps: call …/custom/&lt;name&gt;?token=&lt;token&gt; (or send the token in an X-Cuebot-Token header). The Custom Webhook trigger gets the hook name, method, headers, query, body and the body's top-level JSON keys as arguments." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBox Text="{Binding NewName}" PlaceholderText="Hook name, e.g. doorbell" MinWidth="240" />
+            <Button Content="Add hook" Classes="accent" Command="{Binding AddCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" Text="No custom hooks yet." IsVisible="{Binding HasNoHooks}" />
+          <ItemsControl ItemsSource="{Binding Hooks}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CustomHookViewModel">
+                <Grid ColumnDefinitions="140,*,Auto" Margin="0,4">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Classes="muted" Text="{Binding MaskedToken}" IsVisible="{Binding !ShowToken}" VerticalAlignment="Center" />
+                    <SelectableTextBlock Text="{Binding Token}" IsVisible="{Binding ShowToken}" FontFamily="monospace" VerticalAlignment="Center" />
+                    <CheckBox Content="Show" IsChecked="{Binding ShowToken}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                    <ToggleSwitch IsChecked="{Binding Enabled}" OnContent="On" OffContent="Off" />
+                    <Button Content="Test" Command="{Binding TestCommand}" />
+                    <Button Content="New token" Command="{Binding RegenerateCommand}" />
+                    <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding LastDelivery}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Last events" />
+          <TextBlock Classes="muted" Text="No events yet. Send a test event to try your triggers." IsVisible="{Binding HasNoEvents}" />
+          <ItemsControl ItemsSource="{Binding RecentEvents}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WebhookRecordViewModel">
+                <Grid ColumnDefinitions="70,140,*,Auto" Margin="0,2">
+                  <TextBlock Classes="muted" Text="{Binding Time}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Service}" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="2" Text="{Binding Summary}" TextWrapping="Wrap" />
+                  <TextBlock Grid.Column="3" Classes="muted" Text="{Binding EventType}" Margin="8,0,0,0" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

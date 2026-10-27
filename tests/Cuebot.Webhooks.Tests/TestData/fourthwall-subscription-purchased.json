@@ -1,0 +1,19 @@
+{
+  "testMode": false,
+  "id": "weve_sub_1",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "SUBSCRIPTION_PURCHASED",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-27T15:07:00.000+00:00",
+  "data": {
+    "id": "7ad0c438-beda-4779-a885-0dc325a755c1",
+    "email": "member@example.com",
+    "nickname": "NewMember",
+    "createdAt": "2026-10-27T15:06:59.000+00:00",
+    "subscription": {
+      "type": "ACTIVE",
+      "variant": { "id": "mtv_1", "tierId": "mt_1", "interval": "MONTHLY", "amount": { "value": 5, "currency": "USD" }, "offerId": "mof_1" }
+    }
+  }
+}

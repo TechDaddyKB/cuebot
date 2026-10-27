@@ -1,0 +1,1 @@
+{ "value1": "Front door opened", "value2": 3, "value3": true, "hookName": "spoofed", "details": { "room": "hall" }, "tags": ["a", "b"] }
