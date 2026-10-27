@@ -54,12 +54,36 @@ public sealed class SubActionDefinition
 /// <summary>Position of a node on the graph canvas. Purely presentational.</summary>
 public sealed record NodeLayout(double X, double Y);
 
+/// <summary>
+/// A timed trigger source ("core.timer" events). Fires every <see cref="IntervalSeconds"/>, or after a random
+/// interval between <see cref="MinIntervalSeconds"/> and <see cref="MaxIntervalSeconds"/>, or on a 5-field
+/// <see cref="Cron"/> schedule (local time). Every property after <see cref="Enabled"/> is optional so older
+/// actions.json files load unchanged.
+/// </summary>
 public sealed class TimerDefinition
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "New timer";
     public int IntervalSeconds { get; set; } = 300;
     public bool Enabled { get; set; } = true;
+
+    /// <summary>When false the timer fires once after it is enabled (or the app starts), then waits to be re-enabled.</summary>
+    public bool Repeat { get; set; } = true;
+
+    /// <summary>Pick each interval at random between the minimum and maximum instead of using <see cref="IntervalSeconds"/>.</summary>
+    public bool RandomInterval { get; set; }
+
+    public int MinIntervalSeconds { get; set; } = 60;
+    public int MaxIntervalSeconds { get; set; } = 300;
+
+    /// <summary>
+    /// When above zero, a due timer only fires if this many chat messages arrived since it last fired (or was armed);
+    /// otherwise that cycle is skipped.
+    /// </summary>
+    public int MinChatLines { get; set; }
+
+    /// <summary>Optional cron schedule ("*/15 * * * *": minute hour day-of-month month day-of-week). Overrides the interval.</summary>
+    public string? Cron { get; set; }
 }
 
 /// <summary>Everything the user builds: actions and timers. Stored in actions.json.</summary>
