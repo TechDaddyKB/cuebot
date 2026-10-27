@@ -1,0 +1,39 @@
+// Shared by the docks: connects to Cuebot's Streamer.bot-compatible WebSocket server, authenticates when asked,
+// subscribes and reconnects. Query parameters: ?port=8080&endpoint=/&password=...&transparent=1
+function cuebotConnect(events, onEvent) {
+  const params = new URLSearchParams(location.search);
+  const host = params.get('host') || location.hostname || '127.0.0.1';
+  const port = params.get('port') || CONFIG.port || 8080;
+  const endpoint = params.get('endpoint') || CONFIG.endpoint || '/';
+  const password = params.get('password') || '';
+  const status = document.getElementById('status');
+  if (params.get('transparent')) document.body.classList.add('transparent');
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const sha = async text => b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+  let retry = 1000;
+  function open() {
+    const ws = new WebSocket('ws://' + host + ':' + port + endpoint);
+    const send = msg => ws.send(JSON.stringify(msg));
+    ws.onmessage = async e => {
+      let msg; try { msg = JSON.parse(e.data); } catch { return; }
+      if (msg.request === 'Hello') {
+        retry = 1000;
+        if (msg.authentication) {
+          if (!password || !crypto.subtle) { status.textContent = 'This server needs a password: add ?password=... to the dock URL'; return; }
+          const secret = await sha(password + msg.authentication.salt);
+          send({ request: 'Authenticate', id: 'auth', authentication: await sha(secret + msg.authentication.challenge) });
+        }
+        send({ request: 'Subscribe', id: 'subscribe', events });
+        return;
+      }
+      if (msg.id === 'subscribe') { status.textContent = msg.status === 'ok' ? '' : ('Cuebot: ' + (msg.error || 'subscribe failed')); return; }
+      if (msg.id === 'auth' && msg.status !== 'ok') { status.textContent = 'Cuebot: wrong password'; return; }
+      if (msg.event && msg.data) onEvent(msg.event, msg.data);
+    };
+    ws.onclose = () => {
+      status.textContent = 'Not connected to Cuebot (is the WebSocket server enabled?) - retrying...';
+      setTimeout(open, retry); retry = Math.min(retry * 2, 15000);
+    };
+  }
+  open();
+}

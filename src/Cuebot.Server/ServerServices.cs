@@ -1,0 +1,71 @@
+using Cuebot.Core;
+using Cuebot.Core.Actions;
+using Cuebot.Core.Chat;
+using Cuebot.Core.Commands;
+using Cuebot.Core.Events;
+using Cuebot.Core.Logging;
+using Cuebot.Core.Users;
+using Cuebot.Core.Variables;
+using Cuebot.Scripting.Compat;
+using Cuebot.Server.SpeakerBot;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Cuebot.Server;
+
+/// <summary>
+/// The Cuebot services the servers expose. With a provider they are resolved on first use: the servers' script
+/// functions and sub-actions are created while the action engine is being built, so eager resolution would loop.
+/// Tests set them directly. Optional ones may be null; requests that need them return empty results.
+/// </summary>
+public sealed class ServerServices
+{
+    private readonly IServiceProvider? _provider;
+    private ActionEngine? _engine;
+    private ProfileService? _profile;
+    private GlobalVariables? _globals;
+    private EventBus? _bus;
+    private AppLog? _log;
+    private UserVariables? _userVariables;
+    private UserRegistry? _users;
+    private CommandStore? _commands;
+    private ChatHub? _chat;
+    private CodeTriggerRegistry? _codeTriggers;
+    private ISpeakerBackend? _speaker;
+    private IReadOnlyList<IConnectionStatus>? _connections;
+
+    public ServerServices()
+    {
+    }
+
+    public ServerServices(IServiceProvider provider) => _provider = provider;
+
+    public ActionEngine Engine { get => _engine ??= Required<ActionEngine>(); init => _engine = value; }
+    public ProfileService Profile { get => _profile ??= Required<ProfileService>(); init => _profile = value; }
+    public GlobalVariables Globals { get => _globals ??= Required<GlobalVariables>(); init => _globals = value; }
+    public EventBus Bus { get => _bus ??= Required<EventBus>(); init => _bus = value; }
+    public AppLog Log { get => _log ??= _provider?.GetService<AppLog>() ?? new AppLog(); init => _log = value; }
+    public UserVariables? UserVariables { get => _userVariables ??= _provider?.GetService<UserVariables>(); init => _userVariables = value; }
+    public UserRegistry? Users { get => _users ??= _provider?.GetService<UserRegistry>(); init => _users = value; }
+    public CommandStore? Commands { get => _commands ??= _provider?.GetService<CommandStore>(); init => _commands = value; }
+    public ChatHub? Chat { get => _chat ??= _provider?.GetService<ChatHub>(); init => _chat = value; }
+
+    public CodeTriggerRegistry CodeTriggers
+    {
+        get => _codeTriggers ??= _provider?.GetService<CodeTriggerRegistry>() ?? new CodeTriggerRegistry();
+        init => _codeTriggers = value;
+    }
+
+    public ISpeakerBackend? Speaker { get => _speaker ??= _provider?.GetService<ISpeakerBackend>(); init => _speaker = value; }
+
+    /// <summary>Platform connections (Twitch, YouTube, Kick, OBS...) for GetBroadcaster.</summary>
+    public IReadOnlyList<IConnectionStatus> Connections
+    {
+        get => _connections ??= _provider?.GetServices<IConnectionStatus>().ToArray() ?? [];
+        init => _connections = value;
+    }
+
+    private T Required<T>() where T : notnull =>
+        _provider is null
+            ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")
+            : _provider.GetRequiredService<T>();
+}

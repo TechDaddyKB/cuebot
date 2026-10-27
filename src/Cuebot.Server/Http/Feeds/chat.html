@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuebot chat</title>
+<style>
+  :root { --bg: rgba(18, 18, 24, 0.92); --fg: #f2f2f5; --muted: #9a9aa8; --accent: #8ab4ff; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, "Segoe UI", sans-serif; }
+  body.transparent { background: transparent; }
+  #status { position: fixed; top: 0; left: 0; right: 0; padding: 4px 10px; font-size: 12px; color: var(--muted); background: rgba(0,0,0,.4); }
+  #status:empty { display: none; }
+  #list { padding: 8px 10px 4px; display: flex; flex-direction: column; justify-content: flex-end; min-height: 100vh; box-sizing: border-box; }
+  .msg { padding: 3px 0; word-wrap: break-word; animation: in .2s ease-out; }
+  .platform { display: inline-block; font-size: 10px; text-transform: uppercase; padding: 1px 5px; margin-right: 6px; border-radius: 3px; background: #333; color: #ddd; vertical-align: 1px; }
+  .platform.twitch { background: #6441a5; } .platform.youtube { background: #c4302b; } .platform.kick { background: #2b8a3e; } .platform.rumble { background: #5a9e2f; }
+  .user { font-weight: 600; margin-right: 6px; }
+  .amount { color: #ffd166; margin-right: 6px; }
+  @keyframes in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="status">Connecting...</div>
+<div id="list"></div>
+<script>
+const CONFIG = /*CUEBOT_CONFIG*/{};
+const MAX = 100;
+const list = document.getElementById('list');
+function add(data) {
+  const row = document.createElement('div');
+  row.className = 'msg';
+  const platform = (data.platform || '').toString();
+  const name = data.userName || (data.user && data.user.name) || 'someone';
+  const color = (data.user && data.user.color) || data.color || '';
+  row.innerHTML = '<span class="platform"></span><span class="user"></span><span class="amount"></span><span class="text"></span>';
+  row.children[0].textContent = platform; row.children[0].classList.add(platform.toLowerCase());
+  row.children[1].textContent = name; if (color) row.children[1].style.color = color;
+  row.children[2].textContent = data.amount || '';
+  row.children[3].textContent = data.message || data.text || '';
+  list.appendChild(row);
+  while (list.children.length > MAX) list.removeChild(list.firstChild);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+/*CUEBOT_CLIENT*/
+cuebotConnect({ Chat: ['Message'] }, (event, data) => add(data));
+</script>
+</body>
+</html>
