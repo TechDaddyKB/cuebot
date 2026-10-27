@@ -123,7 +123,11 @@ internal sealed class FakeObsServer : IAsyncDisposable
             _identified.TrySetResult(session);
 
             while (await ReceiveAsync(session) is { } message)
-                if (message.GetProperty("op").GetInt32() == 6) _ = Task.Run(() => AnswerAsync(session, message.GetProperty("d").Clone()));
+            {
+                var op = message.GetProperty("op").GetInt32();
+                if (op == 6) _ = Task.Run(() => AnswerAsync(session, message.GetProperty("d").Clone()));
+                else if (op == 8) _ = Task.Run(() => AnswerBatchAsync(session, message.GetProperty("d").Clone()));
+            }
         }
         catch (Exception)
         {
@@ -134,6 +138,24 @@ internal sealed class FakeObsServer : IAsyncDisposable
     private bool IsAuthenticated(JsonElement identify) =>
         identify.TryGetProperty("authentication", out var auth) &&
         auth.GetString() == ObsAuth.Compute(_password!, Salt, Challenge);
+
+    /// <summary>RequestBatch (op 8): answers each request through <see cref="Handler"/> in order, then sends op 9.</summary>
+    private async Task AnswerBatchAsync(WebSocket session, JsonElement batch)
+    {
+        var halt = batch.TryGetProperty("haltOnFailure", out var h) && h.GetBoolean();
+        var results = new List<object>();
+        foreach (var request in batch.GetProperty("requests").EnumerateArray())
+        {
+            var requestType = request.GetProperty("requestType").GetString()!;
+            var data = request.TryGetProperty("requestData", out var d) ? d : default;
+            Requests.Enqueue((requestType, data));
+            var reply = Handler(requestType, data) ?? FakeReply.Fail(204, "No reply");
+            var status = new { result = reply.Success, code = reply.Code, comment = reply.Comment };
+            results.Add(reply.Data is null ? new { requestType, requestStatus = status } : new { requestType, requestStatus = status, responseData = reply.Data });
+            if (halt && !reply.Success) break;
+        }
+        await SendAsync(session, 9, new { requestId = batch.GetProperty("requestId").GetString(), results });
+    }
 
     private async Task AnswerAsync(WebSocket session, JsonElement request)
     {

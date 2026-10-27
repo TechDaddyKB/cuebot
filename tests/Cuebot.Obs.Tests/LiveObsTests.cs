@@ -126,6 +126,28 @@ public sealed class LiveObsTests : IAsyncLifetime
         await WaitUntil(async () => await ReadText() == $"now on {SceneB}");
     }
 
+    [LiveObsFact]
+    public async Task Scene_items_transforms_colors_stats_and_batches_work_on_the_test_scene()
+    {
+        var obs = _obs.Default;
+        var items = await obs.GetSceneItemsAsync(SceneA);
+        Assert.Contains(items, i => i.SourceName == ColorSource);
+
+        Assert.Equal(90, await obs.RotateSourceAsync(SceneA, ColorSource, 90, relative: false));
+        Assert.Equal(90, (await obs.GetSceneItemTransformAsync(SceneA, ColorSource)).GetProperty("rotation").GetDouble());
+
+        await obs.SetColorSourceColorAsync(ColorSource, "#FF0000");
+        var color = (await obs.GetInputSettingsAsync(ColorSource)).GetProperty("color").GetInt64();
+        Assert.Equal(0xFF0000FFL, color);
+
+        Assert.True((await obs.GetStatsAsync()).TryGetProperty("cpuUsage", out _));
+        var status = await obs.GetStatusAsync();
+        Assert.Equal(true, status["obsConnected"]);
+
+        var results = await obs.RequestBatchAsync([new { requestType = "GetVersion" }, new { requestType = "GetSceneList" }]);
+        Assert.Equal(2, results.GetArrayLength());
+    }
+
     private async Task<string?> ReadText()
     {
         var settings = await _obs.RequestAsync("GetInputSettings", new { inputName = TextSource });

@@ -15,7 +15,9 @@ public class MappingTests
     [InlineData("RecordStateChanged", "OBS_WEBSOCKET_OUTPUT_STARTED", ObsEvents.RecordStarted)]
     [InlineData("RecordStateChanged", "OBS_WEBSOCKET_OUTPUT_STOPPED", ObsEvents.RecordStopped)]
     [InlineData("StreamStateChanged", "OBS_WEBSOCKET_OUTPUT_STOPPING", null)]
-    [InlineData("ReplayBufferStateChanged", "OBS_WEBSOCKET_OUTPUT_STARTED", null)]
+    [InlineData("ReplayBufferStateChanged", "OBS_WEBSOCKET_OUTPUT_STARTED", ObsEvents.ReplayBufferStarted)]
+    [InlineData("RecordStateChanged", "OBS_WEBSOCKET_OUTPUT_PAUSED", ObsEvents.RecordPaused)]
+    [InlineData("VirtualcamStateChanged", "OBS_WEBSOCKET_OUTPUT_STOPPED", ObsEvents.VirtualCamStopped)]
     public void Maps_output_states(string eventType, string outputState, string? expected)
     {
         var e = new ObsEvent(eventType, Json($$"""{"outputActive":true,"outputState":"{{outputState}}"}"""));

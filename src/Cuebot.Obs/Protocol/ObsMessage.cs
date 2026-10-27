@@ -11,6 +11,8 @@ internal enum ObsOpCode
     Event = 5,
     Request = 6,
     RequestResponse = 7,
+    RequestBatch = 8,
+    RequestBatchResponse = 9,
 }
 
 /// <summary>One decoded <c>{ "op": n, "d": { ... } }</c> message.</summary>
