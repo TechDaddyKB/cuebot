@@ -170,6 +170,72 @@ public class EventSpeechTests
     }
 
     [Fact]
+    public async Task Merch_events_use_the_merch_template_and_the_feed_copy_is_not_spoken_twice()
+    {
+        await using var h = await StartAsync();
+
+        h.Bus.Publish(new Core.Events.BotEvent("streamelements.merch", new Dictionary<string, object?>
+        {
+            ["service"] = "StreamElements", ["platform"] = "StreamElements", ["user"] = "Buyer", ["product"] = "Hoodie, 2x Mug",
+            ["formattedAmount"] = "$45.00", ["currency"] = "USD", ["amount"] = 45.0, ["message"] = "love it", ["merchQuantity"] = 3,
+        }));
+        h.Bus.Publish(Activity("Other", "Buyer", "Buyer bought Hoodie, 2x Mug", "love it", "$45.00", platform: "StreamElements"));
+        h.Bus.Publish(new Core.Events.BotEvent("streamlabs.merch", new Dictionary<string, object?>
+        {
+            ["service"] = "Streamlabs", ["user"] = "Fan", ["product"] = "Cap", ["amount"] = 0.0, ["formattedAmount"] = "", ["message"] = "",
+        }));
+        h.Bus.Publish(Activity("Other", "Fan", "[Test] Fan bought Cap", platform: "Streamlabs"));
+        await h.DrainAsync();
+
+        Assert.Equal(["Buyer bought Hoodie, 2x Mug! love it", "Fan bought Cap!"], h.Spoken);
+    }
+
+    [Fact]
+    public void Merch_args_carry_amount_quantity_and_currency()
+    {
+        var variables = EventSpeech.Variables(EventSpeech.MerchArgs(new Dictionary<string, object?>
+        {
+            ["service"] = "StreamElements", ["user"] = "Buyer", ["product"] = "Mug", ["formattedAmount"] = "€7,50",
+            ["currency"] = "EUR", ["merchQuantity"] = 2,
+        }));
+
+        Assert.Equal(("Merch", "Mug", "2", "€7,50", "EUR", "StreamElements"),
+            ((string)variables["kind"]!, (string)variables["product"]!, (string)variables["quantity"]!, (string)variables["amount"]!,
+                (string)variables["currency"]!, (string)variables["platform"]!));
+    }
+
+    [Theory]
+    [InlineData("Follow", "Follow")]
+    [InlineData("sub", "Subscription")]
+    [InlineData("Gift Bomb", "GiftSubscription")]
+    [InlineData("donation", "Tip")]
+    [InlineData("merch", "Merch")]
+    [InlineData("channel_points", "Redemption")]
+    [InlineData("dance", null)]
+    public void Event_names_resolve_to_kinds(string name, string? kind) => Assert.Equal(kind, EventSpeech.ResolveKind(name));
+
+    [Fact]
+    public async Task Single_events_can_be_switched_off_and_on()
+    {
+        await using var h = await StartAsync();
+
+        Assert.True(h.Service.SetEventEnabled("follow", false));
+        Assert.False(h.Service.SetEventEnabled("dance", false));
+        Assert.Null(h.Service.IsEventEnabled("dance"));
+        h.Bus.Publish(Activity("Follow", "Alice", "Alice followed"));
+        h.Bus.Publish(Activity("Raid", "Bob", "Bob raided with 3 viewers"));
+        await h.DrainAsync();
+
+        Assert.Equal(["Bob is raiding with 3 viewers!"], h.Spoken);
+        Assert.False(h.Service.IsEventEnabled("Follow"));
+        var stored = h.Settings.Events.Templates.Single(t => t.Kind == "Follow");
+        Assert.Equal("%name% just followed!", stored.Messages.Single().Text);
+
+        Assert.True(h.Service.SetEventEnabled("Follow", true));
+        Assert.True(h.Service.IsEventEnabled("follows"));
+    }
+
+    [Fact]
     public async Task Events_are_dropped_when_speech_is_disabled()
     {
         await using var h = await StartAsync();

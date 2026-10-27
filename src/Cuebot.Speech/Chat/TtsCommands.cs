@@ -373,9 +373,8 @@ internal sealed class TtsCommands(SpeechService speech, TimeProvider time)
                 return nick.Length == 0 ? $"{at} removed {target}'s nickname." : $"{at} {target} is now spoken as {nick}.";
             }
             case "sticky":
-                speech.Settings.SpeakChat.StickyRandom = ParseOnOff(args[1]);
-                speech.SaveSettings();
-                return $"{at} sticky random voices {(speech.Settings.SpeakChat.StickyRandom ? "on" : "off")}.";
+                speech.StickyRandom = ParseOnOff(args[1]);
+                return $"{at} sticky random voices {(speech.StickyRandom ? "on" : "off")}.";
             case "voice":
             {
                 if (args.Length < 3) throw new UsageException();
@@ -393,20 +392,9 @@ internal sealed class TtsCommands(SpeechService speech, TimeProvider time)
             return AssignAlias(args[0].TrimStart('@'), string.Join(' ', args.Skip(1)), chat, at);
 
         var target = args[1].TrimStart('@');
+        if (speech.AssignLastVoice(chat.Platform, target) is not { } alias) return $"{at} {target} has not spoken yet.";
         var user = speech.Users.Find(chat.Platform, null, target);
-        if (user is null || user.LastVoice.Split('|') is not [var aliasName, var engineId, var voiceId])
-            return $"{at} {target} has not spoken yet.";
-        var alias = VoiceResolver.FindAlias(aliasName, speech.Settings.Aliases);
-        if (alias is null || alias.EffectiveVoices().Count > 1)
-        {
-            // A random pick (or a multi-voice alias): pin exactly the voice that was heard in a new alias.
-            var name = UniqueAliasName($"{(user.UserName.Length > 0 ? user.UserName : target)} voice");
-            alias = new VoiceAlias { Name = name, EngineId = engineId, VoiceId = voiceId };
-            speech.Settings.Aliases.Add(alias);
-            speech.SaveSettings();
-        }
-        speech.SetUserVoice(chat.Platform, user.UserId, user.UserName, alias.Name);
-        return $"{at} {(user.UserName.Length > 0 ? user.UserName : target)} now always speaks with {alias.Name}.";
+        return $"{at} {(user is { UserName.Length: > 0 } ? user.UserName : target)} now always speaks with {alias.Name}.";
     }
 
     private string AssignAlias(string target, string aliasName, ChatContext chat, string at)
@@ -433,13 +421,6 @@ internal sealed class TtsCommands(SpeechService speech, TimeProvider time)
         return speech.ActivateVoiceIgnoreProfile(name)
             ? $"{at} ignore profile: {(settings.ActiveVoiceIgnoreProfile.Length > 0 ? settings.ActiveVoiceIgnoreProfile : "none")}."
             : $"{at} no ignore profile named {name}.";
-    }
-
-    private string UniqueAliasName(string baseName)
-    {
-        var name = baseName;
-        for (var i = 2; VoiceResolver.FindAlias(name, speech.Settings.Aliases) is not null; i++) name = $"{baseName} {i}";
-        return name;
     }
 
     private static bool SamePlatform(SpeechUser user, ChatContext chat) =>

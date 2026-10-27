@@ -11,7 +11,8 @@ internal sealed record EventUtterance(string Kind, string Text, string Alias);
 /// Turns "chat.activity" events into speech using per-kind templates with weighted random messages.
 /// Args used: kind (FeedKind name), platform, user, title, detail, amount; optional richer args from platform
 /// modules: bits, viewers, tier, months/cumulative, total/gift, recipient, currency, rewardTitle, cost, input,
-/// level, percent, message.
+/// level, percent, message, product, quantity. Streamlabs / StreamElements merch purchases are read from their own
+/// events (see <see cref="MerchArgs"/>) because the activity feed only knows them as "Other".
 /// </summary>
 internal sealed partial class EventSpeech(Random? random = null)
 {
@@ -19,8 +20,34 @@ internal sealed partial class EventSpeech(Random? random = null)
     public static readonly string[] VariableNames =
     [
         "name", "user", "platform", "kind", "description", "level", "gift", "subtier", "tier", "title", "cost", "bits",
-        "amount", "percent", "currency", "recipient", "cumulative", "message", "input", "viewers",
+        "amount", "percent", "currency", "recipient", "cumulative", "message", "input", "viewers", "product", "quantity",
     ];
+
+    /// <summary>The event kinds that have a template.</summary>
+    public static readonly string[] Kinds =
+    [
+        "Follow", "Subscription", "GiftSubscription", "Tip", "Cheer", "Merch", "Raid", "Redemption", "StreamOnline", "StreamOffline",
+    ];
+
+    /// <summary>Speaker.bot-style event names (UDP "events" value) → kind. Keys are lower case, letters and digits only.</summary>
+    private static readonly Dictionary<string, string> KindSynonyms = new(StringComparer.Ordinal)
+    {
+        ["follows"] = "Follow", ["follower"] = "Follow",
+        ["sub"] = "Subscription", ["subs"] = "Subscription", ["subscribe"] = "Subscription", ["subscriber"] = "Subscription",
+        ["resub"] = "Subscription", ["resubscription"] = "Subscription",
+        ["gift"] = "GiftSubscription", ["giftsub"] = "GiftSubscription", ["giftedsub"] = "GiftSubscription",
+        ["giftbomb"] = "GiftSubscription", ["communitygift"] = "GiftSubscription", ["communitysubgift"] = "GiftSubscription",
+        ["donation"] = "Tip", ["donate"] = "Tip", ["tips"] = "Tip",
+        ["bits"] = "Cheer", ["cheers"] = "Cheer",
+        ["merchandise"] = "Merch", ["merchpurchase"] = "Merch",
+        ["raids"] = "Raid",
+        ["reward"] = "Redemption", ["rewards"] = "Redemption", ["rewardredemption"] = "Redemption", ["redeem"] = "Redemption",
+        ["channelpoint"] = "Redemption", ["channelpoints"] = "Redemption", ["channelreward"] = "Redemption",
+        ["online"] = "StreamOnline", ["live"] = "StreamOnline", ["offline"] = "StreamOffline",
+    };
+
+    /// <summary>Donation services whose merch events are spoken through <see cref="MerchArgs"/>.</summary>
+    private static readonly string[] MerchServices = ["Streamlabs", "StreamElements"];
 
     private readonly Random _random = random ?? Random.Shared;
     private readonly HashSet<string> _followers = new(StringComparer.OrdinalIgnoreCase);
@@ -32,6 +59,7 @@ internal sealed partial class EventSpeech(Random? random = null)
     public EventUtterance? Build(IReadOnlyDictionary<string, object?> args, EventSpeechSettings settings, FilterProfile profile,
         SpeakChatSettings legacy)
     {
+        if (IsMerchFeedItem(args)) return null;
         var variables = Variables(args);
         var kind = (string)variables["kind"]!;
         var template = FindTemplate(settings, kind);
@@ -69,6 +97,56 @@ internal sealed partial class EventSpeech(Random? random = null)
         lock (_gate) _followers.Clear();
     }
 
+    /// <summary>The template kind for a kind or a Speaker.bot event name ("Sub", "gift bomb", "donation"), or null.</summary>
+    public static string? ResolveKind(string name)
+    {
+        var key = new string(name.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        if (key.Length == 0) return null;
+        return Kinds.FirstOrDefault(k => k.Equals(key, StringComparison.OrdinalIgnoreCase)) ?? KindSynonyms.GetValueOrDefault(key);
+    }
+
+    /// <summary>
+    /// Activity args (kind "Merch") for a Streamlabs / StreamElements merch event: buyer, product (items joined),
+    /// quantity, formatted amount, currency and the buyer's message.
+    /// </summary>
+    internal static Dictionary<string, object?> MerchArgs(IReadOnlyDictionary<string, object?> args)
+    {
+        string Get(string key) => args.TryGetValue(key, out var value) ? VariableResolver.Format(value) : "";
+        string First(params string[] keys) => keys.Select(Get).FirstOrDefault(v => v.Length > 0) ?? "";
+
+        var user = First("user", "userName", "merchUsername", "merchandiseFrom");
+        var product = First("product", "merchandiseProduct");
+        var amount = First("formattedAmount", "merchFormattedAmount");
+        if (amount.Length == 0
+            && double.TryParse(Get("amount"), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && number > 0)
+            amount = Get("amount");
+        var message = First("message", "merchMessage", "merchandiseMessage");
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["kind"] = "Merch",
+            ["platform"] = First("service", "platform"),
+            ["user"] = user,
+            ["title"] = product.Length > 0 ? $"{user} bought {product}" : $"{user} bought merch",
+            ["detail"] = message,
+            ["amount"] = amount,
+            ["currency"] = First("currency", "merchCurrency"),
+            ["product"] = product,
+            ["quantity"] = First("merchQuantity", "quantity") is { Length: > 0 } q ? q : product.Length > 0 ? "1" : "",
+            ["message"] = message,
+        };
+    }
+
+    /// <summary>The activity feed's copy of a merch purchase (kind Other, "X bought Y"); it is spoken from the merch event instead.</summary>
+    internal static bool IsMerchFeedItem(IReadOnlyDictionary<string, object?> args)
+    {
+        string Get(string key) => args.TryGetValue(key, out var value) ? VariableResolver.Format(value) : "";
+        if (!Get("kind").Equals("Other", StringComparison.OrdinalIgnoreCase)) return false;
+        if (!MerchServices.Contains(Get("platform"), StringComparer.OrdinalIgnoreCase)) return false;
+        var title = Get("title");
+        if (title.StartsWith("[Test] ", StringComparison.Ordinal)) title = title["[Test] ".Length..];
+        return title.StartsWith($"{Get("user")} bought ", StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>The configured template for a kind, else the built-in default.</summary>
     internal static EventTemplate? FindTemplate(EventSpeechSettings settings, string kind) =>
         settings.Templates.FirstOrDefault(t => string.Equals(t.Kind, kind, StringComparison.OrdinalIgnoreCase))
@@ -82,6 +160,7 @@ internal sealed partial class EventSpeech(Random? random = null)
             "Subscription" => "%name% subscribed! %message%",
             "GiftSubscription" => "%name% gifted %gift% subs!",
             "Tip" => "%name% tipped %amount%! %message%",
+            "Merch" => "%name% bought %product%! %message%",
             "Cheer" => "%name% cheered %bits% bits! %message%",
             "Raid" => "%name% is raiding with %viewers% viewers!",
             "Redemption" => "%name% redeemed %title%. %input%",
@@ -142,13 +221,15 @@ internal sealed partial class EventSpeech(Random? random = null)
             ["message"] = First("message") is { Length: > 0 } m ? m : detail,
             ["input"] = First("input", "userInput") is { Length: > 0 } i ? i : detail,
             ["viewers"] = First("viewers") is { Length: > 0 } v ? v : NumberIn(description),
+            ["product"] = First("product", "item"),
+            ["quantity"] = First("quantity"),
         };
         return variables;
     }
 
     private static string Normalize(string kind)
     {
-        foreach (var known in new[] { "Follow", "Subscription", "GiftSubscription", "Tip", "Cheer", "Raid", "Redemption", "StreamOnline", "StreamOffline", "Other" })
+        foreach (var known in Kinds.Append("Other"))
             if (string.Equals(known, kind, StringComparison.OrdinalIgnoreCase)) return known;
         return kind.Length == 0 ? "Other" : kind;
     }

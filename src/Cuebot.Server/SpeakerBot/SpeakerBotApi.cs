@@ -18,7 +18,7 @@ public sealed class SpeakerBotApi(ISpeakerBackend speech, AppLog log)
     public static readonly IReadOnlyList<string> Requests =
     [
         "Speak", "Stop", "Enable", "On", "Disable", "Off", "Events", "Mode", "Pause", "Resume", "Clear",
-        "SetEnabled", "SetPaused", "ActivateVoiceGate", "GetVoices", "GetAliases", "GetInfo", "GetState",
+        "SetEnabled", "SetPaused", "ActivateVoiceGate", "Set", "Assign", "GetVoices", "GetAliases", "GetInfo", "GetState",
     ];
 
     /// <summary>Handles one WebSocket request; returns the response body without status/id.</summary>
@@ -48,8 +48,40 @@ public sealed class SpeakerBotApi(ISpeakerBackend speech, AppLog log)
             case "resume": speech.Paused = false; return State();
             case "clear": speech.Clear(); return State();
             case "events":
-                speech.EventsEnabled = OnOff(Str(message, "state"), speech.EventsEnabled);
-                return State();
+            {
+                var name = EventName(message);
+                if (name is null)
+                {
+                    speech.EventsEnabled = OnOff(Str(message, "state"), speech.EventsEnabled);
+                    return State();
+                }
+                var enabled = ToggleEvent(name, Str(message, "state")) ?? throw new RequestException($"Unknown event '{name}'");
+                var state = State();
+                state["event"] = name;
+                state["eventEnabled"] = enabled;
+                return state;
+            }
+            case "set":
+                switch (Str(message, "method").ToLowerInvariant())
+                {
+                    case "nickname":
+                        speech.SetNickname(Platform, Str(message, "username"), Str(message, "nickname"));
+                        return [];
+                    case "sticky":
+                        speech.StickyRandom = OnOff(StickyValue(message), speech.StickyRandom);
+                        return new JsonObject { ["sticky"] = speech.StickyRandom };
+                    default:
+                        throw new RequestException("method must be 'nickname' or 'sticky'");
+                }
+            case "assign":
+            {
+                if (!Str(message, "method", "last").Equals("last", StringComparison.OrdinalIgnoreCase))
+                    throw new RequestException("method must be 'last'");
+                var user = UserName(message);
+                if (user.Length == 0) throw new RequestException("username is required");
+                var alias = speech.AssignLastVoice(Platform, user);
+                return new JsonObject { ["success"] = alias is not null, ["alias"] = alias ?? "" };
+            }
             case "mode":
                 if (!speech.SetMode(Str(message, "mode"))) throw new RequestException("mode must be 'all' or 'command'");
                 return [];
@@ -102,15 +134,10 @@ public sealed class SpeakerBotApi(ISpeakerBackend speech, AppLog log)
             case "clear": speech.Clear(); break;
             case "events":
             {
-                var value = Str(message, "value");
-                if (value.Length == 0 || value.Equals("all", StringComparison.OrdinalIgnoreCase))
-                {
+                if (EventName(message) is not { } name)
                     speech.EventsEnabled = OnOff(Str(message, "state"), speech.EventsEnabled);
-                }
-                else
-                {
-                    log.Warn(LogSource, $"Turning single events on or off ('{value}') is not supported; use the Speech page");
-                }
+                else if (ToggleEvent(name, Str(message, "state")) is null)
+                    log.Warn(LogSource, $"Unknown event '{name}'");
                 break;
             }
             case "profile":
@@ -123,6 +150,15 @@ public sealed class SpeakerBotApi(ISpeakerBackend speech, AppLog log)
             case "set" when Str(message, "method").Equals("nickname", StringComparison.OrdinalIgnoreCase):
                 speech.SetNickname(Platform, Str(message, "username"), Str(message, "nickname"));
                 break;
+            case "set" when Str(message, "method").Equals("sticky", StringComparison.OrdinalIgnoreCase):
+                speech.StickyRandom = OnOff(StickyValue(message), speech.StickyRandom);
+                break;
+            case "assign" when Str(message, "method", "last").Equals("last", StringComparison.OrdinalIgnoreCase):
+            {
+                var user = UserName(message);
+                if (speech.AssignLastVoice(Platform, user) is null) log.Warn(LogSource, $"'{user}' has not spoken yet; no voice assigned");
+                break;
+            }
             default:
                 log.Warn(LogSource, $"Unsupported UDP command '{command}'");
                 break;
@@ -164,6 +200,29 @@ public sealed class SpeakerBotApi(ISpeakerBackend speech, AppLog log)
         throw new RequestException($"state must be '{onWord}', '{offWords[0]}' or 'toggle'");
     }
 
-    private static string Str(JsonElement message, string name) => StreamerBotRequests.Str(message, name);
+    /// <summary>The single event an "events" message names (<c>value</c>, or <c>event</c>); null for all events.</summary>
+    private static string? EventName(JsonElement message)
+    {
+        var value = Str(message, "value");
+        if (value.Length == 0) value = Str(message, "event");
+        return value.Trim().Length == 0 || value.Trim().Equals("all", StringComparison.OrdinalIgnoreCase) ? null : value.Trim();
+    }
+
+    /// <summary>Turns one event on, off or toggles it; the new state, or null when the event is unknown.</summary>
+    private bool? ToggleEvent(string name, string state)
+    {
+        if (speech.IsEventEnabled(name) is not { } current) return null;
+        var enabled = OnOff(state, current);
+        return speech.SetEventEnabled(name, enabled) ? enabled : null;
+    }
+
+    /// <summary>"set sticky" sends <c>value</c> (bool); <c>state</c> is accepted too.</summary>
+    private static string StickyValue(JsonElement message) =>
+        Str(message, "value") is { Length: > 0 } value ? value : Str(message, "state");
+
+    private static string UserName(JsonElement message) =>
+        (Str(message, "username") is { Length: > 0 } u ? u : Str(message, "user")).Trim().TrimStart('@');
+
+    private static string Str(JsonElement message, string name, string fallback = "") => StreamerBotRequests.Str(message, name, fallback);
     private static bool Bool(JsonElement message, string name) => StreamerBotRequests.Bool(message, name, false);
 }

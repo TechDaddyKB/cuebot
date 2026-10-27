@@ -19,6 +19,12 @@ public static class SpeechEvents
     internal const string ChatActivity = "chat.activity";
 
     /// <summary>
+    /// Merch purchases from the donations module (args: service, user, product, formattedAmount, currency, message,
+    /// merchQuantity). Spoken with the "Merch" template; see <see cref="EventSpeech.MerchArgs"/>.
+    /// </summary>
+    internal static readonly string[] Merch = ["streamlabs.merch", "streamelements.merch"];
+
+    /// <summary>
     /// A message was deleted. Expected args: platform, messageId (or targetMessageId), optionally userId/user.
     /// Accepted as "chat.messageDeleted" or "twitch.messageDeleted" (the Twitch module emits it in wave 3).
     /// </summary>

@@ -252,6 +252,22 @@ internal sealed class FakeSpeaker : ISpeakerBackend
     public void SetNickname(string platform, string userName, string nickname) => Log.Enqueue($"nick:{userName}:{nickname}");
     public void SetUserVoice(string platform, string userId, string userName, string alias) => Log.Enqueue($"voice:{userName}:{alias}");
     public void SetRegular(string platform, string userId, string userName, bool regular) => Log.Enqueue($"reg:{userName}:{regular}");
+    public bool StickyRandom { get; set; } = true;
+    public ConcurrentDictionary<string, bool> EventStates { get; } = new(StringComparer.OrdinalIgnoreCase) { ["Follow"] = true, ["Merch"] = true };
+    public string? AssignLastVoice(string platform, string userName)
+    {
+        Log.Enqueue($"assign:{userName}");
+        return userName.Equals("ann", StringComparison.OrdinalIgnoreCase) ? "ann voice" : null;
+    }
+
+    public bool? IsEventEnabled(string name) => EventStates.TryGetValue(name, out var on) ? on : null;
+
+    public bool SetEventEnabled(string name, bool enabled)
+    {
+        if (!EventStates.ContainsKey(name)) return false;
+        EventStates[name] = enabled;
+        return true;
+    }
 
     public Task<IReadOnlyList<SpeakerVoice>> GetVoicesAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<SpeakerVoice>>([new SpeakerVoice("fake", "v1", "Voice One", "en-US")]);

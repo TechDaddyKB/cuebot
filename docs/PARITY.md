@@ -105,13 +105,13 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | Engines: SAPI5, Google, Azure, Amazon Polly, IBM Watson, UberDuck, TTS Monster, Acapela, CereProc, ElevenLabs | 10 | All 10 + espeak-ng (➕ Linux); cloud engines not yet tested against the real services | ✅ | 2 |
 | Voice aliases with several voices (random pick), per-alias volume/rate/pitch | ✓ | ✓ | ✅ | 2 |
 | Per-user voice/alias, nickname pronunciation | ✓ | ✓ | ✅ | 2 |
-| Viewer `!tts` commands (18: voice, speed, pitch, nick, on/off, skip, clear, ...) | ✓ | All 18 + aliases; `set sticky` / `assign last` not yet | 🟡 | 2 |
+| Viewer `!tts` commands (18: voice, speed, pitch, nick, on/off, skip, clear, ...) | ✓ | All 18 + aliases, including `set sticky` and `assign last` (pins the last heard voice, creating an alias for random picks) | ✅ | 2 |
 | Filters: bad words (strip/skip), URLs, regex replace, max words/chars, emote stripping (6 sources), ignored prefixes, ignore users/bots, repeated chars | ✓ | ✓ (emotes: platform ranges + 7TV/BTTV/FFZ names) | ✅ | 2–3 |
 | Ignore profiles; stop/skip on message delete, timeout, ban; shared-chat ignore | ✓ | ✓ (neutral moderation events from Twitch, YouTube, Kick) | ✅ | 2–3 |
-| Event speech with templates (16 vars) from Twitch, Streamlabs, StreamElements | ✓ | Every platform + Streamlabs/StreamElements tips (Tip template); merch has no template yet | 🟡 | 2–4 |
+| Event speech with templates (16 vars) from Twitch, Streamlabs, StreamElements | ✓ | Every platform + Streamlabs/StreamElements tips (Tip template) and merch (Merch template, + `%product%` / `%quantity%`) | ✅ | 2–4 |
 | Queue: pause, skip, clear, max queue, save to WAV, silent speak with duration | ✓ | ✓ (+ remove one queued text) | ✅ | 2 |
 | Audio output device selection (WASAPI), VoiceGate (mic level gate) | ✓ | ✓ (miniaudio on Windows and Linux) | ✅ | 2 |
-| WebSocket API (port 7580) and UDP API (port 6669), Streamer.bot Speaker.bot sub-actions | ✓ | ✓ (UDP single-event toggles, `set sticky`, `assign last` unsupported) | 🟡 | 3 |
+| WebSocket API (port 7580) and UDP API (port 6669), Streamer.bot Speaker.bot sub-actions | ✓ | ✓ incl. UDP single-event toggles (`events` with an event name), `set sticky` and `assign last`; the WebSocket API also takes `Events` with `value`, `Set` and `Assign` | ✅ | 3 |
 
 ## 9. App shell
 

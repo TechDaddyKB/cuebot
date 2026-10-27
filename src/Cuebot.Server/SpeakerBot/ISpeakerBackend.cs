@@ -32,6 +32,18 @@ public interface ISpeakerBackend
 
     /// <summary>Marks a user as a "regular" (Speaker.bot reg add/del).</summary>
     void SetRegular(string platform, string userId, string userName, bool regular);
+
+    /// <summary>Sticky random voices (Speaker.bot "set sticky").</summary>
+    bool StickyRandom { get; set; }
+
+    /// <summary>Speaker.bot "assign last": pins the voice a user was last heard with. The alias, or null when the user has not spoken.</summary>
+    string? AssignLastVoice(string platform, string userName);
+
+    /// <summary>Whether one event (kind or Speaker.bot event name) is spoken; null when the name is unknown.</summary>
+    bool? IsEventEnabled(string name);
+
+    /// <summary>Turns one event on or off; false when the name is unknown.</summary>
+    bool SetEventEnabled(string name, bool enabled);
     Task<IReadOnlyList<SpeakerVoice>> GetVoicesAsync(CancellationToken ct);
 }
 
@@ -84,6 +96,11 @@ public sealed class SpeechServiceBackend(SpeechService speech) : ISpeakerBackend
 
     public void SetRegular(string platform, string userId, string userName, bool regular) =>
         speech.Users.Update(platform, userId, userName, u => u.Regular = regular);
+
+    public bool StickyRandom { get => speech.StickyRandom; set => speech.StickyRandom = value; }
+    public string? AssignLastVoice(string platform, string userName) => speech.AssignLastVoice(platform, userName)?.Name;
+    public bool? IsEventEnabled(string name) => speech.IsEventEnabled(name);
+    public bool SetEventEnabled(string name, bool enabled) => speech.SetEventEnabled(name, enabled);
 
     public async Task<IReadOnlyList<SpeakerVoice>> GetVoicesAsync(CancellationToken ct)
     {
