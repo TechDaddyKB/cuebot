@@ -7,6 +7,8 @@ public sealed class IntegrationsSettings
     public VoicemodSettings Voicemod { get; set; } = new();
     public PulsoidSettings Pulsoid { get; set; } = new();
     public HypeRateSettings HypeRate { get; set; } = new();
+    public StreamLootsSettings StreamLoots { get; set; } = new();
+    public CrowdControlSettings CrowdControl { get; set; } = new();
 }
 
 public sealed class VTubeStudioSettings
@@ -69,4 +71,26 @@ public sealed class HypeRateSettings
 
     /// <summary>Also join the clips channel for "Twitch clip created" events.</summary>
     public bool SubscribeClips { get; set; } = true;
+}
+
+public sealed class StreamLootsSettings
+{
+    /// <summary>
+    /// The Alerts widget URL from the StreamLoots dashboard (https://widgets.streamloots.com/alerts/&lt;alert id&gt;) or the bare
+    /// alert id. Anyone with it can read the alerts, so it is treated as a secret.
+    /// </summary>
+    public string AlertsUrl { get; set; } = "";
+
+    public bool AutoConnect { get; set; }
+}
+
+public sealed class CrowdControlSettings
+{
+    /// <summary>
+    /// The private Overlay URL from the Crowd Control app (Overlays &amp; Assets; it carries the overlay key as <c>?key=</c>),
+    /// or the bare overlay key. A secret.
+    /// </summary>
+    public string OverlayUrl { get; set; } = "";
+
+    public bool AutoConnect { get; set; }
 }

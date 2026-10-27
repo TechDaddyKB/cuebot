@@ -8,8 +8,12 @@ public sealed record IntegrationsTimings(
     TimeSpan MaxReconnectDelay,
     TimeSpan AuthApprovalTimeout,
     TimeSpan HeartbeatInterval,
-    TimeSpan InjectInterval)
+    TimeSpan InjectInterval,
+    TimeSpan? KeepAliveInterval = null)
 {
+    /// <summary>Crowd Control PubSub: ping after 8 minutes (the documented limit is 9 minutes of inactivity).</summary>
+    public TimeSpan PubSubPingInterval => KeepAliveInterval ?? TimeSpan.FromMinutes(8);
+
     public static IntegrationsTimings Default { get; } = new(
         ConnectTimeout: TimeSpan.FromSeconds(5),
         RequestTimeout: TimeSpan.FromSeconds(10),

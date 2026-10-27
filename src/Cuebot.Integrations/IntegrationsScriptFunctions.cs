@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Cuebot.Core.Scripting;
 using Cuebot.Integrations.Common;
+using Cuebot.Integrations.CrowdControl;
+using Cuebot.Integrations.StreamLoots;
 using Cuebot.Integrations.HeartRate;
 using Cuebot.Integrations.HeartRate.HypeRate;
 using Cuebot.Integrations.HeartRate.Pulsoid;
@@ -9,9 +11,9 @@ using Cuebot.Integrations.Voicemod;
 
 namespace Cuebot.Integrations;
 
-/// <summary>VTube Studio, Voicemod and heart rate functions available to user scripts.</summary>
+/// <summary>VTube Studio, Voicemod, heart rate, StreamLoots and Crowd Control functions available to user scripts.</summary>
 internal sealed class IntegrationsScriptFunctions(VTubeStudioService vts, VoicemodService voicemod, PulsoidService pulsoid,
-    HypeRateService hypeRate, HeartRateHub hub) : IScriptFunctionProvider
+    HypeRateService hypeRate, HeartRateHub hub, StreamLootsService streamLoots, CrowdControlService crowdControl) : IScriptFunctionProvider
 {
     public IEnumerable<ScriptFunction> GetFunctions() =>
     [
@@ -96,6 +98,33 @@ internal sealed class IntegrationsScriptFunctions(VTubeStudioService vts, Voicem
             }),
         new("pulsoid.isConnected", "True while Pulsoid is connected", [], (_, _, _) => Task.FromResult<object?>(pulsoid.IsConnected)),
         new("hyperate.isConnected", "True while HypeRate is connected", [], (_, _, _) => Task.FromResult<object?>(hypeRate.IsConnected)),
+
+        // ---- StreamLoots ----
+        new("streamloots.isConnected", "True while the StreamLoots alerts stream is open", [],
+            (_, _, _) => Task.FromResult<object?>(streamLoots.IsConnected)),
+        new("streamloots.sendTestEvent", "Publish a sample alert locally (kind purchase, gift, communityGift or redemption)", ["kind"],
+            (_, a, _) => Task.FromResult<object?>(streamLoots.SendTestEvent(a.GetString("kind", "redemption")))),
+
+        // ---- Crowd Control ----
+        new("crowdcontrol.isConnected", "True while Crowd Control is connected", [], (_, _, _) => Task.FromResult<object?>(crowdControl.IsConnected)),
+        new("crowdcontrol.getSession", "The current game session {active, paused, gameSessionId, gameName, gamePackName, timedEffects}", [],
+            (_, _, _) =>
+            {
+                var s = crowdControl.Session;
+                return Task.FromResult<object?>(new
+                {
+                    active = s is not null,
+                    paused = s?.Paused ?? false,
+                    gameSessionId = s?.GameSessionId ?? "",
+                    gameName = s?.GameName ?? "",
+                    gamePackName = s?.GamePackName ?? "",
+                    timedEffects = crowdControl.TimedEffects
+                        .Select(t => new { requestId = t.RequestId, effectName = t.EffectName, user = t.User, status = t.Status, timeRemaining = t.TimeRemainingMs })
+                        .ToArray(),
+                });
+            }),
+        new("crowdcontrol.sendTestEvent", "Publish a sample event locally (e.g. effectSuccess, coinExchange, gameSessionStart)", ["kind"],
+            (_, a, _) => Task.FromResult<object?>(crowdControl.SendTestEvent(a.GetString("kind", "effectSuccess")))),
     ];
 
     private ScriptFunction Switch(string name, string label, VoicemodSwitch which) =>

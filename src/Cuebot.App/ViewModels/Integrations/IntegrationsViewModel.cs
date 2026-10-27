@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core;
 using Cuebot.Integrations;
 using Cuebot.Integrations.Common;
+using Cuebot.Integrations.CrowdControl;
+using Cuebot.Integrations.StreamLoots;
 using Cuebot.Integrations.HeartRate;
 using Cuebot.Integrations.HeartRate.HypeRate;
 using Cuebot.Integrations.HeartRate.Pulsoid;
@@ -13,22 +15,32 @@ using Cuebot.Integrations.Voicemod;
 
 namespace Cuebot.App.ViewModels.Integrations;
 
-/// <summary>Integrations page: a card per app (VTube Studio, Voicemod, Pulsoid, HypeRate) with connection, credentials and a live preview.</summary>
+/// <summary>
+/// Integrations page: a card per app (VTube Studio, Voicemod, Pulsoid, HypeRate, StreamLoots, Crowd Control) with connection,
+/// credentials and a live preview. The StreamLoots and Crowd Control cards appear when those services are passed in.
+/// </summary>
 public sealed class IntegrationsViewModel : PageViewModel
 {
-    public IntegrationsViewModel(VTubeStudioService vts, VoicemodService voicemod, PulsoidService pulsoid, HypeRateService hypeRate)
+    public IntegrationsViewModel(VTubeStudioService vts, VoicemodService voicemod, PulsoidService pulsoid, HypeRateService hypeRate,
+        StreamLootsService? streamLoots = null, CrowdControlService? crowdControl = null)
         : base("Integrations")
     {
         VTubeStudio = new VtsCardViewModel(vts);
         Voicemod = new VoicemodCardViewModel(voicemod);
         Pulsoid = new PulsoidCardViewModel(pulsoid);
         HypeRate = new HypeRateCardViewModel(hypeRate);
+        StreamLoots = streamLoots is null ? null : new StreamLootsCardViewModel(streamLoots);
+        CrowdControl = crowdControl is null ? null : new CrowdControlCardViewModel(crowdControl);
     }
 
     public VtsCardViewModel VTubeStudio { get; }
     public VoicemodCardViewModel Voicemod { get; }
     public PulsoidCardViewModel Pulsoid { get; }
     public HypeRateCardViewModel HypeRate { get; }
+    public StreamLootsCardViewModel? StreamLoots { get; }
+    public CrowdControlCardViewModel? CrowdControl { get; }
+    public bool HasStreamLoots => StreamLoots is not null;
+    public bool HasCrowdControl => CrowdControl is not null;
 }
 
 /// <summary>Connection part shared by every card: status, connect/disconnect, error and info lines.</summary>
@@ -358,5 +370,119 @@ public sealed class HypeRateCardViewModel(HypeRateService hypeRate) : HeartRateC
     {
         get => S.SubscribeClips;
         set { S.SubscribeClips = value; hypeRate.SaveSettings(); OnPropertyChanged(); }
+    }
+}
+
+/// <summary>StreamLoots: the Alerts widget URL (masked), the newest alert and local test alerts.</summary>
+public sealed partial class StreamLootsCardViewModel : IntegrationCardViewModel
+{
+    private readonly StreamLootsService _streamLoots;
+
+    public StreamLootsCardViewModel(StreamLootsService streamLoots) : base(streamLoots)
+    {
+        _streamLoots = streamLoots;
+        streamLoots.AlertReceived += () => OnUi(() => OnPropertyChanged(nameof(LastAlert)));
+        _selectedTestKind = streamLoots.TestEventKinds.FirstOrDefault();
+    }
+
+    private StreamLootsSettings S => _streamLoots.Settings;
+
+    /// <summary>The Alerts widget URL; the view masks it (it contains the alert id).</summary>
+    public string AlertsUrl
+    {
+        get => S.AlertsUrl;
+        set
+        {
+            if (value.Trim() == S.AlertsUrl) return;
+            S.AlertsUrl = value.Trim();
+            _streamLoots.SaveSettings();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(MaskedUrl));
+        }
+    }
+
+    public string MaskedUrl => _streamLoots.MaskedSetting;
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; _streamLoots.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public string LastAlert => _streamLoots.LastAlert is { Length: > 0 } a ? a : "No alert yet";
+
+    public IReadOnlyList<string> TestKinds => _streamLoots.TestEventKinds;
+
+    [ObservableProperty] private string? _selectedTestKind;
+
+    [RelayCommand]
+    private void SendTest()
+    {
+        Error = "";
+        Info = SelectedTestKind is { } kind && _streamLoots.SendTestEvent(kind)
+            ? $"Sent a local test {kind} alert (isTest = true)."
+            : "Pick a test alert first.";
+        OnPropertyChanged(nameof(LastAlert));
+    }
+}
+
+/// <summary>Crowd Control: the Overlay URL (masked), the current game session, running timed effects and test events.</summary>
+public sealed partial class CrowdControlCardViewModel : IntegrationCardViewModel
+{
+    private readonly CrowdControlService _cc;
+
+    public CrowdControlCardViewModel(CrowdControlService cc) : base(cc)
+    {
+        _cc = cc;
+        cc.DataChanged += () => OnUi(Refresh);
+        _selectedTestKind = cc.TestEventKinds.FirstOrDefault(k => k == "effectSuccess") ?? cc.TestEventKinds.FirstOrDefault();
+    }
+
+    private CrowdControlSettings S => _cc.Settings;
+
+    /// <summary>The Overlay URL; the view masks it (it contains the overlay key).</summary>
+    public string OverlayUrl
+    {
+        get => S.OverlayUrl;
+        set
+        {
+            if (value.Trim() == S.OverlayUrl) return;
+            S.OverlayUrl = value.Trim();
+            _cc.SaveSettings();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(MaskedUrl));
+        }
+    }
+
+    public string MaskedUrl => _cc.MaskedSetting;
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; _cc.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public string SessionText => _cc.Session is { } s
+        ? $"{s.GameName}{(s.GamePackName.Length > 0 && s.GamePackName != s.GameName ? $" ({s.GamePackName})" : "")}{(s.Paused ? " · paused" : "")}"
+        : "No game session seen since connecting";
+
+    public string TimedEffectsText => _cc.TimedEffects is { Count: > 0 } timed
+        ? string.Join(" · ", timed.Select(t => string.Create(CultureInfo.InvariantCulture, $"{t.EffectName} ({t.Status}, {t.TimeRemainingMs / 1000.0:0} s, {t.User})")))
+        : "No timed effects running";
+
+    public string LastEvent => _cc.LastEvent is { Length: > 0 } e ? e : "No event yet";
+
+    public IReadOnlyList<string> TestKinds => _cc.TestEventKinds;
+
+    [ObservableProperty] private string? _selectedTestKind;
+
+    [RelayCommand]
+    private void SendTest()
+    {
+        Error = "";
+        Info = SelectedTestKind is { } kind && _cc.SendTestEvent(kind)
+            ? $"Sent a local test {kind} event (isTest = true)."
+            : "Pick a test event first.";
+        Refresh();
     }
 }
