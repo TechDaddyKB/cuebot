@@ -134,27 +134,31 @@ internal sealed class CentrifugoClient(
             Connected?.Invoke(connect.Str("client"));
 
             var refreshId = 0;
+            var lastTraffic = DateTimeOffset.UtcNow;
             while (true)
             {
-                var wait = silence;
-                if (refreshAt is { } at && refreshId == 0)
-                {
-                    var untilRefresh = at - DateTimeOffset.UtcNow;
-                    if (untilRefresh < wait) wait = untilRefresh < TimeSpan.Zero ? TimeSpan.Zero : untilRefresh;
-                }
+                var now = DateTimeOffset.UtcNow;
+                var wait = lastTraffic + silence - now;
+                if (refreshAt is { } at && refreshId == 0 && at - now < wait) wait = at - now;
+                if (wait < TimeSpan.Zero) wait = TimeSpan.Zero;
                 var next = await ReadAsync(inbox.Reader, wait, ct).ConfigureAwait(false);
                 if (next.TimedOut)
                 {
-                    if (refreshAt is { } due && refreshId == 0 && DateTimeOffset.UtcNow >= due)
+                    // Timers can fire a little early, so decide by the clock rather than by which deadline was nearest.
+                    now = DateTimeOffset.UtcNow;
+                    if (refreshAt is { } due && refreshId == 0 && now >= due - TimeSpan.FromMilliseconds(50))
                     {
                         refreshId = nextId++;
                         var token = await refreshToken(clientId, ct).ConfigureAwait(false);
                         await transport.SendAsync(Command("refresh", new { token }, refreshId), ct).ConfigureAwait(false);
                         continue;
                     }
-                    return new CentrifugoSessionEnd("no ping from Kick's real-time server", CentrifugoReconnect.Backoff);
+                    if (now - lastTraffic >= silence - TimeSpan.FromMilliseconds(50))
+                        return new CentrifugoSessionEnd("no ping from Kick's real-time server", CentrifugoReconnect.Backoff);
+                    continue;
                 }
                 if (next.Text is null) return Closed(transport);
+                lastTraffic = DateTimeOffset.UtcNow;
 
                 foreach (var line in next.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
