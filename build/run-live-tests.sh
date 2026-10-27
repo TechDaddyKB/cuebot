@@ -20,6 +20,7 @@ if [ -f "$env_file" ]; then
     key="${line%%=*}"; value="${line#*=}"
     [[ "$key" == "$line" || -z "$value" ]] && continue
     value="${value%\"}"; value="${value#\"}"; value="${value%\'}"; value="${value#\'}"
+    [ -n "${!key:-}" ] && continue   # variables already set in the environment win over the file
     export "$key=$value"
   done < "$env_file"
   echo "Loaded live-test settings from $env_file"

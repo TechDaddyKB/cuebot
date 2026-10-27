@@ -21,8 +21,12 @@ if (Test-Path $EnvFile) {
         if ($line.StartsWith("export ")) { $line = $line.Substring(7).TrimStart() }
         $eq = $line.IndexOf("=")
         if ($eq -le 0) { continue }
+        $key = $line.Substring(0, $eq).Trim()
         $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
-        if ($value -ne "") { [Environment]::SetEnvironmentVariable($line.Substring(0, $eq).Trim(), $value, "Process") }
+        # Variables already set in the environment win over the file.
+        if ($value -ne "" -and -not [Environment]::GetEnvironmentVariable($key, "Process")) {
+            [Environment]::SetEnvironmentVariable($key, $value, "Process")
+        }
     }
     Write-Host "Loaded live-test settings from $EnvFile"
 } else {
