@@ -71,7 +71,7 @@ jobs:
         with:
           name: Cuebot-x86_64.flatpak
           path: artifacts/Cuebot-x86_64.flatpak
-      - name: Smoke test on Wayland (native backend, no X server), X11, and Wayland-to-X11 fallback
+      - name: Smoke test on Wayland (native backend, no X server), X11, Wayland-to-X11 fallback and hung-Wayland watchdog
         run: |
           # Ubuntu 24.04's sway 1.9 only offers xdg_wm_base v2 (Avalonia needs v3+), so native Wayland is
           # tested on weston here (and on current sway in the Arch job); old sway exercises the X11 fallback.
@@ -82,6 +82,7 @@ jobs:
             SMOKE_STOP="flatpak kill io.github.cuebot.Cuebot" SMOKE_APP_DATA="$flatpak_data" dbus-run-session -- packaging/linux/smoke-test.sh $mode flatpak flatpak run io.github.cuebot.Cuebot || status=1
           done
           dbus-run-session -- packaging/linux/smoke-test.sh fallback appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run || status=1
+          dbus-run-session -- packaging/linux/smoke-test.sh hang appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run || status=1
           exit $status
       - uses: actions/upload-artifact@v5
         if: always()

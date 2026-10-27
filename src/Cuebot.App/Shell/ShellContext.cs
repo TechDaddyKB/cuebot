@@ -23,6 +23,13 @@ public sealed class ShellContext
     /// <summary>The app asked to start again after shutting down (restore, settings).</summary>
     public bool RestartRequested { get; set; }
 
+    private readonly TaskCompletionSource _uiReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>Completes once the main window has opened (or, when starting in the tray, the UI thread is running).</summary>
+    public Task UiReady => _uiReady.Task;
+
+    public void MarkUiReady() => _uiReady.TrySetResult();
+
     private readonly List<(LogLevel Level, string Message)> _pending = [];
 
     /// <summary>Things that happened before the log existed (backups, restores), written once it does.</summary>

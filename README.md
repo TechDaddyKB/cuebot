@@ -81,9 +81,9 @@ while Cuebot restarts, before anything is loaded, after a safety backup of the c
 ## Linux
 
 Cuebot is **Wayland-first**: when a Wayland compositor is running it uses Avalonia's native Wayland backend,
-otherwise X11. If the Wayland backend cannot start, Cuebot relaunches itself once on X11 (XWayland). Force a
-backend with `--backend=wayland` / `--backend=x11` or `CUEBOT_BACKEND=wayland|x11`; the startup log line records
-which backend is in use.
+otherwise X11. If the Wayland backend cannot start, or opens no window within 20 s (set `CUEBOT_WAYLAND_TIMEOUT` in
+seconds to change that), Cuebot relaunches itself once on X11 (XWayland). Force a backend with `--backend=wayland` /
+`--backend=x11` or `CUEBOT_BACKEND=wayland|x11`; the startup log line records which backend is in use.
 
 Packages: AppImage, Flatpak (Wayland socket with X11 fallback), and the AUR: `cuebot` builds from source on the
 system .NET runtime, `cuebot-bin` repackages the self-contained release. See `packaging/aur`.

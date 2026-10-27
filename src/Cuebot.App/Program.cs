@@ -128,18 +128,35 @@ internal static class Program
             : DisplayBackend.Default;
         ShellContext.Current = ctx;
         if (ctx.Settings.Settings.General.ShowTrayIcon) ctx.TrayProbe = TrayProbe.IsTrayAvailableAsync(TimeSpan.FromSeconds(2));
+        var canFallBack = backend == DisplayBackend.Wayland && LinuxBackend.CanFallBack(args, Environment.GetEnvironmentVariable);
+        var fellBack = 0;
+        int? FallBack(string reason)
+        {
+            if (Interlocked.Exchange(ref fellBack, 1) != 0) return null;   // the other path is already relaunching
+            // The Wayland backend is still young; if it cannot start, relaunch once on X11 (XWayland).
+            Console.Error.WriteLine($"{reason}; relaunching with X11.");
+            ctx.Host?.ShutDown(ShutdownTimeout);
+            ctx.Instance?.Dispose();   // the relaunched process must be able to claim the data folder
+            return RelaunchOnX11(args);
+        }
+
+        // Some compositors make Avalonia's Wayland backend hang rather than fail; no window in time counts as a failure.
+        // The UI thread is stuck then, so the watchdog relaunches from its own thread and ends this process afterwards.
+        if (canFallBack)
+        {
+            var timeout = StartupWatchdog.TimeoutFrom(Environment.GetEnvironmentVariable);
+            _ = new StartupWatchdog(ctx.UiReady, timeout,
+                () => { if (FallBack($"Wayland backend did not open a window within {timeout.TotalSeconds:0.#} s") is { } code) Environment.Exit(code); });
+        }
+
         int exitCode;
         try
         {
             exitCode = BuildAvaloniaApp(backend).StartWithClassicDesktopLifetime(args);
         }
-        catch (Exception ex) when (backend == DisplayBackend.Wayland && LinuxBackend.CanFallBack(args, Environment.GetEnvironmentVariable))
+        catch (Exception ex) when (canFallBack && Volatile.Read(ref fellBack) == 0)
         {
-            // The Wayland backend is still young; if it cannot start, relaunch once on X11 (XWayland).
-            Console.Error.WriteLine($"Wayland backend failed to start ({ex.Message}); relaunching with X11.");
-            ctx.Host?.ShutDown(ShutdownTimeout);
-            ctx.Instance?.Dispose();   // the relaunched process must be able to claim the data folder
-            return RelaunchOnX11(args);
+            return FallBack($"Wayland backend failed to start ({ex.Message})") ?? 0;
         }
 
         // Dispose once, off the UI thread (Exit already started it; this waits for it to finish).

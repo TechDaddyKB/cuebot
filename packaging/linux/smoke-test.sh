@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Launches a packaged Cuebot on a headless display server, checks the window appears and the expected
 # display backend was used, and saves a screenshot.
-#   packaging/linux/smoke-test.sh <x11|wayland|wayland-weston|fallback> <name> <command...>
-# x11: xvfb xdotool scrot. wayland: sway grim jq. wayland-weston: weston. fallback: sway + x11 tools.
+#   packaging/linux/smoke-test.sh <x11|wayland|wayland-weston|fallback|hang> <name> <command...>
+# x11: xvfb xdotool scrot. wayland: sway grim jq. wayland-weston: weston. fallback: sway + x11 tools. hang: python3 + x11 tools.
 # Writes artifacts/smoke-<name>-<mode>.png and .log.
 set -uo pipefail
 mode="$1"; name="$2"; shift 2
@@ -91,6 +91,19 @@ case "$mode" in
     window_up() { xdotool search --name '^Cuebot$' >/dev/null 2>&1; }
     screenshot() { scrot --overwrite "$out.png"; }
     ;;
+  hang)             # a "compositor" that accepts the connection and never answers, plus an X server:
+                    # Avalonia blocks on it instead of failing, so the start-up watchdog must relaunch on X11
+    export XDG_RUNTIME_DIR="$(mktemp -d)"; chmod 700 "$XDG_RUNTIME_DIR"
+    python3 -c 'import socket,sys,time
+s=socket.socket(socket.AF_UNIX); s.bind(sys.argv[1]); s.listen(8); held=[]
+while True: held.append(s.accept()[0])' "$XDG_RUNTIME_DIR/wayland-hang" & pids+=($!)
+    export WAYLAND_DISPLAY=wayland-hang
+    export CUEBOT_WAYLAND_TIMEOUT=8
+    start_xvfb
+    expected="X11"
+    window_up() { xdotool search --name '^Cuebot$' >/dev/null 2>&1; }
+    screenshot() { scrot --overwrite "$out.png"; }
+    ;;
   *) echo "unknown mode $mode" >&2; exit 2 ;;
 esac
 sleep 2
@@ -122,6 +135,11 @@ if ! grep -q "display backend: $expected" "$out.log"; then
 fi
 if [ "$mode" = fallback ] && ! grep -q "relaunching with X11" "$out.log"; then
   echo "Expected a Wayland failure followed by an X11 relaunch; output:" >&2
+  cat "$out.log" >&2
+  ok=0
+fi
+if [ "$mode" = hang ] && ! grep -q "did not open a window within .*relaunching with X11" "$out.log"; then
+  echo "Expected the start-up watchdog to relaunch on X11; output:" >&2
   cat "$out.log" >&2
   ok=0
 fi

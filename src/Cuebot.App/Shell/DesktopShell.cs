@@ -75,10 +75,12 @@ public sealed class DesktopShell : IShellHost, IDisposable
         if (minimized && General.ShowTrayIcon && WaitForTrayProbe())
         {
             _log.Info("Cuebot", "Started minimized to the tray");
+            Dispatcher.UIThread.Post(_ctx.MarkUiReady, DispatcherPriority.Background);   // the UI thread is running
         }
         else
         {
             if (minimized) _window.WindowState = WindowState.Minimized;
+            _window.Opened += (_, _) => _ctx.MarkUiReady();
             // The lifetime shows its MainWindow when it starts, so it is only assigned once the window should be seen.
             _desktop.MainWindow = _window;
             _window.Show();

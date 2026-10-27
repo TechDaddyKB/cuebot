@@ -6,7 +6,8 @@ public enum DisplayBackend { Default, Wayland, X11 }
 /// Wayland-first display backend selection on Linux. Order of precedence:
 /// <c>--backend=wayland|x11</c>, then <c>CUEBOT_BACKEND</c>, then Wayland whenever a compositor is
 /// advertised (<c>WAYLAND_DISPLAY</c>), else X11. A failed Wayland start relaunches on X11 once
-/// (see <see cref="Program"/>), marked by <see cref="FallbackMarker"/> so it can never loop.
+/// (see <see cref="Program"/>; a start that opens no window in time counts too, see <see cref="StartupWatchdog"/>),
+/// marked by <see cref="FallbackMarker"/> so it can never loop.
 /// </summary>
 public static class LinuxBackend
 {
