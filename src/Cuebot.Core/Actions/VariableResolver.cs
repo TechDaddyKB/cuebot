@@ -1,56 +1,55 @@
+using System.Buffers;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using Cuebot.Core.Variables;
 
 namespace Cuebot.Core.Actions;
 
 /// <summary>
-/// Substitutes %argument% with action arguments and ~global~ with global variables.
-/// Unknown names are left untouched so literal percent signs survive.
+/// Resolves text templates used by every sub-action parameter (except code).
+/// <list type="bullet">
+/// <item><c>%name%</c>: action argument (case-insensitive), else a built-in such as <c>%date%</c>, <c>%time%</c>,
+/// <c>%unixtime%</c>, <c>%lf%</c>, <c>%random:1-6%</c> (see <see cref="BuiltInVariables"/>).</item>
+/// <item><c>~name~</c>: global variable.</item>
+/// <item><c>%name:format%</c> / <c>~name:format~</c>: .NET format specifier (<c>%amount:c2%</c>, <c>%n:N0%</c>,
+/// <c>%date:yyyy-MM-dd%</c>, <c>%time:t%</c>), using <see cref="TextEnvironment.Culture"/> (invariant with "$" by
+/// default); append <c>|culture</c> to override, e.g. <c>%amount:c2|de-DE%</c>. See <see cref="ValueFormatter"/>
+/// for how text values are treated.</item>
+/// <item><c>$function(...)$</c>: inline functions (<c>$math()$</c>, <c>$length()$</c>, <c>$parse()$</c>, ...; see
+/// <see cref="TextFunctions"/>), evaluated after variables, innermost first.</item>
+/// </list>
+/// Unknown names are left untouched so literal percent signs survive, and substituted values are never parsed
+/// again. Templates are parsed once and cached; text without markers is returned as-is without allocating.
 /// </summary>
-public static partial class VariableResolver
+public static class VariableResolver
 {
-    [GeneratedRegex(@"%([A-Za-z0-9_.]+)%")]
-    private static partial Regex ArgPattern();
+    private static readonly SearchValues<char> Markers = SearchValues.Create("%~$");
 
-    [GeneratedRegex(@"~([A-Za-z0-9_.]+)~")]
-    private static partial Regex GlobalPattern();
+    /// <summary>
+    /// Resolves with the environment of the <see cref="GlobalVariables"/> instance behind <paramref name="globals"/>
+    /// (when it is <c>GlobalVariables.Get</c>), otherwise <see cref="TextEnvironment.Default"/>.
+    /// </summary>
+    public static string Resolve(string template, IReadOnlyDictionary<string, object?> args, Func<string, string?>? globals = null) =>
+        Resolve(template, args, globals, (globals?.Target as GlobalVariables)?.Text ?? TextEnvironment.Default);
 
-    public static string Resolve(string template, IReadOnlyDictionary<string, object?> args, Func<string, string?>? globals = null)
+    public static string Resolve(string template, IReadOnlyDictionary<string, object?> args, Func<string, string?>? globals,
+        TextEnvironment environment)
     {
-        if (string.IsNullOrEmpty(template)) return template;
-        var result = template;
-        if (result.Contains('%'))
-        {
-            result = ArgPattern().Replace(result, m =>
-                TryGet(args, m.Groups[1].Value, out var value) ? Format(value) : m.Value);
-        }
-        if (globals is not null && result.Contains('~'))
-        {
-            result = GlobalPattern().Replace(result, m => globals(m.Groups[1].Value) ?? m.Value);
-        }
-        return result;
+        if (string.IsNullOrEmpty(template) || !HasMarkers(template)) return template;
+        var parsed = TextTemplate.Get(template);
+        if (parsed.Literal is not null) return parsed.Literal;
+        return TemplateRenderer.Render(parsed, new ResolveScope(args, globals, environment));
     }
 
+    /// <summary>True when the text contains a character that could start a variable or function.</summary>
+    public static bool HasMarkers(string text) => text.AsSpan().IndexOfAny(Markers) >= 0;
+
+    /// <summary>Formats a value as it is inserted into text: invariant culture, booleans as "true"/"false".</summary>
     public static string Format(object? value) => value switch
     {
         null => "",
+        string s => s,
         bool b => b ? "true" : "false",
         IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
         _ => value.ToString() ?? "",
     };
-
-    private static bool TryGet(IReadOnlyDictionary<string, object?> args, string key, out object? value)
-    {
-        if (args.TryGetValue(key, out value)) return true;
-        // Fall back to a case-insensitive scan for dictionaries created with the default comparer.
-        foreach (var pair in args)
-        {
-            if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase))
-            {
-                value = pair.Value;
-                return true;
-            }
-        }
-        return false;
-    }
 }
