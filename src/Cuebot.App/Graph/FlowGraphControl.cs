@@ -21,17 +21,27 @@ public sealed class FlowGraphControl : Control
     private const double PortRadius = 7;
     private const double PortHitRadius = 13;
 
-    private static readonly IBrush Background = new SolidColorBrush(Color.Parse("#1B1D23"));
-    private static readonly IBrush GridDot = new SolidColorBrush(Color.Parse("#2E323C"));
-    private static readonly IBrush NodeFill = new SolidColorBrush(Color.Parse("#272A33"));
-    private static readonly IBrush TitleBrush = Brushes.White;
-    private static readonly IBrush SubtitleBrush = new SolidColorBrush(Color.Parse("#A8AEBB"));
-    private static readonly IBrush PortFill = new SolidColorBrush(Color.Parse("#3A3F4B"));
-    private static readonly IBrush DropFill = new SolidColorBrush(Color.Parse("#4CAF50"));
-    private static readonly IPen EdgePen = new Pen(new SolidColorBrush(Color.Parse("#7C8496")), 2);
-    private static readonly IPen NodePen = new Pen(new SolidColorBrush(Color.Parse("#3A3F4B")), 1);
-    private static readonly IPen SelectedPen = new Pen(new SolidColorBrush(Color.Parse("#6CA8FF")), 2.5);
-    private static readonly IPen PortPen = new Pen(new SolidColorBrush(Color.Parse("#7C8496")), 1.5);
+    /// <summary>Canvas colours for one theme variant; the control picks one from its actual theme (Light, Dark, System).</summary>
+    private sealed record Palette(IBrush Background, IBrush GridDot, IBrush NodeFill, IBrush TitleBrush, IBrush SubtitleBrush,
+        IBrush PortFill, IBrush DropFill, IPen EdgePen, IPen NodePen, IPen SelectedPen, IPen PortPen)
+    {
+        public static Palette Create(string background, string gridDot, string nodeFill, string title, string subtitle,
+            string portFill, string edge, string nodeBorder, string selected) => new(
+            Brush(background), Brush(gridDot), Brush(nodeFill), Brush(title), Brush(subtitle), Brush(portFill), Brush("#4CAF50"),
+            new Pen(Brush(edge), 2), new Pen(Brush(nodeBorder), 1), new Pen(Brush(selected), 2.5), new Pen(Brush(edge), 1.5));
+
+        private static SolidColorBrush Brush(string color) => new(Color.Parse(color));
+    }
+
+    private static readonly Palette DarkPalette = Palette.Create(
+        background: "#1B1D23", gridDot: "#2E323C", nodeFill: "#272A33", title: "#FFFFFF", subtitle: "#A8AEBB",
+        portFill: "#3A3F4B", edge: "#7C8496", nodeBorder: "#3A3F4B", selected: "#6CA8FF");
+
+    private static readonly Palette LightPalette = Palette.Create(
+        background: "#F3F4F7", gridDot: "#D3D7DF", nodeFill: "#FFFFFF", title: "#1B1D23", subtitle: "#5C6372",
+        portFill: "#E1E4EA", edge: "#8A92A3", nodeBorder: "#C9CED8", selected: "#2F6FE0");
+
+    private Palette P => ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light ? LightPalette : DarkPalette;
     private static readonly Typeface TitleFace = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
     private static readonly Typeface TextFace = new(FontFamily.Default);
 
@@ -50,6 +60,12 @@ public sealed class FlowGraphControl : Control
         FocusableProperty.OverrideDefaultValue<FlowGraphControl>(true);
         ClipToBoundsProperty.OverrideDefaultValue<FlowGraphControl>(true);
         AffectsRender<FlowGraphControl>(ActionProperty);
+    }
+
+    public FlowGraphControl()
+    {
+        // The canvas paints its own colours, so a Light/Dark/System switch has to repaint it.
+        ActualThemeVariantChanged += (_, _) => InvalidateVisual();
     }
 
     public ActionItemViewModel? Action
@@ -93,7 +109,7 @@ public sealed class FlowGraphControl : Control
             FitToView();
             _fitPending = false;
         }
-        context.FillRectangle(Background, new Rect(Bounds.Size));
+        context.FillRectangle(P.Background, new Rect(Bounds.Size));
         DrawGrid(context);
         using (context.PushTransform(_view))
         {
@@ -103,7 +119,7 @@ public sealed class FlowGraphControl : Control
         }
         if (Action is null)
         {
-            DrawText(context, "Select an action", new Point(20, 20), TextFace, 14, SubtitleBrush, 400);
+            DrawText(context, "Select an action", new Point(20, 20), TextFace, 14, P.SubtitleBrush, 400);
         }
     }
 
@@ -115,7 +131,7 @@ public sealed class FlowGraphControl : Control
         var offsetY = _view.M32 % spacing;
         for (var x = offsetX; x < Bounds.Width; x += spacing)
         for (var y = offsetY; y < Bounds.Height; y += spacing)
-            context.FillRectangle(GridDot, new Rect(x, y, 1.5, 1.5));
+            context.FillRectangle(P.GridDot, new Rect(x, y, 1.5, 1.5));
     }
 
     private static void DrawFrame(DrawingContext context, GraphFrame frame)
@@ -125,7 +141,7 @@ public sealed class FlowGraphControl : Control
         context.DrawRectangle(fill, pen, frame.Bounds, 10, 10);
     }
 
-    private static void DrawEdge(DrawingContext context, GraphEdge edge)
+    private void DrawEdge(DrawingContext context, GraphEdge edge)
     {
         var a = edge.From.Position;
         var b = edge.To.Position;
@@ -139,7 +155,7 @@ public sealed class FlowGraphControl : Control
             g.CubicBezierTo(c1, c2, b);
             g.EndFigure(false);
         }
-        context.DrawGeometry(null, EdgePen, geometry);
+        context.DrawGeometry(null, P.EdgePen, geometry);
     }
 
     private void DrawNode(DrawingContext context, GraphNode node)
@@ -149,7 +165,7 @@ public sealed class FlowGraphControl : Control
         using (context.PushOpacity(node.Enabled ? 1 : 0.45))
         {
             var rect = node.Bounds;
-            context.DrawRectangle(NodeFill, selected ? SelectedPen : NodePen, rect, 8, 8);
+            context.DrawRectangle(P.NodeFill, selected ? P.SelectedPen : P.NodePen, rect, 8, 8);
             var header = new Rect(rect.X, rect.Y, 6, rect.Height);
             context.DrawRectangle(node.Tint is { } tint ? new SolidColorBrush(tint) : CategoryBrush(node), null, header, 3, 3);
 
@@ -159,10 +175,10 @@ public sealed class FlowGraphControl : Control
                 GraphNodeKind.Entry => "ACTION",
                 _ => node.Category.ToUpperInvariant(),
             };
-            DrawText(context, kindLabel, new Point(rect.X + 16, rect.Y + 7), TextFace, 9.5, SubtitleBrush, rect.Width - 24);
-            DrawText(context, node.Title, new Point(rect.X + 16, rect.Y + 21), TitleFace, 13.5, TitleBrush, rect.Width - 24);
+            DrawText(context, kindLabel, new Point(rect.X + 16, rect.Y + 7), TextFace, 9.5, P.SubtitleBrush, rect.Width - 24);
+            DrawText(context, node.Title, new Point(rect.X + 16, rect.Y + 21), TitleFace, 13.5, P.TitleBrush, rect.Width - 24);
             if (node.Subtitle.Length > 0)
-                DrawText(context, node.Subtitle, new Point(rect.X + 16, rect.Y + 40), TextFace, 11, SubtitleBrush, rect.Width - 24);
+                DrawText(context, node.Subtitle, new Point(rect.X + 16, rect.Y + 40), TextFace, 11, P.SubtitleBrush, rect.Width - 24);
         }
 
         foreach (var port in node.Ports) DrawPort(context, port);
@@ -172,20 +188,20 @@ public sealed class FlowGraphControl : Control
     {
         var isOutput = port.Kind != GraphPortKind.In;
         var isDropTarget = _dragMoved && _dragNode is not null && port == _hoverPort && CanDrop(_dragNode, port);
-        var fill = isDropTarget ? DropFill : port == _hoverPort && isOutput ? SelectedPen.Brush! : PortFill;
-        context.DrawEllipse(fill, PortPen, port.Position, PortRadius, PortRadius);
+        var fill = isDropTarget ? P.DropFill : port == _hoverPort && isOutput ? P.SelectedPen.Brush! : P.PortFill;
+        context.DrawEllipse(fill, P.PortPen, port.Position, PortRadius, PortRadius);
         if (isOutput)
         {
             // "+" glyph: output ports add a step (or trigger) at that point.
             var p = port.Position;
-            var plus = new Pen(TitleBrush, 1.5);
+            var plus = new Pen(P.TitleBrush, 1.5);
             context.DrawLine(plus, new Point(p.X - 3.5, p.Y), new Point(p.X + 3.5, p.Y));
             context.DrawLine(plus, new Point(p.X, p.Y - 3.5), new Point(p.X, p.Y + 3.5));
         }
         if (port.Label is not null)
         {
             var at = port.Kind == GraphPortKind.Branch ? new Point(port.Position.X + 10, port.Position.Y - 16) : new Point(port.Position.X + 10, port.Position.Y - 7);
-            DrawText(context, port.Label, at, TextFace, 10, SubtitleBrush, 120);
+            DrawText(context, port.Label, at, TextFace, 10, P.SubtitleBrush, 120);
         }
     }
 

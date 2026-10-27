@@ -105,6 +105,9 @@ public sealed class MainWindowTests : IAsyncDisposable
 
         actions.IsGraphView = true;
         Save(window, "actions-graph");
+        vm.Settings.Theme = Cuebot.App.Shell.AppTheme.Light;
+        Save(window, "actions-graph-light");
+        vm.Settings.Theme = Cuebot.App.Shell.AppTheme.Dark;
 
         // A code sub-action shows the syntax-highlighting editor in the properties panel.
         var python = actions.SelectedAction!.Registry.GetSubAction("code.python")!;
