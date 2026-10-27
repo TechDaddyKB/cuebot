@@ -20,9 +20,10 @@ public abstract partial class EditorItemViewModel : ObservableObject
 
 public sealed partial class TriggerItemViewModel : EditorItemViewModel
 {
-    private readonly Action _changed;
+    private readonly Action<string?> _changed;
 
-    public TriggerItemViewModel(TriggerDefinition definition, ITriggerType? type, Action changed)
+    /// <param name="changed">Called after an edit with an undo coalesce key (null: never merged with other edits).</param>
+    public TriggerItemViewModel(TriggerDefinition definition, ITriggerType? type, Action<string?> changed)
     {
         Definition = definition;
         Type = type;
@@ -45,14 +46,14 @@ public sealed partial class TriggerItemViewModel : EditorItemViewModel
             if (Definition.Enabled == value) return;
             Definition.Enabled = value;
             OnPropertyChanged();
-            _changed();
+            _changed(null);
         }
     }
 
     private void OnParameterChanged()
     {
         OnPropertyChanged(nameof(Summary));
-        _changed();
+        _changed("trigger:" + Definition.Id);
     }
 }
 
@@ -164,7 +165,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
             if (Definition.Weight.Equals(weight)) return;
             Definition.Weight = weight;
             OnPropertyChanged();
-            _owner.MarkChanged(structural: false);
+            _owner.MarkChanged(structural: false, coalesceKey: "weight:" + Definition.Id);
         }
     }
 
@@ -204,7 +205,8 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
                          nameof(ContainerBackground), nameof(ContainerBorderBrush)])
                 OnPropertyChanged(name);
         }
-        _owner.MarkChanged(structural: RefreshBranches());
+        var structural = RefreshBranches();
+        _owner.MarkChanged(structural, structural ? null : "step:" + Definition.Id);
     }
 }
 

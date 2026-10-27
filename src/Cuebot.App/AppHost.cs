@@ -6,6 +6,7 @@ using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Obs;
 using Cuebot.Kick;
+using Cuebot.Donations;
 using Cuebot.Rumble;
 using Cuebot.Server;
 using Cuebot.Scripting;
@@ -41,6 +42,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddRumble()
             .AddYouTube()
             .AddKick()
+            .AddDonations()
             .AddServers();
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
@@ -82,6 +84,8 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Rumble", () => Get<RumbleService>().StartAsync()),
             StartSafely(log, "YouTube", () => Get<Cuebot.YouTube.YouTubeService>().StartAsync()),
             StartSafely(log, "Kick", () => Get<Cuebot.Kick.KickService>().StartAsync()),
+            StartSafely(log, "Streamlabs", () => Get<Cuebot.Donations.Streamlabs.StreamlabsService>().StartAsync()),
+            StartSafely(log, "StreamElements", () => Get<Cuebot.Donations.StreamElements.StreamElementsService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),

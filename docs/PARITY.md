@@ -13,15 +13,15 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | Area | Streamer.bot | Cuebot today | Status | Phase |
 | --- | --- | --- | --- | --- |
 | Actions, groups, enable/disable, duplicate | ✓ | ✓ | ✅ | — |
-| Triggers → actions, many-to-many, test run | ✓ (+ Test Trigger with custom args, Trigger Viewer) | Test trigger with custom args (engine); Trigger Viewer missing | 🟡 | 2 |
+| Triggers → actions, many-to-many, test run | ✓ (+ Test Trigger with custom args, Trigger Viewer) | Test trigger with custom args; Trigger Viewer (History page) | ✅ | 2–4 |
 | Named action queues (blocking, pause/resume, clear, always-run, skip queue) | ✓ | Named queues, blocking, pause/resume/clear, always-run (skip-queue for rewards pending) | ✅ | 2 |
 | Random action / weights, concurrent sub-actions | ✓ | ✓ | ✅ | 2 |
 | Sub-action groups (nestable, coloured, random) | ✓ | ✓ | ✅ | 2 |
 | Logic: If/Else, Switch, While, Loop Break/Continue, Break, Get Input, Random Number | ✓ | ✓ | ✅ | 2 |
 | Signals: local/remote send & wait | ✓ | Local ✓, remote missing | 🟡 | 3 |
-| Pending actions + Action History (inspect variables, requeue) | ✓ | ✓ (engine); no page yet | 🟡 | 4 |
+| Pending actions + Action History (inspect variables, requeue) | ✓ | History page: inspector, filters, run again, cancel; pending work per queue | ✅ | 4 |
 | Node-graph editor | — | ✓ | ➕ | — |
-| Copy/paste triggers, sub-actions, actions; undo/redo | ✓ | — | ❌ | 2 |
+| Copy/paste triggers, sub-actions, actions; undo/redo | ✓ | Copy/paste (also across instances), per-action undo/redo, Ctrl+C/V/D/Z/Y; whole-action delete not undoable | ✅ | 4 |
 
 ## 2. Variables and text
 
@@ -62,7 +62,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | --- | --- | --- | --- | --- | --- |
 | OBS Studio (9 triggers, 29 sub-actions) | ✅ 36 triggers, 47 sub-actions, multiple connections | 3 | Streamlabs Desktop | 🟡 8 triggers, 14 sub-actions (some calls unverified) | 3 |
 | Meld Studio | ❌ | 5 | VTube Studio | ❌ | 5 |
-| Voicemod | ❌ | 5 | Streamlabs / StreamElements donations | ❌ | 4 |
+| Voicemod | ❌ | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; not yet tried against the real services | 4 |
 | Ko-fi, Patreon, Fourthwall, Shopify, Throne, TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 | Pulsoid, HypeRate | ❌ | 5 |
 | Crowd Control | ❌ | 5 | Elgato (Stream Deck, Camera Hub, Control Center, Wave Link, Studio: 105 triggers) | ❌ | 5 |
 | T.I.T.S., Lumia, Pally.gg, StreamFog, Mtion, PolyPop, OBSBOT | ❌ | 5 | Pronouns (alejo.io) | ✅ | 3 |
@@ -93,7 +93,7 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | WebSocket server (22 requests, ~500 event types, auth) | ✅ | 3 | all requests; events mapped to Streamer.bot source/type names; verified against the real `@streamerbot/client` |
 | HTTP server (6 endpoints), UDP server (`DoAction`) | ✅ | 3 | localhost-only and off by default; origin checks |
 | Custom WebSocket servers/clients | ✅ | 3 | triggers, sub-actions, script functions |
-| Import/export (own format) + Streamer.bot import string importer | ❌ | 4 | importer maps their actions to ours where a counterpart exists |
+| Import/export (own format) + Streamer.bot import string importer | 🟡 | 4 | Cuebot bundles ✅ (string + .cuebot file, preview, conflicts, remapping). Streamer.bot strings: the wrapper is read, but its numeric type codes are undocumented, so most items import as disabled placeholders (extendable via `streamerbot-mapping.json`) |
 | MCP server, local REST API, in-app AI assistant | ➕ | 6 | roadmap |
 | Crash / problem reporting with info gatherer | ➕ | 6 | roadmap |
 
@@ -107,7 +107,7 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 | Viewer `!tts` commands (18: voice, speed, pitch, nick, on/off, skip, clear, ...) | ✓ | All 18 + aliases; `set sticky` / `assign last` not yet | 🟡 | 2 |
 | Filters: bad words (strip/skip), URLs, regex replace, max words/chars, emote stripping (6 sources), ignored prefixes, ignore users/bots, repeated chars | ✓ | ✓ (emotes: platform ranges + 7TV/BTTV/FFZ names) | ✅ | 2–3 |
 | Ignore profiles; stop/skip on message delete, timeout, ban; shared-chat ignore | ✓ | ✓ (neutral moderation events from Twitch, YouTube, Kick) | ✅ | 2–3 |
-| Event speech with templates (16 vars) from Twitch, Streamlabs, StreamElements | ✓ | Twitch and other platforms; Streamlabs/StreamElements wait for those integrations | 🟡 | 2–4 |
+| Event speech with templates (16 vars) from Twitch, Streamlabs, StreamElements | ✓ | Every platform + Streamlabs/StreamElements tips (Tip template); merch has no template yet | 🟡 | 2–4 |
 | Queue: pause, skip, clear, max queue, save to WAV, silent speak with duration | ✓ | ✓ (+ remove one queued text) | ✅ | 2 |
 | Audio output device selection (WASAPI), VoiceGate (mic level gate) | ✓ | ✓ (miniaudio on Windows and Linux) | ✅ | 2 |
 | WebSocket API (port 7580) and UDP API (port 6669), Streamer.bot Speaker.bot sub-actions | ✓ | ✓ (UDP single-event toggles, `set sticky`, `assign last` unsupported) | 🟡 | 3 |
@@ -125,13 +125,13 @@ outbound, token-authenticated WebSocket (no port forwarding; short offline buffe
 ## Delivery waves
 
 1. **Done:** combined chat + activity feed, Rumble module.
-2. **Done except copy/paste/undo — core parity:** queues, logic/groups, variables & inline functions, commands manager, users/groups, timers, history,
+2. **Done — core parity:** queues, logic/groups, variables & inline functions, commands manager, users/groups, timers, history,
    copy/paste/undo, sounds + audio devices, file/HTTP/JSON sub-actions, tray/headless/backups, and the Speaker.bot
    feature set (engines, aliases, per-user voices, `!tts`, filters, event speech, audio backend with device choice).
 3. **Done (gaps in the tables above) — platforms & APIs:** full Twitch, YouTube, Kick; OBS completion; Streamer.bot-compatible WebSocket/HTTP/UDP servers,
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
-4. **In progress — services:** points ✅, quotes ✅, credits ✅, hotkeys ✅, toasts ✅; still to do: donations (Streamlabs/StreamElements),
-   import/export + Streamer.bot importer, updater, action history page.
+4. **Mostly done — services:** points, quotes, credits, hotkeys, toasts, donations, import/export, action history and copy/paste/undo; still to do:
+   updater, mouse/keyboard output, multiple point currencies, Streamer.bot type-code mapping.
 5. **Integrations:** stream apps, Elgato, VTube Studio, Voicemod, MIDI, voice control and the remaining services.
 6. **Beyond parity:** MCP server + REST API, in-app AI assistant, crash/problem reporting.
 

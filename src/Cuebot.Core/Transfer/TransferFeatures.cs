@@ -15,7 +15,8 @@ public static class TransferFeatures
         if (services.Any(d => d.ServiceType == typeof(TransferService))) return services; // idempotent
         services.AddSingleton(sp => new TransferService(
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<GlobalVariables>(),
-            sp.GetService<Registry>(), sp.GetService<AppPaths>(), sp.GetService<AppLog>()));
+            // The registry is read lazily: it is built from handlers that need ScriptApi, which includes our script functions.
+            () => sp.GetService<Registry>(), sp.GetService<AppPaths>(), sp.GetService<AppLog>()));
         services.AddSingleton<IScriptFunctionProvider>(sp => new TransferScriptFunctions(sp.GetRequiredService<TransferService>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>()));
         return services;

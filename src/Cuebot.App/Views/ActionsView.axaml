@@ -92,7 +92,16 @@
             <Button Content="Duplicate" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
             <Button Content="Delete" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" />
           </StackPanel>
-          <ListBox ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Background="Transparent">
+          <ListBox x:Name="ActionList" ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Background="Transparent">
+            <ListBox.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Copy action" InputGesture="Ctrl+C" Command="{Binding CopyActionCommand}" IsEnabled="{Binding HasSelection}" />
+                <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+                <MenuItem Header="Duplicate action" InputGesture="Ctrl+D" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
+                <Separator />
+                <MenuItem Header="Delete action" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" />
+              </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemTemplate>
               <DataTemplate DataType="vm:ActionItemViewModel">
                 <StackPanel Opacity="{Binding Enabled, Converter={x:Static vm:EditorConverters.EnabledOpacity}}">
@@ -142,18 +151,40 @@
               <CheckBox Content="Exclude from history" IsChecked="{Binding SelectedAction.ExcludeFromHistory}"
                         ToolTip.Tip="Keep runs out of the Pending and History lists" />
             </WrapPanel>
-            <StackPanel Orientation="Horizontal" Spacing="8">
+            <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
               <Button Content="▶ Run now" Command="{Binding RunActionCommand}" />
               <Button Content="Test trigger…" Command="{Binding TestTriggerCommand}"
                       ToolTip.Tip="Run the action as if a trigger fired, with arguments you type" />
-              <TextBlock Text="{Binding LastRunResult}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
-            </StackPanel>
+              <Border Width="1" Height="22" Margin="4,0" Background="{DynamicResource CuebotCardBorder}" VerticalAlignment="Center" />
+              <Button x:Name="UndoButton" Content="↶ Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Undo the last change to this action (Ctrl+Z)" />
+              <Button x:Name="RedoButton" Content="↷ Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y or Ctrl+Shift+Z)" />
+              <Button Content="Copy" Command="{Binding CopyItemCommand}"
+                      ToolTip.Tip="Copy the selected trigger or sub-action, or the whole action when nothing is selected (Ctrl+C)" />
+              <Button Content="Paste" Command="{Binding PasteCommand}"
+                      ToolTip.Tip="Paste an action, sub-actions or triggers, also from another Cuebot (Ctrl+V)" />
+            </WrapPanel>
+            <TextBlock Text="{Binding LastRunResult}" Classes="muted" TextTrimming="CharacterEllipsis"
+                       IsVisible="{Binding LastRunResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock x:Name="EditStatusText" Text="{Binding EditStatus}" Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis"
+                       IsVisible="{Binding EditStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
         </Border>
 
         <Grid>
           <!-- List editor -->
-          <ScrollViewer IsVisible="{Binding !IsGraphView}" Padding="16,12">
+          <ScrollViewer x:Name="ListEditor" IsVisible="{Binding !IsGraphView}" Padding="16,12" Background="Transparent">
+            <ScrollViewer.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Copy" InputGesture="Ctrl+C" Command="{Binding CopyItemCommand}" />
+                <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+                <MenuItem Header="Duplicate" InputGesture="Ctrl+D" Command="{Binding DuplicateItemCommand}" />
+                <MenuItem Header="Delete" InputGesture="Delete" Command="{Binding DeleteItemCommand}" />
+                <Separator />
+                <MenuItem Header="Copy whole action" Command="{Binding CopyActionCommand}" />
+                <MenuItem Header="Undo" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+                <MenuItem Header="Redo" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+              </ContextMenu>
+            </ScrollViewer.ContextMenu>
             <StackPanel>
               <DockPanel Margin="0,0,0,6">
                 <Button DockPanel.Dock="Right" Content="+ Trigger" Command="{Binding AddTriggerCommand}" />
@@ -197,10 +228,23 @@
               <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Auto-arrange" Command="{Binding AutoArrangeCommand}" />
                 <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
-                           Text="Click + on a port to add a step there · drag a node onto a port to rewire it · drag the background to pan · wheel to zoom · Del deletes" />
+                           Text="Click + on a port to add a step there · drag a node onto a port to rewire it · drag the background to pan · wheel to zoom · Del deletes · Ctrl+C/V/D copy, paste, duplicate · Ctrl+Z undo" />
               </DockPanel>
             </Border>
-            <graph:FlowGraphControl Action="{Binding SelectedAction}" />
+            <graph:FlowGraphControl x:Name="Graph" Action="{Binding SelectedAction}">
+              <graph:FlowGraphControl.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Copy" InputGesture="Ctrl+C" Command="{Binding CopyItemCommand}" />
+                  <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+                  <MenuItem Header="Duplicate" InputGesture="Ctrl+D" Command="{Binding DuplicateItemCommand}" />
+                  <MenuItem Header="Delete" InputGesture="Delete" Command="{Binding DeleteItemCommand}" />
+                  <Separator />
+                  <MenuItem Header="Copy whole action" Command="{Binding CopyActionCommand}" />
+                  <MenuItem Header="Undo" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+                  <MenuItem Header="Redo" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+                </ContextMenu>
+              </graph:FlowGraphControl.ContextMenu>
+            </graph:FlowGraphControl>
           </DockPanel>
         </Grid>
       </DockPanel>

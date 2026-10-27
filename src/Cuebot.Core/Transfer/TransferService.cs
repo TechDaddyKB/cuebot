@@ -11,7 +11,7 @@ namespace Cuebot.Core.Transfer;
 /// chosen items. Nothing in an import is executed.
 /// </summary>
 public sealed class TransferService(ProfileService profile, CommandStore commands, GlobalVariables globals,
-    Registry? registry = null, AppPaths? paths = null, AppLog? log = null)
+    Func<Registry?>? registry = null, AppPaths? paths = null, AppLog? log = null)
 {
     /// <summary>Optional user mapping additions for Streamer.bot type codes (see <see cref="StreamerBotMappingTable"/>).</summary>
     public const string MappingFileName = "streamerbot-mapping.json";
@@ -40,7 +40,7 @@ public sealed class TransferService(ProfileService profile, CommandStore command
             (bundle, report) = new StreamerBotImporter(MappingTable()).Convert(payload.Json);
         }
         var plan = BundleImporter.Preview(bundle, CurrentTarget(), payload.Kind, report);
-        if (registry is not null) FlagUnknownTypes(plan, registry);
+        if (registry?.Invoke() is { } known) FlagUnknownTypes(plan, known);
         return plan;
     }
 
