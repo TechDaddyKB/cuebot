@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Obs.Tests;
 
-/// <summary>Runs only when CUEBOT_OBS_PASSWORD is set (CUEBOT_OBS_PORT optional, default 4455).</summary>
+/// <summary>Runs only when CUEBOT_OBS_PASSWORD is set (CUEBOT_OBS_HOST / CUEBOT_OBS_PORT optional).</summary>
 public sealed class LiveObsFactAttribute : FactAttribute
 {
     public LiveObsFactAttribute()
@@ -43,7 +43,7 @@ public sealed class LiveObsTests : IAsyncLifetime
         if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CUEBOT_OBS_PASSWORD"))) return;
         _services = new ServiceCollection().AddCuebotCore(new AppPaths(_dataDir)).AddObs().BuildServiceProvider();
         var settings = _services.GetRequiredService<JsonFile<ObsSettings>>().Value;
-        settings.Host = "127.0.0.1";
+        settings.Host = Environment.GetEnvironmentVariable("CUEBOT_OBS_HOST") is { Length: > 0 } host ? host : "127.0.0.1";
         settings.Port = Port;
         settings.Password = Environment.GetEnvironmentVariable("CUEBOT_OBS_PASSWORD")!;
         _obs = _services.GetRequiredService<ObsService>();

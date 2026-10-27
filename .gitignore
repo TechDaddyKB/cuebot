@@ -7,3 +7,4 @@ dist/
 .idea/
 TestResults/
 tests/Cuebot.UiTests/screenshots/
+live.env
