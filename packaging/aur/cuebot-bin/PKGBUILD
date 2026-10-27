@@ -7,7 +7,7 @@ pkgrel=1
 pkgdesc="Streaming automation: actions and triggers for Twitch and OBS, text-to-speech, C# and Python scripting (prebuilt)"
 arch=('x86_64' 'aarch64')
 url="https://github.com/TechDaddyKB/cuebot"
-license=('LicenseRef-Cuebot')
+license=('MIT')
 depends=('fontconfig' 'gcc-libs' 'glibc' 'hicolor-icon-theme' 'icu' 'libglvnd' 'libice' 'libsm' 'libx11'
          'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'openssl' 'wayland' 'zlib')
 optdepends=('espeak-ng: offline text-to-speech voices'
@@ -36,6 +36,7 @@ package() {
   install -d "$pkgdir/usr/bin"
   ln -s "/usr/lib/$_pkgname/Cuebot" "$pkgdir/usr/bin/$_pkgname"
 
+  install -Dm644 share/LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
   install -Dm644 share/io.github.cuebot.Cuebot.desktop -t "$pkgdir/usr/share/applications"
   install -Dm644 share/io.github.cuebot.Cuebot.metainfo.xml -t "$pkgdir/usr/share/metainfo"
   for size in 16 32 48 64 128 256 512; do

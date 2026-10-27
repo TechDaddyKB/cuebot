@@ -4,7 +4,7 @@
   <name>Cuebot</name>
   <summary>Streaming automation with actions, triggers, Twitch, OBS and text-to-speech</summary>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>LicenseRef-proprietary</project_license>
+  <project_license>MIT</project_license>
   <description>
     <p>
       Cuebot reacts to stream events (chat commands, follows, cheers, raids, OBS scene changes, timers)

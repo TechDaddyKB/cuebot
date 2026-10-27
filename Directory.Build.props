@@ -7,6 +7,8 @@
     <Version>0.1.0</Version>
     <Authors>Cuebot contributors</Authors>
     <Product>Cuebot</Product>
+    <Copyright>Copyright (c) 2026 TechDaddyKB and Cuebot contributors</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <WarningsAsErrors>nullable</WarningsAsErrors>
   </PropertyGroup>
 </Project>

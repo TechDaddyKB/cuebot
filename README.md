@@ -85,3 +85,7 @@ source, so the repository (or at least its releases) must be public before publi
 ## Variables
 
 `%name%` inserts an action argument (`%user%`, `%message%`, `%input0%`, `%bits%`...), `~name~` a global variable.
+
+## License
+
+[MIT](LICENSE)

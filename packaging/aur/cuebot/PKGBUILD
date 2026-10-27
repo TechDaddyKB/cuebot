@@ -6,7 +6,7 @@ pkgrel=1
 pkgdesc="Streaming automation: actions and triggers for Twitch and OBS, text-to-speech, C# and Python scripting"
 arch=('x86_64' 'aarch64')
 url="https://github.com/TechDaddyKB/cuebot"
-license=('LicenseRef-Cuebot')
+license=('MIT')
 depends=('dotnet-runtime>=10.0' 'fontconfig' 'hicolor-icon-theme' 'libglvnd' 'libice' 'libsm' 'libx11'
          'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'wayland')
 makedepends=('dotnet-sdk>=10.0')
@@ -49,6 +49,7 @@ package() {
 exec /usr/bin/dotnet /usr/lib/cuebot/Cuebot.dll "$@"
 EOF
 
+  install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
   install -Dm644 packaging/linux/io.github.cuebot.Cuebot.desktop -t "$pkgdir/usr/share/applications"
   install -Dm644 packaging/linux/io.github.cuebot.Cuebot.metainfo.xml -t "$pkgdir/usr/share/metainfo"
   for size in 16 32 48 64 128 256 512; do
