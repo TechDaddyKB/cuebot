@@ -63,10 +63,11 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | OBS Studio (9 triggers, 29 sub-actions) | ✅ 36 triggers, 47 sub-actions, multiple connections | 3 | Streamlabs Desktop | 🟡 8 triggers, 14 sub-actions (some calls unverified) | 3 |
 | Meld Studio | ❌ | 5 | VTube Studio | ✅ 11/11 triggers, 10/10 sub-actions (+ extras); live-tested against the real app | 5 |
 | Voicemod | ✅ 4/4 triggers, 11/12 sub-actions (Set Censor State removed from Voicemod V3); live-tested against the real app | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; both connect live (no real tip received yet) | 4 |
-| Ko-fi (5), Patreon (5 + 2 extra), Fourthwall (13), Shopify (2), Throne (3), Custom Webhooks | ✅ all documented triggers, signatures verified (Throne: Ed25519 with Throne's public key, optional URL token), dedupe on each service's documented id, feed + credits, test events (`src/Cuebot.Webhooks`); payload handling checked against official docs and real captured test deliveries (Ko-fi test transaction id, Shopify test order, Throne envelope, Patreon tiers/gifts, Fourthwall dual signatures); the relay path is live-tested end to end (custom webhook), the services themselves not yet tried with real deliveries from Cuebot | 5 | TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 |
+| Ko-fi (5), Patreon (5 + 2 extra), Fourthwall (13), Shopify (2), Throne (3), Custom Webhooks | ✅ all documented triggers, signatures verified (Throne: Ed25519 with Throne's public key, optional URL token), dedupe on each service's documented id, feed + credits, test events (`src/Cuebot.Webhooks`); payload handling checked against official docs and real captured test deliveries (Ko-fi test transaction id, Shopify test order, Throne envelope, Patreon tiers/gifts, Fourthwall dual signatures); the relay path is live-tested end to end (custom webhook), the services themselves not yet tried with real deliveries from Cuebot | 5 | StreamLoots | ❌ | 5 |
+| TipeeeStream (Donation + relayed follow/sub/cheer/raid/host), DonorDrive / Extra Life (Donation, Incentive, Profile Updated), TreatStream (Treat, Authenticated), Pally.gg (Campaign Tip) | 🟡 all documented triggers and variables, connection status, auto-connect, feed + credits + speech, test events, script functions (`src/Cuebot.Donations`, see its PROTOCOL.md). DonorDrive read live through Cuebot (public Extra Life team); TipeeeStream, TreatStream (OAuth with the user's own app) and Pally.gg not yet tried against the real services | 5 | | | |
 | Pulsoid, HypeRate | ✅ + threshold triggers; not yet tried against the real services | 5 | | | |
 | Crowd Control | ❌ | 5 | Elgato (Stream Deck, Camera Hub, Control Center, Wave Link, Studio: 105 triggers) | ❌ | 5 |
-| T.I.T.S., Lumia, Pally.gg, StreamFog, Mtion, PolyPop, OBSBOT | ❌ | 5 | Pronouns (alejo.io) | ✅ | 3 |
+| T.I.T.S., Lumia, StreamFog, Mtion, PolyPop, OBSBOT | ❌ | 5 | Pronouns (alejo.io) | ✅ | 3 |
 
 Webhook-based services (Kick events, Ko-fi, Patreon, ...) need a publicly reachable endpoint. Streamer.bot relays them
 through its website. **Cuebot's decision:** use each service's direct API (WebSocket, polling or SDK) wherever one exists;
@@ -146,7 +147,7 @@ has an enabled Mouse Click trigger.
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
    import/export, action history and copy/paste/undo, app shortcuts; left: Streamer.bot type-code mapping (needs real exports).
-5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅; still to do: TipeeeStream, DonorDrive, StreamLoots, TreatStream, Pally.gg, Crowd Control, Meld, PolyPop, Elgato, MIDI, voice control, the remaining apps.
+5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡; still to do: StreamLoots, Crowd Control, Meld, PolyPop, Elgato, MIDI, voice control, the remaining apps.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.

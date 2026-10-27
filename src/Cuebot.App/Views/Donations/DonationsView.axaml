@@ -7,7 +7,7 @@
     <StackPanel MaxWidth="760" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Donations" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Tips, merch and store redemptions from Streamlabs and StreamElements become triggers, activity feed items and event speech. Tokens are stored in donations.json, masked here and never written to the log." />
+                 Text="Tips, donations, treats and store redemptions from Streamlabs, StreamElements, TipeeeStream, DonorDrive (Extra Life), TreatStream and Pally.gg become triggers, activity feed items, credits and event speech. Keys and tokens are stored in donations.json, masked here and never written to the log." />
 
       <Border Classes="card" DataContext="{Binding Streamlabs}" x:DataType="vm:StreamlabsCardViewModel">
         <StackPanel Spacing="8">
@@ -55,6 +55,132 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
             <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" DataContext="{Binding TipeeeStream}" x:DataType="vm:TipeeeStreamCardViewModel"
+              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="TipeeeStream" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On tipeeestream.com open your account's API page and copy the API key. Cuebot looks up TipeeeStream's socket server, connects with the key and joins your room, so donations arrive as they happen." />
+          <TextBox Name="TipeeeStreamKey" Text="{Binding Token}" PasswordChar="•" PlaceholderText="API key" />
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
+          <TextBox Text="{Binding Username}" PlaceholderText="TipeeeStream user name (optional)" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Also publish the follows, subs, cheers, raids and hosts TipeeeStream relays" IsChecked="{Binding RelayPlatformEvents}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" DataContext="{Binding DonorDrive}" x:DataType="vm:DonorDriveCardViewModel"
+              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="DonorDrive (Extra Life and other charities)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="No key needed: DonorDrive's public API is read with your participant (or team) id, the number in your fundraising page's address. Cuebot checks for changes at most every 15 seconds, as DonorDrive asks, and reports new donations, incentives and goal changes." />
+          <ComboBox ItemsSource="{Binding Programs}" SelectedIndex="{Binding ProgramIndex}" MinWidth="320" />
+          <TextBox Text="{Binding CustomBaseUrl}" PlaceholderText="Charity site, e.g. https://www.example-charity.org" IsVisible="{Binding IsCustom}" />
+          <TextBlock Classes="muted" Text="{Binding ApiBase}" />
+          <TextBox Name="DonorDriveId" Text="{Binding Token}" PlaceholderText="Participant or team id" />
+          <CheckBox Content="This is a team id" IsChecked="{Binding IsTeam}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Check every (seconds)" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PollSeconds}" Minimum="15" Increment="5" FormatString="0" Width="140" />
+            <TextBlock Text="Currency" VerticalAlignment="Center" Margin="12,0,0,0" />
+            <TextBox Text="{Binding Currency}" Width="80" />
+          </StackPanel>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding ProfileSummary}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" DataContext="{Binding TreatStream}" x:DataType="vm:TreatStreamCardViewModel"
+              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="TreatStream" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="TreatStream uses OAuth: create an API app in your TreatStream account settings, set its redirect URL to the address below, copy its Client ID and Client Secret here and sign in. Cuebot then gets a socket token and receives treats as they are sent." />
+          <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
+          <TextBox Name="TreatStreamSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Redirect port" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="140" />
+            <SelectableTextBlock Text="{Binding RedirectUri}" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Sign in with TreatStream" Classes="accent" Command="{Binding SignInCommand}" IsEnabled="{Binding !IsSigningIn}" />
+            <Button Content="Sign out" Command="{Binding SignOutCommand}" />
+            <TextBlock Classes="muted" Text="{Binding SignInState}" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBox Name="TreatStreamToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Access token (filled in by signing in)" />
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" DataContext="{Binding Pally}" x:DataType="vm:PallyCardViewModel"
+              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Pally.gg" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On pally.gg open Dashboard → Settings → API Keys and create a key for Cuebot. Cuebot connects to Pally's event websocket for campaign tips on all your pages, or only on the page whose slug you enter (pally.gg/p/your-slug)." />
+          <TextBox Name="PallyKey" Text="{Binding Token}" PasswordChar="•" PlaceholderText="API key" />
+          <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
+          <TextBox Text="{Binding PageSlug}" PlaceholderText="Page slug (optional; empty = all your pages)" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+            <Button Content="Test through Pally.gg" Command="{Binding EchoTestCommand}" ToolTip.Tip="Pally's server echoes a sample tip back on this connection (arrives marked as a test)" />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />

@@ -138,7 +138,13 @@ internal static class TestTimings
 }
 
 /// <summary>A request as seen by <see cref="FakeHttpHandler"/>.</summary>
-internal sealed record RecordedRequest(HttpMethod Method, Uri Uri, string? Authorization, string Body);
+internal sealed record RecordedRequest(HttpMethod Method, Uri Uri, string? Authorization, string Body)
+{
+    /// <summary>Request headers (first value of each), e.g. If-None-Match.</summary>
+    public IReadOnlyDictionary<string, string> Headers { get; init; } = new Dictionary<string, string>();
+
+    public string? ContentType { get; init; }
+}
 
 /// <summary>In-memory HTTP: every request is recorded and answered by the supplied responder.</summary>
 internal sealed class FakeHttpHandler(Func<RecordedRequest, HttpResponseMessage> respond) : HttpMessageHandler
@@ -156,7 +162,11 @@ internal sealed class FakeHttpHandler(Func<RecordedRequest, HttpResponseMessage>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
-        var recorded = new RecordedRequest(request.Method, request.RequestUri!, request.Headers.Authorization?.ToString(), body);
+        var recorded = new RecordedRequest(request.Method, request.RequestUri!, request.Headers.Authorization?.ToString(), body)
+        {
+            Headers = request.Headers.ToDictionary(h => h.Key, h => string.Join(",", h.Value), StringComparer.OrdinalIgnoreCase),
+            ContentType = request.Content?.Headers.ContentType?.MediaType,
+        };
         lock (_requests) _requests.Add(recorded);
         return respond(recorded);
     }

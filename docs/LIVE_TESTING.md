@@ -87,6 +87,16 @@ nothing reaches viewers. Streamlabs needs `CUEBOT_LIVE_STREAMLABS_SOCKET_TOKEN`,
 `CUEBOT_LIVE_VTS=1` and the API turned on (Settings → "Start API"); the first run waits up to two minutes for you to
 click **Allow** on VTube Studio's plugin popup, and the plugin token is kept for later runs.
 
+### TipeeeStream, DonorDrive, TreatStream, Pally.gg
+
+`CharityLiveTests` connects to each of these whose variable is set, checks it answers and disconnects; nothing reaches
+viewers. TipeeeStream needs `CUEBOT_LIVE_TIPEEESTREAM_API_KEY` (optional `CUEBOT_LIVE_TIPEEESTREAM_USERNAME`).
+DonorDrive needs only a public `CUEBOT_LIVE_DONORDRIVE_PARTICIPANT_ID` (Extra Life by default; `CUEBOT_LIVE_DONORDRIVE_TEAM=1`
+for a team id, `CUEBOT_LIVE_DONORDRIVE_BASE_URL` for another DonorDrive charity) and makes two or three requests.
+TreatStream needs `CUEBOT_LIVE_TREATSTREAM_TOKEN` (an access token from signing in on the Donations page) and
+`CUEBOT_LIVE_TREATSTREAM_CLIENT_ID` (your TreatStream app). Pally.gg needs `CUEBOT_LIVE_PALLY_API_KEY`; the test also asks
+Pally's server to echo a sample tip and checks it arrives as a test campaign tip.
+
 ## Running
 
 ```powershell

@@ -6,7 +6,7 @@ using Cuebot.Core.Storage;
 namespace Cuebot.Donations;
 
 /// <summary>
-/// Shared plumbing of the Streamlabs and StreamElements connections: status, a background run loop with
+/// Shared plumbing of the donation service connections: status, a background run loop with
 /// connect/disconnect, dedupe, publishing, the "last events" list and local test events.
 /// </summary>
 public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
@@ -45,6 +45,12 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
 
     protected abstract bool AutoConnect { get; }
 
+    /// <summary>Status shown when <see cref="ConnectAsync"/> is called without a token.</summary>
+    protected virtual string MissingTokenMessage => $"Enter your {Name} token first.";
+
+    /// <summary>Removes every secret this service knows from a message before it is logged or shown.</summary>
+    private protected virtual string RedactSecrets(string? text) => Secrets.Redact(text, Token);
+
     /// <summary>Whether relayed platform events are published.</summary>
     protected abstract bool RelayPlatformEvents { get; }
 
@@ -66,7 +72,7 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
     {
         if (Token.Trim().Length == 0)
         {
-            SetStatus(ConnectionState.Error, $"Enter your {Name} token first.");
+            SetStatus(ConnectionState.Error, MissingTokenMessage);
             throw new InvalidOperationException(StatusMessage);
         }
         await _connectGate.WaitAsync(ct).ConfigureAwait(false);
@@ -81,7 +87,7 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            SetStatus(ConnectionState.Error, Secrets.Redact(ex.Message, Token));
+            SetStatus(ConnectionState.Error, RedactSecrets(ex.Message));
             throw;
         }
         finally
@@ -113,7 +119,7 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
-            Log.Error(Name, $"Automatic connection failed: {Secrets.Redact(ex.Message, Token)}");
+            Log.Error(Name, $"Automatic connection failed: {RedactSecrets(ex.Message)}");
         }
     }
 
@@ -141,8 +147,8 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Log.Error(Name, $"Connection stopped: {Secrets.Redact(ex.Message, Token)}");
-            SetStatus(ConnectionState.Error, Secrets.Redact(ex.Message, Token));
+            Log.Error(Name, $"Connection stopped: {RedactSecrets(ex.Message)}");
+            SetStatus(ConnectionState.Error, RedactSecrets(ex.Message));
         }
     }
 
@@ -161,7 +167,7 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
     {
         if (_run is null) return;
         var wasConnected = State == ConnectionState.Connected;
-        reason = Secrets.Redact(reason, Token);
+        reason = RedactSecrets(reason);
         SetStatus(fatal ? ConnectionState.Error : ConnectionState.Connecting, fatal ? reason : $"Reconnecting ({reason})");
         if (wasConnected) Bus.Publish(new BotEvent(DisconnectedEvent, new Dictionary<string, object?> { ["service"] = Name, ["reason"] = reason }));
     }
@@ -173,7 +179,7 @@ public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
         if (e.Relayed && !RelayPlatformEvents && !isTest) return false;
         if (!isTest && !_seen.AddAll(e.Keys)) return false;
         var bot = new BotEvent(e.Type, e.Args);
-        var summary = DonationChatAdapter.Describe(bot)?.Title ?? e.Type;
+        var summary = DonationChatAdapter.Describe(bot)?.Title ?? DonationChatAdapter.Summary(bot) ?? e.Type;
         lock (_gate)
         {
             _recent.AddFirst(new DonationRecord(bot.Time, e.Type, summary, isTest));
