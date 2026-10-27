@@ -1,37 +1,61 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 
 namespace Cuebot.Core.Actions;
 
-public sealed record ActionRunRecord(string ActionName, string Source, bool Success, TimeSpan Duration, string? Error);
+/// <summary>A finished run (dashboard "recent runs"). <see cref="ActionHistory"/> has the full picture.</summary>
+public sealed record ActionRunRecord(string ActionName, string Source, bool Success, TimeSpan Duration, string? Error)
+{
+    public Guid RunId { get; init; }
+    public string Queue { get; init; } = QueueService.DefaultQueue;
+    public ActionRunState State { get; init; }
 
-/// <summary>Matches events to triggers and executes actions' flow trees.</summary>
+    /// <summary>The action is marked "Exclude from history"; dashboards may want to hide it too.</summary>
+    public bool ExcludedFromHistory { get; init; }
+}
+
+/// <summary>Matches events to triggers, queues runs and executes actions' flow trees.</summary>
 public sealed class ActionEngine : IDisposable
 {
     public const int MaxDepth = 16;
     private const string Source = "Actions";
+
+    /// <summary>Arguments the engine adds to every run; Requeue drops them so the replay gets fresh ones.</summary>
+    private static readonly string[] EngineArgs = ["actionName", "actionId", "runId", "actionQueuedAt"];
 
     private readonly EventBus _bus;
     private readonly ProfileService _profile;
     private readonly Registry _registry;
     private readonly GlobalVariables _globals;
     private readonly AppLog _log;
-    private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _queues = new();
+    private readonly IRandomSource _random;
+    private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _active = new();
     private readonly CancellationTokenSource _shutdown = new();
+    private readonly bool _ownsQueues;
     private IDisposable? _subscription;
 
-    public ActionEngine(EventBus bus, ProfileService profile, Registry registry, GlobalVariables globals, AppLog log)
+    public ActionEngine(EventBus bus, ProfileService profile, Registry registry, GlobalVariables globals, AppLog log,
+        QueueService? queues = null, ActionHistory? history = null, IRandomSource? random = null)
     {
         _bus = bus;
         _profile = profile;
         _registry = registry;
         _globals = globals;
         _log = log;
+        _ownsQueues = queues is null;
+        Queues = queues ?? new QueueService(profile);
+        History = history ?? new ActionHistory();
+        _random = random ?? SystemRandomSource.Instance;
     }
 
+    /// <summary>Raised when any run (including nested and excluded ones) finishes, on the run's thread.</summary>
     public event Action<ActionRunRecord>? RunCompleted;
+
+    public QueueService Queues { get; }
+    public ActionHistory History { get; }
 
     public void Start() => _subscription ??= _bus.Subscribe(OnEvent);
 
@@ -61,9 +85,7 @@ public sealed class ActionEngine : IDisposable
                 }
                 if (!matched) continue;
 
-                args["triggerType"] = type.TypeId;
-                args["triggerName"] = type.DisplayName;
-                args["eventType"] = e.Type;
+                AddTriggerArgs(args, type, e.Type);
                 started.Add(RunAsync(action, args, source: type.DisplayName));
                 break; // one run per event per action, even if several triggers match
             }
@@ -89,6 +111,56 @@ public sealed class ActionEngine : IDisposable
         return RunAsync(action, args, depth: 0, "Run action", ct);
     }
 
+    /// <summary>
+    /// "Test trigger": runs the action as if <paramref name="trigger"/> had fired with <paramref name="args"/>
+    /// (adds triggerType/triggerName/eventType like a real event, plus isTest=true). The trigger's filter is not
+    /// evaluated. Pass a null trigger to test with custom arguments only. The run goes through the action's queue.
+    /// </summary>
+    public Task<bool> TestTriggerAsync(ActionDefinition action, TriggerDefinition? trigger,
+        IReadOnlyDictionary<string, object?>? args = null, CancellationToken ct = default)
+    {
+        var runArgs = args is null
+            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
+        var type = trigger is null ? null : _registry.GetTrigger(trigger.Type);
+        if (type is not null) AddTriggerArgs(runArgs, type, type.EventTypes.FirstOrDefault() ?? "");
+        runArgs["isTest"] = true;
+        return RunAsync(action, runArgs, depth: 0, $"Test: {type?.DisplayName ?? "custom arguments"}", ct);
+    }
+
+    /// <summary>
+    /// Runs a past run's action again with the arguments it had when it was queued. Returns false when the run is
+    /// unknown (evicted from history) or its action no longer exists.
+    /// </summary>
+    public Task<bool> RequeueAsync(Guid runId, CancellationToken ct = default)
+    {
+        var entry = History.Find(runId);
+        var action = entry is null ? null : _profile.Snapshot.FindAction(entry.ActionId) ?? FindAction(entry.ActionName);
+        if (entry is null || action is null)
+        {
+            _log.Warn(Source, entry is null ? "That run is no longer in the history" : $"No action named '{entry.ActionName}'");
+            return Task.FromResult(false);
+        }
+        var args = new Dictionary<string, object?>(entry.ArgsWhenQueued, StringComparer.OrdinalIgnoreCase);
+        foreach (var key in EngineArgs) args.Remove(key);
+        return RunAsync(action, args, depth: 0, "Requeue", ct);
+    }
+
+    /// <summary>Cancels a pending or running run (e.g. "Break running" in the UI). Returns false if it already ended.</summary>
+    public bool Cancel(Guid runId)
+    {
+        if (!_active.TryGetValue(runId, out var cts)) return false;
+        try
+        {
+            cts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
+        return true;
+    }
+
     internal async Task<bool> RunAsync(ActionDefinition action, IReadOnlyDictionary<string, object?>? args, int depth,
         string source, CancellationToken ct)
     {
@@ -98,39 +170,70 @@ public sealed class ActionEngine : IDisposable
                 $"'{action.Name}' exceeded the maximum nesting depth of {MaxDepth}; is an action running itself?");
         }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _shutdown.Token);
-        SemaphoreSlim? queue = null;
-        if (!action.Concurrent && depth == 0)
+        var runId = Guid.NewGuid();
+        var queue = QueueService.Normalize(action.Queue);
+        var queuedAt = DateTimeOffset.Now;
+        var runArgs = args is null
+            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
+        runArgs["actionName"] = action.Name;
+        runArgs["actionId"] = action.Id.ToString();
+        runArgs["runId"] = runId.ToString();
+        runArgs["actionQueuedAt"] = queuedAt;
+
+        var tracked = !action.ExcludeFromHistory;
+        if (tracked)
         {
-            queue = _queues.GetOrAdd(action.Id, _ => new SemaphoreSlim(1, 1));
-            await queue.WaitAsync(linked.Token).ConfigureAwait(false);
+            History.Add(new ActionRunEntry
+            {
+                RunId = runId,
+                ActionId = action.Id,
+                ActionName = action.Name,
+                Queue = queue,
+                Source = source,
+                QueuedAt = queuedAt,
+                Depth = depth,
+                ArgsWhenQueued = Copy(runArgs),
+            });
         }
 
-        var watch = Stopwatch.StartNew();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _shutdown.Token);
+        _active[runId] = linked;
+        IDisposable? lease = null;
+        var watch = new Stopwatch();
         string? error = null;
-        var success = false;
+        var state = ActionRunState.Failed;
         try
         {
-            var runArgs = args is null
-                ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
-            runArgs["actionName"] = action.Name;
-            runArgs["actionId"] = action.Id.ToString();
-            runArgs["runId"] = Guid.NewGuid().ToString();
+            if (depth == 0)
+            {
+                // Nested runs (Run action, scripts) bypass queues: waiting would deadlock a blocking queue.
+                Guid? exclusive = string.IsNullOrWhiteSpace(action.Queue) && !action.Concurrent ? action.Id : null;
+                lease = await Queues.EnterAsync(queue, action.AlwaysRun, exclusive, linked.Token).ConfigureAwait(false);
+            }
 
+            watch.Start();
+            if (tracked)
+            {
+                var startedAt = DateTimeOffset.Now;
+                History.Update(runId, e => e with { State = ActionRunState.Running, StartedAt = startedAt });
+            }
             var context = new ActionRunContext(action, runArgs, this, _globals, _log, depth);
-            await RunChainAsync(context, action.SubActions, linked.Token).ConfigureAwait(false);
-            success = true;
+            await RunBodyAsync(context, action, linked.Token).ConfigureAwait(false);
+            state = ActionRunState.Completed;
         }
         catch (Exception ex) when (depth > 0)
         {
             // Nested runs propagate so the calling action fails too; only the outermost run logs.
-            error = ex.Message;
+            var cancelled = ex is OperationCanceledException;
+            error = cancelled ? "cancelled" : ex.Message;
+            state = cancelled ? ActionRunState.Cancelled : ActionRunState.Failed;
             throw;
         }
         catch (OperationCanceledException)
         {
             error = "cancelled";
+            state = ActionRunState.Cancelled;
         }
         catch (Exception ex)
         {
@@ -139,44 +242,159 @@ public sealed class ActionEngine : IDisposable
         }
         finally
         {
-            queue?.Release();
-            RunCompleted?.Invoke(new ActionRunRecord(action.Name, source, success, watch.Elapsed, error));
+            watch.Stop();
+            lease?.Dispose();
+            _active.TryRemove(runId, out _);
+            if (tracked)
+            {
+                var completedAt = DateTimeOffset.Now;
+                var after = Copy(runArgs);
+                History.Update(runId, e => e with
+                {
+                    State = state,
+                    CompletedAt = completedAt,
+                    Duration = watch.Elapsed,
+                    Error = error,
+                    ArgsAfterRun = after,
+                });
+            }
+            RunCompleted?.Invoke(new ActionRunRecord(action.Name, source, state == ActionRunState.Completed, watch.Elapsed, error)
+            {
+                RunId = runId,
+                Queue = queue,
+                State = state,
+                ExcludedFromHistory = !tracked,
+            });
         }
-        return success;
+        return state == ActionRunState.Completed;
     }
 
-    /// <summary>Runs a chain. Returns false when a sub-action asked to stop the whole action.</summary>
-    private async Task<bool> RunChainAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> chain, CancellationToken ct)
+    private async Task RunBodyAsync(ActionRunContext context, ActionDefinition action, CancellationToken ct)
+    {
+        // Stop, and loop signals outside any loop, simply end the action.
+        if (action.RandomAction) await RunRandomAsync(context, action.SubActions, ct).ConfigureAwait(false);
+        else if (action.ConcurrentSubActions) await RunConcurrentlyAsync(context, action.SubActions, ct).ConfigureAwait(false);
+        else await RunChainAsync(context, action.SubActions, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Runs a chain in order until it ends or a step stops it / signals a loop.</summary>
+    internal async Task<FlowOutcome> RunChainAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> chain, CancellationToken ct)
     {
         foreach (var step in chain)
         {
-            ct.ThrowIfCancellationRequested();
             if (!step.Enabled) continue;
+            var outcome = await RunStepAsync(context, step, ct).ConfigureAwait(false);
+            if (outcome != FlowOutcome.Completed) return outcome;
+        }
+        return FlowOutcome.Completed;
+    }
 
-            var handler = _registry.GetSubAction(step.Type)
-                ?? throw new InvalidOperationException($"Unknown sub-action type '{step.Type}' (is its module installed?)");
+    /// <summary>Runs ONE enabled step of <paramref name="candidates"/>, picked by weight.</summary>
+    internal async Task<FlowOutcome> RunRandomAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> candidates, CancellationToken ct)
+    {
+        var enabled = candidates.Where(s => s.Enabled).ToArray();
+        var pick = WeightedRandom.Pick(enabled, s => s.Weight, _random);
+        return pick is null ? FlowOutcome.Completed : await RunStepAsync(context, pick, ct).ConfigureAwait(false);
+    }
 
-            var values = ResolveParameters(handler, step, context);
-            SubActionResult result;
+    /// <summary>
+    /// Runs every enabled step at once. Each gets its own copy of the arguments; afterwards the changes are merged
+    /// back in step order (later steps win). A Stop or failure cancels the siblings that are still running.
+    /// </summary>
+    internal async Task<FlowOutcome> RunConcurrentlyAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> steps, CancellationToken ct)
+    {
+        var enabled = steps.Where(s => s.Enabled).ToArray();
+        if (enabled.Length == 0) return FlowOutcome.Completed;
+
+        var baseline = new Dictionary<string, object?>(context.Args, StringComparer.OrdinalIgnoreCase);
+        using var siblings = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var forks = enabled.Select(_ => context.Fork()).ToArray();
+        var tasks = enabled.Select((step, i) => RunForkAsync(forks[i], step)).ToArray();
+        try
+        {
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Inspected per task below.
+        }
+
+        ct.ThrowIfCancellationRequested();
+        var failed = tasks.FirstOrDefault(t => t.IsFaulted);
+        if (failed is not null) ExceptionDispatchInfo.Capture(failed.Exception!.InnerException!).Throw();
+
+        foreach (var fork in forks)
+        {
+            foreach (var (key, value) in fork.Args)
+            {
+                if (!baseline.TryGetValue(key, out var old) || !Equals(old, value)) context.Args[key] = value;
+            }
+            foreach (var key in baseline.Keys)
+            {
+                if (!fork.Args.ContainsKey(key)) context.Args.Remove(key);
+            }
+        }
+
+        var outcomes = tasks.Where(t => t.IsCompletedSuccessfully).Select(t => t.Result).ToArray();
+        if (tasks.Any(t => t.IsCanceled) || outcomes.Contains(FlowOutcome.Stop)) return FlowOutcome.Stop;
+        if (outcomes.Contains(FlowOutcome.Break)) return FlowOutcome.Break;
+        return outcomes.Contains(FlowOutcome.Continue) ? FlowOutcome.Continue : FlowOutcome.Completed;
+
+        async Task<FlowOutcome> RunForkAsync(ActionRunContext fork, SubActionDefinition step)
+        {
+            await Task.Yield();
             try
             {
-                result = await handler.ExecuteAsync(context, values, ct).ConfigureAwait(false);
+                var outcome = await RunStepAsync(fork, step, siblings.Token).ConfigureAwait(false);
+                if (outcome == FlowOutcome.Stop) await siblings.CancelAsync().ConfigureAwait(false);
+                return outcome;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                throw new InvalidOperationException($"{handler.DisplayName}: {ex.Message}", ex);
-            }
-
-            if (!result.Continue) return false;
-            if (result.Branch is not null && step.Branches.TryGetValue(result.Branch, out var branch))
-            {
-                if (!await RunChainAsync(context, branch, ct).ConfigureAwait(false)) return false;
+                await siblings.CancelAsync().ConfigureAwait(false);
+                throw;
             }
         }
-        return true;
     }
 
-    private static ParameterValues ResolveParameters(ISubActionHandler handler, SubActionDefinition step, ActionRunContext context)
+    private async Task<FlowOutcome> RunStepAsync(ActionRunContext context, SubActionDefinition step, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var handler = _registry.GetSubAction(step.Type)
+            ?? throw new InvalidOperationException($"Unknown sub-action type '{step.Type}' (is its module installed?)");
+
+        if (handler is IFlowContainerHandler container)
+        {
+            try
+            {
+                return await container.ExecuteFlowAsync(context, new FlowStep(this, context, handler, step), ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException and not SubActionFailedException)
+            {
+                throw new SubActionFailedException($"{handler.DisplayName}: {ex.Message}", ex);
+            }
+        }
+
+        SubActionResult result;
+        try
+        {
+            var values = ResolveParameters(handler, step, context);
+            result = await handler.ExecuteAsync(context, values, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new SubActionFailedException($"{handler.DisplayName}: {ex.Message}", ex);
+        }
+
+        if (!result.Continue) return result.ToOutcome();
+        if (result.Branch is not null && step.Branches.TryGetValue(result.Branch, out var branch))
+        {
+            return await RunChainAsync(context, branch, ct).ConfigureAwait(false);
+        }
+        return FlowOutcome.Completed;
+    }
+
+    internal static ParameterValues ResolveParameters(ISubActionHandler handler, SubActionDefinition step, ActionRunContext context)
     {
         var resolved = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var d in handler.Parameters)
@@ -187,6 +405,16 @@ public sealed class ActionEngine : IDisposable
         return new ParameterValues(resolved);
     }
 
+    private static void AddTriggerArgs(Dictionary<string, object?> args, ITriggerType type, string eventType)
+    {
+        args["triggerType"] = type.TypeId;
+        args["triggerName"] = type.DisplayName;
+        args["eventType"] = eventType;
+    }
+
+    private static Dictionary<string, object?> Copy(Dictionary<string, object?> args) =>
+        new(args, StringComparer.OrdinalIgnoreCase);
+
     private void OnEvent(BotEvent e) => Dispatch(e);
 
     public void Dispose()
@@ -194,5 +422,9 @@ public sealed class ActionEngine : IDisposable
         _subscription?.Dispose();
         _shutdown.Cancel();
         _shutdown.Dispose();
+        if (_ownsQueues) Queues.Dispose();
     }
+
+    /// <summary>A sub-action failed; carries "Display name: message" and is not re-wrapped by enclosing containers.</summary>
+    private sealed class SubActionFailedException(string message, Exception inner) : InvalidOperationException(message, inner);
 }
