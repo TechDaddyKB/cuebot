@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using Cuebot.Core.Events;
 using Cuebot.Speech.Tests.Fakes;
 
@@ -40,8 +39,8 @@ public class SpeechServiceTests
         await h.Service.SpeakAsync("quiet", wait: true);
 
         var playback = await h.Player.NextAsync();
-        var info = Wav.Parse(playback.Wav);
-        Assert.Equal(FakeTtsEngine.SampleValue / 4, BinaryPrimitives.ReadInt16LittleEndian(playback.Wav.AsSpan(info.DataOffset)));
+        Assert.Equal(25, playback.Options.Volume); // volume travels to the player, so compressed audio works too
+        Assert.Null(playback.Options.DeviceId);
     }
 
     [Fact]

@@ -6,8 +6,9 @@ namespace Cuebot.Speech.Tests;
 public class SpeakChatTests
 {
     private static BotEvent Chat(string user, string message, string? userName = null) =>
-        new("twitch.chatMessage", new Dictionary<string, object?>
+        new("chat.message", new Dictionary<string, object?>
         {
+            ["platform"] = "Twitch",
             ["user"] = user,
             ["userName"] = userName ?? user.ToLowerInvariant(),
             ["message"] = message,
