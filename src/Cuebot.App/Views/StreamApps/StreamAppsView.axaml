@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.StreamAppsView"
+             x:DataType="vm:StreamAppsViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Meld Studio &amp; PolyPop" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Both apps become triggers, sub-actions and script functions. Settings are stored in streamapps.json. Nothing connects automatically unless you tick the box." />
+
+      <!-- Meld Studio -->
+      <Border Classes="card" DataContext="{Binding Meld}" x:DataType="vm:MeldCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Meld Studio" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In Meld Studio open File → Preferences → Advanced and switch on &quot;Allow remote connections&quot;. Meld listens on port 13376 and has no password, so only allow it on networks you trust." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="MeldHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Reconnect when the connection drops (or Meld is not running yet)" IsChecked="{Binding AutoReconnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="MeldOutputs" Classes="muted" Text="{Binding Outputs}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Toggle stream" Command="{Binding ToggleStreamingCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Content="Toggle recording" Command="{Binding ToggleRecordingCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Content="Screenshot" Command="{Binding ScreenshotCommand}" IsEnabled="{Binding IsConnected}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+            <Run Text="Current scene: " FontWeight="SemiBold" /><Run Text="{Binding CurrentScene}" />
+          </TextBlock>
+          <TextBlock Text="Scenes" FontWeight="SemiBold" />
+          <TextBlock Classes="muted" Text="Connect to list Meld's scenes." IsVisible="{Binding HasNoScenes}" />
+          <ItemsControl Name="MeldScenes" ItemsSource="{Binding Scenes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:MeldSceneRowViewModel">
+                <Grid ColumnDefinitions="*,200,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Details}" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="Show" Command="{Binding ShowCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- PolyPop -->
+      <Border Classes="card" DataContext="{Binding PolyPop}" x:DataType="vm:PolyPopCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="PolyPop" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Install the community WebSocket plugin in PolyPop, add a WebSocket source and set its Port to the port below (the plugin's default is 38031; Streamer.bot setups use 9652). Add a WebSocket Alert per alert name and wire its variables as &lt;name&gt;." />
+          <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding ModeIndex}" MinWidth="320" />
+          <Grid ColumnDefinitions="Auto,*,Auto,140,Auto,120" RowDefinitions="Auto">
+            <TextBlock Text="Address" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Text="{Binding Address}" PlaceholderText="127.0.0.1" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="PolyPopPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <TextBlock Grid.Column="4" Text="Endpoint" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <TextBox Grid.Column="5" Text="{Binding Endpoint}" PlaceholderText="/" />
+          </Grid>
+          <CheckBox Content="Start automatically on startup" IsChecked="{Binding AutoStart}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Start" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Stop" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="Last message from PolyPop: " FontWeight="SemiBold" /><Run Text="{Binding LastMessage}" />
+          </TextBlock>
+          <TextBlock Text="Test alert" FontWeight="SemiBold" Margin="0,4,0,0" />
+          <Grid ColumnDefinitions="200,*,Auto" RowDefinitions="Auto">
+            <TextBox Text="{Binding TestAlert}" PlaceholderText="Alert name" />
+            <TextBox Grid.Column="1" Margin="8,0" Text="{Binding TestVariables}" PlaceholderText="name=value" />
+            <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" IsEnabled="{Binding IsConnected}" />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

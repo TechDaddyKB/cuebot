@@ -11,6 +11,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
 | `Cuebot.LiveTests` › YouTube API | Device-code sign-in (approved once), connection and channel info; with `CUEBOT_LIVE_YOUTUBE_CHAT=1` while live: a sent message comes back through the chat poll | Google OAuth client ID + secret; for chat a live broadcast |
 | `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
+| `Cuebot.LiveTests` › Meld Studio / PolyPop | Meld: WebChannel handshake, scene list, re-show the current scene, optionally toggle a named layer and restore it (the session update must come back). PolyPop: the WebSocket plugin connects to Cuebot and a test alert is delivered | Meld Studio with remote connections on; PolyPop with the WebSocket plugin |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -105,6 +106,16 @@ for a team id, `CUEBOT_LIVE_DONORDRIVE_BASE_URL` for another DonorDrive charity)
 TreatStream needs `CUEBOT_LIVE_TREATSTREAM_TOKEN` (an access token from signing in on the Donations page) and
 `CUEBOT_LIVE_TREATSTREAM_CLIENT_ID` (your TreatStream app). Pally.gg needs `CUEBOT_LIVE_PALLY_API_KEY`; the test also asks
 Pally's server to echo a sample tip and checks it arrives as a test campaign tip.
+=======
+### Meld Studio, PolyPop
+
+`StreamAppsLiveTests` (nothing goes live). **Meld Studio** runs with `CUEBOT_LIVE_MELD=1`: turn on File → Preferences →
+Advanced → "Allow remote connections" (Meld listens on 13376; `CUEBOT_LIVE_MELD_HOST` for another PC). The test
+connects, checks the scene list and re-shows the current scene; with `CUEBOT_LIVE_MELD_LAYER=<layer name>` it also
+toggles that layer, waits for Meld's session update and restores it. **PolyPop** runs with `CUEBOT_LIVE_POLYPOP=1`:
+install the community WebSocket plugin, add a WebSocket source with Port 9652 (or `CUEBOT_LIVE_POLYPOP_PORT`) and a
+WebSocket Alert named `Cuebot Test` (or `CUEBOT_LIVE_POLYPOP_ALERT`). Cuebot listens and waits up to 90 s for the
+plugin (it retries every 5 s), then sends the alert with `<message>` = "dev testing".
 
 ## Running
 
