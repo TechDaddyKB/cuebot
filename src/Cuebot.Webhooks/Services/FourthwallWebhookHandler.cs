@@ -26,11 +26,22 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
     protected override string SecretName => "Fourthwall webhook secret";
     public override IReadOnlyList<string> TestEventKinds => [.. Samples.Keys];
 
+    /// <summary>
+    /// Fourthwall may send both headers (shop webhook and platform-app signatures); the delivery is accepted when
+    /// either one verifies with the stored secret.
+    /// </summary>
     private protected override bool Verify(WebhookDelivery delivery)
     {
-        var header = delivery.Header("X-Fourthwall-Hmac-SHA256") is { Length: > 0 } h ? h : delivery.Header("X-Fourthwall-Hmac-Apps-SHA256");
-        return WebhookVerification.CheckHmacSha256Base64(Settings.Secret.Trim(), delivery.Body, header);
+        var secret = Settings.Secret.Trim();
+        return WebhookVerification.CheckHmacSha256Base64(secret, delivery.Body, delivery.Header("X-Fourthwall-Hmac-SHA256"))
+            | WebhookVerification.CheckHmacSha256Base64(secret, delivery.Body, delivery.Header("X-Fourthwall-Hmac-Apps-SHA256"));
     }
+
+    /// <summary>
+    /// Fourthwall's API may return user text HTML-escaped (<c>&amp;#39;</c>); the display values (<c>user</c>,
+    /// <c>message</c>, so the feed and speech) are decoded, the <c>fw.*</c> arguments keep the raw text.
+    /// </summary>
+    private static string Display(string text) => System.Net.WebUtility.HtmlDecode(text);
 
     private protected override IReadOnlyList<WebhookEvent> Map(WebhookDelivery delivery) =>
         Map(JsonReaders.ParseBody(delivery.BodyText), isTest: false) is { } e ? [e] : [];
@@ -169,7 +180,7 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
                 message = data.Str("name");
                 break;
         }
-        Common(a, user, amount, currency, message, isTest);
+        Common(a, Display(user), amount, currency, Display(message), isTest);
         return new WebhookEvent(type, [envelope.Str("id")], a);
     }
 
@@ -220,7 +231,8 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
         a["fw.username"] = data.Str("username");
         a["fw.statmessageus"] = data.Str("message");
         a["fw.message"] = data.Str("message");
-        a["fw.quantity"] = data.Number("quantity");
+        // Gift draws carry no quantity: it is the number of gifts.
+        a["fw.quantity"] = data.Has("quantity") ? data.Number("quantity") : data.Items("gifts").Count();
         a["fw.currency"] = data.PathStr("amounts.total.currency");
         foreach (var part in new[] { "subtotal", "tax", "total", "profit" })
             a[$"fw.{part}"] = data.PathNumber($"amounts.{part}.value");

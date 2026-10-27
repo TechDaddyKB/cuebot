@@ -1,0 +1,38 @@
+{
+  "data": {
+    "attributes": {
+      "currently_entitled_amount_cents": 300,
+      "email": "sam@example.com",
+      "full_name": "Sam Gifted",
+      "is_follower": false,
+      "is_free_trial": false,
+      "is_gifted": true,
+      "last_charge_date": null,
+      "last_charge_status": null,
+      "lifetime_support_cents": 0,
+      "note": "",
+      "patron_status": "active_patron",
+      "pledge_relationship_start": "2026-10-27T10:00:00.000+00:00",
+      "will_pay_amount_cents": 0
+    },
+    "id": "8c7b6a59-4d3e-4f21-b0a9-8f7e6d5c4b3a",
+    "relationships": {
+      "campaign": { "data": { "id": "2468135", "type": "campaign" } },
+      "currently_entitled_tiers": { "data": [ { "id": "3333333", "type": "tier" } ] },
+      "user": { "data": { "id": "66698765", "type": "user" } }
+    },
+    "type": "member"
+  },
+  "included": [
+    {
+      "attributes": { "created_at": "2021-03-01T00:00:00.000+00:00", "creation_name": "videos", "is_monthly": true, "patron_count": 121 },
+      "id": "2468135",
+      "type": "campaign"
+    },
+    {
+      "attributes": { "first_name": "Sam", "full_name": "Sam Gifted", "last_name": "Gifted", "url": "https://www.patreon.com/user?u=66698765", "vanity": null },
+      "id": "66698765",
+      "type": "user"
+    }
+  ]
+}

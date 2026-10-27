@@ -1,0 +1,24 @@
+{
+  "testMode": true,
+  "id": "weve_draw_1",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "GIFT_DRAW_ENDED",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-27T15:20:00.000+00:00",
+  "data": {
+    "id": "gdr_x1Y2z3",
+    "type": "GIVEAWAY",
+    "giveawayId": "giv_voWcDCtfQUygxpuYx1HtNg",
+    "giveawayFriendlyId": "F2LGPYCV",
+    "durationSeconds": 60,
+    "offer": { "id": "b2c201d3-8104-4b2a-b2c9-1f6b335b650a", "name": "New T-shirt", "slug": "new-t-shirt", "primaryImage": { "url": "https://cdn.fourthwall.com/tee.jpeg" } },
+    "username": "Tom &amp; Jerry",
+    "message": "Good luck, y&#39;all!",
+    "gifts": [
+      { "id": "gft_1", "status": "AVAILABLE", "winner": { "username": "winner-1" } },
+      { "id": "gft_2", "status": "AVAILABLE", "winner": { "username": "winner-2" } },
+      { "id": "gft_3", "status": "AVAILABLE", "winner": null }
+    ]
+  }
+}

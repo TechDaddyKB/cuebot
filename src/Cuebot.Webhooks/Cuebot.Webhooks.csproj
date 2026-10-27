@@ -3,6 +3,9 @@
     <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Webhooks.Tests" />
     <InternalsVisibleTo Include="Cuebot.UiTests" />
   </ItemGroup>

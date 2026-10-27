@@ -7,7 +7,7 @@
     <StackPanel MaxWidth="760" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Webhook services" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Ko-fi, Patreon, Fourthwall, Shopify, Throne and your own hooks reach Cuebot through your relay. Each delivery is verified here with the secret you enter (deliveries that do not match are dropped), then becomes triggers, activity feed items, event speech and credits. Secrets are stored in webhooks.json, masked here and never written to the log." />
+                 Text="Ko-fi, Patreon, Fourthwall, Shopify, Throne and your own hooks reach Cuebot through your relay. Each delivery is verified here with the secret you enter, or for Throne with its published signing key (deliveries that do not match are dropped), then becomes triggers, activity feed items, event speech and credits. Secrets are stored in webhooks.json, masked here and never written to the log." />
 
       <ItemsControl ItemsSource="{Binding Services}">
         <ItemsControl.ItemTemplate>

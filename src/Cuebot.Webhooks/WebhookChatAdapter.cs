@@ -62,6 +62,10 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
 
             PatreonEventTypes.PledgeCreated => Item(FeedKind.Subscription, $"{user} became a patron{tierText}", paid, withMessage: false),
             PatreonEventTypes.PledgeUpdated => Item(FeedKind.Other, $"{user} changed their pledge{tierText}", paid, withMessage: false),
+            PatreonEventTypes.FollowCreated when a.TryGetValue("isGifted", out var gifted) && gifted is true =>
+                Item(FeedKind.Subscription, $"{user} received a gifted Patreon membership{tierText}", withMessage: false),
+            PatreonEventTypes.FollowCreated when a.TryGetValue("isFreeTrial", out var trial) && trial is true =>
+                Item(FeedKind.Subscription, $"{user} started a Patreon free trial{tierText}", withMessage: false),
             PatreonEventTypes.FollowCreated => Item(FeedKind.Follow, $"{user} followed on Patreon", withMessage: false),
 
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid when a.TryGetValue("isRepeatOrder", out var rep) && rep is true => null,

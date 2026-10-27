@@ -1,0 +1,52 @@
+{
+  "data": {
+    "attributes": {
+      "campaign_lifetime_support_cents": 1000,
+      "currently_entitled_amount_cents": 1000,
+      "email": "alex@example.com",
+      "full_name": "Alex Supporter",
+      "is_follower": false,
+      "is_free_trial": false,
+      "is_gifted": false,
+      "last_charge_date": "2026-10-27T09:15:00.000+00:00",
+      "last_charge_status": "Paid",
+      "lifetime_support_cents": 1000,
+      "next_charge_date": "2026-11-01T00:00:00.000+00:00",
+      "note": "Met at the meetup, wants a shout-out",
+      "patron_status": "active_patron",
+      "pledge_cadence": 1,
+      "pledge_relationship_start": "2026-10-27T09:15:00.000+00:00",
+      "will_pay_amount_cents": 1000
+    },
+    "id": "5e2d8a71-3c4b-4f9a-a1d2-6b7c8d9e0f12",
+    "relationships": {
+      "address": { "data": null },
+      "campaign": { "data": { "id": "2468135", "type": "campaign" } },
+      "currently_entitled_tiers": { "data": [ { "id": "1111111", "type": "tier" }, { "id": "2222222", "type": "tier" } ] },
+      "user": { "data": { "id": "55512345", "type": "user" } }
+    },
+    "type": "member"
+  },
+  "included": [
+    {
+      "attributes": { "created_at": "2021-03-01T00:00:00.000+00:00", "creation_name": "videos", "is_monthly": true, "patron_count": 120 },
+      "id": "2468135",
+      "type": "campaign"
+    },
+    {
+      "attributes": { "amount_cents": 0, "description": "Follow for public posts", "published": true, "title": "Free", "url": "/join/videos" },
+      "id": "1111111",
+      "type": "tier"
+    },
+    {
+      "attributes": { "amount_cents": 1000, "description": "Early access", "published": true, "title": "Gold", "url": "/join/videos/checkout?rid=2222222" },
+      "id": "2222222",
+      "type": "tier"
+    },
+    {
+      "attributes": { "first_name": "Alex", "full_name": "Alex Supporter", "last_name": "Supporter", "url": "https://www.patreon.com/user?u=55512345", "vanity": null },
+      "id": "55512345",
+      "type": "user"
+    }
+  ]
+}

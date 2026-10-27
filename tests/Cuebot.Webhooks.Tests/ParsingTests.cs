@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Cuebot.Core.Chat;
 using Cuebot.Core.Events;
 using Cuebot.Core.Webhooks;
 using Cuebot.Webhooks.Services;
@@ -255,38 +256,238 @@ public sealed class ParsingTests : IDisposable
         })));
     }
 
-    private BotEvent Throne(string file)
+    private readonly ThroneSigner _throneKey = new();
+
+    private BotEvent Throne(string file, string? timestamp = null) => ThroneBody(Harness.Data(file), timestamp);
+
+    private BotEvent ThroneBody(string body, string? timestamp = null)
     {
-        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "t" } };
+        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, _throneKey.PublicKey);
         var before = _h.Published.Count;
-        Assert.Equal(WebhookOutcome.Handled, throne.Handle(Harness.Delivery("throne", Harness.Data(file), path: "t")));
+        Assert.Equal(WebhookOutcome.Handled, throne.Handle(_throneKey.Delivery(body, timestamp)));
         return _h.Published.Skip(before).Single();
     }
 
     [Fact]
-    public void Throne_reads_snake_case_envelopes_and_flat_camel_case_bodies()
+    public void Throne_reads_the_real_envelope()
     {
-        var gift = Throne("throne-gift-purchased.json");
+        var ts = ThroneSigner.Now();
+        var gift = Throne("throne-gift-purchased.json", ts);
         Assert.Equal(ThroneEventTypes.GiftPurchased, gift.Type);
-        Assert.Equal("twitch:12345678", gift.Args["throne.creatorId"]);
+        Assert.Equal("4b6f2d1e-8c3a-4f7b-9e21-6d5c4b3a2f10", gift.Args["throne.eventId"]);
+        Assert.Equal("gift_purchased", gift.Args["throne.eventType"]);
+        Assert.Equal("1", gift.Args["throne.contractVersion"]);
+        Assert.Equal("8f3c1a2b4d5e6f708192a3b4", gift.Args["throne.creatorId"]);
         Assert.Equal("twitchuser123", gift.Args["throne.creatorLogin"]);
         Assert.Equal("Lyfesaver74", gift.Args["throne.gifterLogin"]);
+        Assert.Equal("Lyfesaver74", gift.Args["user"]);
+        Assert.Equal(false, gift.Args["isAnonymous"]);
         Assert.Equal("AirPods Max", gift.Args["throne.itemName"]);
+        Assert.Equal("AirPods Max", gift.Args["item"]);
         Assert.Equal(54900.0, gift.Args["throne.price"]);
         Assert.Equal(false, gift.Args["throne.isSurpriseGift"]);
         Assert.Equal("Happy Birthday!", gift.Args["throne.message"]);
         Assert.Equal(549.0, gift.Args["amount"]);
         Assert.Equal("$549.00", gift.Args["formattedAmount"]);
+        // createdAt is the signed timestamp (Unix seconds).
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(long.Parse(ts, System.Globalization.CultureInfo.InvariantCulture)), gift.Args["throne.createdAt"]);
 
-        var contribution = Throne("throne-contribution-flat.json");
+        var contribution = Throne("throne-contribution-purchased.json");
         Assert.Equal(ThroneEventTypes.ContributionPurchased, contribution.Type);
         Assert.Equal(1099.0, contribution.Args["throne.amount"]);
-        Assert.Equal("Chipper", contribution.Args["throne.gifterLogin"]);
+        Assert.False(contribution.Args.ContainsKey("throne.price"));
         Assert.Equal(10.99, contribution.Args["amount"]);
+        Assert.Equal("", contribution.Args["message"]);   // omitted when there is none
 
+        var crowdfunded = Throne("throne-gift-crowdfunded.json");
+        Assert.Equal(ThroneEventTypes.GiftCrowdfunded, crowdfunded.Type);
+        Assert.Equal(149900.0, crowdfunded.Args["throne.price"]);
+        Assert.Equal(true, crowdfunded.Args["throne.isSurpriseGift"]);
+        Assert.Equal("EUR", crowdfunded.Args["currency"]);
+        Assert.Equal("Streaming PC was fully crowdfunded on Throne", WebhookChatAdapter.Describe(crowdfunded)!.Title);
+    }
+
+    [Fact]
+    public void Throne_anonymous_gifters_are_flagged_and_shown_as_anonymous()
+    {
+        var contribution = Throne("throne-contribution-purchased.json");
+        Assert.Equal(true, contribution.Args["isAnonymous"]);
+        Assert.Equal("Anonymous", contribution.Args["user"]);
+        var item = WebhookChatAdapter.Describe(contribution)!;
+        Assert.Equal(("Anonymous", "Anonymous contributed $10.99 to Streaming PC"), (item.User, item.Title));
+
+        var gift = Harness.Data("throne-gift-purchased.json").Replace("Lyfesaver74", "Anonymous", StringComparison.Ordinal);
+        Assert.Equal(true, ThroneBody(gift).Args["isAnonymous"]);
+    }
+
+    [Fact]
+    public void Throne_warns_about_an_unknown_contract_version_and_ignores_unknown_event_types()
+    {
+        var v2 = Harness.Data("throne-gift-purchased.json").Replace("\"contract_version\": \"1\"", "\"contract_version\": \"2\"", StringComparison.Ordinal);
+        Assert.Equal(ThroneEventTypes.GiftPurchased, ThroneBody(v2).Type);
+        Assert.Contains(_h.Log.Recent(), e => e.Message.Contains("contract_version '2'", StringComparison.Ordinal));
+
+        var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log, _throneKey.PublicKey);
+        var other = Harness.Data("throne-gift-purchased.json").Replace("\"gift_purchased\"", "\"wishlist_updated\"", StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Ignored, throne.Handle(_throneKey.Delivery(other)));
+    }
+
+    [Fact]
+    public void Throne_built_in_samples_are_real_envelopes()
+    {
         var throne = new ThroneWebhookHandler(_h.Settings, _h.Bus, _h.Log);
-        Assert.True(throne.SendTestEvent("giftCrowdfunded"));
+        foreach (var kind in throne.TestEventKinds)
+        {
+            var json = ThroneWebhookHandler.SampleJson(kind)!;
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            Assert.Equal("1", doc.RootElement.GetProperty("contract_version").GetString());
+            Assert.True(Guid.TryParse(doc.RootElement.GetProperty("event_id").GetString(), out _));
+            Assert.True(throne.SendTestEvent(kind), kind);
+        }
         Assert.Single(_h.Events(ThroneEventTypes.GiftCrowdfunded));
+        Assert.All(_h.Published, e => Assert.Equal(true, e.Args["isTest"]));
+        Assert.Null(ThroneWebhookHandler.SampleJson("nope"));
+    }
+
+    [Fact]
+    public void Shopify_real_test_delivery_is_a_test_with_presentment_money()
+    {
+        var shopify = new ShopifyWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "k" } };
+        var body = Harness.Data("shopify-test-order.json");
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, new Dictionary<string, string>
+        {
+            ["X-Shopify-Topic"] = "orders/create", ["X-Shopify-Test"] = "true", ["X-Shopify-Webhook-Id"] = "b54557e4-bdd9-4b37-8a5f-bf7d70bcd043",
+            ["X-Shopify-Event-Id"] = "9d1b4f9e-3c4e-4d4c-9c64-6f6b6c2f0d11", ["Content-Type"] = "application/json",
+            ["X-Shopify-Hmac-Sha256"] = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(body)),
+        })));
+        var e = _h.Published.Single();
+        Assert.Equal(true, e.Args["isTest"]);
+        Assert.Equal("voided", e.Args["shopify.financial_status"]);
+        Assert.Equal(4.0, e.Args["itemCount"]);
+        Assert.Equal("IPod Nano - 8GB, IPod Nano - 8GB, Gift card, Sticker", e.Args["items"]);
+        Assert.Equal(403.0, e.Args["amount"]);
+        Assert.Equal(403.0, e.Args["presentmentAmount"]);
+        Assert.Equal("USD", e.Args["presentmentCurrency"]);
+        Assert.StartsWith("[Test] John Smith placed order #9999", WebhookChatAdapter.Describe(e)!.Title, StringComparison.Ordinal);
+
+        // The header alone marks a test, even when the body says test:false.
+        Assert.Equal(true, ShopifyMapped(Harness.Data("shopify-order.json"), test: true).Args["isTest"]);
+        Assert.Equal(false, ShopifyMapped(Harness.Data("shopify-order.json"), test: false).Args["isTest"]);
+    }
+
+    private BotEvent ShopifyMapped(string body, bool test)
+    {
+        var shopify = new ShopifyWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = "k" } };
+        var h = new Dictionary<string, string>
+        {
+            ["X-Shopify-Topic"] = "orders/paid", ["X-Shopify-Webhook-Id"] = Guid.NewGuid().ToString(),
+            ["X-Shopify-Hmac-Sha256"] = WebhookVerification.HmacSha256Base64("k", Encoding.UTF8.GetBytes(body)),
+        };
+        if (test) h["X-Shopify-Test"] = "true";
+        var before = _h.Published.Count;
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, h)));
+        return _h.Published.Skip(before).Single();
+    }
+
+    [Fact]
+    public void Shopify_presentment_money_differs_from_shop_money()
+    {
+        var body = Harness.Data("shopify-test-order.json").Replace(
+            "\"presentment_money\": { \"amount\": \"403.00\", \"currency_code\": \"USD\" }",
+            "\"presentment_money\": { \"amount\": \"372.10\", \"currency_code\": \"EUR\" }", StringComparison.Ordinal);
+        Assert.Contains("372.10", body, StringComparison.Ordinal);
+        var e = ShopifyMapped(body, test: false);
+        Assert.Equal(403.0, e.Args["amount"]);
+        Assert.Equal("USD", e.Args["currency"]);
+        Assert.Equal(372.10, e.Args["presentmentAmount"]);
+        Assert.Equal("EUR", e.Args["presentmentCurrency"]);
+    }
+
+    [Fact]
+    public void Fourthwall_gift_draws_count_gifts_and_display_text_is_html_decoded()
+    {
+        var draw = Fourthwall("fourthwall-gift-draw-ended.json");
+        Assert.Equal(FourthwallEventTypes.GiftDrawEnded, draw.Type);
+        Assert.Equal(3.0, draw.Args["fw.quantity"]);
+        Assert.Equal(3, draw.Args["fw.giftCount"]);
+        Assert.Equal("winner-2", draw.Args["fw.gifts[1].winner"]);
+        Assert.Equal(60.0, draw.Args["fw.durationSeconds"]);
+        // Raw text in the fw.* arguments, decoded for display.
+        Assert.Equal("Good luck, y&#39;all!", draw.Args["fw.message"]);
+        Assert.Equal("Tom &amp; Jerry", draw.Args["fw.username"]);
+        Assert.Equal("Good luck, y'all!", draw.Args["message"]);
+        Assert.Equal("Tom & Jerry", draw.Args["user"]);
+    }
+
+    [Fact]
+    public void Kofi_exposes_discord_fields_and_defaults_item_quantity_to_one()
+    {
+        var sub = Harness.Data("kofi-subscription.json").Replace("\"tier_name\": \"Gold\",",
+            "\"tier_name\": \"Gold\", \"discord_username\": \"quiet#0001\", \"discord_userid\": \"012345678901234567\",", StringComparison.Ordinal);
+        Assert.Contains("discord_userid", sub, StringComparison.Ordinal);
+        var kofi = new KofiWebhookHandler(_h.Settings, _h.Bus, _h.Log) { Settings = { Secret = KofiToken } };
+        Assert.Equal(WebhookOutcome.Handled, kofi.Handle(Harness.Delivery("kofi", "data=" + WebUtility.UrlEncode(sub))));
+        var e = _h.Published.Single();
+        Assert.Equal("quiet#0001", e.Args["discordUsername"]);
+        Assert.Equal("012345678901234567", e.Args["discordUserId"]);
+        Assert.False(Kofi("kofi-donation.json").Args.ContainsKey("discordUsername"));
+
+        var order = Harness.Data("kofi-shop-order.json").Replace(", \"quantity\": 1 }", " }", StringComparison.Ordinal);
+        Assert.DoesNotContain("\"quantity\": 1", order, StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Handled, kofi.Handle(Harness.Delivery("kofi", "data=" + WebUtility.UrlEncode(order))));
+        Assert.Equal(1.0, _h.Events(KofiEventTypes.ShopOrder).Single().Args["item1.quantity"]);
+    }
+
+    [Fact]
+    public void Patreon_note_is_private_and_free_tiers_are_dropped_next_to_paid_ones()
+    {
+        var e = Patreon("members:pledge:create", Harness.Data("patreon-paid-and-free-tiers.json"));
+        Assert.Equal("", e.Args["message"]);
+        Assert.Equal("Met at the meetup, wants a shout-out", e.Args["note"]);
+        Assert.Equal("Met at the meetup, wants a shout-out", e.Args["attributes.note"]);
+        Assert.Equal("Gold", e.Args["tier"]);
+        Assert.Equal("Free", e.Args["entitledTiers[0].Attributes.title"]);   // still in the arguments
+        Assert.Equal("2222222", e.Args["entitledTiers[1].id"]);
+        Assert.Equal(10.0, e.Args["amount"]);
+        Assert.Equal(false, e.Args["isGifted"]);
+        Assert.Equal(false, e.Args["isFreeTrial"]);
+        Assert.Null(WebhookChatAdapter.Describe(e)!.Detail);
+
+        // Only a free tier: it is named.
+        var free = Harness.Data("patreon-paid-and-free-tiers.json")
+            .Replace("""{ "id": "1111111", "type": "tier" }, { "id": "2222222", "type": "tier" }""", """{ "id": "1111111", "type": "tier" }""", StringComparison.Ordinal);
+        Assert.Equal("Free", Patreon("members:update", free).Args["tier"]);
+    }
+
+    [Fact]
+    public void Patreon_gifted_members_with_a_tier_missing_from_included_still_publish()
+    {
+        var e = Patreon("members:create", Harness.Data("patreon-missing-tier.json"));
+        Assert.Equal(PatreonEventTypes.FollowCreated, e.Type);
+        Assert.Equal(true, e.Args["isGifted"]);
+        Assert.Equal(false, e.Args["isFreeTrial"]);
+        Assert.Equal("", e.Args["tier"]);
+        Assert.Equal("3333333", e.Args["entitledTiers[0].id"]);
+        Assert.Equal("tier", e.Args["entitledTiers[0].type"]);
+        Assert.Equal("Sam Gifted", e.Args["user"]);
+        var item = WebhookChatAdapter.Describe(e)!;
+        Assert.Equal((FeedKind.Subscription, "Sam Gifted received a gifted Patreon membership"), (item.Kind, item.Title));
+
+        var trial = Harness.Data("patreon-missing-tier.json")
+            .Replace("\"is_free_trial\": false", "\"is_free_trial\": true", StringComparison.Ordinal)
+            .Replace("\"is_gifted\": true", "\"is_gifted\": false", StringComparison.Ordinal);
+        var t = Patreon("members:create", trial);
+        Assert.Equal(true, t.Args["isFreeTrial"]);
+        Assert.Equal("Sam Gifted started a Patreon free trial", WebhookChatAdapter.Describe(t)!.Title);
+    }
+
+    [Fact]
+    public void Patreon_post_urls_are_made_absolute()
+    {
+        var patreon = new PatreonWebhookHandler(_h.Settings, _h.Bus, _h.Log);
+        Assert.True(patreon.SendTestEvent("postPublished"));
+        Assert.Equal("https://www.patreon.com/posts/new-video-is-up-123", _h.Events(PatreonEventTypes.PostPublished).Single().Args["url"]);
+        Assert.Equal("https://example.com/x", PatreonWebhookHandler.AbsoluteUrl("https://example.com/x"));
     }
 
     [Fact]

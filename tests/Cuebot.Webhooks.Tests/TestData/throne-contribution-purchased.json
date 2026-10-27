@@ -1,0 +1,14 @@
+{
+  "contract_version": "1",
+  "event_id": "9a1c3e5f-2b4d-4a6c-8e0f-1a3b5c7d9e2f",
+  "event_type": "contribution_purchased",
+  "data": {
+    "creator_id": "8f3c1a2b4d5e6f708192a3b4",
+    "creator_username": "twitchuser123",
+    "gifter_username": "Anonymous",
+    "item_name": "Streaming PC",
+    "item_thumbnail_url": "https://example.com/pc.jpg",
+    "amount": 1099,
+    "currency": "USD"
+  }
+}

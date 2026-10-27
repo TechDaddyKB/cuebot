@@ -10,7 +10,8 @@ namespace Cuebot.Webhooks.Services;
 /// Ko-fi (ko-fi.com → Settings → API → Webhooks). Ko-fi POSTs <c>application/x-www-form-urlencoded</c> with one
 /// field, <c>data</c>, holding JSON; the JSON's <c>verification_token</c> must equal the token shown in Ko-fi's
 /// webhook settings. Types: Donation, Subscription (first payment → subscription, later → resubscription),
-/// Commission, Shop Order. Dedupe on <c>message_id</c>.
+/// Commission, Shop Order. Dedupe on <c>message_id</c> only (retries reuse it). Ko-fi's test buttons send a fresh
+/// <c>message_id</c> but always the placeholder transaction id <see cref="TestTransactionId"/>, which marks them isTest.
 /// </summary>
 public sealed class KofiWebhookHandler(JsonFile<WebhooksSettings> settings, EventBus bus, AppLog log)
     : WebhookServiceBase(settings, bus, log)
@@ -42,8 +43,12 @@ public sealed class KofiWebhookHandler(JsonFile<WebhooksSettings> settings, Even
         return JsonReaders.ParseBody(text);
     }
 
+    /// <summary>The <c>kofi_transaction_id</c> of every delivery sent by Ko-fi's webhook test buttons.</summary>
+    internal const string TestTransactionId = "00000000-1111-2222-3333-444444444444";
+
     internal static WebhookEvent? Map(JsonElement data, bool isTest)
     {
+        isTest |= string.Equals(data.Str("kofi_transaction_id").Trim(), TestTransactionId, StringComparison.OrdinalIgnoreCase);
         var kind = data.Str("type");
         var type = kind.ToLowerInvariant() switch
         {
@@ -67,6 +72,9 @@ public sealed class KofiWebhookHandler(JsonFile<WebhooksSettings> settings, Even
         a["kofiType"] = kind;
         a["url"] = data.Str("url");
         a["transactionId"] = data.Str("kofi_transaction_id");
+        // Sent when the supporter linked Discord (memberships with Discord roles).
+        if (data.Str("discord_username") is { Length: > 0 } discordName) a["discordUsername"] = discordName;
+        if (data.Str("discord_userid") is { Length: > 0 } discordId) a["discordUserId"] = discordId;
         if (type is KofiEventTypes.Subscription or KofiEventTypes.Resubscription)
         {
             a["tier"] = data.Str("tier_name");
@@ -81,10 +89,10 @@ public sealed class KofiWebhookHandler(JsonFile<WebhooksSettings> settings, Even
                 var item = items[i];
                 a[$"item{i}"] = item.First("variation_name", "direct_link_code");
                 a[$"item{i}.code"] = item.Str("direct_link_code");
-                a[$"item{i}.quantity"] = item.Number("quantity");
+                a[$"item{i}.quantity"] = item.Has("quantity") ? item.Number("quantity") : 1.0;
             }
         }
-        return new WebhookEvent(type, [data.Str("message_id"), data.Str("kofi_transaction_id") is { Length: > 0 } tx ? $"{kind}:{tx}" : ""], a);
+        return new WebhookEvent(type, [data.Str("message_id")], a);
     }
 
     internal static readonly IReadOnlyDictionary<string, string> Samples = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
