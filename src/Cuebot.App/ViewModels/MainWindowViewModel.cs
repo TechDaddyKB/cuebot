@@ -32,7 +32,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new TwitchViewModel(host.Get<TwitchService>()),
             new RumbleViewModel(host.Get<Cuebot.Rumble.RumbleService>()),
             new ObsViewModel(host.Get<ObsService>()),
-            new SpeechViewModel(host.Get<SpeechService>()),
+            new SpeechViewModel(host.Get<SpeechService>(), host.Get<IAudioInput>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
             Settings,
         ];
