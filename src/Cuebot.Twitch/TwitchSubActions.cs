@@ -80,6 +80,32 @@ internal static class TwitchSubActions
                 c.Args["presentViewerCount"] = chatters.Count;
                 c.Args["presentViewers"] = string.Join(",", chatters.Select(x => x.UserLogin));
             }),
+        new("twitch.pinMessage", "Pin chat message",
+            [
+                new("messageId", "Message id") { DefaultValue = "%messageId%" },
+                Number("duration", "Pinned for (seconds)", "0", "30 to 1800; 0 keeps it pinned until the stream ends"),
+            ],
+            (api, _, p, ct) => api.PinMessageAsync(p["messageId"], p.GetInt("duration"), ct)),
+        new("twitch.unpinMessage", "Unpin chat message", [PinnedIdParam()],
+            async (api, _, p, ct) => await api.UnpinMessageAsync(await PinnedIdAsync(api, p, ct).ConfigureAwait(false), ct).ConfigureAwait(false)),
+        new("twitch.updatePinnedDuration", "Update pinned message duration",
+            [PinnedIdParam(), Number("duration", "Pinned for (seconds, from now)", "60", "30 to 1800; 0 keeps it pinned until the stream ends")],
+            async (api, _, p, ct) => await api.UpdatePinnedMessageAsync(await PinnedIdAsync(api, p, ct).ConfigureAwait(false), p.GetInt("duration"), ct)
+                .ConfigureAwait(false)),
+        new("twitch.getPinnedMessage", "Get pinned chat message (isPinned, pinnedMessage, pinnedMessageId, pinnedUser...)", [],
+            async (api, c, _, ct) =>
+            {
+                var pin = await api.GetPinnedMessageAsync(ct).ConfigureAwait(false);
+                c.Args["isPinned"] = pin is not null;
+                c.Args["pinnedMessageId"] = pin?.MessageId ?? "";
+                c.Args["pinnedMessage"] = pin?.Text ?? "";
+                c.Args["pinnedUser"] = pin?.SenderUserName ?? "";
+                c.Args["pinnedUserName"] = pin?.SenderUserLogin ?? "";
+                c.Args["pinnedUserId"] = pin?.SenderUserId ?? "";
+                c.Args["pinnedBy"] = pin?.PinnedByUserName ?? "";
+                c.Args["pinnedAt"] = pin?.StartsAt?.ToString("o", CultureInfo.InvariantCulture) ?? "";
+                c.Args["pinnedUntil"] = pin?.EndsAt?.ToString("o", CultureInfo.InvariantCulture) ?? "";
+            }),
 
         // ---------------------------------------------------------------- channel
         new("twitch.setTitle", "Set channel title", [new("title", "Title")],
@@ -373,6 +399,56 @@ internal static class TwitchSubActions
                 new("status", "Status", ParameterKind.Choice) { DefaultValue = "Fulfil", Choices = ["Fulfil", "Cancel"], Help = "Cancel refunds the points" },
             ],
             (api, _, p, ct) => api.UpdateRedemptionAsync(p["rewardId"], p["redemptionId"], p["status"] != "Cancel", ct)),
+        new("twitch.updateReward", "Reward: update title, prompt and cost",
+            [
+                RewardParam(),
+                new("title", "Title") { Help = "Leave empty to keep" },
+                new("prompt", "Prompt") { Help = "Leave empty to keep" },
+                new("cost", "Cost") { Help = "Leave empty to keep; with an operator it changes the current cost" },
+                new("operator", "Cost operator", ParameterKind.Choice) { DefaultValue = "Set", Choices = ["Set", "Add", "Subtract", "Multiply", "Divide"] },
+            ],
+            async (api, c, p, ct) =>
+            {
+                var reward = await RewardAsync(api, c, p, ct).ConfigureAwait(false);
+                int? cost = double.TryParse(p["cost"], NumberStyles.Float, CultureInfo.InvariantCulture, out var amount)
+                    ? ApplyCost(reward.Cost, amount, p["operator"])
+                    : null;
+                await api.UpdateRewardAsync(reward.Id, new RewardUpdate
+                {
+                    Title = p["title"].Trim().Length > 0 ? p["title"] : null,
+                    Prompt = p["prompt"].Trim().Length > 0 ? p["prompt"] : null,
+                    Cost = cost,
+                }, ct).ConfigureAwait(false);
+                c.Args["rewardCost"] = cost ?? reward.Cost;
+            }),
+        new("twitch.getRewardCounter", "Reward: get counters (counter, userCounter)", [RewardParam(), UserParam("For user")],
+            async (api, c, p, ct) =>
+            {
+                var reward = await RewardAsync(api, c, p, ct).ConfigureAwait(false);
+                var userId = p["user"].Trim().Length > 0 || c.Args.ContainsKey("userId") ? await UserIdAsync(api, c, p, ct).ConfigureAwait(false) : "";
+                var (counter, userCounter) = api.Counters.GetRewardCounter(reward.Id, userId);
+                c.Args["counter"] = counter;
+                c.Args["userCounter"] = userCounter;
+            }),
+        new("twitch.resetRewardCounter", "Reward: reset counter", [RewardParam()],
+            async (api, c, p, ct) => api.Counters.ResetRewardCounter((await RewardAsync(api, c, p, ct).ConfigureAwait(false)).Id)),
+        new("twitch.resetRewardUserCounters", "Reward: reset user counters", [RewardParam()],
+            async (api, c, p, ct) => api.Counters.ResetRewardUserCounters((await RewardAsync(api, c, p, ct).ConfigureAwait(false)).Id)),
+        new("twitch.setRewardGroupEnabled", "Reward group: set enabled state (rewardsChanged)",
+            [GroupParam(), StateParam("Enabled", "Disabled")],
+            (api, c, p, ct) => SetGroupStateAsync(api, c, p["group"], p["state"], r => r.IsEnabled, on => new RewardUpdate { IsEnabled = on }, ct)),
+        new("twitch.setRewardGroupPaused", "Reward group: set paused state (rewardsChanged)",
+            [GroupParam(), StateParam("Paused", "Unpaused")],
+            (api, c, p, ct) => SetGroupStateAsync(api, c, p["group"], p["state"], r => r.IsPaused, on => new RewardUpdate { IsPaused = on }, ct)),
+        new("twitch.configureRewards", "Configure rewards (rewardsChanged)",
+            [
+                new("enable", "Enable", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },
+                new("disable", "Disable", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },
+                new("pause", "Pause", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },
+                new("unpause", "Unpause", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },
+                Bool("disableNotConfigured", "Disable rewards that are in no group", false),
+            ],
+            ConfigureRewardsAsync),
 
         // ---------------------------------------------------------------- users
         new("twitch.getUserInfo", "Get user info (targetUser, targetUserId, targetDescription, targetCreatedAt...)", [UserParam()],
@@ -431,6 +507,47 @@ internal static class TwitchSubActions
                 c.Args["subscriberCount"] = count.Total;
                 c.Args["subPoints"] = count.Points;
             }),
+        new("twitch.getLatestSubscriber", "Get latest subscriber (latestSubscriber.userName, .userId, .tier, .isGift...)", [],
+            (api, c, _, _) =>
+            {
+                var latest = api.Counters.LatestSubscriber;
+                c.Args["latestSubscriber.userName"] = latest.UserName;
+                c.Args["latestSubscriber.userLogin"] = latest.UserLogin;
+                c.Args["latestSubscriber.userId"] = latest.UserId;
+                c.Args["latestSubscriber.tier"] = latest.Tier.Length > 0 ? "Tier" + latest.Tier : "";
+                c.Args["latestSubscriber.isGift"] = latest.IsGift;
+                c.Args["latestSubscriber.at"] = latest.At?.ToString("o", CultureInfo.InvariantCulture) ?? "";
+                return Task.CompletedTask;
+            }),
+        new("twitch.getSubCounter", "Get sub counter (subCounter.count, subCounter.rollover, subCounter.rolloverCount)", [],
+            (api, c, _, _) =>
+            {
+                WriteSubCounter(c, api.Counters.SubCounter);
+                return Task.CompletedTask;
+            }),
+        new("twitch.setSubCounter", "Set sub counter (setResult)",
+            [Number("count", "Count", "0"), new("rolloverCount", "Rollover count") { Help = "Leave empty to keep" }],
+            (api, c, p, _) =>
+            {
+                var valid = int.TryParse(p["count"].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var count) && count >= 0;
+                int? rollovers = int.TryParse(p["rolloverCount"].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var r) ? r : null;
+                c.Args["setResult"] = valid;
+                if (valid) WriteSubCounter(c, api.Counters.SetSubCount(count, rollovers));
+                return Task.CompletedTask;
+            }),
+        new("twitch.getPresentUser", "Get present user by index (presentUser, presentUserId, presentUserName, presentUsersCount)",
+            [new("index", "Index") { DefaultValue = "0", Help = "0 is the first present viewer; a variable such as %randomNumber% works" }],
+            async (api, c, p, ct) =>
+            {
+                var chatters = await api.GetChattersAsync(ct).ConfigureAwait(false);
+                var index = p.GetInt("index", -1);
+                var found = index >= 0 && index < chatters.Count ? chatters[index] : null;
+                c.Args["presentUsersCount"] = chatters.Count;
+                c.Args["presentUser"] = found is null ? (object)false : found.UserName;
+                c.Args["presentUserId"] = found?.UserId ?? "";
+                c.Args["presentUserName"] = found?.UserLogin ?? "";
+                c.Args["presentUserType"] = found is null ? "" : "twitch";
+            }),
         new("twitch.getTeamInfo", "Get team info (teams, teamCount)", [UserParam()],
             async (api, c, p, ct) =>
             {
@@ -479,7 +596,210 @@ internal static class TwitchSubActions
                 c.Args["charityTarget"] = charity?.TargetAmount ?? "";
                 c.Args["charityCurrency"] = charity?.Currency ?? "";
             }),
+
+        // ---------------------------------------------------------------- guest star (Twitch beta)
+        new("twitch.getGuestStarSettings", "Guest Star: get channel settings (guestStarSlotCount, guestStarLayout...)", [],
+            async (api, c, _, ct) =>
+            {
+                var s = await api.GetGuestStarSettingsAsync(ct).ConfigureAwait(false);
+                c.Args["guestStarSlotCount"] = s.SlotCount;
+                c.Args["guestStarLayout"] = s.GroupLayout;
+                c.Args["guestStarModeratorSendLive"] = s.IsModeratorSendLiveEnabled;
+                c.Args["guestStarBrowserSourceAudio"] = s.IsBrowserSourceAudioEnabled;
+                c.Args["guestStarBrowserSourceToken"] = s.BrowserSourceToken;
+            }),
+        new("twitch.updateGuestStarSettings", "Guest Star: update channel settings",
+            [
+                Number("slotCount", "Slots (1 to 6, 0 = keep)", "0"),
+                new("layout", "Layout", ParameterKind.Choice)
+                {
+                    DefaultValue = "Keep", Choices = ["Keep", "TILED_LAYOUT", "SCREENSHARE_LAYOUT", "HORIZONTAL_LAYOUT", "VERTICAL_LAYOUT"],
+                },
+                Keep("moderatorSendLive", "Moderators can send guests live"),
+                Keep("browserSourceAudio", "Browser source audio"),
+                Bool("regenerateBrowserSources", "Regenerate browser sources (invalidates the old ones)", false),
+            ],
+            (api, _, p, ct) => api.UpdateGuestStarSettingsAsync(new GuestStarSettingsUpdate
+            {
+                SlotCount = p.GetInt("slotCount") > 0 ? p.GetInt("slotCount") : null,
+                GroupLayout = p["layout"] is "" or "Keep" ? null : p["layout"],
+                IsModeratorSendLiveEnabled = KeepValue(p["moderatorSendLive"]),
+                IsBrowserSourceAudioEnabled = KeepValue(p["browserSourceAudio"]),
+                RegenerateBrowserSources = p.GetBool("regenerateBrowserSources"),
+            }, ct)),
+        new("twitch.getGuestStarSession", "Guest Star: get session (guestStarSessionId, guestStarGuestCount, guestStarGuest0..)", [],
+            async (api, c, _, ct) => WriteGuestStarSession(c, await api.GetGuestStarSessionAsync(ct).ConfigureAwait(false))),
+        new("twitch.createGuestStarSession", "Guest Star: create session (guestStarSessionId)", [],
+            async (api, c, _, ct) => WriteGuestStarSession(c, await api.CreateGuestStarSessionAsync(ct).ConfigureAwait(false))),
+        new("twitch.endGuestStarSession", "Guest Star: end session", [SessionParam()],
+            (api, _, p, ct) => api.EndGuestStarSessionAsync(p["sessionId"], ct)),
+        new("twitch.getGuestStarInvites", "Guest Star: get invites (guestStarInviteCount, guestStarInvite0UserId, ...Status)", [SessionParam()],
+            async (api, c, p, ct) =>
+            {
+                var invites = await api.GetGuestStarInvitesAsync(p["sessionId"], ct).ConfigureAwait(false);
+                c.Args["guestStarInviteCount"] = invites.Count;
+                c.Args["guestStarInvites"] = string.Join(",", invites.Select(i => i.UserId));
+                for (var i = 0; i < invites.Count; i++)
+                {
+                    c.Args[$"guestStarInvite{i}UserId"] = invites[i].UserId;
+                    c.Args[$"guestStarInvite{i}Status"] = invites[i].Status;
+                }
+            }),
+        new("twitch.sendGuestStarInvite", "Guest Star: send invite", [UserParam("Guest"), SessionParam()],
+            async (api, c, p, ct) => await api.SendGuestStarInviteAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), p["sessionId"], ct)
+                .ConfigureAwait(false)),
+        new("twitch.deleteGuestStarInvite", "Guest Star: delete invite", [UserParam("Guest"), SessionParam()],
+            async (api, c, p, ct) => await api.DeleteGuestStarInviteAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), p["sessionId"], ct)
+                .ConfigureAwait(false)),
+        new("twitch.assignGuestStarSlot", "Guest Star: assign slot", [UserParam("Guest"), SlotParam("slot", "Slot"), SessionParam()],
+            async (api, c, p, ct) => await api.AssignGuestStarSlotAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), p["slot"],
+                p["sessionId"], ct).ConfigureAwait(false)),
+        new("twitch.updateGuestStarSlot", "Guest Star: move guest to another slot",
+            [SlotParam("slot", "From slot"), SlotParam("toSlot", "To slot"), SessionParam()],
+            (api, _, p, ct) => api.MoveGuestStarSlotAsync(p["slot"], p["toSlot"], p["sessionId"], ct)),
+        new("twitch.deleteGuestStarSlot", "Guest Star: remove guest from slot",
+            [UserParam("Guest"), SlotParam("slot", "Slot"), Bool("reinvite", "Send back to the invite queue", false), SessionParam()],
+            async (api, c, p, ct) => await api.RemoveGuestStarSlotAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), p["slot"],
+                p.GetBool("reinvite"), p["sessionId"], ct).ConfigureAwait(false)),
+        new("twitch.updateGuestStarSlotSettings", "Guest Star: update slot settings",
+            [
+                SlotParam("slot", "Slot"), Keep("audio", "Audio"), Keep("video", "Video"), Keep("live", "Live"),
+                Number("volume", "Volume (0 to 100, -1 = keep)", "-1"), SessionParam(),
+            ],
+            (api, _, p, ct) => api.UpdateGuestStarSlotSettingsAsync(p["slot"], KeepValue(p["audio"]), KeepValue(p["video"]), KeepValue(p["live"]),
+                p.GetInt("volume", -1) >= 0 ? p.GetInt("volume", -1) : null, p["sessionId"], ct)),
     ];
+
+    private static ParameterDescriptor PinnedIdParam() =>
+        new("messageId", "Pinned message id") { Help = "Leave empty for the message pinned now" };
+
+    private static async Task<string> PinnedIdAsync(TwitchApi api, ParameterValues p, CancellationToken ct)
+    {
+        if (p["messageId"].Trim().Length > 0) return p["messageId"].Trim();
+        return (await api.GetPinnedMessageAsync(ct).ConfigureAwait(false))?.MessageId ?? throw new TwitchApiException("No chat message is pinned.");
+    }
+
+    private static void WriteSubCounter(ActionRunContext c, SubCounterState s)
+    {
+        c.Args["subCounter.count"] = s.Count;
+        c.Args["subCounter.rollover"] = s.Rollover;
+        c.Args["subCounter.rolloverCount"] = s.RolloverCount;
+    }
+
+    // ---------------------------------------------------------------- reward helpers
+
+    private static ParameterDescriptor GroupParam() => new("group", "Reward group") { Help = "Set a reward's group on the Twitch page (Rewards tab)" };
+
+    private static ParameterDescriptor StateParam(string on, string off) =>
+        new("state", "State", ParameterKind.Choice) { DefaultValue = on, Choices = [on, off, "Toggle"] };
+
+    /// <summary>The new cost of a reward: "Set" replaces it, the other operators change the current cost (at least 1).</summary>
+    internal static int ApplyCost(int current, double amount, string op) => (int)Math.Max(1, Math.Round(op switch
+    {
+        "Add" => current + amount,
+        "Subtract" => current - amount,
+        "Multiply" => current * amount,
+        "Divide" => amount == 0 ? current : current / amount,
+        _ => amount,
+    }));
+
+    /// <summary>
+    /// Sets one flag on every reward of a group (Toggle: on unless any reward already has it). Only rewards Cuebot
+    /// created can change; the others are counted in rewardsSkipped.
+    /// </summary>
+    private static async Task SetGroupStateAsync(TwitchApi api, ActionRunContext c, string group, string state, Func<TwitchReward, bool> flag,
+        Func<bool, RewardUpdate> update, CancellationToken ct)
+    {
+        if (group.Trim().Length == 0) throw new ArgumentException("No reward group given.");
+        var ids = api.Counters.RewardsInGroup(group).ToHashSet(StringComparer.Ordinal);
+        var rewards = (await api.GetRewardsAsync(ct).ConfigureAwait(false)).Where(r => ids.Contains(r.Id)).ToArray();
+        if (rewards.Length == 0) throw new TwitchApiException($"The reward group '{group.Trim()}' has no rewards.");
+        var on = state == "Toggle" ? !rewards.Any(flag) : !state.StartsWith("Dis", StringComparison.Ordinal) && !state.StartsWith("Un", StringComparison.Ordinal);
+        var changed = 0;
+        foreach (var reward in rewards.Where(r => r.IsManageable && flag(r) != on))
+        {
+            await api.UpdateRewardAsync(reward.Id, update(on), ct).ConfigureAwait(false);
+            changed++;
+        }
+        c.Args["rewardsChanged"] = changed;
+        c.Args["rewardsSkipped"] = rewards.Count(r => !r.IsManageable);
+    }
+
+    /// <summary>Enables, disables, pauses and unpauses many rewards at once (by title, id or group), with one update each.</summary>
+    private static async Task ConfigureRewardsAsync(TwitchApi api, ActionRunContext c, ParameterValues p, CancellationToken ct)
+    {
+        var rewards = await api.GetRewardsAsync(ct).ConfigureAwait(false);
+        var updates = new Dictionary<string, RewardUpdate>(StringComparer.Ordinal);
+        var mentioned = new HashSet<string>(StringComparer.Ordinal);
+
+        IEnumerable<TwitchReward> Resolve(string list) => Lines(list).SelectMany(key =>
+        {
+            var inGroup = api.Counters.RewardsInGroup(key).ToHashSet(StringComparer.Ordinal);
+            var matches = rewards.Where(r => r.Id == key || r.Title.Equals(key, StringComparison.OrdinalIgnoreCase) || inGroup.Contains(r.Id)).ToArray();
+            return matches.Length > 0 ? matches : throw new TwitchApiException($"No reward or reward group '{key}' was found.");
+        });
+
+        void Apply(string list, Func<RewardUpdate, RewardUpdate> change)
+        {
+            foreach (var reward in Resolve(list))
+            {
+                mentioned.Add(reward.Id);
+                updates[reward.Id] = change(updates.GetValueOrDefault(reward.Id) ?? new RewardUpdate());
+            }
+        }
+
+        Apply(p["enable"], u => u with { IsEnabled = true });
+        Apply(p["disable"], u => u with { IsEnabled = false });
+        Apply(p["pause"], u => u with { IsPaused = true });
+        Apply(p["unpause"], u => u with { IsPaused = false });
+        if (p.GetBool("disableNotConfigured"))
+            foreach (var reward in rewards.Where(r => !mentioned.Contains(r.Id) && r.IsEnabled && api.Counters.GetGroup(r.Id).Length == 0))
+                updates[reward.Id] = new RewardUpdate { IsEnabled = false };
+
+        var changed = 0;
+        foreach (var reward in rewards.Where(r => r.IsManageable && updates.ContainsKey(r.Id)))
+        {
+            await api.UpdateRewardAsync(reward.Id, updates[reward.Id], ct).ConfigureAwait(false);
+            changed++;
+        }
+        c.Args["rewardsChanged"] = changed;
+        c.Args["rewardsSkipped"] = rewards.Count(r => !r.IsManageable && updates.ContainsKey(r.Id));
+    }
+
+    // ---------------------------------------------------------------- guest star helpers
+
+    private static ParameterDescriptor SessionParam() =>
+        new("sessionId", "Session id") { Help = "Leave empty for the active Guest Star session" };
+
+    private static ParameterDescriptor SlotParam(string key, string label) =>
+        new(key, label) { DefaultValue = "1", Help = "Slot number, 1 to the number of slots" };
+
+    private static ParameterDescriptor Keep(string key, string label) =>
+        new(key, label, ParameterKind.Choice) { DefaultValue = "Keep", Choices = ["Keep", "On", "Off"] };
+
+    private static bool? KeepValue(string value) => value switch
+    {
+        "On" or "true" => true,
+        "Off" or "false" => false,
+        _ => null,
+    };
+
+    private static void WriteGuestStarSession(ActionRunContext c, TwitchGuestStarSession? session)
+    {
+        var guests = session?.Guests ?? [];
+        c.Args["guestStarActive"] = session is not null;
+        c.Args["guestStarSessionId"] = session?.Id ?? "";
+        c.Args["guestStarGuestCount"] = guests.Count;
+        for (var i = 0; i < guests.Count; i++)
+        {
+            c.Args[$"guestStarGuest{i}"] = guests[i].UserDisplayName;
+            c.Args[$"guestStarGuest{i}UserName"] = guests[i].UserLogin;
+            c.Args[$"guestStarGuest{i}UserId"] = guests[i].UserId;
+            c.Args[$"guestStarGuest{i}Slot"] = guests[i].SlotId;
+            c.Args[$"guestStarGuest{i}IsLive"] = guests[i].IsLive;
+            c.Args[$"guestStarGuest{i}Volume"] = guests[i].Volume;
+        }
+    }
 
     private static TwitchSubActionSpec Reward(string id, string name, ParameterDescriptor value, Func<ParameterValues, RewardUpdate> update) =>
         new(id, name, [RewardParam(), value], async (api, c, p, ct) =>

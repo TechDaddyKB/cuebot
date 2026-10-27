@@ -36,6 +36,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     private ActiveConnection? _botConnection;
     private Task _pendingSignOut = Task.CompletedTask;
     private bool _announcedConnected;
+    private bool _announcedChat;
 
     public TwitchService(JsonFile<TwitchSettings> settings, HttpClient http, EventBus bus, AppLog log)
         : this(settings, http, bus, log, TwitchEndpoints.Production, TimeProvider.System, EventSubTimeouts.Default)
@@ -57,8 +58,9 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         _helix = new HelixClient(http, endpoints.Helix, _tokens);
         _botHelix = new HelixClient(http, endpoints.Helix, _botTokens);
         var sent = new SentMessageTracker();
-        _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent);
-        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, bus.Publish, sent);
+        var counters = new TwitchCounters(() => Settings, settings.ScheduleSave);
+        _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent, counters: counters);
+        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, bus.Publish, sent, counters);
     }
 
     public string Name => "Twitch";
@@ -411,6 +413,10 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         return clientId;
     }
 
+    /// <summary>
+    /// Updates the status and publishes the connection events. Chat arrives over EventSub, so "chat connected" follows
+    /// the EventSub connection when the chat message subscription was created.
+    /// </summary>
     private void SetStatus(ConnectionState state, string message)
     {
         var wasConnected = _announcedConnected;
@@ -419,9 +425,18 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         _announcedConnected = state == ConnectionState.Connected;
         StatusChanged?.Invoke();
         if (_announcedConnected && !wasConnected)
+        {
             _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterConnected, AccountArgs(Settings.Login, Settings.UserId)));
+            _announcedChat = !UnavailableEvents.Contains("channel.chat.message");
+            if (_announcedChat) _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterChatConnected, AccountArgs(Settings.Login, Settings.UserId)));
+        }
         else if (wasConnected && !_announcedConnected)
+        {
             _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
+            if (_announcedChat)
+                _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterChatDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
+            _announcedChat = false;
+        }
     }
 
     private void SetBotStatus(ConnectionState state, string message)
@@ -458,9 +473,13 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
 /// </summary>
 internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, EventBus bus, AppLog log, TimeProvider time)
 {
+    private const int AdScheduleIntervalSeconds = 30;
+    private readonly UpcomingAdWarnings _ads = new();
+
     public Task RunAsync(CancellationToken ct) => Task.WhenAll(
         LoopAsync(settings.ViewerCountIntervalSeconds, PollViewersAsync, "viewer count", ct),
-        LoopAsync(settings.PresentViewersIntervalSeconds, PollPresentAsync, "present viewers", ct));
+        LoopAsync(settings.PresentViewersIntervalSeconds, PollPresentAsync, "present viewers", ct),
+        LoopAsync(settings.UpcomingAdWarnings ? AdScheduleIntervalSeconds : 0, PollAdScheduleAsync, "ad schedule", ct));
 
     private async Task LoopAsync(int seconds, Func<CancellationToken, Task> poll, string what, CancellationToken ct)
     {
@@ -511,5 +530,44 @@ internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Event
             ["users"] = string.Join(",", chatters.Select(c => c.UserLogin)),
             ["userIds"] = string.Join(",", chatters.Select(c => c.UserId)),
         }));
+    }
+
+    private async Task PollAdScheduleAsync(CancellationToken ct)
+    {
+        if (!settings.Scopes.Contains(TwitchScopes.ReadAds) && !settings.Scopes.Contains(TwitchScopes.ManageAds)) return;
+        if (await api.GetStreamAsync(null, ct).ConfigureAwait(false) is null) return;
+        var schedule = await api.GetAdScheduleAsync(ct).ConfigureAwait(false);
+        if (_ads.Check(schedule, time.GetUtcNow()) is { } warning) bus.Publish(warning);
+    }
+}
+
+/// <summary>
+/// Streamer.bot's "Upcoming ad": one event per minute from 5 minutes before the next scheduled ad down to 1 minute.
+/// Not thread-safe; the poller calls it from one loop.
+/// </summary>
+internal sealed class UpcomingAdWarnings
+{
+    public const int FirstWarningMinutes = 5;
+
+    private DateTimeOffset? _lastAd;
+    private int _lastMinutes;
+
+    /// <summary>The warning to publish for this schedule now, or null (no ad soon, or this minute was already announced).</summary>
+    public BotEvent? Check(TwitchAdSchedule schedule, DateTimeOffset now)
+    {
+        if (schedule.NextAdAt is not { } next || next <= now) return null;
+        var minutes = (int)Math.Ceiling((next - now).TotalMinutes);
+        if (minutes > FirstWarningMinutes) return null;
+        if (_lastAd == next && _lastMinutes == minutes) return null;
+        _lastAd = next;
+        _lastMinutes = minutes;
+        return new BotEvent(TwitchEventTypes.UpcomingAd, new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["minutes"] = minutes,
+            ["adLength"] = schedule.Duration,
+            ["nextAdAt"] = next.ToString("o", CultureInfo.InvariantCulture),
+            ["snoozesLeft"] = schedule.SnoozeCount,
+            ["snoozeCount"] = schedule.SnoozeCount,
+        });
     }
 }

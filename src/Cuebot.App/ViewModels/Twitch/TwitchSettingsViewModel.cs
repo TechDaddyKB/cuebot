@@ -57,6 +57,52 @@ public sealed partial class TwitchSettingsViewModel : TwitchTabViewModel
         set { Twitch.Settings.PresentViewersIntervalSeconds = Math.Max(0, (int)value); Twitch.SaveSettings(); OnPropertyChanged(); }
     }
 
+    public bool UpcomingAdWarnings
+    {
+        get => Twitch.Settings.UpcomingAdWarnings;
+        set { Twitch.Settings.UpcomingAdWarnings = value; Twitch.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    // ---------------------------------------------------------------- sub counter
+
+    public decimal SubCount
+    {
+        get => Twitch.Api.Counters.SubCounter.Count;
+        set { Twitch.Api.Counters.SetSubCount((int)value); OnPropertyChanged(); }
+    }
+
+    public decimal SubRollover
+    {
+        get => Twitch.Settings.SubCounter.Rollover;
+        set { Twitch.Settings.SubCounter.Rollover = Math.Max(0, (int)value); Twitch.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public decimal SubRolloverCount
+    {
+        get => Twitch.Api.Counters.SubCounter.RolloverCount;
+        set { Twitch.Api.Counters.SetSubCount(Twitch.Api.Counters.SubCounter.Count, (int)value); OnPropertyChanged(); }
+    }
+
+    public bool SubCountResubs
+    {
+        get => Twitch.Settings.SubCounter.CountResubs;
+        set { Twitch.Settings.SubCounter.CountResubs = value; Twitch.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool SubCountGifts
+    {
+        get => Twitch.Settings.SubCounter.CountGiftedSubs;
+        set { Twitch.Settings.SubCounter.CountGiftedSubs = value; Twitch.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    [RelayCommand]
+    private void ResetSubCounter()
+    {
+        Twitch.Api.Counters.SetSubCount(0, 0);
+        OnPropertyChanged(nameof(SubCount));
+        OnPropertyChanged(nameof(SubRolloverCount));
+    }
+
     public string RequestedSummary => $"{Scopes.Count(s => s.IsRequested)} of {Scopes.Count} scopes requested, "
                                       + $"{Scopes.Count(s => s.IsGranted)} granted to the current sign-in.";
 
@@ -74,6 +120,8 @@ public sealed partial class TwitchSettingsViewModel : TwitchTabViewModel
         OnPropertyChanged(nameof(RequestedSummary));
         OnPropertyChanged(nameof(UnavailableEvents));
         OnPropertyChanged(nameof(NeedsSignIn));
+        OnPropertyChanged(nameof(SubCount));
+        OnPropertyChanged(nameof(SubRolloverCount));
     }
 
     [RelayCommand]

@@ -38,10 +38,10 @@ internal sealed class TwitchEventSubListener(
         var missingScopes = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var spec in account.Subscriptions)
         {
-            if (!spec.IsAuthorized(granted))
+            if (spec.MissingScope(granted) is { } missing)
             {
                 unavailable.Add(spec.Type);
-                missingScopes.Add(spec.Scopes[^1]);
+                missingScopes.Add(missing);
                 continue;
             }
             try

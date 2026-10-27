@@ -2,15 +2,24 @@ namespace Cuebot.Twitch.EventSub;
 
 /// <summary>
 /// One EventSub subscription Cuebot creates. <see cref="Scopes"/> lists the scopes that each authorize it (any one
-/// is enough; empty means none is needed).
+/// is enough; empty means none is needed). <see cref="AlsoRequired"/> lists further groups of which one scope each
+/// must be granted too (channel.moderate needs a whole set).
 /// </summary>
 internal sealed record EventSubSubscriptionSpec(
     string Type,
     string Version,
     IReadOnlyList<string> Scopes,
-    Func<string, IReadOnlyDictionary<string, string>> BuildCondition)
+    Func<string, IReadOnlyDictionary<string, string>> BuildCondition,
+    IReadOnlyList<IReadOnlyList<string>>? AlsoRequired = null)
 {
-    public bool IsAuthorized(IReadOnlySet<string> granted) => Scopes.Count == 0 || Scopes.Any(granted.Contains);
+    public bool IsAuthorized(IReadOnlySet<string> granted) => MissingScope(granted) is null;
+
+    /// <summary>A scope to grant so this subscription can be created; null when it is authorized.</summary>
+    public string? MissingScope(IReadOnlySet<string> granted)
+    {
+        if (Scopes.Count > 0 && !Scopes.Any(granted.Contains)) return Scopes[^1];
+        return AlsoRequired?.FirstOrDefault(group => !group.Any(granted.Contains))?[^1];
+    }
 }
 
 /// <summary>The EventSub subscriptions Cuebot needs, each with the scopes that authorize it.</summary>
@@ -28,6 +37,20 @@ internal static class EventSubSubscriptions
     private static readonly string[] Redemptions = [TwitchScopes.ReadRedemptions, TwitchScopes.ManageRedemptions];
     private static readonly string[] Polls = [ReadPolls, TwitchScopes.ManagePolls];
     private static readonly string[] Predictions = [ReadPredictions, TwitchScopes.ManagePredictions];
+    private static readonly string[] GuestStar =
+        ["channel:read:guest_star", "moderator:read:guest_star", "moderator:manage:guest_star", TwitchScopes.ManageGuestStar];
+
+    /// <summary>channel.moderate v2 needs one scope of every group (read or manage) besides moderator:read:moderators.</summary>
+    private static readonly IReadOnlyList<IReadOnlyList<string>> ModerateScopes =
+    [
+        ["moderator:read:blocked_terms", TwitchScopes.ManageBlockedTerms],
+        ["moderator:read:chat_settings", TwitchScopes.ManageChatSettings],
+        [ReadUnbanRequests, TwitchScopes.ManageUnbanRequests],
+        ["moderator:read:banned_users", TwitchScopes.ManageBannedUsers],
+        ["moderator:read:chat_messages", TwitchScopes.ManageChatMessages],
+        [ReadWarnings, TwitchScopes.ManageWarnings],
+        [TwitchScopes.ReadVips],
+    ];
 
     /// <summary>Subscriptions of the broadcaster session (conditions built from the broadcaster user id).</summary>
     public static IReadOnlyList<EventSubSubscriptionSpec> All { get; } =
@@ -107,6 +130,15 @@ internal static class EventSubSubscriptions
         WithModerator("automod.message.hold", "1", TwitchScopes.ManageAutomod),
         WithModerator("automod.message.update", "1", TwitchScopes.ManageAutomod),
         WithModerator("automod.terms.update", "1", TwitchScopes.ManageAutomod),
+        // Only its shared_chat_* actions are used (bans, timeouts and deletions in the other shared chat channels).
+        new("channel.moderate", "2", [TwitchScopes.ReadModerators],
+            id => Condition(("broadcaster_user_id", id), ("moderator_user_id", id)), ModerateScopes),
+
+        // Guest Star (Twitch beta: version "beta")
+        WithModerator("channel.guest_star_session.begin", "beta", GuestStar),
+        WithModerator("channel.guest_star_session.end", "beta", GuestStar),
+        WithModerator("channel.guest_star_guest.update", "beta", GuestStar),
+        WithModerator("channel.guest_star_settings.update", "beta", GuestStar),
     ];
 
     /// <summary>Subscriptions of the bot account session: only its whispers.</summary>

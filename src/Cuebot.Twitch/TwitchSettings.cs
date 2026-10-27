@@ -35,6 +35,55 @@ public sealed class TwitchSettings
 
     /// <summary>How often present viewers are listed (seconds; 0 disables). Needs moderator:read:chatters.</summary>
     public int PresentViewersIntervalSeconds { get; set; } = 300;
+
+    /// <summary>Publish "upcoming ad" warnings each minute from 5 minutes before a scheduled ad. Needs channel:read:ads.</summary>
+    public bool UpcomingAdWarnings { get; set; } = true;
+
+    /// <summary>The sub counter (Streamer.bot's Twitch sub counter with rollover).</summary>
+    public TwitchSubCounter SubCounter { get; set; } = new();
+
+    /// <summary>Cuebot-side reward settings and counters, by reward id.</summary>
+    public Dictionary<string, TwitchRewardState> Rewards { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>The most recent subscription event (Helix has no "latest subscriber" lookup).</summary>
+    public TwitchLatestSubscriber LatestSubscriber { get; set; } = new();
+}
+
+/// <summary>Counts new subs (and optionally resubs and gifted subs); every <see cref="Rollover"/> subs it starts over.</summary>
+public sealed class TwitchSubCounter
+{
+    public int Count { get; set; }
+
+    /// <summary>Subs per round; 0 means the counter never rolls over.</summary>
+    public int Rollover { get; set; }
+
+    /// <summary>How many times the counter reached <see cref="Rollover"/>.</summary>
+    public int RolloverCount { get; set; }
+
+    public bool CountResubs { get; set; } = true;
+    public bool CountGiftedSubs { get; set; } = true;
+}
+
+/// <summary>A reward's group and redemption counters (reset when the stream goes online unless persisted).</summary>
+public sealed class TwitchRewardState
+{
+    /// <summary>Reward group name for the group sub-actions; empty means "not configured".</summary>
+    public string Group { get; set; } = "";
+
+    public bool PersistCounter { get; set; }
+    public bool PersistUserCounter { get; set; }
+    public int Counter { get; set; }
+    public Dictionary<string, int> UserCounters { get; set; } = new(StringComparer.Ordinal);
+}
+
+public sealed class TwitchLatestSubscriber
+{
+    public string UserId { get; set; } = "";
+    public string UserLogin { get; set; } = "";
+    public string UserName { get; set; } = "";
+    public string Tier { get; set; } = "";
+    public bool IsGift { get; set; }
+    public DateTimeOffset? At { get; set; }
 }
 
 /// <summary>Tokens and identity of the optional bot account.</summary>

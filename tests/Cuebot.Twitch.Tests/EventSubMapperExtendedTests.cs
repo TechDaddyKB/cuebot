@@ -513,9 +513,104 @@ public sealed class EventSubMapperExtendedTests
                 "channel.chat.notification" => Notice("announcement", """{"color":"BLUE"}"""),
                 "channel.unban_request.resolve" => Obj(B, U, "\"status\":\"approved\""),
                 "automod.terms.update" => Obj(B, M, "\"action\":\"add_blocked\",\"terms\":[]"),
+                "channel.moderate" => Obj(B, M, "\"action\":\"shared_chat_unban\",\"shared_chat_unban\":{" + U + "}"),
                 _ => Obj(B, U),
             };
             Assert.True(EventSubMapper.Map(spec.Type, JsonSerializer.Deserialize<JsonElement>(payload), "1337") is not null, spec.Type);
         }
+    }
+
+    // ---------------------------------------------------------------- watch streaks, modiversaries
+
+    [Fact]
+    public void Watch_streak_and_modiversary_notices()
+    {
+        var streak = Map("channel.chat.notification", Notice("watch_streak", """{"streak_count":7,"channel_points_awarded":450}"""));
+        Assert.Equal(TwitchEventTypes.WatchStreak, streak.Type);
+        Assert.Equal(7, streak.Args["streak"]);
+        Assert.Equal(450, streak.Args["channelPointsAwarded"]);
+        Assert.Equal("viewer23", streak.Args["userName"]);
+
+        var mod = Map("channel.chat.notification", Notice("modiversary", """{"months":12}"""));
+        Assert.Equal(TwitchEventTypes.Modiversary, mod.Type);
+        Assert.Equal(12, mod.Args["months"]);
+
+        var shared = Map("channel.chat.notification", Notice("shared_chat_modiversary", """{"months":3}""",
+            """ "source_broadcaster_user_id":"2002","source_broadcaster_user_login":"partner","source_broadcaster_user_name":"Partner" """));
+        Assert.Equal(TwitchEventTypes.SharedChatModiversary, shared.Type);
+        Assert.Equal(3, shared.Args["months"]);
+        Assert.Equal(true, shared.Args["isSharedChat"]);
+    }
+
+    // ---------------------------------------------------------------- shared chat moderation (channel.moderate v2)
+
+    private const string Source = """ "source_broadcaster_user_id":"2002","source_broadcaster_user_login":"partner","source_broadcaster_user_name":"Partner" """;
+
+    [Fact]
+    public void Shared_chat_moderation_actions_map_and_own_channel_actions_are_ignored()
+    {
+        var ban = Map("channel.moderate", Obj(B, M, Source, """ "action":"shared_chat_ban","shared_chat_ban":{""" + U + ""","reason":"spam"} """));
+        Assert.Equal(TwitchEventTypes.SharedChatUserBanned, ban.Type);
+        Assert.Equal("Cool_User", ban.Args["user"]);
+        Assert.Equal("1234", ban.Args["userId"]);
+        Assert.Equal("spam", ban.Args["reason"]);
+        Assert.Equal("Mod", ban.Args["moderator"]);
+        Assert.Equal("partner", ban.Args["sourceBroadcasterUserName"]);
+        Assert.Equal(true, ban.Args["isSharedChat"]);
+
+        var expires = DateTimeOffset.UtcNow.AddMinutes(10).ToString("o");
+        var timeout = Map("channel.moderate", Obj(B, M, Source,
+            $$""" "action":"shared_chat_timeout","shared_chat_timeout":{{{U}},"reason":"","expires_at":"{{expires}}"} """));
+        Assert.Equal(TwitchEventTypes.SharedChatUserTimedOut, timeout.Type);
+        Assert.InRange((int)timeout.Args["duration"]!, 590, 600);
+
+        Assert.Equal(TwitchEventTypes.SharedChatUserUnbanned,
+            Map("channel.moderate", Obj(B, M, Source, """ "action":"shared_chat_unban","shared_chat_unban":{""" + U + "}")).Type);
+        Assert.Equal(TwitchEventTypes.SharedChatUserUntimedOut,
+            Map("channel.moderate", Obj(B, M, Source, """ "action":"shared_chat_untimeout","shared_chat_untimeout":{""" + U + "}")).Type);
+
+        var deleted = Map("channel.moderate", Obj(B, M, Source,
+            """ "action":"shared_chat_delete","shared_chat_delete":{""" + U + ""","message_id":"m-5","message_body":"rude"} """));
+        Assert.Equal(TwitchEventTypes.SharedChatMessageDeleted, deleted.Type);
+        Assert.Equal("m-5", deleted.Args["messageId"]);
+        Assert.Equal("rude", deleted.Args["message"]);
+
+        Assert.Null(EventSubMapper.Map("channel.moderate",
+            JsonSerializer.Deserialize<JsonElement>(Obj(B, M, """ "action":"ban","ban":{""" + U + ""","reason":"x"} """)), "1337"));
+    }
+
+    // ---------------------------------------------------------------- guest star
+
+    [Fact]
+    public void Guest_star_events()
+    {
+        var begin = Map("channel.guest_star_session.begin", Obj(B, """ "session_id":"s-1","started_at":"2026-01-01T12:00:00Z" """));
+        Assert.Equal(TwitchEventTypes.GuestStarSessionBegin, begin.Type);
+        Assert.Equal("s-1", begin.Args["sessionId"]);
+
+        var end = Map("channel.guest_star_session.end", Obj(B,
+            """ "session_id":"s-1","started_at":"x","ended_at":"y","host_user_id":"1337","host_user_login":"streamer","host_user_name":"Streamer" """));
+        Assert.Equal(TwitchEventTypes.GuestStarSessionEnd, end.Type);
+        Assert.Equal("Streamer", end.Args["host"]);
+        Assert.Equal("y", end.Args["endedAt"]);
+
+        var guest = Map("channel.guest_star_guest.update", Obj(B, M,
+            """
+            "session_id":"s-1","guest_user_id":"55","guest_user_login":"guest","guest_user_name":"Guest","slot_id":"2","state":"live",
+            "host_user_id":"1337","host_user_login":"streamer","host_user_name":"Streamer","host_video_enabled":true,"host_audio_enabled":false,"host_volume":80
+            """));
+        Assert.Equal(TwitchEventTypes.GuestStarGuestUpdate, guest.Type);
+        Assert.Equal("Guest", guest.Args["user"]);
+        Assert.Equal("55", guest.Args["userId"]);
+        Assert.Equal("2", guest.Args["slotId"]);
+        Assert.Equal("live", guest.Args["state"]);
+        Assert.Equal(80, guest.Args["hostVolume"]);
+        Assert.Equal(true, guest.Args["hostVideoEnabled"]);
+
+        var settings = Map("channel.guest_star_settings.update", Obj(B,
+            """ "is_moderator_send_live_enabled":true,"slot_count":5,"is_browser_source_audio_enabled":false,"group_layout":"tiled" """));
+        Assert.Equal(TwitchEventTypes.GuestStarSettingsUpdate, settings.Type);
+        Assert.Equal(5, settings.Args["slotCount"]);
+        Assert.Equal("tiled", settings.Args["groupLayout"]);
     }
 }

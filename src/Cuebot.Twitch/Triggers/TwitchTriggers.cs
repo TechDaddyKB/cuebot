@@ -55,6 +55,8 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.UniqueModeOff, "Chat mode: unique chat off"),
         Event(T.Pyramid, "Pyramid completed", [Min("minWidth", "Minimum width", "3")], (e, s) => AtLeast(e, "width", s, "minWidth")),
         Event(T.PyramidBroken, "Pyramid broken"),
+        Event(T.WatchStreak, "Watch streak shared", [Min("minStreak", "Minimum streak", "0")], (e, s) => AtLeast(e, "streak", s, "minStreak")),
+        Event(T.Modiversary, "Modiversary", [Min("minMonths", "Minimum months", "0")], (e, s) => AtLeast(e, "months", s, "minMonths")),
 
         // Channel
         Event(T.Follow, "Follow"),
@@ -92,6 +94,7 @@ internal sealed class TwitchTriggers : ITriggerProvider
             [new("powerUpType", "Power-up type", ParameterKind.Choice)
                 { DefaultValue = "Any", Choices = ["Any", "gigantify_an_emote", "celebration", "message_effect"] }],
             (e, s) => s["powerUpType"] == "Any" || Equal(e, "powerUpType", s["powerUpType"])),
+        Event(T.SubCounterRollover, "Sub counter rollover"),
 
         // Raids
         Event(T.Raid, "Raid",
@@ -152,6 +155,9 @@ internal sealed class TwitchTriggers : ITriggerProvider
                 "Manual" => !e.Args.GetBool("isAutomatic"),
                 _ => true,
             }),
+        Event(T.UpcomingAd, "Upcoming ad (5 to 1 minutes before)",
+            [new("minutes", "Minutes before", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "5", "4", "3", "2", "1"] }],
+            (e, s) => s["minutes"] is "" or "Any" || e.Args.GetString("minutes") == s["minutes"]),
         Event(T.ShoutoutCreated, "Shoutout created"),
         Event(T.ShoutoutReceived, "Shoutout received"),
         Event(T.ShieldModeBegin, "Shield mode begin"),
@@ -168,6 +174,21 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.SharedChatPayItForward, "Shared chat: pay it forward"),
         Event(T.SharedChatRaid, "Shared chat: raid"),
         Event(T.SharedChatAnnouncement, "Shared chat: announcement"),
+        Event(T.SharedChatModiversary, "Shared chat: modiversary"),
+        Event(T.SharedChatMessageDeleted, "Shared chat: message deleted"),
+        Event(T.SharedChatUserBanned, "Shared chat: user banned"),
+        Event(T.SharedChatUserTimedOut, "Shared chat: user timed out"),
+        Event(T.SharedChatUserUnbanned, "Shared chat: user unbanned"),
+        Event(T.SharedChatUserUntimedOut, "Shared chat: user untimed out"),
+
+        // Guest Star
+        Event(T.GuestStarSessionBegin, "Guest Star session begin"),
+        Event(T.GuestStarSessionEnd, "Guest Star session end"),
+        Event(T.GuestStarGuestUpdate, "Guest Star guest update",
+            [new("state", "Guest state", ParameterKind.Choice)
+                { DefaultValue = "Any", Choices = ["Any", "invited", "accepted", "ready", "backstage", "live", "removed"] }],
+            (e, s) => s["state"] is "" or "Any" || Equal(e, "state", s["state"])),
+        Event(T.GuestStarSettingsUpdate, "Guest Star settings update"),
 
         // Moderation
         Event(T.UserBanned, "User banned"),
@@ -197,6 +218,8 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.BroadcasterAuthenticated, "Broadcaster signed in"),
         Event(T.BroadcasterConnected, "Broadcaster EventSub connected"),
         Event(T.BroadcasterDisconnected, "Broadcaster EventSub disconnected"),
+        Event(T.BroadcasterChatConnected, "Broadcaster chat connected"),
+        Event(T.BroadcasterChatDisconnected, "Broadcaster chat disconnected"),
         Event(T.BotConnected, "Bot account connected"),
         Event(T.BotDisconnected, "Bot account disconnected"),
     ];
