@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Support"
+             x:Class="Cuebot.App.Views.Support.SupportView"
+             x:DataType="vm:SupportViewModel">
+  <DockPanel Margin="24,24,24,0">
+    <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Support" />
+    <TabControl x:Name="Sections" SelectedIndex="{Binding SelectedTab}">
+      <TabControl.Styles>
+        <Style Selector="TabItem">
+          <Setter Property="FontSize" Value="17" />
+          <Setter Property="MinHeight" Value="40" />
+        </Style>
+      </TabControl.Styles>
+
+      <TabItem Header="Report a problem">
+        <ScrollViewer DataContext="{Binding Report}" x:DataType="vm:ReportProblemViewModel">
+          <Grid ColumnDefinitions="*,16,*" Margin="0,12,0,24">
+            <StackPanel>
+              <Border Classes="card">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="h2" Text="What went wrong?" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Describe the problem; Cuebot adds versions, system details and recent log lines with secrets removed. Nothing is sent until you click a send button, and you can edit the preview first." />
+                  <TextBox x:Name="ReportTitle" Text="{Binding Title}" PlaceholderText="Title (a short summary)" />
+                  <TextBox Text="{Binding Summary}" PlaceholderText="What happened?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
+                  <TextBox Text="{Binding Steps}" PlaceholderText="Steps to reproduce (1. ... 2. ...)" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
+                  <TextBox Text="{Binding Expected}" PlaceholderText="What did you expect?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
+                  <TextBox Text="{Binding Actual}" PlaceholderText="What happened instead?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
+                </StackPanel>
+              </Border>
+              <Border Classes="card">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="h2" Text="Include" />
+                  <CheckBox Content="Connection states (Twitch, OBS, ...)" IsChecked="{Binding IncludeConnections}" />
+                  <CheckBox Content="App settings (app.json)" IsChecked="{Binding IncludeAppSettings}" />
+                  <CheckBox Content="Module settings files (tokens, keys and passwords removed)" IsChecked="{Binding IncludeModuleSettings}" />
+                  <CheckBox Content="Recent log lines" IsChecked="{Binding IncludeLog}" />
+                  <CheckBox IsChecked="{Binding IncludeCrash}" IsVisible="{Binding HasCrash}">
+                    <TextBlock Text="{Binding CrashLabel}" TextWrapping="Wrap" />
+                  </CheckBox>
+                  <CheckBox Content="Include account names (logins, channel names, user ids)" IsChecked="{Binding IncludeAccountNames}" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Tokens, passwords, stream keys, API keys, client secrets, JWTs, OAuth codes and webhook URLs are always removed. Account names are replaced unless you tick the last box." />
+                  <Button Content="Refresh collected info" Command="{Binding RefreshCommand}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+              <Border Classes="card">
+                <StackPanel Spacing="8">
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Rebuild preview" Command="{Binding RebuildPreviewCommand}" />
+                    <TextBlock Classes="h2" Text="Preview (exactly what will be sent)" VerticalAlignment="Center" Margin="0" />
+                  </DockPanel>
+                  <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding PreviewEdited}"
+                             Text="You edited the preview; changing the form no longer updates it. Rebuild preview discards your edits." />
+                  <TextBox x:Name="PreviewBox" Text="{Binding Preview}" AcceptsReturn="True" TextWrapping="Wrap" Height="420"
+                           FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" />
+                  <WrapPanel Orientation="Horizontal">
+                    <Button x:Name="OpenIssueButton" Classes="accent" Content="Open GitHub issue in browser" Command="{Binding OpenIssueCommand}" Margin="0,0,8,8" />
+                    <Button x:Name="GhButton" Content="Submit with gh…" Command="{Binding PrepareGhCommand}" IsVisible="{Binding GhAvailable}" Margin="0,0,8,8" />
+                    <Button Content="Copy report" Command="{Binding CopyReportCommand}" Margin="0,0,8,8" />
+                    <Button Content="Save report" Command="{Binding SaveReportCommand}" Margin="0,0,8,8" />
+                    <Button Content="Open reports folder" Command="{Binding OpenReportsFolderCommand}" Margin="0,0,8,8" />
+                  </WrapPanel>
+                  <Border x:Name="GhConfirm" IsVisible="{Binding IsGhConfirming}" BorderBrush="{DynamicResource CuebotAccent}" BorderThickness="1"
+                          CornerRadius="4" Padding="10">
+                    <StackPanel Spacing="8">
+                      <TextBlock TextWrapping="Wrap" Text="This runs the GitHub CLI with your GitHub account and creates a public issue:" />
+                      <SelectableTextBlock Text="{Binding GhCommand}" TextWrapping="Wrap" FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="accent" Content="Run command" Command="{Binding RunGhCommand}" IsEnabled="{Binding !IsBusy}" />
+                        <Button Content="Cancel" Command="{Binding CancelGhCommand}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                  <SelectableTextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Status}"
+                                       IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}"
+                             IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Updates">
+        <ScrollViewer DataContext="{Binding Updates}" x:DataType="vm:UpdatesViewModel">
+          <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,12,0,24">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Version" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Classes="muted" Text="Installed" Width="120" VerticalAlignment="Center" />
+                  <TextBlock x:Name="CurrentVersion" Text="{Binding CurrentVersion}" FontWeight="SemiBold" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Classes="muted" Text="Package" Width="120" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Package}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Classes="muted" Text="Channel" Width="120" VerticalAlignment="Center" />
+                  <ComboBox ItemsSource="{x:Static vm:UpdatesViewModel.Channels}" SelectedItem="{Binding Channel}" MinWidth="160" />
+                </StackPanel>
+                <CheckBox Content="Check for updates when Cuebot starts (at most once a day)" IsChecked="{Binding CheckOnStart}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <Button x:Name="CheckNowButton" Classes="accent" Content="Check now" Command="{Binding CheckNowCommand}" IsEnabled="{Binding !IsChecking}" />
+                  <TextBlock Classes="muted" Text="{Binding LastChecked}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock x:Name="UpdateStatus" TextWrapping="Wrap" Text="{Binding Status}" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Cuebot only checks GitHub for a newer release; it never downloads or installs anything by itself." />
+              </StackPanel>
+            </Border>
+            <Border Classes="card" IsVisible="{Binding IsUpdateAvailable}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="{Binding Headline}" TextWrapping="Wrap" />
+                <TextBox Text="{Binding ReleaseNotes}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="260" />
+                <TextBlock TextWrapping="Wrap" Text="{Binding Instructions}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Classes="accent" Content="Open release page" Command="{Binding OpenReleasePageCommand}" />
+                  <Button Command="{Binding DownloadCommand}" IsVisible="{Binding HasDownload}">
+                    <TextBlock Text="{Binding DownloadLabel}" />
+                  </Button>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

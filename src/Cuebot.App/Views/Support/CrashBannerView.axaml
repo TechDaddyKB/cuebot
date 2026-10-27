@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Support"
+             x:Class="Cuebot.App.Views.Support.CrashBannerView"
+             x:DataType="vm:CrashBannerViewModel"
+             IsVisible="{Binding IsVisible}">
+  <!-- Non-blocking: a strip above the page; the app works normally while it is shown. -->
+  <Border Background="{DynamicResource CuebotCard}" BorderBrush="{DynamicResource CuebotBad}" BorderThickness="0,0,0,2" Padding="16,8">
+    <DockPanel>
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button x:Name="ReportCrashButton" Classes="accent" Content="Report it…" Command="{Binding ReportCommand}" />
+        <Button x:Name="DismissCrashButton" Content="Dismiss" Command="{Binding DismissCommand}" />
+      </StackPanel>
+      <StackPanel VerticalAlignment="Center" Spacing="2">
+        <TextBlock Text="{Binding Message}" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <TextBlock Classes="muted" Text="{Binding Detail}" FontSize="12" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</UserControl>
