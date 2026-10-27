@@ -61,8 +61,8 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | Integration | Status | Phase | Integration | Status | Phase |
 | --- | --- | --- | --- | --- | --- |
 | OBS Studio (9 triggers, 29 sub-actions) | ✅ 36 triggers, 47 sub-actions, multiple connections | 3 | Streamlabs Desktop | 🟡 8 triggers, 14 sub-actions (some calls unverified) | 3 |
-| Meld Studio | ❌ | 5 | VTube Studio | ✅ 11/11 triggers, 10/10 sub-actions (+ extras); not yet tried against the real app | 5 |
-| Voicemod | ✅ 4/4 triggers, 11/12 sub-actions (Set Censor State removed from Voicemod V3); not yet tried against the real app | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; not yet tried against the real services | 4 |
+| Meld Studio | ❌ | 5 | VTube Studio | ✅ 11/11 triggers, 10/10 sub-actions (+ extras); live-tested against the real app | 5 |
+| Voicemod | ✅ 4/4 triggers, 11/12 sub-actions (Set Censor State removed from Voicemod V3); live-tested against the real app | 5 | Streamlabs / StreamElements donations | 🟡 tips, merch, store, relayed events, SE points; both connect live (no real tip received yet) | 4 |
 | Ko-fi, Patreon, Fourthwall, Shopify, Throne, TipeeeStream, DonorDrive, StreamLoots, TreatStream | ❌ | 5 | Pulsoid, HypeRate | ✅ + threshold triggers; not yet tried against the real services | 5 |
 | Crowd Control | ❌ | 5 | Elgato (Stream Deck, Camera Hub, Control Center, Wave Link, Studio: 105 triggers) | ❌ | 5 |
 | T.I.T.S., Lumia, Pally.gg, StreamFog, Mtion, PolyPop, OBSBOT | ❌ | 5 | Pronouns (alejo.io) | ✅ | 3 |
