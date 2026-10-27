@@ -16,7 +16,7 @@ internal interface IPusherTransport : IAsyncDisposable
     /// <summary>Why the connection ended, when known.</summary>
     string? CloseReason { get; }
 
-    /// <summary>The websocket close code (Pusher uses 4000-4999), when the server closed the connection.</summary>
+    /// <summary>The websocket close code , when the server closed the connection.</summary>
     int? CloseCode { get; }
 }
 
@@ -58,17 +58,17 @@ internal sealed class ClientWebSocketTransport : IPusherTransport
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 CloseReason = _socket.CloseStatus is { } status
-                    ? $"Pusher closed the connection ({(int)status}{(string.IsNullOrEmpty(_socket.CloseStatusDescription) ? "" : " " + _socket.CloseStatusDescription)})"
-                    : "Pusher closed the connection";
+                    ? $"Kick's real-time server closed the connection ({(int)status}{(string.IsNullOrEmpty(_socket.CloseStatusDescription) ? "" : " " + _socket.CloseStatusDescription)})"
+                    : "Kick's real-time server closed the connection";
                 return null;
             }
             message.Write(buffer, 0, result.Count);
-            if (message.Length > MaxMessageBytes) throw new InvalidDataException("Pusher message too large");
+            if (message.Length > MaxMessageBytes) throw new InvalidDataException("Real-time message too large");
             if (result.EndOfMessage) return Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length);
         }
     }
 
-    /// <summary>The Pusher close code (4000-4999), used to decide how to reconnect.</summary>
+    /// <summary>The websocket close code, used to decide how to reconnect.</summary>
     public int? CloseCode => _socket.CloseStatus is { } s ? (int)s : null;
 
     public async ValueTask DisposeAsync()

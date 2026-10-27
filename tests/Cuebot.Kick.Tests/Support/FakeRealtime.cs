@@ -4,8 +4,8 @@ using Cuebot.Kick.Pusher;
 
 namespace Cuebot.Kick.Tests.Support;
 
-/// <summary>One in-memory websocket connection: the test plays the Pusher server.</summary>
-internal sealed class FakePusherTransport : IPusherTransport
+/// <summary>One in-memory websocket connection: the test plays kick.com's real-time (Centrifugo) server.</summary>
+internal sealed class FakeRealtimeTransport : IPusherTransport
 {
     private readonly Channel<string?> _toClient = Channel.CreateUnbounded<string?>();
     private readonly Channel<string> _fromClient = Channel.CreateUnbounded<string>();
@@ -34,14 +34,25 @@ internal sealed class FakePusherTransport : IPusherTransport
 
     public void Push(string text) => _toClient.Writer.TryWrite(text);
 
-    public void Establish(int activityTimeout = 120, string socketId = "123.456") =>
-        Push(Frame("pusher:connection_established", null, new { socket_id = socketId, activity_timeout = activityTimeout }));
+    /// <summary>Reads the client's connect command and accepts it. Returns the command's <c>connect</c> object.</summary>
+    public async Task<JsonElement> EstablishAsync(int ping = 25, bool pong = true, int? ttl = null)
+    {
+        var connect = await NextSentAsync();
+        var result = new Dictionary<string, object> { ["client"] = "client-1", ["version"] = "6.0.0", ["ping"] = ping, ["pong"] = pong };
+        if (ttl is { } t)
+        {
+            result["expires"] = true;
+            result["ttl"] = t;
+        }
+        Push(JsonSerializer.Serialize(new { id = connect.GetProperty("id").GetInt32(), connect = result }));
+        return connect.GetProperty("connect");
+    }
 
-    /// <summary>Sends a channel event; like Pusher, <paramref name="data"/> is JSON-encoded into a string.</summary>
+    /// <summary>A publication; like kick.com, the envelope's <paramref name="data"/> is JSON-encoded into a string.</summary>
     public void Event(string name, string channel, object data) => Push(Frame(name, channel, data));
 
     public void EventRaw(string name, string channel, string dataJson) =>
-        Push(JsonSerializer.Serialize(new { @event = name, channel, data = dataJson }));
+        Push(JsonSerializer.Serialize(new { push = new { channel, pub = new { data = new { @event = name, data = dataJson } } } }));
 
     public void Close(int? code = null, string reason = "closed by test")
     {
@@ -58,10 +69,12 @@ internal sealed class FakePusherTransport : IPusherTransport
         return JsonDocument.Parse(text).RootElement.Clone();
     }
 
-    public async Task<string> NextSentEventAsync() => (await NextSentAsync()).GetProperty("event").GetString()!;
+    /// <summary>The channel of the next message the client sent, which must be a subscribe command.</summary>
+    public async Task<string> NextSubscribedChannelAsync() =>
+        (await NextSentAsync()).GetProperty("subscribe").GetProperty("channel").GetString()!;
 
-    public static string Frame(string name, string? channel, object data) =>
-        JsonSerializer.Serialize(new { @event = name, channel, data = JsonSerializer.Serialize(data) });
+    public static string Frame(string name, string channel, object data) =>
+        JsonSerializer.Serialize(new { push = new { channel, pub = new { data = new { @event = name, data = JsonSerializer.Serialize(data) } } } });
 
     public ValueTask DisposeAsync()
     {
@@ -70,10 +83,10 @@ internal sealed class FakePusherTransport : IPusherTransport
     }
 }
 
-/// <summary>Hands out a new <see cref="FakePusherTransport"/> per connection attempt.</summary>
-internal sealed class FakePusherServer
+/// <summary>Hands out a new <see cref="FakeRealtimeTransport"/> per connection attempt.</summary>
+internal sealed class FakeRealtimeServer
 {
-    private readonly Channel<FakePusherTransport> _connections = Channel.CreateUnbounded<FakePusherTransport>();
+    private readonly Channel<FakeRealtimeTransport> _connections = Channel.CreateUnbounded<FakeRealtimeTransport>();
     private int _failuresLeft;
 
     public int Attempts { get; private set; }
@@ -85,12 +98,12 @@ internal sealed class FakePusherServer
         Attempts++;
         var fail = _failuresLeft > 0;
         if (fail) _failuresLeft--;
-        var transport = new FakePusherTransport { FailConnect = fail };
+        var transport = new FakeRealtimeTransport { FailConnect = fail };
         if (!fail) _connections.Writer.TryWrite(transport);
         return transport;
     }
 
-    public async Task<FakePusherTransport> NextConnectionAsync()
+    public async Task<FakeRealtimeTransport> NextConnectionAsync()
     {
         using var timeout = new CancellationTokenSource(Wait.Timeout);
         return await _connections.Reader.ReadAsync(timeout.Token);

@@ -18,12 +18,12 @@ namespace Cuebot.Kick.Tests;
 public sealed class KickServiceTests : IAsyncLifetime
 {
     private static readonly KickEndpoints Endpoints = new(new Uri("https://id.test/"), new Uri("https://api.test/"),
-        new Uri("https://web.test/"), new Uri("wss://pusher.test/app/key?protocol=7"));
+        new Uri("https://web.test/"), new Uri("https://rt.test/api/"));
 
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "cuebot-kick-tests-" + Guid.NewGuid().ToString("N"));
     private readonly AppLog _log = new();
     private readonly ConcurrentQueue<BotEvent> _published = new();
-    private readonly FakePusherServer _pusher = new();
+    private readonly FakeRealtimeServer _pusher = new();
     private readonly FakeReceiver _receiver = new();
     private volatile bool _live;
     private volatile HttpStatusCode _webStatus = HttpStatusCode.OK;
@@ -72,6 +72,9 @@ public sealed class KickServiceTests : IAsyncLifetime
             ? FakeHttpHandler.Json("""{"id":1234,"user_id":100,"slug":"cuebotdev","chatroom":{"id":5678}}""")
             : new HttpResponseMessage(_webStatus),
         ("web.test", "/api/v2/channels/stranger") => FakeHttpHandler.Json("""{"id":9,"user_id":909,"slug":"stranger","chatroom":{"id":99}}"""),
+        ("rt.test", var path) when path.EndsWith("/chat/connection", StringComparison.Ordinal) => FakeHttpHandler.Json(
+            """{"data":{"connections":[{"credentials":{"url":"wss://realtime.test/connection/websocket"},"provider":"centrifugo"}],"mode":"websocket"},"message":"success"}"""),
+        ("rt.test", "/api/v1/realtime/auth/connection") => FakeHttpHandler.Json("""{"data":{"token":"rt-token"}}"""),
         _ when r.Method == HttpMethod.Patch => new HttpResponseMessage(HttpStatusCode.NoContent),
         _ => new HttpResponseMessage(HttpStatusCode.NotFound),
     };
@@ -89,12 +92,12 @@ public sealed class KickServiceTests : IAsyncLifetime
         _settings.Value.Broadcaster.UserId = 100;
     }
 
-    private async Task<FakePusherTransport> ConnectAsync()
+    private async Task<FakeRealtimeTransport> ConnectAsync()
     {
         SignedIn();
         await _service.ConnectAsync();
         var conn = await _pusher.NextConnectionAsync();
-        conn.Establish();
+        await conn.EstablishAsync();
         for (var i = 0; i < 4; i++) await conn.NextSentAsync(); // four subscriptions
         await Wait.UntilAsync(() => _service.IsRealtimeConnected, "real-time connected");
         return conn;
@@ -152,9 +155,10 @@ public sealed class KickServiceTests : IAsyncLifetime
         SignedIn();
         await _service.ConnectAsync();
         var conn = await _pusher.NextConnectionAsync();
-        conn.Establish();
+        Assert.Equal(new Uri("wss://realtime.test/connection/websocket"), conn.Url); // from the discovery call
+        Assert.Equal("rt-token", (await conn.EstablishAsync()).GetProperty("token").GetString());
         var channels = new List<string>();
-        for (var i = 0; i < 4; i++) channels.Add((await conn.NextSentAsync()).GetProperty("data").GetProperty("channel").GetString()!);
+        for (var i = 0; i < 4; i++) channels.Add(await conn.NextSubscribedChannelAsync());
         Assert.Equal(["chatrooms.5678.v2", "chatroom_5678", "channel.1234", "channel_1234"], channels);
         Assert.Equal(1234, _settings.Value.ChannelId);
         Assert.Equal(5678, _settings.Value.ChatroomId);
@@ -191,8 +195,8 @@ public sealed class KickServiceTests : IAsyncLifetime
         SignedIn();
         await _service.ConnectAsync();
         var conn = await _pusher.NextConnectionAsync();
-        conn.Establish();
-        Assert.Equal("chatrooms.2.v2", (await conn.NextSentAsync()).GetProperty("data").GetProperty("channel").GetString());
+        await conn.EstablishAsync();
+        Assert.Equal("chatrooms.2.v2", await conn.NextSubscribedChannelAsync());
         Assert.DoesNotContain(_http.Requests, r => r.Uri.Host == "web.test");
     }
 

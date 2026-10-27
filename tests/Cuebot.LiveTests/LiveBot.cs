@@ -149,7 +149,14 @@ public sealed class LiveBot : IAsyncLifetime
     public async Task StopStreamIfActiveAsync()
     {
         if (!Obs.IsConnected || !(await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean()) return;
-        await Obs.ControlStreamAsync(OutputCommand.Stop);
+        try
+        {
+            await Obs.ControlStreamAsync(OutputCommand.Stop);
+        }
+        catch (Cuebot.Obs.Protocol.ObsRequestException ex) when (ex.Code == 501)
+        {
+            return;   // OutputNotRunning: the stream ended on its own between the status check and the stop
+        }
         var deadline = DateTime.UtcNow.AddSeconds(30);
         while ((await Obs.RequestAsync("GetStreamStatus")).GetProperty("outputActive").GetBoolean() && DateTime.UtcNow < deadline)
             await Task.Delay(500);

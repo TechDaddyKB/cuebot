@@ -8,9 +8,10 @@ Sources:
 
 - Kick developer docs: <https://docs.kick.com> (OAuth flow `getting-started/generating-tokens-oauth2-flow`,
   scopes `getting-started/scopes`, APIs `apis/*`, events `events/*`, webhook security `events/webhook-security`).
-- Pusher Channels protocol 7: <https://pusher.com/docs/channels/library_auth_reference/pusher-websockets-protocol/>.
-- Public knowledge of kick.com's website traffic, as used by open-source clients (for example
-  `github.com/andreas-bylund/chatmux` `kick/kick.go`, which documents the same app key, cluster and channel name).
+- Centrifugo client protocol (JSON): <https://centrifugal.dev/docs/transports/client_protocol>; Pusher protocol 7 for the former feed.
+- kick.com's website traffic and its public web client (the real-time discovery and token calls, observed in a
+  browser in Oct 2026), and, for the former Pusher feed, open-source clients such as
+  `github.com/andreas-bylund/chatmux` `kick/kick.go`.
 
 ## 1. OAuth 2.1 (official) — `Auth/`
 
@@ -91,30 +92,49 @@ Event types (version 1) and their mapping:
 
 With "Register webhook events" enabled, connecting registers any missing subscriptions for these events.
 
-## 4. Real-time websocket (UNOFFICIAL) — `Pusher/`
+## 4. Real-time websocket (UNOFFICIAL) — `Realtime/`, events decoded in `Pusher/`
 
-kick.com's website receives chat and channel events from Pusher Channels:
+kick.com's website receives chat and channel events from its own **Centrifugo** server. (Until October 2026 it
+used Pusher Channels with the public app key `32cbd69e4b950bf97679`, cluster `us2`; that key is now refused on every
+cluster with error 4001. The event envelopes kept Pusher's shape, which is why the decoder still lives in `Pusher/`.)
 
-- URL: `wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false`
-  (public app key `32cbd69e4b950bf97679`, cluster `us2`; older clients used key `eb1d5f283081a78b932c`).
-- Public channels, no auth: `chatrooms.{chatroomId}.v2`, `chatroom_{chatroomId}`, `channel.{channelId}`,
-  `channel_{channelId}`. Events can arrive on more than one of them; the hub de-duplicates.
-- The **chatroom id** and **channel id** are internal ids (not the broadcaster user id) that the official API does
-  not return. Cuebot reads them from the website API `GET https://kick.com/api/v2/channels/{slug}` (`id`,
-  `chatroom.id`, `user_id`), sent with a browser User-Agent. kick.com is behind Cloudflare and sometimes blocks
-  such requests (403 or a challenge page); then Cuebot keeps working without real-time events and the user can
-  enter both ids on the Kick page (open that URL in a browser and copy them). They are cached in `kick.json`.
+Seen in kick.com's web client and its traffic (Oct 2026):
 
-Protocol (Pusher 7): server sends `pusher:connection_established` with `{socket_id, activity_timeout}` (data is a
-JSON-encoded string, as for every event). Client sends `{"event":"pusher:subscribe","data":{"auth":"","channel":…}}`
-per channel, gets `pusher_internal:subscription_succeeded`. The client answers `pusher:ping` with `pusher:pong`
-and sends its own `pusher:ping` after `activity_timeout` seconds without traffic; no reply within 30 s →
-reconnect. `pusher:error` / close codes: 4000–4099 don't reconnect (Cuebot retries only at the maximum delay),
-4100–4199 back off, 4200–4299 reconnect immediately. Reconnects back off exponentially from 1 s to 60 s.
+1. **Discovery:** `POST https://web.kick.com/api/v1/realtime/channels/{channelId}/chat/connection` (or
+   `/v1/realtime/connection` without a channel) with
+   `{"client":{"id":"<uuid>","type":"web"},"capabilities":{"accepted_providers":[{"provider":"centrifugo"}]}}` →
+   `data.connections[] = {provider:"centrifugo", credentials:{url}}`, e.g.
+   `wss://realtime.us-east-1.platform.kick.com/connection/websocket`. Works without signing in. If it fails, Cuebot
+   uses `wss://realtime.us-west-2.platform.kick.com/connection/websocket`.
+2. **Token:** `POST https://web.kick.com/api/v1/realtime/auth/connection` `{"client_id":"<same uuid>"}` →
+   `data.token` (an anonymous connection JWT; an empty body is rejected with 400). Cuebot never logs it.
+3. **Connect** (Centrifugo JSON protocol, one JSON command per line; replies and pushes may be batched with `\n`):
+   send `{"connect":{"token":…,"name":"js"},"id":1}` → `{"id":1,"connect":{client, version, ping, pong, expires?, ttl?}}`
+   or `{"id":1,"error":{code, message}}`. Connecting without a token closes with 3501 "bad request".
+4. **Subscribe** per public channel: `{"subscribe":{"channel":…,"flag":1},"id":n}` → `{"id":n,"subscribe":{…}}`.
+   Channels, no channel token needed: `chatrooms.{chatroomId}.v2`, `chatroom_{chatroomId}`, `channel.{channelId}`,
+   `channel_{channelId}` (the website also uses `chatrooms.{chatroomId}` and `predictions-channel-{channelId}`; the
+   `private-…` ones need a signed-in website session and are not used). Events can arrive on more than one channel;
+   the hub de-duplicates.
+5. **Publications:** `{"push":{"channel":…,"pub":{"data":{"event":"App\Events\ChatMessageEvent","data":"<json string>"}}}}`
+   (the envelope itself may also arrive JSON-encoded). Cuebot turns each into a `PusherFrame(event, channel, data)`.
+6. **Keep-alive:** the server sends `{}` every `ping` seconds; when `pong` is true the client answers `{}`. No traffic
+   for `ping` + 30 s → reconnect.
+7. **Token expiry:** when the connect reply has `expires: true`, Cuebot fetches a new token 30 s before `ttl` and
+   sends `{"refresh":{"token":…},"id":n}`. Error 109 ("token expired") reconnects immediately with a new token.
+8. **Disconnects:** `{"push":{"disconnect":{code, reason}}}` or websocket close codes. 3500–3999 and 4500–4999 mean
+   "don't reconnect" (Cuebot retries only at the maximum delay); everything else backs off exponentially, 1 s to 60 s.
+   Every reconnect gets fresh credentials.
+
+The **chatroom id** and **channel id** are internal ids (not the broadcaster user id) that the official API does
+not return. Cuebot reads them from the website API `GET https://kick.com/api/v2/channels/{slug}` (`id`,
+`chatroom.id`, `user_id`), sent with a browser User-Agent. kick.com is behind Cloudflare and often blocks such
+requests (403 or a challenge page); then Cuebot keeps working without real-time events and the user can enter both
+ids on the Kick page (open that URL in a browser and copy them). They are cached in `kick.json`.
 
 Events decoded (event names are `App\Events\…`; payload fields as seen on the website):
 
-| Pusher event | Data (relevant fields) | Cuebot event |
+| Event | Data (relevant fields) | Cuebot event |
 | --- | --- | --- |
 | `ChatMessageEvent` | `id, chatroom_id, content, type (message/reply), created_at, sender{id, username, slug, identity{color, badges[{type, text, count?}]}}, metadata{original_sender{id, username}, original_message{id, content}}` | `kick.chatMessage` |
 | `MessageDeletedEvent` | `id, message{id}, aiModerated` | `kick.messageDeleted` + `chat.messageDeleted` |

@@ -58,7 +58,7 @@ public sealed class KickSettings
     /// <summary>Kick's internal chatroom id for real-time chat. Filled automatically or entered manually.</summary>
     public long ChatroomId { get; set; }
 
-    /// <summary>Read chat and channel events in real time from Kick's public (unofficial) Pusher websocket.</summary>
+    /// <summary>Read chat and channel events in real time from kick.com's public (unofficial) real-time websocket.</summary>
     public bool UseRealtimeChat { get; set; } = true;
 
     /// <summary>Seconds between official API polls of the channel (live state, viewers, title, category).</summary>

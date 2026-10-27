@@ -51,7 +51,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | --- | --- | --- | --- | --- |
 | Twitch: 131 triggers, 95 sub-actions (rewards, polls, predictions, moderation, raids, ads, hype train, shoutouts, shared chat, whispers, bot account) | ✓ | 107/131 triggers, 66/95 sub-actions, 64 EventSub subscriptions, bot account; Guest Star, pinned messages, sub counter, reward counters/groups missing | 🟡 | 3 |
 | YouTube: 24 triggers, 9 sub-actions (chat, super chats/stickers, members, broadcasts) | ✓ | All inventory triggers + polls/deletes/quota, 18 sub-actions; own Google Cloud OAuth client; polling (quota-aware) | ✅ | 3 |
-| Kick: 18 triggers, 14 sub-actions | ✓ (via Streamer.bot website webhook relay) | 16/18 triggers (+ unban, delete, host), 11 sub-actions; official API + unofficial Pusher chat; webhook parser ready for the relay; 7TV triggers and reward management missing | 🟡 | 3 |
+| Kick: 18 triggers, 14 sub-actions | ✓ (via Streamer.bot website webhook relay) | 16/18 triggers (+ unban, delete, host), 11 sub-actions; official API + unofficial real-time chat (kick.com's Centrifugo server); webhook parser ready for the relay; 7TV triggers and reward management missing | 🟡 | 3 |
 | Rumble: chat, follows, subs, rants, live state | — | In progress | ➕ | 1 |
 | Combined chat (send to one/all, platform badges) + activity feed | ✓ (Streamer.bot Chat) | Twitch, YouTube, Kick, Rumble in one chat and feed | ✅ | 1–3 |
 | Chat extras: emotes (Twitch/YouTube/7TV/BTTV/FFZ), quick actions, slash commands, OBS chat/event docks | ✓ | 7TV/BTTV/FFZ/Twitch/Kick emotes inline, highlights, autocomplete, slash commands, quick actions, message menu, `/feed/chat` + `/feed/events` docks; animated emotes show first frame | ✅ | 3 |

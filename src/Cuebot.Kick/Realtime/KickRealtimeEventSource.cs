@@ -1,16 +1,17 @@
 using Cuebot.Core.Logging;
 using Cuebot.Kick.Events;
+using Cuebot.Kick.Pusher;
 
-namespace Cuebot.Kick.Pusher;
+namespace Cuebot.Kick.Realtime;
 
 /// <summary>
-/// UNOFFICIAL direct real-time source: Kick's public Pusher websocket, the same one kick.com's chat uses. Needs no
-/// public URL. Subscribes to the chatroom and channel channels and decodes their events.
+/// UNOFFICIAL direct real-time source: kick.com's own real-time server (Centrifugo), the same one its website chat
+/// uses. Needs no public URL and no sign-in. Subscribes to the chatroom and channel channels and decodes their events.
 /// </summary>
-internal sealed class KickPusherEventSource : IKickEventSource, IAsyncDisposable
+internal sealed class KickRealtimeEventSource : IKickEventSource, IAsyncDisposable
 {
     private readonly Func<IPusherTransport> _transports;
-    private readonly Uri _url;
+    private readonly KickRealtimeAuth _auth;
     private readonly KickTimings _timings;
     private readonly AppLog _log;
     private CancellationTokenSource? _stop;
@@ -18,10 +19,10 @@ internal sealed class KickPusherEventSource : IKickEventSource, IAsyncDisposable
     private long _broadcasterUserId;
     private volatile bool _connected;
 
-    public KickPusherEventSource(Func<IPusherTransport> transports, Uri url, KickTimings timings, AppLog log)
+    public KickRealtimeEventSource(Func<IPusherTransport> transports, KickRealtimeAuth auth, KickTimings timings, AppLog log)
     {
         _transports = transports;
-        _url = url;
+        _auth = auth;
         _timings = timings;
         _log = log;
     }
@@ -38,7 +39,9 @@ internal sealed class KickPusherEventSource : IKickEventSource, IAsyncDisposable
         var channels = KickPusherDecoder.ChannelsFor(channelId, chatroomId);
         if (channels.Count == 0) throw new KickApiException("No Kick chatroom id is known, so real-time chat cannot start.");
         _broadcasterUserId = broadcasterUserId;
-        var client = new PusherClient(_transports, _url, _timings, _log);
+        var client = new CentrifugoClient(_transports,
+            (clientId, ct) => _auth.GetCredentialsAsync(clientId, channelId, ct),
+            _auth.GetTokenAsync, _timings, _log);
         client.Connected += _ => SetConnected(true, "connected");
         client.Disconnected += reason => SetConnected(false, reason);
         client.SubscriptionSucceeded += channel => _log.Debug("Kick", $"Subscribed to {channel}");

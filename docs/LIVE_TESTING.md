@@ -10,7 +10,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › YouTube / Kick | The platform's ingest accepts a stream Cuebot starts and stops: live, data flowing, no reconnects, no dropped frames | Stream key (and Kick ingest URL), OBS, streaming enabled |
 | `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
 | `Cuebot.LiveTests` › YouTube API | Device-code sign-in (approved once), connection and channel info; with `CUEBOT_LIVE_YOUTUBE_CHAT=1` while live: a sent message comes back through the chat poll | Google OAuth client ID + secret; for chat a live broadcast |
-| `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Pusher) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
+| `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -68,7 +68,17 @@ Create a Kick app (kick.com → Settings → Developer), register the redirect U
 in `CUEBOT_LIVE_KICK_CLIENT_ID` / `CUEBOT_LIVE_KICK_CLIENT_SECRET`. The first run opens the browser for the OAuth
 sign-in; the tokens are kept in `CUEBOT_LIVE_DATA/kick/kick.json` for later runs. The real-time chat uses Kick's
 unofficial website websocket (see `src/Cuebot.Kick/PROTOCOL.md`); if kick.com blocks the automatic channel-id
-lookup, set `CUEBOT_LIVE_KICK_CHANNEL_ID` and `CUEBOT_LIVE_KICK_CHATROOM_ID`.
+lookup, set `CUEBOT_LIVE_KICK_CHANNEL_ID` and `CUEBOT_LIVE_KICK_CHATROOM_ID`. The lookup goes through Cloudflare
+and is often blocked; open `https://kick.com/api/v2/channels/<your slug>` in a browser and copy `id` and
+`chatroom.id`. The sign-in URL is also printed, in case the browser that opens is not the one you are signed in to.
+
+### Streamlabs, StreamElements, VTube Studio, Voicemod
+
+`ServicesLiveTests` connects to each service whose setting is filled in, checks it answers, and disconnects;
+nothing reaches viewers. Streamlabs needs `CUEBOT_LIVE_STREAMLABS_SOCKET_TOKEN`, StreamElements
+`CUEBOT_LIVE_STREAMELEMENTS_JWT`, Voicemod (running) `CUEBOT_LIVE_VOICEMOD_API_KEY`. VTube Studio runs with
+`CUEBOT_LIVE_VTS=1` and the API turned on (Settings → "Start API"); the first run waits up to two minutes for you to
+click **Allow** on VTube Studio's plugin popup, and the plugin token is kept for later runs.
 
 ## Running
 

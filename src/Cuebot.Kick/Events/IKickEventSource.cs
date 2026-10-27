@@ -1,7 +1,7 @@
 namespace Cuebot.Kick.Events;
 
 /// <summary>
-/// Something that delivers Kick events: the real-time websocket (<c>KickPusherEventSource</c>, works today) or
+/// Something that delivers Kick events: the real-time websocket (<c>KickRealtimeEventSource</c>, works today) or
 /// the webhook relay (<c>KickWebhookEventSource</c>, fed by the user-hosted relay later). The service merges all
 /// sources and de-duplicates them with <see cref="KickEvent.DedupeKey"/>.
 /// </summary>

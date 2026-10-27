@@ -7,6 +7,7 @@ using Cuebot.Kick.Api;
 using Cuebot.Kick.Auth;
 using Cuebot.Kick.Events;
 using Cuebot.Kick.Pusher;
+using Cuebot.Kick.Realtime;
 using Cuebot.Kick.Webhooks;
 
 namespace Cuebot.Kick;
@@ -27,7 +28,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     private readonly KickApiClient _api;
     private readonly KickWebClient _web;
     private readonly KickEventHub _hub;
-    private readonly KickPusherEventSource _realtime;
+    private readonly KickRealtimeEventSource _realtime;
     private readonly Func<int, IOAuthReceiver> _receivers;
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private CancellationTokenSource? _pollStop;
@@ -55,7 +56,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _api = new KickApiClient(http, endpoints, _tokens);
         _web = new KickWebClient(http, endpoints);
         _hub = new KickEventHub(bus, time, timings.DedupeWindow);
-        _realtime = new KickPusherEventSource(transports, endpoints.Pusher, timings, log);
+        _realtime = new KickRealtimeEventSource(transports, new KickRealtimeAuth(http, endpoints), timings, log);
         _realtime.ConnectionChanged += OnRealtimeChanged;
         _hub.Attach(_realtime);
         Webhooks = new KickWebhookEventSource(ct => _api.GetWebhookPublicKeyAsync(ct));

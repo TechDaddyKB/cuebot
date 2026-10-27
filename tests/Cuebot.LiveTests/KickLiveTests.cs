@@ -72,7 +72,11 @@ public sealed class KickLiveBot : IAsyncLifetime
         if (KickLiveEnvironment.ChannelId is { } channelId) s.ChannelId = channelId;
         if (KickLiveEnvironment.ChatroomId is { } chatroomId) s.ChatroomId = chatroomId;
         if (!Kick.IsBroadcasterSignedIn)
-            await Kick.SignInAsync(KickAccount.Broadcaster, url => Process.Start(new ProcessStartInfo(url.ToString()) { UseShellExecute = true }));
+            await Kick.SignInAsync(KickAccount.Broadcaster, url =>
+            {
+                Console.Error.WriteLine($"Sign in to Kick for Cuebot's live tests: {url}");
+                Process.Start(new ProcessStartInfo(url.ToString()) { UseShellExecute = true });
+            });
         await Kick.ConnectAsync();
         Kick.SaveSettings();
     }

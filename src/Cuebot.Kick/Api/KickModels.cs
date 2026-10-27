@@ -26,5 +26,5 @@ public sealed record KickChatSendResult(string MessageId, bool IsSent);
 /// <summary>An event subscription (webhook) from /public/v1/events/subscriptions.</summary>
 public sealed record KickEventSubscription(string Id, string Event, int Version, string Method);
 
-/// <summary>Internal ids of a channel needed by the real-time (Pusher) connection, from kick.com's website API.</summary>
+/// <summary>Internal ids of a channel needed by the real-time connection, from kick.com's website API.</summary>
 public sealed record KickChannelIds(long ChannelId, long ChatroomId, long UserId, string Slug);
