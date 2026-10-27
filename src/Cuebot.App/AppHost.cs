@@ -4,6 +4,7 @@ using Cuebot.Core.BuiltIn;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Obs;
+using Cuebot.Rumble;
 using Cuebot.Scripting;
 using Cuebot.Speech;
 using Cuebot.Twitch;
@@ -26,7 +27,8 @@ public sealed class AppHost : IAsyncDisposable
             .AddTwitch()
             .AddObs()
             .AddSpeech()
-            .AddScripting();
+            .AddScripting()
+            .AddRumble();
         var host = new AppHost(services.BuildServiceProvider());
         if (firstRun)
         {
@@ -46,12 +48,14 @@ public sealed class AppHost : IAsyncDisposable
     {
         var log = Get<AppLog>();
         log.Info("Cuebot", $"Starting (data folder: {Get<AppPaths>().Root}, display backend: {Program.BackendName})");
+        Get<Cuebot.Core.Chat.ChatHub>();   // created before platforms connect, so no chat is missed
         Get<ActionEngine>().Start();
         Get<TimerService>().Start();
 
         await Task.WhenAll(
             StartSafely(log, "Twitch", () => Get<TwitchService>().StartAsync()),
             StartSafely(log, "OBS", () => Get<ObsService>().StartAsync()),
+            StartSafely(log, "Rumble", () => Get<RumbleService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),
             StartSafely(log, "Python", () => Get<PythonRuntime>().StartAsync()));
 

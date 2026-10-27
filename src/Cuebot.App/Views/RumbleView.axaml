@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.RumbleView"
+             x:DataType="vm:RumbleViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Rumble" />
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Connection" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="On rumble.com open your account menu → Live Stream API, create a key and paste the full URL here. Cuebot polls it for followers, subscribers, rants and live status, and reads live chat while you stream." />
+          <TextBox Text="{Binding LiveStreamApiUrl}" PasswordChar="•" PlaceholderText="https://rumble.com/-livestream-api/get-data?key=..." />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <TextBlock Text="Check every (seconds)" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PollSeconds}" Minimum="5" Maximum="300" Increment="5" FormatString="0" Width="140" />
+            <CheckBox Content="Connect automatically" IsChecked="{Binding AutoConnect}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+          </StackPanel>
+          <TextBlock>
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Text="{Binding Channel, StringFormat='Channel: {0}'}" />
+          <TextBlock Text="{Binding LiveStatus}" />
+          <TextBlock Classes="error" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Send chat (optional)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Reading chat needs no sign-in. To post messages, sign in with your Rumble account; Cuebot keeps only the session, never your password. Rumble has no official chat API, so this may break if Rumble changes its site." />
+          <TextBlock Text="{Binding ChatAccount}" />
+          <StackPanel Spacing="8" IsVisible="{Binding !IsSignedIn}">
+            <TextBox Text="{Binding Username}" PlaceholderText="Rumble username" />
+            <TextBox Text="{Binding Password}" PasswordChar="•" PlaceholderText="Password" />
+            <Button Content="Sign in" Command="{Binding SignInCommand}" />
+          </StackPanel>
+          <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding IsSignedIn}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

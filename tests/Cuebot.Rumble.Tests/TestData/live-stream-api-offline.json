@@ -1,0 +1,23 @@
+{
+  "now": 1767268800,
+  "type": "user",
+  "user_id": "_u3x9k2",
+  "username": "CuebotDev",
+  "channel_id": null,
+  "channel_name": null,
+  "since": null,
+  "max_num_results": 50,
+  "followers": {
+    "num_followers": 0,
+    "num_followers_total": 0,
+    "latest_follower": { "username": "", "followed_on": "" },
+    "recent_followers": [ { "username": "", "followed_on": "" } ]
+  },
+  "subscribers": {
+    "num_subscribers": 0,
+    "latest_subscriber": { "user": "", "username": "", "amount_cents": 0, "amount_dollars": 0, "subscribed_on": "" },
+    "recent_subscribers": []
+  },
+  "gifted_subs": { "num_gifted_subs": 0, "latest_gifted_sub": null, "recent_gifted_subs": [] },
+  "livestreams": []
+}

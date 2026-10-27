@@ -13,5 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cuebot.Twitch\Cuebot.Twitch.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Obs\Cuebot.Obs.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.Rumble\Cuebot.Rumble.csproj" />
   </ItemGroup>
 </Project>

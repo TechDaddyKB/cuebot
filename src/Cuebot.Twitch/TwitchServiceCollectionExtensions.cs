@@ -25,6 +25,8 @@ public static class TwitchServiceCollectionExtensions
         services.AddSingleton<ITriggerProvider, TwitchTriggers>();
         services.AddSingleton<ISubActionHandler, SendChatMessageSubAction>();
         services.AddSingleton<IScriptFunctionProvider, TwitchScriptFunctions>();
+        services.AddSingleton<Cuebot.Core.Chat.IChatEventAdapter, TwitchChatAdapter>();
+        services.AddSingleton<Cuebot.Core.Chat.IChatSender, TwitchChatSender>();
         return services;
     }
 }

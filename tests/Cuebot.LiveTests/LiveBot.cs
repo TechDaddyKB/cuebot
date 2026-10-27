@@ -33,7 +33,7 @@ public sealed class LiveBot : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var clientId = LiveEnvironment.TwitchClientId;
-        if (clientId is null && LiveEnvironment.ObsPassword is null) return;   // nothing configured: every test skips
+        if (!LiveEnvironment.RunRequested || (clientId is null && LiveEnvironment.ObsPassword is null)) return;   // every test skips
 
         Directory.CreateDirectory(LiveEnvironment.DataDirectory);
         _services = new ServiceCollection()

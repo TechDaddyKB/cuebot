@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Cuebot.Obs\Cuebot.Obs.csproj" />
     <ProjectReference Include="..\Cuebot.Speech\Cuebot.Speech.csproj" />
     <ProjectReference Include="..\Cuebot.Scripting\Cuebot.Scripting.csproj" />
+    <ProjectReference Include="..\Cuebot.Rumble\Cuebot.Rumble.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.UiTests" />

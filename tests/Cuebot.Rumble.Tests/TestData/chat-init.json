@@ -1,0 +1,27 @@
+{
+  "type": "init",
+  "data": {
+    "messages": [
+      { "id": "1346698903156345836", "time": "2026-01-01T12:59:00+0000", "user_id": "88707682", "text": "welcome!" },
+      { "id": "1346698903156345837", "time": "2026-01-01T12:59:30+0000", "user_id": "12345", "text": "hello there" },
+      { "id": "1346698903156345838", "time": "2026-01-01T12:59:40+0000", "user_id": "777", "channel_id": 4242, "text": "Great stream",
+        "rant": { "price_cents": 500, "duration": 120, "expires_on": "2026-01-01T13:01:40+0000" } }
+    ],
+    "users": [
+      { "id": "88707682", "username": "CuebotDev", "link": "/user/CuebotDev", "color": "e8b44c", "badges": ["admin", "verified"], "is_follower": false },
+      { "id": "12345", "username": "Bob", "link": "/user/Bob", "color": "85c742", "badges": ["premium", "moderator"], "is_follower": true },
+      { "id": "777", "username": "gina_personal", "link": "/user/gina_personal", "color": "ff8800", "badges": ["recurring_subscription", "whale-blue"], "is_follower": true }
+    ],
+    "channels": [
+      { "id": "4242", "username": "Gina", "link": "/c/Gina" }
+    ],
+    "config": {
+      "rants": { "enable": true, "levels": [] },
+      "message_length_max": 200,
+      "badges": {
+        "admin": { "icons": { "48": "/i/badges/admin_48.png" }, "label": { "en": "Admin" } },
+        "moderator": { "icons": { "48": "/i/badges/moderator_48.png" }, "label": { "en": "Moderator" } }
+      }
+    }
+  }
+}

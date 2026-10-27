@@ -3,6 +3,7 @@
     <Project Path="src/Cuebot.App/Cuebot.App.csproj" />
     <Project Path="src/Cuebot.Core/Cuebot.Core.csproj" />
     <Project Path="src/Cuebot.Obs/Cuebot.Obs.csproj" />
+    <Project Path="src/Cuebot.Rumble/Cuebot.Rumble.csproj" />
     <Project Path="src/Cuebot.Scripting/Cuebot.Scripting.csproj" />
     <Project Path="src/Cuebot.Speech/Cuebot.Speech.csproj" />
     <Project Path="src/Cuebot.Twitch/Cuebot.Twitch.csproj" />
@@ -10,6 +11,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Cuebot.LiveTests/Cuebot.LiveTests.csproj" />
     <Project Path="tests/Cuebot.Obs.Tests/Cuebot.Obs.Tests.csproj" />
+    <Project Path="tests/Cuebot.Rumble.Tests/Cuebot.Rumble.Tests.csproj" />
     <Project Path="tests/Cuebot.Scripting.Tests/Cuebot.Scripting.Tests.csproj" />
     <Project Path="tests/Cuebot.Speech.Tests/Cuebot.Speech.Tests.csproj" />
     <Project Path="tests/Cuebot.Tests/Cuebot.Tests.csproj" />

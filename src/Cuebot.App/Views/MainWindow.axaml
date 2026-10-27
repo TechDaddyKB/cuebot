@@ -10,10 +10,12 @@
         Width="1360" Height="860" MinWidth="960" MinHeight="600">
   <Window.DataTemplates>
     <DataTemplate DataType="vm:DashboardViewModel"><views:DashboardView /></DataTemplate>
+    <DataTemplate DataType="vm:ChatViewModel"><views:ChatView /></DataTemplate>
     <DataTemplate DataType="actions:ActionsViewModel"><views:ActionsView /></DataTemplate>
     <DataTemplate DataType="vm:TimersViewModel"><views:TimersView /></DataTemplate>
     <DataTemplate DataType="vm:VariablesViewModel"><views:VariablesView /></DataTemplate>
     <DataTemplate DataType="vm:TwitchViewModel"><views:TwitchView /></DataTemplate>
+    <DataTemplate DataType="vm:RumbleViewModel"><views:RumbleView /></DataTemplate>
     <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>

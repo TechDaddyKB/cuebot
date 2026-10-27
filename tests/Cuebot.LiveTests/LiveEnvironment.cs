@@ -17,9 +17,18 @@ internal static class LiveEnvironment
         if (!File.Exists(file)) return;
         foreach (var (key, value) in EnvFile.Parse(File.ReadAllLines(file)))
         {
+            if (key == RunSwitch) continue;   // the run switch must come from the caller, never from the file
             if (Environment.GetEnvironmentVariable(key) is null) Environment.SetEnvironmentVariable(key, value);
         }
     }
+
+    /// <summary>
+    /// Live tests only run when the caller sets CUEBOT_LIVE_TESTS=1 (build/run-live-tests.* does), so a plain
+    /// `dotnet test` of the solution never goes live just because ~/.cuebot/live.env exists.
+    /// </summary>
+    public const string RunSwitch = "CUEBOT_LIVE_TESTS";
+
+    public static bool RunRequested => Environment.GetEnvironmentVariable(RunSwitch) == "1";
 
     /// <summary>Client ID of a Twitch application registered as a Public client.</summary>
     public static string? TwitchClientId => Get("CUEBOT_LIVE_TWITCH_CLIENT_ID");
@@ -89,10 +98,11 @@ public static class EnvFile
 }
 
 /// <summary>Streams to one platform from the env file; needs OBS, CUEBOT_LIVE_STREAM=1 and CUEBOT_LIVE_OBS_SCENE.</summary>
-public sealed class LivePlatformStreamFactAttribute : FactAttribute
+public sealed class LivePlatformStreamFactAttribute : LiveFactAttribute
 {
     public LivePlatformStreamFactAttribute(string platform)
     {
+        if (Skip is not null) return;
         if (LiveEnvironment.ObsPassword is null)
             Skip = "Set CUEBOT_OBS_PASSWORD (see docs/LIVE_TESTING.md)";
         else if (!LiveEnvironment.StreamingAllowed || LiveEnvironment.StreamScene is null)
@@ -102,11 +112,22 @@ public sealed class LivePlatformStreamFactAttribute : FactAttribute
     }
 }
 
+/// <summary>Base for every live test: skips unless the run was explicitly requested (CUEBOT_LIVE_TESTS=1).</summary>
+public abstract class LiveFactAttribute : FactAttribute
+{
+    protected LiveFactAttribute()
+    {
+        if (!LiveEnvironment.RunRequested)
+            Skip = "Live tests run only via build/run-live-tests (sets CUEBOT_LIVE_TESTS=1); see docs/LIVE_TESTING.md";
+    }
+}
+
 /// <summary>Runs only with CUEBOT_LIVE_TWITCH_CLIENT_ID set. Posts "dev testing" messages to your own chat.</summary>
-public sealed class LiveTwitchFactAttribute : FactAttribute
+public sealed class LiveTwitchFactAttribute : LiveFactAttribute
 {
     public LiveTwitchFactAttribute()
     {
+        if (Skip is not null) return;
         if (LiveEnvironment.TwitchClientId is null)
             Skip = "Set CUEBOT_LIVE_TWITCH_CLIENT_ID to run against real Twitch (see docs/LIVE_TESTING.md)";
     }
@@ -116,10 +137,11 @@ public sealed class LiveTwitchFactAttribute : FactAttribute
 /// Goes live on Twitch: needs the Twitch client ID and stream key, OBS, and CUEBOT_LIVE_STREAM=1 plus
 /// CUEBOT_LIVE_OBS_SCENE, because it is public.
 /// </summary>
-public sealed class LiveTwitchStreamFactAttribute : FactAttribute
+public sealed class LiveTwitchStreamFactAttribute : LiveFactAttribute
 {
     public LiveTwitchStreamFactAttribute()
     {
+        if (Skip is not null) return;
         if (LiveEnvironment.TwitchClientId is null || LiveEnvironment.ObsPassword is null)
             Skip = "Set CUEBOT_LIVE_TWITCH_CLIENT_ID and CUEBOT_OBS_PASSWORD (see docs/LIVE_TESTING.md)";
         else if (!LiveEnvironment.StreamingAllowed || LiveEnvironment.StreamScene is null)

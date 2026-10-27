@@ -19,10 +19,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Pages =
         [
             Dashboard,
+            new ChatViewModel(host.Get<Cuebot.Core.Chat.ChatHub>()),
             new ActionsViewModel(host.Get<ProfileService>(), host.Get<Registry>(), host.Get<ActionEngine>()),
             new TimersViewModel(host.Get<ProfileService>()),
             new VariablesViewModel(host.Get<GlobalVariables>()),
             new TwitchViewModel(host.Get<TwitchService>()),
+            new RumbleViewModel(host.Get<Cuebot.Rumble.RumbleService>()),
             new ObsViewModel(host.Get<ObsService>()),
             new SpeechViewModel(host.Get<SpeechService>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),

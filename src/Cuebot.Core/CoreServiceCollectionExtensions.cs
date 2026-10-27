@@ -34,6 +34,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ISubActionHandler, RunActionSubAction>();
         services.AddSingleton<ISubActionHandler, RunProgramSubAction>();
         services.AddSingleton<ITriggerProvider, CoreTriggers>();
+        services.AddSingleton<Chat.ChatHub>();
+        services.AddSingleton<ITriggerProvider, Chat.ChatTriggers>();
+        services.AddSingleton<ISubActionHandler, Chat.SendChatToPlatformsSubAction>();
         services.AddSingleton<IScriptFunctionProvider, CoreScriptFunctions>();
         return services;
     }

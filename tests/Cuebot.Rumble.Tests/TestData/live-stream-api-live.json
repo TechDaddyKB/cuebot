@@ -1,0 +1,63 @@
+{
+  "now": 1767272400,
+  "type": "channel",
+  "user_id": "_u3x9k2",
+  "username": "CuebotDev",
+  "channel_id": "_c1ab2cd",
+  "channel_name": "Cuebot Dev Channel",
+  "since": null,
+  "max_num_results": 50,
+  "followers": {
+    "num_followers": 165,
+    "num_followers_total": 362,
+    "latest_follower": { "username": "Carol", "followed_on": "2026-01-01T12:58:00+00:00" },
+    "recent_followers": [
+      { "username": "Carol", "followed_on": "2026-01-01T12:58:00+00:00" },
+      { "username": "Bob", "followed_on": "2026-01-01T12:30:00+00:00" },
+      { "username": "Alice", "followed_on": "2025-12-31T20:43:56-04:00" }
+    ]
+  },
+  "subscribers": {
+    "num_subscribers": 2,
+    "num_subscribers_total": 4,
+    "latest_subscriber": { "user": "Dave", "username": "Dave", "amount_cents": 500, "amount_dollars": 5, "subscribed_on": "2026-01-01T11:03:05+00:00" },
+    "recent_subscribers": [
+      { "user": "Dave", "username": "Dave", "amount_cents": 500, "amount_dollars": 5, "subscribed_on": "2026-01-01T11:03:05+00:00" },
+      { "user": "Erin", "username": "Erin", "amount_cents": 1000, "amount_dollars": 10, "subscribed_on": "2025-12-15T20:50:50+00:00" }
+    ]
+  },
+  "gifted_subs": {
+    "num_gifted_subs": 1,
+    "latest_gifted_sub": { "total_gifts": 5, "gift_type": "rumble", "remaining_gifts": 2, "video_id": 284390214, "purchased_by": "Frank" },
+    "recent_gifted_subs": [
+      { "total_gifts": 5, "gift_type": "rumble", "remaining_gifts": 2, "video_id": 284390214, "purchased_by": "Frank" }
+    ]
+  },
+  "livestreams": [
+    {
+      "id": "4ponnu",
+      "title": "dev testing: Cuebot",
+      "created_on": "2026-01-01T12:00:00+00:00",
+      "is_live": true,
+      "categories": {
+        "primary": { "slug": "gaming", "title": "Gaming" },
+        "secondary": { "slug": "simulators", "title": "Simulators" }
+      },
+      "stream_key": "SECRET-STREAM-KEY",
+      "likes": 3,
+      "dislikes": 1,
+      "watching_now": 19,
+      "chat": {
+        "latest_message": { "username": "Bob", "badges": ["premium"], "text": "hello there", "created_on": "2026-01-01T12:59:30+00:00" },
+        "recent_messages": [
+          { "username": "Bob", "badges": ["premium"], "text": "hello there", "created_on": "2026-01-01T12:59:30+00:00" },
+          { "username": "CuebotDev", "badges": ["admin", "verified"], "text": "welcome!", "created_on": "2026-01-01T12:59:00+00:00" }
+        ],
+        "latest_rant": { "username": "Gina", "badges": ["whale-blue"], "text": "Great stream", "created_on": "2026-01-01T12:50:37+00:00", "expires_on": "2026-01-01T12:52:37+00:00", "amount_cents": 500, "amount_dollars": 5 },
+        "recent_rants": [
+          { "username": "Gina", "badges": ["whale-blue"], "text": "Great stream", "created_on": "2026-01-01T12:50:37+00:00", "expires_on": "2026-01-01T12:52:37+00:00", "amount_cents": 500, "amount_dollars": 5 }
+        ]
+      }
+    }
+  ]
+}

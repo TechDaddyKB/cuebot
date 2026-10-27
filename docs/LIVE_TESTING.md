@@ -8,10 +8,14 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Twitch chat | Sign-in (device code), EventSub connects, a Helix chat message comes back as a `channel.chat.message` event, `!cuebottest` → command trigger → action → chat reply | Twitch client ID |
 | `Cuebot.LiveTests` › Twitch going live | Cuebot starts the stream in OBS → `obs.streamStarted`, Twitch `stream.online` and the online trigger's chat message, healthy output for the configured duration, stop → `obs.streamStopped` and Twitch `stream.offline` | Twitch client ID + stream key, OBS, streaming enabled |
 | `Cuebot.LiveTests` › YouTube / Kick | The platform's ingest accepts a stream Cuebot starts and stops: live, data flowing, no reconnects, no dropped frames | Stream key (and Kick ingest URL), OBS, streaming enabled |
+| `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
-Every test **skips** unless its settings are present, so CI and normal `dotnet test` runs are unaffected.
+Every test **skips** unless its settings are present, so CI and normal `dotnet test` runs are unaffected. The
+`Cuebot.LiveTests` suite additionally runs only when `CUEBOT_LIVE_TESTS=1` is set by the caller (the runner scripts
+do this; it is never read from `live.env`), so having a filled-in `live.env` can't make an ordinary `dotnet test`
+of the solution go live. To run that suite directly, set `CUEBOT_LIVE_TESTS=1` yourself.
 
 ## Setup
 
@@ -27,6 +31,15 @@ Every test **skips** unless its settings are present, so CI and normal `dotnet t
    whatever title the platform has. For YouTube use a reusable **stream key**, not OBS's "Connect Account"
    (that needs the Manage Broadcast dialog), and consider making it Unlisted.
 5. Going live is public, so nothing streams until you set `CUEBOT_LIVE_STREAM=1`.
+
+### Rumble
+
+Put your Live Stream API URL (rumble.com → Account → Live Stream API; it contains a private key) in
+`CUEBOT_LIVE_RUMBLE_API_URL`. That alone runs the read-only test. For the going-live test also set
+`CUEBOT_LIVE_RUMBLE_RTMP_URL` and `CUEBOT_LIVE_RUMBLE_STREAM_KEY` from Rumble's stream setup page. Rumble's API
+reports a stream going live or ending with a delay, so that test allows up to five minutes for each. The live
+chat endpoints Cuebot uses are unofficial (see `src/Cuebot.Rumble/PROTOCOL.md`); if the API works but the chat
+never attaches, Rumble has probably changed them.
 
 ## Running
 

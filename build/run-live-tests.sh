@@ -10,6 +10,9 @@ mkdir -p "$results"
 stamp="$(date +%Y%m%d-%H%M%S)"
 env_file="${CUEBOT_LIVE_ENV_FILE:-$HOME/.cuebot/live.env}"
 
+# Live tests only run when explicitly requested; a plain `dotnet test` never goes live.
+export CUEBOT_LIVE_TESTS=1
+
 # Load KEY=VALUE pairs into this process only; values are never printed.
 if [ -f "$env_file" ]; then
   export CUEBOT_LIVE_ENV_FILE="$env_file"

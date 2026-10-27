@@ -12,6 +12,9 @@ $results = Join-Path $root "artifacts/live-tests"
 New-Item -ItemType Directory -Force $results | Out-Null
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 
+# Live tests only run when explicitly requested; a plain `dotnet test` never goes live.
+$env:CUEBOT_LIVE_TESTS = "1"
+
 # Load KEY=VALUE pairs into this process only; values are never printed.
 if (Test-Path $EnvFile) {
     $env:CUEBOT_LIVE_ENV_FILE = $EnvFile

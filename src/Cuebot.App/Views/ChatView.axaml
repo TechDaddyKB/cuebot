@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.ChatView"
+             x:DataType="vm:ChatViewModel">
+  <Grid ColumnDefinitions="2*,12,*" Margin="24">
+    <!-- Combined chat -->
+    <Border Classes="card" Margin="0">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <ComboBox DockPanel.Dock="Right" ItemsSource="{Binding PlatformFilters}" SelectedItem="{Binding Filter}" MinWidth="130" />
+          <TextBlock Classes="h2" Text="Chat" VerticalAlignment="Center" Margin="0" />
+        </DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
+          <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+            <ComboBox ItemsSource="{Binding SendTargets}" SelectedItem="{Binding SendTarget}" MinWidth="110" ToolTip.Tip="Send to" />
+            <TextBox Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message" KeyDown="OnDraftKeyDown" />
+            <Button Grid.Column="4" Content="Send" Classes="accent" Command="{Binding SendCommand}" />
+          </Grid>
+          <TextBlock Text="{Binding Status}" Classes="muted" />
+        </StackPanel>
+        <ListBox x:Name="ChatList" ItemsSource="{Binding Messages}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="vm:ChatLineViewModel">
+              <Grid ColumnDefinitions="Auto,Auto,*">
+                <Border Background="{Binding PlatformBrush}" CornerRadius="3" Padding="5,0" Margin="0,2,8,0" VerticalAlignment="Top"
+                        ToolTip.Tip="{Binding Platform}">
+                  <TextBlock Text="{Binding Platform}" FontSize="10" FontWeight="Bold" Foreground="#111" />
+                </Border>
+                <TextBlock Grid.Column="1" Text="{Binding Time}" Classes="muted" Margin="0,2,8,0" VerticalAlignment="Top" />
+                <TextBlock Grid.Column="2" TextWrapping="Wrap">
+                  <Run Text="{Binding Badges}" /><Run Text="{Binding User}" FontWeight="SemiBold" Foreground="{Binding UserBrush}" /><Run Text=": " /><Run Text="{Binding Text}" />
+                </TextBlock>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Activity feed -->
+    <Border Grid.Column="2" Classes="card" Margin="0">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearFeedCommand}" />
+          <TextBlock Classes="h2" Text="Activity" VerticalAlignment="Center" Margin="0" />
+        </DockPanel>
+        <ListBox ItemsSource="{Binding Feed}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="vm:FeedLineViewModel">
+              <Grid ColumnDefinitions="Auto,*">
+                <Border Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="0,0,10,0" />
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
+                  <TextBlock Classes="muted">
+                    <Run Text="{Binding Platform}" /><Run Text=" · " /><Run Text="{Binding Kind}" /><Run Text=" · " /><Run Text="{Binding Time}" />
+                  </TextBlock>
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>
