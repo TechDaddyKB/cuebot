@@ -9,6 +9,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Twitch going live | Cuebot starts the stream in OBS → `obs.streamStarted`, Twitch `stream.online` and the online trigger's chat message, healthy output for the configured duration, stop → `obs.streamStopped` and Twitch `stream.offline` | Twitch client ID + stream key, OBS, streaming enabled |
 | `Cuebot.LiveTests` › YouTube / Kick | The platform's ingest accepts a stream Cuebot starts and stops: live, data flowing, no reconnects, no dropped frames | Stream key (and Kick ingest URL), OBS, streaming enabled |
 | `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
+| `Cuebot.LiveTests` › YouTube API | Device-code sign-in (approved once), connection and channel info; with `CUEBOT_LIVE_YOUTUBE_CHAT=1` while live: a sent message comes back through the chat poll | Google OAuth client ID + secret; for chat a live broadcast |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -46,6 +47,16 @@ accepts the stream (the dashboard shows it LIVE) but the Live Stream API never l
 `rumble.streamOnline` event or chat arrives. The live
 chat endpoints Cuebot uses are unofficial (see `src/Cuebot.Rumble/PROTOCOL.md`); if the API works but the chat
 never attaches, Rumble has probably changed them.
+
+### YouTube API
+
+Create an OAuth client of type **TVs and Limited Input devices** in your own Google Cloud project (YouTube Data
+API v3 enabled; steps in `src/Cuebot.YouTube/YOUTUBE.md`) and put its ID and secret in
+`CUEBOT_LIVE_YOUTUBE_CLIENT_ID` / `CUEBOT_LIVE_YOUTUBE_CLIENT_SECRET`. The first run prints a device code (also in
+`<data folder>/youtube/sign-in.txt`) and waits up to five minutes for approval; the sign-in is kept for later runs.
+The read-only test costs a few quota units. The chat round trip (`CUEBOT_LIVE_YOUTUBE_CHAT=1`) needs a broadcast
+that is live (started by you, or by the YouTube going-live test) and posts one visible "dev testing" message
+(50 units).
 
 ## Running
 
