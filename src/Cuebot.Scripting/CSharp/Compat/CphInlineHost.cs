@@ -28,16 +28,24 @@ internal sealed partial class CphInlineHost : IDisposable
 
     private static readonly string GlobalUsings =
         "global using System;\nglobal using System.Collections.Generic;\nglobal using System.Linq;\n"
-        // Streamer.bot's documented examples use its data classes (TwitchUserInfo, ...) with only `using System;`.
-        + "global using Streamer.bot.Plugin.Interface.Model;\n";
+        // Streamer.bot's documented examples use its data classes (TwitchUserInfo, ...), Platform and EventType with
+        // only `using System;`.
+        + "global using Streamer.bot.Plugin.Interface.Model;\nglobal using Streamer.bot.Plugin.Interface.Enums;\n"
+        + "global using Streamer.bot.Common.Events;\nglobal using Twitch.Common.Models.Api;\n";
 
     private readonly Dictionary<string, Compiled> _compiled = [];
     private readonly LinkedList<string> _order = new();
     private readonly object _gate = new();
     private readonly AppLog? _log;
+    private readonly Func<IReadOnlyList<string>>? _globalReferences;
     private bool _disposed;
 
-    public CphInlineHost(AppLog? log = null) => _log = log;
+    /// <param name="globalReferences">Custom DLLs (full paths) every class is compiled with; null for none.</param>
+    public CphInlineHost(AppLog? log = null, Func<IReadOnlyList<string>>? globalReferences = null)
+    {
+        _log = log;
+        _globalReferences = globalReferences;
+    }
 
     [GeneratedRegex(@"\bclass\s+CPHInline\b")]
     private static partial Regex InlineClass();
@@ -51,10 +59,12 @@ internal sealed partial class CphInlineHost : IDisposable
     }
 
     /// <summary>Runs Execute() with this run's CPH and args. Returns its result (false stops the action).</summary>
-    public Task<bool> ExecuteAsync(string code, CphProxy proxy, ActionRunContext context, CancellationToken ct) =>
+    /// <param name="references">Custom DLLs the code needs (full paths), besides the framework and Cuebot's.</param>
+    public Task<bool> ExecuteAsync(string code, CphProxy proxy, ActionRunContext context, CancellationToken ct,
+        IReadOnlyList<string>? references = null) =>
         Task.Run(() =>
         {
-            var compiled = Get(code);
+            var compiled = Get(code, references);
             CPHInlineBase.Enter(proxy, context.Args);
             compiled.EnsureInitialized();
             return compiled.Execute();
@@ -65,25 +75,39 @@ internal sealed partial class CphInlineHost : IDisposable
     /// same long-lived instance its Execute() uses), with the caller's CPH and args, for <c>CPH.ExecuteMethod</c>.
     /// Returns the method's bool result (true for void methods), or null when there is no such method.
     /// </summary>
-    internal bool? InvokeMethod(string code, string methodName, CphProxy proxy, Dictionary<string, object?> args)
+    internal bool? InvokeMethod(string code, string methodName, CphProxy proxy, Dictionary<string, object?> args,
+        IReadOnlyList<string>? references = null)
     {
-        var compiled = Get(code);
+        var compiled = Get(code, references);
         CPHInlineBase.Enter(proxy, args);
         compiled.EnsureInitialized();
         return compiled.Invoke(methodName);
     }
 
-    /// <summary>Compiles (or returns the cached) script. Throws <see cref="ScriptException"/> with the compile errors.</summary>
-    internal Compiled Get(string code)
+    /// <summary>
+    /// Compiles the code and runs its Init() now ("Precompile on Application Start"), with a CPH that has no action
+    /// run. Later runs reuse the compiled instance and do not run Init() again.
+    /// </summary>
+    internal void Precompile(string code, CphProxy proxy, IReadOnlyList<string>? references = null)
     {
-        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+        var compiled = Get(code, references);
+        CPHInlineBase.Enter(proxy, new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase));
+        compiled.EnsureInitialized();
+    }
+
+    /// <summary>Compiles (or returns the cached) script. Throws <see cref="ScriptException"/> with the compile errors.</summary>
+    internal Compiled Get(string code, IReadOnlyList<string>? references = null)
+    {
+        var global = _globalReferences?.Invoke() ?? [];
+        references = global.Count == 0 ? references ?? [] : [.. global.Union(references ?? [], StringComparer.OrdinalIgnoreCase)];
+        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code + CSharpReferences.Key(references))));
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (_compiled.TryGetValue(key, out var cached)) return cached;
         }
 
-        var compiled = Compile(code);
+        var compiled = Compile(code, references);
         Compiled? evicted = null;
         lock (_gate)
         {
@@ -101,7 +125,7 @@ internal sealed partial class CphInlineHost : IDisposable
         return compiled;
     }
 
-    private static Compiled Compile(string code)
+    private static Compiled Compile(string code, IReadOnlyList<string> customReferences)
     {
         var parse = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
         var tree = CSharpSyntaxTree.ParseText(code, parse, CSharpScriptCompiler.ScriptFileName, Encoding.UTF8);
@@ -111,7 +135,7 @@ internal sealed partial class CphInlineHost : IDisposable
         var compilation = CSharpCompilation.Create(
             "CPHInline_" + Guid.NewGuid().ToString("N"),
             [tree, usings],
-            References.Value,
+            WithCustom(References.Value, customReferences),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
                 optimizationLevel: OptimizationLevel.Debug, allowUnsafe: true, nullableContextOptions: NullableContextOptions.Disable));
 
@@ -150,7 +174,18 @@ internal sealed partial class CphInlineHost : IDisposable
             });
     }
 
-    /// <summary>Every framework assembly plus Cuebot's, so scripts can use any BCL namespace like in Streamer.bot.</summary>
+    /// <summary>The standard references plus the user's DLLs, skipping any the standard set already has.</summary>
+    private static IReadOnlyList<MetadataReference> WithCustom(IReadOnlyList<MetadataReference> standard, IReadOnlyList<string> custom)
+    {
+        if (custom.Count == 0) return standard;
+        var present = standard.Select(r => Path.GetFileName(r.Display ?? "")).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return [.. standard, .. CSharpReferences.Load(custom).Where(r => !present.Contains(Path.GetFileName(r.Display ?? "")))];
+    }
+
+    /// <summary>
+    /// Every framework assembly plus Cuebot's and Newtonsoft.Json (which Streamer.bot ships), so scripts can use any
+    /// BCL namespace like in Streamer.bot.
+    /// </summary>
     private static IReadOnlyList<MetadataReference> LoadReferences()
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -158,7 +193,8 @@ internal sealed partial class CphInlineHost : IDisposable
         {
             foreach (var path in tpa.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)) paths.Add(path);
         }
-        foreach (var assembly in new[] { typeof(object).Assembly, typeof(CphProxy).Assembly, typeof(ActionEngine).Assembly })
+        foreach (var assembly in new[] { typeof(object).Assembly, typeof(CphProxy).Assembly, typeof(ActionEngine).Assembly,
+                     typeof(Newtonsoft.Json.JsonConvert).Assembly })
         {
             if (!string.IsNullOrEmpty(assembly.Location)) paths.Add(assembly.Location);
         }

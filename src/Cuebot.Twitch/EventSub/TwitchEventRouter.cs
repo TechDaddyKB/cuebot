@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Cuebot.Core.Events;
+using Cuebot.Twitch.Compat;
 
 namespace Cuebot.Twitch.EventSub;
 
@@ -41,18 +42,52 @@ internal sealed class TwitchEventRouter(
     Func<string> botUserId,
     SentMessageTracker sent,
     Func<int>? pyramidMinWidth = null,
-    TwitchCounters? counters = null)
+    TwitchCounters? counters = null,
+    Func<string>? broadcasterLogin = null)
 {
+    private const int RememberedMessages = 300;
+
     private readonly object _gate = new();
     private readonly Dictionary<string, DateTimeOffset> _timeouts = new(StringComparer.Ordinal);
     private readonly PyramidDetector _pyramids = new();
+    private readonly Dictionary<string, RewardSettings> _rewards = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _messages = new(StringComparer.Ordinal);
+    private readonly Queue<string> _messageOrder = new();
+    private readonly Dictionary<string, int> _giftBombs = new(StringComparer.Ordinal);
     private TwitchChatSettings? _chatSettings;
+    private TwitchBroadcasterArgs? _broadcaster;
+    private (string Title, string GameId, string GameName)? _channel;
+    private (string User, string UserName, string UserId, string Image)? _raidTarget;
+    private bool? _sharedChatHost;
     private int _hypeTrainLevel;
+    private int _pyramidCount;
+    private int _pyramidBrokenCount;
 
     /// <summary>Sets the chat modes the next "chat settings updated" notification is compared with.</summary>
     public void SeedChatSettings(TwitchChatSettings settings)
     {
         lock (_gate) _chatSettings = settings;
+    }
+
+    /// <summary>The broadcaster's display name and type, for Streamer.bot's broadcastUser* arguments.</summary>
+    public void SeedBroadcaster(TwitchUser user)
+    {
+        lock (_gate) _broadcaster = new TwitchBroadcasterArgs(user.Login, user.Id, user.DisplayName, user.BroadcasterType);
+    }
+
+    /// <summary>Reward settings that EventSub redemptions do not carry (skipsQueue, maxPerStream...).</summary>
+    public void SeedRewards(IEnumerable<TwitchReward> rewards)
+    {
+        lock (_gate)
+            foreach (var r in rewards)
+                _rewards[r.Id] = new RewardSettings(r.SkipQueue, r.IsUserInputRequired, r.MaxPerStream, r.MaxPerUserPerStream,
+                    r.GlobalCooldownSeconds, r.BackgroundColor);
+    }
+
+    /// <summary>The current title and category, so the next stream update can report what changed.</summary>
+    public void SeedChannel(TwitchChannelInfo channel)
+    {
+        lock (_gate) _channel = (channel.Title, channel.GameId, channel.GameName);
     }
 
     public IReadOnlyList<BotEvent> Route(string subscriptionType, JsonElement payload, bool botSession = false)
@@ -62,7 +97,125 @@ internal sealed class TwitchEventRouter(
         return Route(primary, botSession);
     }
 
+    /// <summary>
+    /// The events to publish for <paramref name="primary"/>, each with Streamer.bot's argument names added
+    /// (see <see cref="StreamerBotVariables"/>).
+    /// </summary>
     internal IReadOnlyList<BotEvent> Route(BotEvent primary, bool botSession = false)
+    {
+        primary = Remember(primary);
+        var broadcaster = Broadcaster();
+        return RouteCore(primary, botSession)
+            .Select(e => e.Type.StartsWith("twitch.", StringComparison.Ordinal) ? StreamerBotVariables.Apply(e, broadcaster) : e)
+            .ToList();
+    }
+
+    private TwitchBroadcasterArgs Broadcaster()
+    {
+        lock (_gate)
+            if (_broadcaster is { } seeded && seeded.UserId == broadcasterId()) return seeded;
+        return new TwitchBroadcasterArgs(broadcasterLogin?.Invoke() ?? "", broadcasterId());
+    }
+
+    /// <summary>Values Streamer.bot reports that need memory across events: reward settings, old title, raid target...</summary>
+    private BotEvent Remember(BotEvent e)
+    {
+        lock (_gate)
+        {
+            switch (e.Type)
+            {
+                case TwitchEventTypes.ChatMessage:
+                    var id = Str(e, "messageId");
+                    if (id.Length > 0 && !_messages.ContainsKey(id))
+                    {
+                        _messages[id] = Str(e, "message");
+                        _messageOrder.Enqueue(id);
+                        if (_messageOrder.Count > RememberedMessages) _messages.Remove(_messageOrder.Dequeue());
+                    }
+                    return e;
+                case TwitchEventTypes.ChatMessageDeleted when !e.Args.ContainsKey("message"):
+                    return _messages.TryGetValue(Str(e, "messageId"), out var deleted) ? Retype(e, e.Type, a => a["message"] = deleted) : e;
+                case TwitchEventTypes.RewardCreated or TwitchEventTypes.RewardUpdated:
+                    _rewards[Str(e, "rewardId")] = new RewardSettings(Bool(e, "skipsQueue"), Bool(e, "requiresUserInput"),
+                        Int(e, "maxPerStream"), Int(e, "maxPerUserPerStream"), Int(e, "globalCooldown"), Str(e, "backgroundColor"));
+                    return e;
+                case TwitchEventTypes.RewardDeleted:
+                    _rewards.Remove(Str(e, "rewardId"));
+                    return e;
+                case TwitchEventTypes.RewardRedemption or TwitchEventTypes.RewardRedemptionUpdated:
+                    if (!_rewards.TryGetValue(Str(e, "rewardId"), out var reward)) return e;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a.TryAdd("skipsQueue", reward.SkipsQueue);
+                        a.TryAdd("requiresUserInput", reward.RequiresUserInput);
+                        a.TryAdd("maxPerStream", reward.MaxPerStream);
+                        a.TryAdd("maxPerUserPerStream", reward.MaxPerUserPerStream);
+                        a.TryAdd("globalCooldown", reward.GlobalCooldown);
+                        a.TryAdd("backgroundColor", reward.BackgroundColor);
+                    });
+                case TwitchEventTypes.StreamUpdate:
+                    var before = _channel;
+                    _channel = (Str(e, "title"), Str(e, "gameId"), Str(e, "gameName"));
+                    if (before is not { } old) return e;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a["statusUpdate"] = old.Title != Str(e, "title");
+                        a["gameUpdate"] = old.GameId != Str(e, "gameId");
+                        a["oldStatus"] = old.Title;
+                        a["oldGameId"] = old.GameId;
+                        a["oldGameName"] = old.GameName;
+                    });
+                case TwitchEventTypes.GiftBomb or TwitchEventTypes.SharedChatGiftBomb:
+                    if (Str(e, "communityGiftId") is { Length: > 0 } bomb)
+                    {
+                        if (_giftBombs.Count > 50) _giftBombs.Clear();
+                        _giftBombs[bomb] = Int(e, "total");
+                    }
+                    return e;
+                case TwitchEventTypes.SubGift or TwitchEventTypes.SharedChatSubGift:
+                    return _giftBombs.TryGetValue(Str(e, "communityGiftId"), out var size)
+                        ? Retype(e, e.Type, a => a["subBombCount"] = size)
+                        : Retype(e, e.Type, a => a["subBombCount"] = 0);
+                case TwitchEventTypes.SharedChatBegin or TwitchEventTypes.SharedChatUpdate:
+                    _sharedChatHost = Bool(e, "isHost");
+                    return e;
+                case TwitchEventTypes.SharedChatEnd:
+                    _sharedChatHost = null;
+                    return e;
+                case TwitchEventTypes.HypeTrainStart or TwitchEventTypes.HypeTrainUpdate or TwitchEventTypes.HypeTrainEnd:
+                    var host = _sharedChatHost;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a.TryAdd("isInSharedChat", host is not null);
+                        a.TryAdd("isSharedChatHost", host is true);
+                    });
+                case TwitchEventTypes.RaidStart:
+                    _raidTarget = (Str(e, "user"), Str(e, "userName"), Str(e, "userId"), Str(e, "profileImageUrl"));
+                    return e;
+                case TwitchEventTypes.RaidSend:
+                    var sent = _raidTarget;
+                    _raidTarget = null;
+                    return sent is { } target && target.UserId == Str(e, "userId") && !e.Args.ContainsKey("profileImageUrl")
+                        ? Retype(e, e.Type, a => a["profileImageUrl"] = target.Image)
+                        : e;
+                case TwitchEventTypes.RaidCancelled:
+                    var cancelled = _raidTarget;
+                    _raidTarget = null;
+                    if (cancelled is not { } c) return e;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a["raidUser"] = c.User;
+                        a["raidUserName"] = c.UserName;
+                        a["raidUserId"] = c.UserId;
+                        a["profileImageUrl"] = c.Image;
+                    });
+                default:
+                    return e;
+            }
+        }
+    }
+
+    private List<BotEvent> RouteCore(BotEvent primary, bool botSession)
     {
         var events = new List<BotEvent>();
         switch (primary.Type)
@@ -124,12 +277,14 @@ internal sealed class TwitchEventRouter(
                 events.Add(primary);
                 var level = Int(primary, "level");
                 bool levelUp;
+                int previous;
                 lock (_gate)
                 {
+                    previous = _hypeTrainLevel;
                     levelUp = _hypeTrainLevel > 0 && level > _hypeTrainLevel;
                     _hypeTrainLevel = Math.Max(_hypeTrainLevel, level);
                 }
-                if (levelUp) events.Add(Retype(primary, TwitchEventTypes.HypeTrainLevelUp));
+                if (levelUp) events.Add(Retype(primary, TwitchEventTypes.HypeTrainLevelUp, a => a["prevLevel"] = previous));
                 break;
             case TwitchEventTypes.HypeTrainEnd:
                 lock (_gate) _hypeTrainLevel = 0;
@@ -189,15 +344,26 @@ internal sealed class TwitchEventRouter(
     {
         PyramidResult? result;
         lock (_gate)
-            result = _pyramids.Add(Str(message, "userId"), Str(message, "user"), Str(message, "message"), Math.Max(2, pyramidMinWidth?.Invoke() ?? 3));
+        {
+            result = _pyramids.Add(Str(message, "userId"), Str(message, "user"), Str(message, "message"), Math.Max(2, pyramidMinWidth?.Invoke() ?? 3),
+                Str(message, "userName"));
+            if (result is not null && result.Broken) _pyramidBrokenCount++;
+            else if (result is not null) _pyramidCount++;
+        }
         if (result is null) yield break;
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["user"] = result.User,
+            ["userName"] = result.UserName,
             ["userId"] = result.UserId,
             ["emote"] = result.Token,
             ["width"] = result.Width,
         };
+        lock (_gate)
+        {
+            if (result.Broken) args["totalPyramidsBroken"] = _pyramidBrokenCount;
+            else args["totalPyramids"] = _pyramidCount;
+        }
         if (result.Broken)
         {
             args["brokenBy"] = Str(message, "user");
@@ -245,10 +411,15 @@ internal sealed class TwitchEventRouter(
 
     private static int Int(BotEvent e, string key) =>
         int.TryParse(Str(e, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : 0;
+
+    private static bool Bool(BotEvent e, string key) => e.Args.GetValueOrDefault(key) is true;
+
+    private sealed record RewardSettings(bool SkipsQueue, bool RequiresUserInput, int MaxPerStream, int MaxPerUserPerStream,
+        int GlobalCooldown, string BackgroundColor);
 }
 
 /// <summary>A completed or broken chat pyramid.</summary>
-internal sealed record PyramidResult(string UserId, string User, string Token, int Width, bool Broken);
+internal sealed record PyramidResult(string UserId, string User, string Token, int Width, bool Broken, string UserName = "");
 
 /// <summary>
 /// Detects one-person chat pyramids ("Kappa", "Kappa Kappa", "Kappa Kappa Kappa", "Kappa Kappa", "Kappa"). Not
@@ -258,13 +429,14 @@ internal sealed class PyramidDetector
 {
     private string _userId = "";
     private string _user = "";
+    private string _userName = "";
     private string _token = "";
     private int _width;
     private int _peak;
     private bool _descending;
 
     /// <summary>Feeds one chat message; returns a result when a pyramid of at least <paramref name="minWidth"/> completes or breaks.</summary>
-    public PyramidResult? Add(string userId, string user, string message, int minWidth)
+    public PyramidResult? Add(string userId, string user, string message, int minWidth, string userName = "")
     {
         var words = message.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         var token = words.Length > 0 && words.All(w => w == words[0]) ? words[0] : null;
@@ -283,20 +455,21 @@ internal sealed class PyramidDetector
                 _descending = true;
                 _width = count;
                 if (count != 1) return null;
-                var done = _peak >= minWidth ? new PyramidResult(_userId, _user, _token, _peak, false) : null;
+                var done = _peak >= minWidth ? new PyramidResult(_userId, _user, _token, _peak, false, _userName) : null;
                 Reset();
                 return done;
             }
         }
 
         PyramidResult? broken = _width > 0 && Math.Max(_peak, _width) >= Math.Max(2, minWidth - 1)
-            ? new PyramidResult(_userId, _user, _token, _peak, true)
+            ? new PyramidResult(_userId, _user, _token, _peak, true, _userName)
             : null;
         Reset();
         if (count == 1)
         {
             _userId = userId;
             _user = user;
+            _userName = userName;
             _token = token!;
             _width = 1;
             _peak = 1;
@@ -306,7 +479,7 @@ internal sealed class PyramidDetector
 
     private void Reset()
     {
-        _userId = _user = _token = "";
+        _userId = _user = _userName = _token = "";
         _width = _peak = 0;
         _descending = false;
     }

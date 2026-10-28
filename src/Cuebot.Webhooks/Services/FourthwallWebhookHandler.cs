@@ -89,7 +89,11 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
             {
                 var order = type == FourthwallEventTypes.OrderUpdated ? data.Child("order") ?? data : data;
                 Order(order, a);
-                if (type == FourthwallEventTypes.OrderUpdated) a["fw.updateType"] = data.PathStr("update.type");
+                if (type == FourthwallEventTypes.OrderUpdated)
+                {
+                    a["fw.updateType"] = data.PathStr("update.type");
+                    a["fw.update"] = data.PathStr("update.type");   // Streamer.bot's name
+                }
                 user = order.Str("username");
                 amount = order.PathNumber("amounts.total.value");
                 currency = order.PathStr("amounts.total.currency");
@@ -165,21 +169,32 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
                 a["fw.state"] = data.PathStr("state.type");
                 a["fw.imageUrl"] = data.PathStr("thumbnailImage.url");
                 a["fw.updatedAt"] = JsonReaders.Time(data.Str("updatedAt"));
+                a["fw.productId"] = data.Str("id");
+                var images = data.Items("images").ToArray();
+                for (var i = 0; i < images.Length; i++)
+                    a[$"fw.images[{i}]"] = images[i].ValueKind == JsonValueKind.String ? JsonReaders.Text(images[i]) : images[i].Str("url");
                 var variants = data.Items("variants").ToArray();
                 for (var i = 0; i < variants.Length; i++)
                 {
                     var v = variants[i];
-                    a[$"fw.variants[{i}].id"] = v.Str("id");
-                    a[$"fw.variants[{i}].name"] = v.Str("name");
-                    a[$"fw.variants[{i}].sku"] = v.Str("sku");
-                    a[$"fw.variants[{i}].unitPrice"] = v.PathNumber("unitPrice.value");
-                    a[$"fw.variants[{i}].currencyCode"] = v.PathStr("unitPrice.currency");
-                    a[$"fw.variants[{i}].stock"] = v.PathStr("stock.type");
+                    var p = $"fw.variants[{i}]";
+                    a[$"{p}.id"] = v.Str("id");
+                    a[$"{p}.name"] = v.Str("name");
+                    a[$"{p}.sku"] = v.Str("sku");
+                    a[$"{p}.unitPrice"] = v.PathNumber("unitPrice.value");
+                    a[$"{p}.currencyCode"] = v.PathStr("unitPrice.currency");
+                    a[$"{p}.image"] = v.Items("images").FirstOrDefault() is { ValueKind: JsonValueKind.Object } image ? image.Str("url") : "";
+                    Attributes(v.Child("attributes"), p, a);
+                    a[$"{p}.attributes.weight"] = v.Path("weight.value") is { } weight
+                        ? $"{JsonReaders.Text(weight)} {v.PathStr("weight.unit")}".Trim()
+                        : "";
+                    Stock(v, p, a);
                 }
                 user = "";
                 message = data.Str("name");
                 break;
         }
+        a["fw.isTest"] = isTest;   // Streamer.bot's name (fw.testMode is Fourthwall's own flag)
         Common(a, Display(user), amount, currency, Display(message), isTest);
         return new WebhookEvent(type, [envelope.Str("id")], a);
     }
@@ -214,13 +229,31 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
             a[$"{p}.unitPrice"] = variant?.PathNumber("unitPrice.value") ?? 0;
             a[$"{p}.currencyCode"] = variant?.PathStr("unitPrice.currency") ?? "";
             a[$"{p}.image"] = offer.PathStr("primaryImage.url");
-            a[$"{p}.attributes.description"] = attributes.Str("description");
-            a[$"{p}.attributes.color"] = attributes.Child("color") is { ValueKind: JsonValueKind.Object } c ? c.Str("name") : attributes.Str("color");
-            a[$"{p}.attributes.colorSwatch"] = attributes.Child("color") is { ValueKind: JsonValueKind.Object } s ? s.Str("swatch") : "";
-            a[$"{p}.attributes.size"] = attributes.Child("size") is { ValueKind: JsonValueKind.Object } z ? z.Str("name") : attributes.Str("size");
+            Attributes(attributes, p, a);
+            Stock(variant, p, a);
         }
         a["fw.itemCount"] = offers.Sum(o => o.Path("variant.quantity") is { } q ? JsonReaders.Number(q) : 1);
         a["fw.items"] = string.Join(", ", offers.Select(o => o.Str("name")));
+    }
+
+    /// <summary><c>fw.variants[#].attributes.*</c>: description, color (name), colorSwatch and size (name).</summary>
+    private static void Attributes(JsonElement? attributes, string p, Dictionary<string, object?> a)
+    {
+        a[$"{p}.attributes.description"] = attributes.Str("description");
+        a[$"{p}.attributes.color"] = attributes.Child("color") is { ValueKind: JsonValueKind.Object } c ? c.Str("name") : attributes.Str("color");
+        a[$"{p}.attributes.colorSwatch"] = attributes.Child("color") is { ValueKind: JsonValueKind.Object } s ? s.Str("swatch") : "";
+        a[$"{p}.attributes.size"] = attributes.Child("size") is { ValueKind: JsonValueKind.Object } z ? z.Str("name") : attributes.Str("size");
+    }
+
+    /// <summary>
+    /// <c>fw.variants[#].stockType</c> (UNLIMITED / LIMITED) and <c>fw.variants[#].stock</c>: the units in stock when
+    /// Fourthwall says, otherwise the stock type.
+    /// </summary>
+    private static void Stock(JsonElement? variant, string p, Dictionary<string, object?> a)
+    {
+        var stockType = variant?.PathStr("stock.type") ?? "";
+        a[$"{p}.stockType"] = stockType;
+        a[$"{p}.stock"] = variant?.Path("stock.inStock") is { ValueKind: JsonValueKind.Number } inStock ? JsonReaders.Number(inStock) : stockType;
     }
 
     private static void Gift(JsonElement data, string type, Dictionary<string, object?> a)
@@ -234,7 +267,7 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
         // Gift draws carry no quantity: it is the number of gifts.
         a["fw.quantity"] = data.Has("quantity") ? data.Number("quantity") : data.Items("gifts").Count();
         a["fw.currency"] = data.PathStr("amounts.total.currency");
-        foreach (var part in new[] { "subtotal", "tax", "total", "profit" })
+        foreach (var part in new[] { "subtotal", "tax", "donation", "discount", "total", "profit" })
             a[$"fw.{part}"] = data.PathNumber($"amounts.{part}.value");
         a["fw.shipping"] = data.PathNumber("amounts.prepaidShipping.value");
         a["fw.offer.id"] = data.PathStr("offer.id");

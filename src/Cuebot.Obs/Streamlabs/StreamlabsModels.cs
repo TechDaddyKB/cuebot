@@ -14,8 +14,13 @@ public sealed class StreamlabsSettings
     public bool AutoConnect { get; set; }
 }
 
-/// <summary>A scene node: a source placed in the scene (or a folder).</summary>
-public sealed record SlobsSceneItem(string Id, string SourceId, string Name, bool Visible, string ResourceId, bool IsFolder);
+/// <summary>A scene node: a source placed in the scene (or a folder, Streamlabs Desktop's groups).</summary>
+/// <param name="ParentId">The id of the folder holding this node, or empty at the scene's top level.</param>
+public sealed record SlobsSceneItem(string Id, string SourceId, string Name, bool Visible, string ResourceId, bool IsFolder,
+    string ParentId = "");
+
+/// <summary>A filter on a source or scene (SourceFiltersService.getFilters).</summary>
+public sealed record SlobsFilter(string Name, bool Visible);
 
 public sealed record SlobsScene(string Id, string Name, string ResourceId, IReadOnlyList<SlobsSceneItem> Items);
 
@@ -24,12 +29,14 @@ public sealed record SlobsSource(string Id, string Name, string Type, string Res
 /// <summary>Bot event types published for Streamlabs Desktop. Args as noted.</summary>
 public static class StreamlabsEvents
 {
+    // Every event also carries Streamer.bot's connection args sd.id, sd.name and sd.host.
+
     public const string Connected = "slobs.connected";
 
     /// <summary>Args: reason.</summary>
     public const string Disconnected = "slobs.disconnected";
 
-    /// <summary>Args: sceneName, sceneId, previousScene.</summary>
+    /// <summary>Args: sceneName, sceneId, previousScene, sd.sceneName.</summary>
     public const string SceneChanged = "slobs.sceneChanged";
 
     public const string StreamStarted = "slobs.streamStarted";
@@ -58,7 +65,8 @@ internal static class StreamlabsParser
             n.GetStringOrNull("name") ?? "",
             n.GetBoolOrNull("visible") ?? true,
             n.GetStringOrNull("resourceId") ?? "",
-            n.GetStringOrNull("sceneNodeType") == "folder")).ToArray();
+            n.GetStringOrNull("sceneNodeType") == "folder",
+            n.GetStringOrNull("parentId") ?? "")).ToArray();
         return new SlobsScene(id, scene.GetStringOrNull("name") ?? id, scene.GetStringOrNull("resourceId") ?? $"Scene[\"{id}\"]", items);
     }
 
@@ -73,6 +81,14 @@ internal static class StreamlabsParser
                     return new SlobsSource(id, s.GetStringOrNull("name") ?? id, s.GetStringOrNull("type") ?? "",
                         s.GetStringOrNull("resourceId") ?? $"Source[\"{id}\"]", s.GetBoolOrNull("muted") ?? false);
                 })
+                .ToArray();
+
+    public static SlobsFilter[] ParseFilters(JsonElement filters) =>
+        filters.ValueKind != JsonValueKind.Array
+            ? []
+            : filters.EnumerateArray()
+                .Where(f => f.ValueKind == JsonValueKind.Object && f.GetStringOrNull("name") is not null)
+                .Select(f => new SlobsFilter(f.GetStringOrNull("name")!, f.GetBoolOrNull("visible") ?? f.GetBoolOrNull("enabled") ?? true))
                 .ToArray();
 
     /// <summary>"live" → started, "offline" → stopped, transitional states → null.</summary>

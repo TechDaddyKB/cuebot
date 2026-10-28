@@ -12,7 +12,7 @@ namespace Cuebot.Twitch;
 /// whispers that can come from the optional bot account. Every call checks sign-in and the scope it needs first,
 /// so a missing permission fails with a message saying what to enable.
 /// </summary>
-public sealed class TwitchApi
+public sealed partial class TwitchApi
 {
     private const int MaxPollChoices = 5;
     private const int MaxPredictionOutcomes = 10;
@@ -174,6 +174,24 @@ public sealed class TwitchApi
         var (key, value) = UserQuery(user);
         var json = await _helix.RequestAsync(HttpMethod.Get, "users", Q((key, value)), null, "Looking up user", ct).ConfigureAwait(false);
         return json.Items("data").Select(HelixParse.User).FirstOrDefault();
+    }
+
+    /// <summary>Whether the user moderates the channel (needs moderation:read, moderator:read:moderators or channel:manage:moderators).</summary>
+    public async Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ModerationRead, TwitchScopes.ReadModerators, TwitchScopes.ManageModerators);
+        var json = await _helix.RequestAsync(HttpMethod.Get, "moderation/moderators", Q(("broadcaster_id", BroadcasterId), ("user_id", userId)),
+            null, "Checking moderator", ct).ConfigureAwait(false);
+        return json.Items("data").Any();
+    }
+
+    /// <summary>Whether the user is a VIP of the channel (needs moderator:read:vips or channel:manage:vips).</summary>
+    public async Task<bool> IsVipAsync(string userId, CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ReadVips, TwitchScopes.ManageVips);
+        var json = await _helix.RequestAsync(HttpMethod.Get, "channels/vips", Q(("broadcaster_id", BroadcasterId), ("user_id", userId)),
+            null, "Checking VIP", ct).ConfigureAwait(false);
+        return json.Items("data").Any();
     }
 
     public async Task<TwitchUser?> GetUserByIdAsync(string userId, CancellationToken ct = default) =>
@@ -370,6 +388,7 @@ public sealed class TwitchApi
             ["user"] = user.DisplayName,
             ["userName"] = user.Login,
             ["userId"] = user.Id,
+            ["profileImageUrl"] = user.ProfileImageUrl,
             ["isMature"] = result.Bool("is_mature"),
             ["createdAt"] = result.Str("created_at"),
         }));

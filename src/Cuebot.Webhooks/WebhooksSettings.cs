@@ -30,6 +30,12 @@ public sealed class WebhooksSettings
 
     /// <summary>User-defined hooks, called at <c>…/custom/&lt;name&gt;</c> with the hook's token.</summary>
     public List<CustomWebhookSettings> Custom { get; set; } = [];
+
+    /// <summary>
+    /// Outgoing: the IFTTT Webhooks key used by the IFTTT Notification sub-actions when they give none
+    /// (ifttt.com/maker_webhooks → Documentation). A secret.
+    /// </summary>
+    public string IftttKey { get; set; } = "";
 }
 
 public sealed class WebhookServiceSettings

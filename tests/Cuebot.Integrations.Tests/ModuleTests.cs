@@ -229,8 +229,25 @@ public sealed class SubActionEngineTests : IAsyncDisposable
         // Later registrations win: the services talk to in-memory fakes.
         collection.AddSingleton(sp => new VTubeStudioService(sp.GetRequiredService<JsonFile<IntegrationsSettings>>(), sp.GetRequiredService<EventBus>(),
             sp.GetRequiredService<AppLog>(), _server.Create, TestTimings.Fast));
+        collection.AddSingleton(sp => new VoicemodService(sp.GetRequiredService<JsonFile<IntegrationsSettings>>(), sp.GetRequiredService<EventBus>(),
+            sp.GetRequiredService<AppLog>(), _server.Create, TestTimings.Fast));
         collection.AddSingleton<ISubActionHandler>(_capture);
         _services = collection.BuildServiceProvider();
+    }
+
+    [Fact]
+    public async Task Voicemod_get_current_voice_sets_streamer_bot_currentVoiceId()
+    {
+        _services.GetRequiredService<JsonFile<IntegrationsSettings>>().Value.Voicemod.ClientKey = FakeVoicemod.ValidKey;
+        var voicemod = _services.GetRequiredService<VoicemodService>();
+        await voicemod.ConnectAsync();
+        _ = new FakeVoicemod(await _server.NextAsync());
+        await Wait.UntilAsync(() => voicemod.State == ConnectionState.Connected, "connected");
+
+        var args = await RunAsync("voicemod.getCurrentVoice", []);
+
+        Assert.Equal("nofx", args["currentVoiceId"]);
+        Assert.Equal("nofx", args["voicemodVoiceId"]);
     }
 
     private async Task<Dictionary<string, object?>> RunAsync(string type, Dictionary<string, string> parameters)
@@ -256,6 +273,22 @@ public sealed class SubActionEngineTests : IAsyncDisposable
         var model = await RunAsync("vtubestudio.getCurrentModel", []);
         Assert.Equal("Akari", model["vtsModelName"]);
         Assert.Equal(-40.0, model["vtsSize"]);
+        Assert.Equal("model-akari", model["model.id"]);
+        Assert.Equal("Akari", model["model.name"]);
+        Assert.Equal("Akari.vtube.json", model["model.vtsModelName"]);
+        Assert.Equal("icon.png", model["model.vtsModelIconName"]);
+        Assert.Equal("Akari.model3.json", model["model.live2DModelName"]);
+        Assert.Equal(1680L, model["model.loadTime"]);
+        Assert.Equal(419903L, model["model.timeSinceLoaded"]);
+        Assert.Equal(29L, model["model.numberOfLive2DParameters"]);
+        Assert.Equal(136L, model["model.numberOfLive2DArtmeshes"]);
+        Assert.Equal(true, model["model.hasPhysicsFile"]);
+        Assert.Equal(1L, model["model.numberOfTextures"]);
+        Assert.Equal(1024L, model["model.textureResolution"]);
+        Assert.Equal(0.1, model["model.posX"]);
+        Assert.Equal(-0.2, model["model.posY"]);
+        Assert.Equal(5.0, model["model.rotation"]);
+        Assert.Equal(-40.0, model["model.size"]);
         var hotkeys = await RunAsync("vtubestudio.getHotkeys", []);
         Assert.Equal("Wave, Heart Eyes", hotkeys["vtsHotkeys"]);
         Assert.Equal("hk-wave", (await RunAsync("vtubestudio.triggerHotkey", new() { ["hotkey"] = "Wave" }))["vtsHotkeyId"]);
@@ -264,6 +297,12 @@ public sealed class SubActionEngineTests : IAsyncDisposable
         Assert.Single(fake.Of("InjectParameterDataRequest"));
         var raw = await RunAsync("vtubestudio.rawRequest", new() { ["messageType"] = "StatisticsRequest" });
         Assert.Equal("{}", raw["vtsResult"]);
+        var rawModel = await RunAsync("vtubestudio.rawRequest", new() { ["messageType"] = "CurrentModelRequest", ["variablePrefix"] = "vts" });
+        Assert.Equal("Akari", rawModel["vts.data.modelName"]);
+        Assert.Equal(true, rawModel["vts.data.modelLoaded"]);
+        Assert.Equal(-40.0, rawModel["vts.data.modelPosition.size"]);
+        var rawModels = await RunAsync("vtubestudio.rawRequest", new() { ["messageType"] = "AvailableModelsRequest" });
+        Assert.Equal("Hiyori", rawModels["vtsRaw.data.availableModels[1].modelName"]);
 
         // Suggestions come from live data.
         var registry = _services.GetRequiredService<Registry>();

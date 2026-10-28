@@ -57,11 +57,21 @@ public sealed partial class CphProxy
 
     /// <summary>The Streamer.bot source of the event that started the run (None for manual runs).</summary>
     public EventSource GetSource() =>
-        CurrentEvent() is { } name && Enum.TryParse<EventSource>(name.Source, true, out var source) ? source : EventSource.None;
+        CurrentEvent() is { } name && Enum.TryParse<EventSource>(name.Source, true, out var source) && Enum.IsDefined(source)
+            ? source
+            : EventSource.None;
 
     /// <summary>The Streamer.bot event type that started the run (None when unknown or manual).</summary>
-    public EventType GetEventType() =>
-        CurrentEvent() is { } name && Enum.TryParse<EventType>(name.Source + name.Type, true, out var type) ? type : EventType.None;
+    public EventType GetEventType()
+    {
+        if (CurrentEvent() is not { } name) return EventType.None;
+        // Most values are source + type ("TwitchFollow"); a few sources' values are the type alone ("TimedAction").
+        foreach (var candidate in new[] { name.Source + name.Type, name.Type })
+        {
+            if (Enum.TryParse<EventType>(candidate, true, out var type) && Enum.IsDefined(type)) return type;
+        }
+        return EventType.None;
+    }
 
     private StreamerBotEventName? CurrentEvent() =>
         _context?.Args.GetValueOrDefault("eventType") is string type && type.Length > 0

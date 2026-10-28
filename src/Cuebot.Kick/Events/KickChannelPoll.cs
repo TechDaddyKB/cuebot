@@ -21,7 +21,7 @@ internal static class KickChannelPoll
 
         if (current.Title != previous.Title || current.Category?.Id != previous.Category?.Id)
             events.Add(KickEventFactory.ChannelUpdate(Source, current.Title, current.Category?.Name ?? "", current.Category?.Id ?? 0,
-                current.Language, current.IsMature));
+                current.Language, current.IsMature, current.Category?.Thumbnail ?? ""));
 
         if (current.IsLive && current.ViewerCount != previous.ViewerCount)
             events.Add(KickEventFactory.ViewerCount(Source, current.ViewerCount));

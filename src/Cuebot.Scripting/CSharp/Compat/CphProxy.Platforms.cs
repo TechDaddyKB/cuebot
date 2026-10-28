@@ -173,14 +173,27 @@ public sealed partial class CphProxy
 
     // ---- Discord --------------------------------------------------------------------------------------------------
 
-    public void DiscordPostTextToWebhook(string webhookUrl, string content, string? username = null, string? avatarUrl = null,
+    /// <summary>Posts to a Discord webhook. Returns the new message's id ("" when Discord did not say).</summary>
+    public string DiscordPostTextToWebhook(string webhookUrl, string content, string? username = null, string? avatarUrl = null,
         bool textToSpeech = false)
     {
         var http = Need(_services.Http);
         var payload = new Dictionary<string, object?> { ["content"] = content, ["tts"] = textToSpeech };
         if (!string.IsNullOrWhiteSpace(username)) payload["username"] = username;
         if (!string.IsNullOrWhiteSpace(avatarUrl)) payload["avatar_url"] = avatarUrl;
-        using var response = Sync(http.PostAsJsonAsync(webhookUrl, payload, _ct));
+        // wait=true makes Discord answer with the created message, which carries its id.
+        var url = webhookUrl.Contains("wait=", StringComparison.OrdinalIgnoreCase) ? webhookUrl
+            : webhookUrl + (webhookUrl.Contains('?') ? "&" : "?") + "wait=true";
+        using var response = Sync(http.PostAsJsonAsync(url, payload, _ct));
         response.EnsureSuccessStatusCode();
+        var body = Sync(response.Content.ReadAsStringAsync(_ct));
+        try
+        {
+            return string.IsNullOrWhiteSpace(body) ? "" : Prop(JsonDocument.Parse(body).RootElement, "id");
+        }
+        catch (JsonException)
+        {
+            return "";
+        }
     }
 }

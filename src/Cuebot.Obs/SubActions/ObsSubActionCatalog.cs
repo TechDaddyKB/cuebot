@@ -17,7 +17,9 @@ public static class ObsSubActionCatalog
                 (c, _, v, ct) => c.SetCurrentSceneAsync(Require(v["scene"], "Scene"), ct)),
             Make("obs.getCurrentScene", "Get current scene", [p.Result("obsScene")], async (c, ctx, v, ct) =>
             {
-                Store(ctx, v["resultArgument"], await c.GetCurrentSceneAsync(ct).ConfigureAwait(false));
+                var current = await c.GetCurrentSceneAsync(ct).ConfigureAwait(false);
+                Store(ctx, v["resultArgument"], current);
+                ctx.Args["currentScene"] = current;   // Streamer.bot's name
                 ctx.Args["obsPreviewScene"] = c.PreviewScene ?? "";
             }),
             Make("obs.setPreviewScene", "Set preview scene (studio mode)", [p.Scene()],
@@ -134,7 +136,20 @@ public static class ObsSubActionCatalog
             Make("obs.virtualCam", "Virtual camera", [p.Choice<OutputCommand>("mode", "Mode", OutputCommand.Start)],
                 (c, _, v, ct) => c.ControlVirtualCamAsync(ParseChoice<OutputCommand>(v["mode"], "Mode"), ct)),
             Make("obs.createRecordChapter", "Create record chapter", [new("chapterName", "Chapter name") { Help = "Optional; needs OBS 30.2+ and Hybrid MP4" }],
-                (c, _, v, ct) => c.CreateRecordChapterAsync(v["chapterName"], ct)),
+                async (c, ctx, v, ct) =>
+                {
+                    // Like Streamer.bot, OBS refusing (e.g. not recording, or not Hybrid MP4) sets success=false and
+                    // carries on; losing the connection still fails the action.
+                    try
+                    {
+                        await c.CreateRecordChapterAsync(v["chapterName"], ct).ConfigureAwait(false);
+                        ctx.Args["success"] = true;
+                    }
+                    catch (Protocol.ObsRequestException)
+                    {
+                        ctx.Args["success"] = false;
+                    }
+                }),
             Make("obs.getOutputState", "Get output state",
                 [p.Choice<ObsOutputKind>("output", "Output", ObsOutputKind.Stream), new("outputName", "Output name") { Help = "Only for Other" }],
                 async (c, ctx, v, ct) =>
@@ -223,6 +238,32 @@ public static class ObsSubActionCatalog
         ctx.Args["obsItemLocked"] = locked.GetBoolOrNull("sceneItemLocked") ?? false;
         StoreObject(ctx, "obsItem", transform);
         ctx.Args["obsItemTransform"] = transform.ValueKind == JsonValueKind.Undefined ? "{}" : transform.GetRawText();
+
+        // Streamer.bot's props.* names.
+        var props = ObsSceneItemProps.Build(id, source, enabled.GetBoolOrNull("sceneItemEnabled") ?? false,
+            locked.GetBoolOrNull("sceneItemLocked") ?? false, await IsMutedAsync(c, source, ct).ConfigureAwait(false), transform);
+        var children = new List<Dictionary<string, object?>>();
+        var item = (await c.GetSceneItemsAsync(scene, ct).ConfigureAwait(false)).FirstOrDefault(i => i.Id == id);
+        if (item is { IsGroup: true })
+        {
+            foreach (var child in await c.GetSceneItemsAsync(source, ct, group: true).ConfigureAwait(false))
+            {
+                var childTransform = await c.RequestAsync("GetSceneItemTransform", new { sceneName = source, sceneItemId = child.Id }, ct)
+                    .ConfigureAwait(false);
+                children.Add(ObsSceneItemProps.Build(child.Id, child.SourceName, child.Enabled, locked: false,
+                    await IsMutedAsync(c, child.SourceName, ct).ConfigureAwait(false),
+                    childTransform.TryGetProperty("sceneItemTransform", out var t) ? t : default));
+            }
+        }
+        ObsSceneItemProps.Store(ctx.Args, props, children);
+    }
+
+    /// <summary>Whether an input is muted; false for sources that are not audio inputs.</summary>
+    private static async Task<bool> IsMutedAsync(ObsConnection c, string source, CancellationToken ct)
+    {
+        if (!c.Inputs.Contains(source, StringComparer.Ordinal)) return false;
+        try { return await c.GetInputMuteAsync(source, ct).ConfigureAwait(false); }
+        catch (Protocol.ObsRequestException) { return false; }   // inputs without audio
     }
 
     /// <summary>Parameter descriptors shared by many sub-actions; suggestions span every connection.</summary>

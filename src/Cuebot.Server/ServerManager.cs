@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Events;
@@ -161,6 +162,8 @@ public sealed class ServerManager : IAsyncDisposable
             _pump = Task.Run(PumpAsync, CancellationToken.None);
             _subscription = _services.Bus.Subscribe(OnEvent);
             _services.Engine.RunCompleted += OnRunCompleted;
+            _services.Engine.RunStarted += OnRunStarted;
+            _services.Engine.SubActionStarting += OnSubActionStarting;
             _services.Profile.Changed += OnProfileChanged;
             if (_services.Commands is { } commands) commands.Changed += OnCommandsChanged;
             _actionSignatures = ActionSignatures();
@@ -345,20 +348,100 @@ public sealed class ServerManager : IAsyncDisposable
         if (SpeakerBotWebSocket is { IsRunning: true } speaker) Enqueue(() => speaker.PublishAsync(e));
     }
 
+    private static readonly StreamerBotEventName RawAction = new("Raw", "Action");
+    private static readonly StreamerBotEventName RawSubAction = new("Raw", "SubAction");
+    private static readonly StreamerBotEventName RawActionCompleted = new("Raw", "ActionCompleted");
+
+    /// <summary>Raw.Action: <c>{id (run), actionId, name, arguments}</c>, as documented.</summary>
+    private void OnRunStarted(ActionRunStart run)
+    {
+        if (!WebSocket.IsRunning || run.Action.ExcludeFromHistory || !WebSocket.HasSubscribers(RawAction)) return;
+        var data = new JsonObject
+        {
+            ["id"] = run.RunId.ToString(),
+            ["actionId"] = run.Action.Id.ToString(),
+            ["name"] = run.Action.Name,
+            ["source"] = run.Source,
+            ["queuedAt"] = run.QueuedAt.ToString("o"),
+            ["startedAt"] = run.StartedAt.ToString("o"),
+            ["arguments"] = Arguments(run.Args),   // copied now: the run keeps changing its args
+        };
+        SendEvent(RawAction, data);
+    }
+
+    /// <summary>Raw.SubAction: <c>{parentId, parentName, type, id (run), actionId (sub-action), name, arguments}</c>.</summary>
+    private void OnSubActionStarting(SubActionStart step)
+    {
+        if (!WebSocket.IsRunning || step.Action.ExcludeFromHistory || !WebSocket.HasSubscribers(RawSubAction)) return;
+        var data = new JsonObject
+        {
+            ["parentId"] = step.Action.Id.ToString(),
+            ["parentName"] = step.Action.Name,
+            ["type"] = SubActionCode(step.Step.Type),
+            ["cuebotType"] = step.Step.Type,
+            ["id"] = step.Args.GetValueOrDefault("runId")?.ToString() ?? "",
+            ["actionId"] = step.Step.Id.ToString(),
+            ["name"] = step.Handler.DisplayName,
+            ["enabled"] = step.Step.Enabled,
+            ["arguments"] = Arguments(step.Args),
+        };
+        SendEvent(RawSubAction, data);
+    }
+
+    /// <summary>
+    /// Raw.ActionCompleted: Streamer.bot's fields (<c>id</c>, <c>actionId</c>, <c>name</c>, <c>duration</c> in ms,
+    /// <c>queuedAt</c>/<c>startedAt</c>/<c>completedAt</c>, <c>success</c>, <c>excludeFromHistory</c>, <c>arguments</c>)
+    /// plus Cuebot's (<c>actionName</c>, <c>runId</c>, <c>source</c>, <c>state</c>, <c>error</c>).
+    /// </summary>
     private void OnRunCompleted(ActionRunRecord run)
     {
-        if (!WebSocket.IsRunning || run.ExcludedFromHistory) return;
-        var data = new Dictionary<string, object?>
+        if (!WebSocket.IsRunning || run.ExcludedFromHistory || !WebSocket.HasSubscribers(RawActionCompleted)) return;
+        var data = new JsonObject
         {
+            ["id"] = run.RunId.ToString(),
+            ["actionId"] = run.ActionId.ToString(),
+            ["name"] = run.ActionName,
+            ["duration"] = run.Duration.TotalMilliseconds,
+            ["queuedAt"] = run.QueuedAt.ToString("o"),
+            ["startedAt"] = (run.StartedAt ?? run.QueuedAt).ToString("o"),
+            ["completedAt"] = run.CompletedAt.ToString("o"),
+            ["success"] = run.Success,
+            ["excludeFromHistory"] = run.ExcludedFromHistory,
+            ["arguments"] = run.Arguments is null ? new JsonObject() : Arguments(run.Arguments),
             ["actionName"] = run.ActionName,
             ["runId"] = run.RunId.ToString(),
             ["source"] = run.Source,
-            ["success"] = run.Success,
             ["state"] = run.State.ToString(),
-            ["duration"] = (long)run.Duration.TotalMilliseconds,
             ["error"] = run.Error,
         };
-        SendApplicationEvent("Raw", "ActionCompleted", data);
+        SendEvent(RawActionCompleted, data);
+    }
+
+    /// <summary>A snapshot of a run's arguments (the engine's <c>runId</c> also as Streamer.bot's <c>runningActionId</c>).</summary>
+    private static JsonObject Arguments(IReadOnlyDictionary<string, object?> args)
+    {
+        var data = StreamerBotEnvelope.Data(args);
+        if (data["runningActionId"] is null && data["runId"] is { } runId) data["runningActionId"] = runId.DeepClone();
+        return data;
+    }
+
+    private static Dictionary<string, string>? _subActionCodes;
+
+    /// <summary>Streamer.bot's numeric sub-action type for a Cuebot type (from the import table), or 0 when none is known.</summary>
+    private static int SubActionCode(string cuebotType)
+    {
+        _subActionCodes ??= Cuebot.Core.Transfer.StreamerBot.StreamerBotMappingTable.Default.SubActions
+            .GroupBy(r => r.TargetType, StringComparer.OrdinalIgnoreCase)
+            .Select(g => (g.Key, Code: g.SelectMany(r => r.TypeKeys).FirstOrDefault(k => k.Length > 0 && k.All(char.IsAsciiDigit))))
+            .Where(x => x.Code is not null)
+            .ToDictionary(x => x.Key, x => x.Code!, StringComparer.OrdinalIgnoreCase);
+        return _subActionCodes.TryGetValue(cuebotType, out var code) && int.TryParse(code, out var n) ? n : 0;
+    }
+
+    private void SendEvent(StreamerBotEventName name, JsonObject data)
+    {
+        var message = StreamerBotEnvelope.Create(name, data, DateTimeOffset.Now);
+        Enqueue(() => WebSocket.SendEventAsync(name, message));
     }
 
     private void OnProfileChanged()
@@ -367,7 +450,7 @@ public sealed class ServerManager : IAsyncDisposable
         var before = Interlocked.Exchange(ref _actionSignatures, now);
         if (!WebSocket.IsRunning) return;
         var names = _services.Profile.Snapshot.Actions.ToDictionary(a => a.Id, a => a.Name);
-        foreach (var (type, id) in Diff(before, now)) SendApplicationEvent("Application", type.Replace("*", "Action"), Entry(id, names));
+        foreach (var (type, id) in Diff(before, now)) SendApplicationEvent("Application", type.Replace("*", "Action"), ActionEntry(id, names));
     }
 
     private void OnCommandsChanged()
@@ -381,6 +464,18 @@ public sealed class ServerManager : IAsyncDisposable
 
     private static Dictionary<string, object?> Entry(Guid id, Dictionary<Guid, string> names) =>
         new() { ["id"] = id.ToString(), ["name"] = names.GetValueOrDefault(id) ?? "" };
+
+    /// <summary>Application.Action*: <c>{id, name, group, enabled}</c> (group and enabled while the action exists).</summary>
+    private Dictionary<string, object?> ActionEntry(Guid id, Dictionary<Guid, string> names)
+    {
+        var entry = Entry(id, names);
+        if (_services.Profile.Snapshot.FindAction(id) is { } action)
+        {
+            entry["group"] = action.Group;
+            entry["enabled"] = action.Enabled;
+        }
+        return entry;
+    }
 
     /// <summary>"*Added" / "*Deleted" / "*Updated" per id between two signature maps.</summary>
     internal static IEnumerable<(string Type, Guid Id)> Diff(Dictionary<Guid, string> before, Dictionary<Guid, string> after)
@@ -446,8 +541,23 @@ public sealed class ServerManager : IAsyncDisposable
         if (_started)
         {
             _services.Engine.RunCompleted -= OnRunCompleted;
+            _services.Engine.RunStarted -= OnRunStarted;
+            _services.Engine.SubActionStarting -= OnSubActionStarting;
             _services.Profile.Changed -= OnProfileChanged;
             if (_services.Commands is { } commands) commands.Changed -= OnCommandsChanged;
+        }
+        if (WebSocket.IsRunning)
+        {
+            // Misc.StreamerbotExiting, sent directly: the outbox pump is about to stop.
+            var exiting = new StreamerBotEventName("Misc", "StreamerbotExiting");
+            try
+            {
+                await WebSocket.SendEventAsync(exiting, StreamerBotEnvelope.Create(exiting, new JsonObject(), DateTimeOffset.Now))
+                    .WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is TimeoutException or System.Net.WebSockets.WebSocketException or ObjectDisposedException)
+            {
+            }
         }
         foreach (var kind in Enum.GetValues<ServerKind>()) await StopCoreAsync(kind).ConfigureAwait(false);
         await CustomServers.DisposeAsync().ConfigureAwait(false);

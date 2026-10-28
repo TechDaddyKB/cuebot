@@ -11,6 +11,7 @@ internal sealed class ChatterDirectory
     private readonly Dictionary<string, string> _nameById = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _idByName = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, MessageAuthor> _messages = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (string ProfileUrl, bool IsSponsor)> _details = new(StringComparer.Ordinal);
     private readonly Queue<string> _messageOrder = new();
 
     public void Remember(string channelId, string displayName)
@@ -18,10 +19,26 @@ internal sealed class ChatterDirectory
         if (channelId.Length == 0 || displayName.Length == 0) return;
         lock (_gate)
         {
-            if (_nameById.Count >= MaxEntries) { _nameById.Clear(); _idByName.Clear(); }
+            if (_nameById.Count >= MaxEntries) { _nameById.Clear(); _idByName.Clear(); _details.Clear(); }
             _nameById[channelId] = displayName;
             _idByName[Normalize(displayName)] = channelId;
         }
+    }
+
+    /// <summary>Profile picture and membership of a chatter, for Streamer.bot's gifter* arguments.</summary>
+    public void RememberDetails(string channelId, string profileUrl, bool isSponsor)
+    {
+        if (channelId.Length == 0) return;
+        lock (_gate)
+        {
+            if (_details.Count >= MaxEntries) _details.Clear();
+            _details[channelId] = (profileUrl, isSponsor);
+        }
+    }
+
+    public (string ProfileUrl, bool IsSponsor)? DetailsOf(string channelId)
+    {
+        lock (_gate) return _details.TryGetValue(channelId, out var d) ? d : null;
     }
 
     public void RememberMessage(string messageId, string channelId, string displayName, string text)
