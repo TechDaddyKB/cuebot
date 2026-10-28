@@ -6,6 +6,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 using Cuebot.Kick.Api;
 using Cuebot.Kick.Auth;
+using Cuebot.Kick.Compat;
 using Cuebot.Kick.Events;
 using Cuebot.Kick.Pusher;
 using Cuebot.Kick.Realtime;
@@ -63,7 +64,12 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _tokens = new KickTokenManager(settings, _auth, time, log);
         _api = new KickApiClient(http, endpoints, _tokens);
         _web = new KickWebClient(http, endpoints);
-        _hub = new KickEventHub(bus, time, timings.DedupeWindow);
+        _hub = new KickEventHub(bus, time, timings.DedupeWindow)
+        {
+            Broadcaster = () => Settings.Broadcaster.UserId > 0
+                ? new KickBroadcasterArgs(Settings.Broadcaster.UserName, KickArgs.Id(Settings.Broadcaster.UserId))
+                : null,
+        };
         _realtime = new KickRealtimeEventSource(transports, new KickRealtimeAuth(http, endpoints), timings, log);
         _realtime.ConnectionChanged += OnRealtimeChanged;
         _hub.Attach(_realtime);
@@ -314,6 +320,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         }
         Settings.ChannelSlug = channel.Slug;
         _channel = channel;
+        _hub.SeedChannel(channel);
     }
 
     private async Task StartRealtimeAsync(CancellationToken ct)
@@ -459,6 +466,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
             var result = await _api.SendChatAsync(account, part, broadcaster, false, replyTo, ct).ConfigureAwait(false);
             if (!result.IsSent) throw new KickApiException("Kick did not accept the chat message");
             lastId = result.MessageId;
+            _hub.MarkSent(result.MessageId);
             replyTo = null;
         }
         return lastId;
