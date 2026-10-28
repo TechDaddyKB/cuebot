@@ -106,7 +106,8 @@ public class TextResolutionTests
 
         Assert.Equal("Live at 05:06 on 2026/11/09", At("Live at %time% on %date%", ""));
         Assert.Equal("Live at 05:06 on 2026/11/09", At("Live at %time% on %date%", "en-US"));
-        Assert.Equal("5:06 PM", At("%time:t%", "en-US"));
+        // The culture's own short time: ICU (Linux) puts a narrow no-break space before PM, Windows a plain space.
+        Assert.Equal(new DateTime(2026, 11, 9, 17, 6, 7).ToString("t", CultureInfo.GetCultureInfo("en-US")), At("%time:t%", "en-US"));
         Assert.Equal("2026.11.09", At("%date%", "de-DE"));   // the culture's date separator, as in .NET
     }
 
