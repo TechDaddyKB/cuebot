@@ -91,7 +91,10 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         // Relayed follows only with the option on.
         const string follow = """{"type":"follow","provider":"twitch","channel":"c","data":{"username":"jtv","displayName":"jtv","providerId":"14027"},"_id":"f1","activityId":"f1"}""";
         socket.Push(Activity(follow));
-        await Task.Delay(100);
+        // Messages are handled in order: once a second tip is out, the follow was handled with the option still off.
+        socket.Push(Activity(StreamElementsMappingTests.Tip.Replace("65ce2539", "75ce2539", StringComparison.Ordinal)
+            .Replace("67b5f39d", "77b5f39d", StringComparison.Ordinal)));
+        await Wait.UntilAsync(() => Events(StreamElementsEventTypes.Tip).Length == 2, "second tip");
         Assert.Empty(Events(StreamElementsEventTypes.Follow));
         _service.Settings.RelayPlatformEvents = true;
         socket.Push(Activity(follow.Replace("f1", "f2", StringComparison.Ordinal)));
