@@ -17,6 +17,14 @@ internal sealed class BroadcastTracker
     private readonly Dictionary<string, YouTubeBroadcast> _active = new(StringComparer.Ordinal);
     private readonly Dictionary<string, YouTubeBroadcast> _upcoming = new(StringComparer.Ordinal);
     private readonly HashSet<string> _ended = new(StringComparer.Ordinal);
+
+    // What each endpoint last said about a live broadcast's title/description/privacy. liveBroadcasts.list and
+    // videos.list can disagree for a while; a reading only counts when that endpoint's own reading changed, so the
+    // two never flip the title back and forth (and a real change fires once).
+    private readonly Dictionary<string, Reading> _listedReadings = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Reading> _videoReadings = new(StringComparer.Ordinal);
+
+    private readonly record struct Reading(string Title, string Description, string PrivacyStatus);
     private bool _activeSeeded;
     private bool _upcomingSeeded;
 
@@ -54,6 +62,9 @@ internal sealed class BroadcastTracker
                 if (b.Id.Length == 0 || _ended.Contains(b.Id) || b.LifeCycleStatus is "complete" or "revoked") continue;
                 listed.Add(b.Id);
                 _upcoming.Remove(b.Id);
+                var reading = ReadingOf(b);
+                var changedHere = !_listedReadings.TryGetValue(b.Id, out var previous) || previous != reading;
+                _listedReadings[b.Id] = reading;
                 if (!_active.TryGetValue(b.Id, out var old))
                 {
                     _active[b.Id] = b;
@@ -62,8 +73,10 @@ internal sealed class BroadcastTracker
                 }
                 else
                 {
-                    _active[b.Id] = b;
-                    if (Differs(old, b)) changes.Add(new BroadcastChange(BroadcastChangeKind.Updated, b, old));
+                    // An unchanged reading keeps what the other endpoint set; everything else comes from this list.
+                    var updated = changedHere ? b : b with { Title = old.Title, Description = old.Description, PrivacyStatus = old.PrivacyStatus };
+                    _active[b.Id] = updated;
+                    if (Differs(old, updated)) changes.Add(new BroadcastChange(BroadcastChangeKind.Updated, updated, old));
                 }
             }
             foreach (var id in _active.Keys.Where(id => !listed.Contains(id)).ToArray()) EndLocked(id, changes);
@@ -111,11 +124,14 @@ internal sealed class BroadcastTracker
         lock (_gate)
         {
             if (!_active.TryGetValue(video.Id, out var old)) return changes;
+            var reading = new Reading(video.Title, video.Description, video.PrivacyStatus.Length > 0 ? video.PrivacyStatus : old.PrivacyStatus);
+            var changedHere = !_videoReadings.TryGetValue(video.Id, out var previous) || previous != reading;
+            _videoReadings[video.Id] = reading;
             var updated = old with
             {
-                Title = video.Title,
-                Description = video.Description,
-                PrivacyStatus = video.PrivacyStatus.Length > 0 ? video.PrivacyStatus : old.PrivacyStatus,
+                Title = changedHere ? reading.Title : old.Title,
+                Description = changedHere ? reading.Description : old.Description,
+                PrivacyStatus = changedHere ? reading.PrivacyStatus : old.PrivacyStatus,
                 ActualStart = video.ActualStart ?? old.ActualStart,
                 ActualEnd = video.ActualEnd,
             };
@@ -159,6 +175,8 @@ internal sealed class BroadcastTracker
         changes.Add(new BroadcastChange(BroadcastChangeKind.Ended, b));
         changes.Add(new BroadcastChange(BroadcastChangeKind.MonitoringEnded, b));
     }
+
+    private static Reading ReadingOf(YouTubeBroadcast b) => new(b.Title, b.Description, b.PrivacyStatus);
 
     private static bool Differs(YouTubeBroadcast a, YouTubeBroadcast b) =>
         a.Title != b.Title || a.Description != b.Description || a.PrivacyStatus != b.PrivacyStatus;

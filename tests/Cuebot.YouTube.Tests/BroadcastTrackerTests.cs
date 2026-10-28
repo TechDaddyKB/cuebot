@@ -15,6 +15,25 @@ public sealed class BroadcastTrackerTests
     private static BroadcastChangeKind[] Kinds(IReadOnlyList<BroadcastChange> changes) => changes.Select(c => c.Kind).ToArray();
 
     [Fact]
+    public void Endpoints_that_disagree_about_the_title_do_not_flip_it_back_and_forth()
+    {
+        // videos.list sees a rename before liveBroadcasts.list does; the stale list must not undo it.
+        var t = new BroadcastTracker();
+        t.UpdateActive([B("b1", "Dev testing")]);
+        Assert.Equal([BroadcastChangeKind.Updated], Kinds(t.ApplyVideo(V("b1", "Renamed"))));
+        Assert.Empty(t.UpdateActive([B("b1", "Dev testing")]));
+        Assert.Empty(t.ApplyVideo(V("b1", "Renamed")));
+        Assert.Empty(t.UpdateActive([B("b1", "Dev testing")]));
+        Assert.Equal("Renamed", t.Latest!.Title);
+
+        // The list catching up is not a second change; a later rename seen by either endpoint is.
+        Assert.Empty(t.UpdateActive([B("b1", "Renamed")]));
+        var next = t.UpdateActive([B("b1", "Third")]);
+        Assert.Equal([BroadcastChangeKind.Updated], Kinds(next));
+        Assert.Equal(("Third", "Renamed"), (next[0].Broadcast.Title, next[0].Previous!.Title));
+    }
+
+    [Fact]
     public void Already_live_at_connect_starts_monitoring_without_started()
     {
         var t = new BroadcastTracker();
