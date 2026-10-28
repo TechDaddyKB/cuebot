@@ -137,7 +137,8 @@ public sealed class RumbleServiceTests : IAsyncLifetime
 
         chat.End();   // the next connection answers 204: Rumble closed the chat
         await Wait.UntilAsync(() => !_service.IsChatAttached, "chat detached");
-        Assert.Contains("chat via Live Stream API", _service.StatusMessage);
+        // The status is set just after the chat detaches.
+        await Wait.UntilAsync(() => _service.StatusMessage.Contains("chat via Live Stream API"), "API chat status");
 
         _apiJson = _apiJson.Replace("\"recent_messages\": [",
             "\"recent_messages\": [ " + """{ "username": "Bob", "badges": ["premium"], "text": "via the api", "created_on": "2026-01-01T13:01:00+00:00" },""",
