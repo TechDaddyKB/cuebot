@@ -145,7 +145,7 @@ internal static class JsonUtil
         JsonValueKind.String => v.GetString(),
         JsonValueKind.True => true,
         JsonValueKind.False => false,
-        JsonValueKind.Number => v.TryGetInt64(out var l) ? l : v.GetDouble(),
+        JsonValueKind.Number => v.TryGetInt64(out var l) ? (object)l : v.GetDouble(),
         JsonValueKind.Null or JsonValueKind.Undefined => null,
         _ => v.GetRawText(),
     };
