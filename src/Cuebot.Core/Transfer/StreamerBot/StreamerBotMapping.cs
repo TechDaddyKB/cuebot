@@ -53,9 +53,9 @@ public abstract record SbRule(string Name, string TargetType, IReadOnlyList<stri
     public IReadOnlyList<string> Excludes { get; init; } = [];
 
     /// <summary>
-    /// True when the Streamer.bot name of a sub-action code is only likely or unsure: Streamer.bot 1.0.7 confirmed the
-    /// code and its fields, but which of several look-alike sub-actions it is was worked out from its fields, the
-    /// order Streamer.bot added them in and public exports (see <see cref="StreamerBotMappingTable.TentativeSubActionCodes"/>
+    /// True when the Streamer.bot name of a sub-action code is only likely: Streamer.bot 1.0.7 confirmed the code and
+    /// its fields, but its UI showed no display text for it, so which of several look-alike sub-actions it is rests on
+    /// its fields, the order Streamer.bot added them in and public exports (see <see cref="StreamerBotMappingTable.TentativeSubActionCodes"/>
     /// and docs/streamerbot-import-codes.md). The import report asks the user to check such items. Trigger codes are
     /// all verified.
     /// </summary>

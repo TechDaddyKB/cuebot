@@ -473,7 +473,8 @@ public sealed class StreamerBotCodeTests
             "speech.speak", "youtube.setTitle", "twitch.getFollowerCount"], main.SubActions.Select(s => s.Type));
         Assert.Equal("Current", main.SubActions[0].Parameters["state"]);
         Assert.Equal("", main.SubActions[3].Parameters["group"]);
-        Assert.Contains(report.Mapped, l => l.Contains("Speak") && l.Contains("inferred"));
+        // Speaker.bot Speak (601) is confirmed by Streamer.bot's UI text, so it is not flagged.
+        Assert.DoesNotContain(report.Mapped, l => l.Contains("Speak") && l.Contains("inferred"));
     }
 
     [Fact]

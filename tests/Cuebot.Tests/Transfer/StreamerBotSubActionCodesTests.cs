@@ -111,6 +111,16 @@ public sealed class StreamerBotSubActionCodesTests
         Assert.Equal("false", One(13, ("status", 1)).Step.Parameters["enabled"]);
         // A real export ends the stream with OBS Streaming state 0.
         Assert.Equal(("obs.streaming", "Stop"), (One(33).Step.Type, One(33).Step.Parameters["mode"]));
+        // Streamer.bot's UI shows fresh steps as "Start Recording", "Redemption Cancel", "Random Filter State (… Visible)" and
+        // "Source Mute State (… Muted)".
+        Assert.Equal(("obs.recording", "Start"), (One(45).Step.Type, One(45).Step.Parameters["mode"]));
+        Assert.Equal("Cancel", One(11).Step.Parameters["status"]);
+        Assert.Equal(("obs.setRandomFilterState", "Enable"), (One(40).Step.Type, One(40).Step.Parameters["state"]));
+        Assert.Equal(("obs.setInputMute", "Mute"), (One(42).Step.Type, One(42).Step.Parameters["state"]));
+        Assert.Equal(("slobs.setRandomFilterState", "slobs.setSourceMute"), (One(411).Step.Type, One(413).Step.Type));
+        Assert.Equal("twitch.getCharityCampaign", One(25).Step.Type);
+        Assert.Equal(("meldstudio.streaming", "meldstudio.recording"), (One(41003).Step.Type, One(41004).Step.Type));
+        Assert.Equal(("users.resetFirstWords", "credits.reset"), (One(1026).Step.Type, One(1027).Step.Type));
         Assert.Equal("Save", One(321, ("state", 2)).Step.Parameters["mode"]);
         Assert.Equal("Track 3", "Track " + One(44, ("track", 2)).Step.Parameters["track"]);
         Assert.Equal("Archive", One(563).Step.Parameters["mode"]);

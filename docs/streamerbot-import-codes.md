@@ -47,25 +47,27 @@ settings are the test fixture `tests/Cuebot.Tests/TestData/streamerbot-1.0.7-sub
 types, parameters and choices the app registers.
 
 Streamer.bot does not store a sub-action's name, so each code was paired with its menu name from its fields, the
-menu, the docs' parameter pages, the order Streamer.bot added sub-actions in (wiki changelogs), Streamer.bot's own
-display text for codes 1–9 and real exports. Confidence of that pairing:
+menu, the docs' parameter pages, the order Streamer.bot added sub-actions in (wiki changelogs) and real exports; the
+codes that left any doubt were then confirmed in Streamer.bot's own UI, which shows each sub-action's display text
+(read with accounts signed in, 2026-10-28). Confidence of the pairing:
 
-- **certain** (232): the fields (or the display text, or a real export's use) leave one reading.
-- **likely** (105): the fields fit, and the cluster or the order the sub-actions were added in picks this one.
-- **unsure** (58): a sibling with the same fields could be meant (for example OBS Set Source Mute State 40 and Set
-  State of a Random Filter 42, or the Twitch empty-field "get" sub-actions); the order is a best guess.
+- **certain** (232): the fields (or the display text for codes 1–9, or a real export's use) leave one reading.
+- **verified (Streamer.bot UI)** (156): confirmed by the display text Streamer.bot shows for it (for example
+  40 "OBS Studio Random Filter State", 42 "OBS Studio Source Mute State", 25 "Twitch Get Latest Charity Campaign").
+- **likely** (7): the fields fit and the order the sub-actions were added in picks this one, but the UI showed no
+  text for it (Twitch reward steps with no reward chosen: 200, 201, 208–210, 214, 215).
 
-Likely and unsure codes (146 of the mapped ones) are marked `Tentative`; the import report lists them as "type code
-meaning inferred; please check". One Twitch menu name, **Get Latest Charity Campaign**, is left without a code by
-this pairing (code 25 has the fields of the docs' Send Announcement, a second announcement layout next to 23).
+Likely codes (7 mapped) are marked `Tentative`; the import report lists them as "type code meaning inferred;
+please check".
 
 Settings conventions:
 
 - A state or mode is an index into the documented options: 0 Enabled / On / Visible, 1 Disabled / Off / Hidden,
   2 Toggle (Twitch chat modes, shield mode and branded content: `status` 0 on, 1 off). An index past Cuebot's
   options (for example a toggle where Cuebot can only switch on or off) imports as a placeholder.
-- OBS Streaming (33) and Streamlabs Desktop Streaming (404): a real export ends the stream with state 0, so 0 Stop,
-  1 Start (Recording 45 / 415 follow the same order, then Pause, Resume).
+- OBS Streaming (33) and Streamlabs Desktop Streaming (404): the UI shows a fresh one (state 0) as "Stop Streaming",
+  so 0 Stop, 1 Start; Recording (45 / 415) and Replay Buffer (321) show "Start ...", so 0 Start, 1 Stop (then Pause,
+  Resume for OBS recording). Update Redemption Status (11) shows "Redemption Cancel": 0 Cancel, 1 Fulfil.
 - Ids (all-zero GUID or null = not set): actions, commands, timers and queues in the export are resolved; rewards
   are passed on (Cuebot takes a reward id); decks, VTube Studio models/hotkeys, Wave Link inputs and the like use
   the name saved next to the id; sub-action, trigger, file tail, group, MIDI device, remote instance and voice
@@ -86,43 +88,43 @@ Settings conventions:
 | 99901 | (structural) If/Else true branch | certain | core.group | name, random, color |
 | 99900 | (structural) Sub-action group | certain | core.group | name, random, color |
 | 99903 | (structural) Switch case | certain | core.group | name, random, color |
-| 99904 | (structural) Switch default case | likely | core.group | name, random, color |
+| 99904 | (structural) Switch default case | verified (Streamer.bot UI) | core.group | name, random, color |
 | 1005 | Core > Action Queues > Clear Action Queue | certain | core.clearActionQueue | queue |
 | 1022 | Core > Action Queues > Set Action Queue Blocking State | certain | core.setActionQueueBlocking | queue, state |
 | 1001 | Core > Action Queues > Set Action Queue Pause State | certain | core.setActionQueuePause | queue, state, clear |
-| 1017 | Core > Actions > Get Action Group State | likely | core.getActionGroupState | group |
+| 1017 | Core > Actions > Get Action Group State | verified (Streamer.bot UI) | core.getActionGroupState | group |
 | 1016 | Core > Actions > Get Action State | certain | core.getActionState | action, name |
 | 4 | Core > Actions > Run Action | certain | core.runAction | action, wait |
-| 1011 | Core > Actions > Set Action Group State | likely | core.setActionGroupState | group, state |
+| 1011 | Core > Actions > Set Action Group State | verified (Streamer.bot UI) | core.setActionGroupState | group, state |
 | 1004 | Core > Actions > Set Action State | certain | core.setActionState | action, state |
 | 1028 | Core > Actions > Set Sub-Action State | certain | core.setSubActionState | action, subAction, state |
-| 1038 | Core > Actions > Set Sub-Action Weight | likely | core.setSubActionWeight | action, subAction, weight |
+| 1038 | Core > Actions > Set Sub-Action Weight | verified (Streamer.bot UI) | core.setSubActionWeight | action, subAction, weight |
 | 123 | Core > Arguments > Set Argument | certain | core.setArgument | name, value, autoType |
 | 99999 | Core > C# > Execute C# Code | certain | code.csharp | code |
 | 99998 | Core > C# > Execute C# Method | certain | code.csharp | code |
-| 1015 | Core > Commands > Get Command Group State | likely | commands.getGroupState | group |
+| 1015 | Core > Commands > Get Command Group State | verified (Streamer.bot UI) | commands.getGroupState | group |
 | 1014 | Core > Commands > Get Command State | certain | commands.getState | command |
 | 1013 | Core > Commands > Get Commands | certain | commands.getCommands | argument, group, show, includeAll, onlyPermitted |
-| 1010 | Core > Commands > Set Command Group State | likely | commands.setGroupState | group, state |
+| 1010 | Core > Commands > Set Command Group State | verified (Streamer.bot UI) | commands.setGroupState | group, state |
 | 9 | Core > Commands > Set Command State | certain | commands.setState | command, state |
 | 1002 | Core > Delay | certain | core.delay | milliseconds |
 | 1039 | Core > File IO > File Exists | certain | core.fileExists | path, kind |
 | 1040 | Core > File IO > Folder Exists | certain | core.fileExists | path, kind |
 | 1006 | Core > File IO > Read Lines From File | certain | core.readLines | path, variable, parseVariables, autoType |
 | 5 | Core > File IO > Read Random Line From File | certain | core.readRandomLine | path, variable, count, parseVariables, autoType |
-| 1021 | Core > File IO > Read Specific Line From File | likely | core.readSpecificLine | path, variable, lineNumber, parseVariables, autoType |
+| 1021 | Core > File IO > Read Specific Line From File | verified (Streamer.bot UI) | core.readSpecificLine | path, variable, lineNumber, parseVariables, autoType |
 | 3 | Core > File IO > Write To File | certain | core.writeFile | path, content, mode |
 | 1030 | Core > File Tail > Set File Tail State | certain | core.setWatcherState | watcher, state |
-| 125 | Core > Globals > Clear Non-Persisted Globals | likely | core.clearTemporaryGlobals |  |
-| 126 | Core > Globals > Clear Non-Persisted User Globals | likely | core.clearTemporaryUserVariables |  |
+| 125 | Core > Globals > Clear Non-Persisted Globals | verified (Streamer.bot UI) | core.clearTemporaryGlobals |  |
+| 126 | Core > Globals > Clear Non-Persisted User Globals | verified (Streamer.bot UI) | core.clearTemporaryUserVariables |  |
 | 121 | Core > Globals > Global (Get) | certain | core.getGlobal | name, destination, defaultValue, autoType |
 | 122 | Core > Globals > Global (Set) | certain | core.setGlobal | name, mode, value, persisted, autoType |
 | 124 | Core > Logic > Break | certain | core.stop |  |
 | 1023 | Core > Logic > Get Input | certain | core.getInputDialog | title, prompt, originalText, variable, autoType |
 | 1003 | Core > Logic > Get Random Number | certain | core.randomNumber | name, min, max |
 | 120 | Core > Logic > If/Else | certain | core.if | left, operator, right |
-| 129 | Core > Logic > Loop Break | likely | core.loopBreak |  |
-| 130 | Core > Logic > Loop Continue | likely | core.loopContinue |  |
+| 129 | Core > Logic > Loop Break | verified (Streamer.bot UI) | core.loopBreak |  |
+| 130 | Core > Logic > Loop Continue | verified (Streamer.bot UI) | core.loopContinue |  |
 | 127 | Core > Logic > Switch | certain | core.switch | input, operator, cases |
 | 128 | Core > Logic > While | certain | core.while | left, operator, right, maxIterations |
 | 9002 | Core > MIDI > Control Change | certain | midi.controlChange | name, device, channel, controller, value |
@@ -135,12 +137,12 @@ Settings conventions:
 | 1037 | Core > Quotes > Add Quote | certain | quotes.add | text |
 | 1036 | Core > Quotes > Delete Quote | certain | quotes.delete | id |
 | 1000 | Core > Quotes > Get Quote | certain | quotes.get | id |
-| 1035 | Core > Quotes > Get Quote Count | likely | quotes.count |  |
+| 1035 | Core > Quotes > Get Quote Count | verified (Streamer.bot UI) | quotes.count |  |
 | 1031 | Core > Signals > Send Local Signal | certain | core.sendSignal | name, includeArgs, arguments, queue |
 | 1032 | Core > Signals > Wait For Local Signal | certain | core.waitForSignal | name, timeoutMs, overwrite |
 | 1 | Core > Sounds > Play Sound | certain | audio.playSound | file, volume, wait, device, tag, useFileName |
 | 7 | Core > Sounds > Play Sound From Folder | certain | audio.playSoundFromFolder | folder, subfolders, volume, wait, device, tag, useFileName |
-| 30001 | Core > Sounds > Stop All Sound Playback | likely | audio.stopSounds |  |
+| 30001 | Core > Sounds > Stop All Sound Playback | verified (Streamer.bot UI) | audio.stopSounds |  |
 | 30002 | Core > Sounds > Stop Sound Playback | certain | audio.stopSounds | tag |
 | 1012 | Core > System > Keyboard Press | certain | input.keyboardPress | keys |
 | 6 | Core > System > Run a Program | certain | core.runProgram | path, arguments, workingDirectory, wait, waitSeconds, captureOutput, environment |
@@ -152,7 +154,7 @@ Settings conventions:
 | 1018 | Core > Voice Control > Set Voice Control Command | certain | voiceControl.setCommand | command, phrase |
 | 1019 | Core > Voice Control > Set Voice Control Command State | certain | voiceControl.setCommandState | command, state |
 | 14312 | Elgato > Camera Hub > Webcam > Set Anti Flicker | certain | elgato.cameraHub.webcam.setAntiFlicker | device, antiFlicker |
-| 14308 | Elgato > Camera Hub > Webcam > Set Auto White Balance | likely | elgato.cameraHub.webcam.setAutoWhiteBalance | device, mode |
+| 14308 | Elgato > Camera Hub > Webcam > Set Auto White Balance | verified (Streamer.bot UI) | elgato.cameraHub.webcam.setAutoWhiteBalance | device, mode |
 | 14302 | Elgato > Camera Hub > Webcam > Set Brightness | certain | elgato.cameraHub.webcam.setBrightness | device, adjustment |
 | 14301 | Elgato > Camera Hub > Webcam > Set Contrast | certain | elgato.cameraHub.webcam.setContrast | device, adjustment |
 | 14307 | Elgato > Camera Hub > Webcam > Set Focus | certain | elgato.cameraHub.webcam.setFocus | device, adjustment |
@@ -166,18 +168,18 @@ Settings conventions:
 | 11004 | Elgato > Stream Deck > Set State | certain | streamDeck.setState | buttonId, state |
 | 11001 | Elgato > Stream Deck > Set Title | certain | streamDeck.setTitle | buttonId, title, state |
 | 11008 | Elgato > Stream Deck > Set Value | certain | streamDeck.setValue | buttonId, value |
-| 11005 | Elgato > Stream Deck > Show Alert | unsure | streamDeck.showAlert | buttonId |
-| 11006 | Elgato > Stream Deck > Show Ok | unsure | streamDeck.showOk | buttonId |
-| 11007 | Elgato > Stream Deck > Toggle State | unsure | streamDeck.toggleState | buttonId |
+| 11005 | Elgato > Stream Deck > Show Alert | verified (Streamer.bot UI) | streamDeck.showAlert | buttonId |
+| 11006 | Elgato > Stream Deck > Show Ok | verified (Streamer.bot UI) | streamDeck.showOk | buttonId |
+| 11007 | Elgato > Stream Deck > Toggle State | verified (Streamer.bot UI) | streamDeck.toggleState | buttonId |
 | 14016 | Elgato > Wave Link > Get Filter State | certain | wavelink.legacy.getFilterState | channel, effect |
 | 14011 | Elgato > Wave Link > Get Input Information | certain | wavelink.legacy.getInputInfo | channel |
 | 14012 | Elgato > Wave Link > Get Microphone Information | certain | wavelink.legacy.getMicrophoneInfo | inputDevice |
-| 14009 | Elgato > Wave Link > Get Output Volumes | unsure | wavelink.legacy.getOutputVolumes |  |
-| 14007 | Elgato > Wave Link > Get Selected Output | unsure | wavelink.legacy.getSelectedOutput |  |
-| 14003 | Elgato > Wave Link > Mute Input | likely | wavelink.legacy.muteInput | channel, mix, state |
+| 14009 | Elgato > Wave Link > Get Output Volumes | verified (Streamer.bot UI) | wavelink.legacy.getOutputVolumes |  |
+| 14007 | Elgato > Wave Link > Get Selected Output | verified (Streamer.bot UI) | wavelink.legacy.getSelectedOutput |  |
+| 14003 | Elgato > Wave Link > Mute Input | verified (Streamer.bot UI) | wavelink.legacy.muteInput | channel, mix, state |
 | 14001 | Elgato > Wave Link > Mute Microphone | certain | wavelink.legacy.muteMicrophone | inputDevice, state |
 | 14002 | Elgato > Wave Link > Mute Output | certain | wavelink.legacy.muteOutput | mix, state |
-| 14004 | Elgato > Wave Link > Set Filter Bypass State | likely | wavelink.legacy.setFilterBypass | channel, mix, state |
+| 14004 | Elgato > Wave Link > Set Filter Bypass State | verified (Streamer.bot UI) | wavelink.legacy.setFilterBypass | channel, mix, state |
 | 14005 | Elgato > Wave Link > Set Filter State | certain | wavelink.legacy.setFilterState | channel, effect, state |
 | 14010 | Elgato > Wave Link > Set Input Volume | certain | wavelink.legacy.setInputVolume | channel, mix, volume, relative |
 | 14015 | Elgato > Wave Link > Set Microphone Balance | certain | wavelink.legacy.setMicrophoneBalance | inputDevice, balance, relative |
@@ -190,7 +192,7 @@ Settings conventions:
 | 8001 | Integrations > IFTTT > IFTTT Notification (Basic) | certain | ifttt.notificationBasic | eventName, text |
 | 6001 | Integrations > Lumia Stream > Send Command | certain | lumia.sendCommand | command |
 | 6002 | Integrations > Lumia Stream > Set Color | certain | lumia.setColor | color, brightness, duration, transition, default, skipQueue, lights |
-| 6004 | Integrations > Lumia Stream > Set To Default | likely | lumia.setToDefault |  |
+| 6004 | Integrations > Lumia Stream > Set To Default | verified (Streamer.bot UI) | lumia.setToDefault |  |
 | 40000 | Integrations > mtion > Get Active Clubhouse | certain | mtion.getActiveClubhouse |  |
 | 40001 | Integrations > mtion > Send Trigger | certain | mtion.sendTrigger | trigger, parameters |
 | 15001 | Integrations > Pronouns > Add Pronouns for User | certain | pronouns.addForUser | user, prefix |
@@ -198,26 +200,26 @@ Settings conventions:
 | 19002 | Integrations > Throwing System > Activate Trigger by Name | certain | tits.activateTriggerByName | trigger |
 | 19003 | Integrations > Throwing System > Throw Item | certain | tits.throwItem | item, delay, amount |
 | 19004 | Integrations > Throwing System > Throw Item by Name | certain | tits.throwItemByName | item, delay, amount |
-| 19005 | Integrations > Throwing System > Throw Items | likely | tits.throwItems | items, delay, amount |
-| 19006 | Integrations > Throwing System > Throw Items by Name | likely | tits.throwItemsByName | items, delay, amount |
-| 5001 | Integrations > VoiceMod > Get Current Voice | likely | voicemod.getCurrentVoice |  |
+| 19005 | Integrations > Throwing System > Throw Items | verified (Streamer.bot UI) | tits.throwItems | items, delay, amount |
+| 19006 | Integrations > Throwing System > Throw Items by Name | verified (Streamer.bot UI) | tits.throwItemsByName | items, delay, amount |
+| 5001 | Integrations > VoiceMod > Get Current Voice | verified (Streamer.bot UI) | voicemod.getCurrentVoice |  |
 | 5010 | Integrations > VoiceMod > Play Sound | certain | voicemod.playSound | sound |
 | 5003 | Integrations > VoiceMod > Select Random Voice | certain | voicemod.selectRandomVoice | mode |
 | 5002 | Integrations > VoiceMod > Select Voice | certain | voicemod.selectVoice | voice |
 | 5009 | Integrations > VoiceMod > Select Voice By Id | certain | voicemod.selectVoice | voice |
 | 5012 | Integrations > VoiceMod > Select Voice by Name | certain | voicemod.selectVoice | voice |
-| 5005 | Integrations > VoiceMod > Set Background Effect State | unsure | voicemod.setBackgroundEffects | state |
-| 5007 | Integrations > VoiceMod > Set Censor State | unsure | voicemod.setCensorBeep | state |
-| 5006 | Integrations > VoiceMod > Set Hear My Voice State | unsure | voicemod.setHearMyself | state |
-| 5008 | Integrations > VoiceMod > Set Mute State | unsure | voicemod.setMute | state |
-| 5004 | Integrations > VoiceMod > Set Voice Changer State | unsure | voicemod.setVoiceChanger | state |
-| 5011 | Integrations > VoiceMod > Stop All Sounds | likely | voicemod.stopAllSounds |  |
+| 5008 | Integrations > VoiceMod > Set Background Effect State | verified (Streamer.bot UI) | voicemod.setBackgroundEffects | state |
+| 5007 | Integrations > VoiceMod > Set Censor State | verified (Streamer.bot UI) | voicemod.setCensorBeep | state |
+| 5006 | Integrations > VoiceMod > Set Hear My Voice State | verified (Streamer.bot UI) | voicemod.setHearMyself | state |
+| 5005 | Integrations > VoiceMod > Set Mute State | verified (Streamer.bot UI) | voicemod.setMute | state |
+| 5004 | Integrations > VoiceMod > Set Voice Changer State | verified (Streamer.bot UI) | voicemod.setVoiceChanger | state |
+| 5011 | Integrations > VoiceMod > Stop All Sounds | verified (Streamer.bot UI) | voicemod.stopAllSounds |  |
 | 12007 | Integrations > VTube Studio > Color Tint | certain | vtubestudio.colorTint | color, nameContains, tagContains, mix |
-| 12006 | Integrations > VTube Studio > Get Current Model | likely | vtubestudio.getCurrentModel |  |
+| 12006 | Integrations > VTube Studio > Get Current Model | verified (Streamer.bot UI) | vtubestudio.getCurrentModel |  |
 | 12001 | Integrations > VTube Studio > Load Model | certain | vtubestudio.loadModel | model |
 | 12002 | Integrations > VTube Studio > Load Model by Name | certain | vtubestudio.loadModel | model |
 | 12005 | Integrations > VTube Studio > Move Model | certain | vtubestudio.moveModel | time, relative, positionX, positionY, rotation, size |
-| 12008 | Integrations > VTube Studio > Reset All Color Tints | likely | vtubestudio.resetColorTint |  |
+| 12008 | Integrations > VTube Studio > Reset All Color Tints | verified (Streamer.bot UI) | vtubestudio.resetColorTint |  |
 | 12010 | Integrations > VTube Studio > Send Raw Request | certain | vtubestudio.rawRequest | messageType, data, resultArgument, variablePrefix |
 | 12009 | Integrations > VTube Studio > Set Expression State | certain | vtubestudio.setExpression | expression, state, fadeTime |
 | 12003 | Integrations > VTube Studio > Trigger Hotkey | certain | vtubestudio.triggerHotkey | hotkey |
@@ -228,76 +230,76 @@ Settings conventions:
 | 35001 | Kick > Chat > Send Message to Channel | certain | kick.sendMessage | message, useBot, fallback |
 | 35040 | Kick > Moderation > Ban User | certain | kick.banUser | user, reason |
 | 35042 | Kick > Moderation > Timeout User | certain | kick.timeoutUser | user, duration, reason |
-| 35041 | Kick > Moderation > Unban User | likely | kick.unbanUser | user |
-| 35043 | Kick > Moderation > UnTimeout User | likely | kick.untimeoutUser | user |
-| 35108 | Kick > Rewards > Get Reward Info | likely | kick.getRewardInfo | reward |
+| 35041 | Kick > Moderation > Unban User | verified (Streamer.bot UI) | kick.unbanUser | user |
+| 35043 | Kick > Moderation > UnTimeout User | verified (Streamer.bot UI) | kick.untimeoutUser | user |
+| 35108 | Kick > Rewards > Get Reward Info | verified (Streamer.bot UI) | kick.getRewardInfo | reward |
 | 35113 | Kick > Rewards > Set Background Color | certain | kick.setRewardColor | reward, color |
 | 35103 | Kick > Rewards > Set Cost | certain | kick.setRewardCost | reward, cost |
 | 35106 | Kick > Rewards > Set Description | certain | kick.setRewardDescription | reward, description |
-| 35101 | Kick > Rewards > Set Enabled State | likely | kick.setRewardEnabled | reward, enabled |
-| 35102 | Kick > Rewards > Set Paused State | likely | kick.setRewardPaused | reward, paused |
+| 35101 | Kick > Rewards > Set Enabled State | verified (Streamer.bot UI) | kick.setRewardEnabled | reward, enabled |
+| 35102 | Kick > Rewards > Set Paused State | verified (Streamer.bot UI) | kick.setRewardPaused | reward, paused |
 | 35105 | Kick > Rewards > Set Title | certain | kick.setRewardTitle | reward, title |
 | 35107 | Kick > Rewards > Update | certain | core.group | name, random, color |
 | 35010 | Kick > User > Add Broadcaster Information | certain | kick.addBroadcasterInfo |  |
 | 35012 | Kick > User > Add Random Users | certain | kick.addRandomUsers | count, excludeCaller, prefix |
 | 35011 | Kick > User > Get User Info for Target | certain | kick.getUserInfo | user, prefix |
-| 35020 | Kick > User Groups > Add User To Group | likely | kick.addUserToGroup | group, user, userId, create |
-| 35021 | Kick > User Groups > Remove User from Group | likely | kick.removeUserFromGroup | group, user, userId |
-| 35022 | Kick > User Groups > User In Group | likely | kick.userInGroup | group, user, userId, argument |
+| 35020 | Kick > User Groups > Add User To Group | verified (Streamer.bot UI) | kick.addUserToGroup | group, user, userId, create |
+| 35021 | Kick > User Groups > Remove User from Group | verified (Streamer.bot UI) | kick.removeUserFromGroup | group, user, userId |
+| 35022 | Kick > User Groups > User In Group | verified (Streamer.bot UI) | kick.userInGroup | group, user, userId, argument |
 | 41007 | Meld Studio > Effects > Set Effect Enabled State | certain | meldstudio.setEffectState | scene, layer, effect, state |
-| 41001 | Meld Studio > Get Current Scene | unsure | meldstudio.getCurrentScene |  |
-| 41002 | Meld Studio > Get Status | unsure | meldstudio.getStatus |  |
-| 41014 | Meld Studio > Layers > Set Browser Layer Url | unsure | meldstudio.setBrowserLayerUrl | scene, layer, url |
+| 41001 | Meld Studio > Get Current Scene | verified (Streamer.bot UI) | meldstudio.getCurrentScene |  |
+| 41002 | Meld Studio > Get Status | verified (Streamer.bot UI) | meldstudio.getStatus |  |
+| 41016 | Meld Studio > Layers > Set Browser Layer Url | verified (Streamer.bot UI) | meldstudio.setBrowserLayerUrl | scene, layer, url |
 | 41006 | Meld Studio > Layers > Set Layer Visibility State | certain | meldstudio.setLayerVisibility | scene, layer, state |
-| 41017 | Meld Studio > Record Clip | unsure | meldstudio.recordClip |  |
-| 41003 | Meld Studio > Recording | unsure | meldstudio.recording | state |
+| 41013 | Meld Studio > Record Clip | verified (Streamer.bot UI) | meldstudio.recordClip |  |
+| 41004 | Meld Studio > Recording | verified (Streamer.bot UI) | meldstudio.recording | state |
 | 41005 | Meld Studio > Show Scene | certain | meldstudio.showScene | scene |
-| 41004 | Meld Studio > Streaming | unsure | meldstudio.streaming | state |
-| 41010 | Meld Studio > Take Screenshot | likely | meldstudio.takeScreenshot | orientation |
-| 41013 | Meld Studio > Take Vertical Screenshot | unsure | meldstudio.takeVerticalScreenshot |  |
+| 41003 | Meld Studio > Streaming | verified (Streamer.bot UI) | meldstudio.streaming | state |
+| 41010 | Meld Studio > Take Screenshot | verified (Streamer.bot UI) | meldstudio.takeScreenshot | orientation |
+| 41017 | Meld Studio > Take Vertical Screenshot | verified (Streamer.bot UI) | meldstudio.takeVerticalScreenshot |  |
 | 41008 | Meld Studio > Tracks > Set Layer Track Muted State | certain | meldstudio.setLayerTrackMuted | scene, layer, state |
 | 41009 | Meld Studio > Tracks > Set Track Muted State | certain | meldstudio.setTrackMuted | track, state |
 | 329 | OBS Studio > Create Record Chapter | certain | obs.createRecordChapter | chapterName, connection |
-| 42 | OBS Studio > Filters > Set State of a Random Filter | unsure | obs.setRandomFilterState | connection, source, state, resultArgument |
-| 43 | OBS Studio > Get Current Scene | likely | obs.getCurrentScene | connection, resultArgument |
+| 40 | OBS Studio > Filters > Set State of a Random Filter | verified (Streamer.bot UI) | obs.setRandomFilterState | connection, source, state, resultArgument |
+| 43 | OBS Studio > Get Current Scene | verified (Streamer.bot UI) | obs.getCurrentScene | connection, resultArgument |
 | 328 | OBS Studio > Get Status | certain | obs.getStatus | connection |
-| 31 | OBS Studio > Groups > Set Random Group Source Visible | unsure | obs.randomGroupSource | connection, group, resultArgument |
+| 31 | OBS Studio > Groups > Set Random Group Source Visible | verified (Streamer.bot UI) | obs.randomGroupSource | connection, group, resultArgument |
 | 46 | OBS Studio > Raw | certain | obs.rawRequest | requestType, requestData, resultArgument, connection |
-| 45 | OBS Studio > Recording | likely | obs.recording | connection, mode |
-| 321 | OBS Studio > Replay > Set Replay Buffer State | likely | obs.replayBuffer | connection, mode |
-| 324 | OBS Studio > Scenes > Get Scene Item Properties | likely | obs.getSceneItemProperties | connection, scene, source |
-| 325 | OBS Studio > Scenes > Hide Scene's Sources | likely | obs.hideSceneSources | connection, scene |
-| 326 | OBS Studio > Scenes > Set Random Scene Source Visible | likely | obs.randomSceneSource | connection, scene, resultArgument |
+| 45 | OBS Studio > Recording | verified (Streamer.bot UI) | obs.recording | connection, mode |
+| 321 | OBS Studio > Replay > Set Replay Buffer State | verified (Streamer.bot UI) | obs.replayBuffer | connection, mode |
+| 324 | OBS Studio > Scenes > Get Scene Item Properties | verified (Streamer.bot UI) | obs.getSceneItemProperties | connection, scene, source |
+| 325 | OBS Studio > Scenes > Hide Scene's Sources | verified (Streamer.bot UI) | obs.hideSceneSources | connection, scene |
+| 326 | OBS Studio > Scenes > Set Random Scene Source Visible | verified (Streamer.bot UI) | obs.randomSceneSource | connection, scene, resultArgument |
 | 47 | OBS Studio > Scenes > Set Scene Filter State | certain | obs.setFilterState | source, filter, state, connection |
 | 34 | OBS Studio > Set Active Scene | certain | obs.setScene | scene, connection |
 | 36 | OBS Studio > Sources > Flip Source | certain | obs.flipSource | connection, scene, source, axis |
-| 32 | OBS Studio > Sources > Hide Group's Sources | unsure | obs.hideGroupSources | connection, group |
-| 41 | OBS Studio > Sources > Hide Source's Filters | likely | obs.setAllFiltersState | connection, source, state |
+| 32 | OBS Studio > Sources > Hide Group's Sources | verified (Streamer.bot UI) | obs.hideGroupSources | connection, group |
+| 41 | OBS Studio > Sources > Hide Source's Filters | verified (Streamer.bot UI) | obs.setAllFiltersState | connection, source, state |
 | 37 | OBS Studio > Sources > Rotate Source | certain | obs.rotateSource | connection, scene, source, degrees, relative |
 | 38 | OBS Studio > Sources > Set Browser Source URL | certain | obs.setBrowserUrl | input, url, connection |
 | 327 | OBS Studio > Sources > Set Color Source Color | certain | obs.setColor | connection, input, color |
 | 39 | OBS Studio > Sources > Set GDI Text | certain | obs.setText | input, text, connection |
-| 323 | OBS Studio > Sources > Set Image Source File | likely | obs.setImageFile | input, file, connection |
+| 323 | OBS Studio > Sources > Set Image Source File | verified (Streamer.bot UI) | obs.setImageFile | input, file, connection |
 | 322 | OBS Studio > Sources > Set Media Source File | certain | obs.setMediaFile | input, file, connection |
-| 49 | OBS Studio > Sources > Set Media State | likely | obs.mediaControl | connection, input, command |
+| 49 | OBS Studio > Sources > Set Media State | verified (Streamer.bot UI) | obs.mediaControl | connection, input, command |
 | 44 | OBS Studio > Sources > Set Source Audio Track State | certain | obs.setAudioTrack | connection, input, track, state |
 | 35 | OBS Studio > Sources > Set Source Filter State | certain | obs.setFilterState | source, filter, state, connection |
-| 40 | OBS Studio > Sources > Set Source Mute State | unsure | obs.setInputMute | connection, input, state |
+| 42 | OBS Studio > Sources > Set Source Mute State | verified (Streamer.bot UI) | obs.setInputMute | connection, input, state |
 | 30 | OBS Studio > Sources > Set Source Visibility State | certain | obs.setSourceVisibility | scene, source, state, connection |
-| 33 | OBS Studio > Streaming | likely | obs.streaming | connection, mode |
+| 33 | OBS Studio > Streaming | verified (Streamer.bot UI) | obs.streaming | connection, mode |
 | 48 | OBS Studio > Take Screenshot | certain | obs.screenshot | connection, source, file, quality, resultArgument |
 | 701 | PolyPop > Trigger Alert | certain | polypop.triggerAlert | alertName, variables |
 | 1008 | Settings > Pick Color | certain | core.pickColor | color, name |
-| 1026 | Settings > Reset Credits | likely | credits.reset |  |
-| 1027 | Settings > Reset First Words | likely | users.resetFirstWords | platform |
+| 1027 | Settings > Reset Credits | verified (Streamer.bot UI) | credits.reset |  |
+| 1026 | Settings > Reset First Words | verified (Streamer.bot UI) | users.resetFirstWords | platform |
 | 1025 | Settings > Set Voice Control Input | certain | voiceControl.setInput | device |
 | 607 | Speaker.bot > Activate VoiceGate Profile | certain | speech.activateVoiceGate | profile |
-| 606 | Speaker.bot > Clear Pending | unsure | speech.clearQueue |  |
-| 603 | Speaker.bot > Set Enabled State | unsure | speech.setEnabled | mode |
-| 604 | Speaker.bot > Set Paused State | unsure | speech.pause | mode |
-| 602 | Speaker.bot > Speak | likely | speech.speak | alias, text, badWordFilter, silent |
-| 601 | Speaker.bot > Speak (UDP) | likely | speech.speak | alias, text, badWordFilter |
-| 605 | Speaker.bot > Stop Speaking | unsure | speech.skip |  |
+| 606 | Speaker.bot > Clear Pending | verified (Streamer.bot UI) | speech.clearQueue |  |
+| 603 | Speaker.bot > Set Enabled State | verified (Streamer.bot UI) | speech.setEnabled | mode |
+| 604 | Speaker.bot > Set Paused State | verified (Streamer.bot UI) | speech.pause | mode |
+| 602 | Speaker.bot > Speak | verified (Streamer.bot UI) | speech.speak | alias, text, badWordFilter, silent |
+| 601 | Speaker.bot > Speak (UDP) | verified (Streamer.bot UI) | speech.speak | alias, text, badWordFilter |
+| 605 | Speaker.bot > Stop Speaking | verified (Streamer.bot UI) | speech.skip |  |
 | 21007 | Streamer.bot > Decks > Deck Notify | certain | decks.notify | deck, title, description |
 | 21004 | Streamer.bot > Decks > Item Set Background | certain | decks.itemSetBackground | deck, item, color, url, state |
 | 21005 | Streamer.bot > Decks > Item Set Icon | certain | decks.itemSetIcon | deck, item, color, name, url, state |
@@ -305,89 +307,89 @@ Settings conventions:
 | 21003 | Streamer.bot > Decks > Item Set Title | certain | decks.itemSetTitle | deck, item, title, color, state |
 | 21006 | Streamer.bot > Decks > Item Set Value | certain | decks.itemSetValue | deck, item, value, state |
 | 21002 | Streamer.bot > Decks > Item Toggle State | certain | decks.itemToggleState | deck, item |
-| 21009 | Streamer.bot > Decks > Page Next | unsure | decks.pageNext | deck |
-| 21010 | Streamer.bot > Decks > Page Previous | unsure | decks.pagePrevious | deck |
+| 21009 | Streamer.bot > Decks > Page Next | verified (Streamer.bot UI) | decks.pageNext | deck |
+| 21010 | Streamer.bot > Decks > Page Previous | verified (Streamer.bot UI) | decks.pagePrevious | deck |
 | 21008 | Streamer.bot > Decks > Page Set | certain | decks.pageSet | deck, page |
 | 20002 | Streamer.bot > Remote > Send Remote Signal | certain | remote.sendSignal | instance, name, includeArgs, arguments |
 | 20003 | Streamer.bot > Remote > Wait For Remote Signal | certain | remote.waitForSignal | instance, name, timeoutMs, overwrite |
-| 413 | Streamlabs Desktop > Filters > Set State of a Random Filter | unsure | slobs.setRandomFilterState | scene, source, state, resultArgument |
-| 403 | Streamlabs Desktop > Groups > Hide Group's Sources | unsure | slobs.hideGroupSources | scene, group |
-| 402 | Streamlabs Desktop > Groups > Set Random Group Source Visible | unsure | slobs.randomGroupSource | scene, group, resultArgument |
-| 415 | Streamlabs Desktop > Recording | likely | slobs.recording | mode |
-| 414 | Streamlabs Desktop > Scenes > Get Current Scene | likely | slobs.getCurrentScene | resultArgument |
+| 411 | Streamlabs Desktop > Filters > Set State of a Random Filter | verified (Streamer.bot UI) | slobs.setRandomFilterState | scene, source, state, resultArgument |
+| 403 | Streamlabs Desktop > Groups > Hide Group's Sources | verified (Streamer.bot UI) | slobs.hideGroupSources | scene, group |
+| 402 | Streamlabs Desktop > Groups > Set Random Group Source Visible | verified (Streamer.bot UI) | slobs.randomGroupSource | scene, group, resultArgument |
+| 415 | Streamlabs Desktop > Recording | verified (Streamer.bot UI) | slobs.recording | mode |
+| 414 | Streamlabs Desktop > Scenes > Get Current Scene | verified (Streamer.bot UI) | slobs.getCurrentScene | resultArgument |
 | 405 | Streamlabs Desktop > Scenes > Set Active Scene | certain | slobs.setScene | scene |
 | 417 | Streamlabs Desktop > Scenes > Set Scene Filter State | certain | slobs.setSceneFilterState | scene, filter, state |
 | 407 | Streamlabs Desktop > Sources > Flip Source | certain | slobs.flipSource | scene, source, axis |
-| 412 | Streamlabs Desktop > Sources > Hide Source's Filters | likely | slobs.hideSourceFilters | scene, source |
+| 412 | Streamlabs Desktop > Sources > Hide Source's Filters | verified (Streamer.bot UI) | slobs.hideSourceFilters | scene, source |
 | 408 | Streamlabs Desktop > Sources > Rotate Source | certain | slobs.rotateSource | scene, source, degrees |
 | 409 | Streamlabs Desktop > Sources > Set Browser Source URL | certain | slobs.setBrowserUrl | source, url |
 | 410 | Streamlabs Desktop > Sources > Set GDI Text | certain | slobs.setText | source, text |
 | 406 | Streamlabs Desktop > Sources > Set Source Filter State | certain | slobs.setFilterState | source, filter, state |
-| 411 | Streamlabs Desktop > Sources > Set Source Mute State | unsure | slobs.setSourceMute | source, state |
+| 413 | Streamlabs Desktop > Sources > Set Source Mute State | verified (Streamer.bot UI) | slobs.setSourceMute | source, state |
 | 401 | Streamlabs Desktop > Sources > Set Source Visibility State | certain | slobs.setSourceVisibility | scene, source, state |
-| 404 | Streamlabs Desktop > Streaming | likely | slobs.streaming | mode |
-| 555 | Twitch > Ads > Get Ad Schedule | unsure | twitch.getAdSchedule |  |
-| 556 | Twitch > Ads > Get Pre-roll Free Time | unsure | twitch.getAdSchedule |  |
+| 404 | Streamlabs Desktop > Streaming | verified (Streamer.bot UI) | slobs.streaming | mode |
+| 556 | Twitch > Ads > Get Ad Schedule | verified (Streamer.bot UI) | twitch.getAdSchedule |  |
+| 557 | Twitch > Ads > Get Pre-roll Free Time | verified (Streamer.bot UI) | twitch.getAdSchedule |  |
 | 19 | Twitch > Ads > Run Commercial | certain | twitch.runAd | length |
-| 557 | Twitch > Ads > Snooze Ad | unsure | twitch.snoozeAd |  |
-| 24 | Twitch > Channel > Add Viewer Count | likely | twitch.getStreamInfo |  |
+| 555 | Twitch > Ads > Snooze Ad | verified (Streamer.bot UI) | twitch.snoozeAd |  |
+| 24 | Twitch > Channel > Add Viewer Count | verified (Streamer.bot UI) | twitch.getStreamInfo |  |
 | 18 | Twitch > Channel > Create Clip | certain | twitch.createClip | hasDelay |
 | 17 | Twitch > Channel > Create Stream Marker | certain | twitch.createMarker | description |
-| 564 | Twitch > Channel > Set Channel Branded Content | likely | twitch.setBrandedContent | enabled |
+| 564 | Twitch > Channel > Set Channel Branded Content | verified (Streamer.bot UI) | twitch.setBrandedContent | enabled |
 | 16 | Twitch > Channel > Set Channel Game | certain | twitch.setGame | game |
 | 15 | Twitch > Channel > Set Channel Title | certain | twitch.setTitle | title |
-| 510 | Twitch > Chat > Clear Chat Messages | unsure | twitch.clearChat |  |
-| 575 | Twitch > Chat > Get Pinned Chat Message | unsure | twitch.getPinnedMessage |  |
+| 25 | Twitch > Charity > Get Latest Charity Campaign | verified (Streamer.bot UI) | twitch.getCharityCampaign |  |
+| 510 | Twitch > Chat > Clear Chat Messages | verified (Streamer.bot UI) | twitch.clearChat |  |
+| 575 | Twitch > Chat > Get Pinned Chat Message | verified (Streamer.bot UI) | twitch.getPinnedMessage |  |
 | 576 | Twitch > Chat > Pin Chat Message | certain | twitch.pinMessage | messageId, duration |
 | 560 | Twitch > Chat > Reply To Message | certain | twitch.replyToMessage | message, messageId, sendAs |
-| 23 | Twitch > Chat > Send Announcement to Channel | likely | twitch.sendAnnouncement | message, color |
-| 25 | Twitch > Chat > Send Announcement to Channel (older layout?) | unsure | twitch.sendAnnouncement | message, color |
+| 23 | Twitch > Chat > Send Announcement to Channel | verified (Streamer.bot UI) | twitch.sendAnnouncement | message, color |
 | 10 | Twitch > Chat > Send Message to Channel | certain | twitch.sendMessage | message, sendAs |
-| 578 | Twitch > Chat > Unpin Chat Message | unsure | twitch.unpinMessage |  |
+| 578 | Twitch > Chat > Unpin Chat Message | verified (Streamer.bot UI) | twitch.unpinMessage |  |
 | 577 | Twitch > Chat > Updated Pinned Chat Message Duration | certain | twitch.updatePinnedDuration | messageId, duration |
 | 51 | Twitch > Followers > Get Follow Age Info for Target | certain | twitch.getFollowAge | user |
 | 506 | Twitch > Followers > Get Follower Count | certain | twitch.getFollowerCount |  |
-| 508 | Twitch > Followers > Get Latest Follower | unsure | twitch.getFollowerCount |  |
-| 528 | Twitch > Guest Star > Assign Guest Star Slot | likely | twitch.assignGuestStarSlot | user, slot |
-| 523 | Twitch > Guest Star > Create Guest Star Session | likely | twitch.createGuestStarSession |  |
-| 527 | Twitch > Guest Star > Delete Guest Star Invite | likely | twitch.deleteGuestStarInvite | user |
-| 530 | Twitch > Guest Star > Delete Guest Star Slot | likely | twitch.deleteGuestStarSlot | user, slot |
-| 524 | Twitch > Guest Star > End Guest Star Session | likely | twitch.endGuestStarSession |  |
-| 520 | Twitch > Guest Star > Get Channel Guest Star Settings | likely | twitch.getGuestStarSettings |  |
-| 525 | Twitch > Guest Star > Get Guest Star Invites | likely | twitch.getGuestStarInvites |  |
-| 522 | Twitch > Guest Star > Get Guest Star Session | likely | twitch.getGuestStarSession |  |
-| 526 | Twitch > Guest Star > Send Guest Star Invite | likely | twitch.sendGuestStarInvite | user |
+| 507 | Twitch > Followers > Get Latest Follower | verified (Streamer.bot UI) | twitch.getFollowerCount |  |
+| 528 | Twitch > Guest Star > Assign Guest Star Slot | verified (Streamer.bot UI) | twitch.assignGuestStarSlot | user, slot |
+| 523 | Twitch > Guest Star > Create Guest Star Session | verified (Streamer.bot UI) | twitch.createGuestStarSession |  |
+| 527 | Twitch > Guest Star > Delete Guest Star Invite | verified (Streamer.bot UI) | twitch.deleteGuestStarInvite | user |
+| 530 | Twitch > Guest Star > Delete Guest Star Slot | verified (Streamer.bot UI) | twitch.deleteGuestStarSlot | user, slot |
+| 524 | Twitch > Guest Star > End Guest Star Session | verified (Streamer.bot UI) | twitch.endGuestStarSession |  |
+| 520 | Twitch > Guest Star > Get Channel Guest Star Settings | verified (Streamer.bot UI) | twitch.getGuestStarSettings |  |
+| 525 | Twitch > Guest Star > Get Guest Star Invites | verified (Streamer.bot UI) | twitch.getGuestStarInvites |  |
+| 522 | Twitch > Guest Star > Get Guest Star Session | verified (Streamer.bot UI) | twitch.getGuestStarSession |  |
+| 526 | Twitch > Guest Star > Send Guest Star Invite | verified (Streamer.bot UI) | twitch.sendGuestStarInvite | user |
 | 521 | Twitch > Guest Star > Update Channel Guest Star Settings | certain | twitch.updateGuestStarSettings | slotCount, layout, moderatorSendLive, browserSourceAudio, regenerateBrowserSources |
 | 529 | Twitch > Guest Star > Update Guest Star Slot | certain | twitch.updateGuestStarSlot | slot, toSlot |
 | 531 | Twitch > Guest Star > Update Guest Star Slot Settings | certain | twitch.updateGuestStarSlotSettings | slot, audio, video, live, volume |
-| 504 | Twitch > Moderation > Add Moderator | unsure | twitch.addModerator | user |
-| 502 | Twitch > Moderation > Add VIP | unsure | twitch.addVip | user |
+| 504 | Twitch > Moderation > Add Moderator | verified (Streamer.bot UI) | twitch.addModerator | user |
+| 502 | Twitch > Moderation > Add VIP | verified (Streamer.bot UI) | twitch.addVip | user |
 | 511 | Twitch > Moderation > Ban User | certain | twitch.ban | user, reason |
-| 13 | Twitch > Moderation > Chat Modes > Emote Only | likely | twitch.emoteOnly | enabled |
-| 28 | Twitch > Moderation > Chat Modes > Follow Mode | likely | twitch.followerMode | enabled, minutes |
-| 14 | Twitch > Moderation > Chat Modes > Slow Mode | likely | twitch.slowMode | enabled, seconds |
-| 12 | Twitch > Moderation > Chat Modes > Subscriber Only | likely | twitch.subscriberMode | enabled |
-| 505 | Twitch > Moderation > Remove Moderator | unsure | twitch.removeModerator | user |
-| 503 | Twitch > Moderation > Remove VIP | unsure | twitch.removeVip | user |
+| 13 | Twitch > Moderation > Chat Modes > Emote Only | verified (Streamer.bot UI) | twitch.emoteOnly | enabled |
+| 28 | Twitch > Moderation > Chat Modes > Follow Mode | verified (Streamer.bot UI) | twitch.followerMode | enabled, minutes |
+| 14 | Twitch > Moderation > Chat Modes > Slow Mode | verified (Streamer.bot UI) | twitch.slowMode | enabled, seconds |
+| 12 | Twitch > Moderation > Chat Modes > Subscriber Only | verified (Streamer.bot UI) | twitch.subscriberMode | enabled |
+| 505 | Twitch > Moderation > Remove Moderator | verified (Streamer.bot UI) | twitch.removeModerator | user |
+| 503 | Twitch > Moderation > Remove VIP | verified (Streamer.bot UI) | twitch.removeVip | user |
 | 29 | Twitch > Moderation > Send Shoutout | certain | twitch.sendShoutout | user |
-| 26 | Twitch > Moderation > Shield > Get Shield Mode Status | likely | twitch.getShieldMode |  |
-| 27 | Twitch > Moderation > Shield > Update Shield Mode Status | likely | twitch.setShieldMode | enabled |
+| 26 | Twitch > Moderation > Shield > Get Shield Mode Status | verified (Streamer.bot UI) | twitch.getShieldMode |  |
+| 27 | Twitch > Moderation > Shield > Update Shield Mode Status | verified (Streamer.bot UI) | twitch.setShieldMode | enabled |
 | 20 | Twitch > Moderation > Timeout User | certain | twitch.timeout | user, duration, reason |
-| 512 | Twitch > Moderation > Unban User | likely | twitch.unban | user |
-| 513 | Twitch > Moderation > UnTimeout User | likely | twitch.untimeout | user |
+| 512 | Twitch > Moderation > Unban User | verified (Streamer.bot UI) | twitch.unban | user |
+| 513 | Twitch > Moderation > UnTimeout User | verified (Streamer.bot UI) | twitch.untimeout | user |
 | 565 | Twitch > Moderation > Warn User | certain | twitch.warn | user, reason |
-| 563 | Twitch > Polls > Archive Active Poll | unsure | twitch.endPoll | mode |
+| 563 | Twitch > Polls > Archive Active Poll | verified (Streamer.bot UI) | twitch.endPoll | mode |
 | 561 | Twitch > Polls > Create Poll | certain | twitch.createPoll | title, choices, duration, pointsPerVote |
-| 566 | Twitch > Polls > Get Active Poll | unsure | twitch.getPoll |  |
-| 562 | Twitch > Polls > Terminate Active Poll | unsure | twitch.endPoll | mode |
-| 570 | Twitch > Predictions > Cancel Active Prediction | unsure | twitch.cancelPrediction |  |
+| 566 | Twitch > Polls > Get Active Poll | verified (Streamer.bot UI) | twitch.getPoll |  |
+| 562 | Twitch > Polls > Terminate Active Poll | verified (Streamer.bot UI) | twitch.endPoll | mode |
+| 569 | Twitch > Predictions > Cancel Active Prediction | verified (Streamer.bot UI) | twitch.cancelPrediction |  |
 | 568 | Twitch > Predictions > Create Prediction | certain | twitch.createPrediction | title, outcomes, window |
-| 567 | Twitch > Predictions > Get Active Prediction | unsure | twitch.getPrediction |  |
-| 569 | Twitch > Predictions > Lock Active Prediction | unsure | twitch.lockPrediction |  |
+| 567 | Twitch > Predictions > Get Active Prediction | verified (Streamer.bot UI) | twitch.getPrediction |  |
+| 570 | Twitch > Predictions > Lock Active Prediction | verified (Streamer.bot UI) | twitch.lockPrediction |  |
 | 571 | Twitch > Predictions > Resolve Last Prediction | certain | twitch.resolvePrediction | winner, title |
 | 572 | Twitch > Predictions > Resolve Last Prediction By Title | certain | twitch.resolvePrediction | winner, title |
-| 501 | Twitch > Raid > Cancel Raid | likely | twitch.cancelRaid |  |
-| 500 | Twitch > Raid > Start Raid | likely | twitch.startRaid | user |
+| 501 | Twitch > Raid > Cancel Raid | verified (Streamer.bot UI) | twitch.cancelRaid |  |
+| 500 | Twitch > Raid > Start Raid | verified (Streamer.bot UI) | twitch.startRaid | user |
 | 203 | Twitch > Rewards > Configure Rewards | certain | twitch.configureRewards | disableNotConfigured |
 | 208 | Twitch > Rewards > Get Reward Info | likely | twitch.getRewardInfo | reward |
 | 209 | Twitch > Rewards > Reset Reward Counter | likely | twitch.resetRewardCounter | reward |
@@ -396,31 +398,31 @@ Settings conventions:
 | 202 | Twitch > Rewards > Set Cost | certain | twitch.updateReward | reward, cost, operator |
 | 200 | Twitch > Rewards > Set Enabled State | likely | twitch.setRewardEnabled | reward, enabled |
 | 204 | Twitch > Rewards > Set Global Cooldown | certain | twitch.setRewardCooldown | reward, seconds |
-| 211 | Twitch > Rewards > Set Group Enabled State | likely | twitch.setRewardGroupEnabled | group, state |
-| 212 | Twitch > Rewards > Set Group Paused State | likely | twitch.setRewardGroupPaused | group, state |
+| 211 | Twitch > Rewards > Set Group Enabled State | verified (Streamer.bot UI) | twitch.setRewardGroupEnabled | group, state |
+| 212 | Twitch > Rewards > Set Group Paused State | verified (Streamer.bot UI) | twitch.setRewardGroupPaused | group, state |
 | 214 | Twitch > Rewards > Set Max Per Stream | likely | twitch.setRewardMaxPerStream | reward, max, additive |
 | 215 | Twitch > Rewards > Set Max per User per Stream | likely | twitch.setRewardMaxPerUser | reward, max, additive |
 | 201 | Twitch > Rewards > Set Paused State | likely | twitch.setRewardPaused | reward, paused |
 | 206 | Twitch > Rewards > Set Prompt | certain | twitch.setRewardPrompt | reward, prompt |
 | 205 | Twitch > Rewards > Set Title | certain | twitch.setRewardTitle | reward, title |
 | 207 | Twitch > Rewards > Update | certain | twitch.updateReward | reward, title, prompt, cost, operator |
-| 11 | Twitch > Rewards > Update Redemption Status | likely | twitch.updateRedemption | rewardId, redemptionId, status |
-| 551 | Twitch > Sub Counter > Get Twitch Sub Counter Count | likely | twitch.getSubCounter |  |
-| 552 | Twitch > Sub Counter > Set Twitch Sub Counter Count | likely | twitch.setSubCounter | count |
-| 509 | Twitch > Subscribers > Get Latest Subscriber | unsure | twitch.getLatestSubscriber |  |
-| 507 | Twitch > Subscribers > Get Subscriber Count | unsure | twitch.getSubscriberCount |  |
-| 253 | Twitch > Tags > Add Channel Tag | likely | twitch.addTag | tag |
+| 11 | Twitch > Rewards > Update Redemption Status | verified (Streamer.bot UI) | twitch.updateRedemption | rewardId, redemptionId, status |
+| 551 | Twitch > Sub Counter > Get Twitch Sub Counter Count | verified (Streamer.bot UI) | twitch.getSubCounter |  |
+| 552 | Twitch > Sub Counter > Set Twitch Sub Counter Count | verified (Streamer.bot UI) | twitch.setSubCounter | count |
+| 509 | Twitch > Subscribers > Get Latest Subscriber | verified (Streamer.bot UI) | twitch.getLatestSubscriber |  |
+| 508 | Twitch > Subscribers > Get Subscriber Count | verified (Streamer.bot UI) | twitch.getSubscriberCount |  |
+| 253 | Twitch > Tags > Add Channel Tag | verified (Streamer.bot UI) | twitch.addTag | tag |
 | 251 | Twitch > Tags > Clear Channel Tags | certain | twitch.clearTags |  |
-| 254 | Twitch > Tags > Remove Channel Tag | likely | twitch.removeTag | tag |
+| 254 | Twitch > Tags > Remove Channel Tag | verified (Streamer.bot UI) | twitch.removeTag | tag |
 | 252 | Twitch > Tags > Set Channel Tags | certain | twitch.setTags | tags |
-| 21 | Twitch > User > Add Broadcaster Information | likely | twitch.getBroadcasterInfo |  |
+| 21 | Twitch > User > Add Broadcaster Information | verified (Streamer.bot UI) | twitch.getBroadcasterInfo |  |
 | 550 | Twitch > User > Add Present User | certain | twitch.getPresentUser | index |
 | 22 | Twitch > User > Add Random Users | certain | twitch.getRandomUsers | count, excludeBroadcaster |
-| 52 | Twitch > User > Get Team Info for Target | likely | twitch.getTeamInfo | user |
+| 52 | Twitch > User > Get Team Info for Target | verified (Streamer.bot UI) | twitch.getTeamInfo | user |
 | 50 | Twitch > User > Get User Info for Target | certain | twitch.getUserInfo | user |
-| 553 | Twitch > User Groups > Add User To Group | likely | groups.addUser | group, platform, user, userId, create |
-| 554 | Twitch > User Groups > Remove User from Group | likely | groups.removeUser | group, platform, user, userId |
-| 558 | Twitch > User Groups > User In Group | likely | groups.userInGroup | group, platform, user, userId, argument |
+| 553 | Twitch > User Groups > Add User To Group | verified (Streamer.bot UI) | groups.addUser | group, platform, user, userId, create |
+| 554 | Twitch > User Groups > Remove User from Group | verified (Streamer.bot UI) | groups.removeUser | group, platform, user, userId |
+| 558 | Twitch > User Groups > User In Group | verified (Streamer.bot UI) | groups.userInGroup | group, platform, user, userId, argument |
 | 4008 | YouTube > Moderation > Ban User | certain | youtube.banUser | user, broadcastId |
 | 4009 | YouTube > Moderation > Timeout User | certain | youtube.timeoutUser | user, duration, broadcastId |
 | 4011 | YouTube > Polls > Create Poll | certain | youtube.createPoll | question, options, broadcastId |
@@ -429,10 +431,10 @@ Settings conventions:
 | 4003 | YouTube > Set Description | certain | youtube.setDescription | description, broadcastId |
 | 4002 | YouTube > Set Title | certain | youtube.setTitle | title, broadcastId |
 | 4004 | YouTube > Set Title and Description | certain | youtube.setTitleAndDescription | title, description, broadcastId |
-| 4010 | YouTube > User > Add Broadcaster Information | likely | youtube.addBroadcasterInfo |  |
-| 4005 | YouTube > User Groups > Add User To Group | likely | groups.addUser | group, platform, user, userId, create |
-| 4006 | YouTube > User Groups > Remove User from Group | likely | groups.removeUser | group, platform, user, userId |
-| 4007 | YouTube > User Groups > User In Group | likely | groups.userInGroup | group, platform, user, userId, argument |
+| 4010 | YouTube > User > Add Broadcaster Information | verified (Streamer.bot UI) | youtube.addBroadcasterInfo |  |
+| 4005 | YouTube > User Groups > Add User To Group | verified (Streamer.bot UI) | groups.addUser | group, platform, user, userId, create |
+| 4006 | YouTube > User Groups > Remove User from Group | verified (Streamer.bot UI) | groups.removeUser | group, platform, user, userId |
+| 4007 | YouTube > User Groups > User In Group | verified (Streamer.bot UI) | groups.userInGroup | group, platform, user, userId, argument |
 
 If/Else operators (120), in the documented order: 0 Equals, 1 Not Equals, 2 Contains, 3 Regex Match, 4 Less Than,
 5 Greater Than, 6 Does Not Exist, 7 Equals (ignore case), 8 Not Equals (ignore case), 9 Is Null or Empty. Usage in
@@ -452,26 +454,26 @@ These import as disabled placeholders with their original JSON.
 | 14403 | Elgato > Camera Hub > EpocCam > Set Bitrate | certain | Cuebot has no EpocCam (phone camera) control |
 | 14402 | Elgato > Camera Hub > EpocCam > Set Camera | certain | Cuebot has no EpocCam (phone camera) control |
 | 14404 | Elgato > Camera Hub > EpocCam > Set Flash Mode | certain | Cuebot has no EpocCam (phone camera) control |
-| 14601 | Elgato > Camera Hub > Prompter > Fast Forward Chapter | unsure | Cuebot has no Camera Hub Prompter connection |
-| 14616 | Elgato > Camera Hub > Prompter > Get Selected Script | likely | Cuebot has no Camera Hub Prompter connection |
-| 14602 | Elgato > Camera Hub > Prompter > Rewind Chapter | unsure | Cuebot has no Camera Hub Prompter connection |
-| 14611 | Elgato > Camera Hub > Prompter > Set Auto Scroll State | unsure | Cuebot has no Camera Hub Prompter connection |
+| 14601 | Elgato > Camera Hub > Prompter > Fast Forward Chapter | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
+| 14616 | Elgato > Camera Hub > Prompter > Get Selected Script | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
+| 14602 | Elgato > Camera Hub > Prompter > Rewind Chapter | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
+| 14611 | Elgato > Camera Hub > Prompter > Set Auto Scroll State | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
 | 14610 | Elgato > Camera Hub > Prompter > Set Brightness | certain | Cuebot has no Camera Hub Prompter connection |
 | 14603 | Elgato > Camera Hub > Prompter > Set Chapter | certain | Cuebot has no Camera Hub Prompter connection |
 | 14615 | Elgato > Camera Hub > Prompter > Set Crosshair Image | certain | Cuebot has no Camera Hub Prompter connection |
-| 14614 | Elgato > Camera Hub > Prompter > Set Crosshair State | unsure | Cuebot has no Camera Hub Prompter connection |
+| 14614 | Elgato > Camera Hub > Prompter > Set Crosshair State | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
 | 14604 | Elgato > Camera Hub > Prompter > Set Font | certain | Cuebot has no Camera Hub Prompter connection |
 | 14605 | Elgato > Camera Hub > Prompter > Set Font Size | certain | Cuebot has no Camera Hub Prompter connection |
-| 14608 | Elgato > Camera Hub > Prompter > Set Horizontal Margin | unsure | Cuebot has no Camera Hub Prompter connection |
+| 14608 | Elgato > Camera Hub > Prompter > Set Horizontal Margin | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
 | 14607 | Elgato > Camera Hub > Prompter > Set Line Spacing | certain | Cuebot has no Camera Hub Prompter connection |
 | 14612 | Elgato > Camera Hub > Prompter > Set Mode | certain | Cuebot has no Camera Hub Prompter connection |
 | 14606 | Elgato > Camera Hub > Prompter > Set Opacity | certain | Cuebot has no Camera Hub Prompter connection |
 | 14617 | Elgato > Camera Hub > Prompter > Set Script | certain | Cuebot has no Camera Hub Prompter connection |
-| 14609 | Elgato > Camera Hub > Prompter > Set Vertical Margin | unsure | Cuebot has no Camera Hub Prompter connection |
+| 14609 | Elgato > Camera Hub > Prompter > Set Vertical Margin | verified (Streamer.bot UI) | Cuebot has no Camera Hub Prompter connection |
 | 14314 | Elgato > Camera Hub > Webcam > Set Dynamic Range | certain | Cuebot's direct (UVC) webcam control has no dynamic range setting |
-| 14311 | Elgato > Camera Hub > Webcam > Set Noise Reduction | likely | Cuebot's direct (UVC) webcam control has no noise reduction setting |
+| 14311 | Elgato > Camera Hub > Webcam > Set Noise Reduction | verified (Streamer.bot UI) | Cuebot's direct (UVC) webcam control has no noise reduction setting |
 | 14310 | Elgato > Camera Hub > Webcam > Set White Balance Tint | certain | Cuebot's direct (UVC) webcam control has no tint setting |
-| 14701 | Elgato > Stream Deck > Execute MCP Action | likely | Cuebot's Stream Deck plugin has no MCP actions |
+| 14701 | Elgato > Stream Deck > Execute MCP Action | verified (Streamer.bot UI) | Cuebot's Stream Deck plugin has no MCP actions |
 | 37014 | Integrations > Streamfog > Backgrounds > Play Video Background | certain | Cuebot has no Streamfog connection |
 | 37015 | Integrations > Streamfog > Backgrounds > Play Video Background by Name | certain | Cuebot has no Streamfog connection |
 | 37001 | Integrations > Streamfog > Lenses > Activate Lens | certain | Cuebot has no Streamfog connection |
@@ -480,22 +482,22 @@ These import as disabled placeholders with their original JSON.
 | 37011 | Integrations > Streamfog > Outfits > Activate Outfit | certain | Cuebot has no Streamfog connection |
 | 37013 | Integrations > Streamfog > Outfits > Activate Outfit by Name | certain | Cuebot has no Streamfog connection |
 | 37012 | Integrations > Streamfog > Outfits > Reset Look | certain | Cuebot has no Streamfog connection |
-| 44001 | Integrations > Streamlabs > Spin Wheel | likely | Cuebot has no Streamlabs (cloud) wheel |
+| 44001 | Integrations > Streamlabs > Spin Wheel | verified (Streamer.bot UI) | Cuebot has no Streamlabs (cloud) wheel |
 | 35104 | Kick > Rewards > Configure Rewards | certain | Cuebot has no bulk Kick reward configuration |
-| 35109 | Kick > Rewards > Reset Reward Counter | likely | Cuebot keeps no Kick reward counters |
-| 35110 | Kick > Rewards > Reset Reward User Counters | likely | Cuebot keeps no Kick reward counters |
-| 35111 | Kick > Rewards > Set Group Enabled State | likely | Cuebot has no Kick reward groups |
-| 35112 | Kick > Rewards > Set Group Paused State | likely | Cuebot has no Kick reward groups |
-| 41016 | Meld Studio > Layers > Set Media Layer Source | unsure | Cuebot's Meld Studio steps cannot change a media layer's file |
+| 35109 | Kick > Rewards > Reset Reward Counter | verified (Streamer.bot UI) | Cuebot keeps no Kick reward counters |
+| 35110 | Kick > Rewards > Reset Reward User Counters | verified (Streamer.bot UI) | Cuebot keeps no Kick reward counters |
+| 35111 | Kick > Rewards > Set Group Enabled State | verified (Streamer.bot UI) | Cuebot has no Kick reward groups |
+| 35112 | Kick > Rewards > Set Group Paused State | verified (Streamer.bot UI) | Cuebot has no Kick reward groups |
+| 41014 | Meld Studio > Layers > Set Media Layer Source | verified (Streamer.bot UI) | Cuebot's Meld Studio steps cannot change a media layer's file |
 | 41012 | Meld Studio > Layers > Set Text | certain | Cuebot's Meld Studio steps cannot set a text layer |
 | 20001 | Streamer.bot > Remote > Send Remote Trigger | certain | Cuebot's remote link sends signals only |
 | 573 | Twitch > Clips > Get Clip Download Urls | certain | Cuebot has no clip download step |
-| 579 | Twitch > Moderation > Add Suspicious Status | likely | Cuebot has no suspicious-user moderation step |
-| 580 | Twitch > Moderation > Remove Suspicious Status | likely | Cuebot has no suspicious-user moderation step |
+| 579 | Twitch > Moderation > Add Suspicious Status | verified (Streamer.bot UI) | Cuebot has no suspicious-user moderation step |
+| 580 | Twitch > Moderation > Remove Suspicious Status | verified (Streamer.bot UI) | Cuebot has no suspicious-user moderation step |
 
 Gaps by integration: Camera Hub Prompter (16) and EpocCam (4) need a Camera Hub connection Cuebot does not have, and
 three webcam settings (white balance tint, noise reduction, dynamic range) are not in Cuebot's direct UVC control;
-Streamfog (8) has no Cuebot connection; Kick's bulk reward configuration, reward counters and reward groups (5),
+Streamfog (8) has no Cuebot connection; Kick's bulk reward configuration, reward counters and reward groups (5; Cuebot's Kick module still has none),
 two Meld Studio layer setters, Twitch's suspicious-user status and clip downloads, Stream Deck MCP actions,
 Streamer.bot Remote triggers and the Streamlabs spin wheel are not in Cuebot.
 
@@ -938,7 +940,7 @@ needs a Camera Hub connection Cuebot does not have.
 
 ## Counts
 
-Sub-action codes: 351 of Streamer.bot 1.0.7's 395 mapped (205 certain, 146 likely or unsure and flagged), 44 with no
+Sub-action codes: 351 of Streamer.bot 1.0.7's 395 mapped (205 certain from their fields, 139 verified by Streamer.bot's UI text, 7 likely and flagged), 44 with no
 Cuebot equivalent; every code verified. Trigger codes: 371 of its 419 mapped, all verified (plus 18002). Some numbers
 are both a sub-action and a trigger code (for example 4001, 15001); the two lists are separate. On the public samples
 tried, every sub-action maps (942 of 942; 924 before the verified sub-action codes) and 94 % of triggers (before the
