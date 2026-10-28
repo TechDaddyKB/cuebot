@@ -2,7 +2,11 @@ using System.Globalization;
 
 namespace Cuebot.Core.Variables;
 
-public sealed class MathException(string message) : Exception(message);
+/// <summary>A <c>$math()$</c> error; <see cref="IsSyntaxError"/> tells malformed text from a value that cannot be computed.</summary>
+public sealed class MathException(string message, bool isSyntaxError = false) : Exception(message)
+{
+    public bool IsSyntaxError { get; } = isSyntaxError;
+}
 
 /// <summary>
 /// A safe evaluator for <c>$math(...)$</c> (no code execution, no reflection) that accepts the mXparser 4.4 syntax
@@ -17,7 +21,9 @@ public sealed class MathException(string message) : Exception(message);
 /// <para>Numbers: <c>1.5</c>, <c>1.2e10</c>, <c>b.1010</c> / <c>b2.1010</c>, <c>o.17</c> / <c>b8.17</c>,
 /// <c>h.1F</c> / <c>b16.1F</c>, any base <c>bN.digits</c> (1–36), fractions <c>1_2</c> and mixed <c>2_3_4</c>.
 /// Constants: <c>pi e [gam] [phi] [true] [false] [NaN]</c>, <c>true false</c>. Random variables: <c>[Uni] [Int]
-/// [Int1]…[Int9] [nat] [nat1]…[nat9] [Nat] [Nat1]…[Nat9] [Nor]</c>.</para>
+/// [Int1]…[Int9] [nat] [nat1]…[nat9] [Nat] [Nat1]…[Nat9] [Nor]</c>. mXparser's other bracketed constants, units,
+/// metric prefixes and physical and astronomical constants (<c>[Kat] [km] [h] [%] [k] [c] [G.] [Earth-M]</c>…; see
+/// <see cref="MathConstants"/>), in SI base units.</para>
 /// <para>Functions (names are case-insensitive, except mXparser's <c>chi CHi Chi cHi</c>): trigonometric and
 /// hyperbolic functions with their mXparser aliases (<c>sin cos tg/tan ctg/cot sec csc asin acos atan acot arcsec
 /// sinh cosh tanh coth sech csch asinh acosh atanh acoth asech acsch</c>, …), <c>ln log2 log10 lg exp sqrt rad deg abs
@@ -25,19 +31,31 @@ public sealed class MathException(string message) : Exception(message);
 /// order; <c>log(x)</c> is ln), <c>mod root(n, x) C(n, k) KDelta pow round(x[, digits]) rUni(a, b) rUnid(a, b)
 /// rNor(mean, sd) random() random(a, b)</c>; <c>if chi CHi Chi cHi clamp</c>; variadic <c>iff min max gcd lcm
 /// add/sum multi mean var std med mode ndist argmin argmax rList coalesce and or xor base</c>. Arguments may be
-/// separated by <c>,</c> or <c>;</c>.</para>
+/// separated by <c>,</c> or <c>;</c>. mXparser's special functions <c>erf erfc erfInv erfcInv Ei li Li Bell Pi(n)
+/// LambW0 LambW1 logGamma sgnGamma diGamma GammaL GammaU GammaP GammaQ Beta logBeta BetaInc BetaI pNor cNor qNor pUni
+/// cUni qUni Sa sinc Sinc nCk nPk Stirl2 Euler Harm(x, n) ndig dig dig10 nfact factval factexp ulp arccsc ConFrac
+/// ConPol</c> (see <see cref="MathSpecialFunctions"/>).</para>
+/// <para>Operators (see <c>MathEvaluator.Operators.cs</c>): <c>if</c> and <c>iff</c> evaluate only the branch they
+/// return; iterated <c>sum prod avg vari stdi mini maxi (i, from, to, expression[, step])</c> (<c>sum</c> and
+/// <c>avg</c> stay variadic unless the first argument is an index name); <c>der der- der+ (expression, x, point)</c>
+/// (Ridders' extrapolation), <c>int(expression, x, a, b)</c> (adaptive Gauss–Kronrod), <c>solve(expression, x, a, b)</c>
+/// (Brent), <c>diff difb (expression, x[, delta])</c> for a bound x. At most <see cref="MaxEvaluations"/>
+/// sub-expression evaluations per expression.</para>
 /// <para>Errors (syntax, unknown names, division or modulo by zero, results that are not finite numbers) throw
 /// <see cref="MathException"/>; mXparser would return NaN instead.</para>
 /// </summary>
-public static class MathEvaluator
+public static partial class MathEvaluator
 {
     public const int MaxLength = 4096;
     private const int MaxDepth = 64;
 
+    /// <summary>Bound on the sub-expression evaluations of iterated and calculus operators in one expression.</summary>
+    public const int MaxEvaluations = 100_000;
+
     public static double Evaluate(string expression, Random? random = null)
     {
         if (expression.Length > MaxLength) throw new MathException($"expression is longer than {MaxLength} characters");
-        var parser = new Parser(expression, random ?? Random.Shared);
+        var parser = new Parser(expression, new Context(random ?? Random.Shared), null, 0, 0);
         var value = parser.ParseAll();
         if (!double.IsFinite(value)) throw new MathException("result is not a finite number");
         return value;
@@ -67,18 +85,44 @@ public static class MathEvaluator
         return value.ToString("G15", CultureInfo.InvariantCulture);
     }
 
-    private sealed class Parser(string text, Random random)
+    /// <summary>State shared by a parser and the sub-parsers of its iterated and calculus operators.</summary>
+    private sealed class Context(Random random)
     {
+        public Random Random { get; } = random;
+
+        /// <summary>Sub-expression evaluations so far (sum, prod, int, der, solve…), bounded by <see cref="MaxEvaluations"/>.</summary>
+        public int Evaluations { get; set; }
+    }
+
+    /// <summary>A bound index or integration variable, innermost first.</summary>
+    private sealed record Binding(string Name, double Value, Binding? Next)
+    {
+        public double? Find(string name)
+        {
+            for (var b = this; b is not null; b = b.Next)
+                if (b.Name == name) return b.Value;
+            return null;
+        }
+    }
+
+    /// <param name="text">The expression, or one argument of an iterated or calculus operator.</param>
+    /// <param name="offset">Where <paramref name="text"/> starts in the whole expression (for error positions).</param>
+    private sealed partial class Parser(string text, Context context, Binding? variables, int depth, int offset)
+    {
+        private readonly Context _context = context;
+        private readonly Binding? _variables = variables;
+        private readonly Random random = context.Random;
+        private readonly int _offset = offset;
         private int _pos;
-        private int _depth;
+        private int _depth = depth;
 
         public double ParseAll()
         {
             SkipSpaces();
-            if (_pos >= text.Length) throw new MathException("expression is empty");
+            if (_pos >= text.Length) throw Syntax("expression is empty");
             var value = ParseImplication();
             SkipSpaces();
-            if (_pos < text.Length) throw new MathException($"unexpected '{text[_pos]}' at position {_pos + 1}");
+            if (_pos < text.Length) throw Syntax($"unexpected '{text[_pos]}' at position {_offset + _pos + 1}");
             return value;
         }
 
@@ -269,7 +313,7 @@ public static class MathEvaluator
         private double ParsePrimary()
         {
             SkipSpaces();
-            if (_pos >= text.Length) throw new MathException("unexpected end of expression");
+            if (_pos >= text.Length) throw Syntax("unexpected end of expression");
             var c = text[_pos];
             if (c == '(')
             {
@@ -283,7 +327,7 @@ public static class MathEvaluator
             if (c == '[') return ParseBracketName();
             if (char.IsAsciiDigit(c) || c == '.') return ParseNumber();
             if (char.IsAsciiLetter(c) || c == '_') return ParseIdentifier();
-            throw new MathException($"unexpected '{c}' at position {_pos + 1}");
+            throw Syntax($"unexpected '{c}' at position {_offset + _pos + 1}");
         }
 
         private double ParseNumber()
@@ -301,7 +345,7 @@ public static class MathEvaluator
                     while (_pos < text.Length && char.IsAsciiDigit(text[_pos])) _pos++;
                     parts.Add(ParseDigits(from, _pos));
                 }
-                if (parts.Count > 3) throw new MathException("a fraction has at most three parts (whole_numerator_denominator)");
+                if (parts.Count > 3) throw Syntax("a fraction has at most three parts (whole_numerator_denominator)");
                 if (parts[^1] == 0) throw new MathException("division by zero");
                 return parts.Count == 2 ? parts[0] / parts[1] : parts[0] + parts[1] / parts[2];
             }
@@ -327,7 +371,7 @@ public static class MathEvaluator
             var token = text.AsSpan(start, end - start);
             if (!double.TryParse(token, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture, out var value))
             {
-                throw new MathException($"'{token}' is not a number");
+                throw Syntax($"'{token}' is not a number");
             }
             return value;
         }
@@ -337,16 +381,12 @@ public static class MathEvaluator
         {
             var start = _pos;
             var end = text.IndexOf(']', _pos);
-            if (end < 0) throw new MathException("missing ']'");
+            if (end < 0) throw Syntax("missing ']'");
             _pos = end + 1;
             var name = text[(start + 1)..end];
+            if (MathConstants.TryGet(name, out var constant)) return constant;
             switch (name)
             {
-                case "true": return 1;
-                case "false": return 0;
-                case "NaN": return double.NaN;
-                case "gam": return 0.57721566490153286060651209008240243;
-                case "phi": return (1 + Math.Sqrt(5)) / 2;
                 case "Uni": return random.NextDouble();
                 case "Nor": return Normal(0, 1);
                 case "Int": return random.NextInt64(-1_000_000_000_000L, 1_000_000_000_001L);
@@ -363,7 +403,7 @@ public static class MathEvaluator
                     _ => random.NextInt64(1, bound + 1),
                 };
             }
-            throw new MathException($"unknown name '[{name}]'");
+            throw Syntax($"unknown name '[{name}]'");
         }
 
         private double ParseIdentifier()
@@ -376,7 +416,18 @@ public static class MathEvaluator
             // Number literals in other bases: b.1010, o.17, h.1F, b16.1F, b1.111 (unary).
             if (_pos < text.Length && text[_pos] == '.' && BaseOf(name) is { } numberBase) return ParseBaseNumber(numberBase);
 
+            // der- and der+ (one-sided derivatives)
+            if (name == "der" && _pos + 1 < text.Length && text[_pos] is '-' or '+' && text[_pos + 1] == '(') name += text[_pos++];
+
             SkipSpaces();
+            if (_pos < text.Length && text[_pos] == '(' && IsOperator(name))
+            {
+                _pos++;
+                Enter();
+                var result = Operator(name, SplitArguments());
+                _depth--;
+                return result;
+            }
             if (_pos < text.Length && text[_pos] == '(')
             {
                 _pos++;
@@ -394,15 +445,21 @@ public static class MathEvaluator
                     Expect(')');
                 }
                 _depth--;
-                return name == "chi" ? Characteristic(original, args) : Call(name, args);
+                return name switch
+                {
+                    "chi" => Characteristic(original, args),
+                    "sinc" or "li" => CaseSensitive(original, args),
+                    _ => Call(name, args),
+                };
             }
+            if (_variables?.Find(original) is { } bound) return bound;
             return name switch
             {
                 "pi" => Math.PI,
                 "e" => Math.E,
                 "true" => 1,
                 "false" => 0,
-                _ => throw new MathException($"unknown name '{original}'"),
+                _ => throw Syntax($"unknown name '{original}'"),
             };
         }
 
@@ -422,18 +479,18 @@ public static class MathEvaluator
             _pos++; // the '.'
             var start = _pos;
             while (_pos < text.Length && char.IsAsciiLetterOrDigit(text[_pos])) _pos++;
-            if (_pos == start) throw new MathException("missing digits after the number base");
+            if (_pos == start) throw Syntax("missing digits after the number base");
             var digits = text[start.._pos];
             if (numberBase == 1)
             {
-                if (digits.Any(d => d != '1')) throw new MathException($"'{digits}' is not a unary number");
+                if (digits.Any(d => d != '1')) throw Syntax($"'{digits}' is not a unary number");
                 return digits.Length;
             }
             double value = 0;
             foreach (var d in digits)
             {
                 var digit = char.IsAsciiDigit(d) ? d - '0' : char.ToLowerInvariant(d) - 'a' + 10;
-                if (digit >= numberBase) throw new MathException($"'{digits}' is not a base-{numberBase} number");
+                if (digit >= numberBase) throw Syntax($"'{digits}' is not a base-{numberBase} number");
                 value = value * numberBase + digit;
             }
             return value;
@@ -450,7 +507,7 @@ public static class MathEvaluator
                 "CHi" => x >= lo && x <= hi,   // [a, b]
                 "Chi" => x >= lo && x < hi,    // [a, b)
                 "cHi" => x > lo && x <= hi,    // (a, b]
-                _ => throw new MathException($"unknown function '{name}' (use chi, CHi, Chi or cHi)"),
+                _ => throw Syntax($"unknown function '{name}' (use chi, CHi, Chi or cHi)"),
             };
             return inside ? 1 : 0;
         }
@@ -489,7 +546,6 @@ public static class MathEvaluator
                     Arity(name, a, 3);
                     if (a[1] > a[2]) throw new MathException("clamp minimum is greater than maximum");
                     return Math.Clamp(a[0], a[1], a[2]);
-                case "if": Arity(name, a, 3); return Truth(a[0]) ? a[1] : a[2];
                 case "random":
                     Arity(name, a, 0, 2);
                     if (a.Count == 0) return random.NextDouble();
@@ -534,6 +590,7 @@ public static class MathEvaluator
                 case "gamma": Arity(name, a, 1); return Gamma(a[0]);
                 case "fib": Arity(name, a, 1); return Fibonacci(NonNegative(name, a[0]));
                 case "luc": Arity(name, a, 1); return Lucas(NonNegative(name, a[0]));
+                case "harm" when a.Count == 2: return Special(name, a, "Harm");
                 case "harm":
                     Arity(name, a, 1);
                     double h = 0;
@@ -570,12 +627,6 @@ public static class MathEvaluator
                 case "rnor": Arity(name, a, 2); return Normal(a[0], a[1]);
 
                 // ---- variadic
-                case "iff":
-                    Arity(name, a, 2, int.MaxValue);
-                    if (a.Count % 2 != 0) throw new MathException("iff expects condition, value pairs");
-                    for (var i = 0; i < a.Count; i += 2)
-                        if (Truth(a[i])) return a[i + 1];
-                    return double.NaN;
                 case "gcd": Arity(name, a, 1, int.MaxValue); return a.Select(x => Integer(x, name)).Aggregate(Gcd);
                 case "lcm":
                     Arity(name, a, 1, int.MaxValue);
@@ -606,7 +657,7 @@ public static class MathEvaluator
                     if (b is < 1 or > 36) throw new MathException("base must be between 1 and 36");
                     return a.Skip(1).Aggregate(0.0, (acc, d) => acc * b + d);
                 default:
-                    throw new MathException($"unknown function '{name}'");
+                    return Special(name, a);
             }
         }
 
@@ -721,21 +772,25 @@ public static class MathEvaluator
         private static double Log(double x) =>
             x > 0 ? Math.Log(x) : throw new MathException("log of a number that is not positive");
 
-        private static void Arity(string name, List<double> args, int min, int? max = null)
+        private static void Arity(string name, List<double> args, int min, int? max = null) => Arity(name, args.Count, min, max);
+
+        private static void Arity(string name, int count, int min, int? max = null)
         {
             var upper = max ?? min;
-            if (args.Count < min || args.Count > upper)
+            if (count < min || count > upper)
             {
                 var expected = min == upper ? $"{min}" : upper == int.MaxValue ? $"at least {min}" : $"{min} to {upper}";
-                throw new MathException($"{name} expects {expected} argument(s), got {args.Count}");
+                throw Syntax($"{name} expects {expected} argument(s), got {count}");
             }
         }
+
+        private static MathException Syntax(string message) => new(message, isSyntaxError: true);
 
         private static bool Truth(double value) => value != 0 && !double.IsNaN(value);
 
         private void Enter()
         {
-            if (++_depth > MaxDepth) throw new MathException("expression is nested too deeply");
+            if (++_depth > MaxDepth) throw Syntax("expression is nested too deeply");
         }
 
         private void SkipSpaces()
@@ -787,8 +842,8 @@ public static class MathEvaluator
         private void Expect(char c)
         {
             SkipSpaces();
-            if (_pos >= text.Length) throw new MathException($"missing '{c}'");
-            if (text[_pos] != c) throw new MathException($"expected '{c}' at position {_pos + 1} but found '{text[_pos]}'");
+            if (_pos >= text.Length) throw Syntax($"missing '{c}'");
+            if (text[_pos] != c) throw Syntax($"expected '{c}' at position {_offset + _pos + 1} but found '{text[_pos]}'");
             _pos++;
         }
     }

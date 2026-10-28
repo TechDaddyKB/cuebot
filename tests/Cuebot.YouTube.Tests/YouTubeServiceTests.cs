@@ -76,7 +76,10 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
                 ? FakeHttpHandler.Json($$$"""{"items":[{"id":"{{{Bob}}}","snippet":{"title":"Bot"}}]}""")
                 : FakeHttpHandler.Json($$$"""{"items":[{"id":"{{{Owner}}}","snippet":{"title":"Owner","customUrl":"@owner"}}]}"""),
             ("GET", "/youtube/v3/channels") => FakeHttpHandler.Json($$$"""{"items":[{"id":"{{{Alice}}}","snippet":{"title":"Alice"},"statistics":{"subscriberCount":"3"}}]}"""),
-            ("GET", "/youtube/v3/liveBroadcasts") => FakeHttpHandler.Json($$$"""{"items":[{{{_active}}}]}"""),
+            // liveBroadcasts and videos report the same title, as YouTube does. (A title only one of them reports would fire
+            // BroadcastUpdated from both pollers in turn, in whichever order their threads publish.)
+            ("GET", "/youtube/v3/liveBroadcasts") =>
+                FakeHttpHandler.Json($$$"""{"items":[{{{_active.Replace("\"Dev testing\"", $"\"{_videoTitle}\"", StringComparison.Ordinal)}}}]}"""),
             ("GET", "/youtube/v3/videos") => FakeHttpHandler.Json($$$"""
                 {"items":[{"id":"b1","snippet":{"title":"{{{_videoTitle}}}","description":"d","categoryId":"20","tags":["t1"]},"status":{"privacyStatus":"public"},
                   "statistics":{"viewCount":"10"},"liveStreamingDetails":{"concurrentViewers":"7","activeLiveChatId":"chat1"}}]}
@@ -136,6 +139,7 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
         var stats = await WaitForEvent(YouTubeEventTypes.BroadcastStatisticsUpdated);
         Assert.Equal(7L, stats.Args["concurrentViewers"]);
 
+        // Seen by whichever poller reads it first (videos or liveBroadcasts); the other one finds nothing new.
         _videoTitle = "Renamed";
         var updated = await WaitForEvent(YouTubeEventTypes.BroadcastUpdated);
         Assert.Equal("Renamed", updated.Args["broadcastTitle"]);
@@ -145,6 +149,9 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
         await WaitForEvent(YouTubeEventTypes.BroadcastEnded);
         await WaitForEvent(YouTubeEventTypes.BroadcastMonitoringEnded);
         Assert.False(_service.IsLive);
+        Assert.Single(_published, e => e.Type == YouTubeEventTypes.BroadcastStarted);
+        Assert.Single(_published, e => e.Type == YouTubeEventTypes.BroadcastUpdated);
+        Assert.Single(_published, e => e.Type == YouTubeEventTypes.BroadcastEnded);
     }
 
     [Fact]

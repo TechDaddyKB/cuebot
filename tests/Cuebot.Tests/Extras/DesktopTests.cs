@@ -150,6 +150,84 @@ public sealed class HotkeyTests : IDisposable
         Assert.Contains("No hotkeys", backend.Status);
     }
 
+    [Fact]
+    public async Task Groups_enable_and_disable_their_hotkeys_rename_and_delete()
+    {
+        using var service = new HotkeyService(null, _backend, _bus, _log);
+        await service.StartAsync();
+        await service.AddGroupAsync("Scenes");
+        Assert.Throws<ArgumentException>(() => { _ = service.AddGroupAsync(" scenes "); });   // names are unique, ignoring case
+        Assert.Throws<ArgumentException>(() => { _ = service.AddGroupAsync(""); });
+        var intro = new HotkeyDefinition { Name = "Intro", Gesture = "Ctrl+F1", Group = "scenes" };
+        var outro = new HotkeyDefinition { Name = "Outro", Gesture = "Ctrl+F2", Group = "Scenes", Enabled = false };
+        var clip = new HotkeyDefinition { Name = "Clip", Gesture = "Ctrl+F3", Group = "Replay" };   // a new name creates the group
+        var mute = new HotkeyDefinition { Name = "Mute", Gesture = "Ctrl+F4" };
+        foreach (var h in new[] { intro, outro, clip, mute }) await service.SaveAsync(h);
+        Assert.Equal(["Scenes", "Replay"], service.Groups.Select(g => g.Name));
+        Assert.Equal("Scenes", service.Hotkeys.Single(h => h.Name == "Intro").Group);   // the group's own spelling
+        Assert.Equal(["Ctrl+F1", "Ctrl+F3", "Ctrl+F4"], _backend.Applied[^1].Select(r => r.Gesture.ToString()));
+
+        await service.SetGroupEnabledAsync("scenes", false);
+        Assert.Equal(["Ctrl+F3", "Ctrl+F4"], _backend.Applied[^1].Select(r => r.Gesture.ToString()));
+        Assert.Equal("Group 'Scenes' is disabled", service.State(intro.Id)!.Message);
+        Assert.Equal("Disabled", service.State(outro.Id)!.Message);
+        Assert.False(service.Groups[0].Enabled);
+        await service.SetGroupEnabledAsync("Scenes", true);
+        Assert.Equal(["Ctrl+F1", "Ctrl+F3", "Ctrl+F4"], _backend.Applied[^1].Select(r => r.Gesture.ToString()));
+        Assert.False(service.Hotkeys.Single(h => h.Name == "Outro").Enabled);   // a hotkey's own flag is kept
+
+        await service.RenameGroupAsync("Scenes", "Scene switching");
+        Assert.Equal(["Scene switching", "Scene switching"], service.Hotkeys.Where(h => h.Name is "Intro" or "Outro").Select(h => h.Group));
+        Assert.Throws<ArgumentException>(() => { _ = service.RenameGroupAsync("Scene switching", "REPLAY"); });
+        Assert.Throws<ArgumentException>(() => { _ = service.RenameGroupAsync("Nope", "Other"); });
+
+        await service.SetGroupEnabledAsync("Replay", false);
+        Assert.DoesNotContain(_backend.Applied[^1], r => r.Gesture.ToString() == "Ctrl+F3");
+        await service.RemoveGroupAsync("replay");   // its hotkeys stay, without a group, and register again
+        Assert.Equal(["Scene switching"], service.Groups.Select(g => g.Name));
+        Assert.Equal("", service.Hotkeys.Single(h => h.Name == "Clip").Group);
+        Assert.Contains(_backend.Applied[^1], r => r.Gesture.ToString() == "Ctrl+F3");
+        Assert.Equal(4, service.Hotkeys.Count);
+    }
+
+    [Fact]
+    public async Task Groups_are_saved_in_hotkeys_json()
+    {
+        var dir = Directory.CreateTempSubdirectory("cuebot-hotkey-groups-").FullName;
+        try
+        {
+            var path = Path.Combine(dir, "hotkeys.json");
+            using (var file = new JsonFile<HotkeySettings>(path, _log))
+            {
+                using var service = new HotkeyService(file, _backend, _bus, _log);
+                await service.AddGroupAsync("Scenes");
+                await service.SaveAsync(new HotkeyDefinition { Name = "Intro", Gesture = "Ctrl+F1", Group = "Scenes" });
+                await service.SetGroupEnabledAsync("Scenes", false);
+                file.Flush();
+            }
+            using (var file = new JsonFile<HotkeySettings>(path, _log))
+            {
+                using var service = new HotkeyService(file, _backend, _bus, _log);
+                var group = Assert.Single(service.Groups);
+                Assert.Equal(("Scenes", false), (group.Name, group.Enabled));
+                Assert.Equal("Scenes", Assert.Single(service.Hotkeys).Group);
+            }
+
+            // A hotkeys.json from before groups, or edited by hand: groups named by hotkeys appear.
+            File.WriteAllText(path, """{"version":1,"hotkeys":[{"name":"Old","gesture":"F9","group":"Legacy"},{"name":"Plain","gesture":"F10"}]}""");
+            using (var file = new JsonFile<HotkeySettings>(path, _log))
+            {
+                using var service = new HotkeyService(file, _backend, _bus, _log);
+                Assert.Equal(("Legacy", true), (service.Groups.Single().Name, service.Groups.Single().Enabled));
+                Assert.Equal("", service.Hotkeys.Single(h => h.Name == "Plain").Group);
+            }
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     public void Dispose() => _log.Dispose();
 
     /// <summary>Records applies; refuses chosen combinations; presses on demand.</summary>

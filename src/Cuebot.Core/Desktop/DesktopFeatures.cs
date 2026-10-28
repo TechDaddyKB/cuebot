@@ -191,7 +191,7 @@ public sealed class DesktopScriptFunctions(INotifier notifier, IClipboardService
             if (!clipboard.IsAvailable) throw new ScriptException(NullClipboardService.Reason);
             return await clipboard.GetTextAsync(ct);
         }),
-        new("hotkeys.list", "Defined hotkeys as [{id, name, gesture, enabled, action}]", [],
+        new("hotkeys.list", "Defined hotkeys as [{id, name, gesture, enabled, action, group}]", [],
             (_, _, _) => Task.FromResult<object?>(hotkeys.Hotkeys.ToArray())),
         new("hotkeys.press", "Act as if a hotkey (by name or id) was pressed; returns false when unknown", ["hotkey"], (_, a, _) =>
         {

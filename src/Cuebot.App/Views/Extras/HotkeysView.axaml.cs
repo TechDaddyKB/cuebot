@@ -14,6 +14,12 @@ public partial class HotkeysView : UserControl
         AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
     }
 
+    /// <summary>Refreshes the "Set Action" and "Group" lists each time a hotkey's context menu opens.</summary>
+    private void OnHotkeyMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (sender is ContextMenu { DataContext: HotkeyItemViewModel item }) item.RefreshMenus();
+    }
+
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is HotkeysViewModel { IsRecording: true } vm && vm.OnKey(e.Key, e.KeyModifiers)) e.Handled = true;
