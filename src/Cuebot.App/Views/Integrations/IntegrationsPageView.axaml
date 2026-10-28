@@ -4,6 +4,7 @@
              xmlns:intv="using:Cuebot.App.Views.Integrations"
              xmlns:elgv="using:Cuebot.App.Views.Elgato"
              xmlns:wlv="using:Cuebot.App.Views.WaveLink"
+             xmlns:gxv="using:Cuebot.App.Views.GoXlr"
              xmlns:sdv="using:Cuebot.App.Views.StreamDeck"
              x:Class="Cuebot.App.Views.Integrations.IntegrationsPageView"
              x:DataType="vm:IntegrationsPageViewModel">
@@ -17,6 +18,9 @@
     </TabItem>
     <TabItem Header="Wave Link">
       <wlv:WaveLinkView DataContext="{Binding WaveLink}" />
+    </TabItem>
+    <TabItem Header="GoXLR">
+      <gxv:GoXlrView DataContext="{Binding GoXlr}" />
     </TabItem>
     <TabItem Header="Stream Deck">
       <sdv:StreamDeckView DataContext="{Binding StreamDeck}" />

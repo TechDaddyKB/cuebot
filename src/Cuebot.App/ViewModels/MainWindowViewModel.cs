@@ -76,6 +76,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 new Cuebot.App.ViewModels.Elgato.ElgatoViewModel(host.Get<Cuebot.Elgato.Lights.ElgatoLightsService>(),
                     host.Get<Cuebot.Elgato.CameraHub.CameraHubService>()),
                 new Cuebot.App.ViewModels.WaveLink.WaveLinkViewModel(host.Get<Cuebot.WaveLink.WaveLinkService>()),
+                new Cuebot.App.ViewModels.GoXlr.GoXlrViewModel(host.Get<Cuebot.GoXlr.GoXlrService>()),
                 new Cuebot.App.ViewModels.StreamDeck.StreamDeckViewModel(host.Get<Cuebot.StreamDeck.StreamDeckHub>(),
                     host.Get<Cuebot.Server.ServerManager>())),
             new Cuebot.App.ViewModels.Webhooks.WebhooksPageViewModel(
