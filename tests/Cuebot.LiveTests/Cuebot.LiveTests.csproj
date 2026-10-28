@@ -29,4 +29,7 @@
     <ProjectReference Include="..\..\src\Cuebot.Controllers\Cuebot.Controllers.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.VoiceControl\Cuebot.VoiceControl.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Cuebot.UiTests\TestData\streamerbot-exported-setup.sb" Link="TestData\streamerbot-exported-setup.sb" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

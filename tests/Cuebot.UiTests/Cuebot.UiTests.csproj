@@ -20,5 +20,16 @@
   <ItemGroup>
     <None Include="..\Cuebot.Tests\TestData\streamerbot-1.0.7-trigger-defaults.json" Link="TestData\streamerbot-1.0.7-trigger-defaults.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Cuebot.Tests\TestData\streamerbot-1.0.7-subaction-defaults.json" Link="TestData\streamerbot-1.0.7-subaction-defaults.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TestData\streamerbot-exported-setup.sb" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <!-- The platform fakes of the module test projects, for the end-to-end Streamer.bot setup test. -->
+  <ItemGroup>
+    <Compile Include="..\Cuebot.Twitch.Tests\Support\FakeEventSubServer.cs" Link="Fakes\Twitch\FakeEventSubServer.cs" />
+    <Compile Include="..\Cuebot.Twitch.Tests\Support\EventSubMessages.cs" Link="Fakes\Twitch\EventSubMessages.cs" />
+    <Compile Include="..\Cuebot.Twitch.Tests\Support\FakeHttpHandler.cs" Link="Fakes\Twitch\FakeHttpHandler.cs" />
+    <Compile Include="..\Cuebot.Twitch.Tests\Support\FakeTimeProvider.cs" Link="Fakes\Twitch\FakeTimeProvider.cs" />
+    <Compile Include="..\Cuebot.Obs.Tests\Fakes\FakeObsServer.cs" Link="Fakes\Obs\FakeObsServer.cs" />
+    <Compile Include="..\Cuebot.Obs.Tests\Fakes\FakeObsState.cs" Link="Fakes\Obs\FakeObsState.cs" />
+    <Compile Include="..\Cuebot.Obs.Tests\Fakes\FakeStreamlabsServer.cs" Link="Fakes\Obs\FakeStreamlabsServer.cs" />
   </ItemGroup>
 </Project>

@@ -78,7 +78,7 @@ public class TextResolutionTests
     public void Built_in_variables_use_the_environment_clock()
     {
         _args.Remove("date");
-        Assert.Equal("03/04/2026", R("%date%"));
+        Assert.Equal("2026/03/04", R("%date%"));
         Assert.Equal("2026-03-04", R("%date:yyyy-MM-dd%"));
         Assert.Equal("05:06", R("%time%"));
         Assert.Equal("5:06 AM", R("%time:h:mm tt%"));
@@ -90,6 +90,24 @@ public class TextResolutionTests
         Assert.Equal("03/04/2026 05:06", R("%datetime%"));
         Assert.Equal("a\nb\tc\r\n", R("a%lf%b%tab%c%crlf%"));
         Assert.Equal(36, R("%guid%").Length);
+    }
+
+    [Fact]
+    public void Date_and_time_default_to_the_formats_streamer_bot_writes()
+    {
+        // Streamer.bot: %date% is yyyy/MM/dd and %time% hh:mm, 12-hour without AM/PM (%time:t% adds it).
+        _args.Remove("date");
+        var env = new TextEnvironment { Clock = new FixedClock { Now = new DateTimeOffset(2026, 11, 9, 17, 6, 7, TimeSpan.Zero) } };
+        string At(string template, string culture)
+        {
+            env.Culture = culture.Length == 0 ? TextEnvironment.DefaultCulture : CultureInfo.GetCultureInfo(culture);
+            return VariableResolver.Resolve(template, _args, _globals.GetValueOrDefault, env);
+        }
+
+        Assert.Equal("Live at 05:06 on 2026/11/09", At("Live at %time% on %date%", ""));
+        Assert.Equal("Live at 05:06 on 2026/11/09", At("Live at %time% on %date%", "en-US"));
+        Assert.Equal("5:06 PM", At("%time:t%", "en-US"));
+        Assert.Equal("2026.11.09", At("%date%", "de-DE"));   // the culture's date separator, as in .NET
     }
 
     [Fact]

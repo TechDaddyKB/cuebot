@@ -85,6 +85,9 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
 
     private int _getScenesCalls;
 
+    /// <summary>Empty scenes after "Main" and "BRB", by id and name.</summary>
+    public List<(string Id, string Name)> ExtraScenes { get; } = [];
+
     private object Scenes() => new object[]
     {
         new
@@ -100,7 +103,7 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
             },
         },
         new { id = "s2", name = "BRB", resourceId = "Scene[\"s2\"]", nodes = Array.Empty<object>() },
-    };
+    }.Concat(ExtraScenes.Select(sc => (object)new { id = sc.Id, name = sc.Name, resourceId = $"Scene[\"{sc.Id}\"]", nodes = Array.Empty<object>() })).ToArray();
 
     private object? Answer(string resource, string method, JsonElement args, out string? error)
     {
@@ -123,7 +126,7 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
             case ("ScenesService", "getScene"):
                 return ((object[])Scenes()).FirstOrDefault(sc => sc.GetType().GetProperty("id")!.GetValue(sc) as string == args[0].GetString());
             case ("ScenesService", "activeSceneId"): return ActiveScene;
-            case ("ScenesService", "activeScene"): return new { id = ActiveScene, name = ActiveScene == "s1" ? "Main" : "BRB" };
+            case ("ScenesService", "activeScene"): return new { id = ActiveScene, name = ActiveScene == "s1" ? "Main" : ExtraScenes.FirstOrDefault(sc => sc.Id == ActiveScene).Name ?? "BRB" };
             case ("ScenesService", "makeSceneActive"):
                 ActiveScene = args[0].GetString()!;
                 return true;

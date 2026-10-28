@@ -266,6 +266,21 @@ public sealed class StreamerBotImporterTests : IDisposable
         Assert.Single(report.Placeholders);
     }
 
+    [Fact]
+    public void Code_step_exported_without_code_imports_empty_and_says_so()
+    {
+        // As Streamer.bot 1.0.7 exported a real C# step: "byteCode": null and no references.
+        var json = """
+            { "actions": [ { "name": "A", "triggers": [], "subActions": [
+              { "name": "E2E shoutout", "references": [], "byteCode": null, "precompile": false, "type": 99999 } ] } ] }
+            """;
+        var (bundle, report) = new StreamerBotImporter().Convert(json);
+        var step = Assert.Single(Assert.Single(bundle.Actions).SubActions);
+        Assert.Equal("code.csharp", step.Type);
+        Assert.Equal("", step.Parameters["code"]);
+        Assert.Contains(report.Warnings, w => w.Contains("'A'") && w.Contains("has no code"));
+    }
+
     [Theory]
     [InlineData("{}")]
     [InlineData("""{ "data": { "something": [] } }""")]
