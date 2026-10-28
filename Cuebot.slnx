@@ -15,6 +15,7 @@
     <Project Path="src/Cuebot.StreamApps/Cuebot.StreamApps.csproj" />
     <Project Path="src/Cuebot.StreamDeck/Cuebot.StreamDeck.csproj" />
     <Project Path="src/Cuebot.Twitch/Cuebot.Twitch.csproj" />
+    <Project Path="src/Cuebot.VoiceControl/Cuebot.VoiceControl.csproj" />
     <Project Path="src/Cuebot.WaveLink/Cuebot.WaveLink.csproj" />
     <Project Path="src/Cuebot.Webhooks/Cuebot.Webhooks.csproj" />
     <Project Path="src/Cuebot.YouTube/Cuebot.YouTube.csproj" />
@@ -36,6 +37,7 @@
     <Project Path="tests/Cuebot.Tests/Cuebot.Tests.csproj" />
     <Project Path="tests/Cuebot.Twitch.Tests/Cuebot.Twitch.Tests.csproj" />
     <Project Path="tests/Cuebot.UiTests/Cuebot.UiTests.csproj" />
+    <Project Path="tests/Cuebot.VoiceControl.Tests/Cuebot.VoiceControl.Tests.csproj" />
     <Project Path="tests/Cuebot.WaveLink.Tests/Cuebot.WaveLink.Tests.csproj" />
     <Project Path="tests/Cuebot.Webhooks.Tests/Cuebot.Webhooks.Tests.csproj" />
     <Project Path="tests/Cuebot.YouTube.Tests/Cuebot.YouTube.Tests.csproj" />

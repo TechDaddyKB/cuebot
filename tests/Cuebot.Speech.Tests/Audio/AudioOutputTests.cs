@@ -130,6 +130,36 @@ public class AudioOutputTests
     }
 
     [Fact]
+    public void Sample_capture_streams_raw_samples_from_the_resolved_device()
+    {
+        var received = new List<float>();
+        using (var stream = _output.CaptureSamples("mic", samples => received.AddRange(samples.ToArray())))
+        {
+            Assert.NotNull(stream);
+            Assert.Equal(1000, stream.SampleRate);
+            Assert.Equal("Mic", _backend.Capture!.DeviceId);
+            _backend.Capture.Feed([0.25f, -0.5f]);
+        }
+        Assert.Equal([0.25f, -0.5f], received);
+        Assert.True(_backend.Capture!.Disposed);
+    }
+
+    [Fact]
+    public void Sample_capture_is_null_when_the_backend_cannot_capture()
+    {
+        _backend.SupportsCapture = false;
+        Assert.Null(_output.CaptureSamples(null, _ => { }));
+        IAudioInput withoutCapture = new InputWithoutSamples();
+        Assert.Null(withoutCapture.CaptureSamples(null, _ => { }));
+    }
+
+    private sealed class InputWithoutSamples : IAudioInput
+    {
+        public IReadOnlyList<AudioDevice> GetInputDevices() => [];
+        public IDisposable MonitorLevel(string? deviceId, Action<double> onLevelDb) => throw new NotSupportedException();
+    }
+
+    [Fact]
     public void Level_monitor_without_capture_is_a_harmless_no_op()
     {
         _backend.SupportsCapture = false;

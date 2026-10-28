@@ -19,13 +19,21 @@ public interface IAudioPlayer
     IReadOnlyList<AudioDevice> GetOutputDevices();
 }
 
-/// <summary>Microphone level monitoring (used by VoiceGate to hold speech while the streamer talks).</summary>
+/// <summary>
+/// Microphone access: level monitoring (VoiceGate holds speech while the streamer talks) and raw samples (voice control).
+/// </summary>
 public interface IAudioInput
 {
     IReadOnlyList<AudioDevice> GetInputDevices();
 
     /// <summary>Reports the input level in dBFS (about -96..0) roughly 20 times a second until disposed.</summary>
     IDisposable MonitorLevel(string? deviceId, Action<double> onLevelDb);
+
+    /// <summary>
+    /// Streams raw mono samples from <paramref name="deviceId"/> (null or unknown = default device) to
+    /// <paramref name="onSamples"/> on the audio thread until disposed. Null when the backend cannot capture.
+    /// </summary>
+    IAudioInputStream? CaptureSamples(string? deviceId, CaptureCallback onSamples) => null;
 }
 
 public static class AudioPlayerExtensions

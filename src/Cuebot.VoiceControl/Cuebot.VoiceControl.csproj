@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+    <!-- Microphone capture (IAudioInput.CaptureSamples) is shared with VoiceGate; no second audio stack. -->
+    <ProjectReference Include="..\Cuebot.Speech\Cuebot.Speech.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.VoiceControl.Tests" />
+    <InternalsVisibleTo Include="Cuebot.LiveTests" />
+    <InternalsVisibleTo Include="Cuebot.UiTests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Whisper.net" />
+    <PackageReference Include="Whisper.net.Runtime" />
+    <PackageReference Include="Whisper.net.Runtime.NoAvx" />
+    <PackageReference Include="System.Speech" />
+  </ItemGroup>
+</Project>
