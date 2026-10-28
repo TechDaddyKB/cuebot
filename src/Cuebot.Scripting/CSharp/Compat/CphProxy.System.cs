@@ -1,6 +1,13 @@
 using Cuebot.Core.Desktop.Input;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat.Moderation;
+using Cuebot.Core.Scripting;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using Streamer.bot.Plugin.Interface.Enums;
 
 namespace Cuebot.Scripting.Compat;
 
@@ -63,4 +70,52 @@ public sealed partial class CphProxy
         if (result is null) LogWarn($"ExecuteMethod: '{codeName}' has no public method {methodName}() without parameters");
         return result ?? false;
     }
+
+    // ---- Older and wiki-era forms ---------------------------------------------------------------------------------
+
+    /// <summary>Fires the custom event with the properties of the JSON object <paramref name="json"/> as its arguments.</summary>
+    public void TriggerCodeEvent(string eventName, string json)
+    {
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in document.RootElement.EnumerateObject()) args[property.Name] = ScriptArgs.ToClr(property.Value);
+            }
+        }
+        TriggerCodeEvent(eventName, args);
+    }
+
+    /// <summary>Percent-encodes text for a URL (query values, path segments).</summary>
+    public string UrlEncode(string text) => Uri.EscapeDataString(text ?? "");
+
+    /// <summary>Escapes text for use inside a JSON string (quotes, backslashes, control characters).</summary>
+    public string EscapeString(string text) => JsonSerializer.Serialize(text ?? "", EscapeOptions)[1..^1];
+
+    private static readonly JsonSerializerOptions EscapeOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+    /// <summary>
+    /// Sends <paramref name="data"/> (text as is, anything else as JSON) as one UDP datagram to <paramref name="port"/>
+    /// on this computer (127.0.0.1). Returns the number of bytes sent.
+    /// </summary>
+    public int BroadcastUdp(int port, object? data)
+    {
+        var bytes = Encoding.UTF8.GetBytes(data as string ?? JsonSerializer.Serialize(data));
+        using var udp = new UdpClient();
+        return udp.Send(bytes, bytes.Length, new IPEndPoint(IPAddress.Loopback, port));
+    }
+
+    // Older user-group forms with numeric Twitch user ids.
+    public bool AddUserToGroup(int userId, string groupName) => AddUserIdToGroup(Num(userId), Platform.Twitch, groupName);
+    public bool RemoveUserFromGroup(int userId, string groupName) => RemoveUserIdFromGroup(Num(userId), Platform.Twitch, groupName);
+    public bool UserInGroup(int userId, string groupName) => UserIdInGroup(Num(userId), Platform.Twitch, groupName);
+
+    /// <summary>Older form without an avatar; returns the message id like the current one.</summary>
+    public string DiscordPostTextToWebhook(string webhookUrl, string content, string? username, bool textToSpeech) =>
+        DiscordPostTextToWebhook(webhookUrl, content, username, null, textToSpeech);
+
+    /// <summary>Sends bytes to a WebSocket client connection as UTF-8 text (Cuebot's clients send text messages).</summary>
+    public void WebsocketSend(byte[] data, int connection = 0) => WebsocketSend(Encoding.UTF8.GetString(data ?? []), connection);
 }

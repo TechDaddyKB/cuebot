@@ -1,10 +1,14 @@
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat;
 using Cuebot.Core.Chat.Moderation;
+using Cuebot.Core.Chat.Pronouns;
 using Cuebot.Core.Commands;
+using Cuebot.Core.Decks;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Desktop.Input;
+using Cuebot.Core.Points;
+using Cuebot.Core.Quotes;
 using Cuebot.Core.Users;
 using Cuebot.Core.Variables;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +41,10 @@ public sealed class CphServices
     private CodeTriggerRegistry? _codeTriggers;
     private ChatModerationService? _chatModeration;
     private IKeyboardOutput? _keyboard;
+    private QuoteStore? _quotes;
+    private PointsService? _points;
+    private DeckService? _decks;
+    private PronounService? _pronouns;
 
     public CphServices()
     {
@@ -64,6 +72,11 @@ public sealed class CphServices
 
     /// <summary>Key presses for CPH.KeyboardPress, from whichever module registers <see cref="IKeyboardOutput"/>.</summary>
     public IKeyboardOutput? Keyboard { get => _keyboard ??= Get<IKeyboardOutput>(); init => _keyboard = value; }
+
+    public QuoteStore? Quotes { get => _quotes ??= Get<QuoteStore>(); init => _quotes = value; }
+    public PointsService? Points { get => _points ??= Get<PointsService>(); init => _points = value; }
+    public DeckService? Decks { get => _decks ??= Get<DeckService>(); init => _decks = value; }
+    public PronounService? Pronouns { get => _pronouns ??= Get<PronounService>(); init => _pronouns = value; }
 
     public CodeTriggerRegistry CodeTriggers
     {

@@ -28,6 +28,119 @@ public sealed class StreamerBotApiCoverageTests
     }
 
     [Fact]
+    public void Every_CPH_method_named_on_subaction_pages_and_in_changelogs_exists()
+    {
+        var methods = typeof(CphProxy).GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+        var documented = Names("cph-methods-more.txt");
+
+        Assert.Equal(284, documented.Count);
+        Assert.Equal(Array.Empty<string>(), documented.Where(n => !methods.Contains(n)).ToArray());
+    }
+
+    /// <summary>
+    /// Every published signature compiles as a call: once with every argument and once with only the required ones,
+    /// assigning the result to the documented return type. This catches missing overloads and incompatible types,
+    /// which the name lists do not.
+    /// </summary>
+    [Fact]
+    public void Every_published_CPH_signature_compiles_as_a_call()
+    {
+        var signatures = Names("cph-signatures.txt");
+        Assert.Equal(582, signatures.Count);
+
+        var calls = signatures.Select(Call).ToArray();
+        using var host = new CphInlineHost();
+        if (Compile(host, calls) is null) return;
+
+        // Something failed: compile one signature at a time to name them.
+        var failures = signatures.Select((s, i) => Compile(host, [calls[i]]) is { } error ? s + "\n    " + error : null)
+            .OfType<string>().ToArray();
+        Assert.True(failures.Length == 0, $"{failures.Length} signatures do not compile:\n" + string.Join("\n", failures));
+    }
+
+    /// <summary>Compiles the calls; null when they compile, else the compiler's message.</summary>
+    private static string? Compile(CphInlineHost host, IReadOnlyList<string> calls)
+    {
+        var code = "public class CPHInline\n{\n    public bool Execute() => true;\n"
+                   + string.Concat(calls.Select((c, i) => $"    public void M{i}()\n    {{\n{c}    }}\n"))
+                   + "}\n";
+        try
+        {
+            host.Get(code);
+            return null;
+        }
+        catch (Cuebot.Core.Scripting.ScriptException ex)
+        {
+            return ex.Message.ReplaceLineEndings(" ");
+        }
+    }
+
+    /// <summary>The statements calling one signature ("bool Name(string a, int b = 0);"); a generic T becomes string.</summary>
+    private static string Call(string signature)
+    {
+        var open = signature.IndexOf('(');
+        var head = signature[..open].Trim();
+        var space = LastTopLevel(head, ' ');
+        var returns = Generic(head[..space].Trim());
+        var name = head[(space + 1)..];
+        if (name.EndsWith("<T>", StringComparison.Ordinal)) name = name[..^3] + "<string>";
+
+        var parameters = Split(signature[(open + 1)..signature.LastIndexOf(')')]);
+        var all = parameters.Select(Argument).ToList();
+        var required = parameters.TakeWhile(p => !p.Contains('=')).Select(Argument).ToList();
+
+        string Statement(List<string> args) => returns == "void"
+            ? $"        CPH.{name}({string.Join(", ", args)});\n"
+            : $"        {{ {returns} r = CPH.{name}({string.Join(", ", args)}); }}\n";
+
+        return Statement(all) + (required.Count < all.Count ? Statement(required) : "");
+    }
+
+    private static string Argument(string parameter)
+    {
+        var text = parameter.Split('=')[0].Trim();
+        var isOut = text.StartsWith("out ", StringComparison.Ordinal);
+        if (isOut) text = text[4..];
+        var type = Generic(text[..LastTopLevel(text, ' ')].Trim());
+        return isOut ? $"out {type} _" : $"default({type})";
+    }
+
+    private static string Generic(string type) =>
+        type == "T" ? "string" : type.Replace("<T>", "<string>", StringComparison.Ordinal);
+
+    private static int LastTopLevel(string text, char c)
+    {
+        var depth = 0;
+        for (var i = text.Length - 1; i >= 0; i--)
+        {
+            if (text[i] == '>') depth++;
+            else if (text[i] == '<') depth--;
+            else if (text[i] == c && depth == 0) return i;
+        }
+        return -1;
+    }
+
+    private static List<string> Split(string parameters)
+    {
+        var result = new List<string>();
+        var depth = 0;
+        var start = 0;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (parameters[i] == '<') depth++;
+            else if (parameters[i] == '>') depth--;
+            else if (parameters[i] == ',' && depth == 0)
+            {
+                result.Add(parameters[start..i]);
+                start = i + 1;
+            }
+        }
+        if (parameters[start..].Trim().Length > 0) result.Add(parameters[start..]);
+        return result;
+    }
+
+    [Fact]
     public void Every_documented_EventType_and_EventSource_value_exists()
     {
         var types = Names("event-types.txt");

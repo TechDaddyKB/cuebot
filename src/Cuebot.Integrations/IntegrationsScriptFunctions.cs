@@ -88,6 +88,15 @@ internal sealed class IntegrationsScriptFunctions(VTubeStudioService vts, Voicem
         Switch("voicemod.setHearMyself", "Hear myself", VoicemodSwitch.HearMyself),
         Switch("voicemod.setBackgroundEffects", "Background effects", VoicemodSwitch.BackgroundEffects),
         Switch("voicemod.setMute", "Microphone mute", VoicemodSwitch.MuteMic),
+        new("voicemod.getState", "Last known state of VoiceChanger, HearMyself, BackgroundEffects or MuteMic (null when unknown)", ["switch"],
+            (_, a, _) => Task.FromResult<object?>(Enum.TryParse<VoicemodSwitch>(a.GetString("switch"), true, out var which) && Enum.IsDefined(which)
+                ? voicemod.GetSwitch(which)
+                : throw new ScriptException("switch must be VoiceChanger, HearMyself, BackgroundEffects or MuteMic"))),
+        new("voicemod.setCensorBeep", "Turn the bad-language beep On or Off", ["state"], async (_, a, ct) =>
+        {
+            await voicemod.SetBeepAsync(!string.Equals(a.GetString("state", "On"), "Off", StringComparison.OrdinalIgnoreCase), ct).ConfigureAwait(false);
+            return true;
+        }),
 
         // ---- Heart rate ----
         new("heartrate.get", "Latest heart rate {bpm, source, time} from source Latest, Pulsoid or HypeRate (null if none)", ["source"],
