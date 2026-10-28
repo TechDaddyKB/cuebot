@@ -264,6 +264,8 @@
                   <TextBlock Classes="h2" Text="{Binding Title}" />
                 </StackPanel>
                 <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                <CheckBox Content="Always run" IsChecked="{Binding AlwaysRun}" IsVisible="{Binding IsRangeTrigger}"
+                          ToolTip.Tip="Run even when a narrower range trigger of the same type also matches the event" />
                 <ItemsControl ItemsSource="{Binding Parameters}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 </ItemsControl>

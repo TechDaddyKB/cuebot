@@ -28,6 +28,8 @@ public partial class App : Application
             // Sub-actions that edit the live profile (e.g. "Set action state") run on the UI thread, where view models read it.
             host.Get<Cuebot.Core.Actions.ProfileService>().EditDispatcher =
                 edit => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(edit).GetTask();
+            // The "Get input" sub-action asks in a dialog.
+            host.Get<Cuebot.Core.Actions.UserPromptService>().Handler = Views.InputPromptWindow.AskAsync;
             _shell = new DesktopShell(this, desktop, ctx, host);
             _shell.Start();
             // Begin flushing as soon as shutdown starts, without blocking the UI thread (no deadlock on async
