@@ -8,11 +8,11 @@ using static Cuebot.Core.Transfer.StreamerBot.SbJson;
 namespace Cuebot.Core.Transfer.StreamerBot;
 
 /// <summary>
-/// The built-in Streamer.bot rules. Each rule lists descriptive type names and, where known, the numeric type code
-/// Streamer.bot really stores. Sub-action codes and their field conventions were worked out from public exports and
-/// the public documentation only; rules marked <see cref="SbRule.Tentative"/> hold medium-confidence codes and
-/// low-confidence codes are not mapped. Trigger codes were read from a real Streamer.bot 1.0.7 install (see
-/// StreamerBotTriggerRules.cs). docs/streamerbot-import-codes.md lists every code.
+/// The built-in Streamer.bot rules. Each rule lists descriptive type names and the numeric type code Streamer.bot
+/// really stores. The sub-action codes and the settings each saves were read from a real Streamer.bot 1.0.7 (see
+/// StreamerBotSubActionRules.cs, which holds the rules for the codes not handled here); rules marked
+/// <see cref="SbRule.Tentative"/> hold codes whose Streamer.bot name is only likely. Trigger codes were read from the
+/// same install (StreamerBotTriggerRules.cs). docs/streamerbot-import-codes.md lists every code.
 /// </summary>
 public sealed partial class StreamerBotMappingTable
 {
@@ -63,7 +63,7 @@ public sealed partial class StreamerBotMappingTable
         {
             Signatures = [["input", "operation", "value"]],
         });
-        t.Add(new SbSubActionRule("While", "core.while", ["While", "128"], MapWhile) { Tentative = true });
+        t.Add(new SbSubActionRule("While", "core.while", ["While", "128"], MapWhile));
         t.Add(new SbSubActionRule("Group", "core.group", ["Group", "SubActionGroup", "ActionGroup", "99900"], (s, c) =>
         {
             var step = Step("core.group", s, ("name", Str(s, "name", "groupName") ?? "Group"),
@@ -72,7 +72,7 @@ public sealed partial class StreamerBotMappingTable
             return step;
         }));
         t.Add(new SbSubActionRule("Comment", "core.comment", ["Comment", "Note", "1009"],
-            (s, _) => Step("core.comment", s, ("text", Str(s, "text", "comment", "value") ?? ""))));
+            (s, _) => Step("core.comment", s, ("text", Str(s, "text", "comment", "value") ?? ""), ("color", Str(s, "color", "colour") ?? ""))));
         t.Add(new SbSubActionRule("LogMessage", "core.log", ["LogMessage", "Log", "WriteLog", "WriteToLog", "1020"],
             (s, _) => Step("core.log", s, ("message", Str(s, "message", "text", "value") ?? ""), ("level", LogLevel(Str(s, "logLevel", "level"))))));
         t.Add(new SbSubActionRule("Break", "core.stop", ["Break", "BreakAction", "StopAction", "Stop", "124"], (s, _) => Step("core.stop", s)));
@@ -87,19 +87,18 @@ public sealed partial class StreamerBotMappingTable
             };
         }));
         t.Add(new SbSubActionRule("TimerState", "timers.setState", ["SetTimerState", "TimerState", "8"], (s, c) =>
-            Step("timers.setState", s, ("timer", c.TimerRef(Str(s, "timerId", "timer", "timerName"))), ("state", Normalize(Str(s, "state")) switch
+            Step("timers.setState", s, ("timer", IsRealId(Str(s, "timerId", "timer", "timerName")) ? c.TimerRef(Str(s, "timerId", "timer", "timerName")) : ""), ("state", Normalize(Str(s, "state")) switch
             {
                 "0" or "enable" or "enabled" => "Enable",
                 "1" or "disable" or "disabled" => "Disable",
+                "2" or "toggle" => "Toggle",
                 var other => throw new SbMappingException($"timer state '{other}' is not known"),
             }))));
         t.Add(new SbSubActionRule("FetchUrl", "core.httpRequest", ["FetchUrl", "1007"], MapFetchUrl));
         t.Add(new SbSubActionRule("ReadRandomLine", "core.readRandomLine", ["ReadRandomLine", "5"], (s, _) =>
             Step("core.readRandomLine", s, ("path", Str(s, "file", "path") ?? ""), ("variable", Str(s, "variableName") ?? "randomLine"),
-                ("count", Text(Math.Max(1, Int(s, "count") ?? 1)))))
-        {
-            Tentative = true,
-        });
+                ("count", Text(Math.Max(1, Int(s, "count") ?? 1))), ("parseVariables", Flag(Bool(s, "parseVariables") ?? false)),
+                ("autoType", Flag(Bool(s, "autoType") ?? false)))));
         t.Add(new SbSubActionRule("RunProgram", "core.runProgram", ["RunProgram", "RunAProgram", "6"], (s, c) =>
         {
             // Streamer.bot's "Wait for Exit" is a number of seconds; waiting fills %outputCount% / %output#%.
@@ -107,7 +106,8 @@ public sealed partial class StreamerBotMappingTable
             var wait = seconds > 0;
             return Step("core.runProgram", s, ("path", Str(s, "command", "path") ?? ""), ("arguments", Str(s, "arguments") ?? ""),
                 ("workingDirectory", Str(s, "workingDir", "workingDirectory") ?? ""), ("wait", Flag(wait)),
-                ("waitSeconds", Text(Math.Max(0, seconds))), ("captureOutput", Flag(wait)));
+                ("waitSeconds", Text(Math.Max(0, seconds))), ("captureOutput", Flag(wait)),
+                ("environment", Obj(s, "envVars") is { Count: > 0 } env ? string.Join("\n", env.Select(kv => $"{kv.Key}={AsString(kv.Value)}")) : ""));
         }));
         t.Add(new SbSubActionRule("ToastNotification", "desktop.showNotification", ["ToastNotification", "1024"],
             (s, _) => Step("desktop.showNotification", s, ("title", Str(s, "title") ?? ""), ("message", Str(s, "text", "message") ?? ""),
@@ -115,8 +115,11 @@ public sealed partial class StreamerBotMappingTable
         t.Add(new SbSubActionRule("GetCommands", "commands.getCommands", ["GetCommands", "1013"], (s, _) =>
         {
             var group = Str(s, "groupName") ?? "";
-            return Step("commands.getCommands", s, ("argument", Str(s, "variableName") ?? "commands"),
-                ("group", group.Equals("All", StringComparison.OrdinalIgnoreCase) ? "" : group));
+            // "Ignore Aliases" lists only each command's first text; otherwise every alias is listed.
+            return Step("commands.getCommands", s, ("argument", Str(s, "variableName") is { Length: > 0 } v ? v : "commands"),
+                ("group", group.Equals("All", StringComparison.OrdinalIgnoreCase) ? "" : group),
+                ("show", Bool(s, "ignoreAliases") == false ? "All aliases" : "First alias"), ("includeAll", Flag(Bool(s, "includeAll") ?? false)),
+                ("onlyPermitted", Flag(Bool(s, "hasPermission") ?? false)));
         }));
         t.Add(new SbSubActionRule("GetQuote", "quotes.get", ["GetQuote", "1000"], (s, _) =>
             // Quote type 0 is a random quote, 1 a quote by id; Cuebot picks a random one when the id is empty.
@@ -138,23 +141,26 @@ public sealed partial class StreamerBotMappingTable
 
         // ---------------------------------------------------------------- audio, speech
         t.Add(new SbSubActionRule("PlaySound", "audio.playSound", ["PlaySound", "SoundPlay", "PlaySoundFile", "1"],
-            (s, _) => Step("audio.playSound", s, ("file", Str(s, "soundFile", "fileName", "file", "path") ?? ""), ("volume", Volume(s)),
-                ("wait", Flag(Bool(s, "finishBeforeContinuing", "wait", "waitUntilFinished") ?? false))))
+            (s, c) => Step("audio.playSound", s, [("file", Str(s, "soundFile", "fileName", "file", "path") ?? ""), ("volume", Volume(s)),
+                ("wait", Flag(Bool(s, "finishBeforeContinuing", "wait", "waitUntilFinished") ?? false)), .. SoundOptions(s, c)]))
         {
             Signatures = [["soundFile"]],
         });
         t.Add(new SbSubActionRule("PlaySoundFromFolder", "audio.playSoundFromFolder", ["PlaySoundFromFolder", "7"],
-            (s, _) => Step("audio.playSoundFromFolder", s, ("folder", Str(s, "folder") ?? ""), ("subfolders", Flag(Bool(s, "recursive") ?? false)),
-                ("volume", Volume(s)), ("wait", Flag(Bool(s, "finishBeforeContinuing") ?? false)))));
+            (s, c) => Step("audio.playSoundFromFolder", s, [("folder", Str(s, "folder") ?? ""), ("subfolders", Flag(Bool(s, "recursive") ?? false)),
+                ("volume", Volume(s)), ("wait", Flag(Bool(s, "finishBeforeContinuing") ?? false)), .. SoundOptions(s, c)])));
+        // 601 is Speaker.bot's original (UDP) speak; 602 (StreamerBotSubActionRules.cs) the websocket one.
         t.Add(new SbSubActionRule("Speak", "speech.speak", ["SpeakerBotSpeak", "Speak", "601"],
-            (s, _) => Step("speech.speak", s, ("alias", Str(s, "alias") ?? ""), ("text", Str(s, "message", "text") ?? "")))
-        {
-            Tentative = true,
-        });
+            (s, _) => Step("speech.speak", s, ("alias", Str(s, "alias") ?? ""), ("text", Str(s, "message", "text") ?? ""),
+                ("badWordFilter", Flag(Bool(s, "badWordFilter") ?? false)))));
 
         // ---------------------------------------------------------------- Twitch
         t.Add(new SbSubActionRule("SendMessage", "twitch.sendMessage", ["SendMessage", "TwitchSendMessage", "ChatSendMessage", "SendChatMessage", "10"],
-            (s, _) => Step("twitch.sendMessage", s, ("message", Str(s, "text", "message") ?? ""), ("sendAs", SendAs(s))))
+            (s, c) =>
+            {
+                if (Bool(s, "pin") == true) c.Warn($"'{c.ActionName}': a Twitch message is pinned when sent; Cuebot sends it unpinned (add a Pin chat message step).");
+                return Step("twitch.sendMessage", s, ("message", Str(s, "text", "message") ?? ""), ("sendAs", SendAs(s)));
+            })
         {
             Signatures = [["text", "useBot"]],
         });
@@ -166,11 +172,18 @@ public sealed partial class StreamerBotMappingTable
         });
         t.Add(new SbSubActionRule("SetTitle", "twitch.setTitle", ["SetChannelTitle", "TwitchSetTitle", "15"],
             (s, _) => Step("twitch.setTitle", s, ("title", Str(s, "title") ?? ""))));
-        t.Add(new SbSubActionRule("SetGame", "twitch.setGame", ["SetChannelGame", "TwitchSetGame", "16"], (s, _) =>
+        t.Add(new SbSubActionRule("SetGame", "twitch.setGame", ["SetChannelGame", "TwitchSetGame", "16"], (s, c) =>
         {
+            // Source 0 types the name (or a variable); 1 picks a game, saved with its name and id.
             var game = Str(s, "game", "gameName") ?? "";
-            if (game.Length == 0) throw new SbMappingException("the category is chosen by id only");
-            return Step("twitch.setGame", s, ("game", game));
+            var step = Step("twitch.setGame", s, ("game", game));
+            if (game.Length == 0)
+            {
+                c.Warn($"'{c.ActionName}': a Set Channel Game step names no category" + (Str(s, "gameId") is { Length: > 0 } id ? $" (only its id {id})" : "")
+                       + "; it was imported disabled. Enter the category and enable it.");
+                step.Enabled = false;
+            }
+            return step;
         }));
         t.Add(new SbSubActionRule("CreateMarker", "twitch.createMarker", ["CreateStreamMarker", "TwitchCreateMarker", "17"],
             (s, _) => Step("twitch.createMarker", s, ("description", Str(s, "description") ?? ""))));
@@ -199,45 +212,25 @@ public sealed partial class StreamerBotMappingTable
         t.Add(new SbSubActionRule("AddPresentUser", "twitch.getPresentUser", ["AddPresentUser", "550"],
             (s, _) => Step("twitch.getPresentUser", s, ("index", Str(s, "userIndex", "index") ?? "0"))));
         t.Add(new SbSubActionRule("AddBroadcasterInfo", "twitch.getBroadcasterInfo", ["AddBroadcasterInformation", "21"],
-            (s, _) => Step("twitch.getBroadcasterInfo", s))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbSubActionRule("AddViewerCount", "twitch.getStreamInfo", ["AddViewerCount", "24"], (s, _) => Step("twitch.getStreamInfo", s))
-        {
-            Tentative = true,
-        });
+            (s, _) => Step("twitch.getBroadcasterInfo", s)));
+        t.Add(new SbSubActionRule("AddViewerCount", "twitch.getStreamInfo", ["AddViewerCount", "24"], (s, _) => Step("twitch.getStreamInfo", s)));
         t.Add(new SbSubActionRule("AddPronouns", "pronouns.addForUser", ["AddPronounsForUser", "15001"],
-            (s, c) => Step("pronouns.addForUser", s, ("user", UserLogin(s, c, "%userName%")), ("prefix", Str(s, "prefix") ?? "")))
-        {
-            Tentative = true,
-        });
+            (s, c) => Step("pronouns.addForUser", s, ("user", UserLogin(s, c, "%userName%")), ("prefix", Str(s, "prefix") ?? ""))));
 
         t.Add(new SbSubActionRule("StartRaid", "twitch.startRaid", ["StartRaid", "TwitchStartRaid", "500"],
-            (s, c) => Step("twitch.startRaid", s, ("user", UserLogin(s, c))))
-        {
-            Tentative = true,
-        });
+            (s, c) => Step("twitch.startRaid", s, ("user", UserLogin(s, c)))));
         t.Add(new SbSubActionRule("Ban", "twitch.ban", ["BanUser", "TwitchBan", "511"],
-            (s, c) => Step("twitch.ban", s, ("user", UserLogin(s, c)), ("reason", Str(s, "reason") ?? "")))
-        {
-            Tentative = true,
-        });
+            (s, c) => Step("twitch.ban", s, ("user", UserLogin(s, c)), ("reason", Str(s, "reason") ?? ""))));
 
         // ---------------------------------------------------------------- YouTube
         t.Add(new SbSubActionRule("YouTubeSendMessage", "youtube.sendMessage", ["YouTubeSendMessage", "4001"],
-            (s, _) => Step("youtube.sendMessage", s, ("message", Str(s, "text", "message") ?? ""), ("useBot", Flag(Bool(s, "useBot") ?? false))))
-        {
-            Tentative = true,
-        });
+            (s, _) => Step("youtube.sendMessage", s, ("message", Str(s, "text", "message") ?? ""), ("useBot", Flag(Bool(s, "useBot") ?? false)),
+                ("fallback", Flag(Bool(s, "fallback") ?? false)), ("broadcastId", ""))));
         t.Add(new SbSubActionRule("YouTubeSetTitle", "youtube.setTitle", ["YouTubeSetTitle", "4002"],
-            (s, _) => Step("youtube.setTitle", s, ("title", Str(s, "title") ?? ""), ("broadcastId", "")))
-        {
-            Tentative = true,
-        });
+            (s, _) => Step("youtube.setTitle", s, ("title", Str(s, "title") ?? ""), ("broadcastId", ""))));
 
         // ---------------------------------------------------------------- OBS
-        t.Add(new SbSubActionRule("ObsSetScene", "obs.setScene", ["ObsSetScene", "SetScene", "ObsSetCurrentScene", "ObsScene"],
+        t.Add(new SbSubActionRule("ObsSetScene", "obs.setScene", ["ObsSetScene", "SetScene", "ObsSetCurrentScene", "ObsScene", "34"],
             (s, c) => Obs(Step("obs.setScene", s, ("scene", Str(s, "sceneName", "scene") ?? "")), s, c))
         {
             Signatures = [["sceneName"]],
@@ -259,26 +252,14 @@ public sealed partial class StreamerBotMappingTable
                 ("state", FilterState(s))), s, c)));
         t.Add(new SbSubActionRule("ObsSetSourceFilterState", "obs.setFilterState", ["ObsSetSourceFilterState", "35"],
             (s, c) => Obs(Step("obs.setFilterState", s, ("source", Str(s, "sourceName") ?? ""), ("filter", Str(s, "filterName") ?? ""),
-                ("state", FilterState(s))), s, c))
-        {
-            Tentative = true,
-        });
+                ("state", FilterState(s))), s, c)));
         t.Add(new SbSubActionRule("ObsSetMediaFile", "obs.setMediaFile", ["ObsSetMediaSourceFile", "322"],
-            (s, c) => Obs(Step("obs.setMediaFile", s, ("input", Str(s, "sourceName") ?? ""), ("file", Str(s, "fileName", "file") ?? "")), s, c))
-        {
-            Tentative = true,
-        });
+            (s, c) => Obs(Step("obs.setMediaFile", s, ("input", Str(s, "sourceName") ?? ""), ("file", Str(s, "fileName", "file") ?? "")), s, c)));
         t.Add(new SbSubActionRule("ObsSetImageFile", "obs.setImageFile", ["ObsSetImageSourceFile", "323"],
-            (s, c) => Obs(Step("obs.setImageFile", s, ("input", Str(s, "sourceName") ?? ""), ("file", Str(s, "fileName", "file") ?? "")), s, c))
-        {
-            Tentative = true,
-        });
+            (s, c) => Obs(Step("obs.setImageFile", s, ("input", Str(s, "sourceName") ?? ""), ("file", Str(s, "fileName", "file") ?? "")), s, c)));
         t.Add(new SbSubActionRule("ObsRaw", "obs.rawRequest", ["ObsRaw", "ObsSendRaw", "46"], MapObsRaw));
-        t.Add(new SbSubActionRule("ObsRecordChapter", "obs.createRecordChapter", ["ObsCreateRecordChapter", "328"],
-            (s, c) => Obs(Step("obs.createRecordChapter", s, ("chapterName", Str(s, "chapterName", "name") ?? "")), s, c))
-        {
-            Tentative = true,
-        });
+        t.Add(new SbSubActionRule("ObsRecordChapter", "obs.createRecordChapter", ["ObsCreateRecordChapter", "329"],
+            (s, c) => Obs(Step("obs.createRecordChapter", s, ("chapterName", Str(s, "chapterName", "name") ?? "")), s, c)));
 
         // ---------------------------------------------------------------- Stream Deck
         t.Add(new SbSubActionRule("StreamDeckSetTitle", "streamDeck.setTitle", ["StreamDeckSetTitle", "11001"],
@@ -292,7 +273,11 @@ public sealed partial class StreamerBotMappingTable
         t.Add(new SbSubActionRule("StreamDeckSetValue", "streamDeck.setValue", ["StreamDeckSetValue", "11008"],
             (s, _) => Step("streamDeck.setValue", s, ("buttonId", Str(s, "buttonId") ?? ""), ("value", Str(s, "value") ?? ""))));
 
+        AddSubActions(t);
         AddTriggers(t);
+        // A rule is tentative when the Streamer.bot name of one of its codes is only likely or unsure.
+        for (var i = 0; i < t._subActions.Count; i++)
+            t._subActions[i] = t._subActions[i] with { Tentative = t._subActions[i].TypeKeys.Any(TentativeSubActionCodes.Contains) };
         return t;
     }
 
@@ -329,6 +314,17 @@ public sealed partial class StreamerBotMappingTable
         var volume = Num(s, "volume") ?? 1;
         if (volume <= 5) volume *= 100;
         return Text(Math.Round(Math.Clamp(volume, 0, 100)));
+    }
+
+    /// <summary>
+    /// "Sound Name" tags the sound for Stop Sound Playback (or names it after its file); a specific output device is
+    /// chosen by id, which Cuebot cannot match, so the default device is used.
+    /// </summary>
+    private static (string, string)[] SoundOptions(JsonObject s, ISbMapContext c)
+    {
+        if (IsRealId(Str(s, "device")))
+            c.Warn($"'{c.ActionName}': plays on audio device id {Str(s, "device")}; it was set to the default device.");
+        return [("device", ""), ("tag", Str(s, "soundName") ?? ""), ("useFileName", Flag(Bool(s, "useFileNameAsName") ?? false))];
     }
 
     /// <summary>"useBot" (newer exports) picks the account; "preferredAccount" (older ones) is not decoded, so Default.</summary>
@@ -397,10 +393,15 @@ public sealed partial class StreamerBotMappingTable
         var raw = Str(s, "delay", "value", "milliseconds", "minDelay", "min") ?? "1000";
         var min = Num(s, "delay", "value", "milliseconds", "minDelay", "min");
         var max = Num(s, "maxDelay", "max", "maxValue");
-        if (max is { } m && min is { } lo && m > lo && Bool(s, "random") != false)
-            c.Warn($"'{c.ActionName}': random delay {Text(lo)}–{Text(m)} ms imported as a fixed {Text(lo)} ms delay.");
         // A variable or inline function ("%adLengthMs%") is kept; Cuebot resolves it when the step runs.
-        return Step("core.delay", s, ("milliseconds", min is { } ms ? Text(Math.Max(0, ms)) : raw));
+        var step = Step("core.delay", s, ("milliseconds", min is { } ms ? Text(Math.Max(0, ms)) : raw));
+        // "Random" waits a random time between the delay and "To".
+        if (max is { } m && min is { } lo && m > lo && Bool(s, "random") != false)
+        {
+            step.Parameters["random"] = "true";
+            step.Parameters["to"] = Text(m);
+        }
+        return step;
     }
 
     private static SubActionDefinition MapSetGlobal(JsonObject s, ISbMapContext c)
@@ -413,7 +414,7 @@ public sealed partial class StreamerBotMappingTable
         switch (Normalize(Str(s, "source")))
         {
             case "" or "1" or "value": break;
-            case "0" or "argument": value = value.Contains('%') ? value : $"%{value}%"; break;
+            case "0" or "argument": value = value.Length == 0 || value.Contains('%') ? value : $"%{value}%"; break;
             case "2" or "increment": mode = "Increment"; break;
             case "3" or "decrement": mode = "Decrement"; break;
             case var other: throw new SbMappingException($"value source '{other}' is not known");
@@ -483,8 +484,16 @@ public sealed partial class StreamerBotMappingTable
         catch (JsonException)
         {
         }
-        var type = Str(raw, "requestType") ?? throw new SbMappingException("the raw request has no requestType");
+        var empty = string.IsNullOrWhiteSpace(Str(s, "raw", "json", "request"));
+        var type = Str(raw, "requestType") ?? (empty ? "" : throw new SbMappingException("the raw request has no requestType"));
         var prefix = Str(s, "prefix") ?? "";
+        if (empty)
+        {
+            c.Warn($"'{c.ActionName}': an OBS raw step holds no request; it was imported disabled.");
+            var blank = Obs(Step("obs.rawRequest", s, ("requestType", ""), ("requestData", ""), ("resultArgument", prefix.Length > 0 ? prefix : "obsResult")), s, c);
+            blank.Enabled = false;
+            return blank;
+        }
         if (Bool(s, "resultsToArgs") == true)
             c.Warn($"'{c.ActionName}': an OBS raw request spread its result into %{prefix}.…% arguments; Cuebot stores the response JSON in %{(prefix.Length > 0 ? prefix : "obsResult")}%.");
         return Obs(Step("obs.rawRequest", s, ("requestType", type), ("requestData", Get(raw, "requestData")?.ToJsonString() ?? ""),
@@ -612,6 +621,7 @@ public sealed partial class StreamerBotMappingTable
         {
             "0" => "equals",
             "1" => "not equals",
+            "2" => "greater than",
             "3" => "less than",
             var other => throw new SbMappingException($"while operator '{other}' is not known"),
         };
@@ -635,7 +645,9 @@ public sealed partial class StreamerBotMappingTable
                 code = null;
             }
         }
-        if (string.IsNullOrEmpty(code)) throw new SbMappingException("the C# code could not be read");
+        // A step that never had any code (a freshly added one) imports empty; code that is there but unreadable does not.
+        if (string.IsNullOrEmpty(code) && (!string.IsNullOrEmpty(Str(s, "byteCode")) || Has(s, "code"))) throw new SbMappingException("the C# code could not be read");
+        code ??= "";
         c.Warn($"'{c.ActionName}': contains C# code. The action was imported disabled; read the code before enabling it.");
         var step = Step("code.csharp", s, ("code", code));
         if (Str(s, "name") is { Length: > 0 } name) step.Parameters["name"] = name;
@@ -708,8 +720,13 @@ public sealed partial class StreamerBotMappingTable
     private static SubActionDefinition MapExecuteMethod(JsonObject s, ISbMapContext c)
     {
         var method = Str(s, "method") ?? "";
-        if (method.Length == 0) throw new SbMappingException("no method is named");
-        var target = c.CodeRef(Str(s, "executeCodeId", "codeId"));
+        var unset = method.Length == 0;
+        if (unset)
+        {
+            c.Warn($"'{c.ActionName}': an Execute C# Method step names no method; it was imported disabled calling Execute.");
+            method = "Execute";
+        }
+        var target = IsRealId(Str(s, "executeCodeId", "codeId")) ? c.CodeRef(Str(s, "executeCodeId", "codeId")) : "";
         c.Warn($"'{c.ActionName}': contains C# code. The action was imported disabled; read the code before enabling it.");
         var code = $$"""
             using System;
@@ -724,6 +741,7 @@ public sealed partial class StreamerBotMappingTable
             }
             """;
         var step = Step("code.csharp", s, ("code", code));
+        if (unset) step.Enabled = false;
         CodeOptions(s, step);
         return step;
     }

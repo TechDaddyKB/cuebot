@@ -10,8 +10,9 @@ namespace Cuebot.UiTests.Transfer;
 
 /// <summary>
 /// Every Streamer.bot mapping rule targets a sub-action or trigger type the full app registers, and the converted
-/// steps and triggers only set parameters those types declare. Triggers are checked with every Streamer.bot 1.0.7
-/// trigger as it saves a freshly added one (Cuebot.Tests/TestData/streamerbot-1.0.7-trigger-defaults.json).
+/// steps and triggers only set parameters those types declare. Triggers and sub-actions are checked with every
+/// Streamer.bot 1.0.7 trigger and sub-action as it saves a freshly added one (Cuebot.Tests/TestData/
+/// streamerbot-1.0.7-trigger-defaults.json and streamerbot-1.0.7-subaction-defaults.json).
 /// </summary>
 public sealed class StreamerBotTargetTypesTests
 {
@@ -73,7 +74,13 @@ public sealed class StreamerBotTargetTypesTests
         Assert.Equal(StreamerBotMappingTable.NoEquivalentTriggers.Count, defaultsReport.Placeholders.Count);
         Assert.Equal(419 - StreamerBotMappingTable.NoEquivalentTriggers.Count, defaultsBundle.Actions.Sum(a => a.Triggers.Count));
 
-        var jsons = new List<string> { AllCodes, triggerDefaults };
+        var subActionDefaults = SubActionDefaults();
+        var (subBundle, subReport) = new StreamerBotImporter().Convert(subActionDefaults);
+        Assert.Equal(StreamerBotMappingTable.NoEquivalentSubActions.Count, subReport.Placeholders.Count);
+        Assert.Equal(395 - StreamerBotMappingTable.NoEquivalentSubActions.Count,
+            subBundle.Actions.Count(a => a.SubActions.Count == 1 && !BundleImporter.IsPlaceholder(a.SubActions[0])));
+
+        var jsons = new List<string> { AllCodes, triggerDefaults, subActionDefaults };
         var samples = Environment.GetEnvironmentVariable("CUEBOT_SB_SAMPLES") is { Length: > 0 } env ? env : @"C:\Users\docker\cuebot-sb-exports\samples";
         if (Directory.Exists(samples))
         {
@@ -103,6 +110,10 @@ public sealed class StreamerBotTargetTypesTests
                     Assert.True(handler is not null, $"no sub-action {step.Type}");
                     var keys = handler!.Parameters.Select(p => p.Key).ToHashSet();
                     foreach (var key in step.Parameters.Keys) Assert.True(keys.Contains(key), $"{step.Type} has no parameter '{key}'");
+                    // A choice holds one of its options (or a variable resolved when the step runs).
+                    foreach (var p in handler.Parameters.Where(p => p.Kind == ParameterKind.Choice && p.Choices.Count > 0))
+                        if (step.Parameters.TryGetValue(p.Key, out var value) && !value.Contains('%'))
+                            Assert.True(p.Choices.Contains(value, StringComparer.OrdinalIgnoreCase), $"{step.Type}: '{value}' is no option of '{p.Key}'");
                 }
                 foreach (var trigger in action.Triggers)
                 {
@@ -114,6 +125,24 @@ public sealed class StreamerBotTargetTypesTests
             }
         }
         Assert.NotEmpty(all.Actions);
+    }
+
+    /// <summary>One action per Streamer.bot 1.0.7 sub-action code, with the settings it saves by default.</summary>
+    private static string SubActionDefaults()
+    {
+        var defaults = (JsonArray)JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "streamerbot-1.0.7-subaction-defaults.json")))!;
+        Assert.Equal(395, defaults.Count);
+        var actions = new JsonArray();
+        foreach (var item in defaults.OfType<JsonObject>())
+        {
+            var sub = new JsonObject { ["id"] = Guid.NewGuid().ToString(), ["type"] = item["type"]!.DeepClone(), ["enabled"] = true, ["index"] = 0 };
+            foreach (var (key, value) in (JsonObject)item["settings"]!) sub[key] = value?.DeepClone();
+            actions.Add(new JsonObject
+            {
+                ["id"] = Guid.NewGuid().ToString(), ["name"] = $"S{item["type"]}", ["triggers"] = new JsonArray(), ["subActions"] = new JsonArray(sub),
+            });
+        }
+        return new JsonObject { ["data"] = new JsonObject { ["actions"] = actions }, ["version"] = 24 }.ToJsonString();
     }
 
     /// <summary>One action per Streamer.bot 1.0.7 trigger code, with the settings it saves by default.</summary>

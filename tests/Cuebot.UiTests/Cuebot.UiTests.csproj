@@ -19,5 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Cuebot.Tests\TestData\streamerbot-1.0.7-trigger-defaults.json" Link="TestData\streamerbot-1.0.7-trigger-defaults.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Cuebot.Tests\TestData\streamerbot-1.0.7-subaction-defaults.json" Link="TestData\streamerbot-1.0.7-subaction-defaults.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -110,7 +110,10 @@ public sealed class StreamerBotCodeTests
             Sub(1002, 2, ("value", "100"), ("maxValue", "900"), ("random", true)),
         ]));
         Assert.Equal(["500", "%adLengthMs%", "100"], main.SubActions.Select(s => s.Parameters["milliseconds"]));
-        Assert.Contains(report.Warnings, w => w.Contains("random delay 100–900"));
+        // A random delay waits between the delay and "To".
+        Assert.Equal(("true", "900"), (main.SubActions[2].Parameters["random"], main.SubActions[2].Parameters["to"]));
+        Assert.False(main.SubActions[0].Parameters.ContainsKey("random"));
+        Assert.Empty(report.Warnings);
     }
 
     [Fact]
@@ -476,8 +479,9 @@ public sealed class StreamerBotCodeTests
     [Fact]
     public void Unknown_codes_stay_placeholders()
     {
-        var (main, report, _) = Import(Export([Sub(12, 0, ("status", 0)), Sub(1008, 1, ("alpha", 255), ("variableName", "c"))], [Trig(702, ("variables", new JsonObject()))]));
-        Assert.Equal(["12", "1008", "702"], report.Placeholders.Select(p => p.OriginalType));
+        var (main, report, _) = Import(Export([Sub(17001, 0, ("status", 0)), Sub(14401, 1, ("arLens", "Glasses"))], [Trig(702, ("variables", new JsonObject()))]));
+        // 17001 is no Streamer.bot 1.0.7 code; 14401 (EpocCam Set AR Lens) is one Cuebot has no equivalent for.
+        Assert.Equal(["17001", "14401", "702"], report.Placeholders.Select(p => p.OriginalType));
         Assert.All(main.SubActions, s => Assert.False(s.Enabled));
         Assert.Empty(main.Triggers);
     }
