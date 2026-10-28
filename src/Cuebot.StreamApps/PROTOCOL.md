@@ -1,4 +1,4 @@
-# Stream apps: Meld Studio, PolyPop, T.I.T.S. and Lumia Stream
+# Stream apps: Meld Studio and PolyPop
 
 `Cuebot.StreamApps` connects Cuebot to **Meld Studio** and **PolyPop**. Settings live in `streamapps.json`.
 Both services implement `IConnectionStatus`, start only when their auto-connect/auto-start box is ticked, and retry
