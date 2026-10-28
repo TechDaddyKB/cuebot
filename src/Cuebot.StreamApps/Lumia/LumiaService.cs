@@ -158,7 +158,7 @@ public sealed class LumiaService : StreamAppConnection
     {
         var body = LumiaProtocol.Send(Steps.Require(type, "Type"), parameters);
         var response = await HttpAsync(HttpMethod.Post, ApiUrl("send"), body, ct).ConfigureAwait(false);
-        return response.ValueKind == JsonValueKind.Object && response.TryGetProperty("message", out var m) ? JsonUtil.ToArg(m) : null;
+        return response.ValueKind == JsonValueKind.Object && response.TryGetProperty("message", out var m) ? Cuebot.Core.Scripting.ScriptArgs.ToClr(m) : null;
     }
 
     /// <summary>Re-reads commands, alerts, lights and voices (<c>GET /api/retrieve?slim=true</c>).</summary>

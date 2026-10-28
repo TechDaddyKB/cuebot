@@ -200,9 +200,9 @@ internal static class LumiaProtocol
         {
             if (p.Value.ValueKind == JsonValueKind.Object)
                 foreach (var child in p.Value.EnumerateObject())
-                    args[$"{prefix}{p.Name}.{child.Name}"] = JsonUtil.ToArg(child.Value);
+                    args[$"{prefix}{p.Name}.{child.Name}"] = Cuebot.Core.Scripting.ScriptArgs.ToClr(child.Value);
             else
-                args[prefix + p.Name] = JsonUtil.ToArg(p.Value);
+                args[prefix + p.Name] = Cuebot.Core.Scripting.ScriptArgs.ToClr(p.Value);
         }
     }
 }
