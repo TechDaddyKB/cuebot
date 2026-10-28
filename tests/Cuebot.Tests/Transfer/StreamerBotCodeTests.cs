@@ -349,6 +349,24 @@ public sealed class StreamerBotCodeTests
     }
 
     [Fact]
+    public void Csharp_references_keep_only_the_users_own_dlls_and_windows_forms_is_flagged()
+    {
+        const string Source = "using System;\nusing System.Windows.Forms;\npublic class CPHInline { public bool Execute() { return true; } }";
+        var (main, report, _) = Import(Export(
+        [
+            Sub(99999, 0, ("code", Source), ("references", new JsonArray(
+                @"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\mscorlib.dll", @"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Windows.Forms.dll",
+                @".\Streamer.bot.Common.dll", @".\Newtonsoft.Json.dll", "System.dll", @".\dlls\StreamUP.dll", @"D:\libs\My.Helpers.dll"))),
+        ]));
+        var lines = main.SubActions[0].Parameters["references"].Split('\n');
+        Assert.Equal(2, lines.Length);
+        Assert.Equal(@"# StreamUP.dll (was .\dlls\StreamUP.dll in Streamer.bot): replace this line with the full path to your copy", lines[0]);
+        Assert.Contains("My.Helpers.dll", lines[1]); // kept as is where D:\ is a full path, else as a comment
+        Assert.Contains(report.Warnings, w => w.Contains("uses StreamUP.dll, My.Helpers.dll"));
+        Assert.Contains(report.Warnings, w => w.Contains("Windows Forms"));
+    }
+
+    [Fact]
     public void Run_program_is_imported_with_the_action_disabled()
     {
         var (main, report, _) = Import(Export([Sub(6, 0, ("command", "python"), ("arguments", "x.py %rawInput%"), ("workingDir", null), ("envVars", "{}"), ("waitForExit", 30))]));

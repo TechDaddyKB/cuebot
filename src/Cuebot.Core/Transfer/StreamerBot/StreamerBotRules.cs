@@ -778,12 +778,56 @@ public sealed partial class StreamerBotMappingTable
         if (Str(s, "name") is { Length: > 0 } name) step.Parameters["name"] = name;
         if (Str(s, "description") is { Length: > 0 } description) step.Parameters["description"] = description;
         CodeOptions(s, step);
-        // Streamer.bot's "references" list names its own install's assemblies (mscorlib.dll, ...); Cuebot always
-        // references the framework, so it is not carried over. Custom DLLs go under the step's References.
+        CodeReferences(s, step, code, c);
         if (Bool(s, "precompile") == true)
             c.Warn($"'{c.ActionName}': a C# step precompiles at startup; that starts once you enable the action.");
         return step;
     }
+
+    /// <summary>
+    /// Streamer.bot's "references" list mostly names the .NET Framework and the assemblies Streamer.bot ships with
+    /// (mscorlib.dll, .\Newtonsoft.Json.dll, ...); Cuebot always references the framework, so those are dropped.
+    /// A DLL the user added (in Streamer.bot's dlls folder, or anywhere else) is kept under the step's References:
+    /// a full path as is, a path relative to Streamer.bot's folder as a comment to replace with the full path.
+    /// </summary>
+    private static void CodeReferences(JsonObject s, SubActionDefinition step, string code, ISbMapContext c)
+    {
+        var all = Arr(s, "references")?.Select(AsString).OfType<string>().Select(r => r.Trim()).Where(r => r.Length > 0).ToList() ?? [];
+        var lines = new List<string>();
+        var custom = new List<string>();
+        foreach (var reference in all.Where(IsCustomReference))
+        {
+            var file = reference.Replace('\\', '/').Split('/')[^1];
+            custom.Add(file);
+            lines.Add(Path.IsPathFullyQualified(reference)
+                ? reference
+                : $"# {file} (was {reference} in Streamer.bot): replace this line with the full path to your copy");
+        }
+        if (lines.Count > 0)
+        {
+            step.Parameters["references"] = string.Join("\n", lines);
+            c.Warn($"'{c.ActionName}': its C# code uses {string.Join(", ", custom)}; check the paths under References.");
+        }
+        if (all.Any(r => r.EndsWith("System.Windows.Forms.dll", StringComparison.OrdinalIgnoreCase) || r.EndsWith("PresentationFramework.dll", StringComparison.OrdinalIgnoreCase))
+            || code.Contains("System.Windows.Forms", StringComparison.Ordinal) || code.Contains("System.Windows.Controls", StringComparison.Ordinal))
+            c.Warn($"'{c.ActionName}': its C# code uses Windows Forms or WPF, which Cuebot does not provide; it will not compile until that part is rewritten.");
+    }
+
+    /// <summary>True for a DLL the user added, false for the framework and the assemblies Streamer.bot ships with.</summary>
+    private static bool IsCustomReference(string reference)
+    {
+        var path = reference.Replace('/', '\\');
+        if (path.Contains(@"\Microsoft.NET\", StringComparison.OrdinalIgnoreCase)
+            || path.Contains(@"\Reference Assemblies\", StringComparison.OrdinalIgnoreCase)
+            || path.Contains(@"\Windows\assembly\", StringComparison.OrdinalIgnoreCase)) return false;
+        // A bare name or a file in Streamer.bot's own folder ships with Streamer.bot or .NET; its "dlls" folder is the user's.
+        var folder = path.Contains('\\') ? path[..path.LastIndexOf('\\')] : "";
+        return folder.EndsWith(@"\dlls", StringComparison.OrdinalIgnoreCase) || IsAbsolute(reference);
+    }
+
+    // A Windows path (C:\ or \\server) counts even on Linux, where Path.IsPathFullyQualified says no.
+    private static bool IsAbsolute(string path) =>
+        Path.IsPathFullyQualified(path) || (path.Length > 2 && char.IsAsciiLetter(path[0]) && path[1] == ':' && path[2] is '\\' or '/') || path.StartsWith(@"\\", StringComparison.Ordinal);
 
     /// <summary>"Precompile on Application Start", "Delayed Start" and "Save Result to Variable" of C# steps.</summary>
     private static void CodeOptions(JsonObject s, SubActionDefinition step)
