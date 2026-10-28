@@ -55,7 +55,7 @@ How to read the counts:
 - **Section 4.** Almost all of its partials are **variable-name gaps**. The triggers and sub-actions exist, but some
   of their documented variables are missing or named differently.
 - **Section 7.** The M count was dominated by **100 documented `CPH` method names** that `CphProxy` did not define (fixed in `w14-cph`).
-  Any Streamer.bot script that calls one of them fails to compile in Cuebot.
+  Any Streamer.bot script that called one of them failed to compile in Cuebot.
 
 ## Most user-visible gaps (prioritized)
 
