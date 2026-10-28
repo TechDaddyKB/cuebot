@@ -12,9 +12,11 @@ internal sealed class FakeVts
     private readonly FakeSocket _socket;
     private readonly Task _loop;
 
-    public FakeVts(FakeSocket socket)
+    /// <summary>Starts answering requests; <paramref name="setup"/> runs first, so the very first request already sees it.</summary>
+    public FakeVts(FakeSocket socket, Action<FakeVts>? setup = null)
     {
         _socket = socket;
+        setup?.Invoke(this);
         _loop = Task.Run(LoopAsync);
     }
 

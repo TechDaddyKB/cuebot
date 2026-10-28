@@ -27,8 +27,7 @@ public sealed class VTubeStudioTests : IAsyncLifetime
     {
         await _vts.ConnectAsync();
         _lastSocket = await _env.Server.NextAsync();
-        var fake = new FakeVts(_lastSocket);
-        setup?.Invoke(fake);
+        var fake = new FakeVts(_lastSocket, setup);
         await Wait.UntilAsync(() => _vts.State == ConnectionState.Connected, "connected");
         await Wait.UntilAsync(() => _vts.ItemFiles.Count > 0, "initial refresh");
         return fake;
@@ -89,7 +88,7 @@ public sealed class VTubeStudioTests : IAsyncLifetime
     public async Task Denied_plugin_request_stops_with_an_error_and_does_not_reconnect()
     {
         await _vts.ConnectAsync();
-        var fake = new FakeVts(await _env.Server.NextAsync()) { DenyToken = true };
+        var fake = new FakeVts(await _env.Server.NextAsync(), f => f.DenyToken = true);
         await Wait.UntilAsync(() => _vts.State == ConnectionState.Error, "error");
         Assert.Contains("denied", _vts.StatusMessage);
         Assert.False(_vts.IsRunning);
