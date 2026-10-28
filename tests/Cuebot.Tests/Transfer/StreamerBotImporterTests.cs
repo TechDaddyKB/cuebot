@@ -248,12 +248,12 @@ public sealed class StreamerBotImporterTests : IDisposable
     [Fact]
     public void Unknown_if_operator_is_disabled_and_flagged()
     {
-        var json = """{ "actions": [ { "name": "A", "triggers": [], "subActions": [ { "type": "IfElse", "input": "x", "operation": 7, "value": "y" } ] } ] }""";
+        var json = """{ "actions": [ { "name": "A", "triggers": [], "subActions": [ { "type": "IfElse", "input": "x", "operation": 42, "value": "y" } ] } ] }""";
         var (bundle, report) = new StreamerBotImporter().Convert(json);
         var step = Assert.Single(Assert.Single(bundle.Actions).SubActions);
         Assert.Equal("core.if", step.Type);
         Assert.False(step.Enabled);
-        Assert.Contains(report.Warnings, w => w.Contains("operator '7'"));
+        Assert.Contains(report.Warnings, w => w.Contains("operator '42'"));
     }
 
     [Fact]

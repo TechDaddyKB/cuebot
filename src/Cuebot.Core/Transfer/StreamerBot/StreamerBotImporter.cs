@@ -19,6 +19,7 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
 {
     public const string PlaceholderSource = "streamerbot";
     private const int MaxPlaceholderJson = 32 * 1024;
+    private const string SyntheticGroupKey = "cuebotGroupFromNames";
 
     private readonly StreamerBotMappingTable _table = table ?? StreamerBotMappingTable.Default;
 
@@ -47,6 +48,7 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
         private readonly Dictionary<string, Guid> _commands = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _timers = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _queues = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _codeNames = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, int> _mapped = [];
         private Dictionary<string, List<JsonObject>>? _flatChildren;
 
@@ -81,7 +83,10 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
 
             // Ids first, so references resolve whatever the order.
             foreach (var a in actionNodes)
+            {
                 if (Str(a, "id") is { } raw) _actions[raw] = (IdOf(a), Str(a, "name") ?? "Imported action");
+                IndexCode(Arr(a, "subActions", "actions"), Str(a, "name") ?? "Imported action");
+            }
             var commandNodes = Objects(Arr(data, "commands")).ToList();
             foreach (var c in commandNodes)
                 if (Str(c, "id") is { } raw) _commands[raw] = IdOf(c);
@@ -116,7 +121,7 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
                 Queue = QueueRef(Str(a, "queue", "queueId")),
             };
 
-            var steps = Objects(Arr(a, "subActions", "actions")).ToList();
+            var steps = GroupByName(a, Objects(Arr(a, "subActions", "actions")).ToList());
             _flatChildren = null;
             if (steps.Any(s => IsRealId(Str(s, "parentId"))))
             {
@@ -151,9 +156,51 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
             }
             action.SubActions.InsertRange(0, triggerPlaceholders);
 
-            if (TransferReferences.Walk(action.SubActions).Any(s => s.Type.StartsWith("code.", StringComparison.OrdinalIgnoreCase)))
+            var all = TransferReferences.Walk(action.SubActions).ToList();
+            if (all.Any(s => s.Type.StartsWith("code.", StringComparison.OrdinalIgnoreCase)))
                 action.Enabled = false;
+            if (all.Any(s => s.Type == "core.runProgram" && s.Enabled))
+            {
+                action.Enabled = false;
+                Warn($"'{ActionName}': runs a program. The action was imported disabled; check the program before enabling it.");
+            }
             return action;
+        }
+
+        /// <summary>
+        /// Older exports keep every sub-action in one list; a sub-action inside a group names the group in its "group"
+        /// field, and the action lists its groups in "actionGroups" (id, name, random, index). Groups and ungrouped
+        /// sub-actions share one index order. Each group becomes a nested group node here.
+        /// </summary>
+        private List<JsonObject> GroupByName(JsonObject action, List<JsonObject> steps)
+        {
+            var groups = Objects(Arr(action, "actionGroups")).Where(g => !string.IsNullOrWhiteSpace(Str(g, "name"))).ToList();
+            if (groups.Count == 0) return steps;
+            var names = groups.Select(g => Str(g, "name")!).ToHashSet(StringComparer.Ordinal);
+            var result = steps.Where(s => Str(s, "group") is not { } g || !names.Contains(g)).ToList();
+            foreach (var g in groups.DistinctBy(g => Str(g, "name"), StringComparer.Ordinal))
+            {
+                var name = Str(g, "name")!;
+                var children = new JsonArray();
+                foreach (var child in steps.Where(s => Str(s, "group") == name)) children.Add(child.DeepClone());
+                result.Add(new JsonObject
+                {
+                    ["type"] = "Group", ["name"] = name, ["random"] = Bool(g, "random") ?? false,
+                    ["index"] = Int(g, "index") ?? int.MaxValue, ["enabled"] = true, ["subActions"] = children, [SyntheticGroupKey] = true,
+                });
+            }
+            return result;
+        }
+
+        /// <summary>Remembers each "Execute C# Code" sub-action's name for "Execute C# Method" references.</summary>
+        private void IndexCode(JsonArray? steps, string actionName)
+        {
+            foreach (var step in Objects(steps))
+            {
+                if (StreamerBotMappingTable.TypeKeyOf(step) == "99999" && Str(step, "id") is { } id)
+                    _codeNames[id] = Str(step, "name") is { Length: > 0 } name ? name : actionName;
+                IndexCode(StreamerBotMappingTable.ChildArray(step), actionName);
+            }
         }
 
         private List<SubActionDefinition> MapList(IEnumerable<JsonObject> nodes)
@@ -189,7 +236,7 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
                 if (flat is not null) children.AddRange(MapList(flat));
                 return [Placeholder(node, "sub-action", ": " + ex.Message, children)];
             }
-            Count(rule, "Sub-action", inferred);
+            if (!Has(node, SyntheticGroupKey)) Count(rule, "Sub-action", inferred);
             if (flat is null) return [step];
 
             switch (step.Type)
@@ -244,7 +291,8 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
 
         private void Count(SbRule rule, string kind, bool inferred)
         {
-            var line = $"{kind} {rule.Name} → {rule.TargetType}" + (inferred ? " (recognised by its fields; please check)" : "");
+            var line = $"{kind} {rule.Name} → {rule.TargetType}" + (inferred ? " (recognised by its fields; please check)"
+                : rule.Tentative ? " (type code meaning inferred; please check)" : "");
             _mapped[line] = _mapped.GetValueOrDefault(line) + 1;
         }
 
@@ -272,12 +320,65 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
                 UserCooldownSeconds = Math.Max(0, Num(c, "userCooldown") ?? 0),
                 PersistCounter = Bool(c, "persistCounter") ?? false,
                 PersistUserCounter = Bool(c, "persistUserCounter") ?? false,
-                AllowedUsers = Strings(Get(c, "permittedUsers", "allowedUsers")),
-                AllowedGroups = Strings(Get(c, "permittedGroups", "allowedGroups")),
+                Include = Bool(c, "include") ?? true,
+                Sources = CommandSources(c, Str(c, "name") ?? "Imported command"),
             };
             command.Commands = Strings(Get(c, "command", "commands"));
             if (command.Commands.Count == 0) Warn($"Command '{command.Name}' has no command text.");
+
+            // Permissions: grant type 0 = Allow (only the listed users/groups), 1 = Deny (everyone except them). An
+            // empty Allow list allows everyone; an empty Deny list denies everyone (the broadcaster always may).
+            var users = Strings(Get(c, "permittedUsers", "allowedUsers"));
+            var groups = Strings(Get(c, "permittedGroups", "allowedGroups"));
+            if (Normalize(Str(c, "grantType")) is "1" or "deny")
+            {
+                command.DeniedUsers = users;
+                command.DeniedGroups = groups;
+                if (users.Count == 0 && groups.Count == 0) command.MinimumRole = ChatPermission.Broadcaster;
+            }
+            else if (users.Count > 0 || groups.Count > 0)
+            {
+                command.AllowedUsers = users;
+                command.AllowedGroups = groups;
+                command.MinimumRole = ChatPermission.Broadcaster;
+            }
             return command;
+        }
+
+        /// <summary>
+        /// Chat sources, documented as Twitch Message, YouTube Message, Twitch Whisper, Twitch (re)sub message; older
+        /// exports list their indexes ([0, 1]), newer ones a number (1 = Twitch Message, read here as bit flags in the
+        /// same order). Anything unknown keeps every source, with a warning.
+        /// </summary>
+        private List<string> CommandSources(JsonObject c, string name)
+        {
+            var node = Get(c, "sources");
+            var codes = new List<int>();
+            if (node is JsonArray list)
+            {
+                foreach (var item in list)
+                    if (int.TryParse(AsString(item), out var code)) codes.Add(code);
+            }
+            else if (int.TryParse(AsString(node), out var flags) && flags > 0)
+            {
+                for (var bit = 0; bit < 31; bit++)
+                    if ((flags & (1 << bit)) != 0) codes.Add(bit);
+            }
+            if (codes.Count == 0) return [];
+            var sources = new List<string>();
+            foreach (var code in codes.Distinct())
+            {
+                switch (code)
+                {
+                    case 0: sources.Add("Twitch:Message"); break;
+                    case 1: sources.Add("YouTube:Message"); break;
+                    case 2: sources.Add("Twitch:Whisper"); break;
+                    default:
+                        Warn($"Command '{name}' listens to a chat source Cuebot does not know (code {code}); it was set to every source.");
+                        return [];
+                }
+            }
+            return sources;
         }
 
         private TimerDefinition MapTimer(JsonObject t)
@@ -289,7 +390,8 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
                 IntervalSeconds = interval, Repeat = Bool(t, "repeat") ?? true,
                 RandomInterval = Bool(t, "randomInterval", "random") ?? false,
                 MinIntervalSeconds = Math.Max(1, Int(t, "minInterval", "minimumInterval", "lowerInterval") ?? interval),
-                MaxIntervalSeconds = Math.Max(1, Int(t, "maxInterval", "maximumInterval", "upperInterval") ?? interval),
+                // Streamer.bot writes 0 for an unused upper bound.
+                MaxIntervalSeconds = Math.Max(1, Int(t, "maxInterval", "maximumInterval", "upperInterval") is { } max and > 0 ? max : interval),
                 MinChatLines = Math.Max(0, Int(t, "lines", "minLines", "minChatLines") ?? 0),
             };
         }
@@ -318,6 +420,14 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
             if (_commands.TryGetValue(idOrName.Trim(), out var id)) return id.ToString();
             if (Guid.TryParse(idOrName, out _)) Warn($"'{ActionName}': command trigger names command id {idOrName}, which is not in this export.");
             return idOrName.Trim();
+        }
+
+        public string CodeRef(string? subActionId)
+        {
+            if (string.IsNullOrWhiteSpace(subActionId)) return "";
+            if (_codeNames.TryGetValue(subActionId.Trim(), out var name)) return name;
+            if (Guid.TryParse(subActionId, out _)) Warn($"'{ActionName}': calls C# code id {subActionId}, which is not in this export.");
+            return subActionId.Trim();
         }
 
         public string TimerRef(string? idOrName)
