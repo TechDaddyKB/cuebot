@@ -179,9 +179,9 @@ Two shapes run in "Execute C# code":
 | Globals | GetGlobalVar&lt;T&gt;, SetGlobalVar, UnsetGlobalVar, GetGlobalVarValues, ClearNonPersistedGlobals | objects stored as JSON text and deserialized on Get |
 | User variables | Get/Set/Unset{Twitch,YouTube,Kick}UserVar(ById), UnsetAll{Platform}UsersVar, Get{Platform}UsersVar&lt;T&gt;, GetUserVar/SetUserVar/UnsetUserVar/UnsetUser (Twitch), UnsetAllUsersVar, ClearNonPersistedUserGlobals | unknown users keyed by lower-case name; persisted flag ignored on Get |
 | Chat | SendMessage, SendYouTubeMessage, SendKickMessage, SendMessageToAll (Cuebot) | `bot`/`fallback` ignored (Cuebot sends with its connected account) |
-| OBS (connection 0) | ObsIsConnected, ObsSetScene, ObsGetCurrentScene, ObsSetSourceVisibility, ObsShowSource, ObsHideSource, ObsIsSourceVisible, ObsToggleSource, ObsShowFilter/ObsHideFilter (2 overloads), ObsSetGdiText, ObsSetBrowserSource, ObsSetImageSourceFile, ObsSetMediaSourceFile, ObsStart/StopStreaming, ObsStart/StopRecording, ObsIsStreaming, ObsIsRecording, ObsSendRaw | via `obs.request` (obs-websocket v5) |
+| OBS (connection 0) | ObsCreateRecordChapter, ObsIsFilterEnabled, ObsSetFilterState (0 visible, 1 hidden, 2 toggle), ObsToggleFilter, ObsSetRandomFilterState, ObsHideSourcesFilters, ObsHideScenesFilters, ObsIsConnected, ObsSetScene, ObsGetCurrentScene, ObsSetSourceVisibility, ObsShowSource, ObsHideSource, ObsIsSourceVisible, ObsToggleSource, ObsShowFilter/ObsHideFilter (2 overloads), ObsSetGdiText, ObsSetBrowserSource, ObsSetImageSourceFile, ObsSetMediaSourceFile, ObsStart/StopStreaming, ObsStart/StopRecording, ObsIsStreaming, ObsIsRecording, ObsSendRaw | via `obs.request` (obs-websocket v5) |
 | Speech / sound | TtsSpeak, PlaySound (volume 0-1, wait, sound name tag), StopSoundPlayback, StopAllSoundPlayback | via `speech.speak` / audio sub-actions |
-| Commands | EnableCommand, DisableCommand, GetCommands, CommandGetCounter, CommandResetCounter, CommandResetAllUserCounters, CommandResetGlobalCooldown, CommandResetAllUserCooldowns, CommandSetGlobalCooldownDuration, CommandSetUserCooldownDuration | cooldown resets clear global and user cooldowns together |
+| Commands | EnableCommand, DisableCommand, GetCommands, CommandGetCounter, CommandResetCounter, CommandResetAllUserCounters, CommandGetUserCounter(ById) → `CommandCounter`, CommandResetUserCounter, CommandResetUsersCounters, CommandSetGlobalCooldownDuration, CommandSetUserCooldownDuration, CommandAddTo{Global,User,AllUser}Cooldown(s), CommandReset{Global,User,AllUser}Cooldown(s), CommandRemove{Global,User,AllUser}Cooldown(s) | as in Streamer.bot: Reset starts a cooldown again at its full length, Remove ends it, AddTo adds seconds. User counters are always persisted (`persisted` is ignored) |
 | Groups | AddGroup, DeleteGroup, GetGroups, GroupExists, AddUserToGroup, AddUserIdToGroup, RemoveUserFromGroup, RemoveUserIdFromGroup, UserInGroup, UserIdInGroup, UsersInGroup, ClearUsersFromGroup (+ platform-less Twitch overloads) | |
 | Timers | EnableTimer, DisableTimer, EnableTimerById, DisableTimerById, GetTimerState, SetTimerInterval | |
 | Triggers | RegisterCustomTrigger, TriggerCodeEvent(name, useArgs), TriggerCodeEvent(name, args), TriggerEvent(name, useArgs) | "Custom code event" trigger; TriggerEvent is the same as TriggerCodeEvent (Cuebot has one custom event trigger) |
@@ -190,22 +190,51 @@ Two shapes run in "Execute C# code":
 | Twitch users | TwitchGetBroadcaster, TwitchGetBot, TwitchGetUserInfoByLogin/ById → `TwitchUserInfo`; TwitchGetExtendedUserInfoByLogin/ById → `TwitchUserInfoEx` | null when not found. Roles and LastActive come from Cuebot's user list (what chat showed); PreviousActive is not tracked. Ex: follow/subscription filled when the scopes allow; GameId and Tags stay empty; AccountAge is in seconds |
 | Twitch moderation / stream | TwitchTimeoutUser, TwitchBanUser, TwitchUnbanUser, TwitchRunCommercial (bool, 30-180 s), SetChannelTitle (bool), SetChannelGame → `GameInfo`, CreateStreamMarker → `StreamMarker`, CreateClip() / CreateClip(title, duration) → `ClipData` | done as the broadcaster (`useBot` ignored); failures return false/null and log a warning. Clip title/duration are not sent (Twitch's API has no such fields); ClipData carries what Twitch returns on creation (id, url, edit/embed url, broadcaster) |
 | YouTube | YouTubeGetLatestMonitoredBroadcast (alias YouTubeGetLatestBroadcast), YouTubeGetMonitoredBroadcasts → `YouTubeBroadcastInfo` | id, channel, live chat id, title, description, privacy, status, url; category, tags, languages and dates stay empty |
-| Kick | KickGetBroadcaster, KickGetBot → `KickUserInfo` | null when not signed in |
+| Twitch rewards | TwitchGetRewards → `TwitchReward`, Enable/Disable/Pause/UnPauseReward, UpdateRewardMaxPerStream, UpdateRewardMaxPerUserPerStream, TwitchRedemptionFulfill/Cancel, TwitchGetRewardCounter, TwitchGetRewardUserCounter(ById), TwitchGetRewardUserCounters → `TwitchRewardCounter`, TwitchResetRewardCounter, TwitchResetRewardUserCounters, TwitchResetUserRewardCounter(s) | only rewards Cuebot's Twitch app created can change (`IsOurs`); counters are Cuebot's (persistence is set per reward on the Twitch page, `persisted` is ignored); LastRedeemed is not tracked |
+| Twitch chat (more) | TwitchReplyToMessage, TwitchDeleteChatMessage, TwitchClearChatMessages, TwitchPinChatMessage, TwitchSendAndPinMessage, TwitchUnpinMessage, TwitchUpdatePinnedMessageDuration, TwitchGetPinnedMessage → `TwitchPinnedMessage` (a Cuebot class) | pins last 30-1800 s, 0 until the stream ends; send-and-pin sends as the broadcaster |
+| Twitch moderation (more) | TwitchWarnUser, TwitchAddBlockedTerm, TwitchRemoveBlockedTerm (by text), TwitchGetBlockedTerms → `List<string>`, TwitchApproveAutoHeldMessage, TwitchDenyAutoHeldMessage, TwitchGetMods, TwitchGetVips → `List<TwitchUserInfo>`, GetCheermotes → `List<Cheermote>` | |
+| Twitch clips | GetAllClips, GetClips, GetClipsForGame, GetClipsForUser (name or int id), GetClipsForUserById, with count / start-end / TimeSpan / isFeatured overloads → `List<ClipData>` | most viewed first, at most 1000 (Twitch's limits) |
+| YouTube (more) | YouTubeGetBroadcaster, YouTubeGetBot → `YouTubeUserInfo`; YouTubeSetTitle, SetDescription, SetCategory (name or id), SetPrivacy, SetMetaData, AddTags, RemoveTags, ClearTags, BanUserById/ByName, TimeoutUserById/ByName (bool); SendYouTubeMessageToLatestMonitored | a null `broadcastId` means the latest monitored broadcast |
+| Kick | KickGetBroadcaster, KickGetBot → `KickUserInfo`; KickBanUser, KickTimeoutUser, KickUnbanUser, KickDeleteChatMessage, KickReplyToMessage, KickSetTitle (bool), KickSetCategory → `KickCategory` | null when not signed in; Kick times out in whole minutes (rounded up); KickCategory carries the name only |
+| Meld Studio | MeldStudioConnect, Disconnect, IsConnected, GetConnectionByName, ShowScene, ShowSceneByName, ShowLayerByName, HideLayerByName | one connection: index -1 or 0 (other indexes return false) |
+| Bulk user variables | IncrementAll{Twitch,YouTube,Kick}UsersVar, Increment{Twitch,YouTube}UsersVarById, IncrementAllKickUsersVarById, IncrementOrCreate{Twitch,YouTube,Kick}UsersVarById, SetKickUsersVarById | only variables with the given persistence change; "OrCreate" starts missing ones at 0 |
+| Parse | Parse(text, args?) | `%arg%`, `~global~` and inline functions, with the given args or this run's |
 | Keyboard | KeyboardPress (SendKeys syntax: `{W}`, `+{W}`, `^{W}`, `%{W}`) | uses Cuebot's keyboard output (SendInput on Windows; XDG RemoteDesktop portal or X11 XTest on Linux) |
 | WebSocket | WebsocketBroadcastJson/String, WebsocketConnect/Disconnect/IsConnected/Send, WebsocketGetConnectionByName, WebsocketCustomServer{Start,Stop,IsListening,Broadcast,CloseSession,CloseAllSessions,GetConnectionByName} | needs the Servers module |
-| Integrations | DiscordPostTextToWebhook | |
+| Integrations | DiscordPostTextToWebhook | returns the new message's id |
 | **Unsupported** (throw `NotSupportedException: CPH.<Name> is not supported by Cuebot`) | TwitchClientId, TwitchOAuthToken | Cuebot never hands platform credentials to scripts |
+| **Stubs** (log "CPH.<Name> is not supported in Cuebot" and return the failure value) | TwitchAddActiveMonitoringSuspiciousStatus, TwitchAddRestrictedSuspiciousStatus, TwitchRemoveSuspiciousStatus, TwitchBlockUser, TwitchBlockUserById (false); TwitchGetChannelPointsUsedByUserId (0) | Cuebot does not request the suspicious-user or blocked-user scopes and does not track the points users spend |
 
-Data classes use Streamer.bot's names and namespaces: `TwitchUserInfo`, `TwitchUserInfoEx`, `GameInfo`,
-`YouTubeBroadcastInfo`, `KickUserInfo` in `Streamer.bot.Plugin.Interface.Model` (imported globally, as Streamer.bot's
-examples assume), `ClipData` and `StreamMarker` in `Twitch.Common.Models.Api`.
+Data classes and enums use Streamer.bot's names and namespaces: every documented class (`TwitchUserInfo`,
+`TwitchReward`, `TwitchRewardCounter`, `CommandCounter`, `QuoteData`, `TeamInfo`, `KickCategory`, `YouTubeUserInfo`,
+`Cheermote*`, `GuestStar*`, `VTSModelPosition`, ...) is in `Streamer.bot.Plugin.Interface.Model`; `ClipData` and
+`StreamMarker` in `Twitch.Common.Models.Api`; `Platform`, `TwitchBlockContext`, `TwitchBlockReason` and
+`StreamlabsDesktopOutputType` in `Streamer.bot.Plugin.Interface.Enums`; the complete `EventType` (508 values) and
+`EventSource` (46) in `Streamer.bot.Common.Events`. All of these namespaces are imported globally in CPHInline code,
+as Streamer.bot's examples assume. Their numeric values are not documented, so compare enum values by name.
+`tests/Cuebot.Scripting.Tests/Data` lists the documented names, and a test checks that each one exists.
+
+Code options (Streamer.bot's sub-action settings):
+
+- **Code name / Description.** Other code calls this code's methods by its name.
+- **Precompile on application start / Delayed start.** The code compiles while Cuebot starts (delayed: once it has
+  started), so a CPHInline `Init()` runs at startup, with a CPH that has no action run. Only enabled steps of enabled
+  actions are precompiled. Without the option, `Init()` runs before the first execution.
+- **Save result to variable / Variable name.** The bool result goes into that argument and the action continues
+  whatever it is (by default false stops the action).
+- **References.** Extra .NET DLLs, one full path per line; `scripting.json` → `CSharpReferences` lists DLLs for all
+  code. Only listed files are loaded, from that exact path, when the script needs them; nothing is searched for or
+  downloaded. Streamer.bot's "Find Refs" is not needed: every framework assembly is referenced already.
+- **Execute C# method** sub-action (`code.csharpMethod`): calls a public parameterless method (or `Execute`) of the
+  named code's CPHInline instance. False stops the action unless the result is saved; unknown code or methods fail
+  the step. `CPH.ExecuteMethod` does the same from code (and returns false instead of failing).
+
+Newtonsoft.Json 13 is bundled and referenced, as in Streamer.bot: add `using Newtonsoft.Json;`.
 
 Methods not listed do not exist and fail at compile time with the usual C# error. A method whose Cuebot module is
 missing throws `NotSupportedException` naming the method and the script function it needs.
 
-Limitations: scripts target .NET 10, not .NET Framework 4.8 (Windows Forms, `System.Web`, etc. are unavailable);
-Newtonsoft.Json is not bundled (use System.Text.Json); "Precompile on application start" is not implemented, so
-`Init()` (and `RegisterCustomTrigger` in it) runs before the script's first execution.
+Limitations: scripts target .NET 10, not .NET Framework 4.8 (Windows Forms, `System.Web`, etc. are unavailable).
 
 ## REST API (default 127.0.0.1:7475, prefix `/api/v1`)
 
