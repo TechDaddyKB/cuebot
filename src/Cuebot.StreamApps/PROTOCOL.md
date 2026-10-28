@@ -152,3 +152,103 @@ Cheap fallback: `Mode = Client` connects out to `ws://Address:Port/Endpoint` for
 - The plugin's own "Trigger" action reads property names that do not exist in its definition (`AlertName`/`AlertText`
   vs `AlertTitle`/`AlertValue`), so messages *from* PolyPop may never arrive with the published build; Cuebot parses
   them if they do.
+
+## T.I.T.S. (Twitch Integrated Throwing System, by Remasuri3)
+
+Code: `Tits/`. Settings `streamapps.json` → `Tits` (Host 127.0.0.1, Port 42069, AutoConnect off, AutoReconnect on).
+
+### Source
+
+- Remasuri3, *T.I.T.S. API* README: https://github.com/Remasuri/TITSAPI (the only public description; "extremely early").
+- Streamer.bot docs (names/variables only): docs.streamer.bot/api/triggers/integrations/tits/*,
+  docs.streamer.bot/api/sub-actions/integrations/tits/*, docs.streamer.bot/api/csharp/methods/integrations/tits/*.
+
+### Protocol
+
+Two websockets, no authentication:
+
+- `ws://host:42069/websocket` - requests. Every message is `{"apiName":"TITSPublicApi","apiVersion":"1.0","requestID":"<id>","messageType":"<type>","data":{...}}`;
+  the response echoes `requestID` with `messageType` `<X>Response` (plus a `timestamp`).
+  `TITSItemListRequest` (`data.sendImage`; Cuebot sends `false`) → `data.items[{ID,name,encodedImage}]`;
+  `TITSItemInfoRequest` (`data.itemID`); `TITSThrowItemsRequest` (`data.items` = ids, one picked at random per throw,
+  `delayTime` seconds, `amountOfThrows`, `errorOnMissingID`) → `data.numberOfThrownItems`; `TITSTriggerListRequest` →
+  `data.triggers[{ID,name}]`; `TITSTriggerActivateRequest` (`data.triggerID`, `data.triggerName` used when the id is
+  empty/unknown). The README does not document errors; Cuebot treats any `messageType` containing "Error" (VTube
+  Studio style `APIError` with `data.message`) as a failure.
+- `ws://host:42069/events` - broadcasts `TITSHitEvent` (`itemID`, `itemName`, `triggerID`, `triggerName`, `strength`,
+  `direction{x,y,z}`), `TITSTriggerActivatedEvent` and `TITSTriggerEndedEvent` (`triggerID`, `triggerName`).
+
+The request socket is the connection (status, backoff). While it is up a second loop keeps `/events` connected with
+its own backoff. If `/events` is down, broadcasts arriving on the request socket are also accepted. Item and trigger
+lists are read on connect (no images) so sub-actions and filters can use names (case-insensitive; ids also accepted).
+
+### Mapping
+
+| Streamer.bot | Cuebot |
+| --- | --- |
+| Trigger Connected | `tits.connected` (both sockets up) |
+| Triggers Websocket Connected / Disconnected | `tits.websocketConnected` / `tits.websocketDisconnected` (request socket; `reason`) |
+| Triggers Events Connected / Disconnected | `tits.eventsConnected` / `tits.eventsDisconnected` |
+| – | `tits.disconnected` (was fully connected, one socket dropped) |
+| Trigger Item Hit (`itemId`, `itemName`, `triggerId`, `triggerName`, `strength`, `direction.x/y/z`) | `tits.itemHit`, same variables; filters item, trigger, minimum strength |
+| Triggers Trigger Activated / Trigger Ended (`triggerId`) | `tits.triggerActivated` / `tits.triggerEnded` (`triggerId`, `triggerName`); trigger filter |
+| Sub-actions Activate Trigger / Activate Trigger by Name | `tits.activateTrigger` (name or id) / `tits.activateTriggerByName` |
+| Sub-actions Throw Item / Throw Item by Name (Item, Delay, Amount) | `tits.throwItem` / `tits.throwItemByName` → `tits.thrownItems` |
+| Sub-actions Throw Items / Throw Items by Name (Items, Delay, Amount) | `tits.throwItems` / `tits.throwItemsByName` (names/ids per line or comma-separated) → `tits.thrownItems` |
+| – | `tits.getItems` / `tits.getTriggers` → `tits.items` / `tits.triggers` (JSON `[{id,name}]`), `tits.itemCount` / `tits.triggerCount` |
+| C# `ThrowingSystemThrowItemByName(itemName, delay = 0.05, amount = 1)` | `tits.throwItemByName({itemName, delay, amount})` → bool |
+| C# `ThrowingSystemActivateTriggerByName(triggerName)` | `tits.activateTriggerByName({triggerName})` → bool |
+| – | `tits.isConnected`, `tits.connect`, `tits.disconnect`, `tits.throwItems`, `tits.activateTrigger`, `tits.getItems`, `tits.getTriggers` |
+
+Delay is in seconds (T.I.T.S.'s `delayTime`; Streamer.bot's C# default 0.05).
+
+### Not covered / untested
+
+- Not run against real T.I.T.S. (it was not running on the dev PC). Tests use an in-memory server shaped after the README.
+- `TITSItemInfoRequest` and item images are not used (no Streamer.bot feature needs them).
+
+## Lumia Stream
+
+Code: `Lumia/`. Settings `streamapps.json` → `Lumia` (Host 127.0.0.1, Port 39231, Token, AutoConnect off, AutoReconnect on).
+
+### Source
+
+- Lumia Stream Developer API: https://dev.lumiastream.com/docs (source: https://github.com/lumiastream/Developer-Docs,
+  `docs/rest/*`, `docs/websockets/*`).
+- Streamer.bot docs (names only): docs.streamer.bot/api/sub-actions/integrations/lumia-stream/*,
+  docs.streamer.bot/api/csharp/methods/integrations/lumia-stream/*, docs.streamer.bot/guide/integrations/lumia-stream.
+
+### Protocol
+
+- Token: Lumia → Settings → API → "Enable Developers API" → "Copy Token". Sent as `?token=` (documented on every
+  version). Cuebot never logs it; HTTP error text is scrubbed of it.
+- Websocket `ws://host:39231/api?token=<token>&name=Cuebot` (Lumia shows a "Cuebot connected" toast). A bad token or a
+  disabled API rejects the upgrade, so an open socket means connected. Nothing is sent on it (every JSON message is
+  executed as a command). Pushed envelope: `{origin, subOrigin?, type, event?, data}` with `type` chat (a deletion has
+  `data.shouldRemove`), command, alert (`event` = alert name, `data.dynamic`, `data.replay`, `data.extraSettings`),
+  states (`on`, `streamMode`, `fuze` as 1/0), premium, modqueue_list, chat_platform_register. `socketapi:*` replies are ignored.
+- REST `POST http://host:39231/api/send?token=` with `{"type":..., "params":{...}}` for every command (it answers on
+  every Lumia version; websocket replies need a recent one). Errors: `{"status":404,"code":"not_found","message":...}`
+  on new versions, plain text on old ones. `GET /api/retrieve?token=&slim=true` on connect reads the user's commands
+  (`options.<type>.values`), alerts, studio scenes, TTS voices and lights (`data.lights[{id,name,type}]`).
+- Colours: `hex-color` (`value` "#RRGGBB") or `rgb-color` (`value` {r,g,b}); `brightness` 0-100 (default 100),
+  `transition` ms (default 0), `duration` ms (default 4000), `hold`, `lights[{type,value:id}]`. `to-default` resets.
+
+### Mapping
+
+| Streamer.bot | Cuebot |
+| --- | --- |
+| Sub-action Send Command (Command) | `lumia.sendCommand`: Command, Command type (chat-command default, chatbot-command, twitch-points, twitch-extension, kick-points), Hold, Extra settings |
+| Sub-action Set Color (Colour, Brightness, Duration, Transition, Skip Queue, Default, Light) | `lumia.setColor`: Colour (#RRGGBB, #AARRGGBB or r,g,b), Brightness, Duration, Transition, Default (sends to-default), Lights (names or brand:id), Hold. Skip Queue: not offered (see below) |
+| Sub-action Set To Default | `lumia.setToDefault` |
+| – | `lumia.sendAlert`, `lumia.chatbotMessage` (platform, as streamer), `lumia.tts` (voice, volume), `lumia.setLumiaState`, `lumia.setStreamMode`, `lumia.getVariable` (→ `lumia.variableValue`), `lumia.setVariable`, `lumia.send` (any Send API type + params JSON → `lumia.response`) |
+| C# `LumiaSendCommand(command)` / `LumiaSetToDefault()` | `lumia.sendCommand({command, type, hold, extraSettings})` / `lumia.setToDefault()` |
+| – | `lumia.isConnected`, `connect`, `disconnect`, `setColor`, `sendAlert`, `chatbotMessage`, `tts`, `getVariable`, `setVariable`, `send`, `getInfo` |
+| – (Streamer.bot documents no Lumia triggers) | Triggers `lumia.connected`, `lumia.disconnected`, `lumia.chatMessage` (`user`, `userName`, `displayName`, `userId`, `message`, `messageId`, `lumia.channel`), `lumia.chatMessageDeleted` (`messageId`), `lumia.command` (`command`, `user`), `lumia.alert` (`lumia.alert`, `lumia.replay`, `lumia.dynamic.*`; filters alert names and replays), `lumia.statesChanged` (`lumia.on`, `lumia.streamMode`, `lumia.fuze`), `lumia.event` (other types, `lumia.data` JSON). Every event: `lumia.origin`, `lumia.subOrigin`, `lumia.type`, `lumia.<extraSettings key>` (nested objects one level as `lumia.<key>.<child>`), `lumia.host`, `lumia.port` |
+
+### Not covered / untested
+
+- Streamer.bot's Set Color "Skip Queue": Lumia's public API documents no skip-queue parameter, so it is left out.
+  Streamer.bot's "empty brightness keeps the current level" is not possible either: an omitted brightness is Lumia's default 100.
+- Not run against real Lumia Stream (it was not running on the dev PC). Tests use in-memory REST and websocket servers
+  shaped after the docs' examples and event mocks.

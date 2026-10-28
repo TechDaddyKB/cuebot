@@ -13,5 +13,11 @@
     <TabItem Header="Meld &amp; PolyPop">
       <apps:StreamAppsView DataContext="{Binding Apps}" />
     </TabItem>
+    <TabItem Header="T.I.T.S." IsVisible="{Binding Tits, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <apps:TitsView DataContext="{Binding Tits}" />
+    </TabItem>
+    <TabItem Header="Lumia Stream" IsVisible="{Binding Lumia, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <apps:LumiaView DataContext="{Binding Lumia}" />
+    </TabItem>
   </TabControl>
 </UserControl>

@@ -89,7 +89,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name)),
             new Cuebot.App.ViewModels.StreamApps.StreamAppsPageViewModel(new ObsViewModel(host.Get<ObsService>()),
                 new Cuebot.App.ViewModels.StreamApps.StreamAppsViewModel(host.Get<Cuebot.StreamApps.Meld.MeldStudioService>(),
-                    host.Get<Cuebot.StreamApps.PolyPop.PolyPopService>())),
+                    host.Get<Cuebot.StreamApps.PolyPop.PolyPopService>()))
+            {
+                Tits = new Cuebot.App.ViewModels.StreamApps.TitsViewModel(host.Get<Cuebot.StreamApps.Tits.TitsService>()),
+                Lumia = new Cuebot.App.ViewModels.StreamApps.LumiaViewModel(host.Get<Cuebot.StreamApps.Lumia.LumiaService>()),
+            },
             new SpeechViewModel(host.Get<SpeechService>(), host.Get<IAudioInput>()),
             new Transfer.ImportExportViewModel(host.Get<Cuebot.Core.Transfer.TransferService>(), host.Get<Cuebot.Core.Actions.ProfileService>(),
                 host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Actions.GlobalVariables>(),

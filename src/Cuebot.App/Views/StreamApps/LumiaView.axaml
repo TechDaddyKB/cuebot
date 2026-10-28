@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.LumiaView"
+             x:DataType="vm:LumiaViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Lumia Stream" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Run Lumia commands, set light colours, simulate alerts and send chat-bot messages from actions; Lumia's chat, commands, alerts and state changes become triggers. Settings are stored in streamapps.json." />
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Connection" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In Lumia Stream open Settings → API, switch on &quot;Enable Developers API&quot; and click &quot;Copy Token&quot;, then paste it below. Lumia's API listens on port 39231." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto,Auto" >
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="LumiaHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="LumiaPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <TextBlock Grid.Row="1" Text="Token" VerticalAlignment="Center" Margin="0,8,8,0" />
+            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,8,0,0" Name="LumiaToken" Text="{Binding Token}" PasswordChar="•"
+                     PlaceholderText="Token from Lumia's Settings → API" />
+          </Grid>
+          <TextBlock Classes="muted" Text="A token is required before Cuebot can connect." IsVisible="{Binding HasNoToken}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Reconnect when the connection drops (or Lumia is not running yet)" IsChecked="{Binding AutoReconnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Reload commands and lights" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="LumiaStates" Classes="muted" Text="{Binding States}" TextWrapping="Wrap" />
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="Lights: " FontWeight="SemiBold" /><Run Text="{Binding Lights}" />
+          </TextBlock>
+          <Grid ColumnDefinitions="200,Auto,Auto" RowDefinitions="Auto">
+            <TextBox Text="{Binding TestColor}" PlaceholderText="#RRGGBB" />
+            <Button Grid.Column="1" Margin="8,0,0,0" Content="Set colour" Command="{Binding SetColorCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Back to default" Command="{Binding ToDefaultCommand}" IsEnabled="{Binding IsConnected}" />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Commands" />
+          <TextBlock Classes="muted" Text="Connect to list Lumia's chat commands." IsVisible="{Binding HasNoCommands}" />
+          <ItemsControl Name="LumiaCommands" ItemsSource="{Binding Commands}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LumiaCommandRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="Run" Command="{Binding RunCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

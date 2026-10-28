@@ -5,6 +5,8 @@ public sealed class StreamAppsSettings
 {
     public MeldStudioSettings Meld { get; set; } = new();
     public PolyPopSettings PolyPop { get; set; } = new();
+    public TitsSettings Tits { get; set; } = new();
+    public LumiaSettings Lumia { get; set; } = new();
 }
 
 public sealed class MeldStudioSettings
