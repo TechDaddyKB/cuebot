@@ -370,6 +370,7 @@ public sealed class TwitchApi
             ["user"] = user.DisplayName,
             ["userName"] = user.Login,
             ["userId"] = user.Id,
+            ["profileImageUrl"] = user.ProfileImageUrl,
             ["isMature"] = result.Bool("is_mature"),
             ["createdAt"] = result.Str("created_at"),
         }));

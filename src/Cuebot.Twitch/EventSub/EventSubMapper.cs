@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Cuebot.Core.Events;
+using Cuebot.Core.Variables;
 
 namespace Cuebot.Twitch.EventSub;
 
@@ -192,6 +193,7 @@ internal static class EventSubMapper
             args["replyParentUser"] = r.Str("parent_user_name");
             args["replyParentMessage"] = r.Str("parent_message_body");
             args["replyThreadMessageId"] = r.Str("thread_message_id");
+            args["replyThreadUserName"] = r.Str("thread_user_login");
         }
 
         SharedChatSource(args, e);
@@ -235,6 +237,7 @@ internal static class EventSubMapper
                 args["isPrime"] = detail.Bool("is_prime");
                 args["cumulativeMonths"] = detail.Int("cumulative_months");
                 args["streakMonths"] = detail.Int("streak_months");
+                args["streakShared"] = detail.Child("streak_months") is { ValueKind: JsonValueKind.Number };
                 args["durationMonths"] = detail.Int("duration_months");
                 return new BotEvent(TwitchEventTypes.SharedChatResub, args);
             case "sub_gift":
@@ -244,12 +247,14 @@ internal static class EventSubMapper
                 args["tier"] = Tier(detail.Str("sub_tier"));
                 args["durationMonths"] = detail.Int("duration_months");
                 args["cumulativeTotal"] = detail.Int("cumulative_total");
+                args["totalSubsGiftedShared"] = detail.Child("cumulative_total") is { ValueKind: JsonValueKind.Number };
                 args["communityGiftId"] = detail.Str("community_gift_id");
                 return new BotEvent(shared ? TwitchEventTypes.SharedChatSubGift : TwitchEventTypes.SubGift, args);
             case "community_sub_gift":
                 args["total"] = detail.Int("total");
                 args["tier"] = Tier(detail.Str("sub_tier"));
                 args["cumulativeTotal"] = detail.Int("cumulative_total");
+                args["totalGiftsShared"] = detail.Child("cumulative_total") is { ValueKind: JsonValueKind.Number };
                 args["communityGiftId"] = detail.Str("id");
                 return new BotEvent(shared ? TwitchEventTypes.SharedChatGiftBomb : TwitchEventTypes.GiftBomb, args);
             case "gift_paid_upgrade":
@@ -456,6 +461,7 @@ internal static class EventSubMapper
         args["message"] = Text(e);
         args["cumulativeMonths"] = e.Int("cumulative_months");
         args["streakMonths"] = e.Int("streak_months");
+        args["streakShared"] = e.Child("streak_months") is { ValueKind: JsonValueKind.Number };
         args["durationMonths"] = e.Int("duration_months");
         Emotes(args, e);
         return new BotEvent(TwitchEventTypes.Resub, args);
@@ -469,6 +475,7 @@ internal static class EventSubMapper
         args["total"] = e.Int("total");
         args["tier"] = Tier(e);
         args["cumulativeTotal"] = e.Int("cumulative_total");
+        args["totalGiftsShared"] = e.Child("cumulative_total") is { ValueKind: JsonValueKind.Number };
         return new BotEvent(TwitchEventTypes.GiftSub, args);
     }
 
@@ -545,8 +552,17 @@ internal static class EventSubMapper
         args["isInStock"] = e.Bool("is_in_stock");
         args["backgroundColor"] = e.Str("background_color");
         args["isUserInputRequired"] = e.Bool("is_user_input_required");
+        args["skipsQueue"] = e.Bool("should_redemptions_skip_request_queue");
+        args["requiresUserInput"] = e.Bool("is_user_input_required");
+        args["maxPerStream"] = Limit(e, "max_per_stream", "value");
+        args["maxPerUserPerStream"] = Limit(e, "max_per_user_per_stream", "value");
+        args["globalCooldown"] = Limit(e, "global_cooldown", "seconds");
         return new BotEvent(type, args);
     }
+
+    /// <summary>An EventSub reward limit {is_enabled, value}; 0 when disabled.</summary>
+    private static int Limit(JsonElement e, string field, string valueField) =>
+        e.Child(field) is { ValueKind: JsonValueKind.Object } limit && limit.Bool("is_enabled") ? limit.Int(valueField) : 0;
 
     // ---------------------------------------------------------------- polls and predictions
 
@@ -581,6 +597,7 @@ internal static class EventSubMapper
         args["totalVotes"] = total;
         args["winningChoice"] = winner;
         args["winningChoiceVotes"] = Math.Max(best, 0);
+        args["poll._json"] = e.GetRawText();
         return new BotEvent(type, args);
     }
 
@@ -615,6 +632,7 @@ internal static class EventSubMapper
         }
         args["totalUsers"] = users;
         args["totalChannelPoints"] = points;
+        args["prediction._json"] = e.GetRawText();
         return new BotEvent(type, args);
     }
 
@@ -649,7 +667,15 @@ internal static class EventSubMapper
             args[prefix + "User"] = c.ValueKind == JsonValueKind.Object ? c.Str("user_name") : "";
             args[prefix + "UserId"] = c.ValueKind == JsonValueKind.Object ? c.Str("user_id") : "";
             args[prefix + "Total"] = c.ValueKind == JsonValueKind.Object ? c.Int("total") : 0;
+            if (c.ValueKind != JsonValueKind.Object) continue;
+            // Streamer.bot: top.bits.user (display name), .userName (login), .userId, .total
+            args[$"top.{kind}.user"] = c.Str("user_name");
+            args[$"top.{kind}.userName"] = c.Str("user_login");
+            args[$"top.{kind}.userId"] = c.Str("user_id");
+            args[$"top.{kind}.total"] = c.Int("total");
         }
+        args["allTimeHighTotal"] = e.Int("all_time_high_total");
+        args["isInSharedChat"] = e.Bool("is_shared_train");
         return new BotEvent(type, args);
     }
 
@@ -680,7 +706,22 @@ internal static class EventSubMapper
         args["currency"] = amount.ValueKind == JsonValueKind.Object ? amount.Str("currency") : (e.Child("current_amount") ?? default).Str("currency");
         args["currentAmount"] = TwitchApi.Money(e.Child("current_amount") ?? default);
         args["targetAmount"] = TwitchApi.Money(e.Child("target_amount") ?? default);
+        args["charityLogo"] = e.Str("charity_logo");
+        CharityAmount(args, "charity.amount", e.Child("amount"));
+        CharityAmount(args, "charity.currentAmount", e.Child("current_amount"));
+        CharityAmount(args, "charity.targetAmount", e.Child("target_amount"));
+        if (type == TwitchEventTypes.CharityStarted && StreamerBotArgs.Time(e.Str("started_at")) is { } started) args["charity.startedAt"] = started;
+        if (type == TwitchEventTypes.CharityCompleted && StreamerBotArgs.Time(e.Str("stopped_at")) is { } stopped) args["charity.stoppedAt"] = stopped;
         return new BotEvent(type, args);
+    }
+
+    /// <summary>Streamer.bot amount: {prefix}.value (decimal), .valueMinor (minor units) and .currency.</summary>
+    private static void CharityAmount(Dictionary<string, object?> args, string prefix, JsonElement? amount)
+    {
+        if (amount is not { ValueKind: JsonValueKind.Object } a) return;
+        args[prefix + ".value"] = decimal.Parse(TwitchApi.Money(a), CultureInfo.InvariantCulture);
+        args[prefix + ".valueMinor"] = a.Child("value") is { ValueKind: JsonValueKind.Number } v && v.TryGetInt64(out var minor) ? minor : 0L;
+        args[prefix + ".currency"] = a.Str("currency");
     }
 
     private static BotEvent Shoutout(string type, JsonElement e, string userPrefix)
@@ -754,6 +795,7 @@ internal static class EventSubMapper
         args["terms"] = string.Join(", ", terms);
         args["termCount"] = terms.Count;
         args["fromAutomod"] = e.Bool("from_automod");
+        for (var i = 0; i < terms.Count; i++) args[$"term.{i}"] = terms[i];
         return new BotEvent(type, args);
     }
 
