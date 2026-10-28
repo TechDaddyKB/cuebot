@@ -17,6 +17,7 @@ using Cuebot.Speech;
 using Cuebot.Speech.Emotes;
 using Cuebot.Controllers;
 using Cuebot.Elgato;
+using Cuebot.GoXlr;
 using Cuebot.Midi;
 using Cuebot.StreamApps;
 using Cuebot.StreamDeck;
@@ -59,6 +60,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddStreamApps()
             .AddElgato()
             .AddWaveLink()
+            .AddGoXlr()
             .AddMidi()
             .AddGameControllers()
             .AddWebhooks()
@@ -127,6 +129,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Elgato Lights", () => Get<Cuebot.Elgato.Lights.ElgatoLightsService>().StartAsync()),
             StartSafely(log, "Camera Hub", () => Get<Cuebot.Elgato.CameraHub.CameraHubService>().StartAsync()),
             StartSafely(log, "Wave Link", () => Get<Cuebot.WaveLink.WaveLinkService>().StartAsync()),
+            StartSafely(log, "GoXLR", () => Get<Cuebot.GoXlr.GoXlrService>().StartAsync()),
             StartSafely(log, "MIDI", () => Get<Cuebot.Midi.MidiService>().StartAsync()),
             StartSafely(log, "Controllers", () => Get<Cuebot.Controllers.ControllerService>().StartAsync()),
             StartSafely(log, "Voice Control", () => Get<Cuebot.VoiceControl.VoiceControlService>().StartAsync()),

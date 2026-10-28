@@ -13,6 +13,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
 | `Cuebot.LiveTests` › Meld Studio / PolyPop | Meld: WebChannel handshake, scene list, re-show the current scene, optionally toggle a named layer and restore it (the session update must come back). PolyPop: the WebSocket plugin connects to Cuebot and a test alert is delivered | Meld Studio with remote connections on; PolyPop with the WebSocket plugin |
 | `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
+| `Cuebot.LiveTests` › GoXLR | Status load, faders and volumes, a ping, optionally a fader mute toggled and restored through the utility's patches | The GoXLR Utility with a GoXLR or GoXLR Mini |
 | `Cuebot.LiveTests` › MIDI | Port listing (WinMM / ALSA sequencer); optionally notes, a controller and SysEx sent to an output, a loopback round trip through the MIDI Message trigger variables, and learning a control you press | Nothing for the listing; a MIDI output, a loopback cable (loopMIDI, Midi Through) or a controller for the rest |
 | `Cuebot.LiveTests` › Game controllers | SDL3 loads and starts on its own thread, connected controllers are listed, optionally the first input arrives as a controller event | Optional: any game controller (works with none connected) |
 | `Cuebot.LiveTests` › Voice control | Text-to-speech says "start the countdown", the audio is fed to voice control as a microphone, and Whisper (and on Windows also Windows Speech Recognition) must fire the Voice Control Command and Dictation triggers. Downloads a Whisper model on the first run | A local TTS voice (Windows SAPI or espeak-ng); about 32 MB download |
@@ -151,6 +152,13 @@ the port itself (Wave Link 3: `ws-info.json`, then 1884-1893; 1.x/2.x: 1824-1834
 one. The test checks the detected API, the channel and mix lists and a request round trip; with
 `CUEBOT_LIVE_WAVELINK_CHANNEL=<channel name>` it also mutes that channel, waits for the state to change and restores it.
 Level meters are not exercised.
+
+### GoXLR
+
+`GoXlrLiveTests` runs with `CUEBOT_LIVE_GOXLR=1` while the GoXLR Utility runs (Linux, Windows or macOS) with a GoXLR or
+GoXLR Mini plugged in. It connects to `localhost:14564` (`CUEBOT_LIVE_GOXLR_HOST` / `CUEBOT_LIVE_GOXLR_PORT` override
+that), loads the status, checks the four faders and pings; with `CUEBOT_LIVE_GOXLR_FADER=<A-D or a channel name>` it
+also toggles that fader's mute, waits for the utility's status patch and restores it.
 
 ### Game controllers
 

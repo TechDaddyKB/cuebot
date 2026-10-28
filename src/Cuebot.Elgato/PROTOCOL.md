@@ -209,6 +209,14 @@ When an automatic mode is on, white-balance and shutter changes fire the "Live" 
   - Triggers: ISO and Live ISO, Overscan, Noise Reduction, Exposure Auto Lock, Bitrate, AR Lens, Lens, Flash, Webcam Activated/Deactivated (whether the feed is in use), Selected Webcam Changed (a Camera Hub selection) and Snapshot Taken.
   - Sub-actions: Set White Balance Tint, Set Dynamic Range and Set Noise Reduction.
   - Facecam may expose some of these through UVC extension units, which are vendor-specific and undocumented.
+  - **Why Set Dynamic Range, Set Noise Reduction and Set White Balance Tint stay ❌ (re-checked 2026-10-28, see
+    `docs/ELGATO_SDKS.md`).** Elgato publishes no Camera Hub SDK, API or plugin system. Its Maker documentation
+    covers Stream Deck, Wave Link, iCUE, OBS and the Marketplace only, so no Camera Hub plugin can be written to
+    expose these settings. The only thing that controls Camera Hub from outside is Elgato's own Stream Deck plugin,
+    over a private channel that the clean-room rule keeps closed. On the camera, standard UVC/V4L2 has no HDR,
+    noise-reduction or tint control. The vendor extension-unit layout that would hold them is undocumented, so the
+    Linux UVC driver has nothing to map. These become possible only if Elgato documents a Camera Hub API or the
+    Facecam extension units.
 - **Windows and macOS:** the Camera Hub service reports "Not available on this system". The UI and the live test only detect whether the Camera Hub app is running.
 
 ---

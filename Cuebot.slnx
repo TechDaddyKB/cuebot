@@ -5,6 +5,7 @@
     <Project Path="src/Cuebot.Core/Cuebot.Core.csproj" />
     <Project Path="src/Cuebot.Donations/Cuebot.Donations.csproj" />
     <Project Path="src/Cuebot.Elgato/Cuebot.Elgato.csproj" />
+    <Project Path="src/Cuebot.GoXlr/Cuebot.GoXlr.csproj" />
     <Project Path="src/Cuebot.Integrations/Cuebot.Integrations.csproj" />
     <Project Path="src/Cuebot.Kick/Cuebot.Kick.csproj" />
     <Project Path="src/Cuebot.Midi/Cuebot.Midi.csproj" />
@@ -27,6 +28,7 @@
     <Project Path="tests/Cuebot.Controllers.Tests/Cuebot.Controllers.Tests.csproj" />
     <Project Path="tests/Cuebot.Donations.Tests/Cuebot.Donations.Tests.csproj" />
     <Project Path="tests/Cuebot.Elgato.Tests/Cuebot.Elgato.Tests.csproj" />
+    <Project Path="tests/Cuebot.GoXlr.Tests/Cuebot.GoXlr.Tests.csproj" />
     <Project Path="tests/Cuebot.Integrations.Tests/Cuebot.Integrations.Tests.csproj" />
     <Project Path="tests/Cuebot.Kick.Tests/Cuebot.Kick.Tests.csproj" />
     <Project Path="tests/Cuebot.LiveTests/Cuebot.LiveTests.csproj" />

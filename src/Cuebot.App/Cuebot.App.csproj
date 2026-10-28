@@ -41,6 +41,7 @@
     <ProjectReference Include="..\Cuebot.StreamDeck\Cuebot.StreamDeck.csproj" />
     <ProjectReference Include="..\Cuebot.Remote\Cuebot.Remote.csproj" />
     <ProjectReference Include="..\Cuebot.WaveLink\Cuebot.WaveLink.csproj" />
+    <ProjectReference Include="..\Cuebot.GoXlr\Cuebot.GoXlr.csproj" />
     <ProjectReference Include="..\Cuebot.Midi\Cuebot.Midi.csproj" />
     <ProjectReference Include="..\Cuebot.Controllers\Cuebot.Controllers.csproj" />
     <ProjectReference Include="..\Cuebot.VoiceControl\Cuebot.VoiceControl.csproj" />
