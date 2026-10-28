@@ -112,6 +112,16 @@ TreatStream needs `CUEBOT_LIVE_TREATSTREAM_TOKEN` (an access token from signing 
 `CUEBOT_LIVE_TREATSTREAM_CLIENT_ID` (your TreatStream app). Pally.gg needs `CUEBOT_LIVE_PALLY_API_KEY`; the test also asks
 Pally's server to echo a sample tip and checks it arrives as a test campaign tip.
 
+### Streamlabs Desktop
+
+`StreamlabsDesktopLiveTests` (nothing goes live) run with `CUEBOT_LIVE_SLOBS_TOKEN` = the API token from Streamlabs
+Desktop's Settings → Remote Control → Show details (`CUEBOT_LIVE_SLOBS_HOST` / `_PORT` for another PC; default
+127.0.0.1:59650). One test adds a temporary scene, switches to it and back (checking the scene changed events), toggles
+a source twice and removes the scene; `CUEBOT_LIVE_SLOBS_RECORD=1` also records for 3 s. The other builds a scratch
+scene (colour sources, a filter, a folder) and runs every visibility, filter, group, transform, settings and mute
+command on it, then removes it. Last run: Streamlabs Desktop 1.22.2, 2026-10-28, both pass. Streamlabs Desktop limits
+how often `ScenesService.getScenes` may be called, so Cuebot reloads only the scene a command or event touches.
+
 ### Meld Studio, PolyPop
 
 `StreamAppsLiveTests` (nothing goes live). **Meld Studio** runs with `CUEBOT_LIVE_MELD=1`: turn on File → Preferences →

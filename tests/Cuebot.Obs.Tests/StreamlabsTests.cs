@@ -92,6 +92,24 @@ public sealed class StreamlabsTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Repeated_source_toggles_and_item_events_do_not_exhaust_the_getScenes_limit()
+    {
+        // Streamlabs Desktop refuses ScenesService.getScenes after a few calls (found with the real app); toggles and
+        // item events reload only the scene they touch.
+        _server.GetScenesLimit = 1;
+        await _slobs.ConnectAsync();
+        await _recorder.WaitForAsync(StreamlabsEvents.Connected);
+
+        for (var i = 0; i < 10; i++)
+        {
+            Assert.Equal(i % 2 == 0, await _slobs.SetSourceVisibilityAsync("Main", "Title", VisibilityMode.Toggle));
+            await _server.SendEventAsync("ScenesService.itemUpdated", new { sceneId = "s1", sceneItemId = "i2", visible = _server.Visible["i2"] });
+        }
+        Assert.False(_server.Visible["i2"]);
+        Assert.Equal(1, _server.Calls.Count(c => c is { Resource: "ScenesService", Method: "getScenes" }));
+    }
+
+    [Fact]
     public async Task Sub_actions_drive_streamlabs_desktop()
     {
         await _slobs.ConnectAsync();

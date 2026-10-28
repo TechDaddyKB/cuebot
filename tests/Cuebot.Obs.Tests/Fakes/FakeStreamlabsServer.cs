@@ -80,6 +80,11 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
         _stop.Dispose();
     }
 
+    /// <summary>How many getScenes calls the fake answers before refusing them, as the real app does.</summary>
+    public int GetScenesLimit { get; set; } = int.MaxValue;
+
+    private int _getScenesCalls;
+
     private object Scenes() => new object[]
     {
         new
@@ -107,7 +112,16 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
                 if (args[0].GetString() == Token) return true;
                 error = "INTERNAL_JSON_RPC_ERROR Invalid token";
                 return null;
-            case ("ScenesService", "getScenes"): return Scenes();
+            case ("ScenesService", "getScenes"):
+                // Like Streamlabs Desktop, which refuses getScenes once it has been called too often.
+                if (++_getScenesCalls > GetScenesLimit)
+                {
+                    error = "INVALID_REQUEST Reached the limit of calls for \"ScenesService.getScenes\" if you need to fetch only the list of scene names then use the getSceneNames() method";
+                    return null;
+                }
+                return Scenes();
+            case ("ScenesService", "getScene"):
+                return ((object[])Scenes()).FirstOrDefault(sc => sc.GetType().GetProperty("id")!.GetValue(sc) as string == args[0].GetString());
             case ("ScenesService", "activeSceneId"): return ActiveScene;
             case ("ScenesService", "activeScene"): return new { id = ActiveScene, name = ActiveScene == "s1" ? "Main" : "BRB" };
             case ("ScenesService", "makeSceneActive"):

@@ -35,6 +35,8 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
     private Task? _keepConnected;
     private volatile bool _manuallyDisconnected;
     private int _disposed;
+    private int _fullRefreshPending;
+    private static readonly TimeSpan FullRefreshDelay = TimeSpan.FromMilliseconds(500);
     private string? _lastFailure;
     private SlobsScene[] _scenes = [];
     private SlobsSource[] _sources = [];
@@ -116,8 +118,7 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
     /// <summary>Shows, hides or toggles a source in a scene. Returns whether it is now visible.</summary>
     public async Task<bool> SetSourceVisibilityAsync(string sceneName, string sourceName, VisibilityMode mode, CancellationToken ct = default)
     {
-        await RefreshScenesAsync(ct).ConfigureAwait(false);   // fresh visibility for Toggle
-        var scene = await FindSceneAsync(sceneName, ct).ConfigureAwait(false);
+        var scene = await FreshSceneAsync(sceneName, ct).ConfigureAwait(false);   // fresh visibility for Toggle
         var item = scene.Items.FirstOrDefault(i => string.Equals(i.Name, sourceName, StringComparison.OrdinalIgnoreCase))
                    ?? throw new StreamlabsException($"Scene '{scene.Name}' has no source named '{sourceName}'.");
         var visible = mode switch { VisibilityMode.Visible => true, VisibilityMode.Hidden => false, _ => !item.Visible };
@@ -128,8 +129,7 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
     /// <summary>Hides every source of a scene. Returns how many were hidden.</summary>
     public async Task<int> HideAllSourcesAsync(string sceneName, CancellationToken ct = default)
     {
-        await RefreshScenesAsync(ct).ConfigureAwait(false);
-        var scene = await FindSceneAsync(sceneName, ct).ConfigureAwait(false);
+        var scene = await FreshSceneAsync(sceneName, ct).ConfigureAwait(false);
         var visible = scene.Items.Where(i => i.Visible && !i.IsFolder).ToArray();
         foreach (var item in visible) await CallAsync(item.ResourceId, "setVisibility", [false], ct).ConfigureAwait(false);
         return visible.Length;
@@ -272,8 +272,7 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
 
     private async Task<IReadOnlyList<SlobsSceneItem>> GroupChildrenAsync(string sceneName, string groupName, CancellationToken ct)
     {
-        await RefreshScenesAsync(ct).ConfigureAwait(false);   // fresh visibility
-        var scene = await FindSceneAsync(sceneName, ct).ConfigureAwait(false);
+        var scene = await FreshSceneAsync(sceneName, ct).ConfigureAwait(false);   // fresh visibility
         var group = scene.Items.FirstOrDefault(i => i.IsFolder && string.Equals(i.Name, groupName, StringComparison.OrdinalIgnoreCase))
                     ?? throw new StreamlabsException($"Scene '{scene.Name}' has no group named '{groupName}'.");
         return scene.Items.Where(i => i.ParentId == group.Id && !i.IsFolder).ToArray();
@@ -423,9 +422,13 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
                         ["sceneName"] = scene.Name, ["sceneId"] = scene.Id, ["previousScene"] = previous ?? "", ["sd.sceneName"] = scene.Name,
                     });
                     break;
+                case "ScenesService.itemAdded" or "ScenesService.itemRemoved" or "ScenesService.itemUpdated"
+                    when data.GetStringOrNull("sceneId") is { } changedSceneId:
+                    RefreshInBackground(c => RefreshSceneAsync(changedSceneId, c));
+                    break;
                 case "ScenesService.sceneAdded" or "ScenesService.sceneRemoved" or "ScenesService.itemAdded" or
                     "ScenesService.itemRemoved" or "ScenesService.itemUpdated":
-                    RefreshInBackground(RefreshScenesAsync);
+                    RefreshScenesSoon();
                     break;
                 case "SourcesService.sourceAdded" or "SourcesService.sourceRemoved" or "SourcesService.sourceUpdated":
                     RefreshInBackground(RefreshSourcesAsync);
@@ -489,6 +492,36 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
         ScenesChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Reloads one scene. Streamlabs Desktop limits how often ScenesService.getScenes may be called ("Reached the
+    /// limit of calls"), so commands and item events reload only the scene they touch.
+    /// </summary>
+    private async Task<SlobsScene> RefreshSceneAsync(string sceneId, CancellationToken ct)
+    {
+        var fresh = StreamlabsParser.ParseScene(await CallAsync("ScenesService", "getScene", [sceneId], ct).ConfigureAwait(false))
+                    ?? throw new StreamlabsException($"Streamlabs Desktop has no scene with id '{sceneId}'.");
+        var scenes = _scenes;
+        var index = Array.FindIndex(scenes, s => s.Id == sceneId);
+        _scenes = index < 0 ? [.. scenes, fresh] : [.. scenes[..index], fresh, .. scenes[(index + 1)..]];
+        ScenesChanged?.Invoke();
+        return fresh;
+    }
+
+    private async Task<SlobsScene> FreshSceneAsync(string sceneName, CancellationToken ct) =>
+        await RefreshSceneAsync((await FindSceneAsync(sceneName, ct).ConfigureAwait(false)).Id, ct).ConfigureAwait(false);
+
+    /// <summary>One full scene reload for a burst of scene added/removed events (see <see cref="RefreshSceneAsync"/>).</summary>
+    private void RefreshScenesSoon()
+    {
+        if (Interlocked.Exchange(ref _fullRefreshPending, 1) == 1) return;
+        RefreshInBackground(async ct =>
+        {
+            await Task.Delay(FullRefreshDelay, ct).ConfigureAwait(false);
+            Volatile.Write(ref _fullRefreshPending, 0);
+            await RefreshScenesAsync(ct).ConfigureAwait(false);
+        });
+    }
+
     private async Task RefreshSourcesAsync(CancellationToken ct)
     {
         _sources = StreamlabsParser.ParseSources(await CallAsync("SourcesService", "getSources", null, ct).ConfigureAwait(false));
@@ -510,8 +543,13 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
     private async Task<SlobsScene> FindSceneAsync(string sceneName, CancellationToken ct)
     {
         if (_scenes.Length == 0) await RefreshScenesAsync(ct).ConfigureAwait(false);
-        return _scenes.FirstOrDefault(s => string.Equals(s.Name, sceneName, StringComparison.OrdinalIgnoreCase))
-               ?? throw new StreamlabsException($"Streamlabs Desktop has no scene named '{sceneName}'.");
+        var scene = _scenes.FirstOrDefault(s => string.Equals(s.Name, sceneName, StringComparison.OrdinalIgnoreCase));
+        if (scene is null)
+        {
+            await RefreshScenesAsync(ct).ConfigureAwait(false);   // added since the last reload
+            scene = _scenes.FirstOrDefault(s => string.Equals(s.Name, sceneName, StringComparison.OrdinalIgnoreCase));
+        }
+        return scene ?? throw new StreamlabsException($"Streamlabs Desktop has no scene named '{sceneName}'.");
     }
 
     private async Task<SlobsSceneItem> FindItemAsync(string sceneName, string sourceName, CancellationToken ct)
