@@ -60,6 +60,9 @@ public sealed class StreamElementsService : DonationServiceBase
     /// <summary>Handles one activity (also used by tests).</summary>
     internal bool HandleActivity(JsonElement activity) => StreamElementsEventMapper.Map(activity) is { } e && Publish(e);
 
+    /// <summary>Handles one legacy <c>event:test</c> (the dashboard's emulated alerts), published as a test.</summary>
+    internal bool HandleWidgetTest(JsonElement test) => StreamElementsEventMapper.MapWidgetTest(test) is { } e && Publish(e);
+
     // ---- REST API (sub-actions and script functions) ----
 
     /// <summary>The token's channel id, looked up once and cached in donations.json.</summary>
@@ -165,6 +168,9 @@ public sealed class StreamElementsService : DonationServiceBase
                     break;
                 case "event" when args.Count > 0:
                     HandleActivity(args[0]);
+                    break;
+                case "event:test" when args.Count > 0:
+                    HandleWidgetTest(args[0]);
                     break;
             }
         };

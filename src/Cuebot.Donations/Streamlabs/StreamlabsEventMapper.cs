@@ -69,6 +69,9 @@ internal static class StreamlabsEventMapper
         var args = Base(from, message, amount, currency, formatted);
         args["userId"] = m.Str("from_user_id");
         args["donationId"] = m.Str("id");
+        // The documented sample names the receiving streamer in "to": {"name": …}.
+        args["recipient"] = m.Child("to").Str("name");
+        args["iconClassName"] = m.Str("iconClassName");
         args["donationAmount"] = amount;
         args["donationCurrency"] = currency;
         args["donationFormattedAmount"] = formatted;
@@ -130,6 +133,7 @@ internal static class StreamlabsEventMapper
         var name = m.First("name", "from");
         var args = Base(name, "", 0, "", "");
         args["userId"] = m.First("id", "from_user_id", "channelId");
+        args["createdAt"] = m.First("created_at", "publishedAt", "createdAt");
         switch (type.ToLowerInvariant())
         {
             case "follow":
@@ -140,6 +144,8 @@ internal static class StreamlabsEventMapper
                 args["tier"] = m.First("sub_plan", "membershipLevelName");
                 args["tierName"] = m.Str("sub_plan_name");
                 args["subType"] = m.Str("sub_type") is { Length: > 0 } subType ? subType : type;
+                // YouTube sponsors carry "sponsorSince", Mixer subscribers "since".
+                args["since"] = m.First("sponsorSince", "since");
                 args["recipient"] = m.First("gifter") is { Length: > 0 } ? name : "";
                 args["gifter"] = m.Str("gifter");
                 return new DonationEvent(StreamlabsEventTypes.Subscription, keys, args, Relayed: true);
@@ -150,7 +156,8 @@ internal static class StreamlabsEventMapper
                 args["formattedAmount"] = $"{bits} bits";
                 args["message"] = m.Str("message");
                 return new DonationEvent(StreamlabsEventTypes.Bits, keys, args, Relayed: true);
-            case "raid":
+            // The docs' sample says "raid", their type table says "raids".
+            case "raid" or "raids":
                 args["viewers"] = (int)m.Number("raiders");
                 return new DonationEvent(StreamlabsEventTypes.Raid, keys, args, Relayed: true);
             case "host":
@@ -159,6 +166,9 @@ internal static class StreamlabsEventMapper
                 return new DonationEvent(StreamlabsEventTypes.Host, keys, args, Relayed: true);
             case "superchat":
                 // YouTube amounts are in micros ("2000000" = 2.00).
+                // Here "id" is the chat message ("LCC.…"); the sender is "channelId".
+                args["userId"] = m.First("channelId", "id");
+                args["superchatId"] = m.Str("id");
                 var currency = m.Str("currency");
                 var amount = m.Number("amount") / 1_000_000d;
                 args["amount"] = amount;

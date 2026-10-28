@@ -49,6 +49,10 @@ public sealed class CharityModuleTests
         Assert.True(Matches(tip, e, new() { ["minAmount"] = "5", ["campaign"] = "Pally" }));
         Assert.False(Matches(tip, e, new() { ["campaign"] = "other" }));
         Assert.False(Matches(tip, e, new() { ["minAmount"] = "6" }));
+        var replay = new BotEvent(PallyEventTypes.CampaignTip, new Dictionary<string, object?>(e.Args) { ["isReplay"] = true });
+        Assert.True(Matches(tip, replay));
+        Assert.False(Matches(tip, replay, new() { ["includeReplays"] = "false" }));
+        Assert.True(Matches(tip, e, new() { ["includeReplays"] = "false" }));
 
         var incentive = new DonorDriveTriggers().GetTriggers().Single(t => t.TypeId == DonorDriveEventTypes.Incentive);
         var claimed = new BotEvent(DonorDriveEventTypes.Incentive, new Dictionary<string, object?> { ["amount"] = 25d, ["incentive.description"] = "Spin the wheel" });

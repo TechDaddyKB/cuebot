@@ -201,8 +201,15 @@ internal sealed class PallyTriggers : ITriggerProvider
         Event(PallyEventTypes.Connected, "Connected"),
         Event(PallyEventTypes.Disconnected, "Disconnected"),
         Event(PallyEventTypes.CampaignTip, "Campaign tip",
-            [new("campaign", "Campaign (page slug)") { Help = "Leave empty for any of your pages" }, .. DonationFilters.Amount],
-            (e, s) => DonationFilters.MatchesAmount(e, s) && (s["campaign"].Length == 0
+            [
+                new("campaign", "Campaign (page slug)") { Help = "Leave empty for any of your pages" },
+                new("includeReplays", "Include replayed alerts", ParameterKind.Boolean)
+                    { DefaultValue = "true", Help = "\"Replay Alert\" in Pally.gg's activity feed sends a tip again (isReplay = True)" },
+                .. DonationFilters.Amount,
+            ],
+            (e, s) => DonationFilters.MatchesAmount(e, s)
+                && (s.GetBool("includeReplays", true) || e.Args.GetValueOrDefault("isReplay") is not true)
+                && (s["campaign"].Length == 0
                 || string.Equals(Convert.ToString(e.Args.GetValueOrDefault("campaignSlug"), CultureInfo.InvariantCulture), s["campaign"].Trim(), StringComparison.OrdinalIgnoreCase))),
     ];
 

@@ -18,6 +18,7 @@ public sealed class PallyService : DonationServiceBase
     private readonly Func<IWebSocketTransport> _transports;
     private readonly Uri _endpoint;
     private readonly DonationsTimings _timings;
+    private readonly RecentIds _tipIds = new();
     private PallyClient? _client;
 
     public PallyService(JsonFile<DonationsSettings> settings, EventBus bus, AppLog log)
@@ -62,7 +63,13 @@ public sealed class PallyService : DonationServiceBase
     }
 
     /// <summary>Handles one message (also used by tests).</summary>
-    internal bool HandleMessage(JsonElement message) => PallyEventMapper.Map(message) is { } e && Publish(e);
+    internal bool HandleMessage(JsonElement message)
+    {
+        if (PallyEventMapper.Map(message) is not { } e) return false;
+        // A tip seen before is a "Replay Alert" from the activity feed: published again, marked isReplay.
+        e.Args["isReplay"] = e.Args["tipId"] is string { Length: > 0 } id && !_tipIds.Add(id);
+        return Publish(e);
+    }
 
     /// <summary>The websocket URL (contains the key: never log it).</summary>
     internal Uri Url()

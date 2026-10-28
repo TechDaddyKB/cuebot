@@ -54,6 +54,9 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
 
     private BotEvent[] Events(string type) => _published.Where(e => e.Type == type).ToArray();
 
+    /// <summary>The welcome message of docs.streamelements.com/websockets.</summary>
+    private const string Welcome = """{"id":"01J5KXYZ","ts":"2026-03-19T12:00:00Z","type":"welcome","data":{"message":"You are in a maze of dank memes, all alike.","client_id":"01J5KXYZ"}}""";
+
     private static string Activity(string activity) =>
         """{"id":"01HPPM2TQ6CCMFQGHEN8MM1NN0","ts":"2024-02-15T14:52:42Z","type":"message","topic":"channel.activities","room":"5ad23dcc18fff500d78c5348","data":"""
         + activity.ReplaceLineEndings("") + "}";
@@ -62,6 +65,7 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
     {
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
+        socket.Push(Welcome);   // Astro greets every connection; documented clients subscribe on it
         var subscribe = JsonDocument.Parse(await socket.NextSentAsync()).RootElement.Clone();
         socket.Push($$$"""{"id":"r1","ts":"2024-02-15T14:52:42Z","type":"response","nonce":"{{{subscribe.GetProperty("nonce").GetString()}}}","data":{"message":"successfully subscribed to topic","topic":"channel.activities","room":"5ad23dcc18fff500d78c5348"}}""");
         await Wait.UntilAsync(() => _service.State == ConnectionState.Connected, "connected");
@@ -109,11 +113,13 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         var resumed = await _server.NextAsync();
         Assert.Equal("?reconnect_token=resume-123", resumed.Url!.Query);
         Assert.True(await resumed.SilentForAsync(TimeSpan.FromMilliseconds(150)));   // subscriptions are restored by the server
-        resumed.Push("""{"type":"welcome","data":{}}""");
+        resumed.Push(Welcome);
+        await Wait.UntilAsync(() => _service.State == ConnectionState.Connected, "resumed");   // the restored subscription counts
 
         resumed.Close();
         var fresh = await _server.NextAsync();   // the token is used once
         Assert.Equal("", fresh.Url!.Query);
+        fresh.Push(Welcome);
         Assert.Contains("\"subscribe\"", await fresh.NextSentAsync());
     }
 
@@ -129,6 +135,7 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         };
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
+        socket.Push(Welcome);
         var subscribe = JsonDocument.Parse(await socket.NextSentAsync()).RootElement;
         socket.Push($$$"""{"id":"e","type":"response","nonce":"{{{subscribe.GetProperty("nonce").GetString()}}}","error":"err_unauthorized","data":{"message":"invalid token"}}""");
         var status = await rejected.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -176,5 +183,54 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         Assert.All(_service.RecentEvents(), r => Assert.True(r.IsTest));
         Assert.Empty(_server.Urls);
         await Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task Astro_waits_for_the_welcome_before_subscribing()
+    {
+        await _service.ConnectAsync();
+        var socket = await _server.NextAsync();
+        Assert.True(await socket.SilentForAsync(TimeSpan.FromMilliseconds(150)));
+        socket.Push(Welcome);
+        var subscribe = JsonDocument.Parse(await socket.NextSentAsync()).RootElement;
+        Assert.Equal("subscribe", subscribe.GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public async Task Astro_retries_a_rate_limited_or_timed_out_subscription()
+    {
+        await _service.ConnectAsync();
+        var socket = await _server.NextAsync();
+        socket.Push(Welcome);
+        await socket.NextSentAsync();
+        // Documented: rate limit responses carry no nonce.
+        socket.Push("""{"id":"e1","ts":"2026-03-19T12:00:01Z","type":"response","error":"rate_limit_exceeded","data":{"message":"rate limit exceeded"}}""");
+        var again = JsonDocument.Parse(await socket.NextSentAsync()).RootElement.Clone();
+        Assert.Equal("channel.activities", again.GetProperty("data").GetProperty("topic").GetString());
+        socket.Push($$$"""{"id":"e2","type":"response","nonce":"{{{again.GetProperty("nonce").GetString()}}}","error":"err_deadline_exceeded","data":{"message":"authorization timed out"}}""");
+        var third = JsonDocument.Parse(await socket.NextSentAsync()).RootElement.Clone();
+        socket.Push($$$"""{"id":"r1","type":"response","nonce":"{{{third.GetProperty("nonce").GetString()}}}","data":{"message":"successfully subscribed to topic","topic":"channel.activities","room":"5ad23dcc18fff500d78c5348"}}""");
+        await Wait.UntilAsync(() => _service.State == ConnectionState.Connected, "connected");
+    }
+
+    [Fact]
+    public async Task Legacy_realtime_dashboard_emulations_are_published_as_tests()
+    {
+        _service.Settings.Transport = StreamElementsTransport.LegacyRealtime;
+        await _service.ConnectAsync();
+        var socket = await _server.NextAsync();
+        socket.Push("""0{"sid":"s","upgrades":[],"pingInterval":25000,"pingTimeout":5000}""");
+        await socket.NextSentAsync();
+        socket.Push("40");
+        socket.Push("""42["authenticated",{"channelId":"5ad23dcc18fff500d78c5348"}]""");
+        await Wait.UntilAsync(() => _service.State == ConnectionState.Connected, "connected");
+
+        // event:test has the widget onEventReceived shape: {listener, event:{name, amount, message, …}}.
+        socket.Push("""42["event:test",{"listener":"tip-latest","event":{"name":"Emulated","amount":12.5,"message":"emulated tip","type":"tip","_id":"x1"}}]""");
+        socket.Push("""42["event:test",{"listener":"follower-latest","event":{"name":"Someone"}}]""");
+        await Wait.UntilAsync(() => Events(StreamElementsEventTypes.Tip).Length == 1, "emulated tip");
+        var tip = Events(StreamElementsEventTypes.Tip)[0].Args;
+        Assert.Equal(("Emulated", 12.5, "emulated tip", true), (tip["tipUsername"], tip["tipAmount"], tip["tipMessage"], tip["isTest"]));
+        Assert.Empty(Events(StreamElementsEventTypes.Follow));
     }
 }

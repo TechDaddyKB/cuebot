@@ -9,12 +9,19 @@ internal sealed record AstroSessionEnd(string Reason, bool Fatal = false, bool R
 
 /// <summary>
 /// Client for the StreamElements Astro websocket gateway (wss://astro.streamelements.com): subscribes to topics
-/// with the JWT, raises topic messages, follows <c>reconnect</c> hand-offs with their reconnect token (the server
+/// with the JWT once the server's <c>welcome</c> arrives, retries subscriptions Astro refuses only for now
+/// (<c>err_deadline_exceeded</c>, <c>rate_limit_exceeded</c>), raises topic messages, follows <c>reconnect</c> hand-offs with their reconnect token (the server
 /// restores subscriptions), and reconnects with backoff. Websocket PING frames are answered by the runtime.
 /// </summary>
 internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endpoint, DonationsTimings timings, AppLog log)
 {
     public const string Source = "StreamElements";
+
+    /// <summary>Astro's command limit is one subscribe/unsubscribe per 100 ms.</summary>
+    private static readonly TimeSpan CommandSpacing = TimeSpan.FromMilliseconds(110);
+
+    /// <summary>Retries of temporarily refused subscriptions per session.</summary>
+    private const int MaxRetries = 5;
 
     private string _reconnectToken = "";
 
@@ -91,20 +98,25 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
 
         await using var inbox = new TransportInbox(transport, ct);
         var pending = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (!resuming)
-        {
-            foreach (var topic in topics)
-            {
-                var nonce = Guid.NewGuid().ToString("N");
-                pending[nonce] = topic;
-                await transport.SendAsync(SubscribeMessage(topic, token, nonce), ct).ConfigureAwait(false);
-            }
-        }
         Connected?.Invoke();
+        // Astro sends "welcome" right after the upgrade and the documented clients subscribe on it. A resumed session's
+        // subscriptions are restored by the server, so its welcome means they are back.
+        var subscribed = resuming;
+        var welcomed = false;
+        var openDeadline = DateTime.UtcNow + timings.OpenTimeout;
         var failures = 0;
+        var retries = 0;
         while (true)
         {
-            var next = await inbox.ReadAsync(Timeout.InfiniteTimeSpan, ct).ConfigureAwait(false);
+            var timeout = subscribed ? Timeout.InfiniteTimeSpan : openDeadline - DateTime.UtcNow;
+            var next = await inbox.ReadAsync(timeout, ct).ConfigureAwait(false);
+            if (next.TimedOut)
+            {
+                // No welcome in time: subscribe anyway rather than sit idle.
+                await SubscribeAsync(transport, topics, token, pending, ct).ConfigureAwait(false);
+                subscribed = true;
+                continue;
+            }
             if (next.Text is null) return new AstroSessionEnd(transport.CloseReason ?? "connection closed");
             if (JsonReaders.TryParse(next.Text) is not { ValueKind: JsonValueKind.Object } message) continue;
             var data = message.Child("data");
@@ -112,12 +124,37 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
             {
                 case "welcome":
                     onHealthy();
+                    if (welcomed) break;
+                    welcomed = true;
+                    if (resuming)
+                    {
+                        foreach (var restored in topics) Subscribed?.Invoke(restored);
+                    }
+                    else if (!subscribed)
+                    {
+                        await SubscribeAsync(transport, topics, token, pending, ct).ConfigureAwait(false);
+                        subscribed = true;
+                    }
                     break;
                 case "response":
                     var nonce = message.Str("nonce");
                     var topic = pending.Remove(nonce, out var t) ? t : data.Str("topic");
                     if (message.Str("error") is { Length: > 0 } error)
                     {
+                        // "Retry the request" (err_deadline_exceeded) and the command rate limit (no nonce, so every
+                        // unanswered subscription is sent again) are temporary.
+                        if (error is "err_deadline_exceeded" or "rate_limit_exceeded" && retries < MaxRetries)
+                        {
+                            retries++;
+                            var again = error == "rate_limit_exceeded" && nonce.Length == 0
+                                ? pending.Values.Distinct(StringComparer.Ordinal).ToArray()
+                                : topic.Length > 0 ? [topic] : [];
+                            if (error == "rate_limit_exceeded" && nonce.Length == 0) pending.Clear();
+                            log.Warn(Source, $"Astro answered {error}; subscribing to {string.Join(", ", again)} again");
+                            await Task.Delay(timings.ReconnectDelay, ct).ConfigureAwait(false);
+                            await SubscribeAsync(transport, again, token, pending, ct).ConfigureAwait(false);
+                            break;
+                        }
                         failures++;
                         var description = data.Str("message");
                         SubscriptionFailed?.Invoke(topic, error, description);
@@ -149,6 +186,19 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
                     _reconnectToken = data.Str("reconnect_token") is { Length: > 0 } rt ? rt : message.Str("reconnect_token");
                     return new AstroSessionEnd("server asked to reconnect", ReconnectNow: true);
             }
+        }
+    }
+
+    /// <summary>One subscribe per topic; Astro allows one command per 100 ms.</summary>
+    private async Task SubscribeAsync(IWebSocketTransport transport, IReadOnlyList<string> topics, string token,
+        Dictionary<string, string> pending, CancellationToken ct)
+    {
+        for (var i = 0; i < topics.Count; i++)
+        {
+            if (i > 0) await Task.Delay(CommandSpacing, ct).ConfigureAwait(false);
+            var nonce = Guid.NewGuid().ToString("N");
+            pending[nonce] = topics[i];
+            await transport.SendAsync(SubscribeMessage(topics[i], token, nonce), ct).ConfigureAwait(false);
         }
     }
 }

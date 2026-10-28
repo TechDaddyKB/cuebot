@@ -68,8 +68,27 @@ internal static partial class DonorDriveEventMapper
 
     public static string DonationId(JsonElement donation) => donation.Str("donationID");
 
+    /// <summary>One entry of the <c>donations</c> list (the donation fields of the Public API, with Streamer.bot's donor names).</summary>
+    public static Dictionary<string, object?> Summary(JsonElement d)
+    {
+        var name = d.Str("displayName");
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["donationId"] = DonationId(d),
+            ["donorName"] = name.Length > 0 ? name : "Anonymous",
+            ["donorAmount"] = Math.Round(d.Number("amount"), 2),
+            ["donorMessage"] = d.Str("message"),
+            ["donorAvatarUrl"] = d.Str("avatarImageURL"),
+            ["donorIsAnonymous"] = name.Length == 0,
+            ["recipientName"] = d.Str("recipientName"),
+            ["incentiveId"] = d.Str("incentiveID"),
+            ["createdAt"] = Date(d.Str("createdDateUTC")),
+        };
+    }
+
     /// <summary>A donation (and its incentive, when it claimed one). Anonymous donors have no displayName/amount.</summary>
-    public static DonationEvent Donation(JsonElement d, DonorDriveProfile profile, DonorDriveIncentive? incentive, string currency, bool isTest = false)
+    public static DonationEvent Donation(JsonElement d, DonorDriveProfile profile, DonorDriveIncentive? incentive, string currency, bool isTest = false,
+        IReadOnlyList<Dictionary<string, object?>>? recent = null)
     {
         var name = d.Str("displayName");
         var anonymous = name.Length == 0;
@@ -78,7 +97,7 @@ internal static partial class DonorDriveEventMapper
         var amount = Math.Round(d.Number("amount"), 2);
         var message = d.Str("message");
         var formatted = hasAmount ? Money.Format(amount, currency) : "";
-        var args = Base(name, message, amount, currency, formatted, profile, isTest);
+        var args = Base(name, message, amount, currency, formatted, profile, isTest, recent);
         args["donationId"] = DonationId(d);
         args["donorId"] = d.Str("donorID");
         args["donorName"] = name;
@@ -102,9 +121,10 @@ internal static partial class DonorDriveEventMapper
     public static DonationEvent IncentiveEvent(DonationEvent donation, string donationId) =>
         new(DonorDriveEventTypes.Incentive, [$"donordrive:incentive:{donationId}"], new Dictionary<string, object?>(donation.Args, StringComparer.OrdinalIgnoreCase));
 
-    public static DonationEvent ProfileUpdated(DonorDriveProfile profile, DonorDriveProfile? previous, string currency, bool isTest = false)
+    public static DonationEvent ProfileUpdated(DonorDriveProfile profile, DonorDriveProfile? previous, string currency, bool isTest = false,
+        IReadOnlyList<Dictionary<string, object?>>? recent = null)
     {
-        var args = Base(profile.Name, "", 0, currency, "", profile, isTest);
+        var args = Base(profile.Name, "", 0, currency, "", profile, isTest, recent);
         args["name"] = profile.Name;
         args["teamName"] = profile.TeamName;
         args["avatarUrl"] = profile.AvatarUrl;
@@ -117,7 +137,7 @@ internal static partial class DonorDriveEventMapper
     }
 
     private static Dictionary<string, object?> Base(string user, string message, double amount, string currency, string formatted,
-        DonorDriveProfile profile, bool isTest) =>
+        DonorDriveProfile profile, bool isTest, IReadOnlyList<Dictionary<string, object?>>? recent) =>
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["service"] = Service,
@@ -138,7 +158,9 @@ internal static partial class DonorDriveEventMapper
             ["raised"] = profile.Raised,
             ["formattedGoal"] = Money.Format(profile.Goal, currency),
             ["formattedRaised"] = Money.Format(profile.Raised, currency),
-            ["donations"] = profile.NumDonations,
+            // Streamer.bot documents "donations" as "An array of the donations"; the count is numDonations.
+            ["donations"] = recent?.ToList() ?? [],
+            ["numDonations"] = profile.NumDonations,
             ["isParticipant"] = !profile.IsTeam,
             ["isTeam"] = profile.IsTeam,
             ["isTest"] = isTest,
