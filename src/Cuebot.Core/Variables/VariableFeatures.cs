@@ -26,6 +26,7 @@ internal static class VariableFeatures
         services.AddSingleton<ISubActionHandler, DeleteUserVariableSubAction>();
         services.AddSingleton<ISubActionHandler, ClearTemporaryUserVariablesSubAction>();
         services.AddSingleton<ISubActionHandler, RandomNumberSubAction>();
+        services.AddSingleton<ISubActionHandler, PickColorSubAction>();
         return services;
     }
 }

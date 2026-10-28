@@ -154,3 +154,49 @@ public sealed class RandomNumberSubAction : ISubActionHandler
         return Task.FromResult(SubActionResult.Next);
     }
 }
+
+/// <summary>
+/// Streamer.bot "Pick Color": the colour is chosen when editing (#RRGGBB or #AARRGGBB); running the step fills
+/// %name.color.a/r/g/b%, %name.html% (#RRGGBB), %name.htmlalpha% (#AARRGGBB) and %name.obs% (OBS's ABGR integer).
+/// </summary>
+public sealed class PickColorSubAction : ISubActionHandler
+{
+    public string TypeId => "core.pickColor";
+    public string Category => Categories.Variables;
+    public string DisplayName => "Pick color";
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        new("color", "Color") { DefaultValue = "#FF9146FF", Help = "#RRGGBB or #AARRGGBB" },
+        new("name", "Variable name") { DefaultValue = "color", Help = "Without %; e.g. color gives %color.html%" },
+    ];
+
+    /// <summary>Parses #RGB, #RRGGBB or #AARRGGBB (the # is optional).</summary>
+    public static bool TryParse(string text, out byte a, out byte r, out byte g, out byte b)
+    {
+        a = 255; r = g = b = 0;
+        var hex = text.Trim().TrimStart('#');
+        if (hex.Length == 3) hex = string.Concat(hex.Select(c => new string(c, 2)));
+        if (hex.Length is not (6 or 8) || !uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var v))
+            return false;
+        if (hex.Length == 8) a = (byte)(v >> 24);
+        r = (byte)(v >> 16);
+        g = (byte)(v >> 8);
+        b = (byte)v;
+        return true;
+    }
+
+    public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        if (!TryParse(p["color"], out var a, out var r, out var g, out var b)) throw new ArgumentException($"'{p["color"]}' is not a colour (use #RRGGBB)");
+        var name = p["name"].Trim().Trim('%');
+        if (name.Length == 0) name = "color";
+        context.Args[name + ".color.a"] = (int)a;
+        context.Args[name + ".color.r"] = (int)r;
+        context.Args[name + ".color.g"] = (int)g;
+        context.Args[name + ".color.b"] = (int)b;
+        context.Args[name + ".html"] = $"#{r:X2}{g:X2}{b:X2}";
+        context.Args[name + ".htmlalpha"] = $"#{a:X2}{r:X2}{g:X2}{b:X2}";
+        context.Args[name + ".obs"] = (long)(((uint)a << 24) | ((uint)b << 16) | ((uint)g << 8) | r);
+        return Task.FromResult(SubActionResult.Next);
+    }
+}

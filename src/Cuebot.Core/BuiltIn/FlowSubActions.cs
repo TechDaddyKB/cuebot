@@ -146,7 +146,7 @@ public sealed class CommentSubAction : ISubActionHandler
 public sealed class SendSignalSubAction(SignalService signals) : ISubActionHandler
 {
     /// <summary>Run bookkeeping that never travels with a signal.</summary>
-    private static readonly string[] RunArgs = ["actionName", "actionId", "runId", "actionQueuedAt"];
+    private static readonly string[] RunArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt"];
 
     public string TypeId => "core.sendSignal";
     public string Category => Categories.Core;

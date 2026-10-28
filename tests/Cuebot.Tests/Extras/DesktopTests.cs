@@ -94,6 +94,7 @@ public sealed class HotkeyTests : IDisposable
         _backend.Press(scene.Id.ToString("N"));
         var e = Assert.Single(_pressed.Events);
         Assert.Equal(("Scene", "Ctrl+F1", scene.Id.ToString()), (e.Args["hotkeyName"], e.Args["hotkey"], e.Args["hotkeyId"]));
+        Assert.Equal(("F1", "Ctrl", true, false, false), (e.Args["key"], e.Args["modifier"], e.Args["hasCtrl"], e.Args["hasAlt"], e.Args["hasShift"]));
         await Task.Delay(50);
         Assert.Equal([("Switch scene", "Ctrl+F1")], ran);
 

@@ -122,6 +122,7 @@ public class CommandServiceTests : IDisposable
         Assert.Equal(CommandService.CooldownEvent, e.Type);
         Assert.Equal("User", e.Args["cooldownType"]);
         Assert.Equal(45, e.Args["remaining"]);
+        Assert.Equal((45, 0, 45), (e.Args["cooldownLeft"], e.Args["globalCooldownLeft"], e.Args["userCooldownLeft"]));
         Assert.Equal("Hello", e.Args["commandName"]);
         Assert.Single(Triggered("!hello", user: "bob", userId: "2"));
         Assert.Equal(1L, _store.GetUserCounter(_store.Snapshot[0].Id, CommandStore.UserKey("Twitch", "1", "alice")));

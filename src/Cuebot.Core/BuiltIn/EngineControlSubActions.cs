@@ -368,7 +368,7 @@ public sealed class TriggerCustomEventSubAction(EventBus bus) : ISubActionHandle
     /// <summary>The event the "Custom code event" trigger listens to (owned by the scripting module).</summary>
     public const string EventType = "custom.codeEvent";
 
-    private static readonly string[] RunArgs = ["actionName", "actionId", "runId", "actionQueuedAt", "triggerType", "triggerName", "eventType"];
+    private static readonly string[] RunArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt", "triggerType", "triggerName", "eventType"];
 
     public string TypeId => "core.triggerCustomEvent";
     public string Category => Categories.Core;

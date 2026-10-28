@@ -38,14 +38,46 @@ public sealed class VariableTriggers : ITriggerProvider, IDisposable
         Trigger("variables.globalCreated", "Global variable created", VariableEvents.GlobalCreated),
         Trigger("variables.globalUpdated", "Global variable updated", VariableEvents.GlobalUpdated),
         Trigger("variables.globalDeleted", "Global variable deleted", VariableEvents.GlobalDeleted),
-        Trigger("variables.userUpdated", "User variable updated", VariableEvents.UserUpdated),
+        Trigger("variables.userUpdated", "User variable updated", VariableEvents.UserUpdated, user: true),
     ];
 
-    private static EventTriggerType Trigger(string id, string name, string eventType) =>
+    public const string Either = "Either";
+    public const string Yes = "Yes";
+    public const string No = "No";
+
+    private static EventTriggerType Trigger(string id, string name, string eventType, bool user = false) =>
         new(id, Categories.Variables, name, eventType,
-            [new ParameterDescriptor("variable", "Variable name") { Help = "Leave empty for any variable" }],
-            (e, settings, _) => settings["variable"].Trim().Length == 0
-                || string.Equals(e.Args.GetValueOrDefault("variableName") as string, settings["variable"].Trim(), StringComparison.OrdinalIgnoreCase));
+            [
+                new ParameterDescriptor("variable", "Variable name") { Help = "Leave empty for any variable" },
+                new ParameterDescriptor("persisted", "Persisted", ParameterKind.Choice) { DefaultValue = Either, Choices = [Either, Yes, No] },
+                .. user
+                    ? new[]
+                    {
+                        new ParameterDescriptor("userLogin", "User login") { Help = "Leave empty for any user" },
+                        new ParameterDescriptor("platform", "Platform") { Help = "Leave empty for any platform" },
+                    }
+                    : [],
+            ],
+            (e, settings, _) => Matches(e.Args, settings, user));
+
+    private static bool Matches(IReadOnlyDictionary<string, object?> args, ParameterValues settings, bool user)
+    {
+        var variable = settings["variable"].Trim();
+        if (variable.Length > 0 && !string.Equals(args.GetValueOrDefault("variableName") as string, variable, StringComparison.OrdinalIgnoreCase))
+            return false;
+        var persisted = args.GetValueOrDefault("persisted") is true;
+        switch (settings["persisted"].Trim())
+        {
+            case Yes when !persisted:
+            case No when persisted:
+                return false;
+        }
+        if (!user) return true;
+        var login = settings["userLogin"].Trim().TrimStart('@');
+        var platform = settings["platform"].Trim();
+        return (login.Length == 0 || string.Equals(args.GetValueOrDefault("userName") as string, login, StringComparison.OrdinalIgnoreCase))
+               && (platform.Length == 0 || string.Equals(args.GetValueOrDefault("platform") as string, platform, StringComparison.OrdinalIgnoreCase));
+    }
 
     private void OnGlobal(GlobalVariableChange c)
     {
@@ -55,13 +87,27 @@ public sealed class VariableTriggers : ITriggerProvider, IDisposable
             VariableChangeKind.Deleted => VariableEvents.GlobalDeleted,
             _ => VariableEvents.GlobalUpdated,
         };
-        _bus.Publish(new BotEvent(type, new Dictionary<string, object?>
+        var args = new Dictionary<string, object?>
         {
             ["variableName"] = c.Name,
             ["oldValue"] = c.OldValue,
             ["newValue"] = c.NewValue,
             ["persisted"] = c.Persisted,
-        }));
+            // Streamer.bot names.
+            ["global.name"] = c.Name,
+            ["global.persisted"] = c.Persisted,
+        };
+        if (c.Kind != VariableChangeKind.Deleted)
+        {
+            args["global.lastWrite"] = DateTime.Now;
+            if (c.Kind == VariableChangeKind.Created) args["global.value"] = c.NewValue;
+            else
+            {
+                args["global.newValue"] = c.NewValue;
+                args["global.oldValue"] = c.OldValue;
+            }
+        }
+        _bus.Publish(new BotEvent(type, args));
     }
 
     private void OnUser(UserVariableChange c)
@@ -77,6 +123,15 @@ public sealed class VariableTriggers : ITriggerProvider, IDisposable
             ["userId"] = c.UserId,
             ["userName"] = c.UserName,
             ["user"] = c.UserName,
+            ["global.name"] = c.Name,
+            ["global.newValue"] = c.NewValue,
+            ["global.oldValue"] = c.OldValue,
+            ["global.persisted"] = c.Persisted,
+            ["global.lastWrite"] = DateTime.Now,
+            ["global.userId"] = c.UserId,
+            ["global.userType"] = c.Platform,
+            ["global.userLogin"] = c.UserName,
+            ["global.userName"] = c.UserName,
         }));
     }
 

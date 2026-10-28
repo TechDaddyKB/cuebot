@@ -24,7 +24,7 @@ public sealed class ActionEngine : IDisposable
     private const string Source = "Actions";
 
     /// <summary>Arguments the engine adds to every run; Requeue drops them so the replay gets fresh ones.</summary>
-    private static readonly string[] EngineArgs = ["actionName", "actionId", "runId", "actionQueuedAt"];
+    private static readonly string[] EngineArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt"];
 
     private readonly EventBus _bus;
     private readonly ProfileService _profile;
@@ -187,6 +187,7 @@ public sealed class ActionEngine : IDisposable
         runArgs["actionName"] = action.Name;
         runArgs["actionId"] = action.Id.ToString();
         runArgs["runId"] = runId.ToString();
+        runArgs["runningActionId"] = runId.ToString(); // Streamer.bot name
         runArgs["actionQueuedAt"] = queuedAt;
 
         var tracked = !action.ExcludeFromHistory;

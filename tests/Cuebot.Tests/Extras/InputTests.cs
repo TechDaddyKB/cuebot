@@ -166,6 +166,7 @@ public sealed class InputTests : IDisposable
         source.Click(new MouseClick(MouseButton.Right, 10, 20, HotkeyModifiers.Ctrl));
         var e = Assert.Single(recorder.Events);
         Assert.Equal(("Right", 10, 20, "Ctrl"), (e.Args["mouseButton"], e.Args["mouseX"], e.Args["mouseY"], e.Args["modifiers"]));
+        Assert.Equal(("Right", 1, 10, 20), (e.Args["mouse.button"], e.Args["mouse.clicks"], e.Args["mouse.x"], e.Args["mouse.y"]));
 
         wanted = false;
         service.Sync();

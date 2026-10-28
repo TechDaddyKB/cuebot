@@ -77,14 +77,18 @@ public sealed class WatcherTests : IAsyncDisposable
         Assert.Equal("Drops", created.Args["watcherName"]);
         Assert.Equal("a.txt", created.Args["fileName"]);
         Assert.Equal(Path.GetFullPath(file), Path.GetFullPath((string)created.Args["filePath"]!));
+        Assert.Equal((watched, "*.txt"), (created.Args["watcherFolder"], created.Args["watcherFilter"]));
+        Assert.Equal(created.Args["filePath"], created.Args["fullPath"]);
 
         await File.AppendAllTextAsync(file, "2");
-        await WaitForAsync(e => e.Type == WatcherEvents.FileChanged);
+        var changed = await WaitForAsync(e => e.Type == WatcherEvents.FileChanged);
+        Assert.Equal(changed.Args["filePath"], changed.Args["fullPath"]);
 
         var renamed = Path.Combine(watched, "b.txt");
         File.Move(file, renamed);
         var rename = await WaitForAsync(e => e.Type == WatcherEvents.FileRenamed);
         Assert.Equal("a.txt", rename.Args["oldFileName"]);
+        Assert.Equal(rename.Args["oldFilePath"], rename.Args["oldFullPath"]);
         Assert.Equal("b.txt", rename.Args["fileName"]);
 
         File.Delete(renamed);
