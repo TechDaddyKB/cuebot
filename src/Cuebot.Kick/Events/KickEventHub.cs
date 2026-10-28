@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Cuebot.Core.Events;
+using Cuebot.Kick.Api;
+using Cuebot.Kick.Compat;
 
 namespace Cuebot.Kick.Events;
 
@@ -15,7 +17,38 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
     private readonly RecentKeys _recent = new(dedupeWindow);
     private readonly ConcurrentDictionary<string, string> _userIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _liveGate = new();
+    private readonly object _memoryGate = new();
+    private readonly HashSet<string> _sent = new(StringComparer.Ordinal);
+    private readonly Queue<string> _sentOrder = new();
     private bool? _isLive;
+    private (string Title, string CategoryId, string CategoryName, string CategoryThumbnail)? _channel;
+    private (string Title, string StartedAt)? _stream;
+
+    /// <summary>The broadcaster account for Streamer.bot's broadcastUser* arguments (null until signed in).</summary>
+    public Func<KickBroadcasterArgs?>? Broadcaster { get; set; }
+
+    /// <summary>A known reward by id, for the reward settings Streamer.bot reports on redemptions.</summary>
+    public Func<string, KickReward?>? FindReward { get; set; }
+
+    /// <summary>The current title and category, so the next channel update can report what changed.</summary>
+    public void SeedChannel(KickChannel channel)
+    {
+        lock (_memoryGate)
+            _channel = (channel.Title, channel.Category is { Id: > 0 } c ? KickArgs.Id(c.Id) : "", channel.Category?.Name ?? "",
+                channel.Category?.Thumbnail ?? "");
+    }
+
+    /// <summary>Remembers a message Cuebot sent, so its echo in chat is flagged <c>isInternal</c>.</summary>
+    public void MarkSent(string? messageId)
+    {
+        if (string.IsNullOrEmpty(messageId)) return;
+        lock (_memoryGate)
+        {
+            if (!_sent.Add(messageId)) return;
+            _sentOrder.Enqueue(messageId);
+            if (_sentOrder.Count > 200) _sent.Remove(_sentOrder.Dequeue());
+        }
+    }
 
     /// <summary>Raised after each published kick.* event.</summary>
     public event Action<KickEvent>? Published;
@@ -49,9 +82,68 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
     {
         if (!ShouldPublish(e)) return;
         Remember(e.Args);
-        bus.Publish(new BotEvent(e.Type, e.Args));
+        bus.Publish(new BotEvent(e.Type, WithStreamerBotNames(e)));
         PublishNeutral(e);
         Published?.Invoke(e);
+    }
+
+    /// <summary>
+    /// The event's arguments plus Streamer.bot's names, including those that need memory across events: old title
+    /// and category, the stream's category and start, whether a chat message was sent by Cuebot.
+    /// </summary>
+    private Dictionary<string, object?> WithStreamerBotNames(KickEvent e)
+    {
+        var a = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase);
+        lock (_memoryGate)
+        {
+            switch (e.Type)
+            {
+                case KickEventTypes.ChatMessage:
+                    a.TryAdd("isInternal", _sent.Contains(a.GetString("messageId")));
+                    break;
+                case KickEventTypes.RewardRedemption when FindReward?.Invoke(a.GetString("rewardId")) is { } reward:
+                    a.TryAdd("rewardDescription", reward.Description);
+                    a.TryAdd("rewardBackgroundColor", reward.BackgroundColor);
+                    a.TryAdd("rewardSkipsQueue", reward.SkipsRequestQueue);
+                    a.TryAdd("rewardRequiresUserInput", reward.IsUserInputRequired);
+                    break;
+                case KickEventTypes.ChannelUpdate:
+                    var now = (a.GetString("title"), a.GetString("categoryId"), a.GetString("category"), a.GetString("categoryThumbnail"));
+                    if (_channel is { } old)
+                    {
+                        a["statusUpdated"] = old.Title != now.Item1;
+                        a["categoryUpdated"] = old.CategoryId != now.Item2;
+                        a["oldStatus"] = old.Title;
+                        a["oldCategoryId"] = old.CategoryId;
+                        a["oldCategoryName"] = old.CategoryName;
+                        a["oldCategoryThumbnail"] = old.CategoryThumbnail;
+                        if (now.Item4.Length == 0 && !a.ContainsKey("categoryThumbnail") && old.CategoryId == now.Item2)
+                            now.Item4 = old.CategoryThumbnail;
+                    }
+                    _channel = now;
+                    a.TryAdd("categoryThumbnail", now.Item4);
+                    break;
+                case KickEventTypes.StreamOnline:
+                    _stream = (a.GetString("title"), a.GetString("startedAt"));
+                    if (_channel is { } live)
+                    {
+                        a.TryAdd("categoryName", live.CategoryName);
+                        a.TryAdd("categoryId", live.CategoryId);
+                        a.TryAdd("categoryThumbnail", live.CategoryThumbnail);
+                    }
+                    break;
+                case KickEventTypes.StreamOffline:
+                    if (_stream is { } ended)
+                    {
+                        a.TryAdd("title", ended.Title);
+                        if (ended.StartedAt.Length > 0) a.TryAdd("startedAt", ended.StartedAt);
+                    }
+                    _stream = null;
+                    break;
+            }
+        }
+        StreamerBotVariables.Apply(e.Type, a, Broadcaster?.Invoke(), time.GetLocalNow());
+        return a;
     }
 
     private bool ShouldPublish(KickEvent e)

@@ -71,6 +71,15 @@ internal static partial class KickArgs
         args["subscribedMonths"] = sub?.Count ?? 0;
         args["badges"] = string.Join(", ", badges.Select(b => b.Type));
         args["color"] = actor.Color;
+        // Streamer.bot (KickChat): badgeCount, badge (list) and badge.#.id / .name / .info
+        args["badgeCount"] = badges.Count;
+        args["badge"] = badges.Select(b => new Dictionary<string, object?> { ["id"] = b.Type, ["name"] = b.Text, ["info"] = b.Count }).ToList();
+        for (var i = 0; i < badges.Count; i++)
+        {
+            args[$"badge.{i}.id"] = badges[i].Type;
+            args[$"badge.{i}.name"] = badges[i].Text;
+            args[$"badge.{i}.info"] = badges[i].Count;
+        }
         return args;
     }
 

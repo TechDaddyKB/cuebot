@@ -61,6 +61,7 @@ internal sealed class KickAddUserToGroupSubAction(KickService kick, GroupStore g
         var (group, userId, user) = Read(p);
         if (!p.GetBool("create", true) && !Groups.Exists(group)) throw new InvalidOperationException($"No group named '{group}'");
         context.Args["groupUserAdded"] = Groups.AddUser(group, KickArgs.Platform, userId, user, createGroup: true);
+        context.Args["addResult"] = context.Args["groupUserAdded"];
         return Task.FromResult(SubActionResult.Next);
     }
 }
@@ -76,6 +77,7 @@ internal sealed class KickRemoveUserFromGroupSubAction(KickService kick, GroupSt
     {
         var (group, userId, user) = Read(p);
         context.Args["groupUserRemoved"] = Groups.RemoveUser(group, KickArgs.Platform, userId, user);
+        context.Args["removeResult"] = context.Args["groupUserRemoved"];
         return Task.FromResult(SubActionResult.Next);
     }
 }
@@ -101,6 +103,12 @@ internal sealed class KickUserInGroupSubAction(KickService kick, GroupStore grou
         var (group, userId, user) = Read(p);
         var inGroup = Groups.Contains(group, KickArgs.Platform, userId, user);
         if (p["argument"].Trim().Length > 0) context.Args[p["argument"].Trim()] = inGroup;
+        // Streamer.bot: inGroup plus foundUser, foundUserName, foundUserId, foundUserType
+        context.Args.TryAdd("inGroup", inGroup);
+        context.Args["foundUser"] = user;
+        context.Args["foundUserName"] = user;
+        context.Args["foundUserId"] = userId;
+        context.Args["foundUserType"] = "kick";
         return Task.FromResult(SubActionResult.TakeBranch(inGroup ? True : False));
     }
 }
@@ -150,6 +158,7 @@ internal sealed class KickAddRandomUsersSubAction(KickService kick, UserRegistry
             context.Args[$"{prefix}{i}"] = picked[i].DisplayName.Length > 0 ? picked[i].DisplayName : picked[i].UserName;
             context.Args[$"{prefix}Name{i}"] = picked[i].UserName;
             context.Args[$"{prefix}Id{i}"] = picked[i].UserId;
+            context.Args[$"{prefix}Type{i}"] = "kick";
         }
         return Task.FromResult(SubActionResult.Next);
     }

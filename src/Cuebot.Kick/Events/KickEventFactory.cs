@@ -36,11 +36,13 @@ internal static class KickEventFactory
     }
 
     /// <summary>A new subscription (1 month) or a renewal (more months).</summary>
-    public static KickEvent Subscription(string source, KickActor subscriber, int months, bool? isRenewal = null)
+    public static KickEvent Subscription(string source, KickActor subscriber, int months, bool? isRenewal = null,
+        DateTimeOffset? createdAt = null, DateTimeOffset? expiresAt = null)
     {
         var args = KickArgs.New(source).WithUser(subscriber);
         args["months"] = months;
         args["cumulativeMonths"] = months;
+        Times(args, createdAt, expiresAt);
         var renewal = isRenewal ?? months > 1;
         return new KickEvent(renewal ? KickEventTypes.Resubscription : KickEventTypes.Subscription, args, "sub:" + Key(subscriber));
     }
@@ -49,7 +51,8 @@ internal static class KickEventFactory
     /// Gifted subscriptions: one <c>giftSubscription</c> per recipient, plus a <c>massGiftSubscription</c> first
     /// when several were gifted at once.
     /// </summary>
-    public static IReadOnlyList<KickEvent> Gifts(string source, KickActor gifter, IReadOnlyList<KickActor> recipients, long gifterTotal = 0)
+    public static IReadOnlyList<KickEvent> Gifts(string source, KickActor gifter, IReadOnlyList<KickActor> recipients, long gifterTotal = 0,
+        DateTimeOffset? createdAt = null, DateTimeOffset? expiresAt = null)
     {
         var events = new List<KickEvent>();
         var mass = recipients.Count > 1;
@@ -59,6 +62,17 @@ internal static class KickEventFactory
             args["gifts"] = recipients.Count;
             args["recipients"] = string.Join(", ", recipients.Select(r => r.UserName));
             if (gifterTotal > 0) args["totalGifted"] = gifterTotal;
+            Times(args, createdAt, expiresAt);
+            for (var i = 0; i < recipients.Count; i++)
+            {
+                // Streamer.bot: recipient.#.userName, .userLogin, .userId, .profilePicture, .platform
+                var r = recipients[i];
+                args[$"recipient.{i}.userName"] = r.UserName;
+                args[$"recipient.{i}.userLogin"] = r.Slug.Length > 0 ? r.Slug : r.UserName;
+                args[$"recipient.{i}.userId"] = r.Id > 0 ? KickArgs.Id(r.Id) : "";
+                args[$"recipient.{i}.profilePicture"] = r.ProfilePicture;
+                args[$"recipient.{i}.platform"] = "kick";
+            }
             events.Add(new KickEvent(KickEventTypes.MassGiftSubscription, args,
                 "gifts:" + Key(gifter) + ":" + string.Join(',', recipients.Select(Key).Order(StringComparer.Ordinal))));
         }
@@ -68,12 +82,15 @@ internal static class KickEventFactory
             args["fromMassGift"] = mass;
             args["gifts"] = recipients.Count;
             if (gifterTotal > 0) args["totalGifted"] = gifterTotal;
+            if (recipient.ProfilePicture.Length > 0) args["recipientProfilePicture"] = recipient.ProfilePicture;
+            Times(args, createdAt, expiresAt);
             events.Add(new KickEvent(KickEventTypes.GiftSubscription, args, "gift:" + Key(recipient)));
         }
         return events;
     }
 
-    public static KickEvent Kicks(string source, KickActor sender, long amount, string giftName, string giftType, string giftTier, string message)
+    public static KickEvent Kicks(string source, KickActor sender, long amount, string giftName, string giftType, string giftTier, string message,
+        long pinnedTimeSeconds = 0, string createdAt = "")
     {
         var args = KickArgs.New(source).WithUser(sender);
         args["kicks"] = amount;
@@ -82,11 +99,13 @@ internal static class KickEventFactory
         args["giftType"] = giftType;
         args["giftTier"] = giftTier;
         args["message"] = message;
+        args["pinnedTimeSeconds"] = pinnedTimeSeconds;
+        if (createdAt.Length > 0) args["createdAt"] = createdAt;
         return new KickEvent(KickEventTypes.KicksGifted, args, $"kicks:{Key(sender)}:{amount}:{giftName}");
     }
 
     public static KickEvent Reward(string source, KickActor redeemer, string rewardId, string title, long cost, string userInput,
-        string status, string redemptionId)
+        string status, string redemptionId, string description = "")
     {
         var args = KickArgs.New(source).WithUser(redeemer);
         args["rewardId"] = rewardId;
@@ -96,6 +115,7 @@ internal static class KickEventFactory
         args["rawInput"] = userInput;
         args["status"] = status;
         args["redemptionId"] = redemptionId;
+        if (description.Length > 0) args["rewardDescription"] = description;
         return new KickEvent(KickEventTypes.RewardRedemption, args, $"reward:{Key(redeemer)}:{title.ToLowerInvariant()}:{status}");
     }
 
@@ -123,7 +143,8 @@ internal static class KickEventFactory
         return new KickEvent(KickEventTypes.StreamOffline, args, "stream:offline");
     }
 
-    public static KickEvent ChannelUpdate(string source, string title, string category, long categoryId, string language, bool isMature)
+    public static KickEvent ChannelUpdate(string source, string title, string category, long categoryId, string language, bool isMature,
+        string categoryThumbnail = "")
     {
         var args = KickArgs.New(source);
         args["title"] = title;
@@ -132,6 +153,7 @@ internal static class KickEventFactory
         args["categoryId"] = categoryId > 0 ? KickArgs.Id(categoryId) : "";
         args["language"] = language;
         args["isMature"] = isMature;
+        if (categoryThumbnail.Length > 0) args["categoryThumbnail"] = categoryThumbnail;
         return new KickEvent(KickEventTypes.ChannelUpdate, args, $"meta:{title}:{categoryId}");
     }
 
@@ -145,7 +167,7 @@ internal static class KickEventFactory
 
     /// <summary>A ban (no duration) or a timeout (<paramref name="durationSeconds"/> &gt; 0).</summary>
     public static KickEvent Ban(string source, KickActor target, KickActor? moderator, long durationSeconds, string reason,
-        DateTimeOffset? expiresAt)
+        DateTimeOffset? expiresAt, DateTimeOffset? bannedAt = null)
     {
         var args = KickArgs.New(source).WithUser(target);
         if (moderator is not null) args.WithUser(moderator, "moderator");
@@ -154,6 +176,7 @@ internal static class KickEventFactory
         args["duration"] = timeout ? durationSeconds : 0;
         args["isPermanent"] = !timeout;
         if (expiresAt is { } t) args["expiresAt"] = t.ToString("o");
+        if (bannedAt is { } b) args["bannedAt"] = b.ToString("o");
         return new KickEvent(timeout ? KickEventTypes.UserTimedOut : KickEventTypes.UserBanned, args, "ban:" + Key(target));
     }
 
@@ -174,6 +197,13 @@ internal static class KickEventFactory
 
     public static KickEvent ChatCleared(string source, string id) =>
         new(KickEventTypes.ChatCleared, KickArgs.New(source), "cleared:" + id);
+
+    /// <summary>Streamer.bot's subscribedAt and expiresAt (local DateTime) when the source sent them.</summary>
+    private static void Times(Dictionary<string, object?> args, DateTimeOffset? createdAt, DateTimeOffset? expiresAt)
+    {
+        if (createdAt is { } c) args["subscribedAt"] = c.LocalDateTime;
+        if (expiresAt is { } x) args["expiresAt"] = x.LocalDateTime;
+    }
 
     /// <summary>Lower-case name when known (some sources send no ids), otherwise the id.</summary>
     private static string Key(KickActor actor) => actor.UserName.Length > 0 ? actor.UserName.ToLowerInvariant() : KickArgs.Id(actor.Id);

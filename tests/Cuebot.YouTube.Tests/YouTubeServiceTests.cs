@@ -289,6 +289,57 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Published_events_and_ban_sub_actions_carry_Streamer_bot_names()
+    {
+        await ConnectLiveAsync();
+        _chatPages.Enqueue(Page("p2", 0, Text("m1", "spam spam", Author(Alice, "Alice"))));
+        var chat = await WaitForEvent(YouTubeEventTypes.ChatMessage);
+        Assert.Equal("Dev testing", chat.Args["broadcast.title"]);
+        Assert.Equal("b1", chat.Args["broadcast.id"]);
+        Assert.Equal("youtube", chat.Args["userType"]);
+        Assert.Equal("spam", chat.Args["input1"]);
+
+        var root = Path.Combine(_dataDir, "engine");
+        var services = new ServiceCollection().AddCuebotCore(new AppPaths(root));
+        foreach (var handler in Cuebot.YouTube.SubActions.YouTubeSubActions.Create(_service)) services.AddSingleton(handler);
+        var capture = new CaptureArgs();
+        services.AddSingleton<ISubActionHandler>(capture);
+        await using var provider = services.BuildServiceProvider();
+        foreach (var (type, result) in new[] { ("youtube.banUser", "banResult"), ("youtube.timeoutUser", "timeoutResult") })
+        {
+            var action = new ActionDefinition
+            {
+                Name = type,
+                SubActions = [new SubActionDefinition { Type = type }, new SubActionDefinition { Type = CaptureArgs.Id }],
+            };
+            await provider.GetRequiredService<ActionEngine>().RunAsync(action, new Dictionary<string, object?> { ["userId"] = Alice });
+            var args = await Wait.ForAsync(() => capture.Args, type + " outputs");
+            Assert.Equal("Alice", args["bannedUser"]);
+            Assert.Equal("Alice", args["bannedUserName"]);
+            Assert.Equal(Alice, args["bannedUserId"]);
+            Assert.Equal("youtube", args["bannedUserType"]);
+            Assert.Equal(true, args[result]);
+            capture.Args = null;
+        }
+    }
+
+    private sealed class CaptureArgs : ISubActionHandler
+    {
+        public const string Id = "test.capture";
+        public Dictionary<string, object?>? Args { get; set; }
+        public string TypeId => Id;
+        public string Category => "Test";
+        public string DisplayName => "Capture";
+        public IReadOnlyList<ParameterDescriptor> Parameters { get; } = [];
+
+        public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues parameters, CancellationToken ct)
+        {
+            Args = new Dictionary<string, object?>(context.Args, StringComparer.OrdinalIgnoreCase);
+            return Task.FromResult(SubActionResult.Next);
+        }
+    }
+
+    [Fact]
     public async Task AddYouTube_registers_service_adapter_sender_triggers_sub_actions_and_script_functions()
     {
         var dataDir = Path.Combine(Path.GetTempPath(), "cuebot-youtube-di-" + Guid.NewGuid().ToString("N"));

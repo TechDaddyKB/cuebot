@@ -59,8 +59,9 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         _botHelix = new HelixClient(http, endpoints.Helix, _botTokens);
         var sent = new SentMessageTracker();
         var counters = new TwitchCounters(() => Settings, settings.ScheduleSave);
-        _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent, counters: counters);
-        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, bus.Publish, sent, counters);
+        _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent, counters: counters,
+            broadcasterLogin: () => Settings.Login);
+        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, Publish, sent, counters);
     }
 
     public string Name => "Twitch";
@@ -107,7 +108,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         _tokens.Store(await _auth.PollDeviceTokenAsync(auth, ct).ConfigureAwait(false));
         var account = await _tokens.ValidateAsync(ct).ConfigureAwait(false);
         _log.Info("Twitch", $"Signed in as {account.Login}");
-        _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterAuthenticated, AccountArgs(account.Login, account.UserId)));
+        Publish(new BotEvent(TwitchEventTypes.BroadcasterAuthenticated, AccountArgs(account.Login, account.UserId)));
         await ConnectAsync(ct).ConfigureAwait(false);
     }
 
@@ -289,7 +290,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
             SetStatus(state, message);
         }, SeedChatSettingsAsync);
         var eventSub = new EventSubClient(_endpoints.EventSub, listener, _log, _eventSubTimeouts);
-        var poller = new TwitchPoller(Api, Settings, _bus, _log, _time);
+        var poller = new TwitchPoller(Api, Settings, Publish, _log, _time);
         var run = Task.WhenAll(eventSub.RunAsync(cts.Token), ValidatePeriodicallyAsync(_tokens, cts, SetStatus), poller.RunAsync(cts.Token));
         return new ActiveConnection(cts, run);
     }
@@ -308,9 +309,43 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         return new ActiveConnection(cts, run);
     }
 
-    /// <summary>Gives the router the current chat modes so the first change can be reported as on/off.</summary>
-    private async Task SeedChatSettingsAsync(CancellationToken ct) =>
+    /// <summary>
+    /// Gives the router the current chat modes (so the first change can be reported as on/off), plus what
+    /// Streamer.bot's argument names need and EventSub does not send: the broadcaster's display name and type,
+    /// reward settings and the current title and category.
+    /// </summary>
+    private async Task SeedChatSettingsAsync(CancellationToken ct)
+    {
         _router.SeedChatSettings(await Api.GetChatSettingsAsync(ct).ConfigureAwait(false));
+        await SeedAsync("broadcaster info", async () =>
+        {
+            if (await Api.GetUserByIdAsync(Settings.UserId, ct).ConfigureAwait(false) is { } user) _router.SeedBroadcaster(user);
+        }).ConfigureAwait(false);
+        await SeedAsync("channel info", async () =>
+        {
+            if (await Api.GetChannelAsync(null, ct).ConfigureAwait(false) is { } channel) _router.SeedChannel(channel);
+        }).ConfigureAwait(false);
+        if (Settings.Scopes.Contains(TwitchScopes.ReadRedemptions) || Settings.Scopes.Contains(TwitchScopes.ManageRedemptions))
+            await SeedAsync("rewards", async () => _router.SeedRewards(await Api.GetRewardsAsync(ct).ConfigureAwait(false))).ConfigureAwait(false);
+    }
+
+    private async Task SeedAsync(string what, Func<Task> seed)
+    {
+        try
+        {
+            await seed().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.Debug("Twitch", $"Could not read the {what}: {ex.Message}");
+        }
+    }
+
+    /// <summary>Publishes an event through the router, which adds Streamer.bot's argument names and memory-based values.</summary>
+    private void Publish(BotEvent e)
+    {
+        foreach (var routed in _router.Route(e)) _bus.Publish(routed);
+    }
 
     /// <summary>Twitch requires hourly validation of tokens used by a long-running connection.</summary>
     private async Task ValidatePeriodicallyAsync(TwitchTokenManager tokens, CancellationTokenSource connection,
@@ -426,15 +461,15 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         StatusChanged?.Invoke();
         if (_announcedConnected && !wasConnected)
         {
-            _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterConnected, AccountArgs(Settings.Login, Settings.UserId)));
+            Publish(new BotEvent(TwitchEventTypes.BroadcasterConnected, AccountArgs(Settings.Login, Settings.UserId)));
             _announcedChat = !UnavailableEvents.Contains("channel.chat.message");
-            if (_announcedChat) _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterChatConnected, AccountArgs(Settings.Login, Settings.UserId)));
+            if (_announcedChat) Publish(new BotEvent(TwitchEventTypes.BroadcasterChatConnected, AccountArgs(Settings.Login, Settings.UserId)));
         }
         else if (wasConnected && !_announcedConnected)
         {
-            _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
+            Publish(new BotEvent(TwitchEventTypes.BroadcasterDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
             if (_announcedChat)
-                _bus.Publish(new BotEvent(TwitchEventTypes.BroadcasterChatDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
+                Publish(new BotEvent(TwitchEventTypes.BroadcasterChatDisconnected, AccountArgs(Settings.Login, Settings.UserId, message)));
             _announcedChat = false;
         }
     }
@@ -447,9 +482,9 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         StatusChanged?.Invoke();
         var connected = state == ConnectionState.Connected;
         if (connected && !wasConnected)
-            _bus.Publish(new BotEvent(TwitchEventTypes.BotConnected, AccountArgs(Settings.Bot.Login, Settings.Bot.UserId)));
+            Publish(new BotEvent(TwitchEventTypes.BotConnected, AccountArgs(Settings.Bot.Login, Settings.Bot.UserId)));
         else if (wasConnected && !connected)
-            _bus.Publish(new BotEvent(TwitchEventTypes.BotDisconnected, AccountArgs(Settings.Bot.Login, Settings.Bot.UserId, message)));
+            Publish(new BotEvent(TwitchEventTypes.BotDisconnected, AccountArgs(Settings.Bot.Login, Settings.Bot.UserId, message)));
     }
 
     private static Dictionary<string, object?> AccountArgs(string login, string userId, string? reason = null)
@@ -471,7 +506,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
 /// While connected: publishes the viewer count when live and the list of present viewers, at the intervals in
 /// <see cref="TwitchSettings"/>. Failures are logged once per kind and never stop the connection.
 /// </summary>
-internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, EventBus bus, AppLog log, TimeProvider time)
+internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Action<BotEvent> publish, AppLog log, TimeProvider time)
 {
     private const int AdScheduleIntervalSeconds = 30;
     private readonly UpcomingAdWarnings _ads = new();
@@ -510,7 +545,7 @@ internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Event
     private async Task PollViewersAsync(CancellationToken ct)
     {
         if (await api.GetStreamAsync(null, ct).ConfigureAwait(false) is not { } stream) return;
-        bus.Publish(new BotEvent(TwitchEventTypes.ViewerCountUpdate, new Dictionary<string, object?>
+        publish(new BotEvent(TwitchEventTypes.ViewerCountUpdate, new Dictionary<string, object?>
         {
             ["viewers"] = stream.ViewerCount,
             ["viewerCount"] = stream.ViewerCount,
@@ -524,7 +559,7 @@ internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Event
     {
         if (!settings.Scopes.Contains(TwitchScopes.ReadChatters)) return;
         var chatters = await api.GetChattersAsync(ct).ConfigureAwait(false);
-        bus.Publish(new BotEvent(TwitchEventTypes.PresentViewers, new Dictionary<string, object?>
+        publish(new BotEvent(TwitchEventTypes.PresentViewers, new Dictionary<string, object?>
         {
             ["count"] = chatters.Count,
             ["users"] = string.Join(",", chatters.Select(c => c.UserLogin)),
@@ -537,7 +572,7 @@ internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Event
         if (!settings.Scopes.Contains(TwitchScopes.ReadAds) && !settings.Scopes.Contains(TwitchScopes.ManageAds)) return;
         if (await api.GetStreamAsync(null, ct).ConfigureAwait(false) is null) return;
         var schedule = await api.GetAdScheduleAsync(ct).ConfigureAwait(false);
-        if (_ads.Check(schedule, time.GetUtcNow()) is { } warning) bus.Publish(warning);
+        if (_ads.Check(schedule, time.GetUtcNow()) is { } warning) publish(warning);
     }
 }
 

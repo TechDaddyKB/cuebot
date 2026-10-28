@@ -6,6 +6,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 using Cuebot.Kick.Api;
 using Cuebot.Kick.Auth;
+using Cuebot.Kick.Compat;
 using Cuebot.Kick.Events;
 using Cuebot.Kick.Pusher;
 using Cuebot.Kick.Realtime;
@@ -63,7 +64,13 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _tokens = new KickTokenManager(settings, _auth, time, log);
         _api = new KickApiClient(http, endpoints, _tokens);
         _web = new KickWebClient(http, endpoints);
-        _hub = new KickEventHub(bus, time, timings.DedupeWindow);
+        _hub = new KickEventHub(bus, time, timings.DedupeWindow)
+        {
+            Broadcaster = () => Settings.Broadcaster.UserId > 0
+                ? new KickBroadcasterArgs(Settings.Broadcaster.UserName, KickArgs.Id(Settings.Broadcaster.UserId))
+                : null,
+            FindReward = id => _rewards.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase)),
+        };
         _realtime = new KickRealtimeEventSource(transports, new KickRealtimeAuth(http, endpoints), timings, log);
         _realtime.ConnectionChanged += OnRealtimeChanged;
         _hub.Attach(_realtime);
@@ -238,6 +245,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
                 Settings.Broadcaster.UserName = user.Name;
                 await LoadOwnChannelAsync(ct).ConfigureAwait(false);
                 SaveSettings();
+                await LoadRewardsForEventsAsync(ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -314,6 +322,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         }
         Settings.ChannelSlug = channel.Slug;
         _channel = channel;
+        _hub.SeedChannel(channel);
     }
 
     private async Task StartRealtimeAsync(CancellationToken ct)
@@ -459,6 +468,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
             var result = await _api.SendChatAsync(account, part, broadcaster, false, replyTo, ct).ConfigureAwait(false);
             if (!result.IsSent) throw new KickApiException("Kick did not accept the chat message");
             lastId = result.MessageId;
+            _hub.MarkSent(result.MessageId);
             replyTo = null;
         }
         return lastId;
@@ -597,10 +607,30 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     /// <summary>A Kick user id already seen in chat or events for <paramref name="userName"/> (no network lookup).</summary>
     public string? FindKnownUserId(string userName) => _hub.FindUserId(userName);
 
+    /// <summary>The event hub (tests feed events through it).</summary>
+    internal KickEventHub Hub => _hub;
+
     // ---- channel rewards ----
 
     /// <summary>The rewards from the last <see cref="GetRewardsAsync"/>.</summary>
     public IReadOnlyList<KickReward> Rewards => _rewards;
+
+    /// <summary>
+    /// Best effort: the reward settings Streamer.bot reports on redemptions (reward.description, .backgroundColor,
+    /// .skipsQueue, .requiresUserInput) are not in Kick's redemption events, so they come from the reward list.
+    /// </summary>
+    private async Task LoadRewardsForEventsAsync(CancellationToken ct)
+    {
+        if (!Settings.Broadcaster.Scopes.Contains(KickScopes.RewardsRead)) return;
+        try
+        {
+            await GetRewardsAsync(ct).ConfigureAwait(false);
+        }
+        catch (KickApiException ex)
+        {
+            _log.Debug("Kick", $"Could not read the channel rewards: {ex.Message}");
+        }
+    }
 
     /// <summary>Reads every reward of the channel (and remembers them for <see cref="Rewards"/>).</summary>
     public async Task<IReadOnlyList<KickReward>> GetRewardsAsync(CancellationToken ct = default)

@@ -36,9 +36,12 @@ public static class KickWebhookParser
         {
             "chat.message.sent" => [Chat(e, broadcaster.Id)],
             "channel.followed" => [KickEventFactory.Follow(Source, Actor(e.Prop("follower")))],
-            "channel.subscription.new" => [KickEventFactory.Subscription(Source, Actor(e.Prop("subscriber")), Months(e), isRenewal: false)],
-            "channel.subscription.renewal" => [KickEventFactory.Subscription(Source, Actor(e.Prop("subscriber")), Months(e), isRenewal: true)],
-            "channel.subscription.gifts" => KickEventFactory.Gifts(Source, Actor(e.Prop("gifter")), e.Items("giftees").Select(g => Actor(g)).ToArray()),
+            "channel.subscription.new" => [KickEventFactory.Subscription(Source, Actor(e.Prop("subscriber")), Months(e), isRenewal: false,
+                Time(e.Str("created_at")), Time(e.Str("expires_at")))],
+            "channel.subscription.renewal" => [KickEventFactory.Subscription(Source, Actor(e.Prop("subscriber")), Months(e), isRenewal: true,
+                Time(e.Str("created_at")), Time(e.Str("expires_at")))],
+            "channel.subscription.gifts" => KickEventFactory.Gifts(Source, Actor(e.Prop("gifter")), e.Items("giftees").Select(g => Actor(g)).ToArray(),
+                createdAt: Time(e.Str("created_at")), expiresAt: Time(e.Str("expires_at"))),
             "channel.reward.redemption.updated" => [Reward(e)],
             "livestream.status.updated" => [e.Bool("is_live")
                 ? KickEventFactory.StreamOnline(Source, e.Str("title"), Time(e.Str("started_at")))
@@ -63,14 +66,14 @@ public static class KickWebhookParser
     {
         var reward = e.Prop("reward");
         return KickEventFactory.Reward(Source, Actor(e.Prop("redeemer")), reward.Str("id"), reward.Str("title"), reward.Long("cost"),
-            e.Str("user_input"), e.Str("status"), e.Str("id"));
+            e.Str("user_input"), e.Str("status"), e.Str("id"), reward.Str("description"));
     }
 
     private static KickEvent Metadata(JsonElement? m)
     {
         var category = m.Prop("category");
         return KickEventFactory.ChannelUpdate(Source, m.Str("title"), category.Str("name"), category.Long("id"), m.Str("language"),
-            m.Bool("has_mature_content"));
+            m.Bool("has_mature_content"), category.Str("thumbnail"));
     }
 
     private static KickEvent Ban(JsonElement e)
@@ -79,14 +82,15 @@ public static class KickWebhookParser
         var created = Time(meta.Str("created_at"));
         var expires = Time(meta.Str("expires_at"));
         var duration = created is { } c && expires is { } x && x > c ? (long)Math.Round((x - c).TotalSeconds) : 0;
-        return KickEventFactory.Ban(Source, Actor(e.Prop("banned_user")), Actor(e.Prop("moderator")), duration, meta.Str("reason"), expires);
+        return KickEventFactory.Ban(Source, Actor(e.Prop("banned_user")), Actor(e.Prop("moderator")), duration, meta.Str("reason"), expires,
+            created);
     }
 
     private static KickEvent Kicks(JsonElement e)
     {
         var gift = e.Prop("gift");
         return KickEventFactory.Kicks(Source, Actor(e.Prop("sender")), gift.Long("amount"), gift.Str("name"), gift.Str("type"),
-            gift.Str("tier"), gift.Str("message"));
+            gift.Str("tier"), gift.Str("message"), gift.Long("pinned_time_seconds"), e.Str("created_at"));
     }
 
     private static int Months(JsonElement e) => (int)Math.Max(1, e.Long("duration"));
