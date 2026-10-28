@@ -504,6 +504,12 @@ public sealed class MidiService : IConnectionStatus, IAsyncDisposable
     /// Waits for the next message on a MIDI In connection (opening it if needed) — Streamer.bot's automatic detection.
     /// NoteOff messages are skipped when <paramref name="ignoreNoteOff"/>.
     /// </summary>
+    /// <summary>True while a <see cref="LearnAsync"/> call is waiting for a message.</summary>
+    public bool IsLearning
+    {
+        get { lock (_gate) return _learners.Count > 0; }
+    }
+
     public async Task<MidiMessage> LearnAsync(MidiConnection input, bool ignoreNoteOff, CancellationToken ct)
     {
         RequireInput(input);

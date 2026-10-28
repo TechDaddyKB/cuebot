@@ -52,7 +52,8 @@ public sealed class MidiViewTests : IDisposable
             Assert.Same(vm.Inputs[0], vm.SelectedInput);
 
             var learning = vm.LearnNewEventCommand.ExecuteAsync(null);
-            await PumpUntil(() => vm.LearnStatus.Length > 0);
+            // The status shows before the background learn starts listening; a message sent in between is not learned.
+            await PumpUntil(() => vm.LearnStatus.Length > 0 && midi.IsLearning);
             backend.Emit(0xB0, 10, 64);
             await PumpUntil(() => learning.IsCompleted);
             var row = Assert.Single(vm.Events);
