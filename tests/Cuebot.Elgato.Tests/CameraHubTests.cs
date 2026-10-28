@@ -75,6 +75,45 @@ public sealed class CameraHubServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Changed_triggers_carry_streamer_bots_old_values()
+    {
+        foreach (var control in new[] { WebcamControl.Focus, WebcamControl.Pan, WebcamControl.Tilt })
+        {
+            _backend.Ranges[control] = new(0, 100, 1, 50);
+            _backend.Values[control] = 50;
+        }
+        await using var hub = Create();
+        await hub.ConnectAsync();
+
+        _backend.Values[WebcamControl.Contrast] = 10;
+        _backend.Values[WebcamControl.Sharpness] = 4;
+        _backend.Values[WebcamControl.Focus] = 20;
+        _backend.Values[WebcamControl.Pan] = 70;
+        _backend.Values[WebcamControl.Tilt] = 0;
+        _backend.Values[WebcamControl.WhiteBalance] = 6500;
+        await hub.RefreshAsync();
+
+        void Check(string type, string name, int now, int old)
+        {
+            var e = Assert.Single(_env.Of(type));
+            Assert.Equal(now, e.Args[name]);
+            Assert.Equal(old, e.Args["old" + char.ToUpperInvariant(name[0]) + name[1..]]);
+        }
+        Check(CameraHubEvents.ContrastChanged, "contrast", 100, 30);
+        Check(CameraHubEvents.SharpnessChanged, "sharpness", 4, 2);
+        Check(CameraHubEvents.FocusChanged, "focus", 20, 50);
+        Check(CameraHubEvents.PanChanged, "pan", 70, 50);
+        Check(CameraHubEvents.TiltChanged, "tilt", 0, 50);
+        Check(CameraHubEvents.WhiteBalanceChanged, "whiteBalance", 6500, 5000);
+
+        _backend.Values[WebcamControl.AutoWhiteBalance] = 1;
+        await hub.RefreshAsync();
+        _backend.Values[WebcamControl.WhiteBalance] = 4000;
+        await hub.RefreshAsync();
+        Check(CameraHubEvents.LiveWhiteBalanceChanged, "whiteBalance", 4000, 6500);
+    }
+
+    [Fact]
     public async Task Sub_action_values_are_converted_to_device_units()
     {
         await using var hub = Create();
