@@ -12,6 +12,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › YouTube API | Device-code sign-in (approved once), connection and channel info; with `CUEBOT_LIVE_YOUTUBE_CHAT=1` while live: a sent message comes back through the chat poll | Google OAuth client ID + secret; for chat a live broadcast |
 | `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
 | `Cuebot.LiveTests` › Meld Studio / PolyPop | Meld: WebChannel handshake, scene list, re-show the current scene, optionally toggle a named layer and restore it (the session update must come back). PolyPop: the WebSocket plugin connects to Cuebot and a test alert is delivered | Meld Studio with remote connections on; PolyPop with the WebSocket plugin |
+| `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -127,6 +128,15 @@ event), then sends one mDNS query and only reports what it finds (multicast is o
 the test reads its controls and writes the brightness back unchanged; on Windows/macOS start Camera Hub and the test
 only checks that Cuebot detects the app. **Elgato Studio** runs with `CUEBOT_LIVE_ELGATO_STUDIO=1`: start the app; the
 test checks that Cuebot detects it. Camera Hub and Studio have no public control API (see `src/Cuebot.Elgato/PROTOCOL.md`).
+
+### Elgato Wave Link
+
+`WaveLinkLiveTests` runs with `CUEBOT_LIVE_WAVELINK=1` while Wave Link 3.x or 1.x/2.x runs on the same PC (Windows or
+macOS; on Linux the service reports "Wave Link is not available on Linux" and the test fails on purpose). Cuebot finds
+the port itself (Wave Link 3: `ws-info.json`, then 1884-1893; 1.x/2.x: 1824-1834); `CUEBOT_LIVE_WAVELINK_PORT` pins
+one. The test checks the detected API, the channel and mix lists and a request round trip; with
+`CUEBOT_LIVE_WAVELINK_CHANNEL=<channel name>` it also mutes that channel, waits for the state to change and restores it.
+Level meters are not exercised.
 
 ## Running
 
