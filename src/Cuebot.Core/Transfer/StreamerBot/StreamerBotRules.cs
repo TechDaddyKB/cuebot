@@ -9,9 +9,10 @@ namespace Cuebot.Core.Transfer.StreamerBot;
 
 /// <summary>
 /// The built-in Streamer.bot rules. Each rule lists descriptive type names and, where known, the numeric type code
-/// Streamer.bot really stores. The codes and their field conventions were worked out from public exports and the
-/// public documentation only; docs/streamerbot-import-codes.md lists each one with its evidence and confidence.
-/// Rules marked <see cref="SbRule.Tentative"/> hold medium-confidence codes; low-confidence codes are not mapped.
+/// Streamer.bot really stores. Sub-action codes and their field conventions were worked out from public exports and
+/// the public documentation only; rules marked <see cref="SbRule.Tentative"/> hold medium-confidence codes and
+/// low-confidence codes are not mapped. Trigger codes were read from a real Streamer.bot 1.0.7 install (see
+/// StreamerBotTriggerRules.cs). docs/streamerbot-import-codes.md lists every code.
 /// </summary>
 public sealed partial class StreamerBotMappingTable
 {
@@ -291,123 +292,7 @@ public sealed partial class StreamerBotMappingTable
         t.Add(new SbSubActionRule("StreamDeckSetValue", "streamDeck.setValue", ["StreamDeckSetValue", "11008"],
             (s, _) => Step("streamDeck.setValue", s, ("buttonId", Str(s, "buttonId") ?? ""), ("value", Str(s, "value") ?? ""))));
 
-        // ---------------------------------------------------------------- triggers
-        t.Add(new SbTriggerRule("Command", "command.triggered", ["Command", "CommandTriggered", "CommandTrigger", "401"],
-            (s, c) => Trigger("command.triggered", s, ("command", c.CommandRef(Str(s, "commandId", "command", "commandName")))))
-        {
-            Signatures = [["commandId"]],
-        });
-        t.Add(new SbTriggerRule("TimedAction", "core.timer", ["TimedAction", "TimedActions", "Timer", "TimerTrigger", "701"],
-            (s, c) => Trigger("core.timer", s, ("timer", c.TimerRef(Str(s, "timerId", "timer", "timerName")))))
-        {
-            Signatures = [["timerId"]],
-        });
-        t.Add(new SbTriggerRule("Follow", "twitch.follow", ["Follow", "TwitchFollow", "101"], (s, _) => Trigger("twitch.follow", s)));
-        t.Add(new SbTriggerRule("Cheer", "twitch.cheer", ["Cheer", "TwitchCheer", "102"],
-            (s, _) => Trigger("twitch.cheer", s, ("minBits", Text(Math.Max(1, Num(s, "min", "minBits", "minimum") ?? 1))),
-                ("maxBits", Num(s, "max", "maxBits", "maximum") is { } max and > 0 ? Text(max) : "")))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("Sub", "twitch.sub", ["Sub", "Subscription", "TwitchSub", "TwitchSubscription", "103"],
-            (s, _) => Trigger("twitch.sub", s, ("tier", Tier(Str(s, "tier"))))));
-        t.Add(new SbTriggerRule("ReSub", "twitch.resub", ["ReSub", "Resubscription", "TwitchReSub", "104"],
-            (s, _) => Trigger("twitch.resub", s, ("tier", Tier(Str(s, "tier"))), ("minMonths", Text(Math.Max(0, Num(s, "min") ?? 0))))));
-        // Streamer.bot fires Gift Subscription once per recipient, like Cuebot's twitch.subGift (twitch.giftSub is the gifter's total).
-        t.Add(new SbTriggerRule("GiftSub", "twitch.subGift", ["GiftSub", "TwitchGiftSub", "105"], (s, _) => Trigger("twitch.subGift", s, ("tier", Tier(Str(s, "tier"))))));
-        t.Add(new SbTriggerRule("GiftBomb", "twitch.giftBomb", ["GiftBomb", "TwitchGiftBomb", "106"],
-            (s, _) => Trigger("twitch.giftBomb", s, ("tier", Tier(Str(s, "tier"))), ("minTotal", Text(Math.Max(1, Num(s, "min") ?? 1))))));
-        t.Add(new SbTriggerRule("Raid", "twitch.raid", ["Raid", "TwitchRaid", "107"],
-            (s, _) => Trigger("twitch.raid", s, ("minViewers", Text(Math.Max(0, Num(s, "min", "minViewers", "minimum") ?? 0)))))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("RewardRedemption", "twitch.rewardRedemption",
-            ["RewardRedemption", "ChannelPointReward", "TwitchRewardRedemption", "Reward", "112"], (s, c) =>
-            {
-                var title = Str(s, "rewardName", "rewardTitle", "title", "name") ?? "";
-                if (title.Length == 0 && Str(s, "rewardId") is { Length: > 0 } id)
-                    c.Warn($"'{c.ActionName}': reward trigger names reward id {id} only; set the reward title in Cuebot.");
-                return Trigger("twitch.rewardRedemption", s, ("rewardTitle", title));
-            })
-        {
-            Signatures = [["rewardId"], ["rewardName"]],
-        });
-        t.Add(new SbTriggerRule("StreamUpdate", "twitch.streamUpdate", ["StreamUpdate", "TwitchStreamUpdate", "118"], (s, c) =>
-        {
-            if (Bool(s, "gameOnly") == true)
-                c.Warn($"'{c.ActionName}': a Stream update trigger was set to category changes only; Cuebot's also runs on title changes.");
-            return Trigger("twitch.streamUpdate", s, ("categoryName", Str(s, "gameName") ?? ""));
-        }));
-        t.Add(new SbTriggerRule("FirstWords", "users.firstWords", ["FirstWords", "FirstWord", "TwitchFirstWords", "120"],
-            (s, c) => FirstWords(s, c, "Twitch")));
-        t.Add(new SbTriggerRule("ChatMessage", "twitch.chatMessage", ["ChatMessage", "TwitchChatMessage", "133"], (s, _) => Trigger("twitch.chatMessage", s)));
-        t.Add(new SbTriggerRule("AdRun", "twitch.adRun", ["AdRun", "TwitchAdRun", "139"], (s, _) => Trigger("twitch.adRun", s, ("kind", "Any")))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("UpcomingAd", "twitch.upcomingAd", ["UpcomingAd", "TwitchUpcomingAd", "186"], (s, c) =>
-        {
-            var minutes = Get(s, "minutes") is JsonArray list ? list.Select(AsString).Where(m => m is not null).ToList() : [];
-            if (minutes.Count > 1) c.Warn($"'{c.ActionName}': an Upcoming ad trigger listed several minute marks; it was imported for every mark.");
-            return Trigger("twitch.upcomingAd", s, ("minutes", minutes.Count == 1 ? minutes[0]! : "Any"));
-        }));
-        t.Add(new SbTriggerRule("WatchStreak", "twitch.watchStreak", ["WatchStreak", "TwitchWatchStreak", "472"],
-            (s, _) => Trigger("twitch.watchStreak", s, ("minStreak", Text(Math.Max(0, Num(s, "min") ?? 0)))))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("StreamOnline", "twitch.streamOnline", ["StreamOnline", "TwitchStreamOnline"], (s, _) => Trigger("twitch.streamOnline", s)));
-        t.Add(new SbTriggerRule("StreamOffline", "twitch.streamOffline", ["StreamOffline", "TwitchStreamOffline"], (s, _) => Trigger("twitch.streamOffline", s)));
-        t.Add(new SbTriggerRule("YouTubeMessage", "youtube.chatMessage", ["YouTubeMessage", "YouTubeChatMessage", "4003"],
-            (s, _) => Trigger("youtube.chatMessage", s))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("YouTubeFirstWords", "users.firstWords", ["YouTubeFirstWords", "4016"], (s, c) => FirstWords(s, c, "YouTube"))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("ObsSceneChanged", "obs.sceneChanged", ["ObsSceneChanged", "14004"],
-            (s, c) => ObsTrigger(Trigger("obs.sceneChanged", s, ("scene", Str(s, "sceneName") ?? "")), s, c)));
-        t.Add(new SbTriggerRule("ObsStreamingStarted", "obs.streamStarted", ["ObsStreamingStarted", "14005"],
-            (s, c) => ObsTrigger(Trigger("obs.streamStarted", s), s, c))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("PresentViewers", "twitch.presentViewers", ["PresentViewers", "TwitchPresentViewers", "124"],
-            (s, _) => Trigger("twitch.presentViewers", s))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("UserBanned", "twitch.userBanned", ["UserBanned", "TwitchUserBanned", "137"], (s, _) => Trigger("twitch.userBanned", s))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("StreamOnlineCode", "twitch.streamOnline", ["154"], (s, _) => Trigger("twitch.streamOnline", s)) { Tentative = true });
-        t.Add(new SbTriggerRule("StreamOfflineCode", "twitch.streamOffline", ["155"], (s, _) => Trigger("twitch.streamOffline", s)) { Tentative = true });
-        t.Add(new SbTriggerRule("AppStarted", "core.appStarted", ["StreamerbotStarted", "706"], (s, _) => Trigger("core.appStarted", s)) { Tentative = true });
-        t.Add(new SbTriggerRule("YouTubeBroadcastStarted", "youtube.broadcastStarted", ["YouTubeBroadcastStarted", "4001"],
-            (s, _) => Trigger("youtube.broadcastStarted", s))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("YouTubeBroadcastEnded", "youtube.broadcastEnded", ["YouTubeBroadcastEnded", "4002"],
-            (s, _) => Trigger("youtube.broadcastEnded", s))
-        {
-            Tentative = true,
-        });
-        t.Add(new SbTriggerRule("YouTubeUserBanned", "youtube.userBanned", ["YouTubeUserBanned", "4005"], (s, _) => Trigger("youtube.userBanned", s))
-        {
-            Tentative = true,
-        });
-        // Custom events (CPH.TriggerEvent) and registered code triggers (CPH.TriggerCodeEvent) both name an event; Cuebot
-        // fires both through its "Custom code event" trigger.
-        t.Add(new SbTriggerRule("CustomEvent", "custom.codeEvent", ["Custom", "CustomEvent", "18001", "CustomCodeEvent", "18002"],
-            (s, _) => Trigger("custom.codeEvent", s, ("eventName", Str(s, "eventName") ?? "")))
-        {
-            Signatures = [["eventName"]],
-        });
+        AddTriggers(t);
         return t;
     }
 
@@ -501,24 +386,10 @@ public sealed partial class StreamerBotMappingTable
         return step;
     }
 
-    private static TriggerDefinition ObsTrigger(TriggerDefinition trigger, JsonObject s, ISbMapContext c)
-    {
-        ObsConnection(s, c);
-        trigger.Settings["connection"] = "";
-        return trigger;
-    }
-
     private static void ObsConnection(JsonObject s, ISbMapContext c)
     {
         if (IsRealId(Str(s, "connectionId", "obsId")))
             c.Warn($"'{c.ActionName}': uses a specific OBS connection (id {Str(s, "connectionId", "obsId")}); it was set to the default connection.");
-    }
-
-    private static TriggerDefinition FirstWords(JsonObject s, ISbMapContext c, string platform)
-    {
-        if (Str(s, "username") is { Length: > 0 } user)
-            c.Warn($"'{c.ActionName}': a First words trigger was limited to '{user}'; Cuebot's runs for every user. Add a condition on %userName%.");
-        return Trigger("users.firstWords", s, ("platform", platform));
     }
 
     private static SubActionDefinition MapDelay(JsonObject s, ISbMapContext c)
@@ -631,14 +502,6 @@ public sealed partial class StreamerBotMappingTable
             _ => "Toggle",
         };
     }
-
-    private static string Tier(string? tier) => Normalize(tier) switch
-    {
-        "1000" or "1" or "tier1" or "prime" => "1",
-        "2000" or "2" or "tier2" => "2",
-        "3000" or "3" or "tier3" => "3",
-        _ => "Any",
-    };
 
     /// <summary>Level names, or the numeric levels of the exports (0 verbose, 1 debug, 2 info, 3 warning, 4 error).</summary>
     private static string LogLevel(string? level) => Normalize(level) switch
