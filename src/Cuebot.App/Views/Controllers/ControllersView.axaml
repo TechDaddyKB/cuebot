@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Controllers"
+             x:Class="Cuebot.App.Views.Controllers.ControllersView"
+             x:DataType="vm:ControllersViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.button">
+      <Setter Property="BorderBrush" Value="{StaticResource CuebotMuted}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="Margin" Value="0,0,4,4" />
+    </Style>
+    <Style Selector="Border.button.pressed">
+      <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+    </Style>
+    <Style Selector="Border.button.pressed TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+  </UserControl.Styles>
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Game controllers" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,8,8"
+                 Text="Xbox, PlayStation, Switch Pro and generic USB/Bluetooth joysticks become Controller Button, Button Combo, Axis, Hat / D-Pad, Connected and Disconnected triggers. Input is read in the background (Cuebot does not need focus) through SDL3. Settings are stored in controllers.json." />
+
+      <!-- Status and settings -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Status" />
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="{Binding Backend}" />
+          <Button Content="Retry" Command="{Binding RetryCommand}" IsVisible="{Binding HasError}" />
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+            <TextBlock Text="Watch controllers" VerticalAlignment="Center" Margin="0,0,12,0" />
+            <StackPanel Grid.Column="1" Spacing="4">
+              <ComboBox ItemsSource="{x:Static vm:ControllersViewModel.Modes}" SelectedItem="{Binding Mode}" Width="160" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="Automatic: while an action uses a controller trigger, this page is open, or a sub-action/script used a controller recently." />
+            </StackPanel>
+            <TextBlock Grid.Row="1" Text="Stick deadzone (%)" VerticalAlignment="Center" Margin="0,8,12,0" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding StickDeadzone}" Minimum="0" Maximum="95" Increment="1" FormatString="0"
+                           Width="120" HorizontalAlignment="Left" Margin="0,8,0,0" />
+            <TextBlock Grid.Row="2" Text="Trigger deadzone (%)" VerticalAlignment="Center" Margin="0,8,12,0" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding TriggerDeadzone}" Minimum="0" Maximum="95" Increment="1" FormatString="0"
+                           Width="120" HorizontalAlignment="Left" Margin="0,8,0,0" />
+            <TextBlock Grid.Row="3" Text="Axis events at most every (ms)" VerticalAlignment="Center" Margin="0,8,12,0" />
+            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+              <NumericUpDown Value="{Binding AxisThrottleMs}" Minimum="0" Maximum="5000" Increment="10" FormatString="0" Width="120" />
+              <TextBlock Text="ignoring changes under" VerticalAlignment="Center" />
+              <NumericUpDown Value="{Binding AxisMinChange}" Minimum="0.1" Maximum="50" Increment="0.5" FormatString="0.0" Width="110" />
+              <TextBlock Text="%" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Grid.Row="4" Text="Mappings file" VerticalAlignment="Center" Margin="0,8,12,0" />
+            <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+              <TextBox Name="ControllerMappingsFile" Text="{Binding MappingsFile}"
+                       PlaceholderText="gamecontrollerdb.txt (path, or a name in the data folder; empty = data folder file if present)" />
+              <Button Grid.Column="1" Content="Reload" Margin="8,0,0,0" Command="{Binding ReloadMappingsCommand}" />
+            </Grid>
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding MappingsInUse}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="The community mappings file from github.com/mdqinc/SDL_GameControllerDB only changes how unusual controllers' buttons and axes are mapped and named; most controllers do not need it." />
+          <CheckBox Content="Report the D-pad as Hat1 too (one Hat trigger for gamepads and joysticks)" IsChecked="{Binding DPadAsHat}" />
+          <CheckBox Content="Include joysticks without a gamepad mapping (flight sticks, wheels, button boxes)" IsChecked="{Binding IncludeJoysticks}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Learn -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Learn an input" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Click Learn, then press the button (or move the stick, trigger or D-pad) you want to use. The trigger settings that match it are shown below. The trigger editor's Button and Axis lists also suggest what you pressed most recently." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Name="ControllerLearn" Content="{Binding LearnLabel}" Classes="accent" Command="{Binding LearnCommand}" />
+          </StackPanel>
+          <TextBlock Text="{Binding LearnText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+          <SelectableTextBlock Text="{Binding LearnSettings}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <!-- Connected controllers -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Connected controllers" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoControllers}"
+                     Text="No controllers. Plug one in or pair it over Bluetooth. On Linux, PlayStation and Switch controllers need read access to /dev/hidraw* for rumble and lights (install your distribution's steam-devices / game-devices-udev rules); the Flatpak needs device access." />
+          <ItemsControl Name="ControllerRows" ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ControllerRowViewModel">
+                <Border BorderBrush="{StaticResource CuebotMuted}" BorderThickness="0,0,0,1" Padding="0,8">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Classes="muted" Text="{Binding Details}" TextWrapping="Wrap" />
+                    <SelectableTextBlock Text="{Binding Identity}" Foreground="{StaticResource CuebotMuted}" FontSize="12" />
+                    <ItemsControl ItemsSource="{Binding Buttons}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ButtonStateViewModel">
+                          <Border Classes="button" Classes.pressed="{Binding IsPressed}">
+                            <TextBlock Text="{Binding Text}" FontSize="12" />
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding Axes}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AxisStateViewModel">
+                          <Grid ColumnDefinitions="110,*,60" Margin="0,1">
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                            <ProgressBar Grid.Column="1" Minimum="-100" Maximum="100" Value="{Binding Percent}" Height="8" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding Text}" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="monospace" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding Hats}" IsVisible="{Binding Hats, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <TextBlock Classes="muted" Text="{Binding Held}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

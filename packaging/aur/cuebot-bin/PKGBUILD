@@ -13,7 +13,8 @@ depends=('fontconfig' 'gcc-libs' 'glibc' 'hicolor-icon-theme' 'icu' 'libglvnd' '
 optdepends=('espeak-ng: offline text-to-speech voices'
             'pipewire-audio: audio playback through pw-play'
             'libpulse: audio playback through paplay'
-            'alsa-utils: audio playback through aplay')
+            'alsa-utils: audio playback through aplay'
+            'game-devices-udev: hidraw access for PlayStation/Switch controller lights and rumble')
 provides=('cuebot')
 conflicts=('cuebot')
 options=('!strip' '!debug')
