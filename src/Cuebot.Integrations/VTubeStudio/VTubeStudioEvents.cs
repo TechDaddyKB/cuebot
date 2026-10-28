@@ -94,18 +94,23 @@ internal static class VtsEventMapper
                 var position = data.Obj("itemPosition");
                 result.Add((VTubeStudioEvents.ItemEvent, Args(("itemEventType", data.Str("itemEventType")),
                     ("itemInstanceId", data.Str("itemInstanceID")), ("itemFileName", data.Str("itemFileName")),
-                    ("itemX", position.Num("x") ?? 0), ("itemY", position.Num("y") ?? 0))));
+                    ("itemX", position.Num("x") ?? 0), ("itemY", position.Num("y") ?? 0),
+                    ("position.x", position.Num("x") ?? 0), ("position.y", position.Num("y") ?? 0))));   // Streamer.bot's names
                 break;
             }
             case "ModelClickedEvent":
             {
                 var click = data.Obj("clickPosition");
+                var window = data.Obj("windowSize");
                 var button = (int)(data.Num("mouseButtonID") ?? 0);
                 result.Add((VTubeStudioEvents.ModelClicked, Args(("modelLoaded", data.Bool("modelLoaded") ?? false),
                     ("modelName", data.Str("loadedModelName")), ("modelId", data.Str("loadedModelID")),
                     ("modelWasClicked", data.Bool("modelWasClicked") ?? false), ("mouseButtonId", button),
                     ("mouseButton", button switch { 0 => "Left", 1 => "Right", 2 => "Middle", _ => button.ToString(System.Globalization.CultureInfo.InvariantCulture) }),
                     ("clickX", click.Num("x") ?? 0), ("clickY", click.Num("y") ?? 0),
+                    // Streamer.bot's names (keys are case-insensitive, so clickPosition.x works too).
+                    ("clickPosition.X", click.Num("x") ?? 0), ("clickPosition.Y", click.Num("y") ?? 0),
+                    ("windowSize.X", window.Num("x") ?? 0), ("windowSize.Y", window.Num("y") ?? 0),
                     ("clickedArtMeshCount", (int)(data.Num("clickedArtMeshCount") ?? 0)),
                     ("artMeshHits", data.Prop("artMeshHits")?.GetRawText() ?? "[]"))));
                 break;

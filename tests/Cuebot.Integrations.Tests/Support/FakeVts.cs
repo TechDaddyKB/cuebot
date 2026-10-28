@@ -87,6 +87,8 @@ internal sealed class FakeVts
         "CurrentModelRequest" => ("CurrentModelResponse", new
         {
             modelLoaded = true, modelName = "Akari", modelID = "model-akari", vtsModelName = "Akari.vtube.json",
+            vtsModelIconName = "icon.png", live2DModelName = "Akari.model3.json", modelLoadTime = 1680, timeSinceModelLoaded = 419903,
+            numberOfLive2DParameters = 29, numberOfLive2DArtmeshes = 136, hasPhysicsFile = true, numberOfTextures = 1, textureResolution = 1024,
             modelPosition = new { positionX = 0.1, positionY = -0.2, rotation = 5.0, size = -40.0 },
         }),
         "AvailableModelsRequest" => ("AvailableModelsResponse", new

@@ -176,6 +176,7 @@ public sealed class ObsFeatureTests : IAsyncLifetime
     {
         var args = await Run("obs.getCurrentScene", new());
         Assert.Equal("Starting", args["obsScene"]);
+        Assert.Equal("Starting", args["currentScene"]);
 
         await Run("obs.studioMode", new() { ["state"] = "Enable" });
         Assert.True(_a.StudioMode);
@@ -210,6 +211,22 @@ public sealed class ObsFeatureTests : IAsyncLifetime
         Assert.Equal(true, args["obsItemVisible"]);
         Assert.Equal(100.0, args["obsItemPositionX"]);
         Assert.Equal(200.0, args["obsItemSourceWidth"]);
+        Assert.Equal(true, args["props.visible"]);
+        Assert.Equal(false, args["props.locked"]);
+        Assert.Equal("Webcam", args["props.name"]);
+        Assert.Equal(100.0, args["props.position.x"]);
+        Assert.Equal(50.0, args["props.position.y"]);
+        Assert.Equal("5", args["props.position.alignment"]);
+        Assert.Equal(200.0, args["props.sourceWidth"]);
+        Assert.Equal(0.0, args["props.crop.left"]);
+        Assert.Equal(1.0, args["props.scale.x"]);
+        Assert.Equal(false, args["props.muted"]);
+        Assert.Contains("\"position.x\":100", (string)args["props._json"]!);
+
+        var group = await Run("obs.getSceneItemProperties", new() { ["scene"] = "Gaming", ["source"] = "Alerts" });
+        Assert.Equal("Follow", group["props.groupChildren[0].name"]);
+        Assert.Equal("Raid", group["props.groupChildren[2].name"]);
+        Assert.Equal(100.0, group["props.groupChildren[1].position.x"]);
 
         await Run("obs.setSourceTransform", new() { ["scene"] = "Gaming", ["source"] = "Webcam", ["positionX"] = "640", ["scaleY"] = "0.5", ["cropLeft"] = "" });
         var t = _a.Scenes["Gaming"].Single(i => i.Source == "Webcam").Transform;
@@ -353,6 +370,7 @@ public sealed class ObsFeatureTests : IAsyncLifetime
     {
         await Run("obs.streaming", new() { ["mode"] = "Start" });
         Assert.True(_a.Streaming);
+        Assert.Equal(false, (await Run("obs.createRecordChapter", new() { ["chapterName"] = "Too early" }))["success"]);
         await Run("obs.recording", new() { ["mode"] = "Start" });
         await Run("obs.recording", new() { ["mode"] = "Pause" });
         Assert.True(_a.Recording && _a.RecordPaused);
@@ -361,7 +379,7 @@ public sealed class ObsFeatureTests : IAsyncLifetime
         await Run("obs.recording", new() { ["mode"] = "Resume" });
         await Run("obs.virtualCam", new() { ["mode"] = "Toggle" });
         Assert.True(_a.VirtualCam);
-        await Run("obs.createRecordChapter", new() { ["chapterName"] = "Boss fight" });
+        Assert.Equal(true, (await Run("obs.createRecordChapter", new() { ["chapterName"] = "Boss fight" }))["success"]);
         await Run("obs.createRecordChapter", new());
         Assert.Equal(["Boss fight", ""], _a.Chapters);
 

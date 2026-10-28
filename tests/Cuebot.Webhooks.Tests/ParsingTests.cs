@@ -121,7 +121,10 @@ public sealed class ParsingTests : IDisposable
         var free = body.Replace("\"active_patron\"", "null", StringComparison.Ordinal);
         Assert.Equal(PatreonEventTypes.FollowCreated, Patreon("members:create", free).Type);
         Assert.Equal(PatreonEventTypes.FollowDeleted, Patreon("members:delete", free).Type);
-        Assert.Equal(PatreonEventTypes.PledgeUpdated, Patreon("members:pledge:update", body).Type);
+        var updated = Patreon("members:pledge:update", body);
+        Assert.Equal(PatreonEventTypes.PledgeUpdated, updated.Type);
+        Assert.Equal("Supporter", updated.Args["entitledTiers[0].updatedToTier"]);
+        Assert.False(Patreon("members:pledge:create", body).Args.ContainsKey("entitledTiers[0].updatedToTier"));
         Assert.Equal(PatreonEventTypes.PledgeDeleted, Patreon("members:pledge:delete", body).Type);
         Assert.Equal(PatreonEventTypes.MemberUpdated, Patreon("members:update", body).Type);
 
@@ -238,6 +241,51 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal("prm_EdJvIXu3SEiXe_QkPavHSA", gift.Args["fw.gifts[3].promotionId"]);
         Assert.Equal(4.0, gift.Args["fw.quantity"]);
         Assert.Equal(5.0, gift.Args["fw.shipping"]);
+        Assert.Equal(10.0, gift.Args["fw.subtotal"]);
+        Assert.Equal(1.0, gift.Args["fw.tax"]);
+        Assert.Equal(17.0, gift.Args["fw.total"]);
+        Assert.Equal(0.0, gift.Args["fw.donation"]);   // not in a gift purchase; present like Streamer.bot's
+        Assert.Equal(0.0, gift.Args["fw.discount"]);
+        Assert.Equal(false, gift.Args["fw.isTest"]);
+    }
+
+    [Fact]
+    public void Fourthwall_streamer_bot_names_for_orders_products_and_tests()
+    {
+        var order = Fourthwall("fourthwall-order-placed.json");
+        Assert.Equal(false, order.Args["fw.isTest"]);
+        Assert.Equal("https://cdn.fourthwall.com/customization/sh_7ad0c438/tee.jpeg", order.Args["fw.variants[0].image"]);
+        Assert.Equal(2.0, order.Args["fw.variants[0].quantity"]);
+        Assert.Equal("White, S", order.Args["fw.variants[0].attributes.description"]);
+        Assert.True(order.Args.ContainsKey("fw.variants[0].stock"));
+        Assert.Equal(true, Fourthwall("fourthwall-donation.json").Args["fw.isTest"]);
+
+        const string product = """
+            {"testMode":false,"id":"weve_p1","shopId":"sh_1","type":"PRODUCT_CREATED","createdAt":"2026-10-27T15:05:11Z","data":{
+             "id":"prod_1","name":"Hoodie","slug":"hoodie","description":"Warm","state":{"type":"AVAILABLE"},
+             "images":[{"id":"i1","url":"https://cdn/a.jpg"},{"id":"i2","url":"https://cdn/b.jpg"}],
+             "variants":[
+               {"id":"v1","name":"Black, M","sku":"H-BM","unitPrice":{"value":40,"currency":"USD"},
+                "attributes":{"description":"Black, M","color":{"name":"Black","swatch":"#000000"},"size":{"name":"M"}},
+                "stock":{"type":"LIMITED","inStock":12},"weight":{"value":0.5,"unit":"kg"},"images":[{"url":"https://cdn/v1.jpg"}]},
+               {"id":"v2","name":"Black, L","sku":"H-BL","unitPrice":{"value":40,"currency":"USD"},"attributes":{},"stock":{"type":"UNLIMITED"}}],
+             "createdAt":"2026-10-27T15:05:10Z","updatedAt":"2026-10-27T15:05:10Z"}}
+            """;
+        var e = FourthwallWebhookHandler.Map(JsonReaders.ParseBody(product), isTest: false)!.Args;
+        Assert.Equal("prod_1", e["fw.productId"]);
+        Assert.Equal("prod_1", e["fw.id"]);
+        Assert.Equal("https://cdn/a.jpg", e["fw.images[0]"]);
+        Assert.Equal("https://cdn/b.jpg", e["fw.images[1]"]);
+        Assert.Equal("https://cdn/v1.jpg", e["fw.variants[0].image"]);
+        Assert.Equal("Black", e["fw.variants[0].attributes.color"]);
+        Assert.Equal("#000000", e["fw.variants[0].attributes.colorSwatch"]);
+        Assert.Equal("M", e["fw.variants[0].attributes.size"]);
+        Assert.Equal("0.5 kg", e["fw.variants[0].attributes.weight"]);
+        Assert.Equal(12.0, e["fw.variants[0].stock"]);
+        Assert.Equal("LIMITED", e["fw.variants[0].stockType"]);
+        Assert.Equal("UNLIMITED", e["fw.variants[1].stock"]);
+        Assert.Equal("AVAILABLE", e["fw.state"]);
+        Assert.Equal(false, e["fw.isTest"]);
     }
 
     [Fact]

@@ -6,6 +6,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Storage;
 using Cuebot.Core.Webhooks;
+using Cuebot.Webhooks.Outgoing;
 using Cuebot.Webhooks.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,6 +38,15 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton<ITriggerProvider, ThroneTriggers>();
         services.AddSingleton<ITriggerProvider, CustomWebhookTriggers>();
         services.AddSingleton<IScriptFunctionProvider, WebhooksScriptFunctions>();
+
+        // Outgoing webhooks: Discord Basic Webhook, IFTTT Notification (Basic / Advanced). One registration per
+        // sub-action so the Registry sees each one.
+        services.AddSingleton(sp => new DiscordWebhookClient(sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton(sp => new IftttWebhookClient(sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton(sp => new OutgoingSubActionSet(OutgoingWebhookSubActions.Create(sp.GetRequiredService<DiscordWebhookClient>(),
+            sp.GetRequiredService<IftttWebhookClient>(), sp.GetRequiredService<JsonFile<WebhooksSettings>>())));
+        foreach (var typeId in OutgoingWebhookSubActions.TypeIds)
+            services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<OutgoingSubActionSet>().Get(typeId));
         return services;
     }
 

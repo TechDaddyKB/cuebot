@@ -122,6 +122,7 @@ internal static class VTubeStudioSubActions
                 ctx.Args["vtsPositionY"] = model.Position.PositionY;
                 ctx.Args["vtsRotation"] = model.Position.Rotation;
                 ctx.Args["vtsSize"] = model.Position.Size;
+                foreach (var (key, value) in VtsProtocol.StreamerBotModelArgs(model)) ctx.Args[key] = value;
             }),
             Make("vtubestudio.getModels", "Get available models", [], async (ctx, _, ct) =>
             {
@@ -150,6 +151,11 @@ internal static class VTubeStudioSubActions
                     new("messageType", "Message type") { Help = "A VTube Studio API request, e.g. SceneColorOverlayInfoRequest" },
                     new("data", "Data (JSON)", ParameterKind.Multiline) { Help = "A JSON object; leave empty for none" },
                     Result("vtsResult", "Store response in argument"),
+                    new("variablePrefix", "Variable prefix")
+                    {
+                        DefaultValue = "vtsRaw",
+                        Help = "Also stores each response field, e.g. %vtsRaw.data.modelName%; leave empty to skip",
+                    },
                 ],
                 async (ctx, v, ct) =>
                 {
@@ -158,6 +164,7 @@ internal static class VTubeStudioSubActions
                         data = JsonUtil.TryParse(v["data"]) is { ValueKind: JsonValueKind.Object } o ? o : throw new ArgumentException("Data must be a JSON object.");
                     var result = await vts.RequestAsync(Require(v["messageType"], "Message type"), data, ct).ConfigureAwait(false);
                     Store(ctx, v["resultArgument"], result.ValueKind == JsonValueKind.Undefined ? "{}" : result.GetRawText());
+                    VtsProtocol.StoreRawResponse(ctx.Args, v["variablePrefix"], result);
                 }),
         ];
     }

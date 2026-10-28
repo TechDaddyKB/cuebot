@@ -213,6 +213,8 @@ public sealed class VoicemodTests : IAsyncLifetime
         var changed = await _env.WaitForEventAsync(VoicemodEvents.VoiceChanged);
         Assert.Equal("Baby", changed.Args["voiceName"]);
         Assert.Equal("Clean", changed.Args["previousVoiceName"]);
+        Assert.Equal("baby", changed.Args["voice.id"]);
+        Assert.Equal("Baby", changed.Args["voice.name"]);
         await Assert.ThrowsAsync<ArgumentException>(() => _voicemod.SelectVoiceAsync("Robot"));
 
         // On while already on: no toggle. Off: toggles once.
@@ -241,6 +243,11 @@ public sealed class VoicemodTests : IAsyncLifetime
         Assert.Equal(true, (await _env.WaitForEventAsync(VoicemodEvents.MuteToggled)).Args["muted"]);
         fake.Event("getMemes", new { listOfMemes = Array.Empty<object>() });
         await _env.WaitForEventAsync(VoicemodEvents.SoundboardChanged);
+        fake.Event("getAllSoundboard", new { soundboards = new[] { new { id = "sb-1", name = "My Test Soundboard", sounds = Array.Empty<object>() } } });
+        fake.Event("getActiveSoundboardProfile", new { profileId = "sb-1" });
+        var soundboard = await _env.WaitForEventAsync(VoicemodEvents.SoundboardChanged, e => e.Args.ContainsKey("profileId"));
+        Assert.Equal("sb-1", soundboard.Args["soundboard.id"]);
+        Assert.Equal("My Test Soundboard", soundboard.Args["soundboard.name"]);
         fake.Event("toggleBackground", new { value = true });
         await _env.WaitForEventAsync(VoicemodEvents.BackgroundEffectsToggled);
     }

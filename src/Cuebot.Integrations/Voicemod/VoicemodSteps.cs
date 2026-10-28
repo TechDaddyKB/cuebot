@@ -51,6 +51,7 @@ internal static class VoicemodSubActions
                 var (id, name) = await voicemod.GetCurrentVoiceAsync(ct).ConfigureAwait(false);
                 ctx.Args["voicemodVoiceId"] = id;
                 ctx.Args["voicemodVoiceName"] = name;
+                ctx.Args["currentVoiceId"] = id;   // Streamer.bot's name
             }),
             Make("voicemod.getVoices", "Get voices",
                 [new("onlyFavorites", "Only favorites", ParameterKind.Boolean) { DefaultValue = "false" }],

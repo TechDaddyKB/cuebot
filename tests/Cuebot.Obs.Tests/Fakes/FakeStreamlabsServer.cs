@@ -43,7 +43,14 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
     public string StreamingStatus { get; set; } = "offline";
     public string RecordingStatus { get; set; } = "offline";
     public string ReplayBufferStatus { get; set; } = "offline";
-    public Dictionary<string, bool> Visible { get; } = new() { ["i1"] = true, ["i2"] = false };
+    public Dictionary<string, bool> Visible { get; } = new() { ["i1"] = true, ["i2"] = false, ["i3"] = true, ["i4"] = true };
+
+    /// <summary>Filter visibility by owning source id (scenes own filters too).</summary>
+    public Dictionary<string, Dictionary<string, bool>> Filters { get; } = new()
+    {
+        ["src-cam"] = new() { ["Blur"] = true, ["Tint"] = true },
+        ["s1"] = new() { ["Shake"] = false },
+    };
     public Dictionary<string, bool> Muted { get; } = new() { ["src-mic"] = false };
     public Dictionary<string, JsonElement> SourceSettings { get; } = new();
     public List<string> FilterCalls { get; } = [];
@@ -82,6 +89,9 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
             {
                 new { id = "i1", sceneItemId = "i1", sourceId = "src-cam", name = "Cam", visible = Visible["i1"], sceneNodeType = "item", resourceId = "SceneItem[\"s1\",\"i1\",\"src-cam\"]" },
                 new { id = "i2", sceneItemId = "i2", sourceId = "src-text", name = "Title", visible = Visible["i2"], sceneNodeType = "item", resourceId = "SceneItem[\"s1\",\"i2\",\"src-text\"]" },
+                new { id = "g1", sceneItemId = "g1", sourceId = "", name = "Alerts", visible = true, sceneNodeType = "folder", resourceId = "SceneItemFolder[\"s1\",\"g1\"]" },
+                new { id = "i3", sceneItemId = "i3", sourceId = "src-a", name = "AlertA", visible = Visible["i3"], sceneNodeType = "item", parentId = "g1", resourceId = "SceneItem[\"s1\",\"i3\",\"src-a\"]" },
+                new { id = "i4", sceneItemId = "i4", sourceId = "src-b", name = "AlertB", visible = Visible["i4"], sceneNodeType = "item", parentId = "g1", resourceId = "SceneItem[\"s1\",\"i4\",\"src-b\"]" },
             },
         },
         new { id = "s2", name = "BRB", resourceId = "Scene[\"s2\"]", nodes = Array.Empty<object>() },
@@ -121,8 +131,13 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
             case ("StreamingService", "startReplayBuffer"): ReplayBufferStatus = "running"; return null;
             case ("StreamingService", "stopReplayBuffer"): ReplayBufferStatus = "offline"; return null;
             case ("StreamingService", "saveReplay"): return null;
+            case ("SourceFiltersService", "getFilters"):
+                return Filters.TryGetValue(args[0].GetString()!, out var list)
+                    ? list.Select(kv => new { name = kv.Key, type = "blur", visible = kv.Value }).ToArray()
+                    : Array.Empty<object>();
             case ("SourceFiltersService", "setVisibility"):
                 FilterCalls.Add($"{args[0].GetString()}|{args[1].GetString()}|{args[2].GetBoolean()}");
+                if (Filters.TryGetValue(args[0].GetString()!, out var owned)) owned[args[1].GetString()!] = args[2].GetBoolean();
                 return null;
             case (_, "setVisibility") when resource.StartsWith("SceneItem[", StringComparison.Ordinal):
                 Visible[resource.Split('"')[3]] = args[0].GetBoolean();
