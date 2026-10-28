@@ -305,6 +305,10 @@ internal static class ChatItemMapper
         args["amount"] = jewels;
         args["giftName"] = details.Str("giftName") is { Length: > 0 } name ? name : details.Str("altText");
         args["comboCount"] = Math.Max(1, details.Int("comboCount"));
+        // Streamer.bot's gift.* fields, when the details carry them under the same name.
+        foreach (var field in (string[])["url", "durationInSeconds", "durationInNanoSeconds", "altText", "altTextLanguage"])
+            if (details.Str(field) is { Length: > 0 } value) args["gift." + field] = value;
+        if (details.Prop("hasVisualEffect").Exists()) args["gift.hasVisualEffect"] = details.Bool("hasVisualEffect");
         args["message"] = snippet.Str("displayMessage");
         return args;
     }

@@ -50,12 +50,20 @@ internal static class YouTubeSubActions
             [new("messageId", "Message id") { DefaultValue = "%messageId%" }],
             (_, p, ct) => yt.DeleteMessageAsync(Clean(p["messageId"]), ct)),
 
-        new YouTubeSubAction("youtube.banUser", "Ban user", [User, BroadcastId],
-            (_, p, ct) => yt.BanUserAsync(Clean(p["user"]), Optional(p["broadcastId"]), ct)),
+        new YouTubeSubAction("youtube.banUser", "Ban user (bannedUser, bannedUserName, bannedUserId, banResult)", [User, BroadcastId],
+            async (c, p, ct) =>
+            {
+                await yt.BanUserAsync(Clean(p["user"]), Optional(p["broadcastId"]), ct).ConfigureAwait(false);
+                await WriteBannedAsync(yt, c, Clean(p["user"]), "banResult", ct).ConfigureAwait(false);
+            }),
 
-        new YouTubeSubAction("youtube.timeoutUser", "Timeout user",
+        new YouTubeSubAction("youtube.timeoutUser", "Timeout user (bannedUser, bannedUserName, bannedUserId, timeoutResult)",
             [User, new("duration", "Duration (seconds)", ParameterKind.Number) { DefaultValue = "300" }, BroadcastId],
-            (_, p, ct) => yt.TimeoutUserAsync(Clean(p["user"]), p.GetInt("duration", 300), Optional(p["broadcastId"]), ct)),
+            async (c, p, ct) =>
+            {
+                await yt.TimeoutUserAsync(Clean(p["user"]), p.GetInt("duration", 300), Optional(p["broadcastId"]), ct).ConfigureAwait(false);
+                await WriteBannedAsync(yt, c, Clean(p["user"]), "timeoutResult", ct).ConfigureAwait(false);
+            }),
 
         new YouTubeSubAction("youtube.unbanUser", "Unban user", [User],
             (_, p, ct) => yt.UnbanUserAsync(Clean(p["user"]), ct)),
@@ -140,6 +148,20 @@ internal static class YouTubeSubActions
             [new("pollMessageId", "Poll message id") { Help = "Leave empty for the active poll" }],
             (_, p, ct) => yt.EndPollAsync(Optional(Clean(p["pollMessageId"])), ct)),
     ];
+
+    /// <summary>
+    /// Streamer.bot's Ban / Timeout User outputs: bannedUser, bannedUserName, bannedUserId, bannedUserType and the
+    /// result flag (true; a failure stops the action instead). The user was just resolved, so this is a cache hit.
+    /// </summary>
+    private static async Task WriteBannedAsync(YouTubeService yt, ActionRunContext c, string user, string result, CancellationToken ct)
+    {
+        var (channelId, name) = await yt.ResolveUserAsync(user, ct).ConfigureAwait(false);
+        c.Args["bannedUser"] = name;
+        c.Args["bannedUserName"] = name;
+        c.Args["bannedUserId"] = channelId;
+        c.Args["bannedUserType"] = "youtube";
+        c.Args[result] = true;
+    }
 
     /// <summary>A parameter whose %variable% did not resolve (argument missing) counts as empty.</summary>
     internal static string Clean(string value)

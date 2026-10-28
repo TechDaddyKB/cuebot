@@ -4,6 +4,7 @@ using Cuebot.Core.Logging;
 using Cuebot.YouTube.Api;
 using Cuebot.YouTube.Auth;
 using Cuebot.YouTube.Chat;
+using Cuebot.YouTube.Compat;
 
 namespace Cuebot.YouTube.Monitoring;
 
@@ -44,6 +45,13 @@ internal sealed class YouTubeConnection : IAsyncDisposable
     }
 
     public BroadcastTracker Broadcasts { get; } = new();
+
+    /// <summary>Publishes an event with Streamer.bot's argument names added (broadcaster and broadcast included).</summary>
+    private void Publish(BotEvent e)
+    {
+        var broadcast = e.Args.TryGetValue("broadcastId", out var id) && id is string { Length: > 0 } bid ? Broadcasts.Find(bid) : null;
+        _bus.Publish(StreamerBotVariables.Apply(e, _broadcaster.Account, broadcast));
+    }
 
     /// <summary>Last problem of any loop, cleared by the next successful broadcast check.</summary>
     public string? Problem { get; private set; }
@@ -131,7 +139,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
             var previous = _statistics.GetValueOrDefault(video.Id);
             _statistics[video.Id] = video.Statistics;
             if (previous != video.Statistics)
-                _bus.Publish(YouTubeEvents.Statistics(Broadcasts.Find(video.Id) ?? current, video.Statistics, _broadcaster.Account));
+                Publish(YouTubeEvents.Statistics(Broadcasts.Find(video.Id) ?? current, video.Statistics, _broadcaster.Account));
         }
         _statusChanged();
     }
@@ -146,7 +154,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         // Newest first from the API; publish oldest first.
         var fresh = recent.Where(s => _subscribers.Add(s.ChannelId.Length > 0 ? s.ChannelId : s.SubscriptionId)).Reverse().ToArray();
         if (_subscribersSeeded)
-            foreach (var s in fresh) _bus.Publish(YouTubeEvents.NewSubscriber(s));
+            foreach (var s in fresh) Publish(YouTubeEvents.NewSubscriber(s));
         _subscribersSeeded = true;
     }
 
@@ -166,7 +174,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
                     _statistics.TryRemove(change.Broadcast.Id, out _);
                     break;
             }
-            _bus.Publish(YouTubeEvents.Broadcast(change, _broadcaster.Account));
+            Publish(YouTubeEvents.Broadcast(change, _broadcaster.Account));
         }
         if (changes.Count > 0) _statusChanged();
     }
@@ -180,7 +188,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         }
         var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
         var context = new ChatContext(broadcast.Id, broadcast.LiveChatId, _chatters) { BotChannelId = _settings().Bot.ChannelId };
-        var poller = new ChatPoller(_api, _broadcaster, context, _bus.Publish, _timings, _time, () => _settings().MinimumChatPollSeconds,
+        var poller = new ChatPoller(_api, _broadcaster, context, Publish, _timings, _time, () => _settings().MinimumChatPollSeconds,
             _log, SetProblem);
         var task = Task.Run(async () =>
         {
@@ -228,7 +236,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         catch (OperationCanceledException)
         {
         }
-        foreach (var change in Broadcasts.StopMonitoring()) _bus.Publish(YouTubeEvents.Broadcast(change, _broadcaster.Account));
+        foreach (var change in Broadcasts.StopMonitoring()) Publish(YouTubeEvents.Broadcast(change, _broadcaster.Account));
         foreach (var chat in chats) chat.Cancellation.Dispose();
         _cts.Dispose();
     }
