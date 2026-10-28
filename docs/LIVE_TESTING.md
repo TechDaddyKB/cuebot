@@ -106,7 +106,7 @@ for a team id, `CUEBOT_LIVE_DONORDRIVE_BASE_URL` for another DonorDrive charity)
 TreatStream needs `CUEBOT_LIVE_TREATSTREAM_TOKEN` (an access token from signing in on the Donations page) and
 `CUEBOT_LIVE_TREATSTREAM_CLIENT_ID` (your TreatStream app). Pally.gg needs `CUEBOT_LIVE_PALLY_API_KEY`; the test also asks
 Pally's server to echo a sample tip and checks it arrives as a test campaign tip.
-=======
+
 ### Meld Studio, PolyPop
 
 `StreamAppsLiveTests` (nothing goes live). **Meld Studio** runs with `CUEBOT_LIVE_MELD=1`: turn on File → Preferences →
