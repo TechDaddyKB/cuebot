@@ -77,6 +77,16 @@ public sealed class CphStreamerBotScriptTests : IDisposable
     private Dictionary<string, object?> Args => _bot.Capture.Args!;
 
     [Fact]
+    public async Task Shared_code_without_execute_compiles_and_only_fails_when_run_directly()
+    {
+        // Streamer.bot's starter pack keeps shared methods in a CPHInline with no Execute(), called by Execute C# Method.
+        var run = await RunAsync("public class CPHInline\n{\n    public bool Increase() { return true; }\n}");
+        Assert.False(run.Success);
+        Assert.Contains("can only be called with Execute C# Method", run.Error);
+        Assert.DoesNotContain("compile error", run.Error);
+    }
+
+    [Fact]
     public async Task Reward_methods_return_streamerbot_classes()
     {
         var run = await RunAsync(Inline("""

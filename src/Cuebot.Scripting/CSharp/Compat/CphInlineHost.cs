@@ -252,11 +252,13 @@ internal sealed partial class CphInlineHost : IDisposable
                 throw new ScriptException("C# compile error: CPHInline must not derive from another class");
             _instance = Activator.CreateInstance(type)
                         ?? throw new ScriptException("C# error: could not create CPHInline");
-            var execute = FindMethod(type, "Execute")
-                          ?? throw new ScriptException("C# compile error: CPHInline needs a public bool Execute() method");
-            _execute = execute.ReturnType == typeof(bool)
-                ? execute.CreateDelegate<Func<bool>>(_instance)
-                : WrapVoid(execute.CreateDelegate<Action>(_instance));
+            // Shared code that is only called through Execute C# Method may have no Execute(); running it directly fails.
+            var execute = FindMethod(type, "Execute");
+            _execute = execute is null
+                ? () => throw new ScriptException("C# error: CPHInline has no public bool Execute() method; this code can only be called with Execute C# Method")
+                : execute.ReturnType == typeof(bool)
+                    ? execute.CreateDelegate<Func<bool>>(_instance)
+                    : WrapVoid(execute.CreateDelegate<Action>(_instance));
             _init = ToAction(FindMethod(type, "Init"), _instance);
             _dispose = ToAction(FindMethod(type, "Dispose"), _instance);
         }
