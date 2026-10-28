@@ -13,6 +13,8 @@
         xmlns:intv="using:Cuebot.App.Views.Integrations"
         xmlns:whvm="using:Cuebot.App.ViewModels.Webhooks"
         xmlns:whv="using:Cuebot.App.Views.Webhooks"
+        xmlns:savm="using:Cuebot.App.ViewModels.StreamApps"
+        xmlns:sav="using:Cuebot.App.Views.StreamApps"
         xmlns:srvvm="using:Cuebot.App.ViewModels.Servers"
         xmlns:srvv="using:Cuebot.App.Views.Servers"
         xmlns:xvm="using:Cuebot.App.ViewModels.Extras"
@@ -68,6 +70,7 @@
     <DataTemplate DataType="xvm:PointsViewModel"><xviews:PointsView /></DataTemplate>
     <DataTemplate DataType="xvm:HotkeysViewModel"><xviews:HotkeysView /></DataTemplate>
     <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
+    <DataTemplate DataType="savm:StreamAppsPageViewModel"><sav:StreamAppsPageView /></DataTemplate>
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
     <DataTemplate DataType="srvvm:ServersViewModel"><srvv:ServersView /></DataTemplate>
@@ -83,8 +86,11 @@
           <Image Source="avares://Cuebot/Assets/cuebot.png" Width="28" Height="28" />
           <TextBlock Text="Cuebot" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
         </StackPanel>
-        <!-- Connection status: two compact columns so the navigation keeps its room at 860 px. -->
-        <ItemsControl DockPanel.Dock="Bottom" Margin="14,6,10,12" ItemsSource="{Binding Dashboard.Connections}">
+        <!-- Connection status: only connections in use, in two compact columns, so the navigation keeps its room at 860 px. -->
+        <TextBlock DockPanel.Dock="Bottom" Margin="14,6,10,12" Classes="muted" FontSize="12" Text="Nothing connected yet"
+                   IsVisible="{Binding !Dashboard.HasSidebarConnections}" />
+        <ItemsControl DockPanel.Dock="Bottom" Margin="14,6,10,12" ItemsSource="{Binding Dashboard.SidebarConnections}"
+                      IsVisible="{Binding Dashboard.HasSidebarConnections}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>

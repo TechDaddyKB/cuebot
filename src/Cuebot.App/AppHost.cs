@@ -14,6 +14,7 @@ using Cuebot.Server;
 using Cuebot.Scripting;
 using Cuebot.Speech;
 using Cuebot.Speech.Emotes;
+using Cuebot.StreamApps;
 using Cuebot.Twitch;
 using Cuebot.Webhooks;
 using Cuebot.YouTube;
@@ -47,6 +48,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddKick()
             .AddDonations()
             .AddIntegrations()
+            .AddStreamApps()
             .AddWebhooks()
             .AddServers()
             .AddRelay();   // after every module, so it sees all IWebhookHandlers
@@ -90,6 +92,10 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Rumble", () => Get<RumbleService>().StartAsync()),
             StartSafely(log, "YouTube", () => Get<Cuebot.YouTube.YouTubeService>().StartAsync()),
             StartSafely(log, "Kick", () => Get<Cuebot.Kick.KickService>().StartAsync()),
+            StartSafely(log, "TipeeeStream", () => Get<Cuebot.Donations.TipeeeStream.TipeeeStreamService>().StartAsync()),
+            StartSafely(log, "DonorDrive", () => Get<Cuebot.Donations.DonorDrive.DonorDriveService>().StartAsync()),
+            StartSafely(log, "TreatStream", () => Get<Cuebot.Donations.TreatStream.TreatStreamService>().StartAsync()),
+            StartSafely(log, "Pally.gg", () => Get<Cuebot.Donations.Pally.PallyService>().StartAsync()),
             StartSafely(log, "Streamlabs", () => Get<Cuebot.Donations.Streamlabs.StreamlabsService>().StartAsync()),
             StartSafely(log, "StreamElements", () => Get<Cuebot.Donations.StreamElements.StreamElementsService>().StartAsync()),
             StartSafely(log, "VTube Studio", () => Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>().StartAsync()),
@@ -98,6 +104,8 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "HypeRate", () => Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>().StartAsync()),
             StartSafely(log, "StreamLoots", () => Get<Cuebot.Integrations.StreamLoots.StreamLootsService>().StartAsync()),
             StartSafely(log, "Crowd Control", () => Get<Cuebot.Integrations.CrowdControl.CrowdControlService>().StartAsync()),
+            StartSafely(log, "Meld Studio", () => Get<Cuebot.StreamApps.Meld.MeldStudioService>().StartAsync()),
+            StartSafely(log, "PolyPop", () => Get<Cuebot.StreamApps.PolyPop.PolyPopService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),

@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             xmlns:views="using:Cuebot.App.Views"
+             xmlns:apps="using:Cuebot.App.Views.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.StreamAppsPageView"
+             x:DataType="vm:StreamAppsPageViewModel">
+  <!-- Each tab brings its own heading, scrolling and padding. -->
+  <TabControl Margin="12,8,12,0">
+    <TabItem Header="OBS &amp; Streamlabs Desktop">
+      <views:ObsView DataContext="{Binding Obs}" />
+    </TabItem>
+    <TabItem Header="Meld &amp; PolyPop">
+      <apps:StreamAppsView DataContext="{Binding Apps}" />
+    </TabItem>
+  </TabControl>
+</UserControl>
