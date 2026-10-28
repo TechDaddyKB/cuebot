@@ -261,6 +261,32 @@ public sealed class MeldStudioTests : IAsyncLifetime
         _env.Events(MeldEvents.Event).Where(x => (string?)x.Args["meldStudioEvent.event"] == MeldEvents.TrackGainChanged).ToArray();
 
     [Fact]
+    public async Task Layer_source_sets_the_documented_image_or_media_property_as_a_file_url()
+    {
+        // Meld's documented layer properties: "source" (image layer) and "mediaSource" (media layer).
+        const string image = "8DB9CC06AFCA152EA30278380B569751", media = "7958A12F7C782F392B08A793218AB7E8";
+        var session = FakeMeld.SampleSession();
+        session[image] = new JsonObject { ["type"] = "layer", ["name"] = "Camera Frame", ["parent"] = Ids.Chatting, ["index"] = 2, ["visible"] = true, ["source"] = "file:///path/to/image.png" };
+        session[media] = new JsonObject { ["type"] = "layer", ["name"] = "Background", ["parent"] = Ids.Chatting, ["index"] = 3, ["visible"] = true, ["mediaSource"] = "file:///path/to/video.mp4" };
+        var fake = await ConnectAsync(session);
+
+        await _meld.SetLayerSourceAsync("Just Chatting", "Camera Frame", "https://cuebot.example/frame.png");
+        var (_, args) = await fake.NextCallAsync("setProperty");
+        Assert.Equal([image, "source", "https://cuebot.example/frame.png"], args.EnumerateArray().Select(a => a.GetString()));
+
+        var file = Path.Combine(Path.GetTempPath(), "cuebot clip.mp4");
+        await _meld.SetLayerSourceAsync("", "background", file);
+        await Wait.UntilAsync(() => fake.CallCount("setProperty") == 2);
+        var last = fake.Calls.Last(c => c.Method == "setProperty").Args;
+        Assert.Equal("mediaSource", last[1].GetString());
+        Assert.Equal(new Uri(file).AbsoluteUri, last[2].GetString());
+        Assert.StartsWith("file:///", last[2].GetString());
+
+        // A browser layer has neither property.
+        await Assert.ThrowsAsync<StreamAppRequestException>(() => _meld.SetLayerSourceAsync("", "Spoilers", "x.png"));
+    }
+
+    [Fact]
     public async Task Version_1_servers_without_setProperty_get_a_clear_error()
     {
         await ConnectAsync(version: null, methods: FakeMeld.DefaultMethods.Where(m => FakeMeld.BareName(m) != "setProperty").ToArray());

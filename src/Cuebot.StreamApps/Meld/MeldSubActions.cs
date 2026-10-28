@@ -14,7 +14,7 @@ internal static class MeldSubActions
     [
         "meldstudio.showScene", "meldstudio.getCurrentScene", "meldstudio.getStatus", "meldstudio.recording", "meldstudio.streaming",
         "meldstudio.takeScreenshot", "meldstudio.takeVerticalScreenshot", "meldstudio.setLayerVisibility", "meldstudio.setEffectState",
-        "meldstudio.setLayerTrackMuted", "meldstudio.setTrackMuted", "meldstudio.setBrowserLayerUrl",
+        "meldstudio.setLayerTrackMuted", "meldstudio.setTrackMuted", "meldstudio.setBrowserLayerUrl", "meldstudio.setLayerSource",
         "meldstudio.setTrackMonitoring", "meldstudio.setTrackGain", "meldstudio.stageScene", "meldstudio.showStagedScene",
         "meldstudio.recordClip", "meldstudio.replay", "meldstudio.toggleVirtualCamera", "meldstudio.mediaControl",
         "meldstudio.widgetEvent", "meldstudio.setProperty", "meldstudio.sendCommand", "meldstudio.getScenes",
@@ -94,6 +94,9 @@ internal static class MeldSubActions
             Make("meldstudio.setBrowserLayerUrl", "Set browser layer URL",
                 [OptionalScene(), Layer(), new("url", "URL") { Help = "The page the browser layer shows" }],
                 (_, v, ct) => meld.SetBrowserLayerUrlAsync(v["scene"], Require(v["layer"], "Layer"), Require(v["url"], "URL"), ct)),
+            Make("meldstudio.setLayerSource", "Set image/media layer source",
+                [OptionalScene(), Layer(), new("source", "File") { Help = "Path or file:// URL of the image or video the layer shows" }],
+                (_, v, ct) => meld.SetLayerSourceAsync(v["scene"], Require(v["layer"], "Layer"), Require(v["source"], "File"), ct)),
             Make("meldstudio.setTrackMonitoring", "Set track monitoring state", [Track(), Switch("Monitoring", "Not Monitoring")],
                 async (ctx, v, ct) => ctx.Args["meldStudio.trackMonitoring"] = await meld.SetTrackMonitoringAsync(Require(v["track"], "Track"),
                     ParseSwitch(v["state"]), ct).ConfigureAwait(false)),

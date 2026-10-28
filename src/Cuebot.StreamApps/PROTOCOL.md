@@ -89,6 +89,8 @@ All event names are prefixed `meldStudioEvent.` in the arguments, matching Strea
 | Set Effect Enabled State | `meldstudio.setEffectState` | `toggleEffect(sceneId, layerId, effectId)` when needed |
 | Set Layer Track Muted State / Set Track Muted State | `meldstudio.setLayerTrackMuted` / `meldstudio.setTrackMuted` | `toggleMute(trackId)` when needed |
 | Set Browser Layer URL | `meldstudio.setBrowserLayerUrl` | `setProperty(layerId, "url", url)` (API v2) |
+| Set Image/Media Layer Source | `meldstudio.setLayerSource` | `setProperty(layerId, "source" (image layer) or "mediaSource" (media layer), file URL)` (API v2; a local path is sent as `file:///...`) |
+| Set Text | none | Meld's API documents no text property for text layers |
 | extras | `setTrackMonitoring`, `setTrackGain`, `stageScene`, `showStagedScene`, `recordClip` (0-90 s), `replay` (show/dismiss), `toggleVirtualCamera`, `mediaControl` (play/pause/seek), `widgetEvent` (`sendStreamEvent`), `setProperty`, `sendCommand`, `getScenes` | as named in Meld's docs |
 
 Script functions (Streamer.bot's `MeldStudio*` C# methods map here): `meldstudio.isConnected`, `connect`,

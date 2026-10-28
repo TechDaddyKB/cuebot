@@ -477,6 +477,27 @@ public sealed class MeldStudioService : StreamAppConnection
         return item;
     }
 
+    /// <summary>
+    /// Changes the file an image layer (Meld's <c>source</c> property) or media layer (<c>mediaSource</c>) shows (API v2).
+    /// A local path is sent as a file:// URL, as Meld reports them; a URL is sent as it is. Other layers are refused.
+    /// </summary>
+    public async Task<MeldItem> SetLayerSourceAsync(string scene, string layer, string source, CancellationToken ct = default)
+    {
+        var item = LiveSession().FindLayer(scene, layer);
+        var property = item.Json.TryGetProperty("mediaSource", out _) ? "mediaSource"
+            : item.Json.TryGetProperty("source", out _) ? "source"
+            : throw new StreamAppRequestException($"Layer '{item.Name}' is not an image or media layer.");
+        await SetPropertyAsync(item.Id, property, SourceUrl(Steps.Require(source, "Source")), ct).ConfigureAwait(false);
+        return item;
+    }
+
+    /// <summary>A file path as a file:// URL; anything that already has a scheme (file://, https://...) unchanged.</summary>
+    internal static string SourceUrl(string source)
+    {
+        source = source.Trim().Trim('"');
+        return source.Contains("://", StringComparison.Ordinal) ? source : new Uri(Path.GetFullPath(source)).AbsoluteUri;
+    }
+
     /// <summary>Media layer control: play, pause or seek (seconds).</summary>
     public async Task MediaAsync(string scene, string layer, string action, double seconds, CancellationToken ct = default)
     {
