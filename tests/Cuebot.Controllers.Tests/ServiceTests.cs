@@ -322,8 +322,9 @@ public sealed class ServiceTests
         var version = env.Service.InputVersion;
         env.Backend.Raise(new ButtonEvent(1, 0, true));
         Assert.True(env.Service.InputVersion > version);
-        Assert.True(changes >= 2);
-        Assert.True(controllerChanges >= 2);
+        // Both events can be raised from the backend's thread, just after the call returns.
+        await WaitAsync(() => Volatile.Read(ref changes) >= 2);
+        await WaitAsync(() => Volatile.Read(ref controllerChanges) >= 2);
     }
 
     internal static async Task WaitAsync(Func<bool> condition)
