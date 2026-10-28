@@ -13,14 +13,14 @@
           <TextBlock Classes="h2" Text="OBSBOT Center (OSC)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="In OBSBOT Center open Settings → OSC, switch OSC on and pick UDP or TCP. Enter its receive port below (and, for UDP, the port it sends replies to). OBSBOT Center runs on Windows and macOS; on Linux point Cuebot at a Tail 2 / Tail Air's own IP, or at a Windows/Mac PC running Center. OSC has no password: only allow it on networks you trust." />
-          <Grid ColumnDefinitions="Auto,*,Auto,120,Auto,100" RowDefinitions="Auto">
+          <Grid ColumnDefinitions="Auto,*,Auto,150,Auto,110" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Column="1" Name="ObsbotHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
             <NumericUpDown Grid.Column="3" Name="ObsbotPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
             <ComboBox Grid.Column="5" Margin="12,0,0,0" ItemsSource="{Binding Transports}" SelectedIndex="{Binding TransportIndex}" />
           </Grid>
-          <Grid ColumnDefinitions="Auto,120,Auto,100,Auto,*" RowDefinitions="Auto">
+          <Grid ColumnDefinitions="Auto,150,Auto,110,Auto,*" RowDefinitions="Auto">
             <TextBlock Text="Reply port (UDP)" VerticalAlignment="Center" Margin="0,0,8,0" />
             <NumericUpDown Grid.Column="1" Value="{Binding ListenPort}" Minimum="0" Maximum="65535" FormatString="0" IsEnabled="{Binding IsUdp}" />
             <TextBlock Grid.Column="2" Text="Poll every (s)" VerticalAlignment="Center" Margin="12,0,8,0" />

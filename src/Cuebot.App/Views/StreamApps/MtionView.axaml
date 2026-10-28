@@ -13,7 +13,7 @@
           <TextBlock Classes="h2" Text="Developer API" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="mtion studio answers on http://localhost:35393 while it runs; there is nothing to switch on and no key. Add external triggers to your clubhouse in mtion, then use them in the &quot;Send trigger&quot; sub-action." />
-          <Grid ColumnDefinitions="Auto,*,Auto,120,Auto,100" RowDefinitions="Auto">
+          <Grid ColumnDefinitions="Auto,*,Auto,150,Auto,110" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Column="1" Name="MtionHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
