@@ -440,9 +440,16 @@ servers and clients). `w14-cph` closes the C# items below; details are in docs/S
   platform-less group overloads. `ResumeAllActionQueues(clear)` and `DiscordPostTextToWebhook` (returns the
   message id) now match the docs. 135 of the 141 `CPHInline` examples in the docs compile; the other 6 have bugs
   in the examples themselves (undefined variables, a syntax error).
-- Still missing, not in the 202-name reference: older wiki-era methods such as `TwitchPollCreate`,
+- ~~Still missing, not in the 202-name reference: older wiki-era methods such as `TwitchPollCreate`,
   `TwitchPredictionCreate`, `AddQuoteForTwitch`, `ShowToastNotification`, `ObsSetColorSourceColor`, the
-  `StreamDeck*` methods, the Guest Star methods and `GetTeamInfoById/ByLogin`.
+  `StreamDeck*` methods, the Guest Star methods and `GetTeamInfoById/ByLogin`.~~ **Fixed in `w15-cph`**: the 284
+  methods named only on sub-action pages (`csharpMethods`), in changelogs or in the wiki now exist (245 work, 39 are
+  stubs: Trovo, VStream, Twitch unblock, Bits per user, game by id, OBS/Streamlabs disconnect, Streamlabs recording
+  pause). Tests check every name (`Data/cph-methods-more.txt`) and compile a call for each of the 582 published
+  signatures (`Data/cph-signatures.txt`), which also added missing overloads (`SendYouTubeMessage(message, useBot,
+  broadcastId)`, `TriggerCodeEvent(name, json)`, int-id group methods, ...). The Points methods have no published
+  signatures; theirs follow the sub-action pages (definition, user name, platform). `GetTeamInfo*` fills team names
+  only.
 - Note: overloads follow the docs, the wiki and the changelogs. Where they give no signature, extra optional
   parameters and bool returns were chosen, so calls written either way compile.
 

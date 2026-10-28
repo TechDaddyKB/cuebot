@@ -222,4 +222,43 @@ namespace Streamer.bot.Plugin.Interface.Model
         /// <summary>When the pin ends; default when it stays until the stream ends.</summary>
         public DateTime EndsAt { get; set; }
     }
+
+    /// <summary>A Trovo account (<c>CPH.TrovoGetBroadcaster</c>, <c>CPH.TrovoGetBot</c>). Cuebot has no Trovo support.</summary>
+    public class TrovoUserInfo
+    {
+        public string UserName { get; set; } = "";
+        public string UserLogin { get; set; } = "";
+        public string UserId { get; set; } = "";
+        public DateTime LastActive { get; set; }
+        public DateTime PreviousActive { get; set; }
+    }
+
+    /// <summary>
+    /// Cuebot: a point definition (Cuebot calls it a currency) for <c>CPH.GetPointDefinition</c>. Streamer.bot has not
+    /// published this class; the members are those of Cuebot's currencies.
+    /// </summary>
+    public class PointDefinition
+    {
+        public string Name { get; set; } = "";
+        public string SingularName { get; set; } = "";
+        public string Symbol { get; set; } = "";
+
+        /// <summary>The user variable holding each balance.</summary>
+        public string VariableName { get; set; } = "";
+        public bool Enabled { get; set; }
+
+        /// <summary>The highest balance allowed; 0 for no limit.</summary>
+        public long MaxBalance { get; set; }
+        public bool OnlyWhileLive { get; set; }
+    }
+
+    /// <summary>Cuebot: a place on a points leaderboard (<c>CPH.GetLeaderboard</c>). Streamer.bot has not published this class.</summary>
+    public class PointsLeaderboardEntry
+    {
+        public int Rank { get; set; }
+        public string Platform { get; set; } = "";
+        public string UserId { get; set; } = "";
+        public string UserName { get; set; } = "";
+        public long Points { get; set; }
+    }
 }

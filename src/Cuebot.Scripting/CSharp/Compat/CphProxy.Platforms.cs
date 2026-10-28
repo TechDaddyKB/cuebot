@@ -11,7 +11,15 @@ public sealed partial class CphProxy
     /// <summary>Sends to Twitch chat. Cuebot sends with its connected account; <paramref name="bot"/> is ignored.</summary>
     public void SendMessage(string message, bool bot = true, bool fallback = true) => SendChat("Twitch", "twitch.sendMessage", message);
 
-    public void SendYouTubeMessage(string message, bool bot = true, bool fallback = true) => SendChat("YouTube", "youtube.sendMessage", message);
+    /// <summary>
+    /// Sends to YouTube chat. With <paramref name="broadcastId"/>, to that broadcast's chat (with the bot account when
+    /// <paramref name="bot"/>, else or as <paramref name="fallback"/> the broadcaster).
+    /// </summary>
+    public void SendYouTubeMessage(string message, bool bot = true, bool fallback = true, string? broadcastId = null)
+    {
+        if (string.IsNullOrWhiteSpace(broadcastId)) SendChat("YouTube", "youtube.sendMessage", message);
+        else if (!string.IsNullOrWhiteSpace(message)) Call("youtube.sendMessage", new { message, useBot = bot, fallback, broadcastId = broadcastId.Trim() });
+    }
 
     public void SendKickMessage(string message, bool bot = true, bool fallback = true) => SendChat("Kick", "kick.sendMessage", message);
 
@@ -30,14 +38,13 @@ public sealed partial class CphProxy
         Call(function, new { message }, method);
     }
 
-    // ---- OBS (one connection: index 0) ----------------------------------------------------------------------------
+    // ---- OBS (connection: the index in Cuebot's OBS connection list, 0 the default connection) -------------------
 
     public bool ObsIsConnected(int connection = 0)
     {
-        Obs(connection);
         try
         {
-            Call("obs.request", new { requestType = "GetVersion" });
+            ObsRequest(connection, "GetVersion", null);
             return true;
         }
         catch (Exception ex) when (ex is not NotSupportedException and not OperationCanceledException)
@@ -119,16 +126,25 @@ public sealed partial class CphProxy
         data.ValueKind == JsonValueKind.Object && data.TryGetProperty("outputActive", out var on) && on.ValueKind == JsonValueKind.True;
 
     private JsonElement ObsRequest(int connection, string requestType, object? requestData,
-        [System.Runtime.CompilerServices.CallerMemberName] string method = "")
+        [System.Runtime.CompilerServices.CallerMemberName] string method = "") =>
+        connection == 0
+            ? Call("obs.request", new { requestType, requestData }, method)
+            : Call("obs.request", new { requestType, requestData, connection = ObsConnectionName(connection, method) }, method);
+
+    /// <summary>The name of OBS connection <paramref name="connection"/> ("" for the default connection 0).</summary>
+    private string ObsConnectionName(int connection, [System.Runtime.CompilerServices.CallerMemberName] string method = "")
     {
-        Obs(connection, method);
-        return Call("obs.request", new { requestType, requestData }, method);
+        if (connection == 0) return "";
+        var names = ObsConnectionNames(method);
+        return connection > 0 && connection < names.Count
+            ? names[connection]
+            : throw new ArgumentOutOfRangeException(nameof(connection), connection, $"Cuebot has {names.Count} OBS connection(s), numbered from 0");
     }
 
-    private static void Obs(int connection, [System.Runtime.CompilerServices.CallerMemberName] string method = "")
-    {
-        if (connection != 0) throw new NotSupportedException($"CPH.{method}: Cuebot has a single OBS connection (use connection 0)");
-    }
+    private List<string> ObsConnectionNames(string method) =>
+        Call("obs.connections", null, method) is { ValueKind: JsonValueKind.Array } list
+            ? list.EnumerateArray().Select(c => Prop(c, "name")).ToList()
+            : [];
 
     // ---- Text-to-speech and sounds --------------------------------------------------------------------------------
 
