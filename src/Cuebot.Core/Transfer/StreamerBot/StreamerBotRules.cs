@@ -77,8 +77,13 @@ public sealed partial class StreamerBotMappingTable
         t.Add(new SbSubActionRule("Break", "core.stop", ["Break", "BreakAction", "StopAction", "Stop", "124"], (s, _) => Step("core.stop", s)));
         t.Add(new SbSubActionRule("RandomNumber", "core.randomNumber", ["GetRandomNumber", "RandomNumber", "1003"], (s, _) =>
         {
-            if (Int(s, "randomType") is { } kind and not 0) throw new SbMappingException($"random number type {kind} has no Cuebot equivalent");
-            return Step("core.randomNumber", s, ("name", "randomNumber"), ("min", Str(s, "min") ?? "1"), ("max", Str(s, "max") ?? "100"));
+            // Type 0 is "Between"; type 1 is "Next Float" (the order the documentation lists them in).
+            return Int(s, "randomType") switch
+            {
+                null or 0 => Step("core.randomNumber", s, ("name", "randomNumber"), ("min", Str(s, "min") ?? "1"), ("max", Str(s, "max") ?? "100")),
+                1 => Step("core.randomNumber", s, ("type", "Next Float")),
+                var kind => throw new SbMappingException($"random number type {kind} has no Cuebot equivalent"),
+            };
         }));
         t.Add(new SbSubActionRule("TimerState", "timers.setState", ["SetTimerState", "TimerState", "8"], (s, c) =>
             Step("timers.setState", s, ("timer", c.TimerRef(Str(s, "timerId", "timer", "timerName"))), ("state", Normalize(Str(s, "state")) switch
@@ -89,19 +94,19 @@ public sealed partial class StreamerBotMappingTable
             }))));
         t.Add(new SbSubActionRule("FetchUrl", "core.httpRequest", ["FetchUrl", "1007"], MapFetchUrl));
         t.Add(new SbSubActionRule("ReadRandomLine", "core.readRandomLine", ["ReadRandomLine", "5"], (s, _) =>
-        {
-            if (Int(s, "count") is { } count and not 1) throw new SbMappingException($"reading {count} lines at once has no Cuebot equivalent");
-            return Step("core.readRandomLine", s, ("path", Str(s, "file", "path") ?? ""), ("variable", Str(s, "variableName") ?? "randomLine"));
-        })
+            Step("core.readRandomLine", s, ("path", Str(s, "file", "path") ?? ""), ("variable", Str(s, "variableName") ?? "randomLine"),
+                ("count", Text(Math.Max(1, Int(s, "count") ?? 1)))))
         {
             Tentative = true,
         });
         t.Add(new SbSubActionRule("RunProgram", "core.runProgram", ["RunProgram", "RunAProgram", "6"], (s, c) =>
         {
-            var wait = Num(s, "waitForExit") is > 0;
-            if (wait) c.Warn($"'{c.ActionName}': a Run program step waits for the program; Cuebot does not capture its output (%output0%...).");
+            // Streamer.bot's "Wait for Exit" is a number of seconds; waiting fills %outputCount% / %output#%.
+            var seconds = Num(s, "waitForExit") ?? 0;
+            var wait = seconds > 0;
             return Step("core.runProgram", s, ("path", Str(s, "command", "path") ?? ""), ("arguments", Str(s, "arguments") ?? ""),
-                ("workingDirectory", Str(s, "workingDir", "workingDirectory") ?? ""), ("wait", Flag(wait)));
+                ("workingDirectory", Str(s, "workingDir", "workingDirectory") ?? ""), ("wait", Flag(wait)),
+                ("waitSeconds", Text(Math.Max(0, seconds))), ("captureOutput", Flag(wait)));
         }));
         t.Add(new SbSubActionRule("ToastNotification", "desktop.showNotification", ["ToastNotification", "1024"],
             (s, _) => Step("desktop.showNotification", s, ("title", Str(s, "title") ?? ""), ("message", Str(s, "text", "message") ?? ""),
@@ -592,10 +597,8 @@ public sealed partial class StreamerBotMappingTable
         if (headerNode is JsonObject o)
             foreach (var (key, value) in o)
                 if (AsString(value) is { } header) headers.Append(key).Append(": ").Append(header).Append('\n');
-        if (Bool(s, "parseAsJson") == true)
-            c.Warn($"'{c.ActionName}': a Fetch URL step parsed the response as JSON; Cuebot stores the raw text. Use JSON steps to read it.");
         return Step("core.httpRequest", s, ("method", "GET"), ("url", Str(s, "url") ?? ""), ("headers", headers.ToString().TrimEnd('\n')),
-            ("variable", Str(s, "variableName") ?? "httpResponse"));
+            ("variable", Str(s, "variableName") ?? "httpResponse"), ("parseJson", Flag(Bool(s, "parseAsJson") == true)));
     }
 
     private static SubActionDefinition MapObsRaw(JsonObject s, ISbMapContext c)
