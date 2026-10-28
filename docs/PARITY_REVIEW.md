@@ -139,7 +139,7 @@ How to read the counts:
 Close behind:
 - IFTTT (2 sub-actions) and the Discord Basic Webhook sub-action are missing; Discord works only through `CPH`.
 - Crowd Control variables use flat names (`effectId`) instead of `effect.*`, `game.*` and `gamePack.*`.
-- Cloud backups are missing.
+- Cloud backups: done with Google Drive (w16).
 - Range-trigger "Always Run" overlap semantics are missing.
 - If/Else regex captures (`match.count`, `match[i]`) are missing.
 
@@ -214,7 +214,7 @@ Present: 4 (the globals get/set/clear sub-actions); the generic variables, `%dat
 
 **Partial (not changed)**
 - P · `%__source%` / `%eventSource%` are not set as arguments. The Streamer.bot event-name map lives in the scripting module, and the docs say C# is needed to read them anyway; `CPH.GetEventType()`/`GetSource()` give the same values — `GD:01.core/03.variables.md`
-- P · `$math()$`: Cuebot's own evaluator, not mXparser, so the full mXparser token set is not guaranteed — `GD:01.core/03.variables.md`
+- P · `$math()$`: Cuebot's evaluator now takes mXparser 4.4's documented operators (`# ! % ^^`, all boolean, relation and bitwise operators), number literals, constants, random variables and the commonly used unary, binary, 3-argument and variadic functions (w16). Still different: errors are reported instead of `NaN`; no calculus/iterated operators (`sum(i,…)`, `int`, `der`, `solve`), units, physical/astronomical constants or the rarer special functions (`Bell`, `Ei`, `erf`, `LambW0`, …); mXparser itself was not added (since 5.0 it is dual-licensed and commercial use needs a paid licence; the BSD-licensed 4.x line is no longer maintained) — `GD:01.core/03.variables.md`
 
 ## 3. Commands, timers, users, points, quotes
 
@@ -268,10 +268,10 @@ with the reason.
 - ✅ Reward Redemption: `rewardName`, `rawInput`, `rawInputEscaped`, `rawInputUrlEncoded`, `skipsQueue`, `requiresUserInput`, `maxPerStream`, `maxPerUserPerStream`, `globalCooldown`, `backgroundColor` (the reward settings come from the reward list read at connect and from reward create/update events) — `TR:twitch/channel-reward/reward-redemption.md`
 - ✅ Reward Redemption Updated: `rewardName`, `rewardStatus` — `TR:twitch/channel-reward/reward-redemption-updated.md`
 - ✅ Automatic Reward Redemption: `unlockedEmote*`, `gigantifiedEmote*` — `TR:twitch/channel-reward/automatic-reward-redemption.md`
-- P · Subscription: `isMultiMonth`, `multiMonthDuration`, `multiMonthTenure` (EventSub `channel.subscribe` carries no duration or tenure) — `TR:twitch/subscriptions/subscription.md`
-- ✅ Resubscription: `cumulative`, `monthStreak`, `isMultiMonth`, `multiMonthDuration`, `streakShared`. Still missing: `multiMonthTenure` (not in EventSub) — `TR:twitch/subscriptions/resubscription.md`
-- ✅ Gift Subscription (Cuebot `twitch.subGift`): `recipientId`, `totalSubsGifted`, `monthsGifted`, `fromGiftBomb`, `subBombCount`, `random`, `totalSubsGiftedShared`, `anonymous`. Still missing: the recipient's `cumulativeMonths` (not in EventSub). Note: the importer maps Streamer.bot's Gift Subscription trigger to `twitch.giftSub` (the gifter's total), which carries `gifts`/`totalGifts`/`anonymous` but not the recipient names — `TR:twitch/subscriptions/gift-subscription.md`
-- ✅ Gift Bomb: `gifts`, `totalGifts`, `totalGiftsShared`, `anonymous`. Still missing: `gift.recipientUser#`/`UserName#`/`Id#` (the recipients arrive as separate notifications after the bomb) and `bonusGifts` (not in EventSub) — `TR:twitch/subscriptions/gift-bomb.md`
+- P · Subscription: `isMultiMonth`, `multiMonthDuration`, `multiMonthTenure` (EventSub `channel.subscribe` carries no duration or tenure; w16: present as placeholders, false / 0) — `TR:twitch/subscriptions/subscription.md`
+- ✅ Resubscription: `cumulative`, `monthStreak`, `isMultiMonth`, `multiMonthDuration`, `streakShared`. `multiMonthTenure` is a placeholder (0, w16; not in EventSub) — `TR:twitch/subscriptions/resubscription.md`
+- ✅ Gift Subscription (Cuebot `twitch.subGift`): `recipientId`, `totalSubsGifted`, `monthsGifted`, `fromGiftBomb`, `subBombCount`, `random`, `totalSubsGiftedShared`, `anonymous`. The recipient's `cumulativeMonths` is a placeholder (0, w16; not in EventSub). Note: the importer maps Streamer.bot's Gift Subscription trigger to `twitch.giftSub` (the gifter's total), which carries `gifts`/`totalGifts`/`anonymous` but not the recipient names — `TR:twitch/subscriptions/gift-subscription.md`
+- ✅ Gift Bomb: `gifts`, `totalGifts`, `totalGiftsShared`, `anonymous`. Still missing: `gift.recipientUser#`/`UserName#`/`Id#` (the recipients arrive as separate notifications after the bomb) and `bonusGifts` (not in EventSub; a placeholder, false, since w16) — `TR:twitch/subscriptions/gift-bomb.md`
 - ✅ Prime Paid Upgrade: `upgradeTier`, `upgradeTierString` ("tier 1"; the docs do not show the exact text) — `TR:twitch/subscriptions/prime-paid-upgrade.md`
 - ✅ Poll Created / Updated / Completed / Terminated / Archived: `poll.Title`, `poll.Id`, `poll.StartedAt`, `poll.Duration`, `poll.DurationRemaining`, `poll.choices.count`, `poll.choice#.*`, `poll.votes`/`rewardVotes`/`totalVotes`, `poll.endedAt`, `poll.winningIndex`, `poll.winningChoice.*`, `poll._json` (5) — `TR:twitch/polls/*`
 - ✅ Prediction Created / Updated / Locked / Completed / Canceled: `prediction.*`, `prediction.outcome#.*`, `prediction.winningOutcome.*`, `prediction._json` (5) — `TR:twitch/predictions/*`
@@ -281,38 +281,38 @@ with the reason.
 - ✅ User Banned / Timed Out / Unbanned / Untimed Out, plus the 4 shared-chat versions: `createdById`, `createdByUsername`, `createdByDisplayName`, `createdAt` (8) — `TR:twitch/moderation/user-*.md`, `TR:twitch/shared-chat/user-*.md`
 - ✅ Raid Start / Send / Cancelled: `raidUser`, `raidUserName`, `raidUserId`, `raidUserProfileImageURL`, `raidUserProfileImageEscaped` (on Send and Cancelled the profile image and the cancelled target are known only for raids started from Cuebot) (3) — `TR:twitch/raid/*`
 - ✅ Pyramid Success / Broken: `totalPyramids`, `totalPyramidsBroken` (per session), `pyramidWidth`, `pyramidEmote`, `pyramidOwner*` (2) — `TR:twitch/pyramid/*`
-- ✅ Stream Update: `status`, `gameUpdate`, `statusUpdate`, `oldStatus`, `oldGameId`, `oldGameName` (compared with the channel read at connect). Still missing: `gameBoxArt`, `oldGameBoxArt` (needs a category lookup per update) — `TR:twitch/general/stream-update.md`
-- P · Stream Online: `game`, `gameId`, `tagCount`, `tag#`, `tags`, `tagsDelimited` (EventSub `stream.online` has none of these; needs a Helix channel read) — `TR:twitch/channel/stream-online.md`
+- ✅ Stream Update: `status`, `gameUpdate`, `statusUpdate`, `oldStatus`, `oldGameId`, `oldGameName` (compared with the channel read at connect). `gameBoxArt`, `oldGameBoxArt` are placeholders ("", w16; they need a category lookup per update) — `TR:twitch/general/stream-update.md`
+- P · Stream Online: `game`, `gameId` now come from the last known category (read at connect, kept by Stream Update; w16); `tagCount`, `tags`, `tagsDelimited` are placeholders (0, empty list, ""); `tag#` is not set (EventSub `stream.online` has none of these) — `TR:twitch/channel/stream-online.md`
 - ✅ Stream Offline: `endedAt` — `TR:twitch/channel/stream-offline.md`
 - ✅ Ad Run: `adLength`, `adLengthMs`, `adScheduled` — `TR:twitch/ads/ad-run.md`
 - ✅ Announcement / Shared Announcement: `announceColor`, `fromSharedChat`, `messageStripped` (2) — `TR:twitch/general/announcement.md`, `TR:twitch/shared-chat/announcement.md`
 - ✅ Blocked / Permitted Terms Added / Deleted: `moderatorUsername`, `moderatorDisplayName`, `moderatorId`, `term.#`, `createdAt` (4) — `TR:twitch/moderation/*-terms-*.md`
-- ✅ Shoutout Created: `targetUserId`, `targetUserLogin`, `targetUserDisplayName`, `viewerCount`. Still missing: `shoutoutId` (EventSub sends no id) — `TR:twitch/moderation/shoutout-created.md`
+- ✅ Shoutout Created: `targetUserId`, `targetUserLogin`, `targetUserDisplayName`, `viewerCount`. `shoutoutId` is a placeholder ("", w16; EventSub sends no id) — `TR:twitch/moderation/shoutout-created.md`
 - ✅ Shoutout Received: `viewerCount` — `TR:twitch/general/shoutout-received.md`
 - ✅ Warned User / Suspicious User Update: `moderator.userName`, `moderator.login`, `moderator.id` (2) — `TR:twitch/moderation/warned-user.md`, `suspicious-user-update.md`
 - ✅ Chat Message Deleted / Shared: `targetMessageId`, `message` (the text of a message Cuebot saw recently) (2) — `TR:twitch/moderation/chat-message-deleted.md`, `TR:twitch/shared-chat/message-deleted.md`
-- ✅ Shared Chat Session Begin / Update / End: `host.userId`, `host.userLogin`, `host.userName`. Still missing: `host.isSubscribed`, `host.isModerator`, `host.isVip` (not in EventSub) (3) — `TR:twitch/shared-chat/session-*.md`
-- ✅ Shared Resub / Sub Gift / Community Sub Gift: the same names as their non-shared versions; `bonusGifts` still missing (3) — `TR:twitch/shared-chat/*`
+- ✅ Shared Chat Session Begin / Update / End: `host.userId`, `host.userLogin`, `host.userName`. `host.isSubscribed`, `host.isModerator`, `host.isVip` are placeholders (false, w16; not in EventSub) (3) — `TR:twitch/shared-chat/session-*.md`
+- ✅ Shared Resub / Sub Gift / Community Sub Gift: the same names as their non-shared versions; `bonusGifts` is a placeholder (false, w16) (3) — `TR:twitch/shared-chat/*`
 - ✅ Subscriber / Unique Mode On/Off: `subscriberOnly`, `uniqueMode` (4) — `TR:twitch/chat/mode/*`
 - ✅ Watch Streak: `watchStreakId` (the notification's message id; EventSub has no separate id) — `TR:twitch/chat/watch-streak.md`
 - ✅ Guest Star Guest Update: `moderatorUserLogin`, `guestUser*`. Different: Cuebot's `moderatorUserName` is the login, Streamer.bot's is the display name (kept for existing actions) — `TR:twitch/guest-star/guest-update.md`
 - ✅ Unban Request Created: `text`; AutoMod Message Held / Updated: `rawInput`, `input#` — `TR:twitch/moderation/*`
 - P · BetterTTV / SevenTV Emote Added/Removed: `imageUrl` is present (Core's emote events carry it); Cuebot still detects these only when the emote cache refreshes, not in real time (4) — `TR:twitch/emotes/*`
 - P · First Words: `firstMessage` — the trigger is Core's `users.firstWords`, outside the Twitch module — `TR:twitch/chat/first-words.md`
-- P · Present Viewers: `isTest` added. Different: `users` is Cuebot's comma separated logins, not Streamer.bot's list of dictionaries (same name, kept); `isLive` missing — `TR:twitch/general/present-viewers.md`
+- P · Present Viewers: `isTest` added. Different: `users` is Cuebot's comma separated logins, not Streamer.bot's list of dictionaries (same name, kept); `isLive` added (w16, a stream lookup per poll) — `TR:twitch/general/present-viewers.md`
 - Common variables, now checked against `3.api/.variables/twitch/*.md`:
   - ✅ `TwitchBroadcaster`: `broadcastUser`, `broadcastUserName`, `broadcastUserId` on every event; `broadcastIsAffiliate`/`broadcastIsPartner` once the broadcaster was read at connect.
-  - ✅ `TwitchUser`: `userType`, `isSubscribed`, `badgeCount`. Still missing: `subscriptionTier`, `userGroups`, `userPreviousActive` (user database); `badges` is Cuebot's "set/id" string, not a list.
-  - ✅ `TwitchChat`: `msgId`, `role`, `colorR/G/B`, `messageStripped`, `messageCheermotesStripped`, `isHighlight`, `reply.*`, `rawInput`, `rawInputEscaped`, `rawInputUrlEncoded`, `input#`, `inputEscaped#`, `inputUrlEncoded#`, `fromSharedChat`. Still missing: `isAction` (EventSub does not flag /me), `inSharedChat`, `firstMessage` (Core); `emotes` is Cuebot's IRC-style string, not a list.
-  - ✅ `TwitchSharedChatSource`: `source.userId`, `source.userLogin`, `source.userName`. Still missing: `source.isSubscribed`, `source.isModerator`, `source.isVip`.
+  - ✅ `TwitchUser`: `userType`, `isSubscribed`, `badgeCount`. `subscriptionTier` (0), `userGroups` (""), `userPreviousActive` are placeholders (w16; Streamer.bot's user database); `badges` is Cuebot's "set/id" string, not a list.
+  - ✅ `TwitchChat`: `msgId`, `role`, `colorR/G/B`, `messageStripped`, `messageCheermotesStripped`, `isHighlight`, `reply.*`, `rawInput`, `rawInputEscaped`, `rawInputUrlEncoded`, `input#`, `inputEscaped#`, `inputUrlEncoded#`, `fromSharedChat`. `isAction` is a placeholder (false, w16; EventSub does not flag /me); `inSharedChat` comes from the shared chat session (w16). Still missing: `firstMessage` (Core); `emotes` is Cuebot's IRC-style string, not a list.
+  - ✅ `TwitchSharedChatSource`: `source.userId`, `source.userLogin`, `source.userName`. `source.isSubscribed`, `source.isModerator`, `source.isVip` are placeholders (false, w16).
 
 **Twitch sub-actions**
-- P · Set Background Color: no Random Color — `SA:twitch/rewards/set-background-color.md`
-- P · Set Max Per Stream / Set Max per User Per Stream: no Additive (2) — `SA:twitch/rewards/set-max-per-stream.md`, `set-max-per-user-per-stream.md`
+- F · Set Background Color: Random Color option (w16) — `SA:twitch/rewards/set-background-color.md`
+- F · Set Max Per Stream / Set Max per User Per Stream: Additive option, never below 0 (w16) (2) — `SA:twitch/rewards/set-max-per-stream.md`, `set-max-per-user-per-stream.md`
 - ✅ Create Clip: `createClipSuccess`, `createClipId`, `createClipCreatedAt`, `createClipUrl` — `SA:twitch/channel/create-clip.md`
 - ✅ Create Stream Marker: `streamMarker*` — `SA:twitch/channel/create-stream-marker.md`
 - ✅ Get Follow Age Info: `followDate`, `followAgeLong`, `followAgeShort`, `followAgeMinutes`, `followAgeSeconds`, `followUser*`, `followAge.*`. Different: `followAgeDays` stays Cuebot's number (the docs show a formatted string "4,149") — `SA:twitch/followers/get-follow-age-info-for-target.md`
-- ✅ Get User Info for Target: `addTargetResult`, `targetDescriptionEscaped`, `targetUserProfileImageUrl` (+Escaped), `targetUserType`, `targetIsAffiliate`, `targetIsPartner`, `targetIsSubscribed`, `targetSubscriptionTier`, `targetIsModerator`, `targetIsVip` (each when the scope is granted), `targetChannelTitle`, `game`, `gameId`, `createdAt`, `accountAge`, `tagCount`, `tag#`, `tags`, `tagsDelimited`. Still missing: `targetLastActive`, `targetPreviousActive` (user database) — `SA:twitch/user/get-user-info-for-target.md`
+- ✅ Get User Info for Target: `addTargetResult`, `targetDescriptionEscaped`, `targetUserProfileImageUrl` (+Escaped), `targetUserType`, `targetIsAffiliate`, `targetIsPartner`, `targetIsSubscribed`, `targetSubscriptionTier`, `targetIsModerator`, `targetIsVip` (each when the scope is granted), `targetChannelTitle`, `game`, `gameId`, `createdAt`, `accountAge`, `tagCount`, `tag#`, `tags`, `tagsDelimited`. `targetLastActive`, `targetPreviousActive` are placeholders (w16; user database) — `SA:twitch/user/get-user-info-for-target.md`
 - ✅ Add Broadcaster Information: `broadcastUser*`, `broadcastIsAffiliate`, `broadcastIsPartner`, `broadcasterProfileUrl`, `broadcasterOfflineUrl`, `broadcasterCreatedAt`, `broadcasterDescription` — `SA:twitch/user/add-broadcaster-information.md`
 - ✅ Add Random Users: `randomUserType#` — `SA:twitch/user/add-random-users.md`
 - ✅ Ban / Timeout / Unban / UnTimeout / Warn User: `bannedUser*`/`banResult`, `timedOutUser*`/`timeoutResult`, `unbannedUser*`/`unbanResult`, `unTimedOutUser*`/`unTimedOutResult`, `warnedUser*`/`warnedResult` (the names are empty when the user is given only as `id:` and is not the triggering user; a failure stops the action rather than setting `false`) (5) — `SA:twitch/moderation/*`
@@ -324,9 +324,9 @@ with the reason.
 - P · Add User To Group / Remove User From Group / User in Group: `addResult`, `removeResult`, `foundUser*` — these are Core's shared `groups.*` sub-actions, outside the Twitch module (3) — `SA:twitch/user-groups/*`
 
 **YouTube**
-- ✅ Super Chat / Super Sticker: `microAmount`, `currencyCode`. Still missing: `stickerImageUrl` (the Data API sends no image). Different: `amount` stays Cuebot's number, Streamer.bot's is the display text (Cuebot `amountText`) (2) — `TR:youtube/chat/super-chat.md`, `super-sticker.md`
+- ✅ Super Chat / Super Sticker: `microAmount`, `currencyCode`. `stickerImageUrl` is a placeholder ("", w16; the Data API sends no image). Different: `amount` stays Cuebot's number, Streamer.bot's is the display text (Cuebot `amountText`) (2) — `TR:youtube/chat/super-chat.md`, `super-sticker.md`
 - ✅ Jewels Gifted: `gift.jewelsAmount`, `gift.name`, `gift.comboCount`, `gift.isCombo`; `gift.url`, `gift.durationInSeconds`, `gift.durationInNanoSeconds`, `gift.hasVisualEffect`, `gift.altText`, `gift.altTextLanguage` when the gift details carry them — `TR:youtube/chat/jewels-gifted.md`
-- P · Message: `parts`, `emotes` (the Data API sends no message parts) — `TR:youtube/chat/message.md`
+- P · Message: `parts`, `emotes` are placeholders ("", w16; the Data API sends no message parts) — `TR:youtube/chat/message.md`
 - ✅ First Words / Message: `rawInputEscaped`, `rawInputUrlEncoded`, `input#`, `input#Escaped` (and `inputEscaped#`) on `youtube.chatMessage`; First Words itself is Core's `users.firstWords` — `TR:youtube/chat/first-words.md`
 - ✅ Gift Membership Received: `id`, `tier`, `gifterUser*`, `gifterUserType`, `gifterProfileUrl`, `gifterIsSponsor` (the last two when the gifter chatted recently) — `TR:youtube/membership/gift-membership-received.md`
 - ✅ Membership Gift: `count`, `tier`, `id` — `TR:youtube/membership/gift.md`
@@ -334,7 +334,7 @@ with the reason.
 - ✅ User Banned / Timed Out: `banDuration` (2) — `TR:youtube/general/user-banned.md`, `user-timed-out.md`
 - ✅ Statistics Updated: `dislikeCount`, `favoriteCount` (always 0: the Data API no longer reports them) — `TR:youtube/broadcast/statistics-updated.md`
 - P · Present Viewers: `isTest`, `isLive`, `users` (the YouTube module has no present-viewers trigger) — `TR:youtube/general/present-viewers.md`
-- ✅ Common variables: `YouTubeUser` `userType`, `userIsSponsor`; `YouTubeBroadcaster` `broadcastUsername`, `broadcastUserId`, `broadcastUserProfileImage`; `YouTubeBroadcast` `broadcast.id`, `.title`, `.description`, `.privacy`, `.status`. Still missing: `isSubscribed`, `userPreviousActive`, `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags` (not in Cuebot's broadcast model).
+- ✅ Common variables: `YouTubeUser` `userType`, `userIsSponsor`; `YouTubeBroadcaster` `broadcastUsername`, `broadcastUserId`, `broadcastUserProfileImage`; `YouTubeBroadcast` `broadcast.id`, `.title`, `.description`, `.privacy`, `.status`. `isSubscribed`, `userPreviousActive`, `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags` are placeholders (w16; not in the Data API chat data or Cuebot's broadcast model).
 - ✅ Ban / Timeout User sub-actions: `bannedUser*`, `banResult`, `timeoutResult` (2) — `SA:youtube/moderation/*`
 
 **Kick**
@@ -342,11 +342,11 @@ with the reason.
 - ✅ Kicks Gifted: `kicks.amount`, `kicks.name`, `kicks.type`, `kicks.tier`, `kicks.pinnedTimeSeconds`, `kicks.createdAt` (webhook), `input.count`, `input#` variants — `TR:kick/kicks/gifted.md`
 - ✅ Channel Update: `categoryUpdated`, `categoryName`, `categoryThumbnail`, `oldCategory*`, `statusUpdated`, `status`, `oldStatus` (compared with the channel read at connect) — `TR:kick/general/channel-update.md`
 - ✅ Stream Online / Offline: `category.name`, `category.id`, `category.thumbnail` (last known category); Offline gets `startedAt`, `title`, `endedAt` — `TR:kick/channel/stream-online.md`, `stream-offline.md`
-- ✅ Subscription / Resubscription: `monthsSubscribed`, `duration`, `expiresAt` (webhook). Still missing: `badgeCount`, `badge` (subscription events carry no badges) (2) — `TR:kick/subscriptions/subscription.md`, `resubscription.md`
+- ✅ Subscription / Resubscription: `monthsSubscribed`, `duration`, `expiresAt` (webhook). `badgeCount`, `badge` are placeholders (0, empty list, w16; subscription events carry no badges) (2) — `TR:kick/subscriptions/subscription.md`, `resubscription.md`
 - ✅ Gift / Mass Gift Subscription: `recipient.*` / `recipient.#.*`, `count`, `subscribedAt` and `expiresAt` (webhook only) (2) — `TR:kick/subscriptions/gift-subscription.md`, `mass-gift-subscription.md`
 - ✅ User Banned / Timed Out: `createdAt`, `createdBy*` (2) — `TR:kick/moderation/*`
 - ✅ Chat Message: `isInternal` (messages Cuebot sent); `KickChat` `messageStripped`, `colorR/G/B`, `emotes.#.*`, `badgeCount`, `badge`, `badge.#.*`, `rawInput*`, `input.count`, `input#` variants; `KickUser` `userType`, `isSubscribed`; `KickBroadcaster` `broadcastUser`, `broadcastUsername`, `broadcastUserId` — `TR:kick/chat/message.md`
-- P · First Words: `firstMessage` (Core's `users.firstWords`); Present Viewers: `isTest`, `isLive`, `users`, `categoryName`, `categoryThumbnail` (the Kick module has no present-viewers trigger); `KickBroadcaster` `broadcastUserProfileImage`, `KickUser` `userGroups`/`userPreviousActive` (2) — `TR:kick/chat/first-words.md`, `TR:kick/general/present-viewers.md`
+- P · First Words: `firstMessage` (Core's `users.firstWords`); Present Viewers: `isTest`, `isLive`, `users`, `categoryName`, `categoryThumbnail` (the Kick module has no present-viewers trigger); `KickBroadcaster` `broadcastUserProfileImage`, `KickUser` `userGroups`/`userPreviousActive` are placeholders since w16 (2) — `TR:kick/chat/first-words.md`, `TR:kick/general/present-viewers.md`
 - ✅ Ban / Timeout / Unban / UnTimeout User: `*User*`/`*Result` outputs (4) — `SA:kick/moderation/*`
 - ✅ Set Channel Title / Category: `titleSuccess`, `category.success`/`id`/`name`/`thumbnail` (2) — `SA:kick/channel/*`
 - ✅ Add Broadcaster Information / Add Random Users / Get User Info for Target: `broadcastUserType`, `broadcasterProfileUrl` (best effort), `randomUserType#`, `targetDescriptionEscaped`, `targetUserProfileImageUrl` (+Escaped), `targetUserType` (3) — `SA:kick/user/*`
@@ -571,17 +571,15 @@ permissions, event speech with weighted messages and event-state minimums, filte
 save-to-folder, highlight alias, WebSocket (incl. `Mode`) and UDP (incl. `profile`, `reg`) APIs, and the
 Streamer.bot Speaker.bot sub-actions.
 
-- M · Allow Moderator Whispers (mods whisper `!tts` commands to the broadcaster). Not done in w14-core: it needs the Twitch module to deliver whispers to the broadcaster account as chat messages, which is the platform area — `SP:1.guide/2.config/0.index.md`
+- F · Allow Moderator Whispers (w16): Speech > Chat > "Allow moderator whispers". A broadcaster whisper (`twitch.whisper`) that is a `!tts` or speaking command runs as if a moderator typed it, without chat replies, when Twitch (Helix moderation/moderators, cached 5 min) says the sender moderates the channel; other whispers are ignored — `SP:1.guide/2.config/0.index.md`
 - N/A · Speaker.bot Connected / Disconnected triggers: Cuebot's TTS is built in — `TR:integrations/speakerbot/*`
 
 ## 9. App shell
 
 - F · `/shutdown` (also `--shutdown`): asks the instance running on the data folder, windowed or headless, to quit (w14-core) — `GD:05.advanced/02.switches.md`
-- M · Cloud backups (upload, restore from cloud). Not done: Streamer.bot backs up to its own account service; Cuebot has no cloud account. Local backups exist — `GD:01.core/10.backup.md`
-- P · Keyboard shortcuts (not changed in w14-core):
-  - Actions view: no Ctrl+R rename group or Ctrl+Home/End to move a sub-action to the top or bottom.
-  - Commands, Timers, MIDI, Voice Control and Quotes views: none of the documented Delete / Ctrl+O / Ctrl+C / Ctrl+R shortcuts.
-  - Source: `GD:05.advanced/01.shortcuts.md`
+- F · Cloud backups (upload, restore from cloud): Google Drive instead of a Streamer.bot account (w16). Every backup is uploaded to a "Cuebot Backups" folder (`drive.file` scope, the user's own "Desktop app" OAuth client), the newest N are kept, and Settings > Google Drive lists and restores them — `GD:01.core/10.backup.md`
+- F · Keyboard shortcuts (w16): Actions view Ctrl+R (rename the selected group) and Ctrl+Home/End (move a sub-action to the top or bottom); Commands view Delete, Ctrl+O, Ctrl+C (copy id), Ctrl+R (rename group), Ctrl+* / Ctrl+- (expand / collapse all; groups are now collapsible); Timers Delete, Ctrl+O; MIDI In/Out Delete, events Ctrl+O; Voice Control Delete, Ctrl+Up/Down/Home/End; Quotes Delete; Twitch Channel Point Rewards Delete, Ctrl+A, Ctrl+D, Ctrl+O. All listed under Settings > About — `GD:05.advanced/01.shortcuts.md`
+- P · Hot Keys page (old wiki): no hotkey groups or "Set Action" context menu; hotkeys are added, edited, recorded and removed on the page — `WIKI:hotkeys.md`
 - Not applicable: `/nologin` and `/nowebview2` (no Streamer.bot login or WebView2 in Cuebot).
 
 ## Notes for whoever acts on this

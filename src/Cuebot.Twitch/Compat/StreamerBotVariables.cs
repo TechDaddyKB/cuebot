@@ -200,6 +200,72 @@ internal static class StreamerBotVariables
                 Alias(a, "guestUserId", "userId");
                 break;
         }
+
+        Placeholders(type, a);
+    }
+
+    /// <summary>
+    /// Documented by Streamer.bot but not sent by EventSub or Helix: present with a neutral value so imported actions
+    /// that read them keep working. Runs last, so real values set above (or by the router) win.
+    /// </summary>
+    private static void Placeholders(string type, Dictionary<string, object?> a)
+    {
+        if (Text(a, "userId").Length > 0)
+        {
+            Placeholder(a, "subscriptionTier", 0);          // TwitchUser: number (1000/2000/3000) when subscribed
+            Placeholder(a, "userGroups", "");               // TwitchUser: comma-delimited groups (Streamer.bot user database)
+            Placeholder(a, "userPreviousActive", default(DateTime));
+        }
+        if (IsChat(type, a))
+        {
+            Placeholder(a, "isAction", false);              // EventSub does not flag /me messages
+            Placeholder(a, "inSharedChat", false);
+        }
+        if (Text(a, "sourceBroadcasterId").Length > 0)
+        {
+            Placeholder(a, "source.isSubscribed", false);
+            Placeholder(a, "source.isModerator", false);
+            Placeholder(a, "source.isVip", false);
+        }
+        switch (type)
+        {
+            case T.Sub or T.SharedChatSub:
+                Placeholder(a, "isMultiMonth", false);
+                Placeholder(a, "multiMonthDuration", 0);
+                Placeholder(a, "multiMonthTenure", 0);
+                break;
+            case T.Resub or T.SharedChatResub:
+                Placeholder(a, "multiMonthTenure", 0);
+                break;
+            case T.SubGift or T.SharedChatSubGift:
+                Placeholder(a, "cumulativeMonths", 0);         // the recipient's months
+                break;
+            case T.GiftBomb or T.SharedChatGiftBomb:
+                Placeholder(a, "bonusGifts", false);
+                break;
+            case T.StreamOnline:
+                Placeholder(a, "game", "");
+                Placeholder(a, "gameId", "");
+                Placeholder(a, "tagCount", 0);
+                Placeholder(a, "tags", new List<string>());
+                Placeholder(a, "tagsDelimited", "");
+                break;
+            case T.StreamUpdate:
+                Placeholder(a, "gameBoxArt", "");
+                Placeholder(a, "oldGameBoxArt", "");
+                break;
+            case T.ShoutoutCreated:
+                Placeholder(a, "shoutoutId", "");
+                break;
+            case T.SharedChatBegin or T.SharedChatUpdate or T.SharedChatEnd:
+                Placeholder(a, "host.isSubscribed", false);
+                Placeholder(a, "host.isModerator", false);
+                Placeholder(a, "host.isVip", false);
+                break;
+            case T.PresentViewers:
+                Placeholder(a, "isLive", false);
+                break;
+        }
     }
 
     /// <summary>TwitchBroadcaster: broadcastUser, broadcastUserName, broadcastUserId, broadcastIsAffiliate, broadcastIsPartner.</summary>

@@ -117,3 +117,35 @@ internal sealed class TwitchChatSender(TwitchService twitch) : IChatSender
             options.Bot switch { true => TwitchSender.Bot, false => TwitchSender.Broadcaster, null => TwitchSender.Default },
             string.IsNullOrWhiteSpace(options.ReplyTo) ? null : options.ReplyTo.Trim(), options.Internal, ct);
 }
+
+/// <summary>
+/// Whether a user moderates the broadcaster's channel (Helix moderation/moderators), cached for a few minutes. Used
+/// for whispered commands, whose events carry no badges. False when signed out or without a moderator-read scope.
+/// </summary>
+internal sealed class TwitchChannelRoles(Func<TwitchApi> api, Cuebot.Core.Logging.AppLog log, TimeProvider? time = null) : Cuebot.Core.Chat.Moderation.IChannelRoles
+{
+    private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(5);
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+    private readonly Dictionary<string, (bool IsModerator, DateTimeOffset Until)> _cache = new(StringComparer.Ordinal);
+
+    public string Platform => TwitchChatAdapter.PlatformName;
+
+    public async Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default)
+    {
+        if (userId.Length == 0) return false;
+        lock (_cache)
+            if (_cache.TryGetValue(userId, out var hit) && hit.Until > _time.GetUtcNow()) return hit.IsModerator;
+        bool result;
+        try
+        {
+            result = await api().IsModeratorAsync(userId, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is TwitchApiException or HttpRequestException or InvalidOperationException)
+        {
+            log.Warn("Twitch", $"Could not check whether user {userId} is a moderator: {ex.Message}");
+            return false;
+        }
+        lock (_cache) _cache[userId] = (result, _time.GetUtcNow() + CacheFor);
+        return result;
+    }
+}

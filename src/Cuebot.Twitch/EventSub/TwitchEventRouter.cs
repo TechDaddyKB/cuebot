@@ -132,7 +132,8 @@ internal sealed class TwitchEventRouter(
                         _messageOrder.Enqueue(id);
                         if (_messageOrder.Count > RememberedMessages) _messages.Remove(_messageOrder.Dequeue());
                     }
-                    return e;
+                    var inSharedChat = _sharedChatHost is not null;
+                    return Retype(e, e.Type, a => a.TryAdd("inSharedChat", inSharedChat));
                 case TwitchEventTypes.ChatMessageDeleted when !e.Args.ContainsKey("message"):
                     return _messages.TryGetValue(Str(e, "messageId"), out var deleted) ? Retype(e, e.Type, a => a["message"] = deleted) : e;
                 case TwitchEventTypes.RewardCreated or TwitchEventTypes.RewardUpdated:
@@ -152,6 +153,14 @@ internal sealed class TwitchEventRouter(
                         a.TryAdd("maxPerUserPerStream", reward.MaxPerUserPerStream);
                         a.TryAdd("globalCooldown", reward.GlobalCooldown);
                         a.TryAdd("backgroundColor", reward.BackgroundColor);
+                    });
+                case TwitchEventTypes.StreamOnline:
+                    // stream.online carries no category: the last one known (read at connect, kept by Stream Update).
+                    if (_channel is not { } live) return e;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a.TryAdd("game", live.GameName);
+                        a.TryAdd("gameId", live.GameId);
                     });
                 case TwitchEventTypes.StreamUpdate:
                     var before = _channel;

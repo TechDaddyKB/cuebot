@@ -28,6 +28,8 @@ public static class TwitchServiceCollectionExtensions
         services.AddSingleton<IScriptFunctionProvider, TwitchScriptFunctions>();
         services.AddSingleton<Cuebot.Core.Chat.IChatEventAdapter, TwitchChatAdapter>();
         services.AddSingleton<Cuebot.Core.Chat.IChatSender, TwitchChatSender>();
+        services.AddSingleton<Cuebot.Core.Chat.Moderation.IChannelRoles>(sp =>
+            new TwitchChannelRoles(() => sp.GetRequiredService<TwitchService>().Api, sp.GetRequiredService<AppLog>()));
         return services;
     }
 }

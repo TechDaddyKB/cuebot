@@ -3,10 +3,10 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Cuebot.YouTube.Auth;
+namespace Cuebot.Core.Auth;
 
 /// <summary>PKCE (RFC 7636) verifier/challenge pair and an unguessable state value.</summary>
-internal static class Pkce
+public static class Pkce
 {
     public static string CreateVerifier() => Base64Url(RandomNumberGenerator.GetBytes(32));
 
@@ -19,16 +19,20 @@ internal static class Pkce
 }
 
 /// <summary>
-/// Receives the OAuth redirect of the browser sign-in on http://127.0.0.1:&lt;random port&gt;/ (Google's loopback
-/// flow for Desktop clients). A minimal one-request HTTP listener on the loopback interface only, so it works the
-/// same on Windows and Linux without URL reservations.
+/// Receives the OAuth redirect of a browser sign-in on http://127.0.0.1:&lt;random port&gt;/ (the loopback flow of
+/// installed apps, e.g. Google "Desktop app" clients used by YouTube and the Google Drive backups). A minimal
+/// one-request HTTP listener on the loopback interface only, so it works the same on Windows and Linux without URL
+/// reservations.
 /// </summary>
-internal sealed class LoopbackReceiver : IDisposable
+public sealed class LoopbackReceiver : IDisposable
 {
     private readonly TcpListener _listener;
+    private readonly string _service;
 
-    public LoopbackReceiver()
+    /// <param name="service">Named on the page the browser shows after the redirect, e.g. "YouTube".</param>
+    public LoopbackReceiver(string service)
     {
+        _service = service;
         _listener = new TcpListener(IPAddress.Loopback, 0);
         _listener.Start();
         RedirectUri = $"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}/";
@@ -56,13 +60,13 @@ internal sealed class LoopbackReceiver : IDisposable
             var query = ParseQuery(target[2..]);
             var ok = query.ContainsKey("code");
             await RespondAsync(stream, "200 OK",
-                ok ? "Cuebot is signed in to YouTube. You can close this tab."
-                   : "YouTube sign-in did not complete. Return to Cuebot and try again.", ct).ConfigureAwait(false);
+                ok ? $"Cuebot is signed in to {_service}. You can close this tab."
+                   : $"{_service} sign-in did not complete. Return to Cuebot and try again.", ct).ConfigureAwait(false);
             return query;
         }
     }
 
-    internal static Dictionary<string, string> ParseQuery(string query)
+    public static Dictionary<string, string> ParseQuery(string query)
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))

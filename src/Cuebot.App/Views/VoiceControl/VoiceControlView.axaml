@@ -43,7 +43,7 @@
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
               <Button Content="Add" Command="{Binding AddCommandCommand}" Name="VoiceAddCommand" />
               <Button Content="Duplicate" Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" />
-              <Button Content="Delete" Command="{Binding RemoveCommandCommand}" IsEnabled="{Binding HasSelection}" HotKey="Delete" />
+              <Button Content="Delete" Command="{Binding RemoveCommandCommand}" IsEnabled="{Binding HasSelection}" />
               <Button Content="↑" Command="{Binding MoveUpCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Move up (commands are checked in this order)" />
               <Button Content="↓" Command="{Binding MoveDownCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Move down" />
             </StackPanel>

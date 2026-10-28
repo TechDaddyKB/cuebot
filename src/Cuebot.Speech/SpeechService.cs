@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Cuebot.Core.Actions;
+using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
@@ -33,6 +34,7 @@ public sealed class SpeechService : IAsyncDisposable
     private readonly AppLog _log;
     private readonly ISpeechChatReplier? _chat;
     private readonly IReadOnlyList<IEmoteNameProvider> _emoteProviders;
+    private readonly IReadOnlyList<IChannelRoles> _roles;
     private readonly TimeProvider _time;
     private readonly SpeechQueue _queue = new();
     private readonly PauseGate _pause = new();
@@ -51,9 +53,10 @@ public sealed class SpeechService : IAsyncDisposable
     public SpeechService(JsonFile<SpeechSettings> settings, IEnumerable<ITtsEngine> engines, IAudioPlayer player,
         EventBus bus, AppLog log, SpeechUserDirectory? users = null, ISpeechChatReplier? chat = null,
         IAudioInput? audioInput = null, IEnumerable<IEmoteNameProvider>? emoteProviders = null, TimeProvider? time = null,
-        Random? random = null)
+        Random? random = null, IEnumerable<IChannelRoles>? roles = null)
     {
         _settings = settings;
+        _roles = roles?.ToArray() ?? [];
         Engines = engines.ToArray();
         _voices = new VoiceResolver(Engines, random);
         _player = player;
@@ -424,6 +427,10 @@ public sealed class SpeechService : IAsyncDisposable
             case SpeechEvents.ChatActivity:
                 HandleActivity(e.Args);
                 return;
+            case SpeechEvents.Whisper:
+                if (Settings.Commands is { Enabled: true, AllowModeratorWhispers: true } && ChatContext.FromEvent(e) is { } whisper)
+                    _ = HandleWhisperSafelyAsync(whisper with { Platform = "Twitch" });
+                return;
         }
         if (SpeechEvents.Merch.Contains(e.Type, StringComparer.OrdinalIgnoreCase))
         {
@@ -465,6 +472,35 @@ public sealed class SpeechService : IAsyncDisposable
         {
             _log.Error(LogSource, "Could not handle a chat message for speech", ex);
         }
+    }
+
+    private async Task HandleWhisperSafelyAsync(ChatContext whisper)
+    {
+        try
+        {
+            await HandleWhisperAsync(whisper).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !_shutdown.IsCancellationRequested)
+        {
+            _log.Error(LogSource, "Could not handle a whispered TTS command", ex);
+        }
+    }
+
+    /// <summary>
+    /// Speaker.bot's "Allow Moderator Whispers": a moderator whispers a <c>!tts</c> (or speaking) command to the
+    /// broadcaster account and it runs as if typed in chat by a moderator. Other whispers, and whispers from anyone
+    /// who is not a moderator of the channel, are ignored. Whisper events carry no badges, so the platform is asked.
+    /// </summary>
+    internal async Task HandleWhisperAsync(ChatContext whisper)
+    {
+        if (!TtsCommands.IsCommand(whisper.Message, Settings.Commands)) return;
+        var roles = _roles.FirstOrDefault(r => string.Equals(r.Platform, whisper.Platform, StringComparison.OrdinalIgnoreCase));
+        if (roles is null || !await roles.IsModeratorAsync(whisper.UserId, _shutdown.Token).ConfigureAwait(false))
+        {
+            _log.Debug(LogSource, $"Ignored a whispered TTS command from {whisper.User}: not a moderator");
+            return;
+        }
+        await HandleChatAsync(whisper with { IsModerator = true }).ConfigureAwait(false);
     }
 
     internal async Task HandleChatAsync(ChatContext chat)

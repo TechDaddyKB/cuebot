@@ -482,4 +482,73 @@ public sealed class StreamerBotVariableTests
         foreach (var (key, value) in input)
             Assert.True(e.Args.ContainsKey(key), $"{type} lost Cuebot's '{key}'");
     }
+
+    // ---------------------------------------------------------------- placeholders (documented, not sent by Twitch)
+
+    private BotEvent RouteArgs(string type, params (string Key, object? Value)[] args) =>
+        Assert.Single(_router.Route(new BotEvent(type, args.ToDictionary(p => p.Key, p => p.Value))), x => x.Type == type);
+
+    [Fact]
+    public void Variables_twitch_cannot_supply_are_present_with_neutral_values()
+    {
+        var sub = RouteArgs(T.Sub, ("user", "Fan"), ("userName", "fan"), ("userId", "1"), ("tier", "1000"));
+        Assert.Equal(false, sub.Args["isMultiMonth"]);
+        Assert.Equal(0, sub.Args["multiMonthDuration"]);
+        Assert.Equal(0, sub.Args["multiMonthTenure"]);
+        Assert.Equal(0, sub.Args["subscriptionTier"]);
+        Assert.Equal("", sub.Args["userGroups"]);
+        Assert.Equal(default(DateTime), sub.Args["userPreviousActive"]);
+
+        Assert.Equal(0, RouteArgs(T.Resub, ("userId", "1"), ("cumulativeMonths", 5)).Args["multiMonthTenure"]);
+        Assert.Equal(0, RouteArgs(T.SubGift, ("userId", "1"), ("recipientUserId", "2")).Args["cumulativeMonths"]);
+        Assert.Equal(false, RouteArgs(T.GiftBomb, ("userId", "1"), ("total", 5)).Args["bonusGifts"]);
+        Assert.Equal("", RouteArgs(T.ShoutoutCreated, ("userId", "5")).Args["shoutoutId"]);
+
+        var online = RouteArgs(T.StreamOnline);
+        Assert.Equal("", online.Args["game"]);
+        Assert.Equal(0, online.Args["tagCount"]);
+        Assert.Empty(Assert.IsType<List<string>>(online.Args["tags"]));
+        Assert.Equal("", online.Args["tagsDelimited"]);
+
+        var update = RouteArgs(T.StreamUpdate, ("title", "t"), ("gameId", "1"), ("gameName", "Art"));
+        Assert.Equal("", update.Args["gameBoxArt"]);
+        Assert.Equal("", update.Args["oldGameBoxArt"]);
+
+        var session = RouteArgs(T.SharedChatBegin, ("user", "H"), ("userName", "h"), ("userId", "5"), ("isHost", false));
+        Assert.Equal(false, session.Args["host.isSubscribed"]);
+        Assert.Equal(false, session.Args["host.isModerator"]);
+        Assert.Equal(false, session.Args["host.isVip"]);
+
+        var shared = RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m1"), ("userId", "1"), ("sourceBroadcasterId", "77"));
+        Assert.Equal(false, shared.Args["isAction"]);
+        Assert.Equal(false, shared.Args["source.isSubscribed"]);
+        Assert.Equal(false, shared.Args["source.isModerator"]);
+        Assert.Equal(false, shared.Args["source.isVip"]);
+
+        Assert.Equal(false, RouteArgs(T.PresentViewers, ("count", 0)).Args["isLive"]);
+    }
+
+    [Fact]
+    public void Real_values_win_over_placeholders()
+    {
+        var sub = RouteArgs(T.Sub, ("userId", "1"), ("durationMonths", 3));
+        Assert.Equal(true, sub.Args["isMultiMonth"]);
+        Assert.Equal(3, sub.Args["multiMonthDuration"]);
+        Assert.Equal(true, RouteArgs(T.PresentViewers, ("count", 0), ("isLive", true)).Args["isLive"]);
+    }
+
+    [Fact]
+    public void Stream_online_gets_the_last_known_category_and_chat_knows_about_a_shared_chat_session()
+    {
+        _router.SeedChannel(new TwitchChannelInfo("1337", "streamer", "Streamer", "en", "509658", "Just Chatting", "Title", [], [], false));
+        var online = RouteArgs(T.StreamOnline);
+        Assert.Equal("Just Chatting", online.Args["game"]);
+        Assert.Equal("509658", online.Args["gameId"]);
+
+        Assert.Equal(false, RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m1"), ("userId", "1")).Args["inSharedChat"]);
+        RouteArgs(T.SharedChatBegin, ("user", "H"), ("userName", "h"), ("userId", "5"), ("isHost", true));
+        Assert.Equal(true, RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m2"), ("userId", "1")).Args["inSharedChat"]);
+        RouteArgs(T.SharedChatEnd, ("user", "H"), ("userName", "h"), ("userId", "5"));
+        Assert.Equal(false, RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m3"), ("userId", "1")).Args["inSharedChat"]);
+    }
 }

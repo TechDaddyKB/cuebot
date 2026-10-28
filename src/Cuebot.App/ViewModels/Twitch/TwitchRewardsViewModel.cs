@@ -106,6 +106,22 @@ public sealed partial class TwitchRewardItem : ObservableObject
         GlobalCooldownSeconds = (int)GlobalCooldownSeconds,
     };
 
+    /// <summary>A new, unsaved reward with this one's settings (Ctrl+D).</summary>
+    public TwitchRewardItem Duplicate() => new(counters: _counters)
+    {
+        Title = Title + " (copy)",
+        Prompt = Prompt,
+        Cost = Cost,
+        BackgroundColor = BackgroundColor,
+        IsEnabled = IsEnabled,
+        IsUserInputRequired = IsUserInputRequired,
+        SkipQueue = SkipQueue,
+        MaxPerStream = MaxPerStream,
+        MaxPerUserPerStream = MaxPerUserPerStream,
+        GlobalCooldownSeconds = GlobalCooldownSeconds,
+        Group = Group,
+    };
+
     internal void Saved(TwitchReward reward)
     {
         var wasNew = IsNew;
@@ -142,6 +158,25 @@ public sealed partial class TwitchRewardsViewModel(TwitchService twitch) : Twitc
         var item = new TwitchRewardItem(counters: Api.Counters);
         Rewards.Add(item);
         Selected = item;
+    }
+
+    /// <summary>Ctrl+D: a copy of the selected reward, saved to Twitch with Save.</summary>
+    [RelayCommand]
+    private void Duplicate()
+    {
+        if (Selected is not { } source) return;
+        var copy = source.Duplicate();
+        Rewards.Add(copy);
+        Selected = copy;
+    }
+
+    /// <summary>Ctrl+O: turns the selected reward on or off, saving it to Twitch when it is one Cuebot created.</summary>
+    [RelayCommand]
+    private async Task ToggleEnabled()
+    {
+        if (Selected is not { IsManageable: true } item) return;   // Twitch only lets an app change its own rewards
+        item.IsEnabled = !item.IsEnabled;
+        if (item.IsManageable && !item.IsNew) await SaveCommand.ExecuteAsync(null);
     }
 
     [RelayCommand]

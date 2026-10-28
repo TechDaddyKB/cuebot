@@ -128,8 +128,23 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
   `%createdByUsername%`, `%raidUserName%`, `%createClipUrl%`, `%followAgeLong%`, ...): Twitch ~64/74 flagged triggers and
   29/35 sub-actions, YouTube 10/12 + 2/2, Kick 11/13 + 12/12. Integrations too: OBS `props.*`/`currentScene`/`success`,
   Streamlabs Desktop `sd.*`, Crowd Control `effect.*`/`game.*`/`gamePack.*`, Fourthwall `fw.*`, Patreon, Pulsoid/HypeRate
-  `measuredAt`, Voicemod `voice.*`/`soundboard.*`, VTube Studio `clickPosition.*`/`model.*`. Not set where the platform
-  APIs lack the data (e.g. Twitch `multiMonthTenure`, `bonusGifts`, `shoutoutId`; YouTube message `parts`/`emotes`).
+  `measuredAt`, Voicemod `voice.*`/`soundboard.*`, VTube Studio `clickPosition.*`/`model.*`.
+- **Placeholders (w16).** Where Streamer.bot documents a variable the platform APIs cannot supply, it is still present,
+  with a neutral value of the documented type (0, false, "", an empty list, `default(DateTime)`), so actions written for
+  Streamer.bot that read it do not fail; a real value always wins (`StreamerBotArgs.Placeholder`):
+  - Twitch: Subscription `isMultiMonth` (false) / `multiMonthDuration` (0) when the event has no duration,
+    `multiMonthTenure` (0, also Resubscription); Gift Subscription recipient `cumulativeMonths` (0); Gift Bomb and shared
+    Community Sub Gift `bonusGifts` (false); Stream Online `tagCount` (0), `tags` (empty list), `tagsDelimited` ("");
+    Stream Update `gameBoxArt`, `oldGameBoxArt` (""); Shoutout Created `shoutoutId` (""); Shared Chat Session
+    `host.isSubscribed`/`isModerator`/`isVip` (false); TwitchChat `isAction` (false); TwitchSharedChatSource
+    `source.isSubscribed`/`isModerator`/`isVip` (false); TwitchUser `subscriptionTier` (0), `userGroups` (""),
+    `userPreviousActive`; Get User Info `targetLastActive`, `targetPreviousActive`.
+  - Now real instead: Stream Online `game`/`gameId` (last known category), TwitchChat `inSharedChat` (shared chat
+    session state), Present Viewers `isLive` (a stream lookup per poll); they fall back to the placeholder when unknown.
+  - YouTube: Message `parts`, `emotes` (""); Super Sticker `stickerImageUrl` (""); YouTubeUser `isSubscribed` (false),
+    `userPreviousActive`; YouTubeBroadcast `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags`.
+  - Kick: Subscription / Resubscription `badgeCount` (0), `badge` (empty list); KickUser `userGroups` (""),
+    `userPreviousActive`; KickBroadcaster `broadcastUserProfileImage` ("") when no picture is known.
 - **Engine and core.** Queue sub-actions (clear, blocking, pause), Set Trigger / Sub-Action State, Set Sub-Action Weight,
   Get/Set Action Group State, Trigger Custom Event, Pick Color; Get Input is Streamer.bot's dialog (the splitter is
   "Split text into inputs"); Random Number Next Float; Delay random range; If/Else regex captures and exists / does not
@@ -147,8 +162,11 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
   sources, random group source (19 sub-actions now; some calls unverified). Discord Basic Webhook, IFTTT.
 - **Still different.** Camera Hub Set Dynamic Range / Noise Reduction / White Balance Tint ❌ (vendor-only controls behind
   Camera Hub, not UVC; re-checked 2026-10-28: Elgato offers no Camera Hub SDK, API or plugin system, so no Camera Hub
-  plugin can expose them, and the Facecam's extension units are undocumented; see [ELGATO_SDKS.md](ELGATO_SDKS.md)); cloud backups ❌ (no Cuebot cloud account); `$math()$` uses Cuebot's evaluator, not mXparser;
-  keyboard shortcuts list and Speaker.bot "Allow Moderator Whispers" not done; see PARITY_REVIEW.md for the full list.
+  plugin can expose them, and the Facecam's extension units are undocumented; see [ELGATO_SDKS.md](ELGATO_SDKS.md)); cloud
+  backups: Google Drive replaces them (Streamer.bot's need a Streamer.bot account; see README "Google Drive backups");
+  `$math()$` accepts mXparser 4.4's documented syntax (Cuebot's evaluator, not mXparser itself: errors instead of NaN, no
+  calculus operators or units). Streamer.bot's keyboard shortcuts and Speaker.bot's "Allow Moderator Whispers" are done
+  (w16); see PARITY_REVIEW.md for what is left.
 
 ## 8. Speaker.bot (text-to-speech)
 
@@ -172,8 +190,9 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
 | Windows + Linux native, Wayland-first, AppImage/Flatpak/AUR | ➕ | — |
 | Tray icon, minimize to tray, start minimized, headless mode, startup switches, single instance | ✅ | 2 |
 | Automatic backups (on start / before update), restore | ✅ | 2 |
+| Cloud backups (upload, keep newest N, list, restore) | ✅ Google Drive (your own OAuth client, `drive.file` scope) instead of a Streamer.bot account | 6 |
 | Update checker / release channels | ✅ (stable + pre-release; notifies, no auto-install) | 5 |
-| Light/dark theme toggle, keyboard shortcuts | ✅ themes; shortcuts Ctrl+S save, F1 support, F5 test trigger, Ctrl+Alt+I/E import/export, Ctrl+Alt+C chat, Ctrl+Alt+V variables, Ctrl+Alt+L log folder; Actions page Delete, Ctrl+D, Ctrl+O, Ctrl+Up/Down, copy/paste, undo/redo (listed under Settings > About) | 4 |
+| Light/dark theme toggle, keyboard shortcuts | ✅ themes; shortcuts Ctrl+S save, F1 support, F5 test trigger, Ctrl+Alt+I/E import/export, Ctrl+Alt+C chat, Ctrl+Alt+V variables, Ctrl+Alt+L log folder; Actions page Delete, Ctrl+D, Ctrl+O, Ctrl+Up/Down, Ctrl+Home/End, Ctrl+R rename group, copy/paste, undo/redo; Streamer.bot's per-view keys on Commands (Delete, Ctrl+O, Ctrl+C id, Ctrl+R group, Ctrl+* / Ctrl+- expand / collapse), Timers, MIDI, Voice Control, Quotes and Twitch Rewards (Delete, Ctrl+A/D/O) (all listed under Settings > About) | 4 |
 
 ## Delivery waves
 

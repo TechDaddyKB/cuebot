@@ -50,6 +50,19 @@ public interface IChatAnnouncer
     Task AnnounceAsync(string text, ChatAnnouncementKind kind, CancellationToken ct = default);
 }
 
+/// <summary>
+/// Implemented by platform modules that can tell whether a user moderates the channel, for messages whose events
+/// carry no badges (a Twitch whisper). Optional; Speech uses it for Speaker.bot's "Allow Moderator Whispers".
+/// </summary>
+public interface IChannelRoles
+{
+    /// <summary>Same name as the module's <see cref="IChatEventAdapter.Platform"/>.</summary>
+    string Platform { get; }
+
+    /// <summary>True when the user moderates the channel (the broadcaster counts). False when unknown or the lookup failed.</summary>
+    Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default);
+}
+
 /// <summary>Looks up moderators and announcers by platform for the combined chat.</summary>
 public sealed class ChatModerationService(IEnumerable<IChatModerator> moderators, IEnumerable<IChatAnnouncer> announcers)
 {

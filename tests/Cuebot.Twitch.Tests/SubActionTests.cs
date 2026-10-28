@@ -173,6 +173,12 @@ public sealed class SubActionTests : IDisposable
             "is_max_per_stream_enabled=false;!max_per_stream" },
         { "twitch.setRewardMaxPerUser", "reward=Hydrate;max=3", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
             "is_max_per_user_per_stream_enabled=true;max_per_user_per_stream=3" },
+        { "twitch.setRewardMaxPerUser", "reward=Hydrate;max=1;additive=true", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "is_max_per_user_per_stream_enabled=true;max_per_user_per_stream=3" },
+        { "twitch.setRewardMaxPerStream", "reward=Hydrate;max=4;additive=true", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "is_max_per_stream_enabled=true;max_per_stream=4" },
+        { "twitch.setRewardMaxPerUser", "reward=Hydrate;max=-5;additive=true", "PATCH", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1",
+            "is_max_per_user_per_stream_enabled=false" },
         { "twitch.deleteReward", "reward=Hydrate", "DELETE", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&id=r1", "" },
         { "twitch.getRewardInfo", "reward=Hydrate", "GET", "/helix/channel_points/custom_rewards", "broadcaster_id=1337&only_manageable_rewards=true", "" },
         { "twitch.updateRedemption", "rewardId=r1;redemptionId=red-1;status=Cancel", "PATCH", "/helix/channel_points/custom_rewards/redemptions",
@@ -236,6 +242,16 @@ public sealed class SubActionTests : IDisposable
         { "twitch.updateGuestStarSlotSettings", "slot=2;audio=Off;volume=50", "PATCH", "/helix/guest_star/slot_settings",
             "broadcaster_id=1337&moderator_id=1337&session_id=s1&slot_id=2&is_audio_enabled=false&volume=50", "" },
     };
+
+    [Fact]
+    public async Task Set_reward_colour_can_pick_a_random_colour()
+    {
+        var (ok, _, log) = await RunAsync("twitch.setRewardColor", Parse("reward=Hydrate;color=#000000;random=true"));
+
+        Assert.True(ok, string.Join(" | ", log.Recent().Select(e => e.Message)));
+        var colour = JsonSerializer.Deserialize<JsonElement>(_h.Last.Body).GetProperty("background_color").GetString()!;
+        Assert.Matches("^#[0-9A-F]{6}$", colour);
+    }
 
     [Theory]
     [MemberData(nameof(HelixCases))]

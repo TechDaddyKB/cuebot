@@ -10,7 +10,13 @@ public partial class QuotesView : UserControl
     private static readonly FilePickerFileType JsonType = new("Quotes JSON") { Patterns = ["*.json"], MimeTypes = ["application/json"] };
     private static readonly FilePickerFileType CsvType = new("CSV") { Patterns = ["*.csv"], MimeTypes = ["text/csv"] };
 
-    public QuotesView() => InitializeComponent();
+    /// <summary>Delete on a quote in the list deletes it (Streamer.bot's Quotes view).</summary>
+    public QuotesView()
+    {
+        InitializeComponent();
+        PageKeys.Handle(QuoteList, e => e.Key == Avalonia.Input.Key.Delete && PageKeys.Plain(e)
+                                        && PageKeys.Item<QuoteRowViewModel>(e) is { } quote && PageKeys.Run(quote.DeleteCommand));
+    }
 
     private QuotesViewModel? Vm => DataContext as QuotesViewModel;
 

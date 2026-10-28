@@ -140,4 +140,25 @@ public sealed class StreamerBotVariableTests
         var neutral = new BotEvent(Y.NeutralUserBanned, new Dictionary<string, object?> { ["userId"] = Alice });
         Assert.Same(neutral, StreamerBotVariables.Apply(neutral, Broadcaster, Live));
     }
+
+    [Fact]
+    public void Variables_the_data_api_cannot_supply_are_present_with_neutral_values()
+    {
+        var e = Map(Text("m1", "hello"));
+        Assert.Equal("", e.Args["parts"]);
+        Assert.Equal("", e.Args["emotes"]);
+        Assert.Equal(false, e.Args["isSubscribed"]);
+        Assert.Equal(default(DateTime), e.Args["userPreviousActive"]);
+        Assert.Equal(default(DateTime), e.Args["broadcast.publishedAt"]);
+        Assert.Equal("", e.Args["broadcast.defaultLanguage"]);
+        Assert.Equal("", e.Args["broadcast.defaultAudioLanguage"]);
+        Assert.Equal("", e.Args["broadcast.tags"]);
+
+        var sticker = Map(Item("s2", "superStickerEvent",
+            """ "superStickerDetails":{"amountMicros":"2000000","currency":"USD","amountDisplayString":"$2.00","tier":1,"superStickerMetadata":{"stickerId":"st1","altText":"Wave","language":"en"}} """));
+        Assert.Equal("", sticker.Args["stickerImageUrl"]);
+
+        var stats = StreamerBotVariables.Apply(YouTubeEvents.Statistics(Live, new BroadcastStatistics(12, 100, 5, 3), Broadcaster), Broadcaster, Live);
+        Assert.False(stats.Args.ContainsKey("isSubscribed"));   // no user on broadcast events
+    }
 }

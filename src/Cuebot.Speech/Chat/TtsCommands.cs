@@ -80,6 +80,13 @@ internal sealed class TtsCommands(SpeechService speech, TimeProvider time)
         return null;
     }
 
+    /// <summary>Whether the message is a <c>!tts</c> command or a speaking command.</summary>
+    public static bool IsCommand(string message, TtsCommandSettings settings)
+    {
+        var prefix = settings.Prefix.Trim().Length > 0 ? settings.Prefix.Trim() : "!tts";
+        return Rest(message.Trim(), prefix, allowEmpty: true) is not null || MatchSpeakCommand(message, settings) is not null;
+    }
+
     /// <summary>Whether a chatter belongs to <paramref name="audience"/>. The broadcaster always does.</summary>
     public static bool Allows(ChatAudience audience, ChatContext chat, SpeechUser? user)
     {
@@ -445,7 +452,8 @@ internal sealed class TtsCommands(SpeechService speech, TimeProvider time)
 
     private async Task ReplyAsync(ChatContext chat, string text, CancellationToken ct)
     {
-        if (Settings.SilenceOutput || speech.Chat is not { } chatReplier) return;
+        // Whispered commands get no chat feedback (as in Speaker.bot): the reply would land in public chat.
+        if (Settings.SilenceOutput || chat.IsWhisper || speech.Chat is not { } chatReplier) return;
         try
         {
             await chatReplier.ReplyAsync(chat.Platform, text, ct).ConfigureAwait(false);

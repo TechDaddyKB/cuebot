@@ -31,9 +31,28 @@ public static class AppShortcuts
         new("", "Ctrl+D", "Duplicate the selected action, trigger or sub-action", ActionsPage),
         new("", "Ctrl+O", "Turn the selected action, trigger or sub-action on or off", ActionsPage),
         new("", "Ctrl+Up / Ctrl+Down", "Move the selected sub-action up or down", ActionsPage),
+        new("", "Ctrl+Home / Ctrl+End", "Move the selected sub-action to the top or bottom", ActionsPage),
+        new("", "Ctrl+R", "Rename the selected group (puts the cursor in its name)", ActionsPage),
         new("", "Ctrl+C / Ctrl+V", "Copy / paste actions, triggers and sub-actions", ActionsPage),
         new("", "Ctrl+Z / Ctrl+Y", "Undo / redo", ActionsPage),
     ];
 
-    public static IReadOnlyList<AppShortcut> All { get; } = [.. Window, .. Actions];
+    /// <summary>Handled by the other list pages (Streamer.bot's per-view shortcuts) while their list has focus.</summary>
+    public static readonly IReadOnlyList<AppShortcut> Pages =
+    [
+        new("", "Delete", "Delete the selected command", "Commands"),
+        new("", "Ctrl+O", "Turn the selected command on or off", "Commands"),
+        new("", "Ctrl+C", "Copy the selected command's id", "Commands"),
+        new("", "Ctrl+R", "Rename the selected command's group", "Commands"),
+        new("", "Ctrl+* / Ctrl+-", "Expand / collapse every group", "Commands"),
+        new("", "Delete / Ctrl+O", "Remove the focused timer / turn it on or off", "Timers"),
+        new("", "Delete / Ctrl+O", "Delete the focused device or event / turn an event on or off", "MIDI"),
+        new("", "Delete", "Delete the selected voice command", "Voice Control"),
+        new("", "Ctrl+Up / Down / Home / End", "Move the selected voice command", "Voice Control"),
+        new("", "Delete", "Delete the selected quote", "Quotes"),
+        new("", "Delete / Ctrl+A / Ctrl+D", "Delete / add / duplicate a channel point reward", "Twitch > Rewards"),
+        new("", "Ctrl+O", "Turn the selected reward on or off (saved to Twitch)", "Twitch > Rewards"),
+    ];
+
+    public static IReadOnlyList<AppShortcut> All { get; } = [.. Window, .. Actions, .. Pages];
 }

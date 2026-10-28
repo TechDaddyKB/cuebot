@@ -200,4 +200,21 @@ public sealed class StreamerBotVariableTests
         var neutral = Assert.Single(_published, e => e.Type == KickEventTypes.NeutralMessageDeleted);
         Assert.False(neutral.Args.ContainsKey("broadcastUser"));
     }
+
+    [Fact]
+    public void Variables_kick_cannot_supply_are_present_with_neutral_values()
+    {
+        var sub = Webhook("channel.subscription.renewal", """
+            {"broadcaster":{"user_id":100},"subscriber":{"user_id":5,"username":"Fan"},"duration":4,
+             "created_at":"2026-01-01T12:00:00Z","expires_at":"2026-02-01T12:00:00Z"}
+            """);
+        Assert.Equal(0, sub.Args["badgeCount"]);
+        Assert.Empty(Assert.IsType<List<Dictionary<string, object?>>>(sub.Args["badge"]));
+        Assert.Equal("", sub.Args["userGroups"]);
+        Assert.Equal(default(DateTime), sub.Args["userPreviousActive"]);
+        Assert.Equal("", sub.Args["broadcastUserProfileImage"]);   // the test broadcaster has no picture
+
+        var chat = Publish(KickEventFactory.Chat("realtime", new KickEventFactory.ChatInput("m9", Fan, "hi", 100, null)));
+        Assert.Equal(2, chat.Args["badgeCount"]);   // real values win
+    }
 }

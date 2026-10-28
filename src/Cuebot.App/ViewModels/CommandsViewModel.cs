@@ -40,8 +40,8 @@ public sealed partial class CommandRowViewModel(CommandsViewModel page, CommandD
     private void Select() => page.SelectCommand.Execute(this);
 }
 
-/// <summary>A group of commands with a toggle that enables or disables all of them.</summary>
-public sealed class CommandGroupViewModel(CommandsViewModel page, string name, IReadOnlyList<CommandRowViewModel> commands) : ObservableObject
+/// <summary>A group of commands with a toggle that enables or disables all of them; it can be collapsed.</summary>
+public sealed partial class CommandGroupViewModel(CommandsViewModel page, string name, IReadOnlyList<CommandRowViewModel> commands) : ObservableObject
 {
     public string Name { get; } = name;
     public string Header => Name.Length == 0 ? "(no group)" : Name;
@@ -53,6 +53,24 @@ public sealed class CommandGroupViewModel(CommandsViewModel page, string name, I
         get => Commands.All(c => c.Enabled) ? true : Commands.Any(c => c.Enabled) ? null : false;
         set => page.SetGroupEnabled(Name, value ?? true);
     }
+
+    /// <summary>Collapsed groups show only their header; the state survives list rebuilds (filtering, edits).</summary>
+    public bool IsExpanded
+    {
+        get => page.IsGroupExpanded(Name);
+        set
+        {
+            if (value == IsExpanded) return;
+            page.SetGroupExpanded(Name, value);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Chevron));
+        }
+    }
+
+    public string Chevron => IsExpanded ? "▾" : "▸";
+
+    [RelayCommand]
+    private void ToggleExpanded() => IsExpanded = !IsExpanded;
 
     public void Refresh() => OnPropertyChanged(nameof(Enabled));
 }
@@ -357,6 +375,7 @@ public sealed partial class CommandsViewModel : PageViewModel
     private readonly CommandStore _store;
     private readonly GroupStore _groups;
     private readonly Dictionary<Guid, CommandRowViewModel> _rows = [];
+    private readonly HashSet<string> _collapsed = new(StringComparer.OrdinalIgnoreCase);
 
     public CommandsViewModel(CommandStore store, GroupStore groups) : base("Commands")
     {
@@ -430,6 +449,48 @@ public sealed partial class CommandsViewModel : PageViewModel
     internal void SetEnabled(CommandRowViewModel row, bool enabled) => _store.SetEnabled(row.Id, enabled);
 
     internal void SetGroupEnabled(string group, bool enabled) => _store.SetGroupEnabled(group, enabled);
+
+    internal bool IsGroupExpanded(string group) => !_collapsed.Contains(group);
+
+    internal void SetGroupExpanded(string group, bool expanded)
+    {
+        if (expanded) _collapsed.Remove(group);
+        else _collapsed.Add(group);
+    }
+
+    /// <summary>Ctrl+* (Streamer.bot's Expand All).</summary>
+    [RelayCommand]
+    private void ExpandAll()
+    {
+        foreach (var group in Groups) group.IsExpanded = true;
+    }
+
+    /// <summary>Ctrl+- (Streamer.bot's Collapse All).</summary>
+    [RelayCommand]
+    private void CollapseAll()
+    {
+        foreach (var group in Groups) group.IsExpanded = false;
+    }
+
+    /// <summary>Ctrl+O: turns the selected command on or off.</summary>
+    [RelayCommand]
+    private void ToggleSelectedEnabled()
+    {
+        if (Editor is not null && _rows.TryGetValue(Editor.Id, out var row)) row.Enabled = !row.Enabled;
+    }
+
+    /// <summary>The selected command's group ("" when it has none), for Ctrl+R.</summary>
+    public string? SelectedGroup => Editor is not null && _store.Get(Editor.Id) is { } c ? c.Group : null;
+
+    /// <summary>Ctrl+R: renames the selected command's group for every command in it. Returns the number renamed.</summary>
+    public int RenameSelectedGroup(string newName)
+    {
+        if (SelectedGroup is not { Length: > 0 } old || string.IsNullOrWhiteSpace(newName)) return 0;
+        var expanded = IsGroupExpanded(old);
+        var renamed = _store.RenameGroup(old, newName.Trim());
+        SetGroupExpanded(newName.Trim(), expanded);
+        return renamed;
+    }
 
     private void AddAndSelect(CommandDefinition command)
     {

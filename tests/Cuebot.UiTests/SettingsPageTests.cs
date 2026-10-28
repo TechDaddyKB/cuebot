@@ -62,7 +62,7 @@ public sealed class SettingsPageTests : IAsyncDisposable
         Assert.Single(vm.Settings.Backups);
 
         var tabs = window.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "Sections");
-        var names = new[] { "general", "audio-text", "backups", "about" };
+        var names = new[] { "general", "audio-text", "backups", "google-drive", "about" };
         for (var i = 0; i < names.Length; i++)
         {
             tabs.SelectedIndex = i;

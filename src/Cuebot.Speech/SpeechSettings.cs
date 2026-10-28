@@ -370,6 +370,12 @@ public sealed class TtsCommandSettings
     /// <summary>Suppress chat replies.</summary>
     public bool SilenceOutput { get; set; }
 
+    /// <summary>
+    /// Speaker.bot's "Allow Moderator Whispers": moderators may whisper <c>!tts</c> and speaking commands to the
+    /// broadcaster's Twitch account; they run as if typed in chat by a moderator, without chat replies.
+    /// </summary>
+    public bool AllowModeratorWhispers { get; set; }
+
     /// <summary>Reply when a user lacks permission; empty for no reply.</summary>
     public string NotAllowedText { get; set; } = "@%user%, you are not allowed to use that.";
 
