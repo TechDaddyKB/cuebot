@@ -104,7 +104,7 @@ How to read the counts:
    - `EventSource` has 26 of 46.
    - 17 data classes and 3 enums are missing (`TwitchReward`, `QuoteData`, `TeamInfo`, `YouTubeUserInfo`, ...).
    - Source: `CS:5.enums/event-type.md`, `CS:5.enums/event-source.md`, `CS:4.classes/*`.
-9. **About 100 WebSocket events go out under names Streamer.bot clients don't subscribe to.** Examples:
+9. **About 100 WebSocket events go out under names Streamer.bot clients don't subscribe to.** (Fixed in `w14-websocket`, see section 7.) Examples:
    - Twitch chat modes are `EmoteModeOn` instead of `ChatEmoteModeOn`.
    - Streamlabs Desktop's source is `Slobs` instead of `StreamlabsDesktop`.
    - Pulsoid sends `HeartRate` instead of `HeartRatePulse`.
@@ -424,26 +424,68 @@ files; UDP DoAction; Execute C# Code basics; `Init()`/`Dispose()` lifecycle; cus
 - P · `EventType` enum: 74 of 508 values — `CS:5.enums/event-type.md`
 - P · `EventSource` enum: 26 of 46 (missing `CrowdControl`, `DonorDrive`, `Elgato`, `Fourthwall`, `HypeRate`, `MeldStudio`, `Pallygg`, `Patreon`, `Pulsoid`, `Quote`, `Shopify`, `StreamDeck`, `StreamLoots`, `StreamerBot`, `StreamerBotRemote`, `StreamlabsDesktop`, `System`, `Throne`, `ThrowingSystem`, `TipeeeStream`, `TreatStream`, `Invalid`) — `CS:5.enums/event-source.md`
 
-**WebSocket events**
-- M · `Raw.Action` and `Raw.SubAction` are never emitted (only `Raw.ActionCompleted`) — `WK:Servers-Clients/WebSocket-Server/Events/raw/Action.md`, `.../raw/SubAction.md`, `CS:5.enums/event-type.md`
-- P · Event names that differ from Streamer.bot's. The docs repo has no WebSocket event list, so these come from `CS:5.enums/event-type.md`; where the wiki has a page, it confirms the `Source.Type` pattern (`WK:Servers-Clients/WebSocket-Server/Events/**`). Cuebot name first, Streamer.bot name second:
-  - Twitch chat modes: `Twitch.EmoteModeOn/Off` and the other 9 → `Twitch.ChatEmoteModeOn/Off`, `ChatFollowerMode*`, `ChatSlowMode*`, `ChatSubscriberMode*`, `ChatUniqueMode*`
-  - `Twitch.SharedChatBegin/End/Update` → `SharedChatSessionBegin/End/Update`; `SharedChatGiftBomb` → `SharedChatCommunitySubGift`; `SharedChatModiversary` → `SharedModiversary`
-  - `Twitch.UserWarned` → `WarnedUser`; `PowerUp` → `PowerUpRedemption`; `Pyramid` → `PyramidSuccess`; `AutomodMessageUpdated` → `AutoModMessageUpdate`; `BroadcasterConnected/Disconnected` → `BroadcasterEventSubConnected/Disconnected`
-  - `Twitch.SubGift` (each recipient) and `Twitch.GiftSub` (Cuebot's "Gift subscriptions"): check that `GiftSub` carries Streamer.bot's single-gift semantics
-  - `YouTube.BroadcastStatisticsUpdated` → `StatisticsUpdated`; `YouTube.SponsorOnlyStarted/Ended` → `NewSponsorOnlyStarted/Ended`
-  - `Slobs.*` → `StreamlabsDesktop.*` (also `RecordStarted` → `RecordingStarted`, `StreamStarted` → `StreamingStarted`)
-  - `Tits.*` → `ThrowingSystem.*`; `Pally.*` → `Pallygg.*`; `Quotes.Added/Shown` → `Quote.Added/Show`
-  - `Pulsoid.HeartRate` → `Pulsoid.HeartRatePulse`; `Hyperate.HeartRate`/`ClipCreated` → `HypeRate.HeartRatePulse`/`TwitchClipCreated`
-  - `Streamlabs.Merch` → `Streamlabs.Merchandise`
-  - `Desktop.ClipboardChanged` → `System.ClipboardChanged`; `Desktop.ToastActivated` → `Toast.Activation`
-  - `Inputs.Pressed` → `Input.KeyPress`; `Controller.*` → `Input.ControllerButton/Axis/Hat`
-  - `Remote.*` → `StreamerBotRemote.InstanceConnected/Disconnected/Signal`; `Webhook.Custom` → `StreamerBot.CustomWebook`
-  - `Chat.EmoteAdded/Removed` → `Twitch/YouTube.SevenTVEmoteAdded`, `BetterTTVEmoteAdded`, ...
-  - Cron timers send `Misc.TimedAction`; Streamer.bot has a separate `System.Cron`
-  - Wave Link (`Wavelink.*`) and Control Center (`DevicePoweredOn` → `DeviceOn`, `BrightnessChanged` → `DeviceBrightnessChanged`, `TemperatureChanged` → `DeviceTemperatureChanged`) do not match the `Elgato*` names
-  - Meld Studio layer visibility, effect, track monitoring and track mute events are not emitted under Streamer.bot's names
-- P · Event payload shape: Cuebot sends its flat argument dictionary plus a `user` object and `text`. Streamer.bot clients read nested fields; for example the HTML Overlay module reads `message.data.reward.title`, which Cuebot sends as `rewardTitle` — `GD:04.extra-features/3.html-overlay.md`
+**WebSocket events** (fixed in `w14-websocket`; names checked against the GetEvents list published with the official
+client, `github.com/Streamerbot/client` `events.const.ts`, plus `CS:5.enums/event-type.md`)
+- ✅ · `Raw.Action` and `Raw.SubAction` are emitted (only while a client subscribes to them), with the documented
+  fields (`id` = run, `actionId`, `name`, `arguments`; sub-actions add `parentId`, `parentName`, `type`).
+  `Raw.ActionCompleted` now has Streamer.bot's fields (`id`, `actionId`, `name`, `duration`, `queuedAt`, `startedAt`,
+  `completedAt`, `success`, `excludeFromHistory`, `arguments`) next to Cuebot's. `Misc.StreamerbotExiting` is sent on
+  shutdown; `Application.Action*` carry `group` and `enabled` — `WK:Servers-Clients/WebSocket-Server/Events/raw/*.md`
+- ✅ · Event names now match Streamer.bot's (`StreamerBotEventMap`). The renames listed in this review are done:
+  - Twitch chat modes → `ChatEmoteModeOn/Off`, `ChatFollowerMode*`, `ChatSlowMode*`, `ChatSubscriberMode*`, `ChatUniqueMode*`
+  - `SharedChatSessionBegin/End/Update`, `SharedChatCommunitySubGift`, `SharedModiversary`, `SharedChatUserTimedout/Untimedout`
+  - `WarnedUser`, `PyramidSuccess`, `AutoModMessageHeld/Update`, `BroadcasterEventSubConnected/Disconnected`,
+    `BotEventSubConnected/Disconnected`. `PowerUp` stays: the GetEvents list uses `PowerUp` (the enum's
+    `PowerUpRedemption` is the C# name).
+  - Gifts: `twitch.subGift` (one per recipient) is `Twitch.GiftSub`, as in Streamer.bot; EventSub's aggregate
+    `twitch.giftSub` is sent as `Twitch.GiftSubscriptions` (a Cuebot addition) so it no longer doubles `GiftSub`/`GiftBomb`.
+  - YouTube `StatisticsUpdated`, `NewSponsorOnlyStarted/Ended`; Kick `BroadcasterChatConnected/Disconnected`, `SevenTVEmoteAdded/Removed`
+  - `StreamlabsDesktop.*` (`StreamingStarted/Stopped`, `RecordingStarted/Stopped`), `ThrowingSystem.*`, `Pallygg.*`,
+    `Quote.Added/Show`, `Pulsoid.HeartRatePulse`, `HypeRate.HeartRatePulse/TwitchClipCreated`, `Streamlabs.Merchandise`,
+    `DonorDrive`, `TipeeeStream`, `TreatStream`, `StreamLoots`, `CrowdControl`, `MeldStudio` source spellings
+  - `System.ClipboardChanged`, `Misc.ToastActivation`, `Inputs.InputKeyPress`, `Inputs.InputMouseClick`,
+    `Inputs.InputControllerButton/Axis/Hat` (game controllers), `StreamerBotRemote.InstanceConnected/Disconnected/Signal`,
+    `StreamerBot.CustomWebook`
+  - Emote changes per platform (`Twitch/YouTube.SevenTVEmoteAdded`, `BetterTTVEmoteAdded`, ...; FFZ stays `Chat.Emote*`)
+  - Cron timers send `System.Cron`; interval timers `Misc.TimedAction`
+  - Wave Link → `Elgato.WaveLinkV3*`; Control Center → `Elgato.ControlCenterDeviceOn/Off`, `DeviceBrightnessChanged`,
+    `DeviceTemperatureChanged`; Camera Hub keeps Streamer.bot's spellings (`CameraHubWebcamrDisconnected`, `CameraHubTiltChanged`)
+  - Meld Studio layer visibility, effect, track monitoring and track mute go out as `LayerVisbilityChanged`,
+    `LEffectEnabledStateChanged`, `TrackMonitoringStateChanged`, `TrackMustedStateChanged` (Streamer.bot's spellings)
+  - No Streamer.bot source exists for Lumia, mtion, OBSBOT, PolyPop, Points, Rumble, Chat, Speech or controller
+    hot-plug; they keep Cuebot names. About 90 Cuebot events under a Streamer.bot source have no Streamer.bot
+    counterpart (extra OBS, StreamElements, Streamlabs, TipeeeStream, VTube Studio events, ...); they keep the generic
+    name and are listed in `StreamerBotEventCatalogTests.CuebotExtras`.
+- ✅ · GetEvents lists exactly what `Map()` emits for the loaded modules' triggers, plus the server's own events.
+- ✅ · Event payload shape: the documented nested fields are built next to the flat args (`StreamerBotPayloads`).
+  Twitch `ChatMessage`/`FirstWord` (`message` object, `user`, `text`, emotes with names and positions, badges),
+  `Whisper`, `Follow`, `Cheer`, `Sub`, `ReSub`, `GiftSub`, `GiftBomb`, `Raid`, `RewardRedemption`
+  (`data.reward.title`), `Announcement`, `AdRun`, polls, predictions, hype trains, charity, `ShoutoutCreated`,
+  bans/timeouts, `ChatMessageDeleted`, `StreamUpdate`, shield mode, pyramids; YouTube `Message`, `FirstWords`,
+  member and Super Chat events (YouTube user object), broadcasts, statistics; Kick chat; `Command.*`, timers, heart
+  rate, `StreamElements.Tip`, speech to text. Every other event with a user gets the `user` object.
+  - P · Still flat apart from `user`: Kick subs/gifts/kicks (Streamer.bot documents no shape), the other donation
+    platforms, OBS, VTube Studio, Elgato, Meld, Crowd Control and the rest of the integrations. Twitch emote
+    `imageUrl`s are built from the public CDN pattern; badge `imageUrl`s are empty.
+
+**WebSocket requests** (checked against `WS:3.requests.md` and the official client's response types)
+- ✅ · Fixed: `GetActions` `trigger_count`; `GetInfo` `mode`, `darkMode`, `source: "websocketServer"`; `GetActiveViewers`
+  `type`; `GetCommands` `ignoreInternal`/`ignoreBotAccount`; `TwitchGetEmotes`/`YouTubeGetEmotes` keys
+  (`userEmotes`, `bttvEmotes`, `ffzEmotes`, `sevenTvEmotes`); `*GetUserGlobal` with `variable` returns one `variable`;
+  `GetUserPronouns` top-level `userLogin`; `GetCredits`/`TestCredits` return `events`, `users`, `hypeTrain`, `top`,
+  `groups`, `custom` at the top level (Cuebot's `credits` object stays).
+- P · `GetBroadcaster` returns connection states, not the documented account fields (`broadcastUser`, `botUserId`, ...):
+  Core has no broadcaster-account interface yet.
+- P · `SendMessage` ignores `bot` and `internal` (ChatHub has no bot/broadcaster choice).
+- P · `TwitchGetEmotes`/`YouTubeGetEmotes` return the documented keys but empty lists; `GetMonitoredYouTubeBroadcasts`
+  and `GetUserPronouns` are stubs.
+- P · `GetCommands` `sources` is a list of names; the docs show a number (an undocumented flag set).
+
+**HTTP and UDP** (`sb-docs/streamerbot/3.api/5.http`, `6.udp`)
+- ✅ · `GetCredits`/`TestCredits` over HTTP return the documented PascalCase shape (`Events.Follows`, `User.Moderator`,
+  `TopBits.All`, ...). `DoAction` (POST, 204), `GetActions`, `ClearCredits`/`ClearFirstWordsCache` (GET, 204), file
+  mappings and UDP `DoAction` already matched.
+- Note · HTTP `DoAction` is POST-only on purpose (a GET could be triggered by any web page).
 
 ## 8. Speaker.bot
 
