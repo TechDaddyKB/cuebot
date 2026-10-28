@@ -32,8 +32,12 @@ public sealed class CronTriggers : ITriggerProvider
     ];
 }
 
-/// <summary>Publishes "core.cron" once per local wall-clock minute (ticked by the timer service).</summary>
-public sealed class CronClock(EventBus bus) : IPeriodicService
+/// <summary>
+/// Publishes "core.cron" at most once per local wall-clock minute (ticked by the timer service), and only when an enabled
+/// Cron trigger's expression matches that minute (so WebSocket clients see System.Cron only when a schedule fires).
+/// Without a profile (tests) it publishes every minute.
+/// </summary>
+public sealed class CronClock(EventBus bus, ProfileService? profile = null) : IPeriodicService
 {
     public const string EventType = "core.cron";
     private DateTime _last = DateTime.MinValue;
@@ -46,10 +50,16 @@ public sealed class CronClock(EventBus bus) : IPeriodicService
         var first = _last == DateTime.MinValue;
         _last = minute;
         if (first && local.Second > 5) return; // started mid-minute: wait for the next full minute
+        if (profile is not null && !AnyMatches(profile, minute)) return;
         bus.Publish(new BotEvent(EventType, new Dictionary<string, object?>
         {
             ["minute"] = minute,
             ["minuteText"] = minute.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
         }));
     }
+
+    private static bool AnyMatches(ProfileService profile, DateTime minute) =>
+        profile.Snapshot.Actions.Where(a => a.Enabled).SelectMany(a => a.Triggers)
+            .Where(t => t.Enabled && string.Equals(t.Type, CronTriggers.TypeId, StringComparison.OrdinalIgnoreCase))
+            .Any(t => CronExpression.TryParse(t.Settings.GetValueOrDefault("expression") ?? "0 * * * *", out var c, out _) && c.Matches(minute));
 }

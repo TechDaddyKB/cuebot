@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Text;
+
 
 namespace Cuebot.Core.Actions;
 
@@ -71,29 +71,17 @@ public static class TriggerArgs
         {
             var text = Convert.ToString(raw, CultureInfo.InvariantCulture) ?? "";
             args.TryAdd("rawInputEscaped", Escape(text));
-            args.TryAdd("rawInputUrlEncoded", Uri.EscapeDataString(text));
+            args.TryAdd("rawInputUrlEncoded", Variables.StreamerBotArgs.UrlEncode(text));
         }
         for (var i = 0; args.TryGetValue($"input{i}", out var word); i++)
         {
             var text = Convert.ToString(word, CultureInfo.InvariantCulture) ?? "";
             args.TryAdd($"inputEscaped{i}", Escape(text));
             args.TryAdd($"input{i}Escaped", Escape(text));
-            args.TryAdd($"inputUrlEncoded{i}", Uri.EscapeDataString(text));
+            args.TryAdd($"inputUrlEncoded{i}", Variables.StreamerBotArgs.UrlEncode(text));
         }
     }
 
-    /// <summary>
-    /// Streamer.bot's "escaped" text: regular-expression metacharacters get a backslash
-    /// (<c>https://streamer.bot/$$</c> → <c>https://streamer\.bot/\$\$</c>); spaces are left alone.
-    /// </summary>
-    public static string Escape(string text)
-    {
-        var sb = new StringBuilder(text.Length + 8);
-        foreach (var c in text)
-        {
-            if (c is '\\' or '*' or '+' or '?' or '|' or '{' or '[' or '(' or ')' or '^' or '$' or '.' or '#') sb.Append('\\');
-            sb.Append(c);
-        }
-        return sb.ToString();
-    }
+    /// <summary>Streamer.bot's "escaped" text (shared with the platform mappers: <see cref="Variables.StreamerBotArgs.Escape"/>).</summary>
+    public static string Escape(string text) => Variables.StreamerBotArgs.Escape(text);
 }

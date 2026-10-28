@@ -223,6 +223,8 @@ public static class StreamerBotEventMap
         ["core.timer"] = new(args => Str(args, "timerCron").Length > 0 ? new("System", "Cron") : new("Misc", "TimedAction"),
             [new("Misc", "TimedAction"), new("System", "Cron")]),
         ["meldstudio.event"] = MeldEvent(),
+        // Cuebot publishes core.cron only in minutes where a Cron trigger fires.
+        ["core.cron"] = new(_ => new("System", "Cron"), [new("System", "Cron")]),
     };
 
     /// <summary>Streamer.bot name for a Cuebot event. Never null; unknown modules map generically.</summary>

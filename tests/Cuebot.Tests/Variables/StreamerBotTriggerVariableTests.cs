@@ -121,6 +121,27 @@ public sealed class StreamerBotTriggerVariableTests : IDisposable
         Assert.False(Matches("not cron"));
     }
 
+    [Fact]
+    public void Cron_clock_publishes_only_when_a_cron_trigger_matches()
+    {
+        var events = new EventRecorder(_bus, CronClock.EventType);
+        var profile = new ProfileService(null, _log);
+        var clock = new CronClock(_bus, profile);
+        var t0 = new DateTimeOffset(new DateTime(2026, 10, 28, 12, 14, 0, DateTimeKind.Local));
+        clock.Tick(t0);
+        Assert.Empty(events.Events);
+        profile.Profile.Actions.Add(new ActionDefinition
+        {
+            Name = "Quarter",
+            Triggers = [new TriggerDefinition { Type = CronTriggers.TypeId, Settings = { ["expression"] = "*/15 * * * *" } }],
+        });
+        profile.NotifyChanged();
+        clock.Tick(t0.AddMinutes(1));
+        Assert.Single(events.Events);
+        clock.Tick(t0.AddMinutes(2));
+        Assert.Single(events.Events);
+    }
+
     [Theory]
     [InlineData("#FF8000", 255, 255, 128, 0, "#FF8000", "#FFFF8000", 4278223103L)]
     [InlineData("80102030", 128, 16, 32, 48, "#102030", "#80102030", 2150637584L)]
