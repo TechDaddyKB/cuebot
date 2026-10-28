@@ -67,12 +67,14 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _tokens = new KickTokenManager(settings, _auth, time, log);
         _api = new KickApiClient(http, endpoints, _tokens);
         _web = new KickWebClient(http, endpoints);
+        Counters = new KickRewardCounters(() => Settings, SaveSettings);
         _hub = new KickEventHub(bus, time, timings.DedupeWindow)
         {
             Broadcaster = () => Settings.Broadcaster.UserId > 0
                 ? new KickBroadcasterArgs(Settings.Broadcaster.UserName, KickArgs.Id(Settings.Broadcaster.UserId), _broadcasterPicture)
                 : null,
             FindReward = id => _rewards.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase)),
+            Counters = Counters,
         };
         _realtime = new KickRealtimeEventSource(transports, new KickRealtimeAuth(http, endpoints), timings, log);
         _realtime.ConnectionChanged += OnRealtimeChanged;
@@ -631,6 +633,9 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     /// <summary>The rewards from the last <see cref="GetRewardsAsync"/>.</summary>
     public IReadOnlyList<KickReward> Rewards => _rewards;
 
+    /// <summary>Reward groups and redemption counters (local state, no Kick API calls).</summary>
+    public KickRewardCounters Counters { get; }
+
     /// <summary>
     /// Best effort: the reward settings Streamer.bot reports on redemptions (reward.description, .backgroundColor,
     /// .skipsQueue, .requiresUserInput) are not in Kick's redemption events, so they come from the reward list.
@@ -684,6 +689,33 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _rewards = _rewards.Select(r => r.Id == updated.Id ? updated : r).ToArray();
         StatusChanged?.Invoke();
         return updated;
+    }
+
+    /// <summary>
+    /// Applies one change to each of several rewards (already read with <see cref="GetRewardsAsync"/>). Kick answers 403
+    /// for rewards another app (or kick.com) made; those are counted as skipped instead of failing the rest.
+    /// </summary>
+    public async Task<(int Changed, int Skipped)> UpdateRewardsAsync(IReadOnlyCollection<(KickReward Reward, KickRewardUpdate Update)> changes,
+        CancellationToken ct = default)
+    {
+        if (changes.Count > 0 && !Settings.Broadcaster.Scopes.Contains(KickScopes.RewardsWrite))
+            throw new KickApiException("Changing Kick rewards needs the rewards permission; sign in again on the Kick page.");
+        var (changed, skipped) = (0, 0);
+        foreach (var (reward, update) in changes)
+        {
+            try
+            {
+                var updated = await _api.UpdateRewardAsync(reward.Id, update, ct).ConfigureAwait(false) ?? reward;
+                _rewards = _rewards.Select(r => r.Id == updated.Id ? updated : r).ToArray();
+                changed++;
+            }
+            catch (KickApiException ex) when (ex.Status == 403)
+            {
+                skipped++;
+            }
+        }
+        if (changes.Count > 0) StatusChanged?.Invoke();
+        return (changed, skipped);
     }
 
     public async Task<KickReward> DeleteRewardAsync(string reward, CancellationToken ct = default)

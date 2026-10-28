@@ -62,6 +62,12 @@ public static class KickServiceCollectionExtensions
         services.AddSingleton<ISubActionHandler, GetRewardInfoSubAction>();
         services.AddSingleton<ISubActionHandler, UpdateRedemptionSubAction>();
         services.AddSingleton<ISubActionHandler, UpdatePendingRedemptionsSubAction>();
+        services.AddSingleton<ISubActionHandler, GetRewardCounterSubAction>();
+        services.AddSingleton<ISubActionHandler>(sp => new ResetRewardCounterSubAction(sp.GetRequiredService<KickService>(), users: false));
+        services.AddSingleton<ISubActionHandler>(sp => new ResetRewardCounterSubAction(sp.GetRequiredService<KickService>(), users: true));
+        services.AddSingleton<ISubActionHandler>(sp => new SetRewardGroupStateSubAction(sp.GetRequiredService<KickService>(), paused: false));
+        services.AddSingleton<ISubActionHandler>(sp => new SetRewardGroupStateSubAction(sp.GetRequiredService<KickService>(), paused: true));
+        services.AddSingleton<ISubActionHandler, ConfigureRewardsSubAction>();
         foreach (var typeId in RewardFieldSubActions)
             services.AddSingleton<ISubActionHandler>(sp =>
                 UpdateRewardSubAction.All(sp.GetRequiredService<KickService>()).Single(s => s.TypeId == typeId));

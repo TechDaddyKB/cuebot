@@ -229,7 +229,8 @@ documentation (<https://7tv.io/docs>, <https://github.com/SevenTV/EventAPI>).
 
 ## 8. Not implemented
 
-- Reward groups and persistent per-reward redemption counters from Streamer.bot's rewards manager (the Kick page
-  lists, creates, enables/pauses and deletes rewards; sub-actions cover every field the API exposes). Kick has no
-  reward cooldowns or per-stream limits in its API, so those Twitch-style settings do not exist for Kick.
+- Kick has no reward cooldowns or per-stream limits in its API, so those Twitch-style settings do not exist for Kick.
+  (Reward groups and redemption counters are Cuebot's own, kept in kick.json as on Twitch: every
+  `kick.rewardRedemption` is counted (`counter`, `userCounter`), counters reset on going live unless persisted, and
+  the group steps change rewards one `PATCH` each, counting the ones Kick refuses with 403 as skipped.)
 - `type: "bot"` chat (posting as the app's own bot user) is supported by the API client but not exposed in the UI.

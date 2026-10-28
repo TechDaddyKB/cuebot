@@ -80,6 +80,8 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
         ("api.test", "PATCH", "/public/v1/channels/rewards/01REWARDB") => FakeHttpHandler.Json(
             """{"data":{"id":"01REWARDB","title":"Song request","cost":500,"is_enabled":true,"is_paused":false},"message":"OK"}"""),
         ("api.test", "DELETE", "/public/v1/channels/rewards/01REWARDA") => new HttpResponseMessage(HttpStatusCode.NoContent),
+        // A reward made on kick.com: only the app that created a reward may change it.
+        ("api.test", "PATCH", "/public/v1/channels/rewards/01REWARDA") => new HttpResponseMessage(HttpStatusCode.Forbidden),
         ("api.test", "GET", "/public/v1/channels/rewards/redemptions") => FakeHttpHandler.Json(r.Query.Contains("cursor=")
             ? """{"data":[{"reward":{"id":"01REWARDA","title":"Hydrate"},"redemptions":[{"id":"R3","redeemed_at":"2026-10-27T10:00:00Z","redeemer":{"user_id":7},"status":"pending","user_input":""}]}],"pagination":{"next_cursor":""}}"""
             : """{"data":[{"reward":{"id":"01REWARDA","title":"Hydrate"},"redemptions":[{"id":"R1","redeemed_at":"2026-10-27T09:00:00Z","redeemer":{"user_id":5},"status":"pending","user_input":"hi"},{"id":"R2","redeemed_at":"2026-10-27T09:30:00Z","redeemer":{"user_id":6},"status":"pending","user_input":""}]}],"pagination":{"next_cursor":"Q1VSU09S"}}"""),
@@ -106,6 +108,9 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
             new CreateRewardSubAction(_service), new DeleteRewardSubAction(_service), new GetRewardInfoSubAction(_service),
             new UpdateRedemptionSubAction(_service), new UpdatePendingRedemptionsSubAction(_service),
             .. UpdateRewardSubAction.All(_service),
+            new GetRewardCounterSubAction(_service), new ResetRewardCounterSubAction(_service, users: false),
+            new ResetRewardCounterSubAction(_service, users: true), new SetRewardGroupStateSubAction(_service, paused: false),
+            new SetRewardGroupStateSubAction(_service, paused: true), new ConfigureRewardsSubAction(_service),
             new KickAddUserToGroupSubAction(_service, groups), new KickRemoveUserFromGroupSubAction(_service, groups),
             new KickUserInGroupSubAction(_service, groups), new KickAddRandomUsersSubAction(_service, users),
         ];
@@ -210,6 +215,85 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
         Assert.Equal(["R1", "R2", "R3"], accept.GetProperty("ids").EnumerateArray().Select(i => i.GetString()));
         Assert.Equal(2, args!["redemptionsUpdated"]);
         Assert.Equal("R2: NOT_PENDING", args["redemptionFailures"]);
+    }
+
+    [Fact]
+    public async Task Reward_counters_are_read_and_reset_by_reward_title_or_id()
+    {
+        using var harness = Harness();
+        _service.Counters.CountRedemption("01REWARDB", "5");
+        _service.Counters.CountRedemption("01REWARDB", "5");
+        _service.Counters.CountRedemption("01REWARDB", "6");
+
+        var (run, args) = await harness.RunAsync("kick.getRewardCounter", new() { ["reward"] = "Song request" }, new() { ["userId"] = "5" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(3, args!["counter"]);
+        Assert.Equal(2, args["userCounter"]);
+
+        (run, _) = await harness.RunAsync("kick.resetRewardUserCounters", new(), new() { ["rewardId"] = "01REWARDB" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal((3, 0), _service.Counters.GetRewardCounter("01REWARDB", "5"));
+        (run, _) = await harness.RunAsync("kick.resetRewardCounter", new() { ["reward"] = "song request" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal((0, 0), _service.Counters.GetRewardCounter("01REWARDB", "6"));
+        Assert.DoesNotContain(_http.Requests, r => r.Method != HttpMethod.Get);
+    }
+
+    [Fact]
+    public async Task Reward_groups_change_only_rewards_not_in_the_state_and_count_ones_kick_refuses()
+    {
+        _settings.Value.Broadcaster.Scopes = [.. KickScopes.Broadcaster];
+        using var harness = Harness();
+        _service.Counters.SetGroup("01REWARDA", "Drinks");
+        _service.Counters.SetGroup("01REWARDB", "drinks");
+
+        // Both are enabled: nothing to do.
+        var (run, args) = await harness.RunAsync("kick.setRewardGroupEnabled", new() { ["group"] = "Drinks", ["state"] = "Enabled" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(0, args!["rewardsChanged"]);
+        Assert.DoesNotContain(_http.Requests, r => r.Method == HttpMethod.Patch);
+
+        // Only Song request is paused.
+        (run, args) = await harness.RunAsync("kick.setRewardGroupPaused", new() { ["group"] = "DRINKS", ["state"] = "Unpaused" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(1, args!["rewardsChanged"]);
+        Assert.Equal("""{"is_paused":false}""", _http.Requests.Single(r => r.Method == HttpMethod.Patch).Body);
+
+        (run, args) = await harness.RunAsync("kick.setRewardGroupEnabled", new() { ["group"] = "Drinks", ["state"] = "Disabled" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(1, args!["rewardsChanged"]); // Song request
+        Assert.Equal(1, args["rewardsSkipped"]); // Hydrate was made on kick.com (403)
+
+        (run, _) = await harness.RunAsync("kick.setRewardGroupPaused", new() { ["group"] = "Snacks", ["state"] = "Paused" });
+        Assert.False(run.Success);
+    }
+
+    [Fact]
+    public async Task Configure_rewards_sends_one_update_per_reward()
+    {
+        _settings.Value.Broadcaster.Scopes = [.. KickScopes.Broadcaster];
+        using var harness = Harness();
+        _service.Counters.SetGroup("01REWARDB", "Music");
+
+        var (run, args) = await harness.RunAsync("kick.configureRewards", new() { ["disable"] = "Music", ["unpause"] = "song request" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(1, args!["rewardsChanged"]);
+        var patch = Body(_http.Requests.Single(r => r.Method == HttpMethod.Patch));
+        Assert.False(patch.GetProperty("is_enabled").GetBoolean());
+        Assert.False(patch.GetProperty("is_paused").GetBoolean());
+
+        // Hydrate is in no group; Kick refuses the change (made on kick.com).
+        (run, args) = await harness.RunAsync("kick.configureRewards", new() { ["disableNotConfigured"] = "true" });
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(0, args!["rewardsChanged"]);
+        Assert.Equal(1, args["rewardsSkipped"]);
+
+        (run, _) = await harness.RunAsync("kick.configureRewards", new() { ["enable"] = "No such reward" });
+        Assert.False(run.Success);
+
+        _settings.Value.Broadcaster.Scopes = [KickScopes.RewardsRead];
+        (run, _) = await harness.RunAsync("kick.configureRewards", new() { ["pause"] = "Hydrate" });
+        Assert.False(run.Success); // signed in without the rewards write permission
     }
 
     [Fact]

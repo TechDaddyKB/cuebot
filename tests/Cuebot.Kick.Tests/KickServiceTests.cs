@@ -350,6 +350,8 @@ public sealed class KickServiceTests : IAsyncLifetime
             "kick.createReward", "kick.deleteReward", "kick.getRewardInfo", "kick.updateRedemption", "kick.updatePendingRedemptions",
             "kick.setRewardEnabled", "kick.setRewardPaused", "kick.setRewardTitle", "kick.setRewardCost", "kick.setRewardDescription",
             "kick.setRewardColor", "kick.setRewardUserInput", "kick.setRewardSkipQueue",
+            "kick.getRewardCounter", "kick.resetRewardCounter", "kick.resetRewardUserCounters", "kick.setRewardGroupEnabled",
+            "kick.setRewardGroupPaused", "kick.configureRewards",
         ];
         Assert.Equal(expected.Order(), handlers.Select(h => h.TypeId).Order());
         Assert.All(handlers, h => Assert.Equal("Kick", h.Category));

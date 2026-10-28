@@ -49,12 +49,12 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Channel rewards" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Kick lets Cuebot change, pause, delete and accept or reject redemptions only for rewards Cuebot created (with your Kick app). Rewards made on kick.com are listed but read-only. Signed in before rewards were supported? Sign in again to grant the reward permission." />
+                     Text="Kick lets Cuebot change, pause, delete and accept or reject redemptions only for rewards Cuebot created (with your Kick app). Rewards made on kick.com are listed but read-only. Signed in before rewards were supported? Sign in again to grant the reward permission. The group and counter settings are Cuebot's own (saved right away): the group is used by the reward group and Configure rewards sub-actions, and redemption counters start over when the stream goes live unless persisted." />
           <Button Content="Refresh rewards" Command="{Binding RefreshRewardsCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
           <ItemsControl ItemsSource="{Binding Rewards}" IsVisible="{Binding HasRewards}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:KickRewardRow">
-                <Grid ColumnDefinitions="*,8,Auto,8,Auto,8,Auto" Margin="0,2">
+                <Grid ColumnDefinitions="*,8,Auto,8,Auto,8,Auto" RowDefinitions="Auto,Auto" Margin="0,2">
                   <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
                     <TextBlock Classes="muted" Text="{Binding Details}" />
@@ -62,6 +62,11 @@
                   <Button Grid.Column="2" Content="{Binding EnableLabel}" Command="{Binding ToggleEnabledCommand}" />
                   <Button Grid.Column="4" Content="{Binding PauseLabel}" Command="{Binding TogglePausedCommand}" />
                   <Button Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" />
+                  <WrapPanel Grid.Row="1" Grid.ColumnSpan="7" Margin="0,4,0,0">
+                    <TextBox Text="{Binding Group}" PlaceholderText="Group (not configured)" Width="200" Margin="0,0,16,0" />
+                    <CheckBox Content="Persist counter" IsChecked="{Binding PersistCounter}" Margin="0,0,16,0" />
+                    <CheckBox Content="Persist per-user counters" IsChecked="{Binding PersistUserCounter}" />
+                  </WrapPanel>
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

@@ -31,6 +31,9 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
     /// <summary>A known reward by id, for the reward settings Streamer.bot reports on redemptions.</summary>
     public Func<string, KickReward?>? FindReward { get; set; }
 
+    /// <summary>Reward redemption counters: redemptions are counted (counter, userCounter) and reset on going live.</summary>
+    public KickRewardCounters? Counters { get; set; }
+
     /// <summary>The current title and category, so the next channel update can report what changed.</summary>
     public void SeedChannel(KickChannel channel)
     {
@@ -108,11 +111,20 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
                         _roles[chatter] = new KickUserRoles(a.GetValueOrDefault("isModerator") is true, a.GetValueOrDefault("isSubscriber") is true);
                     }
                     break;
-                case KickEventTypes.RewardRedemption when FindReward?.Invoke(a.GetString("rewardId")) is { } reward:
-                    a.TryAdd("rewardDescription", reward.Description);
-                    a.TryAdd("rewardBackgroundColor", reward.BackgroundColor);
-                    a.TryAdd("rewardSkipsQueue", reward.SkipsRequestQueue);
-                    a.TryAdd("rewardRequiresUserInput", reward.IsUserInputRequired);
+                case KickEventTypes.RewardRedemption:
+                    if (FindReward?.Invoke(a.GetString("rewardId")) is { } reward)
+                    {
+                        a.TryAdd("rewardDescription", reward.Description);
+                        a.TryAdd("rewardBackgroundColor", reward.BackgroundColor);
+                        a.TryAdd("rewardSkipsQueue", reward.SkipsRequestQueue);
+                        a.TryAdd("rewardRequiresUserInput", reward.IsUserInputRequired);
+                    }
+                    if (Counters is { } counters)
+                    {
+                        var (counter, userCounter) = counters.CountRedemption(a.GetString("rewardId"), a.GetString("userId"));
+                        a.TryAdd("counter", counter);
+                        a.TryAdd("userCounter", userCounter);
+                    }
                     break;
                 case KickEventTypes.ChannelUpdate:
                     var now = (a.GetString("title"), a.GetString("categoryId"), a.GetString("category"), a.GetString("categoryThumbnail"));
@@ -131,6 +143,7 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
                     a.TryAdd("categoryThumbnail", now.Item4);
                     break;
                 case KickEventTypes.StreamOnline:
+                    Counters?.ResetStreamCounters();
                     _stream = (a.GetString("title"), a.GetString("startedAt"));
                     if (_channel is { } live)
                     {
