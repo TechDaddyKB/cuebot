@@ -318,6 +318,105 @@ public sealed class SubActionTests : IDisposable
         Assert.Equal("No", prediction["predictionOutcome1"]);
     }
 
+    /// <summary>Streamer.bot's documented output names (docs: 3.api/1.sub-actions/twitch/**), per sub-action.</summary>
+    public static TheoryData<string, string, string> StreamerBotOutputs => new()
+    {
+        { "twitch.createClip", "", "createClipSuccess,createClipId,createClipCreatedAt,createClipUrl" },
+        { "twitch.createMarker", "description=hi", "streamMarkerSuccess,streamMarkerId,streamMarkerCreatedAt,streamMarkerDescription,streamMarkerPosition" },
+        { "twitch.setBrandedContent", "enabled=true", "success" },
+        { "twitch.setGame", "game=just chatting", "gameSuccess,gameName,gameId,gameBoxArt" },
+        { "twitch.setTitle", "title=T", "titleSuccess" },
+        { "twitch.clearChat", "", "clearSuccess" },
+        { "twitch.getFollowAge", "", "isFollowing,followDate,followAgeLong,followAgeShort,followAgeDays,followAgeMinutes,followAgeSeconds,followUser,followUserName,followUserId,followAge.years,followAge.months,followAge.days,followAge.hours,followAge.minutes,followAge.seconds" },
+        { "twitch.ban", "user=target", "bannedUser,bannedUserName,bannedUserId,bannedUserType,banResult" },
+        { "twitch.timeout", "user=target;duration=60", "timedOutUser,timedOutUserName,timedOutUserId,timedOutUserType,timeoutResult" },
+        { "twitch.unban", "user=target", "unbannedUser,unbannedUserName,unbannedUserId,unbannedUserType,unbanResult" },
+        { "twitch.untimeout", "user=target", "unTimedOutUser,unTimedOutUserName,unTimedOutUserId,unTimedOutUserType,unTimedOutResult" },
+        { "twitch.warn", "user=target;reason=r", "warnedUser,warnedUserName,warnedUserId,warnedUserType,warnedResult" },
+        { "twitch.sendShoutout", "user=target", "shoutoutSuccess" },
+        { "twitch.startRaid", "user=target", "startRaidSuccess" },
+        { "twitch.getAdSchedule", "", "prerollFree,prerollFreeSeconds,snoozeCount" },
+        { "twitch.snoozeAd", "", "snooze.success,snoozeCount" },
+        { "twitch.getStreamInfo", "", "viewerCount" },
+        { "twitch.createPoll", "title=Q;choices=A|B", "pollId,success" },
+        { "twitch.getPoll", "", "active,poll.Title,poll.Id,poll.Duration,poll.choices.count,poll.choice0.title,poll.choice0.id,poll.choice0.votes,poll.choice0.rewardVotes,poll.choice0.totalVotes,poll.votes,poll.rewardVotes,poll.totalVotes" },
+        { "twitch.createPrediction", "title=Q;outcomes=A|B", "success,prediction.Id" },
+        { "twitch.getPrediction", "", "active,prediction.Id,prediction.Title,prediction.PredictionWindow,prediction.outcome0.id,prediction.outcome0.title,prediction.outcome0.users,prediction.outcome0.points,prediction.outcome0.color" },
+        { "twitch.lockPrediction", "", "active,locked,prediction.Id,prediction.outcome1.title" },
+        { "twitch.cancelPrediction", "", "active,cancelled,prediction.Id" },
+        { "twitch.resolvePrediction", "winner=No", "success,prediction.winningIndex,prediction.winningOutcome.id,prediction.winningCutcome.title,prediction.winningOutcome.title,prediction.winningOutcome.users,prediction.winningOutcome.points,prediction.winningOutcome.color" },
+        { "twitch.getRewardInfo", "reward=Hydrate", "rewardId,rewardCost,rewardTitle,rewardBackgroundColor,rewardEnabled,rewardPaused,rewardPrompt,rewardSkipRequestQueue,rewardMaxPerStream,rewardMaxPerUserPerStream,rewardGlobalCooldown,rewardIsOurs" },
+        { "twitch.getSubCounter", "", "subCounter.count,subCounter.rollover,subCounter.rolloverCount" },
+        { "twitch.setSubCounter", "count=3", "setResult" },
+        { "twitch.getBroadcasterInfo", "", "broadcastUser,broadcastUserName,broadcastUserId,broadcastUserType,broadcastIsAffiliate,broadcastIsPartner,broadcasterProfileUrl,broadcasterOfflineUrl,broadcasterCreatedAt,broadcasterDescription" },
+        { "twitch.getPresentUser", "index=0", "presentUsersCount,presentUser,presentUserName,presentUserId,presentUserType" },
+        { "twitch.getRandomUsers", "count=1", "randomUser0,randomUserName0,randomUserId0,randomUserType0" },
+        { "twitch.getUserInfo", "user=target", "addTargetResult,targetUser,targetUserName,targetUserId,targetDescription,targetDescriptionEscaped,targetUserProfileImageUrl,targetUserProfileImageUrlEscaped,targetUserType,targetIsAffiliate,targetIsPartner,targetIsSubscribed,targetSubscriptionTier,targetChannelTitle,game,gameId,createdAt,accountAge,tagCount,tag0,tags,tagsDelimited" },
+    };
+
+    [Theory]
+    [MemberData(nameof(StreamerBotOutputs))]
+    public async Task Sub_actions_write_Streamer_bot_output_names(string type, string parameters, string expected)
+    {
+        const string prediction =
+            """{"data":[{"id":"pr1","title":"Win?","status":"STATUS","winning_outcome_id":"WIN","prediction_window":60,"outcomes":[{"id":"o1","title":"Yes","users":2,"channel_points":200,"color":"BLUE"},{"id":"o2","title":"No","users":1,"channel_points":50,"color":"PINK"}]}]}""";
+        _h.On("GET /helix/channels/followers", """{"total":1,"data":[{"user_id":"4242","user_name":"Target","user_login":"target","followed_at":"2020-01-01T00:00:00Z"}]}""")
+          .On("GET /helix/streams", """{"data":[]}""")
+          .On("POST /helix/clips", """{"data":[{"id":"FunnyClip","edit_url":"https://clips.twitch.tv/FunnyClip/edit"}]}""")
+          .On("POST /helix/streams/markers", """{"data":[{"id":"mk1","position_seconds":125,"description":"hi"}]}""")
+          .On("GET /helix/channels/ads", """{"data":[{"next_ad_at":0,"last_ad_at":0,"duration":60,"preroll_free_time":90,"snooze_count":2,"snooze_refresh_at":0}]}""")
+          .On("POST /helix/channels/ads/schedule/snooze", """{"data":[{"snooze_count":1,"snooze_refresh_at":0,"next_ad_at":0}]}""")
+          .On("POST /helix/polls", ActivePoll)
+          .On("POST /helix/predictions", ActivePrediction)
+          .On("GET /helix/subscriptions", """{"data":[{"user_id":"4242","user_login":"target","user_name":"Target","tier":"2000","is_gift":false}]}""")
+          .On("GET /helix/chat/chatters", """{"data":[{"user_id":"5","user_login":"a","user_name":"A"}],"pagination":{},"total":1}""")
+          .On("POST /helix/raids", """{"data":[{"created_at":"2026-01-01T12:00:00Z","is_mature":false}]}""");
+        var status = type switch { "twitch.lockPrediction" => "LOCKED", "twitch.cancelPrediction" => "CANCELED", _ => "RESOLVED" };
+        _h.On("PATCH /helix/predictions", prediction.Replace("STATUS", status).Replace("WIN", status == "RESOLVED" ? "o2" : ""));
+
+        var values = parameters.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Split('=', 2))
+            .ToDictionary(p => p[0], p => p[1]);
+        var (ok, args, log) = await RunAsync(type, values,
+            new Dictionary<string, object?> { ["user"] = "Viewer", ["userName"] = "viewer", ["userId"] = "4242" });
+
+        Assert.True(ok, string.Join(" | ", log.Recent().Select(e => e.Message)));
+        foreach (var name in expected.Split(','))
+            Assert.True(args.ContainsKey(name), $"{type} did not set Streamer.bot's '{name}'");
+    }
+
+    [Fact]
+    public async Task Streamer_bot_output_values()
+    {
+        _h.On("GET /helix/channels/followers", """{"total":1,"data":[{"user_id":"4242","user_name":"Target","user_login":"target","followed_at":"2020-01-01T00:00:00Z"}]}""");
+
+        var ban = (await RunAsync("twitch.ban", new() { ["user"] = "target" })).Args;
+        Assert.Equal("Target", ban["bannedUser"]);
+        Assert.Equal("target", ban["bannedUserName"]);
+        Assert.Equal("4242", ban["bannedUserId"]);
+        Assert.Equal("twitch", ban["bannedUserType"]);
+        Assert.Equal(true, ban["banResult"]);
+
+        var poll = (await RunAsync("twitch.getPoll")).Args;
+        Assert.Equal(true, poll["active"]);
+        Assert.Equal("Best?", poll["poll.Title"]);
+        Assert.Equal("A", poll["poll.choice0.title"]);
+        Assert.Equal(3, poll["poll.choice0.totalVotes"]);
+
+        var follow = (await RunAsync("twitch.getFollowAge")).Args;
+        Assert.Equal("target", follow["followUserName"]);
+        Assert.Matches(@"^\d+ years?", (string)follow["followAgeLong"]!);
+        Assert.Matches(@"^\d+y", (string)follow["followAgeShort"]!);
+        Assert.IsType<int>(follow["followAge.years"]);
+
+        var user = (await RunAsync("twitch.getUserInfo", new() { ["user"] = "target" })).Args;
+        Assert.Equal("affiliate", user["targetUserType"]);
+        Assert.Equal(true, user["targetIsAffiliate"]);
+        Assert.Equal("p.png", user["targetUserProfileImageUrl"]);
+        Assert.Equal(2, user["tagCount"]);
+        Assert.Equal("Cozy", user["tag0"]);
+        Assert.Equal("Cozy,English", user["tagsDelimited"]);
+    }
+
     [Fact]
     public async Task New_get_actions_write_results_into_arguments()
     {
