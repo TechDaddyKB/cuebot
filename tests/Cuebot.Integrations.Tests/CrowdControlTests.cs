@@ -153,6 +153,52 @@ public sealed class CrowdControlTests : IAsyncLifetime
     }
 
     [Fact]
+    public void Events_also_carry_streamer_bot_dotted_names()
+    {
+        var request = CrowdControlProtocol.Map(CrowdControlProtocol.Parse(Request)!)!.Args;
+        Assert.Equal("7b0c1d2e-0000-4000-8000-000000000001", request["requestID"]);
+        Assert.Equal("creeper", request["effect.effectID"]);
+        Assert.Equal("Spawn Creeper", request["effect.name"]);
+        Assert.Equal("game", request["effect.type"]);
+        Assert.Equal(15.0, request["effect.duration"]);
+        Assert.Equal("Ssss", request["effect.description"]);
+        Assert.Equal("Mobs", request["effect.category"]);
+        Assert.Equal("Mobs", request["effect.category[0]"]);
+        Assert.Equal("https://resources.crowdcontrol.live/images/Minecraft/icons/creeper.png", request["effect.image"]);
+        Assert.Equal("Minecraft", request["game.gameID"]);
+        Assert.Equal("Minecraft", request["game.name"]);
+        Assert.Equal("MinecraftServer", request["gamePack.gamePackID"]);
+        Assert.Equal("Minecraft (Server)", request["gamePack.name"]);
+        Assert.Equal("pc", request["gamePack.platform"]);
+        Assert.Equal("Alice", request["requester.name"]);
+        Assert.Equal("cc-alice", request["requester.ccUID"]);
+        Assert.Equal("1001", request["requester.originID"]);
+        Assert.Equal("twitch", request["requester.profile"]);
+        Assert.Equal("Streamer", request["target.name"]);
+        Assert.Equal("2002", request["target.originID"]);
+        Assert.Equal("Spawn Creeper", request["effectName"]);   // Cuebot's names stay
+
+        var ended = CrowdControlProtocol.Map(CrowdControlProtocol.Parse(Replace(Replace(Request, "effect-request", "timed-effect-update"),
+            "\"quantity\":2", "\"status\":\"end\",\"timeRemaining\":0,\"quantity\":2"))!)!;
+        Assert.Equal("timedEffectEnded", ended.Name);
+        Assert.Equal("End", ended.Args["status"]);
+        Assert.Equal("creeper", ended.Args["effect.effectID"]);
+
+        var coins = CrowdControlProtocol.Map(CrowdControlProtocol.Parse("""
+            {"domain":"prv","type":"coin-exchange","payload":{"amount":10,"coinType":"free","source":"twitch-sub","exchanger":{"name":"Bob"}}}
+            """)!)!.Args;
+        Assert.Equal("twitch-sub", coins["exchangeSource"]);
+        Assert.Equal("twitch-sub", coins["source"]);
+
+        var session = CrowdControlProtocol.Map(CrowdControlProtocol.Parse("""
+            {"domain":"pub","type":"game-session-start","payload":{"gameSessionID":"gs-1","game":{"gameID":"Minecraft","name":"Minecraft"},
+             "gamePack":{"gamePackID":"MinecraftServer","name":"Minecraft (Server)","platform":"pc"}}}
+            """)!)!.Args;
+        Assert.Equal("Minecraft", session["game.name"]);
+        Assert.Equal("MinecraftServer", session["gamePack.gamePackID"]);
+    }
+
+    [Fact]
     public async Task A_refused_key_stops_without_retrying_or_leaking_it()
     {
         await _service.ConnectAsync();

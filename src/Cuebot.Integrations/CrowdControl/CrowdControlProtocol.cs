@@ -150,6 +150,7 @@ internal static partial class CrowdControlProtocol
                 if (name is null) return null;
                 var e = Effect(name, p, isTest);
                 e.Args["timedStatus"] = status;
+                e.Args["status"] = char.ToUpperInvariant(status[0]) + status[1..];   // Streamer.bot's name: Begin, Pause, Resume, End
                 var remaining = p.Num("timeRemaining") ?? 0;
                 e.Args["timeRemaining"] = (long)remaining;
                 e.Args["timeRemainingSeconds"] = Math.Round(remaining / 1000.0, 1);
@@ -221,7 +222,47 @@ internal static partial class CrowdControlProtocol
             ["timestamp"] = p.Num("timestamp") is { } ts ? Time(ts) : "",
             ["isTest"] = isTest,
         };
+        AddStreamerBotEffectArgs(args, p, effect, game, pack, requester, target);
         return new CrowdControlEvent(name, args);
+    }
+
+    /// <summary>
+    /// Streamer.bot's dotted names for the same payload (<c>requestID</c>, <c>effect.*</c>, <c>game.*</c>,
+    /// <c>gamePack.*</c>, <c>requester.*</c>, <c>target.*</c>), added alongside Cuebot's flat names.
+    /// </summary>
+    private static void AddStreamerBotEffectArgs(Dictionary<string, object?> args, JsonElement p, JsonElement effect,
+        JsonElement game, JsonElement pack, JsonElement requester, JsonElement target)
+    {
+        args["requestID"] = p.Str("requestID");
+        args["effect.effectID"] = effect.Str("effectID", "id");
+        args["effect.type"] = effect.Str("type");
+        args["effect.name"] = Name(effect.Prop("name"));
+        args["effect.duration"] = effect.Num("duration") ?? 0;
+        args["effect.note"] = effect.Str("note");
+        args["effect.description"] = effect.Str("description");
+        args["effect.price"] = (long)(effect.Num("price") ?? 0);
+        args["effect.image"] = effect.Str("image");
+        var categories = effect.Array("category").Select(c => c.ToString()).ToArray();
+        args["effect.category"] = string.Join(", ", categories);
+        for (var i = 0; i < categories.Length; i++) args[$"effect.category[{i}]"] = categories[i];
+        AddGameArgs(args, game, pack, p.Str("gamePackID"));
+        foreach (var (prefix, user) in new[] { ("requester", requester), ("target", target) })
+        {
+            args[prefix + ".ccUID"] = user.Str("ccUID");
+            args[prefix + ".name"] = user.Str("name");
+            args[prefix + ".profile"] = user.Str("profile");
+            args[prefix + ".originID"] = user.Str("originID");
+            args[prefix + ".image"] = user.Str("image");
+        }
+    }
+
+    private static void AddGameArgs(Dictionary<string, object?> args, JsonElement game, JsonElement pack, string fallbackPackId)
+    {
+        args["game.gameID"] = game.Str("gameID");
+        args["game.name"] = Name(game.Prop("name"));
+        args["gamePack.gamePackID"] = pack.Str("gamePackID") is { Length: > 0 } id ? id : fallbackPackId;
+        args["gamePack.name"] = pack.Str("name") is { Length: > 0 } pn ? pn : Name(pack.Obj("meta").Prop("name"));
+        args["gamePack.platform"] = pack.Str("platform");
     }
 
     private static CrowdControlEvent Coins(JsonElement p, bool isTest)
@@ -239,6 +280,7 @@ internal static partial class CrowdControlProtocol
             ["amount"] = (long)(p.Num("amount") ?? 0),
             ["bonus"] = (long)(p.Num("bonus") ?? 0),
             ["source"] = p.Str("source"),
+            ["exchangeSource"] = p.Str("source"),   // Streamer.bot's name
             ["user"] = user,
             ["userName"] = user,
             ["userId"] = exchanger.Str("originID"),
@@ -267,6 +309,7 @@ internal static partial class CrowdControlProtocol
             ["platform"] = p.Str("profileType"),
             ["isTest"] = isTest,
         };
+        AddGameArgs(args, game, pack, p.Str("gamePackID"));
         return new CrowdControlEvent(name, args);
     }
 

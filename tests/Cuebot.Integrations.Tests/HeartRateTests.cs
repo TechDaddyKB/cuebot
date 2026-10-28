@@ -80,7 +80,7 @@ public sealed class PulsoidTests : IAsyncLifetime
         var socket = await _env.Server.NextAsync();
         Assert.Equal("wss://pulsoid.test/api/v1/data/real_time", socket.Url!.ToString());
         socket.Push("""{"measured_at":1625310655000,"data":{"heart_rate":72}}""");
-        await _env.WaitForEventAsync(HeartRateEventTypes.Pulsoid.HeartRate);
+        Assert.Equal(1625310655L, (await _env.WaitForEventAsync(HeartRateEventTypes.Pulsoid.HeartRate)).Args["measuredAt"]);
         socket.Close();
         await _env.WaitForEventAsync(HeartRateEventTypes.Pulsoid.Disconnected);
         var again = await _env.Server.NextAsync();
@@ -96,6 +96,13 @@ public sealed class PulsoidTests : IAsyncLifetime
     [InlineData("""{"type":"ingestion_pause","timestamp":"x","ingestionPause":{"id":"a"}}""", null)]
     [InlineData("not json", null)]
     public void Parses_frames(string frame, int? bpm) => Assert.Equal(bpm, PulsoidProtocol.ParseBpm(frame));
+
+    [Theory]
+    [InlineData("""{"measured_at":1704063600000,"data":{"heart_rate":40}}""", 1704063600L)]
+    [InlineData("""{"type":"heart_rate","timestamp":"2024-01-01T00:00:00Z","heartRate":{"bpm":85}}""", 1704067200L)]
+    [InlineData("123", null)]
+    public void Parses_measured_at_as_unix_seconds(string frame, long? measuredAt) =>
+        Assert.Equal(measuredAt, PulsoidProtocol.ParseMeasuredAt(frame));
 }
 
 public sealed class HypeRateTests : IAsyncLifetime

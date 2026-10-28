@@ -37,6 +37,8 @@ public sealed class VoicemodService : IntegrationConnection
     private VoicemodSound[] _sounds = [];
     private string? _currentVoiceId;
     private readonly bool?[] _switches = new bool?[4];
+    private Dictionary<string, string> _soundboardNames = new(StringComparer.Ordinal);
+    private string _activeSoundboardId = "";
 
     public VoicemodService(JsonFile<IntegrationsSettings> settings, EventBus bus, AppLog log)
         : this(settings, bus, log, () => new ClientWebSocketTransport(), IntegrationsTimings.Default)
@@ -211,16 +213,21 @@ public sealed class VoicemodService : IntegrationConnection
                 break;
             case "getMemes":
                 _sounds = VoicemodProtocol.ParseMemes(message);
-                if (!solicited) Publish("soundboardChanged", new Dictionary<string, object?> { ["soundCount"] = _sounds.Length });
+                if (!solicited) Publish("soundboardChanged", SoundboardArgs(new() { ["soundCount"] = _sounds.Length }));
                 break;
             case "getAllSoundboard":
-                if (!solicited) Publish("soundboardChanged", new Dictionary<string, object?>
+                _soundboardNames = message.Body.Array("soundboards")
+                    .Where(b => b.Str("id").Length > 0)
+                    .GroupBy(b => b.Str("id"))
+                    .ToDictionary(g => g.Key, g => g.First().Str("name"), StringComparer.Ordinal);
+                if (!solicited) Publish("soundboardChanged", SoundboardArgs(new()
                 {
                     ["soundCount"] = VoicemodProtocol.ParseSoundboards(message).Length,
-                });
+                }));
                 break;
             case "getActiveSoundboardProfile":
-                Publish("soundboardChanged", new Dictionary<string, object?> { ["profileId"] = message.Body.Str("profileId") });
+                _activeSoundboardId = message.Body.Str("profileId");
+                Publish("soundboardChanged", SoundboardArgs(new() { ["profileId"] = _activeSoundboardId }));
                 break;
             case "licenseTypeChanged":
                 Publish("licenseChanged", new Dictionary<string, object?> { ["licenseType"] = message.Body.Str("licenseType") });
@@ -248,7 +255,17 @@ public sealed class VoicemodService : IntegrationConnection
             ["voiceName"] = CurrentVoiceName,
             ["previousVoiceId"] = previous ?? "",
             ["previousVoiceName"] = previousName,
+            ["voice.id"] = voiceId,   // Streamer.bot's names
+            ["voice.name"] = CurrentVoiceName,
         });
+    }
+
+    /// <summary>Adds Streamer.bot's <c>soundboard.id</c> / <c>soundboard.name</c> (the active soundboard, when known).</summary>
+    private Dictionary<string, object?> SoundboardArgs(Dictionary<string, object?> args)
+    {
+        args["soundboard.id"] = _activeSoundboardId;
+        args["soundboard.name"] = _soundboardNames.GetValueOrDefault(_activeSoundboardId, "");
+        return args;
     }
 
     private void SetSwitch(VoicemodSwitch which, bool? value, bool solicited)

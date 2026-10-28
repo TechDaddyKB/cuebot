@@ -26,6 +26,19 @@ internal static class PulsoidProtocol
             return type == "heart_rate" && root.Obj("heartRate").Num("bpm") is { } bpm ? (int)Math.Round(bpm) : null;
         return root.Obj("data").Num("heart_rate") is { } v1 ? (int)Math.Round(v1) : null;
     }
+
+    /// <summary>
+    /// When a frame was measured, as Unix seconds: v1's <c>measured_at</c> (milliseconds) or v2's ISO <c>timestamp</c>.
+    /// Null when absent (the plain-number mode).
+    /// </summary>
+    public static long? ParseMeasuredAt(string text)
+    {
+        if (JsonUtil.TryParse(text.Trim()) is not { ValueKind: JsonValueKind.Object } root) return null;
+        if (root.Num("measured_at", "measuredAt") is { } at and > 0) return (long)(at > 1e11 ? at / 1000 : at);
+        return DateTimeOffset.TryParse(root.Str("timestamp"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var time)
+            ? time.ToUnixTimeSeconds()
+            : null;
+    }
 }
 
 /// <summary>
@@ -82,7 +95,7 @@ public sealed class PulsoidService : HeartRateConnection
         {
             if (PulsoidProtocol.ParseBpm(text) is { } bpm)
             {
-                Report(bpm);
+                Report(bpm, PulsoidProtocol.ParseMeasuredAt(text));
                 SetStatus(Cuebot.Core.ConnectionState.Connected, $"Connected to Pulsoid: {bpm} BPM");
             }
         }
