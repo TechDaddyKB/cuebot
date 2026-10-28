@@ -19,5 +19,14 @@
     <TabItem Header="Lumia Stream" IsVisible="{Binding Lumia, Converter={x:Static ObjectConverters.IsNotNull}}">
       <apps:LumiaView DataContext="{Binding Lumia}" />
     </TabItem>
+    <TabItem Header="OBSBOT" IsVisible="{Binding Obsbot, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <apps:ObsbotView DataContext="{Binding Obsbot}" />
+    </TabItem>
+    <TabItem Header="mtion" IsVisible="{Binding Mtion, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <apps:MtionView DataContext="{Binding Mtion}" />
+    </TabItem>
+    <TabItem Header="StreamFog">
+      <apps:StreamFogView />
+    </TabItem>
   </TabControl>
 </UserControl>

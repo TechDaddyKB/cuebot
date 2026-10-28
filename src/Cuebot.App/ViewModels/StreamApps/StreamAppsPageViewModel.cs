@@ -10,4 +10,9 @@ public sealed class StreamAppsPageViewModel(ObsViewModel obs, StreamAppsViewMode
     public TitsViewModel? Tits { get; init; }
 
     public LumiaViewModel? Lumia { get; init; }
+    /// <summary>OBSBOT tab (null in hosts that do not show it).</summary>
+    public ObsbotViewModel? Obsbot { get; init; }
+
+    /// <summary>mtion studio tab.</summary>
+    public MtionViewModel? Mtion { get; init; }
 }

@@ -93,6 +93,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 Tits = new Cuebot.App.ViewModels.StreamApps.TitsViewModel(host.Get<Cuebot.StreamApps.Tits.TitsService>()),
                 Lumia = new Cuebot.App.ViewModels.StreamApps.LumiaViewModel(host.Get<Cuebot.StreamApps.Lumia.LumiaService>()),
+                Obsbot = new Cuebot.App.ViewModels.StreamApps.ObsbotViewModel(host.Get<Cuebot.StreamApps.Obsbot.ObsbotService>()),
+                Mtion = new Cuebot.App.ViewModels.StreamApps.MtionViewModel(host.Get<Cuebot.StreamApps.Mtion.MtionService>()),
             },
             new SpeechViewModel(host.Get<SpeechService>(), host.Get<IAudioInput>()),
             new Transfer.ImportExportViewModel(host.Get<Cuebot.Core.Transfer.TransferService>(), host.Get<Cuebot.Core.Actions.ProfileService>(),

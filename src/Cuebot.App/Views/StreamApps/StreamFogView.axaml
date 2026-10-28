@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Cuebot.App.Views.StreamApps.StreamFogView">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="StreamFog" />
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Not supported" />
+          <TextBlock Name="StreamFogReason" TextWrapping="Wrap"
+                     Text="StreamFog publishes no API. Its lens, outfit and video-background controls are only reachable through StreamFog's private Streamer.bot integration (a per-user &quot;Remote Key&quot; issued inside the StreamFog app), whose protocol is not documented. Cuebot only uses vendors' public interfaces, so it cannot drive StreamFog." />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="What still works: StreamFog's chat-triggered effects run inside StreamFog itself, and its OBS browser source or virtual camera can be shown, hidden or switched with Cuebot's OBS sub-actions. If StreamFog publishes an API, lenses, outfits and backgrounds can be added here." />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

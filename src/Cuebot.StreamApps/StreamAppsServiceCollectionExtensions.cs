@@ -5,6 +5,8 @@ using Cuebot.Core.Logging;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Storage;
 using Cuebot.StreamApps.Meld;
+using Cuebot.StreamApps.Mtion;
+using Cuebot.StreamApps.Obsbot;
 using Cuebot.StreamApps.PolyPop;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,9 +29,15 @@ public static class StreamAppsServiceCollectionExtensions
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PolyPopService>());
         Tits.TitsRegistration.Add(services);
         Lumia.LumiaRegistration.Add(services);
+        services.AddSingleton(sp => new ObsbotService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<ObsbotService>());
+        services.AddSingleton(sp => new MtionService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<MtionService>());
 
         services.AddSingleton<ITriggerProvider>(sp => new MeldTriggers(sp.GetRequiredService<MeldStudioService>()));
         services.AddSingleton<ITriggerProvider>(_ => new PolyPopTriggers());
+        services.AddSingleton<ITriggerProvider>(_ => new ObsbotTriggers());
+        services.AddSingleton<ITriggerProvider>(_ => new MtionTriggers());
 
         services.AddSingleton(sp => new SubActionSet(
         [
@@ -37,6 +45,8 @@ public static class StreamAppsServiceCollectionExtensions
             .. PolyPopSubActions.Create(sp.GetRequiredService<PolyPopService>()),
             .. Tits.TitsSubActions.Create(sp.GetRequiredService<Tits.TitsService>()),
             .. Lumia.LumiaSubActions.Create(sp.GetRequiredService<Lumia.LumiaService>()),
+            .. ObsbotSubActions.Create(sp.GetRequiredService<ObsbotService>()),
+            .. MtionSubActions.Create(sp.GetRequiredService<MtionService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -44,6 +54,8 @@ public static class StreamAppsServiceCollectionExtensions
 
         services.AddSingleton<IScriptFunctionProvider>(sp => new StreamAppsScriptFunctions(
             sp.GetRequiredService<MeldStudioService>(), sp.GetRequiredService<PolyPopService>()));
+        services.AddSingleton<IScriptFunctionProvider>(sp => new ObsbotScriptFunctions(sp.GetRequiredService<ObsbotService>()));
+        services.AddSingleton<IScriptFunctionProvider>(sp => new MtionScriptFunctions(sp.GetRequiredService<MtionService>()));
         return services;
     }
 
@@ -60,6 +72,7 @@ public static class StreamAppsServiceCollectionExtensions
             .. MeldSubActions.TypeIds, .. PolyPopSubActions.TypeIds,
             .. Tits.TitsSubActions.TypeIds,
             .. Lumia.LumiaSubActions.TypeIds,
+            .. ObsbotSubActions.TypeIds, .. MtionSubActions.TypeIds,
         ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;
