@@ -56,7 +56,10 @@ internal static class ChatItemMapper
         var type = snippet.Str("type");
         var id = item.Str("id");
         if (author.Str("channelId") is { Length: > 0 } authorId)
+        {
             ctx.Chatters.Remember(authorId, author.Str("displayName"));
+            ctx.Chatters.RememberDetails(authorId, author.Str("profileImageUrl"), author.Bool("isChatSponsor"));
+        }
 
         switch (type)
         {
@@ -129,6 +132,12 @@ internal static class ChatItemMapper
                 args["levelName"] = d.Str("memberLevelName");
                 args["gifterId"] = gifterId;
                 args["gifterName"] = ctx.Chatters.NameOf(gifterId) ?? "";
+                if (ctx.Chatters.DetailsOf(gifterId) is { } gifter)
+                {
+                    // Streamer.bot: gifterProfileUrl, gifterIsSponsor
+                    args["gifterProfileUrl"] = gifter.ProfileUrl;
+                    args["gifterIsSponsor"] = gifter.IsSponsor;
+                }
                 args["giftId"] = d.Str("associatedMembershipGiftingMessageId");
                 args["message"] = snippet.Str("displayMessage");
                 return One(YouTubeEventTypes.GiftMembershipReceived, args);

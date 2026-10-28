@@ -234,6 +234,20 @@ public sealed class StreamerBotVariableTests
     }
 
     [Fact]
+    public void Hype_train_knows_the_shared_chat_session()
+    {
+        _router.Route(new BotEvent(T.SharedChatBegin, new Dictionary<string, object?> { ["isHost"] = true, ["userId"] = "1337" }));
+        var shared = _router.Route(new BotEvent(T.HypeTrainStart, new Dictionary<string, object?> { ["level"] = 1 }))[0];
+        _router.Route(new BotEvent(T.SharedChatEnd, new Dictionary<string, object?> { ["isHost"] = true }));
+        var alone = _router.Route(new BotEvent(T.HypeTrainEnd, new Dictionary<string, object?> { ["level"] = 1 }))[0];
+
+        Assert.Equal(true, shared.Args["isInSharedChat"]);
+        Assert.Equal(true, shared.Args["isSharedChatHost"]);
+        Assert.Equal(false, alone.Args["isInSharedChat"]);
+        Assert.Equal(false, alone.Args["isSharedChatHost"]);
+    }
+
+    [Fact]
     public void Hype_train_level_up_has_prevLevel()
     {
         const string start = """ "id":"h1","level":1,"total":10,"progress":10,"goal":100 """;
@@ -399,7 +413,8 @@ public sealed class StreamerBotVariableTests
         { T.PredictionLocked, "predictionId=p;title=Q;lockedAt=2026-01-01T12:00:00Z;outcomeCount=0", "prediction.Id,prediction.LockedAt" },
         { T.PredictionCanceled, "predictionId=p;title=Q;endedAt=2026-01-01T12:00:00Z;outcomeCount=0", "prediction.EndedAt" },
         { T.PredictionCompleted, "predictionId=p;title=Q;winningOutcomeId=o;outcomeCount=1;outcome0Id=o;outcome0Title=A", "prediction.winningOutcome.id,prediction.winningOutcome.title" },
-        { T.HypeTrainStart, "hypeTrainId=h;percent=50;isGoldenKappa=false;trainType=regular", "id,percentDecimal,isGoldenKappaTrain,isTreasureTrain" },
+        { T.HypeTrainStart, "hypeTrainId=h;percent=50;isGoldenKappa=false;trainType=regular", "id,percentDecimal,isGoldenKappaTrain,isTreasureTrain,isInSharedChat,isSharedChatHost" },
+        { T.WatchStreak, "messageId=n;message=hi;watchStreak=3;systemMessage=s;channelPointsAwarded=5;userId=1", "watchStreakId,systemMessage,watchStreak,channelPointsAwarded" },
         { T.HypeTrainEnd, "hypeTrainId=h;percent=50;isGoldenKappa=true;trainType=golden_kappa", "id,percentDecimal,isGoldenKappaTrain" },
         { T.GoalBegin, "goalId=g;goalType=follower;description=D;currentAmount=1;targetAmount=2;startedAt=2026-01-01T12:00:00Z", "goal.id,goal.type,goal.description,goal.currentAmount,goal.targetAmount,goal.startedAt" },
         { T.GoalProgress, "goalId=g;goalType=follower;description=D;currentAmount=1;targetAmount=2", "goal.id,goal.currentAmount" },

@@ -130,6 +130,10 @@ internal static class StreamerBotVariables
                 Alias(a, "targetUserDisplayName", "user");
                 Alias(a, "viewerCount", "viewers");
                 break;
+            case T.WatchStreak:
+                // EventSub has no separate streak id; the notification's message id identifies it.
+                Alias(a, "watchStreakId", "messageId");
+                break;
             case T.ShoutoutReceived:
                 Alias(a, "viewerCount", "viewers");
                 break;

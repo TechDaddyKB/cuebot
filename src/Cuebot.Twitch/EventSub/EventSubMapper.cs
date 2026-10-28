@@ -675,7 +675,6 @@ internal static class EventSubMapper
             args[$"top.{kind}.total"] = c.Int("total");
         }
         args["allTimeHighTotal"] = e.Int("all_time_high_total");
-        args["isInSharedChat"] = e.Bool("is_shared_train");
         return new BotEvent(type, args);
     }
 

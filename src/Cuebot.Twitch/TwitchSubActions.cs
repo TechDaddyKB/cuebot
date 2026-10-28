@@ -532,6 +532,9 @@ internal static class TwitchSubActions
                 c.Args["targetCreatedAt"] = user.CreatedAt?.ToString("o", CultureInfo.InvariantCulture) ?? "";
                 c.Args["targetAccountAgeDays"] = user.CreatedAt is { } created ? (int)(DateTimeOffset.UtcNow - created).TotalDays : 0;
                 var sub = await TrySubscriptionAsync(api, user.Id, ct).ConfigureAwait(false);
+                if (await TryAsync(() => api.IsModeratorAsync(user.Id, ct)).ConfigureAwait(false) is { } isModerator)
+                    c.Args["targetIsModerator"] = isModerator;
+                if (await TryAsync(() => api.IsVipAsync(user.Id, ct)).ConfigureAwait(false) is { } isVip) c.Args["targetIsVip"] = isVip;
                 var sbChannel = await api.GetChannelAsync(user.Id, ct).ConfigureAwait(false);
                 if (sbChannel is { } channel)
                 {
@@ -1052,6 +1055,19 @@ internal static class TwitchSubActions
         if (!sub.Known) return;
         c.Args["targetIsSubscribed"] = sub.Sub is not null;
         c.Args["targetSubscriptionTier"] = sub.Sub is null ? "" : sub.Sub.Tier + "000";
+    }
+
+    /// <summary>The answer, or null when it is not known (a missing scope).</summary>
+    private static async Task<bool?> TryAsync(Func<Task<bool>> check)
+    {
+        try
+        {
+            return await check().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is TwitchApiException or InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The user's subscription, or not known (missing channel:read:subscriptions).</summary>

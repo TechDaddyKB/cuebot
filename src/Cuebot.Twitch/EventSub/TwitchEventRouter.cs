@@ -58,6 +58,7 @@ internal sealed class TwitchEventRouter(
     private TwitchBroadcasterArgs? _broadcaster;
     private (string Title, string GameId, string GameName)? _channel;
     private (string User, string UserName, string UserId, string Image)? _raidTarget;
+    private bool? _sharedChatHost;
     private int _hypeTrainLevel;
     private int _pyramidCount;
     private int _pyramidBrokenCount;
@@ -175,6 +176,19 @@ internal sealed class TwitchEventRouter(
                     return _giftBombs.TryGetValue(Str(e, "communityGiftId"), out var size)
                         ? Retype(e, e.Type, a => a["subBombCount"] = size)
                         : Retype(e, e.Type, a => a["subBombCount"] = 0);
+                case TwitchEventTypes.SharedChatBegin or TwitchEventTypes.SharedChatUpdate:
+                    _sharedChatHost = Bool(e, "isHost");
+                    return e;
+                case TwitchEventTypes.SharedChatEnd:
+                    _sharedChatHost = null;
+                    return e;
+                case TwitchEventTypes.HypeTrainStart or TwitchEventTypes.HypeTrainUpdate or TwitchEventTypes.HypeTrainEnd:
+                    var host = _sharedChatHost;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a.TryAdd("isInSharedChat", host is not null);
+                        a.TryAdd("isSharedChatHost", host is true);
+                    });
                 case TwitchEventTypes.RaidStart:
                     _raidTarget = (Str(e, "user"), Str(e, "userName"), Str(e, "userId"), Str(e, "profileImageUrl"));
                     return e;

@@ -92,7 +92,7 @@ public sealed class StreamerBotVariableTests
         Assert.Equal("Gold", gift.Args["tier"]);
         Assert.Equal("mg1", gift.Args["id"]);
 
-        _ctx.Chatters.Remember(Owner, "Owner");
+        Map(Text("c1", "hello", Author(Owner, "Owner", member: true)));
         var received = Map(Item("r1", "giftMembershipReceivedEvent",
             $$""" "giftMembershipReceivedDetails":{"memberLevelName":"Gold","gifterChannelId":"{{Owner}}","associatedMembershipGiftingMessageId":"mg1"} """));
         Assert.Equal("mg1", received.Args["id"]);
@@ -101,6 +101,8 @@ public sealed class StreamerBotVariableTests
         Assert.Equal("Owner", received.Args["gifterUserName"]);
         Assert.Equal(Owner, received.Args["gifterUserId"]);
         Assert.Equal("youtube", received.Args["gifterUserType"]);
+        Assert.Equal("https://yt3.test/" + Owner + ".jpg", received.Args["gifterProfileUrl"]);
+        Assert.Equal(true, received.Args["gifterIsSponsor"]);
     }
 
     [Fact]

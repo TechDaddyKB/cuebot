@@ -351,7 +351,7 @@ public sealed class SubActionTests : IDisposable
         { "twitch.getBroadcasterInfo", "", "broadcastUser,broadcastUserName,broadcastUserId,broadcastUserType,broadcastIsAffiliate,broadcastIsPartner,broadcasterProfileUrl,broadcasterOfflineUrl,broadcasterCreatedAt,broadcasterDescription" },
         { "twitch.getPresentUser", "index=0", "presentUsersCount,presentUser,presentUserName,presentUserId,presentUserType" },
         { "twitch.getRandomUsers", "count=1", "randomUser0,randomUserName0,randomUserId0,randomUserType0" },
-        { "twitch.getUserInfo", "user=target", "addTargetResult,targetUser,targetUserName,targetUserId,targetDescription,targetDescriptionEscaped,targetUserProfileImageUrl,targetUserProfileImageUrlEscaped,targetUserType,targetIsAffiliate,targetIsPartner,targetIsSubscribed,targetSubscriptionTier,targetChannelTitle,game,gameId,createdAt,accountAge,tagCount,tag0,tags,tagsDelimited" },
+        { "twitch.getUserInfo", "user=target", "addTargetResult,targetUser,targetUserName,targetUserId,targetDescription,targetDescriptionEscaped,targetUserProfileImageUrl,targetUserProfileImageUrlEscaped,targetUserType,targetIsAffiliate,targetIsPartner,targetIsSubscribed,targetSubscriptionTier,targetIsModerator,targetIsVip,targetChannelTitle,game,gameId,createdAt,accountAge,tagCount,tag0,tags,tagsDelimited" },
     };
 
     [Theory]
