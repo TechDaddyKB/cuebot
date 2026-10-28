@@ -50,8 +50,9 @@ public abstract record SbRule(string Name, string TargetType, IReadOnlyList<stri
     public IReadOnlyList<string> Excludes { get; init; } = [];
 
     /// <summary>
-    /// True when the meaning of a numeric type code was inferred from public exports with medium confidence (see
-    /// docs/streamerbot-import-codes.md); the import report asks the user to check such items.
+    /// True when the meaning of a numeric sub-action type code was inferred from public exports with medium confidence
+    /// (see docs/streamerbot-import-codes.md); the import report asks the user to check such items. Trigger codes are
+    /// all verified.
     /// </summary>
     public bool Tentative { get; init; }
 }

@@ -17,4 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cuebot.App\Cuebot.App.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Cuebot.Tests\TestData\streamerbot-1.0.7-trigger-defaults.json" Link="TestData\streamerbot-1.0.7-trigger-defaults.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
