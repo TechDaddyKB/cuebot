@@ -18,7 +18,7 @@ internal sealed class RemoteScriptFunctions(RemoteHub hub) : IScriptFunctionProv
                 {
                     foreach (var property in obj.EnumerateObject()) args[property.Name] = ScriptArgs.ToClr(property.Value);
                 }
-                return await hub.SendSignalAsync(a.GetString("instance"), name, context.Action.Name, args, ct).ConfigureAwait(false);
+                return await hub.SendSignalAsync(a.GetString("instance"), name, context?.Action.Name ?? "", args, ct).ConfigureAwait(false);
             }),
         new("remote.waitForSignal", "Wait for a signal from a remote instance (instance empty = any; timeoutMs default 30000, 0 = forever). Returns {name, sender, instance..., args} or null on timeout",
             ["name", "instance", "timeoutMs"], async (_, a, ct) =>
