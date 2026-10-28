@@ -39,7 +39,7 @@ public sealed class StreamerBotRunVariablesTests : IDisposable
     public async Task Every_mapped_trigger_run_carries_streamerbots_run_arguments_with_its_types()
     {
         var mapped = MappedCodes().ToList();
-        Assert.Equal(371, mapped.Select(m => m.Code).Distinct().Count());   // docs/streamerbot-import-codes.md
+        Assert.Equal(372, mapped.Select(m => m.Code).Distinct().Count());   // docs/streamerbot-import-codes.md
 
         var profile = new ProfileService(null, _log);
         var targets = mapped.Select(m => m.Target).Distinct(StringComparer.Ordinal).ToList();

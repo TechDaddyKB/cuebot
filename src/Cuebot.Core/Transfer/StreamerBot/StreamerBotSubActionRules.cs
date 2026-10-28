@@ -49,22 +49,13 @@ public sealed partial class StreamerBotMappingTable
     {
         var gaps = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["573"] = "Twitch Get Clip Download Urls: Cuebot has no clip download step",
-            ["579"] = "Twitch Add Suspicious Status: Cuebot has no suspicious-user moderation step",
-            ["580"] = "Twitch Remove Suspicious Status: Cuebot has no suspicious-user moderation step",
             ["14310"] = "Camera Hub Webcam Set White Balance Tint: Cuebot's direct (UVC) webcam control has no tint setting",
             ["14311"] = "Camera Hub Webcam Set Noise Reduction: Cuebot's direct (UVC) webcam control has no noise reduction setting",
             ["14314"] = "Camera Hub Webcam Set Dynamic Range: Cuebot's direct (UVC) webcam control has no dynamic range setting",
             ["14701"] = "Stream Deck Execute MCP Action: Cuebot's Stream Deck plugin has no MCP actions",
             ["20001"] = "Streamer.bot Remote Send Remote Trigger: Cuebot's remote link sends signals only",
-            ["35104"] = "Kick Configure Rewards: Cuebot has no bulk Kick reward configuration",
-            ["35109"] = "Kick Reset Reward Counter: Cuebot keeps no Kick reward counters",
-            ["35110"] = "Kick Reset Reward User Counters: Cuebot keeps no Kick reward counters",
-            ["35111"] = "Kick Set Group Enabled State: Cuebot has no Kick reward groups",
-            ["35112"] = "Kick Set Group Paused State: Cuebot has no Kick reward groups",
-            ["41012"] = "Meld Studio Set Text: Cuebot's Meld Studio steps cannot set a text layer",
-            ["41014"] = "Meld Studio Set Image/Media Layer Source: Cuebot's Meld Studio steps cannot change a media layer's file",
-            ["44001"] = "Streamlabs Spin Wheel: Cuebot has no Streamlabs (cloud) wheel",
+            ["41012"] = "Meld Studio Set Text: Meld's WebChannel API documents no text property for text layers",
+            ["44001"] = "Streamlabs Spin Wheel: Streamlabs' wheel endpoint needs a REST API (OAuth) token; Cuebot connects with the Socket API token only",
         };
         foreach (var (code, name) in new[] { ("14401", "Set AR Lens"), ("14402", "Set Camera"), ("14403", "Set Bitrate"), ("14404", "Set Flash Mode") })
             gaps[code] = $"Camera Hub EpocCam {name}: Cuebot has no EpocCam (phone camera) control";
@@ -332,6 +323,11 @@ public sealed partial class StreamerBotMappingTable
         With("577", "Twitch Update Pinned Chat Message Duration", "twitch.updatePinnedDuration", (s, _, _) =>
             [("messageId", ""), ("duration", Text(Math.Max(0, Num(s, "duration") ?? 60)))]);
         Plain("578", "Twitch Unpin Chat Message", "twitch.unpinMessage");
+        With("573", "Twitch Get Clip Download Urls", "twitch.getClipDownloadUrls", (s, _, _) => [("clipId", Str(s, "clipId") ?? "")]);
+        // Helix has two statuses; Streamer.bot's UI shows 0 as "Actively Monitoring".
+        With("579", "Twitch Add Suspicious Status", "twitch.addSuspiciousStatus", (s, c, l) =>
+            [("user", UserLogin(s, c)), ("status", Pick(s, "status", l, "Active Monitoring", "Restricted"))]);
+        With("580", "Twitch Remove Suspicious Status", "twitch.removeSuspiciousStatus", (s, c, _) => [("user", UserLogin(s, c))]);
 
         // ---------------------------------------------------------------- OBS Studio
         Obs("31", "OBS Set Random Group Source Visible", "obs.randomGroupSource", (s, _, _) => [("group", Str(s, "groupName") ?? ""), ("resultArgument", "obsSourceName")]);
@@ -592,10 +588,23 @@ public sealed partial class StreamerBotMappingTable
         With("35101", "Kick Reward Set Enabled State", "kick.setRewardEnabled", (s, _, l) => [Reward(s), ("enabled", OnOff(s, "state", l))]);
         With("35102", "Kick Reward Set Paused State", "kick.setRewardPaused", (s, _, l) => [Reward(s), ("paused", OnOff(s, "state", l))]);
         With("35103", "Kick Reward Set Cost", "kick.setRewardCost", (s, _, l) => [Reward(s), ("cost", KickCost(s, l))]);
+        With("35104", "Kick Configure Rewards", "kick.configureRewards", (s, c, l) =>
+        {
+            // As Twitch's: the per-reward states are not decoded; the step is imported empty and reported.
+            if (Obj(s, "states") is { Count: > 0 } states)
+                c.Warn($"'{c.ActionName}': a {l} step sets {states.Count} rewards; Cuebot could not read which state each gets. Fill in its lists.");
+            return [("disableNotConfigured", Flag(Bool(s, "disableNotConfigured") ?? false))];
+        });
         With("35105", "Kick Reward Set Title", "kick.setRewardTitle", (s, _, _) => [Reward(s), ("title", Str(s, "title") ?? "")]);
         With("35106", "Kick Reward Set Description", "kick.setRewardDescription", (s, _, _) => [Reward(s), ("description", Str(s, "description") ?? "")]);
         Custom("35107", "Kick Reward Update", "core.group", MapKickRewardUpdate);
         With("35108", "Kick Get Reward Info", "kick.getRewardInfo", (s, _, _) => [Reward(s)]);
+        With("35109", "Kick Reset Reward Counter", "kick.resetRewardCounter", (s, _, _) => [Reward(s)]);
+        With("35110", "Kick Reset Reward User Counters", "kick.resetRewardUserCounters", (s, _, _) => [Reward(s)]);
+        With("35111", "Kick Reward Set Group Enabled State", "kick.setRewardGroupEnabled", (s, _, l) =>
+            [("group", Str(s, "groupName") ?? ""), ("state", Pick(s, "state", l, "Enabled", "Disabled", "Toggle"))]);
+        With("35112", "Kick Reward Set Group Paused State", "kick.setRewardGroupPaused", (s, _, l) =>
+            [("group", Str(s, "groupName") ?? ""), ("state", Pick(s, "state", l, "Paused", "Unpaused", "Toggle"))]);
         With("35113", "Kick Reward Set Background Color", "kick.setRewardColor", (s, c, l) =>
         {
             Ignored(s, c, l, "random", "Cuebot sets the colour it was given");
@@ -628,6 +637,8 @@ public sealed partial class StreamerBotMappingTable
         Meld("41016", "Meld Studio Set Browser Layer Url", "meldstudio.setBrowserLayerUrl", (s, _, _) =>
             [("scene", Str(s, "sceneName") ?? ""), ("layer", Str(s, "layerName") ?? ""), ("url", Str(s, "url") ?? "")]);
         Meld("41017", "Meld Studio Take Vertical Screenshot", "meldstudio.takeVerticalScreenshot");
+        Meld("41014", "Meld Studio Set Image/Media Layer Source", "meldstudio.setLayerSource", (s, _, _) =>
+            [("scene", Str(s, "sceneName") ?? ""), ("layer", Str(s, "layerName") ?? ""), ("source", Str(s, "url") ?? "")]);
 
         // ---------------------------------------------------------------- structure (not in the menu)
         // A branch or case found outside its if/else or switch keeps its children in a group.

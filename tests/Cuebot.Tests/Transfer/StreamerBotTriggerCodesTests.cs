@@ -61,8 +61,8 @@ public sealed class StreamerBotTriggerCodesTests
             mapped++;
         }
         Assert.Equal(419 - StreamerBotMappingTable.NoEquivalentTriggers.Count, mapped);
-        Assert.Equal(371, mapped);
-        Assert.Equal(48, report.Placeholders.Count);
+        Assert.Equal(372, mapped);
+        Assert.Equal(47, report.Placeholders.Count);
         // Every listed gap is a real 1.0.7 code, and no gap also has a rule.
         var codes = defaults.OfType<JsonObject>().Select(i => Str(i, "type")!).ToHashSet();
         Assert.All(StreamerBotMappingTable.NoEquivalentTriggers.Keys, k => Assert.Contains(k, codes));
@@ -104,6 +104,9 @@ public sealed class StreamerBotTriggerCodesTests
     public void Range_filters_become_min_and_max_settings()
     {
         var tip = One(1201, ("min", 5), ("max", 50));
+        var powerUp = One(496, ("customPowerUpId", "92af127c-7326-4483-a52b-b0da0be61c01"));
+        Assert.Equal(("twitch.customPowerUpRedemption", "92af127c-7326-4483-a52b-b0da0be61c01"), (powerUp.Type, powerUp.Settings["powerUp"]));
+        Assert.Equal("", One(496, ("customPowerUpId", null)).Settings["powerUp"]);
         Assert.Equal(("streamelements.tip", "5", "50"), (tip.Type, tip.Settings["minAmount"], tip.Settings["maxAmount"]));
         // A Max alone is an exact value.
         var exact = One(201, ("min", -1), ("max", 10));

@@ -63,8 +63,8 @@ public sealed class StreamerBotSubActionCodesTests
             mapped++;
         }
         Assert.Equal(CodeCount - StreamerBotMappingTable.NoEquivalentSubActions.Count, mapped);
-        Assert.Equal(351, mapped);
-        Assert.Equal(44, report.Placeholders.Count);
+        Assert.Equal(360, mapped);
+        Assert.Equal(35, report.Placeholders.Count);
 
         // Every listed gap and tentative code is a real 1.0.7 code, no gap also has a rule, and every numeric code a
         // rule names is one Streamer.bot 1.0.7 knows.
@@ -178,6 +178,20 @@ public sealed class StreamerBotSubActionCodesTests
         Assert.Contains(One(14002).Warnings, w => w.Contains("both Wave Link outputs"));
         var kick = One(35107, ("rewardId", "r1"), ("title", "T"), ("cost", "50"), ("operator", 0)).Step;
         Assert.Equal(["kick.setRewardTitle", "kick.setRewardCost"], kick.Branches["Steps"].Select(s => s.Type));
+        Assert.Equal(("twitch.addSuspiciousStatus", "Active Monitoring"), (One(579).Step.Type, One(579).Step.Parameters["status"]));
+        Assert.Equal("Restricted", One(579, ("userLogin", "troll"), ("status", 1)).Step.Parameters["status"]);
+        Assert.Equal("troll", One(580, ("userLogin", "troll")).Step.Parameters["user"]);
+        Assert.Equal(("twitch.getClipDownloadUrls", "Clip1"), (One(573, ("clipId", "Clip1")).Step.Type, One(573, ("clipId", "Clip1")).Step.Parameters["clipId"]));
+        Assert.Equal(("kick.resetRewardCounter", "r1"), (One(35109, ("rewardId", "r1")).Step.Type, One(35109, ("rewardId", "r1")).Step.Parameters["reward"]));
+        Assert.Equal("kick.resetRewardUserCounters", One(35110).Step.Type);
+        var rewardGroup = One(35111, ("groupName", "Drinks"), ("state", 2)).Step;
+        Assert.Equal(("kick.setRewardGroupEnabled", "Drinks", "Toggle"), (rewardGroup.Type, rewardGroup.Parameters["group"], rewardGroup.Parameters["state"]));
+        Assert.Equal("Unpaused", One(35112, ("groupName", "Drinks"), ("state", 1)).Step.Parameters["state"]);
+        var configure = One(35104, ("states", new JsonObject { ["r1"] = 0 }), ("disableNotConfigured", true));
+        Assert.Equal(("kick.configureRewards", "true"), (configure.Step.Type, configure.Step.Parameters["disableNotConfigured"]));
+        Assert.Contains(configure.Warnings, w => w.Contains("Fill in its lists"));
+        var source = One(41014, ("sceneName", "Main"), ("layerName", "Frame"), ("url", "C:\a.png")).Step;
+        Assert.Equal(("meldstudio.setLayerSource", "Frame", "C:\a.png"), (source.Type, source.Parameters["layer"], source.Parameters["source"]));
         var delay = One(1002, ("value", "100"), ("maxValue", "900"), ("random", true)).Step;
         Assert.Equal(("100", "true", "900"), (delay.Parameters["milliseconds"], delay.Parameters["random"], delay.Parameters["to"]));
     }
