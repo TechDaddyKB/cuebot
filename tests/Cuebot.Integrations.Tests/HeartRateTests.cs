@@ -141,6 +141,11 @@ public sealed class HypeRateTests : IAsyncLifetime
     [Fact]
     public async Task Joins_the_channel_publishes_heart_rate_and_clips_and_sends_heartbeats()
     {
+        // Heartbeats go unanswered until the pulse and clip checks are done; at 250 ms a loaded runner can take
+        // longer than the 3 missed heartbeats that make the service reconnect.
+        await _hypeRate.DisposeAsync();
+        _hypeRate = new HypeRateService(_env.Settings, new HeartRateHub(null, TimeProvider.System), _env.Bus, _env.Log, _env.Server.Create,
+            TestTimings.Fast with { HeartbeatInterval = TimeSpan.FromSeconds(1) }, new Uri("wss://hyperate.test/socket/websocket"));
         await _hypeRate.ConnectAsync();
         var (socket, join) = await JoinAsync();
         Assert.Equal($"wss://hyperate.test/socket/websocket?token={ApiKey}", socket.Url!.ToString());
