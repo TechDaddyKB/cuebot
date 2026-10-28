@@ -118,6 +118,8 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Crowd Control", () => Get<Cuebot.Integrations.CrowdControl.CrowdControlService>().StartAsync()),
             StartSafely(log, "Meld Studio", () => Get<Cuebot.StreamApps.Meld.MeldStudioService>().StartAsync()),
             StartSafely(log, "PolyPop", () => Get<Cuebot.StreamApps.PolyPop.PolyPopService>().StartAsync()),
+            StartSafely(log, "T.I.T.S.", () => Get<Cuebot.StreamApps.Tits.TitsService>().StartAsync()),
+            StartSafely(log, "Lumia Stream", () => Get<Cuebot.StreamApps.Lumia.LumiaService>().StartAsync()),
             StartSafely(log, "Elgato Lights", () => Get<Cuebot.Elgato.Lights.ElgatoLightsService>().StartAsync()),
             StartSafely(log, "Camera Hub", () => Get<Cuebot.Elgato.CameraHub.CameraHubService>().StartAsync()),
             StartSafely(log, "Wave Link", () => Get<Cuebot.WaveLink.WaveLinkService>().StartAsync()),

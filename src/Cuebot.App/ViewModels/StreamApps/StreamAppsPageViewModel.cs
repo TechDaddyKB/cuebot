@@ -6,4 +6,8 @@ public sealed class StreamAppsPageViewModel(ObsViewModel obs, StreamAppsViewMode
     public ObsViewModel Obs { get; } = obs;
 
     public StreamAppsViewModel Apps { get; } = apps;
+
+    public TitsViewModel? Tits { get; init; }
+
+    public LumiaViewModel? Lumia { get; init; }
 }

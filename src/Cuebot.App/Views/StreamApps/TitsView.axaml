@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.TitsView"
+             x:DataType="vm:TitsViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="T.I.T.S." />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Twitch Integrated Throwing System by Remasuri3. Throw items and activate triggers from actions; item hits and trigger starts/ends become triggers. Settings are stored in streamapps.json." />
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Connection" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In T.I.T.S. open Settings and switch the API on. It listens on port 42069 without a password; Cuebot uses /websocket for requests and /events for hits and triggers." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="TitsHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="TitsPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Reconnect when the connection drops (or T.I.T.S. is not running yet)" IsChecked="{Binding AutoReconnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Reload items and triggers" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="TitsSockets" Classes="muted" Text="{Binding Sockets}" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto,100">
+            <TextBlock Classes="h2" Text="Items" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Throw" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <NumericUpDown Grid.Column="2" Value="{Binding ThrowAmount}" Minimum="1" Maximum="500" FormatString="0" />
+          </Grid>
+          <TextBlock Classes="muted" Text="Connect to list the items in T.I.T.S.'s model importer." IsVisible="{Binding HasNoItems}" />
+          <ItemsControl Name="TitsItems" ItemsSource="{Binding Items}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:TitsRowViewModel">
+                <Grid ColumnDefinitions="*,320,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Id}" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="h2" Text="Triggers" Margin="0,8,0,0" />
+          <TextBlock Classes="muted" Text="Connect to list your T.I.T.S. triggers." IsVisible="{Binding HasNoTriggers}" />
+          <ItemsControl Name="TitsTriggers" ItemsSource="{Binding Triggers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:TitsRowViewModel">
+                <Grid ColumnDefinitions="*,320,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Id}" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
