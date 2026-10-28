@@ -69,6 +69,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
             Broadcaster = () => Settings.Broadcaster.UserId > 0
                 ? new KickBroadcasterArgs(Settings.Broadcaster.UserName, KickArgs.Id(Settings.Broadcaster.UserId))
                 : null,
+            FindReward = id => _rewards.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase)),
         };
         _realtime = new KickRealtimeEventSource(transports, new KickRealtimeAuth(http, endpoints), timings, log);
         _realtime.ConnectionChanged += OnRealtimeChanged;
@@ -244,6 +245,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
                 Settings.Broadcaster.UserName = user.Name;
                 await LoadOwnChannelAsync(ct).ConfigureAwait(false);
                 SaveSettings();
+                await LoadRewardsForEventsAsync(ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -605,10 +607,30 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     /// <summary>A Kick user id already seen in chat or events for <paramref name="userName"/> (no network lookup).</summary>
     public string? FindKnownUserId(string userName) => _hub.FindUserId(userName);
 
+    /// <summary>The event hub (tests feed events through it).</summary>
+    internal KickEventHub Hub => _hub;
+
     // ---- channel rewards ----
 
     /// <summary>The rewards from the last <see cref="GetRewardsAsync"/>.</summary>
     public IReadOnlyList<KickReward> Rewards => _rewards;
+
+    /// <summary>
+    /// Best effort: the reward settings Streamer.bot reports on redemptions (reward.description, .backgroundColor,
+    /// .skipsQueue, .requiresUserInput) are not in Kick's redemption events, so they come from the reward list.
+    /// </summary>
+    private async Task LoadRewardsForEventsAsync(CancellationToken ct)
+    {
+        if (!Settings.Broadcaster.Scopes.Contains(KickScopes.RewardsRead)) return;
+        try
+        {
+            await GetRewardsAsync(ct).ConfigureAwait(false);
+        }
+        catch (KickApiException ex)
+        {
+            _log.Debug("Kick", $"Could not read the channel rewards: {ex.Message}");
+        }
+    }
 
     /// <summary>Reads every reward of the channel (and remembers them for <see cref="Rewards"/>).</summary>
     public async Task<IReadOnlyList<KickReward>> GetRewardsAsync(CancellationToken ct = default)

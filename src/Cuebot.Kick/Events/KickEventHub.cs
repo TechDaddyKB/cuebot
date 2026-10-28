@@ -27,6 +27,9 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
     /// <summary>The broadcaster account for Streamer.bot's broadcastUser* arguments (null until signed in).</summary>
     public Func<KickBroadcasterArgs?>? Broadcaster { get; set; }
 
+    /// <summary>A known reward by id, for the reward settings Streamer.bot reports on redemptions.</summary>
+    public Func<string, KickReward?>? FindReward { get; set; }
+
     /// <summary>The current title and category, so the next channel update can report what changed.</summary>
     public void SeedChannel(KickChannel channel)
     {
@@ -97,6 +100,12 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
             {
                 case KickEventTypes.ChatMessage:
                     a.TryAdd("isInternal", _sent.Contains(a.GetString("messageId")));
+                    break;
+                case KickEventTypes.RewardRedemption when FindReward?.Invoke(a.GetString("rewardId")) is { } reward:
+                    a.TryAdd("rewardDescription", reward.Description);
+                    a.TryAdd("rewardBackgroundColor", reward.BackgroundColor);
+                    a.TryAdd("rewardSkipsQueue", reward.SkipsRequestQueue);
+                    a.TryAdd("rewardRequiresUserInput", reward.IsUserInputRequired);
                     break;
                 case KickEventTypes.ChannelUpdate:
                     var now = (a.GetString("title"), a.GetString("categoryId"), a.GetString("category"), a.GetString("categoryThumbnail"));

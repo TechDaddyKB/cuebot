@@ -87,6 +87,9 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
             => FakeHttpHandler.Json(r.Body.Contains("\"R2\"")
                 ? """{"data":[{"id":"R2","reason":"NOT_PENDING"}],"message":"OK"}"""
                 : """{"data":[],"message":"OK"}"""),
+        ("api.test", "POST", "/public/v1/moderation/bans") or ("api.test", "DELETE", "/public/v1/moderation/bans")
+            or ("api.test", "PATCH", "/public/v1/channels") => new HttpResponseMessage(HttpStatusCode.NoContent),
+        ("api.test", "GET", "/public/v1/categories/7") => FakeHttpHandler.Json("""{"data":{"id":7,"name":"Just Chatting","thumbnail":"jc.png"}}"""),
         ("7tv.test", "GET", "/v3/users/kick/100") => FakeHttpHandler.Json(
             """{"id":"conn","platform":"KICK","username":"cuebotdev","emote_set":{"id":"SET1","name":"cuebot's set","emotes":[]},"user":{"id":"U7TV"}}"""),
         _ => new HttpResponseMessage(HttpStatusCode.NotFound),
@@ -267,6 +270,69 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
         (_, args) = await harness.RunAsync("kick.addRandomUsers", new() { ["count"] = "1", ["excludeCaller"] = "true" },
             new() { ["userId"] = "1", ["user"] = "Alice" });
         Assert.Equal("Bob", args!["randomUser0"]);
+    }
+
+    // ---- Streamer.bot output names (docs: 3.api/1.sub-actions/kick/**) ----
+
+    public static TheoryData<string, string, string> StreamerBotOutputs => new()
+    {
+        { "kick.banUser", "user=Fan", "bannedUser,bannedUserName,bannedUserId,bannedUserType,banResult" },
+        { "kick.timeoutUser", "user=Fan;duration=60", "timedOutUser,timedOutUserName,timedOutUserId,timedOutUserType,timeoutResult" },
+        { "kick.unbanUser", "user=Fan", "unbannedUser,unbannedUserName,unbannedUserId,unbannedUserType,unbanResult" },
+        { "kick.untimeoutUser", "user=5", "unTimedOutUser,unTimedOutUserName,unTimedOutUserId,unTimedOutUserType,unTimedOutResult" },
+        { "kick.setTitle", "title=New", "titleSuccess" },
+        { "kick.setCategory", "category=7", "category.success,category.id,category.name,category.thumbnail" },
+        { "kick.addBroadcasterInfo", "", "broadcastUser,broadcastUserName,broadcastUserId,broadcastUserType,broadcasterProfileUrl" },
+        { "kick.getUserInfo", "user=100", "targetUser,targetUserName,targetUserId,targetDescription,targetDescriptionEscaped,targetUserProfileImageUrl,targetUserProfileImageUrlEscaped,targetUserType" },
+        { "kick.addUserToGroup", "group=VIPs;user=5", "addResult" },
+        { "kick.removeUserFromGroup", "group=VIPs;user=5", "removeResult" },
+        { "kick.userInGroup", "group=VIPs;user=Fan;userId=5", "inGroup,foundUser,foundUserName,foundUserId,foundUserType" },
+    };
+
+    [Theory]
+    [MemberData(nameof(StreamerBotOutputs))]
+    public async Task Sub_actions_write_Streamer_bot_output_names(string type, string parameters, string expected)
+    {
+        ISubActionHandler[] handlers =
+        [
+            new BanUserSubAction(_service), new TimeoutUserSubAction(_service),
+            new UnbanUserSubAction(_service, "kick.unbanUser", "Unban user"), new UnbanUserSubAction(_service, "kick.untimeoutUser", "Remove timeout"),
+            new SetTitleSubAction(_service), new SetCategorySubAction(_service), new AddBroadcasterInfoSubAction(_service),
+            new GetUserInfoSubAction(_service),
+        ];
+        var groups = new GroupStore(null, _log);
+        using var harness = new ActionHarness(_log, [.. handlers, new KickAddUserToGroupSubAction(_service, groups),
+            new KickRemoveUserFromGroupSubAction(_service, groups), new KickUserInGroupSubAction(_service, groups)]);
+        _service.Hub.Handle(Cuebot.Kick.Events.KickEventFactory.Follow("realtime", new Cuebot.Kick.Events.KickActor(5, "Fan")));
+        var values = parameters.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Split('=', 2)).ToDictionary(p => p[0], p => p[1]);
+
+        var (run, args) = await harness.RunAsync(type, values, new() { ["user"] = "Fan", ["userName"] = "Fan", ["userId"] = "5" },
+            branch: type == "kick.userInGroup" ? "False" : null);
+
+        Assert.True(run.Success, run.Error);
+        foreach (var name in expected.Split(','))
+            Assert.True(args!.ContainsKey(name), $"{type} did not set Streamer.bot's '{name}'");
+        if (type == "kick.banUser")
+        {
+            Assert.Equal("Fan", args!["bannedUser"]);
+            Assert.Equal("5", args["bannedUserId"]);
+            Assert.Equal("kick", args["bannedUserType"]);
+            Assert.Equal(true, args["banResult"]);
+        }
+        if (type == "kick.untimeoutUser") Assert.Equal("Fan", args!["unTimedOutUser"]);
+    }
+
+    [Fact]
+    public async Task Random_users_have_a_platform_type()
+    {
+        var users = new UserRegistry(null, _bus, _log);
+        users.Handle(new BotEvent(ChatHub.MessageEvent,
+            new Dictionary<string, object?> { ["platform"] = "Kick", ["userId"] = "1", ["user"] = "Alice", ["userName"] = "alice" }));
+        using var harness = Harness(users: users);
+
+        var (_, args) = await harness.RunAsync("kick.addRandomUsers", new() { ["count"] = "1" });
+
+        Assert.Equal("kick", args!["randomUserType0"]);
     }
 
     // ---- 7TV ----
