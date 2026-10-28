@@ -6,6 +6,7 @@ using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Obs;
 using Cuebot.Relay;
+using Cuebot.Remote;
 using Cuebot.Kick;
 using Cuebot.Donations;
 using Cuebot.Integrations;
@@ -63,6 +64,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddWebhooks()
             .AddServers()
             .AddStreamDeck()
+            .AddRemote()     // links to other Cuebot instances (served on the REST API listener)
             .AddRelay();   // after every module, so it sees all IWebhookHandlers
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
@@ -126,6 +128,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Voice Control", () => Get<Cuebot.VoiceControl.VoiceControlService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
+            StartSafely(log, "Remote instances", () => Get<RemoteHub>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),
             StartSafely(log, "Python", () => Get<PythonRuntime>().StartAsync()),

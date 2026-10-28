@@ -239,6 +239,21 @@ not a number, Boolean not true/false, Choice not one of the choices) → 400 wit
 keys and branches the step does not offer are only `warnings` (imports and older files carry them). Empty or duplicate
 ids are replaced; on create an existing id is 409.
 
+### Remote instances (`/api/v1/remote` WebSocket)
+
+Module: `src/Cuebot.Remote` (wire format in `src/Cuebot.Remote/PROTOCOL.md`). Settings: `remote.json` →
+`{instanceId, instanceName, releaseLocalWaiters, instances: [{id, name, host, port, token, enabled, reconnectSeconds}]}`.
+UI: Servers page, "Remote instances" card. Other Cuebot instances connect to this endpoint with this instance's API
+token; this instance connects to the ones in `remote.json` with theirs. One link carries signals both ways.
+
+| Kind | Name | Notes |
+| --- | --- | --- |
+| Sub-action | Send remote signal (`remote.sendSignal`) | instance (empty = all), name, include action arguments, extra `key=value` lines; sets `%remoteSignalSent%` |
+| Sub-action | Wait for remote signal (`remote.waitForSignal`) | instance (empty = any), name, timeout (default 30000 ms, 0 = forever), stop on timeout, overwrite variables; sets `%signalReceived%`, `%signalTimeout%`, `%hasResult%`, the signal's arguments and instance fields |
+| Trigger | Remote signal received (`remote.signal`) | filters: signal name, instance |
+| Trigger | Remote instance connected / disconnected | filter: instance |
+| Script | `remote.sendSignal {name, instance?, args?}`, `remote.waitForSignal {name, instance?, timeoutMs?}`, `remote.getInstances` | |
+
 ## MCP server (`/mcp` on the API listener)
 
 Module: `src/Cuebot.Server/Mcp`. Settings: `servers.json` → `mcp {enabled, requireConfirmation (default true)}`; uses the

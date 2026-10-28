@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sv="using:Cuebot.App.ViewModels.Servers"
+             xmlns:sviews="using:Cuebot.App.Views.Servers"
              x:Class="Cuebot.App.Views.Servers.ServersView"
              x:DataType="sv:ServersViewModel"
              x:Name="Root">
@@ -229,6 +230,11 @@
                      Text="The token is hidden in these snippets unless Show is on; Copy always copies the complete snippet including the token." />
         </StackPanel>
       </Border>
+
+      <!-- Remote instances (other Cuebots, over the REST API listener) -->
+      <Panel IsVisible="{Binding Remote, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <sviews:RemoteInstancesView DataContext="{Binding Remote}" />
+      </Panel>
 
       <!-- Custom servers -->
       <Border Classes="card">

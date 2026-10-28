@@ -15,9 +15,11 @@ public sealed partial class ServersViewModel : PageViewModel
 {
     private readonly ServerManager _servers;
 
-    public ServersViewModel(ServerManager servers) : base("Servers")
+    /// <param name="remote">The "Remote instances" card (links to other Cuebot instances); null hides it.</param>
+    public ServersViewModel(ServerManager servers, RemoteInstancesViewModel? remote = null) : base("Servers")
     {
         _servers = servers;
+        Remote = remote;
         foreach (var mapping in Settings.Http.Mappings) Mappings.Add(new HttpMappingViewModel(this, mapping));
         foreach (var server in Settings.CustomServers) CustomServers.Add(new CustomServerViewModel(this, server));
         foreach (var client in Settings.CustomClients) CustomClients.Add(new CustomClientViewModel(this, client));
@@ -26,6 +28,8 @@ public sealed partial class ServersViewModel : PageViewModel
     }
 
     internal ServerManager Manager => _servers;
+
+    public RemoteInstancesViewModel? Remote { get; }
     private ServerSettings Settings => _servers.Settings;
 
     internal void Save() => _servers.SaveSettings();
@@ -231,6 +235,7 @@ public sealed partial class ServersViewModel : PageViewModel
         RaiseApiChanged();
         foreach (var item in CustomServers) item.Refresh();
         foreach (var item in CustomClients) item.Refresh();
+        Remote?.Refresh();   // the "can others connect" hint follows the REST API
         OnPropertyChanged(nameof(DockUrls));
     }
 
