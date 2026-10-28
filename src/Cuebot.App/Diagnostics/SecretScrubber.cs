@@ -44,6 +44,10 @@ public static partial class SecretScrubber
     [GeneratedRegex(@"https://hooks\.slack\.com/[^\s""'<>]+", RegexOptions.IgnoreCase)]
     private static partial Regex SlackWebhook();
 
+    /// <summary>IFTTT Webhooks URLs carry the key in the path: <c>…/with/key/&lt;key&gt;</c>.</summary>
+    [GeneratedRegex(@"(/with/key/)[^\s/?#""'<>]+", RegexOptions.IgnoreCase)]
+    private static partial Regex IftttKeyPath();
+
     [GeneratedRegex(@"\beyJ[\w-]{4,}\.[\w-]{4,}\.[\w-]*")]
     private static partial Regex Jwt();
 
@@ -85,6 +89,7 @@ public static partial class SecretScrubber
         var s = text;
         s = DiscordWebhook().Replace(s, "https://discord.com/api/webhooks/" + Redacted);
         s = SlackWebhook().Replace(s, "https://hooks.slack.com/" + Redacted);
+        s = IftttKeyPath().Replace(s, m => m.Groups[1].Value + Redacted);
         s = Jwt().Replace(s, Redacted);
         s = AuthHeader().Replace(s, m => m.Groups[1].Value + m.Groups[2].Value + Redacted);
         s = AuthScheme().Replace(s, m => m.Groups[1].Value + " " + Redacted);

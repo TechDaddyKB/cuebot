@@ -58,7 +58,69 @@ internal static class VtsProtocol
         var position = data.Obj("modelPosition");
         return new VtsCurrentModel(data.Bool("modelLoaded") ?? false, data.Str("modelName"), data.Str("modelID"),
             new VtsModelPosition(position.Num("positionX") ?? 0, position.Num("positionY") ?? 0,
-                position.Num("rotation") ?? 0, position.Num("size") ?? 0));
+                position.Num("rotation") ?? 0, position.Num("size") ?? 0))
+        {
+            Raw = data.ValueKind == JsonValueKind.Undefined ? default : data.Clone(),
+        };
+    }
+
+    /// <summary>
+    /// Streamer.bot's <c>model.*</c> variables of Get Current Model, from a CurrentModelResponse's data:
+    /// id, name, vtsModelName, vtsModelIconName, live2DModelName, loadTime, timeSinceLoaded, numberOfLive2DParameters,
+    /// numberOfLive2DArtmeshes, hasPhysicsFile, numberOfTextures, textureResolution, posX, posY, rotation, size.
+    /// </summary>
+    public static Dictionary<string, object?> StreamerBotModelArgs(VtsCurrentModel model)
+    {
+        var d = model.Raw;
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["model.id"] = model.Id,
+            ["model.name"] = model.Name,
+            ["model.vtsModelName"] = d.Str("vtsModelName"),
+            ["model.vtsModelIconName"] = d.Str("vtsModelIconName"),
+            ["model.live2DModelName"] = d.Str("live2DModelName"),
+            ["model.loadTime"] = (long)(d.Num("modelLoadTime") ?? 0),
+            ["model.timeSinceLoaded"] = (long)(d.Num("timeSinceModelLoaded") ?? 0),
+            ["model.numberOfLive2DParameters"] = (long)(d.Num("numberOfLive2DParameters") ?? 0),
+            ["model.numberOfLive2DArtmeshes"] = (long)(d.Num("numberOfLive2DArtmeshes") ?? 0),
+            ["model.hasPhysicsFile"] = d.Bool("hasPhysicsFile") ?? false,
+            ["model.numberOfTextures"] = (long)(d.Num("numberOfTextures") ?? 0),
+            ["model.textureResolution"] = (long)(d.Num("textureResolution") ?? 0),
+            ["model.posX"] = model.Position.PositionX,
+            ["model.posY"] = model.Position.PositionY,
+            ["model.rotation"] = model.Position.Rotation,
+            ["model.size"] = model.Position.Size,
+        };
+    }
+
+    /// <summary>
+    /// Flattens a raw response as Streamer.bot's Send Raw Request does: <c>prefix.data.modelName</c>, with arrays as
+    /// <c>prefix.data.list[0].name</c>.
+    /// </summary>
+    public static void StoreRawResponse(IDictionary<string, object?> args, string prefix, JsonElement data)
+    {
+        prefix = prefix.Trim();
+        if (prefix.Length == 0) return;
+        Flatten(args, prefix + ".data", data, 0);
+
+        static void Flatten(IDictionary<string, object?> into, string path, JsonElement element, int depth)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object when depth < 8:
+                    foreach (var property in element.EnumerateObject()) Flatten(into, $"{path}.{property.Name}", property.Value, depth + 1);
+                    break;
+                case JsonValueKind.Array when depth < 8:
+                    var i = 0;
+                    foreach (var item in element.EnumerateArray()) Flatten(into, $"{path}[{i++}]", item, depth + 1);
+                    break;
+                case JsonValueKind.String: into[path] = element.GetString(); break;
+                case JsonValueKind.Number: into[path] = element.GetDouble(); break;
+                case JsonValueKind.True or JsonValueKind.False: into[path] = element.GetBoolean(); break;
+                case JsonValueKind.Undefined or JsonValueKind.Null: break;
+                default: into[path] = element.GetRawText(); break;
+            }
+        }
     }
 
     public static VtsModel[] ParseModels(JsonElement data) =>
@@ -153,7 +215,11 @@ internal static class VtsProtocol
 
 public sealed record VtsModelPosition(double PositionX, double PositionY, double Rotation, double Size);
 
-public sealed record VtsCurrentModel(bool Loaded, string Name, string Id, VtsModelPosition Position);
+public sealed record VtsCurrentModel(bool Loaded, string Name, string Id, VtsModelPosition Position)
+{
+    /// <summary>The whole CurrentModelResponse data (for Streamer.bot's model.* variables).</summary>
+    public System.Text.Json.JsonElement Raw { get; init; }
+}
 
 public sealed record VtsModel(string Id, string Name, bool Loaded);
 

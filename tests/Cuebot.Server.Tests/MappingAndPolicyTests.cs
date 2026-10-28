@@ -16,7 +16,7 @@ public sealed class MappingAndPolicyTests
     [InlineData("twitch.giftBomb", "Twitch", "GiftBomb")]
     [InlineData("youtube.chatMessage", "YouTube", "Message")]
     [InlineData("youtube.superChat", "YouTube", "SuperChat")]
-    [InlineData("kick.resub", "Kick", "Resubscription")]
+    [InlineData("kick.resubscription", "Kick", "Resubscription")]
     [InlineData("obs.streamStarted", "Obs", "StreamingStarted")]
     [InlineData("speechToText.command", "SpeechToText", "Command")]
     [InlineData("speechToText.dictation", "SpeechToText", "Dictation")]

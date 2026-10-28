@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat;
+using Cuebot.Core.Credits;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Variables;
 using Cuebot.Scripting.Compat;
@@ -43,7 +44,7 @@ public sealed class StreamerBotRequests(ServerServices services)
         switch (request.ToLowerInvariant())
         {
             case "getinfo": return new JsonObject { ["info"] = Info() };
-            case "getevents": return new JsonObject { ["events"] = Catalog() };
+            case "getevents": return new JsonObject { ["events"] = Catalog(services.Registry) };
             case "getactions": return GetActions();
             case "doaction": return DoAction(message);
             case "getbroadcaster": return GetBroadcaster();
@@ -67,11 +68,20 @@ public sealed class StreamerBotRequests(ServerServices services)
             case "sendmessage": return await SendMessageAsync(message, ct).ConfigureAwait(false);
             case "twitchgetemotes":
             case "youtubegetemotes":
-                return new JsonObject { ["emotes"] = new JsonObject { ["platform"] = new JsonArray(), ["bttv"] = new JsonArray(), ["ffz"] = new JsonArray(), ["sevenTv"] = new JsonArray() } };
-            case "getmonitoredyoutubebroadcasts": return new JsonObject { ["broadcasts"] = new JsonArray() };
+                // Emote lists are not exposed yet: the documented (empty) shape.
+                return new JsonObject
+                {
+                    ["emotes"] = new JsonObject
+                    {
+                        ["userEmotes"] = new JsonArray(), ["bttvEmotes"] = new JsonArray(), ["ffzEmotes"] = new JsonArray(),
+                        ["sevenTvEmotes"] = new JsonArray(),
+                    },
+                };
+            case "getmonitoredyoutubebroadcasts": return new JsonObject { ["broadcasts"] = new JsonArray(), ["count"] = 0 };
             case "getuserpronouns":
                 return new JsonObject
                 {
+                    ["userLogin"] = Str(message, "userLogin"),
                     ["pronoun"] = new JsonObject { ["userLogin"] = Str(message, "userLogin"), ["userFound"] = false },
                 };
             case "clearfirstwordscache":
@@ -89,13 +99,23 @@ public sealed class StreamerBotRequests(ServerServices services)
         ["osVersion"] = RuntimeInformation.OSDescription,
         ["version"] = "1.0.0",
         ["cuebotVersion"] = typeof(StreamerBotRequests).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
-        ["source"] = "cuebot",
+        ["mode"] = "ui",
+        ["darkMode"] = true,
+        ["source"] = "websocketServer",
+        ["app"] = "cuebot",
     };
 
-    public static JsonObject Catalog()
+    /// <summary>
+    /// GetEvents: every Streamer.bot name the loaded modules' triggers can produce (what the server actually sends),
+    /// or the built-in catalog without a registry.
+    /// </summary>
+    public static JsonObject Catalog(Registry? registry = null)
     {
+        var catalog = registry is null
+            ? StreamerBotEventMap.Catalog
+            : StreamerBotEventMap.BuildCatalog(registry.Triggers.SelectMany(t => t.EventTypes));
         var events = new JsonObject();
-        foreach (var (source, types) in StreamerBotEventMap.Catalog.OrderBy(p => p.Key, StringComparer.Ordinal))
+        foreach (var (source, types) in catalog.OrderBy(p => p.Key, StringComparer.Ordinal))
         {
             events[source] = new JsonArray(types.Select(t => (JsonNode)t).ToArray());
         }
@@ -114,6 +134,7 @@ public sealed class StreamerBotRequests(ServerServices services)
                 ["group"] = a.Group,
                 ["enabled"] = a.Enabled,
                 ["subaction_count"] = a.SubActions.Count,
+                ["trigger_count"] = a.Triggers.Count,
             }).ToArray()),
             ["count"] = actions.Count,
         };
@@ -191,6 +212,7 @@ public sealed class StreamerBotRequests(ServerServices services)
                 ["id"] = u.UserId,
                 ["login"] = u.UserName,
                 ["display"] = string.IsNullOrEmpty(u.DisplayName) ? u.UserName : u.DisplayName,
+                ["type"] = u.Platform.ToLowerInvariant(),
                 ["platform"] = u.Platform.ToLowerInvariant(),
                 ["role"] = Role(u.Roles),
                 ["subscribed"] = u.Roles.HasFlag(ChatRoles.Subscriber),
@@ -233,18 +255,94 @@ public sealed class StreamerBotRequests(ServerServices services)
         return [];
     }
 
+    /// <summary>Streamer.bot credits event lists → the Cuebot section that fills them (null: Cuebot has no such section).</summary>
+    private static readonly (string Key, string? Section)[] CreditsEvents =
+    [
+        ("follows", CreditsSections.Follows), ("cheers", CreditsSections.Cheers), ("subs", CreditsSections.Subscriptions),
+        ("resubs", null), ("giftsubs", CreditsSections.GiftSubscriptions), ("giftbombs", null), ("raided", CreditsSections.Raids),
+        ("rewardredemptions", CreditsSections.Redemptions), ("goalcontributions", null), ("gameupdates", null),
+        ("pyramids", null), ("hypetrains", null),
+    ];
+
+    private static readonly (string Key, string? Section)[] CreditsUsers =
+    [
+        ("editors", null), ("moderators", CreditsSections.Moderators), ("subscribers", CreditsSections.Subscribers),
+        ("vips", CreditsSections.Vips), ("groups", null), ("users", CreditsSections.Chatters),
+    ];
+
     /// <summary>
-    /// Credits as <c>{credits: {events: {section: [user...]}, cuebot: snapshot}}</c>: user names per section for simple
-    /// rolls, and Cuebot's full snapshot (counts, amounts, platforms) for richer overlays.
+    /// The HTTP server's GetCredits/TestCredits shape (PascalCase, as documented for HTTP): <c>Events</c>,
+    /// <c>HypeTrainConductor</c>, <c>HypeTrainContributors</c>, <c>User</c>, <c>Custom</c>, <c>TopBits</c>,
+    /// <c>TopChannelRewards</c>, built from a WebSocket credits response (whose fields are kept alongside).
     /// </summary>
-    private static JsonObject CreditsResponse(Cuebot.Core.Credits.CreditsSnapshot? snapshot)
+    public static JsonObject HttpCredits(JsonObject response)
     {
-        var events = new JsonObject();
+        JsonNode List(string group, string key) => response[group]?[key]?.DeepClone() ?? new JsonArray();
+        var http = new JsonObject
+        {
+            ["Events"] = new JsonObject
+            {
+                ["Follows"] = List("events", "follows"), ["Cheers"] = List("events", "cheers"), ["Subs"] = List("events", "subs"),
+                ["ReSubs"] = List("events", "resubs"), ["GiftSubs"] = List("events", "giftsubs"),
+                ["GiftBombs"] = List("events", "giftbombs"), ["Raided"] = List("events", "raided"),
+                ["RewardRedemptions"] = List("events", "rewardredemptions"),
+                ["GoalContributions"] = List("events", "goalcontributions"), ["GameUpdates"] = List("events", "gameupdates"),
+                ["Pyramids"] = List("events", "pyramids"),
+            },
+            ["HypeTrainConductor"] = List("hypeTrain", "conductors"),
+            ["HypeTrainContributors"] = List("hypeTrain", "contributors"),
+            ["User"] = new JsonObject
+            {
+                ["Editors"] = List("users", "editors"), ["Moderator"] = List("users", "moderators"),
+                ["Subscriber"] = List("users", "subscribers"), ["VIPs"] = List("users", "vips"), ["Users"] = List("users", "users"),
+                ["regulars"] = new JsonArray(),
+            },
+            ["Custom"] = response["custom"]?.DeepClone() ?? new JsonObject(),
+            ["TopBits"] = new JsonObject { ["All"] = List("top", "allBits"), ["Month"] = List("top", "monthBits"), ["Week"] = List("top", "weekBits") },
+            ["TopChannelRewards"] = List("top", "channelRewards"),
+        };
+        foreach (var (key, value) in response) http[key] = value?.DeepClone();
+        return http;
+    }
+
+    /// <summary>
+    /// Credits in Streamer.bot's shape (<c>events</c>, <c>users</c>, <c>hypeTrain</c>, <c>top</c>, <c>groups</c>,
+    /// <c>custom</c>: user names per list) at the top level, plus <c>credits</c>: the same lists keyed by Cuebot section
+    /// and Cuebot's full snapshot (counts, amounts, platforms) for richer overlays.
+    /// </summary>
+    private static JsonObject CreditsResponse(CreditsSnapshot? snapshot)
+    {
+        JsonArray Names(string? section) =>
+            new([.. (section is null ? null : snapshot?.Section(section))?.Entries.Select(e => (JsonNode?)JsonValue.Create(e.User)) ?? []]);
+        JsonObject Lists((string Key, string? Section)[] map)
+        {
+            var lists = new JsonObject();
+            foreach (var (key, section) in map) lists[key] = Names(section);
+            return lists;
+        }
+
+        var bySection = new JsonObject();
+        foreach (var section in snapshot?.Sections ?? []) bySection[section.Id] = Names(section.Id);
+        var custom = new JsonObject();
         foreach (var section in snapshot?.Sections ?? [])
-            events[section.Id] = new JsonArray([.. section.Entries.Select(e => (JsonNode?)JsonValue.Create(e.User))]);
-        var credits = new JsonObject { ["events"] = events };
+        {
+            if (CreditsEvents.All(m => m.Section != section.Id) && CreditsUsers.All(m => m.Section != section.Id)) custom[section.Id] = Names(section.Id);
+        }
+        var credits = new JsonObject { ["events"] = bySection };
         if (snapshot is not null) credits["cuebot"] = JsonSerializer.SerializeToNode(snapshot, Cuebot.Core.Storage.Json.Options);
-        return new JsonObject { ["credits"] = credits };
+        return new JsonObject
+        {
+            ["events"] = Lists(CreditsEvents),
+            ["users"] = Lists(CreditsUsers),
+            ["hypeTrain"] = new JsonObject { ["conductors"] = new JsonArray(), ["contributors"] = new JsonArray() },
+            ["top"] = new JsonObject
+            {
+                ["allBits"] = new JsonArray(), ["monthBits"] = new JsonArray(), ["weekBits"] = new JsonArray(), ["channelRewards"] = new JsonArray(),
+            },
+            ["groups"] = new JsonObject(),
+            ["custom"] = custom,
+            ["credits"] = credits,
+        };
     }
 
     private JsonObject GetCommands()
@@ -258,6 +356,8 @@ public sealed class StreamerBotRequests(ServerServices services)
                 ["name"] = c.Name,
                 ["enabled"] = c.Enabled,
                 ["group"] = c.Group,
+                ["ignoreInternal"] = c.IgnoreInternal,
+                ["ignoreBotAccount"] = c.IgnoreBotAccount,
                 ["mode"] = c.Mode.ToString(),
                 ["location"] = c.Location.ToString(),
                 ["commands"] = new JsonArray(c.Commands.Select(x => (JsonNode)x).ToArray()),
@@ -308,6 +408,12 @@ public sealed class StreamerBotRequests(ServerServices services)
         var list = (services.UserVariables?.Snapshot(platform, userId, persisted) ?? [])
             .Where(v => name.Length == 0 || string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase))
             .ToArray();
+        if (name.Length > 0)
+        {
+            // With a variable name the response is that one variable, as documented.
+            var found = list.FirstOrDefault() ?? throw new RequestException($"Variable '{name}' not found");
+            return new JsonObject { ["variable"] = Variable(found.Name, found.Value, found.LastWrite) };
+        }
         return new JsonObject { ["variables"] = UserVariables(list), ["count"] = list.Length };
     }
 

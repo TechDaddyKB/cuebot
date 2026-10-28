@@ -183,6 +183,10 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
         Assert.Equal("Music", a["waveLinkChannelName"]);
         Assert.Equal(50.0, a["waveLinkChannelVolume"]);
         Assert.Equal("Stream Mix", a["waveLinkChannelMix.1.name"]);
+        foreach (var field in new[] { "id", "name", "level", "muted" })   // Streamer.bot's waveLinkChannelMix.#.*
+            Assert.True(a.ContainsKey($"waveLinkChannelMix.0.{field}"), field);
+        Assert.IsType<double>(a["waveLinkChannelMix.0.level"]);
+        Assert.IsType<bool>(a["waveLinkChannelMix.0.muted"]);
         Assert.Equal("Personal Mix", a["waveLinkMixName"]);
         Assert.Equal(100.0, a["waveLinkMixVolume"]);
         Assert.Equal("Headphones (Wave:3)", a["waveLinkOutputDeviceName"]);

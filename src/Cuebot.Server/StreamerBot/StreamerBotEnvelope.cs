@@ -17,13 +17,22 @@ public static class StreamerBotEnvelope
         ["data"] = data ?? new JsonObject(),
     };
 
-    /// <summary>A Cuebot bus event as a Streamer.bot event (args become <c>data</c>).</summary>
+    /// <summary>
+    /// A Cuebot bus event as a Streamer.bot event: the flat args, the documented nested fields of
+    /// <see cref="StreamerBotPayloads"/> on top, and <c>cuebotEvent</c> (the Cuebot event type).
+    /// </summary>
     public static (StreamerBotEventName Name, JsonObject Message) FromBotEvent(BotEvent e)
     {
         var name = StreamerBotEventMap.Map(e.Type, e.Args);
         var data = Data(e.Args);
         data["cuebotEvent"] = e.Type;
-        AddCompatFields(name, e.Args, data);
+        // The flat user name stays available as userName when the user object replaces "user".
+        if (data["userName"] is null && e.Args.GetValueOrDefault("user") is { } user) data["userName"] = ToNode(user);
+        StreamerBotPayloads.Apply(name, e.Args, data);
+        if (data["text"] is null && e.Args.GetValueOrDefault("message") is string text && name.Type is "ChatMessage" or "Message" or "Whisper")
+        {
+            data["text"] = text;
+        }
         return (name, Create(name, data, e.Time));
     }
 
@@ -53,41 +62,5 @@ public static class StreamerBotEnvelope
         {
             return value?.ToString();
         }
-    }
-
-    /// <summary>
-    /// Adds the nested <c>user</c> object and <c>text</c> that Streamer.bot chat payloads carry, so overlays written
-    /// for them find a user name and message without knowing Cuebot's flat argument names.
-    /// </summary>
-    private static void AddCompatFields(StreamerBotEventName name, IReadOnlyDictionary<string, object?> args, JsonObject data)
-    {
-        var user = Arg(args, "user") ?? Arg(args, "userName");
-        if (user is not null && data["user"] is null or JsonValue)
-        {
-            // The flat name stays available as userName.
-            data["userName"] ??= user;
-            data["user"] = new JsonObject
-            {
-                ["id"] = Arg(args, "userId") ?? "",
-                ["login"] = (Arg(args, "userName") ?? user).ToLowerInvariant(),
-                ["name"] = user,
-                ["display_name"] = user,
-                ["color"] = Arg(args, "color") ?? "",
-                ["role"] = Role(args),
-            };
-        }
-        if (Arg(args, "message") is { } text && name.Type is "ChatMessage" or "Message" or "Whisper")
-        {
-            data["text"] = text;
-        }
-    }
-
-    private static string? Arg(IReadOnlyDictionary<string, object?> args, string key) =>
-        args.TryGetValue(key, out var v) && v is not null ? v.ToString() : null;
-
-    private static int Role(IReadOnlyDictionary<string, object?> args)
-    {
-        bool Flag(string key) => args.TryGetValue(key, out var v) && v is true;
-        return Flag("isBroadcaster") ? 4 : Flag("isModerator") ? 3 : Flag("isVip") ? 2 : 1;
     }
 }

@@ -142,9 +142,16 @@ public sealed class VTubeStudioTests : IAsyncLifetime
         var item = await _env.WaitForEventAsync(VTubeStudioEvents.ItemEvent);
         Assert.Equal("Added", item.Args["itemEventType"]);
         Assert.Equal(0.5, item.Args["itemX"]);
+        Assert.Equal(0.5, item.Args["position.x"]);
+        Assert.Equal(-0.5, item.Args["position.y"]);
 
-        fake.PushEvent("ModelClickedEvent", new { modelLoaded = true, loadedModelID = "m", loadedModelName = "Akari", modelWasClicked = true, mouseButtonID = 1, clickPosition = new { x = 1, y = 2 }, clickedArtMeshCount = 0, artMeshHits = Array.Empty<object>() });
-        Assert.Equal("Right", (await _env.WaitForEventAsync(VTubeStudioEvents.ModelClicked)).Args["mouseButton"]);
+        fake.PushEvent("ModelClickedEvent", new { modelLoaded = true, loadedModelID = "m", loadedModelName = "Akari", modelWasClicked = true, mouseButtonID = 1, clickPosition = new { x = 1, y = 2 }, windowSize = new { x = 1920, y = 1080 }, clickedArtMeshCount = 0, artMeshHits = Array.Empty<object>() });
+        var clicked = await _env.WaitForEventAsync(VTubeStudioEvents.ModelClicked);
+        Assert.Equal("Right", clicked.Args["mouseButton"]);
+        Assert.Equal(1.0, clicked.Args["clickPosition.X"]);
+        Assert.Equal(2.0, clicked.Args["clickPosition.Y"]);
+        Assert.Equal(1920.0, clicked.Args["windowSize.X"]);
+        Assert.Equal(1080.0, clicked.Args["windowSize.Y"]);
 
         Assert.Contains(_env.Events(VTubeStudioEvents.Any), e => (string?)e.Args["eventName"] == "ItemEvent");
         // Model change refreshes hotkeys etc. in the background.

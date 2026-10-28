@@ -104,7 +104,7 @@ How to read the counts:
    - `EventSource` has 26 of 46.
    - 17 data classes and 3 enums are missing (`TwitchReward`, `QuoteData`, `TeamInfo`, `YouTubeUserInfo`, ...).
    - Source: `CS:5.enums/event-type.md`, `CS:5.enums/event-source.md`, `CS:4.classes/*`.
-9. **About 100 WebSocket events go out under names Streamer.bot clients don't subscribe to.** Examples:
+9. **About 100 WebSocket events go out under names Streamer.bot clients don't subscribe to.** (Fixed in `w14-websocket`, see section 7.) Examples:
    - Twitch chat modes are `EmoteModeOn` instead of `ChatEmoteModeOn`.
    - Streamlabs Desktop's source is `Slobs` instead of `StreamlabsDesktop`.
    - Pulsoid sends `HeartRate` instead of `HeartRatePulse`.
@@ -339,28 +339,32 @@ Present: about 291 (OBS 9/9 triggers and all sub-actions; Meld Studio; VTube Stu
 mtion; PolyPop; Stream Deck; Control Center; Wave Link 1.x and 3; Ko-fi, Patreon, Shopify, Throne, Pally.gg,
 TipeeeStream, TreatStream, DonorDrive, StreamLoots, StreamElements, Streamlabs, HypeRate; Speaker.bot triggers N/A).
 
+**Status (branch `w14-apps`).** Items below marked **Fixed** now produce Streamer.bot's names alongside Cuebot's
+(nothing was renamed or removed) and are covered by tests with fakes. **Already present** means the reviewed commit
+had it (the static check missed it) and a test now pins it. Decks and Stream Deck MCP are out of scope for this pass.
+
 **Missing**
-- M · Streamer.bot Decks: Deck Notify, Item Set Background/Icon/State/Title/Value, Item Toggle State, Page Next/Previous/Set (10) — `SA:streamerbot/decks/*`, `GD:04.extra-features/2.streamerbot-decks.md`, `WK:Extended-Features/HTML-Decks.md`
-- M · IFTTT Notification (Basic) / (Advanced) (2) — `SA:integrations/ifttt/*`, `GD:06.integrations/ifttt.md`
-- M · Streamlabs Desktop: Set State of a Random Filter, Hide Group's Sources, Set Random Group Source Visible, Set Scene Filter State, Hide Source's Filters (5) — `SA:streamlabs-desktop/filters/*`, `groups/*`, `scenes/set-scene-filter-state.md`, `sources/hide-sources-filters.md`
-- M · Elgato Camera Hub webcam: Set Dynamic Range, Set Noise Reduction, Set White Balance Tint (3; may not be reachable through UVC) — `SA:elgato/camera-hub/**`
-- M · Stream Deck MCP: `StreamDeckMcpConnected`/`Disconnected` and MCP actions (PARITY.md: "not yet") — `CS:5.enums/event-type.md`
+- M · Streamer.bot Decks: Deck Notify, Item Set Background/Icon/State/Title/Value, Item Toggle State, Page Next/Previous/Set (10) — `SA:streamerbot/decks/*`, `GD:04.extra-features/2.streamerbot-decks.md`, `WK:Extended-Features/HTML-Decks.md` — *open (Cuebot.Core work, separate pass)*
+- ~~M · IFTTT Notification (Basic) / (Advanced) (2)~~ — **Fixed**: `ifttt.notificationBasic` / `ifttt.notificationAdvanced` (Cuebot.Webhooks). Streamer.bot routes these through its own website service; Cuebot posts to IFTTT's Webhooks service (`maker.ifttt.com/trigger/{event}[/json]/with/key/{key}`), so applets use the "Webhooks → Receive a web request" trigger. Basic sends `value1`; Advanced sends `Argument1Name`/`Argument1Value` … 5, `ArgumentsJson` and `value1`–`value3`. Key from the sub-action or `webhooks.json` `IftttKey` — `SA:integrations/ifttt/*`, `GD:06.integrations/ifttt.md`
+- ~~M · Streamlabs Desktop: Set State of a Random Filter, Hide Group's Sources, Set Random Group Source Visible, Set Scene Filter State, Hide Source's Filters (5)~~ — **Fixed**: `slobs.setRandomFilterState` (stores `slobsFilterName`), `slobs.hideGroupSources`, `slobs.randomGroupSource` (stores `randomSource`), `slobs.setSceneFilterState`, `slobs.hideSourceFilters`, through `SourceFiltersService.getFilters`/`setVisibility` and scene folders (Streamlabs Desktop's groups) — `SA:streamlabs-desktop/filters/*`, `groups/*`, `scenes/set-scene-filter-state.md`, `sources/hide-sources-filters.md`
+- M · Elgato Camera Hub webcam: Set Dynamic Range, Set Noise Reduction, Set White Balance Tint (3) — **Not possible through UVC**: standard UVC / V4L2 has no HDR, noise-reduction or tint control (the nearest, white balance component red/blue, is a different control, and Cuebot's V4L2 backend only maps the standard controls). On Elgato cameras these would be vendor extension-unit controls with no public documentation, so they can only be reached through Camera Hub, which has no API (see the Not possible list) — `SA:elgato/camera-hub/**`
+- M · Stream Deck MCP: `StreamDeckMcpConnected`/`Disconnected` and MCP actions (PARITY.md: "not yet") — `CS:5.enums/event-type.md` — *open (skipped in this pass)*
 
 **Partial**
-- P · Discord Basic Webhook: no sub-action; only `CPH.DiscordPostTextToWebhook` — `SA:integrations/discord/basic-webhook.md`, `GD:06.integrations/discord.md`
-- P · Streamlabs Desktop triggers (7): no `sd.id`, `sd.name`, `sd.host`, `sd.sceneName` — `TR:streamlabs-desktop/*`
-- P · Streamlabs Desktop Get Current Scene: no `currentScene` — `SA:streamlabs-desktop/scenes/get-current-scene.md`
-- P · OBS Get Scene Item Properties: `props.*` (Cuebot `obsItem.*`) — `SA:obs-studio/scenes/get-scene-item-properties.md`
-- P · OBS Get Current Scene / Create Record Chapter: `currentScene` (Cuebot default `obsScene`), `success` (2) — `SA:obs-studio/get-current-scene.md`, `SA:obs-studio/create-record-chapter.md`
-- P · Crowd Control Effect Request/Success/Failure, Timed Effect Started/Updated/Ended: `effect.*`, `game.*`, `gamePack.*` (Cuebot `effectId`, `gameName`, ...) (6), plus Coin Exchange `exchangeSource` (1) — `TR:integrations/crowdcontrol/*`
-- P · Fourthwall Order Placed/Updated, Gift Purchase, Product Created/Updated, Newsletter Subscribed, Thank You Sent: `fw.subtotal`/`tax`/`donation`/`discount`/`total`, `fw.gifts[n].*`, `fw.variants[#].image`/`quantity`/`attributes.*`/`stock`, `fw.productId`, `fw.images[#]`, `fw.isTest` (Cuebot has `fw.testMode`) (7) — `TR:integrations/fourthwall/*`
-- P · Patreon Pledge Updated: `entitledTiers[#].updatedToTier` — `TR:integrations/patreon/pledge-updated.md`
-- P · Pulsoid Heart Rate Pulse: `measuredAt` — `TR:integrations/pulsoid/heart-rate-pulse.md`
-- P · Streamlabs Merchandise: `merchandiseImageUrl`, `merchandiseImageEscaped` — `TR:integrations/streamlabs/merchandise.md`
-- P · Voicemod Soundboard Changed / Voice Loaded: `soundboard.*`, `voice.*`; Get Current Voice: `currentVoiceId` (3) — `TR:integrations/voicemod/*`, `SA:integrations/voicemod/get-current-voice.md`
-- P · VTube Studio Model Clicked / Item Event: `clickPosition.X/Y`, `windowSize.X/Y`, `position.x/y`; Get Current Model: `model.*`; Send Raw Request outputs (4) — `TR:integrations/vtube-studio/*`, `SA:integrations/vtube-studio/*`
-- P · Camera Hub webcam triggers that Cuebot has (Contrast, Focus, Pan, Tilt, Sharpness, White Balance, Live White Balance): no `old*` previous values (7) — `TR:elgato/camera-hub/webcam/*`
-- P · Wave Link 3 Get Channel Information: `waveLinkChannelMix.#.*` — `SA:elgato/wave-link-3/channels/get-channel-information.md`
+- ~~P · Discord Basic Webhook~~ — **Fixed**: `discord.basicWebhook` sub-action (Cuebot.Webhooks) with the same payload as `CPH.DiscordPostTextToWebhook` (content, tts, username, avatar_url), sent with `wait=true`; stores `messageId` — `SA:integrations/discord/basic-webhook.md`, `GD:06.integrations/discord.md`
+- ~~P · Streamlabs Desktop triggers (7): `sd.id`, `sd.name`, `sd.host`, `sd.sceneName`~~ — **Fixed** (every Streamlabs Desktop event; Cuebot has one connection, so `sd.id` = `main`, `sd.name` = `Main`) — `TR:streamlabs-desktop/*`
+- ~~P · Streamlabs Desktop Get Current Scene: `currentScene`~~ — **Fixed** — `SA:streamlabs-desktop/scenes/get-current-scene.md`
+- ~~P · OBS Get Scene Item Properties: `props.*`~~ — **Fixed**: `props.*` incl. `props.groupChildren[#].*` and `props._json`; `props.scale.filter` is not produced (obs-websocket 5 does not expose it) and `props.message-id` is not produced (no Cuebot equivalent) — `SA:obs-studio/scenes/get-scene-item-properties.md`
+- ~~P · OBS Get Current Scene / Create Record Chapter: `currentScene`, `success` (2)~~ — **Fixed**; Create Record Chapter now sets `success=false` and carries on when OBS refuses (like Streamer.bot); a lost connection still fails the action — `SA:obs-studio/get-current-scene.md`, `SA:obs-studio/create-record-chapter.md`
+- ~~P · Crowd Control … `effect.*`, `game.*`, `gamePack.*` (6), Coin Exchange `exchangeSource` (1)~~ — **Fixed**: plus `requestID`, `requester.*`, `target.*`, `effect.category[#]` and timed `status`; session events also get `game.*`/`gamePack.*`. `timestamp` keeps Cuebot's ISO time — `TR:integrations/crowdcontrol/*`
+- ~~P · Fourthwall … (7)~~ — **Fixed**: `fw.isTest`, `fw.update`, `fw.productId`, `fw.images[#]`, gift `fw.donation`/`fw.discount`, `fw.variants[#].image`/`stock`/`stockType`/`attributes.*` (incl. `weight`) for orders and products. Totals, `fw.gifts[n].*` and order variant `quantity` were already present — `TR:integrations/fourthwall/*`
+- ~~P · Patreon Pledge Updated: `entitledTiers[#].updatedToTier`~~ — **Fixed** (the tier's title, else its id) — `TR:integrations/patreon/pledge-updated.md`
+- ~~P · Pulsoid Heart Rate Pulse: `measuredAt`~~ — **Fixed** (Unix seconds from Pulsoid's `measured_at` / `timestamp`, else the time received; HypeRate gets it too) — `TR:integrations/pulsoid/heart-rate-pulse.md`
+- ~~P · Streamlabs Merchandise: `merchandiseImageUrl`, `merchandiseImageEscaped`~~ — **Already present** (`StreamlabsEventMapper.Merch`, tested in `StreamlabsMappingTests`) — `TR:integrations/streamlabs/merchandise.md`
+- ~~P · Voicemod Soundboard Changed / Voice Loaded: `soundboard.*`, `voice.*`; Get Current Voice: `currentVoiceId` (3)~~ — **Fixed** — `TR:integrations/voicemod/*`, `SA:integrations/voicemod/get-current-voice.md`
+- ~~P · VTube Studio Model Clicked / Item Event / Get Current Model / Send Raw Request (4)~~ — **Fixed**: `clickPosition.X/Y`, `windowSize.X/Y`, `position.x/y`, `model.*`, and Send Raw Request's flattened `<prefix>.data.*` (new "Variable prefix" parameter, default `vtsRaw`) — `TR:integrations/vtube-studio/*`, `SA:integrations/vtube-studio/*`
+- ~~P · Camera Hub webcam triggers: `old*` previous values (7)~~ — **Already present** (`CameraHubService.Diff`); now pinned by a test — `TR:elgato/camera-hub/webcam/*`
+- ~~P · Wave Link 3 Get Channel Information: `waveLinkChannelMix.#.*`~~ — **Already present** (`WaveLinkArgs`); now pinned by a test — `SA:elgato/wave-link-3/channels/get-channel-information.md`
 
 **Not possible**
 - NP · Camera Hub Prompter and EpocCam: 44 triggers and 20 sub-actions (Camera Hub app has no public API; PARITY.md agrees) — `TR:elgato/camera-hub/**`, `SA:elgato/camera-hub/**`
@@ -424,26 +428,68 @@ files; UDP DoAction; Execute C# Code basics; `Init()`/`Dispose()` lifecycle; cus
 - P · `EventType` enum: 74 of 508 values — `CS:5.enums/event-type.md`
 - P · `EventSource` enum: 26 of 46 (missing `CrowdControl`, `DonorDrive`, `Elgato`, `Fourthwall`, `HypeRate`, `MeldStudio`, `Pallygg`, `Patreon`, `Pulsoid`, `Quote`, `Shopify`, `StreamDeck`, `StreamLoots`, `StreamerBot`, `StreamerBotRemote`, `StreamlabsDesktop`, `System`, `Throne`, `ThrowingSystem`, `TipeeeStream`, `TreatStream`, `Invalid`) — `CS:5.enums/event-source.md`
 
-**WebSocket events**
-- M · `Raw.Action` and `Raw.SubAction` are never emitted (only `Raw.ActionCompleted`) — `WK:Servers-Clients/WebSocket-Server/Events/raw/Action.md`, `.../raw/SubAction.md`, `CS:5.enums/event-type.md`
-- P · Event names that differ from Streamer.bot's. The docs repo has no WebSocket event list, so these come from `CS:5.enums/event-type.md`; where the wiki has a page, it confirms the `Source.Type` pattern (`WK:Servers-Clients/WebSocket-Server/Events/**`). Cuebot name first, Streamer.bot name second:
-  - Twitch chat modes: `Twitch.EmoteModeOn/Off` and the other 9 → `Twitch.ChatEmoteModeOn/Off`, `ChatFollowerMode*`, `ChatSlowMode*`, `ChatSubscriberMode*`, `ChatUniqueMode*`
-  - `Twitch.SharedChatBegin/End/Update` → `SharedChatSessionBegin/End/Update`; `SharedChatGiftBomb` → `SharedChatCommunitySubGift`; `SharedChatModiversary` → `SharedModiversary`
-  - `Twitch.UserWarned` → `WarnedUser`; `PowerUp` → `PowerUpRedemption`; `Pyramid` → `PyramidSuccess`; `AutomodMessageUpdated` → `AutoModMessageUpdate`; `BroadcasterConnected/Disconnected` → `BroadcasterEventSubConnected/Disconnected`
-  - `Twitch.SubGift` (each recipient) and `Twitch.GiftSub` (Cuebot's "Gift subscriptions"): check that `GiftSub` carries Streamer.bot's single-gift semantics
-  - `YouTube.BroadcastStatisticsUpdated` → `StatisticsUpdated`; `YouTube.SponsorOnlyStarted/Ended` → `NewSponsorOnlyStarted/Ended`
-  - `Slobs.*` → `StreamlabsDesktop.*` (also `RecordStarted` → `RecordingStarted`, `StreamStarted` → `StreamingStarted`)
-  - `Tits.*` → `ThrowingSystem.*`; `Pally.*` → `Pallygg.*`; `Quotes.Added/Shown` → `Quote.Added/Show`
-  - `Pulsoid.HeartRate` → `Pulsoid.HeartRatePulse`; `Hyperate.HeartRate`/`ClipCreated` → `HypeRate.HeartRatePulse`/`TwitchClipCreated`
-  - `Streamlabs.Merch` → `Streamlabs.Merchandise`
-  - `Desktop.ClipboardChanged` → `System.ClipboardChanged`; `Desktop.ToastActivated` → `Toast.Activation`
-  - `Inputs.Pressed` → `Input.KeyPress`; `Controller.*` → `Input.ControllerButton/Axis/Hat`
-  - `Remote.*` → `StreamerBotRemote.InstanceConnected/Disconnected/Signal`; `Webhook.Custom` → `StreamerBot.CustomWebook`
-  - `Chat.EmoteAdded/Removed` → `Twitch/YouTube.SevenTVEmoteAdded`, `BetterTTVEmoteAdded`, ...
-  - Cron timers send `Misc.TimedAction`; Streamer.bot has a separate `System.Cron`
-  - Wave Link (`Wavelink.*`) and Control Center (`DevicePoweredOn` → `DeviceOn`, `BrightnessChanged` → `DeviceBrightnessChanged`, `TemperatureChanged` → `DeviceTemperatureChanged`) do not match the `Elgato*` names
-  - Meld Studio layer visibility, effect, track monitoring and track mute events are not emitted under Streamer.bot's names
-- P · Event payload shape: Cuebot sends its flat argument dictionary plus a `user` object and `text`. Streamer.bot clients read nested fields; for example the HTML Overlay module reads `message.data.reward.title`, which Cuebot sends as `rewardTitle` — `GD:04.extra-features/3.html-overlay.md`
+**WebSocket events** (fixed in `w14-websocket`; names checked against the GetEvents list published with the official
+client, `github.com/Streamerbot/client` `events.const.ts`, plus `CS:5.enums/event-type.md`)
+- ✅ · `Raw.Action` and `Raw.SubAction` are emitted (only while a client subscribes to them), with the documented
+  fields (`id` = run, `actionId`, `name`, `arguments`; sub-actions add `parentId`, `parentName`, `type`).
+  `Raw.ActionCompleted` now has Streamer.bot's fields (`id`, `actionId`, `name`, `duration`, `queuedAt`, `startedAt`,
+  `completedAt`, `success`, `excludeFromHistory`, `arguments`) next to Cuebot's. `Misc.StreamerbotExiting` is sent on
+  shutdown; `Application.Action*` carry `group` and `enabled` — `WK:Servers-Clients/WebSocket-Server/Events/raw/*.md`
+- ✅ · Event names now match Streamer.bot's (`StreamerBotEventMap`). The renames listed in this review are done:
+  - Twitch chat modes → `ChatEmoteModeOn/Off`, `ChatFollowerMode*`, `ChatSlowMode*`, `ChatSubscriberMode*`, `ChatUniqueMode*`
+  - `SharedChatSessionBegin/End/Update`, `SharedChatCommunitySubGift`, `SharedModiversary`, `SharedChatUserTimedout/Untimedout`
+  - `WarnedUser`, `PyramidSuccess`, `AutoModMessageHeld/Update`, `BroadcasterEventSubConnected/Disconnected`,
+    `BotEventSubConnected/Disconnected`. `PowerUp` stays: the GetEvents list uses `PowerUp` (the enum's
+    `PowerUpRedemption` is the C# name).
+  - Gifts: `twitch.subGift` (one per recipient) is `Twitch.GiftSub`, as in Streamer.bot; EventSub's aggregate
+    `twitch.giftSub` is sent as `Twitch.GiftSubscriptions` (a Cuebot addition) so it no longer doubles `GiftSub`/`GiftBomb`.
+  - YouTube `StatisticsUpdated`, `NewSponsorOnlyStarted/Ended`; Kick `BroadcasterChatConnected/Disconnected`, `SevenTVEmoteAdded/Removed`
+  - `StreamlabsDesktop.*` (`StreamingStarted/Stopped`, `RecordingStarted/Stopped`), `ThrowingSystem.*`, `Pallygg.*`,
+    `Quote.Added/Show`, `Pulsoid.HeartRatePulse`, `HypeRate.HeartRatePulse/TwitchClipCreated`, `Streamlabs.Merchandise`,
+    `DonorDrive`, `TipeeeStream`, `TreatStream`, `StreamLoots`, `CrowdControl`, `MeldStudio` source spellings
+  - `System.ClipboardChanged`, `Misc.ToastActivation`, `Inputs.InputKeyPress`, `Inputs.InputMouseClick`,
+    `Inputs.InputControllerButton/Axis/Hat` (game controllers), `StreamerBotRemote.InstanceConnected/Disconnected/Signal`,
+    `StreamerBot.CustomWebook`
+  - Emote changes per platform (`Twitch/YouTube.SevenTVEmoteAdded`, `BetterTTVEmoteAdded`, ...; FFZ stays `Chat.Emote*`)
+  - Cron timers send `System.Cron`; interval timers `Misc.TimedAction`
+  - Wave Link → `Elgato.WaveLinkV3*`; Control Center → `Elgato.ControlCenterDeviceOn/Off`, `DeviceBrightnessChanged`,
+    `DeviceTemperatureChanged`; Camera Hub keeps Streamer.bot's spellings (`CameraHubWebcamrDisconnected`, `CameraHubTiltChanged`)
+  - Meld Studio layer visibility, effect, track monitoring and track mute go out as `LayerVisbilityChanged`,
+    `LEffectEnabledStateChanged`, `TrackMonitoringStateChanged`, `TrackMustedStateChanged` (Streamer.bot's spellings)
+  - No Streamer.bot source exists for Lumia, mtion, OBSBOT, PolyPop, Points, Rumble, Chat, Speech or controller
+    hot-plug; they keep Cuebot names. About 90 Cuebot events under a Streamer.bot source have no Streamer.bot
+    counterpart (extra OBS, StreamElements, Streamlabs, TipeeeStream, VTube Studio events, ...); they keep the generic
+    name and are listed in `StreamerBotEventCatalogTests.CuebotExtras`.
+- ✅ · GetEvents lists exactly what `Map()` emits for the loaded modules' triggers, plus the server's own events.
+- ✅ · Event payload shape: the documented nested fields are built next to the flat args (`StreamerBotPayloads`).
+  Twitch `ChatMessage`/`FirstWord` (`message` object, `user`, `text`, emotes with names and positions, badges),
+  `Whisper`, `Follow`, `Cheer`, `Sub`, `ReSub`, `GiftSub`, `GiftBomb`, `Raid`, `RewardRedemption`
+  (`data.reward.title`), `Announcement`, `AdRun`, polls, predictions, hype trains, charity, `ShoutoutCreated`,
+  bans/timeouts, `ChatMessageDeleted`, `StreamUpdate`, shield mode, pyramids; YouTube `Message`, `FirstWords`,
+  member and Super Chat events (YouTube user object), broadcasts, statistics; Kick chat; `Command.*`, timers, heart
+  rate, `StreamElements.Tip`, speech to text. Every other event with a user gets the `user` object.
+  - P · Still flat apart from `user`: Kick subs/gifts/kicks (Streamer.bot documents no shape), the other donation
+    platforms, OBS, VTube Studio, Elgato, Meld, Crowd Control and the rest of the integrations. Twitch emote
+    `imageUrl`s are built from the public CDN pattern; badge `imageUrl`s are empty.
+
+**WebSocket requests** (checked against `WS:3.requests.md` and the official client's response types)
+- ✅ · Fixed: `GetActions` `trigger_count`; `GetInfo` `mode`, `darkMode`, `source: "websocketServer"`; `GetActiveViewers`
+  `type`; `GetCommands` `ignoreInternal`/`ignoreBotAccount`; `TwitchGetEmotes`/`YouTubeGetEmotes` keys
+  (`userEmotes`, `bttvEmotes`, `ffzEmotes`, `sevenTvEmotes`); `*GetUserGlobal` with `variable` returns one `variable`;
+  `GetUserPronouns` top-level `userLogin`; `GetCredits`/`TestCredits` return `events`, `users`, `hypeTrain`, `top`,
+  `groups`, `custom` at the top level (Cuebot's `credits` object stays).
+- P · `GetBroadcaster` returns connection states, not the documented account fields (`broadcastUser`, `botUserId`, ...):
+  Core has no broadcaster-account interface yet.
+- P · `SendMessage` ignores `bot` and `internal` (ChatHub has no bot/broadcaster choice).
+- P · `TwitchGetEmotes`/`YouTubeGetEmotes` return the documented keys but empty lists; `GetMonitoredYouTubeBroadcasts`
+  and `GetUserPronouns` are stubs.
+- P · `GetCommands` `sources` is a list of names; the docs show a number (an undocumented flag set).
+
+**HTTP and UDP** (`sb-docs/streamerbot/3.api/5.http`, `6.udp`)
+- ✅ · `GetCredits`/`TestCredits` over HTTP return the documented PascalCase shape (`Events.Follows`, `User.Moderator`,
+  `TopBits.All`, ...). `DoAction` (POST, 204), `GetActions`, `ClearCredits`/`ClearFirstWordsCache` (GET, 204), file
+  mappings and UDP `DoAction` already matched.
+- Note · HTTP `DoAction` is POST-only on purpose (a GET could be triggered by any web page).
 
 ## 8. Speaker.bot
 

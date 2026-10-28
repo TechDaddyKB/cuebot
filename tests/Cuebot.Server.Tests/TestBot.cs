@@ -33,7 +33,7 @@ internal sealed class TestBot : IAsyncDisposable
         Api = new ScriptApi([new CoreScriptFunctions(), new VariableScriptFunctions(UserVariables), Functions]);
         Scripts = new CSharpScriptEngine(Api, new CphServices(new LateProvider(this)));
         Registry = new Registry([Capture, new CSharpCodeSubAction(Scripts), new LogSubAction(), new IfSubAction(), new DelaySubAction()],
-            [], [new CodeTriggerProvider(CodeTriggers), new CommandTriggers(Commands), new CoreTriggers(Profile)]);
+            PlatformTriggers, [new CodeTriggerProvider(CodeTriggers), new CommandTriggers(Commands), new CoreTriggers(Profile)]);
         Timers = new TimerService(Profile, Bus);
         Transfer = new Cuebot.Core.Transfer.TransferService(Profile, Commands, Globals, () => Registry);
         Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log);
@@ -51,6 +51,18 @@ internal sealed class TestBot : IAsyncDisposable
         if (settings is not null) Copy(settings, Manager.Settings);
         Bus.Subscribe(e => Events.Enqueue(e));
     }
+
+    /// <summary>Stand-ins for some platform modules' triggers, so GetEvents lists their events as in the app.</summary>
+    internal static readonly ITriggerType[] PlatformTriggers =
+    [
+        .. new[]
+        {
+            "twitch.chatMessage", "twitch.follow", "twitch.sub", "twitch.resub", "twitch.subGift", "twitch.giftBomb",
+            "twitch.cheer", "twitch.raid", "twitch.rewardRedemption", "twitch.emoteModeOn", "youtube.chatMessage",
+            "youtube.superChat", "youtube.newSponsor", "kick.chatMessage", "kick.subscription", "users.firstWords",
+            "slobs.streamStarted", "obs.streamStarted", "tits.itemHit", "pulsoid.heartRate",
+        }.Select(t => (ITriggerType)new EventTriggerType(t, "Test", t, t)),
+    ];
 
     public AppLog Log { get; } = new();
     public Cuebot.Core.Credits.CreditsCollector Credits => _credits ??= new Cuebot.Core.Credits.CreditsCollector(null, Bus, Log);

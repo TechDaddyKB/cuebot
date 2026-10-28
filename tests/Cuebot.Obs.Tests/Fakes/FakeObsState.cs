@@ -236,6 +236,7 @@ internal sealed class FakeObsState
                 return Ok();
             case "GetLastReplayBufferReplay": return Ok(new { savedReplayPath = $"/replays/{Name}-last.mkv" });
             case "CreateRecordChapter":
+                if (!Recording) return FakeReply.Fail(501, "Recording is not active.");
                 Chapters.Add(d.ValueKind == JsonValueKind.Object && d.TryGetProperty("chapterName", out var chapter) ? chapter.GetString()! : "");
                 return Ok();
             case "GetStreamStatus":

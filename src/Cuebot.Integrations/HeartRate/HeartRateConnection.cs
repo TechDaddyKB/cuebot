@@ -22,7 +22,8 @@ public abstract class HeartRateConnection : IntegrationConnection
     /// <summary>Plausible human heart rates only; anything else is a sensor glitch (0 = no contact).</summary>
     internal static bool Plausible(int bpm) => bpm is > 0 and < 300;
 
-    private protected void Report(int bpm)
+    /// <param name="measuredAt">When the sensor measured it (Unix seconds), if the frame says; otherwise the time received.</param>
+    private protected void Report(int bpm, long? measuredAt = null)
     {
         if (!Plausible(bpm)) return;
         var previous = Hub.Report(Name, bpm);
@@ -31,6 +32,7 @@ public abstract class HeartRateConnection : IntegrationConnection
             ["heartRate"] = bpm,
             ["previousHeartRate"] = previous?.Bpm ?? 0,
             ["source"] = Name,
+            ["measuredAt"] = measuredAt ?? Hub.Get(Name)?.Time.ToUnixTimeSeconds() ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
         });
     }
 
