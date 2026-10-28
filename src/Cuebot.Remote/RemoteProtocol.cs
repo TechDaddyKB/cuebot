@@ -122,7 +122,9 @@ internal static class RemoteProtocol
             JsonValueKind.String => value.GetValue<string>(),
             JsonValueKind.True => true,
             JsonValueKind.False => false,
-            JsonValueKind.Number => value.TryGetValue<long>(out var l) ? l : value.GetValue<double>(),
+            JsonValueKind.Number => long.TryParse(value.ToJsonString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)
+                ? (object)l
+                : double.Parse(value.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture),
             _ => null,
         };
     }
