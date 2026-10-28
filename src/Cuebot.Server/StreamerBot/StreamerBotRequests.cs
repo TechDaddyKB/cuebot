@@ -271,6 +271,41 @@ public sealed class StreamerBotRequests(ServerServices services)
     ];
 
     /// <summary>
+    /// The HTTP server's GetCredits/TestCredits shape (PascalCase, as documented for HTTP): <c>Events</c>,
+    /// <c>HypeTrainConductor</c>, <c>HypeTrainContributors</c>, <c>User</c>, <c>Custom</c>, <c>TopBits</c>,
+    /// <c>TopChannelRewards</c>, built from a WebSocket credits response (whose fields are kept alongside).
+    /// </summary>
+    public static JsonObject HttpCredits(JsonObject response)
+    {
+        JsonNode List(string group, string key) => response[group]?[key]?.DeepClone() ?? new JsonArray();
+        var http = new JsonObject
+        {
+            ["Events"] = new JsonObject
+            {
+                ["Follows"] = List("events", "follows"), ["Cheers"] = List("events", "cheers"), ["Subs"] = List("events", "subs"),
+                ["ReSubs"] = List("events", "resubs"), ["GiftSubs"] = List("events", "giftsubs"),
+                ["GiftBombs"] = List("events", "giftbombs"), ["Raided"] = List("events", "raided"),
+                ["RewardRedemptions"] = List("events", "rewardredemptions"),
+                ["GoalContributions"] = List("events", "goalcontributions"), ["GameUpdates"] = List("events", "gameupdates"),
+                ["Pyramids"] = List("events", "pyramids"),
+            },
+            ["HypeTrainConductor"] = List("hypeTrain", "conductors"),
+            ["HypeTrainContributors"] = List("hypeTrain", "contributors"),
+            ["User"] = new JsonObject
+            {
+                ["Editors"] = List("users", "editors"), ["Moderator"] = List("users", "moderators"),
+                ["Subscriber"] = List("users", "subscribers"), ["VIPs"] = List("users", "vips"), ["Users"] = List("users", "users"),
+                ["regulars"] = new JsonArray(),
+            },
+            ["Custom"] = response["custom"]?.DeepClone() ?? new JsonObject(),
+            ["TopBits"] = new JsonObject { ["All"] = List("top", "allBits"), ["Month"] = List("top", "monthBits"), ["Week"] = List("top", "weekBits") },
+            ["TopChannelRewards"] = List("top", "channelRewards"),
+        };
+        foreach (var (key, value) in response) http[key] = value?.DeepClone();
+        return http;
+    }
+
+    /// <summary>
     /// Credits in Streamer.bot's shape (<c>events</c>, <c>users</c>, <c>hypeTrain</c>, <c>top</c>, <c>groups</c>,
     /// <c>custom</c>: user names per list) at the top level, plus <c>credits</c>: the same lists keyed by Cuebot section
     /// and Cuebot's full snapshot (counts, amounts, platforms) for richer overlays.
