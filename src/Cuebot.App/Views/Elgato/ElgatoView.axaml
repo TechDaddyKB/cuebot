@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Elgato"
+             x:Class="Cuebot.App.Views.Elgato.ElgatoView"
+             x:DataType="vm:ElgatoViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Elgato lights, Camera Hub &amp; Studio" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Lights become Control Center triggers and sub-actions; webcams become Camera Hub ones. Settings are stored in elgato.json. Nothing starts automatically unless you tick the box." />
+
+      <!-- Lights (Control Center) -->
+      <Border Classes="card" DataContext="{Binding Lights}" x:DataType="vm:ElgatoLightsCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Lights (Control Center)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Cuebot talks to Key Light, Key Light Air/Mini, Ring Light and Light Strip directly on your network (port 9123), on Windows and Linux, with or without Control Center. Lights are found with mDNS; add one by IP address if your network blocks multicast. Lights have no push channel, so changes made elsewhere are picked up by polling." />
+          <CheckBox Content="Start on startup" IsChecked="{Binding AutoStart}" />
+          <CheckBox Content="Find lights automatically (mDNS)" IsChecked="{Binding Discovery}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Poll every" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding PollSeconds}" Minimum="0.5" Maximum="60" Increment="0.5" FormatString="0.0" Width="120" />
+            <TextBlock Text="seconds" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Start" Classes="accent" Command="{Binding StartCommand}" />
+            <Button Content="Stop" Command="{Binding StopCommand}" />
+            <Button Content="Search now" Command="{Binding DiscoverCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Name="ElgatoNewAddress" Text="{Binding NewAddress}" PlaceholderText="IP address, e.g. 192.168.1.40 (or host:port)" />
+            <Button Grid.Column="1" Content="Add light" Margin="8,0,0,0" Command="{Binding AddCommand}" />
+          </Grid>
+          <TextBlock Classes="muted" Text="No lights yet. Start or Search now, or add one by address." IsVisible="{Binding HasNoLights}" />
+          <ItemsControl Name="ElgatoLights" ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ElgatoLightRowViewModel">
+                <Border BorderBrush="{StaticResource CuebotMuted}" BorderThickness="0,0,0,1" Padding="0,6">
+                  <Grid ColumnDefinitions="220,Auto,*,*,Auto,Auto" RowDefinitions="Auto,Auto">
+                    <StackPanel Grid.RowSpan="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Classes="muted" Text="{Binding Details}" TextWrapping="Wrap" />
+                      <TextBlock Classes="muted" Text="{Binding Reachability}" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" Grid.RowSpan="2" IsChecked="{Binding IsOn}" OnContent="On" OffContent="Off"
+                                  IsEnabled="{Binding IsOnline}" Margin="8,0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Classes="muted" Text="Brightness" Margin="8,0,0,0" />
+                    <Slider Grid.Column="2" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding Brightness}" IsEnabled="{Binding IsOnline}"
+                            Margin="8,0" />
+                    <TextBlock Grid.Column="3" Classes="muted" Text="Temperature (K)" Margin="8,0,0,0" IsVisible="{Binding HasTemperature}" />
+                    <Slider Grid.Column="3" Grid.Row="1" Minimum="2900" Maximum="7000" Value="{Binding Temperature}"
+                            IsEnabled="{Binding IsOnline}" IsVisible="{Binding HasTemperature}" Margin="8,0" />
+                    <Button Grid.Column="4" Grid.RowSpan="2" Content="Identify" Command="{Binding IdentifyCommand}" IsEnabled="{Binding IsOnline}"
+                            VerticalAlignment="Center" />
+                    <Button Grid.Column="5" Grid.RowSpan="2" Content="Remove" Command="{Binding RemoveCommand}" Margin="8,0,0,0"
+                            VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Camera Hub -->
+      <Border Classes="card" DataContext="{Binding CameraHub}" x:DataType="vm:CameraHubCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Camera Hub (webcams)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Camera Hub has no public control API. On Linux, Cuebot controls Facecam and other UVC webcams directly (V4L2): brightness, contrast, saturation, sharpness, focus, pan, tilt, zoom, white balance, anti-flicker and the automatic modes, and turns changes into Camera Hub triggers." />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding AppStatus}" />
+          <StackPanel IsVisible="{Binding IsAvailable}" Spacing="8">
+            <CheckBox Content="Start on startup" IsChecked="{Binding AutoConnect}" />
+            <Grid ColumnDefinitions="Auto,*">
+              <TextBlock Text="Only webcams named" VerticalAlignment="Center" Margin="0,0,8,0" />
+              <TextBox Grid.Column="1" Text="{Binding NameFilter}" PlaceholderText="e.g. Elgato (empty = every webcam)" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Start" Classes="accent" Command="{Binding ConnectCommand}" />
+              <Button Content="Stop" Command="{Binding DisconnectCommand}" />
+            </StackPanel>
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <ItemsControl ItemsSource="{Binding Webcams}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WebcamRowViewModel">
+                <StackPanel Margin="0,4">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                  <TextBlock Classes="muted" Text="{Binding Settings}" TextWrapping="Wrap" />
+                  <TextBlock Classes="muted" Text="{Binding Path}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding PrompterNote}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Elgato Studio -->
+      <Border Classes="card" DataContext="{Binding Studio}" x:DataType="vm:ElgatoStudioCardViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Elgato Studio" />
+          <TextBlock Name="ElgatoStudioStatus" Text="{Binding AppStatus}" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Note}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

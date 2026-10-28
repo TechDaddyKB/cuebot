@@ -3,6 +3,7 @@
     <Project Path="src/Cuebot.App/Cuebot.App.csproj" />
     <Project Path="src/Cuebot.Core/Cuebot.Core.csproj" />
     <Project Path="src/Cuebot.Donations/Cuebot.Donations.csproj" />
+    <Project Path="src/Cuebot.Elgato/Cuebot.Elgato.csproj" />
     <Project Path="src/Cuebot.Integrations/Cuebot.Integrations.csproj" />
     <Project Path="src/Cuebot.Kick/Cuebot.Kick.csproj" />
     <Project Path="src/Cuebot.Obs/Cuebot.Obs.csproj" />
@@ -18,6 +19,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Cuebot.Donations.Tests/Cuebot.Donations.Tests.csproj" />
+    <Project Path="tests/Cuebot.Elgato.Tests/Cuebot.Elgato.Tests.csproj" />
     <Project Path="tests/Cuebot.Integrations.Tests/Cuebot.Integrations.Tests.csproj" />
     <Project Path="tests/Cuebot.Kick.Tests/Cuebot.Kick.Tests.csproj" />
     <Project Path="tests/Cuebot.LiveTests/Cuebot.LiveTests.csproj" />
