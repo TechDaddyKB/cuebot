@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cuebot.Core.Actions;
@@ -24,6 +23,12 @@ public interface ISbMapContext
     /// <summary>Name of the imported timer with this Streamer.bot id (or the text itself).</summary>
     string TimerRef(string? idOrName);
 
+    /// <summary>
+    /// The name <c>CPH.ExecuteMethod</c> finds a Streamer.bot "Execute C# Code" sub-action by: its code name, else the
+    /// name of the action holding it. Falls back to the text itself.
+    /// </summary>
+    string CodeRef(string? subActionId);
+
     void Warn(string message);
 }
 
@@ -43,6 +48,12 @@ public abstract record SbRule(string Name, string TargetType, IReadOnlyList<stri
 {
     public IReadOnlyList<IReadOnlyList<string>> Signatures { get; init; } = [];
     public IReadOnlyList<string> Excludes { get; init; } = [];
+
+    /// <summary>
+    /// True when the meaning of a numeric type code was inferred from public exports with medium confidence (see
+    /// docs/streamerbot-import-codes.md); the import report asks the user to check such items.
+    /// </summary>
+    public bool Tentative { get; init; }
 }
 
 public sealed record SbSubActionRule(string Name, string TargetType, IReadOnlyList<string> TypeKeys, SbSubActionMap Map)
@@ -54,11 +65,11 @@ public sealed record SbTriggerRule(string Name, string TargetType, IReadOnlyList
 /// <summary>
 /// The pluggable Streamer.bot → Cuebot mapping table. <see cref="Default"/> holds the built-in rules (see the table
 /// in docs and <see cref="Describe"/>). Streamer.bot stores sub-action and trigger types as numeric codes that are
-/// not publicly documented, so the defaults match descriptive type names, CLR class names and field shapes; users
-/// (or later releases) add numeric codes with <see cref="AddAliases"/> or a JSON file
-/// (<c>{"subActions": {"&lt;code&gt;": "SendMessage"}, "triggers": {"&lt;code&gt;": "Follow"}}</c>).
+/// not publicly documented. The defaults hold the codes worked out from public exports (docs/streamerbot-import-codes.md)
+/// and also match descriptive type names, CLR class names and field shapes; users add or override codes with
+/// <see cref="AddAliases"/> or a JSON file (<c>{"subActions": {"&lt;code&gt;": "SendMessage"}, "triggers": {"&lt;code&gt;": "Follow"}}</c>).
 /// </summary>
-public sealed class StreamerBotMappingTable
+public sealed partial class StreamerBotMappingTable
 {
     private readonly List<SbSubActionRule> _subActions = [];
     private readonly List<SbTriggerRule> _triggers = [];
@@ -154,252 +165,8 @@ public sealed class StreamerBotMappingTable
         _subActions.Select(r => $"Sub-action {r.Name} → {r.TargetType}")
             .Concat(_triggers.Select(r => $"Trigger {r.Name} → {r.TargetType}"));
 
-    /// <summary>The built-in rules.</summary>
+    /// <summary>The built-in rules (see StreamerBotRules.cs and docs/streamerbot-import-codes.md).</summary>
     public static StreamerBotMappingTable Default { get; } = CreateDefault();
-
-    public static StreamerBotMappingTable CreateDefault()
-    {
-        var t = new StreamerBotMappingTable();
-
-        // ---- sub-actions ----
-        t.Add(new SbSubActionRule("SendMessage", "twitch.sendMessage", ["SendMessage", "TwitchSendMessage", "ChatSendMessage", "SendChatMessage"],
-            (s, _) => Step("twitch.sendMessage", s, ("message", Str(s, "text", "message") ?? ""),
-                ("sendAs", Bool(s, "useBot", "bot", "sendAsBot") switch { true => "Bot", false => "Broadcaster", _ => "Default" })))
-        {
-            Signatures = [["text", "useBot"]],
-        });
-        t.Add(new SbSubActionRule("Delay", "core.delay", ["Delay", "Wait"], (s, c) =>
-        {
-            var min = Num(s, "delay", "value", "milliseconds", "minDelay", "min") ?? 1000;
-            var max = Num(s, "maxDelay", "max", "maxValue");
-            if (max is { } m && m > min) c.Warn($"'{c.ActionName}': random delay {Text(min)}–{Text(m)} ms imported as a fixed {Text(min)} ms delay.");
-            return Step("core.delay", s, ("milliseconds", Text(Math.Max(0, min))));
-        })
-        {
-            Signatures = [["delay"], ["maxDelay"]],
-        });
-        t.Add(new SbSubActionRule("SetGlobal", "core.setGlobal", ["SetGlobal", "GlobalSet", "SetGlobalVariable", "GlobalVariableSet"],
-            (s, _) => Step("core.setGlobal", s, ("name", Str(s, "variableName", "name", "variable") ?? ""), ("mode", "Value"),
-                ("value", Str(s, "value") ?? ""), ("persisted", (Bool(s, "persisted", "persist") ?? true) ? "true" : "false"),
-                ("autoType", (Bool(s, "autoType") ?? false) ? "true" : "false")))
-        {
-            Signatures = [["variableName", "value", "persisted"]],
-        });
-        t.Add(new SbSubActionRule("GetGlobal", "core.getGlobal", ["GetGlobal", "GlobalGet", "GetGlobalVariable", "GlobalVariableGet"],
-            (s, _) => Step("core.getGlobal", s, ("name", Str(s, "variableName", "name", "variable") ?? ""),
-                ("destination", Str(s, "destinationVariable", "destination", "argumentName") ?? ""),
-                ("defaultValue", Str(s, "defaultValue", "default") ?? ""), ("autoType", "true")))
-        {
-            Signatures = [["variableName", "destinationVariable"]],
-        });
-        t.Add(new SbSubActionRule("SetArgument", "core.setArgument", ["SetArgument", "SetArg", "ArgumentSet"],
-            (s, _) => Step("core.setArgument", s, ("name", Str(s, "variableName", "argumentName", "name") ?? ""), ("value", Str(s, "value") ?? ""),
-                ("autoType", (Bool(s, "autoType") ?? false) ? "true" : "false"))));
-        t.Add(new SbSubActionRule("PlaySound", "audio.playSound", ["PlaySound", "SoundPlay", "PlaySoundFile"], (s, _) =>
-        {
-            var volume = Num(s, "volume") ?? 1;
-            if (volume <= 1) volume *= 100; // a 0–1 fraction (assumed) → Cuebot's 0–100
-            return Step("audio.playSound", s, ("file", Str(s, "soundFile", "fileName", "file", "path") ?? ""),
-                ("volume", Text(Math.Round(Math.Clamp(volume, 0, 100)))),
-                ("wait", (Bool(s, "finishBeforeContinuing", "wait", "waitUntilFinished") ?? false) ? "true" : "false"));
-        })
-        {
-            Signatures = [["soundFile"]],
-        });
-        t.Add(new SbSubActionRule("ObsSetScene", "obs.setScene", ["ObsSetScene", "SetScene", "ObsSetCurrentScene", "ObsScene"],
-            (s, _) => Step("obs.setScene", s, ("scene", Str(s, "sceneName", "scene") ?? "")))
-        {
-            Signatures = [["sceneName"]],
-            Excludes = ["sourceName", "filterName", "itemName", "inputName", "groupName"],
-        });
-        t.Add(new SbSubActionRule("ObsSetSourceVisibility", "obs.setSourceVisibility",
-            ["ObsSetSourceVisibility", "ObsSourceVisibility", "SetSourceVisibility", "ObsSetSourceVisibilityState"],
-            (s, c) => Step("obs.setSourceVisibility", s, ("scene", Str(s, "sceneName", "scene") ?? ""),
-                ("source", Str(s, "sourceName", "source", "itemName") ?? ""), ("state", VisibilityState(s, c))))
-        {
-            Signatures = [["sceneName", "sourceName", "state"], ["sceneName", "sourceName", "visible"]],
-        });
-        t.Add(new SbSubActionRule("RunAction", "core.runAction", ["RunAction", "ActionRun", "RunActionById"],
-            (s, c) => Step("core.runAction", s, ("action", c.ActionRef(Str(s, "actionId", "actionName", "action"))),
-                ("wait", (Bool(s, "runImmediately", "wait") ?? true) ? "true" : "false")))
-        {
-            Signatures = [["actionId"]],
-            Excludes = ["state", "enabled"],
-        });
-        t.Add(new SbSubActionRule("IfElse", "core.if", ["IfElse", "If", "Condition", "IfCondition"], MapIf)
-        {
-            Signatures = [["input", "operation", "value"]],
-        });
-        t.Add(new SbSubActionRule("ExecuteCode", "code.csharp", ["ExecuteCode", "ExecuteCSharpCode", "CSharpCode", "InlineCode", "ExecuteCSharp"], MapCode)
-        {
-            Signatures = [["byteCode"], ["code", "references"]],
-        });
-        t.Add(new SbSubActionRule("Group", "core.group", ["Group", "SubActionGroup", "ActionGroup"], (s, c) =>
-        {
-            var step = Step("core.group", s, ("name", Str(s, "name", "groupName") ?? "Group"),
-                ("random", (Bool(s, "random") ?? false) ? "true" : "false"), ("color", Str(s, "color", "colour") ?? ""));
-            step.Branches["Steps"] = c.MapChildren(ChildArray(s));
-            return step;
-        }));
-        t.Add(new SbSubActionRule("Comment", "core.comment", ["Comment", "Note"],
-            (s, _) => Step("core.comment", s, ("text", Str(s, "text", "comment", "value") ?? ""))));
-        t.Add(new SbSubActionRule("LogMessage", "core.log", ["LogMessage", "Log", "WriteLog", "WriteToLog"],
-            (s, _) => Step("core.log", s, ("message", Str(s, "message", "text", "value") ?? ""), ("level", LogLevel(Str(s, "logLevel", "level"))))));
-        t.Add(new SbSubActionRule("Break", "core.stop", ["Break", "BreakAction", "StopAction", "Stop"], (s, _) => Step("core.stop", s)));
-
-        // ---- triggers ----
-        t.Add(new SbTriggerRule("Command", "command.triggered", ["Command", "CommandTriggered", "CommandTrigger"],
-            (s, c) => Trigger("command.triggered", s, ("command", c.CommandRef(Str(s, "commandId", "command", "commandName")))))
-        {
-            Signatures = [["commandId"]],
-        });
-        t.Add(new SbTriggerRule("Follow", "twitch.follow", ["Follow", "TwitchFollow"], (s, _) => Trigger("twitch.follow", s)));
-        t.Add(new SbTriggerRule("Sub", "twitch.sub", ["Sub", "Subscription", "TwitchSub", "TwitchSubscription"],
-            (s, _) => Trigger("twitch.sub", s, ("tier", Tier(Str(s, "tier"))))));
-        t.Add(new SbTriggerRule("ReSub", "twitch.resub", ["ReSub", "Resubscription", "TwitchReSub"], (s, _) => Trigger("twitch.resub", s)));
-        t.Add(new SbTriggerRule("GiftSub", "twitch.giftSub", ["GiftSub", "TwitchGiftSub"], (s, _) => Trigger("twitch.giftSub", s)));
-        t.Add(new SbTriggerRule("GiftBomb", "twitch.giftBomb", ["GiftBomb", "TwitchGiftBomb"], (s, _) => Trigger("twitch.giftBomb", s)));
-        t.Add(new SbTriggerRule("Cheer", "twitch.cheer", ["Cheer", "TwitchCheer"],
-            (s, _) => Trigger("twitch.cheer", s, ("minBits", Text(Math.Max(1, Num(s, "min", "minBits", "minimum") ?? 1))),
-                ("maxBits", Num(s, "max", "maxBits", "maximum") is { } max and > 0 ? Text(max) : ""))));
-        t.Add(new SbTriggerRule("Raid", "twitch.raid", ["Raid", "TwitchRaid"],
-            (s, _) => Trigger("twitch.raid", s, ("minViewers", Text(Math.Max(0, Num(s, "min", "minViewers", "minimum") ?? 0))))));
-        t.Add(new SbTriggerRule("RewardRedemption", "twitch.rewardRedemption",
-            ["RewardRedemption", "ChannelPointReward", "TwitchRewardRedemption", "Reward"], (s, c) =>
-            {
-                var title = Str(s, "rewardName", "rewardTitle", "title", "name") ?? "";
-                if (title.Length == 0 && Str(s, "rewardId") is { Length: > 0 } id)
-                    c.Warn($"'{c.ActionName}': reward trigger names reward id {id} only; set the reward title in Cuebot.");
-                return Trigger("twitch.rewardRedemption", s, ("rewardTitle", title));
-            })
-        {
-            Signatures = [["rewardId"], ["rewardName"]],
-        });
-        t.Add(new SbTriggerRule("TimedAction", "core.timer", ["TimedAction", "TimedActions", "Timer", "TimerTrigger"],
-            (s, c) => Trigger("core.timer", s, ("timer", c.TimerRef(Str(s, "timerId", "timer", "timerName")))))
-        {
-            Signatures = [["timerId"]],
-        });
-        t.Add(new SbTriggerRule("FirstWords", "twitch.firstWords", ["FirstWords", "FirstWord", "TwitchFirstWords"], (s, _) => Trigger("twitch.firstWords", s)));
-        t.Add(new SbTriggerRule("ChatMessage", "twitch.chatMessage", ["ChatMessage", "TwitchChatMessage"], (s, _) => Trigger("twitch.chatMessage", s)));
-        t.Add(new SbTriggerRule("StreamOnline", "twitch.streamOnline", ["StreamOnline", "TwitchStreamOnline"], (s, _) => Trigger("twitch.streamOnline", s)));
-        t.Add(new SbTriggerRule("StreamOffline", "twitch.streamOffline", ["StreamOffline", "TwitchStreamOffline"], (s, _) => Trigger("twitch.streamOffline", s)));
-        return t;
-    }
-
-    // ---- helpers shared by the rules ----
-
-    /// <summary>A new step with the source's enabled flag and weight, plus the given parameters.</summary>
-    public static SubActionDefinition Step(string type, JsonObject source, params (string Key, string Value)[] parameters)
-    {
-        var step = new SubActionDefinition { Type = type, Enabled = Bool(source, "enabled") ?? true };
-        if (Num(source, "weight") is { } w && w >= 0) step.Weight = w;
-        foreach (var (key, value) in parameters) step.Parameters[key] = value;
-        return step;
-    }
-
-    public static TriggerDefinition Trigger(string type, JsonObject source, params (string Key, string Value)[] settings)
-    {
-        var trigger = new TriggerDefinition { Type = type, Enabled = Bool(source, "enabled") ?? true };
-        foreach (var (key, value) in settings) trigger.Settings[key] = value;
-        return trigger;
-    }
-
-    /// <summary>Nested children of a group-like sub-action, if the export uses the nested layout.</summary>
-    public static JsonArray? ChildArray(JsonObject source) => Arr(source, "subActions", "actions", "children", "items");
-
-    private static string VisibilityState(JsonObject s, ISbMapContext c)
-    {
-        if (Bool(s, "visible") is { } visible) return visible ? "Visible" : "Hidden";
-        var state = Str(s, "state") ?? "";
-        switch (Normalize(state))
-        {
-            case "visible" or "show" or "true" or "on": return "Visible";
-            case "hidden" or "hide" or "false" or "off": return "Hidden";
-            case "toggle": return "Toggle";
-            // Numeric codes are assumed to follow the UI order (Visible, Hidden, Toggle); flagged for review.
-            case "0": c.Warn($"'{c.ActionName}': source visibility state code 0 read as Visible; please check."); return "Visible";
-            case "1": c.Warn($"'{c.ActionName}': source visibility state code 1 read as Hidden; please check."); return "Hidden";
-            default: return "Toggle";
-        }
-    }
-
-    private static string Tier(string? tier) => Normalize(tier) switch
-    {
-        "1000" or "1" or "tier1" or "prime" => "1",
-        "2000" or "2" or "tier2" => "2",
-        "3000" or "3" or "tier3" => "3",
-        _ => "Any",
-    };
-
-    private static string LogLevel(string? level) => Normalize(level) switch
-    {
-        "debug" or "verbose" => "Debug",
-        "warn" or "warning" => "Warning",
-        "error" => "Error",
-        _ => "Info",
-    };
-
-    /// <summary>Streamer.bot operator names → Cuebot <see cref="Conditions.Operators"/>.</summary>
-    private static readonly Dictionary<string, string> Operators = new()
-    {
-        ["equals"] = "equals", ["equal"] = "equals", ["eq"] = "equals", ["isequal"] = "equals",
-        ["notequals"] = "not equals", ["notequal"] = "not equals", ["ne"] = "not equals", ["doesnotequal"] = "not equals",
-        ["contains"] = "contains", ["doesnotcontain"] = "does not contain", ["notcontains"] = "does not contain",
-        ["startswith"] = "starts with", ["endswith"] = "ends with",
-        ["greaterthan"] = "greater than", ["gt"] = "greater than", ["lessthan"] = "less than", ["lt"] = "less than",
-        ["isnullorempty"] = "is empty", ["isempty"] = "is empty", ["isnotnullorempty"] = "is not empty", ["isnotempty"] = "is not empty",
-        ["regex"] = "matches regex", ["matchesregex"] = "matches regex", ["regexmatch"] = "matches regex",
-    };
-
-    private static SubActionDefinition MapIf(JsonObject s, ISbMapContext c)
-    {
-        var op = Str(s, "operation", "operator", "comparison") ?? "equals";
-        var known = Operators.TryGetValue(Normalize(op), out var mapped);
-        if (!known) c.Warn($"'{c.ActionName}': if/else operator '{op}' is not known; imported as 'equals' and disabled. Please check it.");
-        var step = Step("core.if", s, ("left", Str(s, "input", "left", "variable") ?? ""), ("operator", mapped ?? "equals"),
-            ("right", Str(s, "value", "right", "compareTo") ?? ""));
-        if (!known) step.Enabled = false;
-
-        // Nested layout: child lists per branch. Older layout: an action to run for each outcome.
-        step.Branches["True"] = c.MapChildren(Arr(s, "true", "trueActions", "trueSubActions", "then", "thenActions"));
-        step.Branches["False"] = c.MapChildren(Arr(s, "false", "falseActions", "falseSubActions", "else", "elseActions"));
-        AddRunBranch(step.Branches["True"], Str(s, "trueAction", "trueActionId", "actionTrue"), Bool(s, "trueRunImmediately"), c);
-        AddRunBranch(step.Branches["False"], Str(s, "falseAction", "falseActionId", "actionFalse"), Bool(s, "falseRunImmediately"), c);
-        if (Get(s, "true", "trueActions", "trueSubActions", "then", "thenActions", "false", "falseActions", "falseSubActions", "else", "elseActions") is null
-            && ChildArray(s) is { } flat)
-            step.Branches["True"].AddRange(c.MapChildren(flat));
-        return step;
-    }
-
-    private static void AddRunBranch(List<SubActionDefinition> branch, string? action, bool? wait, ISbMapContext c)
-    {
-        if (string.IsNullOrWhiteSpace(action) || action == Guid.Empty.ToString()) return;
-        branch.Add(new SubActionDefinition
-        {
-            Type = "core.runAction",
-            Parameters = { ["action"] = c.ActionRef(action), ["wait"] = (wait ?? true) ? "true" : "false" },
-        });
-    }
-
-    private static SubActionDefinition MapCode(JsonObject s, ISbMapContext c)
-    {
-        var code = Str(s, "code", "source", "sourceCode");
-        if (string.IsNullOrEmpty(code) && Str(s, "byteCode") is { Length: > 0 } encoded)
-        {
-            try
-            {
-                code = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
-            }
-            catch (FormatException)
-            {
-                code = null;
-            }
-        }
-        if (string.IsNullOrEmpty(code)) throw new SbMappingException("the C# code could not be read");
-        c.Warn($"'{c.ActionName}': contains C# code. The action was imported disabled; read the code before enabling it.");
-        return Step("code.csharp", s, ("code", code));
-    }
 }
 
 /// <summary>Thrown by a mapping when the item matched a rule but cannot be converted; the importer keeps a placeholder.</summary>
