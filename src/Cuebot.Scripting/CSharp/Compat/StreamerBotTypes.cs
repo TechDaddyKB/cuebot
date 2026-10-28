@@ -42,118 +42,30 @@ namespace Streamer.bot.Plugin.Interface.Enums
         YouTube = 1,
         Kick = 2,
     }
-}
 
-namespace Streamer.bot.Common.Events
-{
-    /// <summary>Event sources (the <c>source</c> of a WebSocket event).</summary>
-    public enum EventSource
+    /// <summary>Where a Twitch block applies (<c>CPH.TwitchBlockUser</c>).</summary>
+    public enum TwitchBlockContext
     {
-        None = 0,
-        General,
-        Application,
-        Command,
-        Custom,
-        FileTail,
-        FileWatcher,
-        Group,
-        Kick,
-        Misc,
-        Obs,
-        Raw,
-        SpeakerBot,
-        Twitch,
-        WebsocketClient,
-        WebsocketCustomServer,
-        YouTube,
-        Inputs,
-        Midi,
-        StreamElements,
-        Streamlabs,
-        Kofi,
-        VTubeStudio,
-        VoiceMod,
-        SpeechToText,
+        None,
+        Chat,
+        Whisper,
     }
 
-    /// <summary>Event types (source + type). <see cref="None"/> when the run was not started by a known event.</summary>
-    public enum EventType
+    /// <summary>Why a Twitch user is blocked (<c>CPH.TwitchBlockUser</c>).</summary>
+    public enum TwitchBlockReason
     {
-        None = 0,
-        TwitchChatMessage,
-        TwitchFollow,
-        TwitchSub,
-        TwitchReSub,
-        TwitchGiftSub,
-        TwitchGiftBomb,
-        TwitchCheer,
-        TwitchRaid,
-        TwitchRewardRedemption,
-        TwitchStreamOnline,
-        TwitchStreamOffline,
-        TwitchFirstWord,
-        TwitchPresentViewers,
-        TwitchWhisper,
-        TwitchAnnouncement,
-        TwitchChatMessageDeleted,
-        TwitchUserBanned,
-        TwitchUserTimedOut,
-        YouTubeMessage,
-        YouTubeSuperChat,
-        YouTubeSuperSticker,
-        YouTubeNewSponsor,
-        YouTubeMemberMileStone,
-        YouTubeMembershipGift,
-        YouTubeNewSubscriber,
-        YouTubeFirstWords,
-        YouTubePresentViewers,
-        KickChatMessage,
-        KickFollow,
-        KickSubscription,
-        KickResubscription,
-        KickGiftSubscription,
-        KickMassGiftSubscription,
-        KickFirstWords,
-        KickPresentViewers,
-        ObsConnected,
-        ObsDisconnected,
-        ObsSceneChanged,
-        ObsStreamingStarted,
-        ObsStreamingStopped,
-        ObsRecordingStarted,
-        ObsRecordingStopped,
-        CommandTriggered,
-        CommandCooldown,
-        GroupAdded,
-        GroupRemoved,
-        GroupCleared,
-        GroupUsersAdded,
-        GroupUsersRemoved,
-        MiscGlobalVariableCreated,
-        MiscGlobalVariableUpdated,
-        MiscGlobalVariableDeleted,
-        MiscUserGlobalVariableUpdated,
-        MiscStreamerbotStarted,
-        MiscTimedAction,
-        MiscProcessStarted,
-        MiscProcessStopped,
-        FileWatcherCreated,
-        FileWatcherChanged,
-        FileWatcherDeleted,
-        FileWatcherRenamed,
-        FileTailChanged,
-        CustomCodeEvent,
-        WebsocketClientOpen,
-        WebsocketClientClose,
-        WebsocketClientMessage,
-        WebsocketCustomServerOpen,
-        WebsocketCustomServerClose,
-        WebsocketCustomServerMessage,
-        SpeechToTextCommand,
-        SpeechToTextDictation,
+        None,
+        Harassment,
+        Spam,
+        Other,
+    }
 
-        /// <summary>Streamer.bot's name for its dictation log event; Cuebot reports dictation as <see cref="SpeechToTextDictation"/>.</summary>
-        SpeechToTextLog,
+    /// <summary>Which Streamlabs Desktop output (horizontal, vertical or both) a request applies to.</summary>
+    public enum StreamlabsDesktopOutputType
+    {
+        Both,
+        Horizontal,
+        Vertical,
     }
 }
 

@@ -12,7 +12,7 @@ namespace Cuebot.Twitch;
 /// whispers that can come from the optional bot account. Every call checks sign-in and the scope it needs first,
 /// so a missing permission fails with a message saying what to enable.
 /// </summary>
-public sealed class TwitchApi
+public sealed partial class TwitchApi
 {
     private const int MaxPollChoices = 5;
     private const int MaxPredictionOutcomes = 10;

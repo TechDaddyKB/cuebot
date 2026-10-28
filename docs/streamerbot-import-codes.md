@@ -27,8 +27,9 @@ Users can add or override codes with a `streamerbot-mapping.json` file
   99901 (true branch) and 99902 (false branch), each with its own `subActions`.
 - **C# code** (99999): v23+ stores the source as plain text in `code`. Older exports store it in `byteCode` as
   base64 of the UTF-8 source text (not compiled code), so it is fully recoverable. The importer copies it into a
-  Cuebot `code.csharp` step and always imports the action disabled; nothing is compiled or run. `references`,
-  `precompile` and `delayStart` are not carried over.
+  Cuebot `code.csharp` step and always imports the action disabled; nothing is compiled or run until it is enabled.
+  `precompile`, `delayStart` and "Save Result to Variable" are carried over; `references` (Streamer.bot's own
+  assemblies) is not, since Cuebot always references the framework.
 - **Commands**: `mode` 0 Basic / 1 Regex; `location` 0 Start / 1 Exact / 2 Anywhere; `grantType` 0 Allow /
   1 Deny for `permittedUsers` / `permittedGroups`; `sources` is a list of indexes in v10 (0 Twitch message,
   1 YouTube message, 2 Twitch whisper, …) and a number in v23 (1 = Twitch message).

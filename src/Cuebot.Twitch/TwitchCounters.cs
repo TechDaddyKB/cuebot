@@ -134,6 +134,29 @@ public sealed class TwitchCounters
 
     public void ResetRewardUserCounters(string rewardId) => Change(rewardId, s => s.UserCounters.Clear());
 
+    /// <summary>Every user's redemption count of a reward (user id → count).</summary>
+    public IReadOnlyDictionary<string, int> GetRewardUserCounters(string rewardId)
+    {
+        lock (_gate)
+            return _settings().Rewards.TryGetValue(rewardId, out var state)
+                ? new Dictionary<string, int>(state.UserCounters, StringComparer.Ordinal)
+                : new Dictionary<string, int>();
+    }
+
+    /// <summary>Resets one user's counter of one reward.</summary>
+    public void ResetUserRewardCounter(string rewardId, string userId) => Change(rewardId, s => s.UserCounters.Remove(userId));
+
+    /// <summary>Resets one user's counters of every reward. Returns how many rewards had a count for them.</summary>
+    public int ResetUserRewardCounters(string userId)
+    {
+        lock (_gate)
+        {
+            var changed = _settings().Rewards.Values.Count(s => s.UserCounters.Remove(userId));
+            if (changed > 0) _save();
+            return changed;
+        }
+    }
+
     /// <summary>Stream online: counters of rewards that do not persist them start over.</summary>
     internal void ResetStreamCounters()
     {

@@ -332,6 +332,23 @@ public sealed class StreamerBotCodeTests
     }
 
     [Fact]
+    public void Csharp_precompile_and_save_result_options_are_carried_over()
+    {
+        const string Source = "using System;\npublic class CPHInline { public bool Execute() { return true; } }";
+        var (main, _, _) = Import(Export(
+        [
+            Sub(99999, 0, ("name", "Startup"), ("code", Source), ("references", new JsonArray("mscorlib.dll")), ("precompile", true),
+                ("delayStart", true), ("saveResultToVariable", true), ("saveToVariable", "ok")),
+            Sub(99998, 1, ("executeCodeId", CodeId), ("method", "Execute"), ("saveResultToVariable", true), ("saveToVariable", "methodOk")),
+        ]));
+        var code = main.SubActions[0].Parameters;
+        Assert.Equal(("true", "true", "true", "ok"), (code["precompile"], code["delayedStart"], code["saveResult"], code["resultVariable"]));
+        Assert.False(code.ContainsKey("references"));
+        Assert.Equal(("true", "methodOk"), (main.SubActions[1].Parameters["saveResult"], main.SubActions[1].Parameters["resultVariable"]));
+        Assert.False(main.Enabled);
+    }
+
+    [Fact]
     public void Run_program_is_imported_with_the_action_disabled()
     {
         var (main, report, _) = Import(Export([Sub(6, 0, ("command", "python"), ("arguments", "x.py %rawInput%"), ("workingDir", null), ("envVars", "{}"), ("waitForExit", 30))]));

@@ -25,13 +25,106 @@ public sealed partial class CphProxy
         UserCooldown = c.UserCooldownSeconds,
     }).ToList();
 
-    public long CommandGetCounter(string id) => Commands().GetCounter(Command(id).Id);
+    public int CommandGetCounter(string id) => (int)Math.Min(int.MaxValue, Commands().GetCounter(Command(id).Id));
     public void CommandResetCounter(string id) => Commands().ResetCounter(Command(id).Id);
     public void CommandResetAllUserCounters(string id) => Commands().ResetUserCounters(Command(id).Id);
 
-    /// <summary>Clears the command's running cooldowns. Cuebot resets the global and every user cooldown together.</summary>
-    public void CommandResetGlobalCooldown(string id) => Need(_services.CommandService).Cooldowns.Reset(Command(id).Id.ToString());
-    public void CommandResetAllUserCooldowns(string id) => Need(_services.CommandService).Cooldowns.Reset(Command(id).Id.ToString());
+    // Cooldowns. Like Streamer.bot, "Reset" starts a cooldown again with its full duration, "Remove" ends it now and
+    // "AddTo" adds seconds (starting it when it is not running).
+
+    public void CommandResetGlobalCooldown(string id)
+    {
+        var command = Command(id);
+        Cooldowns().Restart(command.Id.ToString(), null, TimeSpan.FromSeconds(command.GlobalCooldownSeconds));
+    }
+
+    public void CommandResetAllUserCooldowns(string id)
+    {
+        var command = Command(id);
+        Cooldowns().RestartUsers(command.Id.ToString(), TimeSpan.FromSeconds(command.UserCooldownSeconds));
+    }
+
+    public void CommandResetUserCooldown(string id, string userId, Platform platform)
+    {
+        var command = Command(id);
+        Cooldowns().Restart(command.Id.ToString(), CooldownUser(platform, userId), TimeSpan.FromSeconds(command.UserCooldownSeconds));
+    }
+
+    /// <summary>Older form for Twitch users.</summary>
+    public void CommandResetUserCooldown(string id, string userId) => CommandResetUserCooldown(id, userId, Platform.Twitch);
+    public void CommandResetUserCooldown(string id, int userId) => CommandResetUserCooldown(id, Num(userId), Platform.Twitch);
+
+    public void CommandRemoveGlobalCooldown(string id) => Cooldowns().Clear(Command(id).Id.ToString(), null);
+    public void CommandRemoveAllUserCooldowns(string id) => Cooldowns().ClearUsers(Command(id).Id.ToString());
+
+    public void CommandRemoveUserCooldown(string id, string userId, Platform platform) =>
+        Cooldowns().Clear(Command(id).Id.ToString(), CooldownUser(platform, userId));
+
+    public void CommandRemoveUserCooldown(string id, string userId) => CommandRemoveUserCooldown(id, userId, Platform.Twitch);
+    public void CommandRemoveUserCooldown(string id, int userId) => CommandRemoveUserCooldown(id, Num(userId), Platform.Twitch);
+
+    public void CommandAddToGlobalCooldown(string id, int seconds) =>
+        Cooldowns().Extend(Command(id).Id.ToString(), null, TimeSpan.FromSeconds(seconds));
+
+    public void CommandAddToAllUserCooldowns(string id, int seconds) =>
+        Cooldowns().ExtendUsers(Command(id).Id.ToString(), TimeSpan.FromSeconds(seconds));
+
+    public void CommandAddToUserCooldown(string id, string userId, Platform platform, int seconds) =>
+        Cooldowns().Extend(Command(id).Id.ToString(), CooldownUser(platform, userId), TimeSpan.FromSeconds(seconds));
+
+    public void CommandAddToUserCooldown(string id, string userId, int seconds) => CommandAddToUserCooldown(id, userId, Platform.Twitch, seconds);
+    public void CommandAddToUserCooldown(string id, int userId, int seconds) => CommandAddToUserCooldown(id, Num(userId), Platform.Twitch, seconds);
+
+    // User counters.
+
+    /// <summary>How often the user (by login) ran the command; null when the command does not exist.</summary>
+    public CommandCounter? CommandGetUserCounter(string userLogin, Platform platform, string commandId) =>
+        UserCounter(platform, FindUserId(Key(platform), userLogin) ?? "", Login(userLogin), commandId);
+
+    /// <summary>How often the user (by id) ran the command; null when the command does not exist.</summary>
+    public CommandCounter? CommandGetUserCounterById(string userId, Platform platform, string commandId) =>
+        UserCounter(platform, userId?.Trim() ?? "", UserName(platform, userId?.Trim() ?? ""), commandId);
+
+    public void CommandResetUserCounter(string commandId, string userId, Platform platform) =>
+        Commands().ResetUserCounters(Command(commandId).Id, CommandStore.UserKey(PlatformName(platform), userId?.Trim() ?? "", ""));
+
+    /// <summary>
+    /// Resets every user counter of the command for one platform. Cuebot keeps command counters persisted, so
+    /// <paramref name="persisted"/> is ignored.
+    /// </summary>
+    public void CommandResetUsersCounters(string commandId, Platform platform, bool persisted)
+    {
+        var prefix = Key(platform) + ":";
+        Commands().ResetUserCountersWhere(Command(commandId).Id, key => key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private CommandCounter? UserCounter(Platform platform, string userId, string userName, string commandId)
+    {
+        var command = Commands().Find(commandId);
+        if (command is null)
+        {
+            LogWarn($"No command '{commandId}'");
+            return null;
+        }
+        var count = Commands().GetUserCounter(command.Id, CommandStore.UserKey(PlatformName(platform), userId, userName));
+        return new CommandCounter
+        {
+            UserId = userId,
+            UserLogin = userName.ToLowerInvariant(),
+            UserName = userName,
+            Platform = PlatformName(platform),
+            Count = (int)Math.Min(int.MaxValue, count),
+        };
+    }
+
+    /// <summary>The user key Cuebot's command cooldowns use ("platform:userId").</summary>
+    private static string CooldownUser(Platform platform, string userId) =>
+        CommandStore.UserKey(PlatformName(platform), userId?.Trim() ?? "", "");
+
+    private static string Num(int value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private CooldownTracker Cooldowns([System.Runtime.CompilerServices.CallerMemberName] string method = "") =>
+        Need(_services.CommandService, method).Cooldowns;
 
     public void CommandSetGlobalCooldownDuration(string id, int seconds) => EditCommand(id, c => c.GlobalCooldownSeconds = Math.Max(0, seconds));
     public void CommandSetUserCooldownDuration(string id, int seconds) => EditCommand(id, c => c.UserCooldownSeconds = Math.Max(0, seconds));
@@ -87,6 +180,9 @@ public sealed partial class CphProxy
     public bool AddUserToGroup(string userName, string groupName) => AddUserToGroup(userName, Platform.Twitch, groupName);
     public bool RemoveUserFromGroup(string userName, string groupName) => RemoveUserFromGroup(userName, Platform.Twitch, groupName);
     public bool UserInGroup(string userName, string groupName) => UserInGroup(userName, Platform.Twitch, groupName);
+    public bool AddUserIdToGroup(string userId, string groupName) => AddUserIdToGroup(userId, Platform.Twitch, groupName);
+    public bool RemoveUserIdFromGroup(string userId, string groupName) => RemoveUserIdFromGroup(userId, Platform.Twitch, groupName);
+    public bool UserIdInGroup(string userId, string groupName) => UserIdInGroup(userId, Platform.Twitch, groupName);
 
     private static string PlatformName(Platform platform) => platform.ToString();
     private static string Key(Platform platform) => platform.ToString().ToLowerInvariant();

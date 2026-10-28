@@ -54,12 +54,12 @@ Path prefixes used below:
 How to read the counts:
 - **Section 4.** Almost all of its partials are **variable-name gaps**. The triggers and sub-actions exist, but some
   of their documented variables are missing or named differently.
-- **Section 7.** The M count is dominated by **100 documented `CPH` method names** that `CphProxy` does not define.
-  Any Streamer.bot script that calls one of them fails to compile in Cuebot.
+- **Section 7.** The M count was dominated by **100 documented `CPH` method names** that `CphProxy` did not define (fixed in `w14-cph`).
+  Any Streamer.bot script that called one of them failed to compile in Cuebot.
 
 ## Most user-visible gaps (prioritized)
 
-1. **100 documented C# (`CPH`) methods are missing.** A pasted or imported `CPHInline` script that calls any of them
+1. **100 documented C# (`CPH`) methods are missing.** (Fixed in `w14-cph`, see section 7.) A pasted or imported `CPHInline` script that calls any of them
    fails to compile. This contradicts PARITY.md §7, which says scripts "compile unchanged".
    - Missing families: all 11 `Kick*`/Kick user-var methods; 18 `YouTube*` methods; 8 `MeldStudio*`; 7 OBS filter
      methods; 44 Twitch methods (rewards, redemptions, pins, AutoMod, blocked terms, suspicious users, clips,
@@ -88,7 +88,7 @@ How to read the counts:
    commonly used to build URLs for Fetch URL. Cuebot has `$urlencode()$` instead.
    Source: `TR:core/commands/command-triggered.md`, `TR:twitch/channel-reward/reward-redemption.md`,
    `TR:kick/kicks/gifted.md`, `TR:youtube/chat/first-words.md`.
-5. **Newtonsoft.Json is not available to C# code, and custom DLL references cannot be added.** The docs say
+5. **Newtonsoft.Json is not available to C# code, and custom DLL references cannot be added.** (Fixed in `w14-cph`, see section 7.) The docs say
    Newtonsoft "is included in Streamer.bot by default", and a recipe covers custom DLLs. Cuebot compiles against the
    framework plus its own assemblies only, so `using Newtonsoft.Json;` fails.
    Source: `CS:0.guide/1.variables.md`, `CS:1.recipes/custom-dlls.md`, `CS:0.guide/5.debugging.md` (References, Find Refs).
@@ -98,7 +98,7 @@ How to read the counts:
 7. **The action, trigger and sub-action toggles are missing:** Set Trigger State, Set Sub-Action State, Set
    Sub-Action Weight, Get Action Group State, Set Action Group State and Trigger Custom Event.
    Source: `SA:core/triggers/*`, `SA:core/actions/*`.
-8. **The C# `EventType` and `EventSource` enums are incomplete,** so `EventType.X` / `EventSource.X` in scripts does
+8. **The C# `EventType` and `EventSource` enums are incomplete,** (fixed in `w14-cph`, see section 7) so `EventType.X` / `EventSource.X` in scripts does
    not compile for most events:
    - `EventType` has 74 of 508 documented values.
    - `EventSource` has 26 of 46.
@@ -115,7 +115,7 @@ How to read the counts:
     Original Text, `success`). Cuebot's "Get input" splits text into `input0..N`. Source: `SA:core/logic/get-input.md`.
 11. **Streamer.bot Decks are missing entirely:** 10 sub-actions, plus the web-deck feature. PARITY.md never
     mentions them. Source: `SA:streamerbot/decks/*`, `GD:04.extra-features/2.streamerbot-decks.md`.
-12. **The C# sub-action options are missing:** the Execute C# Method sub-action, Precompile on Application Start /
+12. **The C# sub-action options are missing:** (Fixed in `w14-cph`, see section 7.) the Execute C# Method sub-action, Precompile on Application Start /
     Delayed Start, and Save Result to Variable. Source: `SA:core/csharp/*`, `CS:0.guide/3.custom-methods.md`.
 13. **Points has missing and partial sub-actions** (PARITY.md says ✅).
     - Missing: Check Points, Delete Points, Get Points Definition.
@@ -398,35 +398,51 @@ stop sounds, hotkeys, watchers, MIDI and voice triggers, custom WebSocket trigge
 
 ## 7. Servers, APIs and scripting
 
-Present: 141 (102 of 202 C# method names; 13 classes/enums; all 22 WebSocket requests; 6 HTTP requests plus serving
-files; UDP DoAction; Execute C# Code basics; `Init()`/`Dispose()` lifecycle; custom WebSocket servers and clients).
+Present: 141 before `w14-cph` (102 of 202 C# method names; 13 classes/enums; all 22 WebSocket requests; 6 HTTP
+requests plus serving files; UDP DoAction; Execute C# Code basics; `Init()`/`Dispose()` lifecycle; custom WebSocket
+servers and clients). `w14-cph` closes the C# items below; details are in docs/SERVERS.md ("C# CPH compatibility").
 
-**Missing C# methods (100)**
-- M · Commands (11): `CommandAddToAllUserCooldowns`, `CommandAddToGlobalCooldown`, `CommandAddToUserCooldown`, `CommandGetUserCounter`, `CommandGetUserCounterById`, `CommandRemoveAllUserCooldowns`, `CommandRemoveGlobalCooldown`, `CommandRemoveUserCooldown`, `CommandResetUserCooldown`, `CommandResetUserCounter`, `CommandResetUsersCounters` — `CS:3.methods/core/commands/*`
-- M · Core (1): `Parse` — `CS:3.methods/core/parse.md`
-- M · Twitch rewards (17): `EnableReward`, `DisableReward`, `PauseReward`, `UpdateRewardMaxPerStream`, `UpdateRewardMaxPerUserPerStream`, `TwitchGetRewards`, `TwitchGetRewardCounter`, `TwitchGetRewardUserCounter`, `TwitchGetRewardUserCounterById`, `TwitchGetRewardUserCounters`, `TwitchResetRewardCounter`, `TwitchResetRewardUserCounters`, `TwitchResetUserRewardCounter`, `TwitchResetUserRewardCounters`, `TwitchRedemptionFulfill`, `TwitchRedemptionCancel`, `TwitchGetChannelPointsUsedByUserId` — `CS:3.methods/twitch/channel-reward/*`
-- M · Twitch chat (8): `TwitchReplyToMessage`, `TwitchDeleteChatMessage`, `TwitchClearChatMessages`, `TwitchPinChatMessage`, `TwitchSendAndPinMessage`, `TwitchUnpinMessage`, `TwitchGetPinnedMessage`, `TwitchUpdatePinnedMessageDuration` — `CS:3.methods/twitch/chat/*`
-- M · Twitch moderation (9): `TwitchWarnUser`, `TwitchAddBlockedTerm`, `TwitchRemoveBlockedTerm`, `TwitchGetBlockedTerms`, `TwitchApproveAutoHeldMessage`, `TwitchDenyAutoHeldMessage`, `TwitchAddActiveMonitoringSuspiciousStatus`, `TwitchAddRestrictedSuspiciousStatus`, `TwitchRemoveSuspiciousStatus` — `CS:3.methods/twitch/moderation/*`
-- M · Twitch clips (5): `GetClips`, `GetAllClips`, `GetClipsForGame`, `GetClipsForUser`, `GetClipsForUserById` — `CS:3.methods/twitch/clips/*`
-- M · Twitch user (2): `TwitchGetMods`, `TwitchGetVips` — `CS:3.methods/twitch/user/*`
-- M · Twitch user variables (3): `IncrementAllTwitchUsersVar`, `IncrementTwitchUsersVarById`, `IncrementOrCreateTwitchUsersVarById` — `CS:3.methods/twitch/globals/*`
-- M · Kick (11): `KickBanUser`, `KickTimeoutUser`, `KickUnbanUser`, `KickDeleteChatMessage`, `KickReplyToMessage`, `KickSetTitle`, `KickSetCategory`, `SetKickUsersVarById`, `IncrementAllKickUsersVar`, `IncrementAllKickUsersVarById`, `IncrementOrCreateKickUsersVarById` — `CS:3.methods/kick/*`
-- M · YouTube (18): `YouTubeGetBroadcaster`, `YouTubeGetBot`, `YouTubeSetTitle`, `YouTubeSetDescription`, `YouTubeSetCategory`, `YouTubeSetPrivacy`, `YouTubeSetMetaData`, `YouTubeAddTags`, `YouTubeRemoveTags`, `YouTubeClearTags`, `YouTubeBanUserById`, `YouTubeBanUserByName`, `YouTubeTimeoutUserById`, `YouTubeTimeoutUserByName`, `SendYouTubeMessageToLatestMonitored`, `IncrementAllYouTubeUsersVar`, `IncrementYouTubeUsersVarById`, `IncrementOrCreateYouTubeUsersVarById` — `CS:3.methods/youtube/*`
-- M · Meld Studio (8): `MeldStudioConnect`, `MeldStudioDisconnect`, `MeldStudioIsConnected`, `MeldStudioGetConnectionByName`, `MeldStudioShowScene`, `MeldStudioShowSceneByName`, `MeldStudioShowLayerByName`, `MeldStudioHideLayerByName` — `CS:3.methods/meld/*`
-- M · OBS (7): `ObsCreateRecordChapter`, `ObsSetFilterState`, `ObsToggleFilter`, `ObsIsFilterEnabled`, `ObsSetRandomFilterState`, `ObsHideScenesFilters`, `ObsHideSourcesFilters` — `CS:3.methods/obs-studio/**`
-- Note: method names were compared, not every overload's signature.
+**C# methods (fixed in `w14-cph`: all 202 documented names exist)**
+- ✅ The 100 names that were missing now exist with the documented signatures and return types. A test checks
+  every documented name (`tests/Cuebot.Scripting.Tests/Data/cph-methods.txt`). The groups were:
+  - Commands (11): cooldowns follow Streamer.bot: Reset restarts at full length, Remove ends, AddTo adds seconds.
+    `CommandResetGlobalCooldown` and `CommandResetAllUserCooldowns` used to clear cooldowns and now restart them.
+  - Core (1): `Parse`.
+  - Twitch rewards (17), chat (8), moderation (9), clips (5), mods/VIPs (2), user variables (3).
+  - Kick (11), YouTube (18), Meld Studio (8), OBS filters and record chapter (7).
+- P · Stubs that compile, log "not supported in Cuebot" and return the failure value:
+  `TwitchAddActiveMonitoringSuspiciousStatus`, `TwitchAddRestrictedSuspiciousStatus` and
+  `TwitchRemoveSuspiciousStatus` (Cuebot does not request `moderator:manage:suspicious_users`), and
+  `TwitchGetChannelPointsUsedByUserId` (Cuebot does not track points spent; returns 0).
+- Also added, beyond the 202: `UnPauseReward`, `GetCheermotes`, `TwitchBlockUser(ById)` (stubs) and older
+  platform-less group overloads. `ResumeAllActionQueues(clear)` and `DiscordPostTextToWebhook` (returns the
+  message id) now match the docs. 135 of the 141 `CPHInline` examples in the docs compile; the other 6 have bugs
+  in the examples themselves (undefined variables, a syntax error).
+- Still missing, not in the 202-name reference: older wiki-era methods such as `TwitchPollCreate`,
+  `TwitchPredictionCreate`, `AddQuoteForTwitch`, `ShowToastNotification`, `ObsSetColorSourceColor`, the
+  `StreamDeck*` methods, the Guest Star methods and `GetTeamInfoById/ByLogin`.
+- Note: overloads follow the docs, the wiki and the changelogs. Where they give no signature, extra optional
+  parameters and bool returns were chosen, so calls written either way compile.
 
-**Missing C# classes and enums (20)**
-- M · `Cheermote`, `CheermoteImage`, `CheermoteImages`, `CheermoteTier`, `CommandCounter`, `GuestSession`, `GuestStar`, `GuestStarInvite`, `GuestStarSettings`, `KickCategory`, `MediaSettings`, `QuoteData`, `TeamInfo`, `TwitchReward`, `TwitchRewardCounter`, `VTSModelPosition`, `YouTubeUserInfo`; enums `StreamlabsDesktopOutputType`, `TwitchBlockContext`, `TwitchBlockReason` — `CS:4.classes/*`, `CS:5.enums/*`
+**C# classes and enums (fixed in `w14-cph`)**
+- ✅ All 17 classes and 3 enums: `Cheermote`, `CheermoteImage`, `CheermoteImages`, `CheermoteTier`,
+  `CommandCounter`, `GuestSession`, `GuestStar`, `GuestStarInvite`, `GuestStarSettings`, `KickCategory`,
+  `MediaSettings`, `QuoteData`, `TeamInfo`, `TwitchReward`, `TwitchRewardCounter`, `VTSModelPosition`,
+  `YouTubeUserInfo`; `StreamlabsDesktopOutputType`, `TwitchBlockContext`, `TwitchBlockReason`. Members follow the
+  shapes in Streamer.bot's changelogs and wiki.
+- ✅ `EventType` has all 508 documented values and `EventSource` all 46. Earlier Cuebot names (`MiscTimedAction`,
+  ...) remain as aliases. Numeric values are not documented, so only the names match.
 
-**Other C# gaps**
-- M · Execute C# Method sub-action (call a method of another code block) — `SA:core/csharp/execute-csharp-method.md`, `CS:0.guide/3.custom-methods.md`
-- M · Newtonsoft.Json referenceable from scripts — `CS:0.guide/1.variables.md`, `sb-docs/streamerbot/4.examples/http-post.md`
-- M · Custom references and Find Refs (custom DLLs) — `CS:1.recipes/custom-dlls.md`, `CS:0.guide/5.debugging.md`, `WK:Settings/CSharp-Compiler.md`
-- M · Precompile on Application Start / Delayed Start — `SA:core/csharp/execute-csharp-code.md`
-- P · Execute C# Code: no Save Result to Variable or Name/Description fields (Cuebot has a code name) — `SA:core/csharp/execute-csharp-code.md`
-- P · `EventType` enum: 74 of 508 values — `CS:5.enums/event-type.md`
-- P · `EventSource` enum: 26 of 46 (missing `CrowdControl`, `DonorDrive`, `Elgato`, `Fourthwall`, `HypeRate`, `MeldStudio`, `Pallygg`, `Patreon`, `Pulsoid`, `Quote`, `Shopify`, `StreamDeck`, `StreamLoots`, `StreamerBot`, `StreamerBotRemote`, `StreamlabsDesktop`, `System`, `Throne`, `ThrowingSystem`, `TipeeeStream`, `TreatStream`, `Invalid`) — `CS:5.enums/event-source.md`
+**Other C# gaps (fixed in `w14-cph`)**
+- ✅ Execute C# Method sub-action (`code.csharpMethod`, with Save Result to Variable); `CPH.ExecuteMethod` resolves
+  the importer's calls.
+- ✅ Newtonsoft.Json 13 is bundled and referenced in both script shapes.
+- ✅ Custom references: a References list per C# step plus `scripting.json` `CSharpReferences`. Only listed full
+  paths are loaded; nothing is fetched. "Find Refs" is not needed, because every framework assembly is referenced.
+- ✅ Precompile on Application Start / Delayed Start (enabled actions only; `Init()` runs at startup).
+- ✅ Execute C# Code: Save Result to Variable and a Description field. The importer carries precompile, delayed
+  start and save-result over.
+- P · Windows Forms and other .NET Framework-only APIs are not available (Cuebot targets .NET 10).
 
 **WebSocket events** (fixed in `w14-websocket`; names checked against the GetEvents list published with the official
 client, `github.com/Streamerbot/client` `events.const.ts`, plus `CS:5.enums/event-type.md`)

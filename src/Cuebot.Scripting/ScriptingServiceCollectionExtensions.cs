@@ -1,6 +1,7 @@
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Scripting;
+using Cuebot.Core.Storage;
 using Cuebot.Scripting.Compat;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,9 +20,21 @@ public static class ScriptingServiceCollectionExtensions
         services.AddSingleton<CodeTriggerRegistry>();
         services.AddSingleton<ITriggerProvider, CodeTriggerProvider>();
         services.AddSingleton(sp => new CphServices(sp));
-        services.AddSingleton(sp => new CSharpScriptEngine(sp.GetRequiredService<ScriptApi>(), sp.GetRequiredService<CphServices>()));
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<JsonFile<ScriptingSettings>>();
+            return new CSharpScriptEngine(sp.GetRequiredService<ScriptApi>(), sp.GetRequiredService<CphServices>(),
+                () => settings.Value.CSharpReferences.Where(r => !string.IsNullOrWhiteSpace(r)).ToArray());
+        });
+        services.AddSingleton<CSharpPrecompiler>();
 
         services.AddSingleton<ISubActionHandler, CSharpCodeSubAction>();
+        services.AddSingleton<ISubActionHandler>(sp =>
+        {
+            var cph = sp.GetRequiredService<CphServices>();
+            return new CSharpMethodSubAction(sp.GetRequiredService<CSharpScriptEngine>(),
+                () => cph.Profile is { } profile ? InlineCodeFinder.Names(profile.Snapshot.Actions) : []);
+        });
         services.AddSingleton<ISubActionHandler, PythonCodeSubAction>();
         return services;
     }
