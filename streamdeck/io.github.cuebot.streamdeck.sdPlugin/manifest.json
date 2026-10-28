@@ -1,0 +1,123 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"Name": "Cuebot",
+	"Version": "0.1.0.0",
+	"Author": "Cuebot contributors",
+	"Description": "Run Cuebot actions, toggle them, set global variables and fire Cuebot's Stream Deck Action trigger from keys and dials. Cuebot can change each key's title, state, image and value.",
+	"UUID": "io.github.cuebot.streamdeck",
+	"Icon": "imgs/plugin/icon",
+	"Category": "Cuebot",
+	"CategoryIcon": "imgs/plugin/category",
+	"CodePath": "bin/plugin.js",
+	"PropertyInspectorPath": "ui/cuebot.html",
+	"SDKVersion": 2,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		},
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		}
+	],
+	"Nodejs": {
+		"Version": "20"
+	},
+	"Actions": [
+		{
+			"UUID": "io.github.cuebot.streamdeck.run",
+			"Name": "Run Cuebot action",
+			"Tooltip": "Runs a Cuebot action (with optional arguments)",
+			"Icon": "imgs/actions/run",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/keys/run",
+					"TitleAlignment": "bottom"
+				}
+			]
+		},
+		{
+			"UUID": "io.github.cuebot.streamdeck.toggle",
+			"Name": "Toggle action enabled",
+			"Tooltip": "Enables, disables or toggles a Cuebot action; the key shows whether it is enabled",
+			"Icon": "imgs/actions/toggle",
+			"Controllers": [
+				"Keypad"
+			],
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Name": "Enabled",
+					"Image": "imgs/keys/toggle-on",
+					"TitleAlignment": "bottom"
+				},
+				{
+					"Name": "Disabled",
+					"Image": "imgs/keys/toggle-off",
+					"TitleAlignment": "bottom"
+				}
+			]
+		},
+		{
+			"UUID": "io.github.cuebot.streamdeck.global",
+			"Name": "Set global variable",
+			"Tooltip": "Sets, adds to or toggles a Cuebot global variable; on a dial, turning adds the step",
+			"Icon": "imgs/actions/global",
+			"Controllers": [
+				"Keypad",
+				"Encoder"
+			],
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/keys/dial-global",
+				"TriggerDescription": {
+					"Rotate": "Add the step per tick",
+					"Push": "Set the value"
+				}
+			},
+			"States": [
+				{
+					"Image": "imgs/keys/global",
+					"TitleAlignment": "bottom"
+				}
+			]
+		},
+		{
+			"UUID": "io.github.cuebot.streamdeck.trigger",
+			"Name": "Cuebot trigger",
+			"Tooltip": "Fires Cuebot's Stream Deck Action trigger with this key's button id; Cuebot can change its look",
+			"Icon": "imgs/actions/trigger",
+			"Controllers": [
+				"Keypad",
+				"Encoder"
+			],
+			"DisableAutomaticStates": true,
+			"Encoder": {
+				"layout": "$B1",
+				"Icon": "imgs/keys/dial-trigger",
+				"TriggerDescription": {
+					"Rotate": "Fire trigger (ticks)",
+					"Push": "Fire trigger",
+					"Touch": "Fire trigger"
+				}
+			},
+			"States": [
+				{
+					"Image": "imgs/keys/trigger",
+					"TitleAlignment": "bottom"
+				},
+				{
+					"Image": "imgs/keys/trigger-alt",
+					"TitleAlignment": "bottom"
+				}
+			]
+		}
+	]
+}

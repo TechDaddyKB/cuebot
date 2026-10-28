@@ -110,6 +110,12 @@ public sealed class ApiServer : IAsyncDisposable
             return;
         }
 
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            await HandleWebSocketAsync(context, path[Prefix.Length..].Trim('/'), cts.Token).ConfigureAwait(false);
+            return;
+        }
+
         try
         {
             await RouteAsync(context, path[Prefix.Length..].Trim('/'), cts.Token).ConfigureAwait(false);
@@ -278,6 +284,9 @@ public sealed class ApiServer : IAsyncDisposable
                 await StreamEventsAsync(context, Q("types"), ct).ConfigureAwait(false);
                 return;
 
+            case var name when s.Length == 1 && FindWebSocketRoute(name) is not null:
+                throw new ApiException(426, $"/api/v1/{name} is a WebSocket endpoint; connect with a WebSocket client");
+
             default:
                 throw IsKnownResource(s) ? MethodNotAllowed() : NotFound();
         }
@@ -319,6 +328,39 @@ public sealed class ApiServer : IAsyncDisposable
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/json; charset=utf-8";
         return context.Response.WriteAsync(body?.ToJsonString() ?? "null");
+    }
+
+    // ---- Module WebSockets (/api/v1/{route}) ------------------------------------------------------------------------
+
+    private IApiWebSocketRoute? FindWebSocketRoute(string route) =>
+        _services.WebSocketRoutes.FirstOrDefault(r => string.Equals(r.Name, route, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Upgrades an authorized request for a registered <see cref="IApiWebSocketRoute"/> and runs its connection.</summary>
+    private async Task HandleWebSocketAsync(HttpContext context, string route, CancellationToken ct)
+    {
+        var handler = route.Contains('/') ? null : FindWebSocketRoute(route);
+        if (handler is null)
+        {
+            await WriteJsonAsync(context, 404, new JsonObject { ["error"] = "No WebSocket endpoint here" }).ConfigureAwait(false);
+            return;
+        }
+
+        using var socket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
+        var connection = new WebSocketConnection(socket, $"{context.Connection.RemoteIpAddress}:{context.Connection.RemotePort}");
+        try
+        {
+            await handler.OnOpenAsync(connection).ConfigureAwait(false);
+            await connection.ReceiveAsync(message => handler.OnMessageAsync(connection, message), ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _services.Log.Error("API", $"WebSocket /api/v1/{handler.Name} failed", ex);
+        }
+        finally
+        {
+            handler.OnClose(connection);
+            await connection.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     // ---- Server-Sent Events ----------------------------------------------------------------------------------------

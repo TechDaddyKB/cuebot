@@ -151,3 +151,25 @@ jobs:
             artifacts/*.pkg.tar.zst
             artifacts/namcap-*.txt
             artifacts/smoke-*
+
+  streamdeck-plugin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: streamdeck
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: streamdeck/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run validate
+      - run: npm run pack
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Cuebot-StreamDeck-plugin
+          path: streamdeck/dist/io.github.cuebot.streamdeck.streamDeckPlugin

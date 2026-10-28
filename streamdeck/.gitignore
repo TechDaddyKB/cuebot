@@ -1,0 +1,8 @@
+node_modules/
+dist/
+# Build output (npm run build)
+io.github.cuebot.streamdeck.sdPlugin/bin/
+io.github.cuebot.streamdeck.sdPlugin/ui/pi.js
+# Written by the plugin at runtime
+io.github.cuebot.streamdeck.sdPlugin/logs/
+*.streamDeckPlugin
