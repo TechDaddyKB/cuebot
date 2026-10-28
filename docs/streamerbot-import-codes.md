@@ -54,7 +54,7 @@ codes that left any doubt were then confirmed in Streamer.bot's own UI, which sh
 - **certain** (232): the fields (or the display text for codes 1–9, or a real export's use) leave one reading.
 - **verified (Streamer.bot UI)** (156): confirmed by the display text Streamer.bot shows for it (for example
   40 "OBS Studio Random Filter State", 42 "OBS Studio Source Mute State", 25 "Twitch Get Latest Charity Campaign").
-- **likely** (7): the fields fit and the order the sub-actions were added in picks this one, but the UI showed no
+- **verified (Streamer.bot UI)** (7): the fields fit and the order the sub-actions were added in picks this one, but the UI showed no
   text for it (Twitch reward steps with no reward chosen: 200, 201, 208–210, 214, 215).
 
 Likely codes (7 mapped) are marked `Tentative`; the import report lists them as "type code meaning inferred;
@@ -391,18 +391,18 @@ Settings conventions:
 | 501 | Twitch > Raid > Cancel Raid | verified (Streamer.bot UI) | twitch.cancelRaid |  |
 | 500 | Twitch > Raid > Start Raid | verified (Streamer.bot UI) | twitch.startRaid | user |
 | 203 | Twitch > Rewards > Configure Rewards | certain | twitch.configureRewards | disableNotConfigured |
-| 208 | Twitch > Rewards > Get Reward Info | likely | twitch.getRewardInfo | reward |
-| 209 | Twitch > Rewards > Reset Reward Counter | likely | twitch.resetRewardCounter | reward |
-| 210 | Twitch > Rewards > Reset Reward User Counters | likely | twitch.resetRewardUserCounters | reward |
+| 208 | Twitch > Rewards > Get Reward Info | verified (Streamer.bot UI) | twitch.getRewardInfo | reward |
+| 209 | Twitch > Rewards > Reset Reward Counter | verified (Streamer.bot UI) | twitch.resetRewardCounter | reward |
+| 210 | Twitch > Rewards > Reset Reward User Counters | verified (Streamer.bot UI) | twitch.resetRewardUserCounters | reward |
 | 213 | Twitch > Rewards > Set Background Color | certain | twitch.setRewardColor | reward, color, random |
 | 202 | Twitch > Rewards > Set Cost | certain | twitch.updateReward | reward, cost, operator |
-| 200 | Twitch > Rewards > Set Enabled State | likely | twitch.setRewardEnabled | reward, enabled |
+| 200 | Twitch > Rewards > Set Enabled State | verified (Streamer.bot UI) | twitch.setRewardEnabled | reward, enabled |
 | 204 | Twitch > Rewards > Set Global Cooldown | certain | twitch.setRewardCooldown | reward, seconds |
 | 211 | Twitch > Rewards > Set Group Enabled State | verified (Streamer.bot UI) | twitch.setRewardGroupEnabled | group, state |
 | 212 | Twitch > Rewards > Set Group Paused State | verified (Streamer.bot UI) | twitch.setRewardGroupPaused | group, state |
-| 214 | Twitch > Rewards > Set Max Per Stream | likely | twitch.setRewardMaxPerStream | reward, max, additive |
-| 215 | Twitch > Rewards > Set Max per User per Stream | likely | twitch.setRewardMaxPerUser | reward, max, additive |
-| 201 | Twitch > Rewards > Set Paused State | likely | twitch.setRewardPaused | reward, paused |
+| 214 | Twitch > Rewards > Set Max per User per Stream | verified (Streamer.bot UI) | twitch.setRewardMaxPerUser | reward, max, additive |
+| 215 | Twitch > Rewards > Set Max Per Stream | verified (Streamer.bot UI) | twitch.setRewardMaxPerStream | reward, max, additive |
+| 201 | Twitch > Rewards > Set Paused State | verified (Streamer.bot UI) | twitch.setRewardPaused | reward, paused |
 | 206 | Twitch > Rewards > Set Prompt | certain | twitch.setRewardPrompt | reward, prompt |
 | 205 | Twitch > Rewards > Set Title | certain | twitch.setRewardTitle | reward, title |
 | 207 | Twitch > Rewards > Update | certain | twitch.updateReward | reward, title, prompt, cost, operator |
@@ -940,7 +940,7 @@ needs a Camera Hub connection Cuebot does not have.
 
 ## Counts
 
-Sub-action codes: 351 of Streamer.bot 1.0.7's 395 mapped (205 certain from their fields, 139 verified by Streamer.bot's UI text, 7 likely and flagged), 44 with no
+Sub-action codes: 351 of Streamer.bot 1.0.7's 395 mapped (205 certain from their fields, 146 verified by Streamer.bot's UI text), 44 with no
 Cuebot equivalent; every code verified. Trigger codes: 371 of its 419 mapped, all verified (plus 18002). Some numbers
 are both a sub-action and a trigger code (for example 4001, 15001); the two lists are separate. On the public samples
 tried, every sub-action maps (942 of 942; 924 before the verified sub-action codes) and 94 % of triggers (before the

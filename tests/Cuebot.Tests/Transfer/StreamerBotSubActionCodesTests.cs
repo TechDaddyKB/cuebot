@@ -121,6 +121,7 @@ public sealed class StreamerBotSubActionCodesTests
         Assert.Equal("twitch.getCharityCampaign", One(25).Step.Type);
         Assert.Equal(("meldstudio.streaming", "meldstudio.recording"), (One(41003).Step.Type, One(41004).Step.Type));
         Assert.Equal(("users.resetFirstWords", "credits.reset"), (One(1026).Step.Type, One(1027).Step.Type));
+        Assert.Equal(("twitch.setRewardMaxPerUser", "twitch.setRewardMaxPerStream"), (One(214).Step.Type, One(215).Step.Type));
         Assert.Equal("Save", One(321, ("state", 2)).Step.Parameters["mode"]);
         Assert.Equal("Track 3", "Track " + One(44, ("track", 2)).Step.Parameters["track"]);
         Assert.Equal("Archive", One(563).Step.Parameters["mode"]);

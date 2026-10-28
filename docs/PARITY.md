@@ -221,7 +221,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
 3. **Done (gaps in the tables above) — platforms & APIs:** full Twitch, YouTube, Kick; OBS completion; Streamer.bot-compatible WebSocket/HTTP/UDP servers,
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
-   import/export, action history and copy/paste/undo, app shortcuts; Streamer.bot type codes: triggers and sub-actions verified against Streamer.bot 1.0.7 (7 Twitch reward sub-action names still to confirm).
+   import/export, action history and copy/paste/undo, app shortcuts; Streamer.bot type codes: triggers and sub-actions verified against Streamer.bot 1.0.7.
 5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop + T.I.T.S. + Lumia + mtion + OBSBOT 🟡, StreamFog ❌ (no public API); Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control 🟡, game controllers 🟡 (built, not yet tried on real hardware); remote signals between instances ✅. Batch 7 (Streamer.bot compatibility from the docs review) ✅; see §7.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 

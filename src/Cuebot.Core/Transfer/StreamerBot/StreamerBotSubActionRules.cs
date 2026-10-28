@@ -38,7 +38,7 @@ public sealed partial class StreamerBotMappingTable
     {
         public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
         {
-            "200", "201", "208", "209", "210", "214", "215",
+            // Every code was confirmed against Streamer.bot 1.0.7 (fields or its own UI text); none is tentative now.
         };
     }
 
@@ -264,9 +264,9 @@ public sealed partial class StreamerBotMappingTable
             [("group", Str(s, "groupName") ?? ""), ("state", Pick(s, "state", l, "Paused", "Unpaused", "Toggle"))]);
         With("213", "Twitch Reward Set Background Color", "twitch.setRewardColor", (s, _, _) =>
             [Reward(s), ("color", Str(s, "backgroundColor") is { Length: > 0 } color ? color : "#9147FF"), ("random", Flag(Bool(s, "random") ?? false))]);
-        With("214", "Twitch Reward Set Max Per Stream", "twitch.setRewardMaxPerStream", (s, _, _) =>
+        With("214", "Twitch Reward Set Max per User per Stream", "twitch.setRewardMaxPerUser", (s, _, _) =>
             [Reward(s), ("max", Text(Math.Max(0, Num(s, "redeems") ?? 0))), ("additive", Flag(Bool(s, "additive") ?? false))]);
-        With("215", "Twitch Reward Set Max per User per Stream", "twitch.setRewardMaxPerUser", (s, _, _) =>
+        With("215", "Twitch Reward Set Max Per Stream", "twitch.setRewardMaxPerStream", (s, _, _) =>
             [Reward(s), ("max", Text(Math.Max(0, Num(s, "redeems") ?? 0))), ("additive", Flag(Bool(s, "additive") ?? false))]);
         Plain("251", "Twitch Clear Channel Tags", "twitch.clearTags");
         With("252", "Twitch Set Channel Tags", "twitch.setTags", (s, _, _) => [("tags", Str(s, "tags") ?? "")]);
