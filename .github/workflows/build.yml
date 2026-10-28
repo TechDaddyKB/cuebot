@@ -25,7 +25,10 @@ jobs:
       - name: Install Linux test dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y espeak-ng python3
-      - run: dotnet test Cuebot.slnx -c Release
+      - run: dotnet build Cuebot.slnx -c Release
+      # At most two test assemblies at once: running all of them in parallel starves the
+      # runner's CPUs and makes the timing-based tests (sockets, reconnects, polling) flaky.
+      - run: dotnet test Cuebot.slnx -c Release --no-build -m:2
 
   windows-package:
     needs: test
