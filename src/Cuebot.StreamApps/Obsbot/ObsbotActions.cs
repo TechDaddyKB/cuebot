@@ -322,7 +322,7 @@ internal static class ObsbotSubActions
     }
 
     private static object ImageValue(string text, string label, bool floats) =>
-        floats ? (float)Number(text, label) : (int)Math.Round(Number(text, label));
+        floats ? (object)(float)Number(text, label) : (int)Math.Round(Number(text, label));
 
     private static int Index(string[] choices, string value, string label)
     {
