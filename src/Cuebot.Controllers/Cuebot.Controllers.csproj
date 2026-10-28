@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Only the native SDL3 libraries (runtimes/<rid>/native) are used; Cuebot has its own small P/Invoke layer
+         (Device/Sdl/SdlNative.cs), so the package's managed bindings are neither compiled against nor shipped. -->
+    <PackageReference Include="ppy.SDL3-CS" ExcludeAssets="compile;runtime" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.Controllers.Tests" />
+    <InternalsVisibleTo Include="Cuebot.LiveTests" />
+    <InternalsVisibleTo Include="Cuebot.UiTests" />
+  </ItemGroup>
+</Project>

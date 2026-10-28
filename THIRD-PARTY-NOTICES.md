@@ -21,6 +21,8 @@ Each keeps its own license; full license texts are available from the linked pro
 | [miniaudio](https://github.com/mackron/miniaudio) (native library inside SoundFlow) | Audio backend | MIT No Attribution or public domain (Unlicense), at your choice |
 | [NVorbis](https://github.com/NVorbis/NVorbis) | Ogg Vorbis decoding | MIT |
 | [BouncyCastle.Cryptography](https://github.com/bcgit/bc-csharp) | Ed25519 verification of Throne webhooks | MIT |
+| [SDL3](https://github.com/libsdl-org/SDL) (native SDL3.dll / libSDL3.so) | Game-controller input | zlib; the HIDAPI code built into it: BSD-style or the original HIDAPI licence, at your choice |
+| [ppy.SDL3-CS](https://github.com/ppy/SDL3-CS) (only the prebuilt SDL3 native libraries from this package are shipped) | Packaging of the SDL3 builds | MIT |
 | [.NET runtime](https://github.com/dotnet/runtime) (self-contained builds) | Runtime | MIT |
 
 ## System libraries used, not bundled

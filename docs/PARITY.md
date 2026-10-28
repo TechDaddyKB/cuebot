@@ -87,7 +87,7 @@ Cuebot and fires its trigger; a wrong token is rejected (`RelayLiveTests`).
 | Play sound (file; WAV/MP3/OGG/FLAC, mixed) | ✅ | 2 | Play from folder, stop sound, output device selection | ✅ | 2 |
 | File/folder watcher, file tails, process watcher, clipboard get/set/changed | ✅ | 2–4 | Toast notifications + activation (in-app, notify-send) | ✅ | 4 |
 | MIDI in/out | 🟡 all of 1.13 built (WinMM, ALSA sequencer; see src/Cuebot.Midi/PROTOCOL.md); verified on Windows output only, MIDI input and Linux not yet tested on hardware | 5 | Voice control (speech-to-text, Whisper) | ❌ | 5 |
-| Game-controller input [1.1α] | ❌ | 5 | File read/write, HTTP request, JSON sub-actions | ✅ | 2 |
+| Game-controller input [1.1α] | 🟡 Button / Axis / Hat triggers via SDL3 (Windows + Linux, background input, hot-plug, gamecontrollerdb override, deadzones, axis throttling) plus extras (Button Combo, Connected/Disconnected, rumble, LED, state sub-actions, scripts, learn); SDL starts live on Windows, not yet tried with a real controller or on Linux; variables are Cuebot's (Streamer.bot documents none) | 5 | File read/write, HTTP request, JSON sub-actions | ✅ | 2 |
 
 **Input on Wayland.** Key presses work on Wayland through the RemoteDesktop portal (KDE Plasma, GNOME, and other
 desktops whose portal offers a remote keyboard); the desktop shows a permission dialog at the first press and the

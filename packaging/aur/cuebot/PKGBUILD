@@ -14,7 +14,8 @@ optdepends=('espeak-ng: offline text-to-speech voices'
             'pipewire-audio: audio playback through pw-play'
             'libpulse: audio playback through paplay'
             'alsa-utils: audio playback through aplay'
-            'alsa-lib: MIDI devices (ALSA sequencer)')
+            'alsa-lib: MIDI devices (ALSA sequencer)'
+            'game-devices-udev: hidraw access for PlayStation/Switch controller lights and rumble')
 provides=('cuebot')
 conflicts=('cuebot-bin')
 options=('!strip' '!debug')   # .NET assemblies must not be stripped

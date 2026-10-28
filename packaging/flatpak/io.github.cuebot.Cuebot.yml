@@ -12,8 +12,9 @@ finish-args:
   - --socket=wayland       # Wayland first (native Avalonia Wayland backend)
   - --socket=fallback-x11  # X11 only when no Wayland compositor is available
   - --socket=pulseaudio    # speech and sound playback
-  - --device=dri
-  - --device=all           # MIDI: the ALSA sequencer (/dev/snd/seq) and USB MIDI hot-plug; libasound comes from the runtime
+  - --device=all           # GPU (dri), MIDI (ALSA sequencer /dev/snd/seq, USB hot-plug; libasound from the runtime) and game
+                           # controllers: /dev/input (evdev) and /dev/hidraw* (PlayStation/Switch lights and rumble).
+                           # --device=input is narrower but needs Flatpak 1.15.6+ and skips hidraw.
   - --filesystem=xdg-music:ro   # sound files used by "Play sound"
   - --talk-name=org.kde.StatusNotifierWatcher   # tray icon (StatusNotifierItem); without it Cuebot runs trayless
 modules:
