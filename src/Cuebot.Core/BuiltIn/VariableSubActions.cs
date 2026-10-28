@@ -117,23 +117,40 @@ public sealed class ClearTemporaryGlobalsSubAction : ISubActionHandler
     }
 }
 
+/// <summary>
+/// Get Random Number. "Between": an integer from min to max (inclusive) in the chosen argument (default %random%; the
+/// Streamer.bot importer uses %randomNumber%). "Next Float": %randomFloat% in [0, 1) and %randomPercent% (0-100).
+/// </summary>
 public sealed class RandomNumberSubAction : ISubActionHandler
 {
+    public const string Between = "Between";
+    public const string NextFloat = "Next Float";
+
     public string TypeId => "core.randomNumber";
     public string Category => Categories.Variables;
     public string DisplayName => "Random number";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
-        new("name", "Store in argument") { DefaultValue = "random" },
+        new("type", "Type", ParameterKind.Choice) { DefaultValue = Between, Choices = [Between, NextFloat] },
+        new("name", "Store in argument") { DefaultValue = "random", Help = "Between only; Next Float sets %randomFloat% and %randomPercent%" },
         new("min", "Minimum", ParameterKind.Number) { DefaultValue = "1" },
         new("max", "Maximum (inclusive)", ParameterKind.Number) { DefaultValue = "100" },
     ];
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
+        var random = context.Globals.Text.Random;
+        if (string.Equals(p["type"].Trim(), NextFloat, StringComparison.OrdinalIgnoreCase))
+        {
+            var value = random.NextDouble();
+            context.Args["randomFloat"] = value;
+            context.Args["randomPercent"] = (int)Math.Round(value * 100, MidpointRounding.AwayFromZero);
+            return Task.FromResult(SubActionResult.Next);
+        }
         var min = p.GetInt("min", 1);
         var max = Math.Max(min, p.GetInt("max", 100));
-        context.Args[p["name"]] = (int)context.Globals.Text.Random.NextInt64(min, (long)max + 1);
+        var name = p["name"].Trim().Length > 0 ? p["name"].Trim() : "random";
+        context.Args[name] = (int)random.NextInt64(min, (long)max + 1);
         return Task.FromResult(SubActionResult.Next);
     }
 }

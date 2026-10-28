@@ -70,7 +70,8 @@ internal sealed class TextTemplate
         return new TextTemplate(nodes, literal);
     }
 
-    internal static bool IsNameChar(char c) => char.IsAsciiLetterOrDigit(c) || c is '_' or '.';
+    // '[' and ']' allow indexed names such as %match[1]% and %fw.variants[0].id%.
+    internal static bool IsNameChar(char c) => char.IsAsciiLetterOrDigit(c) || c is '_' or '.' or '[' or ']';
 
     private sealed class Parser(string s)
     {

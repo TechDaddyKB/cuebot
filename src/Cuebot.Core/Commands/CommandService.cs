@@ -137,6 +137,7 @@ public sealed class CommandService : IPeriodicService, IDisposable
     {
         var platform = chat.GetString("platform");
         var userKey = CommandStore.UserKey(platform, chat.GetString("userId"), UserName(chat));
+        var kind = chat.GetString("messageKind");
         var args = new Dictionary<string, object?>(chat, StringComparer.OrdinalIgnoreCase)
         {
             ["command"] = match.Command,
@@ -145,18 +146,27 @@ public sealed class CommandService : IPeriodicService, IDisposable
             ["commandGroup"] = command.Group,
             ["commandMode"] = command.Mode.ToString(),
             ["commandLocation"] = command.Location.ToString(),
-            ["rawInput"] = chat.GetString("message"),
+            // Streamer.bot: rawInput is the text after the command; the whole message stays in %message%.
+            ["rawInput"] = match.Input,
+            ["commandSource"] = platform.ToLowerInvariant(),
+            ["commandType"] = kind.Length == 0 ? "message" : kind.ToLowerInvariant(),
         };
+        if (!args.ContainsKey("msgId") && chat.GetString("messageId") is { Length: > 0 } msgId) args["msgId"] = msgId;
 
         if (ChatArgs.RoleOf(chat) != ChatPermission.Broadcaster)
         {
-            var cooldown = Cooldowns.TryStart(command.Id.ToString(), userKey,
-                Seconds(command.GlobalCooldownSeconds), Seconds(command.UserCooldownSeconds));
+            var key = command.Id.ToString();
+            var cooldown = Cooldowns.TryStart(key, userKey, Seconds(command.GlobalCooldownSeconds), Seconds(command.UserCooldownSeconds));
             if (!cooldown.Allowed)
             {
                 args["cooldownType"] = cooldown.Kind.ToString();
                 args["remaining"] = (int)Math.Ceiling(cooldown.Remaining.TotalSeconds);
                 args["remainingMs"] = (long)Math.Ceiling(cooldown.Remaining.TotalMilliseconds);
+                var global = (int)Math.Ceiling(Cooldowns.GlobalRemaining(key).TotalSeconds);
+                var user = (int)Math.Ceiling(Cooldowns.UserRemaining(key, userKey).TotalSeconds);
+                args["globalCooldownLeft"] = global;
+                args["userCooldownLeft"] = user;
+                args["cooldownLeft"] = Math.Max(global, user);
                 return new BotEvent(CooldownEvent, args);
             }
         }
@@ -170,8 +180,12 @@ public sealed class CommandService : IPeriodicService, IDisposable
         if (command.Mode == CommandMode.Regex)
         {
             args["match"] = match.Matched;
+            args["match[0]"] = match.Matched;
+            args["match.count"] = match.Groups.Count + 1;
+            var index = 1;
             foreach (var (name, value) in match.Groups)
             {
+                args[$"match[{index++}]"] = value;
                 args[int.TryParse(name, NumberStyles.None, CultureInfo.InvariantCulture, out _) ? "group" + name : name] = value;
             }
         }

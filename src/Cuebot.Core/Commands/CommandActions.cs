@@ -78,6 +78,7 @@ public sealed class GetCommandStateSubAction(CommandStore store) : CommandSubAct
     {
         var command = Require(p["command"]);
         context.Args["commandEnabled"] = command.Enabled;
+        context.Args["commandState"] = command.Enabled;
         context.Args["commandStateName"] = command.Name;
         context.Args["commandStateId"] = command.Id.ToString();
         context.Args["commandStateGroup"] = command.Group;
@@ -121,6 +122,9 @@ public sealed class GetCommandGroupStateSubAction(CommandStore store) : CommandS
         context.Args["commandGroupEnabled"] = group.Length > 0 && enabled == group.Length;
         context.Args["commandGroupEnabledCount"] = enabled;
         context.Args["commandGroupCount"] = group.Length;
+        context.Args["commandGroupState"] = enabled == 0 ? 0 : enabled == group.Length ? 1 : 2;
+        context.Args["commandsEnabled"] = group.Where(c => c.Enabled).Select(c => c.Id.ToString()).ToList();
+        context.Args["commandsDisabled"] = group.Where(c => !c.Enabled).Select(c => c.Id.ToString()).ToList();
         return Task.FromResult(SubActionResult.Next);
     }
 }
@@ -148,27 +152,37 @@ public sealed class SetCommandGroupStateSubAction(CommandStore store) : CommandS
     }
 }
 
-public sealed class GetCommandsSubAction(CommandStore store) : CommandSubActionBase(store)
+/// <summary>
+/// Lists commands into %&lt;argument&gt;% (joined), %&lt;argument&gt;List% (a list) and %&lt;argument&gt;Count%. Like
+/// Streamer.bot it can include commands whose Include option is off, and keep only commands the running user may use.
+/// </summary>
+public sealed class GetCommandsSubAction(CommandStore store, CommandService? service = null) : CommandSubActionBase(store)
 {
     public override string TypeId => "commands.getCommands";
     public override string DisplayName => "Get commands";
     public override IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
-        new("argument", "Store in argument") { DefaultValue = "commands", Help = "Also sets %<argument>Count%" },
-        new("group", "Only this group") { Suggestions = () => Store.Groups, Help = "Leave empty for every group" },
+        new("argument", "Store in argument") { DefaultValue = "commands", Help = "Also sets %<argument>List% and %<argument>Count%" },
+        new("group", "Only this group") { Suggestions = () => Store.Groups, Help = "Leave empty (or All) for every group" },
         new("show", "List", ParameterKind.Choice) { DefaultValue = "First alias", Choices = ["First alias", "All aliases", "Names"] },
         new("separator", "Separator") { DefaultValue = ", " },
         new("includeDisabled", "Include disabled commands", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("includeAll", "Include all (ignore each command's Include option)", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("onlyPermitted", "Only commands the user may use", ParameterKind.Boolean) { DefaultValue = "false", Help = "Checks the run's user (%user%, %userId%, roles) against each command's permissions" },
     ];
     private IReadOnlyList<ParameterDescriptor>? _parameters;
 
     public override Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
         var group = p["group"].Trim();
+        if (group.Equals("All", StringComparison.OrdinalIgnoreCase)) group = "";
         var includeDisabled = p.GetBool("includeDisabled");
+        var includeAll = p.GetBool("includeAll");
+        var onlyPermitted = p.GetBool("onlyPermitted") && service is not null;
         var commands = Store.Snapshot
-            .Where(c => c.Include && (includeDisabled || c.Enabled))
+            .Where(c => (includeAll || c.Include) && (includeDisabled || c.Enabled))
             .Where(c => group.Length == 0 || string.Equals(c.Group, group, StringComparison.OrdinalIgnoreCase))
+            .Where(c => !onlyPermitted || service!.IsPermitted(c, context.Args))
             .ToArray();
         var items = p["show"] switch
         {
@@ -179,6 +193,7 @@ public sealed class GetCommandsSubAction(CommandStore store) : CommandSubActionB
         var list = items.Where(s => s.Trim().Length > 0).ToArray();
         var name = p["argument"].Trim().Length > 0 ? p["argument"].Trim() : "commands";
         context.Args[name] = string.Join(p["separator"], list);
+        context.Args[name + "List"] = list.ToList();
         context.Args[name + "Count"] = list.Length;
         return Task.FromResult(SubActionResult.Next);
     }

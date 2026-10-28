@@ -62,7 +62,7 @@ public sealed class ActionEngine : IDisposable
     /// <summary>Find actions triggered by the event and start them. Returns the started runs (for tests).</summary>
     public IReadOnlyList<Task<bool>> Dispatch(BotEvent e)
     {
-        var started = new List<Task<bool>>();
+        var matches = new List<TriggerMatch>();
         foreach (var action in _profile.Snapshot.Actions)
         {
             if (!action.Enabled) continue;
@@ -73,22 +73,29 @@ public sealed class ActionEngine : IDisposable
                 if (type is null || !type.EventTypes.Contains(e.Type)) continue;
 
                 var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase);
+                var settings = ParameterValues.From(type.Parameters, trigger.Settings);
                 bool matched;
                 try
                 {
-                    matched = type.Matches(e, trigger, ParameterValues.From(type.Parameters, trigger.Settings), args);
+                    matched = type.Matches(e, trigger, settings, args);
                 }
                 catch (Exception ex)
                 {
                     _log.Error(Source, $"Trigger '{type.DisplayName}' on '{action.Name}' failed", ex);
                     continue;
                 }
-                if (!matched) continue;
-
-                AddTriggerArgs(args, type, e.Type);
-                started.Add(RunAsync(action, args, source: type.DisplayName));
-                break; // one run per event per action, even if several triggers match
+                if (matched) matches.Add(new TriggerMatch(action, trigger, type, args, RangeTriggers.Width(type, settings)));
             }
+        }
+
+        var started = new List<Task<bool>>();
+        var ran = new HashSet<Guid>();
+        foreach (var m in RangeTriggers.MostSpecific(matches))
+        {
+            if (!ran.Add(m.Action.Id)) continue; // one run per event per action, even if several triggers match
+            TriggerArgs.AddDerived(m.Args);
+            AddTriggerArgs(m.Args, m.Type, e.Type);
+            started.Add(RunAsync(m.Action, m.Args, source: m.Type.DisplayName));
         }
         return started;
     }
@@ -123,6 +130,7 @@ public sealed class ActionEngine : IDisposable
             ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
         var type = trigger is null ? null : _registry.GetTrigger(trigger.Type);
+        TriggerArgs.AddDerived(runArgs);
         if (type is not null) AddTriggerArgs(runArgs, type, type.EventTypes.FirstOrDefault() ?? "");
         runArgs["isTest"] = true;
         return RunAsync(action, runArgs, depth: 0, $"Test: {type?.DisplayName ?? "custom arguments"}", ct);

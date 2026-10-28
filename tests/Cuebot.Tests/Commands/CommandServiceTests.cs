@@ -60,7 +60,10 @@ public class CommandServiceTests : IDisposable
         Assert.Equal("big", e.Args["input0"]);
         Assert.Equal("world", e.Args["input1"]);
         Assert.Equal(2, e.Args["inputCount"]);
-        Assert.Equal("!hello big world", e.Args["rawInput"]);
+        Assert.Equal("big world", e.Args["rawInput"]);
+        Assert.Equal("!hello big world", e.Args["message"]);
+        Assert.Equal("twitch", e.Args["commandSource"]);
+        Assert.Equal("message", e.Args["commandType"]);
         Assert.Equal("alice", e.Args["user"]);
         Assert.Equal("1", e.Args["userId"]);
         Assert.Equal("Twitch", e.Args["platform"]);

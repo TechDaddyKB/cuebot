@@ -51,6 +51,13 @@ public sealed class TriggerDefinition
     public string Type { get; set; } = "";
     public bool Enabled { get; set; } = true;
     public Dictionary<string, string> Settings { get; set; } = [];
+
+    /// <summary>
+    /// Range triggers only (a trigger type with a min/max setting pair, e.g. bits): when several triggers of the same
+    /// type match an event, only the narrowest ranges run, unless a trigger is marked Always Run. JSON: "alwaysRun".
+    /// </summary>
+    public bool AlwaysRun { get; set; }
+
     public NodeLayout? Layout { get; set; }
 }
 
