@@ -238,7 +238,7 @@ public sealed class StreamerBotWebSocketTests : IAsyncLifetime
         Assert.Equal("Twitch", S(e["event"]!["source"]));
         Assert.Equal("ChatMessage", S(e["event"]!["type"]));
         Assert.True(DateTimeOffset.TryParse(S(e["timeStamp"]), out _));
-        Assert.Equal("hi there", S(e["data"]!["message"]));
+        Assert.Equal("hi there", S(e["data"]!["message"]!["message"]));
         Assert.Equal("hi there", S(e["data"]!["text"]));
         Assert.Equal("Ann", S(e["data"]!["user"]!["name"]));
         Assert.Equal("42", S(e["data"]!["user"]!["id"]));

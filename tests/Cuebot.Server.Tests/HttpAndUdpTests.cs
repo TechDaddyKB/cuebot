@@ -88,7 +88,13 @@ public sealed class HttpServerTests : IAsyncLifetime
         var one = JsonNode.Parse(await _http.GetStringAsync("/api/GetGlobal?variable=hp"))!;
         Assert.Equal("hp", one["variable"]!["name"]!.GetValue<string>());
 
-        Assert.NotNull(JsonNode.Parse(await _http.GetStringAsync("/api/GetCredits"))!["credits"]);
+        var credits = JsonNode.Parse(await _http.GetStringAsync("/api/GetCredits"))!;
+        Assert.NotNull(credits["credits"]);
+        Assert.NotNull(credits["Events"]!["Follows"]);          // the documented HTTP shape
+        Assert.NotNull(credits["User"]!["Moderator"]);
+        Assert.NotNull(credits["TopBits"]!["All"]);
+        var test = JsonNode.Parse(await _http.GetStringAsync("/TestCredits"))!;
+        Assert.NotEmpty(test["Events"]!["Follows"]!.AsArray());
         using var clear = await _http.GetAsync("/api/ClearCredits");
         Assert.Equal(HttpStatusCode.NoContent, clear.StatusCode);
         using var firstWords = await _http.GetAsync("/api/ClearFirstWordsCache");

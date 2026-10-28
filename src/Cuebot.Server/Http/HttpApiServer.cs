@@ -157,6 +157,7 @@ public sealed class HttpApiServer : IAsyncDisposable
                 context.Response.StatusCode = 204;
                 return;
             }
+            if (name is "GetCredits" or "TestCredits") result = StreamerBotRequests.HttpCredits(result);
             await Json(context, 200, result).ConfigureAwait(false);
         }
         catch (RequestException ex)
