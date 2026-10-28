@@ -137,9 +137,8 @@ public sealed class RemoteHub : IApiWebSocketRoute, IConnectionStatus, IAsyncDis
     // ---- Instances (remote.json) -----------------------------------------------------------------------------------
 
     /// <summary>Connects every enabled instance in remote.json. Never throws.</summary>
-    public async Task StartAsync(CancellationToken ct = default)
-    {
-        foreach (var definition in _settings.Instances.Where(d => d.Enabled).ToArray())
+    public Task StartAsync(CancellationToken ct = default) =>
+        Task.WhenAll(_settings.Instances.Where(d => d.Enabled).ToArray().Select(async definition =>
         {
             try
             {
@@ -149,8 +148,7 @@ public sealed class RemoteHub : IApiWebSocketRoute, IConnectionStatus, IAsyncDis
             {
                 _log.Error(Source, $"Could not start the link to '{definition.Name}'", ex);
             }
-        }
-    }
+        }));
 
     /// <summary>Starts (or restarts, picking up edits) the link to <paramref name="definition"/>; returns after the first attempt.</summary>
     public async Task ConnectAsync(RemoteInstanceDefinition definition, CancellationToken ct = default)

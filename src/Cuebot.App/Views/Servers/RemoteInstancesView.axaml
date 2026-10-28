@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sv="using:Cuebot.App.ViewModels.Servers"
+             x:Class="Cuebot.App.Views.Servers.RemoteInstancesView"
+             x:DataType="sv:RemoteInstancesViewModel">
+  <Border Classes="card">
+    <StackPanel Spacing="8">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Content="+ Instance" Command="{Binding AddInstanceCommand}" />
+        <TextBlock Classes="h2" Text="Remote instances" VerticalAlignment="Center" />
+      </DockPanel>
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Link other Cuebot instances (another PC, a second streamer) to send signals between them. Sub-actions: Send remote signal, Wait for remote signal. Triggers: Remote signal received, Remote instance connected / disconnected. A link works both ways, so only one side has to add the other." />
+      <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto">
+        <TextBlock Text="This instance's name" />
+        <TextBox Grid.Row="1" Text="{Binding InstanceName}" PlaceholderText="{Binding SelfName}" />
+        <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"
+                  Content="Remote signals also release 'Wait for local signal'" IsChecked="{Binding ReleaseLocalWaiters}" />
+      </Grid>
+      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding AcceptHint}" />
+      <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />
+
+      <ItemsControl ItemsSource="{Binding Instances}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="sv:RemoteInstanceViewModel">
+            <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,1,0,0" Padding="0,8">
+              <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="180,8,*,8,110,8,*" RowDefinitions="Auto,Auto">
+                  <TextBlock Text="Name" />
+                  <TextBlock Grid.Column="2" Text="Host or URL" />
+                  <TextBlock Grid.Column="4" Text="API port" />
+                  <TextBlock Grid.Column="6" Text="Its API token" />
+                  <TextBox Grid.Row="1" Text="{Binding Name}" PlaceholderText="Name" />
+                  <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Host}" PlaceholderText="192.168.1.20" />
+                  <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+                  <TextBox Grid.Row="1" Grid.Column="6" Text="{Binding Token}" PasswordChar="•" PlaceholderText="cb_..." />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <CheckBox Content="Connect with Cuebot" IsChecked="{Binding Enabled}" />
+                  <Button Content="Connect" Command="{Binding ConnectCommand}" />
+                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+                  <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                  <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Text="Changed: press Connect to reconnect with the new settings." Foreground="{DynamicResource CuebotAccent}"
+                           IsVisible="{Binding HasPendingChanges}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <TextBlock Text="Connected to this instance" FontWeight="SemiBold" Margin="0,4,0,0" />
+      <TextBlock Classes="muted" Text="None" IsVisible="{Binding HasNoIncoming}" />
+      <ItemsControl ItemsSource="{Binding Incoming}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock Text="{Binding}" FontSize="13" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </Border>
+</UserControl>
