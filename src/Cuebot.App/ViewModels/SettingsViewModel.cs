@@ -148,7 +148,7 @@ public sealed partial class SettingsViewModel : PageViewModel
         {
             var culture = Shell.TextCulture.Resolve(TextCulture?.Name);
             var now = DateTime.Now;
-            return string.Create(culture, $"%amount:c2% → {1234.5m:C2}    %n:N2% → {1234.5m:N2}    %date% → {now:d}    %time% → {now:t}");
+            return string.Create(culture, $"%amount:c2% → {1234.5m:C2}    %n:N2% → {1234.5m:N2}    %date% → {now.ToString(Cuebot.Core.Variables.BuiltInVariables.DateFormat, culture)}    %time% → {now.ToString(Cuebot.Core.Variables.BuiltInVariables.TimeFormat, culture)}");
         }
     }
 

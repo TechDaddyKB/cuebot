@@ -5,8 +5,10 @@ namespace Cuebot.Core.Variables;
 /// <summary>
 /// Variables available in every text field. Action arguments with the same name win.
 /// <list type="table">
-/// <item><term>%date%</term><description>local date, culture short date ("d"); <c>%date:fmt%</c> formats the current local date/time</description></item>
-/// <item><term>%time%</term><description>local time, short ("t"); <c>%time:fmt%</c> likewise</description></item>
+/// <item><term>%date%</term><description>local date as Streamer.bot writes it, "yyyy/MM/dd" (the "/" is the culture's date
+/// separator); <c>%date:fmt%</c> formats the current local date/time</description></item>
+/// <item><term>%time%</term><description>local time as Streamer.bot writes it, "hh:mm" (12-hour, no AM/PM); <c>%time:fmt%</c>
+/// likewise, so <c>%time:t%</c> is the culture's short time</description></item>
 /// <item><term>%longtime%</term><description>local time with seconds ("T")</description></item>
 /// <item><term>%datetime%</term><description>local date and time ("g")</description></item>
 /// <item><term>%unixtime%</term><description>seconds since 1970-01-01 UTC; %unixtimems% in milliseconds</description></item>
@@ -19,6 +21,12 @@ namespace Cuebot.Core.Variables;
 /// </summary>
 public static class BuiltInVariables
 {
+    /// <summary>Format of %date% without one: Streamer.bot's.</summary>
+    public const string DateFormat = "yyyy/MM/dd";
+
+    /// <summary>Format of %time% without one: Streamer.bot's.</summary>
+    public const string TimeFormat = "hh:mm";
+
     public static IReadOnlyList<string> Names { get; } =
     [
         "date", "time", "longtime", "datetime", "unixtime", "unixtimems", "filedatetime",
@@ -35,11 +43,11 @@ public static class BuiltInVariables
         {
             case "date":
                 value = env.LocalNow();
-                format ??= "d";
+                format ??= DateFormat;
                 return true;
             case "time":
                 value = env.LocalNow();
-                format ??= "t";
+                format ??= TimeFormat;
                 return true;
             case "longtime":
                 value = env.LocalNow();

@@ -23,7 +23,7 @@ symbol. Values without a format are always written invariant (`5.5`, `true`). Ho
 
 ### Built-ins
 
-`%date%` (short date), `%time%` (short time), `%longtime%`, `%datetime%`, `%unixtime%`, `%unixtimems%`,
+`%date%` (`yyyy/MM/dd`), `%time%` (`hh:mm`, 12-hour; both as Streamer.bot writes them), `%longtime%`, `%datetime%`, `%unixtime%`, `%unixtimems%`,
 `%filedatetime%` (`yyyyMMdd_HHmmss`), `%lf%`, `%cr%`, `%crlf%`, `%tab%`, `%random%` (1-100), `%random:a-b%`,
 `%randomdecimal%` (0-1), `%guid%`. `%date:fmt%` / `%time:fmt%` format the current local time. Arguments with the
 same name win.
