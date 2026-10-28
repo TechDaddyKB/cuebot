@@ -559,9 +559,19 @@ internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Actio
     {
         if (!settings.Scopes.Contains(TwitchScopes.ReadChatters)) return;
         var chatters = await api.GetChattersAsync(ct).ConfigureAwait(false);
+        bool live;
+        try
+        {
+            live = await api.GetStreamAsync(null, ct).ConfigureAwait(false) is not null;
+        }
+        catch (Exception ex) when (ex is TwitchApiException or HttpRequestException)
+        {
+            live = false;   // Streamer.bot's isLive; the viewer list matters more than this flag
+        }
         publish(new BotEvent(TwitchEventTypes.PresentViewers, new Dictionary<string, object?>
         {
             ["count"] = chatters.Count,
+            ["isLive"] = live,
             ["users"] = string.Join(",", chatters.Select(c => c.UserLogin)),
             ["userIds"] = string.Join(",", chatters.Select(c => c.UserId)),
         }));

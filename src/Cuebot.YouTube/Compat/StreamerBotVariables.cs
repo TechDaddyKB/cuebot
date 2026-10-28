@@ -103,6 +103,38 @@ internal static class StreamerBotVariables
                 Set(a, "favoriteCount", 0L);
                 break;
         }
+
+        Placeholders(type, a, broadcast is not null || a.ContainsKey("broadcast.id"));
+    }
+
+    /// <summary>
+    /// Documented by Streamer.bot but not available from the YouTube Data API (or not in Cuebot's broadcast model):
+    /// present with a neutral value so imported actions that read them keep working. Runs last, so real values win.
+    /// </summary>
+    private static void Placeholders(string type, Dictionary<string, object?> a, bool hasBroadcast)
+    {
+        if (a.ContainsKey("userType"))
+        {
+            Placeholder(a, "isSubscribed", false);   // YouTubeUser: the Data API does not say whether a chatter subscribes
+            Placeholder(a, "userPreviousActive", default(DateTime));
+        }
+        if (hasBroadcast)
+        {
+            Placeholder(a, "broadcast.publishedAt", default(DateTime));
+            Placeholder(a, "broadcast.defaultLanguage", "");
+            Placeholder(a, "broadcast.defaultAudioLanguage", "");
+            Placeholder(a, "broadcast.tags", "");
+        }
+        switch (type)
+        {
+            case Y.ChatMessage:
+                Placeholder(a, "parts", "");    // the Data API sends the text only, no message parts or emote positions
+                Placeholder(a, "emotes", "");
+                break;
+            case Y.SuperSticker:
+                Placeholder(a, "stickerImageUrl", "");
+                break;
+        }
     }
 
     /// <summary>The documented <c>input#Escaped</c> spelling (First Words) next to <c>inputEscaped#</c>.</summary>

@@ -127,8 +127,23 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
   `%createdByUsername%`, `%raidUserName%`, `%createClipUrl%`, `%followAgeLong%`, ...): Twitch ~64/74 flagged triggers and
   29/35 sub-actions, YouTube 10/12 + 2/2, Kick 11/13 + 12/12. Integrations too: OBS `props.*`/`currentScene`/`success`,
   Streamlabs Desktop `sd.*`, Crowd Control `effect.*`/`game.*`/`gamePack.*`, Fourthwall `fw.*`, Patreon, Pulsoid/HypeRate
-  `measuredAt`, Voicemod `voice.*`/`soundboard.*`, VTube Studio `clickPosition.*`/`model.*`. Not set where the platform
-  APIs lack the data (e.g. Twitch `multiMonthTenure`, `bonusGifts`, `shoutoutId`; YouTube message `parts`/`emotes`).
+  `measuredAt`, Voicemod `voice.*`/`soundboard.*`, VTube Studio `clickPosition.*`/`model.*`.
+- **Placeholders (w16).** Where Streamer.bot documents a variable the platform APIs cannot supply, it is still present,
+  with a neutral value of the documented type (0, false, "", an empty list, `default(DateTime)`), so actions written for
+  Streamer.bot that read it do not fail; a real value always wins (`StreamerBotArgs.Placeholder`):
+  - Twitch: Subscription `isMultiMonth` (false) / `multiMonthDuration` (0) when the event has no duration,
+    `multiMonthTenure` (0, also Resubscription); Gift Subscription recipient `cumulativeMonths` (0); Gift Bomb and shared
+    Community Sub Gift `bonusGifts` (false); Stream Online `tagCount` (0), `tags` (empty list), `tagsDelimited` ("");
+    Stream Update `gameBoxArt`, `oldGameBoxArt` (""); Shoutout Created `shoutoutId` (""); Shared Chat Session
+    `host.isSubscribed`/`isModerator`/`isVip` (false); TwitchChat `isAction` (false); TwitchSharedChatSource
+    `source.isSubscribed`/`isModerator`/`isVip` (false); TwitchUser `subscriptionTier` (0), `userGroups` (""),
+    `userPreviousActive`; Get User Info `targetLastActive`, `targetPreviousActive`.
+  - Now real instead: Stream Online `game`/`gameId` (last known category), TwitchChat `inSharedChat` (shared chat
+    session state), Present Viewers `isLive` (a stream lookup per poll); they fall back to the placeholder when unknown.
+  - YouTube: Message `parts`, `emotes` (""); Super Sticker `stickerImageUrl` (""); YouTubeUser `isSubscribed` (false),
+    `userPreviousActive`; YouTubeBroadcast `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags`.
+  - Kick: Subscription / Resubscription `badgeCount` (0), `badge` (empty list); KickUser `userGroups` (""),
+    `userPreviousActive`; KickBroadcaster `broadcastUserProfileImage` ("") when no picture is known.
 - **Engine and core.** Queue sub-actions (clear, blocking, pause), Set Trigger / Sub-Action State, Set Sub-Action Weight,
   Get/Set Action Group State, Trigger Custom Event, Pick Color; Get Input is Streamer.bot's dialog (the splitter is
   "Split text into inputs"); Random Number Next Float; Delay random range; If/Else regex captures and exists / does not

@@ -92,6 +92,27 @@ internal static partial class StreamerBotVariables
                 SetTime(a, "endedAt", at);
                 break;
         }
+
+        Placeholders(type, a, broadcaster is { UserId.Length: > 0 });
+    }
+
+    /// <summary>
+    /// Documented by Streamer.bot but not available from Kick's API: present with a neutral value so imported actions
+    /// that read them keep working. Runs last, so real values win.
+    /// </summary>
+    private static void Placeholders(string type, Dictionary<string, object?> a, bool hasBroadcaster)
+    {
+        if (hasBroadcaster) Placeholder(a, "broadcastUserProfileImage", "");
+        if (a.ContainsKey("userType"))
+        {
+            Placeholder(a, "userGroups", "");          // KickUser: comma-delimited groups (Streamer.bot user database)
+            Placeholder(a, "userPreviousActive", default(DateTime));
+        }
+        if (type is K.Subscription or K.Resubscription)
+        {
+            Placeholder(a, "badgeCount", 0);            // subscription events carry no badges
+            Placeholder(a, "badge", new List<Dictionary<string, object?>>());
+        }
     }
 
     /// <summary>KickChat: messageStripped, colorR/G/B, emotes.#.*, badge.#.* (set by the factory) and the input words.</summary>

@@ -542,6 +542,9 @@ internal static class TwitchSubActions
                     c.Args["targetTitle"] = channel.Title;
                 }
                 WriteTargetInfo(c, user, sbChannel, sub);
+                // Streamer.bot reads these from its user database; Helix has nothing like it (placeholders).
+                Cuebot.Core.Variables.StreamerBotArgs.Placeholder(c.Args, "targetLastActive", default(DateTime));
+                Cuebot.Core.Variables.StreamerBotArgs.Placeholder(c.Args, "targetPreviousActive", default(DateTime));
             }),
         new("twitch.getFollowAge", "Get follow age (isFollowing, followedAt, followAgeDays, followAge)", [UserParam()],
             async (api, c, p, ct) =>

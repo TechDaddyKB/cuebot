@@ -16,6 +16,13 @@ public static class StreamerBotArgs
         if (!args.ContainsKey(name) && args.TryGetValue(from, out var value)) args[name] = value;
     }
 
+    /// <summary>
+    /// A variable Streamer.bot documents but the platform's API cannot supply: set to a neutral value of the documented
+    /// type (0, false, "", an empty list, <c>default(DateTime)</c>) unless already present, so actions written for
+    /// Streamer.bot that read it do not fail. Each module lists its placeholders in <c>docs/PARITY.md</c>.
+    /// </summary>
+    public static void Placeholder(IDictionary<string, object?> args, string name, object? value) => Set(args, name, value);
+
     /// <summary>Sets <paramref name="name"/> unless it is already present.</summary>
     public static void Set(IDictionary<string, object?> args, string name, object? value)
     {
