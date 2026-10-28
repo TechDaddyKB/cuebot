@@ -74,4 +74,8 @@ internal sealed class KickChatSender(KickService kick) : IChatSender
     public bool CanSend => kick.IsBroadcasterSignedIn && kick.Settings.Broadcaster.UserId > 0;
 
     public Task SendAsync(string text, CancellationToken ct = default) => kick.SendChatMessageAsync(text, ct: ct);
+
+    public Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default) =>
+        kick.SendChatMessageAsync(text, options.Bot == true, fallback: true,
+            string.IsNullOrWhiteSpace(options.ReplyTo) ? null : options.ReplyTo.Trim(), options.Internal, ct);
 }

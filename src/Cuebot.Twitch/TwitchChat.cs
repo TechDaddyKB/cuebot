@@ -111,4 +111,9 @@ internal sealed class TwitchChatSender(TwitchService twitch) : IChatSender
     public string Platform => TwitchChatAdapter.PlatformName;
     public bool CanSend => twitch.State == Cuebot.Core.ConnectionState.Connected;
     public Task SendAsync(string text, CancellationToken ct = default) => twitch.SendChatMessageAsync(text, ct);
+
+    public Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default) =>
+        twitch.Api.SendChatMessageAsync(text,
+            options.Bot switch { true => TwitchSender.Bot, false => TwitchSender.Broadcaster, null => TwitchSender.Default },
+            string.IsNullOrWhiteSpace(options.ReplyTo) ? null : options.ReplyTo.Trim(), options.Internal, ct);
 }

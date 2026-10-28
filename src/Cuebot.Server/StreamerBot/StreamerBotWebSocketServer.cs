@@ -48,11 +48,16 @@ public sealed class StreamerBotWebSocketServer : IWebSocketHandler, IAsyncDispos
     }
 
     /// <summary>Forwards a bus event to the sessions subscribed to its Streamer.bot name.</summary>
-    public Task<int> PublishAsync(BotEvent e)
+    public async Task<int> PublishAsync(BotEvent e)
     {
-        if (_sessions.IsEmpty) return Task.FromResult(0);
-        var (name, message) = StreamerBotEnvelope.FromBotEvent(e);
-        return SendEventAsync(name, message);
+        if (_sessions.IsEmpty) return 0;
+        var (name, message) = StreamerBotEnvelope.FromBotEvent(e, _requests.PayloadServices);
+        var sent = await SendEventAsync(name, message).ConfigureAwait(false);
+        if (StreamerBotEnvelope.CustomEvent(e) is { } custom)
+        {
+            sent += await SendEventAsync(StreamerBotEnvelope.CustomEventName, custom).ConfigureAwait(false);
+        }
+        return sent;
     }
 
     /// <summary>Whether any connected session is subscribed to <paramref name="name"/> (lets callers skip building costly payloads).</summary>

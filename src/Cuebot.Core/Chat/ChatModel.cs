@@ -62,4 +62,22 @@ public interface IChatSender
     bool CanSend { get; }
 
     Task SendAsync(string text, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sends with <paramref name="options"/> (account, internal flag, reply, broadcast). Platforms that support none
+    /// of them send as <see cref="SendAsync(string, CancellationToken)"/> does.
+    /// </summary>
+    Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default) => SendAsync(text, ct);
+}
+
+/// <summary>How a chat message is sent (Streamer.bot's SendMessage options).</summary>
+/// <param name="Bot">True: the bot account, false: the broadcaster, null: the platform's setting.</param>
+/// <param name="Internal">
+/// Mark the echo of the message <c>isInternal</c>, so commands that ignore internal messages skip it (Cuebot's default).
+/// </param>
+/// <param name="ReplyTo">Message id to reply to (Twitch, Kick).</param>
+/// <param name="BroadcastId">Broadcast whose chat receives the message (YouTube; the latest monitored one when null).</param>
+public sealed record ChatSendOptions(bool? Bot = null, bool Internal = true, string? ReplyTo = null, string? BroadcastId = null)
+{
+    public static readonly ChatSendOptions Default = new();
 }

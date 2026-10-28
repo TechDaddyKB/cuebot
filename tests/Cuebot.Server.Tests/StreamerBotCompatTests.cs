@@ -428,4 +428,263 @@ public sealed class StreamerBotCompatTests
         var commands = await Ask("GetCommands");
         Assert.NotNull(commands["commands"]);
     }
+
+    // ---- Account details, emotes, pronouns, chat options ----------------------------------------------------------
+
+    private static Func<string, object?, Task<JsonObject>> Asker(TestBot bot)
+    {
+        var requests = new StreamerBotRequests(bot.Services);
+        return (request, body) => requests.HandleAsync(request, System.Text.Json.JsonSerializer.SerializeToElement(body ?? new { }));
+    }
+
+    [Fact]
+    public async Task GetBroadcaster_fills_the_accounts_from_the_platform_modules()
+    {
+        await using var bot = new TestBot(options: StreamerBotFixtures.Options());
+        var response = await Asker(bot)("GetBroadcaster", null);
+
+        var twitch = response["platforms"]!["twitch"]!;
+        Assert.Equal("Streamer", S(twitch["broadcastUser"]));
+        Assert.Equal("streamer", S(twitch["broadcastUserName"]));
+        Assert.Equal("1001", S(twitch["broadcastUserId"]));
+        Assert.True(twitch["broadcastIsAffiliate"]!.GetValue<bool>());
+        Assert.False(twitch["broadcastIsPartner"]!.GetValue<bool>());
+        Assert.Equal("HelperBot", S(twitch["botUser"]));
+        Assert.Equal("helperbot", S(twitch["botUserName"]));
+        Assert.Equal("1002", S(twitch["botUserId"]));
+        Assert.Equal("Connected", S(twitch["state"]));
+
+        var youtube = response["platforms"]!["youtube"]!;
+        Assert.Equal("Streamer Channel", S(youtube["broadcastUserName"]));
+        Assert.Equal("UC1001", S(youtube["broadcastUserId"]));
+        Assert.Equal("https://example.com/yt.png", S(youtube["broadcastUserProfileImage"]));
+
+        var kick = response["platforms"]!["kick"]!;
+        Assert.Equal("kickstreamer", S(kick["broadcasterLogin"]));
+        Assert.Equal("KickStreamer", S(kick["broadcasterUserName"]));
+        Assert.Equal("5001", S(kick["broadcasterUserId"]));
+        Assert.Equal("https://example.com/kick.png", S(kick["broadcasterProfileUrl"]));
+
+        Assert.Equal(["twitch"], response["connected"]!.AsArray().Select(S));
+        Assert.Equal(["youtube", "kick"], response["disconnected"]!.AsArray().Select(S));
+    }
+
+    [Fact]
+    public async Task GetBroadcaster_without_platform_modules_reports_the_connection_states()
+    {
+        await using var bot = new TestBot();
+        var response = await Asker(bot)("GetBroadcaster", null);
+        Assert.Equal("Connected", S(response["platforms"]!["twitch"]!["state"]));
+        Assert.Null(response["platforms"]!["kick"]);
+        Assert.Equal(["twitch"], response["connected"]!.AsArray().Select(S));
+        Assert.Equal(["youtube"], response["disconnected"]!.AsArray().Select(S));
+    }
+
+    [Fact]
+    public async Task Emote_lists_come_from_the_loaded_sets_and_the_emotes_seen_in_chat()
+    {
+        await using var bot = new TestBot(options: StreamerBotFixtures.Options());
+        bot.Services.Emotes!.FindEmotes("Twitch", "Kappa", new Dictionary<string, object?> { ["emotes"] = "25:0-4" });
+        var emotes = (await Asker(bot)("TwitchGetEmotes", null))["emotes"]!;
+
+        var seven = Assert.Single(emotes["sevenTvEmotes"]!.AsArray())!;
+        Assert.Equal("catJAM", S(seven["name"]));
+        Assert.Equal("7TVGlobal", S(seven["type"]));
+        Assert.True(seven["zeroWidth"]!.GetValue<bool>());
+        Assert.Equal("BTTVGlobal", S(Assert.Single(emotes["bttvEmotes"]!.AsArray())!["type"]));
+        Assert.Equal("OMEGALUL", S(Assert.Single(emotes["ffzEmotes"]!.AsArray())!["name"]));
+        var kappa = Assert.Single(emotes["userEmotes"]!.AsArray())!;
+        Assert.Equal("Kappa", S(kappa["name"]));
+        Assert.Equal("twitch", S(kappa["type"]));
+        Assert.StartsWith("https://static-cdn.jtvnw.net/emoticons/v2/25/", S(kappa["imageUrl"]));
+    }
+
+    [Fact]
+    public async Task Chat_payloads_list_third_party_emotes_and_cheermotes()
+    {
+        await using var bot = new TestBot(options: StreamerBotFixtures.Options());
+        var services = new StreamerBotPayloadServices(bot.Services.Pronouns, bot.Services.Emotes);
+        JsonObject Payload(string type, Dictionary<string, object?> args) =>
+            StreamerBotEnvelope.FromBotEvent(new BotEvent(type, new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase)), services)
+                .Message["data"]!.AsObject();
+
+        var chat = Payload("twitch.chatMessage", new(TwitchUser()) { ["message"] = "😀 Kappa catJAM", ["emotes"] = "25:2-6" });
+        var emotes = chat["message"]!["emotes"]!.AsArray();
+        Assert.Equal(["Twitch", "7TV"], emotes.Select(e => S(e!["type"])));
+        Assert.Equal(8, emotes[1]!["startIndex"]!.GetValue<int>());     // code points, as Twitch counts them
+        Assert.Equal(13, emotes[1]!["endIndex"]!.GetValue<int>());
+        Assert.Equal(0, emotes[0]!["bits"]!.GetValue<int>());
+
+        var cheer = Payload("twitch.cheer", new(TwitchUser()) { ["bits"] = 1100, ["message"] = "Cheer1000 hi Cheer100" });
+        var cheermotes = cheer["cheerEmotes"]!.AsArray();
+        Assert.Equal([1000, 100], cheermotes.Select(c => c!["bits"]!.GetValue<int>()));
+        Assert.Equal("#1db2a5", S(cheermotes[0]!["color"]));
+        Assert.Equal(13, cheermotes[1]!["startIndex"]!.GetValue<int>());
+        Assert.Contains("/actions/cheer/dark/animated/100/", S(cheermotes[1]!["imageUrl"]));
+
+        // Words that do not add up to the cheer's bits are not guessed at.
+        var unclear = Payload("twitch.cheer", new(TwitchUser()) { ["bits"] = 50, ["message"] = "Level99 Cheer50 x1" });
+        Assert.Empty(unclear["cheerEmotes"]!.AsArray());
+    }
+
+    [Fact]
+    public async Task GetUserPronouns_and_user_payloads_carry_streamer_bot_pronoun_forms()
+    {
+        await using var bot = new TestBot(options: StreamerBotFixtures.Options());
+        var ask = Asker(bot);
+
+        var ann = (await ask("GetUserPronouns", new { platform = "twitch", userLogin = "Ann" }))["pronoun"]!;
+        Assert.True(ann["userFound"]!.GetValue<bool>());
+        Assert.Equal("She", S(ann["pronounSubject"]));
+        Assert.Equal("Her", S(ann["pronounObject"]));
+        Assert.Equal("Her", S(ann["pronounPossessive"]));
+        Assert.Equal("Hers", S(ann["pronounPronoun"]));
+        Assert.Equal("Herself", S(ann["pronounReflexive"]));
+        Assert.Equal("Was", S(ann["pronounPastTense"]));
+        Assert.Equal("is", S(ann["pronounCurrentTenseLower"]));
+        Assert.Equal("s", S(ann["pronounPluralLower"]));
+        Assert.Equal("(She/Her)", S(ann["pronouns"]));
+        Assert.Equal("She/Her", S(ann["pronounsPlain"]));
+
+        var theo = (await ask("GetUserPronouns", new { platform = "twitch", userLogin = "theo" }))["pronoun"]!;
+        Assert.Equal("Themselves", S(theo["pronounReflexive"]));
+        Assert.Equal("Were", S(theo["pronounPastTense"]));
+        Assert.Equal("", S(theo["pronounPluralLower"]));
+
+        var nobody = (await ask("GetUserPronouns", new { platform = "twitch", userLogin = "nobody" }))["pronoun"]!;
+        Assert.False(nobody["userFound"]!.GetValue<bool>());
+        Assert.Equal("", S(nobody["pronounSubject"]));
+
+        // Payloads only use what is already known: ann was looked up above, bob never was.
+        var services = new StreamerBotPayloadServices(bot.Services.Pronouns, bot.Services.Emotes);
+        var chat = StreamerBotEnvelope.FromBotEvent(new BotEvent("twitch.chatMessage", TwitchUser()), services).Message["data"]!;
+        Assert.Equal("She", S(chat["user"]!["pronouns"]!["pronounSubject"]));
+        var bob = StreamerBotEnvelope.FromBotEvent(new BotEvent("twitch.chatMessage", TwitchUser("Bob", "bob", "7")), services).Message["data"]!;
+        Assert.False(bob["user"]!["pronouns"]!["userFound"]!.GetValue<bool>());
+        Assert.False(bot.Services.Pronouns!.TryGetCached("bob").Known);
+    }
+
+    [Fact]
+    public async Task SendMessage_passes_bot_internal_and_reply_options_to_the_chat_sender()
+    {
+        await using var bot = new TestBot();
+        var ask = Asker(bot);
+        await ask("SendMessage", new { platform = "twitch", message = "one", bot = true, @internal = false, replyId = "m1" });
+        await ask("SendMessage", new { platform = "twitch", message = "two", bot = "false" });
+        await ask("SendMessage", new { platform = "twitch", message = "three" });
+
+        var sent = bot.Sender.SentWithOptions.ToArray();
+        Assert.Equal(new ChatSendOptionsView(true, false, "m1"), View(sent[0].Options));
+        Assert.Equal(new ChatSendOptionsView(false, true, null), View(sent[1].Options));
+        Assert.Equal(["one", "two", "three"], bot.Sender.Sent);
+        Assert.Equal(2, sent.Length);   // no options: the plain send, as before
+
+        static ChatSendOptionsView View(Cuebot.Core.Chat.ChatSendOptions o) => new(o.Bot, o.Internal, o.ReplyTo);
+    }
+
+    private readonly record struct ChatSendOptionsView(bool? Bot, bool Internal, string? ReplyTo);
+
+    [Fact]
+    public async Task GetGlobal_and_named_GetUserGlobal_answer_in_both_documented_and_client_shapes()
+    {
+        await using var bot = new TestBot();
+        var ask = Asker(bot);
+        bot.Globals.SetValue("score", 4L, persist: true);
+        bot.UserVariables.Set("twitch", "42", "Ann", "tuna", 3L, persist: true);
+
+        var global = await ask("GetGlobal", new { variable = "score" });
+        Assert.Equal(4, global["variable"]!["value"]!.GetValue<long>());               // the request reference
+        Assert.Equal(4, global["variables"]!["score"]!["value"]!.GetValue<long>());    // what client.getGlobal reads
+
+        var user = await ask("TwitchGetUserGlobal", new { userId = "42", variable = "tuna" });
+        Assert.Equal(3, user["variable"]!["value"]!.GetValue<long>());
+        Assert.Equal("tuna", S(user["variables"]![0]!["name"]));                      // client.getUserGlobal finds it here
+
+        Assert.True(StreamerBotRequests.IsKnown("TrovoGetUserGlobals"));
+        Assert.Equal(0, (await ask("TrovoGetUserGlobals", new { variable = "tuna" }))["count"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task Custom_events_also_go_out_as_Custom_Event_for_customEventResponse()
+    {
+        await using var bot = new TestBot(new ServerSettings
+        {
+            WebSocket = new StreamerBotWebSocketSettings { Enabled = true, Port = 0, AuthenticationEnabled = false },
+        });
+        await bot.Manager.StartAsync();
+        await using var client = await WsClient.ConnectAsync(bot.Manager.WebSocket.Port);
+        await client.RequestAsync("Subscribe", new { events = new { Custom = new[] { "Event", "CodeEvent" } } });
+        Assert.Contains("Event", (await client.RequestAsync("GetEvents"))["events"]!["Custom"]!.AsArray().Select(S));
+
+        await client.RequestAsync("ExecuteCodeTrigger", new { triggerName = "sb:client:res:1", args = new { score = 3 } });
+        var custom = await client.NextAsync(WsClient.IsEvent("Custom", "Event"));
+        Assert.Equal("sb:client:res:1", S(custom["data"]!["eventName"]));
+        Assert.Equal(3, custom["data"]!["args"]!["score"]!.GetValue<int>());
+        await client.NextAsync(WsClient.IsEvent("Custom", "CodeEvent"));
+    }
+
+    [Fact]
+    public void Newly_shaped_events_have_their_documented_fields()
+    {
+        var cleared = Data("twitch.chatCleared", TwitchUser("Me", "me", "1"));
+        Assert.Equal("clear", S(cleared["moderation_action"]));
+        Assert.Equal("1", S(cleared["created_by_user_id"]));
+
+        var untimeout = Data("twitch.userUntimedOut", new(TwitchUser()) { ["moderatorUserName"] = "mod", ["moderatorUserId"] = "9" });
+        Assert.Equal("untimeout", S(untimeout["moderation_action"]));
+        Assert.Equal("ann", S(untimeout["target_user_login"]));
+
+        var poll = Data("twitch.pollCreated", new()
+        {
+            ["pollId"] = "p1", ["choiceCount"] = 0,
+            ["poll._json"] = """{"channel_points_voting":{"is_enabled":true,"amount_per_vote":25}}""",
+        });
+        Assert.True(poll["channel_points_voting"]!["is_enabled"]!.GetValue<bool>());
+        Assert.Equal(25, poll["channel_points_voting"]!["amount_per_vote"]!.GetValue<long>());
+
+        var charity = Data("twitch.charityDonation", new(TwitchUser())
+        {
+            ["amount"] = "5.5", ["currency"] = "EUR", ["charity.amount.valueMinor"] = 550L, ["charity.amount.currency"] = "EUR",
+        });
+        Assert.Equal(550, charity["amount"]!["value"]!.GetValue<long>());
+        Assert.Equal("EUR", S(charity["amount"]!["currency"]));
+
+        var donation = Data("streamlabs.donation", new() { ["donationFrom"] = "Ann", ["donationAmount"] = 5.0, ["donationFormattedAmount"] = "$5.00" });
+        Assert.Equal("Ann", S(donation["from"]));
+        Assert.Equal("$5.00", S(donation["formattedAmount"]));
+
+        var obs = Data("obs.connected", new() { ["studioVersion"] = "31.0.0", ["host"] = "127.0.0.1", ["obsConnection"] = "Main" });
+        Assert.Equal("31.0.0", S(obs["obs.studioVersion"]));
+        Assert.Equal("Main", S(obs["obs.name"]));
+        Assert.Equal("127.0.0.1", S(obs["obs.host"]));
+    }
+
+    [Fact]
+    public void File_watcher_changes_carry_the_file_contents()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"cuebot-fw-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var text = Path.Combine(dir, "now playing.txt");
+            File.WriteAllText(text, "Song\r\nArtist");
+            var lines = Data("core.fileChanged", new() { ["fullPath"] = text, ["fileName"] = "now playing.txt" });
+            Assert.Equal(["Song", "Artist"], lines["lines"]!.AsArray().Select(S));
+            Assert.Equal("now playing", S(lines["name"]));
+            Assert.Null(lines["data"]);
+
+            var json = Path.Combine(dir, "stats.json");
+            File.WriteAllText(json, """{"wins": 3, "name": "run"}""");
+            var data = Data("core.fileChanged", new() { ["fullPath"] = json });
+            Assert.Equal(3, data["data"]!["wins"]!.GetValue<int>());
+            Assert.Null(data["lines"]);
+
+            var created = Data("core.fileCreated", new() { ["fullPath"] = text });
+            Assert.Null(created["lines"]);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }

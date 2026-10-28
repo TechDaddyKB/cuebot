@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using Cuebot.Core.Chat.Emotes;
 using Cuebot.Scripting.Compat;
 
 namespace Cuebot.Server.StreamerBot;
@@ -55,6 +57,14 @@ public static class StreamerBotPayloads
         ["Twitch.ShoutoutCreated"] = TwitchShoutout,
         ["Twitch.UserBanned"] = (a, d) => TwitchBan(a, d, "ban"),
         ["Twitch.UserTimedOut"] = (a, d) => TwitchBan(a, d, "timeout"),
+        ["Twitch.UserUnbanned"] = (a, d) => TwitchBan(a, d, "unban"),
+        ["Twitch.UserUntimedOut"] = (a, d) => TwitchBan(a, d, "untimeout"),
+        ["Twitch.ChatCleared"] = TwitchChatCleared,
+        ["Twitch.RewardCreated"] = TwitchRewardCreated,
+        ["Twitch.RewardUpdated"] = TwitchReward,
+        ["Twitch.RewardDeleted"] = TwitchReward,
+        ["Twitch.StreamOnline"] = TwitchStreamOnline,
+        ["Twitch.StreamOffline"] = TwitchStreamOnline,
         ["Twitch.ChatMessageDeleted"] = TwitchMessageDeleted,
         ["Twitch.StreamUpdate"] = TwitchStreamUpdate,
         ["Twitch.ViewerCountUpdate"] = (a, d) => d["viewers"] = a.Int("viewers", "viewerCount"),
@@ -93,17 +103,31 @@ public static class StreamerBotPayloads
         ["Pulsoid.HeartRatePulse"] = HeartRate,
         ["HypeRate.HeartRatePulse"] = HeartRate,
         ["StreamElements.Tip"] = StreamElementsTip,
+        ["Streamlabs.Donation"] = StreamlabsDonation,
+        ["Streamlabs.Merchandise"] = StreamlabsMerch,
+        ["DonorDrive.Donation"] = DonorDriveDonation,
+        ["DonorDrive.Incentive"] = DonorDriveDonation,
+        ["DonorDrive.ProfileUpdated"] = DonorDriveProfile,
         ["SpeechToText.Command"] = SpeechToText,
         ["SpeechToText.Dictation"] = SpeechToText,
+        ["FileWatcher.Changed"] = (a, d) => FileWatcher(a, d, changed: true),
+        ["FileWatcher.Created"] = (a, d) => FileWatcher(a, d, changed: false),
+        ["FileWatcher.Deleted"] = (a, d) => FileWatcher(a, d, changed: false),
+        ["FileWatcher.Renamed"] = (a, d) => FileWatcher(a, d, changed: false),
+        ["Obs.Connected"] = ObsConnection,
+        ["Obs.Disconnected"] = ObsConnection,
+        ["Shopify.OrderCreated"] = ShopifyOrder,
+        ["Shopify.OrderPaid"] = ShopifyOrder,
     };
 
     /// <summary>Whether <paramref name="name"/> has a documented shape (otherwise only the generic user object is added).</summary>
     public static bool HasShape(StreamerBotEventName name) => Shapers.ContainsKey(name.ToString());
 
     /// <summary>Adds the documented fields of <paramref name="name"/> to <paramref name="data"/> (which already holds the flat args).</summary>
-    public static void Apply(StreamerBotEventName name, IReadOnlyDictionary<string, object?> args, JsonObject data)
+    public static void Apply(StreamerBotEventName name, IReadOnlyDictionary<string, object?> args, JsonObject data,
+        StreamerBotPayloadServices? services = null)
     {
-        var a = new EventArgsView(args);
+        var a = new EventArgsView(args, services);
         if (Shapers.TryGetValue(name.ToString(), out var shaper)) shaper(a, data);
         if (data["user"] is not JsonObject && a.Has("user", "userName", "userId"))
         {
@@ -122,7 +146,7 @@ public static class StreamerBotPayloads
         var display = a.Str("user", "displayName", "userName");
         var login = a.Str("userLogin", "userSlug", "userName", "user");
         if (platform != "youtube") login = login.ToLowerInvariant();
-        return new JsonObject
+        var user = new JsonObject
         {
             ["id"] = a.Str("userId"),
             ["login"] = login,
@@ -136,6 +160,10 @@ public static class StreamerBotPayloads
             ["badges"] = Badges(a),
             ["type"] = platform,
         };
+        // Pronouns come from alejo.io, which only knows Twitch users. Only already looked-up users are filled in:
+        // building a payload never starts a lookup.
+        if (platform == "twitch") user["pronouns"] = StreamerBotPronouns.Cached(a.Services?.Pronouns, login);
+        return user;
     }
 
     private static string PlatformOf(StreamerBotEventName name, EventArgsView a) =>
@@ -189,10 +217,90 @@ public static class StreamerBotPayloads
                     ["startIndex"] = start,
                     ["endIndex"] = end,
                     ["imageUrl"] = $"https://static-cdn.jtvnw.net/emoticons/v2/{id}/default/dark/2.0",
+                    ["bits"] = 0,
+                    ["color"] = "",
                 });
             }
         }
+        // 7TV, BTTV and FFZ emotes (Streamer.bot lists them with the Twitch ones), when Cuebot's emote sets are loaded.
+        if (a.Services?.Emotes is { } service && text.Length > 0)
+        {
+            try
+            {
+                foreach (var match in service.FindEmotes(EmoteProviders.Twitch, text, a.Args))
+                {
+                    if (!EmoteProviders.ThirdParty.Contains(match.Provider)) continue;
+                    var start = RuneIndex(text, match.Start);
+                    emotes.Add(new JsonObject
+                    {
+                        ["type"] = match.Provider,
+                        ["id"] = match.Emote.Id,
+                        ["name"] = match.Code,
+                        ["startIndex"] = start,
+                        ["endIndex"] = start + RuneCount(text.AsSpan(match.Start, match.Length)) - 1,
+                        ["imageUrl"] = match.ImageUrl,
+                        ["bits"] = 0,
+                        ["color"] = "",
+                    });
+                }
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                // A malformed emote argument only costs the third-party emotes.
+            }
+        }
         return emotes;
+    }
+
+    /// <summary>The code point index (what Twitch's emote positions count) of a UTF-16 index.</summary>
+    private static int RuneIndex(string text, int utf16Index) =>
+        RuneCount(text.AsSpan(0, Math.Clamp(utf16Index, 0, text.Length)));
+
+    private static int RuneCount(ReadOnlySpan<char> text)
+    {
+        var count = 0;
+        foreach (var _ in text.EnumerateRunes()) count++;
+        return count;
+    }
+
+    /// <summary>Twitch's default cheermote tiers and colours (1, 100, 1000, 5000, 10000 bits).</summary>
+    private static readonly (int Min, string Color)[] CheerTiers =
+        [(10000, "#f43021"), (5000, "#0099fe"), (1000, "#1db2a5"), (100, "#9c3ee8"), (1, "#979797")];
+
+    private static readonly System.Text.RegularExpressions.Regex CheerWord =
+        new(@"^(?<prefix>[A-Za-z]+)(?<bits>[1-9][0-9]*)$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Cheermotes in a cheer message: words like "Cheer100" whose amounts add up to the cheer's bits (the event does
+    /// not list them, so a message whose words do not add up gets none). Images use Twitch's public cheermote CDN.
+    /// </summary>
+    private static JsonArray CheerEmotes(string text, int bits)
+    {
+        var found = new JsonArray();
+        if (bits <= 0 || text.Length == 0) return found;
+        var total = 0L;
+        var index = 0;
+        foreach (var word in text.Split(' '))
+        {
+            var length = word.EnumerateRunes().Count();
+            if (CheerWord.Match(word) is { Success: true } m && int.TryParse(m.Groups["bits"].Value, out var amount))
+            {
+                total += amount;
+                var (tier, color) = CheerTiers.First(t => amount >= t.Min);
+                found.Add(new JsonObject
+                {
+                    ["type"] = "Cheermote",
+                    ["name"] = word,
+                    ["bits"] = amount,
+                    ["color"] = color,
+                    ["startIndex"] = index,
+                    ["endIndex"] = index + length - 1,
+                    ["imageUrl"] = $"https://d3aqoihi2n8ty8.cloudfront.net/actions/{m.Groups["prefix"].Value.ToLowerInvariant()}/dark/animated/{tier}/2.gif",
+                });
+            }
+            index += length + 1;
+        }
+        return total == bits ? found : [];
     }
 
     /// <summary>The legacy Twitch fields shared by chat-like payloads (userId, userName, displayName, role, ...).</summary>
@@ -238,7 +346,7 @@ public static class StreamerBotPayloads
             ["firstMessage"] = a.Bool("isFirstMessage", "firstMessage"),
             ["hasBits"] = bits > 0,
             ["emotes"] = TwitchEmotes(a, text),
-            ["cheerEmotes"] = new JsonArray(),
+            ["cheerEmotes"] = CheerEmotes(text, bits),
             ["badges"] = Badges(a),
             ["monthsSubscribed"] = a.Int("monthsSubscribed"),
             ["isTest"] = a.Bool("isTest"),
@@ -304,7 +412,7 @@ public static class StreamerBotPayloads
         d["firstMessage"] = false;
         d["hasBits"] = true;
         d["emotes"] = TwitchEmotes(a, text);
-        d["cheerEmotes"] = new JsonArray();
+        d["cheerEmotes"] = CheerEmotes(text, a.Int("bits"));
         d["badges"] = Badges(a);
         d["monthsSubscribed"] = a.Int("monthsSubscribed");
         d["internal"] = false;
@@ -447,11 +555,23 @@ public static class StreamerBotPayloads
         d["started_at"] = a.Str("startedAt");
         d["ends_at"] = a.Str("endsAt");
         d["ended_at"] = a.Str("endedAt");
+        // channel_points_voting is only in the raw EventSub payload Cuebot keeps as poll._json.
+        var voting = a.Json("poll._json")?["channel_points_voting"] as JsonObject;
+        d["channel_points_voting"] = new JsonObject
+        {
+            ["is_enabled"] = voting?["is_enabled"]?.GetValueKind() == System.Text.Json.JsonValueKind.True,
+            ["amount_per_vote"] = Number(voting?["amount_per_vote"]),
+        };
         if (winner is not null) d["winningChoice"] = winner;
     }
 
+    /// <summary>A JSON number as a long (0 for anything else).</summary>
+    private static long Number(JsonNode? node) =>
+        node is JsonValue v && v.GetValueKind() == System.Text.Json.JsonValueKind.Number && v.TryGetValue<long>(out var n) ? n : 0;
+
     private static void TwitchPrediction(EventArgsView a, JsonObject d)
     {
+        var raw = a.Json("prediction._json");
         var outcomes = new JsonArray();
         JsonObject? winner = null;
         for (var i = 0; i < a.Int("outcomeCount"); i++)
@@ -463,7 +583,7 @@ public static class StreamerBotPayloads
                 ["color"] = a.Str($"outcome{i}Color"),
                 ["users"] = a.Int($"outcome{i}Users"),
                 ["channel_points"] = a.Int($"outcome{i}ChannelPoints"),
-                ["top_predictors"] = new JsonArray(),
+                ["top_predictors"] = TopPredictors(raw, a.Str($"outcome{i}Id")),
             };
             if (a.Str("winningOutcomeId") is { Length: > 0 } wid && wid == a.Str($"outcome{i}Id")) winner = (JsonObject)outcome.DeepClone();
             outcomes.Add(outcome);
@@ -478,6 +598,29 @@ public static class StreamerBotPayloads
         d["ended_at"] = a.Str("endedAt");
         d["winning_outcome_id"] = a.Str("winningOutcomeId");
         if (winner is not null) d["winning_outcome"] = winner;
+    }
+
+    /// <summary>An outcome's top predictors from the raw EventSub payload (prediction._json), in the documented shape.</summary>
+    private static JsonArray TopPredictors(JsonNode? raw, string outcomeId)
+    {
+        var predictors = new JsonArray();
+        if (raw?["outcomes"] is not JsonArray outcomes) return predictors;
+        foreach (var outcome in outcomes)
+        {
+            if (outcome?["id"]?.ToString() != outcomeId || outcome["top_predictors"] is not JsonArray top) continue;
+            foreach (var p in top)
+            {
+                predictors.Add(new JsonObject
+                {
+                    ["user_id"] = p?["user_id"]?.ToString() ?? "",
+                    ["user_login"] = p?["user_login"]?.ToString() ?? "",
+                    ["user_name"] = p?["user_name"]?.ToString() ?? "",
+                    ["channel_points_used"] = Number(p?["channel_points_used"]),
+                    ["channel_points_won"] = Number(p?["channel_points_won"]),
+                });
+            }
+        }
+        return predictors;
     }
 
     private static void TwitchHypeTrain(EventArgsView a, JsonObject d)
@@ -500,6 +643,8 @@ public static class StreamerBotPayloads
         d["total"] = a.Int("total");
         d["progress"] = a.Int("progress");
         d["goal"] = a.Int("goal");
+        // EventSub v2 hype trains no longer report the last contribution; the documented object stays, empty.
+        d["last_contribution"] = new JsonObject { ["user_id"] = "", ["user_login"] = "", ["user_name"] = "", ["total"] = 0 };
         d["top_contributions"] = top;
         d["started_at"] = a.Str("startedAt");
         d["expires_at"] = a.Str("expiresAt");
@@ -511,11 +656,12 @@ public static class StreamerBotPayloads
     private static void TwitchCharity(EventArgsView a, JsonObject d)
     {
         var currency = a.Str("currency");
+        // Minor units as Twitch sends them (charity.amount.valueMinor), else the decimal amount in cents.
         JsonObject Money(string key) => new()
         {
-            ["value"] = (long)Math.Round(a.Double(key) * 100),
+            ["value"] = a.Has($"charity.{key}.valueMinor") ? a.Long($"charity.{key}.valueMinor") : (long)Math.Round(a.Double(key) * 100),
             ["decimal_places"] = 2,
-            ["currency"] = currency,
+            ["currency"] = a.Str($"charity.{key}.currency") is { Length: > 0 } c ? c : currency,
         };
         d["id"] = a.Str("campaignId");
         d["campaign_id"] = a.Str("campaignId");
@@ -529,6 +675,23 @@ public static class StreamerBotPayloads
         d["user_id"] = a.Str("userId");
         d["user_login"] = a.Str("userName").ToLowerInvariant();
         d["user_name"] = a.Str("user", "userName");
+        d["started_at"] = Time(a, "charity.startedAt", "startedAt");
+        d["stopped_at"] = Time(a, "charity.stoppedAt", "stoppedAt");
+    }
+
+    /// <summary>A time argument (DateTime, DateTimeOffset or text) as ISO 8601 text; "" when missing.</summary>
+    private static string Time(EventArgsView a, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            switch (a.Raw(key))
+            {
+                case DateTimeOffset o: return o.ToString("o", CultureInfo.InvariantCulture);
+                case DateTime t: return t.ToString("o", CultureInfo.InvariantCulture);
+                case string { Length: > 0 } s: return s;
+            }
+        }
+        return "";
     }
 
     private static void TwitchShoutout(EventArgsView a, JsonObject d)
@@ -554,7 +717,7 @@ public static class StreamerBotPayloads
         d["created_by_user_id"] = a.Str("moderatorUserId");
         d["created_by"] = a.Str("moderatorUserName", "moderator");
         d["moderation_action"] = action;
-        d["type"] = action;
+        d["type"] = "chat_login_moderation";
         d["duration"] = a.Int("duration");
         d["reason"] = a.Str("reason");
         d["isTest"] = a.Bool("isTest");
@@ -611,6 +774,69 @@ public static class StreamerBotPayloads
             ["subscribed"] = false,
             ["type"] = "twitch",
         };
+    }
+
+    private static void TwitchChatCleared(EventArgsView a, JsonObject d)
+    {
+        // Streamer.bot sends the clear in its moderation shape, with no target user.
+        d["target_user_id"] = "";
+        d["target_user_login"] = "";
+        d["created_by_user_id"] = a.Str("moderatorUserId", "userId");
+        d["created_by"] = a.Str("moderatorUserName", "moderator", "userName").ToLowerInvariant();
+        d["moderation_action"] = "clear";
+        d["type"] = "chat_channel_moderation";
+        d["duration"] = 0;
+        d["isTest"] = a.Bool("isTest");
+    }
+
+    /// <summary>Reward created: Streamer.bot's own reward record (name, group, counters) plus the EventSub fields.</summary>
+    private static void TwitchRewardCreated(EventArgsView a, JsonObject d)
+    {
+        TwitchReward(a, d);
+        d["name"] = a.Str("rewardTitle", "rewardName");
+        d["group"] = a.Str("rewardGroup");
+        d["userInput"] = a.Bool("isUserInputRequired", "requiresUserInput");
+        d["persistCounter"] = false;
+        d["counter"] = a.Int("counter");
+        d["persistUserCounter"] = false;
+        d["backgroundColor"] = a.Str("backgroundColor");
+        d["userCounters"] = new JsonObject();
+    }
+
+    /// <summary>Reward updated/deleted: the EventSub reward fields plus the older names the wiki shows.</summary>
+    private static void TwitchReward(EventArgsView a, JsonObject d)
+    {
+        static JsonObject Limit(int value, string field) => new() { ["is_enabled"] = value > 0, [field] = value };
+        d["id"] = a.Str("rewardId");
+        d["is_enabled"] = a.Bool("isEnabled");
+        d["is_paused"] = a.Bool("isPaused");
+        d["is_in_stock"] = a.Bool("isInStock");
+        d["title"] = a.Str("rewardTitle", "rewardName");
+        d["cost"] = a.Int("rewardCost");
+        d["prompt"] = a.Str("rewardPrompt");
+        d["is_user_input_required"] = a.Bool("isUserInputRequired", "requiresUserInput");
+        d["should_redemptions_skip_request_queue"] = a.Bool("skipsQueue");
+        d["cooldown_expires_at"] = a.Str("cooldownExpiresAt");
+        d["max_per_stream"] = Limit(a.Int("maxPerStream"), "value");
+        d["max_per_user_per_stream"] = Limit(a.Int("maxPerUserPerStream"), "value");
+        d["global_cooldown"] = Limit(a.Int("globalCooldown"), "seconds");
+        d["background_color"] = a.Str("backgroundColor");
+        d["backgroundColor"] = a.Str("backgroundColor");
+        d["default_image"] = new JsonObject { ["url_1x"] = "", ["url_2x"] = "", ["url_4x"] = "" };
+        d["rewardId"] = a.Str("rewardId");
+        d["channelId"] = a.Str("broadcasterId", "userId");
+        d["dateTime"] = DateTimeOffset.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+        d["inputRequired"] = a.Bool("isUserInputRequired", "requiresUserInput");
+        d["enabled"] = a.Bool("isEnabled");
+        d["paused"] = a.Bool("isPaused");
+        d["subOnly"] = false;
+    }
+
+    private static void TwitchStreamOnline(EventArgsView a, JsonObject d)
+    {
+        d["id"] = a.Str("streamId", "broadcastId");
+        d["type"] = a.Str("streamType") is { Length: > 0 } type ? type : "live";
+        d["started_at"] = Time(a, "startedAt");
     }
 
     // ---- YouTube -------------------------------------------------------------------------------------------------
@@ -730,6 +956,129 @@ public static class StreamerBotPayloads
         d["isTest"] = a.Bool("isTest");
     }
 
+    private static void StreamlabsDonation(EventArgsView a, JsonObject d)
+    {
+        d["from"] = a.Str("donationFrom", "user", "userName");
+        d["amount"] = a.Double("donationAmount", "amount");
+        d["formattedAmount"] = a.Str("donationFormattedAmount", "formattedAmount");
+        d["currency"] = a.Str("donationCurrency", "currency");
+        d["message"] = a.Str("donationMessage", "message");
+        d["isTest"] = a.Bool("isTest");
+    }
+
+    private static void StreamlabsMerch(EventArgsView a, JsonObject d)
+    {
+        d["from"] = a.Str("merchandiseFrom", "user", "userName");
+        d["product"] = a.Str("merchandiseProduct", "product");
+        d["message"] = a.Str("merchandiseMessage", "message");
+        d["image"] = a.Str("merchandiseImageUrl", "imageUrl");
+        d["isTest"] = a.Bool("isTest");
+    }
+
+    /// <summary>DonorDrive donation (and incentive): the documented <c>donation</c> object.</summary>
+    private static void DonorDriveDonation(EventArgsView a, JsonObject d)
+    {
+        d["donation"] = new JsonObject
+        {
+            ["displayName"] = a.Str("donorName", "user"),
+            ["donorId"] = a.Str("donorId"),
+            ["links"] = new JsonObject { ["recipient"] = a.Str("profileUrl") },
+            ["eventId"] = a.Long("eventId"),
+            ["createdDateUtc"] = Time(a, "createdAt"),
+            ["recipientName"] = a.Str("recipientName", "profileName"),
+            ["message"] = a.Str("donorMessage", "message"),
+            ["participantId"] = a.Long("participantId"),
+            ["amount"] = a.Double("donorAmount", "amount"),
+            ["avatarImageUrl"] = a.Str("donorAvatarUrl"),
+            ["teamId"] = a.Long("teamId"),
+            ["donationId"] = a.Str("donationId"),
+        };
+    }
+
+    private static void DonorDriveProfile(EventArgsView a, JsonObject d)
+    {
+        d["profile"] = new JsonObject
+        {
+            ["fundraisingGoal"] = a.Double("goal"),
+            ["eventName"] = a.Str("eventName"),
+            ["links"] = new JsonObject { ["recipient"] = a.Str("profileUrl") },
+            ["eventId"] = a.Long("eventId"),
+            ["sumDonations"] = a.Double("raised"),
+            ["createdDateUtc"] = Time(a, "createdAt"),
+            ["numAwardedBadges"] = a.Int("numAwardedBadges"),
+            ["captainDisplayName"] = a.Str("captainDisplayName"),
+            ["avatarImageUrl"] = a.Str("avatarUrl"),
+            ["teamId"] = a.Long("teamId"),
+            ["sumPledges"] = a.Double("sumPledges"),
+            ["numDonations"] = a.Int("numDonations", "donations"),
+        };
+    }
+
+    /// <summary>Largest file whose contents a FileWatcher.Changed payload carries (Streamer.bot's lines/data).</summary>
+    private const int MaxWatchedFileBytes = 256 * 1024;
+
+    private static void FileWatcher(EventArgsView a, JsonObject d, bool changed)
+    {
+        var path = a.Str("fullPath", "filePath");
+        d["fullPath"] = path;
+        d["fileName"] = a.Str("fileName") is { Length: > 0 } file ? file : Path.GetFileName(path);
+        d["name"] = Path.GetFileNameWithoutExtension(path);
+        if (a.Has("oldFullPath", "oldFilePath"))
+        {
+            d["oldFullPath"] = a.Str("oldFullPath", "oldFilePath");
+            d["oldFileName"] = a.Str("oldFileName");
+        }
+        if (!changed || path.Length == 0) return;
+        // Streamer.bot sends the new contents: "data" when the file is a JSON object (top-level values), else "lines".
+        try
+        {
+            var info = new FileInfo(path);
+            if (!info.Exists || info.Length > MaxWatchedFileBytes) return;
+            var text = File.ReadAllText(path);
+            if (text.TrimStart().StartsWith('{'))
+            {
+                try
+                {
+                    if (JsonNode.Parse(text) is JsonObject json)
+                    {
+                        d["data"] = json;
+                        return;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Not JSON after all: sent as lines.
+                }
+            }
+            d["lines"] = new JsonArray([.. text.ReplaceLineEndings("\n").Split('\n').Select(l => (JsonNode?)JsonValue.Create(l))]);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            // Locked or gone: the event goes out without the contents.
+        }
+    }
+
+    /// <summary>OBS connection events: Streamer.bot's dotted <c>obs.*</c> keys.</summary>
+    private static void ObsConnection(EventArgsView a, JsonObject d)
+    {
+        // Cuebot names connections rather than giving them ids: the name stands in for obs.id.
+        d["obs.id"] = a.Str("obsConnection");
+        d["obs.name"] = a.Str("obsConnection");
+        d["obs.host"] = a.Str("host");
+        d["obs.studioVersion"] = a.Str("studioVersion");
+        d["obs.websocketVersion"] = a.Str("websocketVersion");
+    }
+
+    /// <summary>Shopify orders: Streamer.bot forwards the webhook's order object (top-level fields) plus <c>event</c>.</summary>
+    private static void ShopifyOrder(EventArgsView a, JsonObject d)
+    {
+        if (a.Json("_json") is JsonObject order)
+        {
+            foreach (var (key, value) in order) d[key] = value?.DeepClone();
+        }
+        d["event"] = a.Str("shopify.event");
+    }
+
     private static void SpeechToText(EventArgsView a, JsonObject d)
     {
         d["text"] = a.Str("text", "message", "rawInput");
@@ -738,8 +1087,34 @@ public static class StreamerBotPayloads
     }
 
     /// <summary>Read access to flat event args with fallbacks between alternative names.</summary>
-    private readonly struct EventArgsView(IReadOnlyDictionary<string, object?> args)
+    private readonly struct EventArgsView(IReadOnlyDictionary<string, object?> args, StreamerBotPayloadServices? services)
     {
+        public IReadOnlyDictionary<string, object?> Args => args;
+
+        public StreamerBotPayloadServices? Services => services;
+
+        /// <summary>The argument as stored (no conversion).</summary>
+        public object? Raw(string key) => Get(key);
+
+        /// <summary>A JSON argument (raw payload text or a JSON value) parsed; null when missing or not JSON.</summary>
+        public JsonNode? Json(string key)
+        {
+            try
+            {
+                return Get(key) switch
+                {
+                    string { Length: > 0 } text when text.TrimStart().StartsWith('{') || text.TrimStart().StartsWith('[') => JsonNode.Parse(text),
+                    JsonElement e => JsonNode.Parse(e.GetRawText()),
+                    JsonNode n => n.DeepClone(),
+                    _ => null,
+                };
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
         private object? Get(string key)
         {
             if (args.TryGetValue(key, out var value)) return value;

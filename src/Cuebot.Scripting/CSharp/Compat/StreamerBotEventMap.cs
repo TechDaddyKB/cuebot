@@ -264,6 +264,8 @@ public static class StreamerBotEventMap
         new("Application", "ActionAdded"), new("Application", "ActionUpdated"), new("Application", "ActionDeleted"),
         new("Application", "CommandAdded"), new("Application", "CommandUpdated"), new("Application", "CommandDeleted"),
         new("General", "Custom"), new("Misc", "StreamerbotExiting"),
+        // Sent next to Custom.CodeEvent for every custom event (the official client's customEventResponse waits for it).
+        new("Custom", "Event"),
     ];
 
     /// <summary>
