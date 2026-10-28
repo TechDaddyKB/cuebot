@@ -25,6 +25,8 @@ public static class StreamAppsServiceCollectionExtensions
         services.AddSingleton(sp => new PolyPopService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<MeldStudioService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PolyPopService>());
+        Tits.TitsRegistration.Add(services);
+        Lumia.LumiaRegistration.Add(services);
 
         services.AddSingleton<ITriggerProvider>(sp => new MeldTriggers(sp.GetRequiredService<MeldStudioService>()));
         services.AddSingleton<ITriggerProvider>(_ => new PolyPopTriggers());
@@ -33,6 +35,8 @@ public static class StreamAppsServiceCollectionExtensions
         [
             .. MeldSubActions.Create(sp.GetRequiredService<MeldStudioService>()),
             .. PolyPopSubActions.Create(sp.GetRequiredService<PolyPopService>()),
+            .. Tits.TitsSubActions.Create(sp.GetRequiredService<Tits.TitsService>()),
+            .. Lumia.LumiaSubActions.Create(sp.GetRequiredService<Lumia.LumiaService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -51,7 +55,12 @@ public static class StreamAppsServiceCollectionExtensions
         private readonly Dictionary<string, ISubActionHandler> _byId = handlers.ToDictionary(h => h.TypeId, StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Every type id, known without building the services (kept in sync by a test).</summary>
-        public static readonly string[] TypeIds = [.. MeldSubActions.TypeIds, .. PolyPopSubActions.TypeIds];
+        public static readonly string[] TypeIds =
+        [
+            .. MeldSubActions.TypeIds, .. PolyPopSubActions.TypeIds,
+            .. Tits.TitsSubActions.TypeIds,
+            .. Lumia.LumiaSubActions.TypeIds,
+        ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;
 
