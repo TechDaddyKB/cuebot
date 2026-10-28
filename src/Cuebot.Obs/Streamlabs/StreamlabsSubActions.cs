@@ -30,6 +30,10 @@ public static class StreamlabsCatalog
     {
         ParameterDescriptor Scene() => new("scene", "Scene") { Suggestions = () => slobs.SceneNames };
         ParameterDescriptor Source(string label = "Source") => new("source", label) { Suggestions = () => slobs.SourceNames };
+        ParameterDescriptor Group() => new("group", "Group")
+        {
+            Suggestions = () => slobs.Scenes.SelectMany(s => s.Items).Where(i => i.IsFolder).Select(i => i.Name).Distinct().ToArray(),
+        };
         ParameterDescriptor Choice<T>(string key, string label, T value) where T : struct, Enum =>
             new(key, label, ParameterKind.Choice) { DefaultValue = value.ToString(), Choices = ChoicesOf<T>() };
         StreamlabsSubAction Make(string id, string name, IReadOnlyList<ParameterDescriptor> parameters,
@@ -39,7 +43,12 @@ public static class StreamlabsCatalog
         [
             Make("slobs.setScene", "Set active scene", [Scene()], (_, v, ct) => slobs.SetSceneAsync(Require(v["scene"], "Scene"), ct)),
             Make("slobs.getCurrentScene", "Get current scene", [new("resultArgument", "Store result in argument") { DefaultValue = "slobsScene" }],
-                async (ctx, v, ct) => Store(ctx, v["resultArgument"], await slobs.GetCurrentSceneAsync(ct).ConfigureAwait(false))),
+                async (ctx, v, ct) =>
+                {
+                    var scene = await slobs.GetCurrentSceneAsync(ct).ConfigureAwait(false);
+                    Store(ctx, v["resultArgument"], scene);
+                    ctx.Args["currentScene"] = scene;   // Streamer.bot's name
+                }),
             Make("slobs.setSourceVisibility", "Set source visibility state", [Scene(), Source(), Choice("state", "State", VisibilityMode.Toggle)],
                 (_, v, ct) => slobs.SetSourceVisibilityAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"),
                     ParseChoice<VisibilityMode>(v["state"], "State"), ct)),
@@ -61,6 +70,23 @@ public static class StreamlabsCatalog
                  new("state", "State", ParameterKind.Choice) { DefaultValue = "Enable", Choices = ["Enable", "Disable"] }],
                 (_, v, ct) => slobs.SetFilterStateAsync(Require(v["source"], "Source"), Require(v["filter"], "Filter"),
                     ParseChoice<EnableMode>(v["state"], "State") == EnableMode.Enable, ct)),
+            Make("slobs.setSceneFilterState", "Set scene filter state",
+                [Scene(), new("filter", "Filter"), Choice("state", "State", VisibilityMode.Toggle)],
+                (_, v, ct) => slobs.SetSceneFilterStateAsync(Require(v["scene"], "Scene"), Require(v["filter"], "Filter"),
+                    ParseChoice<VisibilityMode>(v["state"], "State"), ct)),
+            Make("slobs.setRandomFilterState", "Set state of a random filter",
+                [Scene(), Source("Source (empty for the scene's own filters)"), Choice("state", "State", VisibilityMode.Visible),
+                 new("resultArgument", "Store filter name in argument") { DefaultValue = "slobsFilterName" }],
+                async (ctx, v, ct) => Store(ctx, v["resultArgument"], await slobs.SetRandomFilterStateAsync(Require(v["scene"], "Scene"),
+                    v["source"], ParseChoice<VisibilityMode>(v["state"], "State"), ct).ConfigureAwait(false))),
+            Make("slobs.hideSourceFilters", "Hide source's filters", [Scene(), Source()],
+                (_, v, ct) => slobs.HideSourceFiltersAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"), ct)),
+            Make("slobs.hideGroupSources", "Hide group's sources", [Scene(), Group()],
+                (_, v, ct) => slobs.HideGroupSourcesAsync(Require(v["scene"], "Scene"), Require(v["group"], "Group"), ct)),
+            Make("slobs.randomGroupSource", "Set random group source visible",
+                [Scene(), Group(), new("resultArgument", "Store source name in argument") { DefaultValue = "randomSource" }],
+                async (ctx, v, ct) => Store(ctx, v["resultArgument"], await slobs.SetRandomGroupSourceVisibleAsync(
+                    Require(v["scene"], "Scene"), Require(v["group"], "Group"), ct).ConfigureAwait(false))),
             Make("slobs.flipSource", "Flip source", [Scene(), Source(), Choice("axis", "Axis", FlipAxis.Horizontal)],
                 (_, v, ct) => slobs.FlipSourceAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"),
                     ParseChoice<FlipAxis>(v["axis"], "Axis"), ct)),

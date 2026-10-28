@@ -181,6 +181,104 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
         await CallAsync("SourceFiltersService", "setVisibility", [sourceId, filterName, enabled], ct).ConfigureAwait(false);
     }
 
+    /// <summary>The filters on a source or scene, by its source id.</summary>
+    public async Task<IReadOnlyList<SlobsFilter>> GetFiltersAsync(string sourceId, CancellationToken ct = default) =>
+        StreamlabsParser.ParseFilters(await CallAsync("SourceFiltersService", "getFilters", [sourceId], ct).ConfigureAwait(false));
+
+    /// <summary>Shows, hides or toggles a filter on a scene (Set Scene Filter State). Returns whether it is now visible.</summary>
+    public async Task<bool> SetSceneFilterStateAsync(string sceneName, string filterName, VisibilityMode mode, CancellationToken ct = default)
+    {
+        var scene = await FindSceneAsync(sceneName, ct).ConfigureAwait(false);
+        return await SetFilterVisibilityAsync(scene.Id, filterName, mode, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Shows, hides or toggles one randomly chosen filter of a scene's source, or of the scene itself when no source is
+    /// given. Returns the chosen filter's name, or null when there are no filters.
+    /// </summary>
+    public async Task<string?> SetRandomFilterStateAsync(string sceneName, string? sourceName, VisibilityMode mode, CancellationToken ct = default)
+    {
+        var sourceId = await FilterOwnerIdAsync(sceneName, sourceName, ct).ConfigureAwait(false);
+        var filters = await GetFiltersAsync(sourceId, ct).ConfigureAwait(false);
+        if (filters.Count == 0) return null;
+        var chosen = filters[Random.Shared.Next(filters.Count)];
+        var visible = mode switch { VisibilityMode.Visible => true, VisibilityMode.Hidden => false, _ => !chosen.Visible };
+        await CallAsync("SourceFiltersService", "setVisibility", [sourceId, chosen.Name, visible], ct).ConfigureAwait(false);
+        return chosen.Name;
+    }
+
+    /// <summary>Hides every filter of a scene's source (Hide Source's Filters). Returns how many were hidden.</summary>
+    public async Task<int> HideSourceFiltersAsync(string sceneName, string sourceName, CancellationToken ct = default)
+    {
+        var sourceId = await FilterOwnerIdAsync(sceneName, sourceName, ct).ConfigureAwait(false);
+        var visible = (await GetFiltersAsync(sourceId, ct).ConfigureAwait(false)).Where(f => f.Visible).ToArray();
+        foreach (var filter in visible)
+            await CallAsync("SourceFiltersService", "setVisibility", [sourceId, filter.Name, false], ct).ConfigureAwait(false);
+        return visible.Length;
+    }
+
+    /// <summary>Hides every source inside a group (a Streamlabs Desktop folder). Returns how many were hidden.</summary>
+    public async Task<int> HideGroupSourcesAsync(string sceneName, string groupName, CancellationToken ct = default)
+    {
+        var children = await GroupChildrenAsync(sceneName, groupName, ct).ConfigureAwait(false);
+        var visible = children.Where(i => i.Visible).ToArray();
+        foreach (var item in visible) await CallAsync(item.ResourceId, "setVisibility", [false], ct).ConfigureAwait(false);
+        return visible.Length;
+    }
+
+    /// <summary>
+    /// Shows one randomly chosen source of a group and hides the others. Returns the chosen source's name, or null
+    /// when the group is empty.
+    /// </summary>
+    public async Task<string?> SetRandomGroupSourceVisibleAsync(string sceneName, string groupName, CancellationToken ct = default)
+    {
+        var children = await GroupChildrenAsync(sceneName, groupName, ct).ConfigureAwait(false);
+        if (children.Count == 0) return null;
+        var chosen = children[Random.Shared.Next(children.Count)];
+        foreach (var item in children)
+        {
+            var show = item.Id == chosen.Id;
+            if (item.Visible != show) await CallAsync(item.ResourceId, "setVisibility", [show], ct).ConfigureAwait(false);
+        }
+        return chosen.Name;
+    }
+
+    private async Task<bool> SetFilterVisibilityAsync(string sourceId, string filterName, VisibilityMode mode, CancellationToken ct)
+    {
+        bool visible;
+        if (mode == VisibilityMode.Toggle)
+        {
+            var filter = (await GetFiltersAsync(sourceId, ct).ConfigureAwait(false))
+                         .FirstOrDefault(f => string.Equals(f.Name, filterName, StringComparison.OrdinalIgnoreCase))
+                         ?? throw new StreamlabsException($"Streamlabs Desktop has no filter named '{filterName}'.");
+            visible = !filter.Visible;
+            filterName = filter.Name;
+        }
+        else
+        {
+            visible = mode == VisibilityMode.Visible;
+        }
+        await CallAsync("SourceFiltersService", "setVisibility", [sourceId, filterName, visible], ct).ConfigureAwait(false);
+        return visible;
+    }
+
+    /// <summary>The source id owning the filters: the named source in the scene, or the scene itself when no source is named.</summary>
+    private async Task<string> FilterOwnerIdAsync(string sceneName, string? sourceName, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(sourceName)) return (await FindSceneAsync(sceneName, ct).ConfigureAwait(false)).Id;
+        var item = await FindItemAsync(sceneName, sourceName, ct).ConfigureAwait(false);
+        return item.SourceId;
+    }
+
+    private async Task<IReadOnlyList<SlobsSceneItem>> GroupChildrenAsync(string sceneName, string groupName, CancellationToken ct)
+    {
+        await RefreshScenesAsync(ct).ConfigureAwait(false);   // fresh visibility
+        var scene = await FindSceneAsync(sceneName, ct).ConfigureAwait(false);
+        var group = scene.Items.FirstOrDefault(i => i.IsFolder && string.Equals(i.Name, groupName, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new StreamlabsException($"Scene '{scene.Name}' has no group named '{groupName}'.");
+        return scene.Items.Where(i => i.ParentId == group.Id && !i.IsFolder).ToArray();
+    }
+
     /// <summary>Mirrors a source by negating its scale on one axis.</summary>
     public async Task FlipSourceAsync(string sceneName, string sourceName, FlipAxis axis, CancellationToken ct = default)
     {
@@ -256,7 +354,7 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
             SetStatus(ConnectionState.Connected, $"Connected to {endpoint}");
             _log.Info(LogSource, $"Connected to {endpoint}");
             await RefreshAllAsync(ct).ConfigureAwait(false);
-            _bus.Publish(new BotEvent(StreamlabsEvents.Connected));
+            Publish(StreamlabsEvents.Connected);
         }
         finally
         {
@@ -306,7 +404,7 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
             SetStatus(ConnectionState.Error, Settings.AutoConnect ? $"{reason} Reconnecting..." : reason);
             _log.Warn(LogSource, reason);
         }
-        _bus.Publish(new BotEvent(StreamlabsEvents.Disconnected, new Dictionary<string, object?> { ["reason"] = reason }));
+        Publish(StreamlabsEvents.Disconnected, new() { ["reason"] = reason });
     }
 
     private void OnEvent(string resourceId, JsonElement data)
@@ -320,10 +418,10 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
                     if (scene is null) break;
                     var previous = Interlocked.Exchange(ref _currentScene, scene.Name);
                     ScenesChanged?.Invoke();
-                    _bus.Publish(new BotEvent(StreamlabsEvents.SceneChanged, new Dictionary<string, object?>
+                    Publish(StreamlabsEvents.SceneChanged, new()
                     {
-                        ["sceneName"] = scene.Name, ["sceneId"] = scene.Id, ["previousScene"] = previous ?? "",
-                    }));
+                        ["sceneName"] = scene.Name, ["sceneId"] = scene.Id, ["previousScene"] = previous ?? "", ["sd.sceneName"] = scene.Name,
+                    });
                     break;
                 case "ScenesService.sceneAdded" or "ScenesService.sceneRemoved" or "ScenesService.itemAdded" or
                     "ScenesService.itemRemoved" or "ScenesService.itemUpdated":
@@ -336,21 +434,21 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
                     if (StreamlabsParser.StreamingState(data.ValueKind == JsonValueKind.String ? data.GetString() : null) is { } live)
                     {
                         IsStreaming = live;
-                        _bus.Publish(new BotEvent(live ? StreamlabsEvents.StreamStarted : StreamlabsEvents.StreamStopped));
+                        Publish(live ? StreamlabsEvents.StreamStarted : StreamlabsEvents.StreamStopped);
                     }
                     break;
                 case "StreamingService.recordingStatusChange":
                     if (StreamlabsParser.RecordingState(data.ValueKind == JsonValueKind.String ? data.GetString() : null) is { } recording)
                     {
                         IsRecording = recording;
-                        _bus.Publish(new BotEvent(recording ? StreamlabsEvents.RecordStarted : StreamlabsEvents.RecordStopped));
+                        Publish(recording ? StreamlabsEvents.RecordStarted : StreamlabsEvents.RecordStopped);
                     }
                     break;
                 case "StreamingService.replayBufferFileWrite":
-                    _bus.Publish(new BotEvent(StreamlabsEvents.ReplayBufferSaved, new Dictionary<string, object?>
+                    Publish(StreamlabsEvents.ReplayBufferSaved, new()
                     {
                         ["savedReplayPath"] = data.ValueKind == JsonValueKind.String ? data.GetString() : "",
-                    }));
+                    });
                     break;
             }
         }
@@ -426,6 +524,19 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
     private SlobsSource FindSource(string sourceName) =>
         _sources.FirstOrDefault(s => string.Equals(s.Name, sourceName, StringComparison.OrdinalIgnoreCase))
         ?? throw new StreamlabsException($"Streamlabs Desktop has no source named '{sourceName}'.");
+
+    /// <summary>Streamer.bot's connection id for the single Streamlabs Desktop connection (sd.id).</summary>
+    public const string ConnectionId = "main";
+
+    /// <summary>Publishes an event with Streamer.bot's connection args (sd.id, sd.name, sd.host) added.</summary>
+    private void Publish(string type, Dictionary<string, object?>? args = null)
+    {
+        args ??= [];
+        args["sd.id"] = ConnectionId;
+        args["sd.name"] = "Main";
+        args["sd.host"] = Settings.Host;
+        _bus.Publish(new BotEvent(type, args));
+    }
 
     private void SetStatus(ConnectionState state, string message)
     {
