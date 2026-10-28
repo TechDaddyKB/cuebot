@@ -152,3 +152,149 @@ Cheap fallback: `Mode = Client` connects out to `ws://Address:Port/Endpoint` for
 - The plugin's own "Trigger" action reads property names that do not exist in its definition (`AlertName`/`AlertText`
   vs `AlertTitle`/`AlertValue`), so messages *from* PolyPop may never arrive with the published build; Cuebot parses
   them if they do.
+
+## OBSBOT (OBSBOT Center OSC)
+
+### Options considered
+
+| Option | Official? | Platforms | Verdict |
+| --- | --- | --- | --- |
+| **OSC server of OBSBOT Center** (UDP or TCP; "OBSBOT Center OSC definition" spreadsheet, rev. 2026-05-08, linked from obsbot.com/explore/obsbot-center/osc) | Yes | Center: Windows, macOS. Tail 2 / Tail Air also speak the same OSC on their own IP | **Chosen** |
+| OBSBOT SDK (C++, by application) | Yes, not public | Win/macOS/Linux | Needs an agreement and native binaries; not usable in a clean-room public build |
+| UVC/V4L2 pan-tilt-zoom controls | Standard | Linux/Windows | Only PTZ/zoom, none of the AI/preset features; would be a separate generic-webcam feature |
+
+**Linux:** OBSBOT Center has no Linux build. Linux users can point Cuebot at a **Tail 2 / Tail Air** directly (they run
+their own OSC server; port 57110 per Bitfocus Companion's module), or at OBSBOT Center on a Windows/Mac PC on the
+network. Tiny/Meet webcams plugged into a Linux PC are not reachable through OSC.
+
+### Wire format (`Obsbot/Osc.cs`)
+
+OSC 1.0: address and type tags NUL-terminated and padded to 4 bytes, big-endian int32/float32 (h, d, s, b, T, F, N are
+decoded too; bundles are flattened). TCP uses OSC 1.0 stream framing: an int32 length before each packet. OBSBOT Center
+writes the length big-endian; Bitfocus Companion's module notes Tail hardware writes it little-endian, so a length
+of at most 64 KiB in either byte order is accepted per frame. UDP: Cuebot binds the reply port (default 57120; 0 = any)
+and sends from it, so Center can answer either to the source port or to its configured reply port; datagrams from
+other hosts are ignored.
+
+### Session
+
+1. Send `/OBSBOT/WebCam/General/Connected ,i 0` (repeated while UDP gets no answer). Center replies
+   `/OBSBOT/WebCam/General/ConnectedResp ,i 1` and `DeviceInfo`. TCP counts as connected once the socket is up; UDP once
+   anything arrives. Commands can be sent over UDP before that (some setups never answer).
+2. Every *Poll seconds* (default 5): `GetDeviceInfo`, `GetZoomInfo`, `GetGimbalPosInfo` and, per series, Tiny
+   `GetAiTrackingInfo` / `GetPresetPositionInfo`, Meet `GetVirtualBackgroundInfo` / `GetAutoFramingInfo`. UDP silence
+   for 3 polls (at least 15 s) = disconnected; Cuebot keeps saying hello.
+3. Replies: `DeviceInfo ,isisisisiii` (4 x connected+name, selected index, run state 0 sleep/1 run, type),
+   `ZoomInfo ,ii` (zoom 0-100, fov 0/1/2 = 86°/78°/65°), `GetGimbalPosInfoResp ,iii` (roll, pitch, yaw),
+   `Tiny/AiTrackingInfo ,i`, `Tiny|Meet/PresetPositionInfo ,isisis`, `Meet/VirtualBackgroundInfo ,i`,
+   `Meet/AutoFramingInfo ,i`. A reply with one extra leading int carries the device index and is accepted too.
+4. On disconnect: `/OBSBOT/WebCam/General/Disconnected ,i 0`.
+
+Commands take an optional first int selecting the device (0-3; omitted = the camera selected in Center), then the
+value(s). PC recording/snapshot/high-fps recording, `Connected`, `Disconnected` and `SelectDevice` take one argument.
+
+### Mapping
+
+Streamer.bot's OBSBOT page (docs.streamer.bot/guide/integrations/obsbot) is an empty "missing documentation" stub and
+its docs repository has no OBSBOT triggers, sub-actions or variables, so there is no documented list to match; Cuebot
+covers OBSBOT Center's whole published command set instead.
+
+| Cuebot sub-action | OSC |
+| --- | --- |
+| `obsbot.selectDevice` | `General/SelectDevice` |
+| `obsbot.wakeSleep` (Wake/Sleep/Toggle) | `General/WakeSleep` |
+| `obsbot.resetGimbal` | `General/ResetGimbal` |
+| `obsbot.setZoom` (0-100, optional speed 0-11) | `General/SetZoom` or `General/SetZoomSpeed` |
+| `obsbot.zoomLimit` (Max/Min) | `General/SetZoomMax` / `SetZoomMin` |
+| `obsbot.moveGimbal` (Up/Down/Left/Right/Stop, speed, optional duration) | `General/SetGimbalUp/Down/Left/Right` (0 stops) |
+| `obsbot.setGimbalPosition` (pan, pitch, speed; optional decimals) | `General/SetGimMotorDegree` / `SetGimMotorDegreeEx` |
+| `obsbot.setView` | `General/SetView` |
+| `obsbot.setMirror` | `General/SetMirror` |
+| `obsbot.recording` (PC / high-fps / Tail camera) | `General/SetPCRecording`, `General/SetHighfpsRecording`, `Camera/Tail/SetRecording` |
+| `obsbot.snapshot` (PC / Tail camera) | `General/PCSnapshot`, `Camera/Tail/Snapshot` |
+| `obsbot.setImage` | `SetAutoFocus`, `SetManualFocus`, `Tail/SetFocusMode`, `SetAutoExposure`, `SetExposureCompensate`, `SetShutterSpeed`, `SetISO`, `SetAutoWhiteBalance`, `SetColorTemperature`, `SetWhiteBalanceShift` (floats), `SetRBGain` |
+| `obsbot.aiLock` (Lock/Unlock/Toggle) | `Tiny/ToggleAILock` |
+| `obsbot.triggerPreset` (1-3, series) | `Tiny/TriggerPreset` / `Camera/Tail/TriggerPreset` |
+| `obsbot.setAiMode` (series) | `Tiny/SetAiMode` / `Camera/Tail/SetAiMode` |
+| `obsbot.setTrackingMode` | `Tiny/SetTrackingMode` |
+| `obsbot.setTrackingSpeed` (Both/Pan/Tilt) | `Tiny/SetTrackingSpeed`, `Tail/SetTrackingSpeed`, `Tail/SetPanTrackingSpeed`, `Tail/SetTiltTrackingSpeed` |
+| `obsbot.setAxisLock` | `Tail/SetPanAxisLock` / `SetTiltAxisLock` |
+| `obsbot.setVirtualBackground`, `obsbot.setAutoFraming`, `obsbot.standardMode` | `Meet/SetVirtualBackground`, `Meet/SetAutoFraming`, `Meet/SetStandardMode` |
+| `obsbot.getState` → `obsbot.isConnected`, `obsbot.deviceIndex/deviceName/awake/zoom/fov/fovDegrees/pitch/yaw/aiLocked/virtualBackground/autoFraming/deviceCount`, `obsbot.presetN.exists/name` | the Get* queries |
+| `obsbot.sendOsc` | any address and arguments |
+
+Triggers (Cuebot extras): `obsbot.connected`, `obsbot.disconnected`, `obsbot.deviceChanged`, `obsbot.sleepStateChanged`
+(filter Awake/Asleep), `obsbot.zoomChanged` (+ `obsbot.oldZoom`), `obsbot.gimbalMoved`, `obsbot.aiTrackingChanged`
+(filter Locked/Unlocked), `obsbot.message` (any non-state message: `obsbot.address`, `obsbot.args` JSON,
+`obsbot.arg0..2`; filter by address). All carry the state variables above plus `obsbot.host/port/transport`.
+
+Script functions: `obsbot.isConnected`, `connect`, `disconnect`, `getState`, `send({address, args})`, `setZoom`,
+`setGimbal`, `triggerPreset`.
+
+### Sources
+
+- OBSBOT, *OBSBOT Center OSC definition* (xlsx, rev. 2026-05-08):
+  https://resource-cdn.obsbothk.com/download/obsbot-tail-2/osc/obsbot_center_osc_definition20260508.xlsx, linked from
+  https://www.obsbot.com/explore/obsbot-center/osc. Every address, argument and value range above comes from it.
+- Bitfocus Companion `companion-module-obsbot-osc` (MIT; HELP.md, `src/tcp.ts`, `src/config.ts`; read for the wire
+  details only): TCP length framing and byte orders, reply port 57120, Tail hardware port 57110, polling.
+- Port 16284 as OBSBOT Center's usual receive port: ObsbotSharp's README and community controllers; it is a setting in
+  Center, so Cuebot only defaults to it.
+- OSC 1.0 specification (opensoundcontrol.org).
+
+### Not covered / untested
+
+- Not run against a real OBSBOT Center or camera (neither is installed here). Tests drive the real UDP and TCP
+  transports against an in-process OSC server on 127.0.0.1 that answers as the spreadsheet describes.
+- Model-specific AI-mode and tracking-speed numbers are passed through as numbers (their meaning differs per model; the
+  sub-action help lists them). Tail 2 hardware's extra commands (its own spreadsheet) are reachable with `obsbot.sendOsc`.
+
+## mtion studio ("mtion worlds")
+
+### Options considered
+
+| Option | Official? | Verdict |
+| --- | --- | --- |
+| **Developer API** (HTTP on localhost:35393 while mtion studio runs; docs.mtion.xyz/mtion/developer-api/external-triggers) | Yes | **Chosen**: the only documented external interface |
+| mtion worlds SDK | Yes | For building content inside mtion, not for remote control |
+| WebSocket / push events | none documented | – |
+
+### API (`Mtion/MtionApi.cs`)
+
+No authentication. `GET /active-clubhouse` → `{id, name, description, external_trigger_datas:[...]}` or 404 (none
+open); `GET /clubhouses`, `GET /clubhouse/:id`; `GET /external-trigger/triggers` → `[{id, name,
+output_parameters:[{parameter_index, name, data_type: string|number|bool|enum}]}]` (404 = no clubhouse);
+`PATCH /external-trigger/fire-trigger/:id` with body `[{"parameter_index":0,"value":...}]` → the trigger (404 = not
+found). Cuebot converts each value to its parameter's type (enum = option number) and only sends the parameters given.
+
+There is no push channel: the optional watcher polls `/active-clubhouse` (default every 5 s) to show "running" on the
+dashboard, publish started/closed events and notice a different clubhouse.
+
+### Mapping
+
+| Streamer.bot (docs.streamer.bot/api/sub-actions/integrations/mtion) | Cuebot |
+| --- | --- |
+| Send Trigger → `mtion.running`, `mtion.trigger.found`, `mtion.trigger.sent` | `mtion.sendTrigger` (trigger name or id + parameters as `name=value` lines or JSON; also sets `mtion.trigger.id/name`) |
+| Get Active Clubhouse → `mtion.running`, `mtion.clubhouse.found/id/name/description` | `mtion.getActiveClubhouse` |
+| – | `mtion.getTriggers` → `mtion.triggerCount`, `mtion.triggerNames`, `mtion.triggers` (JSON) |
+| – (Streamer.bot documents no mtion triggers) | Triggers `mtion.connected`, `mtion.disconnected`, `mtion.clubhouseChanged` (`mtion.clubhouse.*`, `mtion.oldClubhouse.id/name`), `mtion.triggerSent` |
+| – | Script functions `mtion.isRunning`, `sendTrigger`, `getActiveClubhouse`, `getTriggers`, `getClubhouses` |
+
+Streamer.bot's Send Trigger parameters are undocumented (`parameters: []`), so how it fills trigger parameters is
+unknown; Cuebot's name=value form is its own.
+
+### Not covered / untested
+
+- Not run against a real mtion studio (not installed here); tests use an in-memory HTTP handler built from the docs.
+  The API page is from 2023 and mtion has since been renamed "mtion worlds" (Alpha); the endpoints may have changed.
+- The API answers on localhost only (per the docs); Host is configurable for proxies.
+
+## StreamFog: not supported
+
+StreamFog (AR lenses, outfits, video backgrounds) publishes no API, SDK or protocol documentation (streamfog.com/help
+has none). Streamer.bot's integration (docs.streamer.bot/guide/integrations/streamfog: a per-user "Remote Key" copied
+from StreamFog's Streamer.bot page; sub-actions Activate Lens, Activate Lens by Name, Deactivate Lens, Activate Outfit,
+Activate Outfit by Name, Deactivate Outfit / Reset Look, Play Video Background, Play Video Background by Name; mostly
+marked "wip") is a private partnership whose wire protocol is not public. Reverse-engineering it would break the
+clean-room rule, so Cuebot implements nothing and the StreamFog tab says why. Users can still show or hide StreamFog's
+OBS browser source with the OBS sub-actions.
