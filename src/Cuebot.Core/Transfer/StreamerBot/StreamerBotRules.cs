@@ -655,6 +655,9 @@ public sealed partial class StreamerBotMappingTable
         // A step that never had any code (a freshly added one) imports empty; code that is there but unreadable does not.
         if (string.IsNullOrEmpty(code) && (!string.IsNullOrEmpty(Str(s, "byteCode")) || Has(s, "code"))) throw new SbMappingException("the C# code could not be read");
         code ??= "";
+        // Streamer.bot can export a step with "byteCode": null (seen from 1.0.7); there is then nothing to run.
+        if (code.Length == 0)
+            c.Warn($"'{c.ActionName}': a C# step has no code (the export carries none). Paste the code into the step before enabling the action.");
         c.Warn($"'{c.ActionName}': contains C# code. The action was imported disabled; read the code before enabling it.");
         var step = Step("code.csharp", s, ("code", code));
         if (Str(s, "name") is { Length: > 0 } name) step.Parameters["name"] = name;
