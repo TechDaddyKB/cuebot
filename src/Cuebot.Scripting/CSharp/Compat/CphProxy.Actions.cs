@@ -90,7 +90,16 @@ public sealed partial class CphProxy
     }
 
     public void PauseAllActionQueues() => Queues().PauseAll();
-    public void ResumeAllActionQueues() => Queues().ResumeAll();
+    /// <summary>Resumes every queue; with <paramref name="clear"/> their waiting runs are dropped first.</summary>
+    public void ResumeAllActionQueues(bool clear = false)
+    {
+        var queues = Queues();
+        if (clear)
+        {
+            foreach (var queue in queues.Queues) queues.Clear(queue.Name);
+        }
+        queues.ResumeAll();
+    }
 
     private QueueService Queues([System.Runtime.CompilerServices.CallerMemberName] string method = "") =>
         Need(_services.Engine, method).Queues;

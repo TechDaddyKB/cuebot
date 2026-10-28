@@ -25,7 +25,7 @@ public sealed partial class CphProxy
         UserCooldown = c.UserCooldownSeconds,
     }).ToList();
 
-    public long CommandGetCounter(string id) => Commands().GetCounter(Command(id).Id);
+    public int CommandGetCounter(string id) => (int)Math.Min(int.MaxValue, Commands().GetCounter(Command(id).Id));
     public void CommandResetCounter(string id) => Commands().ResetCounter(Command(id).Id);
     public void CommandResetAllUserCounters(string id) => Commands().ResetUserCounters(Command(id).Id);
 
@@ -180,6 +180,9 @@ public sealed partial class CphProxy
     public bool AddUserToGroup(string userName, string groupName) => AddUserToGroup(userName, Platform.Twitch, groupName);
     public bool RemoveUserFromGroup(string userName, string groupName) => RemoveUserFromGroup(userName, Platform.Twitch, groupName);
     public bool UserInGroup(string userName, string groupName) => UserInGroup(userName, Platform.Twitch, groupName);
+    public bool AddUserIdToGroup(string userId, string groupName) => AddUserIdToGroup(userId, Platform.Twitch, groupName);
+    public bool RemoveUserIdFromGroup(string userId, string groupName) => RemoveUserIdFromGroup(userId, Platform.Twitch, groupName);
+    public bool UserIdInGroup(string userId, string groupName) => UserIdInGroup(userId, Platform.Twitch, groupName);
 
     private static string PlatformName(Platform platform) => platform.ToString();
     private static string Key(Platform platform) => platform.ToString().ToLowerInvariant();
