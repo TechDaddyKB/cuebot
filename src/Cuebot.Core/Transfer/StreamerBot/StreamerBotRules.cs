@@ -275,7 +275,7 @@ public sealed partial class StreamerBotMappingTable
 
         AddSubActions(t);
         AddTriggers(t);
-        // A rule is tentative when the Streamer.bot name of one of its codes is only likely or unsure.
+        // A rule is tentative when the Streamer.bot name of one of its codes is only likely (not confirmed by its UI text).
         for (var i = 0; i < t._subActions.Count; i++)
             t._subActions[i] = t._subActions[i] with { Tentative = t._subActions[i].TypeKeys.Any(TentativeSubActionCodes.Contains) };
         return t;

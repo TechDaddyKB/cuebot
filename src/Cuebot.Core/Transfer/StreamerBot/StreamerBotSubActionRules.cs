@@ -11,7 +11,8 @@ namespace Cuebot.Core.Transfer.StreamerBot;
 /// the settings it saves by default were read from a real Streamer.bot 1.0.7 (each candidate code imported into it,
 /// the codes it kept read back with their default settings, 2026-10-28). Which menu entry a code is was worked out
 /// from those fields, the menu, the docs and the order Streamer.bot added sub-actions in; codes whose name is only
-/// likely or unsure are in <see cref="TentativeSubActionCodes"/> and reported as "please check".
+/// likely are in <see cref="TentativeSubActionCodes"/> and reported as "please check"; the others were confirmed by
+/// the display text Streamer.bot's UI shows for each (read with accounts signed in, 2026-10-28).
 /// docs/streamerbot-import-codes.md lists every code; <see cref="NoEquivalentSubActions"/> the ones Cuebot cannot do.
 /// <para>
 /// Settings conventions: a state is an index into the documented options (0 Enabled/On, 1 Disabled/Off, 2 Toggle);
@@ -26,8 +27,9 @@ public sealed partial class StreamerBotMappingTable
     public const string SwitchDefaultCode = "99904";
 
     /// <summary>
-    /// Streamer.bot 1.0.7 sub-action codes whose menu name is only likely or unsure (a sibling with the same fields
-    /// could be meant). Their rules are <see cref="SbRule.Tentative"/>.
+    /// Streamer.bot 1.0.7 sub-action codes whose menu name is only likely: every other code is certain from its fields
+    /// or confirmed by the display text Streamer.bot's UI shows for it; these rendered no text (Twitch reward steps
+    /// with no reward chosen). Their rules are <see cref="SbRule.Tentative"/>.
     /// </summary>
     public static IReadOnlySet<string> TentativeSubActionCodes => TentativeCodes.All;
 
@@ -36,18 +38,7 @@ public sealed partial class StreamerBotMappingTable
     {
         public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
         {
-        "11", "12", "13", "14", "21", "23", "24", "25", "26", "27", "28", "31", "32", "33", "40", "41", "42", "43", "45", "49", "52",
-        "125", "126", "129", "130", "200", "201", "208", "209", "210", "211", "212", "214", "215", "253", "254",
-        "321", "323", "324", "325", "326", "402", "403", "404", "411", "412", "413", "414", "415",
-        "500", "501", "502", "503", "504", "505", "507", "508", "509", "510", "512", "513",
-        "520", "522", "523", "524", "525", "526", "527", "528", "530", "551", "552", "553", "554", "555", "556", "557", "558",
-        "562", "563", "564", "566", "567", "569", "570", "575", "578", "579", "580", "601", "602", "603", "604", "605", "606",
-        "1010", "1011", "1015", "1017", "1021", "1026", "1027", "1035", "1038",
-        "4005", "4006", "4007", "4010", "5001", "5004", "5005", "5006", "5007", "5008", "5011", "6004",
-        "11005", "11006", "11007", "12006", "12008", "14003", "14004", "14007", "14009", "14308", "14311",
-        "14601", "14602", "14608", "14609", "14611", "14614", "14616", "14701", "19005", "19006", "21009", "21010", "30001",
-        "35020", "35021", "35022", "35041", "35043", "35101", "35102", "35108", "35109", "35110", "35111", "35112",
-        "41001", "41002", "41003", "41004", "41010", "41013", "41014", "41016", "41017", "44001", SwitchDefaultCode,
+            "200", "201", "208", "209", "210", "214", "215",
         };
     }
 
@@ -72,7 +63,7 @@ public sealed partial class StreamerBotMappingTable
             ["35111"] = "Kick Set Group Enabled State: Cuebot has no Kick reward groups",
             ["35112"] = "Kick Set Group Paused State: Cuebot has no Kick reward groups",
             ["41012"] = "Meld Studio Set Text: Cuebot's Meld Studio steps cannot set a text layer",
-            ["41016"] = "Meld Studio Set Media Layer Source: Cuebot's Meld Studio steps cannot change a media layer's file",
+            ["41014"] = "Meld Studio Set Image/Media Layer Source: Cuebot's Meld Studio steps cannot change a media layer's file",
             ["44001"] = "Streamlabs Spin Wheel: Cuebot has no Streamlabs (cloud) wheel",
         };
         foreach (var (code, name) in new[] { ("14401", "Set AR Lens"), ("14402", "Set Camera"), ("14403", "Set Bitrate"), ("14404", "Set Flash Mode") })
@@ -182,8 +173,8 @@ public sealed partial class StreamerBotMappingTable
             [("title", Str(s, "title") ?? ""), ("prompt", Str(s, "prompt") ?? ""), ("originalText", Str(s, "originalText") ?? ""),
              ("variable", Str(s, "outputVariable") is { Length: > 0 } v ? v : "inputResult"), ("autoType", Flag(Bool(s, "autoTypeOutput") ?? false))]);
         With("1025", "Set Voice Control Input", "voiceControl.setInput", (s, _, _) => [("device", Str(s, "audioDeviceName") is { Length: > 0 } d ? d : "Default")]);
-        Plain("1026", "Reset Credits", "credits.reset");
-        With("1027", "Reset First Words", "users.resetFirstWords", (_, _, _) => [("platform", "All")]);
+        With("1026", "Reset First Words", "users.resetFirstWords", (_, _, _) => [("platform", "All")]);
+        Plain("1027", "Reset Credits", "credits.reset");
         With("1028", "Set Sub-Action State", "core.setSubActionState", (s, c, l) =>
             [("action", Action(s, c)), ("subAction", Ref(s, c, l, "subActionId", "sub-action")), ("state", EnableState(s, l))]);
         With("1030", "Set File Tail State", "core.setWatcherState", (s, c, l) => [("watcher", Ref(s, c, l, "fileTailId", "file tail")), ("state", EnableState(s, l))]);
@@ -214,7 +205,7 @@ public sealed partial class StreamerBotMappingTable
 
         // ---------------------------------------------------------------- Twitch
         With("11", "Twitch Update Redemption Status", "twitch.updateRedemption", (s, _, l) =>
-            [("rewardId", "%rewardId%"), ("redemptionId", "%redemptionId%"), ("status", Pick(s, "status", l, "Fulfil", "Cancel"))]);
+            [("rewardId", "%rewardId%"), ("redemptionId", "%redemptionId%"), ("status", Pick(s, "status", l, "Cancel", "Fulfil"))]);
         With("12", "Twitch Subscriber Only", "twitch.subscriberMode", (s, _, l) => [("enabled", OnOff(s, "status", l))]);
         With("13", "Twitch Emote Only", "twitch.emoteOnly", (s, _, l) => [("enabled", OnOff(s, "status", l))]);
         With("14", "Twitch Slow Mode", "twitch.slowMode", (s, _, l) =>
@@ -240,7 +231,7 @@ public sealed partial class StreamerBotMappingTable
             return [("count", Text(Math.Max(1, Num(s, "count") ?? 1))), ("excludeBroadcaster", "true")];
         });
         With("23", "Twitch Send Announcement", "twitch.sendAnnouncement", Announcement);
-        With("25", "Twitch Send Announcement (older layout)", "twitch.sendAnnouncement", Announcement);
+        Custom("25", "Twitch Get Latest Charity Campaign", "twitch.getCharityCampaign", (s, _) => Step("twitch.getCharityCampaign", s));
         Plain("26", "Twitch Get Shield Mode Status", "twitch.getShieldMode");
         With("27", "Twitch Update Shield Mode Status", "twitch.setShieldMode", (s, _, l) => [("enabled", OnOff(s, "status", l))]);
         With("28", "Twitch Follow Mode", "twitch.followerMode", (s, _, l) => [("enabled", OnOff(s, "status", l)), ("minutes", Text(Math.Max(0, Num(s, "duration") ?? 0)))]);
@@ -286,8 +277,8 @@ public sealed partial class StreamerBotMappingTable
         With("503", "Twitch Remove VIP", "twitch.removeVip", (s, c, _) => [("user", UserLogin(s, c))]);
         With("504", "Twitch Add Moderator", "twitch.addModerator", (s, c, _) => [("user", UserLogin(s, c))]);
         With("505", "Twitch Remove Moderator", "twitch.removeModerator", (s, c, _) => [("user", UserLogin(s, c))]);
-        Plain("507", "Twitch Get Subscriber Count", "twitch.getSubscriberCount");
-        Plain("508", "Twitch Get Latest Follower", "twitch.getFollowerCount");
+        Plain("507", "Twitch Get Latest Follower", "twitch.getFollowerCount");
+        Plain("508", "Twitch Get Subscriber Count", "twitch.getSubscriberCount");
         Plain("509", "Twitch Get Latest Subscriber", "twitch.getLatestSubscriber");
         Plain("510", "Twitch Clear Chat Messages", "twitch.clearChat");
         With("512", "Twitch Unban User", "twitch.unban", (s, c, _) => [("user", UserLogin(s, c))]);
@@ -315,9 +306,9 @@ public sealed partial class StreamerBotMappingTable
         With("553", "Twitch Add User To Group", "groups.addUser", (s, c, _) => [.. UserGroup(s, c, "twitch"), ("create", "true")]);
         With("554", "Twitch Remove User from Group", "groups.removeUser", (s, c, _) => UserGroup(s, c, "twitch"));
         Custom("558", "Twitch User In Group", "groups.userInGroup", (s, c) => Step("groups.userInGroup", s, [.. UserGroup(s, c, "twitch"), ("argument", "inGroup")]));
-        Plain("555", "Twitch Get Ad Schedule", "twitch.getAdSchedule");
-        Plain("556", "Twitch Get Pre-roll Free Time", "twitch.getAdSchedule");
-        Plain("557", "Twitch Snooze Ad", "twitch.snoozeAd");
+        Plain("555", "Twitch Snooze Ad", "twitch.snoozeAd");
+        Plain("556", "Twitch Get Ad Schedule", "twitch.getAdSchedule");
+        Plain("557", "Twitch Get Pre-roll Free Time", "twitch.getAdSchedule");
         With("561", "Twitch Create Poll", "twitch.createPoll", (s, _, _) =>
             [("title", Str(s, "title") ?? ""), ("choices", Lines(Get(s, "choices"))), ("duration", Text(Math.Max(15, Num(s, "duration") ?? 60))),
              ("pointsPerVote", Text(Math.Max(0, Num(s, "channelPointsPerVote") ?? 0)))]);
@@ -329,8 +320,8 @@ public sealed partial class StreamerBotMappingTable
         Plain("567", "Twitch Get Active Prediction", "twitch.getPrediction");
         With("568", "Twitch Create Prediction", "twitch.createPrediction", (s, _, _) =>
             [("title", Str(s, "title") ?? ""), ("outcomes", Lines(Get(s, "outcomes"))), ("window", Text(Math.Max(30, Num(s, "predictionWindow") ?? 120)))]);
-        Plain("569", "Twitch Lock Active Prediction", "twitch.lockPrediction");
-        Plain("570", "Twitch Cancel Active Prediction", "twitch.cancelPrediction");
+        Plain("569", "Twitch Cancel Active Prediction", "twitch.cancelPrediction");
+        Plain("570", "Twitch Lock Active Prediction", "twitch.lockPrediction");
         // Streamer.bot's winning index counts from 0; Cuebot numbers outcomes from 1.
         With("571", "Twitch Resolve Last Prediction", "twitch.resolvePrediction", (s, _, _) =>
             [("winner", Num(s, "winningIndex") is { } i ? Text(Math.Max(0, i) + 1) : Str(s, "winningIndex") ?? "1"), ("title", "")]);
@@ -345,20 +336,20 @@ public sealed partial class StreamerBotMappingTable
         // ---------------------------------------------------------------- OBS Studio
         Obs("31", "OBS Set Random Group Source Visible", "obs.randomGroupSource", (s, _, _) => [("group", Str(s, "groupName") ?? ""), ("resultArgument", "obsSourceName")]);
         Obs("32", "OBS Hide Group's Sources", "obs.hideGroupSources", (s, _, _) => [("group", Str(s, "groupName") ?? "")]);
-        // A real export ends the stream with state 0 ("_Raid Out" in the official starter pack): 0 Stop, 1 Start.
+        // Streamer.bot shows a fresh one (state 0) as "Stop Streaming", and the starter pack's "_Raid Out" ends the stream with it.
         Obs("33", "OBS Streaming", "obs.streaming", (s, _, l) => [("mode", Pick(s, "state", l, "Stop", "Start", "Toggle"))]);
         Obs("36", "OBS Flip Source", "obs.flipSource", (s, _, l) =>
             [("scene", Str(s, "sceneName") ?? ""), ("source", Str(s, "sourceName") ?? ""), ("axis", Pick(s, "flipMode", l, "Horizontal", "Vertical"))]);
         Obs("37", "OBS Rotate Source", "obs.rotateSource", (s, _, _) =>
             [("scene", Str(s, "sceneName") ?? ""), ("source", Str(s, "sourceName") ?? ""), ("degrees", Str(s, "degrees") ?? "0"), ("relative", Flag(Bool(s, "additive") ?? false))]);
-        Obs("40", "OBS Set Source Mute State", "obs.setInputMute", (s, _, l) => [("input", Str(s, "sourceName") ?? ""), ("state", Pick(s, "state", l, "Mute", "Unmute", "Toggle"))]);
+        Obs("42", "OBS Set Source Mute State", "obs.setInputMute", (s, _, l) => [("input", Str(s, "sourceName") ?? ""), ("state", Pick(s, "state", l, "Mute", "Unmute", "Toggle"))]);
         Obs("41", "OBS Hide Source's Filters", "obs.setAllFiltersState", (s, _, _) => [("source", Str(s, "sourceName") ?? ""), ("state", "Disable")]);
-        Obs("42", "OBS Set State of a Random Filter", "obs.setRandomFilterState", (s, _, l) =>
+        Obs("40", "OBS Set State of a Random Filter", "obs.setRandomFilterState", (s, _, l) =>
             [("source", Str(s, "sourceName") ?? ""), ("state", Pick(s, "state", l, "Enable", "Disable", "Toggle")), ("resultArgument", "obsFilterName")]);
         Obs("43", "OBS Get Current Scene", "obs.getCurrentScene", (_, _, _) => [("resultArgument", "currentScene")]);
         Obs("44", "OBS Set Source Audio Track State", "obs.setAudioTrack", (s, _, l) =>
             [("input", Str(s, "sourceName") ?? ""), ("track", Text(Math.Clamp(Int(s, "track") ?? 0, 0, 5) + 1)), ("state", Pick(s, "state", l, "Enable", "Disable", "Toggle"))]);
-        Obs("45", "OBS Recording", "obs.recording", (s, _, l) => [("mode", Pick(s, "state", l, "Stop", "Start", "Pause", "Resume"))]);
+        Obs("45", "OBS Recording", "obs.recording", (s, _, l) => [("mode", Pick(s, "state", l, "Start", "Stop", "Pause", "Resume"))]);
         Obs("48", "OBS Take Screenshot", "obs.screenshot", (s, _, _) =>
             [("source", Str(s, "sourceName") is { Length: > 0 } source ? source : Str(s, "sceneName") ?? ""), ("file", Str(s, "path") ?? ""),
              ("quality", Text(Num(s, "quality") is { } q && q > 0 ? q : -1)), ("resultArgument", "screenshotFile")]);
@@ -394,14 +385,14 @@ public sealed partial class StreamerBotMappingTable
         });
         Slobs("409", "Streamlabs Desktop Set Browser Source URL", "slobs.setBrowserUrl", (s, _, _) => [("source", Str(s, "sourceName") ?? ""), ("url", Str(s, "url") ?? "")]);
         Slobs("410", "Streamlabs Desktop Set GDI Text", "slobs.setText", (s, _, _) => [("source", Str(s, "sourceName") ?? ""), ("text", Str(s, "text") ?? "")]);
-        Slobs("411", "Streamlabs Desktop Set Source Mute State", "slobs.setSourceMute", (s, _, l) =>
+        Slobs("413", "Streamlabs Desktop Set Source Mute State", "slobs.setSourceMute", (s, _, l) =>
             [("source", Str(s, "sourceName") ?? ""), ("state", Pick(s, "state", l, "Mute", "Unmute", "Toggle"))]);
         Slobs("412", "Streamlabs Desktop Hide Source's Filters", "slobs.hideSourceFilters", (s, _, _) => [("scene", Str(s, "sceneName") ?? ""), ("source", Str(s, "sourceName") ?? "")]);
-        Slobs("413", "Streamlabs Desktop Set State of a Random Filter", "slobs.setRandomFilterState", (s, _, l) =>
+        Slobs("411", "Streamlabs Desktop Set State of a Random Filter", "slobs.setRandomFilterState", (s, _, l) =>
             [("scene", Str(s, "sceneName") ?? ""), ("source", Str(s, "sourceName") ?? ""), ("state", Pick(s, "state", l, "Visible", "Hidden", "Toggle")),
              ("resultArgument", "slobsFilterName")]);
         Slobs("414", "Streamlabs Desktop Get Current Scene", "slobs.getCurrentScene", (_, _, _) => [("resultArgument", "currentScene")]);
-        Slobs("415", "Streamlabs Desktop Recording", "slobs.recording", (s, _, l) => [("mode", Pick(s, "state", l, "Stop", "Start", "Toggle"))]);
+        Slobs("415", "Streamlabs Desktop Recording", "slobs.recording", (s, _, l) => [("mode", Pick(s, "state", l, "Start", "Stop", "Toggle"))]);
         Slobs("417", "Streamlabs Desktop Set Scene Filter State", "slobs.setSceneFilterState", (s, _, l) =>
             [("scene", Str(s, "sceneName") ?? ""), ("filter", Str(s, "filterName") ?? ""), ("state", Pick(s, "state", l, "Visible", "Hidden", "Toggle"))]);
 
@@ -439,10 +430,10 @@ public sealed partial class StreamerBotMappingTable
         With("5003", "VoiceMod Select Random Voice", "voicemod.selectRandomVoice", (s, _, l) =>
             [("mode", Pick(s, "mode", l, "AllVoices", "FreeVoices", "FavoriteVoices", "CustomVoices"))]);
         With("5004", "VoiceMod Set Voice Changer State", "voicemod.setVoiceChanger", VoiceModState);
-        With("5005", "VoiceMod Set Background Effect State", "voicemod.setBackgroundEffects", VoiceModState);
+        With("5005", "VoiceMod Set Mute State", "voicemod.setMute", VoiceModState);
         With("5006", "VoiceMod Set Hear My Voice State", "voicemod.setHearMyself", VoiceModState);
         With("5007", "VoiceMod Set Censor State", "voicemod.setCensorBeep", (s, _, l) => [("state", Pick(s, "state", l, "On", "Off"))]);
-        With("5008", "VoiceMod Set Mute State", "voicemod.setMute", VoiceModState);
+        With("5008", "VoiceMod Set Background Effect State", "voicemod.setBackgroundEffects", VoiceModState);
         With("5009", "VoiceMod Select Voice By Id", "voicemod.selectVoice", (s, _, _) => [("voice", Str(s, "voiceId") ?? "")]);
         With("5010", "VoiceMod Play Sound", "voicemod.playSound", (s, _, _) => [("sound", NameOr(s, "soundName", "soundId"))]);
         Plain("5011", "VoiceMod Stop All Sounds", "voicemod.stopAllSounds");
@@ -614,8 +605,8 @@ public sealed partial class StreamerBotMappingTable
         // ---------------------------------------------------------------- Meld Studio
         Meld("41001", "Meld Studio Get Current Scene", "meldstudio.getCurrentScene");
         Meld("41002", "Meld Studio Get Status", "meldstudio.getStatus");
-        Meld("41003", "Meld Studio Recording", "meldstudio.recording", (s, _, l) => [("state", Pick(s, "state", l, "Start", "Stop", "Toggle"))]);
-        Meld("41004", "Meld Studio Streaming", "meldstudio.streaming", (s, _, l) => [("state", Pick(s, "state", l, "Start", "Stop", "Toggle"))]);
+        Meld("41003", "Meld Studio Streaming", "meldstudio.streaming", (s, _, l) => [("state", Pick(s, "state", l, "Start", "Stop", "Toggle"))]);
+        Meld("41004", "Meld Studio Recording", "meldstudio.recording", (s, _, l) => [("state", Pick(s, "state", l, "Start", "Stop", "Toggle"))]);
         Meld("41005", "Meld Studio Show Scene", "meldstudio.showScene", (s, _, _) => [("scene", Str(s, "sceneName") ?? "")]);
         Meld("41006", "Meld Studio Set Layer Visibility State", "meldstudio.setLayerVisibility", (s, _, l) =>
             [("scene", Str(s, "sceneName") ?? ""), ("layer", Str(s, "layerName") ?? ""), ("state", Pick(s, "state", l, "Visible", "Hidden", "Toggle"))]);
@@ -633,10 +624,10 @@ public sealed partial class StreamerBotMappingTable
             [("track", Str(s, "trackName", "track") ?? s.Where(kv => kv.Key.StartsWith('_')).Select(kv => AsString(kv.Value)).FirstOrDefault(v => v is not null) ?? ""),
              ("state", Pick(s, "state", l, "Muted", "Not Muted", "Toggle"))]);
         Meld("41010", "Meld Studio Take Screenshot", "meldstudio.takeScreenshot", (_, _, _) => [("orientation", "Horizontal")]);
-        Meld("41013", "Meld Studio Take Vertical Screenshot", "meldstudio.takeVerticalScreenshot");
-        Meld("41014", "Meld Studio Set Browser Layer Url", "meldstudio.setBrowserLayerUrl", (s, _, _) =>
+        Meld("41013", "Meld Studio Record Clip", "meldstudio.recordClip");
+        Meld("41016", "Meld Studio Set Browser Layer Url", "meldstudio.setBrowserLayerUrl", (s, _, _) =>
             [("scene", Str(s, "sceneName") ?? ""), ("layer", Str(s, "layerName") ?? ""), ("url", Str(s, "url") ?? "")]);
-        Meld("41017", "Meld Studio Record Clip", "meldstudio.recordClip");
+        Meld("41017", "Meld Studio Take Vertical Screenshot", "meldstudio.takeVerticalScreenshot");
 
         // ---------------------------------------------------------------- structure (not in the menu)
         // A branch or case found outside its if/else or switch keeps its children in a group.
