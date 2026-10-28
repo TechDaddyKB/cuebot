@@ -23,6 +23,13 @@ Each keeps its own license; full license texts are available from the linked pro
 | [BouncyCastle.Cryptography](https://github.com/bcgit/bc-csharp) | Ed25519 verification of Throne webhooks | MIT |
 | [.NET runtime](https://github.com/dotnet/runtime) (self-contained builds) | Runtime | MIT |
 
+## System libraries used, not bundled
+
+| Component | Used for | License |
+|---|---|---|
+| [alsa-lib](https://github.com/alsa-project/alsa-lib) (libasound.so.2, Linux; loaded at runtime from the system or Flatpak runtime) | MIDI in/out through the ALSA sequencer | LGPL-2.1-or-later (dynamically linked) |
+| WinMM (winmm.dll, part of Windows) | MIDI in/out on Windows | Windows component |
+
 ## Downloaded on demand
 
 | Component | When | License |

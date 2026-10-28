@@ -13,7 +13,8 @@ makedepends=('dotnet-sdk>=10.0' 'aspnet-targeting-pack>=10.0')
 optdepends=('espeak-ng: offline text-to-speech voices'
             'pipewire-audio: audio playback through pw-play'
             'libpulse: audio playback through paplay'
-            'alsa-utils: audio playback through aplay')
+            'alsa-utils: audio playback through aplay'
+            'alsa-lib: MIDI devices (ALSA sequencer)')
 provides=('cuebot')
 conflicts=('cuebot-bin')
 options=('!strip' '!debug')   # .NET assemblies must not be stripped
