@@ -292,6 +292,115 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public async Task Hotkeys_page_groups_hotkeys_and_has_a_set_action_context_menu()
+    {
+        var service = Get<HotkeyService>();
+        await service.AddGroupAsync("Scenes");
+        await service.SaveAsync(new HotkeyDefinition { Name = "Intro", Gesture = "Ctrl+F1", Group = "Scenes" });
+        await service.SaveAsync(new HotkeyDefinition { Name = "Outro", Gesture = "Ctrl+F2", Group = "Scenes" });
+        await service.SaveAsync(new HotkeyDefinition { Name = "Clip", Gesture = "Ctrl+F3" });
+        await service.StartAsync();
+        var vm = new HotkeysViewModel(service, Get<JsonFile<DesktopSettings>>(), () => ["Scene: Gameplay", "Clip it"]);
+        var view = new HotkeysView();
+        var window = Open(view, vm);
+
+        Assert.Equal(["", "Scenes"], vm.Sections.Select(s => s.Name));
+        var ungrouped = vm.Sections[0];
+        var scenes = vm.Sections[1];
+        Assert.Equal(["Clip"], ungrouped.Hotkeys.Select(h => h.Name));
+        Assert.Equal(["Intro", "Outro"], scenes.Hotkeys.Select(h => h.Name));
+        Assert.True(ungrouped.ShowHeader);
+        Assert.Equal("2 hotkeys", scenes.CountText);
+
+        // + Group, rename in the header, move a hotkey there with its Group box.
+        vm.AddGroupCommand.Execute(null);
+        var replay = vm.Sections[2];
+        Assert.Equal("Group 2", replay.Name);
+        replay.Name = "Replay";
+        Assert.Equal(["", "Scenes", "Replay"], vm.GroupChoices);
+        var clip = vm.Hotkeys.Single(h => h.Name == "Clip");
+        clip.Group = "Replay";
+        Pump();
+        Assert.Equal(["Clip"], replay.Hotkeys.Select(h => h.Name));
+        Assert.Empty(ungrouped.Hotkeys);
+        Assert.False(ungrouped.ShowHeader);
+        Assert.Equal("Replay", service.Hotkeys.Single(h => h.Name == "Clip").Group);
+        replay.Name = "scenes";   // taken: refused, the old name stays
+        Assert.Equal("Replay", replay.Name);
+        Assert.Contains("already a group", vm.Status);
+        replay.Name = "Replays";
+        Pump();
+        Assert.Equal("Replays", clip.Group);
+        Assert.Equal("Replays", service.Hotkeys.Single(h => h.Name == "Clip").Group);
+
+        // Disabling a group unregisters its hotkeys.
+        scenes.Enabled = false;
+        await WaitFor(() => { Pump(); return vm.Hotkeys.Single(h => h.Name == "Intro").State == "Group 'Scenes' is disabled"; });
+        Assert.DoesNotContain(_hotkeys.Applied[^1], r => r.Gesture.ToString() == "Ctrl+F1");
+        Assert.Contains(_hotkeys.Applied[^1], r => r.Gesture.ToString() == "Ctrl+F3");
+        SaveBothThemes(window, "hotkey-groups");
+
+        // The card's context menu: Set Action, Group and Enabled.
+        var card = view.GetVisualDescendants().OfType<Border>().First(b => b.DataContext == clip && b.ContextMenu is not null);
+        var menu = card.ContextMenu!;
+        card.RaiseEvent(new ContextRequestedEventArgs());
+        Pump();
+        MenuItem Entry(string header) => menu.Items.OfType<MenuItem>().First(m => (string?)m.Header == header);
+        MenuItem Choice(MenuItem parent, string label)
+        {
+            parent.Open();
+            Pump();
+            return parent.GetRealizedContainers().OfType<MenuItem>().First(m => (string?)m.Header == label);
+        }
+        void Click(MenuItem item)
+        {
+            item.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
+            Pump();
+        }
+
+        Assert.Equal(["(none)", "Clip it", "Scene: Gameplay"],
+            Entry("Set Action").Items.OfType<HotkeyMenuChoice>().Select(c => c.Label));
+        Click(Choice(Entry("Set Action"), "Clip it"));
+        Assert.Equal("Clip it", clip.Action);
+        Assert.Equal("Clip it", service.Hotkeys.Single(h => h.Name == "Clip").Action);
+        menu.Close();
+        card.RaiseEvent(new ContextRequestedEventArgs());   // right-click: the lists are rebuilt on opening
+        Pump();
+        Assert.True(Entry("Set Action").Items.OfType<HotkeyMenuChoice>().Single(c => c.Label == "Clip it").IsSelected);
+        Assert.Equal(["(no group)", "Scenes", "Replays", "New group"], Entry("Group").Items.OfType<HotkeyMenuChoice>().Select(c => c.Label));
+        Click(Choice(Entry("Group"), "Scenes"));
+        Assert.Equal(["Intro", "Outro", "Clip"], scenes.Hotkeys.Select(h => h.Name));
+        Assert.Equal("Scenes", service.Hotkeys.Single(h => h.Name == "Clip").Group);
+        menu.Close();
+
+        card = view.GetVisualDescendants().OfType<Border>().First(b => b.DataContext == clip && b.ContextMenu is not null);
+        menu = card.ContextMenu!;
+        card.RaiseEvent(new ContextRequestedEventArgs());
+        Pump();
+        Assert.True(Entry("Enabled").IsChecked);
+        Click(Entry("Enabled"));
+        Assert.False(clip.Enabled);
+        Assert.False(service.Hotkeys.Single(h => h.Name == "Clip").Enabled);
+        menu.Close();
+        Pump();
+
+        // Deleting a group keeps its hotkeys, without a group.
+        scenes.DeleteCommand.Execute(null);
+        Pump();
+        Assert.Equal(["", "Replays"], vm.Sections.Select(s => s.Name));
+        Assert.Equal(["Intro", "Outro", "Clip"], ungrouped.Hotkeys.Select(h => h.Name));
+        Assert.All(service.Hotkeys, h => Assert.Equal("", h.Group));
+        Assert.Equal(["Replays"], service.Groups.Select(g => g.Name));
+        await WaitFor(() => { Pump(); return vm.Hotkeys.Single(h => h.Name == "Intro").Registered; });
+
+        // A fresh page (after a restart) shows the saved groups.
+        var reopened = new HotkeysViewModel(service, Get<JsonFile<DesktopSettings>>());
+        Assert.Equal(["", "Replays"], reopened.Sections.Select(s => s.Name));
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Hotkeys_page_records_a_combo_and_registers_it()
     {
         var service = Get<HotkeyService>();
