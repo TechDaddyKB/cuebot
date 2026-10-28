@@ -404,19 +404,26 @@ public sealed partial class StreamerBotMappingTable
         return step;
     }
 
+    /// <summary>The first export format seen with the 1.0 numbering of Global (Set) "source" (format 10 had the old one).</summary>
+    private const int ModernGlobalSourceFormat = 23;
+
     private static SubActionDefinition MapSetGlobal(JsonObject s, ISbMapContext c)
     {
         var name = Str(s, "variableName", "name", "variable") ?? "";
         var value = Str(s, "value") ?? "";
-        // Numeric exports: "source" 0 = copy the argument named in Value, 1 = the value itself, 2 = increment and
-        // 3 = decrement by Value (empty = 1).
+        // Numeric "source", format 23+ (Streamer.bot 1.0): 0 = set to Value, 1 = increment and 2 = decrement by Value
+        // (empty = 1), as Streamer.bot 1.0.7 describes them. Older formats had 0 = copy the argument named in Value,
+        // 1 = the value itself, 2 = increment, 3 = decrement (a format 10 export names its steps that way).
         var mode = "Value";
-        switch (Normalize(Str(s, "source")))
+        var source = Normalize(Str(s, "source"));
+        if (c.FormatVersion is > 0 and < ModernGlobalSourceFormat)
+            source = source switch { "0" => "argument", "1" => "value", "2" => "increment", "3" => "decrement", _ => source };
+        switch (source)
         {
-            case "" or "1" or "value": break;
-            case "0" or "argument": value = value.Length == 0 || value.Contains('%') ? value : $"%{value}%"; break;
-            case "2" or "increment": mode = "Increment"; break;
-            case "3" or "decrement": mode = "Decrement"; break;
+            case "" or "0" or "value": break;
+            case "argument": value = value.Length == 0 || value.Contains('%') ? value : $"%{value}%"; break;
+            case "1" or "increment": mode = "Increment"; break;
+            case "2" or "decrement": mode = "Decrement"; break;
             case var other: throw new SbMappingException($"value source '{other}' is not known");
         }
         var persisted = ("persisted", Flag(Bool(s, "persisted", "persist") ?? true));

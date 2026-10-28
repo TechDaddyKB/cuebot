@@ -57,8 +57,7 @@ codes that left any doubt were then confirmed in Streamer.bot's own UI, which sh
 - **verified (Streamer.bot UI)** (7): the fields fit and the order the sub-actions were added in picks this one, but the UI showed no
   text for it (Twitch reward steps with no reward chosen: 200, 201, 208–210, 214, 215).
 
-Likely codes (7 mapped) are marked `Tentative`; the import report lists them as "type code meaning inferred;
-please check".
+Every code is confirmed (the last 7, the Twitch reward steps, by Streamer.bot's UI text); none is `Tentative` now.
 
 Settings conventions:
 
@@ -68,6 +67,12 @@ Settings conventions:
 - OBS Streaming (33) and Streamlabs Desktop Streaming (404): the UI shows a fresh one (state 0) as "Stop Streaming",
   so 0 Stop, 1 Start; Recording (45 / 415) and Replay Buffer (321) show "Start ...", so 0 Start, 1 Stop (then Pause,
   Resume for OBS recording). Update Redemption Status (11) shows "Redemption Cancel": 0 Cancel, 1 Fulfil.
+- Global (Set) (122) `source` changed numbering: from format 23 (Streamer.bot 1.0) 0 = Set, 1 = Increment, 2 = Decrement
+  (Streamer.bot 1.0.7 describes them so); older formats used 0 = copy the argument named in Value, 1 = the value,
+  2 = Increment, 3 = Decrement (a format 10 export names its steps that way). `destination` (Set) and `source` (Get):
+  0 global, 1 the user who ran the action, 2 the target user. If/Else (120) `operation`: 0 Equals, 1 Not Equals,
+  2 Contains, 3 Regex Match, 4 Less Than, 5 Greater Than, 6 Does Not Exist, 7/8 Equals / Not Equals ignoring case,
+  9 Is Null or Empty (all checked against Streamer.bot 1.0.7's UI text).
 - Ids (all-zero GUID or null = not set): actions, commands, timers and queues in the export are resolved; rewards
   are passed on (Cuebot takes a reward id); decks, VTube Studio models/hotkeys, Wave Link inputs and the like use
   the name saved next to the id; sub-action, trigger, file tail, group, MIDI device, remote instance and voice

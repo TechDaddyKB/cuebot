@@ -26,6 +26,9 @@ public interface ISbMapContext
     /// <summary>Name of the imported action queue with this Streamer.bot id; empty (and reported) when it is not in the export.</summary>
     string QueueRef(string? idOrName);
 
+    /// <summary>The export's format version (top-level "version"; 0 when missing). Some enums were renumbered over time.</summary>
+    int FormatVersion { get; }
+
     /// <summary>
     /// The name <c>CPH.ExecuteMethod</c> finds a Streamer.bot "Execute C# Code" sub-action by: its code name, else the
     /// name of the action holding it. Falls back to the text itself.

@@ -143,6 +143,23 @@ public sealed class StreamerBotCodeTests
     }
 
     [Fact]
+    public void Global_set_source_uses_the_1_0_numbering_from_format_23()
+    {
+        // Streamer.bot 1.0.7 describes source 0/1/2 as "Set ... to", "Increment ... by", "Decrement ... by".
+        var (main, report, _) = Import(Export(
+        [
+            Sub(122, 0, ("destination", 0), ("variableName", "a"), ("persisted", true), ("source", 0), ("value", "rawInput")),
+            Sub(122, 1, ("destination", 0), ("variableName", "a"), ("persisted", true), ("source", 1), ("value", "1")),
+            Sub(122, 2, ("destination", 0), ("variableName", "a"), ("persisted", true), ("source", 2), ("value", "2")),
+        ], version: 24));
+        Assert.Empty(report.Placeholders);
+        var s = main.SubActions;
+        Assert.Equal(("Value", "rawInput"), (s[0].Parameters["mode"], s[0].Parameters["value"]));
+        Assert.Equal(("Increment", "1"), (s[1].Parameters["mode"], s[1].Parameters["value"]));
+        Assert.Equal(("Decrement", "2"), (s[2].Parameters["mode"], s[2].Parameters["value"]));
+    }
+
+    [Fact]
     public void Unknown_global_source_stays_a_placeholder()
     {
         var (_, report, _) = Import(Export([Sub(122, 0, ("destination", 0), ("variableName", "x"), ("source", 9), ("value", "1"))]));

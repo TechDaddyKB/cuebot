@@ -54,10 +54,12 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
 
         public ImportReport Report { get; } = new();
         public string ActionName { get; private set; } = "";
+        public int FormatVersion { get; private set; }
 
         public TransferBundle Convert(JsonObject root)
         {
             var data = Obj(root, "data") ?? root;
+            FormatVersion = int.TryParse(Str(root, "version"), out var format) ? format : 0;
             var meta = Obj(root, "meta");
             var bundle = new TransferBundle
             {
