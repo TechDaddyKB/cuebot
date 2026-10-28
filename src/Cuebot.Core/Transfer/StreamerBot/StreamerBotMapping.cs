@@ -23,6 +23,9 @@ public interface ISbMapContext
     /// <summary>Name of the imported timer with this Streamer.bot id (or the text itself).</summary>
     string TimerRef(string? idOrName);
 
+    /// <summary>Name of the imported action queue with this Streamer.bot id; empty (and reported) when it is not in the export.</summary>
+    string QueueRef(string? idOrName);
+
     /// <summary>
     /// The name <c>CPH.ExecuteMethod</c> finds a Streamer.bot "Execute C# Code" sub-action by: its code name, else the
     /// name of the action holding it. Falls back to the text itself.
@@ -50,8 +53,10 @@ public abstract record SbRule(string Name, string TargetType, IReadOnlyList<stri
     public IReadOnlyList<string> Excludes { get; init; } = [];
 
     /// <summary>
-    /// True when the meaning of a numeric sub-action type code was inferred from public exports with medium confidence
-    /// (see docs/streamerbot-import-codes.md); the import report asks the user to check such items. Trigger codes are
+    /// True when the Streamer.bot name of a sub-action code is only likely or unsure: Streamer.bot 1.0.7 confirmed the
+    /// code and its fields, but which of several look-alike sub-actions it is was worked out from its fields, the
+    /// order Streamer.bot added them in and public exports (see <see cref="StreamerBotMappingTable.TentativeSubActionCodes"/>
+    /// and docs/streamerbot-import-codes.md). The import report asks the user to check such items. Trigger codes are
     /// all verified.
     /// </summary>
     public bool Tentative { get; init; }

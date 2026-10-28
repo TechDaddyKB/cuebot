@@ -438,7 +438,7 @@ public sealed class StreamerBotImporter(StreamerBotMappingTable? table = null)
             return idOrName.Trim();
         }
 
-        private string QueueRef(string? idOrName)
+        public string QueueRef(string? idOrName)
         {
             if (!IsRealId(idOrName)) return "";
             if (_queues.TryGetValue(idOrName!.Trim(), out var name)) return name;
