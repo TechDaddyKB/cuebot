@@ -22,6 +22,17 @@ mkdir -p "$appdir/usr/lib/cuebot" "$appdir/usr/bin" "$appdir/usr/share/applicati
 cp -a "$publish/." "$appdir/usr/lib/cuebot/"
 ln -s ../lib/cuebot/Cuebot "$appdir/usr/bin/cuebot"
 
+# Voice control's whisper.cpp libraries need the GCC OpenMP runtime (libgomp.so.1), which minimal desktops may lack.
+# Bundle the build host's copy in a folder of its own; AppRun puts only that folder on the library path.
+case "$arch" in x86_64) tag="x86-64" ;; *) tag="AArch64" ;; esac
+gomp="$(ldconfig -p 2>/dev/null | grep -F "libgomp.so.1 " | grep -F "$tag" | head -n1 | sed "s/.*=> //")"
+if [ -n "$gomp" ] && [ -f "$gomp" ]; then
+  mkdir -p "$appdir/usr/lib/cuebot-deps"
+  cp -L "$gomp" "$appdir/usr/lib/cuebot-deps/libgomp.so.1"
+else
+  echo "warning: libgomp.so.1 not found on the build host; Whisper voice control will need it on the user's system" >&2
+fi
+
 desktop="$root/packaging/linux/io.github.cuebot.Cuebot.desktop"
 cp "$desktop" "$appdir/usr/share/applications/"
 cp "$desktop" "$appdir/"
@@ -32,6 +43,8 @@ cp "$root/packaging/icons/cuebot-256.png" "$appdir/io.github.cuebot.Cuebot.png"
 cat > "$appdir/AppRun" <<'EOF'
 #!/bin/sh
 here="$(dirname "$(readlink -f "$0")")"
+# The folder holds nothing but libgomp (for voice control), so no other system library is affected.
+export LD_LIBRARY_PATH="$here/usr/lib/cuebot-deps${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 exec "$here/usr/lib/cuebot/Cuebot" "$@"
 EOF
 chmod +x "$appdir/AppRun"

@@ -1,7 +1,7 @@
 namespace Cuebot.Speech;
 
-/// <summary>Receives captured mono samples (float, -1..1) on the audio thread.</summary>
-internal delegate void CaptureCallback(ReadOnlySpan<float> samples);
+/// <summary>Receives captured mono samples (float, -1..1) on the audio thread. Must return quickly.</summary>
+public delegate void CaptureCallback(ReadOnlySpan<float> samples);
 
 /// <summary>
 /// The native (or fallback) layer under <see cref="AudioOutput"/>: device lists, playback voices, capture and
@@ -38,11 +38,15 @@ internal interface IAudioVoice
     void Stop();
 }
 
-/// <summary>A running input capture; dispose to stop.</summary>
-internal interface IAudioCapture : IDisposable
+/// <summary>A running microphone capture (see <see cref="IAudioInput.CaptureSamples"/>); dispose to stop.</summary>
+public interface IAudioInputStream : IDisposable
 {
+    /// <summary>Rate of the mono samples handed to the <see cref="CaptureCallback"/>.</summary>
     int SampleRate { get; }
 }
+
+/// <summary>A running input capture on a backend; dispose to stop.</summary>
+internal interface IAudioCapture : IAudioInputStream;
 
 /// <summary>Maps a stored device id or name to a device the backend currently lists.</summary>
 public static class AudioDeviceSelector

@@ -1,0 +1,213 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.VoiceControl"
+             x:Class="Cuebot.App.Views.VoiceControl.VoiceControlView"
+             x:DataType="vm:VoiceControlViewModel">
+  <UserControl.Styles>
+    <Style Selector="TabControl#VoiceTabs > TabItem">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,3" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Margin="24,24,24,8">
+    <!-- Status bar: listening state, level meter, what is being heard right now. -->
+    <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+      <TextBlock Classes="h1" Text="Voice Control" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Say a command phrase to fire the Voice Control Command trigger; everything recognised also fires Dictation. Recognition runs on this PC (Whisper on Windows and Linux, or Windows Speech Recognition). Settings are stored in voicecontrol.json." />
+      <Grid ColumnDefinitions="Auto,Auto,*,200">
+        <Button Content="Start Listening" Classes="accent" Command="{Binding StartCommand}" Name="VoiceStart" />
+        <Button Grid.Column="1" Content="Stop Listening" Command="{Binding StopCommand}" Margin="8,0" Name="VoiceStop" />
+        <TextBlock Grid.Column="2" VerticalAlignment="Center" TextWrapping="Wrap">
+          <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
+        </TextBlock>
+        <ProgressBar Grid.Column="3" Minimum="-70" Maximum="0" Value="{Binding LevelDb}" Height="10" MinHeight="10" VerticalAlignment="Center"
+                     ToolTip.Tip="Microphone level" />
+      </Grid>
+      <TextBlock Classes="muted" FontStyle="Italic" Text="{Binding Hearing}" IsVisible="{Binding IsListening}" TextWrapping="Wrap" />
+      <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+    </StackPanel>
+
+    <TabControl Name="VoiceTabs">
+      <!-- Commands -->
+      <TabItem Header="Commands">
+        <Grid ColumnDefinitions="300,*" Margin="0,8,0,0">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+              <Button Content="Add" Command="{Binding AddCommandCommand}" Name="VoiceAddCommand" />
+              <Button Content="Duplicate" Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" />
+              <Button Content="Delete" Command="{Binding RemoveCommandCommand}" IsEnabled="{Binding HasSelection}" HotKey="Delete" />
+              <Button Content="↑" Command="{Binding MoveUpCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Move up (commands are checked in this order)" />
+              <Button Content="↓" Command="{Binding MoveDownCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Move down" />
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoCommands}"
+                       Text="No voice commands yet. Add one, then pick it in a Voice Control Command trigger." />
+            <ListBox Name="VoiceCommands" ItemsSource="{Binding Commands}" SelectedItem="{Binding Selected}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:VoiceCommandRowViewModel">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <CheckBox IsChecked="{Binding Enabled}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Classes="muted" Text="{Binding Phrase}" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Classes="muted" FontSize="11" Text="{Binding Summary}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+
+          <ScrollViewer Grid.Column="1" Margin="16,0,0,0">
+            <Border Classes="card" IsVisible="{Binding $parent[UserControl].((vm:VoiceControlViewModel)DataContext).HasSelection}" DataContext="{Binding Selected}" x:DataType="vm:VoiceCommandRowViewModel"
+                    VerticalAlignment="Top" MaxWidth="640" HorizontalAlignment="Left">
+              <StackPanel Spacing="10">
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Name" />
+                  <TextBox Text="{Binding Name}" Name="VoiceCommandName" />
+                </StackPanel>
+                <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Command" />
+                  <TextBox Text="{Binding Phrase}" PlaceholderText="What to say, e.g. start the countdown" Name="VoiceCommandPhrase" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Location" />
+                  <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:VoiceControlViewModel)DataContext).Locations}"
+                            SelectedItem="{Binding Location}" MinWidth="180" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12" Margin="0,4,0,0"
+                             Text="Exact: the whole phrase on its own, with a pause before and after. Start: the phrase begins what you say; the rest becomes %spokenTextInput%. Anywhere: the phrase anywhere in a sentence." />
+                </StackPanel>
+                <CheckBox Content="Stop After" IsChecked="{Binding StopAfter}"
+                          ToolTip.Tip="Fire as soon as the phrase is heard (Start/Anywhere, while you are still talking) and stop checking other commands for that sentence" />
+                <CheckBox Content="Override Global confidence" IsChecked="{Binding OverrideGlobal}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding OverrideGlobal}">
+                  <TextBlock Text="Confidence Threshold" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding ConfidenceThreshold}" Minimum="0" Maximum="100" Increment="5" FormatString="0" Width="130" />
+                  <TextBlock Text="%" VerticalAlignment="Center" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+
+      <!-- Settings -->
+      <TabItem Header="Settings">
+        <ScrollViewer Margin="0,8,0,0">
+          <StackPanel MaxWidth="760" HorizontalAlignment="Left" Spacing="8">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Listening" />
+                <CheckBox Content="Auto Start Listen (when Cuebot starts)" IsChecked="{Binding AutoStart}" />
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Audio Input Device" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <ComboBox ItemsSource="{Binding InputDevices}" SelectedItem="{Binding InputDevice}" HorizontalAlignment="Stretch" Name="VoiceInputDevice" />
+                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshDevicesCommand}" Margin="8,0,0,0" />
+                  </Grid>
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
+                             Text="Can be changed while listening. The same microphone list is used by Speech → VoiceGate." />
+                  <TextBlock Classes="error" FontSize="12" IsVisible="{Binding !HasMicrophone}"
+                             Text="No audio input backend is available, so voice control cannot listen." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Confidence Threshold" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding ConfidenceThreshold}" Minimum="0" Maximum="100" Increment="5" FormatString="0" Width="130" />
+                  <TextBlock Text="% (phrases below this are ignored)" VerticalAlignment="Center" Classes="muted" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Match tolerance" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding MatchTolerance}" Minimum="0" Maximum="50" Increment="5" FormatString="0" Width="130" />
+                  <TextBlock Text="% of letters that may differ (0 = exact words)" VerticalAlignment="Center" Classes="muted" />
+                </StackPanel>
+                <CheckBox Content="Log Speech to Text Dictation (write recognised phrases to the log file)" IsChecked="{Binding LogDictation}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Recognition engine" />
+                <ComboBox ItemsSource="{Binding Engines}" SelectedItem="{Binding Engine}" MinWidth="360" Name="VoiceEngine">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:VoiceEngineOption">
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding EngineHint}" />
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Locale" />
+                  <AutoCompleteBox ItemsSource="{Binding Locales}" Text="{Binding Locale}" FilterMode="StartsWith" MinimumPrefixLength="0" Width="200"
+                                   HorizontalAlignment="Left" />
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding LocaleHint}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" IsVisible="{Binding IsWhisper}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Whisper model" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Models are downloaded once from the whisper.cpp model repository (Hugging Face) into the data folder and checked against a SHA-256 sum. Bigger models are more accurate but slower; English-only models are better for English." />
+                <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding Model}" MinWidth="360" Name="VoiceModel">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:WhisperModelRowViewModel">
+                      <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding Notes}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock TextWrapping="Wrap" Text="{Binding ModelHint}" />
+                <StackPanel DataContext="{Binding Model}" x:DataType="vm:WhisperModelRowViewModel" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Download" Classes="accent" IsVisible="{Binding CanDownload}"
+                            Command="{Binding $parent[UserControl].((vm:VoiceControlViewModel)DataContext).DownloadModelCommand}" Name="VoiceDownload" />
+                    <Button Content="Cancel download" IsVisible="{Binding IsDownloading}" Command="{Binding CancelCommand}" />
+                    <Button Content="Delete model" IsVisible="{Binding IsDownloaded}" Command="{Binding DeleteCommand}" />
+                  </StackPanel>
+                  <StackPanel IsVisible="{Binding IsDownloading}" Spacing="2">
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="8" MinHeight="8" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding ProgressText}" />
+                  </StackPanel>
+                </StackPanel>
+                <CheckBox Content="Use a GPU runtime when one is installed (CUDA or Vulkan; otherwise the CPU is used)" IsChecked="{Binding UseGpu}" />
+                <CheckBox Content="Interim results (lets Stop After commands fire while you are still talking; uses more CPU)" IsChecked="{Binding InterimResults}" />
+                <CheckBox Content="Hint the command phrases to Whisper (spells them the way you wrote them)" IsChecked="{Binding PromptWithCommands}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Log -->
+      <TabItem Header="Log">
+        <DockPanel Margin="0,8,0,0">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Live feed of what the engine recognised (kept in memory only; tick Log Speech to Text Dictation to also write it to the log file)." />
+            <Button Content="Clear" Command="{Binding ClearLogCommand}" />
+          </StackPanel>
+          <ListBox ItemsSource="{Binding Log}" Name="VoiceLog">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:DictationRowViewModel">
+                <Grid ColumnDefinitions="70,50,*,Auto">
+                  <TextBlock Classes="muted" Text="{Binding Time}" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Confidence}" />
+                  <TextBlock Grid.Column="2" Text="{Binding Text}" TextWrapping="Wrap" />
+                  <TextBlock Grid.Column="3" Classes="muted" Text="{Binding Outcome}" Margin="8,0,0,0" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

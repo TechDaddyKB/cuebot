@@ -15,6 +15,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
 | `Cuebot.LiveTests` › MIDI | Port listing (WinMM / ALSA sequencer); optionally notes, a controller and SysEx sent to an output, a loopback round trip through the MIDI Message trigger variables, and learning a control you press | Nothing for the listing; a MIDI output, a loopback cable (loopMIDI, Midi Through) or a controller for the rest |
 | `Cuebot.LiveTests` › Game controllers | SDL3 loads and starts on its own thread, connected controllers are listed, optionally the first input arrives as a controller event | Optional: any game controller (works with none connected) |
+| `Cuebot.LiveTests` › Voice control | Text-to-speech says "start the countdown", the audio is fed to voice control as a microphone, and Whisper (and on Windows also Windows Speech Recognition) must fire the Voice Control Command and Dictation triggers. Downloads a Whisper model on the first run | A local TTS voice (Windows SAPI or espeak-ng); about 32 MB download |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -161,6 +162,15 @@ to n seconds for any button press, stick movement past half way or D-pad/hat dir
 controller event; nothing is asked on screen, so press something on the controller once the test starts. On Linux,
 PlayStation/Switch lights and rumble need hidraw access (`steam-devices` / `game-devices-udev` udev rules); see
 `src/Cuebot.Controllers/PROTOCOL.md`.
+
+### Voice control
+
+`VoiceControlLiveTests` runs with `CUEBOT_LIVE_VOICE=1`. No microphone is used: the speech module's own TTS (Windows
+SAPI voices, or espeak-ng on Linux) speaks "start the countdown", and the clip is played into voice control in 20 ms
+blocks at real-time speed, like a microphone. The Whisper test downloads its model once (default Tiny English,
+32 MB; pick another with `CUEBOT_LIVE_VOICE_MODEL=base.en-q5_1` etc.) into `CUEBOT_LIVE_DATA/voicecontrol-whisper/models`
+and checks the SHA-256. The Windows Speech Recognition test only runs on Windows with an installed recogniser
+language. On Linux this is also the check that the bundled whisper.cpp libraries load (glibc 2.34+, libgomp).
 
 ## Running
 

@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Whisper.net's runtime packages copy whisper.cpp for every platform into runtimes/<platform>/ (and runtimes/noavx/...).
+    A RID-specific publish only needs its own, so the other platforms' folders are removed (about 20 MB). Only folders
+    holding a whisper.cpp (ggml-whisper) library are touched; other packages' runtimes/ folders are left alone.
+  -->
+  <Target Name="CuebotPruneForeignWhisperRuntimes" AfterTargets="Publish"
+          Condition="'$(RuntimeIdentifier)' != '' and Exists('$(PublishDir)runtimes')">
+    <ItemGroup>
+      <_CuebotRuntimeDir Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)runtimes'))" />
+      <_CuebotRuntimeDir Include="$([System.IO.Directory]::GetDirectories('$(PublishDir)runtimes/noavx'))"
+                         Condition="Exists('$(PublishDir)runtimes/noavx')" />
+      <_CuebotForeignWhisperDir Include="@(_CuebotRuntimeDir)"
+                                Condition="'%(Filename)%(Extension)' != '$(RuntimeIdentifier)' and (Exists('%(Identity)/ggml-whisper.dll') or Exists('%(Identity)/libggml-whisper.so') or Exists('%(Identity)/libggml-whisper.dylib'))" />
+    </ItemGroup>
+    <RemoveDir Directories="@(_CuebotForeignWhisperDir)" />
+    <Delete Files="$(PublishDir)ggml-metal.metal" Condition="!$(RuntimeIdentifier.StartsWith('osx'))" />
+  </Target>
+</Project>

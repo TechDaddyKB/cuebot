@@ -155,6 +155,7 @@ public static class StreamerBotEventMap
         Add("Custom", "Event");
         Add("Rumble", "ChatMessage", "Rant", "Follow", "Subscribe", "GiftSub", "StreamOnline", "StreamOffline");
         Add("Chat", "Message", "Activity");
+        Add("SpeechToText", "Command", "Dictation");
         return catalog.ToDictionary(p => p.Key, p => (IReadOnlyList<string>)p.Value.ToArray(), StringComparer.Ordinal);
     }
 }

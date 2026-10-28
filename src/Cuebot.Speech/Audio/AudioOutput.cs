@@ -100,6 +100,14 @@ public sealed class AudioOutput : IAudioClipPlayer, IAudioInput, IDisposable
         return capture;
     }
 
+    public IAudioInputStream? CaptureSamples(string? deviceId, CaptureCallback onSamples)
+    {
+        ArgumentNullException.ThrowIfNull(onSamples);
+        var capture = Backend.StartCapture(ResolveInputDevice(deviceId), onSamples);
+        if (capture is null) _log?.Warn(LogSource, $"Microphone capture is not available with {Backend.Name}.");
+        return capture;
+    }
+
     /// <summary>The device to use: null (default) when unset, or when the device is gone (warned once).</summary>
     private string? ResolveDevice(string? requested)
     {

@@ -26,5 +26,6 @@
     <ProjectReference Include="..\..\src\Cuebot.Webhooks\Cuebot.Webhooks.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Midi\Cuebot.Midi.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Controllers\Cuebot.Controllers.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.VoiceControl\Cuebot.VoiceControl.csproj" />
   </ItemGroup>
 </Project>

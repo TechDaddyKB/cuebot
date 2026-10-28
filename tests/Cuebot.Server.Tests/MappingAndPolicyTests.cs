@@ -18,6 +18,8 @@ public sealed class MappingAndPolicyTests
     [InlineData("youtube.superChat", "YouTube", "SuperChat")]
     [InlineData("kick.resub", "Kick", "Resubscription")]
     [InlineData("obs.streamStarted", "Obs", "StreamingStarted")]
+    [InlineData("speechToText.command", "SpeechToText", "Command")]
+    [InlineData("speechToText.dictation", "SpeechToText", "Dictation")]
     [InlineData("obs.recordStopped", "Obs", "RecordingStopped")]
     [InlineData("obs.sceneChanged", "Obs", "SceneChanged")]
     [InlineData("command.triggered", "Command", "Triggered")]
