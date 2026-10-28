@@ -301,8 +301,8 @@ with the reason.
 - P · First Words: `firstMessage` — the trigger is Core's `users.firstWords`, outside the Twitch module — `TR:twitch/chat/first-words.md`
 - ✅ Present Viewers: `isTest`, `isLive` (w16, a stream lookup per poll); since w18 `users` is Streamer.bot's list of dictionaries (`id`, `userName`, `display`, `role`, `isSubscribed`; role 1 and not subscribed, the chatter list has neither) and Cuebot's comma separated logins moved to `userLogins` — `TR:twitch/general/present-viewers.md`
 - Common variables, now checked against `3.api/.variables/twitch/*.md`:
-  - ✅ `TwitchBroadcaster`: `broadcastUser`, `broadcastUserName`, `broadcastUserId` on every event; `broadcastIsAffiliate`/`broadcastIsPartner` once the broadcaster was read at connect.
-  - ✅ `TwitchUser`: `userType`, `isSubscribed`, `badgeCount`. `subscriptionTier` (0), `userGroups` (""), `userPreviousActive` are placeholders (w16; Streamer.bot's user database); `badges` is Cuebot's "set/id" string, not a list.
+  - ✅ `TwitchBroadcaster`: `broadcastUser`, `broadcastUserName`, `broadcastUserId` on every event; `broadcastIsAffiliate`/`broadcastIsPartner` once the broadcaster was read at connect; since w20 also the signed-in account block (`broadcasterChannel.*`, `broadcasterCreatedAt`, `broadcasterDescription`, `broadcasterIsAffiliate`/`IsPartner`/`IsOnboarded`, `broadcasterProfileUrl`, `broadcasterOfflineUrl`).
+  - ✅ `TwitchUser`: `userType`, `isSubscribed`, `badgeCount`. `subscriptionTier` ("0" since w20: Streamer.bot types it as text), `userGroups` (""), `userPreviousActive` are placeholders (w16; Streamer.bot's user database); `badges` is Cuebot's "set/id" string, not a list.
   - ✅ `TwitchChat`: `msgId`, `role`, `colorR/G/B`, `messageStripped`, `messageCheermotesStripped`, `isHighlight`, `reply.*`, `rawInput`, `rawInputEscaped`, `rawInputUrlEncoded`, `input#`, `inputEscaped#`, `inputUrlEncoded#`, `fromSharedChat`. `isAction` is a placeholder (false, w16; EventSub does not flag /me); `inSharedChat` comes from the shared chat session (w16). Still missing: `firstMessage` (Core); `emotes` is Cuebot's IRC-style string, not a list.
   - ✅ `TwitchSharedChatSource`: `source.userId`, `source.userLogin`, `source.userName`. `source.isSubscribed`, `source.isModerator`, `source.isVip` are placeholders (false, w16).
 
@@ -645,7 +645,55 @@ skipped.
   Changed `misc` (like Toast Activation, the other Core > System trigger).
 - Values that need data Cuebot does not have stay placeholders, as listed above and in `docs/PARITY.md`.
 
-### Triggers without a dump (166)
+### Signed in (w20)
+
+Added in w20 (2026-10-28). Streamer.bot 1.0.7 was then signed in to Twitch, YouTube and Kick and Test Trigger rerun
+for every platform trigger: 126 dumps, 45 of them for triggers the signed-out pass could not fire (listed below).
+Signed in, Streamer.bot adds the connected account to every event and fills the user variables from its user
+database. The comparison was rerun the same way (module test suites with every published event's argument names and
+types recorded, Twitch events also run through the Streamer.bot names when only the mapper is tested), and the gaps
+were read by hand; names only missing because a test payload was short (a second poll choice, `input4`, `tag6`)
+were checked in the code instead. YouTube's two re-dumped triggers (New Sponsor, New Subscriber) and Streamlabs
+Connected, Remote Instance Connected / Disconnected matched.
+
+Account data is read once per connection and kept (the Twitch user and channel from Helix, the Kick user and channel
+from the official API; channel updates keep it current), never per event, the same data the Streamer.bot WebSocket
+server's GetBroadcaster reports.
+
+| Module | Added (real data) | Placeholders | Types changed to Streamer.bot's |
+| --- | --- | --- | --- |
+| Twitch | On every event: `broadcasterChannel.gameId`, `.gameName`, `.title` (the channel, kept by Stream Update), `broadcasterCreatedAt` (UTC), `broadcasterDescription`, `broadcasterIsAffiliate`, `broadcasterIsPartner`, `broadcasterProfileUrl`, `broadcasterOfflineUrl`; `isModerator`, `isVip`, `isSubscribed` on events without chat badges (the roles last seen in chat, kept by Moderator/VIP Added/Removed); Stream Online `tags`, `tag#`, `tagCount`, `tagsDelimited` (the channel's tags); Hype Train `duration` (expires - started), `contributors` (top contributions listed); Cheer `anonymous`, `cheerEmotes`, `cheerEmoteCount`; Raid Start `viewers` (last viewer count poll); Unban Request Approved/Denied `message`, `moderatorId`, `moderatorUsername`, `moderatorDisplayName`; Suspicious User `low_trust_status`; Announcement / Modiversary `fromSharedChat`; ended polls `poll.Duration` (the time they ran) | `broadcasterIsOnboarded` (false); the account block before the account is read ("", default DateTime); roles of users not seen in chat (false); Cheer `msgId`, `badges`, `emotes`, `color`, `badgeCount`, `emoteCount` (channel.cheer is no chat message); `contributors`, Raid Start `viewers`, `poll.Duration`/`DurationRemaining` (0) when unknown | `colorR/G/B` byte (Kick too); `subscriptionTier` text ("0"); Gift Sub `monthsGifted` text; Stream Update `statusUpdate`/`gameUpdate` text ("True"); Hype Train `startedAt`, `expiresAt`, Shoutout Created `cooldownEndsAt`, `targetCooldownEndsAt`, Unban Request Created `createdAt` DateTime; Guest Star `slotId` int |
+| Kick | On every event: `broadcasterChannel.categoryId` (int), `.categoryName`, `.categoryThumbnail`, `.title` (the channel, kept by Channel Update); `broadcastUserProfileImage` (the account's picture, read at connect); `broadcastUserName` (the runs' spelling; the docs' `broadcastUsername` still resolves, argument names are case-insensitive); `isModerator`, `isSubscribed` on events without chat badges (roles last seen in chat); Channel Update `statusUpdate` | `broadcasterChannel.*` ("" / 0) before the channel is read; roles of users not seen in chat (false) | Stream Online/Offline `startedAt` DateTime; Stream Online `category.id` int; Viewer Count Update `viewerCount` int; `kicks.amount` decimal |
+| Server | — | — | WebSocket payloads turn the now-DateTime arguments (Hype Train, Shoutout, Shield Mode, ban `createdAt`, YouTube `publishedAt`) into ISO 8601 text again |
+
+Still different after the signed-in pass:
+
+- Hype Train `percent` stays Cuebot's number (50; Streamer.bot: text "50%"): Cuebot's own name, read by its speech
+  templates; `percentDecimal` is Streamer.bot's. Kick Channel Update `categoryUpdated` stays a boolean (Streamer.bot:
+  text "True") for the same reason (Cuebot's name); `statusUpdate` is added as text. Kick timeout `duration` stays
+  Int64 (Streamer.bot: decimal), like Twitch's.
+- Announcement `role` is a number (Streamer.bot's own runs use its `ViewerRole` enum there and a number elsewhere).
+- Cheer `cheerEmotes`, like `badges`/`emotes`, is Cuebot's comma separated text, not Streamer.bot's model list.
+- The broadcaster block is not added to Core's events: Twitch 7TV/BTTV Emote Added/Removed (Core's `chat.emoteAdded` /
+  `chat.emoteRemoved`) and Kick Present Viewers (Core's `users.presentViewers`). First Words gets it, through the
+  platform's chat message arguments.
+- `userGroups` and `userPreviousActive` stay placeholders (Streamer.bot's user database); `broadcasterIsOnboarded` is
+  not in Helix.
+- Case-only spellings resolve because Cuebot's argument names are case-insensitive: Raid `raidUserProfileImageUrl`
+  (Cuebot `raidUserProfileImageURL`), `prediction.endedAt` / `lockedAt` (Cuebot `prediction.EndedAt` / `LockedAt`).
+- Community goals (116, 117) have no Cuebot trigger (Twitch retired them).
+
+Newly dumped (45): Twitch Cheer (102), Gift Subscription (105), Hype Train Start/Update/Level Up/End (108-111), Stream
+Update (118), First Words (120), Chat Message (133), Chat Message Deleted (135), User Banned (137), Announcement (138),
+Shoutout Created (144), User Untimed Out (145), Raid Start (158), Pyramid Broken (163), Guest Star Guest Update (167),
+User Unbanned (191), Unban Request Approved/Denied/Created (192, 193, 195), Warned User (467), Suspicious User Update
+(468), Warning Acknowledged (471), Watch Streak (472), Shared Chat Announcement (481), Shared Chat Message Deleted (494),
+Modiversary (497); Streamlabs Connected (203); Remote Instance Connected/Disconnected (29001, 29002); Kick First Words
+(35008), Present Viewers (35009), Chat Message (35010), Follow (35011), Stream Online/Offline (35012, 35013),
+Subscription/Resubscription/Gift Subscription (35014-35016), User Timed Out (35018), User Banned (35019), Channel Update
+(35020), Viewer Count Update (35023), Kicks Gifted (35025).
+
+### Triggers without a dump (166 signed out; 45 of them dumped signed in, above)
 
 These could not be test-fired without connected accounts, or crashed Streamer.bot's Test Trigger. For them the trigger
 docs (`TR:`) were compared with the module source instead; the remaining doc gaps were all already covered (names
