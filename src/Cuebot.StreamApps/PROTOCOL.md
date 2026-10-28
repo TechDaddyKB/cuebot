@@ -12,7 +12,7 @@ triggers, sub-actions and variables only.
 
 | Option | Official? | Events | Control | Setup | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| **WebChannel API** (Qt WebChannel over `ws://<host>:13376`) | Yes: documented by Meld in `WebChannelAPI.md` and linked from meldstudio.co/docs/api | Full session pushes (scenes, layers, effects, tracks), `isStreaming`/`isRecording` changes, `gainUpdated` per track | Scenes, staged scenes, layers, effects, mute/monitor/gain, record/stream, screenshots, clips, replay, virtual camera, media, widget events, `setProperty` (v2) | One checkbox in Meld: "Allow remote connections" | **Chosen** |
+| **WebChannel API** (Qt WebChannel over `ws://<host>:13376`) | Yes: documented by Meld in `WebChannelAPI.md` and linked from meldstudio.co/docs/api | Full session pushes (scenes, layers, effects, tracks), `isStreaming`/`isRecording` changes, `gainUpdated` per track | Scenes, staged scenes, layers, effects, mute/monitor/gain, record/stream, screenshots, clips, replay, virtual camera, media, widget events, `setProperty` (v2) | One checkbox, File → Preferences → Advanced → "Allow remote connections" (from Streamer.bot's setup guide; Meld's API doc only says it "will always listen on" 127.0.0.1:13376) | **Chosen** |
 | Stream Deck plugin (MeldStudio/streamdeck), Bitfocus Companion `meld-studio`, Firebot / Touch Portal / Loupedeck plugins, meld-cli | Mixed (the Stream Deck plugin is Meld's own) | Same | Same | n/a | They all speak the same WebChannel API with Qt's `qwebchannel.js`, so they are not separate interfaces |
 | OSC, HTTP or an SDK | none found | – | – | – | Meld publishes no other remote-control interface |
 
@@ -44,12 +44,20 @@ One JSON object per websocket text frame. Message types: 1 signal, 2 propertyUpd
 3. Property updates: `{"type":2,"data":[{"object":"meld","signals":{"<sigIdx>":[]},"properties":{"<propIdx>":value}}]}`.
 4. Pure signals need `{"type":7,"object":"meld","signal":<idx>}`; Cuebot connects `gainUpdated` and calls
    `registerTrackObserver("cuebot", trackId)` for each track (setting *ObserveTrackGain*, default on). Signal frames:
-   `{"type":1,"object":"meld","signal":<idx>,"args":[trackId, gain, muted]}`.
-5. Calls: `{"type":6,"object":"meld","method":<index from init>,"args":[...],"id":n}` → `{"type":10,"id":n,"data":...}`.
-   Cuebot only calls methods the init listed and reports "this Meld version does not offer X" otherwise.
+   `{"type":1,"object":"meld","signal":<idx>,"args":[trackId, gain, muted]}`. Meld answers each registration with the
+   current gain at once (that first report is a baseline, not an event) and drops every observer when it rebuilds its
+   audio tracks (restoring or reopening a session, socket left open), so Cuebot registers again after every session
+   change, as Meld's own Stream Deck plugin does.
+5. Calls: `{"type":6,"object":"meld","method":"<bare name>","args":[...],"id":n}` → `{"type":10,"id":n,"data":...}`
+   (a void slot answers `data: null`). Like `qwebchannel.js`, Cuebot names the method, so Qt picks the overload whose
+   parameter count matches the arguments; a call by index skips that and silently drops extra arguments. Cuebot only
+   calls methods the init listed and reports "this Meld version does not offer X" otherwise. `sendStreamEvent` always
+   gets two arguments (`false` when there is no data), as Meld's plugin sends it.
 
 Session items are keyed by 32-hex ids with `type` scene/layer/effect/track; layers' `parent` is their scene, effects'
-`parent` is their layer, layer tracks' `parent` is their layer, global tracks have none.
+`parent` is their layer, layer tracks' `parent` is their layer, global tracks have none. Scenes with `vertical: true`
+are the vertical-canvas twins of a scene (same name possible): they are kept out of the scene list and name lookups
+(reachable by id), and staging one is refused because Meld resolves `setStagedScene` through horizontal scenes only.
 
 ### Mapping
 
@@ -98,10 +106,43 @@ events and generic `setProperty`; state sub-actions never toggle when the item i
 ### Not covered / untested
 
 - Not yet run against a real Meld Studio (unit tests use an in-memory WebChannel server built from the docs; the
-  live test `CUEBOT_LIVE_MELD=1` is ready). The exact shape of `meld.session` in propertyUpdate frames (wrapped in
-  `items` or not) is handled both ways.
+  live test `CUEBOT_LIVE_MELD=1` is ready).
 - Meld has no authentication: anyone who can reach port 13376 controls Meld. Keep "Allow remote connections" to
-  trusted networks.
+  trusted networks. Meld's own docs only mention 127.0.0.1; the checkbox comes from Streamer.bot's setup guide.
+
+### Verification against the docs (2026-10-28)
+
+Sources: Meld's `WebChannelAPI.md` (github.com/MeldStudio/streamdeck, last change commit `f8e27ea`, 2026-08-13; the
+file has no version of its own); meldstudio.co/docs/api (only links to it); Meld's client
+`packages.streamwithmeld.com/qt6.8/qwebchannel.js` (Last-Modified 2025-06-20, identical to Qt 6.8's file); Qt's
+`qmetaobjectpublisher.cpp` (qtwebchannel 6.8 branch) for how the server resolves calls and queues updates; Meld's
+Stream Deck plugin source at the same commit (`src/meld/connection.ts`, `types.ts`, `widget-control.ts`,
+`transition-stepper.ts`, `replay.ts`). Bitfocus `companion-module-meld-studio` (2026-09-29) was read but is guesswork
+(calls methods "if they exist"), so it settled nothing.
+
+Verified as matching: port 13376; message type numbers; init → response → idle order and an idle after every
+propertyUpdate; property entries `[idx, name, [1|"sig", sigIdx] | [], value]` with `1` = `<name>Changed`; frame shapes
+of propertyUpdate, connectToSignal, signal and response; property names `session` (documented as an object with a
+single key `items`), `isStreaming`, `isRecording`, `version` (absent = v1); every session field Cuebot reads; the
+argument order of every method Cuebot calls; all 12 `sendCommand` strings and all 15 widget event types.
+
+Changed:
+- Methods were invoked by numeric index; now by bare name like `qwebchannel.js` (Qt's overload resolution by argument
+  count). The fake now lists real signatures, QObject's own members, refuses a by-name call that matches no overload
+  and drops extra arguments on index calls, so a wrong argument count fails the tests.
+- `sendStreamEvent` without data sent one argument; now `[type, false]` (Meld's plugin).
+- `gainUpdated` that changed only `muted` raised nothing; now it does. The report Meld sends on registration is a
+  baseline (the fake now sends it, as the plugin documents).
+- Track observers were never registered again; now after every session change.
+- Vertical twin scenes were treated as ordinary scenes (name lookups, scene list, scene-changed events, staging).
+- The fake now holds property updates until the client is idle (Qt's behaviour), so the idle replies are tested.
+
+Not settled by the docs (risks until tried with the real app): whether Meld's slots are overloads or have default
+arguments (only a live init dump shows the real signatures); the scale of the gain `gainUpdated` reports (only
+`setGain`'s 0-1 is documented); which API version added `sendCommandWithArgs`, `sendStreamEvent`, `callFunction*`;
+whether a vertical twin is `current` together with its scene; the docs' table calls a track's `parent` a scene while
+its example (and Meld's plugin) use the layer, which Cuebot follows. The vertical twins, observer drop and
+registration report come from Meld's plugin, not from `WebChannelAPI.md`.
 
 ## PolyPop
 
@@ -167,20 +208,26 @@ Code: `Tits/`. Settings `streamapps.json` → `Tits` (Host 127.0.0.1, Port 42069
 
 Two websockets, no authentication:
 
-- `ws://host:42069/websocket` - requests. Every message is `{"apiName":"TITSPublicApi","apiVersion":"1.0","requestID":"<id>","messageType":"<type>","data":{...}}`;
-  the response echoes `requestID` with `messageType` `<X>Response` (plus a `timestamp`).
-  `TITSItemListRequest` (`data.sendImage`; Cuebot sends `false`) → `data.items[{ID,name,encodedImage}]`;
-  `TITSItemInfoRequest` (`data.itemID`); `TITSThrowItemsRequest` (`data.items` = ids, one picked at random per throw,
-  `delayTime` seconds, `amountOfThrows`, `errorOnMissingID`) → `data.numberOfThrownItems`; `TITSTriggerListRequest` →
-  `data.triggers[{ID,name}]`; `TITSTriggerActivateRequest` (`data.triggerID`, `data.triggerName` used when the id is
-  empty/unknown). The README does not document errors; Cuebot treats any `messageType` containing "Error" (VTube
-  Studio style `APIError` with `data.message`) as a failure.
+- `ws://host:42069/websocket` - requests. Every message is `{"apiName":"TITSPublicApi","apiVersion":"1.0","requestID":"<id>","messageType":"<type>","data":{...}}`
+  (`data` left out when there is none); the response echoes `requestID` with `messageType` `<X>Response` (plus a
+  `timestamp`). `TITSItemListRequest` (`data.sendImage`; Cuebot sends `false`, also as the obsolete top-level
+  `sendImage` that builds before mid-2023 read) → `data.items[{ID,name,encodedImage}]`; `TITSItemInfoRequest`
+  (`data.itemID`) → `data.{ID,name,encodedImage}`; `TITSThrowItemsRequest` (`data.items` = ids, one picked at random
+  per throw, `delayTime` seconds, `amountOfThrows`, `errorOnMissingID`) → `data.numberOfThrownItems`;
+  `TITSTriggerListRequest` → `data.triggers[{ID,name}]` and a top-level `triggerCount`; `TITSTriggerActivateRequest`
+  (`data.triggerID`, and since October 2025 `data.triggerName`, used when the id is empty or unknown) → no data.
+  Cuebot sends a known trigger's id and name, and unknown text in both fields. The README does not document errors
+  (issue #9); open-source clients expect `APIError` or `TITSApiError` with `data.errorID` and `data.message`, so any
+  `messageType` containing "Error" is a failure. An error without a known `requestID` fails the request when exactly
+  one is waiting.
 - `ws://host:42069/events` - broadcasts `TITSHitEvent` (`itemID`, `itemName`, `triggerID`, `triggerName`, `strength`,
-  `direction{x,y,z}`), `TITSTriggerActivatedEvent` and `TITSTriggerEndedEvent` (`triggerID`, `triggerName`).
+  `direction{x,y,z}`), `TITSTriggerActivatedEvent` and `TITSTriggerEndedEvent` (`triggerID`, `triggerName`), in the
+  same envelope (`requestID` "someID" in the README's examples). Names a payload lacks are filled from the cached lists.
 
 The request socket is the connection (status, backoff). While it is up a second loop keeps `/events` connected with
-its own backoff. If `/events` is down, broadcasts arriving on the request socket are also accepted. Item and trigger
-lists are read on connect (no images) so sub-actions and filters can use names (case-insensitive; ids also accepted).
+its own backoff. If `/events` is down, broadcasts arriving on the request socket are also accepted (not documented;
+harmless). Item and trigger lists are read on connect (no images) so sub-actions and filters can use names
+(case-insensitive; ids also accepted).
 
 ### Mapping
 
@@ -206,6 +253,37 @@ Delay is in seconds (T.I.T.S.'s `delayTime`; Streamer.bot's C# default 0.05).
 
 - Not run against real T.I.T.S. (it was not running on the dev PC). Tests use an in-memory server shaped after the README.
 - `TITSItemInfoRequest` and item images are not used (no Streamer.bot feature needs them).
+
+### Verification against the docs (2026-10-28)
+
+Sources: the TITSAPI README (github.com/Remasuri/TITSAPI, the repo's only file; HEAD `05ee40c`, 2025-10-13, PR #10 "Api
+update 1", which added `triggerName` to activation and to both trigger events; earlier: `7274a92` 2023-06-18 moved
+`sendImage` into `data`, `200f90e` 2023-01-17 added item info and changed the hit event, `436e0a8` 2023-01-11 added the
+trigger events) and its issues (#9 errors undocumented, #2 extra `direction` fields such as `magnitude` and hit events
+with ids only, #7). Community clients, read for field names only: Mix It Up's `TITSService.cs`, StreamConnect-Bridge's
+`TITSHandler.ts`, `3e849f2e5c/TITSWebSocket` and `TITSLethalCompany`, okabot. No other official documentation exists.
+
+Verified as matching: port 42069, paths `/websocket` and `/events`, no authentication; envelope field names and
+casing; every request type and data field Cuebot sends; response type names and fields; the three event names and
+their fields; Streamer.bot's variable names.
+
+Changed:
+- Activate Trigger by Name sent an empty `triggerID`, which builds before the October 2025 README update ignore; it now
+  sends the cached id (reloading the list once) as well as the name. An unknown id was sent only as a name; now in
+  both fields.
+- Events without `triggerName` / `itemName` (older builds) published empty names, so name filters failed; the names
+  now come from the cached lists.
+- The item list now also carries the top-level `sendImage: false` (older builds would otherwise send every image).
+- An error answer without a `requestID` timed out; it now fails the one waiting request.
+- The fake now follows the README's examples: `encodedImage` in the item list, the top-level `triggerCount`, no data
+  on the activation answer, `requestID`/`timestamp` on broadcasts, the id-then-name activation lookup, and a "legacy"
+  mode (id-only activation, errors without `requestID`).
+
+Not settled by the docs: the error message type and shape, and whether errors echo `requestID`; whether
+`encodedImage` is left out when `sendImage` is false; whether hits from a plain throw carry trigger ids (issue #7);
+whether the server is strict about casing (okabot sends `TITSPublicAPI`/`requestId`); whether the port can be changed
+and which interface it binds (okabot reaches it on a LAN address); which T.I.T.S. app version added the October 2025
+fields (`apiVersion` stayed "1.0").
 
 ## Lumia Stream
 
@@ -233,13 +311,20 @@ Code: `Lumia/`. Settings `streamapps.json` → `Lumia` (Host 127.0.0.1, Port 392
   (`options.<type>.values`), alerts, studio scenes, TTS voices and lights (`data.lights[{id,name,type}]`).
 - Colours: `hex-color` (`value` "#RRGGBB") or `rgb-color` (`value` {r,g,b}); `brightness` 0-100 (default 100),
   `transition` ms (default 0), `duration` ms (default 4000), `hold`, `lights[{type,value:id}]`. `to-default` resets.
+- `skipQueue: true` in `params` runs a queued type (commands, colours, alerts) at once: not on the Developer-Docs pages,
+  but in Lumia's `lumia-types` (`API_ENVELOPE_PARAMS`, `ILumiaSendPack`) and sent by the official C# and JS SDKs.
+- `extraSettings` values keep their JSON types (the docs send `"bits": 1000`; Lumia reads flags by truthiness, so the
+  text "false" would be true). From a sub-action, a JSON object keeps its types and name=value lines are text except
+  true/false. `update-variable-value` takes any value (counters also `+N`, `-N`, `=N`).
+- `chatbot-message` platforms: the REST page lists twitch, youtube, facebook; `lumia-types` (which calls that page stale)
+  adds kick and discord, and no platform means every connected chat bot (Cuebot's "all").
 
 ### Mapping
 
 | Streamer.bot | Cuebot |
 | --- | --- |
-| Sub-action Send Command (Command) | `lumia.sendCommand`: Command, Command type (chat-command default, chatbot-command, twitch-points, twitch-extension, kick-points), Hold, Extra settings |
-| Sub-action Set Color (Colour, Brightness, Duration, Transition, Skip Queue, Default, Light) | `lumia.setColor`: Colour (#RRGGBB, #AARRGGBB or r,g,b), Brightness, Duration, Transition, Default (sends to-default), Lights (names or brand:id), Hold. Skip Queue: not offered (see below) |
+| Sub-action Send Command (Command) | `lumia.sendCommand`: Command, Command type (chat-command default, chatbot-command, twitch-points, twitch-extension, kick-points), Hold, Skip queue, Extra settings |
+| Sub-action Set Color (Colour, Brightness, Duration, Transition, Skip Queue, Default, Light) | `lumia.setColor`: Colour (#RRGGBB, #AARRGGBB or r,g,b), Brightness, Duration, Transition, Skip Queue (`skipQueue`), Default (sends to-default), Lights (names or brand:id), Hold |
 | Sub-action Set To Default | `lumia.setToDefault` |
 | – | `lumia.sendAlert`, `lumia.chatbotMessage` (platform, as streamer), `lumia.tts` (voice, volume), `lumia.setLumiaState`, `lumia.setStreamMode`, `lumia.getVariable` (→ `lumia.variableValue`), `lumia.setVariable`, `lumia.send` (any Send API type + params JSON → `lumia.response`) |
 | C# `LumiaSendCommand(command)` / `LumiaSetToDefault()` | `lumia.sendCommand({command, type, hold, extraSettings})` / `lumia.setToDefault()` |
@@ -248,23 +333,71 @@ Code: `Lumia/`. Settings `streamapps.json` → `Lumia` (Host 127.0.0.1, Port 392
 
 ### Not covered / untested
 
-- Streamer.bot's Set Color "Skip Queue": Lumia's public API documents no skip-queue parameter, so it is left out.
-  Streamer.bot's "empty brightness keeps the current level" is not possible either: an omitted brightness is Lumia's default 100.
+- Streamer.bot's "empty brightness keeps the current level" is not possible: an omitted brightness is Lumia's default 100.
 - Not run against real Lumia Stream (it was not running on the dev PC). Tests use in-memory REST and websocket servers
   shaped after the docs' examples and event mocks.
+- Not offered: the HTTPS/WSS variant on port 39232 (`wss://127.0.0.1:39232/api?token=`, when HTTPS is on in Lumia),
+  colour temperature (`CT` 2900-7000 K in the value object), `GET /api/meta` capability checks (older Lumia answers
+  `{"message":true}` even for unknown names), Twitch threaded replies (`replyParentMessageId`). Close codes are not
+  told apart (1000 API off / app closing, 1012 restarting after a settings change, 1006 before open = bad token or API
+  off); every close goes through the normal reconnect backoff.
+
+### Verification against the docs (2026-10-28)
+
+Sources: Lumia's Developer-Docs repository (github.com/lumiastream/Developer-Docs, HEAD `072ac46`, 2026-10-13;
+`docs/rest/*`, `docs/websockets/*`, `docs/tts/*`, `docs/alerts/*`, cheatsheet), the live dev.lumiastream.com pages
+(spot-checked, same text), Lumia's MCP server (github.com/lumiastream/MCP `86c5f20`, 2026-08-18, npm `@lumiastream/mcp`
+0.5.0: exact request bodies), `lumia-types` (github.com/lumiastream/lumia-types `db603e0`, 2026-10-21, npm 4.3.3:
+`api.schema.ts`, `event.types.ts`), and the older official SDKs (Lumia-SDK-CSharp `bf9e34f` 2023-01-30, Lumia-SDK-JS
+`3cca5e4` 2023-01-10).
+
+Verified as matching: port 39231 and `/api/send`, `/api/retrieve` (`slim=true`); `?token=` on REST and websocket;
+`{type, params}` bodies for every type Cuebot sends (commands, alert, hex/rgb colour with brightness, transition,
+duration, hold and lights, to-default, chat bot with `userToChatAs: "self"`, tts, start/stop/set-lumia,
+toggle-stream-mode, get/update-variable-value); retrieve fields (`options.<type>.values`,
+`options.tts.values.voices`, `lights`, `premium`); error shapes; the websocket URL with `name`, nothing sent on it,
+`socketapi:*` replies ignored; the event envelope and the chat, deletion, command, alert and states payloads (the
+fakes' events are the docs' event mocks).
+
+Changed:
+- Set Color's Skip Queue was missing because the Developer-Docs pages do not show it; `lumia-types` and the official
+  SDKs do (`skipQueue`), so Set Color and Send Command now offer it.
+- Chat bot platforms: `tiktok` (in no source, and Lumia reports success for an unknown platform) removed; `discord`
+  and "all" (no platform) added.
+- `extraSettings` values were all sent as text (a script's `{flag:false}` arrived as the truthy "false"); types are
+  kept now. Script `lumia.setVariable` keeps number/boolean/object values.
+- An alert's `extraSettings.type` (Twitch power-ups, Kick kicks) overwrote `lumia.type`; `origin`, `subOrigin` and
+  `type` from `extraSettings` now go to `lumia.extraSettings.<key>`.
+- `data.states` in a retrieve reply seeds Lumia's states before the first `states` push (documented for the websocket
+  retrieve; the REST example does not show it, so it may never come).
+
+Not settled by the docs: whether `twitch_point`, `twitch_extension`, `kick_point` and `pulse` events (only in
+`lumia-types`) are still pushed (they would arrive as `lumia.event`); whether `value: null` toggles exactly like an
+omitted value; the REST answer to a bad token (the fake's 401 body is a guess); whether REST retrieve has `states`;
+`#AARRGGBB` and 3-digit hex (Lumia documents only #RRGGBB); kick/discord chat bot support beyond `lumia-types`.
+Docs-internal inconsistencies, where Cuebot follows the examples: TTS voices at `options.tts.values.voices` (one page
+says `options.tts.voices`), `lights` directly under `params`, `alert` rather than `send-alert` for TTS alerts.
 ## OBSBOT (OBSBOT Center OSC)
 
 ### Options considered
 
 | Option | Official? | Platforms | Verdict |
 | --- | --- | --- | --- |
-| **OSC server of OBSBOT Center** (UDP or TCP; "OBSBOT Center OSC definition" spreadsheet, rev. 2026-05-08, linked from obsbot.com/explore/obsbot-center/osc) | Yes | Center: Windows, macOS. Tail 2 / Tail Air also speak the same OSC on their own IP | **Chosen** |
+| **OSC server of OBSBOT Center** (UDP or TCP; "OBSBOT Center OSC definition" spreadsheet, rev. 2026-05-08, linked from obsbot.com/explore/obsbot-center/osc) | Yes | Center: Windows, macOS. Tail 2 / Tail Air also run an OSC server on their own IP (port 57110), with their own sheets: Center's general commands minus the PC/Tiny/Meet ones, and their own `/OBSBOT/Camera/Tail2/` or `/OBSBOT/Camera/TailAir/` commands | **Chosen** |
 | OBSBOT SDK (C++, by application) | Yes, not public | Win/macOS/Linux | Needs an agreement and native binaries; not usable in a clean-room public build |
 | UVC/V4L2 pan-tilt-zoom controls | Standard | Linux/Windows | Only PTZ/zoom, none of the AI/preset features; would be a separate generic-webcam feature |
 
 **Linux:** OBSBOT Center has no Linux build. Linux users can point Cuebot at a **Tail 2 / Tail Air** directly (they run
-their own OSC server; port 57110 per Bitfocus Companion's module), or at OBSBOT Center on a Windows/Mac PC on the
-network. Tiny/Meet webcams plugged into a Linux PC are not reachable through OSC.
+their own OSC server on port 57110, per OBSBOT's Tail 2 and Tail Air sheets; choose "Tail 2 direct" / "Tail Air
+direct" as the series), or at OBSBOT Center on a Windows/Mac PC on the network. Tiny/Meet webcams plugged into a Linux
+PC are not reachable through OSC.
+
+**Direct to a Tail:** with series Tail 2 direct / Tail Air direct, Cuebot sends no device index, maps the Tail
+sub-actions to the camera's own prefix, uses port 57110 when the Port is left at Center's 16284, applies the camera's
+limits (Tail 2: pan ±159°, pitch ±62°, zoom speed 0-10, AI mode 0/1, one five-value `SetTrackingSpeed`; Tail Air: AI
+modes 0, 1, 2, 3, 6, 7, tracking speed 0-2), refuses sub-actions the camera's sheet does not list (field of view,
+wake/sleep, PC recording, Tiny/Meet commands, focus mode, axis locks, ...; raw OSC still goes out), and repeats the
+hello on every poll because Tail 2 hardware is reported to answer only that (with its whole state).
 
 ### Wire format (`Obsbot/Osc.cs`)
 
@@ -284,13 +417,17 @@ other hosts are ignored.
    `GetAiTrackingInfo` / `GetPresetPositionInfo`, Meet `GetVirtualBackgroundInfo` / `GetAutoFramingInfo`. UDP silence
    for 3 polls (at least 15 s) = disconnected; Cuebot keeps saying hello.
 3. Replies: `DeviceInfo ,isisisisiii` (4 x connected+name, selected index, run state 0 sleep/1 run, type),
-   `ZoomInfo ,ii` (zoom 0-100, fov 0/1/2 = 86°/78°/65°), `GetGimbalPosInfoResp ,iii` (roll, pitch, yaw),
-   `Tiny/AiTrackingInfo ,i`, `Tiny|Meet/PresetPositionInfo ,isisis`, `Meet/VirtualBackgroundInfo ,i`,
-   `Meet/AutoFramingInfo ,i`. A reply with one extra leading int carries the device index and is accepted too.
+   `ZoomInfo ,ii` (zoom 0-100, fov 0/1/2 = 86°/78°/65°; -1 "custom" as real devices send it), `GetGimbalPosInfoResp
+   ,iii` (roll, pitch, yaw; the two-value form real devices send is read as [yaw, pitch] from Center and [pitch, yaw]
+   from a Tail 2 direct), `Tiny/AiTrackingInfo ,i`, `Tiny|Meet/PresetPositionInfo ,isisis`,
+   `Meet/VirtualBackgroundInfo ,i`, `Meet/AutoFramingInfo ,i`. A reply with one extra leading int carries the device
+   index (the sheet's device column) and is accepted too. `General/PresetPositionInfo` is not in any sheet (Companion
+   reports it from Tail 2 hardware) and is read like the Tiny one.
 4. On disconnect: `/OBSBOT/WebCam/General/Disconnected ,i 0`.
 
 Commands take an optional first int selecting the device (0-3; omitted = the camera selected in Center), then the
 value(s). PC recording/snapshot/high-fps recording, `Connected`, `Disconnected` and `SelectDevice` take one argument.
+A Tail reached directly takes no device index.
 
 ### Mapping
 
@@ -305,7 +442,7 @@ covers OBSBOT Center's whole published command set instead.
 | `obsbot.resetGimbal` | `General/ResetGimbal` |
 | `obsbot.setZoom` (0-100, optional speed 0-11) | `General/SetZoom` or `General/SetZoomSpeed` |
 | `obsbot.zoomLimit` (Max/Min) | `General/SetZoomMax` / `SetZoomMin` |
-| `obsbot.moveGimbal` (Up/Down/Left/Right/Stop, speed, optional duration) | `General/SetGimbalUp/Down/Left/Right` (0 stops) |
+| `obsbot.moveGimbal` (Up/Down/Left/Right/Stop, speed, optional duration) | `General/SetGimbalUp/Down/Left/Right` (0 stops; Stop sends 0 to all four) |
 | `obsbot.setGimbalPosition` (pan, pitch, speed; optional decimals) | `General/SetGimMotorDegree` / `SetGimMotorDegreeEx` |
 | `obsbot.setView` | `General/SetView` |
 | `obsbot.setMirror` | `General/SetMirror` |
@@ -332,21 +469,61 @@ Script functions: `obsbot.isConnected`, `connect`, `disconnect`, `getState`, `se
 
 ### Sources
 
-- OBSBOT, *OBSBOT Center OSC definition* (xlsx, rev. 2026-05-08):
+- OBSBOT, *OBSBOT Center OSC definition* (xlsx, rev. 2026-05-08, served with Last-Modified 2026-10-10; still the only
+  Center revision linked on 2026-10-28):
   https://resource-cdn.obsbothk.com/download/obsbot-tail-2/osc/obsbot_center_osc_definition20260508.xlsx, linked from
-  https://www.obsbot.com/explore/obsbot-center/osc. Every address, argument and value range above comes from it.
-- Bitfocus Companion `companion-module-obsbot-osc` (MIT; HELP.md, `src/tcp.ts`, `src/config.ts`; read for the wire
-  details only): TCP length framing and byte orders, reply port 57120, Tail hardware port 57110, polling.
-- Port 16284 as OBSBOT Center's usual receive port: ObsbotSharp's README and community controllers; it is a setting in
-  Center, so Cuebot only defaults to it.
+  https://www.obsbot.com/explore/obsbot-center/osc. Every Center address, argument and value range above comes from it.
+- OBSBOT, *Tail 2 OSC definition* (https://resource-cdn.obsbothk.com/download/obsbot-tail-2/osc/obsbot_tail_2_osc_definition.xlsx,
+  Last-Modified 2025-08-20) and *Tail Air OSC definition*
+  (https://resource-cdn.obsbothk.com/download/obsbot-tail-air/osc/OBSBOT%20Tail%20Air-%20OSC%20Definition.xlsx,
+  Last-Modified 2025-03-06), linked from the same page: the cameras' own servers, port 57110 (TCP and UDP), replies
+  from 57120 (UDP), "only OSC 1.0" over TCP.
+- OBSBOT's TouchOSC sample layouts for Center (`OBSBOT Webcam Sample-UDP.tosc` / `-TCP.tosc`, 2025-03-06): how replies
+  are parsed by OBSBOT itself.
+- Bitfocus Companion `companion-module-obsbot-osc` (MIT; main `692270f`, 2026-10-05; HELP.md, `src/tcp.ts`,
+  `src/config.ts`, `src/api.ts`; community, read for the wire details only): TCP length byte orders, reply port 57120
+  for Center, two-value gimbal replies, fov -1, Tail 2 ignoring Get* queries.
+- Port 16284 as OBSBOT Center's usual receive port: ObsbotSharp's README and community controllers; none of OBSBOT's
+  documents give Center's ports (they are settings in Center), so Cuebot only defaults to it.
 - OSC 1.0 specification (opensoundcontrol.org).
 
 ### Not covered / untested
 
 - Not run against a real OBSBOT Center or camera (neither is installed here). Tests drive the real UDP and TCP
-  transports against an in-process OSC server on 127.0.0.1 that answers as the spreadsheet describes.
+  transports against an in-process OSC server on 127.0.0.1 that answers as the spreadsheets describe (and, in Tail 2
+  hardware mode, as Companion reports the real camera behaving).
 - Model-specific AI-mode and tracking-speed numbers are passed through as numbers (their meaning differs per model; the
-  sub-action help lists them). Tail 2 hardware's extra commands (its own spreadsheet) are reachable with `obsbot.sendOsc`.
+  sub-action help lists them). Tail 2 hardware's extra commands (`SetAiEnable`, `SetAutoZoom`, `SetOnlyMe`) are
+  reachable with `obsbot.sendOsc`. The Talent / Talent 2 sheets were not examined.
+
+### Verification against the docs (2026-10-28)
+
+Verified as matching the Center sheet: the spelling and casing of every address Cuebot sends or parses (General,
+Camera/Tail, Tiny, Meet, the Get* queries and every reply); argument counts and types (all int except
+`SetWhiteBalanceShift` ff and `SetGimMotorDegreeEx` fff); every value table and range; the optional device index and
+the one-argument commands without it; the hello/goodbye handshake; the reply layouts.
+
+Changed:
+- A Tail 2 / Tail Air reached directly got Center's `/OBSBOT/Camera/Tail/` addresses, a device index and Center's
+  limits, none of which its own sheet has; the new "Tail 2 direct" / "Tail Air direct" series follow the camera sheets
+  (see "Direct to a Tail" above), and polling repeats the hello so a Tail 2 that ignores Get* is not taken for lost.
+- The gimbal reply in its two-value form (what real devices send, per Companion) never filled the yaw and put a Tail 2's
+  yaw into the pitch.
+- Ranges: Center's Tiny `SetTrackingSpeed` is 0-2 (was 0-5), Center's Tail `SetAiMode` 0-7 (was 0-9), the camera
+  number 1-4 (16 was accepted).
+- Gimbal Stop sent 0 to Up and Left only; it now stops all four direction addresses.
+- Help texts: the Tiny 2 Lite / Tiny SE AI-mode and tracking-mode limits, and that shutter speeds 12.5, 6.25 and 2.5
+  cannot be sent exactly (the sheet types the value as int while listing them).
+- fov -1 shows as "custom"; the setting comments no longer present 16284 / 57120 as OBSBOT's documented Center ports.
+
+Not settled by the docs: Center's default receive and reply ports and whether it answers the source port; the TCP
+length byte order (only Companion describes it); whether Center adds a device index to replies; the real arity of
+the gimbal reply (sheet 3, devices 2); what fov -1 means; device-type numbers above 3 (OBSBOT's own sample treats 6 as
+a Tiny); whether Up 0 also stops a downward move; Meet presets (the sheet has `Meet/GetPresetPositionInfo` but no
+`Meet/TriggerPreset`; Cuebot sends `Tiny/TriggerPreset`); the Tail 2 five-value tracking speed's auto flags (Cuebot's
+reading: Both = [speed,1,5,1,5], one axis = custom with that axis manual); whether Tail hardware answers Get* at all.
+OBSBOT's own UDP sample sends `GetGimPosInfo` and `Connected 1`, while all three sheets say `GetGimbalPosInfo` and
+"0 recommended"; Cuebot follows the sheets.
 
 ## mtion studio ("mtion worlds")
 
@@ -360,11 +537,15 @@ Script functions: `obsbot.isConnected`, `connect`, `disconnect`, `getState`, `se
 
 ### API (`Mtion/MtionApi.cs`)
 
-No authentication. `GET /active-clubhouse` → `{id, name, description, external_trigger_datas:[...]}` or 404 (none
-open); `GET /clubhouses`, `GET /clubhouse/:id`; `GET /external-trigger/triggers` → `[{id, name,
-output_parameters:[{parameter_index, name, data_type: string|number|bool|enum}]}]` (404 = no clubhouse);
-`PATCH /external-trigger/fire-trigger/:id` with body `[{"parameter_index":0,"value":...}]` → the trigger (404 = not
-found). Cuebot converts each value to its parameter's type (enum = option number) and only sends the parameters given.
+No authentication; `http://localhost:35393` (Cuebot's default host is `localhost`, as in the docs). `GET
+/active-clubhouse` → `{id, name, description, external_trigger_datas:[...]}` or 404 (none open); `GET /clubhouses`;
+`GET /external-trigger/triggers` → `[{id, name, output_parameters:[{parameter_index, name, data_type:
+string|number|bool|enum}]}]` (404 = no clubhouse); `PATCH /external-trigger/fire-trigger/:id` with
+`Content-Type: application/json` and body `[{"parameter_index":0,"value":...}]` → the trigger (404 = "No clubhouse
+open or trigger not found", reported as not found and not sent). Also documented, not used by Cuebot: `GET
+/clubhouse/:id`, `GET /external-trigger/trigger/:id`, and firing by `GET` on the fire path with
+`?parameter_data=[...]`. Cuebot converts each value to its parameter's type (enum = option number) and only sends the
+parameters given.
 
 There is no push channel: the optional watcher polls `/active-clubhouse` (default every 5 s) to show "running" on the
 dashboard, publish started/closed events and notice a different clubhouse.
@@ -385,8 +566,37 @@ unknown; Cuebot's name=value form is its own.
 ### Not covered / untested
 
 - Not run against a real mtion studio (not installed here); tests use an in-memory HTTP handler built from the docs.
-  The API page is from 2023 and mtion has since been renamed "mtion worlds" (Alpha); the endpoints may have changed.
-- The API answers on localhost only (per the docs); Host is configurable for proxies.
+  The API page was last updated 2024-04-17 and mtion has since been renamed "mtion worlds" (Alpha); the endpoints may
+  have changed.
+- The docs say the API "can be called at localhost:35393"; whether it binds loopback only, and whether the port can be
+  changed, is not said. Host and Port are configurable.
+
+### Verification against the docs (2026-10-28)
+
+Sources: mtion's *External Triggers* page (https://docs.mtion.xyz/mtion/developer-api/external-triggers, GitBook "last
+updated" 2024-04-17; the Developer API section has no other page, per docs.mtion.xyz/mtion/llms.txt). Community
+clients, read for the wire format only: Mix It Up's `MtionStudioService.cs` (MixItUpBot/Desktop `c5a3497`, 2025-10-20)
+and Rumbling Universal Mayhem Plugin's `mtionConnector.ts` (Renpona, 2024-05). Streamer.bot's mtion sub-action pages
+(v0.2.5) for the variable names.
+
+Verified as matching: port 35393, plain HTTP, no authentication; every path and method Cuebot uses; the fire body (the
+test body equals the docs' sample apart from whitespace) and sending only some parameters (both clients do); the value
+types per `data_type`; every response field name; the documented meaning of each 404.
+
+Changed:
+- Default host `127.0.0.1` → `localhost` (the docs' and Mix It Up's address; a listener that checks the Host header
+  would refuse `127.0.0.1`). Saved settings keep their host.
+- A 404 from the fire request itself reported the trigger as found; it now reports not found (the docs: no clubhouse
+  open or trigger not found).
+- The fire request's Content-Type was `application/json; charset=utf-8`; now plain `application/json` as in the docs.
+- The fake now also answers `GET /clubhouse/:id`, `GET /external-trigger/trigger/:id` and the GET form of firing, as
+  documented.
+
+Not settled by the docs: whether a fractional `number` (Cuebot sends 1.5 as given) is accepted; whether an enum value
+is a 0-based option index (the API exposes no option list); whether omitted parameters fall back to their defaults;
+error statuses other than 404 and the error body format; whether the Host header is checked, the port configurable,
+or the listener IPv4 or IPv6; whether the API still exists unchanged in "mtion worlds"; how Streamer.bot fills trigger
+parameters.
 
 ## StreamFog: not supported
 

@@ -42,6 +42,12 @@ public sealed class MeldItem
     public bool Muted => Json.Bool("muted") == true;
     public bool Monitoring => Json.Bool("monitoring") == true;
 
+    /// <summary>
+    /// The vertical-canvas twin of a scene (<c>vertical: true</c>, seen in Meld's own Stream Deck plugin; not in
+    /// WebChannelAPI.md). It can share its scene's name, and Meld cannot stage it.
+    /// </summary>
+    public bool Vertical => Json.Bool("vertical") == true;
+
     /// <summary>Browser layers have a url.</summary>
     public string Url => Json.Str("url");
 
@@ -60,7 +66,8 @@ public sealed class MeldSession
     private MeldSession(Dictionary<string, MeldItem> items)
     {
         _byId = items;
-        Scenes = items.Values.Where(i => i.IsScene).OrderBy(i => i.Index).ToArray();
+        Scenes = items.Values.Where(i => i.IsScene && !i.Vertical).OrderBy(i => i.Index).ToArray();
+        VerticalScenes = items.Values.Where(i => i.IsScene && i.Vertical).OrderBy(i => i.Index).ToArray();
     }
 
     /// <summary>Parses the <c>session</c> property value (<c>{"items": {...}}</c>, or the items object itself).</summary>
@@ -76,7 +83,10 @@ public sealed class MeldSession
 
     public IReadOnlyCollection<MeldItem> Items => _byId.Values;
 
+    /// <summary>The (horizontal) scenes; vertical twins are in <see cref="VerticalScenes"/>.</summary>
     public IReadOnlyList<MeldItem> Scenes { get; }
+
+    public IReadOnlyList<MeldItem> VerticalScenes { get; }
 
     public MeldItem? CurrentScene => Scenes.FirstOrDefault(s => s.Current);
 
@@ -94,9 +104,11 @@ public sealed class MeldSession
     public IEnumerable<MeldItem> Effects => _byId.Values.Where(i => i.IsEffect);
     public IEnumerable<MeldItem> Tracks => _byId.Values.Where(i => i.IsTrack);
 
-    /// <summary>The scene with this id or (case-insensitive) name.</summary>
+    /// <summary>The scene with this id or (case-insensitive) name; a vertical twin only by its id.</summary>
     public MeldItem FindScene(string nameOrId) =>
-        Find(Scenes, nameOrId) ?? throw new StreamAppRequestException($"Meld Studio has no scene '{nameOrId}'.");
+        Find(Scenes, nameOrId)
+        ?? VerticalScenes.FirstOrDefault(s => string.Equals(s.Id, nameOrId.Trim(), StringComparison.OrdinalIgnoreCase))
+        ?? throw new StreamAppRequestException($"Meld Studio has no scene '{nameOrId}'.");
 
     /// <summary>A layer by id or name, inside <paramref name="scene"/> when given (empty = any scene, current scene first).</summary>
     public MeldItem FindLayer(string scene, string nameOrId)
@@ -109,7 +121,7 @@ public sealed class MeldSession
         }
         var current = CurrentScene;
         return (current is null ? null : Find(LayersOf(current.Id), nameOrId))
-               ?? Find(Layers.OrderBy(l => l.Parent).ThenBy(l => l.Index), nameOrId)
+               ?? Find(Layers.OrderBy(l => Get(l.Parent)?.Vertical == true ? 1 : 0).ThenBy(l => l.Parent).ThenBy(l => l.Index), nameOrId)
                ?? throw new StreamAppRequestException($"Meld Studio has no layer '{nameOrId}'.");
     }
 

@@ -20,7 +20,7 @@ public sealed class MeldStudioService : StreamAppConnection
 
     private readonly JsonFile<StreamAppsSettings> _settings;
     private readonly ConcurrentDictionary<long, TaskCompletionSource<JsonElement>> _pending = new();
-    private readonly ConcurrentDictionary<string, double> _gains = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, (double Gain, bool Muted)> _gains = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _observedTracks = new(StringComparer.OrdinalIgnoreCase);
     private long _nextId;
     private volatile QWebChannelObject? _meld;
@@ -55,7 +55,7 @@ public sealed class MeldStudioService : StreamAppConnection
     public IReadOnlyCollection<string> Methods => _meld?.MethodNames ?? [];
 
     /// <summary>Last gain (0-1) Meld reported for a track through <c>gainUpdated</c>, if any.</summary>
-    public double? TrackGain(string trackId) => _gains.TryGetValue(trackId, out var g) ? g : null;
+    public double? TrackGain(string trackId) => _gains.TryGetValue(trackId, out var g) ? g.Gain : null;
 
     /// <summary>Raised (on a background thread) when the session, recording or streaming state changed.</summary>
     public event Action? DataChanged;
@@ -260,6 +260,10 @@ public sealed class MeldStudioService : StreamAppConnection
             });
         }
         foreach (var change in MeldSessionDiff.Compare(previous, next)) PublishEvent(change.Event, change.Args);
+        // Meld drops every track observer when it rebuilds its audio tracks (restoring or reopening a session does that
+        // without closing the socket, and the track ids come back unchanged), so Meld's own Stream Deck plugin
+        // registers again on every session change; so does Cuebot. Known gains keep the repeat reports quiet.
+        lock (_observedTracks) _observedTracks.Clear();
         if (Settings.ObserveTrackGain && _meld is { } meld && meld.HasMethod("registerTrackObserver") && IsConnected)
             _ = Task.Run(async () =>
             {
@@ -280,8 +284,11 @@ public sealed class MeldStudioService : StreamAppConnection
         var trackId = args[0].GetString()!;
         var gain = args[1].ValueKind == JsonValueKind.Number ? args[1].GetDouble() : 0;
         var muted = args.GetArrayLength() > 2 && args[2].ValueKind == JsonValueKind.True;
-        if (_gains.TryGetValue(trackId, out var old) && Math.Abs(old - gain) < 1e-9) return;
-        _gains[trackId] = gain;
+        // The signal fires "when the gain or mute status of a track changes", and Meld also sends the current value as
+        // soon as an observer registers: that first report is the baseline, not a change.
+        var known = _gains.TryGetValue(trackId, out var old);
+        _gains[trackId] = (gain, muted);
+        if (!known || (Math.Abs(old.Gain - gain) < 1e-9 && old.Muted == muted)) return;
         var track = _session.Get(trackId);
         PublishEvent(MeldEvents.TrackGainChanged, new Dictionary<string, object?>
         {
@@ -336,10 +343,10 @@ public sealed class MeldStudioService : StreamAppConnection
     {
         EnsureConnected();
         var meld = _meld ?? throw new StreamAppNotConnectedException(Name);
-        var index = meld.MethodIndex(method) ?? throw new StreamAppRequestException(
-            $"This Meld Studio version does not offer '{method}' (WebChannel API v{ApiVersion}). Update Meld Studio.");
+        if (!meld.HasMethod(method))
+            throw new StreamAppRequestException($"This Meld Studio version does not offer '{method}' (WebChannel API v{ApiVersion}). Update Meld Studio.");
         var id = Interlocked.Increment(ref _nextId);
-        return await RequestAsync(SendAsync, id, QWebChannel.Invoke(id, ObjectName, index, args), ct).ConfigureAwait(false);
+        return await RequestAsync(SendAsync, id, QWebChannel.Invoke(id, ObjectName, method, args), ct).ConfigureAwait(false);
     }
 
     private MeldSession LiveSession()
@@ -362,6 +369,8 @@ public sealed class MeldStudioService : StreamAppConnection
     public async Task<MeldItem> StageSceneAsync(string scene, CancellationToken ct = default)
     {
         var item = LiveSession().FindScene(scene);
+        // Meld resolves setStagedScene through its horizontal scenes only: staging a vertical twin does nothing.
+        if (item.Vertical) throw new StreamAppRequestException($"Meld Studio cannot stage the vertical scene '{item.Name}'.");
         await InvokeAsync("setStagedScene", [item.Id], ct).ConfigureAwait(false);
         return item;
     }
@@ -487,10 +496,13 @@ public sealed class MeldStudioService : StreamAppConnection
         }
     }
 
-    /// <summary>Sends a widget event (STOPWATCH_RESET, CONFETTIPOP_TRIGGER, SUBATHONTIMER_ADDTIME, ...).</summary>
+    /// <summary>
+    /// Sends a widget event (STOPWATCH_RESET, CONFETTIPOP_TRIGGER, SUBATHONTIMER_ADDTIME, ...). Always two arguments:
+    /// events without data send <c>false</c>, as Meld's own Stream Deck plugin does (a one-argument call by name would
+    /// match no overload if the slot only has the two-parameter form).
+    /// </summary>
     public Task SendStreamEventAsync(string type, double? amount, CancellationToken ct = default) =>
-        amount is { } a
-            ? InvokeAsync("sendStreamEvent", [Steps.Require(type, "Event type"), new Dictionary<string, object> { ["amount"] = a }], ct)
-            : InvokeAsync("sendStreamEvent", [Steps.Require(type, "Event type")], ct);
+        InvokeAsync("sendStreamEvent",
+            [Steps.Require(type, "Event type"), amount is { } a ? new Dictionary<string, object> { ["amount"] = a } : false], ct);
 
 }

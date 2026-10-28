@@ -24,11 +24,11 @@ internal sealed class LumiaScriptFunctions(LumiaService lumia) : IScriptFunction
             await lumia.DisconnectAsync().ConfigureAwait(false);
             return true;
         }),
-        new("lumia.sendCommand", "Run a Lumia command: {command, type (chat-command default, chatbot-command, twitch-points...), hold, extraSettings:{}}",
-            ["command", "type", "hold", "extraSettings"], async (_, a, ct) =>
+        new("lumia.sendCommand", "Run a Lumia command: {command, type (chat-command default, chatbot-command, twitch-points...), hold, skipQueue, extraSettings:{}}",
+            ["command", "type", "hold", "skipQueue", "extraSettings"], async (_, a, ct) =>
             {
-                await lumia.SendCommandAsync(a.GetString("command"), a.GetString("type", "chat-command"), a.GetBool("hold"), Pairs(a, "extraSettings"), ct)
-                    .ConfigureAwait(false);
+                await lumia.SendCommandAsync(a.GetString("command"), a.GetString("type", "chat-command"), a.GetBool("hold"), Pairs(a, "extraSettings"),
+                    a.GetBool("skipQueue"), ct).ConfigureAwait(false);
                 return true;
             }),
         new("lumia.setToDefault", "Return Lumia's lights to their default state", [], async (_, _, ct) =>
@@ -36,11 +36,11 @@ internal sealed class LumiaScriptFunctions(LumiaService lumia) : IScriptFunction
             await lumia.SetToDefaultAsync(ct).ConfigureAwait(false);
             return true;
         }),
-        new("lumia.setColor", "Set a colour: {color:'#FF4076' or 'r,g,b', brightness, transition, duration (ms), lights:'Hue go, hue:19', hold}",
-            ["color", "brightness", "transition", "duration", "lights", "hold"], async (_, a, ct) =>
+        new("lumia.setColor", "Set a colour: {color:'#FF4076' or 'r,g,b', brightness, transition, duration (ms), lights:'Hue go, hue:19', hold, skipQueue}",
+            ["color", "brightness", "transition", "duration", "lights", "hold", "skipQueue"], async (_, a, ct) =>
             {
                 await lumia.SetColorAsync(a.GetString("color"), Number(a, "brightness"), Number(a, "transition"), Number(a, "duration"),
-                    a.GetString("lights"), a.GetBool("hold"), ct).ConfigureAwait(false);
+                    a.GetString("lights"), a.GetBool("hold"), a.GetBool("skipQueue"), ct).ConfigureAwait(false);
                 return true;
             }),
         new("lumia.sendAlert", "Simulate a Lumia alert: {alert:'twitch-follower', extraSettings:{username:'x'}}", ["alert", "extraSettings"], async (_, a, ct) =>
@@ -48,7 +48,8 @@ internal sealed class LumiaScriptFunctions(LumiaService lumia) : IScriptFunction
             await lumia.SendAlertAsync(a.GetString("alert"), Pairs(a, "extraSettings"), ct).ConfigureAwait(false);
             return true;
         }),
-        new("lumia.chatbotMessage", "Send a chat message through Lumia's chat bot: {message, platform (twitch), asSelf}", ["message", "platform", "asSelf"],
+        new("lumia.chatbotMessage", "Send a chat message through Lumia's chat bot: {message, platform (twitch, youtube, facebook, kick, discord or all), asSelf}",
+            ["message", "platform", "asSelf"],
             async (_, a, ct) =>
             {
                 await lumia.SendChatbotMessageAsync(a.GetString("message"), a.GetString("platform", "twitch"), a.GetBool("asSelf"), ct).ConfigureAwait(false);
@@ -60,9 +61,10 @@ internal sealed class LumiaScriptFunctions(LumiaService lumia) : IScriptFunction
             return true;
         }),
         new("lumia.getVariable", "Read a Lumia variable", ["name"], async (_, a, ct) => await lumia.GetVariableAsync(a.GetString("name"), ct).ConfigureAwait(false)),
-        new("lumia.setVariable", "Update a Lumia variable", ["name", "value"], async (_, a, ct) =>
+        new("lumia.setVariable", "Update a Lumia variable (text, number, boolean or object; counters also take '+1', '-1', '=5')", ["name", "value"], async (_, a, ct) =>
         {
-            await lumia.SetVariableAsync(a.GetString("name"), a.GetString("value"), ct).ConfigureAwait(false);
+            object? value = a.GetElement("value") is { ValueKind: not (JsonValueKind.String or JsonValueKind.Undefined) } typed ? typed.Clone() : a.GetString("value");
+            await lumia.SetVariableAsync(a.GetString("name"), value, ct).ConfigureAwait(false);
             return true;
         }),
         new("lumia.send", "Any Send API request: {type:'studio-scene', params:{value:'Sunset'}}; returns Lumia's reply message", ["type", "params"],
@@ -86,12 +88,6 @@ internal sealed class LumiaScriptFunctions(LumiaService lumia) : IScriptFunction
         _ => null,
     };
 
-    private static Dictionary<string, string>? Pairs(JsonElement args, string name)
-    {
-        if (args.GetElement(name) is not { ValueKind: JsonValueKind.Object } obj) return null;
-        var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var p in obj.EnumerateObject())
-            result[p.Name] = p.Value.ValueKind == JsonValueKind.String ? p.Value.GetString() ?? "" : p.Value.GetRawText();
-        return result;
-    }
+    /// <summary>Extra settings with their JSON types kept ({bits:1000} stays a number, {flag:false} a boolean).</summary>
+    private static Dictionary<string, object?>? Pairs(JsonElement args, string name) => LumiaProtocol.JsonObjectValues(args.GetElement(name));
 }

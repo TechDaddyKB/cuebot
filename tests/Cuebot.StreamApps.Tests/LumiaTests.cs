@@ -31,7 +31,12 @@ public sealed class LumiaProtocolTests
     {
         Assert.Equal("""{"type":"to-default"}""", LumiaProtocol.Send("to-default"));
         Assert.Equal("""{"type":"chat-command","params":{"value":"blue","hold":true,"extraSettings":{"username":"lumia"}}}""",
-            LumiaProtocol.Send("chat-command", LumiaProtocol.CommandParams("blue", true, new Dictionary<string, string> { ["username"] = "lumia" })));
+            LumiaProtocol.Send("chat-command", LumiaProtocol.CommandParams("blue", true, new Dictionary<string, object?> { ["username"] = "lumia" })));
+        // Skip Queue is Lumia's skipQueue param (lumia-types / the official SDKs).
+        Assert.Equal("""{"type":"chat-command","params":{"value":"blue","skipQueue":true}}""",
+            LumiaProtocol.Send("chat-command", LumiaProtocol.CommandParams("blue", false, null, skipQueue: true)));
+        Assert.Equal("""{"type":"hex-color","params":{"value":"#FF4076","skipQueue":true}}""",
+            LumiaProtocol.Send("hex-color", LumiaProtocol.ColorParams("#FF4076", null, null, null, false, null, skipQueue: true)));
         var lights = LumiaProtocol.ResolveLights("Hue go, nanoleaf:167", [new("19", "Hue go", "hue")]);
         Assert.Equal("""{"type":"hex-color","params":{"value":"#FF4076","brightness":100,"duration":5000,"lights":[{"type":"hue","value":"19"},{"type":"nanoleaf","value":"167"}]}}""",
             LumiaProtocol.Send("hex-color", LumiaProtocol.ColorParams("#FF4076", 120, null, 5000, false, lights)));
@@ -83,11 +88,36 @@ public sealed class LumiaProtocolTests
         Assert.Equal(1000L, alert.Args["lumia.bits"]);
         Assert.Equal(true, alert.Args["lumia.replay"]);
 
+        // Power-up alerts document data.extraSettings.type: it must not replace lumia.type.
+        var powerup = Parse("""
+            {"origin":"twitch","type":"alert","event":"twitch-powerups","data":{"dynamic":{"value":"gigantify"},
+             "extraSettings":{"username":"lumiastream","type":"gigantify"}}}
+            """);
+        Assert.Equal("alert", powerup.Args["lumia.type"]);
+        Assert.Equal("gigantify", powerup.Args["lumia.extraSettings.type"]);
+
         var states = Parse("""{"type":"states","data":{"on":1,"streamMode":0,"fuze":0,"listenId":"abc123"}}""");
         Assert.Equal((LumiaEvents.StatesChanged, true, false), (states.Type, states.Args["lumia.on"], states.Args["lumia.streamMode"]));
 
         Assert.Equal(LumiaEvents.Event, Parse("""{"origin":"lumiastream","type":"premium","data":{"premium":true}}""").Type);
         Assert.Null(LumiaProtocol.Event(JsonDocument.Parse("""{"event":"socketapi:response","context":1,"status":200}""").RootElement));
+    }
+
+    [Fact]
+    public void Extra_settings_keep_json_types_and_lines_turn_true_false_into_booleans()
+    {
+        Assert.Equal("""{"bits":1000,"flag":false,"username":"kris"}""",
+            JsonSerializer.Serialize(LumiaProtocol.ParseExtraSettings("""{"bits":1000,"flag":false,"username":"kris"}""")));
+        Assert.Equal("""{"username":"kris","replay":false,"amount":"5"}""",
+            JsonSerializer.Serialize(LumiaProtocol.ParseExtraSettings("username=kris\nreplay=False\namount=5")));
+        Assert.Throws<ArgumentException>(() => LumiaProtocol.ParseExtraSettings("{\"a\":"));
+    }
+
+    [Fact]
+    public void Retrieve_states_are_read_when_present()
+    {
+        Assert.Null(LumiaProtocol.ParseStates(JsonDocument.Parse(FakeLumiaHttp.Retrieve).RootElement.GetProperty("data")));
+        Assert.Equal((true, false, true), LumiaProtocol.ParseStates(JsonDocument.Parse("""{"states":{"on":1,"streamMode":0,"fuze":1}}""").RootElement));
     }
 }
 
@@ -137,6 +167,8 @@ public sealed class LumiaServiceTests : IAsyncLifetime
         await _lumia.SendChatbotMessageAsync("hi", "YouTube", asSelf: true);
         await _lumia.SetStreamModeAsync(SwitchMode.Toggle);
         Assert.Equal("Kris", await _lumia.GetVariableAsync("twitch_username"));
+        await _lumia.SendChatbotMessageAsync("everyone", "all");
+        await _lumia.SetVariableAsync("deaths", 5);
 
         var bodies = _http.Requests.Where(r => r.Url.AbsolutePath == "/api/send").Select(r => r.Body).ToArray();
         Assert.Equal(
@@ -147,6 +179,9 @@ public sealed class LumiaServiceTests : IAsyncLifetime
             """{"type":"chatbot-message","params":{"value":"hi","platform":"youtube","userToChatAs":"self"}}""",
             """{"type":"toggle-stream-mode","params":{"value":null}}""",
             """{"type":"get-variable-value","params":{"name":"twitch_username"}}""",
+            // No platform = every connected chat bot (lumia-types); variable values keep their type.
+            """{"type":"chatbot-message","params":{"value":"everyone"}}""",
+            """{"type":"update-variable-value","params":{"name":"deaths","value":5}}""",
         ], bodies);
         Assert.All(_http.Requests, r => Assert.Contains("token=", r.Url.Query));
     }
@@ -195,7 +230,7 @@ public sealed class LumiaServiceTests : IAsyncLifetime
         Assert.Equal(LumiaSubActions.TypeIds.Order(), handlers.Select(h => h.TypeId).Order());
         var (ok, args, error) = await ActionHarness.RunAsync(handlers,
             ("lumia.sendCommand", new() { ["command"] = "red", ["commandType"] = "twitch-points", ["extraSettings"] = "username=kris" }),
-            ("lumia.setColor", new() { ["color"] = "1,2,3", ["default"] = "False" }),
+            ("lumia.setColor", new() { ["color"] = "1,2,3", ["default"] = "False", ["skipQueue"] = "True" }),
             ("lumia.setColor", new() { ["default"] = "True" }),
             ("lumia.getVariable", new() { ["name"] = "twitch_username" }),
             ("lumia.send", new() { ["type"] = "studio-scene", ["params"] = """{"value":"Sunset"}""" }));
@@ -205,7 +240,7 @@ public sealed class LumiaServiceTests : IAsyncLifetime
         Assert.Equal(
         [
             """{"type":"twitch-points","params":{"value":"red","extraSettings":{"username":"kris"}}}""",
-            """{"type":"rgb-color","params":{"value":{"r":1,"g":2,"b":3}}}""",
+            """{"type":"rgb-color","params":{"value":{"r":1,"g":2,"b":3},"skipQueue":true}}""",
             """{"type":"to-default"}""",
             """{"type":"get-variable-value","params":{"name":"twitch_username"}}""",
             """{"type":"studio-scene","params":{"value":"Sunset"}}""",

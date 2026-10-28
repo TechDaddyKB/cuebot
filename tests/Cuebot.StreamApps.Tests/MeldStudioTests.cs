@@ -59,7 +59,7 @@ public sealed class MeldStudioTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Commands_resolve_names_to_ids_and_invoke_by_method_index()
+    public async Task Commands_resolve_names_to_ids_and_invoke_by_name_with_matching_argument_counts()
     {
         var fake = await ConnectAsync();
 
@@ -105,14 +105,42 @@ public sealed class MeldStudioTests : IAsyncLifetime
 
         await _meld.SendStreamEventAsync("SUBATHONTIMER_ADDTIME", 120);
         Assert.Equal(120, (await fake.NextCallAsync("sendStreamEvent")).Args[1].GetProperty("amount").GetDouble());
+        // Without data the event still goes out with two arguments (false), like Meld's own plugin sends it.
+        await _meld.SendStreamEventAsync("CONFETTIPOP_TRIGGER", null);
+        await Wait.UntilAsync(() => fake.CallCount("sendStreamEvent") == 2);
+        var confetti = fake.Calls.Last(c => c.Method == "sendStreamEvent").Args;
+        Assert.Equal("CONFETTIPOP_TRIGGER", confetti[0].GetString());
+        Assert.Equal(JsonValueKind.False, confetti[1].ValueKind);
 
         await _meld.MediaAsync("", "Spoilers", "Seek", 12);
         (_, args) = await fake.NextCallAsync("callFunctionWithArgs");
         Assert.Equal("seekTo", args[1].GetString());
 
+        // Every call named its method (as qwebchannel.js does) and matched an overload by argument count.
+        Assert.Equal(0, fake.IndexCalls);
+        Assert.Empty(fake.Unmatched);
+
         var unknown = await Assert.ThrowsAsync<StreamAppRequestException>(() => _meld.ShowSceneAsync("Nope"));
         Assert.Contains("no scene 'Nope'", unknown.Message);
         await Assert.ThrowsAsync<StreamAppRequestException>(() => _meld.SetLayerVisibilityAsync("Gaming", "Spoilers", SwitchMode.On));
+    }
+
+    [Fact]
+    public async Task Vertical_scene_twins_are_kept_apart_from_the_scene_list_and_cannot_be_staged()
+    {
+        var fake = await ConnectAsync();
+
+        // "Gaming" by name is the horizontal scene even though its vertical twin has the same name.
+        Assert.DoesNotContain(_meld.Session.Scenes, s => s.Id == Ids.GamingVertical);
+        Assert.Equal(Ids.GamingVertical, Assert.Single(_meld.Session.VerticalScenes).Id);
+        Assert.Equal(Ids.Gaming, (await _meld.StageSceneAsync("Gaming")).Id);
+        Assert.Equal(Ids.Gaming, (await fake.NextCallAsync("setStagedScene")).Args[0].GetString());
+
+        // By id the twin can be shown, but staging it would be a silent no-op in Meld.
+        await _meld.ShowSceneAsync(Ids.GamingVertical);
+        Assert.Equal(Ids.GamingVertical, (await fake.NextCallAsync("showScene")).Args[0].GetString());
+        var error = await Assert.ThrowsAsync<StreamAppRequestException>(() => _meld.StageSceneAsync(Ids.GamingVertical));
+        Assert.Contains("vertical", error.Message);
     }
 
     [Fact]
@@ -195,20 +223,47 @@ public sealed class MeldStudioTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Gain_signal_raises_track_gain_changed()
+    public async Task Gain_signal_raises_track_gain_changed_for_gain_and_mute_changes_but_not_the_registration_report()
     {
         var fake = await ConnectAsync();
+        // Meld answers each registerTrackObserver with the current gain: that is the baseline, not an event.
+        await Wait.UntilAsync(() => _meld.TrackGain(Ids.Mic) == 0.5 && _meld.TrackGain(Ids.SpoilersTrack) == 0.5, "baseline gains");
+        Assert.Empty(GainEvents());
+
         fake.PushGain(Ids.Mic, 0.25, true);
         var e = await _env.WaitForEventAsync(MeldEvents.Event, x => (string?)x.Args["meldStudioEvent.event"] == MeldEvents.TrackGainChanged);
         Assert.Equal("Microphone", e.Args["meldStudioEvent.trackName"]);
         Assert.Equal(0.25, e.Args["meldStudioEvent.gain"]);
         Assert.Equal(0.25, _meld.TrackGain(Ids.Mic));
+
+        // "when the gain or mute status of a track changes": a mute-only change is an event too.
+        fake.PushGain(Ids.Mic, 0.25, false);
+        await Wait.UntilAsync(() => GainEvents().Length == 2, "mute-only gain event");
+        Assert.Equal(false, GainEvents()[1].Args["meldStudioEvent.muted"]);
+        fake.PushGain(Ids.Mic, 0.25, false);   // unchanged
+        await Task.Delay(100);
+        Assert.Equal(2, GainEvents().Length);
     }
+
+    [Fact]
+    public async Task Track_observers_are_registered_again_after_every_session_change()
+    {
+        var fake = await ConnectAsync();
+        await Wait.UntilAsync(() => fake.CallCount("registerTrackObserver") == 2, "first registration");
+
+        // Meld drops its observers when it rebuilds the audio tracks; the same track ids come back.
+        fake.PushSession(FakeMeld.SampleSession());
+        await Wait.UntilAsync(() => fake.CallCount("registerTrackObserver") == 4, "registration after a session change");
+        Assert.Empty(GainEvents());
+    }
+
+    private Cuebot.Core.Events.BotEvent[] GainEvents() =>
+        _env.Events(MeldEvents.Event).Where(x => (string?)x.Args["meldStudioEvent.event"] == MeldEvents.TrackGainChanged).ToArray();
 
     [Fact]
     public async Task Version_1_servers_without_setProperty_get_a_clear_error()
     {
-        await ConnectAsync(version: null, methods: FakeMeld.DefaultMethods.Where(m => m != "setProperty").ToArray());
+        await ConnectAsync(version: null, methods: FakeMeld.DefaultMethods.Where(m => FakeMeld.BareName(m) != "setProperty").ToArray());
         Assert.Equal(1, _meld.ApiVersion);
         var error = await Assert.ThrowsAsync<StreamAppRequestException>(() => _meld.SetBrowserLayerUrlAsync("", "Spoilers", "https://x"));
         Assert.Contains("API v2", error.Message);

@@ -17,8 +17,13 @@ namespace Cuebot.StreamApps.Tests;
 internal sealed class FakeMtion : HttpMessageHandler
 {
     public volatile bool Running = true;
+
+    /// <summary>The clubhouse closes between the trigger list and the fire request (the fire then gets 404).</summary>
+    public volatile bool ClubhouseClosesBeforeFire;
     public JsonObject? Active = Clubhouse("MCLB-1", "Kongo's Clubhouse");
     public ConcurrentQueue<(string Method, string Path, string Body)> Requests { get; } = new();
+    public ConcurrentQueue<string> ContentTypes { get; } = new();
+    public ConcurrentQueue<string> Hosts { get; } = new();
 
     public static JsonObject Clubhouse(string id, string name) => new()
     {
@@ -45,14 +50,22 @@ internal sealed class FakeMtion : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath.TrimStart('/');
         var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
         Requests.Enqueue((request.Method.Method, path, body));
+        if (request.Content?.Headers.ContentType is { } type) ContentTypes.Enqueue(type.ToString());
+        Hosts.Enqueue(request.RequestUri.Authority);
         var active = Active;
+        var last = path.Split('/')[^1];
+        JsonNode? Trigger() => active?["external_trigger_datas"]?.AsArray().FirstOrDefault(t => (string?)t!["id"] == last)?.DeepClone();
+        var clubhouses = new JsonArray(Clubhouse("MCLB-1", "Kongo's Clubhouse"), Clubhouse("MCLB-2", "Empty Template"));
         JsonNode? answer = path switch
         {
             "active-clubhouse" => active?.DeepClone(),
-            "clubhouses" => new JsonArray(Clubhouse("MCLB-1", "Kongo's Clubhouse"), Clubhouse("MCLB-2", "Empty Template")),
+            "clubhouses" => clubhouses,
+            _ when path.StartsWith("clubhouse/", StringComparison.Ordinal) => clubhouses.FirstOrDefault(c => (string?)c!["id"] == last)?.DeepClone(),
             "external-trigger/triggers" => active?["external_trigger_datas"]?.DeepClone(),
-            _ when path.StartsWith("external-trigger/fire-trigger/", StringComparison.Ordinal) && request.Method == HttpMethod.Patch =>
-                active?["external_trigger_datas"]?.AsArray().FirstOrDefault(t => (string?)t!["id"] == path.Split('/')[^1])?.DeepClone(),
+            _ when path.StartsWith("external-trigger/trigger/", StringComparison.Ordinal) => Trigger(),
+            // Both documented ways to fire: PATCH with the JSON array as the body, or GET with ?parameter_data=[...].
+            _ when path.StartsWith("external-trigger/fire-trigger/", StringComparison.Ordinal)
+                   && (request.Method == HttpMethod.Patch || request.Method == HttpMethod.Get) => ClubhouseClosesBeforeFire ? null : Trigger(),
             _ => null,
         };
         return answer is null
@@ -152,12 +165,21 @@ public sealed class MtionServiceTests : IAsyncLifetime
         var fire = _fake.Requests.Single(r => r.Method == "PATCH");
         Assert.Equal("external-trigger/fire-trigger/1ff84176fc8242d8918e1404f33d6161", fire.Path);
         Assert.Equal("""[{"parameter_index":0,"value":"Hi"},{"parameter_index":1,"value":3}]""", fire.Body);
+        Assert.Equal("application/json", Assert.Single(_fake.ContentTypes));   // as in the docs' sample
+        Assert.All(_fake.Hosts, h => Assert.Equal("localhost:35393", h));      // the docs' address
         var sent = await _env.WaitForEventAsync(MtionService.TriggerSentEvent);
         Assert.Equal("Confetti", sent.Args["mtion.trigger.name"]);
 
         (ok, args) = await runner.RunAsync(("mtion.sendTrigger", new() { ["trigger"] = "Missing" }));
         Assert.True(ok);
         Assert.Equal((true, false, false), ((bool)args["mtion.running"]!, (bool)args["mtion.trigger.found"]!, (bool)args["mtion.trigger.sent"]!));
+
+        // A 404 from the fire request itself means "no clubhouse open or trigger not found": not found, not sent.
+        _fake.ClubhouseClosesBeforeFire = true;
+        (ok, args) = await runner.RunAsync(("mtion.sendTrigger", new() { ["trigger"] = "Wave" }));
+        Assert.True(ok);
+        Assert.Equal((true, false, false), ((bool)args["mtion.running"]!, (bool)args["mtion.trigger.found"]!, (bool)args["mtion.trigger.sent"]!));
+        _fake.ClubhouseClosesBeforeFire = false;
 
         (ok, args) = await runner.RunAsync(("mtion.getActiveClubhouse", null));
         Assert.True(ok);

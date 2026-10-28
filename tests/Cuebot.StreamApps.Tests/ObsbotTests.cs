@@ -44,6 +44,39 @@ public sealed class ObsbotProtocolTests
         var unrelated = new OscMessage("/OBSBOT/Something/Else", 1);
         Assert.Same(s, P.Apply(s, unrelated));
         Assert.Equal("78°", ObsbotState.FovLabel(1));
+        Assert.Equal("custom", ObsbotState.FovLabel(-1));
+    }
+
+    [Fact]
+    public void Two_value_gimbal_replies_follow_what_real_devices_send()
+    {
+        // The sheets say roll, pitch, yaw; Center has been seen sending [yaw, pitch] and Tail 2 hardware [pitch, yaw].
+        var center = P.Apply(ObsbotState.Empty, new OscMessage(P.GimbalPosInfo, 33, -12));
+        Assert.Equal((-12, 33), (center.Pitch!.Value, center.Yaw!.Value));
+        var tail2 = P.Apply(ObsbotState.Empty, new OscMessage(P.GimbalPosInfo, -12, 33), ObsbotSeries.Tail2Direct);
+        Assert.Equal((-12, 33), (tail2.Pitch!.Value, tail2.Yaw!.Value));
+        var spec = P.Apply(ObsbotState.Empty, new OscMessage(P.GimbalPosInfo, 0, -12, 33), ObsbotSeries.Tail2Direct);
+        Assert.Equal((-12, 33), (spec.Pitch!.Value, spec.Yaw!.Value));
+    }
+
+    [Fact]
+    public void Cameras_reached_directly_only_take_what_their_own_sheet_lists()
+    {
+        Assert.True(P.Supports(ObsbotSeries.Tiny, P.General + "SetView"));
+        Assert.True(P.Supports(ObsbotSeries.Tail2Direct, P.General + "SetGimMotorDegree"));
+        Assert.False(P.Supports(ObsbotSeries.Tail2Direct, P.General + "SetView"));
+        Assert.False(P.Supports(ObsbotSeries.Tail2Direct, P.General + "WakeSleep"));
+        Assert.False(P.Supports(ObsbotSeries.Tail2Direct, P.Tiny + "ToggleAILock"));
+        Assert.True(P.Supports(ObsbotSeries.Tail2Direct, P.Tail2 + "SetOnlyMe"));
+        Assert.False(P.Supports(ObsbotSeries.TailAirDirect, P.TailAir + "SetOnlyMe"));
+        Assert.False(P.Supports(ObsbotSeries.TailAirDirect, P.Tail2 + "TriggerPreset"));
+        Assert.Equal(P.Tail2, P.TailPrefix(ObsbotSeries.Tail2Direct));
+        Assert.Equal(P.Tail, P.TailPrefix(ObsbotSeries.Tail));
+        Assert.Equal((159, 62, 10), P.Limits(ObsbotSeries.Tail2Direct));
+        Assert.Equal((129, 59, 11), P.Limits(ObsbotSeries.TailAirDirect));
+        Assert.Equal(P.Connected, P.Queries(ObsbotSeries.Tail2Direct).First().Address);
+        Assert.DoesNotContain(P.Queries(ObsbotSeries.TailAirDirect), q => q.Address.StartsWith(P.Tiny, StringComparison.Ordinal));
+        Assert.Throws<ArgumentException>(() => ObsbotSubActions.DeviceIndex("5"));
     }
 
     [Fact]
@@ -78,9 +111,9 @@ public sealed class ObsbotServiceTests : IAsyncLifetime
 
     public Task InitializeAsync() => Task.CompletedTask;
 
-    private async Task StartAsync(ObsbotTransport transport, bool silent = false)
+    private async Task StartAsync(ObsbotTransport transport, bool silent = false, bool tail2Hardware = false)
     {
-        _center = new FakeObsbotCenter(transport) { Silent = silent };
+        _center = new FakeObsbotCenter(transport) { Silent = silent, Tail2Hardware = tail2Hardware };
         var s = _env.Settings.Value.Obsbot;
         s.Transport = transport;
         s.Port = _center.Port;
@@ -225,6 +258,64 @@ public sealed class ObsbotServiceTests : IAsyncLifetime
         var (bad, _) = await runner.RunAsync(("obsbot.setZoom", new() { ["zoom"] = "150" }));
         Assert.False(bad);
         Assert.Contains("between 0 and 100", runner.LastError);
+
+        // Center's sheet: Tiny tracking speed 0-2, Tail AI modes 0-7.
+        Assert.False((await runner.RunAsync(("obsbot.setTrackingSpeed", new() { ["speed"] = "4", ["axis"] = "Both", ["series"] = "Tiny" }))).Ok);
+        Assert.Equal([4], (await Run("obsbot.setTrackingSpeed", new() { ["speed"] = "4", ["series"] = "Tail" }, P.Tail + "SetTrackingSpeed")).Args);
+        await using (var fresh = new ActionRunner(ObsbotSubActions.Create(_obsbot)))
+        {
+            Assert.False((await fresh.RunAsync(("obsbot.setAiMode", new() { ["mode"] = "8", ["series"] = "Tail" }))).Ok);
+            Assert.Contains("valid: 0, 1, 2, 3, 4, 5, 6, 7", fresh.LastError);
+        }
+
+        // Stop sends 0 to every direction address.
+        _center.Clear();
+        Assert.True((await runner.RunAsync(("obsbot.moveGimbal", new() { ["direction"] = "Stop" }))).Ok);
+        foreach (var d in new[] { "Up", "Down", "Left", "Right" }) Assert.Equal([0], (await _center.NextAsync(P.General + "SetGimbal" + d)).Args);
+    }
+
+    [Fact]
+    public async Task A_tail_2_reached_directly_gets_its_own_addresses_no_device_index_and_stays_connected()
+    {
+        _env.Settings.Value.Obsbot.Series = ObsbotSeries.Tail2Direct;
+        await StartAsync(ObsbotTransport.Udp, tail2Hardware: true);
+        await _env.WaitForEventAsync(ObsbotService.ConnectedEvent);
+        await Wait.UntilAsync(() => _obsbot.Current.Yaw == 40, "state from the hello");
+        Assert.Equal((-8, 40), (_obsbot.Current.Pitch!.Value, _obsbot.Current.Yaw!.Value));
+        Assert.Equal(-1, _obsbot.Current.Fov);
+        await using var runner = new ActionRunner(ObsbotSubActions.Create(_obsbot));
+        _center.Clear();
+
+        async Task<OscMessage> Run(string type, Dictionary<string, string> parameters, string expectAddress)
+        {
+            var (ok, _) = await runner.RunAsync((type, parameters));
+            Assert.True(ok, runner.LastError);
+            return await _center.NextAsync(expectAddress);
+        }
+
+        Assert.Equal([0], (await Run("obsbot.triggerPreset", new() { ["preset"] = "1", ["device"] = "2" }, P.Tail2 + "TriggerPreset")).Args);
+        Assert.Equal([1], (await Run("obsbot.recording", new() { ["target"] = "Camera recording (Tail)", ["state"] = "Start" }, P.Tail2 + "SetRecording")).Args);
+        Assert.Equal([55], (await Run("obsbot.setZoom", new() { ["zoom"] = "55", ["device"] = "2" }, P.General + "SetZoom")).Args);
+        Assert.Equal([60, 10], (await Run("obsbot.setZoom", new() { ["zoom"] = "60", ["speed"] = "11" }, P.General + "SetZoomSpeed")).Args);
+        Assert.Equal([30, 150, -62], (await Run("obsbot.setGimbalPosition",
+            new() { ["pan"] = "150", ["pitch"] = "-70", ["speed"] = "30" }, P.General + "SetGimMotorDegree")).Args);
+        Assert.Equal([1], (await Run("obsbot.setAiMode", new() { ["mode"] = "1" }, P.Tail2 + "SetAiMode")).Args);
+        Assert.Equal([3, 1, 5, 1, 5], (await Run("obsbot.setTrackingSpeed", new() { ["speed"] = "3" }, P.Tail2 + "SetTrackingSpeed")).Args);
+        Assert.Equal([5, 0, 8, 1, 5], (await Run("obsbot.setTrackingSpeed", new() { ["speed"] = "8", ["axis"] = "Pan" }, P.Tail2 + "SetTrackingSpeed")).Args);
+
+        foreach (var (type, parameters) in new (string, Dictionary<string, string>)[]
+                 {
+                     ("obsbot.setView", new() { ["view"] = "65°" }), ("obsbot.wakeSleep", new() { ["state"] = "Sleep" }),
+                     ("obsbot.aiLock", new() { ["state"] = "Lock" }), ("obsbot.snapshot", []), ("obsbot.setAiMode", new() { ["mode"] = "2" }),
+                     ("obsbot.setAxisLock", new() { ["axis"] = "Pan", ["state"] = "Lock" }),
+                 })
+            Assert.False((await runner.RunAsync((type, parameters))).Ok, type);
+        Assert.Contains("Tail 2 reached directly has no", runner.LastError);
+
+        // Get* queries go unanswered, but the hello in every poll keeps it connected past the silence limit.
+        await Task.Delay(TimeSpan.FromSeconds(2.5));
+        Assert.True(_obsbot.IsConnected);
+        Assert.Empty(_env.Events(ObsbotService.DisconnectedEvent));
     }
 
     [Fact]

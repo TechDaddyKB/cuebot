@@ -83,7 +83,12 @@ public sealed class ObsbotService : IConnectionStatus, IAsyncDisposable
     public ObsbotSeries Series => Settings.Series != ObsbotSeries.Auto ? Settings.Series : ObsbotProtocol.Guess(_state.SelectedName, _state.DeviceType);
 
     private string Host => Settings.Host.Trim().Length > 0 ? Settings.Host.Trim() : "127.0.0.1";
-    private int Port => Settings.Port is > 0 and < 65536 ? Settings.Port : 16284;
+    /// <summary>True when Cuebot talks to a Tail 2 / Tail Air's own OSC server rather than OBSBOT Center.</summary>
+    public bool IsDirect => ObsbotProtocol.IsDirect(Settings.Series);
+
+    // A Tail reached directly listens on 57110; Center's community default 16284 would never reach it.
+    private int Port => Settings.Port is > 0 and < 65536 && !(IsDirect && Settings.Port == 16284) ? Settings.Port
+        : IsDirect ? ObsbotProtocol.TailHardwarePort : 16284;
     private int ListenPort => Settings.ListenPort is >= 0 and < 65536 ? Settings.ListenPort : 57120;
 
     private TimeSpan Tick => _tickOverride ?? TimeSpan.FromSeconds(Settings.PollSeconds > 0 ? Math.Min(Settings.PollSeconds, 3600) : 5);
@@ -367,7 +372,7 @@ public sealed class ObsbotService : IConnectionStatus, IAsyncDisposable
         if (!_connected) MarkConnected($"OBSBOT Center answered at {display}");
 
         var before = _state;
-        var after = ObsbotProtocol.Apply(before, message);
+        var after = ObsbotProtocol.Apply(before, message, Settings.Series);
         if (ReferenceEquals(before, after))
         {
             if (message.Address != ObsbotProtocol.ConnectedResp)

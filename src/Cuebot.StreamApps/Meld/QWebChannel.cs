@@ -25,11 +25,12 @@ internal static class QWebChannel
 
     public static string IdleMessage() => JsonUtil.Serialize(new { type = Idle });
 
-    public static string Invoke(long id, string objectName, int method, IReadOnlyList<object?> args) =>
-        JsonUtil.Serialize(new { type = InvokeMethod, @object = objectName, method, args, id });
-
-    /// <summary>Invoke by name: Qt 6 servers resolve plain method names (used when init did not list the method).</summary>
-    public static string InvokeByName(long id, string objectName, string method, IReadOnlyList<object?> args) =>
+    /// <summary>
+    /// Invoke by bare name, as qwebchannel.js does for every name without a signature: the server then picks the
+    /// overload whose parameter count matches the arguments. (An index call skips that resolution, silently drops
+    /// extra arguments and fills missing ones with defaults.)
+    /// </summary>
+    public static string Invoke(long id, string objectName, string method, IReadOnlyList<object?> args) =>
         JsonUtil.Serialize(new { type = InvokeMethod, @object = objectName, method, args, id });
 
     public static string Connect(string objectName, int signal) =>
@@ -109,8 +110,6 @@ internal sealed class QWebChannelObject
     public IReadOnlyCollection<string> PropertyNames => _values.Keys;
 
     public bool HasMethod(string name) => _methods.ContainsKey(name);
-
-    public int? MethodIndex(string name) => _methods.TryGetValue(name, out var i) ? i : null;
 
     public int? SignalIndex(string name) => _signals.TryGetValue(name, out var i) ? i : null;
 

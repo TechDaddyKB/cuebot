@@ -62,7 +62,7 @@ public sealed class LumiaService : StreamAppConnection
     /// <summary>Commands, alerts, lights and voices read from Lumia on connect (and by <see cref="RefreshAsync"/>).</summary>
     public LumiaInfo Info => _info;
 
-    /// <summary>Last core states Lumia pushed (null until the first <c>states</c> event).</summary>
+    /// <summary>Last core states Lumia pushed or retrieve returned (null until either has them).</summary>
     public (bool On, bool StreamMode, bool Fuze)? States { get; private set; }
 
     /// <summary>Raised (on a background thread) when <see cref="Info"/> or <see cref="States"/> changed.</summary>
@@ -165,7 +165,9 @@ public sealed class LumiaService : StreamAppConnection
     public async Task<LumiaInfo> RefreshAsync(CancellationToken ct = default)
     {
         var response = await HttpAsync(HttpMethod.Get, ApiUrl("retrieve", "&slim=true"), null, ct).ConfigureAwait(false);
-        _info = LumiaProtocol.ParseInfo(response.ValueKind == JsonValueKind.Object && response.TryGetProperty("data", out var d) ? d : default);
+        var data = response.ValueKind == JsonValueKind.Object && response.TryGetProperty("data", out var d) ? d : default;
+        _info = LumiaProtocol.ParseInfo(data);
+        if (States is null && LumiaProtocol.ParseStates(data) is { } states) States = states;
         if (IsConnected)
             SetStatus(ConnectionState.Connected,
                 $"Connected to Lumia Stream at {Host}:{Port} ({_info.Values("chat-command").Count} commands, {_info.Lights.Count} lights)");
@@ -205,27 +207,30 @@ public sealed class LumiaService : StreamAppConnection
     // ---- Commands ----
 
     public Task SendCommandAsync(string command, string type = "chat-command", bool hold = false,
-        IReadOnlyDictionary<string, string>? extraSettings = null, CancellationToken ct = default) =>
+        IReadOnlyDictionary<string, object?>? extraSettings = null, bool skipQueue = false, CancellationToken ct = default) =>
         SendApiAsync(type.Trim().Length > 0 ? type.Trim() : "chat-command",
-            LumiaProtocol.CommandParams(Steps.Require(command, "Command"), hold, extraSettings), ct);
+            LumiaProtocol.CommandParams(Steps.Require(command, "Command"), hold, extraSettings, skipQueue), ct);
 
     /// <summary>Sets a colour (#RRGGBB or r,g,b) on all lights, or on <paramref name="lights"/> (names, ids or brand:id).</summary>
     public Task SetColorAsync(string color, double? brightness = null, double? transition = null, double? duration = null,
-        string lights = "", bool hold = false, CancellationToken ct = default)
+        string lights = "", bool hold = false, bool skipQueue = false, CancellationToken ct = default)
     {
         var (type, value) = LumiaProtocol.Color(Steps.Require(color, "Colour"));
         var selected = lights.Trim().Length > 0 ? LumiaProtocol.ResolveLights(lights, _info.Lights) : null;
-        return SendApiAsync(type, LumiaProtocol.ColorParams(value, brightness, transition, duration, hold, selected), ct);
+        return SendApiAsync(type, LumiaProtocol.ColorParams(value, brightness, transition, duration, hold, selected, skipQueue), ct);
     }
 
     public Task SetToDefaultAsync(CancellationToken ct = default) => SendApiAsync("to-default", null, ct);
 
-    public Task SendAlertAsync(string alert, IReadOnlyDictionary<string, string>? extraSettings = null, CancellationToken ct = default) =>
+    public Task SendAlertAsync(string alert, IReadOnlyDictionary<string, object?>? extraSettings = null, CancellationToken ct = default) =>
         SendApiAsync("alert", LumiaProtocol.CommandParams(Steps.Require(alert, "Alert"), false, extraSettings), ct);
 
+    /// <summary>Sends through Lumia's chat bot; platform "all" (or empty) leaves it out so every connected bot sends.</summary>
     public Task SendChatbotMessageAsync(string message, string platform = "twitch", bool asSelf = false, CancellationToken ct = default)
     {
-        var p = new Dictionary<string, object?> { ["value"] = Steps.Require(message, "Message"), ["platform"] = platform.Trim().Length > 0 ? platform.Trim().ToLowerInvariant() : "twitch" };
+        var p = new Dictionary<string, object?> { ["value"] = Steps.Require(message, "Message") };
+        var target = platform.Trim().ToLowerInvariant();
+        if (target.Length > 0 && target != LumiaProtocol.AllPlatforms) p["platform"] = target;
         if (asSelf) p["userToChatAs"] = "self";
         return SendApiAsync("chatbot-message", p, ct);
     }
@@ -253,6 +258,7 @@ public sealed class LumiaService : StreamAppConnection
         Convert.ToString(await SendApiAsync("get-variable-value", new { name = Steps.Require(name, "Variable") }, ct).ConfigureAwait(false),
             System.Globalization.CultureInfo.InvariantCulture) ?? "";
 
-    public Task SetVariableAsync(string name, string value, CancellationToken ct = default) =>
-        SendApiAsync("update-variable-value", new { name = Steps.Require(name, "Variable"), value }, ct);
+    /// <summary>Sets a variable; <paramref name="value"/> may be text, a number, a boolean or JSON (Lumia's value is "any").</summary>
+    public Task SetVariableAsync(string name, object? value, CancellationToken ct = default) =>
+        SendApiAsync("update-variable-value", new Dictionary<string, object?> { ["name"] = Steps.Require(name, "Variable"), ["value"] = value }, ct);
 }

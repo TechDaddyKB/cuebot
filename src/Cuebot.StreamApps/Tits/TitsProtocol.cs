@@ -28,8 +28,16 @@ internal static class TitsProtocol
     public const string TriggerActivatedEvent = "TITSTriggerActivatedEvent";
     public const string TriggerEndedEvent = "TITSTriggerEndedEvent";
 
+    /// <summary>
+    /// The request envelope. The item list also carries the top-level <c>sendImage</c> that the README marks obsolete
+    /// "to keep integrity" with older apps: builds before mid-2023 read only that one and would otherwise send every image.
+    /// </summary>
     public static string Request(string messageType, string requestId, object? data = null) =>
-        JsonUtil.Serialize(new { apiName = ApiName, apiVersion = ApiVersion, requestID = requestId, messageType, data });
+        JsonUtil.Serialize(new
+        {
+            apiName = ApiName, apiVersion = ApiVersion, requestID = requestId, messageType,
+            sendImage = messageType == ItemList ? false : (bool?)null, data,
+        });
 
     public static object ItemListData() => new { sendImage = false };
 
@@ -45,7 +53,10 @@ internal static class TitsProtocol
     public static JsonElement Data(JsonElement message) =>
         message.ValueKind == JsonValueKind.Object && message.TryGetProperty("data", out var d) ? d : default;
 
-    /// <summary>T.I.T.S. answers failures with an error message type (e.g. "APIError", like VTube Studio's API).</summary>
+    /// <summary>
+    /// Errors are not documented (TITSAPI issue #9). Open-source clients expect "APIError" or "TITSApiError" with
+    /// <c>data.errorID</c> and <c>data.message</c>, so any message type containing "Error" counts as one.
+    /// </summary>
     public static bool IsError(JsonElement message) => MessageType(message).Contains("Error", StringComparison.OrdinalIgnoreCase);
 
     public static string ErrorText(JsonElement message)
@@ -67,19 +78,25 @@ internal static class TitsProtocol
             .ToArray();
     }
 
-    /// <summary>Arguments of a broadcast event, named like Streamer.bot's T.I.T.S. trigger variables.</summary>
-    public static Dictionary<string, object?> EventArgs(JsonElement message)
+    /// <summary>
+    /// Arguments of a broadcast event, named like Streamer.bot's T.I.T.S. trigger variables. Names missing from the
+    /// payload (trigger events only gained <c>triggerName</c> in the README's October 2025 update, and early hit events
+    /// carried ids only) are filled from the cached lists.
+    /// </summary>
+    public static Dictionary<string, object?> EventArgs(JsonElement message, IReadOnlyList<TitsEntry>? items = null, IReadOnlyList<TitsEntry>? triggers = null)
     {
         var data = Data(message);
+        var triggerId = data.Str("triggerID");
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
-            ["triggerId"] = data.Str("triggerID"),
-            ["triggerName"] = data.Str("triggerName"),
+            ["triggerId"] = triggerId,
+            ["triggerName"] = data.Str("triggerName") is { Length: > 0 } triggerName ? triggerName : NameOf(triggers, triggerId),
         };
         if (MessageType(message) == HitEvent)
         {
-            args["itemId"] = data.Str("itemID");
-            args["itemName"] = data.Str("itemName");
+            var itemId = data.Str("itemID");
+            args["itemId"] = itemId;
+            args["itemName"] = data.Str("itemName") is { Length: > 0 } itemName ? itemName : NameOf(items, itemId);
             args["strength"] = data.Num("strength") ?? 0;
             var direction = data.ValueKind == JsonValueKind.Object && data.TryGetProperty("direction", out var d) ? d : default;
             args["direction.x"] = direction.Num("x") ?? 0;
@@ -88,6 +105,9 @@ internal static class TitsProtocol
         }
         return args;
     }
+
+    private static string NameOf(IReadOnlyList<TitsEntry>? entries, string id) =>
+        id.Length == 0 ? "" : entries?.FirstOrDefault(e => string.Equals(e.Id, id, StringComparison.OrdinalIgnoreCase))?.Name ?? "";
 
     /// <summary>Names or ids separated by commas or new lines.</summary>
     public static string[] SplitList(string text) =>
