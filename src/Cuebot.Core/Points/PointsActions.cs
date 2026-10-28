@@ -36,6 +36,11 @@ public static class PointsFeatures
         services.AddSingleton<ISubActionHandler, GetPointsMultiplierSubAction>();
         services.AddSingleton<ISubActionHandler, SetGroupMultiplierSubAction>();
         services.AddSingleton<ISubActionHandler, SetUserMultiplierSubAction>();
+        services.AddSingleton<ISubActionHandler, CheckPointsSubAction>();
+        services.AddSingleton<ISubActionHandler, DeletePointsSubAction>();
+        services.AddSingleton<ISubActionHandler, ResetUserPointsSubAction>();
+        services.AddSingleton<ISubActionHandler, GetPointsDefinitionSubAction>();
+        services.AddSingleton<ISubActionHandler, AwardPointsToAllSubAction>();
         services.AddSingleton<IScriptFunctionProvider, PointsScriptFunctions>();
         return services;
     }
@@ -164,6 +169,16 @@ internal static class PointsParameters
         throw new InvalidOperationException($"'{t}' is not a multiplier (use a number like 1.5, or empty to remove)");
     }
 
+    /// <summary>Streamer.bot's "Destination Variable": an extra argument that receives the balance (blank = none).</summary>
+    public static ParameterDescriptor Destination(string defaultValue = "") =>
+        new("destination", "Also store balance in argument") { DefaultValue = defaultValue, Help = "e.g. userPoints; blank = only %points%" };
+
+    public static void StoreDestination(ActionRunContext context, ParameterValues p, long balance)
+    {
+        var name = ExtrasText.Clean(p["destination"]).Trim('%');
+        if (name.Length > 0) context.Args[name] = balance;
+    }
+
     /// <summary>points, pointsFormatted, pointsName, pointsCurrency, pointsUser, pointsUserId, pointsPlatform.</summary>
     public static void Store(ActionRunContext context, PointsService points, PointsUser user, long balance, string prefix = "points",
         string? currency = null)
@@ -194,15 +209,21 @@ public sealed class AddPointsSubAction(PointsService points) : PointsSubActionBa
     public override string TypeId => "points.add";
     public override string DisplayName => "Add points";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
-        [.. PointsParameters.User(), PointsParameters.Amount("10"), PointsParameters.Currency(points)];
+    [
+        .. PointsParameters.User(), PointsParameters.Amount("10"), PointsParameters.Currency(points),
+        new("applyMultipliers", "Apply user/group multipliers", ParameterKind.Boolean) { DefaultValue = "false" },
+        PointsParameters.Destination(),
+    ];
 
     public override Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
         var currency = PointsParameters.CurrencyOf(Points, p);
         var user = PointsParameters.Require(Points, context, p, currency: currency);
         var amount = PointsParameters.ParseAmount(p["amount"]);
+        if (p.GetBool("applyMultipliers")) amount = Points.Multiplied(amount, user.Platform, user.UserId, user.UserName, currency);
         var balance = Points.Add(user.Platform, user.UserId, user.UserName, amount, currency: currency);
         PointsParameters.Store(context, Points, user, balance, currency: currency);
+        PointsParameters.StoreDestination(context, p, balance);
         context.Args["pointsAdded"] = amount;
         return Task.FromResult(SubActionResult.Next);
     }
@@ -355,6 +376,7 @@ public sealed class PointsLeaderboardSubAction(PointsService points) : PointsSub
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("count", "How many", ParameterKind.Number) { DefaultValue = "5" },
+        new("offset", "Skip the first (offset)", ParameterKind.Number) { DefaultValue = "0", Help = "0 starts at first place; 5 starts at sixth" },
         PointsParameters.Platform(),
         PointsParameters.Currency(points),
     ];
@@ -362,7 +384,8 @@ public sealed class PointsLeaderboardSubAction(PointsService points) : PointsSub
     public override Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
         var currency = PointsParameters.CurrencyOf(Points, p);
-        var board = Points.Leaderboard(ExtrasText.Clean(p["platform"]), Math.Max(1, p.GetInt("count", 5)), currency);
+        var offset = Math.Max(0, p.GetInt("offset"));
+        var board = Points.Leaderboard(ExtrasText.Clean(p["platform"]), 0, currency).Skip(offset).Take(Math.Max(1, p.GetInt("count", 5))).ToList();
         context.Args["leaderboard"] = string.Join(", ", board.Select(e => $"{e.Rank}. {e.UserName} ({Points.Format(e.Points, currency)})"));
         context.Args["leaderboardCount"] = board.Count;
         context.Args["leaderboardJson"] = JsonSerializer.Serialize(board, Storage.Json.Options);

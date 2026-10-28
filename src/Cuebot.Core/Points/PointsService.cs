@@ -576,6 +576,52 @@ public sealed class PointsService : IPeriodicService, IDisposable
         return paid;
     }
 
+    /// <summary>
+    /// Pays every known user (optionally of one platform): everyone the user registry has seen plus everyone holding a
+    /// balance. With <paramref name="onlyActive"/> it pays present viewers only, like <see cref="AwardPresent"/>.
+    /// Returns how many were paid.
+    /// </summary>
+    public int AwardAll(string? platform, long amount, bool onlyActive = false, bool applyMultipliers = false, string? currency = null)
+    {
+        if (onlyActive) return AwardPresent(platform, amount, applyMultipliers, currency);
+        string variable;
+        lock (_gate) variable = Resolve(currency).VariableName;
+        var filter = string.IsNullOrWhiteSpace(platform) ? null : platform;
+        var users = new Dictionary<string, (string Platform, string UserId, string Name)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var u in _users?.All() ?? [])
+        {
+            if (u.UserId.Length == 0) continue;
+            if (filter is not null && !string.Equals(UserVariables.NormalizePlatform(u.Platform), UserVariables.NormalizePlatform(filter), StringComparison.OrdinalIgnoreCase)) continue;
+            users.TryAdd(UserKey(u.Platform, u.UserId), (u.Platform, u.UserId, u.DisplayName.Length > 0 ? u.DisplayName : u.UserName));
+        }
+        foreach (var v in _vars.Snapshot(filter).Where(v => string.Equals(v.Name, variable, StringComparison.OrdinalIgnoreCase)))
+        {
+            users.TryAdd(UserKey(v.Platform, v.UserId), (v.Platform, v.UserId, v.UserName));
+        }
+        foreach (var (p, id, name) in users.Values)
+        {
+            var value = applyMultipliers ? Multiplied(amount, p, id, name, currency) : amount;
+            Add(p, id, name.Length > 0 ? name : null, value, "award", currency);
+        }
+        return users.Count;
+    }
+
+    /// <summary>Deletes one user's balance record (Streamer.bot "Delete Points"). Returns false when they had none.</summary>
+    public bool Delete(string platform, string userId, string? currency = null)
+    {
+        PointsCurrency c;
+        long old;
+        bool removed;
+        lock (_gate)
+        {
+            c = Resolve(currency);
+            old = Read(c, platform, userId);
+            removed = _vars.Delete(platform, userId, c.VariableName);
+        }
+        if (removed) Changed?.Invoke(new PointsChange(UserVariables.NormalizePlatform(platform), userId, "", old, 0, "delete", c.Name));
+        return removed;
+    }
+
     // ---- earning ----
 
     /// <summary>Processes one bus event (subscribed automatically; public for tests).</summary>
