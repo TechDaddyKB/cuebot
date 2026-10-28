@@ -85,7 +85,7 @@ public sealed class DecksPageTests : IAsyncDisposable
         var window = Open(new DecksView(), vm);
         Assert.False(vm.HasSelection);
         Assert.Contains("HTTP server, which is off", vm.HttpHint);
-        Assert.True(window.GetVisualDescendants().OfType<Button>().Any(b => b.Name == "AddDeckButton"));
+        Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "AddDeckButton");
         AssertNoBindingErrors();
         window.Close();
     }

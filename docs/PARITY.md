@@ -71,6 +71,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing · ➕ Cuebot-only (beyond parit
 | T.I.T.S. (8 triggers, 6 sub-actions) | 🟡 8/8 triggers (+ Disconnected) with Streamer.bot's variables, 6/6 sub-actions (+ get items/triggers), both C# methods as script functions; public TITSAPI WebSocket (`/websocket` + `/events`, port 42069); not yet tried against the real app | 6 | Lumia Stream (3 sub-actions) | 🟡 3/3 sub-actions (Send Command, Set Color, Set To Default) + alert, chat-bot message, TTS, Lumia/stream-mode state, variables, raw Send API; extra triggers (chat, commands, alerts, states, other events); official Developer API (REST + event WebSocket, token); Set Color "Skip Queue" missing (not in the public API); not yet tried against the real app | 6 |
 | mtion studio (2 sub-actions) | 🟡 2/2 sub-actions (Send Trigger, Get Active Clubhouse) with Streamer.bot's variables + trigger list, started/closed/clubhouse-changed/trigger-fired triggers; official local developer API (port 35393, docs from 2023: the product is now "mtion worlds", endpoints may have changed); not yet tried against the real app | 6 | OBSBOT | 🟡 Streamer.bot documents nothing yet; Cuebot covers OBSBOT Center's official OSC command set over UDP or TCP: 23 sub-actions (PTZ, zoom, presets, AI tracking, image settings, Meet modes, recording, snapshot, state, raw OSC), 8 triggers; Linux via a Tail 2 / Tail Air's own OSC or Center on another PC (no Linux OBSBOT Center); not yet tried with a real camera | 6 |
 | StreamFog (9 sub-actions) | ❌ no public API: Streamer.bot uses StreamFog's private "Remote Key" partnership protocol; Cuebot's StreamFog tab suggests showing/hiding StreamFog's OBS source instead | — | Pronouns (alejo.io) | ✅ | 3 |
+| Streamer.bot Decks (10 sub-actions) | ✅ Cuebot Decks: pages of buttons served at `/deck/<id>` by the HTTP server (any browser, phone or OBS dock) with live updates, the 10 deck sub-actions, a "Deck item pressed" trigger and a Decks editor page; runtime changes are not persisted; no streamer.bot website account or sharing | 7 | Discord (Basic Webhook), IFTTT (Notification Basic / Advanced) | ✅ outgoing sub-actions (`src/Cuebot.Webhooks/Outgoing`); Discord returns `messageId`; IFTTT uses IFTTT's Webhooks service (applet "Receive a web request") instead of Streamer.bot's website; no app field for the IFTTT key yet; not yet tried against the real services | 7 |
 
 Webhook-based services (Kick events, Ko-fi, Patreon, ...) need a publicly reachable endpoint. Streamer.bot relays them
 through its website. **Cuebot's decision:** use each service's direct API (WebSocket, polling or SDK) wherever one exists;
@@ -106,14 +107,46 @@ has an enabled Mouse Click trigger.
 | --- | --- | --- | --- |
 | C# code sub-action | ✅ | — | Roslyn; `Cb` API |
 | Python code sub-action + package manager | ➕ | — | beyond Streamer.bot |
-| **CPH compatibility layer** (Streamer.bot C# method names) | 🟡 | 3 | ~175 methods; `CPHInline` scripts compile unchanged; Twitch user/moderation/clip/marker/channel, YouTube latest broadcast, Kick accounts, ExecuteMethod, TriggerEvent and SendAction map onto the modules with Streamer.bot's data classes; KeyboardPress uses the keyboard output (§6); only TwitchClientId/TwitchOAuthToken throw NotSupported by design (see `docs/SERVERS.md`); review 2026-10-28: see `docs/PARITY_REVIEW.md` (CPH: 102 of 202 documented method names, enums and data classes incomplete, no Newtonsoft.Json; WebSocket: ~100 event names and the nested event data differ from Streamer.bot's) |
-| WebSocket server (22 requests, ~500 event types, auth) | 🟡 | 3 | all requests; events mapped to Streamer.bot source/type names; verified against the real `@streamerbot/client`; review 2026-10-28: see `docs/PARITY_REVIEW.md` (CPH: 102 of 202 documented method names, enums and data classes incomplete, no Newtonsoft.Json; WebSocket: ~100 event names and the nested event data differ from Streamer.bot's) |
+| **CPH compatibility layer** (Streamer.bot C# method names) | ✅ | 7 | All 202 `CPH` methods in Streamer.bot's C# reference with the documented signatures: 196 work through Cuebot's modules, 6 compile but log "not supported" and return the failure value (the three suspicious-user methods, `TwitchGetChannelPointsUsedByUserId`, `TwitchBlockUser(ById)`); full `EventType` (508) and `EventSource` (46) and every documented class/enum; Newtonsoft.Json bundled; Execute C# Code has code name, description, precompile / delayed start, save result to variable and custom DLL references (only listed paths, nothing downloaded); Execute C# Method sub-action and `CPH.ExecuteMethod`. 135/141 docs examples compile (the other 6 have bugs). Not available: .NET Framework-only APIs (Windows Forms) and wiki-era methods outside the C# reference (`TwitchPollCreate`, `AddQuoteForTwitch`, `ShowToastNotification`, `StreamDeck*`, Guest Star) |
+| WebSocket server (22 requests, ~500 event types, auth) | 🟡 | 7 | All documented requests, response fields checked against the docs and the official client's types. Events use Streamer.bot's exact names (the official client's GetEvents list and the `EventType` enum) with the documented nested `data` for the main overlay events (Twitch chat, follow, sub, resub, gift, gift bomb, cheer, raid, reward redemption; YouTube and Kick chat and members; commands, timers); `Raw.Action`, `Raw.SubAction`, `Raw.ActionCompleted` sent; GetEvents lists what the loaded modules emit. Left: GetBroadcaster has no account details, SendMessage ignores `bot`/`internal`, emote lists and pronouns are empty, payloads of less common integrations are flat plus a `user` object. HTTP server ✅ (incl. the documented GetCredits shape), UDP DoAction ✅ |
 | HTTP server (6 endpoints), UDP server (`DoAction`) | ✅ | 3 | localhost-only and off by default; origin checks |
 | Custom WebSocket servers/clients | ✅ | 3 | triggers, sub-actions, script functions |
 | Import/export (own format) + Streamer.bot import string importer | 🟡 | 4 | Cuebot bundles ✅ (string + .cuebot file, preview, conflicts, remapping). Streamer.bot strings: every export layout seen (format v3–v24, flat and nested groups, old and new if/else); 58 sub-action and 30 trigger type codes mapped from public exports only (docs, starter pack, 157 community exports; see `docs/streamerbot-import-codes.md`), about 98% of sub-actions and 72% of triggers on the public samples; C# source recovered and always imported disabled; 14 sub-action and 15 trigger codes are medium confidence (flagged in the import report) until checked against a real Streamer.bot; unknown codes import as disabled placeholders (extendable via `streamerbot-mapping.json`) |
 | Local REST API (`/api/v1`, OpenAPI 3.1, SSE events) + MCP server (2025-06-18; 32 tools, resources, prompts; HTTP + `--mcp-stdio`) | ➕ ✅ | 5 | off by default, localhost, bearer token, confirmation for destructive tools |
 | In-app AI assistant (user connects their own AI provider) | ➕ | 6 | builds on the MCP tools |
 | Crash / problem reporting with info gatherer | ➕ ✅ | 5 | crash file + next-start banner, scrubbed report preview, GitHub issue link or `gh` |
+
+
+### Streamer.bot compatibility (batch 7, 2026-10-28)
+
+`docs/PARITY_REVIEW.md` compares Cuebot item by item with Streamer.bot's public docs and old wiki; batch 7 closed most of
+what it found. Streamer.bot's names are **added** next to Cuebot's own, so existing Cuebot actions keep working.
+
+- **Variable names.** Twitch, YouTube and Kick triggers and sub-actions set Streamer.bot's documented names
+  (`%rewardName%`, `%rawInput%`, `%cumulative%`, `%gifts%`, `%poll.choice0.title%`, `%charity.amount.value%`,
+  `%createdByUsername%`, `%raidUserName%`, `%createClipUrl%`, `%followAgeLong%`, ...): Twitch ~64/74 flagged triggers and
+  29/35 sub-actions, YouTube 10/12 + 2/2, Kick 11/13 + 12/12. Integrations too: OBS `props.*`/`currentScene`/`success`,
+  Streamlabs Desktop `sd.*`, Crowd Control `effect.*`/`game.*`/`gamePack.*`, Fourthwall `fw.*`, Patreon, Pulsoid/HypeRate
+  `measuredAt`, Voicemod `voice.*`/`soundboard.*`, VTube Studio `clickPosition.*`/`model.*`. Not set where the platform
+  APIs lack the data (e.g. Twitch `multiMonthTenure`, `bonusGifts`, `shoutoutId`; YouTube message `parts`/`emotes`).
+- **Engine and core.** Queue sub-actions (clear, blocking, pause), Set Trigger / Sub-Action State, Set Sub-Action Weight,
+  Get/Set Action Group State, Trigger Custom Event, Pick Color; Get Input is Streamer.bot's dialog (the splitter is
+  "Split text into inputs"); Random Number Next Float; Delay random range; If/Else regex captures and exists / does not
+  exist; local signals with arguments, queueing and Overwrite Variables; Streamer.bot's narrowest-range rule with a
+  per-trigger Always Run; `rawInputEscaped`/`rawInputUrlEncoded`/`inputEscaped#`/`inputUrlEncoded#` and
+  `%runningActionId%` on every run; global-variable triggers with `global.*`; Cron trigger.
+- **Commands and points.** `commandSource`, `commandType`, `msgId`, `match.*`, cooldown `*Left` variables; a command's
+  `rawInput` is now the text after the command (the whole message stays in `message`); cooldown Reset restarts at full
+  length and Remove ends it. Points: Check, Delete, Reset User, Get Points Definition, Award to All, leaderboard offset,
+  multipliers for one user. Groups and First Words set the documented outputs.
+- **System.** Read Lines / Read Specific Line / Read Random Lines (count), UDP Broadcast, Run a Program with environment
+  variables and output capture, Fetch URL parse as JSON, Play Sound `soundLength`; Streamer.bot names on key press, mouse,
+  process, file watcher, clipboard and toast triggers. `/shutdown` startup switch.
+- **New sub-actions.** Streamlabs Desktop: scene filter state, random filter state, hide source's filters, hide group's
+  sources, random group source (19 sub-actions now; some calls unverified). Discord Basic Webhook, IFTTT.
+- **Still different.** Camera Hub Set Dynamic Range / Noise Reduction / White Balance Tint ❌ (vendor-only controls behind
+  Camera Hub, not UVC); cloud backups ❌ (no Cuebot cloud account); `$math()$` uses Cuebot's evaluator, not mXparser;
+  keyboard shortcuts list and Speaker.bot "Allow Moderator Whispers" not done; see PARITY_REVIEW.md for the full list.
 
 ## 8. Speaker.bot (text-to-speech)
 
@@ -150,7 +183,7 @@ has an enabled Mouse Click trigger.
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
    import/export, action history and copy/paste/undo, app shortcuts; Streamer.bot type codes mapped from public exports (medium-confidence codes still to confirm).
-5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop + T.I.T.S. + Lumia + mtion + OBSBOT 🟡, StreamFog ❌ (no public API); Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control 🟡, game controllers 🟡 (built, not yet tried on real hardware); remote signals between instances ✅.
+5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop + T.I.T.S. + Lumia + mtion + OBSBOT 🟡, StreamFog ❌ (no public API); Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control 🟡, game controllers 🟡 (built, not yet tried on real hardware); remote signals between instances ✅. Batch 7 (Streamer.bot compatibility from the docs review) ✅; see §7.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.

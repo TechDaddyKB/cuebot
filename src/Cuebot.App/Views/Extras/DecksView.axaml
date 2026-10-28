@@ -101,7 +101,7 @@
                           <Grid ColumnDefinitions="Auto,8,*,12,Auto">
                             <TextBlock Text="Action" VerticalAlignment="Center" />
                             <AutoCompleteBox Grid.Column="2" Text="{Binding Action}" ItemsSource="{Binding ActionSuggestions}"
-                                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0" Watermark="Action to run (optional)" />
+                                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0" PlaceholderText="Action to run (optional)" />
                             <CheckBox Grid.Column="4" Content="Toggle state on press" IsChecked="{Binding ToggleOnPress}" />
                           </Grid>
                           <WrapPanel ItemSpacing="12" LineSpacing="8">
