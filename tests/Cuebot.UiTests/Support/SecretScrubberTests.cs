@@ -187,6 +187,7 @@ public sealed class SecretScrubberTests
         new("Google request ?key=" + GoogleKey + "&alt=json", GoogleKey),
         new("Discord webhook https://discord.com/api/webhooks/123456789012345678/AbCdEfGhIjKlMnOpQrStUvWxYz-0123456789", "AbCdEfGhIjKlMnOpQrStUvWxYz-0123456789"),
         new("Slack https://hooks.slack.com/services/T000/B000/XXXXXXXXXXXXXXXX", "XXXXXXXXXXXXXXXX"),
+        new("IFTTT https://maker.ifttt.com/trigger/live/json/with/key/dQw4w9-WgXcQ", "dQw4w9-WgXcQ"),
         new("gh token ghp_abcdefghijklmnopqrstuvwxyz0123456789", "ghp_abcdefghijklmnopqrstuvwxyz0123456789"),
         new("Kick token " + KickAccess + " expired", KickAccess),
         new("stream_key: live_123456_abcdefABCDEF", "live_123456_abcdefABCDEF"),
