@@ -19,6 +19,9 @@ internal interface IOscTransport : IAsyncDisposable
 
     /// <summary>Why the connection ended, when known.</summary>
     string? CloseReason { get; }
+
+    /// <summary>A problem worth logging that did not stop the transport (e.g. the UDP reply port was taken).</summary>
+    string? Warning => null;
 }
 
 internal static class OscTransports
@@ -50,6 +53,8 @@ internal sealed class UdpOscTransport : IOscTransport
 
     public string? CloseReason { get; private set; }
 
+    public string? Warning { get; private set; }
+
     /// <summary>The local port actually bound (differs from the setting when it was 0 or taken).</summary>
     public int LocalPort => (_socket?.LocalEndPoint as IPEndPoint)?.Port ?? 0;
 
@@ -68,7 +73,7 @@ internal sealed class UdpOscTransport : IOscTransport
         {
             // The reply port is taken (another OSC tool?): fall back to any free port; replies may then not arrive.
             socket.Bind(new IPEndPoint(bindTo, 0));
-            CloseReason = $"reply port {listenPort} is in use, listening on {((IPEndPoint)socket.LocalEndPoint!).Port}";
+            Warning = $"reply port {listenPort} is in use, listening on {((IPEndPoint)socket.LocalEndPoint!).Port}";
         }
         if (OperatingSystem.IsWindows())
         {

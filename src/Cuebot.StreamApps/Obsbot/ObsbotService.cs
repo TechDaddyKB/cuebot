@@ -307,7 +307,7 @@ public sealed class ObsbotService : IConnectionStatus, IAsyncDisposable
         }
         else
         {
-            if (transport.CloseReason is { } warning) _log.Warn(Name, warning);
+            if (transport.Warning is { } warning) _log.Warn(Name, warning);
             SetStatus(ConnectionState.Connecting, $"Sending to {display}; waiting for OBSBOT Center to answer (OSC on? ports match?)");
         }
 
