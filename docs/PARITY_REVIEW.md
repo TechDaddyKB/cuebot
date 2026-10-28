@@ -307,8 +307,8 @@ with the reason.
   - ✅ `TwitchSharedChatSource`: `source.userId`, `source.userLogin`, `source.userName`. `source.isSubscribed`, `source.isModerator`, `source.isVip` are placeholders (false, w16).
 
 **Twitch sub-actions**
-- P · Set Background Color: no Random Color — `SA:twitch/rewards/set-background-color.md`
-- P · Set Max Per Stream / Set Max per User Per Stream: no Additive (2) — `SA:twitch/rewards/set-max-per-stream.md`, `set-max-per-user-per-stream.md`
+- F · Set Background Color: Random Color option (w16) — `SA:twitch/rewards/set-background-color.md`
+- F · Set Max Per Stream / Set Max per User Per Stream: Additive option, never below 0 (w16) (2) — `SA:twitch/rewards/set-max-per-stream.md`, `set-max-per-user-per-stream.md`
 - ✅ Create Clip: `createClipSuccess`, `createClipId`, `createClipCreatedAt`, `createClipUrl` — `SA:twitch/channel/create-clip.md`
 - ✅ Create Stream Marker: `streamMarker*` — `SA:twitch/channel/create-stream-marker.md`
 - ✅ Get Follow Age Info: `followDate`, `followAgeLong`, `followAgeShort`, `followAgeMinutes`, `followAgeSeconds`, `followUser*`, `followAge.*`. Different: `followAgeDays` stays Cuebot's number (the docs show a formatted string "4,149") — `SA:twitch/followers/get-follow-age-info-for-target.md`

@@ -425,14 +425,15 @@ internal static class TwitchSubActions
         Reward("twitch.setRewardCost", "Reward: set cost", Number("cost", "Cost", "100"), p => new RewardUpdate { Cost = p.GetInt("cost", 100) }),
         Reward("twitch.setRewardTitle", "Reward: set title", new("title", "Title"), p => new RewardUpdate { Title = p["title"] }),
         Reward("twitch.setRewardPrompt", "Reward: set prompt", new("prompt", "Prompt"), p => new RewardUpdate { Prompt = p["prompt"] }),
-        Reward("twitch.setRewardColor", "Reward: set background colour", new("color", "Colour (#RRGGBB)") { DefaultValue = "#9147FF" },
-            p => new RewardUpdate { BackgroundColor = p["color"].Trim() }),
+        Reward("twitch.setRewardColor", "Reward: set background colour",
+            [new("color", "Colour (#RRGGBB)") { DefaultValue = "#9147FF" }, Bool("random", "Random colour", false)],
+            (p, _) => new RewardUpdate { BackgroundColor = p.GetBool("random") ? $"#{Random.Shared.Next(0x1000000):X6}" : p["color"].Trim() }),
         Reward("twitch.setRewardCooldown", "Reward: set global cooldown", Number("seconds", "Cooldown (seconds)", "0", "0 disables"),
             p => new RewardUpdate { GlobalCooldownSeconds = p.GetInt("seconds") }),
-        Reward("twitch.setRewardMaxPerStream", "Reward: set max per stream", Number("max", "Maximum", "0", "0 disables"),
-            p => new RewardUpdate { MaxPerStream = p.GetInt("max") }),
-        Reward("twitch.setRewardMaxPerUser", "Reward: set max per user per stream", Number("max", "Maximum", "0", "0 disables"),
-            p => new RewardUpdate { MaxPerUserPerStream = p.GetInt("max") }),
+        Reward("twitch.setRewardMaxPerStream", "Reward: set max per stream", [Number("max", "Maximum", "0", "0 disables"), Additive()],
+            (p, r) => new RewardUpdate { MaxPerStream = Limit(p, r.MaxPerStream) }),
+        Reward("twitch.setRewardMaxPerUser", "Reward: set max per user per stream", [Number("max", "Maximum", "0", "0 disables"), Additive()],
+            (p, r) => new RewardUpdate { MaxPerUserPerStream = Limit(p, r.MaxPerUserPerStream) }),
         new("twitch.deleteReward", "Reward: delete", [RewardParam()],
             async (api, c, p, ct) => await api.DeleteRewardAsync((await RewardAsync(api, c, p, ct).ConfigureAwait(false)).Id, ct).ConfigureAwait(false)),
         new("twitch.getRewardInfo", "Reward: get info (rewardTitle, rewardCost, rewardEnabled, rewardPaused...)", [RewardParam()],
@@ -894,6 +895,22 @@ internal static class TwitchSubActions
             var reward = await RewardAsync(api, c, p, ct).ConfigureAwait(false);
             await api.UpdateRewardAsync(reward.Id, update(p), ct).ConfigureAwait(false);
         });
+
+    /// <summary>A reward edit that reads the reward's current settings (random colour, additive limits).</summary>
+    private static TwitchSubActionSpec Reward(string id, string name, ParameterDescriptor[] values,
+        Func<ParameterValues, TwitchReward, RewardUpdate> update) =>
+        new(id, name, [RewardParam(), .. values], async (api, c, p, ct) =>
+        {
+            var reward = await RewardAsync(api, c, p, ct).ConfigureAwait(false);
+            await api.UpdateRewardAsync(reward.Id, update(p, reward), ct).ConfigureAwait(false);
+        });
+
+    /// <summary>Streamer.bot's "Additive": the maximum is added to the current limit (never below 0) instead of replacing it.</summary>
+    private static ParameterDescriptor Additive() =>
+        Bool("additive", "Additive", false) with { Help = "Add the maximum to the current limit (negative lowers it) instead of replacing it" };
+
+    private static int Limit(ParameterValues p, int current) =>
+        p.GetBool("additive") ? Math.Max(0, current + p.GetInt("max")) : p.GetInt("max");
 
     private static async Task<TwitchReward> RewardAsync(TwitchApi api, ActionRunContext c, ParameterValues p, CancellationToken ct)
     {
