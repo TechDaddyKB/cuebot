@@ -106,6 +106,11 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
                 JsonReaders.Flatten(tierAttributes, $"entitledTiers[{i}].Attributes", a, maxDepth: 1);
                 if (tierAttributes.Str("title") is { Length: > 0 } t) tierTitles.Add((t, tierAttributes.Number("amount_cents")));
             }
+            // Streamer.bot's Pledge Updated: the tier the patron is now entitled to (its title, else its id).
+            if (type == PatreonEventTypes.PledgeUpdated)
+                a[$"entitledTiers[{i}].updatedToTier"] = Included(tiers[i])?.Child("attributes").Str("title") is { Length: > 0 } title
+                    ? title
+                    : tiers[i].Str("id");
         }
         // Members of a paid tier are usually entitled to the campaign's Free tier too; name only the paid one(s).
         if (tierTitles.Any(t => t.Cents > 0)) tierTitles.RemoveAll(t => t.Cents <= 0);
