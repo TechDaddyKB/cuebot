@@ -182,8 +182,8 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
   Camera Hub, not UVC; re-checked 2026-10-28: Elgato offers no Camera Hub SDK, API or plugin system, so no Camera Hub
   plugin can expose them, and the Facecam's extension units are undocumented; see [ELGATO_SDKS.md](ELGATO_SDKS.md)); cloud
   backups: Google Drive replaces them (Streamer.bot's need a Streamer.bot account; see README "Google Drive backups");
-  `$math()$` accepts mXparser 4.4's documented syntax (Cuebot's evaluator, not mXparser itself: errors instead of NaN, no
-  calculus operators or units). Streamer.bot's keyboard shortcuts and Speaker.bot's "Allow Moderator Whispers" are done
+  `$math()$` accepts mXparser 4.4's documented syntax (Cuebot's evaluator, not mXparser itself: errors instead of NaN;
+  iterated and calculus operators, units, constants and special functions since w22). Streamer.bot's keyboard shortcuts and Speaker.bot's "Allow Moderator Whispers" are done
   (w16); see PARITY_REVIEW.md for what is left.
 
 ## 8. Speaker.bot (text-to-speech)
