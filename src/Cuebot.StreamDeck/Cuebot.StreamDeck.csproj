@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+    <!-- The plugin talks to Cuebot over a WebSocket on the REST API listener (/api/v1/streamdeck, same bearer token). -->
+    <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.StreamDeck.Tests" />
+    <InternalsVisibleTo Include="Cuebot.UiTests" />
+  </ItemGroup>
+</Project>

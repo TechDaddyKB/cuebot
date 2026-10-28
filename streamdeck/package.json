@@ -1,0 +1,31 @@
+{
+  "name": "cuebot-streamdeck-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stream Deck plugin for Cuebot",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p .",
+    "test": "npm run build && vitest run",
+    "validate": "streamdeck validate io.github.cuebot.streamdeck.sdPlugin --no-update-check",
+    "pack": "npm run build && streamdeck pack io.github.cuebot.streamdeck.sdPlugin --output dist --force --no-update-check"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "2.1.2",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.10.3",
+    "@types/node": "24.19.2",
+    "@types/ws": "8.18.2",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

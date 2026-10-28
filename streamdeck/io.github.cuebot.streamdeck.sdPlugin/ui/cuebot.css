@@ -1,0 +1,73 @@
+/* Property inspector styling close to Stream Deck's own (dark, compact). */
+:root {
+	color-scheme: dark;
+	--bg: #2d2d2d;
+	--field: #3d3d3d;
+	--text: #d8d8d8;
+	--muted: #9a9a9a;
+	--accent: #6ca8ff;
+	--good: #4caf50;
+	--bad: #e5534b;
+	--busy: #f0b429;
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	padding: 8px 12px 16px;
+	background: var(--bg);
+	color: var(--text);
+	font: 9pt system-ui, "Segoe UI", sans-serif;
+}
+
+[hidden] { display: none !important; }
+
+.row {
+	display: grid;
+	grid-template-columns: 96px 1fr auto;
+	align-items: center;
+	gap: 6px;
+	margin: 6px 0;
+}
+
+.row.tall { align-items: start; }
+
+.row > label { color: var(--muted); text-align: right; }
+
+.row > :nth-child(2):last-child { grid-column: 2 / 4; }
+
+input, select, textarea, button {
+	font: inherit;
+	color: var(--text);
+	background: var(--field);
+	border: 1px solid transparent;
+	border-radius: 3px;
+	padding: 4px 6px;
+	min-width: 0;
+}
+
+textarea { resize: vertical; font-family: ui-monospace, Consolas, monospace; }
+
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+
+[disabled] { opacity: 0.5; }
+
+label.check { color: var(--text); text-align: left; display: flex; gap: 6px; align-items: center; }
+
+.hint { color: var(--muted); margin: 2px 0 8px 102px; line-height: 1.35; }
+.hint.error { color: var(--bad); }
+.hint:empty { display: none; }
+
+details { border-bottom: 1px solid #444; padding-bottom: 6px; margin-bottom: 8px; }
+summary { cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 0; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+details .hint { margin-left: 0; }
+
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--muted); }
+.dot.ok { background: var(--good); }
+.dot.bad { background: var(--bad); }
+.dot.busy { background: var(--busy); }

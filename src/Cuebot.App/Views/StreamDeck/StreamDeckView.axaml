@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamDeck"
+             x:Class="Cuebot.App.Views.StreamDeck.StreamDeckView"
+             x:DataType="vm:StreamDeckViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="Elgato Stream Deck" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="The Cuebot plugin for Stream Deck runs actions, toggles them, sets global variables and fires the Stream Deck Action trigger. Cuebot's Stream Deck sub-actions change a key's title, state, image and value by its button id." />
+
+      <TextBlock TextWrapping="Wrap" Margin="0,0,0,8">
+        <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Name="StreamDeckStatus" Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+      </TextBlock>
+
+      <!-- Setup -->
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="Set up" />
+
+          <StackPanel Spacing="4">
+            <TextBlock FontWeight="SemiBold" Text="1. Turn on the REST API" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="The plugin talks to Cuebot through the local REST API (Servers page), using its token. It listens on 127.0.0.1 only unless LAN access is allowed there." />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Name="ApiState" Text="{Binding ApiState}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              <Button Content="Turn on the REST API" Classes="accent" Command="{Binding EnableApiCommand}" IsVisible="{Binding !ApiRunning}" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="4">
+            <TextBlock FontWeight="SemiBold" Text="2. Install the plugin" />
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding PluginHint}" />
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasPluginFile}">
+              <TextBlock Text="{Binding PluginFile}" VerticalAlignment="Center" FontFamily="monospace" TextWrapping="Wrap" Margin="0,0,8,0" />
+              <Button Grid.Column="1" Content="Show file" Command="{Binding OpenPluginFolderCommand}" />
+            </Grid>
+            <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding IsLinux}"
+                       Text="The Stream Deck app runs on Windows and macOS only. Run it on another computer and point the plugin at this one: allow LAN access on the Servers page, set the REST API address to 0.0.0.0 and enter this computer's IP address as the host." />
+          </StackPanel>
+
+          <StackPanel Spacing="4">
+            <TextBlock FontWeight="SemiBold" Text="3. Pair: enter these in any Cuebot key's settings (Connection)" />
+            <Grid ColumnDefinitions="90,*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,2">
+              <TextBlock Text="Host" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Host}" VerticalAlignment="Center" FontFamily="monospace" />
+              <Button Grid.Column="2" Content="Copy" Tag="host" Click="OnCopy" />
+              <TextBlock Grid.Row="1" Text="Port" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Port}" VerticalAlignment="Center" FontFamily="monospace" />
+              <Button Grid.Row="1" Grid.Column="2" Content="Copy" Tag="port" Click="OnCopy" Margin="0,4,0,0" />
+              <TextBlock Grid.Row="2" Text="API token" VerticalAlignment="Center" />
+              <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Name="Token" Text="{Binding TokenDisplay}" VerticalAlignment="Center" FontFamily="monospace" />
+                <CheckBox Content="Show" IsChecked="{Binding ShowToken}" IsVisible="{Binding HasToken}" />
+              </StackPanel>
+              <Button Grid.Row="2" Grid.Column="2" Content="Copy" Tag="token" Click="OnCopy" Margin="0,4,0,0" />
+            </Grid>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="The settings are shared by every Cuebot key. The dot next to Connection turns green once the plugin is connected; the Stream Deck app then appears below." />
+          </StackPanel>
+
+          <StackPanel Spacing="4">
+            <TextBlock FontWeight="SemiBold" Text="4. Use it" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Add Cuebot keys from the Cuebot category. Each key has a Button ID (shown in its settings and below). Use it in the Stream Deck Action trigger to react to presses, dial turns and touches, and in the Stream Deck sub-actions (Set Title, Set State, Set Background, Set Value, Show Alert, Show Ok, Toggle State) to change how keys look." />
+          </StackPanel>
+
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Message}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Connected apps -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="h2" Text="Connected Stream Deck apps" />
+            <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" />
+          </Grid>
+          <TextBlock Classes="muted" Text="None yet. Install the plugin and enter the token." IsVisible="{Binding HasNoInstances}" TextWrapping="Wrap" />
+          <ItemsControl Name="Instances" ItemsSource="{Binding Instances}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:StreamDeckInstanceViewModel">
+                <StackPanel Spacing="4" Margin="0,4,0,12">
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                  <TextBlock Classes="muted" Text="{Binding Details}" TextWrapping="Wrap" />
+                  <TextBlock Text="Devices" FontWeight="SemiBold" Margin="0,4,0,0" />
+                  <ItemsControl ItemsSource="{Binding Devices}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding}" Margin="12,1,0,1" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock Text="Visible Cuebot keys" FontWeight="SemiBold" Margin="0,4,0,0" />
+                  <TextBlock Classes="muted" Text="No Cuebot keys on the current pages." IsVisible="{Binding HasNoButtons}" Margin="12,0,0,0" />
+                  <ItemsControl ItemsSource="{Binding Buttons}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:StreamDeckButtonViewModel">
+                        <Grid ColumnDefinitions="180,220,*,80" Margin="12,1,0,1">
+                          <SelectableTextBlock Text="{Binding ButtonId}" FontFamily="monospace" />
+                          <TextBlock Grid.Column="1" Text="{Binding Kind}" />
+                          <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Where}" />
+                          <TextBlock Grid.Column="3" Classes="muted" Text="{Binding State}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

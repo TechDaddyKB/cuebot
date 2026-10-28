@@ -96,6 +96,15 @@ public sealed class ServerServices
         init => _scripts = value;
     }
 
+    /// <summary>Module WebSocket endpoints served on the REST API listener (<c>/api/v1/{name}</c>), e.g. the Stream Deck plugin.</summary>
+    public IReadOnlyList<Api.IApiWebSocketRoute> WebSocketRoutes
+    {
+        get => _webSocketRoutes ??= _provider?.GetServices<Api.IApiWebSocketRoute>().ToArray() ?? [];
+        init => _webSocketRoutes = value;
+    }
+
+    private IReadOnlyList<Api.IApiWebSocketRoute>? _webSocketRoutes;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")

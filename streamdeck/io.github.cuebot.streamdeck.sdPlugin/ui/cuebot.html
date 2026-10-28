@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Cuebot</title>
+	<link rel="stylesheet" href="cuebot.css" />
+</head>
+<body>
+	<!-- Connection (global settings, shared by every Cuebot key) -->
+	<details id="connection">
+		<summary><span id="status-dot" class="dot off"></span><span id="status-text">Waiting for the plugin...</span></summary>
+		<div class="row"><label for="host">Host</label><input id="host" data-global="host" placeholder="127.0.0.1" spellcheck="false" /></div>
+		<div class="row"><label for="port">Port</label><input id="port" data-global="port" placeholder="7475" inputmode="numeric" /></div>
+		<div class="row">
+			<label for="token">API token</label>
+			<input id="token" data-global="token" type="password" placeholder="cb_..." spellcheck="false" autocomplete="off" />
+			<button id="show-token" type="button" title="Show or hide the token">👁</button>
+		</div>
+		<div class="row"><span></span><button id="reconnect" type="button">Reconnect</button></div>
+		<p class="hint">In Cuebot open the Stream Deck page (or Servers → REST API), turn the REST API on and copy the token. Host and port are Cuebot's REST API (default 127.0.0.1:7475).</p>
+	</details>
+
+	<!-- Every key -->
+	<div class="row" data-kinds="all">
+		<label for="buttonId">Button ID</label>
+		<input id="buttonId" data-setting="buttonId" spellcheck="false" />
+		<button id="copy-id" type="button" title="Copy">⧉</button>
+	</div>
+	<p class="hint" data-kinds="all">Cuebot's Stream Deck sub-actions (Set Title, Set State, Set Background...) target keys by this id. Keys with the same id change together.</p>
+
+	<!-- Run / Toggle: pick an action -->
+	<div class="row" data-kinds="run toggle">
+		<label for="actionId">Action</label>
+		<select id="actionId" data-setting="actionId" data-needs-connection><option value="">(not connected)</option></select>
+		<button id="refresh" type="button" title="Reload the list">↻</button>
+	</div>
+	<p id="actions-note" class="hint error" data-kinds="run toggle"></p>
+
+	<div class="row" data-kinds="run">
+		<label for="runOn">Run on</label>
+		<select id="runOn" data-setting="runOn"><option value="down">Key down</option><option value="up">Key up</option></select>
+	</div>
+
+	<div class="row" data-kinds="toggle">
+		<label for="mode">Press</label>
+		<select id="mode" data-setting="mode">
+			<option value="toggle">Toggle enabled</option>
+			<option value="enable">Enable</option>
+			<option value="disable">Disable</option>
+		</select>
+	</div>
+
+	<!-- Set global variable -->
+	<div class="row" data-kinds="global">
+		<label for="variable">Variable</label>
+		<input id="variable" data-setting="variable" list="globals" spellcheck="false" />
+		<datalist id="globals"></datalist>
+	</div>
+	<div class="row" data-kinds="global">
+		<label for="op">Operation</label>
+		<select id="op" data-setting="op">
+			<option value="set">Set to value</option>
+			<option value="add">Add value (number)</option>
+			<option value="toggle">Toggle true/false</option>
+		</select>
+	</div>
+	<div class="row" data-kinds="global"><label for="value">Value</label><input id="value" data-setting="value" spellcheck="false" /></div>
+	<div class="row" data-kinds="global" data-controller="Encoder"><label for="step">Step per tick</label><input id="step" data-setting="step" placeholder="1" inputmode="decimal" /></div>
+	<div class="row" data-kinds="global"><span></span><label class="check"><input type="checkbox" data-setting="persisted" checked /> Persisted (survives restarts)</label></div>
+	<div class="row" data-kinds="global"><span></span><label class="check"><input type="checkbox" data-setting="showValue" /> Show the value on the key</label></div>
+
+	<!-- Arguments -->
+	<div class="row tall" data-kinds="run trigger">
+		<label for="args">Arguments</label>
+		<textarea id="args" data-setting="args" rows="3" placeholder="name=value (one per line)" spellcheck="false"></textarea>
+	</div>
+	<p class="hint" data-kinds="trigger">Presses, releases, dial turns and touches fire the <b>Stream Deck Action</b> trigger in Cuebot with %buttonId%, %buttonEvent%, %ticks% and these arguments.</p>
+
+	<script src="pi.js"></script>
+</body>
+</html>
