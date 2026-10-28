@@ -494,7 +494,7 @@ public sealed class StreamerBotCodeTests
         ], data));
         Assert.Empty(report.Placeholders);
         var t = main.Triggers;
-        Assert.Equal(["command.triggered", "twitch.follow", "twitch.cheer", "twitch.sub", "twitch.resub", "twitch.giftSub", "twitch.giftBomb", "twitch.raid",
+        Assert.Equal(["command.triggered", "twitch.follow", "twitch.cheer", "twitch.sub", "twitch.resub", "twitch.subGift", "twitch.giftBomb", "twitch.raid",
             "twitch.rewardRedemption", "twitch.streamUpdate", "users.firstWords", "twitch.chatMessage", "twitch.adRun", "twitch.upcomingAd",
             "twitch.watchStreak", "youtube.chatMessage", "users.firstWords", "obs.sceneChanged", "obs.streamStarted", "custom.codeEvent", "custom.codeEvent"],
             t.Select(x => x.Type));

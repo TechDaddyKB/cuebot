@@ -119,7 +119,7 @@ webhook), 17001, 17008 and 18001 (Kick and other platforms).
 | 102 | Twitch Cheer | twitch.cheer | medium | min/max bits; 102 vs 107 by order |
 | 103 | Twitch Sub | twitch.sub | high | `tiers` |
 | 104 | Twitch Resub | twitch.resub | high | min months |
-| 105 | Twitch Gift Sub | twitch.giftSub | high | `monthsGifted` |
+| 105 | Twitch Gift Sub | twitch.subGift (one per recipient) | high | `monthsGifted` |
 | 106 | Twitch Gift Bomb | twitch.giftBomb | high | min gifts |
 | 107 | Twitch Raid | twitch.raid | medium | min viewers |
 | 112 | Twitch Reward Redemption | twitch.rewardRedemption | high | reward id only; title must be set |

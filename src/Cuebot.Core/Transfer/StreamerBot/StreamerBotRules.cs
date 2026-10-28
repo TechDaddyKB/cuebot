@@ -308,7 +308,8 @@ public sealed partial class StreamerBotMappingTable
             (s, _) => Trigger("twitch.sub", s, ("tier", Tier(Str(s, "tier"))))));
         t.Add(new SbTriggerRule("ReSub", "twitch.resub", ["ReSub", "Resubscription", "TwitchReSub", "104"],
             (s, _) => Trigger("twitch.resub", s, ("tier", Tier(Str(s, "tier"))), ("minMonths", Text(Math.Max(0, Num(s, "min") ?? 0))))));
-        t.Add(new SbTriggerRule("GiftSub", "twitch.giftSub", ["GiftSub", "TwitchGiftSub", "105"], (s, _) => Trigger("twitch.giftSub", s)));
+        // Streamer.bot fires Gift Subscription once per recipient, like Cuebot's twitch.subGift (twitch.giftSub is the gifter's total).
+        t.Add(new SbTriggerRule("GiftSub", "twitch.subGift", ["GiftSub", "TwitchGiftSub", "105"], (s, _) => Trigger("twitch.subGift", s, ("tier", Tier(Str(s, "tier"))))));
         t.Add(new SbTriggerRule("GiftBomb", "twitch.giftBomb", ["GiftBomb", "TwitchGiftBomb", "106"],
             (s, _) => Trigger("twitch.giftBomb", s, ("tier", Tier(Str(s, "tier"))), ("minTotal", Text(Math.Max(1, Num(s, "min") ?? 1))))));
         t.Add(new SbTriggerRule("Raid", "twitch.raid", ["Raid", "TwitchRaid", "107"],
