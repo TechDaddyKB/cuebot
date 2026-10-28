@@ -161,10 +161,12 @@ public sealed class HypeRateService : HeartRateConnection
                     case "clip:created" when message.Topic == clipsTopic:
                     {
                         var slug = message.Payload.Str("twitch_slug");
+                        var url = slug.Length > 0 ? "https://clips.twitch.tv/" + slug : "";
                         Publish("clipCreated", new Dictionary<string, object?>
                         {
                             ["twitchSlug"] = slug,
-                            ["clipUrl"] = slug.Length > 0 ? "https://clips.twitch.tv/" + slug : "",
+                            ["clipUrl"] = url,
+                            ["url"] = url,   // Streamer.bot's name
                         });
                         break;
                     }

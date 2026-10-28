@@ -30,14 +30,14 @@ public sealed class ParsingTests : IDisposable
     {
         var e = Kofi("kofi-donation.json");
         Assert.Equal(KofiEventTypes.Donation, e.Type);
-        Assert.Equal(3.0, e.Args["amount"]);
+        Assert.Equal(3.0m, e.Args["amount"]);
         Assert.Equal("USD", e.Args["currency"]);
         Assert.Equal("Ko-fi Team", e.Args["from"]);
         Assert.Equal("Ko-fi Team", e.Args["user"]);
         Assert.Equal(true, e.Args["isPublic"]);
         Assert.Equal("Good luck with the integration!", e.Args["message"]);
         Assert.Equal("3a1fac0c-f960-4506-a60e-824979a74e74", e.Args["messageId"]);
-        Assert.Equal(new DateTimeOffset(2026, 10, 27, 13, 4, 30, TimeSpan.Zero), e.Args["timestamp"]);
+        Assert.Equal(new DateTimeOffset(2026, 10, 27, 13, 4, 30, TimeSpan.Zero).LocalDateTime, e.Args["timestamp"]);   // Streamer.bot: a DateTime
         Assert.Equal("$3.00", e.Args["formattedAmount"]);
         Assert.Equal("Ko-fi", e.Args["service"]);
         Assert.Equal(false, e.Args["isTest"]);
@@ -109,9 +109,16 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal("Supporter", e.Args["entitledTiers[0].Attributes.title"]);
         Assert.Equal(500L, e.Args["entitledTiers[0].Attributes.amount_cents"]);
         Assert.Equal("Jane Patron", e.Args["user"]);
-        Assert.Equal(5.0, e.Args["amount"]);
+        Assert.Equal(5.0m, e.Args["amount"]);
         Assert.Equal("Supporter", e.Args["tier"]);
         Assert.Equal("members:pledge:create", e.Args["eventType"]);
+
+        // Streamer.bot 1.0.7's Test Trigger dump: every social connection (null when not linked) and DateTime dates.
+        Assert.True(e.Args.ContainsKey("user.attributes.social_connections.youtube"));
+        Assert.Null(e.Args["user.attributes.social_connections.discord.user_id"]);
+        Assert.False(e.Args.ContainsKey("user.attributes.social_connections.twitch"));   // linked: twitch.url is there instead
+        Assert.IsType<DateTime>(e.Args["user.attributes.created"]);
+        Assert.IsType<DateTime>(e.Args["entitledTiers[0].attributes.created_at"]);
     }
 
     [Fact]
@@ -125,6 +132,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(PatreonEventTypes.PledgeUpdated, updated.Type);
         Assert.Equal("Supporter", updated.Args["entitledTiers[0].updatedToTier"]);
         Assert.False(Patreon("members:pledge:create", body).Args.ContainsKey("entitledTiers[0].updatedToTier"));
+        Assert.Equal(updated.Args["entitledTiers[0].updatedToTier"], updated.Args["updatedToTier"]);
         Assert.Equal(PatreonEventTypes.PledgeDeleted, Patreon("members:pledge:delete", body).Type);
         Assert.Equal(PatreonEventTypes.MemberUpdated, Patreon("members:update", body).Type);
 
@@ -164,7 +172,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(2L, e.Args["shopify.line_items[1].quantity"]);
         Assert.Equal(body, e.Args["_json"]);
         Assert.Equal("John Smith", e.Args["user"]);
-        Assert.Equal(254.98, e.Args["amount"]);
+        Assert.Equal(254.98m, e.Args["amount"]);
         Assert.Equal("#9999", e.Args["orderName"]);
         Assert.Equal(3.0, e.Args["itemCount"]);
 
@@ -208,7 +216,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(5.0, e.Args["fw.variants[0].unitPrice"]);
         Assert.Equal("Z3YD-8CTV00S", e.Args["fw.variants[0].sku"]);
         Assert.Equal("MerchFan", e.Args["user"]);
-        Assert.Equal(17.0, e.Args["amount"]);
+        Assert.Equal(17.0m, e.Args["amount"]);
         Assert.Equal(false, e.Args["isTest"]);
     }
 
@@ -229,6 +237,13 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal("ACTIVE", sub.Args["fw.type"]);
         Assert.Equal("NewMember", sub.Args["fw.nickname"]);
         Assert.Equal(5.0, sub.Args["fw.amount"]);
+
+        // Streamer.bot 1.0.7's runs (its Test Trigger dumps) name the fields without "fw."; createdAt is a DateTime.
+        Assert.Equal(("don_xyz", "KindSupporter", 5.5m), (donation.Args["donationId"], donation.Args["username"], donation.Args["amount"]));
+        foreach (var name in (string[])["email", "shopId", "status"]) Assert.True(donation.Args.ContainsKey(name), name);
+        Assert.IsType<DateTime>(donation.Args["createdAt"]);
+        Assert.Equal(("MONTHLY", "ACTIVE", "NewMember"), (sub.Args["interval"], sub.Args["type"], sub.Args["nickname"]));
+        Assert.Equal(sub.Args["fw.id"], sub.Args["subscriptionId"]);
 
         var gift = Fourthwall("fourthwall-gift-purchase.json");
         Assert.Equal(FourthwallEventTypes.GiftPurchase, gift.Type);
@@ -335,7 +350,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(54900.0, gift.Args["throne.price"]);
         Assert.Equal(false, gift.Args["throne.isSurpriseGift"]);
         Assert.Equal("Happy Birthday!", gift.Args["throne.message"]);
-        Assert.Equal(549.0, gift.Args["amount"]);
+        Assert.Equal(549.0m, gift.Args["amount"]);
         Assert.Equal("$549.00", gift.Args["formattedAmount"]);
         // createdAt is the signed timestamp (Unix seconds).
         Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(long.Parse(ts, System.Globalization.CultureInfo.InvariantCulture)), gift.Args["throne.createdAt"]);
@@ -344,7 +359,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(ThroneEventTypes.ContributionPurchased, contribution.Type);
         Assert.Equal(1099.0, contribution.Args["throne.amount"]);
         Assert.False(contribution.Args.ContainsKey("throne.price"));
-        Assert.Equal(10.99, contribution.Args["amount"]);
+        Assert.Equal(10.99m, contribution.Args["amount"]);
         Assert.Equal("", contribution.Args["message"]);   // omitted when there is none
 
         var crowdfunded = Throne("throne-gift-crowdfunded.json");
@@ -413,7 +428,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal("voided", e.Args["shopify.financial_status"]);
         Assert.Equal(4.0, e.Args["itemCount"]);
         Assert.Equal("IPod Nano - 8GB, IPod Nano - 8GB, Gift card, Sticker", e.Args["items"]);
-        Assert.Equal(403.0, e.Args["amount"]);
+        Assert.Equal(403.0m, e.Args["amount"]);
         Assert.Equal(403.0, e.Args["presentmentAmount"]);
         Assert.Equal("USD", e.Args["presentmentCurrency"]);
         Assert.StartsWith("[Test] John Smith placed order #9999", WebhookChatAdapter.Describe(e)!.Title, StringComparison.Ordinal);
@@ -445,7 +460,7 @@ public sealed class ParsingTests : IDisposable
             "\"presentment_money\": { \"amount\": \"372.10\", \"currency_code\": \"EUR\" }", StringComparison.Ordinal);
         Assert.Contains("372.10", body, StringComparison.Ordinal);
         var e = ShopifyMapped(body, test: false);
-        Assert.Equal(403.0, e.Args["amount"]);
+        Assert.Equal(403.0m, e.Args["amount"]);
         Assert.Equal("USD", e.Args["currency"]);
         Assert.Equal(372.10, e.Args["presentmentAmount"]);
         Assert.Equal("EUR", e.Args["presentmentCurrency"]);
@@ -496,7 +511,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal("Gold", e.Args["tier"]);
         Assert.Equal("Free", e.Args["entitledTiers[0].Attributes.title"]);   // still in the arguments
         Assert.Equal("2222222", e.Args["entitledTiers[1].id"]);
-        Assert.Equal(10.0, e.Args["amount"]);
+        Assert.Equal(10.0m, e.Args["amount"]);
         Assert.Equal(false, e.Args["isGifted"]);
         Assert.Equal(false, e.Args["isFreeTrial"]);
         Assert.Null(WebhookChatAdapter.Describe(e)!.Detail);

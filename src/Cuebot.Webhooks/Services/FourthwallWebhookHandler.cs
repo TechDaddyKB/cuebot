@@ -2,6 +2,7 @@ using System.Text.Json;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
+using Cuebot.Core.Variables;
 using Cuebot.Core.Webhooks;
 
 namespace Cuebot.Webhooks.Services;
@@ -196,7 +197,21 @@ public sealed class FourthwallWebhookHandler(JsonFile<WebhooksSettings> settings
         }
         a["fw.isTest"] = isTest;   // Streamer.bot's name (fw.testMode is Fourthwall's own flag)
         Common(a, Display(user), amount, currency, Display(message), isTest);
+        Unprefixed(type, a);
         return new WebhookEvent(type, [envelope.Str("id")], a);
+    }
+
+    /// <summary>
+    /// Streamer.bot 1.0.7's runs name the fields without the "fw." its docs show (donationId, email, shopId, status,
+    /// username, createdAt...; a subscription's id is subscriptionId), so both spellings are set; Cuebot's own
+    /// unprefixed names (amount, currency, message, user) win.
+    /// </summary>
+    private static void Unprefixed(string type, Dictionary<string, object?> a)
+    {
+        if (type is FourthwallEventTypes.SubscriptionPurchased or FourthwallEventTypes.SubscriptionChanged or FourthwallEventTypes.SubscriptionExpired)
+            StreamerBotArgs.Alias(a, "subscriptionId", "fw.id");
+        foreach (var key in a.Keys.Where(k => k.StartsWith("fw.", StringComparison.Ordinal)).ToArray())
+            StreamerBotArgs.Alias(a, key[3..], key);
     }
 
     private static void Order(JsonElement order, Dictionary<string, object?> a)

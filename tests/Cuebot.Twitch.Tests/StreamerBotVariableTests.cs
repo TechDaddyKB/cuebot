@@ -189,8 +189,9 @@ public sealed class StreamerBotVariableTests
         Assert.Equal("c1", e.Args["charity.campaignId"]);
         Assert.Equal("Example", e.Args["charity.name"]);
         Assert.Equal("logo.png", e.Args["charity.logo"]);
-        Assert.Equal(10.50m, e.Args["charity.amount.value"]);
-        Assert.Equal(1050L, e.Args["charity.amount.valueMinor"]);
+        Assert.Equal("d1", e.Args["charity.donationId"]);
+        Assert.Equal("10.50", e.Args["charity.amount.value"]);   // Streamer.bot: text and an int
+        Assert.Equal(1050, e.Args["charity.amount.valueMinor"]);
         Assert.Equal("USD", e.Args["charity.amount.currency"]);
     }
 
@@ -526,6 +527,47 @@ public sealed class StreamerBotVariableTests
         Assert.Equal(false, shared.Args["source.isVip"]);
 
         Assert.Equal(false, RouteArgs(T.PresentViewers, ("count", 0)).Args["isLive"]);
+    }
+
+    /// <summary>Names and types from Streamer.bot 1.0.7's own Test Trigger runs (dumped from a real install).</summary>
+    [Fact]
+    public void Test_trigger_dump_names_have_streamerbots_types()
+    {
+        const string Time = "2026-01-01T12:00:00Z";
+        Assert.Equal(true, RouteArgs(T.EmoteModeOn, ("emoteMode", true)).Args["emoteOnly"]);
+        Assert.Equal(false, RouteArgs(T.EmoteModeOff, ("emoteMode", false)).Args["emoteOnly"]);
+
+        var begin = RouteArgs(T.GuestStarSessionBegin, ("sessionId", "s1"), ("startedAt", Time));
+        Assert.IsType<DateTime>(begin.Args["sartedAt"]);   // sic
+        var end = RouteArgs(T.GuestStarSessionEnd, ("sessionId", "s1"), ("startedAt", Time), ("endedAt", Time));
+        Assert.IsType<DateTime>(end.Args["sartedAt"]);
+        Assert.IsType<DateTime>(end.Args["endedAt"]);
+        Assert.IsType<DateTime>(RouteArgs(T.StreamOnline, ("startedAt", Time)).Args["startedAt"]);
+        Assert.IsType<DateTime>(RouteArgs(T.ShieldModeBegin, ("userId", "9"), ("startedAt", Time)).Args["startedAt"]);
+        Assert.IsType<DateTime>(RouteArgs(T.ShieldModeEnd, ("userId", "9"), ("endedAt", Time)).Args["endedAt"]);
+        Assert.IsType<DateTime>(RouteArgs(T.UpcomingAd, ("minutes", 5), ("nextAdAt", Time)).Args["nextAdAt"]);
+        Assert.Equal(30_000, RouteArgs(T.AdRun, ("duration", 30), ("userId", "1")).Args["adLengthMs"]);
+
+        Assert.Equal(true, RouteArgs(T.SharedChatRaid, ("userId", "1"), ("viewers", 5)).Args["fromSharedChat"]);
+        var bomb = RouteArgs(T.SharedChatGiftBomb, ("userId", "1"), ("total", 5));
+        Assert.Equal((true, false), (bomb.Args["fromSharedChat"], bomb.Args["isSubscribed"]));
+
+        // Subscription notices carry the TwitchChat names, empty when EventSub sends no message.
+        var sub = RouteArgs(T.Sub, ("userId", "1"), ("tier", "1000"));
+        Assert.Equal(("", "", "", ""), (sub.Args["rawInput"], sub.Args["rawInputEscaped"], sub.Args["messageStripped"], sub.Args["color"]));
+        Assert.Equal((0, 0, "", ""), (sub.Args["badgeCount"], sub.Args["emoteCount"], sub.Args["badges"], sub.Args["emotes"]));
+        var resub = RouteArgs(T.Resub, ("userId", "1"), ("message", "Kappa hi"), ("emoteNames", "Kappa"), ("cumulativeMonths", 3));
+        Assert.Equal(("Kappa hi", "hi", "hi"), (resub.Args["rawInput"], resub.Args["messageStripped"], resub.Args["input1"]));
+
+        var poll = RouteArgs(T.PollCreated, ("pollId", "6c1f5b5e-4c1a-4c4b-9a39-5a8c2d1b2e3f"), ("title", "Q"), ("choiceCount", 0));
+        Assert.Equal(Guid.Parse("6c1f5b5e-4c1a-4c4b-9a39-5a8c2d1b2e3f"), poll.Args["poll.Id"]);
+        Assert.IsType<DateTime>(RouteArgs(T.PredictionCreated, ("predictionId", "p"), ("startedAt", Time), ("locksAt", Time)).Args["prediction.LocksAt"]);
+
+        var present = RouteArgs(T.PresentViewers, ("count", 0));
+        Assert.IsType<List<Dictionary<string, object?>>>(present.Args["users"]);
+        Assert.Equal(("", 0, default(DateTime)), (present.Args["title"], present.Args["viewerCount"], present.Args["startedAt"]));
+
+        Assert.Equal("bad", RouteArgs(T.BlockedTermsAdded, ("userId", "9"), ("term.0", "bad")).Args["term.[0]"]);
     }
 
     [Fact]

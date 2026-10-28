@@ -379,7 +379,8 @@ public sealed partial class ObsConnection : IConnectionStatus, IAsyncDisposable
         return _sceneItemNames.GetValueOrDefault((sceneName, sceneItemId));
     }
 
-    private void Publish(BotEvent e) => _bus.Publish(ObsEventMapper.WithConnection(e, Name));
+    private void Publish(BotEvent e) => _bus.Publish(ObsEventMapper.WithConnection(e,
+        new ObsEventMapper.ObsSource(Name, Settings.Host, _studioVersion ?? "", _webSocketVersion ?? "")));
 
     private async Task RefreshCachesAsync(string? webSocketVersion, CancellationToken ct)
     {

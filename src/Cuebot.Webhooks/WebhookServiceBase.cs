@@ -159,7 +159,7 @@ public abstract class WebhookServiceBase : IWebhookHandler
     private protected static void Common(Dictionary<string, object?> args, string user, double amount, string currency, string message, bool isTest)
     {
         args["user"] = user;
-        args["amount"] = amount;
+        args["amount"] = double.IsFinite(amount) ? (decimal)amount : 0m;   // Streamer.bot: decimal
         args["currency"] = currency;
         args["formattedAmount"] = Money.Format(amount, currency);
         args["message"] = message;

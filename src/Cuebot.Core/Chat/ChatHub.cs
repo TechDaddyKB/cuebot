@@ -110,6 +110,12 @@ public sealed class ChatHub : IDisposable
         "isSharedChat", "sourceBroadcasterId", "broadcasterId", "isHighlighted",
     ];
 
+    /// <summary>
+    /// The platform event's full arguments, under one key of "chat.message" (a read-only dictionary), for consumers
+    /// that pass the platform's variables on: First Words runs get them as Streamer.bot's do (badges, broadcast.*...).
+    /// </summary>
+    public const string PlatformArgsKey = "platformArgs";
+
     private void Add(ChatMessage message, BotEvent source)
     {
         lock (_gate) Push(_messages, message);
@@ -117,10 +123,11 @@ public sealed class ChatHub : IDisposable
         var args = MessageArgs(message);
         foreach (var name in ForwardedArgs)
             if (source.Args.TryGetValue(name, out var value) && !args.ContainsKey(name)) args[name] = value;
+        args[PlatformArgsKey] = source.Args;
         _bus.Publish(new BotEvent(MessageEvent, args));
     }
 
-    private static Dictionary<string, object?> MessageArgs(ChatMessage message) => new()
+    private static Dictionary<string, object?> MessageArgs(ChatMessage message) => new(StringComparer.OrdinalIgnoreCase)
         {
             ["platform"] = message.Platform,
             ["user"] = message.User,

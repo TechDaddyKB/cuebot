@@ -46,11 +46,13 @@ internal static class StreamerBotVariables
 
             case T.Sub or T.SharedChatSub:
                 MultiMonth(a);
+                SubMessage(type, a);
                 break;
             case T.Resub or T.SharedChatResub:
                 Alias(a, "cumulative", "cumulativeMonths");
                 Alias(a, "monthStreak", "streakMonths");
                 MultiMonth(a);
+                SubMessage(type, a);
                 break;
             case T.SubGift or T.SharedChatSubGift:
                 Alias(a, "recipientId", "recipientUserId");
@@ -78,6 +80,20 @@ internal static class StreamerBotVariables
                 break;
             case T.PredictionCreated or T.PredictionUpdated or T.PredictionLocked or T.PredictionCompleted or T.PredictionCanceled:
                 Prediction(a);
+                break;
+
+            case T.StreamOnline or T.ShieldModeBegin:
+                ToTime(a, "startedAt");
+                break;
+            case T.ShieldModeEnd:
+                ToTime(a, "endedAt");
+                break;
+            case T.GuestStarSessionBegin or T.GuestStarSessionEnd:
+                SetTime(a, "sartedAt", a.GetValueOrDefault("startedAt")); // sic: Streamer.bot's spelling
+                ToTime(a, "endedAt");
+                break;
+            case T.UpcomingAd:
+                ToTime(a, "nextAdAt");
                 break;
 
             case T.HypeTrainStart or T.HypeTrainUpdate or T.HypeTrainLevelUp or T.HypeTrainEnd:
@@ -123,6 +139,7 @@ internal static class StreamerBotVariables
                 Alias(a, "moderatorDisplayName", "user");
                 Alias(a, "moderatorId", "userId");
                 SetTime(a, "createdAt", at);
+                for (var i = 0; a.ContainsKey($"term.{i}"); i++) Alias(a, $"term.[{i}]", $"term.{i}"); // the docs' spelling
                 break;
             case T.ShoutoutCreated:
                 Alias(a, "targetUserId", "userId");
@@ -172,7 +189,7 @@ internal static class StreamerBotVariables
                 break;
             case T.AdRun:
                 Alias(a, "adLength", "duration");
-                Set(a, "adLengthMs", Number(a, "duration") * 1000);
+                Set(a, "adLengthMs", (int)Number(a, "duration") * 1000);
                 Alias(a, "adScheduled", "isAutomatic");
                 break;
             case T.PresentViewers:
@@ -187,6 +204,7 @@ internal static class StreamerBotVariables
             case T.SlowModeOn or T.SlowModeOff or T.SlowModeChanged:
                 Alias(a, "subscriberOnly", "subscriberMode");
                 Alias(a, "uniqueMode", "uniqueChatMode");
+                Alias(a, "emoteOnly", "emoteMode");
                 break;
             case T.SharedChatBegin or T.SharedChatUpdate or T.SharedChatEnd:
                 Alias(a, "host.userId", "userId");
@@ -200,6 +218,10 @@ internal static class StreamerBotVariables
                 Alias(a, "guestUserId", "userId");
                 break;
         }
+
+        // Shared chat copies of channel events (not the session events) are always from the shared chat.
+        if (type.StartsWith("twitch.sharedChat", StringComparison.Ordinal) && type is not (T.SharedChatBegin or T.SharedChatUpdate or T.SharedChatEnd))
+            Set(a, "fromSharedChat", true);
 
         Placeholders(type, a);
     }
@@ -242,6 +264,7 @@ internal static class StreamerBotVariables
                 break;
             case T.GiftBomb or T.SharedChatGiftBomb:
                 Placeholder(a, "bonusGifts", false);
+                Placeholder(a, "isSubscribed", false);
                 break;
             case T.StreamOnline:
                 Placeholder(a, "game", "");
@@ -264,8 +287,30 @@ internal static class StreamerBotVariables
                 break;
             case T.PresentViewers:
                 Placeholder(a, "isLive", false);
+                Placeholder(a, "users", new List<Dictionary<string, object?>>());
+                Placeholder(a, "title", "");
+                Placeholder(a, "viewerCount", 0);
+                Placeholder(a, "startedAt", default(DateTime));
                 break;
         }
+        if (type is T.Sub or T.SharedChatSub or T.Resub or T.SharedChatResub)
+        {
+            // TwitchChat names of the sub notice; EventSub's subscribe events have no badges, emotes or color.
+            Placeholder(a, "badges", "");
+            Placeholder(a, "badgeCount", 0);
+            Placeholder(a, "emotes", "");
+            Placeholder(a, "emoteCount", 0);
+            Placeholder(a, "color", "");
+        }
+    }
+
+    /// <summary>Subscription notices: rawInput (and its forms) and messageStripped from the sub message, "" without one.</summary>
+    private static void SubMessage(string type, Dictionary<string, object?> a)
+    {
+        if (IsChat(type, a)) return;   // Chat() added them
+        var message = Text(a, "message");
+        AddInput(a, message);
+        Set(a, "messageStripped", Strip(message, Text(a, "emoteNames")));
     }
 
     /// <summary>TwitchBroadcaster: broadcastUser, broadcastUserName, broadcastUserId, broadcastIsAffiliate, broadcastIsPartner.</summary>
@@ -369,7 +414,8 @@ internal static class StreamerBotVariables
     private static void Poll(string type, Dictionary<string, object?> a, DateTimeOffset at)
     {
         Alias(a, "poll.Title", "title");
-        Alias(a, "poll.Id", "pollId");
+        // Streamer.bot types the poll id as a Guid (Twitch's ids are GUIDs).
+        if (Text(a, "pollId") is { Length: > 0 } pollId) Set(a, "poll.Id", Guid.TryParse(pollId, out var guid) ? guid : pollId);
         SetTime(a, "poll.StartedAt", a.GetValueOrDefault("startedAt"));
         SetTime(a, "poll.EndsAt", a.GetValueOrDefault("endsAt"));
         var ended = type is T.PollCompleted or T.PollTerminated or T.PollArchived;
@@ -420,6 +466,7 @@ internal static class StreamerBotVariables
         SetTime(a, "prediction.CreatedAt", a.GetValueOrDefault("startedAt"));
         SetTime(a, "prediction.LockedAt", a.GetValueOrDefault("lockedAt"));
         SetTime(a, "prediction.EndedAt", a.GetValueOrDefault("endedAt"));
+        SetTime(a, "prediction.LocksAt", a.GetValueOrDefault("locksAt"));
         if (Time(a.GetValueOrDefault("startedAt")) is { } started && Time(a.GetValueOrDefault("locksAt")) is { } locks)
             Set(a, "prediction.PredictionWindow", (int)Math.Round((locks - started).TotalSeconds));
         var count = (int)Number(a, "outcomeCount");

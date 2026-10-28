@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cuebot.Core.Events;
+using Cuebot.Core.Variables;
 using Cuebot.Obs.Protocol;
 
 namespace Cuebot.Obs;
@@ -81,10 +82,66 @@ internal static class ObsEventMapper
             ("sceneItemId", sceneItemId), ("visible", visible));
 
     /// <summary>A copy of <paramref name="e"/> whose args also name the connection it came from.</summary>
-    public static BotEvent WithConnection(BotEvent e, string connection)
+    public static BotEvent WithConnection(BotEvent e, string connection) => WithConnection(e, new ObsSource(connection, "", "", ""));
+
+    /// <summary>
+    /// A copy of <paramref name="e"/> whose args also name the connection it came from, plus Streamer.bot's names:
+    /// <c>obs.id</c>, <c>obs.name</c>, <c>obs.host</c>, <c>obs.studioVersion</c>, <c>obs.websocketVersion</c> on every
+    /// event, <c>obs.sceneName</c>/<c>obs.oldSceneName</c> (scene changed), <c>obsVendorEvent.*</c> (vendor event)
+    /// and <c>obsEvent.event</c> plus <c>obsEvent.&lt;field&gt;</c> per top-level event data field (OBS event).
+    /// </summary>
+    public static BotEvent WithConnection(BotEvent e, ObsSource source)
     {
-        var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase) { [ConnectionArg] = connection };
+        var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase) { [ConnectionArg] = source.Name };
+        // Streamer.bot identifies connections by a Guid; Cuebot's are named, so the id is derived from the name.
+        StreamerBotArgs.Set(args, "obs.id", ConnectionId(source.Name));
+        StreamerBotArgs.Set(args, "obs.name", source.Name);
+        StreamerBotArgs.Set(args, "obs.host", source.Host);
+        StreamerBotArgs.Set(args, "obs.studioVersion", source.StudioVersion);
+        StreamerBotArgs.Set(args, "obs.websocketVersion", source.WebSocketVersion);
+        switch (e.Type)
+        {
+            case ObsEvents.SceneChanged:
+                StreamerBotArgs.Alias(args, "obs.sceneName", "sceneName");
+                StreamerBotArgs.Alias(args, "obs.oldSceneName", "previousScene");
+                break;
+            case ObsEvents.VendorEvent:
+                StreamerBotArgs.Alias(args, "obsVendorEvent.vendor", "vendorName");
+                StreamerBotArgs.Alias(args, "obsVendorEvent.event", "vendorEventType");
+                break;
+            case ObsEvents.Event:
+                StreamerBotArgs.Alias(args, "obsEvent.event", "eventType");
+                if (args.GetValueOrDefault("eventData") is string { Length: > 1 } json) AddEventFields(args, json);
+                break;
+        }
         return new BotEvent(e.Type, args);
+    }
+
+    /// <summary>A stable Guid for a connection name (the same name gives the same id on every run).</summary>
+    public static Guid ConnectionId(string name) =>
+        new(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("obs:" + name)).AsSpan(0, 16));
+
+    /// <summary><c>obsEvent.&lt;field&gt;</c> for each top-level field of the event data: values as text, objects and lists as JSON.</summary>
+    private static void AddEventFields(Dictionary<string, object?> args, string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return;
+            foreach (var p in doc.RootElement.EnumerateObject())
+            {
+                StreamerBotArgs.Set(args, "obsEvent." + p.Name, p.Value.ValueKind switch
+                {
+                    JsonValueKind.String => p.Value.GetString(),
+                    JsonValueKind.Null => "",
+                    _ => p.Value.GetRawText(),
+                });
+            }
+        }
+        catch (JsonException)
+        {
+            // Not JSON: nothing to flatten.
+        }
     }
 
     /// <summary>"OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY" -> "play".</summary>
@@ -93,6 +150,9 @@ internal static class ObsEventMapper
         : (action.StartsWith(MediaActionPrefix, StringComparison.Ordinal) ? action[MediaActionPrefix.Length..] : action).ToLowerInvariant();
 
     private static string Str(JsonElement d, string property) => d.GetStringOrNull(property) ?? "";
+
+    /// <summary>The connection an event came from, for <see cref="WithConnection(BotEvent, ObsSource)"/>.</summary>
+    public sealed record ObsSource(string Name, string Host, string StudioVersion, string WebSocketVersion);
 
     private static BotEvent Event(string type, params (string Key, object? Value)[] args) =>
         new(type, args.ToDictionary(a => a.Key, a => a.Value, StringComparer.OrdinalIgnoreCase));

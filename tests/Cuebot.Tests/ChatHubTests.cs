@@ -54,6 +54,8 @@ public class ChatHubTests : IDisposable
         Assert.Equal("25:0-1", neutral.Args["emotes"]);
         Assert.Equal(true, neutral.Args["isFirstMessage"]);
         Assert.False(neutral.Args.ContainsKey("secretThing"));
+        // The platform's own arguments travel under one key, for First Words and commands.
+        Assert.Equal("x", Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(neutral.Args[ChatHub.PlatformArgsKey])["secretThing"]);
         Assert.Equal("Alpha", neutral.Args["platform"]); // the hub's own fields win
     }
 

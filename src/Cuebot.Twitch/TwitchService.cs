@@ -559,21 +559,29 @@ internal sealed class TwitchPoller(TwitchApi api, TwitchSettings settings, Actio
     {
         if (!settings.Scopes.Contains(TwitchScopes.ReadChatters)) return;
         var chatters = await api.GetChattersAsync(ct).ConfigureAwait(false);
-        bool live;
+        TwitchStreamInfo? stream;
         try
         {
-            live = await api.GetStreamAsync(null, ct).ConfigureAwait(false) is not null;
+            stream = await api.GetStreamAsync(null, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is TwitchApiException or HttpRequestException)
         {
-            live = false;   // Streamer.bot's isLive; the viewer list matters more than this flag
+            stream = null;   // Streamer.bot's isLive and stream details; the viewer list matters more
         }
         publish(new BotEvent(TwitchEventTypes.PresentViewers, new Dictionary<string, object?>
         {
             ["count"] = chatters.Count,
-            ["isLive"] = live,
-            ["users"] = string.Join(",", chatters.Select(c => c.UserLogin)),
+            ["isLive"] = stream is not null,
+            // Streamer.bot's list (id, userName, display, role, isSubscribed); the chatter list has no roles or subs.
+            ["users"] = chatters.Select(c => new Dictionary<string, object?>
+            {
+                ["id"] = c.UserId, ["userName"] = c.UserLogin, ["display"] = c.UserName, ["role"] = 1, ["isSubscribed"] = false,
+            }).ToList(),
+            ["userLogins"] = string.Join(",", chatters.Select(c => c.UserLogin)),
             ["userIds"] = string.Join(",", chatters.Select(c => c.UserId)),
+            ["title"] = stream?.Title ?? "",
+            ["viewerCount"] = stream?.ViewerCount ?? 0,
+            ["startedAt"] = stream?.StartedAt?.LocalDateTime ?? default(DateTime),
         }));
     }
 

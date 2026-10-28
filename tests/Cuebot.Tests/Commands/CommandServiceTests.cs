@@ -77,6 +77,21 @@ public class CommandServiceTests : IDisposable
     }
 
     [Fact]
+    public void Command_runs_carry_the_platforms_chat_variables_but_their_own_input()
+    {
+        Add();
+        var platform = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["userType"] = "twitch", ["badgeCount"] = 2, ["input0"] = "!hello", ["rawInputEscaped"] = "!hello big", ["command"] = "spoofed",
+        };
+        var e = Assert.Single(Send("!hello big", extra: new() { [ChatHub.PlatformArgsKey] = platform }));
+        Assert.Equal(("twitch", 2), (e.Args["userType"], e.Args["badgeCount"]));   // Streamer.bot's TwitchUser names
+        Assert.Equal(("!hello", "big", "big"), (e.Args["command"], e.Args["input0"], e.Args["rawInput"]));
+        Assert.False(e.Args.ContainsKey("rawInputEscaped"));
+        Assert.False(e.Args.ContainsKey(ChatHub.PlatformArgsKey));
+    }
+
+    [Fact]
     public void Non_matching_and_disabled_commands_publish_nothing()
     {
         var command = Add();

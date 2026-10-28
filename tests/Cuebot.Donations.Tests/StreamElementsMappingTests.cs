@@ -24,8 +24,9 @@ public sealed class StreamElementsMappingTests
         var a = e.Args;
         Assert.Equal(("Styler", "styler"), (a["user"], a["userName"]));
         Assert.Equal((4.2, "USD", "$4.20", "Great stream"), (a["amount"], a["currency"], a["formattedAmount"], a["message"]));
-        Assert.Equal((4.2, "USD", "Great stream", "Styler", "https://cdn.test/a.png"),
+        Assert.Equal((4.2m, "USD", "Great stream", "Styler", "https://cdn.test/a.png"),
             (a["tipAmount"], a["tipCurrency"], a["tipMessage"], a["tipUsername"], a["tipAvatar"]));
+        Assert.Equal("twitch", a["tipProvider"]);
         Assert.Equal("StreamElements", a["platform"]);
         Assert.Equal(["activity:65ce2539b1585c5f909a91e1", "tip:67b5f39d07ecd4c594e60f73"], e.Keys);
     }
@@ -40,10 +41,11 @@ public sealed class StreamElementsMappingTests
             """);
         Assert.Equal(StreamElementsEventTypes.Merch, e.Type);
         var a = e.Args;
-        Assert.Equal((45.0, "EUR", "€45.00"), (a["merchAmount"], a["merchCurrency"], a["formattedAmount"]));
+        Assert.Equal((45m, "EUR", "€45.00"), (a["merchAmount"], a["merchCurrency"], a["formattedAmount"]));
         Assert.Equal((2, 3), (a["merchItems"], a["merchQuantity"]));
-        Assert.Equal(("Hoodie", 30.0, 1), (a["merchItem0.name"], a["merchItem0.price"], a["merchItem0.quantity"]));
-        Assert.Equal(("Mug", 7.5, 2), (a["merchItem1.name"], a["merchItem1.price"], a["merchItem1.quantity"]));
+        Assert.Equal(("Hoodie", 30m, 1), (a["merchItem0.name"], a["merchItem0.price"], a["merchItem0.quantity"]));
+        Assert.Equal("twitch", a["merchProvider"]);
+        Assert.Equal(("Mug", 7.5m, 2), (a["merchItem1.name"], a["merchItem1.price"], a["merchItem1.quantity"]));
         Assert.Equal("Hoodie, 2x Mug", a["product"]);
         Assert.Equal("My merch message", a["merchMessage"]);
     }

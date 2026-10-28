@@ -142,6 +142,7 @@ public sealed class WaveLinkLegacyTests : IAsyncLifetime
 
         var switched = await Expect("outputSwitched", new() { ["value"] = "StreamMix" }, WaveLinkEvents.OutputMixChanged, "OutputSwitched");
         Assert.Equal("Stream Mix", switched.Args["waveLinkOutputMixName"]);
+        Assert.Equal(Ids.Stream, switched.Args["mixerOutput"]);   // Streamer.bot's Output Switched name
         Assert.Equal(Ids.Stream, _wl.Snapshot.MonitoredMixId);
         var selected = await Expect("selectedOutputChanged", new() { ["identifier"] = Ids.Speakers, ["mixerID"] = Ids.Local, ["value"] = "" },
             WaveLinkEvents.MainOutputChanged, "SelectedOutputChanged");

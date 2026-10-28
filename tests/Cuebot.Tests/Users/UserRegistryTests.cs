@@ -53,6 +53,20 @@ public class UserRegistryTests : IDisposable
     }
 
     [Fact]
+    public void First_words_carry_the_platforms_chat_variables_like_streamerbot()
+    {
+        var platform = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["broadcast.title"] = "Live", ["publishedAt"] = new DateTime(2026, 1, 1), ["message"] = "spoofed",
+        };
+        _bus.Publish(Chat.Message("hi", "Ann", "9", "YouTube", extra: new() { [ChatHub.PlatformArgsKey] = platform }));
+
+        var e = Assert.Single(_events.OfType(UserEvents.FirstWords));
+        Assert.Equal(("Live", new DateTime(2026, 1, 1), "hi"), (e.Args["broadcast.title"], e.Args["publishedAt"], e.Args["message"]));
+        Assert.False(e.Args.ContainsKey(ChatHub.PlatformArgsKey));
+    }
+
+    [Fact]
     public void First_words_fire_once_per_user_until_reset()
     {
         Say("Alice", "1");
@@ -143,7 +157,11 @@ public class UserRegistryTests : IDisposable
         Assert.Equal("Rumble", events[0].Args["platform"]);
         Assert.Equal(1, events[0].Args["count"]);
         Assert.Equal(2, events[1].Args["count"]);
-        Assert.Contains("Alice", (string)events[1].Args["users"]!);
+        Assert.Contains("Alice", (string)events[1].Args["userNames"]!);
+        // Streamer.bot's shape: a list of user dictionaries.
+        var users = Assert.IsType<List<Dictionary<string, object?>>>(events[1].Args["users"]);
+        Assert.Contains(users, u => (string?)u["display"] == "Alice" && u["role"] is 1 && u["isSubscribed"] is false);
+        Assert.Equal(false, events[1].Args["isLive"]);
 
         _events.Clear();
         _clock.Advance(11 * 60); // everybody went quiet

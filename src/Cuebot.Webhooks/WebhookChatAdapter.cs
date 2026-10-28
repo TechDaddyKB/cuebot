@@ -33,7 +33,7 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
         var user = Get(a, "user");
         var message = Get(a, "message");
         var amount = Get(a, "formattedAmount");
-        var hasAmount = a.TryGetValue("amount", out var raw) && raw is double d && d > 0;
+        var hasAmount = a.TryGetValue("amount", out var raw) && raw is decimal or double && Convert.ToDouble(raw, CultureInfo.InvariantCulture) > 0;
         var paid = hasAmount ? amount : "";
 
         // Ko-fi asks that private supports are not shown publicly.

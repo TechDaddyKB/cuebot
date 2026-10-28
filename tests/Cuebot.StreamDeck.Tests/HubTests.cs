@@ -31,6 +31,13 @@ public class HubTests
         Assert.Equal(2, info.Args["deviceCount"]);
         Assert.Equal("My XL, My Plus", info.Args["deviceNames"]);
         Assert.Equal("Stream Deck +", info.Args["device1.type"]);
+        // Streamer.bot's Stream Deck Info names (data.*, from its own Test Trigger run) with its types.
+        Assert.Equal(("7.1.0", "windows", "en", ""), (info.Args["data.application.version"], info.Args["data.application.platform"],
+            info.Args["data.application.language"], info.Args["data.application.font"]));
+        Assert.Equal(("DEV2", "My Plus", 4L, 2L, 7L), (info.Args["data.devices[1].id"], info.Args["data.devices[1].name"],
+            info.Args["data.devices[1].size.columns"], info.Args["data.devices[1].size.rows"], info.Args["data.devices[1].type"]));
+        Assert.Equal(("io.github.cuebot.streamdeck", "0.1.0", 1L), (info.Args["data.plugin.uuid"], info.Args["data.plugin.version"], info.Args["data.devicePixelRatio"]));
+        Assert.Equal("", info.Args["data.colors.highlightColor"]);
 
         Assert.Equal(ConnectionState.Connected, h.Hub.State);
         Assert.Equal("1 Stream Deck app, 2 devices, 2 visible keys", h.Hub.StatusMessage);

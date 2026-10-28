@@ -525,8 +525,11 @@ public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposab
         _sources.FirstOrDefault(s => string.Equals(s.Name, sourceName, StringComparison.OrdinalIgnoreCase))
         ?? throw new StreamlabsException($"Streamlabs Desktop has no source named '{sourceName}'.");
 
-    /// <summary>Streamer.bot's connection id for the single Streamlabs Desktop connection (sd.id).</summary>
-    public const string ConnectionId = "main";
+    /// <summary>
+    /// Streamer.bot's connection id for the single Streamlabs Desktop connection (sd.id). Streamer.bot's is a Guid;
+    /// Cuebot's is a fixed one, derived like OBS connection ids.
+    /// </summary>
+    public static readonly Guid ConnectionId = ObsEventMapper.ConnectionId("streamlabs-desktop:main");
 
     /// <summary>Publishes an event with Streamer.bot's connection args (sd.id, sd.name, sd.host) added.</summary>
     private void Publish(string type, Dictionary<string, object?>? args = null)

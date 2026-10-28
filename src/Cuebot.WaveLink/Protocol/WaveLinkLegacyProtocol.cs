@@ -336,6 +336,7 @@ internal sealed class WaveLinkLegacyProtocol(JsonRpcPeer rpc, IWaveLinkHost host
                     switched["waveLinkOutputMixName"] = newMix == StreamMixer ? StreamMixName : LocalMixName;
                     switched["waveLinkPreviousMixId"] = oldMix;
                     switched["switchState"] = _switchState;
+                    switched["mixerOutput"] = newMix;   // Streamer.bot: the mix now monitored
                     events.Add((E.OutputMixChanged, switched));
                     break;
                 case "selectedOutputChanged":

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Cuebot.Core.Variables;
 
 namespace Cuebot.Donations.Streamlabs;
 
@@ -94,7 +95,8 @@ internal static class StreamlabsEventMapper
         args["charityDonationFormattedAmount"] = formatted;
         args["charityDonationFrom"] = from;
         args["charityDonationMessage"] = message;
-        args["charityDonationCreatedAt"] = m.First("createdAt", "created_at");
+        var created = m.First("createdAt", "created_at");
+        args["charityDonationCreatedAt"] = StreamerBotArgs.Time(created) is { } time ? time : created;   // Streamer.bot: DateTime
         args["charityDonationGif"] = m.First("gif", "gifUrl");
         args["charityDonationIconClassName"] = m.First("iconClassName", "icon_class_name");
         return new DonationEvent(StreamlabsEventTypes.CharityDonation, keys, args);

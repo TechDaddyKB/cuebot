@@ -2,6 +2,7 @@ using System.Text.Json;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
+using Cuebot.Core.Variables;
 using Cuebot.Core.Webhooks;
 
 namespace Cuebot.Webhooks.Services;
@@ -62,6 +63,10 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
     /// <summary>Post URLs are site-relative (<c>/posts/…</c>); make them absolute.</summary>
     internal static string AbsoluteUrl(string url) => url.StartsWith('/') ? "https://www.patreon.com" + url : url;
 
+    /// <summary>Streamer.bot's <c>user.attributes.social_connections.*</c> names.</summary>
+    private static readonly string[] SocialConnections =
+        ["deviantart", "discord.url", "discord.user_id", "facebook", "google", "instagram", "reddit", "spotify", "twitch", "twitter", "vimeo", "youtube"];
+
     internal static WebhookEvent? Map(string topic, JsonElement root, bool isTest)
     {
         var data = root.Child("data") ?? throw new FormatException("No data in the Patreon payload");
@@ -91,6 +96,13 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
         a["user.id"] = userRef.Str("id");
         a["user.type"] = userRef.Str("type") is { Length: > 0 } ut ? ut : "user";
         if (user?.Child("attributes") is { } userAttributes) JsonReaders.Flatten(userAttributes, "user.Attributes", a, maxDepth: 2);
+        StreamerBotArgs.ToTime(a, "user.attributes.created");
+        // Streamer.bot lists every social connection, null when not linked; Patreon may leave them out.
+        foreach (var network in SocialConnections)
+        {
+            var connection = "user.attributes.social_connections." + network;
+            if (!a.Keys.Any(k => k.StartsWith(connection + ".", StringComparison.OrdinalIgnoreCase))) StreamerBotArgs.Placeholder(a, connection, null);
+        }
 
         var tiers = data.Path("relationships.currently_entitled_tiers.data") is { ValueKind: JsonValueKind.Array } refs
             ? refs.EnumerateArray().ToArray()
@@ -104,6 +116,7 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
             if (Included(tiers[i])?.Child("attributes") is { } tierAttributes)
             {
                 JsonReaders.Flatten(tierAttributes, $"entitledTiers[{i}].Attributes", a, maxDepth: 1);
+                foreach (var time in (string[])["created_at", "edited_at", "published_at"]) StreamerBotArgs.ToTime(a, $"entitledTiers[{i}].attributes.{time}");
                 if (tierAttributes.Str("title") is { Length: > 0 } t) tierTitles.Add((t, tierAttributes.Number("amount_cents")));
             }
             // Streamer.bot's Pledge Updated: the tier the patron is now entitled to (its title, else its id).
@@ -112,6 +125,8 @@ public sealed class PatreonWebhookHandler(JsonFile<WebhooksSettings> settings, E
                     ? title
                     : tiers[i].Str("id");
         }
+        // Streamer.bot's Pledge Updated also names the new tier at the top level (null when there is none).
+        if (type == PatreonEventTypes.PledgeUpdated) a["updatedToTier"] = a.GetValueOrDefault("entitledTiers[0].updatedToTier");
         // Members of a paid tier are usually entitled to the campaign's Free tier too; name only the paid one(s).
         if (tierTitles.Any(t => t.Cents > 0)) tierTitles.RemoveAll(t => t.Cents <= 0);
 
