@@ -97,25 +97,38 @@ internal sealed class FakeSocket(FakeServer server) : IWebSocketTransport
 }
 
 /// <summary>
-/// A Qt WebChannel server publishing a "meld" object like Meld Studio's: answers init with methods, properties and
-/// signals, records invokes (answering each with a null result), counts idles and pushes property updates and signals.
+/// A Qt WebChannel server publishing a "meld" object, modelled on Meld's WebChannelAPI.md and on Qt's
+/// QMetaObjectPublisher: init lists every method twice (bare name = first overload, full signature = that overload)
+/// plus QObject's own members; a call by name picks the overload with as many parameters as arguments (no match = no
+/// answer, only a server-side warning), a call by index drops extra arguments; property updates are held until the
+/// client says idle and the client counts as busy again after each batch; registerTrackObserver is answered with an
+/// immediate gainUpdated (as Meld's own Stream Deck plugin documents).
 /// </summary>
 internal sealed class FakeMeld
 {
+    /// <summary>Meld's documented slots with Qt signatures (sendStreamEvent always takes its data argument).</summary>
     public static readonly string[] DefaultMethods =
     [
-        "showScene", "toggleMute", "toggleMonitor", "toggleLayer", "toggleEffect", "toggleRecord", "toggleStream",
-        "registerTrackObserver", "unregisterTrackObserver", "setGain", "callFunction", "callFunctionWithArgs", "sendCommand",
-        "sendCommandWithArgs", "sendStreamEvent", "sendEvent", "setStagedScene", "showStagedScene", "setProperty",
+        "showScene(QString)", "toggleMute(QString)", "toggleMonitor(QString)", "toggleLayer(QString,QString)",
+        "toggleEffect(QString,QString,QString)", "toggleRecord()", "toggleStream()", "registerTrackObserver(QString,QString)",
+        "unregisterTrackObserver(QString,QString)", "setGain(QString,double)", "callFunction(QString,QString)",
+        "callFunctionWithArgs(QString,QString,QVariantList)", "sendCommand(QString)", "sendCommandWithArgs(QString,QVariantList)",
+        "sendStreamEvent(QString,QVariant)", "sendEvent(QString)", "setStagedScene(QString)", "showStagedScene()",
+        "setProperty(QString,QString,QVariant)",
     ];
 
-    // Property / signal indices as a Qt server would number them.
-    public const int RecordingProperty = 0, StreamingProperty = 1, SessionProperty = 2, VersionProperty = 3;
+    // Property / signal indices as a Qt server would number them (QObject's objectName is property 0, destroyed 0/1).
+    public const int ObjectNameProperty = 0, RecordingProperty = 1, StreamingProperty = 2, SessionProperty = 3, VersionProperty = 4;
     public const int RecordingSignal = 10, StreamingSignal = 11, SessionSignal = 12, GainSignal = 13;
 
     private readonly ConcurrentQueue<(string Method, JsonElement Args)> _calls = new();
+    private readonly ConcurrentQueue<string> _unmatched = new();
     private readonly string[] _methods;
+    private readonly Lock _gate = new();
+    private readonly List<(int Property, int Signal, JsonNode? Value)> _queued = [];
+    private bool _clientIdle;
     private int _idles;
+    private int _indexCalls;
 
     public FakeMeld(FakeSocket socket, JsonObject session, bool recording = false, bool streaming = false, int? version = 2, string[]? methods = null)
     {
@@ -138,8 +151,22 @@ internal sealed class FakeMeld
     public ConcurrentQueue<int> ConnectedSignals { get; } = new();
     public IReadOnlyList<(string Method, JsonElement Args)> Calls => _calls.ToArray();
 
-    /// <summary>Method index = 100 + position, so tests can tell indices from names.</summary>
-    public int MethodIndex(string name) => 100 + Array.IndexOf(_methods, name);
+    /// <summary>Calls by name that matched no overload ("name/argument count").</summary>
+    public IReadOnlyList<string> Unmatched => _unmatched.ToArray();
+
+    /// <summary>Calls that named the method by index rather than by name.</summary>
+    public int IndexCalls => Volatile.Read(ref _indexCalls);
+
+    /// <summary>Gain reported for a track when an observer registers.</summary>
+    public double InitialGain { get; set; } = 0.5;
+
+    public static string BareName(string signature) => signature.IndexOf('(') is var p and > 0 ? signature[..p] : signature;
+
+    private static int Arity(string signature)
+    {
+        var inside = signature[(signature.IndexOf('(') + 1)..^1];
+        return inside.Length == 0 ? 0 : inside.Split(',').Length;
+    }
 
     public async Task<(string Method, JsonElement Args)> NextCallAsync(string method)
     {
@@ -162,17 +189,34 @@ internal sealed class FakeMeld
     public void PushGain(string trackId, double gain, bool muted) =>
         Socket.Push(new JsonObject { ["type"] = 1, ["object"] = "meld", ["signal"] = GainSignal, ["args"] = new JsonArray(trackId, gain, muted) }.ToJsonString());
 
-    private void PushProperty(int property, int signal, JsonNode? value) =>
+    private void PushProperty(int property, int signal, JsonNode? value)
+    {
+        lock (_gate)
+        {
+            _queued.Add((property, signal, value));
+            if (_clientIdle) Flush();
+        }
+    }
+
+    // Qt sends everything queued in one frame, then waits for the client's next idle.
+    private void Flush()
+    {
+        if (_queued.Count == 0) return;
+        var signals = new JsonObject();
+        var properties = new JsonObject();
+        foreach (var (property, signal, value) in _queued)
+        {
+            signals[signal.ToString()] = new JsonArray();
+            properties[property.ToString()] = value?.DeepClone();
+        }
+        _queued.Clear();
+        _clientIdle = false;
         Socket.Push(new JsonObject
         {
             ["type"] = 2,
-            ["data"] = new JsonArray(new JsonObject
-            {
-                ["object"] = "meld",
-                ["signals"] = new JsonObject { [signal.ToString()] = new JsonArray() },
-                ["properties"] = new JsonObject { [property.ToString()] = value },
-            }),
+            ["data"] = new JsonArray(new JsonObject { ["object"] = "meld", ["signals"] = signals, ["properties"] = properties }),
         }.ToJsonString());
+    }
 
     private async Task RunAsync()
     {
@@ -196,12 +240,14 @@ internal sealed class FakeMeld
                     break;
                 case 4:
                     Interlocked.Increment(ref _idles);
+                    lock (_gate)
+                    {
+                        _clientIdle = true;
+                        Flush();
+                    }
                     break;
                 case 6:
-                    var method = m.GetProperty("method");
-                    var name = method.ValueKind == JsonValueKind.Number ? _methods[method.GetInt32() - 100] : method.GetString()!;
-                    _calls.Enqueue((name, m.GetProperty("args").Clone()));
-                    Socket.Push(new JsonObject { ["type"] = 10, ["id"] = m.GetProperty("id").GetInt64(), ["data"] = null }.ToJsonString());
+                    Invoke(m);
                     break;
                 case 7:
                     ConnectedSignals.Enqueue(m.GetProperty("signal").GetInt32());
@@ -210,35 +256,72 @@ internal sealed class FakeMeld
         }
     }
 
+    private void Invoke(JsonElement m)
+    {
+        var method = m.GetProperty("method");
+        var args = m.GetProperty("args");
+        string signature;
+        if (method.ValueKind == JsonValueKind.Number)
+        {
+            Interlocked.Increment(ref _indexCalls);
+            var index = method.GetInt32() - 100;
+            if (index < 0 || index >= _methods.Length) return;
+            signature = _methods[index];
+        }
+        else
+        {
+            var name = method.GetString()!;
+            var match = _methods.FirstOrDefault(s => BareName(s) == name && Arity(s) == args.GetArrayLength());
+            if (match is null)
+            {
+                _unmatched.Enqueue($"{name}/{args.GetArrayLength()}");
+                return;
+            }
+            signature = match;
+        }
+        var kept = new JsonArray(args.EnumerateArray().Take(Arity(signature)).Select(a => JsonNode.Parse(a.GetRawText())).ToArray());
+        using (var parsed = JsonDocument.Parse(kept.ToJsonString())) _calls.Enqueue((BareName(signature), parsed.RootElement.Clone()));
+        Socket.Push(new JsonObject { ["type"] = 10, ["id"] = m.GetProperty("id").GetInt64(), ["data"] = null }.ToJsonString());
+        if (BareName(signature) == "registerTrackObserver" && args.GetArrayLength() == 2 && args[1].GetString() is { } trackId)
+            PushGain(trackId, InitialGain, Session[trackId]?["muted"]?.GetValue<bool>() ?? false);
+    }
+
     private JsonObject Description()
     {
-        var methods = new JsonArray();
+        var methods = new JsonArray(new JsonArray("deleteLater", 3), new JsonArray("deleteLater()", 3));
+        var seen = new HashSet<string>();
         for (var i = 0; i < _methods.Length; i++)
         {
+            if (seen.Add(BareName(_methods[i]))) methods.Add(new JsonArray(BareName(_methods[i]), 100 + i));
             methods.Add(new JsonArray(_methods[i], 100 + i));
-            methods.Add(new JsonArray(_methods[i] + "(QString)", 100 + i));   // Qt also lists signatures
         }
         var properties = new JsonArray(
+            new JsonArray(ObjectNameProperty, "objectName", new JsonArray(1, 2), "meld"),
             new JsonArray(RecordingProperty, "isRecording", new JsonArray(1, RecordingSignal), Recording),
             new JsonArray(StreamingProperty, "isStreaming", new JsonArray("isStreamingChanged", StreamingSignal), Streaming),
             new JsonArray(SessionProperty, "session", new JsonArray(1, SessionSignal), new JsonObject { ["items"] = Session.DeepClone() }));
-        if (Version is { } v) properties.Add(new JsonArray(VersionProperty, "version", null, v));
+        if (Version is { } v) properties.Add(new JsonArray(VersionProperty, "version", new JsonArray(), v));
         return new JsonObject
         {
             ["meld"] = new JsonObject
             {
                 ["methods"] = methods,
                 ["properties"] = properties,
-                ["signals"] = new JsonArray(new JsonArray("destroyed", 0), new JsonArray("gainUpdated", GainSignal)),
+                ["signals"] = new JsonArray(new JsonArray("destroyed", 0), new JsonArray("destroyed(QObject*)", 0), new JsonArray("destroyed()", 1),
+                    new JsonArray("gainUpdated", GainSignal), new JsonArray("gainUpdated(QString,double,bool)", GainSignal)),
                 ["enums"] = new JsonObject(),
             },
         };
     }
 
-    /// <summary>The session from Meld's documentation, trimmed: two scenes, layers, an effect and tracks.</summary>
+    /// <summary>
+    /// The session from Meld's documentation, trimmed: two scenes, layers, an effect and tracks, plus the vertical twin
+    /// of "Gaming" (same name, <c>vertical: true</c>) that Meld's Stream Deck plugin describes.
+    /// </summary>
     public static JsonObject SampleSession() => new()
     {
         [Ids.Chatting] = new JsonObject { ["type"] = "scene", ["name"] = "Just Chatting", ["index"] = 1, ["current"] = true, ["staged"] = false },
+        [Ids.GamingVertical] = new JsonObject { ["type"] = "scene", ["name"] = "Gaming", ["index"] = 0, ["current"] = false, ["staged"] = false, ["vertical"] = true },
         [Ids.Gaming] = new JsonObject { ["type"] = "scene", ["name"] = "Gaming", ["index"] = 0, ["current"] = false, ["staged"] = false },
         [Ids.Camera] = new JsonObject { ["type"] = "layer", ["name"] = "Camera", ["parent"] = Ids.Gaming, ["index"] = 0, ["visible"] = true },
         [Ids.Spoilers] = new JsonObject { ["type"] = "layer", ["name"] = "Spoilers", ["parent"] = Ids.Chatting, ["index"] = 1, ["visible"] = true, ["url"] = "https://example.com/" },
@@ -251,6 +334,7 @@ internal sealed class FakeMeld
     {
         public const string Chatting = "05731BDA0C5DE934359C8F7F24CE6C1B";
         public const string Gaming = "9DA5A633182EB0C0804E671B26A1B581";
+        public const string GamingVertical = "1F3C2A9B8E7D6C5B4A39281706F5E4D3";
         public const string Camera = "9F2A72924699F775E0E789C6940141F6";
         public const string Spoilers = "89BFE4955144FBD6490ECBB453CA6639";
         public const string Glow = "85DFC4BCD7451D2DB3C55A6E2D9948E2";

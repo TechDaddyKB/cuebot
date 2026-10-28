@@ -43,6 +43,13 @@ internal sealed class FakeObsbotCenter : IAsyncDisposable
     /// <summary>Do not answer anything (Center with OSC off, or replies going elsewhere).</summary>
     public volatile bool Silent;
 
+    /// <summary>
+    /// Behave like a Tail 2's own OSC server (OBSBOT's Tail 2 sheet, plus what Bitfocus Companion's module reports from
+    /// the real camera): Get* queries are ignored, every Connected is answered with the whole state, ZoomInfo carries
+    /// fov -1 and the gimbal reply has two values, [pitch, yaw].
+    /// </summary>
+    public volatile bool Tail2Hardware;
+
     public int Zoom { get; set; } = 20;
     public int Fov { get; set; }
     public int AiLocked { get; set; }
@@ -81,6 +88,17 @@ internal sealed class FakeObsbotCenter : IAsyncDisposable
     private IEnumerable<OscMessage> Answer(OscMessage m)
     {
         const string g = ObsbotProtocol.General;
+        if (Tail2Hardware)
+        {
+            if (m.Address == ObsbotProtocol.Connected)
+            {
+                yield return new OscMessage(ObsbotProtocol.ConnectedResp, 1);
+                yield return new OscMessage(ObsbotProtocol.DeviceInfo, 1, "OBSBOT Tail 2", 0, "", 0, "", 0, "", 0, 1, 0);
+                yield return new OscMessage(ObsbotProtocol.ZoomInfo, Zoom, -1);
+                yield return new OscMessage(ObsbotProtocol.GimbalPosInfo, -8, 40);
+            }
+            yield break;
+        }
         switch (m.Address)
         {
             case ObsbotProtocol.Connected:

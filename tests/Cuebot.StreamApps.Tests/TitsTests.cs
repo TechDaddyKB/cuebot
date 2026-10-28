@@ -83,6 +83,8 @@ public sealed class TitsServiceTests : IAsyncLifetime
         Assert.Contains("2 items, 2 triggers", _tits.StatusMessage);
         var itemList = _fake.Requests.First(r => r.Str("messageType") == "TITSItemListRequest");
         Assert.False(itemList.GetProperty("data").GetProperty("sendImage").GetBoolean());
+        Assert.False(itemList.GetProperty("sendImage").GetBoolean());   // the obsolete top-level copy, for older builds
+        Assert.False(_fake.Requests.First(r => r.Str("messageType") == "TITSTriggerListRequest").TryGetProperty("sendImage", out _));
         await Task.CompletedTask;
     }
 
@@ -104,8 +106,37 @@ public sealed class TitsServiceTests : IAsyncLifetime
 
         await _tits.ActivateTriggerByNameAsync("New Follow");
         var byName = _fake.Requests.Last(r => r.Str("messageType") == "TITSTriggerActivateRequest").GetProperty("data");
-        Assert.Equal("", byName.GetProperty("triggerID").GetString());
+        Assert.Equal("6709", byName.GetProperty("triggerID").GetString());   // from the cached list
         Assert.Equal("New Follow", byName.GetProperty("triggerName").GetString());
+
+        // Text that is neither a cached id nor a cached name goes in both fields.
+        await Assert.ThrowsAsync<StreamAppRequestException>(() => _tits.ActivateTriggerAsync("f00d"));
+        var raw = _fake.Requests.Last(r => r.Str("messageType") == "TITSTriggerActivateRequest").GetProperty("data");
+        Assert.Equal("f00d", raw.GetProperty("triggerID").GetString());
+        Assert.Equal("f00d", raw.GetProperty("triggerName").GetString());
+    }
+
+    [Fact]
+    public async Task Builds_before_the_name_fallback_still_activate_by_name_fill_event_names_and_fail_fast_on_errors()
+    {
+        _fake.Legacy = true;
+        await _tits.ActivateTriggerByNameAsync("throw bananas");
+        Assert.Equal("ebb7", _fake.Requests.Last(r => r.Str("messageType") == "TITSTriggerActivateRequest").GetProperty("data").GetProperty("triggerID").GetString());
+
+        // An error without the requestID fails the one waiting request at once (well inside the timeout).
+        var started = DateTime.UtcNow;
+        var error = await Assert.ThrowsAsync<StreamAppRequestException>(() => _tits.ActivateTriggerByNameAsync("Nope"));
+        Assert.Contains("No trigger found", error.Message);
+        Assert.True(DateTime.UtcNow - started < TestTimings.Fast.RequestTimeout);
+
+        // Trigger events from those builds carry only the id: the name comes from the cached list.
+        _fake.Events!.Push("""{"apiName":"TITSPublicApi","apiVersion":"1.0","timestamp":133173178563183532,"requestID":"someID","messageType":"TITSTriggerActivatedEvent","data":{"triggerID":"6709"}}""");
+        var activated = await _env.WaitForEventAsync(TitsEvents.TriggerActivated);
+        Assert.Equal("New Follow", activated.Args["triggerName"]);
+        _fake.Events.Push("""{"apiName":"TITSPublicApi","apiVersion":"1.0","timestamp":133173178563183532,"requestID":"someID","messageType":"TITSHitEvent","data":{"itemID":"16d7","strength":3.5,"direction":{"x":0,"y":1,"z":0}}}""");
+        var hit = await _env.WaitForEventAsync(TitsEvents.ItemHit);
+        Assert.Equal("banana", hit.Args["itemName"]);
+        Assert.Equal("", hit.Args["triggerName"]);
     }
 
     [Fact]
@@ -123,8 +154,8 @@ public sealed class TitsServiceTests : IAsyncLifetime
             {"apiName":"TITSPublicApi","apiVersion":"1.0","requestID":"b","messageType":"TITSHitEvent",
              "data":{"itemID":"60c6","itemName":"apple","triggerID":"ebb7","triggerName":"Throw Bananas","strength":24.5,"direction":{"x":1,"y":0,"z":0}}}
             """);
-        _fake.Events.Push("""{"apiName":"TITSPublicApi","apiVersion":"1.0","messageType":"TITSTriggerActivatedEvent","data":{"triggerID":"6709","triggerName":"New Follow"}}""");
-        _fake.Events.Push("""{"apiName":"TITSPublicApi","apiVersion":"1.0","messageType":"TITSTriggerEndedEvent","data":{"triggerID":"6709","triggerName":"New Follow"}}""");
+        _fake.Events.Push("""{"apiName":"TITSPublicApi","apiVersion":"1.0","timestamp":133173178563183532,"requestID":"someID","messageType":"TITSTriggerActivatedEvent","data":{"triggerID":"6709","triggerName":"New Follow"}}""");
+        _fake.Events.Push("""{"apiName":"TITSPublicApi","apiVersion":"1.0","timestamp":133173178563183532,"requestID":"someID","messageType":"TITSTriggerEndedEvent","data":{"triggerID":"6709","triggerName":"New Follow"}}""");
         var hit = await _env.WaitForEventAsync(TitsEvents.ItemHit);
         var activated = await _env.WaitForEventAsync(TitsEvents.TriggerActivated);
         await _env.WaitForEventAsync(TitsEvents.TriggerEnded);
@@ -176,7 +207,10 @@ public sealed class TitsServiceTests : IAsyncLifetime
     private static bool Matches(ITriggerType trigger, BotEvent e, Dictionary<string, string> settings) =>
         trigger.Matches(e, new TriggerDefinition(), ParameterValues.From(trigger.Parameters, settings), new Dictionary<string, object?>());
 
-    /// <summary>T.I.T.S.'s API as documented: answers item/trigger lists, throws and activations; /events only broadcasts.</summary>
+    /// <summary>
+    /// T.I.T.S.'s API as the README documents it: answers item/trigger lists (with <c>encodedImage</c> and the
+    /// top-level <c>triggerCount</c>), throws and activations (no data); /events only broadcasts.
+    /// </summary>
     private sealed class FakeTits
     {
         private readonly ConcurrentQueue<JsonElement> _requests = new();
@@ -200,6 +234,14 @@ public sealed class TitsServiceTests : IAsyncLifetime
         public FakeSocket? Data { get; private set; }
         public FakeSocket? Events { get; private set; }
         public bool FailNext { get; set; }
+
+        /// <summary>
+        /// Behave like a build from before the README's October 2025 update: activation reads triggerID only, and
+        /// (undocumented, as some clients report) errors come back without the requestID.
+        /// </summary>
+        public bool Legacy { get; set; }
+
+        public static readonly (string Id, string Name)[] Triggers = [("6709", "New Follow"), ("ebb7", "Throw Bananas")];
         public IReadOnlyList<JsonElement> Requests => _requests.ToArray();
 
         private async Task ServeAsync(FakeSocket socket)
@@ -216,7 +258,9 @@ public sealed class TitsServiceTests : IAsyncLifetime
                 {
                     "TITSItemListRequest" => new JsonObject
                     {
-                        ["items"] = new JsonArray(new JsonObject { ["ID"] = "60c6", ["name"] = "apple" }, new JsonObject { ["ID"] = "16d7", ["name"] = "banana" }),
+                        ["items"] = new JsonArray(
+                            new JsonObject { ["ID"] = "60c6", ["name"] = "apple", ["encodedImage"] = "" },
+                            new JsonObject { ["ID"] = "16d7", ["name"] = "banana", ["encodedImage"] = "" }),
                     },
                     "TITSTriggerListRequest" => new JsonObject
                     {
@@ -227,6 +271,14 @@ public sealed class TitsServiceTests : IAsyncLifetime
                 };
                 var failing = FailNext && type == "TITSTriggerActivateRequest";
                 if (failing) FailNext = false;
+                if (type == "TITSTriggerActivateRequest" && !failing)
+                {
+                    // Look up triggerID; the current README falls back to triggerName, legacy builds do not.
+                    var activate = request.GetProperty("data");
+                    var found = Triggers.Any(t => t.Id == activate.Str("triggerID"))
+                                || (!Legacy && Triggers.Any(t => t.Name == activate.Str("triggerName")));
+                    failing = !found;
+                }
                 var response = new JsonObject
                 {
                     ["apiName"] = "TITSPublicApi",
@@ -234,8 +286,12 @@ public sealed class TitsServiceTests : IAsyncLifetime
                     ["apiVersion"] = "1.0",
                     ["requestID"] = request.GetProperty("requestID").GetString(),
                     ["messageType"] = failing ? "APIError" : type.Replace("Request", "Response"),
-                    ["data"] = failing ? new JsonObject { ["errorID"] = 1, ["message"] = "No trigger found" } : data,
                 };
+                if (failing) response["data"] = new JsonObject { ["errorID"] = 1, ["message"] = "No trigger found" };
+                else if (data is not null) response["data"] = data;
+                // The README's trigger list response also counts the triggers outside data.
+                if (type == "TITSTriggerListRequest" && !failing) response["triggerCount"] = 2;
+                if (failing && Legacy) response.Remove("requestID");
                 socket.Push(response.ToJsonString());
             }
         }

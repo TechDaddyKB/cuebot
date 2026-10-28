@@ -31,17 +31,57 @@ internal static class LumiaProtocol
 {
     public static readonly string[] CommandTypes = ["chat-command", "chatbot-command", "twitch-points", "twitch-extension", "kick-points"];
 
-    public static readonly string[] ChatbotPlatforms = ["twitch", "youtube", "facebook", "kick", "tiktok"];
+    /// <summary>
+    /// Chat bot platforms. The REST page lists twitch, youtube and facebook; Lumia's own lumia-types (which calls that
+    /// page stale) adds kick and discord, and an omitted platform sends to every connected chat bot ("all" here).
+    /// </summary>
+    public static readonly string[] ChatbotPlatforms = ["twitch", "youtube", "facebook", "kick", "discord", AllPlatforms];
+
+    public const string AllPlatforms = "all";
 
     public static string Send(string type, object? parameters = null) =>
         parameters is null ? JsonUtil.Serialize(new { type }) : JsonUtil.Serialize(new { type, @params = parameters });
 
-    public static Dictionary<string, object?> CommandParams(string command, bool hold, IReadOnlyDictionary<string, string>? extraSettings)
+    /// <summary>
+    /// Command and alert params. <paramref name="skipQueue"/> is Lumia's <c>skipQueue</c> envelope param (lumia-types
+    /// and the official SDKs; not on the Developer-Docs pages): run now instead of waiting in the activity queue.
+    /// </summary>
+    public static Dictionary<string, object?> CommandParams(string command, bool hold, IReadOnlyDictionary<string, object?>? extraSettings, bool skipQueue = false)
     {
         var p = new Dictionary<string, object?> { ["value"] = command };
         if (hold) p["hold"] = true;
+        if (skipQueue) p["skipQueue"] = true;
         if (extraSettings is { Count: > 0 }) p["extraSettings"] = extraSettings;
         return p;
+    }
+
+    /// <summary>
+    /// Extra settings from a sub-action: a JSON object keeps its value types (the docs send numbers such as
+    /// <c>"bits": 1000</c>); name=value lines are text except true/false, which become booleans because Lumia reads
+    /// flags by truthiness (the text "false" would count as true).
+    /// </summary>
+    public static Dictionary<string, object?> ParseExtraSettings(string text)
+    {
+        var result = new Dictionary<string, object?>(StringComparer.Ordinal);
+        var trimmed = text.Trim();
+        if (trimmed.StartsWith('{'))
+        {
+            if (JsonUtil.TryParse(trimmed) is not { ValueKind: JsonValueKind.Object } obj) throw new ArgumentException("Extra settings must be a JSON object.");
+            foreach (var p in obj.EnumerateObject()) result[p.Name] = p.Value.Clone();
+            return result;
+        }
+        foreach (var (name, value) in Steps.ParsePairs(text))
+            result[name] = bool.TryParse(value, out var flag) ? flag : value;
+        return result;
+    }
+
+    /// <summary>A JSON object's members with their JSON types (script arguments).</summary>
+    public static Dictionary<string, object?>? JsonObjectValues(JsonElement? element)
+    {
+        if (element is not { ValueKind: JsonValueKind.Object } obj) return null;
+        var result = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (var p in obj.EnumerateObject()) result[p.Name] = p.Value.Clone();
+        return result;
     }
 
     /// <summary>Lumia's colour request: <c>hex-color</c> for #RRGGBB (an alpha prefix #AARRGGBB is dropped) or <c>rgb-color</c> for "r,g,b".</summary>
@@ -64,13 +104,14 @@ internal static class LumiaProtocol
     }
 
     public static Dictionary<string, object?> ColorParams(object value, double? brightness, double? transition, double? duration, bool hold,
-        IReadOnlyList<LumiaLight>? lights)
+        IReadOnlyList<LumiaLight>? lights, bool skipQueue = false)
     {
         var p = new Dictionary<string, object?> { ["value"] = value };
         if (brightness is { } b) p["brightness"] = Math.Clamp(b, 0, 100);
         if (transition is { } t) p["transition"] = Math.Max(0, t);
         if (duration is { } d) p["duration"] = Math.Max(0, d);
         if (hold) p["hold"] = true;
+        if (skipQueue) p["skipQueue"] = true;
         if (lights is { Count: > 0 }) p["lights"] = lights.Select(l => new { type = l.Type, value = l.Id }).ToArray();
         return p;
     }
@@ -97,6 +138,15 @@ internal static class LumiaProtocol
             : [];
         return new LumiaInfo(options, lights, voices, data.Bool("premium"));
     }
+
+    /// <summary>
+    /// <c>data.states</c> (on, streamMode, fuze as 1/0) when a retrieve reply has it: the websocket retrieve documents
+    /// it; the REST example does not show it, so it may be absent.
+    /// </summary>
+    public static (bool On, bool StreamMode, bool Fuze)? ParseStates(JsonElement data) =>
+        data.ValueKind == JsonValueKind.Object && data.TryGetProperty("states", out var s) && s.ValueKind == JsonValueKind.Object
+            ? (s.Bool("on") ?? false, s.Bool("streamMode") ?? false, s.Bool("fuze") ?? false)
+            : null;
 
     private static string Name(JsonElement e) => e.ValueKind == JsonValueKind.String ? e.GetString() ?? "" : e.Str("name");
 
@@ -144,7 +194,9 @@ internal static class LumiaProtocol
             ["lumia.type"] = kind,
         };
         var extra = data.ValueKind == JsonValueKind.Object && data.TryGetProperty("extraSettings", out var x) ? x : default;
-        Flatten(args, "lumia.", extra);
+        // Some alerts carry extraSettings keys such as "type" (Twitch power-ups, Kick kicks): those must not replace
+        // lumia.type/origin/subOrigin, so they go under lumia.extraSettings.<key> instead.
+        Flatten(args, "lumia.", extra, ReservedKeys);
         AddUser(args, extra);
         switch (kind)
         {
@@ -192,17 +244,20 @@ internal static class LumiaProtocol
         args["userId"] = extra.Str("userId");
     }
 
+    private static readonly HashSet<string> ReservedKeys = new(["origin", "subOrigin", "type"], StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Scalars as prefix+key, nested objects one level deep as prefix+key.child; arrays stay JSON text.</summary>
-    private static void Flatten(Dictionary<string, object?> args, string prefix, JsonElement obj)
+    private static void Flatten(Dictionary<string, object?> args, string prefix, JsonElement obj, IReadOnlySet<string>? reserved = null)
     {
         if (obj.ValueKind != JsonValueKind.Object) return;
         foreach (var p in obj.EnumerateObject())
         {
+            var name = reserved?.Contains(p.Name) == true ? "extraSettings." + p.Name : p.Name;
             if (p.Value.ValueKind == JsonValueKind.Object)
                 foreach (var child in p.Value.EnumerateObject())
-                    args[$"{prefix}{p.Name}.{child.Name}"] = Cuebot.Core.Scripting.ScriptArgs.ToClr(child.Value);
+                    args[$"{prefix}{name}.{child.Name}"] = Cuebot.Core.Scripting.ScriptArgs.ToClr(child.Value);
             else
-                args[prefix + p.Name] = Cuebot.Core.Scripting.ScriptArgs.ToClr(p.Value);
+                args[prefix + name] = Cuebot.Core.Scripting.ScriptArgs.ToClr(p.Value);
         }
     }
 }

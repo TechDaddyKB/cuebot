@@ -173,7 +173,8 @@ public sealed class TitsService : StreamAppConnection
                 if (JsonUtil.TryParse(text) is not { ValueKind: JsonValueKind.Object } message) continue;
                 if (TitsProtocol.RequestId(message) is { Length: > 0 } id && _pending.TryRemove(id, out var tcs))
                     tcs.TrySetResult(message);
-                else if (!_eventsConnected) OnEvent(message);   // older builds may broadcast on the request socket
+                else if (TitsProtocol.IsError(message)) OnUnmatchedError(message);
+                else if (!_eventsConnected) OnEvent(message);   // not in the README (broadcasts go to /events); harmless
             }
         }
         finally
@@ -249,6 +250,17 @@ public sealed class TitsService : StreamAppConnection
         DataChanged?.Invoke();
     }
 
+    /// <summary>
+    /// An error without a known requestID (the README does not say whether errors such as "Header is missing!" echo
+    /// it): with exactly one request waiting it can only be that one's, so it fails now instead of timing out.
+    /// </summary>
+    private void OnUnmatchedError(JsonElement message)
+    {
+        var waiting = _pending.Keys.ToArray();
+        if (waiting.Length == 1 && _pending.TryRemove(waiting[0], out var tcs)) tcs.TrySetResult(message);
+        else Log.Warn(Name, $"T.I.T.S. reported an error: {TitsProtocol.ErrorText(message)}");
+    }
+
     private void OnEvent(JsonElement message)
     {
         var type = TitsProtocol.MessageType(message) switch
@@ -261,7 +273,7 @@ public sealed class TitsService : StreamAppConnection
         if (type is null) return;
         try
         {
-            PublishEvent(type, TitsProtocol.EventArgs(message));
+            PublishEvent(type, TitsProtocol.EventArgs(message, _items, _triggers));
         }
         catch (Exception ex)
         {
@@ -341,18 +353,43 @@ public sealed class TitsService : StreamAppConnection
         return namesOrIds.Select(n => Find(items, n)?.Id ?? throw new StreamAppRequestException($"T.I.T.S. has no item '{n}'.")).ToArray();
     }
 
-    /// <summary>Activates a trigger by id or name (T.I.T.S. falls back to the name when the id is unknown).</summary>
+    /// <summary>
+    /// Activates a trigger by id or name. A known trigger goes out with its id and name; unknown text goes in both
+    /// fields, because T.I.T.S. looks up <c>triggerID</c> first and (since the README's October 2025 update) falls back
+    /// to <c>triggerName</c>. Older builds read the id only.
+    /// </summary>
     public async Task ActivateTriggerAsync(string idOrName, CancellationToken ct = default)
     {
         var wanted = Steps.Require(idOrName, "Trigger");
         var known = Find(_triggers, wanted);
         await RequestAsync(TitsProtocol.TriggerActivate,
-            TitsProtocol.ActivateData(known?.Id ?? "", known?.Name ?? wanted), ct).ConfigureAwait(false);
+            TitsProtocol.ActivateData(known?.Id ?? wanted, known?.Name ?? wanted), ct).ConfigureAwait(false);
     }
 
-    /// <summary>Activates a trigger by its name only.</summary>
-    public Task ActivateTriggerByNameAsync(string name, CancellationToken ct = default) =>
-        RequestAsync(TitsProtocol.TriggerActivate, TitsProtocol.ActivateData("", Steps.Require(name, "Trigger name")), ct);
+    /// <summary>
+    /// Activates a trigger by its name. The id from the cached list (reloaded once when the name is unknown) is sent
+    /// too, so builds that only read <c>triggerID</c> work; a name still unknown is left to T.I.T.S.'s name lookup.
+    /// </summary>
+    public async Task ActivateTriggerByNameAsync(string name, CancellationToken ct = default)
+    {
+        var wanted = Steps.Require(name, "Trigger name");
+        if (FindByName(_triggers, wanted) is null)
+        {
+            try
+            {
+                await GetTriggersAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is TimeoutException or StreamAppRequestException)
+            {
+                Log.Debug(Name, $"Could not reload the trigger list: {ex.Message}");
+            }
+        }
+        var known = FindByName(_triggers, wanted);
+        await RequestAsync(TitsProtocol.TriggerActivate, TitsProtocol.ActivateData(known?.Id ?? "", known?.Name ?? wanted), ct).ConfigureAwait(false);
+    }
+
+    private static TitsEntry? FindByName(IReadOnlyList<TitsEntry> entries, string name) =>
+        entries.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
 
     private static TitsEntry? Find(IReadOnlyList<TitsEntry> entries, string nameOrId) =>
         entries.FirstOrDefault(e => string.Equals(e.Id, nameOrId, StringComparison.OrdinalIgnoreCase))

@@ -73,6 +73,10 @@ internal static class LumiaSubActions
             Help = "Optional name=value per line (or a JSON object); Lumia uses them as {{name}} variables, e.g. username=%user%",
         };
         ParameterDescriptor Hold() => new("hold", "Make it the new default state", ParameterKind.Boolean) { DefaultValue = "false" };
+        ParameterDescriptor SkipQueue() => new("skipQueue", "Skip queue", ParameterKind.Boolean)
+        {
+            DefaultValue = "false", Help = "Run now instead of waiting behind queued commands and colours",
+        };
 
         return
         [
@@ -84,9 +88,9 @@ internal static class LumiaSubActions
                         Suggestions = () => LumiaProtocol.CommandTypes.SelectMany(lumia.Info.Values).Distinct(StringComparer.OrdinalIgnoreCase),
                     },
                     new("commandType", "Command type", ParameterKind.Choice) { DefaultValue = "chat-command", Choices = LumiaProtocol.CommandTypes },
-                    Hold(), Extra(),
+                    Hold(), SkipQueue(), Extra(),
                 ],
-                (_, v, ct) => lumia.SendCommandAsync(Require(v["command"], "Command"), v["commandType"], v.GetBool("hold"), Pairs(v), ct)),
+                (_, v, ct) => lumia.SendCommandAsync(Require(v["command"], "Command"), v["commandType"], v.GetBool("hold"), Pairs(v), v.GetBool("skipQueue"), ct)),
             Make("lumia.setColor", "Set colour",
                 [
                     new("color", "Colour") { DefaultValue = "#FF4076", Help = "#RRGGBB (an #AARRGGBB alpha is ignored) or r,g,b" },
@@ -99,12 +103,13 @@ internal static class LumiaSubActions
                         Help = "Comma-separated light names (or brand:id, e.g. hue:19); empty for all lights",
                         Suggestions = () => lumia.Info.Lights.Select(l => l.Display),
                     },
-                    Hold(),
+                    Hold(), SkipQueue(),
                 ],
                 (_, v, ct) => v.GetBool("default")
                     ? lumia.SetToDefaultAsync(ct)
                     : lumia.SetColorAsync(Require(v["color"], "Colour"), OptionalNumber(v["brightness"], "Brightness"),
-                        OptionalNumber(v["transition"], "Transition"), OptionalNumber(v["duration"], "Duration"), v["lights"], v.GetBool("hold"), ct)),
+                        OptionalNumber(v["transition"], "Transition"), OptionalNumber(v["duration"], "Duration"), v["lights"], v.GetBool("hold"),
+                        v.GetBool("skipQueue"), ct)),
             Make("lumia.setToDefault", "Set to default", [], (_, _, ct) => lumia.SetToDefaultAsync(ct)),
             Make("lumia.sendAlert", "Send alert",
                 [
@@ -159,8 +164,8 @@ internal static class LumiaSubActions
         ];
     }
 
-    private static Dictionary<string, string>? Pairs(ParameterValues v) =>
-        v["extraSettings"].Trim().Length == 0 ? null : ParsePairs(v["extraSettings"]);
+    private static Dictionary<string, object?>? Pairs(ParameterValues v) =>
+        v["extraSettings"].Trim().Length == 0 ? null : LumiaProtocol.ParseExtraSettings(v["extraSettings"]);
 
     private static ISubActionHandler Make(string typeId, string name, IReadOnlyList<ParameterDescriptor> parameters,
         Func<ActionRunContext, ParameterValues, CancellationToken, Task> run) =>

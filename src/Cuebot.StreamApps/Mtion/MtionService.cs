@@ -72,7 +72,7 @@ public sealed class MtionService : IConnectionStatus, IAsyncDisposable
     {
         get
         {
-            var host = Settings.Host.Trim().Length > 0 ? Settings.Host.Trim() : "127.0.0.1";
+            var host = Settings.Host.Trim().Length > 0 ? Settings.Host.Trim() : "localhost";
             if (host.Contains(':') && !host.StartsWith('[')) host = $"[{host}]";
             var port = Settings.Port is > 0 and < 65536 ? Settings.Port : 35393;
             return new Uri($"http://{host}:{port}/");
@@ -169,12 +169,18 @@ public sealed class MtionService : IConnectionStatus, IAsyncDisposable
         timeout.CancelAfter(_timings.RequestTimeout);
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Patch, new Uri(BaseUrl, MtionApi.FireTrigger(trigger.Id)))
-            {
-                Content = new StringContent(body, Encoding.UTF8, "application/json"),
-            };
+            // Plain "application/json" as in the docs' sample (no charset parameter).
+            var content = new StringContent(body, Encoding.UTF8);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            using var request = new HttpRequestMessage(HttpMethod.Patch, new Uri(BaseUrl, MtionApi.FireTrigger(trigger.Id))) { Content = content };
             using var response = await _http.SendAsync(request, timeout.Token).ConfigureAwait(false);
             var sent = response.IsSuccessStatusCode;
+            // 404 is documented as "No clubhouse open or trigger not found": the clubhouse changed since the list was read.
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                _log.Warn(Name, $"mtion no longer has the trigger '{trigger.Name}' (or closed the clubhouse).");
+                return new MtionFireResult(true, false, false, trigger);
+            }
             if (!sent) _log.Warn(Name, $"mtion did not fire '{trigger.Name}' (HTTP {(int)response.StatusCode}).");
             else
                 Publish(TriggerSentEvent, new()

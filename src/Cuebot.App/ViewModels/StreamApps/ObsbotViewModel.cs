@@ -55,12 +55,13 @@ public sealed partial class ObsbotViewModel : StreamAppCardViewModel
         set { S.PollSeconds = (int)(value ?? 5); _obsbot.SaveSettings(); OnPropertyChanged(); }
     }
 
-    public IReadOnlyList<string> SeriesNames { get; } = ["Auto (from the camera name)", "Tiny series", "Tail series", "Meet series"];
+    public IReadOnlyList<string> SeriesNames { get; } =
+        ["Auto (from the camera name)", "Tiny series", "Tail series", "Meet series", "Tail 2 direct (no OBSBOT Center)", "Tail Air direct (no OBSBOT Center)"];
 
     public int SeriesIndex
     {
         get => (int)S.Series;
-        set { S.Series = (ObsbotSeries)Math.Clamp(value, 0, 3); _obsbot.SaveSettings(); OnPropertyChanged(); }
+        set { S.Series = (ObsbotSeries)Math.Clamp(value, 0, 5); _obsbot.SaveSettings(); OnPropertyChanged(); }
     }
 
     public bool AutoConnect
@@ -139,7 +140,7 @@ public sealed partial class ObsbotViewModel : StreamAppCardViewModel
     private Task Preset(string number) => RunAsync(async () =>
     {
         var index = int.Parse(number, System.Globalization.CultureInfo.InvariantCulture) - 1;
-        await _obsbot.SendAsync(new OscMessage((_obsbot.Series == ObsbotSeries.Tail ? P.Tail : P.Tiny) + "TriggerPreset", index));
+        await _obsbot.SendAsync(new OscMessage((P.IsTail(_obsbot.Series) ? P.TailPrefix(_obsbot.Series) : P.Tiny) + "TriggerPreset", index));
         return $"Preset {number}.";
     });
 

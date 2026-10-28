@@ -17,11 +17,13 @@ public sealed record MtionClubhouse(string Id, string Name, string Description, 
 public sealed record MtionFireResult(bool Running, bool Found, bool Sent, MtionTrigger? Trigger);
 
 /// <summary>
-/// JSON shapes of mtion studio's developer API (docs.mtion.xyz/mtion/developer-api/external-triggers): HTTP on
-/// localhost:35393; <c>GET /active-clubhouse</c>, <c>GET /clubhouses</c>, <c>GET /clubhouse/:id</c>,
-/// <c>GET /external-trigger/triggers</c>, <c>GET /external-trigger/trigger/:id</c> and
-/// <c>PATCH /external-trigger/fire-trigger/:id</c> with a body <c>[{"parameter_index":0,"value":...}]</c>. 404 = no
-/// clubhouse open / not found. No authentication.
+/// JSON shapes of mtion studio's developer API (docs.mtion.xyz/mtion/developer-api/external-triggers, updated
+/// 2024-04-17): HTTP on localhost:35393, no authentication. Documented: <c>GET /active-clubhouse</c>,
+/// <c>GET /clubhouses</c>, <c>GET /clubhouse/:id</c>, <c>GET /external-trigger/triggers</c>,
+/// <c>GET /external-trigger/trigger/:id</c>, and firing as <c>PATCH /external-trigger/fire-trigger/:id</c> with the
+/// body <c>[{"parameter_index":0,"value":...}]</c> or <c>GET</c> on the same path with <c>?parameter_data=[...]</c>.
+/// 404 = no clubhouse open, or that clubhouse / trigger not found. Cuebot uses the first two GETs, the trigger list
+/// and the PATCH form.
 /// </summary>
 public static class MtionApi
 {

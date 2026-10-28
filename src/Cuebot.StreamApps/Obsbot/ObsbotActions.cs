@@ -68,9 +68,12 @@ internal static class ObsbotSubActions
         {
             DefaultValue = "Auto", Choices = SeriesChoices, Help = "Auto uses the setting on the OBSBOT card (or guesses from the camera name)",
         };
+        // Device commands: through Center with the optional device index; to a Tail reached directly with its own Tail
+        // prefix, no index, and only what its OSC definition lists.
         Task Send(string address, ParameterValues v, CancellationToken ct, params object[] values) =>
-            obsbot.SendAsync(P.Command(address, DeviceIndex(v["device"]), values), ct);
-        ObsbotSeries SeriesOf(ParameterValues v) => v["series"] switch
+            SendChecked(obsbot, address, obsbot.IsDirect ? null : DeviceIndex(v["device"]), ct, values);
+        Task SendPlain(string address, CancellationToken ct, params object[] values) => SendChecked(obsbot, address, null, ct, values);
+        ObsbotSeries SeriesOf(ParameterValues v) => obsbot.IsDirect ? obsbot.Series : v["series"] switch
         {
             "Tiny" => ObsbotSeries.Tiny,
             "Tail" => ObsbotSeries.Tail,
@@ -82,7 +85,7 @@ internal static class ObsbotSubActions
         [
             Make("obsbot.selectDevice", "Select camera",
                 [new("device", "Camera") { DefaultValue = "1", Help = "1-4 in OBSBOT Center's device list" }],
-                (_, v, ct) => obsbot.SendAsync(new OscMessage(P.General + "SelectDevice", DeviceIndex(v["device"]) ?? 0), ct)),
+                (_, v, ct) => SendPlain(P.General + "SelectDevice", ct, DeviceIndex(v["device"]) ?? 0)),
             Make("obsbot.wakeSleep", "Wake / sleep camera", [Switch("Wake", "Sleep"), Device()], async (ctx, v, ct) =>
             {
                 var mode = ParseWake(v["state"]);
@@ -96,14 +99,14 @@ internal static class ObsbotSubActions
             Make("obsbot.setZoom", "Set zoom",
                 [
                     new("zoom", "Zoom (0-100)", ParameterKind.Number) { DefaultValue = "0", Help = "Percent of the zoom range" },
-                    new("speed", "Speed (optional, 0-11)") { Help = "Empty = instant; 0 default speed, 1-11 faster (newer models only)" },
+                    new("speed", "Speed (optional, 0-11)") { Help = "Empty = instant; 0 default speed, 1-11 faster (newer models only; a Tail 2 reached directly: 1-10)" },
                     Device(),
                 ],
                 (_, v, ct) =>
                 {
                     var zoom = Range(v["zoom"], "Zoom", 0, 100);
                     return OptionalNumber(v["speed"], "Speed") is { } speed
-                        ? Send(P.General + "SetZoomSpeed", v, ct, zoom, (int)Math.Clamp(Math.Round(speed), 0, 11))
+                        ? Send(P.General + "SetZoomSpeed", v, ct, zoom, (int)Math.Clamp(Math.Round(speed), 0, P.Limits(obsbot.Series).ZoomSpeed))
                         : Send(P.General + "SetZoom", v, ct, zoom);
                 }),
             Make("obsbot.zoomLimit", "Zoom to maximum / minimum",
@@ -132,25 +135,26 @@ internal static class ObsbotSubActions
                         await Send(address, v, CancellationToken.None, 0).ConfigureAwait(false);
                     }
 
+                    // 0 stops each direction address; whether Up 0 also stops a downward move is not documented.
                     async Task StopGimbalAsync()
                     {
-                        await Send(P.General + "SetGimbalUp", v, ct, 0).ConfigureAwait(false);
-                        await Send(P.General + "SetGimbalLeft", v, ct, 0).ConfigureAwait(false);
+                        foreach (var d in Directions[..4]) await Send(P.General + "SetGimbal" + d, v, ct, 0).ConfigureAwait(false);
                     }
                 }),
             Make("obsbot.setGimbalPosition", "Set gimbal position",
                 [
-                    new("pan", "Pan (°, -129..129)", ParameterKind.Number) { DefaultValue = "0" },
-                    new("pitch", "Pitch (°, -59..59)", ParameterKind.Number) { DefaultValue = "0" },
+                    new("pan", "Pan (°, -129..129)", ParameterKind.Number) { DefaultValue = "0", Help = "A Tail 2 reached directly: -159..159" },
+                    new("pitch", "Pitch (°, -59..59)", ParameterKind.Number) { DefaultValue = "0", Help = "A Tail 2 reached directly: -62..62" },
                     new("speed", "Speed (0-90)", ParameterKind.Number) { DefaultValue = "50" },
-                    new("precise", "Send decimals", ParameterKind.Boolean) { DefaultValue = "False", Help = "Use SetGimMotorDegreeEx (floats) instead of whole degrees" },
+                    new("precise", "Send decimals", ParameterKind.Boolean) { DefaultValue = "False", Help = "Use SetGimMotorDegreeEx (floats) instead of whole degrees (OBSBOT Center only)" },
                     Device(),
                 ],
                 (_, v, ct) =>
                 {
+                    var limits = P.Limits(obsbot.Series);
                     var speed = Math.Clamp(Number(v["speed"], "Speed"), 0, 90);
-                    var pan = Math.Clamp(Number(v["pan"], "Pan"), -129, 129);
-                    var pitch = Math.Clamp(Number(v["pitch"], "Pitch"), -59, 59);
+                    var pan = Math.Clamp(Number(v["pan"], "Pan"), -limits.Pan, limits.Pan);
+                    var pitch = Math.Clamp(Number(v["pitch"], "Pitch"), -limits.Pitch, limits.Pitch);
                     return v.GetBool("precise")
                         ? Send(P.General + "SetGimMotorDegreeEx", v, ct, (float)speed, (float)pan, (float)pitch)
                         : Send(P.General + "SetGimMotorDegree", v, ct, (int)Math.Round(speed), (int)Math.Round(pan), (int)Math.Round(pitch));
@@ -172,16 +176,16 @@ internal static class ObsbotSubActions
                     var on = ParseSwitch(v["state"]) == SwitchMode.Off ? 0 : 1;
                     return v["target"] switch
                     {
-                        "High-fps recording" => obsbot.SendAsync(new OscMessage(P.General + "SetHighfpsRecording", on), ct),
+                        "High-fps recording" => SendPlain(P.General + "SetHighfpsRecording", ct, on),
                         "Camera recording (Tail)" => Send(P.Tail + "SetRecording", v, ct, on),
-                        _ => obsbot.SendAsync(new OscMessage(P.General + "SetPCRecording", on), ct),
+                        _ => SendPlain(P.General + "SetPCRecording", ct, on),
                     };
                 }),
             Make("obsbot.snapshot", "Take snapshot",
                 [new("target", "Snapshot", ParameterKind.Choice) { DefaultValue = "PC snapshot", Choices = ["PC snapshot", "Camera snapshot (Tail)"] }, Device()],
                 (_, v, ct) => v["target"] == "Camera snapshot (Tail)"
                     ? Send(P.Tail + "Snapshot", v, ct, 1)
-                    : obsbot.SendAsync(new OscMessage(P.General + "PCSnapshot", 1), ct)),
+                    : SendPlain(P.General + "PCSnapshot", ct, 1)),
             Make("obsbot.setImage", "Set image setting",
                 [
                     new("setting", "Setting", ParameterKind.Choice) { DefaultValue = "Auto exposure", Choices = [.. P.ImageSettings.Keys] },
@@ -208,12 +212,19 @@ internal static class ObsbotSubActions
             }),
             Make("obsbot.triggerPreset", "Go to preset position",
                 [new("preset", "Preset", ParameterKind.Choice) { DefaultValue = "1", Choices = ["1", "2", "3"] }, Series(), Device()],
-                (_, v, ct) => Send((SeriesOf(v) == ObsbotSeries.Tail ? P.Tail : P.Tiny) + "TriggerPreset", v, ct, Range(v["preset"], "Preset", 1, 3) - 1)),
+                (_, v, ct) => Send((P.IsTail(SeriesOf(v)) ? P.Tail : P.Tiny) + "TriggerPreset", v, ct, Range(v["preset"], "Preset", 1, 3) - 1)),
             Make("obsbot.setAiMode", "Set AI mode",
                 [new("mode", "AI mode", ParameterKind.Number) { DefaultValue = "1", Help = P.TinyAiModesHelp + " " + P.TailAiModesHelp }, Series(), Device()],
-                (_, v, ct) => Send((SeriesOf(v) == ObsbotSeries.Tail ? P.Tail : P.Tiny) + "SetAiMode", v, ct, Range(v["mode"], "AI mode", 0, 9))),
+                (_, v, ct) =>
+                {
+                    var series = SeriesOf(v);
+                    var mode = Range(v["mode"], "AI mode", 0, 9);
+                    var valid = P.AiModes(P.IsTail(series) ? series : ObsbotSeries.Tiny);
+                    if (!valid.Contains(mode)) throw new ArgumentException($"AI mode {mode} does not exist for this camera series (valid: {string.Join(", ", valid)}).");
+                    return Send((P.IsTail(series) ? P.Tail : P.Tiny) + "SetAiMode", v, ct, mode);
+                }),
             Make("obsbot.setTrackingMode", "Set tracking mode (Tiny)",
-                [new("mode", "Tracking mode", ParameterKind.Choice) { DefaultValue = "Standard", Choices = P.TinyTrackingModes }, Device()],
+                [new("mode", "Tracking mode", ParameterKind.Choice) { DefaultValue = "Standard", Choices = P.TinyTrackingModes, Help = P.TrackingModesHelp }, Device()],
                 (_, v, ct) => Send(P.Tiny + "SetTrackingMode", v, ct, Index(P.TinyTrackingModes, v["mode"], "Tracking mode"))),
             Make("obsbot.setTrackingSpeed", "Set tracking speed",
                 [
@@ -222,11 +233,25 @@ internal static class ObsbotSubActions
                     Series(),
                     Device(),
                 ],
-                (_, v, ct) => v["axis"] switch
+                (_, v, ct) =>
                 {
-                    "Pan" => Send(P.Tail + "SetPanTrackingSpeed", v, ct, Range(v["speed"], "Speed", 1, 10)),
-                    "Tilt" => Send(P.Tail + "SetTiltTrackingSpeed", v, ct, Range(v["speed"], "Speed", 1, 10)),
-                    _ => Send((SeriesOf(v) == ObsbotSeries.Tail ? P.Tail : P.Tiny) + "SetTrackingSpeed", v, ct, Range(v["speed"], "Speed", 0, 5)),
+                    var series = SeriesOf(v);
+                    // A Tail 2 reached directly has one five-value command (,iiiii): preset speed 0-5 (5 = custom), then
+                    // pan auto (0/1), pan speed 1-10, pitch auto (0/1), pitch speed 1-10 for the custom setting.
+                    if (series == ObsbotSeries.Tail2Direct)
+                        return v["axis"] switch
+                        {
+                            "Pan" => Send(P.Tail + "SetTrackingSpeed", v, ct, 5, 0, Range(v["speed"], "Speed", 1, 10), 1, 5),
+                            "Tilt" => Send(P.Tail + "SetTrackingSpeed", v, ct, 5, 1, 5, 0, Range(v["speed"], "Speed", 1, 10)),
+                            _ => Send(P.Tail + "SetTrackingSpeed", v, ct, Range(v["speed"], "Speed", 0, 5), 1, 5, 1, 5),
+                        };
+                    return v["axis"] switch
+                    {
+                        "Pan" => Send(P.Tail + "SetPanTrackingSpeed", v, ct, Range(v["speed"], "Speed", 1, 10)),
+                        "Tilt" => Send(P.Tail + "SetTiltTrackingSpeed", v, ct, Range(v["speed"], "Speed", 1, 10)),
+                        _ => Send((P.IsTail(series) ? P.Tail : P.Tiny) + "SetTrackingSpeed", v, ct,
+                            Range(v["speed"], "Speed", 0, P.MaxTrackingSpeed(P.IsTail(series) ? series : ObsbotSeries.Tiny))),
+                    };
                 }),
             Make("obsbot.setAxisLock", "Lock pan / tilt axis (Tail 2)",
                 [
@@ -257,14 +282,28 @@ internal static class ObsbotSubActions
         ];
     }
 
-    /// <summary>"1"-"4" → 0-3; empty → null (the camera selected in Center).</summary>
+    /// <summary>"1"-"4" → 0-3 (DeviceInfo and SelectDevice cover four cameras); empty → null (the camera selected in Center).</summary>
     internal static int? DeviceIndex(string text)
     {
         var t = text.Trim();
         if (t.Length == 0) return null;
-        return int.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) && n is >= 1 and <= 16
+        return int.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) && n is >= 1 and <= 4
             ? n - 1
             : throw new ArgumentException($"Camera must be a number from 1 to 4 (got '{text}').");
+    }
+
+    /// <summary>
+    /// Sends a device command: Center's Tail prefix becomes the camera's own when it is reached directly (no device index
+    /// then), and a command the camera's OSC definition does not list fails instead of going nowhere.
+    /// </summary>
+    internal static Task SendChecked(ObsbotService obsbot, string address, int? device, CancellationToken ct, params object[] values)
+    {
+        var series = obsbot.Series;
+        if (P.IsDirect(series) && address.StartsWith(P.Tail, StringComparison.Ordinal)) address = P.TailPrefix(series) + address[P.Tail.Length..];
+        if (!P.Supports(series, address))
+            throw new ArgumentException($"{(series == ObsbotSeries.Tail2Direct ? "A Tail 2" : "A Tail Air")} reached directly has no {address} " +
+                "(it is an OBSBOT Center command). Connect through OBSBOT Center, or send raw OSC.");
+        return obsbot.SendAsync(P.Command(address, P.IsDirect(series) ? null : device, values), ct);
     }
 
     /// <summary>OSC arguments from text: a JSON array, or tokens (ints, floats, true/false, strings).</summary>
@@ -361,22 +400,23 @@ internal sealed class ObsbotScriptFunctions(ObsbotService obsbot) : IScriptFunct
         }),
         new("obsbot.setZoom", "Zoom 0-100 (device 1-4 optional)", ["zoom", "device"], async (_, a, ct) =>
         {
-            await obsbot.SendAsync(P.Command(P.General + "SetZoom", ObsbotSubActions.DeviceIndex(a.GetString("device")),
-                (int)Math.Clamp(Math.Round(Num(a, "zoom")), 0, 100)), ct).ConfigureAwait(false);
+            await ObsbotSubActions.SendChecked(obsbot, P.General + "SetZoom", ObsbotSubActions.DeviceIndex(a.GetString("device")), ct,
+                (int)Math.Clamp(Math.Round(Num(a, "zoom")), 0, 100)).ConfigureAwait(false);
             return true;
         }),
-        new("obsbot.setGimbal", "Point the gimbal: pan (-129..129), pitch (-59..59), speed (0-90)", ["pan", "pitch", "speed", "device"], async (_, a, ct) =>
+        new("obsbot.setGimbal", "Point the gimbal: pan (-129..129), pitch (-59..59), speed (0-90); a Tail 2 reached directly: pan -159..159, pitch -62..62",
+            ["pan", "pitch", "speed", "device"], async (_, a, ct) =>
         {
-            await obsbot.SendAsync(P.Command(P.General + "SetGimMotorDegree", ObsbotSubActions.DeviceIndex(a.GetString("device")),
-                (int)Math.Clamp(Math.Round(Num(a, "speed", 50)), 0, 90), (int)Math.Clamp(Math.Round(Num(a, "pan")), -129, 129),
-                (int)Math.Clamp(Math.Round(Num(a, "pitch")), -59, 59)), ct).ConfigureAwait(false);
+            var limits = P.Limits(obsbot.Series);
+            await ObsbotSubActions.SendChecked(obsbot, P.General + "SetGimMotorDegree", ObsbotSubActions.DeviceIndex(a.GetString("device")), ct,
+                (int)Math.Clamp(Math.Round(Num(a, "speed", 50)), 0, 90), (int)Math.Clamp(Math.Round(Num(a, "pan")), -limits.Pan, limits.Pan),
+                (int)Math.Clamp(Math.Round(Num(a, "pitch")), -limits.Pitch, limits.Pitch)).ConfigureAwait(false);
             return true;
         }),
         new("obsbot.triggerPreset", "Go to preset 1-3", ["preset", "device"], async (_, a, ct) =>
         {
-            var series = obsbot.Series == ObsbotSeries.Tail ? P.Tail : P.Tiny;
-            await obsbot.SendAsync(P.Command(series + "TriggerPreset", ObsbotSubActions.DeviceIndex(a.GetString("device")),
-                (int)Math.Clamp(Math.Round(Num(a, "preset", 1)), 1, 3) - 1), ct).ConfigureAwait(false);
+            await ObsbotSubActions.SendChecked(obsbot, (P.IsTail(obsbot.Series) ? P.Tail : P.Tiny) + "TriggerPreset",
+                ObsbotSubActions.DeviceIndex(a.GetString("device")), ct, (int)Math.Clamp(Math.Round(Num(a, "preset", 1)), 1, 3) - 1).ConfigureAwait(false);
             return true;
         }),
     ];
