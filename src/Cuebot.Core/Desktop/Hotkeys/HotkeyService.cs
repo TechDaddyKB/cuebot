@@ -199,6 +199,12 @@ public sealed class HotkeyService : IPeriodicService, IDisposable
             ["hotkeyId"] = hotkey.Id.ToString(),
             ["hotkeyName"] = hotkey.Name,
             ["hotkey"] = gesture,
+            // Streamer.bot Key Press names.
+            ["key"] = g.Key,
+            ["modifier"] = Cuebot.Core.Desktop.Input.MouseClickService.ModifierText(g.Modifiers),
+            ["hasCtrl"] = g.Modifiers.HasFlag(HotkeyModifiers.Ctrl),
+            ["hasAlt"] = g.Modifiers.HasFlag(HotkeyModifiers.Alt),
+            ["hasShift"] = g.Modifiers.HasFlag(HotkeyModifiers.Shift),
         };
         _bus.Publish(new BotEvent(HotkeyEvents.Pressed, args));
         if (hotkey.Action.Trim().Length > 0 && _runAction is not null)

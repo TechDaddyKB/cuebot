@@ -13,6 +13,7 @@ internal sealed class EngineHarness : IDisposable
 
     public EngineHarness(IRandomSource? random = null, int historyCapacity = ActionHistory.DefaultCapacity)
     {
+        Bus = new EventBus(Log);
         Profile = new ProfileService(null, Log);
         Globals = new GlobalVariables(null, Log);
         Random = random ?? new SequenceRandom(0);
@@ -26,17 +27,29 @@ internal sealed class EngineHarness : IDisposable
             new GetInputSubAction(), new StopSubAction(), new RunActionSubAction(Profile), new SetArgumentSubAction(),
             new SendSignalSubAction(Signals), new WaitForSignalSubAction(Signals),
             new SetActionStateSubAction(Profile), new GetActionStateSubAction(Profile),
+            new GetInputDialogSubAction(Prompts), new ClearActionQueueSubAction(Queues, Profile),
+            new SetActionQueueBlockingSubAction(Profile), new SetActionQueuePauseSubAction(Queues, Profile),
+            new SetTriggerStateSubAction(Profile), new SetSubActionStateSubAction(Profile), new SetSubActionWeightSubAction(Profile),
+            new GetActionGroupStateSubAction(Profile), new SetActionGroupStateSubAction(Profile), new TriggerCustomEventSubAction(Bus),
+            new RandomNumberSubAction(),
         ],
         [
+            new EventTriggerType("test.range", "Test", "Range event", "test.range",
+                [new ParameterDescriptor("minAmount", "Min", ParameterKind.Number), new ParameterDescriptor("maxAmount", "Max", ParameterKind.Number)],
+                (e, s, _) => RangeMatches(e, s)),
+            new EventTriggerType("custom.codeEvent", "Test", "Custom code event", "custom.codeEvent",
+                [new ParameterDescriptor("eventName", "Event")], (e, s, _) => Equals(e.Args.GetValueOrDefault("eventName"), s["eventName"])),
             new EventTriggerType("test.event", "Test", "Test event", "test.event",
                 [new ParameterDescriptor("match", "Match")],
                 (e, s, _) => s["match"] == "" || Equals(e.Args.GetValueOrDefault("value"), s["match"])),
         ]);
-        Engine = new ActionEngine(new EventBus(Log), Profile, Registry, Globals, Log, Queues, History, Random);
+        Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log, Queues, History, Random);
         Engine.RunCompleted += r => Completed.Enqueue(r);
     }
 
     public AppLog Log { get; } = new();
+    public EventBus Bus { get; }
+    public UserPromptService Prompts { get; } = new();
     public ProfileService Profile { get; }
     public GlobalVariables Globals { get; }
     public SignalService Signals { get; } = new();
@@ -84,6 +97,24 @@ internal sealed class EngineHarness : IDisposable
         var step = Step(RecordSubAction.Id, ("text", text));
         step.Weight = weight;
         return step;
+    }
+
+    /// <summary>"test.range": amount between minAmount (blank = none) and maxAmount (blank/0 = none).</summary>
+    private static bool RangeMatches(BotEvent e, ParameterValues s)
+    {
+        var amount = Convert.ToDouble(e.Args.GetValueOrDefault("amount") ?? 0, System.Globalization.CultureInfo.InvariantCulture);
+        var min = s.GetDouble("minAmount", double.NegativeInfinity);
+        var max = s.GetDouble("maxAmount", 0);
+        return amount >= min && (max <= 0 || amount <= max);
+    }
+
+    public ActionDefinition AddWithTrigger(string name, TriggerDefinition trigger, params SubActionDefinition[] steps)
+    {
+        var action = new ActionDefinition { Name = name, SubActions = [.. steps] };
+        action.Triggers.Add(trigger);
+        Profile.Profile.Actions.Add(action);
+        Profile.NotifyChanged();
+        return Profile.Snapshot.FindAction(action.Id)!;
     }
 
     public static SubActionDefinition Gate(string name) => Step(GateSubAction.Id, ("gate", name));

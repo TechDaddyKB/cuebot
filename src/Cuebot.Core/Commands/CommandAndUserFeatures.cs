@@ -26,6 +26,8 @@ internal static class CommandAndUserFeatures
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<UserRegistry>());
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<CommandService>());
+        services.AddSingleton<IPeriodicService>(sp => new Timers.CronClock(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<ProfileService>()));
+        services.AddSingleton<ITriggerProvider, Timers.CronTriggers>();
         services.AddSingleton(sp => new TimerService(sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<EventBus>(),
             periodic: sp.GetServices<IPeriodicService>(), log: sp.GetRequiredService<AppLog>()));
 

@@ -60,7 +60,17 @@ public sealed class ClipboardMonitor(Func<IClipboardService> clipboard, JsonFile
             }
             if (text is null || text == _last) return;
             _last = text;
-            bus.Publish(new BotEvent(DesktopEvents.ClipboardChanged, new Dictionary<string, object?> { ["clipboardText"] = text }));
+            // Cuebot watches text only, so the Streamer.bot format list is always "Text".
+            bus.Publish(new BotEvent(DesktopEvents.ClipboardChanged, new Dictionary<string, object?>
+            {
+                ["clipboardText"] = text,
+                ["clipboard.text"] = text,
+                ["containsText"] = true,
+                ["containsImage"] = false,
+                ["containsAudio"] = false,
+                ["formats.count"] = 1,
+                ["formats.0"] = "Text",
+            }));
         }
         catch (Exception ex)
         {

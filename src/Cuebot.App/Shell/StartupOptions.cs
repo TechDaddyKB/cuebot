@@ -22,6 +22,9 @@ public sealed record StartupOptions
     /// <summary><c>--backend=wayland|x11</c> (Linux only; parsed by <see cref="Platform.LinuxBackend"/>).</summary>
     public string? Backend { get; init; }
 
+    /// <summary>Ask the instance running on this data folder to quit, then exit (Streamer.bot <c>/shutdown</c>).</summary>
+    public bool Shutdown { get; init; }
+
     public bool ShowHelp { get; init; }
 
     public IReadOnlyList<string> Unknown { get; init; } = [];
@@ -39,6 +42,7 @@ public sealed record StartupOptions
           --reset-window       Forget the saved window size and position.
           --backend=<name>     Linux display backend: wayland or x11 (default: Wayland when available).
           --mcp-stdio          Run as an MCP stdio server for a running Cuebot (for AI apps).
+          --shutdown           Ask the Cuebot running on this data folder (window or headless) to quit.
           --help               Show this help.
         """;
 
@@ -62,6 +66,7 @@ public sealed record StartupOptions
                 case "minimized" or "minimised" or "tray": options = options with { Minimized = true }; break;
                 case "reset-window" or "resetwindow": options = options with { ResetWindow = true }; break;
                 case "help" or "h" or "?": options = options with { ShowHelp = true }; break;
+                case "shutdown": options = options with { Shutdown = true }; break;
                 case "backend": options = options with { Backend = value ?? Next(args, ref i) }; break;
                 case "data":
                     var folder = value ?? Next(args, ref i);

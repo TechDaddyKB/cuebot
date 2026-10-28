@@ -84,7 +84,7 @@ How to read the counts:
    and `bannedUser*`, `timeoutResult`, `followAgeLong` / `followAgeShort` / `followDate`,
    `targetUserProfileImageUrl`, `targetIsPartner`, `poll.*` / `prediction.*` from the Get/Lock/Resolve sub-actions,
    `titleSuccess`, `gameSuccess`. Source: `SA:twitch/**`, `SA:kick/**`, `SA:youtube/moderation/*`.
-4. **No `rawInputEscaped` / `rawInputUrlEncoded` / `inputEscaped#` / `inputUrlEncoded#` anywhere.** These are
+4. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **No `rawInputEscaped` / `rawInputUrlEncoded` / `inputEscaped#` / `inputUrlEncoded#` anywhere.** These are
    commonly used to build URLs for Fetch URL. Cuebot has `$urlencode()$` instead.
    Source: `TR:core/commands/command-triggered.md`, `TR:twitch/channel-reward/reward-redemption.md`,
    `TR:kick/kicks/gifted.md`, `TR:youtube/chat/first-words.md`.
@@ -92,10 +92,10 @@ How to read the counts:
    Newtonsoft "is included in Streamer.bot by default", and a recipe covers custom DLLs. Cuebot compiles against the
    framework plus its own assemblies only, so `using Newtonsoft.Json;` fails.
    Source: `CS:0.guide/1.variables.md`, `CS:1.recipes/custom-dlls.md`, `CS:0.guide/5.debugging.md` (References, Find Refs).
-6. **The action-queue sub-actions are missing:** Clear Action Queue, Set Action Queue Blocking State and Set Action
+6. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **The action-queue sub-actions are missing:** Clear Action Queue, Set Action Queue Blocking State and Set Action
    Queue Pause State. Queues can only be controlled from the UI and through `CPH.Pause/ResumeActionQueue`.
    Source: `SA:core/action-queues/*`.
-7. **The action, trigger and sub-action toggles are missing:** Set Trigger State, Set Sub-Action State, Set
+7. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **The action, trigger and sub-action toggles are missing:** Set Trigger State, Set Sub-Action State, Set
    Sub-Action Weight, Get Action Group State, Set Action Group State and Trigger Custom Event.
    Source: `SA:core/triggers/*`, `SA:core/actions/*`.
 8. **The C# `EventType` and `EventSource` enums are incomplete,** (fixed in `w14-cph`, see section 7) so `EventType.X` / `EventSource.X` in scripts does
@@ -111,18 +111,18 @@ How to read the counts:
    - T.I.T.S.'s source is `Tits` instead of `ThrowingSystem`.
    - `Raw.Action` and `Raw.SubAction` are never emitted.
    - Source: `CS:5.enums/event-type.md`, `WK:Servers-Clients/WebSocket-Server/Events/**`.
-10. **Get Input is a different feature.** Streamer.bot's Get Input opens an interactive dialog (Title, Prompt,
+10. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **Get Input is a different feature.** Streamer.bot's Get Input opens an interactive dialog (Title, Prompt,
     Original Text, `success`). Cuebot's "Get input" splits text into `input0..N`. Source: `SA:core/logic/get-input.md`.
-11. **Streamer.bot Decks are missing entirely:** 10 sub-actions, plus the web-deck feature. PARITY.md never
+11. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **Streamer.bot Decks are missing entirely:** 10 sub-actions, plus the web-deck feature. PARITY.md never
     mentions them. Source: `SA:streamerbot/decks/*`, `GD:04.extra-features/2.streamerbot-decks.md`.
 12. **The C# sub-action options are missing:** (Fixed in `w14-cph`, see section 7.) the Execute C# Method sub-action, Precompile on Application Start /
     Delayed Start, and Save Result to Variable. Source: `SA:core/csharp/*`, `CS:0.guide/3.custom-methods.md`.
-13. **Points has missing and partial sub-actions** (PARITY.md says ✅).
+13. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **Points has missing and partial sub-actions** (PARITY.md says ✅).
     - Missing: Check Points, Delete Points, Get Points Definition.
     - Partial: the leaderboard has no `Offset`; Award/Update Points for one user cannot apply multipliers; Award
       Points to All only pays present viewers.
     - Source: `SA:core/points/**`.
-14. **File and system sub-actions are incomplete:**
+14. ✅ **Fixed (w14-core), see sections 1-3 and 6.** **File and system sub-actions are incomplete:**
     - Read Lines From File only gives `fileContent`, with no `line#` / `lineCount`.
     - Read Specific Line is missing.
     - Read Random Line has no `Count`.
@@ -181,42 +181,40 @@ Present: 13 (Run Action, Set/Get Action State, Set Argument, Break, Loop Break/C
 trigger, Custom/Code Event triggers, Streamer.bot Started); the queue, pending and history UIs, trigger viewer,
 copy/paste and undo.
 
-**Missing**
-- M · Clear Action Queue — `SA:core/action-queues/clear-action-queue.md`
-- M · Set Action Queue Blocking State — `SA:core/action-queues/set-action-queue-blocking-state.md`
-- M · Set Action Queue Pause State — `SA:core/action-queues/set-action-queue-pause-state.md`
-- M · Get Action Group State (`actionGroupState`, `actionsEnabled`, `actionsDisabled`) — `SA:core/actions/get-action-group-state.md`
-- M · Set Action Group State — `SA:core/actions/set-action-group-state.md`
-- M · Set Sub-Action State — `SA:core/actions/set-sub-action-state.md`
-- M · Set Sub-Action Weight — `SA:core/actions/set-sub-action-weight.md`
-- M · Trigger Custom Event (sub-action; only `CPH.TriggerEvent` exists) — `SA:core/triggers/custom-event-trigger.md`
-- M · Set Trigger State — `SA:core/triggers/set-trigger-state.md`
-- M · Get Input, the interactive dialog with `success` (Cuebot's "Get input" splits text) — `SA:core/logic/get-input.md`
-- M · Pick Color — `SA:settings/pick-color.md`
-
-**Partial**
-- P · Delay: no Random / To range — `SA:core/delay.md`
-- P · Comment: no colour — `SA:core/misc/comment.md`
-- P · Get Random Number: no "Next Float" type (`randomFloat`, `randomPercent`), and the default variable is not `randomNumber` — `SA:core/logic/get-random-number.md`
-- P · If / Else: "matches regex" sets no `match.count`, `match[i]` or named-group variables — `SA:core/logic/if-else.md`
-- P · Send Local Signal: no Include Action's Arguments, Arguments or Queue Signal — `SA:core/signals/send-local-signal.md`
-- P · Wait for Local Signal: no Overwrite Variables, and no `signalTimeout`, `hasResult` or `signalName` outputs — `SA:core/signals/wait-for-local-signal.md`
-- P · Get Action State: result stored under a user-chosen name, not `actionState` — `SA:core/actions/get-action-state.md`
-- P · Range triggers "Always Run": Cuebot fires every matching trigger and has no "only the most specific range unless Always Run" rule; it has action-level Always Run only — `GD:01.core/02.triggers.md`
+**Fixed (w14-core).** Legend: **F** fixed.
+- F · Clear Action Queue (`core.clearActionQueue`, one queue or All; sets `queueCleared`) — `SA:core/action-queues/clear-action-queue.md`
+- F · Set Action Queue Blocking State (`core.setActionQueueBlocking`, Enable/Disable/Toggle, saved; the Default queue never blocks) — `SA:core/action-queues/set-action-queue-blocking-state.md`
+- F · Set Action Queue Pause State (`core.setActionQueuePause`, Pause/Resume/Toggle, All, Clear) — `SA:core/action-queues/set-action-queue-pause-state.md`
+- F · Get Action Group State (`actionGroupState` 0/1/2, `actionsEnabled`, `actionsDisabled`) — `SA:core/actions/get-action-group-state.md`
+- F · Set Action Group State — `SA:core/actions/set-action-group-state.md`
+- F · Set Sub-Action State (step by position, counting steps inside groups and branches, or by id) — `SA:core/actions/set-sub-action-state.md`
+- F · Set Sub-Action Weight — `SA:core/actions/set-sub-action-weight.md`
+- F · Trigger Custom Event (`core.triggerCustomEvent`; Use Args passes the run's arguments; fires the "Custom code event" trigger) — `SA:core/triggers/custom-event-trigger.md`
+- F · Set Trigger State (trigger by position, id or type) — `SA:core/triggers/set-trigger-state.md`
+- F · Get Input: the dialog (`core.getInputDialog`: Title, Prompt, Original Text, Output Variable, Auto Type, `success`). The old text splitter keeps its type id `core.getInput` as "Split text into inputs". Headless runs count as cancelled — `SA:core/logic/get-input.md`
+- F · Pick Color (`core.pickColor`: colour chosen when editing; `name.color.a/r/g/b`, `.html`, `.htmlalpha`, `.obs`) — `SA:settings/pick-color.md`
+- F · Delay: Random and To — `SA:core/delay.md`
+- F · Comment: colour parameter (stored; the list editor does not paint it yet) — `SA:core/misc/comment.md`
+- F · Get Random Number: "Next Float" (`randomFloat`, `randomPercent`). The default argument stays `random` for older actions; the importer uses `randomNumber` — `SA:core/logic/get-random-number.md`
+- F · If / Else: "matches regex" sets `match.count`, `match[i]` and named groups; "does not exist" / "exists" operators. Variable names may now contain `[ ]` — `SA:core/logic/if-else.md`
+- F · Send Local Signal: Include Action's Arguments, Arguments (name=value lines), Queue Signal — `SA:core/signals/send-local-signal.md`
+- F · Wait for Local Signal: Overwrite Variables, `signalTimeout`, `hasResult`, `signalName`. Cuebot still continues on timeout (optionally stops) instead of aborting — `SA:core/signals/wait-for-local-signal.md`
+- F · Get Action State: always sets `actionState` (the chosen name too) — `SA:core/actions/get-action-state.md`
+- F · Range triggers "Always Run": when several triggers of one range type (a numeric min/max setting pair) match, only the narrowest ranges run unless a trigger is marked Always Run (new trigger option in the editor) — `GD:01.core/02.triggers.md`
 
 ## 2. Variables and text
 
 Present: 4 (the globals get/set/clear sub-actions); the generic variables, `%date%`/`%time%` formats, number formats,
 `$length()$`, `$parse()$` and the Global Variable Viewer.
 
-**Missing**
-- M · `rawInputEscaped`, `rawInputUrlEncoded`, `inputEscaped#`, `inputUrlEncoded#` variable families, missing everywhere — `TR:core/commands/command-triggered.md`, `TR:twitch/channel-reward/reward-redemption.md`, `TR:kick/kicks/gifted.md`, `TR:youtube/chat/first-words.md`
+**Fixed (w14-core)**
+- F · `rawInputEscaped`, `rawInputUrlEncoded`, `inputEscaped#`, `input#Escaped`, `inputUrlEncoded#`: the engine adds them to every triggered run that has `rawInput` / `input#` (core commands included; the Twitch, YouTube and Kick mappers already set them) — `TR:core/commands/command-triggered.md`
+- F · `%runningActionId%` (same value as `runId`) — `GD:01.core/03.variables.md`
+- F · Global Variable Created, Updated, Deleted and User Global Variable Updated: `global.name`, `global.value`/`newValue`/`oldValue`, `global.persisted`, `global.lastWrite`, `global.userId/userType/userLogin/userName`, plus the Persisted (Either/Yes/No), User Login and Platform filters — `TR:core/global-variables/*`
 
-**Partial**
-- P · `%runningActionId%`: Cuebot calls it `runId` — `GD:01.core/03.variables.md`
-- P · `%__source%` / `%eventSource%` are not set as arguments; only `CPH.GetEventType()`/`GetSource()` exist — `GD:01.core/03.variables.md`
+**Partial (not changed)**
+- P · `%__source%` / `%eventSource%` are not set as arguments. The Streamer.bot event-name map lives in the scripting module, and the docs say C# is needed to read them anyway; `CPH.GetEventType()`/`GetSource()` give the same values — `GD:01.core/03.variables.md`
 - P · `$math()$`: Cuebot's own evaluator, not mXparser, so the full mXparser token set is not guaranteed — `GD:01.core/03.variables.md`
-- P · The Global Variable Created, Updated, Deleted and User Global Variable Updated triggers have no `global.name`, `global.value`/`newValue`/`oldValue`, `global.persisted` or `global.lastWrite`, nor `global.user*` on the user trigger (4 triggers) — `TR:core/global-variables/*`
 
 ## 3. Commands, timers, users, points, quotes
 
@@ -224,25 +222,27 @@ Present: 19 (command and command-group state sub-actions, timers, groups, quotes
 cron and timed-action triggers, user-group sub-actions); command options (persist counters, ignore bot/internal,
 case, cooldowns, permissions).
 
-**Missing**
-- M · Check Points (check without spending, with Break on failure) — `SA:core/points/user/check-points.md`
-- M · Delete Points (remove a user's record) — `SA:core/points/user/delete-points.md`
-- M · Get Points Definition — `SA:core/points/admin/get-points-definition.md`
+**Fixed (w14-core)**
+- F · Check Points (`points.check`, Enough/Not enough branches, Break on failure default on, `userPoints`) — `SA:core/points/user/check-points.md`
+- F · Delete Points (`points.delete`, removes the record) — `SA:core/points/user/delete-points.md`
+- F · Get Points Definition (`points.getDefinition`: JSON plus `<var>.name`, `.singularName`, `.symbol`, ...) — `SA:core/points/admin/get-points-definition.md`
+- F · Command Triggered: `commandSource`, `commandType`, `msgId`, regex `match.count` / `match[i]`. **Behaviour change:** `rawInput` is now the text after the command, as documented (the whole message stays in `message`) — `TR:core/commands/command-triggered.md`
+- F · Command Cooldown: `commandSource`, `commandType`, `cooldownLeft`, `globalCooldownLeft`, `userCooldownLeft` — `TR:core/commands/command-cooldown.md`
+- F · Get Commands: Include All, Only Has Permission (checks the run's user), `<var>List`; Ignore Aliases is the existing "First alias" choice — `SA:core/commands/get-commands.md`
+- F · Get Command State / Get Command Group State: `commandState`, `commandGroupState`, `commandsEnabled`, `commandsDisabled` — `SA:core/commands/get-command-state.md`, `SA:core/commands/get-command-group-state.md`
+- F · Get Points Leaderboard: Offset — `SA:core/points/leaderboards/get-points-leaderboard.md`
+- F · Award Points (one user) / Update Points: Apply User/Group Multipliers and a destination argument on Add points (negative amounts update down) — `SA:core/points/user/award-points.md`, `update-points.md`
+- F · Award Points to All (`points.awardAll`: every known user, or Only Active) — `SA:core/points/bulk/award-points-to-all.md`
+- F · Reset User Points (`points.resetUser`) — `SA:core/points/user/reset-user-points.md`
+- F · Group Added, Removed, Cleared, Users Added and Users Removed: `group.id` (the name; Cuebot groups have no separate id), `group.name`, `group.bots` (always false), `group.user.count`, `group.user0.*` (one user per event) — `TR:core/groups/*`
+- F · User group sub-actions: `addResult`, `removeResult`, `inGroup`, `foundUser`, `foundUserName`, `foundUserId`, `foundUserType`
+- F · First Words (core `users.firstWords`): `firstMessage`
+- F · Quote Added / Show: `quoteTime` (2) — `TR:core/quotes/*`
+- F · Add Quote / Get Quote / Delete Quote: `quoteTime`, `success` (3) — `SA:core/quotes/*`
+- F · Cron trigger (`core.cron`): its own expression, `expression`, `triggeredAt` — `TR:core/schedule/cron.md`
 
-**Partial**
-- P · Command Triggered: no `commandSource`, `commandType`, `msgId` or regex `match.*` — `TR:core/commands/command-triggered.md`
-- P · Command Cooldown: no `commandSource`, `commandType`, `cooldownLeft`, `globalCooldownLeft` or `userCooldownLeft` — `TR:core/commands/command-cooldown.md`
-- P · Get Commands: no Only Has Permission or Ignore Aliases — `SA:core/commands/get-commands.md`
-- P · Get Command State / Get Command Group State: no `commandState`, `commandGroupState`, `commandsEnabled` or `commandsDisabled` — `SA:core/commands/get-command-state.md`, `SA:core/commands/get-command-group-state.md`
-- P · Get Points Leaderboard: no Offset — `SA:core/points/leaderboards/get-points-leaderboard.md`
-- P · Award Points (one user): cannot apply user/group multipliers — `SA:core/points/user/award-points.md`
-- P · Update Points: cannot apply multipliers — `SA:core/points/user/update-points.md`
-- P · Award Points to All: only present viewers, with no "all users" option — `SA:core/points/bulk/award-points-to-all.md`
-- P · Reset User Points: no single-user reset; it needs Set Points 0 — `SA:core/points/user/reset-user-points.md`
-- P · The Group Added, Removed, Cleared, Users Added and Users Removed triggers have no `group.id`, `group.name`, `group.bots` or `group.user#.*` (5 triggers) — `TR:core/groups/*`
-- P · Quote Added / Show triggers: no `quoteTime` (2) — `TR:core/quotes/*`
-- P · Add Quote / Get Quote / Delete Quote: no `quoteTime` or `success` (3) — `SA:core/quotes/*`
-- P · Cron trigger: no `expression` or `triggeredAt` — `TR:core/schedule/cron.md`
+**Partial (not changed)**
+- P · Group `isSubscribed` per user is not set (groups do not track it)
 
 ## 4. Platforms
 
@@ -360,10 +360,10 @@ TipeeeStream, TreatStream, DonorDrive, StreamLoots, StreamElements, Streamlabs, 
 
 **Status (branch `w14-apps`).** Items below marked **Fixed** now produce Streamer.bot's names alongside Cuebot's
 (nothing was renamed or removed) and are covered by tests with fakes. **Already present** means the reviewed commit
-had it (the static check missed it) and a test now pins it. Decks and Stream Deck MCP are out of scope for this pass.
+had it (the static check missed it) and a test now pins it. Stream Deck MCP is out of scope for this pass; Decks were done in `w14-core`.
 
 **Missing**
-- M · Streamer.bot Decks: Deck Notify, Item Set Background/Icon/State/Title/Value, Item Toggle State, Page Next/Previous/Set (10) — `SA:streamerbot/decks/*`, `GD:04.extra-features/2.streamerbot-decks.md`, `WK:Extended-Features/HTML-Decks.md` — *open (Cuebot.Core work, separate pass)*
+- F (w14-core) · Streamer.bot Decks: Cuebot Decks, served by the HTTP server at `/deck/<id>` with live updates; the 10 sub-actions (Deck Notify, Item Set Background/Icon/State/Title/Value, Item Toggle State, Page Next/Previous/Set), a "Deck item pressed" trigger and a Decks page. Not the streamer.bot website: no Discord login, private/public sharing or file uploads — `SA:streamerbot/decks/*`, `GD:04.extra-features/2.streamerbot-decks.md`, `WK:Extended-Features/HTML-Decks.md`
 - ~~M · IFTTT Notification (Basic) / (Advanced) (2)~~ — **Fixed**: `ifttt.notificationBasic` / `ifttt.notificationAdvanced` (Cuebot.Webhooks). Streamer.bot routes these through its own website service; Cuebot posts to IFTTT's Webhooks service (`maker.ifttt.com/trigger/{event}[/json]/with/key/{key}`), so applets use the "Webhooks → Receive a web request" trigger. Basic sends `value1`; Advanced sends `Argument1Name`/`Argument1Value` … 5, `ArgumentsJson` and `value1`–`value3`. Key from the sub-action or `webhooks.json` `IftttKey` — `SA:integrations/ifttt/*`, `GD:06.integrations/ifttt.md`
 - ~~M · Streamlabs Desktop: Set State of a Random Filter, Hide Group's Sources, Set Random Group Source Visible, Set Scene Filter State, Hide Source's Filters (5)~~ — **Fixed**: `slobs.setRandomFilterState` (stores `slobsFilterName`), `slobs.hideGroupSources`, `slobs.randomGroupSource` (stores `randomSource`), `slobs.setSceneFilterState`, `slobs.hideSourceFilters`, through `SourceFiltersService.getFilters`/`setVisibility` and scene folders (Streamlabs Desktop's groups) — `SA:streamlabs-desktop/filters/*`, `groups/*`, `scenes/set-scene-filter-state.md`, `sources/hide-sources-filters.md`
 - M · Elgato Camera Hub webcam: Set Dynamic Range, Set Noise Reduction, Set White Balance Tint (3) — **Not possible through UVC**: standard UVC / V4L2 has no HDR, noise-reduction or tint control (the nearest, white balance component red/blue, is a different control, and Cuebot's V4L2 backend only maps the standard controls). On Elgato cameras these would be vendor extension-unit controls with no public documentation, so they can only be reached through Camera Hub, which has no API (see the Not possible list) — `SA:elgato/camera-hub/**`
@@ -397,23 +397,26 @@ had it (the static check missed it) and a test now pins it. Decks and Stream Dec
 Present: 24 (MIDI, voice control, keyboard press, toast, clipboard, file exists/folder, write file, file tail state,
 stop sounds, hotkeys, watchers, MIDI and voice triggers, custom WebSocket triggers).
 
-**Missing**
-- M · Read Specific Line From File (`line`, `fileFound`) — `SA:core/file-io/read-specific-line-from-file.md`
-- M · UDP Broadcast — `SA:core/network/udp-broadcast.md`
+**Fixed (w14-core)**
+- F · Read Specific Line From File (`core.readSpecificLine`: `line`, `fileFound`, Parse Variables, auto-typing) — `SA:core/file-io/read-specific-line-from-file.md`
+- F · UDP Broadcast (`core.udpBroadcast`; address defaults to 255.255.255.255, 127.0.0.1 for this computer; `udpBytesSent`) — `SA:core/network/udp-broadcast.md`
+- F · Read Lines From File (`core.readLines`: `line#`, `lineCount`, `fileFound`, Parse Variables, auto-typing; Cuebot's whole-file "Read file" stays) — `SA:core/file-io/read-lines-from-file.md`
+- F · Read Random Line From File: Count, `randomLine#`, `randomLineNumber#` (from 0), `fileFound`, Parse Variables, auto-typing — `SA:core/file-io/read-random-line-from-file.md`
+- F · Play Sound: `soundLength`, `soundLengthMs`, Use Filename As Name — `SA:core/sounds/play-sound.md`
+- F · Play Sound From Folder: `randomSoundFile`, `randomSoundFileName`, `soundLength*` — `SA:core/sounds/play-sound-from-folder.md`
+- F · Run a Program: environment variables, wait limit in seconds, `outputCount` / `output#` (from 1) and `error#` capture, `timedOut` — `SA:core/system/run-a-program.md`
+- F · Fetch URL: "Parse result as JSON" (`<var>.<key>`, arrays as `<var>.items[0]`) — `SA:core/network/fetch-url.md`
+- F · Key Press trigger (Cuebot hotkeys): `key`, `modifier`, `hasCtrl`, `hasAlt`, `hasShift` — `TR:core/inputs/key-press.md`
+- F · Mouse Click trigger: `mouse.button`, `mouse.clicks` (1 per event), `mouse.x`, `mouse.y` — `TR:core/inputs/mouse-click.md`
+- F · Process Started / Stopped: `name`, `executable`, `path` and `fullPath` (Started only, read while the process runs) — `TR:core/processes/*`
+- F · File/Folder Watcher: `watcherFolder`, `watcherFilter`, `fullPath`, `oldFullPath`; Changed also `fileSize`, `empty`, `lineCount`, `line#`, `lineEscaped#` (files up to 256 KB) — `TR:core/file-folder-watcher/*`
+- F · Clipboard Changed: `clipboard.text`, `containsText`, `containsImage`/`containsAudio` (false), `formats.count`, `formats.0` — `TR:core/system/clipboard-changed.md`
+- F · Toast Activation: `toast.id`, `toast.title`, `toast.message`, `toast.iconPath`, `toast.localIconPath` — `TR:core/system/toast-activation.md`
 
-**Partial**
-- P · Read Lines From File: only `fileContent`; no `line#`, `lineCount`, `fileFound`, Parse Variables or auto-typing — `SA:core/file-io/read-lines-from-file.md`
-- P · Read Random Line From File: no Count, `randomLine#`, `randomLineNumber#` or `fileFound` — `SA:core/file-io/read-random-line-from-file.md`
-- P · Play Sound: no `soundLength`, `soundLengthMs` or "Use Filename As Name" — `SA:core/sounds/play-sound.md`
-- P · Play Sound From Folder: no `randomSoundFile`, `randomSoundFileName` or `soundLength*` — `SA:core/sounds/play-sound-from-folder.md`
-- P · Run a Program: no environment variables and no `outputCount`/`output#` capture — `SA:core/system/run-a-program.md`
-- P · Fetch URL: no "Parse result as JSON" (`<var>.<jsonKey>`); JSON get value is a workaround — `SA:core/network/fetch-url.md`
-- P · Key Press trigger: no `hasCtrl`, `hasAlt` or `hasShift` — `TR:core/inputs/key-press.md`
-- P · Mouse Click trigger: no `mouse.button`, `mouse.clicks`, `mouse.x` or `mouse.y` — `TR:core/inputs/mouse-click.md`
-- P · Process Started / Stopped: no `executable`, `fullPath` or `parentProcessId` (2) — `TR:core/processes/*`
-- P · File/Folder Watcher Changed / Created / Deleted / Renamed: no `watcherFolder`, `watcherFilter`, `fullPath`, `oldFullPath`, `fileSize` or `lineEscaped#` (4) — `TR:core/file-folder-watcher/*`
-- P · Clipboard Changed: no `formats.*`, `containsText`, `containsImage`, `containsAudio` or `clipboard.text` — `TR:core/system/clipboard-changed.md`
-- P · Toast Activation: no `toast.*` — `TR:core/system/toast-activation.md`
+**Partial (not changed)**
+- P · Process `parentProcessId`: needs per-OS process APIs (WMI on Windows, /proc on Linux); not added.
+- P · Clipboard images and audio: Cuebot's clipboard watcher reads text only.
+- P · Renamed: Streamer.bot spells `oldFilename`; Cuebot's `oldFileName` answers it, because argument names are case-insensitive.
 
 ## 7. Servers, APIs and scripting
 
@@ -533,14 +536,14 @@ permissions, event speech with weighted messages and event-state minimums, filte
 save-to-folder, highlight alias, WebSocket (incl. `Mode`) and UDP (incl. `profile`, `reg`) APIs, and the
 Streamer.bot Speaker.bot sub-actions.
 
-- M · Allow Moderator Whispers (mods whisper `!tts` commands to the broadcaster) — `SP:1.guide/2.config/0.index.md`
+- M · Allow Moderator Whispers (mods whisper `!tts` commands to the broadcaster). Not done in w14-core: it needs the Twitch module to deliver whispers to the broadcaster account as chat messages, which is the platform area — `SP:1.guide/2.config/0.index.md`
 - N/A · Speaker.bot Connected / Disconnected triggers: Cuebot's TTS is built in — `TR:integrations/speakerbot/*`
 
 ## 9. App shell
 
-- M · Cloud backups (upload, restore from cloud) — `GD:01.core/10.backup.md`
-- M · `/shutdown` startup switch (stop a running or headless instance) — `GD:05.advanced/02.switches.md`
-- P · Keyboard shortcuts:
+- F · `/shutdown` (also `--shutdown`): asks the instance running on the data folder, windowed or headless, to quit (w14-core) — `GD:05.advanced/02.switches.md`
+- M · Cloud backups (upload, restore from cloud). Not done: Streamer.bot backs up to its own account service; Cuebot has no cloud account. Local backups exist — `GD:01.core/10.backup.md`
+- P · Keyboard shortcuts (not changed in w14-core):
   - Actions view: no Ctrl+R rename group or Ctrl+Home/End to move a sub-action to the top or bottom.
   - Commands, Timers, MIDI, Voice Control and Quotes views: none of the documented Delete / Ctrl+O / Ctrl+C / Ctrl+R shortcuts.
   - Source: `GD:05.advanced/01.shortcuts.md`

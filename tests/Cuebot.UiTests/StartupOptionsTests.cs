@@ -77,5 +77,8 @@ public class StartupOptionsTests
         Assert.True(StartupOptions.Parse(["--help"]).ShowHelp);
         Assert.True(StartupOptions.Parse(["-h"]).ShowHelp);
         Assert.Contains("--headless", StartupOptions.HelpText);
+        Assert.Contains("--shutdown", StartupOptions.HelpText);
+        Assert.True(StartupOptions.Parse(["/shutdown"]).Shutdown);
+        Assert.True(StartupOptions.Parse(["--Shutdown"]).Shutdown);
     }
 }

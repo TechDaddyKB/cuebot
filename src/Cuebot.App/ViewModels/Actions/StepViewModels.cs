@@ -50,6 +50,22 @@ public sealed partial class TriggerItemViewModel : EditorItemViewModel
         }
     }
 
+    /// <summary>The trigger has a min/max range, so Streamer.bot's "Always Run" option applies.</summary>
+    public bool IsRangeTrigger => Type is not null && RangeTriggers.IsRangeTrigger(Type);
+
+    /// <summary>Run even when a narrower range trigger of the same type also matches.</summary>
+    public bool AlwaysRun
+    {
+        get => Definition.AlwaysRun;
+        set
+        {
+            if (Definition.AlwaysRun == value) return;
+            Definition.AlwaysRun = value;
+            OnPropertyChanged();
+            _changed(null);
+        }
+    }
+
     private void OnParameterChanged()
     {
         OnPropertyChanged(nameof(Summary));

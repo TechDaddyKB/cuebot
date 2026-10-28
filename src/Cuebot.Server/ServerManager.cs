@@ -48,7 +48,7 @@ public sealed class ServerManager : IAsyncDisposable
         _services = services;
         Requests = new StreamerBotRequests(services);
         WebSocket = new StreamerBotWebSocketServer(Settings.WebSocket, Requests, Origins);
-        Http = new HttpApiServer(() => Settings, Requests);
+        Http = new HttpApiServer(() => Settings, Requests, services.Decks);
         CustomServers = new CustomWebSocketServers(() => Settings, services.Bus, services.Log);
         CustomClients = new CustomWebSocketClients(() => Settings, services.Bus, services.Log);
         CustomServers.Changed += RaiseChanged;
@@ -229,7 +229,7 @@ public sealed class ServerManager : IAsyncDisposable
                     await WebSocket.StartAsync(address, ct).ConfigureAwait(false);
                     break;
                 case ServerKind.Http:
-                    Http = new HttpApiServer(() => Settings, Requests);
+                    Http = new HttpApiServer(() => Settings, Requests, _services.Decks);
                     await Http.StartAsync(address, ct).ConfigureAwait(false);
                     break;
                 case ServerKind.Udp:

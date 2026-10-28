@@ -16,6 +16,9 @@ internal static class SystemFeatures
         services.AddSingleton<ISubActionHandler, ReadFileSubAction>();
         services.AddSingleton<ISubActionHandler, WriteFileSubAction>();
         services.AddSingleton<ISubActionHandler>(_ => new ReadRandomLineSubAction());
+        services.AddSingleton<ISubActionHandler, ReadLinesSubAction>();
+        services.AddSingleton<ISubActionHandler, ReadSpecificLineSubAction>();
+        services.AddSingleton<ISubActionHandler, UdpBroadcastSubAction>();
         services.AddSingleton<ISubActionHandler, FileExistsSubAction>();
         services.AddSingleton<ISubActionHandler, DeleteFileSubAction>();
         services.AddSingleton<ISubActionHandler, HttpRequestSubAction>();

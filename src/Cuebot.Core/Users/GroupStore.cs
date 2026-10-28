@@ -242,12 +242,21 @@ public sealed class GroupStore : IDisposable
         if (_bus is null) return;
         var args = extra ?? new Dictionary<string, object?>();
         args["groupName"] = group;
+        // Streamer.bot names. Cuebot groups are identified by name and have no bot flag.
+        args["group.id"] = group;
+        args["group.name"] = group;
+        args["group.bots"] = false;
         if (platform.Length > 0 || userId.Length > 0 || userName.Length > 0)
         {
             args["platform"] = platform;
             args["user"] = userName;
             args["userName"] = userName;
             args["userId"] = userId;
+            args["group.user.count"] = 1;
+            args["group.user0.userId"] = userId;
+            args["group.user0.user"] = userName;
+            args["group.user0.userName"] = userName.ToLowerInvariant();
+            args["group.user0.userType"] = platform.ToLowerInvariant();
         }
         _bus.Publish(new BotEvent(eventType, args));
     }

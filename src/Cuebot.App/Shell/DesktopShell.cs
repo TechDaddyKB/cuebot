@@ -89,6 +89,7 @@ public sealed class DesktopShell : IShellHost, IDisposable
         if (_ctx.Instance is { } instance)
         {
             instance.ActivationRequested += () => Dispatcher.UIThread.Post(ShowWindow);
+            instance.ShutdownRequested += () => Dispatcher.UIThread.Post(Quit);
             if (instance.ListenError is { } error)
                 _log.Warn("Cuebot", $"Later launches cannot bring this window forward ({error})");
         }

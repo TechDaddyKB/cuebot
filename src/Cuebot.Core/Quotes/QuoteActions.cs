@@ -97,6 +97,7 @@ public sealed class AddQuoteSubAction(QuoteStore quotes) : ISubActionHandler
         if (text.Length == 0) throw new InvalidOperationException("No quote text given");
         var quote = quotes.Add(text, ExtrasText.Clean(p["user"]), ExtrasText.Clean(p["userId"]), ExtrasText.Clean(p["platform"]),
             ExtrasText.Clean(p["game"]));
+        context.Args["success"] = true;
         QuoteParameters.Store(context, quote);
         context.Args["quoteCount"] = quotes.Count;
         return Task.FromResult(SubActionResult.Next);
@@ -121,6 +122,7 @@ public sealed class GetQuoteSubAction(QuoteStore quotes) : ISubActionHandler
         var id = QuoteStore.ParseId(p["id"]);
         var quote = id > 0 ? quotes.Get(id) : quotes.RandomQuote(ExtrasText.Clean(p["search"]));
         context.Args["quoteFound"] = quote is not null;
+        context.Args["success"] = quote is not null;
         context.Args["quoteCount"] = quotes.Count;
         if (quote is null)
         {
@@ -169,6 +171,7 @@ public sealed class DeleteQuoteSubAction(QuoteStore quotes) : ISubActionHandler
     {
         var removed = quotes.Delete(QuoteParameters.RequireId(p["id"]));
         context.Args["quoteDeleted"] = removed is not null;
+        context.Args["success"] = removed is not null;
         if (removed is not null) QuoteParameters.Store(context, removed);
         context.Args["quoteCount"] = quotes.Count;
         return Task.FromResult(SubActionResult.Next);

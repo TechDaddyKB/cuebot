@@ -158,6 +158,11 @@ public sealed class DesktopNotifier(ISystemNotifier system, IToastPresenter toas
                 ["toastId"] = notification.Id,
                 ["toastTitle"] = notification.Title,
                 ["toastMessage"] = notification.Message,
+                ["toast.id"] = notification.Id,
+                ["toast.title"] = notification.Title,
+                ["toast.message"] = notification.Message,
+                ["toast.iconPath"] = notification.IconPath ?? "",
+                ["toast.localIconPath"] = notification.IconPath ?? "",
             }));
         });
         return "in-app";

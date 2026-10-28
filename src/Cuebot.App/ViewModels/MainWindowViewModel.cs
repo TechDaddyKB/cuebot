@@ -22,7 +22,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public static readonly IReadOnlyList<(string Group, string[] Titles)> NavLayout =
     [
         ("Main", ["Dashboard", "Chat", "Actions", "Commands", "History"]),
-        ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Input", "Quotes", "Credits", "Points"]),
+        ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Decks", "Input", "Quotes", "Credits", "Points"]),
         ("Platforms", ["Twitch", "Rumble", "YouTube", "Kick"]),
         ("Apps", ["OBS", "Speech", "Donations", "Integrations", "Webhooks"]),
         ("System", ["Import / Export", "Scripting", "Servers", "Support", "Settings"]),
@@ -84,6 +84,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new Extras.QuotesViewModel(host.Get<Cuebot.Core.Quotes.QuoteStore>()),
             new Extras.CreditsViewModel(host.Get<Cuebot.Core.Credits.CreditsCollector>()),
             new Extras.PointsViewModel(host.Get<Cuebot.Core.Points.PointsService>()),
+            new Extras.DecksViewModel(host.Get<Cuebot.Core.Decks.DeckService>(),
+                () => host.Get<Cuebot.Server.ServerManager>().DockUrls[0].Url.Replace("/feed/chat", "", StringComparison.Ordinal),
+                () => host.Get<Cuebot.Server.ServerManager>().Settings.Http.Enabled,
+                () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name)),
             new Extras.HotkeysViewModel(host.Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>(),
                 host.Get<Cuebot.Core.Storage.JsonFile<Cuebot.Core.Desktop.Notifications.DesktopSettings>>(),
                 () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name)),

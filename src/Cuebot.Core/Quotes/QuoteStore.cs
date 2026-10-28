@@ -260,6 +260,7 @@ public sealed class QuoteStore : IDisposable
         ["quoteGame"] = quote.Game,
         ["quoteDate"] = quote.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd", ExtrasText.Inv),
         ["quoteTimestamp"] = quote.CreatedAt.ToString("o", ExtrasText.Inv),
+        ["quoteTime"] = quote.CreatedAt.LocalDateTime,
     };
 
     /// <summary>Parses "12" or "#12"; 0 when not a positive number.</summary>

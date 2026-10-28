@@ -67,7 +67,9 @@ public sealed class AddUserToGroupSubAction(GroupStore groups) : GroupUserSubAct
     {
         var (group, platform, user, userId) = Read(p);
         if (!p.GetBool("create", true) && !Groups.Exists(group)) throw new InvalidOperationException($"No group named '{group}'");
-        context.Args["groupUserAdded"] = Groups.AddUser(group, platform, userId, user, createGroup: true);
+        var added = Groups.AddUser(group, platform, userId, user, createGroup: true);
+        context.Args["groupUserAdded"] = added;
+        context.Args["addResult"] = added; // Streamer.bot name
         return Task.FromResult(SubActionResult.Next);
     }
 }
@@ -80,7 +82,9 @@ public sealed class RemoveUserFromGroupSubAction(GroupStore groups) : GroupUserS
     public override Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
         var (group, platform, user, userId) = Read(p);
-        context.Args["groupUserRemoved"] = Groups.RemoveUser(group, platform, userId, user);
+        var removed = Groups.RemoveUser(group, platform, userId, user);
+        context.Args["groupUserRemoved"] = removed;
+        context.Args["removeResult"] = removed; // Streamer.bot name
         return Task.FromResult(SubActionResult.Next);
     }
 }
@@ -106,6 +110,12 @@ public sealed class UserInGroupSubAction(GroupStore groups) : GroupUserSubAction
         var (group, platform, user, userId) = Read(p);
         var inGroup = Groups.Contains(group, platform, userId, user);
         if (p["argument"].Trim().Length > 0) context.Args[p["argument"].Trim()] = inGroup;
+        // Streamer.bot names.
+        context.Args["inGroup"] = inGroup;
+        context.Args["foundUser"] = user;
+        context.Args["foundUserName"] = user.ToLowerInvariant();
+        context.Args["foundUserId"] = userId;
+        context.Args["foundUserType"] = platform.ToLowerInvariant();
         return Task.FromResult(SubActionResult.TakeBranch(inGroup ? True : False));
     }
 }

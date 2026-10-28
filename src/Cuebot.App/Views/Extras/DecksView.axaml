@@ -1,0 +1,133 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.DecksView"
+             x:DataType="vm:DecksViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+          <Button x:Name="AddDeckButton" Content="+ Deck" Command="{Binding AddDeckCommand}" />
+          <Button Content="Remove deck" Command="{Binding RemoveDeckCommand}" IsEnabled="{Binding HasSelection}" />
+        </StackPanel>
+        <TextBlock Classes="h1" Text="Decks" Margin="0" VerticalAlignment="Center" />
+      </DockPanel>
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="A deck is a page of buttons for any browser: a phone, a tablet or an OBS dock. Pressing a button runs its action (and fires 'Deck item pressed'); the Decks sub-actions change titles, colours, icons, values, states and pages while Cuebot runs." />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding HttpHint}" />
+    </StackPanel>
+
+    <Grid ColumnDefinitions="220,16,*">
+      <ListBox x:Name="DeckList" ItemsSource="{Binding Decks}" SelectedItem="{Binding SelectedDeck}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:DeckEditorViewModel">
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <TextBlock Grid.Column="2" Classes="muted" IsVisible="{Binding !HasSelection}" Text="No decks yet. Add one with '+ Deck'." />
+
+      <ScrollViewer Grid.Column="2" IsVisible="{Binding HasSelection}">
+        <ContentControl Content="{Binding SelectedDeck}">
+          <ContentControl.DataTemplates>
+            <DataTemplate DataType="vm:DeckEditorViewModel">
+              <StackPanel Spacing="12" MaxWidth="1000" HorizontalAlignment="Left">
+                <Border Classes="card">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,12,Auto">
+                      <TextBox x:Name="DeckName" Text="{Binding Name}" PlaceholderText="Deck name" FontWeight="SemiBold" />
+                      <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+                      <TextBlock Text="Address" VerticalAlignment="Center" />
+                      <TextBox x:Name="DeckUrl" Grid.Column="2" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" />
+                      <Button Grid.Column="4" Content="Open" Click="OnOpenDeck" />
+                    </Grid>
+                    <WrapPanel ItemSpacing="16" LineSpacing="8">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Rows" VerticalAlignment="Center" />
+                        <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" />
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Columns" VerticalAlignment="Center" />
+                        <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" />
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Gap (px)" VerticalAlignment="Center" />
+                        <NumericUpDown Value="{Binding Gap}" Minimum="0" Maximum="64" Increment="1" FormatString="0" Width="110" />
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Background" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding Background}" PlaceholderText="#16161c" Width="120" />
+                      </StackPanel>
+                      <Button Content="Reset runtime changes" Command="{Binding ResetRuntimeCommand}"
+                              ToolTip.Tip="Forget titles, colours, states and the page that sub-actions changed" />
+                    </WrapPanel>
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Arguments for every button (name=value per line)" />
+                      <TextBox Text="{Binding Arguments}" AcceptsReturn="True" MinHeight="48" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <DockPanel>
+                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <Button Content="+ Page" Command="{Binding AddPageCommand}" />
+                    <Button Content="Remove page" Command="{Binding RemovePageCommand}" />
+                    <Button x:Name="AddItemButton" Content="+ Button" Command="{Binding AddItemCommand}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Page" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding Pages}" SelectedIndex="{Binding SelectedPageIndex}" MinWidth="160" />
+                    <TextBox Text="{Binding PageName}" PlaceholderText="Page name" Width="180" />
+                  </StackPanel>
+                </DockPanel>
+
+                <TextBlock Classes="muted" IsVisible="{Binding !Items.Count}" Text="This page has no buttons yet." />
+                <ItemsControl ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:DeckItemEditorViewModel">
+                      <Border Classes="card">
+                        <StackPanel Spacing="8">
+                          <Grid ColumnDefinitions="*,12,Auto,8,Auto,8,Auto,8,Auto,12,Auto">
+                            <TextBox Text="{Binding Name}" PlaceholderText="Name (used by sub-actions)" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2" Text="Row" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="4" Value="{Binding Row}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
+                            <TextBlock Grid.Column="6" Text="Column" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="8" Value="{Binding Column}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
+                            <Button Grid.Column="10" Content="Remove" Command="{Binding RemoveCommand}" />
+                          </Grid>
+                          <Grid ColumnDefinitions="Auto,8,*,12,Auto">
+                            <TextBlock Text="Action" VerticalAlignment="Center" />
+                            <AutoCompleteBox Grid.Column="2" Text="{Binding Action}" ItemsSource="{Binding ActionSuggestions}"
+                                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0" Watermark="Action to run (optional)" />
+                            <CheckBox Grid.Column="4" Content="Toggle state on press" IsChecked="{Binding ToggleOnPress}" />
+                          </Grid>
+                          <WrapPanel ItemSpacing="12" LineSpacing="8">
+                            <TextBox Text="{Binding Title}" PlaceholderText="Title" Width="170" />
+                            <TextBox Text="{Binding TitleColor}" PlaceholderText="Title colour" Width="110" />
+                            <TextBox Text="{Binding Background}" PlaceholderText="Background colour" Width="140" />
+                            <TextBox Text="{Binding Icon}" PlaceholderText="Icon (mdi:home)" Width="140" />
+                            <TextBox Text="{Binding IconColor}" PlaceholderText="Icon colour" Width="110" />
+                            <TextBox Text="{Binding BackgroundImage}" PlaceholderText="Background image URL" Width="220" />
+                          </WrapPanel>
+                          <WrapPanel ItemSpacing="12" LineSpacing="8">
+                            <TextBlock Classes="muted" Text="Active state (1):" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding ActiveTitle}" PlaceholderText="Title" Width="170" />
+                            <TextBox Text="{Binding ActiveBackground}" PlaceholderText="Background colour" Width="140" />
+                          </WrapPanel>
+                          <TextBox Text="{Binding Arguments}" AcceptsReturn="True" PlaceholderText="Arguments for the action, name=value per line" MinHeight="36" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>

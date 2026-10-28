@@ -62,6 +62,7 @@ public class UserRegistryTests : IDisposable
         var first = _events.OfType(UserEvents.FirstWords);
         Assert.Equal(["Alice", "Bob", "Alice"], first.Select(e => (string)e.Args["user"]!));
         Assert.Equal(true, first[0].Args["isNewUser"]);
+        Assert.Equal(true, first[0].Args["firstMessage"]);
         Assert.Equal("hi", first[0].Args["message"]);
         Assert.True(_users.HasSpoken("Twitch", "1"));
 

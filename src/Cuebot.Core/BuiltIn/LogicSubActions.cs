@@ -2,10 +2,19 @@ using Cuebot.Core.Actions;
 
 namespace Cuebot.Core.BuiltIn;
 
+/// <summary>
+/// If / Else. "matches regex" also sets Streamer.bot's capture arguments when it matches: %match.count% (groups,
+/// including group 0), %match[0]%.. (each group's text) and one argument per named group. "does not exist" / "exists"
+/// test whether an argument is defined; the value is its bare name (or %name%).
+/// </summary>
 public sealed class IfSubAction : ISubActionHandler
 {
     public const string True = "True";
     public const string False = "False";
+    public const string DoesNotExist = "does not exist";
+    public const string Exists = "exists";
+
+    public static readonly IReadOnlyList<string> Operators = [.. Conditions.Operators, DoesNotExist, Exists];
 
     public string TypeId => "core.if";
     public string Category => Categories.Logic;
@@ -13,13 +22,55 @@ public sealed class IfSubAction : ISubActionHandler
     public IReadOnlyList<string> Branches { get; } = [True, False];
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
-        new("left", "Value") { DefaultValue = "%message%" },
-        new("operator", "Operator", ParameterKind.Choice) { DefaultValue = "equals", Choices = Conditions.Operators },
+        new("left", "Value") { DefaultValue = "%message%", Help = "For \"does not exist\" / \"exists\": the argument's name" },
+        new("operator", "Operator", ParameterKind.Choice) { DefaultValue = "equals", Choices = Operators },
         new("right", "Compare to"),
     ];
 
-    public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct) =>
-        Task.FromResult(SubActionResult.TakeBranch(Conditions.Evaluate(p["left"], p["operator"], p["right"]) ? True : False));
+    public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var op = p["operator"].Trim();
+        bool result;
+        if (op.Equals(DoesNotExist, StringComparison.OrdinalIgnoreCase) || op.Equals(Exists, StringComparison.OrdinalIgnoreCase))
+        {
+            result = ArgumentExists(context, p["left"]) == op.Equals(Exists, StringComparison.OrdinalIgnoreCase);
+        }
+        else if (op.Equals("matches regex", StringComparison.OrdinalIgnoreCase))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(p["left"], p["right"],
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            result = match.Success;
+            if (match.Success) SetCaptures(context.Args, match);
+        }
+        else
+        {
+            result = Conditions.Evaluate(p["left"], op, p["right"]);
+        }
+        return Task.FromResult(SubActionResult.TakeBranch(result ? True : False));
+    }
+
+    /// <summary>Whether an argument is defined. A resolved %name% that became a value means it exists.</summary>
+    private static bool ArgumentExists(ActionRunContext context, string text)
+    {
+        var name = text.Trim();
+        // The value field is resolved before we see it: a bare name stays as it is, %name% of a missing argument stays
+        // "%name%", and %name% of a defined one became its value.
+        if (name.Length > 1 && name[0] == '%' && name[^1] == '%') return false;
+        if (name.Length == 0) return false;
+        return context.Args.ContainsKey(name);
+    }
+
+    /// <summary>Streamer.bot's regex capture arguments.</summary>
+    public static void SetCaptures(IDictionary<string, object?> args, System.Text.RegularExpressions.Match match)
+    {
+        args["match.count"] = match.Groups.Count;
+        for (var i = 0; i < match.Groups.Count; i++)
+        {
+            var group = match.Groups[i];
+            args[$"match[{i}]"] = group.Value;
+            if (!int.TryParse(group.Name, out _)) args[group.Name] = group.Value;
+        }
+    }
 }
 
 /// <summary>
@@ -169,14 +220,15 @@ public sealed class LoopContinueSubAction : ISubActionHandler
 }
 
 /// <summary>
-/// Get input: splits a text (default %rawInput%) into %input0%..%inputN% and %inputCount%. A blank separator splits
+/// Split text into inputs (type id "core.getInput", called "Get input" before Cuebot added Streamer.bot's dialog): splits a
+/// text (default %rawInput%) into %input0%..%inputN% and %inputCount%. A blank separator splits
 /// on whitespace. Stale %inputN% arguments beyond the new count are removed.
 /// </summary>
 public sealed class GetInputSubAction : ISubActionHandler
 {
     public string TypeId => "core.getInput";
     public string Category => Categories.Logic;
-    public string DisplayName => "Get input";
+    public string DisplayName => "Split text into inputs";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("input", "Text") { DefaultValue = "%rawInput%" },
@@ -199,5 +251,36 @@ public sealed class GetInputSubAction : ISubActionHandler
         for (var i = 0; i < parts.Length; i++) context.Args[$"input{i}"] = parts[i];
         context.Args["inputCount"] = parts.Length;
         return Task.FromResult(SubActionResult.Next);
+    }
+}
+
+/// <summary>
+/// Get Input (Streamer.bot semantics): opens a dialog with a title, a prompt and an optional starting text, and stores
+/// what the user typed in the output argument (default %inputResult%, auto-typed when asked). %success% is true when
+/// OK was pressed, false when the dialog was cancelled or closed, or when no dialog can be shown (headless).
+/// </summary>
+public sealed class GetInputDialogSubAction(UserPromptService prompts) : ISubActionHandler
+{
+    public string TypeId => "core.getInputDialog";
+    public string Category => Categories.Logic;
+    public string DisplayName => "Get input";
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        new("title", "Title") { DefaultValue = "Cuebot" },
+        new("prompt", "Prompt") { DefaultValue = "Enter a value" },
+        new("originalText", "Original text") { Help = "Starting text in the input box" },
+        new("variable", "Output variable") { DefaultValue = "inputResult" },
+        new("autoType", "Auto type output", ParameterKind.Boolean) { DefaultValue = "false" },
+    ];
+
+    public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var name = p["variable"].Trim().Trim('%');
+        if (name.Length == 0) name = "inputResult";
+        if (!prompts.IsAvailable) context.Log.Warn(context.Action.Name, "Get input: no dialog can be shown here (headless); treating it as cancelled");
+        var text = await prompts.AskAsync(new UserPromptRequest(p["title"], p["prompt"], p["originalText"]), ct).ConfigureAwait(false);
+        context.Args["success"] = text is not null;
+        if (text is not null) context.Args[name] = p.GetBool("autoType") ? Cuebot.Core.Variables.VariableValues.AutoType(text) : text;
+        return SubActionResult.Next;
     }
 }

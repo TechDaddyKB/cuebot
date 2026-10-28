@@ -22,6 +22,20 @@ public sealed class SingleInstanceTests : IDisposable
     }
 
     [Fact]
+    public async Task Shutdown_request_reaches_the_running_instance_and_not_activation()
+    {
+        using var first = SingleInstance.TryAcquire(_root);
+        Assert.NotNull(first);
+        var shutdown = new TaskCompletionSource();
+        var activated = 0;
+        first.ShutdownRequested += () => shutdown.TrySetResult();
+        first.ActivationRequested += () => Interlocked.Increment(ref activated);
+        Assert.True(await SingleInstance.ShutdownExistingAsync(_root, TimeSpan.FromSeconds(5)));
+        await shutdown.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(0, Volatile.Read(ref activated));
+    }
+
+    [Fact]
     public async Task Folder_can_be_claimed_again_after_the_first_instance_exits()
     {
         var first = SingleInstance.TryAcquire(_root);

@@ -43,7 +43,10 @@ public static class HeadlessRunner
         }
 
         if (ctx.Instance is { } instance)
+        {
             instance.ActivationRequested += () => log.Info("Cuebot", "Another launch asked to show the window; running headless, so it was ignored");
+            instance.ShutdownRequested += () => stopped.TrySetResult("--shutdown requested");
+        }
 
         try
         {

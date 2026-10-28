@@ -98,9 +98,9 @@ public sealed class HttpRequestSubActionTests : IDisposable
         Assert.False(HttpHeaderLines.IsSensitive("Accept"));
     }
 
-    private sealed record RecordedRequest(HttpMethod Method, string Uri, Dictionary<string, string> Headers, string? Body);
+    internal sealed record RecordedRequest(HttpMethod Method, string Uri, Dictionary<string, string> Headers, string? Body);
 
-    private sealed class FakeHandler : HttpMessageHandler
+    internal sealed class FakeHandler : HttpMessageHandler
     {
         public List<RecordedRequest> Requests { get; } = [];
         public Func<HttpRequestMessage, HttpResponseMessage> Respond { get; set; } = _ => new HttpResponseMessage(HttpStatusCode.OK);

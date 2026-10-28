@@ -74,6 +74,9 @@ public class CommandActionTests : IDisposable
         Assert.Equal(false, mod.Args["commandGroupEnabled"]);
         Assert.Equal(1, mod.Args["commandGroupEnabledCount"]);
         Assert.Equal(2, mod.Args["commandGroupCount"]);
+        Assert.Equal(2, mod.Args["commandGroupState"]);
+        Assert.Single(Assert.IsType<List<string>>(mod.Args["commandsEnabled"]));
+        Assert.Single(Assert.IsType<List<string>>(mod.Args["commandsDisabled"]));
 
         await SubActionHarness.RunAsync(new SetCommandGroupStateSubAction(_store), new() { ["group"] = "Mod", ["state"] = "Toggle" });
         Assert.All(_store.Snapshot.Where(c => c.Group == "Mod"), c => Assert.True(c.Enabled));
@@ -88,6 +91,7 @@ public class CommandActionTests : IDisposable
         var all = await SubActionHarness.RunAsync(new GetCommandsSubAction(_store), []);
         Assert.Equal("!hello, !roll", all.Args["commands"]);
         Assert.Equal(2, all.Args["commandsCount"]);
+        Assert.Equal(["!hello", "!roll"], Assert.IsType<List<string>>(all.Args["commandsList"]));
 
         var aliases = await SubActionHarness.RunAsync(new GetCommandsSubAction(_store),
             new() { ["argument"] = "list", ["show"] = "All aliases", ["separator"] = " | ", ["group"] = "fun" });
@@ -96,6 +100,9 @@ public class CommandActionTests : IDisposable
         var names = await SubActionHarness.RunAsync(new GetCommandsSubAction(_store),
             new() { ["show"] = "Names", ["includeDisabled"] = "true" });
         Assert.Equal("Hello, Dice, Off", names.Args["commands"]); // Ban is not included
+        var everything = await SubActionHarness.RunAsync(new GetCommandsSubAction(_store),
+            new() { ["show"] = "Names", ["includeDisabled"] = "true", ["includeAll"] = "true", ["group"] = "All" });
+        Assert.Contains("Ban", (string)everything.Args["commands"]!);
     }
 
     [Fact]

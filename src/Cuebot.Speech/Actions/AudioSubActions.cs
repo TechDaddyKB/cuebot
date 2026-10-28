@@ -14,6 +14,8 @@ internal static class SoundPlaybackSteps
     public static readonly ParameterDescriptor Volume = new("volume", "Volume (0-100)", ParameterKind.Number) { DefaultValue = "100" };
     public static readonly ParameterDescriptor Wait = new("wait", "Wait until finished", ParameterKind.Boolean) { DefaultValue = "true" };
 
+    public static readonly ParameterDescriptor UseFileName = new("useFileName", "Use the file name as the tag", ParameterKind.Boolean) { DefaultValue = "false" };
+
     public static readonly ParameterDescriptor Tag = new("tag", "Sound tag")
     {
         Help = "Optional name; \"Stop sounds\" can stop every sound with this tag",
@@ -25,10 +27,15 @@ internal static class SoundPlaybackSteps
     {
         var options = new PlaybackOptions(NullIfEmpty(p["device"]), Math.Clamp(p.GetInt("volume", 100), 0, 100));
         // The sound outlives the action's token unless the action waits for it.
-        var playback = await audio.StartFileAsync(file, options, NullIfEmpty(p["tag"]), ct).ConfigureAwait(false);
+        // Streamer.bot "Use Filename As Name": the sound is tagged with its file name, for Stop Sound Playback.
+        var tag = p.GetBool("useFileName") ? Path.GetFileNameWithoutExtension(file) : NullIfEmpty(p["tag"]);
+        var playback = await audio.StartFileAsync(file, options, tag, ct).ConfigureAwait(false);
         context.Args["soundFile"] = file;
         context.Args["soundDuration"] = Math.Round(playback.Duration.TotalSeconds, 3);
         context.Args["soundDurationMs"] = (long)Math.Round(playback.Duration.TotalMilliseconds);
+        // Streamer.bot names.
+        context.Args["soundLength"] = context.Args["soundDuration"];
+        context.Args["soundLengthMs"] = context.Args["soundDurationMs"];
         if (p.GetBool("wait", true))
         {
             using (ct.Register(playback.Stop))
@@ -72,6 +79,7 @@ internal sealed class PlaySoundSubAction(AudioService audio) : ISubActionHandler
         SoundPlaybackSteps.Volume,
         SoundPlaybackSteps.Wait,
         SoundPlaybackSteps.Tag,
+        SoundPlaybackSteps.UseFileName,
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues parameters, CancellationToken ct)
@@ -97,6 +105,7 @@ internal sealed class PlaySoundFromFolderSubAction(AudioService audio, Random? r
         SoundPlaybackSteps.Volume,
         SoundPlaybackSteps.Wait,
         SoundPlaybackSteps.Tag,
+        SoundPlaybackSteps.UseFileName,
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues parameters, CancellationToken ct)
@@ -108,6 +117,8 @@ internal sealed class PlaySoundFromFolderSubAction(AudioService audio, Random? r
             context.Log.Warn(context.Action.Name, $"No sound files found in {folder}");
             return SubActionResult.Next;
         }
+        context.Args["randomSoundFile"] = file;
+        context.Args["randomSoundFileName"] = Path.GetFileName(file);
         await SoundPlaybackSteps.PlayAsync(audio, context, parameters, file, ct).ConfigureAwait(false);
         return SubActionResult.Next;
     }

@@ -14,6 +14,7 @@ public sealed class SingleInstance : IDisposable
     public const string LockFileName = "instance.lock";
     public const string SocketFileName = "instance.sock";
     private const string ActivateMessage = "activate";
+    internal const string ShutdownMessage = "shutdown";
     private const int MaxSocketPathBytes = 100;   // sun_path is 108 bytes on Linux and Windows
 
     private readonly FileStream _lock;
@@ -38,6 +39,9 @@ public sealed class SingleInstance : IDisposable
 
     /// <summary>Raised on a thread-pool thread when another launch asks this instance to show itself.</summary>
     public event Action? ActivationRequested;
+
+    /// <summary>Raised on a thread-pool thread when a launch with --shutdown asks this instance to quit.</summary>
+    public event Action? ShutdownRequested;
 
     /// <summary>The socket path for a data folder: inside it when short enough, else a hashed name in the temp folder.</summary>
     public static string SocketPathFor(string dataRoot)
@@ -86,7 +90,14 @@ public sealed class SingleInstance : IDisposable
     public static Task<bool> ActivateExistingAsync(string dataRoot, TimeSpan timeout) =>
         ActivateExistingAsync(SocketPathFor(dataRoot), timeout, retryUntilTimeout: true);
 
-    public static async Task<bool> ActivateExistingAsync(string socketPath, TimeSpan timeout, bool retryUntilTimeout)
+    /// <summary>Asks the instance owning <paramref name="dataRoot"/> to quit (Streamer.bot <c>/shutdown</c>). True when it answered.</summary>
+    public static Task<bool> ShutdownExistingAsync(string dataRoot, TimeSpan timeout) =>
+        SendAsync(SocketPathFor(dataRoot), ShutdownMessage, timeout, retryUntilTimeout: true);
+
+    public static Task<bool> ActivateExistingAsync(string socketPath, TimeSpan timeout, bool retryUntilTimeout) =>
+        SendAsync(socketPath, ActivateMessage, timeout, retryUntilTimeout);
+
+    internal static async Task<bool> SendAsync(string socketPath, string command, TimeSpan timeout, bool retryUntilTimeout)
     {
         using var cts = new CancellationTokenSource(timeout);
         while (true)
@@ -96,7 +107,7 @@ public sealed class SingleInstance : IDisposable
                 using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
                 await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), cts.Token);
                 await using var stream = new NetworkStream(socket, ownsSocket: false);
-                await stream.WriteAsync(Encoding.UTF8.GetBytes(ActivateMessage + "\n"), cts.Token);
+                await stream.WriteAsync(Encoding.UTF8.GetBytes(command + "\n"), cts.Token);
                 var buffer = new byte[16];
                 var read = await stream.ReadAsync(buffer, cts.Token);
                 return Encoding.UTF8.GetString(buffer, 0, read).StartsWith("ok", StringComparison.Ordinal);
@@ -144,8 +155,9 @@ public sealed class SingleInstance : IDisposable
                 var buffer = new byte[256];
                 var read = await stream.ReadAsync(buffer, timeout.Token);
                 var message = Encoding.UTF8.GetString(buffer, 0, read).Trim();
-                if (message != ActivateMessage) return;
-                try { ActivationRequested?.Invoke(); }
+                var handler = message switch { ActivateMessage => ActivationRequested, ShutdownMessage => ShutdownRequested, _ => null };
+                if (handler is null) return;
+                try { handler.Invoke(); }
                 catch (Exception) { /* a failing handler must not break the handshake */ }
                 await stream.WriteAsync("ok\n"u8.ToArray(), timeout.Token);
             }

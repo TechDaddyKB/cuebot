@@ -142,6 +142,11 @@ public sealed class MouseClickService : IPeriodicService, IDisposable
             ["mouseX"] = click.X,
             ["mouseY"] = click.Y,
             ["modifiers"] = ModifierText(click.Modifiers),
+            // Streamer.bot Mouse Click names (one event per click).
+            ["mouse.button"] = click.Button.ToString(),
+            ["mouse.clicks"] = 1,
+            ["mouse.x"] = click.X,
+            ["mouse.y"] = click.Y,
         }));
     }
 

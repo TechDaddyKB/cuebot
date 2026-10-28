@@ -3,17 +3,34 @@ using Cuebot.Core.Logging;
 
 namespace Cuebot.Core.BuiltIn;
 
-public sealed class DelaySubAction : ISubActionHandler
+/// <summary>Waits a fixed time, or with "random" a random time between the delay and "to" (inclusive). Sets %delayMs%.</summary>
+public sealed class DelaySubAction(IRandomSource? random = null) : ISubActionHandler
 {
     public string TypeId => "core.delay";
     public string Category => Categories.Core;
     public string DisplayName => "Delay";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
-        [new("milliseconds", "Milliseconds", ParameterKind.Number) { DefaultValue = "1000" }];
+    [
+        new("milliseconds", "Milliseconds", ParameterKind.Number) { DefaultValue = "1000" },
+        new("random", "Random delay", ParameterKind.Boolean) { DefaultValue = "false", Help = "Wait a random time between Milliseconds and To" },
+        new("to", "To (milliseconds)", ParameterKind.Number) { DefaultValue = "2000" },
+    ];
+
+    /// <summary>The delay to wait, in milliseconds.</summary>
+    public static int Pick(ParameterValues p, IRandomSource random)
+    {
+        var from = Math.Max(0, p.GetInt("milliseconds"));
+        if (!p.GetBool("random")) return from;
+        var to = Math.Max(0, p.GetInt("to", from));
+        var (lo, hi) = from <= to ? (from, to) : (to, from);
+        return (int)Math.Min(hi, lo + Math.Floor(random.NextDouble() * ((long)hi - lo + 1)));
+    }
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        await Task.Delay(Math.Max(0, p.GetInt("milliseconds")), ct).ConfigureAwait(false);
+        var ms = Pick(p, random ?? SystemRandomSource.Instance);
+        context.Args["delayMs"] = ms;
+        await Task.Delay(ms, ct).ConfigureAwait(false);
         return SubActionResult.Next;
     }
 }
@@ -111,31 +128,70 @@ public sealed class CommentSubAction : ISubActionHandler
     public string TypeId => Id;
     public string Category => Categories.Core;
     public string DisplayName => "Comment";
-    public IReadOnlyList<ParameterDescriptor> Parameters { get; } = [new("text", "Comment", ParameterKind.Multiline)];
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        new("text", "Comment", ParameterKind.Multiline),
+        new("color", "Colour") { Help = "Text colour in the editor, e.g. #E0A030 (blank = default)" },
+    ];
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct) =>
         Task.FromResult(SubActionResult.Next);
 }
 
-/// <summary>Releases every run waiting for the named local signal. Sets %signalWaiters% to how many were waiting.</summary>
+/// <summary>
+/// Releases every run waiting for the named local signal. Sets %signalWaiters% to how many were waiting. The signal
+/// carries %signalSender% plus, optionally, all of this run's arguments and/or the listed "name=value" arguments
+/// (the listed ones win). "Queue signal" keeps it for the next wait when nobody is waiting yet.
+/// </summary>
 public sealed class SendSignalSubAction(SignalService signals) : ISubActionHandler
 {
+    /// <summary>Run bookkeeping that never travels with a signal.</summary>
+    private static readonly string[] RunArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt"];
+
     public string TypeId => "core.sendSignal";
     public string Category => Categories.Core;
     public string DisplayName => "Send local signal";
-    public IReadOnlyList<ParameterDescriptor> Parameters { get; } = [new("name", "Signal name")];
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        new("name", "Signal name"),
+        new("includeArgs", "Include the action's arguments", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("arguments", "Arguments", ParameterKind.Multiline) { Help = "One name=value per line; always sent" },
+        new("queue", "Queue signal", ParameterKind.Boolean) { DefaultValue = "false", Help = "Keep it for a wait that has not started yet" },
+    ];
+
+    /// <summary>"name=value" lines (blank lines and lines without a name are skipped).</summary>
+    public static IEnumerable<KeyValuePair<string, string>> ParseArguments(string text)
+    {
+        foreach (var raw in text.Split('\n'))
+        {
+            var line = raw.TrimEnd('\r');
+            var eq = line.IndexOf('=');
+            var name = (eq < 0 ? line : line[..eq]).Trim().Trim('%');
+            if (name.Length == 0) continue;
+            yield return new(name, eq < 0 ? "" : line[(eq + 1)..].Trim());
+        }
+    }
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        context.Args["signalWaiters"] = signals.Send(p["name"],
-            new Dictionary<string, object?> { ["signalSender"] = context.Action.Name });
+        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        if (p.GetBool("includeArgs"))
+        {
+            foreach (var (key, value) in context.Args) payload[key] = value;
+            foreach (var key in RunArgs) payload.Remove(key);
+        }
+        foreach (var (key, value) in ParseArguments(p["arguments"])) payload[key] = value;
+        payload["signalSender"] = context.Action.Name;
+        context.Args["signalWaiters"] = signals.Send(p["name"], payload, p.GetBool("queue"));
         return Task.FromResult(SubActionResult.Next);
     }
 }
 
 /// <summary>
-/// Waits until another run sends the named local signal (only signals sent after the wait starts count).
-/// Sets %signalReceived% (true/false) and %signalSender%. On timeout it continues, or stops the action if asked.
+/// Waits until another run sends the named local signal (only signals sent after the wait starts count, unless queued).
+/// Sets %signalReceived%, %signalTimeout%, %signalName% and %hasResult% (the signal carried arguments), and copies the
+/// signal's arguments in; with "Overwrite variables" off, arguments this run already has are kept. On timeout it
+/// continues, or stops the action if asked.
 /// </summary>
 public sealed class WaitForSignalSubAction(SignalService signals) : ISubActionHandler
 {
@@ -147,6 +203,7 @@ public sealed class WaitForSignalSubAction(SignalService signals) : ISubActionHa
         new("name", "Signal name"),
         new("timeoutMs", "Timeout (ms, 0 = wait forever)", ParameterKind.Number) { DefaultValue = "0" },
         new("stopOnTimeout", "Stop the action on timeout", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("overwrite", "Overwrite variables", ParameterKind.Boolean) { DefaultValue = "true", Help = "The signal's arguments replace this run's arguments of the same name" },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
@@ -155,8 +212,17 @@ public sealed class WaitForSignalSubAction(SignalService signals) : ISubActionHa
         var payload = await signals.WaitAsync(p["name"], timeoutMs > 0 ? TimeSpan.FromMilliseconds(timeoutMs) : null, ct)
             .ConfigureAwait(false);
         context.Args["signalReceived"] = payload is not null;
+        context.Args["signalTimeout"] = payload is null;
         if (payload is null) return p.GetBool("stopOnTimeout") ? SubActionResult.Stop : SubActionResult.Next;
-        foreach (var (key, value) in payload) context.Args[key] = value;
+
+        var overwrite = p.GetBool("overwrite", true);
+        foreach (var (key, value) in payload)
+        {
+            if (overwrite || !context.Args.ContainsKey(key) || string.Equals(key, "signalSender", StringComparison.OrdinalIgnoreCase))
+                context.Args[key] = value;
+        }
+        context.Args["signalName"] = p["name"];
+        context.Args["hasResult"] = payload.Keys.Any(k => !string.Equals(k, "signalSender", StringComparison.OrdinalIgnoreCase));
         return SubActionResult.Next;
     }
 }
@@ -213,7 +279,9 @@ public sealed class GetActionStateSubAction(ProfileService profile) : ISubAction
     {
         var action = profile.Snapshot.FindAction(p["action"])
             ?? throw new InvalidOperationException($"No action named '{p["action"]}'");
-        context.Args[p["name"]] = action.Enabled;
+        // Streamer.bot always sets %actionState%; the chosen name is kept for older Cuebot actions.
+        context.Args["actionState"] = action.Enabled;
+        if (p["name"].Trim().Length > 0) context.Args[p["name"].Trim()] = action.Enabled;
         return Task.FromResult(SubActionResult.Next);
     }
 }

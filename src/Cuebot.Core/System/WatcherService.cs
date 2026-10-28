@@ -225,11 +225,21 @@ public sealed class WatcherService : IAsyncDisposable
             var transitions = _processTracker.Update(_processes.List(), watchers);
             foreach (var t in transitions)
             {
-                Publish(t.Started ? WatcherEvents.ProcessStarted : WatcherEvents.ProcessStopped, t.Watcher, new()
+                var args = new Dictionary<string, object?>
                 {
                     ["processName"] = t.Process.Name,
                     ["processId"] = t.Process.Id,
-                });
+                    // Streamer.bot names; the path is only known while the process runs.
+                    ["name"] = t.Process.Name,
+                    ["executable"] = t.Process.Name + (OperatingSystem.IsWindows() ? ".exe" : ""),
+                };
+                if (t.Started && ProcessPath(t.Process.Id) is { } fullPath)
+                {
+                    args["fullPath"] = fullPath;
+                    args["path"] = Path.GetDirectoryName(fullPath) ?? "";
+                    args["executable"] = Path.GetFileName(fullPath);
+                }
+                Publish(t.Started ? WatcherEvents.ProcessStarted : WatcherEvents.ProcessStopped, t.Watcher, args);
             }
         }
         catch (Exception ex)
@@ -239,6 +249,20 @@ public sealed class WatcherService : IAsyncDisposable
         finally
         {
             Volatile.Write(ref _processPolling, 0);
+        }
+    }
+
+    /// <summary>The executable of a running process, or null when it is gone or not accessible.</summary>
+    private static string? ProcessPath(int id)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(id);
+            return process.MainModule?.FileName;
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+        {
+            return null;
         }
     }
 
@@ -362,14 +386,50 @@ public sealed class WatcherService : IAsyncDisposable
                 ["filePath"] = path,
                 ["fileName"] = Path.GetFileName(path),
                 ["folder"] = Path.GetDirectoryName(path) ?? "",
+                // Streamer.bot names.
+                ["fullPath"] = path,
+                ["watcherFolder"] = _definition.Folder,
+                ["watcherFilter"] = _definition.Filter,
             };
             if (oldPath is not null)
             {
                 args["oldFilePath"] = oldPath;
                 args["oldFileName"] = Path.GetFileName(oldPath);
+                args["oldFullPath"] = oldPath;
             }
+            if (change == "Changed") AddContent(args, path);
             _owner.Publish(type, _definition, args);
         }
+
+        /// <summary>Streamer.bot's Changed variables: fileSize, empty, lineCount, line#, lineEscaped# (small text files only).</summary>
+        private static void AddContent(Dictionary<string, object?> args, string path)
+        {
+            try
+            {
+                var info = new FileInfo(path);
+                if (!info.Exists) return;
+                args["fileSize"] = info.Length;
+                args["empty"] = info.Length == 0;
+                if (info.Length > MaxContentBytes) return;
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream);
+                var lines = reader.ReadToEnd().Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+                if (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
+                args["lineCount"] = lines.Count;
+                for (var i = 0; i < lines.Count; i++)
+                {
+                    args["line" + i.ToString(System.Globalization.CultureInfo.InvariantCulture)] = lines[i];
+                    args["lineEscaped" + i.ToString(System.Globalization.CultureInfo.InvariantCulture)] = Uri.EscapeDataString(lines[i]);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Still being written, or locked: the event goes out without the content.
+            }
+        }
+
+        /// <summary>Changed events read the file's lines only up to this size.</summary>
+        private const long MaxContentBytes = 256 * 1024;
 
         private void OnError(Exception ex)
         {

@@ -30,7 +30,21 @@ internal static class EngineFeatures
         services.AddSingleton<ISubActionHandler, WaitForSignalSubAction>();
         services.AddSingleton<ISubActionHandler, SetActionStateSubAction>();
         services.AddSingleton<ISubActionHandler, GetActionStateSubAction>();
+        services.AddSingleton<UserPromptService>();
+        services.AddSingleton<ISubActionHandler, GetInputDialogSubAction>();
+        services.AddSingleton<ISubActionHandler, ClearActionQueueSubAction>();
+        services.AddSingleton<ISubActionHandler, SetActionQueueBlockingSubAction>();
+        services.AddSingleton<ISubActionHandler, SetActionQueuePauseSubAction>();
+        services.AddSingleton<ISubActionHandler, GetActionGroupStateSubAction>();
+        services.AddSingleton<ISubActionHandler, SetActionGroupStateSubAction>();
+        services.AddSingleton<ISubActionHandler, TriggerCustomEventSubAction>();
+        // These name triggers and steps by their display names, so they read the registry lazily (it contains them).
+        services.AddSingleton<ISubActionHandler>(sp => new SetTriggerStateSubAction(sp.GetRequiredService<ProfileService>(), LazyRegistry(sp)));
+        services.AddSingleton<ISubActionHandler>(sp => new SetSubActionStateSubAction(sp.GetRequiredService<ProfileService>(), LazyRegistry(sp)));
+        services.AddSingleton<ISubActionHandler>(sp => new SetSubActionWeightSubAction(sp.GetRequiredService<ProfileService>(), LazyRegistry(sp)));
         services.AddSingleton<ITriggerProvider, CoreTriggers>();
         return services;
     }
+
+    private static Lazy<Registry> LazyRegistry(IServiceProvider sp) => new(sp.GetRequiredService<Registry>);
 }
