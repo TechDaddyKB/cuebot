@@ -354,7 +354,9 @@ public sealed class ObsbotService : IConnectionStatus, IAsyncDisposable
     private TimeSpan SilenceLimit()
     {
         var polled = Settings.PollSeconds > 0 ? Tick * 3 : TimeSpan.MaxValue;
-        return polled < TimeSpan.FromSeconds(15) && _tickOverride is null ? TimeSpan.FromSeconds(15) : polled;
+        // A test tick override still gets a floor, so a slow machine's late reply is not taken for a lost Center.
+        var floor = _tickOverride is null ? TimeSpan.FromSeconds(15) : TimeSpan.FromSeconds(2);
+        return polled < floor ? floor : polled;
     }
 
     private void OnMessage(OscMessage message, string display)
