@@ -145,6 +145,16 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
     `userPreviousActive`; YouTubeBroadcast `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags`.
   - Kick: Subscription / Resubscription `badgeCount` (0), `badge` (empty list); KickUser `userGroups` (""),
     `userPreviousActive`; KickBroadcaster `broadcastUserProfileImage` ("") when no picture is known.
+  - Added in w18 (from Streamer.bot 1.0.7's own Test Trigger runs): Twitch sub notices `badges`, `emotes`, `color`
+    (""), `badgeCount`, `emoteCount` (0); gift bombs `isSubscribed` (false); Present Viewers `users`, `title`,
+    `viewerCount`, `startedAt` when offline. YouTube Jewels `gift.url`, `gift.altText`, `gift.altTextLanguage` (""),
+    `gift.durationInSeconds`, `tier` (0), `gift.hasVisualEffect` (false). Patreon `user.attributes.social_connections.*`
+    (null). Stream Deck Info `data.colors.*`, `data.application.font`/`platformVersion` ("") and `data.devicePixelRatio`
+    (1) when the plugin does not send them. Core Present Viewers `isLive` (false). See
+    `docs/PARITY_REVIEW.md` (Runtime variables vs Streamer.bot 1.0.7 Test Trigger dumps) for everything added then.
+- **Run arguments (w18).** Every triggered run has Streamer.bot's `__source` (its trigger code; an `EventType` inside
+  C#), `eventSource`, `triggerName`, `triggerCategory` (Streamer.bot's names where it has the trigger), `triggerId`,
+  `queueName` and `isTest`; `actionId`/`runningActionId` are Guids and `actionQueuedAt` a DateTime, as in Streamer.bot.
 - **Engine and core.** Queue sub-actions (clear, blocking, pause), Set Trigger / Sub-Action State, Set Sub-Action Weight,
   Get/Set Action Group State, Trigger Custom Event, Pick Color; Get Input is Streamer.bot's dialog (the splitter is
   "Split text into inputs"); Random Number Next Float; Delay random range; If/Else regex captures and exists / does not
