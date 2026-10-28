@@ -139,6 +139,17 @@ one. The test checks the detected API, the channel and mix lists and a request r
 `CUEBOT_LIVE_WAVELINK_CHANNEL=<channel name>` it also mutes that channel, waits for the state to change and restores it.
 Level meters are not exercised.
 
+### Game controllers
+
+`ControllerLiveTests` runs with `CUEBOT_LIVE_CONTROLLER=1` (Windows or Linux; nothing goes live, nothing rumbles or
+changes colour). It loads the real SDL3 library, starts it on its own thread and lists every connected controller (name,
+type, GUID, USB ids, rumble/LED capability, battery) in the test output; with no controller plugged in it still checks
+that SDL starts and reports "No controllers connected". With `CUEBOT_LIVE_CONTROLLER_WAIT_SECONDS=<n>` it also waits up
+to n seconds for any button press, stick movement past half way or D-pad/hat direction and checks that it arrived as a
+controller event; nothing is asked on screen, so press something on the controller once the test starts. On Linux,
+PlayStation/Switch lights and rumble need hidraw access (`steam-devices` / `game-devices-udev` udev rules); see
+`src/Cuebot.Controllers/PROTOCOL.md`.
+
 ## Running
 
 ```powershell
