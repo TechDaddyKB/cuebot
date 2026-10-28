@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Integrations"
+             xmlns:intv="using:Cuebot.App.Views.Integrations"
+             xmlns:elgv="using:Cuebot.App.Views.Elgato"
+             xmlns:wlv="using:Cuebot.App.Views.WaveLink"
+             xmlns:sdv="using:Cuebot.App.Views.StreamDeck"
+             x:Class="Cuebot.App.Views.Integrations.IntegrationsPageView"
+             x:DataType="vm:IntegrationsPageViewModel">
+  <!-- Each tab brings its own heading, scrolling and padding. -->
+  <TabControl Margin="12,8,12,0">
+    <TabItem Header="Apps &amp; services">
+      <intv:IntegrationsView DataContext="{Binding Integrations}" />
+    </TabItem>
+    <TabItem Header="Elgato lights &amp; webcams">
+      <elgv:ElgatoView DataContext="{Binding Elgato}" />
+    </TabItem>
+    <TabItem Header="Wave Link">
+      <wlv:WaveLinkView DataContext="{Binding WaveLink}" />
+    </TabItem>
+    <TabItem Header="Stream Deck">
+      <sdv:StreamDeckView DataContext="{Binding StreamDeck}" />
+    </TabItem>
+  </TabControl>
+</UserControl>

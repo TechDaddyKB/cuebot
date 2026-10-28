@@ -14,7 +14,10 @@ using Cuebot.Server;
 using Cuebot.Scripting;
 using Cuebot.Speech;
 using Cuebot.Speech.Emotes;
+using Cuebot.Elgato;
 using Cuebot.StreamApps;
+using Cuebot.StreamDeck;
+using Cuebot.WaveLink;
 using Cuebot.Twitch;
 using Cuebot.Webhooks;
 using Cuebot.YouTube;
@@ -49,8 +52,11 @@ public sealed class AppHost : IAsyncDisposable
             .AddDonations()
             .AddIntegrations()
             .AddStreamApps()
+            .AddElgato()
+            .AddWaveLink()
             .AddWebhooks()
             .AddServers()
+            .AddStreamDeck()
             .AddRelay();   // after every module, so it sees all IWebhookHandlers
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
@@ -106,6 +112,9 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Crowd Control", () => Get<Cuebot.Integrations.CrowdControl.CrowdControlService>().StartAsync()),
             StartSafely(log, "Meld Studio", () => Get<Cuebot.StreamApps.Meld.MeldStudioService>().StartAsync()),
             StartSafely(log, "PolyPop", () => Get<Cuebot.StreamApps.PolyPop.PolyPopService>().StartAsync()),
+            StartSafely(log, "Elgato Lights", () => Get<Cuebot.Elgato.Lights.ElgatoLightsService>().StartAsync()),
+            StartSafely(log, "Camera Hub", () => Get<Cuebot.Elgato.CameraHub.CameraHubService>().StartAsync()),
+            StartSafely(log, "Wave Link", () => Get<Cuebot.WaveLink.WaveLinkService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),

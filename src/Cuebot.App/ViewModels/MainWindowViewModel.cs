@@ -64,10 +64,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new Cuebot.App.ViewModels.YouTube.YouTubeViewModel(host.Get<Cuebot.YouTube.YouTubeService>()),
             new Cuebot.App.ViewModels.Kick.KickViewModel(host.Get<Cuebot.Kick.KickService>()),
             new Cuebot.App.ViewModels.Donations.DonationsViewModel(host.Get<Cuebot.Donations.DonationServices>()),
-            new Cuebot.App.ViewModels.Integrations.IntegrationsViewModel(
-                host.Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>(), host.Get<Cuebot.Integrations.Voicemod.VoicemodService>(),
-                host.Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>(), host.Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>(),
-                host.Get<Cuebot.Integrations.StreamLoots.StreamLootsService>(), host.Get<Cuebot.Integrations.CrowdControl.CrowdControlService>()),
+            new Cuebot.App.ViewModels.Integrations.IntegrationsPageViewModel(
+                new Cuebot.App.ViewModels.Integrations.IntegrationsViewModel(
+                    host.Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>(), host.Get<Cuebot.Integrations.Voicemod.VoicemodService>(),
+                    host.Get<Cuebot.Integrations.HeartRate.Pulsoid.PulsoidService>(), host.Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>(),
+                    host.Get<Cuebot.Integrations.StreamLoots.StreamLootsService>(), host.Get<Cuebot.Integrations.CrowdControl.CrowdControlService>()),
+                new Cuebot.App.ViewModels.Elgato.ElgatoViewModel(host.Get<Cuebot.Elgato.Lights.ElgatoLightsService>(),
+                    host.Get<Cuebot.Elgato.CameraHub.CameraHubService>()),
+                new Cuebot.App.ViewModels.WaveLink.WaveLinkViewModel(host.Get<Cuebot.WaveLink.WaveLinkService>()),
+                new Cuebot.App.ViewModels.StreamDeck.StreamDeckViewModel(host.Get<Cuebot.StreamDeck.StreamDeckHub>(),
+                    host.Get<Cuebot.Server.ServerManager>())),
             new Cuebot.App.ViewModels.Webhooks.WebhooksPageViewModel(
                 new Cuebot.App.ViewModels.Webhooks.WebhookServicesViewModel(host.Get<Cuebot.Webhooks.WebhookServices>()),
                 new Cuebot.App.ViewModels.Webhooks.WebhooksViewModel(host.Get<Cuebot.Relay.RelayClient>(), host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>())),
