@@ -137,7 +137,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
     Community Sub Gift `bonusGifts` (false); Stream Online `tagCount` (0), `tags` (empty list), `tagsDelimited` ("");
     Stream Update `gameBoxArt`, `oldGameBoxArt` (""); Shoutout Created `shoutoutId` (""); Shared Chat Session
     `host.isSubscribed`/`isModerator`/`isVip` (false); TwitchChat `isAction` (false); TwitchSharedChatSource
-    `source.isSubscribed`/`isModerator`/`isVip` (false); TwitchUser `subscriptionTier` (0), `userGroups` (""),
+    `source.isSubscribed`/`isModerator`/`isVip` (false); TwitchUser `subscriptionTier` ("0"), `userGroups` (""),
     `userPreviousActive`; Get User Info `targetLastActive`, `targetPreviousActive`.
   - Now real instead: Stream Online `game`/`gameId` (last known category), TwitchChat `inSharedChat` (shared chat
     session state), Present Viewers `isLive` (a stream lookup per poll); they fall back to the placeholder when unknown.
@@ -152,6 +152,14 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
     (null). Stream Deck Info `data.colors.*`, `data.application.font`/`platformVersion` ("") and `data.devicePixelRatio`
     (1) when the plugin does not send them. Core Present Viewers `isLive` (false). See
     `docs/PARITY_REVIEW.md` (Runtime variables vs Streamer.bot 1.0.7 Test Trigger dumps) for everything added then.
+  - Added in w20 (Test Trigger runs with accounts connected): Twitch `broadcasterIsOnboarded` (false, not in Helix)
+    and, until the account and channel are read at connect, `broadcasterChannel.*`, `broadcasterDescription`,
+    `broadcasterProfileUrl`, `broadcasterOfflineUrl` (""), `broadcasterCreatedAt` (default DateTime); `isModerator`,
+    `isVip`, `isSubscribed` (false) for users not seen in chat yet; Cheer `msgId`, `badges`, `emotes`, `color` (""),
+    `badgeCount`, `emoteCount` (0); Hype Train `contributors` (0 without top contributions); Raid Start `viewers` (0
+    before the first viewer count poll); poll `poll.Duration`/`DurationRemaining` (0 when not computable). Kick
+    `broadcasterChannel.*` ("" / 0) until the channel is read and `isModerator`/`isSubscribed` (false) for users not
+    seen in chat yet.
 - **Run arguments (w18).** Every triggered run has Streamer.bot's `__source` (its trigger code; an `EventType` inside
   C#), `eventSource`, `triggerName`, `triggerCategory` (Streamer.bot's names where it has the trigger), `triggerId`,
   `queueName` and `isTest`; `actionId`/`runningActionId` are Guids and `actionQueuedAt` a DateTime, as in Streamer.bot.

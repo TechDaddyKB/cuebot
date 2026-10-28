@@ -658,6 +658,7 @@ internal static class EventSubMapper
         args["cooldownEndsAt"] = e.Str("cooldown_ends_at");
 
         var contributions = e.Items("top_contributions").ToArray();
+        args["contributors"] = contributions.Length;   // Streamer.bot: the number of top contributors listed
         var top = contributions.OrderByDescending(c => c.Int("total")).FirstOrDefault();
         args["topContributor"] = top.ValueKind == JsonValueKind.Object ? top.Str("user_name") : "";
         args["topContributorTotal"] = top.ValueKind == JsonValueKind.Object ? top.Int("total") : 0;

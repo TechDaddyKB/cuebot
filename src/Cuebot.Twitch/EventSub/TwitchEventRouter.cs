@@ -57,6 +57,9 @@ internal sealed class TwitchEventRouter(
     private TwitchChatSettings? _chatSettings;
     private TwitchBroadcasterArgs? _broadcaster;
     private (string Title, string GameId, string GameName)? _channel;
+    private IReadOnlyList<string> _tags = [];
+    private readonly Dictionary<string, TwitchUserRoles> _roles = new(StringComparer.Ordinal);
+    private int? _viewers;
     private (string User, string UserName, string UserId, string Image)? _raidTarget;
     private bool? _sharedChatHost;
     private int _hypeTrainLevel;
@@ -69,10 +72,17 @@ internal sealed class TwitchEventRouter(
         lock (_gate) _chatSettings = settings;
     }
 
-    /// <summary>The broadcaster's display name and type, for Streamer.bot's broadcastUser* arguments.</summary>
+    /// <summary>The broadcaster's account (read once per connection), for Streamer.bot's broadcastUser* and broadcaster* arguments.</summary>
     public void SeedBroadcaster(TwitchUser user)
     {
-        lock (_gate) _broadcaster = new TwitchBroadcasterArgs(user.Login, user.Id, user.DisplayName, user.BroadcasterType);
+        lock (_gate)
+            _broadcaster = new TwitchBroadcasterArgs(user.Login, user.Id, user.DisplayName, user.BroadcasterType)
+            {
+                Description = user.Description,
+                ProfileImageUrl = user.ProfileImageUrl,
+                OfflineImageUrl = user.OfflineImageUrl,
+                CreatedAt = user.CreatedAt?.UtcDateTime,
+            };
     }
 
     /// <summary>Reward settings that EventSub redemptions do not carry (skipsQueue, maxPerStream...).</summary>
@@ -87,7 +97,11 @@ internal sealed class TwitchEventRouter(
     /// <summary>The current title and category, so the next stream update can report what changed.</summary>
     public void SeedChannel(TwitchChannelInfo channel)
     {
-        lock (_gate) _channel = (channel.Title, channel.GameId, channel.GameName);
+        lock (_gate)
+        {
+            _channel = (channel.Title, channel.GameId, channel.GameName);
+            _tags = channel.Tags;
+        }
     }
 
     public IReadOnlyList<BotEvent> Route(string subscriptionType, JsonElement payload, bool botSession = false)
@@ -106,15 +120,32 @@ internal sealed class TwitchEventRouter(
         primary = Remember(primary);
         var broadcaster = Broadcaster();
         return RouteCore(primary, botSession)
-            .Select(e => e.Type.StartsWith("twitch.", StringComparison.Ordinal) ? StreamerBotVariables.Apply(e, broadcaster) : e)
+            .Select(e => e.Type.StartsWith("twitch.", StringComparison.Ordinal) ? StreamerBotVariables.Apply(e, broadcaster, Roles) : e)
             .ToList();
     }
 
+    /// <summary>The broadcaster account plus the channel's current title and category.</summary>
     private TwitchBroadcasterArgs Broadcaster()
     {
         lock (_gate)
-            if (_broadcaster is { } seeded && seeded.UserId == broadcasterId()) return seeded;
-        return new TwitchBroadcasterArgs(broadcasterLogin?.Invoke() ?? "", broadcasterId());
+        {
+            var channel = _channel is { } c ? new TwitchChannelArgs(c.Title, c.GameId, c.GameName) : null;
+            if (_broadcaster is { } seeded && seeded.UserId == broadcasterId()) return seeded with { Channel = channel };
+            return new TwitchBroadcasterArgs(broadcasterLogin?.Invoke() ?? "", broadcasterId()) { Channel = channel };
+        }
+    }
+
+    /// <summary>A user's roles as last seen in chat (or from moderator / VIP changes); null when not seen.</summary>
+    private TwitchUserRoles? Roles(string userId)
+    {
+        lock (_gate) return _roles.TryGetValue(userId, out var roles) ? roles : null;
+    }
+
+    private void RememberRoles(string userId, Func<TwitchUserRoles, TwitchUserRoles> change)
+    {
+        if (userId.Length == 0) return;
+        if (_roles.Count > 20_000) _roles.Clear();
+        _roles[userId] = change(_roles.GetValueOrDefault(userId));
     }
 
     /// <summary>Values Streamer.bot reports that need memory across events: reward settings, old title, raid target...</summary>
@@ -125,6 +156,10 @@ internal sealed class TwitchEventRouter(
             switch (e.Type)
             {
                 case TwitchEventTypes.ChatMessage:
+                    // Badges are the user's roles in this channel unless the message came from another channel's shared chat.
+                    var source = Str(e, "sourceBroadcasterId");
+                    if (source.Length == 0 || source == broadcasterId())
+                        RememberRoles(Str(e, "userId"), _ => new TwitchUserRoles(Bool(e, "isModerator"), Bool(e, "isVip"), Bool(e, "isSubscriber")));
                     var id = Str(e, "messageId");
                     if (id.Length > 0 && !_messages.ContainsKey(id))
                     {
@@ -154,13 +189,29 @@ internal sealed class TwitchEventRouter(
                         a.TryAdd("globalCooldown", reward.GlobalCooldown);
                         a.TryAdd("backgroundColor", reward.BackgroundColor);
                     });
+                case TwitchEventTypes.ModeratorAdded or TwitchEventTypes.ModeratorRemoved:
+                    var mod = e.Type == TwitchEventTypes.ModeratorAdded;
+                    RememberRoles(Str(e, "userId"), r => r with { IsModerator = mod });
+                    return e;
+                case TwitchEventTypes.VipAdded or TwitchEventTypes.VipRemoved:
+                    var vip = e.Type == TwitchEventTypes.VipAdded;
+                    RememberRoles(Str(e, "userId"), r => r with { IsVip = vip });
+                    return e;
+                case TwitchEventTypes.ViewerCountUpdate:
+                    _viewers = Int(e, "viewerCount");
+                    return e;
                 case TwitchEventTypes.StreamOnline:
-                    // stream.online carries no category: the last one known (read at connect, kept by Stream Update).
+                    // stream.online carries no category or tags: the last ones known (read at connect, kept by Stream Update).
                     if (_channel is not { } live) return e;
+                    var tags = _tags;
                     return Retype(e, e.Type, a =>
                     {
                         a.TryAdd("game", live.GameName);
                         a.TryAdd("gameId", live.GameId);
+                        a.TryAdd("tags", tags.ToList());
+                        a.TryAdd("tagCount", tags.Count);
+                        a.TryAdd("tagsDelimited", string.Join(", ", tags));
+                        for (var i = 0; i < tags.Count; i++) a.TryAdd("tag" + i.ToString(CultureInfo.InvariantCulture), tags[i]);
                     });
                 case TwitchEventTypes.StreamUpdate:
                     var before = _channel;
@@ -168,8 +219,9 @@ internal sealed class TwitchEventRouter(
                     if (before is not { } old) return e;
                     return Retype(e, e.Type, a =>
                     {
-                        a["statusUpdate"] = old.Title != Str(e, "title");
-                        a["gameUpdate"] = old.GameId != Str(e, "gameId");
+                        // Streamer.bot reports these as text ("True" / "False").
+                        a["statusUpdate"] = (old.Title != Str(e, "title")).ToString();
+                        a["gameUpdate"] = (old.GameId != Str(e, "gameId")).ToString();
                         a["oldStatus"] = old.Title;
                         a["oldGameId"] = old.GameId;
                         a["oldGameName"] = old.GameName;
@@ -200,7 +252,8 @@ internal sealed class TwitchEventRouter(
                     });
                 case TwitchEventTypes.RaidStart:
                     _raidTarget = (Str(e, "user"), Str(e, "userName"), Str(e, "userId"), Str(e, "profileImageUrl"));
-                    return e;
+                    // The viewers going along: the stream's last polled viewer count.
+                    return _viewers is { } viewers && !e.Args.ContainsKey("viewers") ? Retype(e, e.Type, a => a["viewers"] = viewers) : e;
                 case TwitchEventTypes.RaidSend:
                     var sent = _raidTarget;
                     _raidTarget = null;

@@ -50,8 +50,8 @@ public sealed class StreamerBotVariableTests
         Assert.Equal("KEKW", e.Args["emotes.0.text"]);
         Assert.Equal("37226", e.Args["emotes.0.id"]);
         Assert.Equal("https://files.kick.com/emotes/37226/fullsize", e.Args["emotes.0.url"]);
-        Assert.Equal(255, e.Args["colorR"]);
-        Assert.Equal(128, e.Args["colorG"]);
+        Assert.Equal((byte)255, e.Args["colorR"]);
+        Assert.Equal((byte)128, e.Args["colorG"]);
         Assert.Equal(2, e.Args["badgeCount"]);
         Assert.Equal("subscriber", e.Args["badge.0.id"]);
         Assert.Equal(3, e.Args["badge.0.info"]);
@@ -98,7 +98,7 @@ public sealed class StreamerBotVariableTests
              "created_at":"2026-01-01T12:00:00Z"}
             """);
 
-        Assert.Equal(100L, e.Args["kicks.amount"]);
+        Assert.Equal(100m, e.Args["kicks.amount"]);
         Assert.Equal("Full Send", e.Args["kicks.name"]);
         Assert.Equal("LEVEL_UP", e.Args["kicks.type"]);
         Assert.Equal("MID", e.Args["kicks.tier"]);
@@ -184,7 +184,7 @@ public sealed class StreamerBotVariableTests
 
         var online = Publish(KickEventFactory.StreamOnline("webhook", "New", new DateTimeOffset(2026, 1, 1, 11, 0, 0, TimeSpan.Zero)));
         Assert.Equal("Games", online.Args["category.name"]);
-        Assert.Equal("2", online.Args["category.id"]);
+        Assert.Equal(2, online.Args["category.id"]);
         Assert.Equal("games.png", online.Args["category.thumbnail"]);
 
         var offline = Publish(KickEventFactory.StreamOffline("webhook"));
@@ -216,5 +216,65 @@ public sealed class StreamerBotVariableTests
 
         var chat = Publish(KickEventFactory.Chat("realtime", new KickEventFactory.ChatInput("m9", Fan, "hi", 100, null)));
         Assert.Equal(2, chat.Args["badgeCount"]);   // real values win
+    }
+
+    // ---------------------------------------------------------------- signed in: Streamer.bot 1.0.7 runs with an account connected
+
+    [Fact]
+    public void Every_event_has_the_broadcaster_channel_block()
+    {
+        var bus = new EventBus(new AppLog());
+        var hub = new KickEventHub(bus, _time, TimeSpan.FromMinutes(2))
+        {
+            Broadcaster = () => new KickBroadcasterArgs("CuebotDev", "100", "https://files.test/me.png"),
+        };
+        var published = new List<BotEvent>();
+        bus.Subscribe(published.Add);
+
+        hub.Handle(KickEventFactory.ViewerCount("api", 12));
+        var before = Assert.Single(published);
+        Assert.Equal((0, "", "", ""), (before.Args["broadcasterChannel.categoryId"], before.Args["broadcasterChannel.categoryName"],
+            before.Args["broadcasterChannel.categoryThumbnail"], before.Args["broadcasterChannel.title"]));
+
+        hub.SeedChannel(new KickChannel(100, "cuebotdev", "Hello", new KickCategory(15, "Just Chatting", "jc.png"), "", false, 0, null, "en", false, [], 0));
+        published.Clear();
+        hub.Handle(KickEventFactory.ViewerCount("api", 13));
+        var e = Assert.Single(published);
+        Assert.Equal(15, e.Args["broadcasterChannel.categoryId"]);
+        Assert.Equal("Just Chatting", e.Args["broadcasterChannel.categoryName"]);
+        Assert.Equal("jc.png", e.Args["broadcasterChannel.categoryThumbnail"]);
+        Assert.Equal("Hello", e.Args["broadcasterChannel.title"]);
+        Assert.Equal("https://files.test/me.png", e.Args["broadcastUserProfileImage"]);
+        Assert.Equal("CuebotDev", e.Args["broadcastUserName"]);
+        Assert.Equal(13, e.Args["viewerCount"]);   // Streamer.bot: Int32
+
+        // A channel update changes what the next events report.
+        published.Clear();
+        hub.Handle(KickEventFactory.ChannelUpdate("webhook", "New", "Games", 2, "en", false, "games.png"));
+        var update = published.First(p => p.Type == KickEventTypes.ChannelUpdate);
+        Assert.Equal("True", update.Args["statusUpdate"]);
+        Assert.Equal((2, "Games", "New"), (update.Args["broadcasterChannel.categoryId"], update.Args["broadcasterChannel.categoryName"],
+            update.Args["broadcasterChannel.title"]));
+    }
+
+    [Fact]
+    public void Events_without_badges_get_the_roles_last_seen_in_chat()
+    {
+        Publish(KickEventFactory.Chat("realtime", new KickEventFactory.ChatInput("m1", Fan, "hi", 100, null)));
+        var kicks = Publish(KickEventFactory.Kicks("webhook", new KickActor(5, "Fan", "fan"), 100, "Rage Quit", "LEVEL_UP", "BASIC", "gg"));
+        Assert.Equal((false, true), (kicks.Args["isModerator"], kicks.Args["isSubscribed"]));
+        Assert.Equal(100m, kicks.Args["kicks.amount"]);
+
+        var stranger = Publish(KickEventFactory.Follow("webhook", new KickActor(6, "New", "new")));
+        Assert.Equal((false, false), (stranger.Args["isModerator"], stranger.Args["isSubscribed"]));
+    }
+
+    [Fact]
+    public void Stream_times_are_datetimes()
+    {
+        var online = Publish(KickEventFactory.StreamOnline("webhook", "Live", new DateTimeOffset(2026, 1, 1, 11, 0, 0, TimeSpan.Zero)));
+        Assert.Equal(new DateTimeOffset(2026, 1, 1, 11, 0, 0, TimeSpan.Zero).LocalDateTime, Assert.IsType<DateTime>(online.Args["startedAt"]));
+        var offline = Publish(KickEventFactory.StreamOffline("webhook"));
+        Assert.IsType<DateTime>(offline.Args["startedAt"]);
     }
 }

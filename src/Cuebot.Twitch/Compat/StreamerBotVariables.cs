@@ -5,8 +5,28 @@ using T = Cuebot.Twitch.TwitchEventTypes;
 
 namespace Cuebot.Twitch.Compat;
 
-/// <summary>The broadcaster account, for Streamer.bot's <c>broadcastUser*</c> arguments on every Twitch event.</summary>
-internal sealed record TwitchBroadcasterArgs(string Login, string UserId, string DisplayName = "", string BroadcasterType = "");
+/// <summary>
+/// The broadcaster account, for Streamer.bot's <c>broadcastUser*</c> and <c>broadcaster*</c> arguments on every Twitch
+/// event. The details are read from Helix once per connection (not per event).
+/// </summary>
+internal sealed record TwitchBroadcasterArgs(string Login, string UserId, string DisplayName = "", string BroadcasterType = "")
+{
+    public string Description { get; init; } = "";
+    public string ProfileImageUrl { get; init; } = "";
+    public string OfflineImageUrl { get; init; } = "";
+
+    /// <summary>When the account was created (UTC, as Streamer.bot reports it).</summary>
+    public DateTime? CreatedAt { get; init; }
+
+    /// <summary>The channel's current title and category; null until read.</summary>
+    public TwitchChannelArgs? Channel { get; init; }
+}
+
+/// <summary>The broadcaster's channel, for Streamer.bot's <c>broadcasterChannel.*</c> arguments.</summary>
+internal sealed record TwitchChannelArgs(string Title, string GameId, string GameName);
+
+/// <summary>A user's roles in the broadcaster's chat as last seen (chat badges, moderator and VIP changes).</summary>
+internal readonly record struct TwitchUserRoles(bool IsModerator, bool IsVip, bool IsSubscriber);
 
 /// <summary>
 /// Adds Streamer.bot's documented trigger argument names (docs: <c>3.api/2.triggers/twitch/**</c> and the
@@ -16,17 +36,19 @@ internal sealed record TwitchBroadcasterArgs(string Login, string UserId, string
 /// </summary>
 internal static class StreamerBotVariables
 {
-    public static BotEvent Apply(BotEvent e, TwitchBroadcasterArgs? broadcaster = null)
+    /// <param name="roles">The roles last seen for a user id (null when unknown), for events without chat badges.</param>
+    public static BotEvent Apply(BotEvent e, TwitchBroadcasterArgs? broadcaster = null, Func<string, TwitchUserRoles?>? roles = null)
     {
         var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase);
-        Apply(e.Type, args, broadcaster, e.Time);
+        Apply(e.Type, args, broadcaster, e.Time, roles);
         return new BotEvent(e.Type, args);
     }
 
-    internal static void Apply(string type, Dictionary<string, object?> a, TwitchBroadcasterArgs? broadcaster, DateTimeOffset at)
+    internal static void Apply(string type, Dictionary<string, object?> a, TwitchBroadcasterArgs? broadcaster, DateTimeOffset at,
+        Func<string, TwitchUserRoles?>? roles = null)
     {
         Broadcaster(a, broadcaster);
-        User(a);
+        User(a, roles);
         if (IsChat(type, a)) Chat(type, a);
         SharedChatSource(a);
 
@@ -56,7 +78,8 @@ internal static class StreamerBotVariables
                 break;
             case T.SubGift or T.SharedChatSubGift:
                 Alias(a, "recipientId", "recipientUserId");
-                Alias(a, "monthsGifted", "durationMonths");
+                // Streamer.bot reports the gifted months as text ("3").
+                if (a.ContainsKey("durationMonths")) Set(a, "monthsGifted", Number(a, "durationMonths").ToString(CultureInfo.InvariantCulture));
                 Alias(a, "totalSubsGifted", "cumulativeTotal");
                 Alias(a, "anonymous", "isAnonymous");
                 Set(a, "fromGiftBomb", Text(a, "communityGiftId").Length > 0);
@@ -97,6 +120,11 @@ internal static class StreamerBotVariables
                 break;
 
             case T.HypeTrainStart or T.HypeTrainUpdate or T.HypeTrainLevelUp or T.HypeTrainEnd:
+                ToTime(a, "startedAt");
+                ToTime(a, "expiresAt");
+                if (type != T.HypeTrainEnd && a.GetValueOrDefault("startedAt") is DateTime trainStarted
+                    && a.GetValueOrDefault("expiresAt") is DateTime trainExpires)
+                    Set(a, "duration", (int)Math.Round((trainExpires - trainStarted).TotalSeconds));
                 Alias(a, "id", "hypeTrainId");
                 Alias(a, "isGoldenKappaTrain", "isGoldenKappa");
                 Set(a, "isTreasureTrain", Text(a, "trainType").Equals("treasure", StringComparison.OrdinalIgnoreCase));
@@ -133,6 +161,16 @@ internal static class StreamerBotVariables
                 Alias(a, "moderator.userName", "moderator");
                 Alias(a, "moderator.login", "moderatorUserName");
                 Alias(a, "moderator.id", "moderatorUserId");
+                Alias(a, "low_trust_status", "lowTrustStatus"); // sic: Streamer.bot's spelling
+                break;
+            case T.SuspiciousUserMessage:
+                Alias(a, "low_trust_status", "lowTrustStatus");
+                break;
+            case T.UnbanRequestApproved or T.UnbanRequestDenied:
+                Alias(a, "message", "resolutionText");
+                Alias(a, "moderatorId", "moderatorUserId");
+                Alias(a, "moderatorUsername", "moderatorUserName");
+                Alias(a, "moderatorDisplayName", "moderator");
                 break;
             case T.BlockedTermsAdded or T.BlockedTermsDeleted or T.PermittedTermsAdded or T.PermittedTermsDeleted:
                 Alias(a, "moderatorUsername", "userName");
@@ -142,6 +180,8 @@ internal static class StreamerBotVariables
                 for (var i = 0; a.ContainsKey($"term.{i}"); i++) Alias(a, $"term.[{i}]", $"term.{i}"); // the docs' spelling
                 break;
             case T.ShoutoutCreated:
+                ToTime(a, "cooldownEndsAt");
+                ToTime(a, "targetCooldownEndsAt");
                 Alias(a, "targetUserId", "userId");
                 Alias(a, "targetUserLogin", "userName");
                 Alias(a, "targetUserDisplayName", "user");
@@ -156,12 +196,14 @@ internal static class StreamerBotVariables
                 break;
             case T.UnbanRequestCreated:
                 Alias(a, "text", "message");
+                ToTime(a, "createdAt");
                 break;
             case T.AutomodMessageHeld or T.AutomodMessageUpdated:
                 AddInput(a, Text(a, "message"));
                 break;
 
             case T.RaidStart or T.RaidSend:
+                Alias(a, "viewers", "viewerCount");
                 Alias(a, "raidUser", "user");
                 Alias(a, "raidUserName", "userName");
                 Alias(a, "raidUserId", "userId");
@@ -198,6 +240,14 @@ internal static class StreamerBotVariables
 
             case T.Announcement or T.SharedChatAnnouncement:
                 Alias(a, "announceColor", "announcementColor");
+                Placeholder(a, "fromSharedChat", type == T.SharedChatAnnouncement);
+                break;
+            case T.Modiversary:
+                Placeholder(a, "fromSharedChat", false);
+                break;
+            case T.Cheer:
+                Alias(a, "anonymous", "isAnonymous");
+                Cheermotes(a);
                 break;
             case T.SubscriberModeOn or T.SubscriberModeOff or T.UniqueModeOn or T.UniqueModeOff or T.ChatSettingsUpdated:
             case T.EmoteModeOn or T.EmoteModeOff or T.FollowerModeOn or T.FollowerModeOff or T.FollowerModeChanged:
@@ -212,6 +262,8 @@ internal static class StreamerBotVariables
                 Alias(a, "host.userName", "user");
                 break;
             case T.GuestStarGuestUpdate:
+                // Streamer.bot types the slot as a number.
+                if (int.TryParse(Text(a, "slotId"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var slot)) a["slotId"] = slot;
                 Alias(a, "moderatorUserLogin", "moderatorUserName");
                 Alias(a, "guestUserName", "user");
                 Alias(a, "guestUserLogin", "userName");
@@ -234,7 +286,7 @@ internal static class StreamerBotVariables
     {
         if (Text(a, "userId").Length > 0)
         {
-            Placeholder(a, "subscriptionTier", 0);          // TwitchUser: number (1000/2000/3000) when subscribed
+            Placeholder(a, "subscriptionTier", "0");        // TwitchUser: text ("1000"/"2000"/"3000") when subscribed
             Placeholder(a, "userGroups", "");               // TwitchUser: comma-delimited groups (Streamer.bot user database)
             Placeholder(a, "userPreviousActive", default(DateTime));
         }
@@ -265,6 +317,21 @@ internal static class StreamerBotVariables
             case T.GiftBomb or T.SharedChatGiftBomb:
                 Placeholder(a, "bonusGifts", false);
                 Placeholder(a, "isSubscribed", false);
+                break;
+            case T.Cheer:
+                // channel.cheer is not a chat message: no message id, badges, emotes or color.
+                Placeholder(a, "msgId", "");
+                Placeholder(a, "color", "");
+                Placeholder(a, "badges", "");
+                Placeholder(a, "badgeCount", 0);
+                Placeholder(a, "emotes", "");
+                Placeholder(a, "emoteCount", 0);
+                break;
+            case T.HypeTrainStart or T.HypeTrainUpdate or T.HypeTrainLevelUp or T.HypeTrainEnd:
+                Placeholder(a, "contributors", 0);
+                break;
+            case T.RaidStart:
+                Placeholder(a, "viewers", 0);
                 break;
             case T.StreamOnline:
                 Placeholder(a, "game", "");
@@ -313,24 +380,52 @@ internal static class StreamerBotVariables
         Set(a, "messageStripped", Strip(message, Text(a, "emoteNames")));
     }
 
-    /// <summary>TwitchBroadcaster: broadcastUser, broadcastUserName, broadcastUserId, broadcastIsAffiliate, broadcastIsPartner.</summary>
+    /// <summary>
+    /// TwitchBroadcaster: broadcastUser, broadcastUserName, broadcastUserId, broadcastIsAffiliate, broadcastIsPartner;
+    /// and the account block Streamer.bot adds to every event of a connected account: broadcasterChannel.gameId,
+    /// .gameName, .title, broadcasterCreatedAt, broadcasterDescription, broadcasterIsAffiliate, broadcasterIsPartner,
+    /// broadcasterIsOnboarded, broadcasterProfileUrl, broadcasterOfflineUrl. Values not read yet are neutral.
+    /// </summary>
     private static void Broadcaster(Dictionary<string, object?> a, TwitchBroadcasterArgs? b)
     {
         if (b is null || b.UserId.Length == 0) return;
         Set(a, "broadcastUser", b.DisplayName.Length > 0 ? b.DisplayName : b.Login);
         Set(a, "broadcastUserName", b.Login);
         Set(a, "broadcastUserId", b.UserId);
-        if (b.BroadcasterType.Length == 0 && b.DisplayName.Length == 0) return;
-        Set(a, "broadcastIsAffiliate", b.BroadcasterType == "affiliate");
-        Set(a, "broadcastIsPartner", b.BroadcasterType == "partner");
+        if (b.BroadcasterType.Length > 0 || b.DisplayName.Length > 0)
+        {
+            Set(a, "broadcastIsAffiliate", b.BroadcasterType == "affiliate");
+            Set(a, "broadcastIsPartner", b.BroadcasterType == "partner");
+        }
+        Set(a, "broadcasterChannel.gameId", b.Channel?.GameId ?? "");
+        Set(a, "broadcasterChannel.gameName", b.Channel?.GameName ?? "");
+        Set(a, "broadcasterChannel.title", b.Channel?.Title ?? "");
+        Set(a, "broadcasterCreatedAt", b.CreatedAt ?? default);
+        Set(a, "broadcasterDescription", b.Description);
+        Set(a, "broadcasterIsAffiliate", b.BroadcasterType == "affiliate");
+        Set(a, "broadcasterIsPartner", b.BroadcasterType == "partner");
+        Placeholder(a, "broadcasterIsOnboarded", false);   // not in Helix
+        Set(a, "broadcasterProfileUrl", b.ProfileImageUrl);
+        Set(a, "broadcasterOfflineUrl", b.OfflineImageUrl);
     }
 
-    /// <summary>TwitchUser: userType, isSubscribed and badgeCount where the event has a user.</summary>
-    private static void User(Dictionary<string, object?> a)
+    /// <summary>
+    /// TwitchUser: userType, isSubscribed, isModerator, isVip and badgeCount where the event has a user. Events without
+    /// chat badges get the roles last seen for the user (false when not seen).
+    /// </summary>
+    private static void User(Dictionary<string, object?> a, Func<string, TwitchUserRoles?>? roles)
     {
-        if (Text(a, "userId").Length == 0 && !a.ContainsKey("isAnonymous")) return;
+        var userId = Text(a, "userId");
+        if (userId.Length == 0 && !a.ContainsKey("isAnonymous")) return;
         Set(a, "userType", "twitch");
         Alias(a, "isSubscribed", "isSubscriber");
+        if (userId.Length > 0)
+        {
+            var known = roles?.Invoke(userId);
+            Set(a, "isModerator", known?.IsModerator ?? false);
+            Set(a, "isVip", known?.IsVip ?? false);
+            Set(a, "isSubscribed", known?.IsSubscriber ?? false);
+        }
         if (a.TryGetValue("badges", out var badges) && badges is string list)
             Set(a, "badgeCount", list.Split(',', StringSplitOptions.RemoveEmptyEntries).Length);
     }
@@ -404,6 +499,15 @@ internal static class StreamerBotVariables
         }
     }
 
+    /// <summary>cheerEmotes (Cuebot's comma separated list of the message's cheermotes, "Cheer100,Kappa50") and cheerEmoteCount.</summary>
+    private static void Cheermotes(Dictionary<string, object?> a)
+    {
+        if (Number(a, "bits") <= 0) return;
+        var found = Text(a, "message").Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(IsCheermote).ToList();
+        Set(a, "cheerEmotes", string.Join(',', found));
+        Set(a, "cheerEmoteCount", found.Count);
+    }
+
     private static void RaidImage(Dictionary<string, object?> a)
     {
         Alias(a, "raidUserProfileImageURL", "profileImageUrl");
@@ -425,6 +529,11 @@ internal static class StreamerBotVariables
             Set(a, "poll.Duration", (int)Math.Round((ends - started).TotalSeconds));
             Set(a, "poll.DurationRemaining", ended ? 0 : (int)Math.Max(0, Math.Round((ends - at.LocalDateTime).TotalSeconds)));
         }
+        // channel.poll.end has no ends_at: the time the poll ran.
+        if (ended && Time(a.GetValueOrDefault("startedAt")) is { } began && a.GetValueOrDefault("poll.endedAt") is DateTime finished)
+            Set(a, "poll.Duration", (int)Math.Max(0, Math.Round((finished - began).TotalSeconds)));
+        Placeholder(a, "poll.Duration", 0);
+        Placeholder(a, "poll.DurationRemaining", 0);
         var count = (int)Number(a, "choiceCount");
         Set(a, "poll.choices.count", count);
         long votes = 0, rewardVotes = 0, total = 0;
@@ -498,11 +607,13 @@ internal static class StreamerBotVariables
     internal static string StripCheermotes(string message, bool hasBits)
     {
         if (!hasBits) return message.Trim();
-        static bool IsCheermote(string w)
-        {
-            var digits = w.Length - w.AsSpan().TrimEnd("0123456789").Length;
-            return digits > 0 && digits < w.Length && char.IsLetter(w[0]);
-        }
         return string.Join(' ', message.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(w => !IsCheermote(w)));
+    }
+
+    /// <summary>A word that is a cheermote: letters followed by a bit count ("Cheer100", "Kappa50").</summary>
+    private static bool IsCheermote(string w)
+    {
+        var digits = w.Length - w.AsSpan().TrimEnd("0123456789").Length;
+        return digits > 0 && digits < w.Length && char.IsLetter(w[0]);
     }
 }
