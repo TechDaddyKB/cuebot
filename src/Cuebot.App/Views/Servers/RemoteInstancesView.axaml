@@ -25,7 +25,7 @@
           <DataTemplate DataType="sv:RemoteInstanceViewModel">
             <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,1,0,0" Padding="0,8">
               <StackPanel Spacing="6">
-                <Grid ColumnDefinitions="180,8,*,8,110,8,*" RowDefinitions="Auto,Auto">
+                <Grid ColumnDefinitions="180,8,*,8,140,8,*" RowDefinitions="Auto,Auto">
                   <TextBlock Text="Name" />
                   <TextBlock Grid.Column="2" Text="Host or URL" />
                   <TextBlock Grid.Column="4" Text="API port" />
