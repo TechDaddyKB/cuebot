@@ -110,7 +110,7 @@ has an enabled Mouse Click trigger.
 | WebSocket server (22 requests, ~500 event types, auth) | ✅ | 3 | all requests; events mapped to Streamer.bot source/type names; verified against the real `@streamerbot/client` |
 | HTTP server (6 endpoints), UDP server (`DoAction`) | ✅ | 3 | localhost-only and off by default; origin checks |
 | Custom WebSocket servers/clients | ✅ | 3 | triggers, sub-actions, script functions |
-| Import/export (own format) + Streamer.bot import string importer | 🟡 | 4 | Cuebot bundles ✅ (string + .cuebot file, preview, conflicts, remapping). Streamer.bot strings: the wrapper is read, but its numeric type codes are undocumented, so most items import as disabled placeholders (extendable via `streamerbot-mapping.json`) |
+| Import/export (own format) + Streamer.bot import string importer | 🟡 | 4 | Cuebot bundles ✅ (string + .cuebot file, preview, conflicts, remapping). Streamer.bot strings: every export layout seen (format v3–v24, flat and nested groups, old and new if/else); 58 sub-action and 30 trigger type codes mapped from public exports only (docs, starter pack, 157 community exports; see `docs/streamerbot-import-codes.md`), about 98% of sub-actions and 72% of triggers on the public samples; C# source recovered and always imported disabled; 14 sub-action and 15 trigger codes are medium confidence (flagged in the import report) until checked against a real Streamer.bot; unknown codes import as disabled placeholders (extendable via `streamerbot-mapping.json`) |
 | Local REST API (`/api/v1`, OpenAPI 3.1, SSE events) + MCP server (2025-06-18; 32 tools, resources, prompts; HTTP + `--mcp-stdio`) | ➕ ✅ | 5 | off by default, localhost, bearer token, confirmation for destructive tools |
 | In-app AI assistant (user connects their own AI provider) | ➕ | 6 | builds on the MCP tools |
 | Crash / problem reporting with info gatherer | ➕ ✅ | 5 | crash file + next-start banner, scrubbed report preview, GitHub issue link or `gh` |
@@ -149,7 +149,7 @@ has an enabled Mouse Click trigger.
 3. **Done (gaps in the tables above) — platforms & APIs:** full Twitch, YouTube, Kick; OBS completion; Streamer.bot-compatible WebSocket/HTTP/UDP servers,
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
-   import/export, action history and copy/paste/undo, app shortcuts; left: Streamer.bot type-code mapping (needs real exports).
+   import/export, action history and copy/paste/undo, app shortcuts; Streamer.bot type codes mapped from public exports (medium-confidence codes still to confirm).
 5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop + T.I.T.S. + Lumia + mtion + OBSBOT 🟡, StreamFog ❌ (no public API); Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control 🟡, game controllers 🟡 (built, not yet tried on real hardware); remote signals between instances ✅.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
