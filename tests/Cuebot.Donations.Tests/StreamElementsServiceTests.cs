@@ -117,12 +117,19 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
     [Fact]
     public async Task Astro_unauthorized_response_is_an_error_without_the_token()
     {
+        // Recorded as it happens: the error only lasts until the (fast) retry, too short to poll for on a slow runner.
+        var rejected = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _service.StatusChanged += () =>
+        {
+            if (_service.State == ConnectionState.Error && _service.StatusMessage is var message && message.Contains("rejected"))
+                rejected.TrySetResult(message);
+        };
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
         var subscribe = JsonDocument.Parse(await socket.NextSentAsync()).RootElement;
         socket.Push($$$"""{"id":"e","type":"response","nonce":"{{{subscribe.GetProperty("nonce").GetString()}}}","error":"err_unauthorized","data":{"message":"invalid token"}}""");
-        await Wait.UntilAsync(() => _service.State == ConnectionState.Error && _service.StatusMessage.Contains("rejected"), "error");
-        Assert.Contains("rejected", _service.StatusMessage);
+        var status = await rejected.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.DoesNotContain(Jwt, status, StringComparison.Ordinal);
         Assert.DoesNotContain(_log.Recent(), e => e.Message.Contains(Jwt, StringComparison.Ordinal));
     }
 
