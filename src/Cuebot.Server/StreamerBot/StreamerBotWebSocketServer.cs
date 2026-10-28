@@ -55,6 +55,9 @@ public sealed class StreamerBotWebSocketServer : IWebSocketHandler, IAsyncDispos
         return SendEventAsync(name, message);
     }
 
+    /// <summary>Whether any connected session is subscribed to <paramref name="name"/> (lets callers skip building costly payloads).</summary>
+    public bool HasSubscribers(StreamerBotEventName name) => _sessions.Values.Any(s => s.IsSubscribed(name));
+
     /// <summary>Sends an event (already in envelope form) to subscribed, authorized sessions.</summary>
     public async Task<int> SendEventAsync(StreamerBotEventName name, JsonObject message)
     {

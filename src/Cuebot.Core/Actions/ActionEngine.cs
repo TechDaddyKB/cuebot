@@ -15,7 +15,23 @@ public sealed record ActionRunRecord(string ActionName, string Source, bool Succ
 
     /// <summary>The action is marked "Exclude from history"; dashboards may want to hide it too.</summary>
     public bool ExcludedFromHistory { get; init; }
+
+    public Guid ActionId { get; init; }
+    public DateTimeOffset QueuedAt { get; init; }
+    public DateTimeOffset? StartedAt { get; init; }
+    public DateTimeOffset CompletedAt { get; init; }
+
+    /// <summary>The run's arguments when it finished (a copy).</summary>
+    public IReadOnlyDictionary<string, object?>? Arguments { get; init; }
 }
+
+/// <summary>A run is starting (after any queue wait). <see cref="Args"/> is the live dictionary: copy it before leaving the handler.</summary>
+public sealed record ActionRunStart(Guid RunId, ActionDefinition Action, string Source, int Depth, DateTimeOffset QueuedAt,
+    DateTimeOffset StartedAt, IReadOnlyDictionary<string, object?> Args);
+
+/// <summary>A sub-action is about to run. <see cref="Args"/> is the live dictionary: copy it before leaving the handler.</summary>
+public sealed record SubActionStart(ActionDefinition Action, SubActionDefinition Step, ISubActionHandler Handler,
+    IReadOnlyDictionary<string, object?> Args);
 
 /// <summary>Matches events to triggers, queues runs and executes actions' flow trees.</summary>
 public sealed class ActionEngine : IDisposable
@@ -53,6 +69,12 @@ public sealed class ActionEngine : IDisposable
 
     /// <summary>Raised when any run (including nested and excluded ones) finishes, on the run's thread.</summary>
     public event Action<ActionRunRecord>? RunCompleted;
+
+    /// <summary>Raised when any run starts executing (after its queue), on the run's thread.</summary>
+    public event Action<ActionRunStart>? RunStarted;
+
+    /// <summary>Raised before each sub-action (including flow containers) runs, on the run's thread.</summary>
+    public event Action<SubActionStart>? SubActionStarting;
 
     public QueueService Queues { get; }
     public ActionHistory History { get; }
@@ -203,6 +225,7 @@ public sealed class ActionEngine : IDisposable
         var watch = new Stopwatch();
         string? error = null;
         var state = ActionRunState.Failed;
+        DateTimeOffset? startedAtValue = null;
         try
         {
             if (depth == 0)
@@ -213,11 +236,13 @@ public sealed class ActionEngine : IDisposable
             }
 
             watch.Start();
+            var startedAt = DateTimeOffset.Now;
+            startedAtValue = startedAt;
             if (tracked)
             {
-                var startedAt = DateTimeOffset.Now;
                 History.Update(runId, e => e with { State = ActionRunState.Running, StartedAt = startedAt });
             }
+            RunStarted?.Invoke(new ActionRunStart(runId, action, source, depth, queuedAt, startedAt, runArgs));
             var context = new ActionRunContext(action, runArgs, this, _globals, _log, depth);
             await RunBodyAsync(context, action, linked.Token).ConfigureAwait(false);
             state = ActionRunState.Completed;
@@ -245,17 +270,17 @@ public sealed class ActionEngine : IDisposable
             watch.Stop();
             lease?.Dispose();
             _active.TryRemove(runId, out _);
+            var completedAt = DateTimeOffset.Now;
+            var after = tracked || RunCompleted is not null ? Copy(runArgs) : null;
             if (tracked)
             {
-                var completedAt = DateTimeOffset.Now;
-                var after = Copy(runArgs);
                 History.Update(runId, e => e with
                 {
                     State = state,
                     CompletedAt = completedAt,
                     Duration = watch.Elapsed,
                     Error = error,
-                    ArgsAfterRun = after,
+                    ArgsAfterRun = after ?? Copy(runArgs),
                 });
             }
             RunCompleted?.Invoke(new ActionRunRecord(action.Name, source, state == ActionRunState.Completed, watch.Elapsed, error)
@@ -264,6 +289,11 @@ public sealed class ActionEngine : IDisposable
                 Queue = queue,
                 State = state,
                 ExcludedFromHistory = !tracked,
+                ActionId = action.Id,
+                QueuedAt = queuedAt,
+                StartedAt = startedAtValue,
+                CompletedAt = completedAt,
+                Arguments = after,
             });
         }
         return state == ActionRunState.Completed;
@@ -362,6 +392,7 @@ public sealed class ActionEngine : IDisposable
         ct.ThrowIfCancellationRequested();
         var handler = _registry.GetSubAction(step.Type)
             ?? throw new InvalidOperationException($"Unknown sub-action type '{step.Type}' (is its module installed?)");
+        SubActionStarting?.Invoke(new SubActionStart(context.Action, step, handler, context.Args));
 
         if (handler is IFlowContainerHandler container)
         {
