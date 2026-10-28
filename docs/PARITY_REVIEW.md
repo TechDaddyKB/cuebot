@@ -550,10 +550,8 @@ Streamer.bot Speaker.bot sub-actions.
 
 - F · `/shutdown` (also `--shutdown`): asks the instance running on the data folder, windowed or headless, to quit (w14-core) — `GD:05.advanced/02.switches.md`
 - F · Cloud backups (upload, restore from cloud): Google Drive instead of a Streamer.bot account (w16). Every backup is uploaded to a "Cuebot Backups" folder (`drive.file` scope, the user's own "Desktop app" OAuth client), the newest N are kept, and Settings > Google Drive lists and restores them — `GD:01.core/10.backup.md`
-- P · Keyboard shortcuts (not changed in w14-core):
-  - Actions view: no Ctrl+R rename group or Ctrl+Home/End to move a sub-action to the top or bottom.
-  - Commands, Timers, MIDI, Voice Control and Quotes views: none of the documented Delete / Ctrl+O / Ctrl+C / Ctrl+R shortcuts.
-  - Source: `GD:05.advanced/01.shortcuts.md`
+- F · Keyboard shortcuts (w16): Actions view Ctrl+R (rename the selected group) and Ctrl+Home/End (move a sub-action to the top or bottom); Commands view Delete, Ctrl+O, Ctrl+C (copy id), Ctrl+R (rename group), Ctrl+* / Ctrl+- (expand / collapse all; groups are now collapsible); Timers Delete, Ctrl+O; MIDI In/Out Delete, events Ctrl+O; Voice Control Delete, Ctrl+Up/Down/Home/End; Quotes Delete; Twitch Channel Point Rewards Delete, Ctrl+A, Ctrl+D, Ctrl+O. All listed under Settings > About — `GD:05.advanced/01.shortcuts.md`
+- P · Hot Keys page (old wiki): no hotkey groups or "Set Action" context menu; hotkeys are added, edited, recorded and removed on the page — `WIKI:hotkeys.md`
 - Not applicable: `/nologin` and `/nowebview2` (no Streamer.bot login or WebView2 in Cuebot).
 
 ## Notes for whoever acts on this

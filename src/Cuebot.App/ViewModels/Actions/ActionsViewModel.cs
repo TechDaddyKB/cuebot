@@ -292,6 +292,12 @@ public sealed partial class ActionsViewModel : PageViewModel
     private void MoveDown() => SelectedAction?.MoveSelected(1);
 
     [RelayCommand]
+    private void MoveToTop() => SelectedAction?.MoveSelectedToEdge(top: true);
+
+    [RelayCommand]
+    private void MoveToBottom() => SelectedAction?.MoveSelectedToEdge(top: false);
+
+    [RelayCommand]
     private void AutoArrange() => SelectedAction?.ClearLayout();
 
     [RelayCommand]

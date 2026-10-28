@@ -15,7 +15,7 @@
               <Button Content="Load from Twitch" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}" />
               <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" />
             </WrapPanel>
-            <ListBox Classes="list" ItemsSource="{Binding Rewards}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="560">
+            <ListBox x:Name="RewardList" Classes="list" ItemsSource="{Binding Rewards}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="560">
               <ListBox.ItemTemplate>
                 <DataTemplate DataType="tw:TwitchRewardItem">
                   <StackPanel>

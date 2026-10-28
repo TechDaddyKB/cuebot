@@ -319,6 +319,14 @@ public sealed partial class ActionItemViewModel : ObservableObject
         if (Selected is SubActionItemViewModel step) step.Parent.Move(step, delta);
     }
 
+    /// <summary>Moves the selected sub-action to the top or bottom of its list (Ctrl+Home / Ctrl+End).</summary>
+    public void MoveSelectedToEdge(bool top)
+    {
+        if (Selected is not SubActionItemViewModel step) return;
+        var index = step.Parent.Items.IndexOf(step);
+        if (index >= 0) step.Parent.Move(step, top ? -index : step.Parent.Items.Count - 1 - index);
+    }
+
     /// <summary>Forget all node positions so the graph editor lays the action out automatically.</summary>
     public void ClearLayout()
     {

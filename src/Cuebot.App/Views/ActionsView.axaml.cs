@@ -13,7 +13,8 @@ namespace Cuebot.App.Views;
 /// Actions page. Editor shortcuts (outside text fields, where the field's own clipboard and undo apply):
 /// Ctrl+C copy (the action when the action list has focus, else the selected trigger/sub-action), Ctrl+V paste,
 /// Ctrl+D duplicate, Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo, Delete removes the selected trigger/sub-action (in the
-/// action list: the action, on a second press), Ctrl+O turns the selection on/off, Ctrl+Up/Down move a sub-action.
+/// action list: the action, on a second press), Ctrl+O turns the selection on/off, Ctrl+Up/Down move a sub-action, Ctrl+Home/End move it to the top/bottom, Ctrl+R
+/// renames the selected group.
 /// F5 (test trigger) is a window shortcut. The list is <see cref="Cuebot.App.Shell.AppShortcuts.Actions"/>.
 /// </summary>
 public partial class ActionsView : UserControl
@@ -131,6 +132,14 @@ public partial class ActionsView : UserControl
                 e.Handled = true;
                 (e.Key == Key.Up ? vm.MoveUpCommand : vm.MoveDownCommand).Execute(null);
                 break;
+            case Key.Home or Key.End when command && !inActionList && vm.SelectedAction?.Selected is SubActionItemViewModel:
+                e.Handled = true;
+                (e.Key == Key.Home ? vm.MoveToTopCommand : vm.MoveToBottomCommand).Execute(null);
+                break;
+            case Key.R when command && !inActionList && vm.SelectedAction?.Selected is SubActionItemViewModel { IsGroup: true }:
+                e.Handled = true;
+                RenameSelectedGroup();
+                break;
             case Key.O when command:
                 e.Handled = true;
                 vm.ToggleEnabled(wholeAction: inActionList);
@@ -140,6 +149,16 @@ public partial class ActionsView : UserControl
                 vm.DeleteActionWithConfirm();
                 break;
         }
+    }
+
+    /// <summary>Ctrl+R: puts the cursor in the selected group's name field (Streamer.bot's "Rename Group").</summary>
+    private void RenameSelectedGroup()
+    {
+        var field = this.GetVisualDescendants().OfType<TextBox>()
+            .FirstOrDefault(t => t.DataContext is TextParameterViewModel { Descriptor.Key: "name" } && t.IsEffectivelyVisible);
+        if (field is null) return;
+        field.Focus();
+        field.SelectAll();
     }
 
     private void OnPickerDoubleTapped(object? sender, TappedEventArgs e) => ViewModel?.Picker.ConfirmCommand.Execute(null);

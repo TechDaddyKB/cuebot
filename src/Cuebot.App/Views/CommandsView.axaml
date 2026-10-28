@@ -6,7 +6,7 @@
              x:Name="Root">
   <Grid ColumnDefinitions="320,*">
     <!-- Command list, grouped -->
-    <Border Background="{DynamicResource CuebotPanel}" BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,0,1,0">
+    <Border x:Name="CommandList" Focusable="True" Background="{DynamicResource CuebotPanel}" BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,0,1,0">
       <DockPanel Margin="12">
         <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Commands" />
         <TextBox DockPanel.Dock="Top" PlaceholderText="Search commands" Text="{Binding Filter}" Margin="0,0,0,8" />
@@ -21,11 +21,15 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate DataType="vm:CommandGroupViewModel">
                 <StackPanel Margin="0,0,0,8">
-                  <CheckBox IsChecked="{Binding Enabled}" IsThreeState="False" Margin="4,0"
-                            ToolTip.Tip="Enable or disable every command in this group">
-                    <TextBlock Text="{Binding Header}" FontWeight="SemiBold" Classes="muted" FontSize="13" />
-                  </CheckBox>
-                  <ItemsControl ItemsSource="{Binding Commands}">
+                  <StackPanel Orientation="Horizontal">
+                    <Button Classes="row" Content="{Binding Chevron}" Command="{Binding ToggleExpandedCommand}" Padding="4,0" MinWidth="0"
+                            ToolTip.Tip="Collapse or expand this group (Ctrl+- / Ctrl+* for all)" />
+                    <CheckBox IsChecked="{Binding Enabled}" IsThreeState="False" Margin="4,0"
+                              ToolTip.Tip="Enable or disable every command in this group">
+                      <TextBlock Text="{Binding Header}" FontWeight="SemiBold" Classes="muted" FontSize="13" />
+                    </CheckBox>
+                  </StackPanel>
+                  <ItemsControl ItemsSource="{Binding Commands}" IsVisible="{Binding IsExpanded}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate DataType="vm:CommandRowViewModel">
                         <Button Classes="row" Classes.selected="{Binding IsSelected}"

@@ -44,7 +44,7 @@
       <TextBlock Grid.Column="5" Classes="muted" Text="PLATFORM" />
     </Grid>
     <Grid>
-      <ListBox ItemsSource="{Binding Quotes}">
+      <ListBox x:Name="QuoteList" ItemsSource="{Binding Quotes}">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:QuoteRowViewModel">
             <Grid ColumnDefinitions="60,*,150,170,90,80,Auto">
