@@ -65,6 +65,78 @@ public sealed class CooldownTracker(TimeProvider? time = null)
         }
     }
 
+    /// <summary>
+    /// Adds time to the global cooldown (<paramref name="userId"/> null) or one user's, starting it from now when it
+    /// is not running. Streamer.bot's CommandAddToGlobalCooldown / CommandAddToUserCooldown.
+    /// </summary>
+    public void Extend(string key, string? userId, TimeSpan amount)
+    {
+        if (amount <= TimeSpan.Zero) return;
+        lock (_gate)
+        {
+            var now = _time.GetUtcNow();
+            var slot = (key, userId is null ? "" : "user:" + userId);
+            _readyAt[slot] = now + Remaining(slot, now) + amount;
+        }
+    }
+
+    /// <summary>Adds time to every running user cooldown of <paramref name="key"/>.</summary>
+    public void ExtendUsers(string key, TimeSpan amount)
+    {
+        if (amount <= TimeSpan.Zero) return;
+        lock (_gate)
+        {
+            var now = _time.GetUtcNow();
+            foreach (var slot in RunningUserSlots(key, now)) _readyAt[slot] += amount;
+        }
+    }
+
+    /// <summary>
+    /// Starts the global cooldown (<paramref name="userId"/> null) or one user's again with its full
+    /// <paramref name="duration"/>. Streamer.bot's CommandResetGlobalCooldown / CommandResetUserCooldown.
+    /// </summary>
+    public void Restart(string key, string? userId, TimeSpan duration)
+    {
+        lock (_gate)
+        {
+            var slot = (key, userId is null ? "" : "user:" + userId);
+            if (duration > TimeSpan.Zero) _readyAt[slot] = _time.GetUtcNow() + duration;
+            else _readyAt.Remove(slot);
+        }
+    }
+
+    /// <summary>Starts every running user cooldown of <paramref name="key"/> again with its full duration.</summary>
+    public void RestartUsers(string key, TimeSpan duration)
+    {
+        lock (_gate)
+        {
+            var now = _time.GetUtcNow();
+            foreach (var slot in RunningUserSlots(key, now))
+            {
+                if (duration > TimeSpan.Zero) _readyAt[slot] = now + duration;
+                else _readyAt.Remove(slot);
+            }
+        }
+    }
+
+    /// <summary>Ends the global cooldown (<paramref name="userId"/> null) or one user's now.</summary>
+    public void Clear(string key, string? userId)
+    {
+        lock (_gate) _readyAt.Remove((key, userId is null ? "" : "user:" + userId));
+    }
+
+    /// <summary>Ends every user cooldown of <paramref name="key"/> now (the global one keeps running).</summary>
+    public void ClearUsers(string key)
+    {
+        lock (_gate)
+        {
+            foreach (var slot in _readyAt.Keys.Where(k => k.Key == key && k.User.Length > 0).ToArray()) _readyAt.Remove(slot);
+        }
+    }
+
+    private (string Key, string User)[] RunningUserSlots(string key, DateTimeOffset now) =>
+        _readyAt.Where(p => p.Key.Key == key && p.Key.User.Length > 0 && p.Value > now).Select(p => p.Key).ToArray();
+
     /// <summary>Drops expired entries.</summary>
     public void Prune()
     {

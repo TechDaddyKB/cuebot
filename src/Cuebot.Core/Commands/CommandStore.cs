@@ -214,6 +214,22 @@ public sealed class CommandStore : IDisposable
         CountersChanged?.Invoke(id);
     }
 
+    /// <summary>Resets the user counters whose key matches (e.g. every "twitch:" user). Returns how many were reset.</summary>
+    public int ResetUserCountersWhere(Guid id, Func<string, bool> userKeyMatches)
+    {
+        int removed;
+        lock (_gate)
+        {
+            if (!_userCounters.TryGetValue(id, out var users)) return 0;
+            var keys = users.Keys.Where(userKeyMatches).ToArray();
+            foreach (var key in keys) users.Remove(key);
+            removed = keys.Length;
+            if (removed > 0) SaveCounters();
+        }
+        if (removed > 0) CountersChanged?.Invoke(id);
+        return removed;
+    }
+
     /// <summary>Key used for per-user counters and cooldowns: "platform:userId" (user name when there is no id).</summary>
     public static string UserKey(string platform, string userId, string userName) =>
         $"{platform}:{(userId.Length > 0 ? userId : userName)}".ToLowerInvariant();

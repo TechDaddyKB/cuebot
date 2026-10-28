@@ -26,5 +26,6 @@ internal sealed class TwitchScriptFunctions(TwitchService twitch) : IScriptFunct
             await twitch.Api.GetRewardsAsync(ct).ConfigureAwait(false)),
         new("twitch.getUser", "Look up a user by login or id:12345", ["user"], async (_, args, ct) =>
             await twitch.Api.GetUserAsync(args.GetString("user"), ct).ConfigureAwait(false)),
+        .. TwitchListScriptFunctions.Create(() => twitch.Api),
     ];
 }
