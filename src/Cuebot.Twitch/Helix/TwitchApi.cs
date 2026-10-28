@@ -62,8 +62,16 @@ public sealed partial class TwitchApi
     /// <see cref="InvalidOperationException"/> when not connected and <see cref="TwitchApiException"/> when Twitch
     /// rejects or drops the message. Returns the account that sent it.
     /// </summary>
-    public async Task<TwitchSender> SendChatMessageAsync(string message, TwitchSender sender = TwitchSender.Default,
-        string? replyToMessageId = null, CancellationToken ct = default)
+    public Task<TwitchSender> SendChatMessageAsync(string message, TwitchSender sender = TwitchSender.Default,
+        string? replyToMessageId = null, CancellationToken ct = default) =>
+        SendChatMessageAsync(message, sender, replyToMessageId, markInternal: true, ct);
+
+    /// <summary>
+    /// As above; with <paramref name="markInternal"/> false the message's echo is not flagged <c>isInternal</c>, so
+    /// commands that ignore internal messages still react to it (Streamer.bot's SendMessage <c>internal: false</c>).
+    /// </summary>
+    public async Task<TwitchSender> SendChatMessageAsync(string message, TwitchSender sender, string? replyToMessageId,
+        bool markInternal, CancellationToken ct)
     {
         if (!_isConnected()) throw new InvalidOperationException("Twitch is not connected.");
         if (string.IsNullOrWhiteSpace(message)) return sender;
@@ -71,7 +79,7 @@ public sealed partial class TwitchApi
         var (helix, tokens) = Account(chosen);
         RequireScope(tokens, chosen, TwitchScopes.WriteChat);
         var id = await helix.SendChatMessageAsync(BroadcasterId, tokens.UserId, message, ct, replyToMessageId).ConfigureAwait(false);
-        _sent.Add(id);
+        if (markInternal) _sent.Add(id);
         return chosen;
     }
 

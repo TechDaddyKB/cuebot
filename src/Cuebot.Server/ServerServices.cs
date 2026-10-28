@@ -110,6 +110,24 @@ public sealed class ServerServices
 
     private Cuebot.Core.Decks.DeckService? _decks;
 
+    /// <summary>Pronouns (GetUserPronouns; cached pronouns in Streamer.bot user payloads).</summary>
+    public Cuebot.Core.Chat.Pronouns.PronounService? Pronouns
+    {
+        get => _pronouns ??= _provider?.GetService<Cuebot.Core.Chat.Pronouns.PronounService>();
+        init => _pronouns = value;
+    }
+
+    private Cuebot.Core.Chat.Pronouns.PronounService? _pronouns;
+
+    /// <summary>Platform and 7TV/BTTV/FFZ emotes (TwitchGetEmotes / YouTubeGetEmotes, third-party emotes in chat payloads).</summary>
+    public Cuebot.Core.Chat.Emotes.EmoteService? Emotes
+    {
+        get => _emotes ??= _provider?.GetService<Cuebot.Core.Chat.Emotes.EmoteService>();
+        init => _emotes = value;
+    }
+
+    private Cuebot.Core.Chat.Emotes.EmoteService? _emotes;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")

@@ -88,6 +88,9 @@ public sealed partial class ObsConnection : IConnectionStatus, IAsyncDisposable
     /// <summary>"OBS 31.0.0 / obs-websocket 5.5.0" once connected; null before.</summary>
     public string? Version { get; private set; }
 
+    private string? _studioVersion;
+    private string? _webSocketVersion;
+
     /// <summary>Raised (on a background thread) when any cached list or current value changes.</summary>
     public event Action? ScenesChanged;
 
@@ -212,7 +215,11 @@ public sealed partial class ObsConnection : IConnectionStatus, IAsyncDisposable
             SetStatus(ConnectionState.Connected, $"Connected to {endpoint}");
             _log.Info(LogSource, $"Connected to {endpoint}");
             await RefreshCachesAsync(client.ServerVersion, ct).ConfigureAwait(false);
-            Publish(new BotEvent(ObsEvents.Connected, new Dictionary<string, object?> { ["obsVersion"] = Version ?? "" }));
+            Publish(new BotEvent(ObsEvents.Connected, new Dictionary<string, object?>
+            {
+                ["obsVersion"] = Version ?? "", ["studioVersion"] = _studioVersion ?? "", ["websocketVersion"] = _webSocketVersion ?? "",
+                ["host"] = Settings.Host,
+            }));
         }
         finally
         {
@@ -268,7 +275,7 @@ public sealed partial class ObsConnection : IConnectionStatus, IAsyncDisposable
             SetStatus(ConnectionState.Error, Settings.AutoConnect ? $"{reason} Reconnecting..." : reason);
             _log.Warn(LogSource, reason);
         }
-        Publish(new BotEvent(ObsEvents.Disconnected, new Dictionary<string, object?> { ["reason"] = reason }));
+        Publish(new BotEvent(ObsEvents.Disconnected, new Dictionary<string, object?> { ["reason"] = reason, ["host"] = Settings.Host }));
     }
 
     private void OnObsEvent(ObsEvent e)
@@ -392,6 +399,7 @@ public sealed partial class ObsConnection : IConnectionStatus, IAsyncDisposable
             var version = await RequestAsync("GetVersion", ct: c).ConfigureAwait(false);
             var obs = version.GetStringOrNull("obsVersion");
             var ws = version.GetStringOrNull("obsWebSocketVersion") ?? webSocketVersion;
+            (_studioVersion, _webSocketVersion) = (obs, ws);
             Version = obs is null ? ws is null ? Version : $"obs-websocket {ws}" : $"OBS {obs} / obs-websocket {ws}";
         }, ct).ConfigureAwait(false);
         await TryRefreshAsync(async c =>

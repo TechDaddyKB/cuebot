@@ -513,9 +513,42 @@ client, `github.com/Streamerbot/client` `events.const.ts`, plus `CS:5.enums/even
   bans/timeouts, `ChatMessageDeleted`, `StreamUpdate`, shield mode, pyramids; YouTube `Message`, `FirstWords`,
   member and Super Chat events (YouTube user object), broadcasts, statistics; Kick chat; `Command.*`, timers, heart
   rate, `StreamElements.Tip`, speech to text. Every other event with a user gets the `user` object.
-  - P · Still flat apart from `user`: Kick subs/gifts/kicks (Streamer.bot documents no shape), the other donation
-    platforms, OBS, VTube Studio, Elgato, Meld, Crowd Control and the rest of the integrations. Twitch emote
-    `imageUrl`s are built from the public CDN pattern; badge `imageUrl`s are empty.
+- ✅ · Deeper review (`w16-websocket`) against the official client itself (`@streamerbot/client` 2.0.1: its
+  `index.d.ts` types and its request handlers) and the docs' example payloads. Differences found and fixed:
+
+  | Area | Before | Client / docs | Now |
+  | --- | --- | --- | --- |
+  | `GetGlobal` | only `variable` | client 2.x `getGlobal()` reads `variables[name]` (threw on Cuebot's answer) | `variable` + `variables` + `count` |
+  | `*GetUserGlobal` with a name | only `variable` | `getUserGlobal()` reads `variables.find()` (threw) | `variable` + `variables` + `count` |
+  | `TrovoGetUserGlobal(s)` | unknown request | in the client's request list | answered (empty: no Trovo) |
+  | `GetBroadcaster` | connection states only | `broadcastUser`, `broadcastUserName`, `broadcastUserId`, `broadcastIs*` (reference: `broadcasterIs*`), `bot*`; YouTube `broadcastUserProfileImage`; Kick `broadcaster*` | from `twitch/youtube/kick.getBroadcaster`/`getBot` (+ cached `getUser`/`getUserInfo`); non-platform connections moved to `cuebotConnections` |
+  | `SendMessage` | `bot`/`internal` ignored | `bot`, `internal` (client default true), `replyId`, `broadcastId` | `ChatSendOptions` through `ChatHub` to the Twitch/Kick/YouTube senders |
+  | `TwitchGetEmotes`/`YouTubeGetEmotes` | empty lists | `{name, type, imageUrl}`, third-party with `zeroWidth` | native emotes seen in chat + loaded 7TV/BTTV/FFZ sets (`7TVGlobal`, `BTTVChannel`, ...) |
+  | `GetUserPronouns` | `userFound: false` stub | 19 `pronoun*` fields | alejo.io lookup with possessive/reflexive/tense forms derived per set |
+  | `GetMonitoredYouTubeBroadcasts` | empty | `MonitoredYouTubeBroadcast` (16 fields) | from `youtube.getMonitoredBroadcasts` |
+  | Twitch emotes | no `bits`/`color` | `TwitchEmote` has both | added; 7TV/BTTV/FFZ matches appended (code-point positions) |
+  | `cheerEmotes` | always empty | cheermotes with `bits`, `color` | words like `Cheer100` when they add up to the cheer's bits |
+  | Hype trains | no `last_contribution` | required by the types | sent (empty: EventSub v2 has no last contribution) |
+  | Polls | no `channel_points_voting` | required | from the raw EventSub payload (`poll._json`) |
+  | Predictions | `top_predictors` empty | user ids, points used/won | from `prediction._json` |
+  | Charity | no `started_at`/`stopped_at`; amounts from decimals | both dates; minor units | dates and `valueMinor` |
+  | `RewardCreated/Updated/Deleted`, `ChatCleared`, `UserUntimedOut`, `UserUnbanned`, `StreamOnline/Offline` | flat | typed / wiki shapes | shaped (reward union of the EventSub and wiki names) |
+  | Ban-like `type` | the action name | `chat_login_moderation` (wiki) | as the wiki |
+  | Streamlabs, DonorDrive, FileWatcher, OBS, Shopify | flat | wiki pages (`from`/`formattedAmount`, `donation{}`/`profile{}`, `lines`/`data`, `obs.*`, the order object) | shaped; FileWatcher.Changed reads files up to 256 KB |
+  | User objects | no pronouns | (Cuebot addition) | Twitch users carry `pronouns` when already looked up (never starts a lookup) |
+  | Custom events | `Custom.CodeEvent` only | `customEventResponse` waits for `Custom.Event {eventName, args}` | both are sent; GetEvents lists `Custom.Event` |
+
+  - Note · Matched by the node test (`StreamerBotClientNodeTests`, needs node + `CUEBOT_TEST_SBCLIENT`): the client
+    connects with a password, subscribes with `client.on()`, receives 70 documented events and calls every request
+    method; responses and the 43 typed Twitch payloads are checked against `index.d.ts` with the TypeScript compiler
+    API. `StreamerBotDocumentedShapeTests` checks the same shapes without node (`Fixtures/streamerbot-documented-shapes.json`).
+  - P · Cannot match: badge `imageUrl`s (need Twitch's chat badge API; Cuebot keeps set/version only), hype train
+    `last_contribution` (sent empty), `CommunityGoalContribution/Ended` (Twitch retired community goals, never sent),
+    OBS `obs.id` (Cuebot names connections; the name is used), YouTube `internal` (Cuebot never flags YouTube echoes),
+    Kick subs/gifts/kicks and the other integrations Streamer.bot documents no payload for (flat args plus `user`).
+  - Note · The reference and the client disagree in places; Cuebot sends both where it can (`broadcastIs*` and
+    `broadcasterIs*`; `variable` and `variables`) and follows the reference for GetBroadcaster `kick` (absent from the
+    client's `BroadcasterPlatform`) and GetCommands `sources` (a list of names; the reference shows a number).
 
 **WebSocket requests** (checked against `WS:3.requests.md` and the official client's response types)
 - ✅ · Fixed: `GetActions` `trigger_count`; `GetInfo` `mode`, `darkMode`, `source: "websocketServer"`; `GetActiveViewers`
@@ -523,12 +556,7 @@ client, `github.com/Streamerbot/client` `events.const.ts`, plus `CS:5.enums/even
   (`userEmotes`, `bttvEmotes`, `ffzEmotes`, `sevenTvEmotes`); `*GetUserGlobal` with `variable` returns one `variable`;
   `GetUserPronouns` top-level `userLogin`; `GetCredits`/`TestCredits` return `events`, `users`, `hypeTrain`, `top`,
   `groups`, `custom` at the top level (Cuebot's `credits` object stays).
-- P · `GetBroadcaster` returns connection states, not the documented account fields (`broadcastUser`, `botUserId`, ...):
-  Core has no broadcaster-account interface yet.
-- P · `SendMessage` ignores `bot` and `internal` (ChatHub has no bot/broadcaster choice).
-- P · `TwitchGetEmotes`/`YouTubeGetEmotes` return the documented keys but empty lists; `GetMonitoredYouTubeBroadcasts`
-  and `GetUserPronouns` are stubs.
-- P · `GetCommands` `sources` is a list of names; the docs show a number (an undocumented flag set).
+- ✅ · `GetBroadcaster` accounts, `SendMessage` options, emote lists, pronouns and monitored broadcasts: see the table above.
 
 **HTTP and UDP** (`sb-docs/streamerbot/3.api/5.http`, `6.udp`)
 - ✅ · `GetCredits`/`TestCredits` over HTTP return the documented PascalCase shape (`Events.Follows`, `User.Moderator`,

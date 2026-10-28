@@ -455,8 +455,16 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     /// Sends to the broadcaster's chat, split into Kick-sized parts. With <paramref name="useBot"/> the bot account
     /// sends (or, when it is not signed in and <paramref name="fallback"/> is set, the broadcaster).
     /// </summary>
-    public async Task<string?> SendChatMessageAsync(string message, bool useBot = false, bool fallback = true, string? replyTo = null,
-        CancellationToken ct = default)
+    public Task<string?> SendChatMessageAsync(string message, bool useBot = false, bool fallback = true, string? replyTo = null,
+        CancellationToken ct = default) =>
+        SendChatMessageAsync(message, useBot, fallback, replyTo, markInternal: true, ct);
+
+    /// <summary>
+    /// As above; with <paramref name="markInternal"/> false the echo is not flagged <c>isInternal</c> (Streamer.bot's
+    /// SendMessage <c>internal: false</c>), so commands that ignore internal messages still react to it.
+    /// </summary>
+    public async Task<string?> SendChatMessageAsync(string message, bool useBot, bool fallback, string? replyTo, bool markInternal,
+        CancellationToken ct)
     {
         var parts = ChatText.Split(message);
         if (parts.Count == 0) return null;
@@ -468,7 +476,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
             var result = await _api.SendChatAsync(account, part, broadcaster, false, replyTo, ct).ConfigureAwait(false);
             if (!result.IsSent) throw new KickApiException("Kick did not accept the chat message");
             lastId = result.MessageId;
-            _hub.MarkSent(result.MessageId);
+            if (markInternal) _hub.MarkSent(result.MessageId);
             replyTo = null;
         }
         return lastId;

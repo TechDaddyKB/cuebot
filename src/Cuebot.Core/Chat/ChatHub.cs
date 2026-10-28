@@ -56,7 +56,11 @@ public sealed class ChatHub : IDisposable
     /// Sends to one platform, or to every connected one with <see cref="AllPlatforms"/>. Returns the platforms
     /// that accepted the message; throws when nothing could send, with each platform's reason.
     /// </summary>
-    public async Task<IReadOnlyList<string>> SendAsync(string platform, string text, CancellationToken ct = default)
+    public Task<IReadOnlyList<string>> SendAsync(string platform, string text, CancellationToken ct = default) =>
+        SendAsync(platform, text, ChatSendOptions.Default, ct);
+
+    /// <summary>As <see cref="SendAsync(string, string, CancellationToken)"/>, with the account and reply options.</summary>
+    public async Task<IReadOnlyList<string>> SendAsync(string platform, string text, ChatSendOptions options, CancellationToken ct = default)
     {
         var targets = string.Equals(platform, AllPlatforms, StringComparison.OrdinalIgnoreCase)
             ? _senders.Where(s => s.CanSend).ToArray()
@@ -70,7 +74,8 @@ public sealed class ChatHub : IDisposable
         {
             try
             {
-                await sender.SendAsync(text, ct).ConfigureAwait(false);
+                if (options == ChatSendOptions.Default) await sender.SendAsync(text, ct).ConfigureAwait(false);
+                else await sender.SendAsync(text, options, ct).ConfigureAwait(false);
                 sent.Add(sender.Platform);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

@@ -1,0 +1,359 @@
+{
+  "_about": [
+    "Shapes of Streamer.bot WebSocket payloads as documented publicly: the official client's TypeScript types",
+    "(@streamerbot/client 2.0.1, index.d.ts), the request reference (docs 3.api/4.websocket/3.requests.md) and the",
+    "wiki's event pages. Field names, nesting and JSON kinds follow those sources; the values are made up.",
+    "\"*\" accepts any value (the sources disagree: the reference shows numbers where the client's types say string).",
+    "A non-empty array gives the shape of every element."
+  ],
+  "events": {
+    "Twitch.ChatMessage": {
+      "message": {
+        "internal": false, "msgId": "", "userId": "", "username": "", "role": 1, "subscriber": false, "displayName": "",
+        "color": "", "channel": "", "message": "", "isHighlighted": false, "isMe": false, "isCustomReward": false,
+        "isAnonymous": false, "isReply": false, "bits": 0, "firstMessage": false, "hasBits": false,
+        "emotes": [{ "bits": 0, "color": "", "type": "", "name": "", "startIndex": 0, "endIndex": 0, "imageUrl": "" }],
+        "cheerEmotes": [], "badges": [{ "name": "", "version": "", "imageUrl": "" }], "monthsSubscribed": 0, "isTest": false
+      }
+    },
+    "Twitch.FirstWord": {
+      "message": {
+        "internal": false, "msgId": "", "userId": "", "username": "", "role": 1, "subscriber": false, "displayName": "",
+        "color": "", "channel": "", "message": "", "isHighlighted": false, "isMe": false, "isCustomReward": false,
+        "isAnonymous": false, "isReply": false, "bits": 0, "firstMessage": false, "hasBits": false, "emotes": [],
+        "cheerEmotes": [], "badges": [], "monthsSubscribed": 0, "isTest": false
+      }
+    },
+    "Twitch.Whisper": {
+      "message": { "msgId": "", "userId": "", "username": "", "displayName": "", "message": "", "emotes": [], "badges": [] }
+    },
+    "Twitch.BotWhisper": {
+      "message": { "msgId": "", "userId": "", "username": "", "displayName": "", "message": "", "emotes": [], "badges": [] }
+    },
+    "Twitch.Follow": { "user_id": "", "user_login": "", "user_name": "", "followed_at": "" },
+    "Twitch.Cheer": {
+      "internal": false, "msgId": "", "userId": "", "username": "", "role": 1, "subscriber": false, "displayName": "",
+      "channel": "", "message": "", "isHighlighted": false, "isMe": false, "isCustomReward": false, "isAnonymous": false,
+      "isReply": false, "bits": 0, "firstMessage": false, "hasBits": false, "emotes": [],
+      "cheerEmotes": [{ "bits": 0, "color": "", "type": "", "name": "", "startIndex": 0, "endIndex": 0, "imageUrl": "" }],
+      "badges": [], "monthsSubscribed": 0, "isTest": false
+    },
+    "Twitch.Sub": {
+      "subTier": 1, "emotes": [], "badges": [], "message": "", "userId": "", "userName": "", "displayName": "", "role": 1,
+      "isTest": false
+    },
+    "Twitch.ReSub": {
+      "cumulativeMonths": 0, "shareStreak": false, "streakMonths": 0, "subTier": 1, "emotes": [], "badges": [], "message": "",
+      "userId": "", "userName": "", "displayName": "", "role": 1, "isTest": false
+    },
+    "Twitch.GiftSub": {
+      "isAnonymous": false, "totalSubsGifted": 0, "cumulativeMonths": 0, "monthsGifted": 0, "fromSubBomb": false,
+      "subBombCount": 0, "recipientUserId": "", "recipientUsername": "", "recipientDisplayName": "", "subTier": 1,
+      "emotes": [], "badges": [], "userId": "", "userName": "", "displayName": "", "role": 1, "isTest": false
+    },
+    "Twitch.GiftBomb": {
+      "isAnonymous": false, "gifts": 0, "totalGifts": 0, "subTier": 1, "userId": "", "userName": "", "displayName": "",
+      "role": 1, "isTest": false
+    },
+    "Twitch.Raid": {
+      "from_broadcaster_user_id": "", "from_broadcaster_user_login": "", "from_broadcaster_user_name": "",
+      "to_broadcaster_user_id": "", "to_broadcaster_user_login": "", "to_broadcaster_user_name": "", "viewers": 0
+    },
+    "Twitch.StreamUpdate": {
+      "channelId": "", "channel": "", "status": "", "oldStatus": "", "oldGame": { "id": "", "name": "" },
+      "game": { "id": "", "name": "" }
+    },
+    "Twitch.StreamOffline": { "id": "", "type": "", "started_at": "" },
+    "Twitch.AdRun": {
+      "length_seconds": 0, "timestamp": "", "is_automatic": false, "requester_user_id": "", "requester_user_login": "",
+      "requester_user_name": ""
+    },
+    "Twitch.HypeTrainStart": {
+      "level": 0, "progress": 0, "last_contribution": { "user_id": "", "user_login": "", "user_name": "", "total": 0 },
+      "expires_at": "", "isTest": false, "id": "", "total": 0, "goal": 0,
+      "top_contributions": [{ "user_id": "", "user_login": "", "user_name": "", "type": "", "total": 0 }], "started_at": ""
+    },
+    "Twitch.HypeTrainUpdate": {
+      "level": 0, "progress": 0, "last_contribution": { "user_id": "", "user_login": "", "user_name": "", "total": 0 },
+      "expires_at": "", "isTest": false, "id": "", "total": 0, "goal": 0, "top_contributions": [], "started_at": ""
+    },
+    "Twitch.HypeTrainLevelUp": {
+      "level": 0, "progress": 0, "last_contribution": { "user_id": "", "user_login": "", "user_name": "", "total": 0 },
+      "expires_at": "", "isTest": false, "id": "", "total": 0, "goal": 0, "top_contributions": [], "started_at": ""
+    },
+    "Twitch.HypeTrainEnd": {
+      "level": 0, "ended_at": "", "cooldown_ends_at": "", "isTest": false, "id": "", "total": 0, "goal": 0,
+      "top_contributions": [], "started_at": ""
+    },
+    "Twitch.RewardRedemption": {
+      "id": "", "user_id": "", "user_login": "", "user_name": "", "user_input": "", "status": "",
+      "reward": { "id": "", "title": "", "cost": 0, "prompt": "" }, "redeemed_at": ""
+    },
+    "Twitch.RewardCreated": {
+      "id": "", "name": "", "prompt": "", "group": "", "cost": 0, "userInput": false, "persistCounter": false, "counter": 0,
+      "persistUserCounter": false, "backgroundColor": "", "userCounters": {}
+    },
+    "Twitch.RewardUpdated": {
+      "id": "", "is_enabled": false, "is_paused": false, "is_in_stock": false, "title": "", "cost": 0, "prompt": "",
+      "is_user_input_required": false, "should_redemptions_skip_request_queue": false, "cooldown_expires_at": "",
+      "max_per_stream": { "is_enabled": false, "value": 0 }, "max_per_user_per_stream": { "is_enabled": false, "value": 0 },
+      "global_cooldown": { "is_enabled": false, "seconds": 0 }, "background_color": "",
+      "default_image": { "url_1x": "", "url_2x": "", "url_4x": "" },
+      "dateTime": "", "channelId": "*", "rewardId": "", "inputRequired": false, "backgroundColor": "*", "enabled": false,
+      "paused": false, "subOnly": false
+    },
+    "Twitch.RewardDeleted": {
+      "id": "", "is_enabled": false, "is_paused": false, "is_in_stock": false, "title": "", "cost": 0, "prompt": "",
+      "is_user_input_required": false, "should_redemptions_skip_request_queue": false,
+      "max_per_stream": { "is_enabled": false, "value": 0 }, "max_per_user_per_stream": { "is_enabled": false, "value": 0 },
+      "global_cooldown": { "is_enabled": false, "seconds": 0 }, "background_color": "",
+      "default_image": { "url_1x": "", "url_2x": "", "url_4x": "" }, "dateTime": "", "channelId": "*", "rewardId": "",
+      "inputRequired": false
+    },
+    "Twitch.PollCreated": {
+      "ends_at": "", "id": "", "title": "", "choices": [{ "id": "", "title": "", "channel_points_votes": 0, "votes": 0 }],
+      "channel_points_voting": { "is_enabled": false, "amount_per_vote": 0 }, "started_at": ""
+    },
+    "Twitch.PollUpdated": {
+      "ends_at": "", "id": "", "title": "", "choices": [{ "id": "", "title": "", "channel_points_votes": 0, "votes": 0 }],
+      "channel_points_voting": { "is_enabled": false, "amount_per_vote": 0 }, "started_at": ""
+    },
+    "Twitch.PollCompleted": {
+      "status": "", "ended_at": "", "winningChoice": { "id": "", "title": "", "channel_points_votes": 0, "votes": 0 },
+      "id": "", "title": "", "choices": [{ "id": "", "title": "", "channel_points_votes": 0, "votes": 0 }],
+      "channel_points_voting": { "is_enabled": false, "amount_per_vote": 0 }, "started_at": ""
+    },
+    "Twitch.PredictionCreated": {
+      "locks_at": "", "id": "", "title": "",
+      "outcomes": [{ "id": "", "title": "", "color": "", "users": 0, "channel_points": 0 }], "started_at": ""
+    },
+    "Twitch.PredictionUpdated": {
+      "locks_at": "", "id": "", "title": "",
+      "outcomes": [{
+        "id": "", "title": "", "color": "", "users": 0, "channel_points": 0,
+        "top_predictors": [{ "user_id": "", "user_login": "", "user_name": "", "channel_points_used": 0 }]
+      }],
+      "started_at": ""
+    },
+    "Twitch.PredictionLocked": {
+      "locked_at": "", "id": "", "title": "",
+      "outcomes": [{ "id": "", "title": "", "color": "", "users": 0, "channel_points": 0, "top_predictors": [] }], "started_at": ""
+    },
+    "Twitch.PredictionCompleted": {
+      "winning_outcome_id": "", "status": "", "ended_at": "",
+      "winning_outcome": { "id": "", "title": "", "color": "", "users": 0, "channel_points": 0, "top_predictors": [] },
+      "id": "", "title": "",
+      "outcomes": [{
+        "id": "", "title": "", "color": "", "users": 0, "channel_points": 0,
+        "top_predictors": [{ "user_id": "", "user_login": "", "user_name": "", "channel_points_won": 0, "channel_points_used": 0 }]
+      }],
+      "started_at": ""
+    },
+    "Twitch.PredictionCanceled": {
+      "winning_outcome_id": "", "status": "", "ended_at": "", "id": "", "title": "",
+      "outcomes": [{ "id": "", "title": "", "color": "", "users": 0, "channel_points": 0, "top_predictors": [] }], "started_at": ""
+    },
+    "Twitch.ViewerCountUpdate": { "viewers": 0 },
+    "Twitch.CharityStarted": {
+      "id": "", "current_amount": { "value": 0, "decimal_places": 0, "currency": "" },
+      "target_amount": { "value": 0, "decimal_places": 0, "currency": "" }, "started_at": "", "charity_name": "",
+      "charity_description": "", "charity_logo": "", "charity_website": ""
+    },
+    "Twitch.CharityProgress": {
+      "id": "", "current_amount": { "value": 0, "decimal_places": 0, "currency": "" },
+      "target_amount": { "value": 0, "decimal_places": 0, "currency": "" }, "charity_name": "", "charity_description": "",
+      "charity_logo": "", "charity_website": ""
+    },
+    "Twitch.CharityCompleted": {
+      "id": "", "current_amount": { "value": 0, "decimal_places": 0, "currency": "" },
+      "target_amount": { "value": 0, "decimal_places": 0, "currency": "" }, "stopped_at": "", "charity_name": "",
+      "charity_description": "", "charity_logo": "", "charity_website": ""
+    },
+    "Twitch.CharityDonation": {
+      "id": "", "campaign_id": "", "user_id": "", "user_login": "", "user_name": "",
+      "amount": { "value": 0, "decimal_places": 0, "currency": "" }, "charity_name": ""
+    },
+    "Twitch.Announcement": {
+      "msgId": "", "subscriber": false, "color": "", "message": "",
+      "emotes": [{ "id": "", "type": "", "name": "", "startIndex": 0, "endIndex": 0, "imageUrl": "" }],
+      "badges": [{ "name": "", "version": "", "imageUrl": "" }], "monthsSubscribed": 0, "announcementColor": "", "userId": "",
+      "userName": "", "displayName": "", "role": 1, "isTest": false
+    },
+    "Twitch.PyramidSuccess": {
+      "total": 0, "width": 0, "emote": "",
+      "user": { "display": "", "id": "", "name": "", "role": 1, "subscribed": false, "type": "" }
+    },
+    "Twitch.PyramidBroken": {
+      "ownerId": "", "ownerUsername": "", "ownerDisplay": "", "total": 0, "width": 0, "emote": "",
+      "user": { "display": "", "id": "", "name": "", "role": 1, "subscribed": false, "type": "" }
+    },
+    "Twitch.ChatCleared": {
+      "target_user_id": "", "target_user_login": "", "created_by_user_id": "", "created_by": "", "moderation_action": "",
+      "type": "", "duration": 0, "isTest": false
+    },
+    "Twitch.ChatMessageDeleted": { "targetMessageId": "", "message": "", "userName": "", "role": 1, "isTest": false },
+    "Twitch.ShieldModeBegin": { "moderator_user_id": "", "moderator_user_name": "", "moderator_user_login": "", "started_at": "" },
+    "Twitch.ShieldModeEnd": { "moderator_user_id": "", "moderator_user_name": "", "moderator_user_login": "", "ended_at": "" },
+    "Twitch.ShoutoutCreated": {
+      "moderator_user_id": "", "moderator_user_name": "", "moderator_user_login": "", "to_broadcaster_user_id": "",
+      "to_broadcaster_user_login": "", "to_broadcaster_user_name": "", "viewer_count": 0, "started_at": "",
+      "cooldown_ends_at": "", "target_cooldown_ends_at": ""
+    },
+    "Twitch.UserTimedOut": {
+      "target_user_display": "", "target_user_id": "", "target_user_login": "", "created_at": "", "created_by_user_id": "",
+      "created_by": "", "moderation_action": "", "type": "", "duration": 0, "reason": "", "isTest": false
+    },
+    "Twitch.UserBanned": {
+      "target_user_display": "", "target_user_id": "", "target_user_login": "", "created_at": "", "created_by_user_id": "",
+      "created_by": "", "moderation_action": "", "type": "", "duration": 0, "reason": "", "isTest": false
+    },
+    "Twitch.UserUntimedOut": {
+      "target_user_display": "", "target_user_id": "", "target_user_login": "", "created_at": "", "created_by_user_id": "",
+      "created_by": "", "moderation_action": "", "type": "", "duration": 0
+    },
+    "YouTube.Message": {
+      "message": "", "eventId": "", "publishedAt": "",
+      "user": {
+        "id": "", "url": "", "name": "", "profileImageUrl": "", "isOwner": false, "isModerator": false, "isSponsor": false,
+        "isVerified": false
+      }
+    },
+    "YouTube.FirstWords": {
+      "message": "", "action": false,
+      "user": { "display": "", "id": "", "name": "", "role": 1, "subscribed": false, "type": "" }
+    },
+    "YouTube.BroadcastStarted": { "id": "", "channelId": "", "title": "", "description": "", "privacy": "", "publishedAt": "" },
+    "YouTube.BroadcastUpdated": { "id": "", "title": "", "description": "", "privacy": "" },
+    "YouTube.StatisticsUpdated": { "likeCount": 0, "dislikeCount": 0, "viewCount": 0, "commentCount": 0, "favoriteCount": 0 },
+    "Command.Triggered": {
+      "command": "", "counter": 0, "userCounter": 0, "message": "",
+      "user": { "id": "*", "login": "", "display_name": "", "subscribed": false, "role": 1 }
+    },
+    "Command.Cooldown": {
+      "command": "", "cooldownLeft": 0, "globalCooldownLeft": 0, "userCooldownLeft": 0, "message": "",
+      "user": { "id": "*", "login": "", "display_name": "", "subscribed": false, "role": 1 }
+    },
+    "Misc.TimedAction": { "id": "", "name": "", "counter": 0 },
+    "Pulsoid.HeartRatePulse": { "measuredAt": 0, "heartRate": 0 },
+    "StreamElements.Tip": { "id": "", "username": "", "amount": 0, "currency": "", "message": "", "isTest": false },
+    "Streamlabs.Donation": { "from": "", "amount": 0, "formattedAmount": "", "currency": "", "message": "", "isTest": false },
+    "Streamlabs.Merchandise": { "from": "", "product": "", "message": "", "image": "", "isTest": false },
+    "DonorDrive.Donation": {
+      "donation": {
+        "displayName": "", "donorId": "", "links": { "recipient": "" }, "eventId": 0, "createdDateUtc": "", "recipientName": "",
+        "message": "", "participantId": 0, "amount": 0, "avatarImageUrl": "", "teamId": 0, "donationId": ""
+      }
+    },
+    "DonorDrive.ProfileUpdated": {
+      "profile": {
+        "fundraisingGoal": 0, "eventName": "", "links": { "recipient": "" }, "eventId": 0, "sumDonations": 0,
+        "createdDateUtc": "", "numAwardedBadges": 0, "captainDisplayName": "", "avatarImageUrl": "", "teamId": 0,
+        "sumPledges": 0, "numDonations": 0
+      }
+    },
+    "SpeechToText.Dictation": { "text": "", "confidence": 0, "alternatives": [] },
+    "SpeechToText.Command": { "text": "", "confidence": 0, "alternatives": [] },
+    "FileWatcher.Changed": { "fullPath": "", "fileName": "", "name": "", "lines": [""] },
+    "FileWatcher.Created": { "fullPath": "", "fileName": "", "name": "" },
+    "FileWatcher.Deleted": { "fullPath": "", "fileName": "", "name": "" },
+    "FileWatcher.Renamed": { "oldFullPath": "", "oldFileName": "", "fullPath": "", "fileName": "" },
+    "Obs.Connected": { "obs.id": "", "obs.name": "", "obs.host": "", "obs.studioVersion": "", "obs.websocketVersion": "" },
+    "Obs.Disconnected": { "obs.id": "", "obs.name": "", "obs.host": "" },
+    "Shopify.OrderCreated": {
+      "created_at": "", "event": "", "id": 0, "email": "", "number": 0, "total_price": "", "subtotal_price": "", "currency": "",
+      "financial_status": "", "name": "", "order_number": 0, "line_items": [{ "title": "", "quantity": 0, "price": "" }]
+    },
+    "Custom.Event": { "eventName": "", "args": {} }
+  },
+  "requests": {
+    "GetInfo": {
+      "info": { "instanceId": "", "name": "", "version": "", "os": "", "osVersion": "", "mode": "", "darkMode": false, "source": "" }
+    },
+    "GetActions": {
+      "count": 0,
+      "actions": [{ "enabled": false, "group": "", "id": "", "name": "", "subaction_count": 0, "trigger_count": 0 }]
+    },
+    "GetBroadcaster": {
+      "platforms": {
+        "twitch": {
+          "broadcastUser": "", "broadcastUserName": "", "broadcastUserId": "*", "broadcastIsAffiliate": false,
+          "broadcastIsPartner": false, "broadcasterIsAffiliate": false, "broadcasterIsPartner": false, "botUser": "",
+          "botUserName": "", "botUserId": ""
+        },
+        "youtube": {
+          "broadcastUserName": "", "broadcastUserId": "", "broadcastUserProfileImage": "", "botUserName": "", "botUserId": "",
+          "botUserProfileImage": ""
+        },
+        "kick": { "broadcasterLogin": "", "broadcasterUserName": "", "broadcasterUserId": "", "broadcasterProfileUrl": "" }
+      },
+      "connected": [""], "disconnected": [""]
+    },
+    "GetMonitoredYouTubeBroadcasts": {
+      "broadcasts": [{
+        "actualEndTime": "", "actualStartTime": "", "categoryId": "", "channelId": "", "description": "", "id": "",
+        "liveChatId": "", "privacy": "", "publishedAt": "", "scheduledEndTime": "", "scheduledStartTime": "", "status": "",
+        "title": "", "tags": [], "defaultLanguage": "", "defaultAudioLanguage": ""
+      }],
+      "count": 0
+    },
+    "GetCredits": {
+      "events": {
+        "follows": [], "cheers": [], "subs": [], "resubs": [], "giftsubs": [], "giftbombs": [], "raided": [],
+        "rewardredemptions": [], "goalcontributions": [], "gameupdates": [], "pyramids": [], "hypetrains": []
+      },
+      "hypeTrain": { "conductors": [], "contributors": [] },
+      "users": { "editors": [], "moderators": [], "subscribers": [], "vips": [], "groups": [], "users": [] },
+      "groups": {},
+      "top": { "allBits": [], "monthBits": [], "weekBits": [], "channelRewards": [] }
+    },
+    "GetActiveViewers": {
+      "count": 0,
+      "viewers": [{
+        "id": "", "type": "", "login": "", "display": "", "subscribed": false, "role": "", "groups": [], "channelPointsUsed": 0,
+        "previousActive": "", "exempt": false
+      }]
+    },
+    "GetCodeTriggers": { "count": 0, "triggers": [{ "name": "", "eventName": "", "category": "" }] },
+    "GetCommands": {
+      "commands": [{
+        "id": "", "enabled": false, "name": "", "group": "*", "commands": [""], "caseSensitive": false, "ignoreInternal": false,
+        "ignoreBotAccount": false, "sources": "*"
+      }],
+      "count": 0
+    },
+    "TwitchGetEmotes": {
+      "emotes": {
+        "userEmotes": [{ "name": "", "type": "", "imageUrl": "" }],
+        "bttvEmotes": [{ "name": "", "imageUrl": "", "type": "", "zeroWidth": false }],
+        "ffzEmotes": [{ "name": "", "imageUrl": "", "type": "", "zeroWidth": false }],
+        "sevenTvEmotes": [{ "name": "", "imageUrl": "", "type": "", "zeroWidth": false }]
+      }
+    },
+    "YouTubeGetEmotes": {
+      "emotes": {
+        "userEmotes": [{ "name": "", "type": "", "imageUrl": "" }],
+        "bttvEmotes": [{ "name": "", "imageUrl": "", "type": "", "zeroWidth": false }],
+        "sevenTvEmotes": [{ "name": "", "imageUrl": "", "type": "", "zeroWidth": false }],
+        "ffzEmotes": [{ "name": "", "imageUrl": "", "type": "", "zeroWidth": false }]
+      }
+    },
+    "GetGlobals": { "variables": {}, "count": 0 },
+    "GetGlobal": { "variable": { "name": "", "value": "*", "lastWrite": "" } },
+    "TwitchGetUserGlobals": {
+      "variables": [{ "name": "", "userId": "", "userLogin": "", "userName": "", "platform": "", "value": "*", "lastWrite": "" }],
+      "count": 0
+    },
+    "TwitchGetUserGlobal": { "variables": [{ "name": "", "value": "*", "lastWrite": "" }], "count": 0 },
+    "TwitchGetUserGlobal+variable": { "variable": { "name": "", "value": "*", "lastWrite": "" } },
+    "GetUserPronouns": {
+      "userLogin": "",
+      "pronoun": {
+        "pronounSubject": "", "pronounObject": "", "pronounPossessive": "", "pronounPronoun": "", "pronounReflexive": "",
+        "pronounPastTense": "", "pronounSubjectLower": "", "pronounObjectLower": "", "pronounPossessiveLower": "",
+        "pronounPronounLower": "", "pronounReflexiveLower": "", "pronounPastTenseLower": "", "pronounCurrentTense": "",
+        "pronounCurrentTenseLower": "", "pronounPluralLower": "", "pronouns": "", "pronounLastCached": "", "userFound": false,
+        "pronounsPlain": ""
+      }
+    }
+  }
+}

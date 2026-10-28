@@ -122,5 +122,9 @@ internal sealed class YouTubeScriptFunctions(YouTubeService yt) : IScriptFunctio
         ["liveChatId"] = b.LiveChatId,
         ["url"] = b.Url,
         ["actualStart"] = b.ActualStart?.ToString("O"),
+        ["actualEnd"] = b.ActualEnd?.ToString("O"),
+        ["scheduledStart"] = b.ScheduledStart?.ToString("O"),
+        ["channelId"] = b.ChannelId,
+        ["thumbnailUrl"] = b.ThumbnailUrl,
     };
 }

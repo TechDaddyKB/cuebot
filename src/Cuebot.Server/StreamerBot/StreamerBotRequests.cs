@@ -1,9 +1,11 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Chat;
+using Cuebot.Core.Chat.Emotes;
 using Cuebot.Core.Credits;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Variables;
@@ -26,7 +28,8 @@ public sealed class StreamerBotRequests(ServerServices services)
         "GetInfo", "GetEvents", "GetActions", "DoAction", "GetBroadcaster", "GetActiveViewers", "GetCodeTriggers",
         "ExecuteCodeTrigger", "GetCommands", "GetGlobals", "GetGlobal", "GetUserGlobals", "GetUserGlobal",
         "TwitchGetUserGlobals", "TwitchGetUserGlobal", "YouTubeGetUserGlobals", "YouTubeGetUserGlobal",
-        "KickGetUserGlobals", "KickGetUserGlobal", "GetCredits", "TestCredits", "ClearCredits", "SendMessage",
+        "KickGetUserGlobals", "KickGetUserGlobal", "TrovoGetUserGlobals", "TrovoGetUserGlobal", "GetCredits", "TestCredits",
+        "ClearCredits", "SendMessage",
         "TwitchGetEmotes", "YouTubeGetEmotes", "GetMonitoredYouTubeBroadcasts", "GetUserPronouns", "ClearFirstWordsCache",
     ];
 
@@ -39,6 +42,11 @@ public sealed class StreamerBotRequests(ServerServices services)
 
     public static bool IsKnown(string request) => Names.Contains(request, StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The services the event payloads read (cached pronouns, loaded emote sets).</summary>
+    public StreamerBotPayloadServices PayloadServices => _payloadServices ??= new StreamerBotPayloadServices(services.Pronouns, services.Emotes);
+
+    private StreamerBotPayloadServices? _payloadServices;
+
     public async Task<JsonObject> HandleAsync(string request, JsonElement message, CancellationToken ct = default)
     {
         switch (request.ToLowerInvariant())
@@ -47,7 +55,7 @@ public sealed class StreamerBotRequests(ServerServices services)
             case "getevents": return new JsonObject { ["events"] = Catalog(services.Registry) };
             case "getactions": return GetActions();
             case "doaction": return DoAction(message);
-            case "getbroadcaster": return GetBroadcaster();
+            case "getbroadcaster": return await GetBroadcasterAsync(ct).ConfigureAwait(false);
             case "getactiveviewers": return GetActiveViewers();
             case "getcodetriggers": return GetCodeTriggers();
             case "executecodetrigger": return ExecuteCodeTrigger(message);
@@ -62,28 +70,16 @@ public sealed class StreamerBotRequests(ServerServices services)
             case "youtubegetuserglobal": return GetUserGlobal("youtube", message);
             case "kickgetuserglobals": return GetUserGlobals("kick", message);
             case "kickgetuserglobal": return GetUserGlobal("kick", message);
+            case "trovogetuserglobals": return GetUserGlobals("trovo", message);
+            case "trovogetuserglobal": return GetUserGlobal("trovo", message);
             case "getcredits": return CreditsResponse(services.Credits?.Snapshot());
             case "testcredits": return CreditsResponse(services.Credits?.Test());
             case "clearcredits": services.Credits?.Reset(); return [];
             case "sendmessage": return await SendMessageAsync(message, ct).ConfigureAwait(false);
-            case "twitchgetemotes":
-            case "youtubegetemotes":
-                // Emote lists are not exposed yet: the documented (empty) shape.
-                return new JsonObject
-                {
-                    ["emotes"] = new JsonObject
-                    {
-                        ["userEmotes"] = new JsonArray(), ["bttvEmotes"] = new JsonArray(), ["ffzEmotes"] = new JsonArray(),
-                        ["sevenTvEmotes"] = new JsonArray(),
-                    },
-                };
-            case "getmonitoredyoutubebroadcasts": return new JsonObject { ["broadcasts"] = new JsonArray(), ["count"] = 0 };
-            case "getuserpronouns":
-                return new JsonObject
-                {
-                    ["userLogin"] = Str(message, "userLogin"),
-                    ["pronoun"] = new JsonObject { ["userLogin"] = Str(message, "userLogin"), ["userFound"] = false },
-                };
+            case "twitchgetemotes": return GetEmotes(EmoteProviders.Twitch);
+            case "youtubegetemotes": return GetEmotes(EmoteProviders.YouTube);
+            case "getmonitoredyoutubebroadcasts": return await GetMonitoredBroadcastsAsync(ct).ConfigureAwait(false);
+            case "getuserpronouns": return await GetUserPronounsAsync(message, ct).ConfigureAwait(false);
             case "clearfirstwordscache":
                 services.Users?.ResetFirstWords();
                 return [];
@@ -188,18 +184,249 @@ public sealed class StreamerBotRequests(ServerServices services)
         return result;
     }
 
-    private JsonObject GetBroadcaster()
+    /// <summary>The broadcaster platforms GetBroadcaster reports (the client's <c>BroadcasterPlatform</c>s Cuebot has).</summary>
+    private static readonly string[] BroadcasterPlatforms = ["twitch", "youtube", "kick"];
+
+    /// <summary>
+    /// GetBroadcaster: the signed-in broadcaster and bot accounts per platform, in Streamer.bot's field names, from the
+    /// platform modules' account functions; <c>connected</c>/<c>disconnected</c> from their connection state. Cuebot's
+    /// state (<c>name</c>, <c>state</c>, <c>status</c>) is kept on each platform, and other connections (OBS, ...) are in
+    /// <c>cuebotConnections</c>.
+    /// </summary>
+    private async Task<JsonObject> GetBroadcasterAsync(CancellationToken ct)
     {
         var platforms = new JsonObject();
         var connected = new JsonArray();
         var disconnected = new JsonArray();
+        var others = new JsonObject();
         foreach (var status in services.Connections)
         {
             var key = status.Name.ToLowerInvariant();
-            platforms[key] = new JsonObject { ["name"] = status.Name, ["state"] = status.State.ToString(), ["status"] = status.StatusMessage };
-            (status.State == ConnectionState.Connected ? connected : disconnected).Add(key);
+            if (BroadcasterPlatforms.Contains(key)) continue;
+            others[key] = new JsonObject { ["name"] = status.Name, ["state"] = status.State.ToString(), ["status"] = status.StatusMessage };
         }
-        return new JsonObject { ["platforms"] = platforms, ["connected"] = connected, ["disconnected"] = disconnected };
+        foreach (var platform in BroadcasterPlatforms)
+        {
+            var status = services.Connections.FirstOrDefault(c => c.Name.Equals(platform, StringComparison.OrdinalIgnoreCase));
+            var account = platform switch
+            {
+                "twitch" => await TwitchAccountAsync(ct).ConfigureAwait(false),
+                "youtube" => await YouTubeAccountAsync(ct).ConfigureAwait(false),
+                _ => await KickAccountAsync(ct).ConfigureAwait(false),
+            };
+            if (status is null && account is null) continue;
+            account ??= new JsonObject();
+            account["name"] = status?.Name ?? platform;
+            account["state"] = (status?.State ?? ConnectionState.Disconnected).ToString();
+            account["status"] = status?.StatusMessage ?? "";
+            platforms[platform] = account;
+            (status?.State == ConnectionState.Connected ? connected : disconnected).Add(platform);
+        }
+        return new JsonObject
+        {
+            ["platforms"] = platforms, ["connected"] = connected, ["disconnected"] = disconnected, ["cuebotConnections"] = others,
+        };
+    }
+
+    private async Task<JsonObject?> TwitchAccountAsync(CancellationToken ct)
+    {
+        var broadcaster = await CallAsync("twitch.getBroadcaster", null, ct).ConfigureAwait(false);
+        var id = Prop(broadcaster, "userId");
+        if (id.Length == 0) return null;
+        var login = Prop(broadcaster, "userName");
+        // Display name and partner status need a Helix lookup; it is cached for the session.
+        var user = await CachedAsync("twitch:" + id, () => CallAsync("twitch.getUser", new { user = "id:" + id }, ct)).ConfigureAwait(false);
+        var display = Prop(user, "displayName") is { Length: > 0 } d ? d : login;
+        var type = Prop(user, "broadcasterType");
+        var bot = await CallAsync("twitch.getBot", null, ct).ConfigureAwait(false);
+        var botLogin = Prop(bot, "userName");
+        return new JsonObject
+        {
+            ["broadcastUser"] = display,
+            ["broadcastUserName"] = login,
+            ["broadcastUserId"] = id,
+            ["broadcastIsAffiliate"] = type == "affiliate",
+            ["broadcastIsPartner"] = type == "partner",
+            // The request reference spells these broadcaster*, the client's types broadcast*: both are sent.
+            ["broadcasterIsAffiliate"] = type == "affiliate",
+            ["broadcasterIsPartner"] = type == "partner",
+            ["broadcastUserProfileImage"] = Prop(user, "profileImageUrl"),
+            ["botUser"] = botLogin,
+            ["botUserName"] = botLogin.ToLowerInvariant(),
+            ["botUserId"] = Prop(bot, "userId"),
+        };
+    }
+
+    private async Task<JsonObject?> YouTubeAccountAsync(CancellationToken ct)
+    {
+        var broadcaster = await CallAsync("youtube.getBroadcaster", null, ct).ConfigureAwait(false);
+        if (Prop(broadcaster, "userId").Length == 0) return null;
+        var bot = await CallAsync("youtube.getBot", null, ct).ConfigureAwait(false);
+        return new JsonObject
+        {
+            ["broadcastUserName"] = Prop(broadcaster, "userName"),
+            ["broadcastUserId"] = Prop(broadcaster, "userId"),
+            ["broadcastUserProfileImage"] = Prop(broadcaster, "profileImageUrl"),
+            ["botUserName"] = Prop(bot, "userName"),
+            ["botUserId"] = Prop(bot, "userId"),
+            ["botUserProfileImage"] = Prop(bot, "profileImageUrl"),
+        };
+    }
+
+    private async Task<JsonObject?> KickAccountAsync(CancellationToken ct)
+    {
+        var info = await CallAsync("kick.getBroadcaster", null, ct).ConfigureAwait(false);
+        var id = Prop(info, "broadcastUserId");
+        if (id.Length == 0) return null;
+        var name = Prop(info, "broadcastUser");
+        var profile = await CachedAsync("kick:" + id, () => CallAsync("kick.getUserInfo", new { user = id }, ct)).ConfigureAwait(false);
+        var botId = Prop(info, "botUserId");
+        var botProfile = botId.Length == 0 ? null
+            : await CachedAsync("kick:" + botId, () => CallAsync("kick.getUserInfo", new { user = botId }, ct)).ConfigureAwait(false);
+        var slug = Prop(info, "broadcasterChannelSlug");
+        return new JsonObject
+        {
+            ["broadcasterLogin"] = slug.Length > 0 ? slug : name.ToLowerInvariant(),
+            ["broadcasterUserName"] = name,
+            ["broadcasterUserId"] = id,
+            ["broadcasterProfileUrl"] = Prop(profile, "ProfilePicture"),
+            ["botLogin"] = Prop(info, "botUser").ToLowerInvariant(),
+            ["botUserName"] = Prop(info, "botUser"),
+            ["botUserId"] = botId,
+            ["botProfileUrl"] = Prop(botProfile, "ProfilePicture"),
+        };
+    }
+
+    /// <summary>Account lookups that need the network, cached (successful ones only) for the life of the server.</summary>
+    private readonly ConcurrentDictionary<string, JsonElement> _lookups = new(StringComparer.Ordinal);
+
+    private async Task<JsonElement?> CachedAsync(string key, Func<Task<JsonElement?>> lookup)
+    {
+        if (_lookups.TryGetValue(key, out var hit)) return hit;
+        var found = await lookup().ConfigureAwait(false);
+        if (found is { ValueKind: JsonValueKind.Object } value) _lookups[key] = value;
+        return found;
+    }
+
+    /// <summary>
+    /// Calls a platform module's script function (twitch.getBroadcaster, youtube.getMonitoredBroadcasts, ...) outside
+    /// an action run; null when no loaded module provides it or it fails (the request then reports less).
+    /// </summary>
+    private async Task<JsonElement?> CallAsync(string function, object? args, CancellationToken ct)
+    {
+        var api = services.Scripts;
+        if (api is null || !api.Functions.Any(f => f.Name.Equals(function, StringComparison.OrdinalIgnoreCase))) return null;
+        try
+        {
+            var context = services.Engine.CreateDetachedContext("Streamer.bot WebSocket request");
+            var result = await api.CallAsync(context, function, args, ct).ConfigureAwait(false);
+            return result is null ? null : JsonSerializer.SerializeToElement(result);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            services.Log.Warn("Servers", $"Streamer.bot request: {function} failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>A property of a function result as text, by name in any case ("" when missing).</summary>
+    private static string Prop(JsonElement? element, string name)
+    {
+        if (element is not { ValueKind: JsonValueKind.Object } e) return "";
+        foreach (var p in e.EnumerateObject())
+        {
+            if (!p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) continue;
+            return p.Value.ValueKind switch
+            {
+                JsonValueKind.String => p.Value.GetString() ?? "",
+                JsonValueKind.Null or JsonValueKind.Undefined => "",
+                _ => p.Value.ToString(),
+            };
+        }
+        return "";
+    }
+
+    // ---- Emotes, broadcasts, pronouns ----------------------------------------------------------------------------
+
+    /// <summary>
+    /// TwitchGetEmotes / YouTubeGetEmotes from Cuebot's emote sets: native emotes Cuebot has seen in chat
+    /// (<c>userEmotes</c>) and the loaded BTTV, FFZ and 7TV sets. Empty lists without the emote service.
+    /// </summary>
+    private JsonObject GetEmotes(string platform)
+    {
+        var lists = new Dictionary<string, JsonArray>
+        {
+            ["userEmotes"] = [], ["bttvEmotes"] = [], ["ffzEmotes"] = [], ["sevenTvEmotes"] = [],
+        };
+        foreach (var e in services.Emotes?.GetEmotes(platform) ?? [])
+        {
+            var (list, type) = e.Provider switch
+            {
+                EmoteProviders.Bttv => ("bttvEmotes", "BTTV"),
+                EmoteProviders.Ffz => ("ffzEmotes", "FFZ"),
+                EmoteProviders.SevenTv => ("sevenTvEmotes", "7TV"),
+                _ => ("userEmotes", platform.ToLowerInvariant()),
+            };
+            var json = new JsonObject
+            {
+                ["name"] = e.Code,
+                ["type"] = list == "userEmotes" ? type : type + (e.Scope == "channel" ? "Channel" : "Global"),
+                ["imageUrl"] = e.ImageUrl,
+            };
+            if (list != "userEmotes") json["zeroWidth"] = e.IsZeroWidth;
+            lists[list].Add(json);
+        }
+        var emotes = new JsonObject();
+        foreach (var (key, list) in lists) emotes[key] = list;
+        return new JsonObject { ["emotes"] = emotes };
+    }
+
+    /// <summary>GetMonitoredYouTubeBroadcasts from the YouTube module, in the client's MonitoredYouTubeBroadcast shape.</summary>
+    private async Task<JsonObject> GetMonitoredBroadcastsAsync(CancellationToken ct)
+    {
+        var broadcasts = new JsonArray();
+        if (await CallAsync("youtube.getMonitoredBroadcasts", null, ct).ConfigureAwait(false) is { ValueKind: JsonValueKind.Array } list)
+        {
+            foreach (var b in list.EnumerateArray())
+            {
+                broadcasts.Add(new JsonObject
+                {
+                    ["actualEndTime"] = Prop(b, "actualEnd"),
+                    ["actualStartTime"] = Prop(b, "actualStart"),
+                    ["categoryId"] = Prop(b, "categoryId"),
+                    ["channelId"] = Prop(b, "channelId"),
+                    ["description"] = Prop(b, "description"),
+                    ["id"] = Prop(b, "id"),
+                    ["liveChatId"] = Prop(b, "liveChatId"),
+                    ["privacy"] = Prop(b, "privacy"),
+                    ["publishedAt"] = Prop(b, "actualStart") is { Length: > 0 } started ? started : Prop(b, "scheduledStart"),
+                    ["scheduledEndTime"] = "",
+                    ["scheduledStartTime"] = Prop(b, "scheduledStart"),
+                    ["status"] = Prop(b, "status"),
+                    ["title"] = Prop(b, "title"),
+                    ["tags"] = new JsonArray(),
+                    ["defaultLanguage"] = "",
+                    ["defaultAudioLanguage"] = "",
+                    ["url"] = Prop(b, "url"),
+                });
+            }
+        }
+        return new JsonObject { ["broadcasts"] = broadcasts, ["count"] = broadcasts.Count };
+    }
+
+    /// <summary>GetUserPronouns: looks a Twitch login up on alejo.io (cached), in Streamer.bot's pronoun shape.</summary>
+    private async Task<JsonObject> GetUserPronounsAsync(JsonElement message, CancellationToken ct)
+    {
+        var login = Str(message, "userLogin").Trim().TrimStart('@');
+        var platform = Str(message, "platform", "twitch");
+        Cuebot.Core.Chat.Pronouns.UserPronouns? found = null;
+        if (login.Length > 0 && services.Pronouns is { } pronouns && platform.Equals("twitch", StringComparison.OrdinalIgnoreCase))
+        {
+            found = await pronouns.GetAsync(login, ct).ConfigureAwait(false);
+        }
+        var pronoun = StreamerBotPronouns.ToJson(found);
+        pronoun["userLogin"] = login;
+        return new JsonObject { ["userLogin"] = login, ["pronoun"] = pronoun };
     }
 
     private JsonObject GetActiveViewers()
@@ -386,7 +613,13 @@ public sealed class StreamerBotRequests(ServerServices services)
         var persisted = Bool(message, "persisted", true);
         var found = services.Globals.Snapshot(persisted).FirstOrDefault(v => string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase))
                     ?? throw new RequestException($"Variable '{name}' not found");
-        return new JsonObject { ["variable"] = Variable(found.Name, found.Value, found.LastWrite) };
+        // The reference documents "variable"; the official client (2.x) reads variables[name]: both are sent.
+        return new JsonObject
+        {
+            ["variable"] = Variable(found.Name, found.Value, found.LastWrite),
+            ["variables"] = new JsonObject { [found.Name] = Variable(found.Name, found.Value, found.LastWrite) },
+            ["count"] = 1,
+        };
     }
 
     private JsonObject GetUserGlobals(string platform, JsonElement message)
@@ -410,9 +643,15 @@ public sealed class StreamerBotRequests(ServerServices services)
             .ToArray();
         if (name.Length > 0)
         {
-            // With a variable name the response is that one variable, as documented.
+            // With a variable name the reference documents one "variable"; the official client reads variables[]:
+            // both are sent.
             var found = list.FirstOrDefault() ?? throw new RequestException($"Variable '{name}' not found");
-            return new JsonObject { ["variable"] = Variable(found.Name, found.Value, found.LastWrite) };
+            return new JsonObject
+            {
+                ["variable"] = Variable(found.Name, found.Value, found.LastWrite),
+                ["variables"] = UserVariables([found]),
+                ["count"] = 1,
+            };
         }
         return new JsonObject { ["variables"] = UserVariables(list), ["count"] = list.Length };
     }
@@ -442,9 +681,16 @@ public sealed class StreamerBotRequests(ServerServices services)
         if (text.Trim().Length == 0) throw new RequestException("message is required");
         var chat = services.Chat ?? throw new RequestException("Chat is not available");
         var platform = Str(message, "platform", "twitch");
+        // bot: true sends from the bot account, false from the broadcaster (no field: the platform's setting);
+        // internal: false lets commands react to the message's echo. replyId (Twitch, Kick), broadcastId (YouTube).
+        var options = new ChatSendOptions(
+            Bot: message.ValueKind == JsonValueKind.Object && message.TryGetProperty("bot", out _) ? Bool(message, "bot", false) : null,
+            Internal: Bool(message, "internal", true),
+            ReplyTo: Str(message, "replyId") is { Length: > 0 } reply ? reply : null,
+            BroadcastId: Str(message, "broadcastId") is { Length: > 0 } broadcast ? broadcast : null);
         try
         {
-            var sent = await chat.SendAsync(platform, text, ct).ConfigureAwait(false);
+            var sent = await chat.SendAsync(platform, text, options, ct).ConfigureAwait(false);
             return new JsonObject { ["platforms"] = new JsonArray(sent.Select(p => (JsonNode)p).ToArray()) };
         }
         catch (InvalidOperationException ex)

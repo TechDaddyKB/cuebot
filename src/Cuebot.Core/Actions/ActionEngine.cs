@@ -126,6 +126,15 @@ public sealed class ActionEngine : IDisposable
         CancellationToken ct = default, string source = "Manual") =>
         RunAsync(action, args, depth: 0, source, ct);
 
+    /// <summary>
+    /// A context for calling script functions outside an action run (e.g. a server request reading account details).
+    /// Nothing runs: no sub-actions, no run record, no events.
+    /// </summary>
+    public ActionRunContext CreateDetachedContext(string name, IReadOnlyDictionary<string, object?>? args = null) =>
+        new(new ActionDefinition { Name = name }, args is null
+            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase), this, _globals, _log, depth: 0);
+
     public ActionDefinition? FindAction(string name) => _profile.Snapshot.FindAction(name);
 
     public Task<bool> RunByNameAsync(string name, IReadOnlyDictionary<string, object?>? args = null,

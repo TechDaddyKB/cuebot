@@ -33,22 +33,22 @@ mode, darkMode, source: "websocketServer"}, authentication?: {salt, challenge}}`
 | --- | --- |
 | Authenticate | ok / error "Authentication failed" |
 | GetInfo | `info` |
-| GetEvents | `events: {Source: [Type...]}`: every name the loaded modules' triggers can emit, plus Raw/Application/General.Custom/Misc.StreamerbotExiting (Subscribe accepts any names) |
+| GetEvents | `events: {Source: [Type...]}`: every name the loaded modules' triggers can emit, plus Raw/Application/General.Custom/Custom.Event/Misc.StreamerbotExiting (Subscribe accepts any names) |
 | Subscribe / UnSubscribe | `events: {Source: [Type...]}` (current subscriptions; `"*"` = all types) |
 | GetActions | `actions: [{id, name, group, enabled, subaction_count, trigger_count}], count` |
 | DoAction | `{action: {id \| name}, args}` → queued (not awaited); error if missing/disabled |
-| GetBroadcaster | `platforms: {twitch: {name, state, status}...}, connected: [...], disconnected: [...]` |
+| GetBroadcaster | `platforms: {twitch: {broadcastUser, broadcastUserName, broadcastUserId, broadcastIsAffiliate, broadcastIsPartner (and broadcasterIs*), botUser, botUserName, botUserId}, youtube: {broadcastUserName, broadcastUserId, broadcastUserProfileImage, bot*}, kick: {broadcasterLogin, broadcasterUserName, broadcasterUserId, broadcasterProfileUrl, bot*}}` (from the modules' `*.getBroadcaster`/`getBot` functions; each also has Cuebot's `name`, `state`, `status`), `connected`/`disconnected: ["twitch", ...]`, `cuebotConnections: {obs: {name, state, status}...}` |
 | GetActiveViewers | `viewers: [{id, type, login, display, platform, role, subscribed, previousActive, ...}], count` |
 | GetCodeTriggers | `triggers: [{name, eventName, category}], count` |
 | ExecuteCodeTrigger | `{triggerName, args}` → fires the "Custom code event" trigger |
 | GetCommands | `commands: [{id, name, enabled, group, mode, location, commands, caseSensitive, ignoreInternal, ignoreBotAccount, globalCooldown, userCooldown, sources}], count` |
-| GetGlobals / GetGlobal | `{persisted}` → `variables: {name: {name, value, lastWrite}}, count` / `{variable}` → `variable` |
-| TwitchGetUserGlobals / TwitchGetUserGlobal (+ YouTube*, Kick*, GetUserGlobals/GetUserGlobal with `platform`) | `variables: [{userId, userLogin, userName, platform, name, value, lastWrite}], count`; *GetUserGlobal with `variable` → `variable: {name, value, lastWrite}` (error when missing) |
+| GetGlobals / GetGlobal | `{persisted}` → `variables: {name: {name, value, lastWrite}}, count` / `{variable}` → `variable` plus `variables: {name: ...}, count: 1` (the reference documents `variable`; the official client reads `variables[name]`) |
+| TwitchGetUserGlobals / TwitchGetUserGlobal (+ YouTube*, Kick*, Trovo* (always empty), GetUserGlobals/GetUserGlobal with `platform`) | `variables: [{userId, userLogin, userName, platform, name, value, lastWrite}], count`; *GetUserGlobal with `variable` → `variable: {name, value, lastWrite}` plus `variables: [that one], count: 1` (error when missing) |
 | GetCredits / TestCredits / ClearCredits | `events: {follows, cheers, subs, resubs, giftsubs, giftbombs, raided, rewardredemptions, ...}, users: {moderators, vips, subscribers, users, ...}, hypeTrain, top, groups, custom` (user names), plus `credits: {events: {cuebotSection: [...]}, cuebot: snapshot}` |
-| SendMessage | `{message, platform}` → combined chat send; privileged |
-| TwitchGetEmotes / YouTubeGetEmotes | `emotes: {userEmotes: [], bttvEmotes: [], ffzEmotes: [], sevenTvEmotes: []}` (empty) |
-| GetMonitoredYouTubeBroadcasts | `broadcasts: [], count: 0` |
-| GetUserPronouns | `userLogin, pronoun: {userLogin, userFound: false}` |
+| SendMessage | `{message, platform, bot?, internal?, replyId?, broadcastId?}` → combined chat send; `bot: true` the bot account, `false` the broadcaster (absent: the platform's setting); `internal: false` leaves the echo unflagged so commands react to it (Twitch, Kick); `replyId` Twitch/Kick, `broadcastId` YouTube; privileged |
+| TwitchGetEmotes / YouTubeGetEmotes | `emotes: {userEmotes: [{name, type, imageUrl}], bttvEmotes, ffzEmotes, sevenTvEmotes: [{name, type: "BTTVGlobal"/"7TVChannel"/..., imageUrl, zeroWidth}]}`: native emotes Cuebot has seen in chat and the loaded 7TV/BTTV/FFZ sets |
+| GetMonitoredYouTubeBroadcasts | `broadcasts: [{id, title, description, privacy, status, liveChatId, channelId, actualStartTime, actualEndTime, scheduledStartTime, publishedAt, ...}], count` from the YouTube module (fields Cuebot does not have are empty) |
+| GetUserPronouns | `{platform, userLogin}` → `userLogin, pronoun: {pronounSubject, pronounObject, pronounPossessive, pronounPronoun, pronounReflexive, pronounPastTense, pronounCurrentTense, pronounPluralLower, ...Lower, pronouns: "(She/Her)", pronounsPlain, userFound}` (alejo.io, Twitch only; looked up and cached) |
 | ClearFirstWordsCache | resets first-words tracking |
 
 Events: `{timeStamp, event: {source, type}, data}`. `data` holds the Cuebot event arguments plus `cuebotEvent` (the
@@ -64,7 +64,27 @@ flat arg's name (Twitch chat's `message`), the documented one wins and the text 
 sub-actions also `parentId`, `parentName`, `type`), `Raw.ActionCompleted` (`id`, `actionId`, `name`, `duration`,
 `queuedAt`, `startedAt`, `completedAt`, `success`, `excludeFromHistory`, `arguments`, plus Cuebot's `actionName`,
 `runId`, `state`, `error`), `Misc.StreamerbotExiting` on shutdown, and `General.Custom` for CPH
-`WebsocketBroadcastJson/String` and the "WebSocket server: broadcast" sub-action.
+`WebsocketBroadcastJson/String` and the "WebSocket server: broadcast" sub-action. Custom events
+(`CPH.TriggerEvent`/`TriggerCodeEvent`, "Trigger custom event", ExecuteCodeTrigger) go out as `Custom.CodeEvent` (flat
+args) and as `Custom.Event {eventName, args}`, which the official client's `customEventResponse` waits for.
+
+Payload shapes follow the official client's types for every Twitch event it types (43, incl. rewards, polls with
+`channel_points_voting`, predictions with `top_predictors`, charity, chat cleared, untimeouts) and the wiki's pages for
+YouTube, commands, timers, heart rate, StreamElements, Streamlabs, DonorDrive (`donation`/`profile` objects), file
+watchers (`fullPath`, `fileName`, `name`; `Changed` adds the file's `lines`, or `data` for a JSON object, up to 256 KB),
+OBS (`obs.name`, `obs.host`, `obs.studioVersion`, ...) and Shopify (the order object). Twitch chat `emotes` include
+7TV/BTTV/FFZ matches (`type` "7TV"/"BTTV"/"FFZ", code-point positions, `bits`, `color`), `cheerEmotes` the cheermotes
+when the message's `Cheer100`-style words add up to the bits, and Twitch user objects carry `pronouns` (the GetUserPronouns
+`pronoun` object) for users whose pronouns Cuebot already looked up; building a payload never starts a lookup. Fields
+Cuebot has no data for are sent empty (badge `imageUrl`, hype train `last_contribution`).
+
+**Testing with the official client.** `StreamerBotClientNodeTests` runs `tests/Cuebot.Server.Tests/NodeClient/streamerbot-client-check.mjs`
+with node against a server started in the test: `@streamerbot/client` connects with a password, subscribes with
+`client.on()`, receives every documented event and calls every request method; responses and Twitch payloads are
+checked against the client's `index.d.ts` with the TypeScript compiler API. Prepare a folder outside the repo once
+(`npm install @streamerbot/client typescript`) and set `CUEBOT_TEST_SBCLIENT` to it (and `CUEBOT_TEST_NODE` when node
+is not on PATH); without them the test is skipped. `StreamerBotDocumentedShapeTests` checks the same shapes without
+node (`Fixtures/streamerbot-documented-shapes.json`).
 
 ### Event mapping (`StreamerBotEventMap`)
 

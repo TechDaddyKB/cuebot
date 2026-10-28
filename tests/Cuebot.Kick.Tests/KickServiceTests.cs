@@ -238,6 +238,20 @@ public sealed class KickServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Chat_sent_with_internal_off_is_not_flagged_internal()
+    {
+        SignedIn();
+        // Streamer.bot's SendMessage internal: false, through the combined chat's sender.
+        IChatSender sender = new KickChatSender(_service);
+        await sender.SendAsync("hello", new ChatSendOptions(Internal: false, ReplyTo: "parent"));
+        Assert.Equal("parent", Body(_http.Requests.Last(r => r.Path == "/public/v1/chat")).GetProperty("reply_to_message_id").GetString());
+
+        _service.Hub.Handle(Events.KickEventFactory.Chat("realtime",
+            new Events.KickEventFactory.ChatInput("sent-1", new Events.KickActor(5, "Fan", "fan"), "hello", 100, null)));
+        Assert.Equal(false, Published(KickEventTypes.ChatMessage).Args["isInternal"]);
+    }
+
+    [Fact]
     public async Task Moderation_resolves_users_from_chat_ids_and_kick_lookups()
     {
         var conn = await ConnectAsync();

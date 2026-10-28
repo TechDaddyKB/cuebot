@@ -18,8 +18,9 @@ namespace Cuebot.Server.Tests;
 /// <summary>Real core services (engine, variables, users, commands, chat) with fakes for chat sending and speech.</summary>
 internal sealed class TestBot : IAsyncDisposable
 {
-    public TestBot(ServerSettings? settings = null)
+    public TestBot(ServerSettings? settings = null, TestBotOptions? options = null)
     {
+        options ??= new TestBotOptions();
         Bus = new EventBus(Log);
         Profile = new ProfileService(null, Log);
         Globals = new GlobalVariables(null, Log);
@@ -30,10 +31,10 @@ internal sealed class TestBot : IAsyncDisposable
         Chat = new ChatHub(Bus, Log, [], [Sender]);
         CodeTriggers = new CodeTriggerRegistry();
 
-        Api = new ScriptApi([new CoreScriptFunctions(), new VariableScriptFunctions(UserVariables), Functions]);
+        Api = new ScriptApi([new CoreScriptFunctions(), new VariableScriptFunctions(UserVariables), Functions, .. options.Functions]);
         Scripts = new CSharpScriptEngine(Api, new CphServices(new LateProvider(this)));
         Registry = new Registry([Capture, new CSharpCodeSubAction(Scripts), new LogSubAction(), new IfSubAction(), new DelaySubAction()],
-            PlatformTriggers, [new CodeTriggerProvider(CodeTriggers), new CommandTriggers(Commands), new CoreTriggers(Profile)]);
+            [.. PlatformTriggers, .. options.Triggers], [new CodeTriggerProvider(CodeTriggers), new CommandTriggers(Commands), new CoreTriggers(Profile)]);
         Timers = new TimerService(Profile, Bus);
         Transfer = new Cuebot.Core.Transfer.TransferService(Profile, Commands, Globals, () => Registry);
         Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log);
@@ -46,7 +47,9 @@ internal sealed class TestBot : IAsyncDisposable
             Users = Users, Commands = Commands, Chat = Chat, CodeTriggers = CodeTriggers, Speaker = Speaker,
             Credits = Credits, Registry = Registry, Timers = Timers, Transfer = Transfer, Scripts = Api,
             Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
+            Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
         };
+        Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
         if (settings is not null) Copy(settings, Manager.Settings);
         Bus.Subscribe(e => Events.Enqueue(e));
@@ -65,6 +68,7 @@ internal sealed class TestBot : IAsyncDisposable
     ];
 
     public AppLog Log { get; } = new();
+    public Cuebot.Core.Chat.Emotes.EmoteService? Emotes { get; }
     public Cuebot.Core.Credits.CreditsCollector Credits => _credits ??= new Cuebot.Core.Credits.CreditsCollector(null, Bus, Log);
     private Cuebot.Core.Credits.CreditsCollector? _credits;
     public EventBus Bus { get; }
@@ -147,6 +151,7 @@ internal sealed class TestBot : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await Manager.DisposeAsync();
+        Emotes?.Dispose();
         Scripts.Dispose();
         Engine.Dispose();
         Timers.Dispose();
@@ -177,6 +182,15 @@ internal sealed class TestBot : IAsyncDisposable
     }
 }
 
+/// <summary>Optional extras: more script functions and trigger types, pronoun and emote services.</summary>
+internal sealed class TestBotOptions
+{
+    public IReadOnlyList<IScriptFunctionProvider> Functions { get; init; } = [];
+    public IReadOnlyList<ITriggerType> Triggers { get; init; } = [];
+    public Cuebot.Core.Chat.Pronouns.PronounService? Pronouns { get; init; }
+    public Func<EventBus, AppLog, Cuebot.Core.Chat.Emotes.EmoteService>? Emotes { get; init; }
+}
+
 internal sealed class CaptureSubAction : ISubActionHandler
 {
     public const string Id = "test.capture";
@@ -198,11 +212,18 @@ internal sealed class FakeSender : IChatSender
     public string Platform => "Twitch";
     public bool CanSend => true;
     public ConcurrentQueue<string> Sent { get; } = new();
+    public ConcurrentQueue<(string Text, ChatSendOptions Options)> SentWithOptions { get; } = new();
 
     public Task SendAsync(string text, CancellationToken ct = default)
     {
         Sent.Enqueue(text);
         return Task.CompletedTask;
+    }
+
+    public Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default)
+    {
+        SentWithOptions.Enqueue((text, options));
+        return SendAsync(text, ct);
     }
 }
 
