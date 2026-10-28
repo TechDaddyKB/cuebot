@@ -231,10 +231,14 @@ public sealed class RelayClientTests : IAsyncDisposable
         _relay.AnswerPings = false;
         var client = Client(Fast with { PingInterval = TimeSpan.FromMilliseconds(30), SilenceTimeout = TimeSpan.FromMilliseconds(100) });
         await client.ConnectAsync();
-        var c1 = await _relay.WaitForConnectionAsync();
-        await _relay.WaitForConnectionAsync(2);
-        Assert.Contains("""{"type":"ping"}""", c1.Sent);
-        Assert.True(c1.Disposed);
+        // On a starved runner the silence timer can beat the first ping, so look for any connection that pinged,
+        // went unanswered and was replaced, not just the first one.
+        await Wait.UntilAsync(() =>
+        {
+            var opened = _relay.Connections.Where(c => c.WasOpened).ToList();
+            var pinged = opened.FindIndex(c => c.Disposed && c.Sent.Contains("""{"type":"ping"}"""));
+            return pinged >= 0 && pinged < opened.Count - 1;
+        }, "a silent connection that sent a ping and was replaced");
     }
 
     [Fact]
