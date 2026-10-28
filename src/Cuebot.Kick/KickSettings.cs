@@ -72,4 +72,7 @@ public sealed class KickSettings
 
     /// <summary>Watch the channel's 7TV emote set in real time (7TV EventAPI) for the 7TV emote added/removed triggers.</summary>
     public bool UseSevenTvEvents { get; set; } = true;
+
+    /// <summary>Cuebot-side reward settings and counters (groups, redemption counters), by reward id.</summary>
+    public Dictionary<string, KickRewardState> Rewards { get; set; } = new(StringComparer.Ordinal);
 }

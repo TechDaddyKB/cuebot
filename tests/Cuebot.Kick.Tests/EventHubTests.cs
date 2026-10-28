@@ -31,6 +31,30 @@ public sealed class EventHubTests
     }
 
     [Fact]
+    public void Redemptions_are_counted_per_reward_and_user_and_reset_on_going_live()
+    {
+        var settings = new KickSettings();
+        var counters = new KickRewardCounters(() => settings, () => { });
+        _hub.Counters = counters;
+        counters.SetPersistence("01KEEP", counter: true, userCounter: false);
+        _hub.SetInitialLive(false);
+
+        _hub.Handle(KickEventFactory.Reward("realtime", Fan, "01HYDRATE", "Hydrate", 100, "", "pending", "R1"));
+        _hub.Handle(KickEventFactory.Reward("realtime", new KickActor(6, "Other"), "01HYDRATE", "Hydrate", 100, "", "pending", "R2"));
+        _time.Now += TimeSpan.FromMinutes(3);
+        _hub.Handle(KickEventFactory.Reward("realtime", Fan, "01HYDRATE", "Hydrate", 100, "", "pending", "R3"));
+        _hub.Handle(KickEventFactory.Reward("realtime", Fan, "01KEEP", "Keep", 100, "", "pending", "R4"));
+
+        Assert.Equal(new object?[] { 1, 2, 3, 1 }, _published.Select(e => e.Args["counter"]));
+        Assert.Equal(new object?[] { 1, 1, 2, 1 }, _published.Select(e => e.Args["userCounter"]));
+        Assert.Equal((3, 2), counters.GetRewardCounter("01HYDRATE", "5"));
+
+        _hub.Handle(KickEventFactory.StreamOnline("api", "t", null));
+        Assert.Equal((0, 0), counters.GetRewardCounter("01HYDRATE", "5"));
+        Assert.Equal((1, 0), counters.GetRewardCounter("01KEEP", "5")); // the counter persists, the user counters do not
+    }
+
+    [Fact]
     public void Duplicates_are_allowed_again_after_the_window()
     {
         _hub.Handle(KickEventFactory.Follow("realtime", Fan));

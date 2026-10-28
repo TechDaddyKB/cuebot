@@ -200,6 +200,19 @@ public sealed partial class CphProxy
     public bool TwitchWarnUser(string userName, string reason, bool useBot = false) =>
         !string.IsNullOrWhiteSpace(userName) && Try(() => Call("twitch.warn", new { user = Login(userName), reason = reason ?? "" }));
 
+    /// <summary>Puts a user (by id) under active monitoring: their messages are flagged for moderators.</summary>
+    public bool TwitchAddActiveMonitoringSuspiciousStatus(string userId) => SuspiciousStatus("twitch.addSuspiciousStatus", userId, "Active Monitoring");
+
+    /// <summary>Restricts a user (by id): their messages are kept out of chat.</summary>
+    public bool TwitchAddRestrictedSuspiciousStatus(string userId) => SuspiciousStatus("twitch.addSuspiciousStatus", userId, "Restricted");
+
+    /// <summary>Removes a user's suspicious status (by id).</summary>
+    public bool TwitchRemoveSuspiciousStatus(string userId) => SuspiciousStatus("twitch.removeSuspiciousStatus", userId, null);
+
+    private bool SuspiciousStatus(string function, string userId, string? status, [System.Runtime.CompilerServices.CallerMemberName] string method = "") =>
+        !string.IsNullOrWhiteSpace(userId)
+        && Try(() => Call(function, status is null ? (object)new { user = "id:" + userId.Trim() } : new { user = "id:" + userId.Trim(), status }, method), method);
+
     public bool TwitchAddBlockedTerm(string term) =>
         !string.IsNullOrWhiteSpace(term) && Try(() => CallForArgs("twitch.addBlockedTerm", new { term = term.Trim() }));
 

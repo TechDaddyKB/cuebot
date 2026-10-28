@@ -41,7 +41,7 @@ Verified against a real **Streamer.bot 1.0.7** (2026-10-28): candidate codes wer
 file shows which codes it keeps (all others it drops) and the default settings it fills in for each (field names,
 types and defaults). That gives all **395** sub-action codes it accepts: 390 are the entries of its Add
 Sub-Action menu, 5 are structure (group 99900, if/else branches 99901/99902, switch case 99903 and default 99904).
-**351** map to a Cuebot sub-action with their settings, **44** have no Cuebot equivalent. The codes and default
+**360** map to a Cuebot sub-action with their settings, **35** have no Cuebot equivalent. The codes and default
 settings are the test fixture `tests/Cuebot.Tests/TestData/streamerbot-1.0.7-subaction-defaults.json`;
 `StreamerBotSubActionCodesTests` imports all of them and Cuebot.UiTests checks every mapped one against the sub-action
 types, parameters and choices the app registers.
@@ -237,11 +237,16 @@ Settings conventions:
 | 35042 | Kick > Moderation > Timeout User | certain | kick.timeoutUser | user, duration, reason |
 | 35041 | Kick > Moderation > Unban User | verified (Streamer.bot UI) | kick.unbanUser | user |
 | 35043 | Kick > Moderation > UnTimeout User | verified (Streamer.bot UI) | kick.untimeoutUser | user |
+| 35104 | Kick > Rewards > Configure Rewards | certain | kick.configureRewards | disableNotConfigured |
 | 35108 | Kick > Rewards > Get Reward Info | verified (Streamer.bot UI) | kick.getRewardInfo | reward |
+| 35109 | Kick > Rewards > Reset Reward Counter | verified (Streamer.bot UI) | kick.resetRewardCounter | reward |
+| 35110 | Kick > Rewards > Reset Reward User Counters | verified (Streamer.bot UI) | kick.resetRewardUserCounters | reward |
 | 35113 | Kick > Rewards > Set Background Color | certain | kick.setRewardColor | reward, color |
 | 35103 | Kick > Rewards > Set Cost | certain | kick.setRewardCost | reward, cost |
 | 35106 | Kick > Rewards > Set Description | certain | kick.setRewardDescription | reward, description |
 | 35101 | Kick > Rewards > Set Enabled State | verified (Streamer.bot UI) | kick.setRewardEnabled | reward, enabled |
+| 35111 | Kick > Rewards > Set Group Enabled State | verified (Streamer.bot UI) | kick.setRewardGroupEnabled | group, state |
+| 35112 | Kick > Rewards > Set Group Paused State | verified (Streamer.bot UI) | kick.setRewardGroupPaused | group, state |
 | 35102 | Kick > Rewards > Set Paused State | verified (Streamer.bot UI) | kick.setRewardPaused | reward, paused |
 | 35105 | Kick > Rewards > Set Title | certain | kick.setRewardTitle | reward, title |
 | 35107 | Kick > Rewards > Update | certain | core.group | name, random, color |
@@ -255,6 +260,7 @@ Settings conventions:
 | 41001 | Meld Studio > Get Current Scene | verified (Streamer.bot UI) | meldstudio.getCurrentScene |  |
 | 41002 | Meld Studio > Get Status | verified (Streamer.bot UI) | meldstudio.getStatus |  |
 | 41016 | Meld Studio > Layers > Set Browser Layer Url | verified (Streamer.bot UI) | meldstudio.setBrowserLayerUrl | scene, layer, url |
+| 41014 | Meld Studio > Layers > Set Media Layer Source | verified (Streamer.bot UI) | meldstudio.setLayerSource | scene, layer, source |
 | 41006 | Meld Studio > Layers > Set Layer Visibility State | certain | meldstudio.setLayerVisibility | scene, layer, state |
 | 41013 | Meld Studio > Record Clip | verified (Streamer.bot UI) | meldstudio.recordClip |  |
 | 41004 | Meld Studio > Recording | verified (Streamer.bot UI) | meldstudio.recording | state |
@@ -339,6 +345,7 @@ Settings conventions:
 | 555 | Twitch > Ads > Snooze Ad | verified (Streamer.bot UI) | twitch.snoozeAd |  |
 | 24 | Twitch > Channel > Add Viewer Count | verified (Streamer.bot UI) | twitch.getStreamInfo |  |
 | 18 | Twitch > Channel > Create Clip | certain | twitch.createClip | hasDelay |
+| 573 | Twitch > Clips > Get Clip Download Urls | certain | twitch.getClipDownloadUrls | clipId |
 | 17 | Twitch > Channel > Create Stream Marker | certain | twitch.createMarker | description |
 | 564 | Twitch > Channel > Set Channel Branded Content | verified (Streamer.bot UI) | twitch.setBrandedContent | enabled |
 | 16 | Twitch > Channel > Set Channel Game | certain | twitch.setGame | game |
@@ -368,6 +375,7 @@ Settings conventions:
 | 529 | Twitch > Guest Star > Update Guest Star Slot | certain | twitch.updateGuestStarSlot | slot, toSlot |
 | 531 | Twitch > Guest Star > Update Guest Star Slot Settings | certain | twitch.updateGuestStarSlotSettings | slot, audio, video, live, volume |
 | 504 | Twitch > Moderation > Add Moderator | verified (Streamer.bot UI) | twitch.addModerator | user |
+| 579 | Twitch > Moderation > Add Suspicious Status | verified (Streamer.bot UI) | twitch.addSuspiciousStatus | user, status |
 | 502 | Twitch > Moderation > Add VIP | verified (Streamer.bot UI) | twitch.addVip | user |
 | 511 | Twitch > Moderation > Ban User | certain | twitch.ban | user, reason |
 | 13 | Twitch > Moderation > Chat Modes > Emote Only | verified (Streamer.bot UI) | twitch.emoteOnly | enabled |
@@ -375,6 +383,7 @@ Settings conventions:
 | 14 | Twitch > Moderation > Chat Modes > Slow Mode | verified (Streamer.bot UI) | twitch.slowMode | enabled, seconds |
 | 12 | Twitch > Moderation > Chat Modes > Subscriber Only | verified (Streamer.bot UI) | twitch.subscriberMode | enabled |
 | 505 | Twitch > Moderation > Remove Moderator | verified (Streamer.bot UI) | twitch.removeModerator | user |
+| 580 | Twitch > Moderation > Remove Suspicious Status | verified (Streamer.bot UI) | twitch.removeSuspiciousStatus | user |
 | 503 | Twitch > Moderation > Remove VIP | verified (Streamer.bot UI) | twitch.removeVip | user |
 | 29 | Twitch > Moderation > Send Shoutout | certain | twitch.sendShoutout | user |
 | 26 | Twitch > Moderation > Shield > Get Shield Mode Status | verified (Streamer.bot UI) | twitch.getShieldMode |  |
@@ -487,30 +496,23 @@ These import as disabled placeholders with their original JSON.
 | 37011 | Integrations > Streamfog > Outfits > Activate Outfit | certain | Cuebot has no Streamfog connection |
 | 37013 | Integrations > Streamfog > Outfits > Activate Outfit by Name | certain | Cuebot has no Streamfog connection |
 | 37012 | Integrations > Streamfog > Outfits > Reset Look | certain | Cuebot has no Streamfog connection |
-| 44001 | Integrations > Streamlabs > Spin Wheel | verified (Streamer.bot UI) | Cuebot has no Streamlabs (cloud) wheel |
-| 35104 | Kick > Rewards > Configure Rewards | certain | Cuebot has no bulk Kick reward configuration |
-| 35109 | Kick > Rewards > Reset Reward Counter | verified (Streamer.bot UI) | Cuebot keeps no Kick reward counters |
-| 35110 | Kick > Rewards > Reset Reward User Counters | verified (Streamer.bot UI) | Cuebot keeps no Kick reward counters |
-| 35111 | Kick > Rewards > Set Group Enabled State | verified (Streamer.bot UI) | Cuebot has no Kick reward groups |
-| 35112 | Kick > Rewards > Set Group Paused State | verified (Streamer.bot UI) | Cuebot has no Kick reward groups |
-| 41014 | Meld Studio > Layers > Set Media Layer Source | verified (Streamer.bot UI) | Cuebot's Meld Studio steps cannot change a media layer's file |
-| 41012 | Meld Studio > Layers > Set Text | certain | Cuebot's Meld Studio steps cannot set a text layer |
+| 44001 | Integrations > Streamlabs > Spin Wheel | verified (Streamer.bot UI) | Streamlabs' wheel endpoint needs a REST API (OAuth) token; Cuebot connects with the Socket API token only |
+| 41012 | Meld Studio > Layers > Set Text | certain | Meld's WebChannel API documents no text property for text layers |
 | 20001 | Streamer.bot > Remote > Send Remote Trigger | certain | Cuebot's remote link sends signals only |
-| 573 | Twitch > Clips > Get Clip Download Urls | certain | Cuebot has no clip download step |
-| 579 | Twitch > Moderation > Add Suspicious Status | verified (Streamer.bot UI) | Cuebot has no suspicious-user moderation step |
-| 580 | Twitch > Moderation > Remove Suspicious Status | verified (Streamer.bot UI) | Cuebot has no suspicious-user moderation step |
 
 Gaps by integration: Camera Hub Prompter (16) and EpocCam (4) need a Camera Hub connection Cuebot does not have, and
 three webcam settings (white balance tint, noise reduction, dynamic range) are not in Cuebot's direct UVC control;
-Streamfog (8) has no Cuebot connection; Kick's bulk reward configuration, reward counters and reward groups (5; Cuebot's Kick module still has none),
-two Meld Studio layer setters, Twitch's suspicious-user status and clip downloads, Stream Deck MCP actions,
-Streamer.bot Remote triggers and the Streamlabs spin wheel are not in Cuebot.
+Streamfog (8) has no Cuebot connection; Meld Studio's text layers have no property in Meld's documented WebChannel
+API (its image and media layers do: `source`, `mediaSource`); Streamlabs' spin wheel is a REST call that needs an
+OAuth app token, while Cuebot's Streamlabs connection uses the Socket API token; Stream Deck MCP actions are not in
+Cuebot's Stream Deck plugin, and Streamer.bot Remote triggers are Streamer.bot's own instance-to-instance protocol
+(Cuebot's remote link sends signals).
 
 ## Triggers
 
 Verified against a real **Streamer.bot 1.0.7** install (2026-10-28): every trigger in its Add Trigger menu was added
 in its UI and the saved file read back, which gives each trigger's code and the settings it saves (field names, types
-and defaults). All 419 are listed here; 371 map to a Cuebot trigger, 48 have no Cuebot equivalent. The codes and
+and defaults). All 419 are listed here; 372 map to a Cuebot trigger, 47 have no Cuebot equivalent. The codes and
 default settings are the test fixture `tests/Cuebot.Tests/TestData/streamerbot-1.0.7-trigger-defaults.json`;
 `StreamerBotTriggerCodesTests` imports all of them and Cuebot.UiTests checks every mapped one against the trigger
 types and parameters the app registers. 18002 (custom code event, seen in older exports) is not in the 1.0.7 menu and
@@ -762,6 +764,7 @@ Settings conventions:
 | 148 | Twitch > Channel Goal > Goal Begin | twitch.goalBegin |  |
 | 150 | Twitch > Channel Goal > Goal End | twitch.goalEnd |  |
 | 149 | Twitch > Channel Goal > Goal Progress | twitch.goalProgress |  |
+| 496 | Twitch > Channel Power-Ups > Custom Power-Up Redemption | twitch.customPowerUpRedemption | `customPowerUpId` → powerUp |
 | 196 | Twitch > Channel Power-Ups > Power Up Redemption | twitch.powerUp | `powerUpType` → powerUpType |
 | 194 | Twitch > Channel Reward > Automatic Reward Redemption | twitch.automaticRewardRedemption | `rewardType` → rewardType |
 | 112 | Twitch > Channel Reward > Reward Redemption | twitch.rewardRedemption | `rewardId` reported: set the reward title |
@@ -917,7 +920,6 @@ These import as disabled placeholders with their original JSON.
 | 702 | Core > Test | only feeds test arguments to Streamer.bot's Test Trigger button; Cuebot runs actions by hand from the editor |
 | 23001 | Integrations > Speaker.bot > Connected | Cuebot speaks itself and never connects to Speaker.bot |
 | 23002 | Integrations > Speaker.bot > Disconnected | Cuebot speaks itself and never connects to Speaker.bot |
-| 496 | Twitch > Channel Power-Ups > Custom Power-Up Redemption | Cuebot's Power-up trigger covers Twitch's built-in power-ups only |
 | 116 | Twitch > Community Goal > Community Goal Contribution | Twitch retired community goals and Cuebot has no such event |
 | 117 | Twitch > Community Goal > Community Goal Ended | Twitch retired community goals and Cuebot has no such event |
 | 21401–21426 | Elgato > Camera Hub > Prompter > (all 26) | Cuebot controls webcams directly (UVC) and has no Elgato Prompter connection |
@@ -938,15 +940,15 @@ These import as disabled placeholders with their original JSON.
 | 21387 | Elgato > Camera Hub > Webcam > Live ISO Changed | a Camera Hub setting or event that Cuebot's direct (UVC) webcam control does not see |
 | 21390 | Elgato > Camera Hub > Webcam > Live White Balance Tint Changed | a Camera Hub setting or event that Cuebot's direct (UVC) webcam control does not see |
 
-Gaps in modules Cuebot already has: the Twitch community goal events (116, 117; retired by Twitch) and custom
-power-up redemptions (496) would need new Twitch events; the 16 Camera Hub webcam events above are settings Camera
+Gaps in modules Cuebot already has: the Twitch community goal events (116, 117) were retired by Twitch and have no
+EventSub event; the 16 Camera Hub webcam events above are settings Camera
 Hub itself exposes (ISO, flash, lenses, snapshots, ...) that Cuebot's direct UVC control does not read; the Prompter
 needs a Camera Hub connection Cuebot does not have.
 
 ## Counts
 
-Sub-action codes: 351 of Streamer.bot 1.0.7's 395 mapped (205 certain from their fields, 146 verified by Streamer.bot's UI text), 44 with no
-Cuebot equivalent; every code verified. Trigger codes: 371 of its 419 mapped, all verified (plus 18002). Some numbers
+Sub-action codes: 360 of Streamer.bot 1.0.7's 395 mapped (207 certain from their fields, 153 verified by Streamer.bot's UI text), 35 with no
+Cuebot equivalent; every code verified. Trigger codes: 372 of its 419 mapped, all verified (plus 18002). Some numbers
 are both a sub-action and a trigger code (for example 4001, 15001); the two lists are separate. On the public samples
 tried, every sub-action maps (942 of 942; 924 before the verified sub-action codes) and 94 % of triggers (before the
 verified trigger codes: 72 %); the remaining trigger placeholders there are the Test trigger (702) and 153, a code from

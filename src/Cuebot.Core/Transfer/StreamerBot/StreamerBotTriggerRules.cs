@@ -30,7 +30,6 @@ public sealed partial class StreamerBotMappingTable
             ["23002"] = "Speaker.bot Disconnected: Cuebot speaks itself and never connects to Speaker.bot",
             ["116"] = "Twitch Community Goal Contribution: Twitch retired community goals and Cuebot has no such event",
             ["117"] = "Twitch Community Goal Ended: Twitch retired community goals and Cuebot has no such event",
-            ["496"] = "Twitch Custom Power-Up Redemption: Cuebot's Power-up trigger covers Twitch's built-in power-ups only",
         };
         const string prompter = "Camera Hub Prompter: Cuebot controls webcams directly (UVC) and has no Elgato Prompter connection";
         for (var code = 21401; code <= 21426; code++) gaps[code.ToString(CultureInfo.InvariantCulture)] = prompter;
@@ -395,6 +394,9 @@ public sealed partial class StreamerBotMappingTable
         With("194", "Twitch Automatic Reward Redemption", "twitch.automaticRewardRedemption", (s, _, _) => [("rewardType", Str(s, "rewardType") ?? "")]);
         With("196", "Twitch Power Up Redemption", "twitch.powerUp",
             (s, c, l) => [("powerUpType", Choice(s, c, l, "powerUpType", ["gigantify_an_emote", "celebration", "message_effect"]))]);
+        // The custom power-up is Twitch's id (EventSub custom_power_up.id), which Cuebot's filter also matches.
+        With("496", "Twitch Custom Power-Up Redemption", "twitch.customPowerUpRedemption",
+            (s, _, _) => [("powerUp", Str(s, "customPowerUpId") is { } id && IsRealId(id) ? id : "")]);
         t.Add(new SbTriggerRule("StreamUpdate", "twitch.streamUpdate", ["StreamUpdate", "TwitchStreamUpdate", "118"], (s, c) =>
         {
             if (Bool(s, "gameOnly") == true)

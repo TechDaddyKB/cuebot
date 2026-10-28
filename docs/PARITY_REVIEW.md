@@ -352,6 +352,34 @@ with the reason.
 - ✅ Add Broadcaster Information / Add Random Users / Get User Info for Target: `broadcastUserType`, `broadcasterProfileUrl` (best effort), `randomUserType#`, `targetDescriptionEscaped`, `targetUserProfileImageUrl` (+Escaped), `targetUserType` (3) — `SA:kick/user/*`
 - ✅ Add/Remove User To/From Group / User in Group: `addResult`, `removeResult`, `inGroup`, `foundUser*` (3) — `SA:kick/user-groups/*`
 
+**Importer gaps with a public API: built (w22-equivalents).** The no-equivalent lists named steps Cuebot lacked
+that a documented API covers; they now exist and import:
+
+- ✅ Twitch Add / Remove Suspicious Status (579, 580): `twitch.addSuspiciousStatus` (Active Monitoring or Restricted)
+  and `twitch.removeSuspiciousStatus`, Helix `POST`/`DELETE /moderation/suspicious_users`; outputs `suspiciousUser`,
+  `suspiciousUserName`, `suspiciousUserId`, `suspiciousStatus`, `suspiciousTypes`, `suspiciousStatusResult` (Streamer.bot
+  documents none). New scope `moderator:manage:suspicious_users` (needs a new sign-in). The three CPH methods are real.
+- ✅ Twitch Get Clip Download Urls (573): `twitch.getClipDownloadUrls`, Helix `GET /clips/downloads` (up to 10 clips;
+  the broadcaster is the editor). Needs a user token with `channel:manage:clips` (or `editor:manage:clips`), which
+  Cuebot can do: new scope `channel:manage:clips` (needs a new sign-in). Outputs `clipDownloadUrl` (landscape),
+  `clipPortraitDownloadUrl`, `clipDownload#.clipId/.landscapeUrl/.portraitUrl`, `clipDownloadCount` (Cuebot's names;
+  Streamer.bot documents none). The URLs are temporary.
+- ✅ Twitch Custom Power-Up Redemption trigger (496): EventSub `channel.custom_power_up_redemption.add` v1 (`bits:read`,
+  no new scope), `twitch.customPowerUpRedemption` with a power-up title/id filter; arguments as a reward redemption
+  (`rewardId`, `rewardTitle`/`rewardName`, `rewardPrompt`, `rewardCost` = `bits`, `userInput`/`rawInput*`,
+  `redemptionId`, `status`) plus `customPowerUpId`.
+- ✅ Kick Configure Rewards, Reset Reward Counter, Reset Reward User Counters, Set Group Enabled / Paused State (35104,
+  35109–35112): Cuebot-side counters and groups as on Twitch (kick.json; counted on every redemption as `counter` /
+  `userCounter`, reset on going live unless persisted; group and persistence set per reward on the Kick page). Group
+  and configure steps change rewards with Kick's official `PATCH /public/v1/channels/rewards/{id}`; rewards Kick
+  refuses (403: made on kick.com or by another app) are counted in `rewardsSkipped`.
+- ✅ Meld Studio Set Image/Media Layer Source (41014): `meldstudio.setLayerSource`, `setProperty(layer, "source" or
+  "mediaSource", file URL)` as documented in Meld's WebChannelAPI.md (API v2).
+- Left: Meld Set Text (41012; the documented API has no text property), Streamlabs Spin Wheel (44001; REST
+  `POST /v1.0/wheel/spin` needs an OAuth app access token, Cuebot's Streamlabs link uses the Socket API token), Stream
+  Deck MCP actions, Streamer.bot Remote triggers, Camera Hub Prompter / EpocCam / vendor-only webcam settings,
+  Streamfog, Speaker.bot connection, the Test trigger and the retired community goals.
+
 ## 5. Stream apps and integrations
 
 Present: about 291 (OBS 9/9 triggers and all sub-actions; Meld Studio; VTube Studio; Voicemod; T.I.T.S.; Lumia;
@@ -433,8 +461,6 @@ servers and clients). `w14-cph` closes the C# items below; details are in docs/S
   - Twitch rewards (17), chat (8), moderation (9), clips (5), mods/VIPs (2), user variables (3).
   - Kick (11), YouTube (18), Meld Studio (8), OBS filters and record chapter (7).
 - P · Stubs that compile, log "not supported in Cuebot" and return the failure value:
-  `TwitchAddActiveMonitoringSuspiciousStatus`, `TwitchAddRestrictedSuspiciousStatus` and
-  `TwitchRemoveSuspiciousStatus` (Cuebot does not request `moderator:manage:suspicious_users`), and
   `TwitchGetChannelPointsUsedByUserId` (Cuebot does not track points spent; returns 0).
 - Also added, beyond the 202: `UnPauseReward`, `GetCheermotes`, `TwitchBlockUser(ById)` (stubs) and older
   platform-less group overloads. `ResumeAllActionQueues(clear)` and `DiscordPostTextToWebhook` (returns the
@@ -593,8 +619,8 @@ published event's argument names and types recorded, and the gaps read by hand (
 were only absent from the test payloads were checked in the mapper). The dumps themselves are not committed.
 
 Triggers with no Cuebot equivalent (`StreamerBotMappingTable.NoEquivalentTriggers`: Camera Hub Prompter, the Camera
-Hub webcam settings Cuebot's UVC control does not see, Test, Speaker.bot, community goals, custom power-ups) were
-skipped.
+Hub webcam settings Cuebot's UVC control does not see, Test, Speaker.bot, community goals) were skipped; custom
+power-ups (496) were added later (w22) and have no dump.
 
 ### Every run (engine)
 
@@ -726,7 +752,7 @@ built in loops such as `recipient.#.*`, `badge.#.*`, `match[#]`, `altPhrase*#`, 
 - Kick > Subscriptions: Gift Subscription (35016), Mass Gift Subscription (35017), Resubscription (35015), Subscription (35014)
 - Meld Studio: Connected (33001), Disconnected (33002), Event (33012), Recording Started (33005), Recording Stopped (33006), Scene Changed (33007), Streaming Started (33003), Streaming Stopped (33004)
 - Streamlabs Desktop: Recording Started (22006), Recording Stopped (22007), Scene Changed (22003), Streaming Started (22004), Streaming Stopped (22005)
-- Twitch > Channel Power-Ups: Custom Power-Up Redemption (496)*, Power Up Redemption (196)
+- Twitch > Channel Power-Ups: Custom Power-Up Redemption (496), Power Up Redemption (196)
 - Twitch > Channel Reward: Automatic Reward Redemption (194), Reward Redemption (112), Reward Redemption Updated (171)
 - Twitch > Chat: Chat Message (133), Cheer (102), First Words (120), Modiversary (497), Watch Streak (472)
 - Twitch > General: Announcement (138), Stream Update (118)

@@ -45,6 +45,7 @@ internal static class EventSubMapper
         "channel.subscription.gift" => GiftSub(e),
         "channel.cheer" => Cheer(e),
         "channel.bits.use" => BitsUse(e),
+        "channel.custom_power_up_redemption.add" => CustomPowerUp(e),
 
         // Channel points
         "channel.channel_points_custom_reward_redemption.add" => RewardRedemption(TwitchEventTypes.RewardRedemption, e),
@@ -504,6 +505,23 @@ internal static class EventSubMapper
         args["powerUpEmoteName"] = emote.Str("name");
         args["messageEffectId"] = powerUp.Str("message_effect_id");
         return new BotEvent(type == "power_up" ? TwitchEventTypes.PowerUp : TwitchEventTypes.BitsUsed, args);
+    }
+
+    /// <summary>A custom Power-up (one the broadcaster made, paid with Bits): as a reward redemption, with the Bits as its cost.</summary>
+    private static BotEvent CustomPowerUp(JsonElement e)
+    {
+        var powerUp = e.Child("custom_power_up") ?? default;
+        var args = User(e, "user");
+        args["rewardId"] = powerUp.Str("id");
+        args["rewardTitle"] = powerUp.Str("title");
+        args["rewardPrompt"] = powerUp.Str("prompt");
+        args["rewardCost"] = powerUp.Int("bits");
+        args["bits"] = powerUp.Int("bits");
+        args["userInput"] = e.Str("user_input");
+        args["redemptionId"] = e.Str("id");
+        args["status"] = e.Str("status");
+        args["redeemedAt"] = e.Str("redeemed_at");
+        return new BotEvent(TwitchEventTypes.CustomPowerUpRedemption, args);
     }
 
     // ---------------------------------------------------------------- channel points

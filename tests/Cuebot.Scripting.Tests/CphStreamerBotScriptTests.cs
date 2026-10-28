@@ -151,16 +151,19 @@ public sealed class CphStreamerBotScriptTests : IDisposable
             CPH.SetArgument("approve", CPH.TwitchApproveAutoHeldMessage("held1"));
             CPH.SetArgument("deny", CPH.TwitchDenyAutoHeldMessage("held2"));
             CPH.SetArgument("suspicious", CPH.TwitchAddRestrictedSuspiciousStatus("42"));
+            CPH.SetArgument("monitored", CPH.TwitchAddActiveMonitoringSuspiciousStatus("43"));
+            CPH.SetArgument("unsuspicious", CPH.TwitchRemoveSuspiciousStatus("42"));
+            CPH.SetArgument("suspiciousEmpty", CPH.TwitchRemoveSuspiciousStatus(" "));
             List<TwitchUserInfo> mods = CPH.TwitchGetMods();
             List<TwitchUserInfo> vips = CPH.TwitchGetVips();
             CPH.SetArgument("roles", mods[0].UserLogin + "/" + vips.Count);
             """));
 
         Assert.True(run.Success, run.Error);
-        foreach (var key in new[] { "delete", "clear", "pin", "sendPin", "update", "unpin", "warn", "block", "unblock", "approve", "deny" })
+        foreach (var key in new[] { "delete", "clear", "pin", "sendPin", "update", "unpin", "warn", "block", "unblock", "approve", "deny", "suspicious", "monitored", "unsuspicious" })
             Assert.True(Args[key] is true, key);
         Assert.Equal(false, Args["unblockMissing"]);
-        Assert.Equal(false, Args["suspicious"]);
+        Assert.Equal(false, Args["suspiciousEmpty"]);
         Assert.Equal("pin1|Rules|Ann", Args["pinned"]);
         Assert.Equal("badword,other", Args["terms"]);
         Assert.Equal("modann/0", Args["roles"]);
@@ -171,6 +174,9 @@ public sealed class CphStreamerBotScriptTests : IDisposable
         Assert.Equal("120", _fakes.Last("twitch.pinMessage").GetProperty("duration").GetString());
         Assert.Equal("troll", _fakes.Last("twitch.warn").GetProperty("user").GetString());
         Assert.Equal(["Allow", "Deny"], _fakes.All("twitch.resolveAutomod").Select(a => a.GetProperty("decision").GetString()));
+        Assert.Equal(["id:42|Restricted", "id:43|Active Monitoring"],
+            _fakes.All("twitch.addSuspiciousStatus").Select(a => a.GetProperty("user").GetString() + "|" + a.GetProperty("status").GetString()));
+        Assert.Equal("id:42", _fakes.Last("twitch.removeSuspiciousStatus").GetProperty("user").GetString());
     }
 
     [Fact]
@@ -491,6 +497,8 @@ public sealed class CphStreamerBotScriptTests : IDisposable
                 c.Args["pinnedUser"] = "Ann";
             }),
             Fn("twitch.warn", (_, _) => null),
+            Fn("twitch.addSuspiciousStatus", (_, _) => null),
+            Fn("twitch.removeSuspiciousStatus", (_, _) => null),
             Writes("twitch.addBlockedTerm", (c, _) => c.Args["blockedTermId"] = "t1"),
             Fn("twitch.removeBlockedTerm", (_, a) => a.GetString("term") == "badword"),
             Fn("twitch.getBlockedTerms", (_, _) => new[] { new { Id = "t1", Text = "badword" }, new { Id = "t2", Text = "other" } }),

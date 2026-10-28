@@ -203,6 +203,9 @@ public sealed partial class KickViewModel : PageViewModel
 
     public bool HasRewards => _kick.Rewards.Count > 0;
 
+    /// <summary>Cuebot's own reward settings (group, counter persistence), saved right away.</summary>
+    internal KickRewardCounters Counters => _kick.Counters;
+
     [RelayCommand]
     private Task RefreshRewards() => Run(async () =>
     {
@@ -255,6 +258,27 @@ public sealed partial class KickRewardRow(KickReward reward, KickViewModel owner
     public string Details => $"{reward.Cost} points · {(reward.IsEnabled ? reward.IsPaused ? "paused" : "enabled" : "disabled")}"
                              + (reward.IsUserInputRequired ? " · viewer input" : "") + (reward.SkipsRequestQueue ? " · skips queue" : "");
     public string EnableLabel => reward.IsEnabled ? "Disable" : "Enable";
+
+    /// <summary>The reward's group for the reward group and Configure rewards sub-actions (empty: not configured).</summary>
+    public string Group
+    {
+        get => owner.Counters.GetGroup(reward.Id);
+        set => owner.Counters.SetGroup(reward.Id, value ?? "");
+    }
+
+    /// <summary>Keep the redemption counter when the stream goes live.</summary>
+    public bool PersistCounter
+    {
+        get => owner.Counters.GetPersistence(reward.Id).Counter;
+        set => owner.Counters.SetPersistence(reward.Id, value, PersistUserCounter);
+    }
+
+    /// <summary>Keep the per-user redemption counters when the stream goes live.</summary>
+    public bool PersistUserCounter
+    {
+        get => owner.Counters.GetPersistence(reward.Id).UserCounter;
+        set => owner.Counters.SetPersistence(reward.Id, PersistCounter, value);
+    }
     public string PauseLabel => reward.IsPaused ? "Resume" : "Pause";
 
     [RelayCommand]

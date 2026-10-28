@@ -33,11 +33,17 @@ public static class TwitchScopes
     public const string ManageChatSettings = "moderator:manage:chat_settings";
     public const string ManageShieldMode = "moderator:manage:shield_mode";
     public const string EditClips = "clips:edit";
+    public const string ManageClips = "channel:manage:clips";
+
+    /// <summary>The editor form of <see cref="ManageClips"/>; Cuebot requests the channel one but accepts either.</summary>
+    public const string EditorManageClips = "editor:manage:clips";
+
     public const string ReadHypeTrain = "channel:read:hype_train";
     public const string ReadGoals = "channel:read:goals";
     public const string ReadCharity = "channel:read:charity";
     public const string ManageUnbanRequests = "moderator:manage:unban_requests";
     public const string ReadSuspiciousUsers = "moderator:read:suspicious_users";
+    public const string ManageSuspiciousUsers = "moderator:manage:suspicious_users";
     public const string ManageAutomod = "moderator:manage:automod";
     public const string ManageBlockedTerms = "moderator:manage:blocked_terms";
     public const string ReadChatters = "moderator:read:chatters";
@@ -69,6 +75,7 @@ public static class TwitchScopes
         new(ManageAds, "Channel", "Snooze the next ad"),
         new(ManageRaids, "Channel", "Start and cancel raids"),
         new(EditClips, "Channel", "Create clips"),
+        new(ManageClips, "Channel", "Clip download URLs"),
         new(ManageShoutouts, "Moderation", "Send shoutouts and shoutout events"),
         new(ChannelModerate, "Moderation", "Ban and unban events"),
         new(ModerationRead, "Moderation", "Moderator added and removed events"),
@@ -81,6 +88,7 @@ public static class TwitchScopes
         new(ManageShieldMode, "Moderation", "Shield mode: events and toggle"),
         new(ManageUnbanRequests, "Moderation", "Unban request events"),
         new(ReadSuspiciousUsers, "Moderation", "Suspicious user events"),
+        new(ManageSuspiciousUsers, "Moderation", "Add and remove a chatter's suspicious status"),
         new(ManageAutomod, "Moderation", "AutoMod held messages and term list events"),
         new(ManageBlockedTerms, "Moderation", "Add and remove blocked terms"),
         new(ReadModerators, "Moderation", "Shared chat moderation events (with the ban, chat message, chat mode, term, unban request and warning scopes)"),
