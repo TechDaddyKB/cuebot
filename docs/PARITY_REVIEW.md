@@ -213,7 +213,7 @@ Present: 4 (the globals get/set/clear sub-actions); the generic variables, `%dat
 - F · Global Variable Created, Updated, Deleted and User Global Variable Updated: `global.name`, `global.value`/`newValue`/`oldValue`, `global.persisted`, `global.lastWrite`, `global.userId/userType/userLogin/userName`, plus the Persisted (Either/Yes/No), User Login and Platform filters — `TR:core/global-variables/*`
 
 **Partial (not changed)**
-- P · `%__source%` / `%eventSource%` are not set as arguments. The Streamer.bot event-name map lives in the scripting module, and the docs say C# is needed to read them anyway; `CPH.GetEventType()`/`GetSource()` give the same values — `GD:01.core/03.variables.md`
+- F · `%__source%` / `%eventSource%` are set on every triggered run since w18 (see [Runtime variables vs Streamer.bot 1.0.7 Test Trigger dumps](#runtime-variables-vs-streamerbot-107-test-trigger-dumps)) — `GD:01.core/03.variables.md`
 - P · `$math()$`: Cuebot's evaluator now takes mXparser 4.4's documented operators (`# ! % ^^`, all boolean, relation and bitwise operators), number literals, constants, random variables and the commonly used unary, binary, 3-argument and variadic functions (w16). Still different: errors are reported instead of `NaN`; no calculus/iterated operators (`sum(i,…)`, `int`, `der`, `solve`), units, physical/astronomical constants or the rarer special functions (`Bell`, `Ei`, `erf`, `LambW0`, …); mXparser itself was not added (since 5.0 it is dual-licensed and commercial use needs a paid licence; the BSD-licensed 4.x line is no longer maintained) — `GD:01.core/03.variables.md`
 
 ## 3. Commands, timers, users, points, quotes
@@ -299,7 +299,7 @@ with the reason.
 - ✅ Unban Request Created: `text`; AutoMod Message Held / Updated: `rawInput`, `input#` — `TR:twitch/moderation/*`
 - P · BetterTTV / SevenTV Emote Added/Removed: `imageUrl` is present (Core's emote events carry it); Cuebot still detects these only when the emote cache refreshes, not in real time (4) — `TR:twitch/emotes/*`
 - P · First Words: `firstMessage` — the trigger is Core's `users.firstWords`, outside the Twitch module — `TR:twitch/chat/first-words.md`
-- P · Present Viewers: `isTest` added. Different: `users` is Cuebot's comma separated logins, not Streamer.bot's list of dictionaries (same name, kept); `isLive` added (w16, a stream lookup per poll) — `TR:twitch/general/present-viewers.md`
+- ✅ Present Viewers: `isTest`, `isLive` (w16, a stream lookup per poll); since w18 `users` is Streamer.bot's list of dictionaries (`id`, `userName`, `display`, `role`, `isSubscribed`; role 1 and not subscribed, the chatter list has neither) and Cuebot's comma separated logins moved to `userLogins` — `TR:twitch/general/present-viewers.md`
 - Common variables, now checked against `3.api/.variables/twitch/*.md`:
   - ✅ `TwitchBroadcaster`: `broadcastUser`, `broadcastUserName`, `broadcastUserId` on every event; `broadcastIsAffiliate`/`broadcastIsPartner` once the broadcaster was read at connect.
   - ✅ `TwitchUser`: `userType`, `isSubscribed`, `badgeCount`. `subscriptionTier` (0), `userGroups` (""), `userPreviousActive` are placeholders (w16; Streamer.bot's user database); `badges` is Cuebot's "set/id" string, not a list.
@@ -333,7 +333,7 @@ with the reason.
 - ✅ Poll Closed (and Started/Updated): `poll.question`, `poll.totalVotes`, `poll.options.count`, `poll.option#.*`, `poll.winningOption.*` — `TR:youtube/polls/poll-closed.md`
 - ✅ User Banned / Timed Out: `banDuration` (2) — `TR:youtube/general/user-banned.md`, `user-timed-out.md`
 - ✅ Statistics Updated: `dislikeCount`, `favoriteCount` (always 0: the Data API no longer reports them) — `TR:youtube/broadcast/statistics-updated.md`
-- P · Present Viewers: `isTest`, `isLive`, `users` (the YouTube module has no present-viewers trigger) — `TR:youtube/general/present-viewers.md`
+- ✅ Present Viewers (Core's `users.presentViewers`): `isTest`, `isLive` (placeholder false) and, since w18, `users` as Streamer.bot's list of dictionaries (Cuebot's display-name list moved to `userNames`) — `TR:youtube/general/present-viewers.md`
 - ✅ Common variables: `YouTubeUser` `userType`, `userIsSponsor`; `YouTubeBroadcaster` `broadcastUsername`, `broadcastUserId`, `broadcastUserProfileImage`; `YouTubeBroadcast` `broadcast.id`, `.title`, `.description`, `.privacy`, `.status`. `isSubscribed`, `userPreviousActive`, `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags` are placeholders (w16; not in the Data API chat data or Cuebot's broadcast model).
 - ✅ Ban / Timeout User sub-actions: `bannedUser*`, `banResult`, `timeoutResult` (2) — `SA:youtube/moderation/*`
 
@@ -346,7 +346,7 @@ with the reason.
 - ✅ Gift / Mass Gift Subscription: `recipient.*` / `recipient.#.*`, `count`, `subscribedAt` and `expiresAt` (webhook only) (2) — `TR:kick/subscriptions/gift-subscription.md`, `mass-gift-subscription.md`
 - ✅ User Banned / Timed Out: `createdAt`, `createdBy*` (2) — `TR:kick/moderation/*`
 - ✅ Chat Message: `isInternal` (messages Cuebot sent); `KickChat` `messageStripped`, `colorR/G/B`, `emotes.#.*`, `badgeCount`, `badge`, `badge.#.*`, `rawInput*`, `input.count`, `input#` variants; `KickUser` `userType`, `isSubscribed`; `KickBroadcaster` `broadcastUser`, `broadcastUsername`, `broadcastUserId` — `TR:kick/chat/message.md`
-- P · First Words: `firstMessage` (Core's `users.firstWords`); Present Viewers: `isTest`, `isLive`, `users`, `categoryName`, `categoryThumbnail` (the Kick module has no present-viewers trigger); `KickBroadcaster` `broadcastUserProfileImage`, `KickUser` `userGroups`/`userPreviousActive` are placeholders since w16 (2) — `TR:kick/chat/first-words.md`, `TR:kick/general/present-viewers.md`
+- P · First Words: `firstMessage` (Core's `users.firstWords`); Present Viewers: `categoryName`, `categoryThumbnail` (Core's `users.presentViewers` has `users` as Streamer.bot's list since w18); `KickBroadcaster` `broadcastUserProfileImage`, `KickUser` `userGroups`/`userPreviousActive` are placeholders since w16 (2) — `TR:kick/chat/first-words.md`, `TR:kick/general/present-viewers.md`
 - ✅ Ban / Timeout / Unban / UnTimeout User: `*User*`/`*Result` outputs (4) — `SA:kick/moderation/*`
 - ✅ Set Channel Title / Category: `titleSuccess`, `category.success`/`id`/`name`/`thumbnail` (2) — `SA:kick/channel/*`
 - ✅ Add Broadcaster Information / Add Random Users / Get User Info for Target: `broadcastUserType`, `broadcasterProfileUrl` (best effort), `randomUserType#`, `targetDescriptionEscaped`, `targetUserProfileImageUrl` (+Escaped), `targetUserType` (3) — `SA:kick/user/*`
@@ -582,6 +582,119 @@ Streamer.bot Speaker.bot sub-actions.
 - P · Hot Keys page (old wiki): no hotkey groups or "Set Action" context menu; hotkeys are added, edited, recorded and removed on the page — `WIKI:hotkeys.md`
 - Not applicable: `/nologin` and `/nowebview2` (no Streamer.bot login or WebView2 in Cuebot).
 
+## Runtime variables vs Streamer.bot 1.0.7 Test Trigger dumps
+
+Added in w18 (2026-10-28). Ground truth: a real Streamer.bot 1.0.7 (black box) with one action holding every
+trigger and a C# step that wrote all of the run's arguments with their .NET types to JSON, fired with Streamer.bot's
+own **Test Trigger** (sample data, no accounts connected). That gave dumps for 253 of the 419 triggers. Values are
+sample data; names, nesting and types are what was compared. Each dump was compared with the arguments Cuebot's
+mapped trigger (the importer's code → trigger table) actually produces: the module test suites were run with every
+published event's argument names and types recorded, and the gaps read by hand (missing names in the record that
+were only absent from the test payloads were checked in the mapper). The dumps themselves are not committed.
+
+Triggers with no Cuebot equivalent (`StreamerBotMappingTable.NoEquivalentTriggers`: Camera Hub Prompter, the Camera
+Hub webcam settings Cuebot's UVC control does not see, Test, Speaker.bot, community goals, custom power-ups) were
+skipped.
+
+### Every run (engine)
+
+- **Added** `__source`, `eventSource`, `triggerCategory`, `triggerId`, `queueName` and `isTest` (false unless the
+  event or Test Trigger says otherwise). `triggerName` and `triggerCategory` are the Streamer.bot trigger's
+  (`Follow`, `Twitch/Channel`) when one imports to the Cuebot trigger, else Cuebot's display name and category.
+  `eventSource` is Streamer.bot's lowercase source (`twitch`, `misc`, `filewatcher`, `streamdeck`, `pallygg`...;
+  `src/Cuebot.Core/Transfer/StreamerBot/StreamerBotTriggerCatalog.cs` holds the 419 codes and the source rules), or
+  the event's module for Cuebot-only triggers. Triggers several Streamer.bot triggers import to are told apart by the
+  event's (or the trigger's) `platform` / `provider`: First Words 120/4016/35008, Present Viewers 124/4017/35009,
+  7TV/BTTV emotes 180-183.
+- **`__source`** is Streamer.bot's trigger code (an int; 0 = none). That code is also the value of Streamer.bot's
+  `EventType` enum, so Cuebot's `EventType` now has those values (`(int)EventType.TwitchFollow == 101`; members
+  without a known code are numbered from 100001). While a C# step runs, `args["__source"]` holds the `EventType`
+  itself, so `(EventType)args["__source"] == EventType.TwitchFollow` and `args["__source"].ToString()` work as in
+  Streamer.bot; afterwards the int is put back. `CPH.GetEventType()` reads `__source` first.
+- **Types changed:** `actionId` and `runningActionId` are `Guid`s (were text; `runId` stays text), `actionQueuedAt`
+  is a local `DateTime` (was `DateTimeOffset`).
+- Custom events and local signals no longer carry the sending run's trigger arguments (`ActionEngine.RunArgumentNames`).
+
+### Per module
+
+| Module | Added (real data) | Placeholders | Types changed to Streamer.bot's |
+| --- | --- | --- | --- |
+| Core | File Tail `fileName`; Custom `customEvent.event` (the event name; Streamer.bot's test run had none); First Words now carries the platform's chat variables (badges, `broadcast.*`, `publishedAt`, ...), via `platformArgs` on `chat.message`; Command Triggered gets the platform's user variables too (its own `input#`/`rawInput*` kept); Present Viewers `users` list (`id`, `userName`, `display`, `role`, `isSubscribed`) — 5 | Present Viewers `isLive` (false) | Present Viewers `users`: list of dictionaries (the old text list is `userNames`) |
+| Twitch | `emoteOnly`; `sartedAt` (sic, Guest Star); `fromSharedChat` on shared chat events; sub notices' `rawInput`/`rawInputEscaped`/`rawInputUrlEncoded`/`input#`/`messageStripped`; `prediction.LocksAt`; `charity.donationId`; `term.[#]` (the docs' spelling, next to `term.#`); Present Viewers `title`, `viewerCount`, `startedAt`, `users` — 14 | sub notices `badges`, `badgeCount`, `emotes`, `emoteCount`, `color`; gift bombs `isSubscribed`; Present Viewers `users`/`title`/`viewerCount`/`startedAt` when offline — 8 | `charity.*.value` text ("42.00"), `.valueMinor` int; `poll.Id` Guid; `startedAt` (Stream Online, Shield Mode Begin), `endedAt` (Shield Mode End, Guest Star End), `nextAdAt` DateTime; `adLengthMs` int; Present Viewers `users` list (logins moved to `userLogins`) |
+| YouTube | — (`broadcast.*` and `userProfileUrl` were already there when the broadcast is known) | Jewels `gift.url`, `gift.altText`, `gift.altTextLanguage`, `gift.durationInSeconds`, `gift.hasVisualEffect`, `tier` — 6 | `publishedAt` DateTime on every event; `microAmount`, `banDuration` decimal; `gift.jewelsAmount`, `gift.durationInSeconds`, Statistics counts int |
+| Kick | — (the dumps matched; docs-only triggers checked by hand) | — | Present Viewers `users` (Core) |
+| OBS | `obs.id`, `obs.name`, `obs.host`, `obs.studioVersion`, `obs.websocketVersion` on every event; `obs.sceneName`, `obs.oldSceneName`; `obsVendorEvent.vendor`, `obsVendorEvent.event`; `obsEvent.event` and `obsEvent.<field>` per event data field — 11 + fields | — | Streamlabs Desktop `sd.id` Guid |
+| Donations | StreamElements `tipProvider`, `merchProvider` — 2 | — | StreamElements `tipAmount`, `merchAmount`, `merchItem#.price` decimal; Pally `tip*Amount`, `tipProccessingFee`, `*InCents` decimal (fee in cents int), `createdAt` DateTime; Streamlabs `charityDonationCreatedAt` DateTime |
+| Webhooks | Fourthwall: every `fw.*` name also without the prefix (`donationId`, `email`, `shopId`, `status`, `username`, `createdAt`, `interval`, `nickname`, `type`...: 1.0.7's runs use those, its docs show `fw.*`) and `subscriptionId`; Patreon top-level `updatedToTier` | Patreon `user.attributes.social_connections.*` (12, null when not linked) | `amount` decimal (Ko-fi, Fourthwall, Patreon, Shopify, Throne); every parsed time a local DateTime (Ko-fi `timestamp`, Fourthwall times); Patreon `user.attributes.created`, `entitledTiers[#].attributes.created_at`/`edited_at`/`published_at` DateTime |
+| Stream Deck | Info: `data.application.*` (5), `data.devicePixelRatio`, `data.devices[#].id`/`name`/`size.columns`/`size.rows`/`type`, `data.plugin.uuid`/`version` — 18 | `data.colors.*` (5), `data.application.font`/`platformVersion` "" and `devicePixelRatio` 1 when the plugin's hello leaves them out | device numbers Int64 |
+| Wave Link | Output Switched `mixerOutput` — 1 | — | — |
+| Integrations | HypeRate Clip Created `url` — 1 | — | — |
+
+### Still different (and why)
+
+- Global variable values are Int64 (Cuebot stores whole numbers as long); Streamer.bot's test used Int32.
+- Key Press `key`/`modifier` are key names (Cuebot's hotkeys are cross-platform), not Windows virtual-key UInt16s.
+- Twitch `badges`/`emotes` are Cuebot's text lists, not lists of Streamer.bot's `Twitch.Common` model objects (Cuebot
+  has no such classes; `badgeCount`/`emoteCount` match). Twitch timeout `duration` and YouTube Super Chat `amount`
+  keep Cuebot's types (int / double; Streamer.bot: decimal / "$42.00" text): they are Cuebot's own names that its
+  trigger filters and existing actions read. `amountText` / `formattedAmount` hold the display text.
+- Fourthwall subscription `amount` is a decimal like the donation's (Streamer.bot's test run used an int there).
+- `obsEvent.event` is the OBS event's name; Streamer.bot's test run put a sample list there.
+- `eventSource` of triggers without a dump is inferred from Streamer.bot's `EventSource` names: commands `command`,
+  quotes `quote`, voice control `speechtotext`, WebSocket `websocketclient`/`websocketcustomserver`, Clipboard
+  Changed `misc` (like Toast Activation, the other Core > System trigger).
+- Values that need data Cuebot does not have stay placeholders, as listed above and in `docs/PARITY.md`.
+
+### Triggers without a dump (166)
+
+These could not be test-fired without connected accounts, or crashed Streamer.bot's Test Trigger. For them the trigger
+docs (`TR:`) were compared with the module source instead; the remaining doc gaps were all already covered (names
+built in loops such as `recipient.#.*`, `badge.#.*`, `match[#]`, `altPhrase*#`, `old<Setting>`), plus Twitch's
+`term.[#]` and Streamlabs' `charityDonationCreatedAt` type above. Marked `*`: no Cuebot equivalent.
+
+- Core > Commands: Command Cooldown (402), Command Triggered (401)
+- Core > Quotes: Quote Added (601), Show Quote (602)
+- Core > System: Clipboard Changed (42001)
+- Core > Voice Control: Dictation (301), Command (302)
+- Core > Websocket: Client > Websocket Client Message (805), Client > Websocket Client Closed (804), Client > Websocket Client Opened (803), Custom Server > Custom Server Connection Closed (2002), Custom Server > Custom Server Connection Opened (2001), Custom Server > Custom Server Message (2003)
+- Elgato > Camera Hub: Prompter > Crosshair Image Changed (21424)*, Prompter > Font Changed (21405)*, Prompter > Font Color Changed (21416)*, Prompter > Mode Changed (21403)*, Webcam > Auto Focus Enabled (21381), Webcam > Contrast Changed (21361)
+- Elgato > Wave Link: Filter Added (21013), Filter Bypass State Changed (21016), Filter Changed (21014), Filter Deleted (21015), Input Mute Changed (21006), Input Name Changed (21007), Input Volume Changed (21005), Microphone Balance Changed (21010), Microphone Mute Changed (21011), Microphone Output Volume Changed (21009), Microphone Setting Changed (21012), Output Level Meter Changed (21020), Output Mute Changed (21003), Output Volume Changed (21002), Selected Output Changed (21004), Microphone Gain Changed (21008), Input Level Meter Changed (21019)
+- Integrations > DonorDrive: Donation (3001), Incentive (3003), Profile Updated (3002)
+- Integrations > Shopify: Shopify Order Created (13001), Shopify Order Paid (13002)
+- Integrations > Streamlabs: Charity Donation (205), Connected (203), Disconnected (204), Donation (201), Merchandise (202)
+- Integrations > StreamLoots: Card Redeemed (36003), Pack Gifted (36002), Pack Purchased (36001), Reaction (36004)
+- Integrations > Throne: Contribution Purchased (37002), Gift Crowdfunded (37003), Gift Purchased (37001)
+- Integrations > Throwing System: Connections > Connected (27001), Connections > Events Connected (27004), Connections > Events Disconnected (27005), Connections > Websocket Connected (27002), Connections > Websocket Disconnected (27003), Item Hit (27010), Trigger Activated (27011), Trigger Ended (27012)
+- Integrations > TipeeeStream: Donation (10001)
+- Integrations > TreatStream: Treat (11001)
+- Integrations > VoiceMod: Connected (30001), Disconnected (30002), Soundboard Changed (30004), Voice Loaded (30003)
+- Integrations > VTube Studio: Background Changed (19003), Connected (19007), Disconnected (19008), Item Event (19010), Tracking Status Changed (19009), Model Loaded (19001), Model Unloaded (19002), Model Configuration Changed (19004), Hotkey Triggered (19005), Model Animation (19006), Model Clicked (19011)
+- Kick > Channel: Follow (35011), Stream Offline (35013), Stream Online (35012), Viewer Count Update (35023)
+- Kick > Channel Reward: Reward Redemption (35024)
+- Kick > Chat: Chat Message (35010), First Words (35008)
+- Kick > General: Channel Update (35020), Present Viewers (35009)
+- Kick > Kicks Gifted: Kicks Gifted (35025)
+- Kick > Moderation: User Banned (35019), User Timed Out (35018)
+- Kick > Subscriptions: Gift Subscription (35016), Mass Gift Subscription (35017), Resubscription (35015), Subscription (35014)
+- Meld Studio: Connected (33001), Disconnected (33002), Event (33012), Recording Started (33005), Recording Stopped (33006), Scene Changed (33007), Streaming Started (33003), Streaming Stopped (33004)
+- Streamlabs Desktop: Recording Started (22006), Recording Stopped (22007), Scene Changed (22003), Streaming Started (22004), Streaming Stopped (22005)
+- Twitch > Channel Power-Ups: Custom Power-Up Redemption (496)*, Power Up Redemption (196)
+- Twitch > Channel Reward: Automatic Reward Redemption (194), Reward Redemption (112), Reward Redemption Updated (171)
+- Twitch > Chat: Chat Message (133), Cheer (102), First Words (120), Modiversary (497), Watch Streak (472)
+- Twitch > General: Announcement (138), Stream Update (118)
+- Twitch > Guest Star: Guest Star Guest Update (167)
+- Twitch > Hype Train: Hype Train End (111), Hype Train Level Up (110), Hype Train Start (108), Hype Train Update (109)
+- Twitch > Moderation: AutoMod Message Held (463), AutoMod Message Updated (464), Blocked Terms Added (465), Blocked Terms Deleted (466), Chat Message Deleted (135), Permitted Terms Added (469), Permitted Terms Deleted (470), Shoutout Created (144), Suspicious User Message (495), Suspicious User Update (468), Unban Request Approved (192), Unban Request Created (195), Unban Request Denied (193), User Banned (137), User Unbanned (191), User Untimed Out (145), Warned User (467), Warning Acknowledged (471)
+- Twitch > Pyramid: Pyramid Broken (163)
+- Twitch > Raid: Raid Cancelled (160), Raid Send (159), Raid Start (158)
+- Twitch > Shared Chat: Shared Chat Announcement (481), Shared Chat Message Deleted (494), Shared Chat Session Begin (474), Shared Chat Session End (476), Shared Chat Session Update (475), Shared Chat Sub Gift (488), Shared Chat User Banned (490), Shared Chat User Unbanned (491), Shared Chat User Untimed Out (493), Shared Modiversary (498)
+- Twitch > Subscriptions: Gift Subscription (105)
+- YouTube > General: Present Viewers (4017)
+- YouTube > Polls: Poll Closed (4027), Poll Started (4028), Poll Updated (4029)
+- YouTube > Membership: Gift Membership Received (4015)
+- Integrations > Streamer.bot Remote: Remote Instance Connected (29001), Remote Instance Disconnected (29002), Remote Instance Trigger (29003)
+- Integrations > Streamer.bot: Custom Webhook (34001)
+
 ## Notes for whoever acts on this
 
 - **Fastest compatibility win.** Most gaps in sections 4 and 7 are aliases. An alias layer per mapper (add
@@ -590,5 +703,5 @@ Streamer.bot Speaker.bot sub-actions.
 - **Event-name table.** The `StreamerBotEventMap.Explicit` table is the place to fix the WebSocket names. Its
   `Catalog` should match what `Map()` actually emits.
 - **Variable counts are flags.** They come from a static check scoped to each module, with spot checks against the
-  mappers (Twitch subs, rewards, polls, charity, goals, Crowd Control). A runtime dump of the args each trigger's
-  sample event produces would give exact lists.
+  mappers (Twitch subs, rewards, polls, charity, goals, Crowd Control). The w18 comparison with Streamer.bot's own
+  Test Trigger runs (above) replaced the flags with exact lists for the 253 triggers it could fire.

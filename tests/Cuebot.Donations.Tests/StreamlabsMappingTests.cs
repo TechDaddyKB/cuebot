@@ -75,7 +75,7 @@ public sealed class StreamlabsMappingTests
         Assert.Equal("$25.00", e.Args["charityDonationFormattedAmount"]);
         Assert.Equal("Kind Person", e.Args["charityDonationFrom"]);
         Assert.Equal("camp1", e.Args["campaignId"]);
-        Assert.Equal("2026-01-02T03:04:05Z", e.Args["charityDonationCreatedAt"]);
+        Assert.Equal(DateTimeOffset.Parse("2026-01-02T03:04:05Z").LocalDateTime, e.Args["charityDonationCreatedAt"]);
         Assert.Equal("fas fa-heart", e.Args["charityDonationIconClassName"]);
     }
 

@@ -25,6 +25,30 @@ public class MappingTests
         Assert.Equal(expected, ObsEventMapper.MapOutputEvent(e)?.Type);
     }
 
+    /// <summary>Streamer.bot 1.0.7's OBS names (from its own Test Trigger runs and the trigger docs).</summary>
+    [Fact]
+    public void Events_carry_streamerbots_obs_names()
+    {
+        var source = new ObsEventMapper.ObsSource("Main OBS", "10.0.0.2", "31.0.0", "5.5.0");
+
+        var connected = ObsEventMapper.WithConnection(new BotEvent(ObsEvents.Connected), source);
+        Assert.Equal(ObsEventMapper.ConnectionId("Main OBS"), Assert.IsType<Guid>(connected.Args["obs.id"]));
+        Assert.Equal(("Main OBS", "10.0.0.2", "31.0.0", "5.5.0", "Main OBS"), (connected.Args["obs.name"], connected.Args["obs.host"],
+            connected.Args["obs.studioVersion"], connected.Args["obs.websocketVersion"], connected.Args[ObsEventMapper.ConnectionArg]));
+
+        var scene = ObsEventMapper.WithConnection(ObsEventMapper.SceneChanged("Game", "Intro"), source);
+        Assert.Equal(("Game", "Intro"), (scene.Args["obs.sceneName"], scene.Args["obs.oldSceneName"]));
+
+        var vendor = ObsEventMapper.WithConnection(ObsEventMapper.Map(new ObsEvent("VendorEvent",
+            Json("""{"vendorName":"streamerbot","eventType":"test_event","eventData":{}}""")))!, source);
+        Assert.Equal(("streamerbot", "test_event"), (vendor.Args["obsVendorEvent.vendor"], vendor.Args["obsVendorEvent.event"]));
+
+        var generic = ObsEventMapper.WithConnection(ObsEventMapper.Generic(new ObsEvent("InputMuteStateChanged",
+            Json("""{"inputName":"Mic","inputMuted":true,"inputUuid":null}"""))), source);
+        Assert.Equal(("InputMuteStateChanged", "Mic", "true", ""), (generic.Args["obsEvent.event"], generic.Args["obsEvent.inputName"],
+            generic.Args["obsEvent.inputMuted"], generic.Args["obsEvent.inputUuid"]));
+    }
+
     [Fact]
     public void Record_events_carry_the_output_path_only_when_present()
     {

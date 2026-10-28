@@ -162,6 +162,7 @@ public sealed class HypeRateTests : IAsyncLifetime
         socket.Push("""{"ref":null,"payload":{"twitch_slug":"FuriousTruffle-AmSu"},"topic":"clips:internal-testing","event":"clip:created"}""");
         var clip = await _env.WaitForEventAsync(HeartRateEventTypes.HypeRate.ClipCreated);
         Assert.Equal("https://clips.twitch.tv/FuriousTruffle-AmSu", clip.Args["clipUrl"]);
+        Assert.Equal(clip.Args["clipUrl"], clip.Args["url"]);   // Streamer.bot's name
 
         // Heartbeats keep coming while answered.
         for (var i = 0; i < 3; i++)

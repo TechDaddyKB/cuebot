@@ -152,6 +152,8 @@ public class EngineControlTests : IDisposable
         Assert.Equal("custom.codeEvent", e.Type);
         Assert.Equal("yes", e.Args["extra"]);
         Assert.False(e.Args.ContainsKey("runId"));
+        Assert.False(e.Args.ContainsKey("triggerId"));   // the firing run's trigger arguments stay behind
+        Assert.Equal("boom", e.Args["customEvent.event"]);
         await Task.WhenAll(_h.Engine.Dispatch(e));
         Assert.Contains("got boom yes", _h.Calls);
 

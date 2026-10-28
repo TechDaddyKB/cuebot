@@ -240,6 +240,9 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
                 ["messageCount"] = copy.MessageCount,
                 ["isNewUser"] = copy.MessageCount == 1,
             };
+            // Streamer.bot's First Words carries the platform's chat message variables; Cuebot's common ones win.
+            if (firstArgs.Remove(ChatHub.PlatformArgsKey, out var platformArgs) && platformArgs is IReadOnlyDictionary<string, object?> source)
+                foreach (var (name, value) in source) firstArgs.TryAdd(name, value);
             // Streamer.bot: the first message ever in the channel (a platform may already have said so).
             firstArgs.TryAdd("firstMessage", copy.MessageCount == 1);
             _bus.Publish(new BotEvent(UserEvents.FirstWords, firstArgs));
@@ -273,9 +276,12 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
                     events.Add(new BotEvent(UserEvents.PresentViewers, new Dictionary<string, object?>
                     {
                         ["platform"] = platform.Key,
-                        ["users"] = string.Join(", ", users.Select(u => u.DisplayName)),
+                        // Streamer.bot's list of users (id, userName, display, role 1-4, isSubscribed).
+                        ["users"] = users.Select(PresentUser).ToList(),
+                        ["userNames"] = string.Join(", ", users.Select(u => u.DisplayName)),
                         ["userIds"] = string.Join(", ", users.Select(u => u.UserId)),
                         ["count"] = users.Length,
+                        ["isLive"] = false,   // Streamer.bot's flag; the user list does not know the stream state
                     }));
                 }
             }
@@ -284,6 +290,15 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
         }
         foreach (var e in events) _bus.Publish(e);
     }
+
+    private static Dictionary<string, object?> PresentUser(UserRecord u) => new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["id"] = u.UserId,
+        ["userName"] = u.UserName,
+        ["display"] = u.DisplayName,
+        ["role"] = u.Roles.HasFlag(ChatRoles.Broadcaster) ? 4 : u.Roles.HasFlag(ChatRoles.Moderator) ? 3 : u.Roles.HasFlag(ChatRoles.Vip) ? 2 : 1,
+        ["isSubscribed"] = u.Roles.HasFlag(ChatRoles.Subscriber),
+    };
 
     /// <summary>Writes users.json now if anything changed.</summary>
     public void Flush()

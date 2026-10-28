@@ -166,6 +166,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         var app = message.Obj("app");
         session.AppVersion = app?.Str("version") ?? "";
         session.Platform = app?.Str("platform") ?? "";
+        session.Hello = message.Clone();
         session.SetDevices(StreamDeckProtocol.ParseDevices(message));
         if (message.TryGetProperty("buttons", out _)) session.SetButtons(StreamDeckProtocol.ParseButtons(message));
         session.Ready = true;
@@ -221,7 +222,38 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
             args[$"device{i}.name"] = devices[i].Name;
             args[$"device{i}.type"] = devices[i].TypeName;
         }
+        StreamerBotData(args, s, devices);
         return args;
+    }
+
+    /// <summary>
+    /// Streamer.bot's Stream Deck Info names: the Stream Deck registration info flattened under <c>data.*</c>
+    /// (application, colors, devicePixelRatio, devices[#] with size, plugin). The plugin's hello carries the
+    /// application as "app" and may leave out colors and the pixel ratio; those are "" / 1.
+    /// </summary>
+    private static void StreamerBotData(Dictionary<string, object?> args, Session s, IReadOnlyList<StreamDeckDevice> devices)
+    {
+        var hello = s.Hello;
+        var app = hello?.Obj("application") ?? hello?.Obj("app");
+        foreach (var field in (string[])["font", "language", "platform", "platformVersion", "version"])
+            args["data.application." + field] = app?.Str(field) ?? "";
+        var colors = hello?.Obj("colors");
+        foreach (var field in (string[])["buttonMouseOverBackgroundColor", "buttonPressedBackgroundColor", "buttonPressedBorderColor",
+                     "buttonPressedTextColor", "highlightColor"])
+            args["data.colors." + field] = colors?.Str(field) ?? "";
+        args["data.devicePixelRatio"] = (long)(hello?.Int("devicePixelRatio") ?? 1);
+        for (var i = 0; i < devices.Count; i++)
+        {
+            var p = $"data.devices[{i}].";
+            args[p + "id"] = devices[i].Id;
+            args[p + "name"] = devices[i].Name;
+            args[p + "size.columns"] = (long)devices[i].Columns;
+            args[p + "size.rows"] = (long)devices[i].Rows;
+            args[p + "type"] = (long)devices[i].Type;
+        }
+        var plugin = hello?.Obj("plugin");
+        args["data.plugin.uuid"] = plugin?.Str("uuid") ?? "";
+        args["data.plugin.version"] = s.PluginVersion;
     }
 
     // ---- Requests from the plugin ----------------------------------------------------------------------------------
@@ -409,6 +441,9 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         public string PluginVersion { get; set; } = "";
         public string AppVersion { get; set; } = "";
         public string Platform { get; set; } = "";
+
+        /// <summary>The last hello message, for Streamer.bot's <c>data.*</c> info names.</summary>
+        public JsonElement? Hello { get; set; }
 
         public int DeviceCount
         {

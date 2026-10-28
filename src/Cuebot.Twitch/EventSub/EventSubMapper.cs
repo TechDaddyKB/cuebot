@@ -697,6 +697,7 @@ internal static class EventSubMapper
         var donation = type == TwitchEventTypes.CharityDonation;
         var args = donation ? User(e, "user") : User(e, "broadcaster_user");
         args["campaignId"] = e.Str(donation ? "campaign_id" : "id");
+        if (donation) args["charity.donationId"] = e.Str("id");
         args["charityName"] = e.Str("charity_name");
         args["charityDescription"] = e.Str("charity_description");
         args["charityWebsite"] = e.Str("charity_website");
@@ -714,12 +715,12 @@ internal static class EventSubMapper
         return new BotEvent(type, args);
     }
 
-    /// <summary>Streamer.bot amount: {prefix}.value (decimal), .valueMinor (minor units) and .currency.</summary>
+    /// <summary>Streamer.bot amount: {prefix}.value (text, "42.00"), .valueMinor (int, minor units) and .currency.</summary>
     private static void CharityAmount(Dictionary<string, object?> args, string prefix, JsonElement? amount)
     {
         if (amount is not { ValueKind: JsonValueKind.Object } a) return;
-        args[prefix + ".value"] = decimal.Parse(TwitchApi.Money(a), CultureInfo.InvariantCulture);
-        args[prefix + ".valueMinor"] = a.Child("value") is { ValueKind: JsonValueKind.Number } v && v.TryGetInt64(out var minor) ? minor : 0L;
+        args[prefix + ".value"] = TwitchApi.Money(a);
+        args[prefix + ".valueMinor"] = a.Child("value") is { ValueKind: JsonValueKind.Number } v && v.TryGetInt32(out var minor) ? minor : 0;
         args[prefix + ".currency"] = a.Str("currency");
     }
 

@@ -152,6 +152,13 @@ public sealed class CommandService : IPeriodicService, IDisposable
             ["commandType"] = kind.Length == 0 ? "message" : kind.ToLowerInvariant(),
         };
         if (!args.ContainsKey("msgId") && chat.GetString("messageId") is { Length: > 0 } msgId) args["msgId"] = msgId;
+        // The platform's chat variables (Streamer.bot's TwitchUser, YouTubeUser... sets); the input words stay the command's.
+        if (args.Remove(ChatHub.PlatformArgsKey, out var platformArgs) && platformArgs is IReadOnlyDictionary<string, object?> source)
+        {
+            foreach (var (name, value) in source)
+                if (!name.StartsWith("input", StringComparison.OrdinalIgnoreCase) && !name.StartsWith("rawInput", StringComparison.OrdinalIgnoreCase))
+                    args.TryAdd(name, value);
+        }
 
         if (ChatArgs.RoleOf(chat) != ChatPermission.Broadcaster)
         {

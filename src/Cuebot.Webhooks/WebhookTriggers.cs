@@ -39,6 +39,7 @@ internal static class WebhookFilters
         args.TryGetValue(key, out var v) ? v switch
         {
             double d => d,
+            decimal m => (double)m,
             int i => i,
             long l => l,
             string str => JsonReaders.ParseNumber(str),

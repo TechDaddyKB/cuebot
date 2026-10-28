@@ -60,7 +60,8 @@ internal static class StreamElementsEventMapper
         var (amount, currency, formatted) = Amount(d);
         SetAmount(args, amount, currency, formatted);
         args["tipUsername"] = args["user"];
-        args["tipAmount"] = amount;
+        args["tipAmount"] = (decimal)amount;   // Streamer.bot: decimal
+        args["tipProvider"] = args["provider"];
         args["tipCurrency"] = currency;
         args["tipFormattedAmount"] = formatted;
         args["tipMessage"] = args["message"];
@@ -83,12 +84,13 @@ internal static class StreamElementsEventMapper
             var name = items[i].Str("name");
             names.Add(q > 1 ? $"{q}x {name}" : name);
             args[$"merchItem{i}.name"] = name;
-            args[$"merchItem{i}.price"] = items[i].Number("price");
+            args[$"merchItem{i}.price"] = (decimal)items[i].Number("price");
             args[$"merchItem{i}.quantity"] = q;
         }
         args["product"] = string.Join(", ", names);
         args["merchUsername"] = args["user"];
-        args["merchAmount"] = amount;
+        args["merchAmount"] = (decimal)amount;
+        args["merchProvider"] = args["provider"];
         args["merchCurrency"] = currency;
         args["merchFormattedAmount"] = formatted;
         args["merchMessage"] = args["message"];

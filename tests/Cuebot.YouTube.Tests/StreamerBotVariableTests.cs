@@ -48,7 +48,7 @@ public sealed class StreamerBotVariableTests
         var e = Map(Item("s1", "superChatEvent",
             """ "superChatDetails":{"amountMicros":"5000000","currency":"USD","amountDisplayString":"$5.00","userComment":"great","tier":2} """));
 
-        Assert.Equal(5_000_000L, e.Args["microAmount"]);
+        Assert.Equal(5_000_000m, e.Args["microAmount"]);   // Streamer.bot: decimal
         Assert.Equal("USD", e.Args["currencyCode"]);
         Assert.Equal(2, e.Args["tier"]);
     }
@@ -79,7 +79,7 @@ public sealed class StreamerBotVariableTests
             $$""" "userBannedDetails":{"bannedUserDetails":{"channelId":"{{Alice}}","displayName":"Alice"},"banType":"temporary","banDurationSeconds":"300"} """));
 
         Assert.Equal(Y.UserTimedOut, e.Type);
-        Assert.Equal(300L, e.Args["banDuration"]);
+        Assert.Equal(300m, e.Args["banDuration"]);   // Streamer.bot: decimal
         Assert.Equal("temporary", e.Args["banType"]);
     }
 
@@ -111,7 +111,7 @@ public sealed class StreamerBotVariableTests
         var e = Map(Item("j1", "giftEvent",
             """ "giftDetails":{"jewelsAmount":50,"giftName":"Rose","comboCount":3,"altText":"A rose","altTextLanguage":"en","hasVisualEffect":true} """));
 
-        Assert.Equal(50L, e.Args["gift.jewelsAmount"]);
+        Assert.Equal(50, e.Args["gift.jewelsAmount"]);   // Streamer.bot: Int32
         Assert.Equal("Rose", e.Args["gift.name"]);
         Assert.Equal(3, e.Args["gift.comboCount"]);
         Assert.Equal(true, e.Args["gift.isCombo"]);
@@ -128,6 +128,24 @@ public sealed class StreamerBotVariableTests
         foreach (var name in (string[])["likeCount", "dislikeCount", "viewCount", "favoriteCount", "commentCount", "concurrentViewers"])
             Assert.True(e.Args.ContainsKey(name), name);
         Assert.False(e.Args.ContainsKey("userType"));
+    }
+
+    /// <summary>Types from Streamer.bot 1.0.7's own Test Trigger runs (dumped from a real install).</summary>
+    [Fact]
+    public void Test_trigger_dump_names_have_streamerbots_types()
+    {
+        var message = Map(Text("m1", "hello"));
+        Assert.IsType<DateTime>(message.Args["publishedAt"]);
+        Assert.IsType<DateTime>(message.Args["broadcast.publishedAt"]);
+
+        var stats = StreamerBotVariables.Apply(YouTubeEvents.Statistics(Live, new BroadcastStatistics(12, 100, 5, 3), Broadcaster), Broadcaster, Live);
+        foreach (var name in (string[])["likeCount", "dislikeCount", "viewCount", "favoriteCount", "commentCount"])
+            Assert.IsType<int>(stats.Args[name]);
+
+        var jewels = Map(Item("j2", "giftEvent", """ "giftDetails":{"jewelsAmount":42,"giftName":"Rose","durationInSeconds":10} """));
+        Assert.Equal((42, 10), (jewels.Args["gift.jewelsAmount"], jewels.Args["gift.durationInSeconds"]));
+        Assert.Equal(("", "", "", false, 0), (jewels.Args["gift.url"], jewels.Args["gift.altText"], jewels.Args["gift.altTextLanguage"],
+            jewels.Args["gift.hasVisualEffect"], jewels.Args["tier"]));
     }
 
     [Fact]

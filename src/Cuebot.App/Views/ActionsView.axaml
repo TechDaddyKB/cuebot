@@ -327,7 +327,7 @@
             <TextBox x:Name="TestArguments" Text="{Binding Test.Arguments}" AcceptsReturn="True" TextWrapping="NoWrap"
                      FontFamily="monospace" MinHeight="140" MaxHeight="260" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Available as %name% in the sub-actions, plus triggerType, triggerName, eventType and isTest=true. The trigger's filter settings are not checked; the run goes through the action's queue." />
+                       Text="Available as %name% in the sub-actions, plus the trigger arguments (triggerType, triggerName, triggerCategory, eventType, eventSource, __source...) and isTest=true. The trigger's filter settings are not checked; the run goes through the action's queue." />
             <TextBlock Classes="error" Text="{Binding Test.Error}" IsVisible="{Binding Test.Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">

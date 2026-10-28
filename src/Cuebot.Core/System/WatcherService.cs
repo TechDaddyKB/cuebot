@@ -498,6 +498,7 @@ public sealed class WatcherService : IAsyncDisposable
                     _owner.Publish(WatcherEvents.FileTailLine, _definition, new()
                     {
                         ["filePath"] = _path,
+                        ["fileName"] = Path.GetFileName(_path),   // Streamer.bot's name
                         ["line"] = line,
                     });
                 }

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cuebot.Core.Transfer.StreamerBot;
 using Cuebot.Scripting.Compat;
 using Streamer.bot.Common.Events;
 
@@ -153,6 +154,48 @@ public sealed class StreamerBotApiCoverageTests
         // Names earlier Cuebot versions used still parse, as aliases of the documented values.
         Assert.Equal(EventType.GlobalVariableCreated, Enum.Parse<EventType>("MiscGlobalVariableCreated"));
         Assert.Equal(EventType.SpeechToTextLog, Enum.Parse<EventType>("SpeechToTextDictation"));
+    }
+
+    [Fact]
+    public void EventType_values_are_streamerbots_trigger_codes()
+    {
+        // __source carries the code; Streamer.bot C# compares it with EventType values.
+        Assert.Equal(Array.Empty<int>(), StreamerBotTriggerCatalog.Paths.Keys.Where(c => !Enum.IsDefined(typeof(EventType), c)).ToArray());
+        Assert.Equal((101, 706, 18001, 18002, 4016), ((int)EventType.TwitchFollow, (int)EventType.StreamerbotStarted, (int)EventType.CustomEvent,
+            (int)EventType.CustomCodeEvent, (int)EventType.YouTubeFirstWords));
+        var values = Enum.GetNames<EventType>().Where(n => !n.StartsWith("Misc", StringComparison.Ordinal) && n != nameof(EventType.SpeechToTextDictation))
+            .Select(Enum.Parse<EventType>).ToArray();
+        Assert.Equal(values.Length, values.Distinct().Count());   // one name per value, apart from the old aliases
+
+        // The name the WebSocket event map gives a Cuebot event is the enum value of the Streamer.bot trigger it imports
+        // from. Exceptions: Cuebot triggers that stand for a neighbouring Streamer.bot trigger (custom code events also
+        // fire the Custom trigger; webcam hot-plug imports as Activated/Deactivated; Wave Link 3 connection as the 1.x one;
+        // remote signals as Remote Instance Trigger), whose WebSocket events keep their own names.
+        int[] neighbours = [18001, 21351, 21352, 21017, 21018, 29003];
+        var wrong = new List<string>();
+        foreach (var rule in StreamerBotMappingTable.Default.Triggers)
+        {
+            foreach (var key in rule.TypeKeys.Where(k => int.TryParse(k, out var c) && StreamerBotTriggerCatalog.Paths.ContainsKey(c)))
+            {
+                var code = int.Parse(key, System.Globalization.CultureInfo.InvariantCulture);
+                if (neighbours.Contains(code)) continue;
+                if (StreamerBotTriggerCatalog.For(rule.TargetType, new Dictionary<string, object?>(), Settings(code))?.Code != code) continue;
+                var name = StreamerBotEventMap.Map(rule.TargetType, Settings(code).ToDictionary(p => p.Key, p => (object?)p.Value));
+                if (!Enum.TryParse<EventType>(name.Source + name.Type, out var type) && !Enum.TryParse(name.Type, out type)) continue;
+                if ((int)type != code) wrong.Add($"{code} {rule.TargetType} -> {name} = {(int)type}");
+            }
+        }
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+
+        static Dictionary<string, string> Settings(int code) => code switch
+        {
+            120 or 124 => new() { ["platform"] = "Twitch" },
+            4016 or 4017 => new() { ["platform"] = "YouTube" },
+            35008 => new() { ["platform"] = "Kick" },
+            180 or 181 => new() { ["platform"] = "Twitch", ["provider"] = "7TV" },
+            182 or 183 => new() { ["platform"] = "Twitch", ["provider"] = "BTTV" },
+            _ => [],
+        };
     }
 
     [Fact]

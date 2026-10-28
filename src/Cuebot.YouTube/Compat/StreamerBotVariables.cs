@@ -66,20 +66,24 @@ internal static class StreamerBotVariables
                 break;
         }
 
+        // Streamer.bot's types: message times are DateTimes.
+        ToTime(a, "publishedAt");
+
         switch (type)
         {
             case Y.SuperChat or Y.SuperSticker:
-                Alias(a, "microAmount", "amountMicros");
+                if (a.TryGetValue("amountMicros", out var micros) && micros is long m) Set(a, "microAmount", (decimal)m);
                 Alias(a, "currencyCode", "currency");
                 break;
             case Y.JewelsGifted:
-                Alias(a, "gift.jewelsAmount", "jewels");
+                if (a.TryGetValue("jewels", out var jewels) && jewels is long j) Set(a, "gift.jewelsAmount", (int)j);
                 Alias(a, "gift.name", "giftName");
                 Alias(a, "gift.comboCount", "comboCount");
                 Set(a, "gift.isCombo", Number(a, "comboCount") > 1);
                 break;
             case Y.UserBanned or Y.UserTimedOut:
                 Alias(a, "banDuration", "duration");
+                ToDecimal(a, "banDuration");
                 break;
             case Y.GiftMembershipReceived:
                 Alias(a, "id", "giftId");
@@ -99,8 +103,9 @@ internal static class StreamerBotVariables
                 break;
             case Y.BroadcastStatisticsUpdated:
                 // The YouTube Data API no longer reports dislikes, and favorites are always 0.
-                Set(a, "dislikeCount", 0L);
-                Set(a, "favoriteCount", 0L);
+                Set(a, "dislikeCount", 0);
+                Set(a, "favoriteCount", 0);
+                foreach (var count in (string[])["viewCount", "likeCount", "commentCount"]) ToInt(a, count);
                 break;
         }
 
@@ -133,6 +138,15 @@ internal static class StreamerBotVariables
                 break;
             case Y.SuperSticker:
                 Placeholder(a, "stickerImageUrl", "");
+                break;
+            case Y.JewelsGifted:
+                // Fields of the gift the Data API does not always send.
+                Placeholder(a, "gift.url", "");
+                Placeholder(a, "gift.altText", "");
+                Placeholder(a, "gift.altTextLanguage", "");
+                Placeholder(a, "gift.durationInSeconds", 0);
+                Placeholder(a, "gift.hasVisualEffect", false);
+                Placeholder(a, "tier", 0);
                 break;
         }
     }

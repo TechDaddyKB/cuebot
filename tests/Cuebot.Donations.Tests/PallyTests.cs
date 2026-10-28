@@ -25,8 +25,10 @@ public sealed class PallyMappingTests
         Assert.Empty(e.Keys);   // replays are wanted; PallyService marks them instead of dropping them
         Assert.Equal(("b1w2pjwjtb9fx0v1se9ex4n2", false), (e.Args["tipId"], e.Args["isReplay"]));
         var a = e.Args;
-        Assert.Equal(("Someone", 5d, "$5.00", 500L), (a["tipDisplayName"], a["tipGrossAmount"], a["tipGrossAmountFormatted"], a["tipGrossAmountInCents"]));
-        Assert.Equal((5d, 0L, 0d), (a["tipNetAmount"], a["tipProccessingFeeInCents"], a["tipProcessingFee"]));
+        // Streamer.bot's types: decimals, the fee in cents an int, createdAt a DateTime.
+        Assert.Equal(("Someone", 5m, "$5.00", 500m), (a["tipDisplayName"], a["tipGrossAmount"], a["tipGrossAmountFormatted"], a["tipGrossAmountInCents"]));
+        Assert.Equal((5m, 0, 0m), (a["tipNetAmount"], a["tipProccessingFeeInCents"], a["tipProcessingFee"]));
+        Assert.IsType<DateTime>(a["createdAt"]);
         Assert.Equal(("1627451579049x550722173620715500", "pally", "Pally.gg's Team Page", "https://pally.gg/p/pally"),
             (a["campaignId"], a["campaignSlug"], a["campaignTitle"], a["campaignUrl"]));
         Assert.Equal(("Someone", 5d, "USD", false), (a["user"], a["amount"], a["currency"], a["isTest"]));

@@ -230,7 +230,7 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         socket.Push("""42["event:test",{"listener":"follower-latest","event":{"name":"Someone"}}]""");
         await Wait.UntilAsync(() => Events(StreamElementsEventTypes.Tip).Length == 1, "emulated tip");
         var tip = Events(StreamElementsEventTypes.Tip)[0].Args;
-        Assert.Equal(("Emulated", 12.5, "emulated tip", true), (tip["tipUsername"], tip["tipAmount"], tip["tipMessage"], tip["isTest"]));
+        Assert.Equal(("Emulated", 12.5m, "emulated tip", true), (tip["tipUsername"], tip["tipAmount"], tip["tipMessage"], tip["isTest"]));
         Assert.Empty(Events(StreamElementsEventTypes.Follow));
     }
 }

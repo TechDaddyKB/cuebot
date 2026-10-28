@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Cuebot.Core.Variables;
 
 namespace Cuebot.Donations.Pally;
 
@@ -47,21 +48,22 @@ internal static class PallyEventMapper
             ["tipId"] = id,
             ["tipDisplayName"] = name,
             ["tipMessage"] = text,
-            ["createdAt"] = tip.Str("createdAt"),
+            // Streamer.bot's types: createdAt is a DateTime, the tip* amounts decimals (fee in cents an int).
+            ["createdAt"] = StreamerBotArgs.Time(tip.Str("createdAt")) is { } created ? created : tip.Str("createdAt"),
             ["updatedAt"] = tip.Str("updatedAt"),
-            ["tipGrossAmount"] = amount,
+            ["tipGrossAmount"] = gross / 100m,
             ["tipGrossAmountFormatted"] = formatted,
-            ["tipGrossAmountInCents"] = gross,
-            ["tipNetAmount"] = net / 100d,
+            ["tipGrossAmountInCents"] = (decimal)gross,
+            ["tipNetAmount"] = net / 100m,
             ["tipNetAmountFormatted"] = Money.Format(net / 100d, "USD"),
-            ["tipNetAmountInCents"] = net,
+            ["tipNetAmountInCents"] = (decimal)net,
             // Streamer.bot documents these with the "Proccessing" spelling; both spellings are set.
-            ["tipProccessingFee"] = fee / 100d,
+            ["tipProccessingFee"] = fee / 100m,
             ["tipProccessingFeeFormatted"] = Money.Format(fee / 100d, "USD"),
-            ["tipProccessingFeeInCents"] = fee,
-            ["tipProcessingFee"] = fee / 100d,
+            ["tipProccessingFeeInCents"] = (int)fee,
+            ["tipProcessingFee"] = fee / 100m,
             ["tipProcessingFeeFormatted"] = Money.Format(fee / 100d, "USD"),
-            ["tipProcessingFeeInCents"] = fee,
+            ["tipProcessingFeeInCents"] = (int)fee,
             ["campaignId"] = page.ValueKind == JsonValueKind.Object ? page.First("campaignId", "id") : "",
             ["campaignSlug"] = page.ValueKind == JsonValueKind.Object ? page.Str("slug") : "",
             ["campaignTitle"] = page.ValueKind == JsonValueKind.Object ? page.Str("title") : "",

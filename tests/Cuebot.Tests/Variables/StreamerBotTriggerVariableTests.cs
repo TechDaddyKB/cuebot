@@ -157,7 +157,8 @@ public sealed class StreamerBotTriggerVariableTests : IDisposable
     public async Task Runs_carry_running_action_id()
     {
         var result = await SubActionHarness.RunAsync(new PickColorSubAction(), []);
-        Assert.Equal(result.Args["runId"], result.Args["runningActionId"]);
+        // Streamer.bot types it as a Guid; Cuebot's runId is the same id as text.
+        Assert.Equal(result.Args["runId"], Assert.IsType<Guid>(result.Args["runningActionId"]).ToString());
     }
 
     public void Dispose() => _log.Dispose();

@@ -52,11 +52,9 @@ public sealed class CodeTriggerRegistry
             ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
         // The engine adds its own run arguments again; keep the caller's from leaking into the new run.
-        foreach (var key in new[] { "actionName", "actionId", "runId", "actionQueuedAt", "triggerType", "triggerName", "eventType" })
-        {
-            data.Remove(key);
-        }
+        foreach (var key in ActionEngine.RunArgumentNames) data.Remove(key);
         data["eventName"] = eventName;
+        data["customEvent.event"] = eventName;   // Streamer.bot's Custom trigger names the event here
         return new BotEvent(EventType, data);
     }
 }

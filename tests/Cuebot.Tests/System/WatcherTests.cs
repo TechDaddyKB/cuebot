@@ -164,6 +164,7 @@ public sealed class WatcherTests : IAsyncDisposable
         var lines = _events.Where(e => e.Type == WatcherEvents.FileTailLine).Select(e => (string)e.Args["line"]!).ToArray();
         Assert.Equal(["first", "second"], lines);
         Assert.Equal("Chat", _events.First().Args["watcherName"]);
+        Assert.Equal("chat.log", _events.First().Args["fileName"]);   // Streamer.bot's name
     }
 
     [Fact]

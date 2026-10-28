@@ -92,6 +92,36 @@ public static class StreamerBotArgs
         if (Time(value) is { } time) Set(args, name, time);
     }
 
+    /// <summary>
+    /// Changes an argument holding a time as text (ISO 8601) into a local <see cref="DateTime"/> in place, for names
+    /// Streamer.bot types as DateTime, so C# casts and date formats work. Other values are left alone.
+    /// </summary>
+    public static void ToTime(IDictionary<string, object?> args, string name)
+    {
+        if (args.TryGetValue(name, out var value) && value is string or DateTimeOffset && Time(value) is { } time) args[name] = time;
+    }
+
+    /// <summary>Changes a whole-number argument into an <see cref="int"/> in place (Streamer.bot's Int32), when it fits.</summary>
+    public static void ToInt(IDictionary<string, object?> args, string name)
+    {
+        if (args.TryGetValue(name, out var value) && value is long l and >= int.MinValue and <= int.MaxValue) args[name] = (int)l;
+    }
+
+    /// <summary>Changes a numeric argument into a <see cref="decimal"/> in place (Streamer.bot's type for money and durations).</summary>
+    public static void ToDecimal(IDictionary<string, object?> args, string name)
+    {
+        if (!args.TryGetValue(name, out var value)) return;
+        decimal? d = value switch
+        {
+            int i => i,
+            long l => l,
+            double x when double.IsFinite(x) => (decimal)x,
+            float f when float.IsFinite(f) => (decimal)f,
+            _ => null,
+        };
+        if (d is { } number) args[name] = number;
+    }
+
     /// <summary>The argument as text ("" when missing).</summary>
     public static string Text(IReadOnlyDictionary<string, object?> args, string name) =>
         args.TryGetValue(name, out var v) && v is not null ? Convert.ToString(v, CultureInfo.InvariantCulture) ?? "" : "";

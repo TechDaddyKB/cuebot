@@ -205,9 +205,9 @@ internal static class JsonReaders
         _ => null,
     };
 
-    /// <summary>ISO timestamps become <see cref="DateTimeOffset"/>; anything else stays text.</summary>
+    /// <summary>ISO timestamps become a local <see cref="DateTime"/> (Streamer.bot's type); anything else stays text.</summary>
     public static object Time(string text) =>
-        DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t) ? t : text;
+        DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t) ? t.LocalDateTime : text;
 
     /// <summary>
     /// Writes every scalar under <paramref name="element"/> as <c>prefix.key</c>, <c>prefix.list[0].key</c>

@@ -64,6 +64,7 @@ public sealed partial class CphProxy
     /// <summary>The Streamer.bot event type that started the run (None when unknown or manual).</summary>
     public EventType GetEventType()
     {
+        if (SourceArgument.ToEventType(_context?.Args.GetValueOrDefault(SourceArgument.Name)) is { } source and not EventType.None) return source;
         if (CurrentEvent() is not { } name) return EventType.None;
         // Most values are source + type ("TwitchFollow"); a few sources' values are the type alone ("TimedAction").
         foreach (var candidate in new[] { name.Source + name.Type, name.Type })

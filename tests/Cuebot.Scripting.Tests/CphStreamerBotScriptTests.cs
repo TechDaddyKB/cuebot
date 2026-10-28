@@ -406,6 +406,30 @@ public sealed class CphStreamerBotScriptTests : IDisposable
     }
 
     [Fact]
+    public async Task Source_argument_is_an_EventType_inside_csharp_and_the_code_outside()
+    {
+        var run = await RunAsync(Inline("""
+            EventType source = (EventType)args["__source"];
+            CPH.SetArgument("isFollow", source == EventType.TwitchFollow);
+            CPH.SetArgument("sourceName", args["__source"].ToString());
+            CPH.TryGetArg("__source", out EventType viaTryGet);
+            CPH.SetArgument("viaTryGet", (int)viaTryGet);
+            CPH.SetArgument("eventType", CPH.GetEventType().ToString());
+            """), new() { ["__source"] = 101 });
+
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(true, Args["isFollow"]);
+        Assert.Equal("TwitchFollow", Args["sourceName"]);
+        Assert.Equal(101, Args["viaTryGet"]);
+        Assert.Equal("TwitchFollow", Args["eventType"]);
+        Assert.Equal(101, Args["__source"]);   // put back for later steps and %__source%
+
+        var none = await RunAsync(Inline("""CPH.SetArgument("none", ((EventType)args["__source"]).ToString());"""), new() { ["__source"] = 0 });
+        Assert.True(none.Success, none.Error);
+        Assert.Equal("None", Args["none"]);
+    }
+
+    [Fact]
     public async Task Newtonsoft_is_usable_from_script_bodies_too()
     {
         var run = await RunAsync("""
