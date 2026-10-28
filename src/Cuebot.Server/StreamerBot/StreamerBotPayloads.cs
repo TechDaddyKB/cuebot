@@ -646,8 +646,8 @@ public static class StreamerBotPayloads
         // EventSub v2 hype trains no longer report the last contribution; the documented object stays, empty.
         d["last_contribution"] = new JsonObject { ["user_id"] = "", ["user_login"] = "", ["user_name"] = "", ["total"] = 0 };
         d["top_contributions"] = top;
-        d["started_at"] = a.Str("startedAt");
-        d["expires_at"] = a.Str("expiresAt");
+        d["started_at"] = Time(a, "startedAt");
+        d["expires_at"] = Time(a, "expiresAt");
         d["ended_at"] = a.Str("endedAt");
         d["cooldown_ends_at"] = a.Str("cooldownEndsAt");
         d["isTest"] = a.Bool("isTest");
@@ -704,8 +704,8 @@ public static class StreamerBotPayloads
         d["to_broadcaster_user_name"] = a.Str("user", "userName");
         d["viewer_count"] = a.Int("viewers", "viewerCount");
         d["started_at"] = a.Str("startedAt");
-        d["cooldown_ends_at"] = a.Str("cooldownEndsAt");
-        d["target_cooldown_ends_at"] = a.Str("targetCooldownEndsAt");
+        d["cooldown_ends_at"] = Time(a, "cooldownEndsAt");
+        d["target_cooldown_ends_at"] = Time(a, "targetCooldownEndsAt");
     }
 
     private static void TwitchBan(EventArgsView a, JsonObject d, string action)
@@ -713,7 +713,7 @@ public static class StreamerBotPayloads
         d["target_user_display"] = a.Str("user", "userName");
         d["target_user_id"] = a.Str("userId");
         d["target_user_login"] = a.Str("userName", "user").ToLowerInvariant();
-        d["created_at"] = a.Str("bannedAt", "createdAt");
+        d["created_at"] = Time(a, "bannedAt", "createdAt");
         d["created_by_user_id"] = a.Str("moderatorUserId");
         d["created_by"] = a.Str("moderatorUserName", "moderator");
         d["moderation_action"] = action;
@@ -751,8 +751,8 @@ public static class StreamerBotPayloads
         d["moderator_user_id"] = a.Str("userId");
         d["moderator_user_login"] = a.Str("userName").ToLowerInvariant();
         d["moderator_user_name"] = a.Str("user", "userName");
-        d["started_at"] = a.Str("startedAt");
-        d["ended_at"] = a.Str("endedAt");
+        d["started_at"] = Time(a, "startedAt");
+        d["ended_at"] = Time(a, "endedAt");
     }
 
     private static void TwitchPyramid(EventArgsView a, JsonObject d)
@@ -861,7 +861,7 @@ public static class StreamerBotPayloads
         d["eventId"] = a.Str("messageId");
         d["message"] = text;
         d["text"] = text;
-        d["publishedAt"] = a.Str("publishedAt");
+        d["publishedAt"] = Time(a, "publishedAt");
         d["user"] = YouTubeUser(a);
     }
 

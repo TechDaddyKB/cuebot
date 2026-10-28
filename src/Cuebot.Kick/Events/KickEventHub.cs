@@ -23,6 +23,7 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
     private bool? _isLive;
     private (string Title, string CategoryId, string CategoryName, string CategoryThumbnail)? _channel;
     private (string Title, string StartedAt)? _stream;
+    private readonly Dictionary<string, KickUserRoles> _roles = new(StringComparer.Ordinal);
 
     /// <summary>The broadcaster account for Streamer.bot's broadcastUser* arguments (null until signed in).</summary>
     public Func<KickBroadcasterArgs?>? Broadcaster { get; set; }
@@ -100,6 +101,12 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
             {
                 case KickEventTypes.ChatMessage:
                     a.TryAdd("isInternal", _sent.Contains(a.GetString("messageId")));
+                    // Badges are the user's roles, for later events of the same user that carry none.
+                    if (a.GetString("userId") is { Length: > 0 } chatter && chatter != "0")
+                    {
+                        if (_roles.Count > 20_000) _roles.Clear();
+                        _roles[chatter] = new KickUserRoles(a.GetValueOrDefault("isModerator") is true, a.GetValueOrDefault("isSubscriber") is true);
+                    }
                     break;
                 case KickEventTypes.RewardRedemption when FindReward?.Invoke(a.GetString("rewardId")) is { } reward:
                     a.TryAdd("rewardDescription", reward.Description);
@@ -142,8 +149,24 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
                     break;
             }
         }
-        StreamerBotVariables.Apply(e.Type, a, Broadcaster?.Invoke(), time.GetLocalNow());
+        StreamerBotVariables.Apply(e.Type, a, WithChannel(Broadcaster?.Invoke()), time.GetLocalNow(), Roles);
         return a;
+    }
+
+    /// <summary>The broadcaster account plus the channel's current title and category (kept by channel updates).</summary>
+    private KickBroadcasterArgs? WithChannel(KickBroadcasterArgs? broadcaster)
+    {
+        if (broadcaster is null) return null;
+        lock (_memoryGate)
+            return _channel is { } c
+                ? broadcaster with { Channel = new KickChannelArgs(c.Title, c.CategoryId, c.CategoryName, c.CategoryThumbnail) }
+                : broadcaster;
+    }
+
+    /// <summary>A user's roles as last seen in chat; null when not seen.</summary>
+    private KickUserRoles? Roles(string userId)
+    {
+        lock (_memoryGate) return _roles.TryGetValue(userId, out var roles) ? roles : null;
     }
 
     private bool ShouldPublish(KickEvent e)

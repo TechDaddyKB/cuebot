@@ -144,4 +144,25 @@ public sealed class MappingAndPolicyTests
         Assert.Equal(2, changes.Count);
         Assert.Equal([("*Deleted", a)], ServerManager.Diff(new() { [a] = "1" }, new()).ToList());
     }
+
+    /// <summary>Event arguments typed DateTime (as in Streamer.bot's runs) still become ISO 8601 times in WebSocket payloads.</summary>
+    [Fact]
+    public void Payload_times_from_datetime_arguments_are_iso_8601()
+    {
+        var started = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var data = new System.Text.Json.Nodes.JsonObject();
+        StreamerBotPayloads.Apply(new StreamerBotEventName("Twitch", "HypeTrainStart"), new Dictionary<string, object?>
+        {
+            ["hypeTrainId"] = "h1", ["startedAt"] = started, ["expiresAt"] = started.AddMinutes(5),
+        }, data);
+        Assert.Equal("2026-01-01T12:00:00.0000000Z", (string?)data["started_at"]);
+        Assert.Equal("2026-01-01T12:05:00.0000000Z", (string?)data["expires_at"]);
+
+        var shoutout = new System.Text.Json.Nodes.JsonObject();
+        StreamerBotPayloads.Apply(new StreamerBotEventName("Twitch", "ShoutoutCreated"), new Dictionary<string, object?>
+        {
+            ["userId"] = "4", ["cooldownEndsAt"] = started,
+        }, shoutout);
+        Assert.Equal("2026-01-01T12:00:00.0000000Z", (string?)shoutout["cooldown_ends_at"]);
+    }
 }

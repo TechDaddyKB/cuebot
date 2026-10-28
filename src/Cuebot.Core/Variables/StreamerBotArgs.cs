@@ -66,14 +66,14 @@ public static class StreamerBotArgs
         }
     }
 
-    /// <summary><c>colorR</c>, <c>colorG</c>, <c>colorB</c> from a "#RRGGBB" color (nothing for other text).</summary>
+    /// <summary><c>colorR</c>, <c>colorG</c>, <c>colorB</c> (bytes, as in Streamer.bot) from a "#RRGGBB" color (nothing for other text).</summary>
     public static void AddColor(IDictionary<string, object?> args, string? color)
     {
         var hex = (color ?? "").Trim().TrimStart('#');
         if (hex.Length != 6 || !int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb)) return;
-        Set(args, "colorR", (rgb >> 16) & 0xFF);
-        Set(args, "colorG", (rgb >> 8) & 0xFF);
-        Set(args, "colorB", rgb & 0xFF);
+        Set(args, "colorR", (byte)(rgb >> 16));
+        Set(args, "colorG", (byte)(rgb >> 8));
+        Set(args, "colorB", (byte)rgb);
     }
 
     /// <summary>An ISO 8601 time (string or DateTimeOffset) as a local <see cref="DateTime"/>, like Streamer.bot's DateTime arguments.</summary>

@@ -39,6 +39,9 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     private readonly SevenTvEventSource? _sevenTv;
     private readonly IDisposable _emoteBridge;
     private KickChannel? _channel;
+
+    /// <summary>The broadcaster's profile picture, read with the account at connect (for Streamer.bot's broadcastUserProfileImage).</summary>
+    private string _broadcasterPicture = "";
     private IReadOnlyList<KickReward> _rewards = [];
     private bool _connected;
     private int _emoteRefreshQueued;
@@ -67,7 +70,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _hub = new KickEventHub(bus, time, timings.DedupeWindow)
         {
             Broadcaster = () => Settings.Broadcaster.UserId > 0
-                ? new KickBroadcasterArgs(Settings.Broadcaster.UserName, KickArgs.Id(Settings.Broadcaster.UserId))
+                ? new KickBroadcasterArgs(Settings.Broadcaster.UserName, KickArgs.Id(Settings.Broadcaster.UserId), _broadcasterPicture)
                 : null,
             FindReward = id => _rewards.FirstOrDefault(r => string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase)),
         };
@@ -208,7 +211,11 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         var stored = _tokens.Tokens(account);
         stored.UserId = user.UserId;
         stored.UserName = user.Name;
-        if (account == KickAccount.Broadcaster) await LoadOwnChannelAsync(ct).ConfigureAwait(false);
+        if (account == KickAccount.Broadcaster)
+        {
+            _broadcasterPicture = user.ProfilePicture;
+            await LoadOwnChannelAsync(ct).ConfigureAwait(false);
+        }
         SaveSettings();
         _log.Info("Kick", $"Signed in to Kick as {user.Name} ({account})");
         if (account == KickAccount.Broadcaster) PublishAuthenticated();
@@ -243,6 +250,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
                 var user = await _api.GetCurrentUserAsync(KickAccount.Broadcaster, ct).ConfigureAwait(false);
                 Settings.Broadcaster.UserId = user.UserId;
                 Settings.Broadcaster.UserName = user.Name;
+                _broadcasterPicture = user.ProfilePicture;
                 await LoadOwnChannelAsync(ct).ConfigureAwait(false);
                 SaveSettings();
                 await LoadRewardsForEventsAsync(ct).ConfigureAwait(false);

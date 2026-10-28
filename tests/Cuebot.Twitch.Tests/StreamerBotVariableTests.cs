@@ -120,13 +120,13 @@ public sealed class StreamerBotVariableTests
         Assert.Equal("77", gift.Args["recipientId"]);
         Assert.Equal("Lucky", gift.Args["recipientUser"]);
         Assert.Equal("lucky", gift.Args["recipientUserName"]);
-        Assert.Equal(3, gift.Args["monthsGifted"]);
+        Assert.Equal("3", gift.Args["monthsGifted"]);
         Assert.Equal(51, gift.Args["totalSubsGifted"]);
         Assert.Equal(true, gift.Args["fromGiftBomb"]);
         Assert.Equal(5, gift.Args["subBombCount"]);
         Assert.Equal(2, gift.Args["role"]);
-        Assert.Equal(255, gift.Args["colorR"]);
-        Assert.Equal(128, gift.Args["colorB"]);
+        Assert.Equal((byte)255, gift.Args["colorR"]);
+        Assert.Equal((byte)128, gift.Args["colorB"]);
     }
 
     [Fact]
@@ -321,9 +321,9 @@ public sealed class StreamerBotVariableTests
 
         Assert.Equal("m-1", e.Args["msgId"]);
         Assert.Equal(3, e.Args["role"]);
-        Assert.Equal(0, e.Args["colorR"]);
-        Assert.Equal(255, e.Args["colorG"]);
-        Assert.Equal(127, e.Args["colorB"]);
+        Assert.Equal((byte)0, e.Args["colorR"]);
+        Assert.Equal((byte)255, e.Args["colorG"]);
+        Assert.Equal((byte)127, e.Args["colorB"]);
         Assert.Equal("hello world", e.Args["messageStripped"]);
         Assert.Equal("Kappa", e.Args["input0"]);
         Assert.Equal("world", e.Args["input2"]);
@@ -355,8 +355,8 @@ public sealed class StreamerBotVariableTests
         var e = First("channel.update", Obj(B, """ "title":"New title","language":"en","category_id":"1","category_name":"Art","content_classification_labels":[] """));
 
         Assert.Equal("New title", e.Args["status"]);
-        Assert.Equal(true, e.Args["statusUpdate"]);
-        Assert.Equal(false, e.Args["gameUpdate"]);
+        Assert.Equal("True", e.Args["statusUpdate"]);
+        Assert.Equal("False", e.Args["gameUpdate"]);
         Assert.Equal("Old title", e.Args["oldStatus"]);
         Assert.Equal("Art", e.Args["oldGameName"]);
     }
@@ -496,7 +496,7 @@ public sealed class StreamerBotVariableTests
         Assert.Equal(false, sub.Args["isMultiMonth"]);
         Assert.Equal(0, sub.Args["multiMonthDuration"]);
         Assert.Equal(0, sub.Args["multiMonthTenure"]);
-        Assert.Equal(0, sub.Args["subscriptionTier"]);
+        Assert.Equal("0", sub.Args["subscriptionTier"]);
         Assert.Equal("", sub.Args["userGroups"]);
         Assert.Equal(default(DateTime), sub.Args["userPreviousActive"]);
 
@@ -592,5 +592,132 @@ public sealed class StreamerBotVariableTests
         Assert.Equal(true, RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m2"), ("userId", "1")).Args["inSharedChat"]);
         RouteArgs(T.SharedChatEnd, ("user", "H"), ("userName", "h"), ("userId", "5"));
         Assert.Equal(false, RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m3"), ("userId", "1")).Args["inSharedChat"]);
+    }
+
+    // ---------------------------------------------------------------- signed in: Streamer.bot 1.0.7 runs with an account connected
+
+    [Fact]
+    public void Every_event_has_the_broadcaster_account_block_once_the_account_is_read()
+    {
+        var created = new DateTimeOffset(2015, 3, 4, 5, 6, 7, TimeSpan.Zero);
+        _router.SeedBroadcaster(new TwitchUser("1337", "streamer", "Streamer", "", "affiliate", "Plays games", "https://cdn.example/p.png",
+            "https://cdn.example/o.png", created));
+        _router.SeedChannel(new TwitchChannelInfo("1337", "streamer", "Streamer", "en", "509658", "Just Chatting", "Hello", [], [], false));
+
+        foreach (var e in new[]
+                 {
+                     First("channel.follow", Obj(B, U, """ "followed_at":"2026-01-01T12:00:00Z" """)),
+                     RouteArgs(T.BroadcasterConnected, ("userName", "streamer"), ("userId", "1337")),
+                     RouteArgs(T.EmoteModeOn, ("emoteMode", true)),
+                 })
+        {
+            Assert.Equal("509658", e.Args["broadcasterChannel.gameId"]);
+            Assert.Equal("Just Chatting", e.Args["broadcasterChannel.gameName"]);
+            Assert.Equal("Hello", e.Args["broadcasterChannel.title"]);
+            Assert.Equal(created.UtcDateTime, Assert.IsType<DateTime>(e.Args["broadcasterCreatedAt"]));
+            Assert.Equal("Plays games", e.Args["broadcasterDescription"]);
+            Assert.Equal(true, e.Args["broadcasterIsAffiliate"]);
+            Assert.Equal(false, e.Args["broadcasterIsPartner"]);
+            Assert.Equal(false, e.Args["broadcasterIsOnboarded"]);
+            Assert.Equal("https://cdn.example/p.png", e.Args["broadcasterProfileUrl"]);
+            Assert.Equal("https://cdn.example/o.png", e.Args["broadcasterOfflineUrl"]);
+            Assert.Equal(("Streamer", "streamer", "1337"), (e.Args["broadcastUser"], e.Args["broadcastUserName"], e.Args["broadcastUserId"]));
+        }
+
+        // A stream update changes the channel the next events report.
+        RouteArgs(T.StreamUpdate, ("title", "New"), ("gameId", "1"), ("gameName", "Art"));
+        var next = RouteArgs(T.EmoteModeOff, ("emoteMode", false));
+        Assert.Equal(("New", "1", "Art"), (next.Args["broadcasterChannel.title"], next.Args["broadcasterChannel.gameId"], next.Args["broadcasterChannel.gameName"]));
+    }
+
+    [Fact]
+    public void The_account_block_is_neutral_before_the_account_is_read()
+    {
+        var e = RouteArgs(T.BroadcasterAuthenticated, ("userName", "streamer"), ("userId", "1337"));
+        Assert.Equal(("", "", ""), (e.Args["broadcasterChannel.gameId"], e.Args["broadcasterChannel.gameName"], e.Args["broadcasterChannel.title"]));
+        Assert.Equal(default(DateTime), e.Args["broadcasterCreatedAt"]);
+        Assert.Equal(("", "", ""), (e.Args["broadcasterDescription"], e.Args["broadcasterProfileUrl"], e.Args["broadcasterOfflineUrl"]));
+        Assert.Equal((false, false, false), (e.Args["broadcasterIsAffiliate"], e.Args["broadcasterIsPartner"], e.Args["broadcasterIsOnboarded"]));
+    }
+
+    [Fact]
+    public void Events_without_badges_get_the_roles_last_seen_in_chat()
+    {
+        var chat = RouteArgs(T.ChatMessage, ("message", "hi"), ("messageId", "m1"), ("userId", "42"), ("isModerator", true), ("isVip", false),
+            ("isSubscriber", true));
+        Assert.Equal(true, chat.Args["isModerator"]);
+
+        var follow = RouteArgs(T.Follow, ("user", "Fan"), ("userName", "fan"), ("userId", "42"));
+        Assert.Equal((true, false, true), (follow.Args["isModerator"], follow.Args["isVip"], follow.Args["isSubscribed"]));
+
+        RouteArgs(T.VipAdded, ("user", "Fan"), ("userName", "fan"), ("userId", "42"));
+        RouteArgs(T.ModeratorRemoved, ("user", "Fan"), ("userName", "fan"), ("userId", "42"));
+        var ban = RouteArgs(T.UserBanned, ("user", "Fan"), ("userName", "fan"), ("userId", "42"));
+        Assert.Equal((false, true, true), (ban.Args["isModerator"], ban.Args["isVip"], ban.Args["isSubscribed"]));
+
+        var stranger = RouteArgs(T.Follow, ("user", "New"), ("userName", "new"), ("userId", "43"));
+        Assert.Equal((false, false, false), (stranger.Args["isModerator"], stranger.Args["isVip"], stranger.Args["isSubscribed"]));
+    }
+
+    [Fact]
+    public void Signed_in_test_trigger_names_have_streamerbots_types()
+    {
+        const string Time = "2026-01-01T12:00:00Z";
+        var train = First("channel.hype_train.begin", Obj(B,
+            """
+            "id":"h1","level":1,"total":100,"progress":100,"goal":800,
+            "top_contributions":[{"user_id":"5","user_login":"bitsy","user_name":"Bitsy","type":"bits","total":100}],
+            "started_at":"2026-01-01T11:58:00Z","expires_at":"2026-01-01T12:03:00Z"
+            """));
+        Assert.IsType<DateTime>(train.Args["startedAt"]);
+        Assert.IsType<DateTime>(train.Args["expiresAt"]);
+        Assert.Equal(300, train.Args["duration"]);
+        Assert.Equal(1, train.Args["contributors"]);
+
+        var cheer = RouteArgs(T.Cheer, ("user", "Fan"), ("userName", "fan"), ("userId", "42"), ("bits", 150), ("message", "Cheer100 nice Kappa50"),
+            ("isAnonymous", false));
+        Assert.Equal(false, cheer.Args["anonymous"]);
+        Assert.Equal("Cheer100,Kappa50", cheer.Args["cheerEmotes"]);
+        Assert.Equal(2, cheer.Args["cheerEmoteCount"]);
+        Assert.Equal(1, cheer.Args["role"]);
+        Assert.Equal(("", "", 0, "", 0, ""), (cheer.Args["msgId"], cheer.Args["badges"], cheer.Args["badgeCount"], cheer.Args["emotes"],
+            cheer.Args["emoteCount"], cheer.Args["color"]));
+
+        var shoutout = RouteArgs(T.ShoutoutCreated, ("userId", "4"), ("cooldownEndsAt", Time), ("targetCooldownEndsAt", Time));
+        Assert.IsType<DateTime>(shoutout.Args["cooldownEndsAt"]);
+        Assert.IsType<DateTime>(shoutout.Args["targetCooldownEndsAt"]);
+        Assert.Equal("0", shoutout.Args["subscriptionTier"]);
+        Assert.IsType<DateTime>(RouteArgs(T.UnbanRequestCreated, ("userId", "4"), ("message", "sorry"), ("createdAt", Time)).Args["createdAt"]);
+        Assert.Equal(2, RouteArgs(T.GuestStarGuestUpdate, ("userId", "4"), ("slotId", "2")).Args["slotId"]);
+        Assert.Equal("3", RouteArgs(T.SubGift, ("userId", "1"), ("recipientUserId", "2"), ("durationMonths", 3)).Args["monthsGifted"]);
+        Assert.Equal("restricted", RouteArgs(T.SuspiciousUserUpdate, ("userId", "4"), ("lowTrustStatus", "restricted")).Args["low_trust_status"]);
+
+        var approved = RouteArgs(T.UnbanRequestApproved, ("userId", "4"), ("resolutionText", "ok"), ("moderator", "Mod"), ("moderatorUserName", "mod"),
+            ("moderatorUserId", "9"));
+        Assert.Equal(("ok", "Mod", "9", "mod"), (approved.Args["message"], approved.Args["moderatorDisplayName"], approved.Args["moderatorId"],
+            approved.Args["moderatorUsername"]));
+
+        Assert.Equal(false, RouteArgs(T.Announcement, ("userId", "4"), ("message", "hi")).Args["fromSharedChat"]);
+        Assert.Equal(false, RouteArgs(T.Modiversary, ("userId", "4"), ("months", 2)).Args["fromSharedChat"]);
+
+        // channel.poll.end has no ends_at: the duration is the time the poll ran.
+        var poll = RouteArgs(T.PollTerminated, ("pollId", "p"), ("title", "Q"), ("choiceCount", 0), ("startedAt", "2026-01-01T11:59:00Z"),
+            ("endedAt", Time));
+        Assert.Equal((60, 0), (poll.Args["poll.Duration"], poll.Args["poll.DurationRemaining"]));
+    }
+
+    [Fact]
+    public void Stream_online_gets_the_channel_tags_and_raid_start_the_last_viewer_count()
+    {
+        _router.SeedChannel(new TwitchChannelInfo("1337", "streamer", "Streamer", "en", "1", "Art", "Title", ["English", "Chill"], [], false));
+        var online = RouteArgs(T.StreamOnline);
+        Assert.Equal(new List<string> { "English", "Chill" }, online.Args["tags"]);
+        Assert.Equal(2, online.Args["tagCount"]);
+        Assert.Equal("English, Chill", online.Args["tagsDelimited"]);
+        Assert.Equal(("English", "Chill"), (online.Args["tag0"], online.Args["tag1"]));
+
+        Assert.Equal(0, RouteArgs(T.RaidStart, ("user", "T"), ("userName", "t"), ("userId", "8")).Args["viewers"]);
+        RouteArgs(T.ViewerCountUpdate, ("viewers", 17), ("viewerCount", 17));
+        Assert.Equal(17, RouteArgs(T.RaidStart, ("user", "T"), ("userName", "t"), ("userId", "8")).Args["viewers"]);
     }
 }
