@@ -62,7 +62,20 @@ internal sealed class WhisperEngine(Func<VoiceControlSettings> settings, ModelSt
 
         public static WhisperTranscriber Load(string path, WhisperModel model, WhisperSettings settings)
         {
-            var factory = WhisperFactory.FromPath(path, new WhisperFactoryOptions { UseGpu = settings.UseGpu });
+            WhisperFactory factory;
+            try
+            {
+                factory = WhisperFactory.FromPath(path, new WhisperFactoryOptions { UseGpu = settings.UseGpu });
+            }
+            catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException
+                                           || ex.GetType().Name.Contains("NativeLibrary", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "The whisper.cpp native library could not be loaded. " + (OperatingSystem.IsWindows()
+                        ? "Install the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
+                        : "It needs glibc 2.34 or newer, libstdc++ and libgomp (GCC's OpenMP runtime, e.g. the libgomp1 or gcc-libs package).")
+                    + $" ({ex.Message})", ex);
+            }
             var runtime = RuntimeOptions.LoadedLibrary?.ToString() ?? "CPU";
             return new WhisperTranscriber(factory, model, settings, runtime);
         }

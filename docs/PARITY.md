@@ -86,7 +86,7 @@ Cuebot and fires its trigger; a wrong token is rejected (`RelayLiveTests`).
 | Run program, delay, log | ✅ | — | Hotkey triggers (Windows, XDG portal, X11); Keyboard Press sub-action (Windows SendInput; Linux XDG RemoteDesktop portal, asks once, X11 XTest fallback); Mouse Click trigger (Windows low-level hook; X11 XInput 2 raw events). See note below | ✅ | 4 |
 | Play sound (file; WAV/MP3/OGG/FLAC, mixed) | ✅ | 2 | Play from folder, stop sound, output device selection | ✅ | 2 |
 | File/folder watcher, file tails, process watcher, clipboard get/set/changed | ✅ | 2–4 | Toast notifications + activation (in-app, notify-send) | ✅ | 4 |
-| MIDI in/out | ❌ | 5 | Voice control (speech-to-text, Whisper) | ❌ | 5 |
+| MIDI in/out | ❌ | 5 | Voice control (speech-to-text, Whisper) | 🟡 module done: Whisper (Win+Linux) and Windows Speech engines, commands, both triggers, sub-actions, model download; verified end to end on Windows (live test), Linux native load untested; page not yet wired into the app | 5 |
 | Game-controller input [1.1α] | ❌ | 5 | File read/write, HTTP request, JSON sub-actions | ✅ | 2 |
 
 **Input on Wayland.** Key presses work on Wayland through the RemoteDesktop portal (KDE Plasma, GNOME, and other

@@ -11,7 +11,7 @@ finish-args:
   - --share=ipc
   - --socket=wayland       # Wayland first (native Avalonia Wayland backend)
   - --socket=fallback-x11  # X11 only when no Wayland compositor is available
-  - --socket=pulseaudio    # speech and sound playback
+  - --socket=pulseaudio    # speech and sound playback; microphone for VoiceGate and voice control
   - --device=dri
   - --filesystem=xdg-music:ro   # sound files used by "Play sound"
   - --talk-name=org.kde.StatusNotifierWatcher   # tray icon (StatusNotifierItem); without it Cuebot runs trayless

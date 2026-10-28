@@ -41,6 +41,7 @@ public sealed class VoiceControlLiveTests(ITestOutputHelper output)
         await using var services = new ServiceCollection().AddCuebotCore(new AppPaths(data)).AddSpeech().AddVoiceControl()
             .AddSingleton<IAudioInput>(microphone).BuildServiceProvider();
         var voice = services.GetRequiredService<VoiceControlService>();
+        services.GetRequiredService<Cuebot.Core.Logging.AppLog>().EntryAdded += e => { try { output.WriteLine(e.ToString()); } catch (InvalidOperationException) { } };
         var engine = voice.Engines.Single(e => e.Id == engineId);
         if (!engine.IsAvailable)
         {
@@ -78,7 +79,7 @@ public sealed class VoiceControlLiveTests(ITestOutputHelper output)
         {
             microphone.Play();
             var deadline = DateTime.UtcNow + Timeout;
-            while (!events.Any(e => e.Type == VoiceControlEvents.Command) && DateTime.UtcNow < deadline) await Task.Delay(100);
+            while (!events.Any(e => e.Type == VoiceControlEvents.Command) && voice.State != ConnectionState.Error && DateTime.UtcNow < deadline) await Task.Delay(100);
             output.WriteLine($"Status: {voice.State} {voice.StatusMessage}");
             foreach (var line in services.GetRequiredService<Cuebot.Core.Logging.AppLog>().Recent().Where(l => l.Source == "Voice Control")) output.WriteLine(line.ToString());
             foreach (var entry in voice.DictationLog) output.WriteLine($"Heard \"{entry.Text}\" ({entry.ConfidencePercent}%) → {string.Join(", ", entry.Commands)}");

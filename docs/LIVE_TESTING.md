@@ -13,6 +13,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
 | `Cuebot.LiveTests` › Meld Studio / PolyPop | Meld: WebChannel handshake, scene list, re-show the current scene, optionally toggle a named layer and restore it (the session update must come back). PolyPop: the WebSocket plugin connects to Cuebot and a test alert is delivered | Meld Studio with remote connections on; PolyPop with the WebSocket plugin |
 | `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
+| `Cuebot.LiveTests` › Voice control | Text-to-speech says "start the countdown", the audio is fed to voice control as a microphone, and Whisper (and on Windows also Windows Speech Recognition) must fire the Voice Control Command and Dictation triggers. Downloads a Whisper model on the first run | A local TTS voice (Windows SAPI or espeak-ng); about 32 MB download |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -137,6 +138,15 @@ the port itself (Wave Link 3: `ws-info.json`, then 1884-1893; 1.x/2.x: 1824-1834
 one. The test checks the detected API, the channel and mix lists and a request round trip; with
 `CUEBOT_LIVE_WAVELINK_CHANNEL=<channel name>` it also mutes that channel, waits for the state to change and restores it.
 Level meters are not exercised.
+
+### Voice control
+
+`VoiceControlLiveTests` runs with `CUEBOT_LIVE_VOICE=1`. No microphone is used: the speech module's own TTS (Windows
+SAPI voices, or espeak-ng on Linux) speaks "start the countdown", and the clip is played into voice control in 20 ms
+blocks at real-time speed, like a microphone. The Whisper test downloads its model once (default Tiny English,
+32 MB; pick another with `CUEBOT_LIVE_VOICE_MODEL=base.en-q5_1` etc.) into `CUEBOT_LIVE_DATA/voicecontrol-whisper/models`
+and checks the SHA-256. The Windows Speech Recognition test only runs on Windows with an installed recogniser
+language. On Linux this is also the check that the bundled whisper.cpp libraries load (glibc 2.34+, libgomp).
 
 ## Running
 

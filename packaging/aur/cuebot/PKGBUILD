@@ -7,7 +7,7 @@ pkgdesc="Streaming automation: actions and triggers for Twitch and OBS, text-to-
 arch=('x86_64' 'aarch64')
 url="https://github.com/TechDaddyKB/cuebot"
 license=('MIT')
-depends=('dotnet-runtime>=10.0' 'aspnet-runtime>=10.0' 'fontconfig' 'hicolor-icon-theme' 'libglvnd' 'libice' 'libsm' 'libx11'
+depends=('dotnet-runtime>=10.0' 'aspnet-runtime>=10.0' 'fontconfig' 'gcc-libs' 'hicolor-icon-theme' 'libglvnd' 'libice' 'libsm' 'libx11'
          'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'wayland')
 makedepends=('dotnet-sdk>=10.0' 'aspnet-targeting-pack>=10.0')
 optdepends=('espeak-ng: offline text-to-speech voices'

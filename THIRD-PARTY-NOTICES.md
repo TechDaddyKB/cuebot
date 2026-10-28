@@ -16,11 +16,14 @@ Each keeps its own license; full license texts are available from the linked pro
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM helpers | MIT |
 | [Microsoft.Extensions.DependencyInjection](https://github.com/dotnet/runtime) | Dependency injection | MIT |
 | [Roslyn scripting](https://github.com/dotnet/roslyn) (Microsoft.CodeAnalysis.CSharp.Scripting) | C# execute-code sub-actions | MIT |
-| [System.Speech](https://github.com/dotnet/runtime) | Windows SAPI voices | MIT |
+| [System.Speech](https://github.com/dotnet/runtime) | Windows SAPI voices and Windows speech recognition (voice control) | MIT |
 | [SoundFlow](https://github.com/LSXPrime/SoundFlow) | Audio playback and capture | MIT |
 | [miniaudio](https://github.com/mackron/miniaudio) (native library inside SoundFlow) | Audio backend | MIT No Attribution or public domain (Unlicense), at your choice |
 | [NVorbis](https://github.com/NVorbis/NVorbis) | Ogg Vorbis decoding | MIT |
 | [BouncyCastle.Cryptography](https://github.com/bcgit/bc-csharp) | Ed25519 verification of Throne webhooks | MIT |
+| [Whisper.net](https://github.com/sandrohanea/whisper.net) (Whisper.net, Runtime, Runtime.NoAvx, Runtime.Metal) | Voice control speech-to-text | MIT |
+| [whisper.cpp](https://github.com/ggml-org/whisper.cpp) / ggml (native libraries inside the Whisper.net runtimes) | Voice control speech-to-text | MIT |
+| [Microsoft.Extensions.AI.Abstractions](https://github.com/dotnet/extensions) (dependency of Whisper.net) | — | MIT |
 | [.NET runtime](https://github.com/dotnet/runtime) (self-contained builds) | Runtime | MIT |
 
 ## Downloaded on demand
@@ -28,6 +31,7 @@ Each keeps its own license; full license texts are available from the linked pro
 | Component | When | License |
 |---|---|---|
 | [python-build-standalone](https://github.com/astral-sh/python-build-standalone) | The first time a Python execute-code sub-action needs the built-in interpreter | Python Software Foundation License, plus the licenses of the libraries it bundles (OpenSSL, SQLite, libffi, zlib, …) listed in the distribution |
+| [Whisper models](https://huggingface.co/ggerganov/whisper.cpp) (ggml conversions of OpenAI's Whisper) | When you click Download in Voice Control → Settings; saved in the data folder (`models/whisper`) and checked against a SHA-256 sum | MIT |
 | Python packages installed with the library manager | When you install them | Each package's own license |
 
 ## Online services

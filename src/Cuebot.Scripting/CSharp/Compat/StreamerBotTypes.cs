@@ -73,6 +73,7 @@ namespace Streamer.bot.Common.Events
         Kofi,
         VTubeStudio,
         VoiceMod,
+        SpeechToText,
     }
 
     /// <summary>Event types (source + type). <see cref="None"/> when the run was not started by a known event.</summary>
@@ -148,6 +149,11 @@ namespace Streamer.bot.Common.Events
         WebsocketCustomServerOpen,
         WebsocketCustomServerClose,
         WebsocketCustomServerMessage,
+        SpeechToTextCommand,
+        SpeechToTextDictation,
+
+        /// <summary>Streamer.bot's name for its dictation log event; Cuebot reports dictation as <see cref="SpeechToTextDictation"/>.</summary>
+        SpeechToTextLog,
     }
 }
 
