@@ -148,7 +148,7 @@ has an enabled Mouse Click trigger.
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
    import/export, action history and copy/paste/undo, app shortcuts; left: Streamer.bot type-code mapping (needs real exports).
-5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop 🟡; still to do: Elgato, MIDI, voice control, the remaining apps.
+5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop 🟡; Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control 🟡, game controllers 🟡 (built, not yet tried on real hardware); still to do: the remaining apps.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.

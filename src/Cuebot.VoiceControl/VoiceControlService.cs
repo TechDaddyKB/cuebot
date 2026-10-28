@@ -33,6 +33,7 @@ public sealed class VoiceControlService : IConnectionStatus, IAsyncDisposable
     private readonly EventBus _bus;
     private readonly AppLog _log;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
+    private int _disposed;
     private readonly object _gate = new();
     private readonly LinkedList<DictationEntry> _dictation = new();
     private readonly Dictionary<long, List<CommandHit>> _fired = [];
@@ -454,8 +455,10 @@ public sealed class VoiceControlService : IConnectionStatus, IAsyncDisposable
         StatusChanged?.Invoke();
     }
 
+    /// <summary>Safe to call more than once: the container also disposes it through its IConnectionStatus registration.</summary>
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         await _lifecycle.WaitAsync().ConfigureAwait(false);
         try { await StopCoreAsync().ConfigureAwait(false); }
         finally { _lifecycle.Release(); }

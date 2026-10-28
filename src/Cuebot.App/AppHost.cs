@@ -14,11 +14,14 @@ using Cuebot.Server;
 using Cuebot.Scripting;
 using Cuebot.Speech;
 using Cuebot.Speech.Emotes;
+using Cuebot.Controllers;
 using Cuebot.Elgato;
+using Cuebot.Midi;
 using Cuebot.StreamApps;
 using Cuebot.StreamDeck;
 using Cuebot.WaveLink;
 using Cuebot.Twitch;
+using Cuebot.VoiceControl;
 using Cuebot.Webhooks;
 using Cuebot.YouTube;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,6 +48,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddObs()
             .AddSpeech()
             .AddSpeechEmoteNames()
+            .AddVoiceControl()   // uses Speech's microphone capture
             .AddScripting()
             .AddRumble()
             .AddYouTube()
@@ -54,6 +58,8 @@ public sealed class AppHost : IAsyncDisposable
             .AddStreamApps()
             .AddElgato()
             .AddWaveLink()
+            .AddMidi()
+            .AddGameControllers()
             .AddWebhooks()
             .AddServers()
             .AddStreamDeck()
@@ -115,6 +121,9 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Elgato Lights", () => Get<Cuebot.Elgato.Lights.ElgatoLightsService>().StartAsync()),
             StartSafely(log, "Camera Hub", () => Get<Cuebot.Elgato.CameraHub.CameraHubService>().StartAsync()),
             StartSafely(log, "Wave Link", () => Get<Cuebot.WaveLink.WaveLinkService>().StartAsync()),
+            StartSafely(log, "MIDI", () => Get<Cuebot.Midi.MidiService>().StartAsync()),
+            StartSafely(log, "Controllers", () => Get<Cuebot.Controllers.ControllerService>().StartAsync()),
+            StartSafely(log, "Voice Control", () => Get<Cuebot.VoiceControl.VoiceControlService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),

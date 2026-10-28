@@ -91,7 +91,7 @@ public sealed partial class VoiceControlViewModel : PageViewModel
 
     public bool HasSelection => Selected is not null;
 
-    public IReadOnlyList<string> Locations { get; } = Enum.GetNames<CommandLocation>();
+    public static IReadOnlyList<string> Locations { get; } = Enum.GetNames<CommandLocation>();
 
     [RelayCommand]
     private void AddCommand()
@@ -292,9 +292,6 @@ public sealed partial class VoiceControlViewModel : PageViewModel
         set { S.Whisper.PromptWithCommands = value; _voice.Save(); OnPropertyChanged(); }
     }
 
-    [RelayCommand]
-    private Task DownloadModel() => Model is { } m ? m.DownloadAsync() : Task.CompletedTask;
-
     /// <summary>Engine, model or language changes need a restart of the engine; done automatically while listening.</summary>
     private void ApplyAfterChange()
     {
@@ -392,6 +389,7 @@ public sealed partial class WhisperModelRowViewModel(VoiceControlViewModel owner
 
     public override string ToString() => Name;
 
+    [RelayCommand]
     internal Task DownloadAsync() => owner.RunAsync(() => owner.Service.Models.DownloadAsync(Model));
 
     [RelayCommand]

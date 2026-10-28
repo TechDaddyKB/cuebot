@@ -19,7 +19,7 @@ public sealed class ControllerLiveTests(ITestOutputHelper output)
     {
         var dataDirectory = Path.Combine(LiveEnvironment.DataDirectory, "controllers");
         Directory.CreateDirectory(dataDirectory);
-        await using var services = new ServiceCollection().AddCuebotCore(new AppPaths(dataDirectory)).AddControllers().BuildServiceProvider();
+        await using var services = new ServiceCollection().AddCuebotCore(new AppPaths(dataDirectory)).AddGameControllers().BuildServiceProvider();
         var events = new ConcurrentQueue<BotEvent>();
         services.GetRequiredService<EventBus>().Subscribe(events.Enqueue);
         var controllers = services.GetRequiredService<ControllerService>();

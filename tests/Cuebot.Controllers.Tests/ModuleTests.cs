@@ -17,7 +17,7 @@ public sealed class ModuleTests : IAsyncDisposable
     private readonly ServiceProvider _services;
 
     public ModuleTests() =>
-        _services = new ServiceCollection().AddCuebotCore(new AppPaths(_dir)).AddControllers()
+        _services = new ServiceCollection().AddCuebotCore(new AppPaths(_dir)).AddGameControllers()
             .AddSingleton<IControllerBackend>(_backend)   // last registration wins: no SDL, no devices
             .BuildServiceProvider();
 
@@ -48,7 +48,7 @@ public sealed class ModuleTests : IAsyncDisposable
     {
         _backend.Present.AddRange([FakeBackend.Xbox(1), FakeBackend.DualSense(2)]);
         var capture = new CaptureStep();
-        await using var services = new ServiceCollection().AddCuebotCore(new AppPaths(Path.Combine(_dir, "run"))).AddControllers()
+        await using var services = new ServiceCollection().AddCuebotCore(new AppPaths(Path.Combine(_dir, "run"))).AddGameControllers()
             .AddSingleton<IControllerBackend>(_backend).AddSingleton<ISubActionHandler>(capture).BuildServiceProvider();
         var engine = services.GetRequiredService<ActionEngine>();
         var action = new ActionDefinition

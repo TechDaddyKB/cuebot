@@ -66,7 +66,8 @@
           </DockPanel>
 
           <ScrollViewer Grid.Column="1" Margin="16,0,0,0">
-            <Border Classes="card" IsVisible="{Binding $parent[UserControl].((vm:VoiceControlViewModel)DataContext).HasSelection}" DataContext="{Binding Selected}" x:DataType="vm:VoiceCommandRowViewModel"
+            <Panel IsVisible="{Binding HasSelection}">
+            <Border Classes="card" DataContext="{Binding Selected}" x:DataType="vm:VoiceCommandRowViewModel"
                     VerticalAlignment="Top" MaxWidth="640" HorizontalAlignment="Left">
               <StackPanel Spacing="10">
                 <StackPanel>
@@ -80,7 +81,7 @@
                 </StackPanel>
                 <StackPanel>
                   <TextBlock Classes="label" Text="Location" />
-                  <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:VoiceControlViewModel)DataContext).Locations}"
+                  <ComboBox ItemsSource="{x:Static vm:VoiceControlViewModel.Locations}"
                             SelectedItem="{Binding Location}" MinWidth="180" />
                   <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12" Margin="0,4,0,0"
                              Text="Exact: the whole phrase on its own, with a pause before and after. Start: the phrase begins what you say; the rest becomes %spokenTextInput%. Anywhere: the phrase anywhere in a sentence." />
@@ -95,6 +96,7 @@
                 </StackPanel>
               </StackPanel>
             </Border>
+            </Panel>
           </ScrollViewer>
         </Grid>
       </TabItem>
@@ -168,7 +170,7 @@
                 <StackPanel DataContext="{Binding Model}" x:DataType="vm:WhisperModelRowViewModel" Spacing="6">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Download" Classes="accent" IsVisible="{Binding CanDownload}"
-                            Command="{Binding $parent[UserControl].((vm:VoiceControlViewModel)DataContext).DownloadModelCommand}" Name="VoiceDownload" />
+                            Command="{Binding DownloadCommand}" Name="VoiceDownload" />
                     <Button Content="Cancel download" IsVisible="{Binding IsDownloading}" Command="{Binding CancelCommand}" />
                     <Button Content="Delete model" IsVisible="{Binding IsDownloaded}" Command="{Binding DeleteCommand}" />
                   </StackPanel>

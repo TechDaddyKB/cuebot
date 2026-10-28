@@ -22,7 +22,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public static readonly IReadOnlyList<(string Group, string[] Titles)> NavLayout =
     [
         ("Main", ["Dashboard", "Chat", "Actions", "Commands", "History"]),
-        ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Quotes", "Credits", "Points"]),
+        ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Input", "Quotes", "Credits", "Points"]),
         ("Platforms", ["Twitch", "Rumble", "YouTube", "Kick"]),
         ("Apps", ["OBS", "Speech", "Donations", "Integrations", "Webhooks"]),
         ("System", ["Import / Export", "Scripting", "Servers", "Support", "Settings"]),
@@ -64,6 +64,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new Cuebot.App.ViewModels.YouTube.YouTubeViewModel(host.Get<Cuebot.YouTube.YouTubeService>()),
             new Cuebot.App.ViewModels.Kick.KickViewModel(host.Get<Cuebot.Kick.KickService>()),
             new Cuebot.App.ViewModels.Donations.DonationsViewModel(host.Get<Cuebot.Donations.DonationServices>()),
+            new InputPageViewModel(
+                new Cuebot.App.ViewModels.VoiceControl.VoiceControlViewModel(host.Get<Cuebot.VoiceControl.VoiceControlService>()),
+                new Cuebot.App.ViewModels.Midi.MidiViewModel(host.Get<Cuebot.Midi.MidiService>()),
+                new Cuebot.App.ViewModels.Controllers.ControllersViewModel(host.Get<Cuebot.Controllers.ControllerService>())),
             new Cuebot.App.ViewModels.Integrations.IntegrationsPageViewModel(
                 new Cuebot.App.ViewModels.Integrations.IntegrationsViewModel(
                     host.Get<Cuebot.Integrations.VTubeStudio.VTubeStudioService>(), host.Get<Cuebot.Integrations.Voicemod.VoicemodService>(),

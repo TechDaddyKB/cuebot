@@ -19,7 +19,7 @@ public static class ControllersServiceCollectionExtensions
     /// core timer starts/stops watching as triggers come and go), triggers, sub-actions and script functions. Call
     /// <see cref="ControllerService.StartAsync"/> at startup. Nothing touches a device until something needs it.
     /// </summary>
-    public static IServiceCollection AddControllers(this IServiceCollection services)
+    public static IServiceCollection AddGameControllers(this IServiceCollection services)
     {
         services.AddSettingsFile<ControllerSettings>("controllers.json");
         services.AddSingleton<IControllerBackend>(sp => new SdlControllerBackend(sp.GetRequiredService<AppLog>()));

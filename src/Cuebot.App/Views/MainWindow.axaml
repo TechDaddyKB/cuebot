@@ -65,6 +65,7 @@
     <DataTemplate DataType="donvm:DonationsViewModel"><donv:DonationsView /></DataTemplate>
     <DataTemplate DataType="intvm:IntegrationsViewModel"><intv:IntegrationsView /></DataTemplate>
     <DataTemplate DataType="intvm:IntegrationsPageViewModel"><intv:IntegrationsPageView /></DataTemplate>
+    <DataTemplate DataType="vm:InputPageViewModel"><views:InputPageView /></DataTemplate>
     <DataTemplate DataType="whvm:WebhooksPageViewModel"><whv:WebhooksPageView /></DataTemplate>
     <DataTemplate DataType="xvm:QuotesViewModel"><xviews:QuotesView /></DataTemplate>
     <DataTemplate DataType="xvm:CreditsViewModel"><xviews:CreditsView /></DataTemplate>

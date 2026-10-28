@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:vcvm="using:Cuebot.App.ViewModels.VoiceControl"
+             xmlns:vcv="using:Cuebot.App.Views.VoiceControl"
+             xmlns:midivm="using:Cuebot.App.ViewModels.Midi"
+             xmlns:midiv="using:Cuebot.App.Views.Midi"
+             xmlns:ctlvm="using:Cuebot.App.ViewModels.Controllers"
+             xmlns:ctlv="using:Cuebot.App.Views.Controllers"
+             x:Class="Cuebot.App.Views.InputPageView"
+             x:DataType="vm:InputPageViewModel">
+  <!-- Tab views come from templates so they never see this page's DataContext. Each brings its own heading,
+       scrolling and padding. Unselected tabs are detached, so the controllers tab only keeps SDL running while shown. -->
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vcvm:VoiceControlViewModel"><vcv:VoiceControlView /></DataTemplate>
+    <DataTemplate DataType="midivm:MidiViewModel"><midiv:MidiView /></DataTemplate>
+    <DataTemplate DataType="ctlvm:ControllersViewModel"><ctlv:ControllersView /></DataTemplate>
+  </UserControl.DataTemplates>
+  <TabControl Margin="12,8,12,0">
+    <TabItem Header="Voice control" Content="{Binding VoiceControl}" />
+    <TabItem Header="MIDI" Content="{Binding Midi}" />
+    <TabItem Header="Game controllers" Content="{Binding Controllers}" />
+  </TabControl>
+</UserControl>

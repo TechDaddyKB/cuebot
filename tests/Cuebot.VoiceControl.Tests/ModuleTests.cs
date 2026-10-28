@@ -52,6 +52,15 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Disposing_the_container_disposes_the_service_once_without_throwing()
+    {
+        // The service is registered directly and as an IConnectionStatus, so the container disposes it twice.
+        _ = _services.GetServices<IConnectionStatus>().ToList();
+        await Voice.DisposeAsync();
+        await _services.DisposeAsync();
+    }
+
+    [Fact]
     public void Trigger_filters_match_any_or_named_commands()
     {
         var trigger = _services.GetRequiredService<Registry>().GetTrigger("voiceControl.command")!;
