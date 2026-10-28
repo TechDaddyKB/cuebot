@@ -368,7 +368,7 @@ public sealed class TriggerCustomEventSubAction(EventBus bus) : ISubActionHandle
     /// <summary>The event the "Custom code event" trigger listens to (owned by the scripting module).</summary>
     public const string EventType = "custom.codeEvent";
 
-    private static readonly string[] RunArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt", "triggerType", "triggerName", "eventType"];
+    private static readonly IReadOnlyList<string> RunArgs = ActionEngine.RunArgumentNames;
 
     public string TypeId => "core.triggerCustomEvent";
     public string Category => Categories.Core;
@@ -388,6 +388,7 @@ public sealed class TriggerCustomEventSubAction(EventBus bus) : ISubActionHandle
             : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         foreach (var key in RunArgs) data.Remove(key);
         data["eventName"] = name;
+        data["customEvent.event"] = name;   // Streamer.bot's Custom trigger names the event here (null in its Test Trigger)
         bus.Publish(new BotEvent(EventType, data));
         return Task.FromResult(SubActionResult.Next);
     }

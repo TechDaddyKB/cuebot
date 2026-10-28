@@ -26,6 +26,7 @@ public sealed class CSharpScriptEngine(ScriptApi api, CphServices? cph = null, F
     public async Task<bool> RunAsync(ActionRunContext context, string code, TimeSpan? timeout, CancellationToken ct,
         IReadOnlyList<string>? references = null)
     {
+        using var source = SourceArgument.Enter(context.Args);
         // Compiling is not part of the time limit.
         if (CphInlineHost.IsInlineClass(code))
         {
@@ -61,6 +62,7 @@ public sealed class CSharpScriptEngine(ScriptApi api, CphServices? cph = null, F
         var code = step.Parameters["code"];
         var references = CSharpCodeSubAction.References(step);
         await Task.Run(() => _inline.Get(code, references), ct).ConfigureAwait(false);
+        using var source = SourceArgument.Enter(context.Args);
         return await RunWithTimeoutAsync(token => Task.Run(() =>
                 _inline.InvokeMethod(code, methodName.Trim(), new CphProxy(_cph, api, context, token, _inline), context.Args, references)
                 ?? throw new ScriptException($"Execute C# Method: '{codeName.Trim()}' has no public method {methodName.Trim()}() without parameters"),

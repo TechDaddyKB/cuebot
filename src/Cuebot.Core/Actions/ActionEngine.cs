@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Transfer.StreamerBot;
+using Cuebot.Core.Variables;
 
 namespace Cuebot.Core.Actions;
 
@@ -40,7 +42,17 @@ public sealed class ActionEngine : IDisposable
     private const string Source = "Actions";
 
     /// <summary>Arguments the engine adds to every run; Requeue drops them so the replay gets fresh ones.</summary>
-    private static readonly string[] EngineArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt"];
+    private static readonly string[] EngineArgs = ["actionName", "actionId", "runId", "runningActionId", "actionQueuedAt", "queueName"];
+
+    /// <summary>
+    /// Every argument the engine sets on a run (run bookkeeping plus the trigger's), for code that passes one run's
+    /// arguments on to new runs (custom events, signals) and must not carry these over. <c>isTest</c> is not listed:
+    /// it travels with the data it describes.
+    /// </summary>
+    public static readonly IReadOnlyList<string> RunArgumentNames =
+    [
+        .. EngineArgs, "triggerType", "triggerName", "triggerCategory", "triggerId", "eventType", "eventSource", "__source",
+    ];
 
     private readonly EventBus _bus;
     private readonly ProfileService _profile;
@@ -116,7 +128,7 @@ public sealed class ActionEngine : IDisposable
         {
             if (!ran.Add(m.Action.Id)) continue; // one run per event per action, even if several triggers match
             TriggerArgs.AddDerived(m.Args);
-            AddTriggerArgs(m.Args, m.Type, e.Type);
+            AddTriggerArgs(m.Args, m.Type, m.Trigger, e.Type);
             started.Add(RunAsync(m.Action, m.Args, source: m.Type.DisplayName));
         }
         return started;
@@ -151,7 +163,7 @@ public sealed class ActionEngine : IDisposable
 
     /// <summary>
     /// "Test trigger": runs the action as if <paramref name="trigger"/> had fired with <paramref name="args"/>
-    /// (adds triggerType/triggerName/eventType like a real event, plus isTest=true). The trigger's filter is not
+    /// (adds the trigger arguments like a real event, plus isTest=true). The trigger's filter is not
     /// evaluated. Pass a null trigger to test with custom arguments only. The run goes through the action's queue.
     /// </summary>
     public Task<bool> TestTriggerAsync(ActionDefinition action, TriggerDefinition? trigger,
@@ -162,7 +174,7 @@ public sealed class ActionEngine : IDisposable
             : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
         var type = trigger is null ? null : _registry.GetTrigger(trigger.Type);
         TriggerArgs.AddDerived(runArgs);
-        if (type is not null) AddTriggerArgs(runArgs, type, type.EventTypes.FirstOrDefault() ?? "");
+        if (type is not null) AddTriggerArgs(runArgs, type, trigger, type.EventTypes.FirstOrDefault() ?? "");
         runArgs["isTest"] = true;
         return RunAsync(action, runArgs, depth: 0, $"Test: {type?.DisplayName ?? "custom arguments"}", ct);
     }
@@ -215,11 +227,14 @@ public sealed class ActionEngine : IDisposable
         var runArgs = args is null
             ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase);
+        // Streamer.bot's run arguments, with its types (Guid ids, a local DateTime); runId is Cuebot's own (text).
         runArgs["actionName"] = action.Name;
-        runArgs["actionId"] = action.Id.ToString();
+        runArgs["actionId"] = action.Id;
         runArgs["runId"] = runId.ToString();
-        runArgs["runningActionId"] = runId.ToString(); // Streamer.bot name
-        runArgs["actionQueuedAt"] = queuedAt;
+        runArgs["runningActionId"] = runId;
+        runArgs["actionQueuedAt"] = queuedAt.LocalDateTime;
+        runArgs["queueName"] = queue;
+        StreamerBotArgs.Set(runArgs, "isTest", false);
 
         var tracked = !action.ExcludeFromHistory;
         if (tracked)
@@ -454,11 +469,23 @@ public sealed class ActionEngine : IDisposable
         return new ParameterValues(resolved);
     }
 
-    private static void AddTriggerArgs(Dictionary<string, object?> args, ITriggerType type, string eventType)
+    /// <summary>
+    /// The trigger's run arguments. Cuebot's own: <c>triggerType</c> (type id) and <c>eventType</c> (bus event).
+    /// Streamer.bot's: <c>triggerName</c>, <c>triggerCategory</c>, <c>eventSource</c> and <c>__source</c> (its trigger
+    /// code, which Streamer.bot C# sees as an <c>EventType</c>; the C# step converts it) come from the equivalent
+    /// Streamer.bot trigger (<see cref="StreamerBotTriggerCatalog"/>); triggers without one report Cuebot's display name
+    /// and category, the event's module as source and code 0 (EventType.None). <c>triggerId</c> is the trigger's id.
+    /// </summary>
+    private static void AddTriggerArgs(Dictionary<string, object?> args, ITriggerType type, TriggerDefinition? trigger, string eventType)
     {
+        var sb = StreamerBotTriggerCatalog.For(type.TypeId, args, trigger?.Settings);
         args["triggerType"] = type.TypeId;
-        args["triggerName"] = type.DisplayName;
+        args["triggerName"] = sb?.Name ?? type.DisplayName;
+        args["triggerCategory"] = sb?.Category ?? type.Category;
+        args["triggerId"] = trigger?.Id ?? Guid.Empty;
         args["eventType"] = eventType;
+        args["eventSource"] = sb?.EventSource ?? eventType.Split('.')[0].ToLowerInvariant();
+        args["__source"] = sb?.Code ?? 0;
     }
 
     private static Dictionary<string, object?> Copy(Dictionary<string, object?> args) =>
