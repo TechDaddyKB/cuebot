@@ -240,6 +240,8 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
                 ["messageCount"] = copy.MessageCount,
                 ["isNewUser"] = copy.MessageCount == 1,
             };
+            // Streamer.bot: the first message ever in the channel (a platform may already have said so).
+            firstArgs.TryAdd("firstMessage", copy.MessageCount == 1);
             _bus.Publish(new BotEvent(UserEvents.FirstWords, firstArgs));
         }
     }

@@ -143,11 +143,13 @@ public class GroupActionTests : IDisposable
         var add = await SubActionHarness.RunAsync(new AddUserToGroupSubAction(_groups), new() { ["group"] = "Regulars" }, _chatArgs);
         Assert.True(add.Success);
         Assert.Equal(true, add.Args["groupUserAdded"]);
+        Assert.Equal(true, add.Args["addResult"]);
         Assert.True(_groups.Contains("Regulars", "Twitch", "1", "alice"));
 
         var check = await SubActionHarness.RunAsync(new UserInGroupSubAction(_groups), new() { ["group"] = "regulars" }, _chatArgs);
         Assert.Equal(UserInGroupSubAction.True, check.Branch);
         Assert.Equal(true, check.Args["inGroup"]);
+        Assert.Equal(("alice", "1", "twitch"), (check.Args["foundUser"], check.Args["foundUserId"], check.Args["foundUserType"]));
 
         var other = await SubActionHarness.RunAsync(new UserInGroupSubAction(_groups),
             new() { ["group"] = "regulars", ["user"] = "bob", ["userId"] = "2", ["argument"] = "isRegular" }, _chatArgs);
@@ -156,6 +158,7 @@ public class GroupActionTests : IDisposable
 
         var remove = await SubActionHarness.RunAsync(new RemoveUserFromGroupSubAction(_groups), new() { ["group"] = "Regulars" }, _chatArgs);
         Assert.Equal(true, remove.Args["groupUserRemoved"]);
+        Assert.Equal(true, remove.Args["removeResult"]);
 
         _groups.AddUser("Regulars", "Twitch", "3", "carol");
         var clear = await SubActionHarness.RunAsync(new ClearGroupSubAction(_groups), new() { ["group"] = "Regulars" });

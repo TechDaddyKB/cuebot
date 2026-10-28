@@ -46,6 +46,19 @@ internal static class Program
 
         // One instance per data folder: a second launch brings the first one forward and exits.
         var instance = SingleInstance.TryAcquire(paths.Root);
+        if (options.Shutdown)
+        {
+            ConsoleAttach.Attach();
+            if (instance is not null)
+            {
+                instance.Dispose();
+                Console.WriteLine($"Cuebot is not running with {paths.Root}.");
+                return 0;
+            }
+            var stopped = SingleInstance.ShutdownExistingAsync(paths.Root, TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+            Console.WriteLine(stopped ? "Asked the running Cuebot to quit." : $"Cuebot is running with {paths.Root} but did not respond.");
+            return stopped ? 0 : 1;
+        }
         if (instance is null)
         {
             var answered = SingleInstance.ActivateExistingAsync(paths.Root, TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
