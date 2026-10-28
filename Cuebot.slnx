@@ -10,6 +10,7 @@
     <Project Path="src/Cuebot.Midi/Cuebot.Midi.csproj" />
     <Project Path="src/Cuebot.Obs/Cuebot.Obs.csproj" />
     <Project Path="src/Cuebot.Relay/Cuebot.Relay.csproj" />
+    <Project Path="src/Cuebot.Remote/Cuebot.Remote.csproj" />
     <Project Path="src/Cuebot.Rumble/Cuebot.Rumble.csproj" />
     <Project Path="src/Cuebot.Scripting/Cuebot.Scripting.csproj" />
     <Project Path="src/Cuebot.Server/Cuebot.Server.csproj" />
@@ -32,6 +33,7 @@
     <Project Path="tests/Cuebot.Midi.Tests/Cuebot.Midi.Tests.csproj" />
     <Project Path="tests/Cuebot.Obs.Tests/Cuebot.Obs.Tests.csproj" />
     <Project Path="tests/Cuebot.Relay.Tests/Cuebot.Relay.Tests.csproj" />
+    <Project Path="tests/Cuebot.Remote.Tests/Cuebot.Remote.Tests.csproj" />
     <Project Path="tests/Cuebot.Rumble.Tests/Cuebot.Rumble.Tests.csproj" />
     <Project Path="tests/Cuebot.Scripting.Tests/Cuebot.Scripting.Tests.csproj" />
     <Project Path="tests/Cuebot.Server.Tests/Cuebot.Server.Tests.csproj" />
