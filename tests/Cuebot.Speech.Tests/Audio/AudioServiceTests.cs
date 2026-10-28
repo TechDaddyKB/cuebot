@@ -144,6 +144,7 @@ public sealed class AudioServiceTests : IDisposable
         Assert.Equal(file, capture.Args["soundFile"]);
         Assert.Equal(0.25, capture.Args["soundDuration"]);
         Assert.Equal(250L, capture.Args["soundDurationMs"]);
+        Assert.Equal((0.25, 250L), (capture.Args["soundLength"], capture.Args["soundLengthMs"]));
         var voice = (await TestAudio.VoicesAsync(_backend, 1))[0];
         Assert.Equal(1f, voice.Gain); // clamped to 100
         Assert.False(voice.Stopped);
@@ -166,6 +167,7 @@ public sealed class AudioServiceTests : IDisposable
         second.Finish();
         Assert.True(await TestAudio.Within(run));
         Assert.Equal(file, capture.Args["soundFile"]);
+        Assert.Equal((file, "ding.wav"), (capture.Args["randomSoundFile"], capture.Args["randomSoundFileName"]));
     }
 
     [Fact]

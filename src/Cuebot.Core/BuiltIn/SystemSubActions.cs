@@ -13,8 +13,17 @@ internal static class SystemCategories
     public const string Json = "JSON";
 }
 
+/// <summary>
+/// Runs a program, script, document or URI. With environment variables or output capture the command must be a
+/// program (it is started directly, not through the shell). When waiting with capture on, each line the program
+/// writes becomes %output1%..%outputN% (Streamer.bot numbering) with %outputCount%; stderr lines go to %error1%...
+/// "Wait at most" (seconds, 0 = no limit) stops waiting, leaving the program running, and sets %timedOut%.
+/// </summary>
 public sealed class RunProgramSubAction : ISubActionHandler
 {
+    /// <summary>Captured lines kept per stream.</summary>
+    public const int MaxOutputLines = 1000;
+
     public string TypeId => "core.runProgram";
     public string Category => Categories.System;
     public string DisplayName => "Run program";
@@ -24,19 +33,82 @@ public sealed class RunProgramSubAction : ISubActionHandler
         new("arguments", "Arguments"),
         new("workingDirectory", "Working directory"),
         new("wait", "Wait for exit", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("waitSeconds", "Wait at most (seconds, 0 = no limit)", ParameterKind.Number) { DefaultValue = "0" },
+        new("captureOutput", "Capture output (%output1%...)", ParameterKind.Boolean) { DefaultValue = "false", Help = "Needs Wait for exit" },
+        new("environment", "Environment variables", ParameterKind.Multiline) { Help = "One NAME=value per line" },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        var info = new ProcessStartInfo(p["path"], p["arguments"]) { UseShellExecute = true };
-        if (!string.IsNullOrWhiteSpace(p["workingDirectory"])) info.WorkingDirectory = p["workingDirectory"];
-        using var process = Process.Start(info);
-        if (process is not null && p.GetBool("wait"))
+        var wait = p.GetBool("wait");
+        var capture = wait && p.GetBool("captureOutput");
+        var environment = SendSignalSubAction.ParseArguments(p["environment"]).ToArray();
+        var direct = capture || environment.Length > 0;
+        var info = new ProcessStartInfo(p["path"].Trim(), p["arguments"]) { UseShellExecute = !direct };
+        if (!string.IsNullOrWhiteSpace(p["workingDirectory"])) info.WorkingDirectory = p["workingDirectory"].Trim();
+        foreach (var (name, value) in environment) info.Environment[name] = value;
+        var output = new List<string>();
+        var errors = new List<string>();
+        if (capture)
         {
-            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            info.RedirectStandardOutput = true;
+            info.RedirectStandardError = true;
+            info.CreateNoWindow = true;
+        }
+
+        using var process = new Process { StartInfo = info };
+        if (capture)
+        {
+            process.OutputDataReceived += (_, e) => Collect(output, e.Data);
+            process.ErrorDataReceived += (_, e) => Collect(errors, e.Data);
+        }
+        if (!process.Start()) return SubActionResult.Next;
+        if (capture)
+        {
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+        }
+        if (!wait) return SubActionResult.Next;
+
+        var limit = p.GetDouble("waitSeconds");
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (limit > 0) timeout.CancelAfter(TimeSpan.FromSeconds(limit));
+        var timedOut = false;
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            timedOut = true;
+        }
+        context.Args["timedOut"] = timedOut;
+        if (!timedOut)
+        {
             context.Args["exitCode"] = process.ExitCode;
+            if (capture) process.WaitForExit(); // flushes the asynchronous readers
+        }
+        if (capture)
+        {
+            lock (output) Store(context, "output", output);
+            lock (errors) Store(context, "error", errors);
         }
         return SubActionResult.Next;
+    }
+
+    private static void Collect(List<string> lines, string? line)
+    {
+        if (line is null) return;
+        lock (lines)
+        {
+            if (lines.Count < MaxOutputLines) lines.Add(line);
+        }
+    }
+
+    private static void Store(ActionRunContext context, string prefix, List<string> lines)
+    {
+        context.Args[prefix + "Count"] = lines.Count;
+        for (var i = 0; i < lines.Count; i++) context.Args[prefix + (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)] = lines[i];
     }
 }
 
@@ -111,7 +183,44 @@ public sealed class WriteFileSubAction : ISubActionHandler
     }
 }
 
-/// <summary>Picks a random line of a text file.</summary>
+/// <summary>Line handling shared by the "read lines" sub-actions: Streamer.bot's Parse Variables and auto-typing.</summary>
+internal static class LineSteps
+{
+    public static readonly ParameterDescriptor Parse =
+        new("parseVariables", "Parse variables", ParameterKind.Boolean) { DefaultValue = "false", Help = "Replace %variables% found in the file" };
+
+    public static readonly ParameterDescriptor AutoType =
+        new("autoType", "Attempt auto-typing", ParameterKind.Boolean) { DefaultValue = "false", Help = "A line holding a number becomes a number" };
+
+    /// <summary>The file's lines, or null when it does not exist (sets %fileFound%).</summary>
+    public static async Task<string[]?> ReadAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var path = FileSteps.RequirePath(p);
+        var found = File.Exists(path);
+        context.Args["fileFound"] = found;
+        if (!found)
+        {
+            context.Log.Warn(context.Action.Name, $"File not found: {path}");
+            return null;
+        }
+        return await File.ReadAllLinesAsync(path, ct).ConfigureAwait(false);
+    }
+
+    public static object Value(ActionRunContext context, ParameterValues p, string line)
+    {
+        var text = p.GetBool("parseVariables") ? context.Resolve(line) : line;
+        return p.GetBool("autoType") ? Variables.VariableValues.AutoType(text) ?? text : text;
+    }
+
+    public static string Suffix(int i) => i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+}
+
+/// <summary>
+/// Streamer.bot "Read Random Lines From File": picks Count distinct random lines. The first goes to %randomLine% (or the
+/// chosen name), the next ones to %randomLine1%, %randomLine2%...; their 0-based numbers to %randomLineNumber%,
+/// %randomLineNumber1%... Cuebot also sets %lineNumber% (1-based, first pick) and %lineCount% (candidate lines). A
+/// missing file sets %fileFound% false and empty results.
+/// </summary>
 public sealed class ReadRandomLineSubAction(Random? random = null) : ISubActionHandler
 {
     public string TypeId => "core.readRandomLine";
@@ -122,27 +231,123 @@ public sealed class ReadRandomLineSubAction(Random? random = null) : ISubActionH
         FileSteps.Path,
         FileSteps.VariableParameter("randomLine"),
         new("skipEmpty", "Skip empty lines", ParameterKind.Boolean) { DefaultValue = "true" },
+        new("count", "How many lines", ParameterKind.Number) { DefaultValue = "1" },
+        LineSteps.Parse,
+        LineSteps.AutoType,
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        var lines = await File.ReadAllLinesAsync(FileSteps.RequirePath(p), ct).ConfigureAwait(false);
+        var lines = await LineSteps.ReadAsync(context, p, ct).ConfigureAwait(false) ?? [];
         var candidates = lines.Select((text, index) => (text, number: index + 1))
             .Where(l => !p.GetBool("skipEmpty", true) || !string.IsNullOrWhiteSpace(l.text))
-            .ToArray();
+            .ToList();
         var variable = FileSteps.Variable(p, "randomLine");
-        if (candidates.Length == 0)
+        var count = Math.Clamp(p.GetInt("count", 1), 1, Math.Max(1, candidates.Count));
+        var rng = random ?? Random.Shared;
+        context.Args["lineCount"] = candidates.Count;
+        if (candidates.Count == 0)
         {
             context.Args[variable] = "";
             context.Args["lineNumber"] = 0;
+            return SubActionResult.Next;
         }
-        else
+        for (var i = 0; i < count; i++)
         {
-            var (text, number) = candidates[(random ?? Random.Shared).Next(candidates.Length)];
-            context.Args[variable] = text;
-            context.Args["lineNumber"] = number;
+            // Partial Fisher-Yates: each pick is distinct.
+            var j = i + rng.Next(candidates.Count - i);
+            (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+            var (text, number) = candidates[i];
+            var suffix = i == 0 ? "" : LineSteps.Suffix(i);
+            context.Args[variable + suffix] = LineSteps.Value(context, p, text);
+            context.Args["randomLineNumber" + suffix] = number - 1;
+            if (i == 0) context.Args["lineNumber"] = number;
         }
-        context.Args["lineCount"] = candidates.Length;
+        return SubActionResult.Next;
+    }
+}
+
+/// <summary>
+/// Streamer.bot "Read Lines From File": %line0%, %line1%... (or another prefix) and %lineCount%, with %fileFound%.
+/// </summary>
+public sealed class ReadLinesSubAction : ISubActionHandler
+{
+    /// <summary>Lines beyond this many are not turned into arguments (%lineCount% still counts them all).</summary>
+    public const int MaxLines = 10000;
+
+    public string TypeId => "core.readLines";
+    public string Category => SystemCategories.Files;
+    public string DisplayName => "Read lines from file";
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+        [FileSteps.Path, FileSteps.VariableParameter("line"), LineSteps.Parse, LineSteps.AutoType];
+
+    public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var lines = await LineSteps.ReadAsync(context, p, ct).ConfigureAwait(false) ?? [];
+        var prefix = FileSteps.Variable(p, "line");
+        context.Args["lineCount"] = lines.Length;
+        for (var i = 0; i < lines.Length && i < MaxLines; i++) context.Args[prefix + LineSteps.Suffix(i)] = LineSteps.Value(context, p, lines[i]);
+        return SubActionResult.Next;
+    }
+}
+
+/// <summary>Streamer.bot "Read Specific Line From File": line N (from 1) into %line%; empty when out of range.</summary>
+public sealed class ReadSpecificLineSubAction : ISubActionHandler
+{
+    public string TypeId => "core.readSpecificLine";
+    public string Category => SystemCategories.Files;
+    public string DisplayName => "Read specific line from file";
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        FileSteps.Path,
+        FileSteps.VariableParameter("line"),
+        new("lineNumber", "Line number (from 1)", ParameterKind.Number) { DefaultValue = "1" },
+        LineSteps.Parse,
+        LineSteps.AutoType,
+    ];
+
+    public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var lines = await LineSteps.ReadAsync(context, p, ct).ConfigureAwait(false) ?? [];
+        var n = p.GetInt("lineNumber", 1);
+        context.Args["lineCount"] = lines.Length;
+        context.Args[FileSteps.Variable(p, "line")] = n >= 1 && n <= lines.Length ? LineSteps.Value(context, p, lines[n - 1]) : "";
+        return SubActionResult.Next;
+    }
+}
+
+/// <summary>
+/// Streamer.bot "UDP Broadcast": sends the payload (UTF-8) as one UDP datagram to a port. The default address is the
+/// local network broadcast address; use 127.0.0.1 for a server on this computer (e.g. Speaker.bot's UDP server).
+/// Sets %udpBytesSent%.
+/// </summary>
+public sealed class UdpBroadcastSubAction : ISubActionHandler
+{
+    public const string Broadcast = "255.255.255.255";
+
+    public string TypeId => "core.udpBroadcast";
+    public string Category => SystemCategories.Network;
+    public string DisplayName => "UDP broadcast";
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        new("port", "UDP port", ParameterKind.Number) { DefaultValue = "6669" },
+        new("payload", "Payload", ParameterKind.Multiline) { Help = "Text or JSON to send" },
+        new("host", "Address") { DefaultValue = Broadcast, Help = "255.255.255.255 broadcasts on the local network; 127.0.0.1 is this computer" },
+    ];
+
+    public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var port = p.GetInt("port");
+        if (port is < 1 or > 65535) throw new ArgumentException($"'{p["port"]}' is not a UDP port (1-65535)");
+        var host = p["host"].Trim().Length > 0 ? p["host"].Trim() : Broadcast;
+        var address = System.Net.IPAddress.TryParse(host, out var ip)
+            ? ip
+            : (await System.Net.Dns.GetHostAddressesAsync(host, ct).ConfigureAwait(false)).FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+              ?? throw new ArgumentException($"Cannot resolve '{host}'");
+        using var udp = new System.Net.Sockets.UdpClient(address.AddressFamily);
+        udp.EnableBroadcast = true;
+        var bytes = Encoding.UTF8.GetBytes(p["payload"]);
+        context.Args["udpBytesSent"] = await udp.SendAsync(bytes, new System.Net.IPEndPoint(address, port), ct).ConfigureAwait(false);
         return SubActionResult.Next;
     }
 }
@@ -220,6 +425,7 @@ public sealed class HttpRequestSubAction(HttpClient http) : ISubActionHandler
         new("contentType", "Content type") { DefaultValue = "application/json" },
         new("timeout", "Timeout (seconds)", ParameterKind.Number) { DefaultValue = "30", Help = "At most 30 seconds (the shared client's limit)" },
         new("variable", "Store response in argument") { DefaultValue = "httpResponse" },
+        new("parseJson", "Parse result as JSON", ParameterKind.Boolean) { DefaultValue = "false", Help = "Also sets %<argument>.<key>% for every JSON value" },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
@@ -254,6 +460,7 @@ public sealed class HttpRequestSubAction(HttpClient http) : ISubActionHandler
             using var response = await http.SendAsync(request, HttpCompletionOption.ResponseContentRead, timeoutCts.Token).ConfigureAwait(false);
             var text = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
             context.Args[variable] = text;
+            if (p.GetBool("parseJson")) ParseJson(context, variable, text);
             context.Args["httpStatusCode"] = (int)response.StatusCode;
             context.Args["httpSuccess"] = response.IsSuccessStatusCode;
             context.Args["httpHeaders"] = HttpHeaderLines.Format(response);
@@ -270,6 +477,22 @@ public sealed class HttpRequestSubAction(HttpClient http) : ISubActionHandler
             context.Log.Warn(context.Action.Name, $"HTTP {method} {uri.Host} failed: {message}");
         }
         return SubActionResult.Next;
+    }
+
+    /// <summary>Streamer.bot "Parse result as JSON": %variable.key% for every value; sets %httpJsonParsed%.</summary>
+    internal static void ParseJson(ActionRunContext context, string variable, string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            foreach (var (key, value) in JsonPath.Flatten(document.RootElement, variable).ToList()) context.Args[key] = value;
+            context.Args["httpJsonParsed"] = true;
+        }
+        catch (JsonException ex)
+        {
+            context.Args["httpJsonParsed"] = false;
+            context.Log.Warn(context.Action.Name, $"The response is not valid JSON: {ex.Message}");
+        }
     }
 }
 

@@ -132,6 +132,36 @@ public static class JsonPath
         _ => value.GetRawText(),
     };
 
+    /// <summary>
+    /// Streamer.bot's "Parse result as JSON": every value under <paramref name="prefix"/> as its own argument,
+    /// objects joined with '.' and arrays with [i] (<c>result.data.items[0].name</c>). Nested objects and arrays also
+    /// get their JSON text under their own name. At most <paramref name="limit"/> arguments are produced.
+    /// </summary>
+    public static IEnumerable<KeyValuePair<string, object>> Flatten(JsonElement value, string prefix, int limit = 5000)
+    {
+        var count = 0;
+        var stack = new Stack<(string Name, JsonElement Value)>();
+        stack.Push((prefix, value));
+        while (stack.Count > 0 && count < limit)
+        {
+            var (name, element) = stack.Pop();
+            if (name != prefix || element.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))
+            {
+                count++;
+                yield return new(name, ToArgument(element));
+            }
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in element.EnumerateObject().Reverse()) stack.Push(($"{name}.{property.Name}", property.Value));
+            }
+            else if (element.ValueKind == JsonValueKind.Array)
+            {
+                var items = element.EnumerateArray().ToArray();
+                for (var i = items.Length - 1; i >= 0; i--) stack.Push(($"{name}[{i}]", items[i]));
+            }
+        }
+    }
+
     /// <summary>Elements of an array or properties of an object; null for other values.</summary>
     public static int? Count(JsonElement value) => value.ValueKind switch
     {
