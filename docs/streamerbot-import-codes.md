@@ -943,6 +943,37 @@ power-up redemptions (496) would need new Twitch events; the 16 Camera Hub webca
 Hub itself exposes (ISO, flash, lenses, snapshots, ...) that Cuebot's direct UVC control does not read; the Prompter
 needs a Camera Hub connection Cuebot does not have.
 
+## End-to-end behaviour
+
+Mapping a code is not the same as behaving the same, so one real setup is also run. `streamerbot-exported-setup.sb`
+(tests/Cuebot.UiTests/TestData; made by us in Streamer.bot 1.0.7, export format 24) is a small streamer setup: 8 actions,
+8 commands (two copies of each, from two imports) and a timer. `StreamerBotSetupBehaviourTests` imports it through the
+Import page's path into the full app, connects Twitch (EventSub and Helix), OBS and Streamlabs Desktop to their fakes,
+fires each trigger the way the platform does and checks the result. Commands and the timer arrive disabled (as
+Streamer.bot imports them) and the C# action disabled (as Cuebot imports code); the test enables them, as a user does.
+
+| Action | Trigger fired | Checked | Result |
+|---|---|---|---|
+| E2E Hello | chat `!hello` | "Hello Viewer32, welcome in!"; `hello there`, `!hellothere` and a YouTube `!hello` do nothing (sources: Twitch) | behaves |
+| E2E Follow alert | EventSub follow | OBS `SetSceneItemEnabled` true, about 3 s, false on "Follow Alert" in "Alerts"; then "Thanks for the follow, Cool_User!" | behaves |
+| E2E Hydrate counter | `!hydrate` 11 times | persisted global `hydrateCount` 1..11; runs 1-9 "Hydrate! (n so far)", 10 and 11 "That is n hydrates, legend!" | behaves |
+| E2E Stream online | EventSub stream.online | OBS `SetCurrentProgramScene` and Streamlabs `makeSceneActive` "Starting Soon"; "Live at %time% on %date%" appended as a line | fixed (`%date%`, `%time%`) |
+| E2E Shoutout (C#) | `!so @CoolStreamer`, `!so` | message, persisted global `lastShoutout`, argument `shoutoutTarget`; usage message when no name | behaves once the code is pasted back (the export has none, see below) |
+| E2E Fortune | `!fortune` 12 times | exactly one of the random group's 3 messages each run, not always the same | behaves |
+| E2E Reminder | timer, clock advanced | nothing at 899 s, the message at 900 s and again at 1800 s | behaves |
+| E2E Reward | any reward redemption | "Thanks Cooler_User for redeeming Hydrate break" (`%rewardName%`) | behaves |
+
+Fixed on the way:
+
+- `%date%` and `%time%` without a format gave the culture's short date and 24-hour short time ("11/09/2026", "17:06").
+  Streamer.bot documents them as `yyyy/MM/dd` and `hh:mm` (12-hour, no AM/PM; `%time:t%` adds it): Cuebot now uses
+  those (the "/" is the culture's date separator, as in .NET).
+- Streamer.bot 1.0.7 exported the C# step with `"byteCode": null` and no references, so the import has no code to run.
+  It imported silently as an empty step; the import now warns that the step has no code and must be pasted in.
+
+`StreamerBotSetupLiveTests` (Cuebot.LiveTests, `CUEBOT_LIVE_E2E=1`) runs the OBS and Streamlabs Desktop parts against the
+real apps; see [LIVE_TESTING.md](LIVE_TESTING.md#imported-streamerbot-setup).
+
 ## Counts
 
 Sub-action codes: 351 of Streamer.bot 1.0.7's 395 mapped (205 certain from their fields, 146 verified by Streamer.bot's UI text), 44 with no

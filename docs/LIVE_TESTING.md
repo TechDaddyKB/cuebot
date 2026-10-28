@@ -122,6 +122,19 @@ scene (colour sources, a filter, a folder) and runs every visibility, filter, gr
 command on it, then removes it. Last run: Streamlabs Desktop 1.22.2, 2026-10-28, both pass. Streamlabs Desktop limits
 how often `ScenesService.getScenes` may be called, so Cuebot reloads only the scene a command or event touches.
 
+### Imported Streamer.bot setup
+
+`StreamerBotSetupLiveTests` imports the real Streamer.bot setup used by Cuebot.UiTests' `StreamerBotSetupBehaviourTests`
+(`tests/Cuebot.UiTests/TestData/streamerbot-exported-setup.sb`) through the Import page's path and runs its OBS and
+Streamlabs Desktop parts against the real apps: "E2E Follow alert" shows "Follow Alert" in the OBS scene "Alerts", waits
+3 s and hides it (the test watches the item and checks the timing); "E2E Stream online" switches OBS and Streamlabs
+Desktop to "Starting Soon" and appends a line to a file in the test's data folder. It needs `CUEBOT_LIVE_E2E=1`,
+`CUEBOT_OBS_PASSWORD` (OBS) and `CUEBOT_LIVE_SLOBS_TOKEN` (Streamlabs Desktop), with both apps running. Missing scenes
+and the source (a small colour source) are created and removed afterwards, an existing "Follow Alert" gets its
+visibility back, and both apps return to the scene they were on. Nothing streams or records; chat steps are captured,
+not sent. Run it with `CUEBOT_LIVE_E2E=1 bash build/run-live-tests.sh StreamerBotSetupLiveTests`. Last run: OBS 33 and
+Streamlabs Desktop 1.22.2, 2026-10-28, passes.
+
 ### Meld Studio, PolyPop
 
 `StreamAppsLiveTests` (nothing goes live). **Meld Studio** runs with `CUEBOT_LIVE_MELD=1`: turn on File → Preferences →

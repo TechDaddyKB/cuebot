@@ -4,5 +4,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Twitch.Tests" />
+    <InternalsVisibleTo Include="Cuebot.UiTests" />
   </ItemGroup>
 </Project>
