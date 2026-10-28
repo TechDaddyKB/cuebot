@@ -26,63 +26,79 @@ same on Windows and Linux, and has WebSockets built in. An empty host is used: n
 ## Streamer.bot WebSocket server (default 127.0.0.1:8080, endpoint `/`)
 
 Hello on connect: `{timeStamp, session, request: "Hello", info: {instanceId, name: "Cuebot", os, osVersion, version,
-source}, authentication?: {salt, challenge}}`. `Authenticate {authentication}` with
+mode, darkMode, source: "websocketServer"}, authentication?: {salt, challenge}}`. `Authenticate {authentication}` with
 `base64(sha256(base64(sha256(password + salt)) + challenge))`. Responses `{status: "ok"|"error", id, ...}`.
 
 | Request | Response / behaviour |
 | --- | --- |
 | Authenticate | ok / error "Authentication failed" |
 | GetInfo | `info` |
-| GetEvents | `events: {Source: [Type...]}` (catalogue; Subscribe accepts any names) |
+| GetEvents | `events: {Source: [Type...]}`: every name the loaded modules' triggers can emit, plus Raw/Application/General.Custom/Misc.StreamerbotExiting (Subscribe accepts any names) |
 | Subscribe / UnSubscribe | `events: {Source: [Type...]}` (current subscriptions; `"*"` = all types) |
-| GetActions | `actions: [{id, name, group, enabled, subaction_count}], count` |
+| GetActions | `actions: [{id, name, group, enabled, subaction_count, trigger_count}], count` |
 | DoAction | `{action: {id \| name}, args}` → queued (not awaited); error if missing/disabled |
 | GetBroadcaster | `platforms: {twitch: {name, state, status}...}, connected: [...], disconnected: [...]` |
-| GetActiveViewers | `viewers: [{id, login, display, platform, role, subscribed, previousActive, ...}], count` |
+| GetActiveViewers | `viewers: [{id, type, login, display, platform, role, subscribed, previousActive, ...}], count` |
 | GetCodeTriggers | `triggers: [{name, eventName, category}], count` |
 | ExecuteCodeTrigger | `{triggerName, args}` → fires the "Custom code event" trigger |
-| GetCommands | `commands: [{id, name, enabled, group, mode, location, commands, caseSensitive, globalCooldown, userCooldown, sources}], count` |
+| GetCommands | `commands: [{id, name, enabled, group, mode, location, commands, caseSensitive, ignoreInternal, ignoreBotAccount, globalCooldown, userCooldown, sources}], count` |
 | GetGlobals / GetGlobal | `{persisted}` → `variables: {name: {name, value, lastWrite}}, count` / `{variable}` → `variable` |
-| TwitchGetUserGlobals / TwitchGetUserGlobal (+ YouTube*, Kick*, GetUserGlobals/GetUserGlobal with `platform`) | `variables: [{userId, userLogin, userName, platform, name, value, lastWrite}], count` |
-| GetCredits / TestCredits / ClearCredits | `credits: {}` (Cuebot has no credits roll yet) |
+| TwitchGetUserGlobals / TwitchGetUserGlobal (+ YouTube*, Kick*, GetUserGlobals/GetUserGlobal with `platform`) | `variables: [{userId, userLogin, userName, platform, name, value, lastWrite}], count`; *GetUserGlobal with `variable` → `variable: {name, value, lastWrite}` (error when missing) |
+| GetCredits / TestCredits / ClearCredits | `events: {follows, cheers, subs, resubs, giftsubs, giftbombs, raided, rewardredemptions, ...}, users: {moderators, vips, subscribers, users, ...}, hypeTrain, top, groups, custom` (user names), plus `credits: {events: {cuebotSection: [...]}, cuebot: snapshot}` |
 | SendMessage | `{message, platform}` → combined chat send; privileged |
-| TwitchGetEmotes / YouTubeGetEmotes | `emotes: {platform: [], bttv: [], ffz: [], sevenTv: []}` (empty) |
-| GetMonitoredYouTubeBroadcasts | `broadcasts: []` |
-| GetUserPronouns | `pronoun: {userLogin, userFound: false}` |
+| TwitchGetEmotes / YouTubeGetEmotes | `emotes: {userEmotes: [], bttvEmotes: [], ffzEmotes: [], sevenTvEmotes: []}` (empty) |
+| GetMonitoredYouTubeBroadcasts | `broadcasts: [], count: 0` |
+| GetUserPronouns | `userLogin, pronoun: {userLogin, userFound: false}` |
 | ClearFirstWordsCache | resets first-words tracking |
 
 Events: `{timeStamp, event: {source, type}, data}`. `data` holds the Cuebot event arguments plus `cuebotEvent` (the
-original type); for events with a `user` argument it adds a Streamer.bot-like `user` object `{id, login, name,
-display_name, color, role}` (the flat name stays as `userName`) and `text` for chat messages. Also sent:
-`Application.ActionAdded/Deleted/Updated`, `Application.CommandAdded/Deleted/Updated`, `Raw.ActionCompleted`, and
-`General.Custom` for CPH `WebsocketBroadcastJson/String` and the "WebSocket server: broadcast" sub-action.
+original type), with Streamer.bot's documented nested fields on top (`StreamerBotPayloads`, from the official client's
+event types and the wiki's event pages): Twitch `ChatMessage` has the `message` object (`data.message.message`,
+`msgId`, `username`, `role`, `emotes`, `badges`, ...), `RewardRedemption` has `reward: {id, title, cost, prompt}`
+and `user_login`/`user_input`, `Follow` has `user_id`/`user_login`/`user_name`/`followed_at`, subs and gifts have
+`subTier`, `recipientUsername`, `gifts`, ...; YouTube events carry the YouTube user object; and every event with a
+user gets `user: {id, login, name, display, role, subscribed, type, color, badges}`. Where a documented field has a
+flat arg's name (Twitch chat's `message`), the documented one wins and the text is in `text`. Also sent:
+`Application.ActionAdded/Deleted/Updated` (`{id, name, group, enabled}`), `Application.CommandAdded/Deleted/Updated`,
+`Raw.Action` and `Raw.SubAction` (only while a client subscribes to them; `{id: run, actionId, name, arguments}`,
+sub-actions also `parentId`, `parentName`, `type`), `Raw.ActionCompleted` (`id`, `actionId`, `name`, `duration`,
+`queuedAt`, `startedAt`, `completedAt`, `success`, `excludeFromHistory`, `arguments`, plus Cuebot's `actionName`,
+`runId`, `state`, `error`), `Misc.StreamerbotExiting` on shutdown, and `General.Custom` for CPH
+`WebsocketBroadcastJson/String` and the "WebSocket server: broadcast" sub-action.
 
 ### Event mapping (`StreamerBotEventMap`)
 
-Explicit entries; anything else maps generically (`module.camelCase` → `Module.PascalCase`, module spelled as in
-`Sources`: twitch→Twitch, youtube→YouTube, kick→Kick, obs→Obs, groups→Group, ...), so new module events are forwarded
-without changes.
+Names follow Streamer.bot's published event list (GetEvents output in the official client, `EventType` enum), with its
+spellings. `Explicit` holds the renames, `Resolvers` the argument-dependent names; anything else maps generically
+(`module.camelCase` → `Source.PascalCase`, the source spelled as in `Sources`), so new module events are forwarded
+without changes. `StreamerBotEventNames` lists the documented names; tests check every name under a Streamer.bot source
+against it (Cuebot additions are listed in `StreamerBotEventCatalogTests.CuebotExtras`).
 
 | Cuebot event | Streamer.bot |
 | --- | --- |
-| twitch.chatMessage / follow / sub / giftSub / giftBomb / cheer / raid / rewardRedemption / streamOnline / streamOffline | Twitch.ChatMessage / Follow / Sub / GiftSub / GiftBomb / Cheer / Raid / RewardRedemption / StreamOnline / StreamOffline (generic) |
-| twitch.resub, twitch.firstWords, twitch.messageDeleted, twitch.userTimedOut | Twitch.ReSub, Twitch.FirstWord, Twitch.ChatMessageDeleted, Twitch.UserTimedOut |
-| youtube.chatMessage, youtube.memberMilestone, youtube.userTimedOut | YouTube.Message, YouTube.MemberMileStone, YouTube.UserTimedout |
-| kick.sub, kick.resub, kick.giftSub, kick.massGiftSub | Kick.Subscription, Kick.Resubscription, Kick.GiftSubscription, Kick.MassGiftSubscription |
-| obs.connected / disconnected / sceneChanged | Obs.Connected / Disconnected / SceneChanged |
+| twitch.chatMessage / follow / sub / giftBomb / cheer / raid / rewardRedemption / streamOnline / ... | Twitch.ChatMessage / Follow / Sub / GiftBomb / Cheer / Raid / RewardRedemption / StreamOnline / ... (generic) |
+| twitch.resub, twitch.subGift (per recipient), twitch.giftSub (EventSub aggregate) | Twitch.ReSub, Twitch.GiftSub, Twitch.GiftSubscriptions (Cuebot addition) |
+| twitch.emoteModeOn/Off, followerMode*, slowMode*, subscriberMode*, uniqueMode* | Twitch.ChatEmoteModeOn/Off, ChatFollowerMode*, ChatSlowMode*, ChatSubscriberMode*, ChatUniqueMode* |
+| twitch.sharedChatBegin/Update/End, sharedChatGiftBomb, sharedChatModiversary, sharedChatUserTimedOut/UntimedOut | Twitch.SharedChatSessionBegin/Update/End, SharedChatCommunitySubGift, SharedModiversary, SharedChatUserTimedout/Untimedout |
+| twitch.userWarned, pyramid, automodMessageHeld/Updated, broadcasterConnected/Disconnected, botConnected/Disconnected | Twitch.WarnedUser, PyramidSuccess, AutoModMessageHeld/Update, BroadcasterEventSubConnected/Disconnected, BotEventSubConnected/Disconnected |
+| youtube.chatMessage, memberMilestone, userTimedOut, broadcastStatisticsUpdated, sponsorOnlyStarted/Ended | YouTube.Message, MemberMileStone, UserTimedout, StatisticsUpdated, NewSponsorOnlyStarted/Ended |
+| kick.chatConnected/Disconnected, sevenTvEmoteAdded/Removed (other kick.* generic) | Kick.BroadcasterChatConnected/Disconnected, SevenTVEmoteAdded/Removed |
 | obs.streamStarted / streamStopped / recordStarted / recordStopped | Obs.StreamingStarted / StreamingStopped / RecordingStarted / RecordingStopped |
-| command.triggered / cooldown | Command.Triggered / Cooldown |
-| groups.added / removed / cleared / usersAdded / usersRemoved | Group.Added / Removed / Cleared / UsersAdded / UsersRemoved |
-| variables.globalCreated / globalUpdated / globalDeleted / userUpdated | Misc.GlobalVariableCreated / GlobalVariableUpdated / GlobalVariableDeleted / UserGlobalVariableUpdated |
-| core.appStarted, core.timer, core.processStarted / processStopped | Misc.StreamerbotStarted, Misc.TimedAction, Misc.ProcessStarted / ProcessStopped |
-| core.fileCreated / fileChanged / fileDeleted / fileRenamed, core.fileTailLine | FileWatcher.Created / Changed / Deleted / Renamed, FileTail.Changed |
+| slobs.* | StreamlabsDesktop.* (StreamingStarted/Stopped, RecordingStarted/Stopped) |
+| meldstudio.*, meldstudio.event | MeldStudio.*; the event's kind picks LayerVisbilityChanged, LEffectEnabledStateChanged, TrackMonitoringStateChanged, TrackMustedStateChanged, else MeldStudio.Event |
+| command.triggered / cooldown; groups.*; quotes.added / shown | Command.Triggered / Cooldown; Group.*; Quote.Added / Show |
+| variables.*, core.appStarted, core.processStarted / processStopped | Misc.GlobalVariable* / UserGlobalVariableUpdated, Misc.StreamerbotStarted, Misc.ProcessStarted / ProcessStopped |
+| core.timer | Misc.TimedAction, or System.Cron for cron timers |
+| core.file*, core.fileTailLine | FileWatcher.*, FileTail.Changed |
 | users.firstWords, users.presentViewers | {platform}.FirstWords (Twitch: FirstWord), {platform}.PresentViewers |
-| custom.codeEvent | Custom.CodeEvent |
-| websocket.clientOpen / clientClose / clientMessage | WebsocketClient.Open / Close / Message |
-| websocket.serverOpen / serverClose / serverMessage | WebsocketCustomServer.Open / Close / Message |
-| speech.started / finished / stateChanged | Speech.SpeechStarted / SpeechFinished / StateChanged (Cuebot source) |
-| chat.message, chat.activity | Chat.Message, Chat.Activity (Cuebot source: combined chat/feed; used by the docks) |
-| rumble.* | Rumble.* (Cuebot source) |
+| chat.emoteAdded / emoteRemoved | {Twitch, YouTube}.SevenTVEmote* / BetterTTVEmote*, Kick.SevenTVEmote*; FFZ: Chat.Emote* |
+| desktop.clipboardChanged, desktop.toastActivated | System.ClipboardChanged, Misc.ToastActivation |
+| hotkeys.pressed, input.mouseClick, controller.button / axis / hat | Inputs.InputKeyPress, InputMouseClick, InputControllerButton / Axis / Hat |
+| remote.connected / disconnected / signal; webhook.custom | StreamerBotRemote.InstanceConnected / InstanceDisconnected / InstanceSignal; StreamerBot.CustomWebook |
+| tits.*, pally.*, pulsoid.heartRate, hyperate.heartRate / clipCreated, streamlabs.merch, voicemod.voiceChanged | ThrowingSystem.*, Pallygg.*, Pulsoid.HeartRatePulse, HypeRate.HeartRatePulse / TwitchClipCreated, Streamlabs.Merchandise, VoiceMod.VoiceLoaded |
+| wavelink.*, elgato.* | Elgato.WaveLinkV3*, Elgato.CameraHub* / ControlCenter* (ControlCenterDeviceOn/Off, DeviceBrightnessChanged, DeviceTemperatureChanged) |
+| custom.codeEvent; websocket.client* / server* | Custom.CodeEvent; WebsocketClient.* / WebsocketCustomServer.* |
+| speech.*, chat.message / activity, rumble.*, lumia.*, mtion.*, obsbot.*, polypop.*, points.*, controller.connected / disconnected | Cuebot sources (no Streamer.bot counterpart): Speech.*, Chat.*, Rumble.*, Lumia.*, Mtion.*, Obsbot.*, PolyPop.*, Points.*, Controller.* |
 
 ## HTTP server (default 127.0.0.1:7474)
 
@@ -90,6 +106,7 @@ without changes.
 | --- | --- |
 | `POST /api/DoAction` (and `/DoAction`) | body `{action: {id \| name}, args}` → 204; 404 unknown action; GET → 405 |
 | `GET /api/GetActions`, `GetInfo`, `GetEvents`, `GetBroadcaster`, `GetActiveViewers`, `GetCodeTriggers`, `GetCommands`, `GetGlobals`, `GetGlobal?variable=`, `*GetUserGlobals`, `GetCredits`, `TestCredits`, emotes, `GetMonitoredYouTubeBroadcasts`, `GetUserPronouns` | same JSON bodies as the WebSocket responses (query string = request fields) |
+| `GET /api/GetCredits`, `TestCredits` | the documented HTTP shape (`Events.Follows`, `User.Moderator`, `TopBits.All`, ...) plus the WebSocket fields |
 | `GET /api/ClearCredits`, `/api/ClearFirstWordsCache` | 204 |
 | `POST /api/ExecuteCodeTrigger` | `{triggerName, args}` → 204 |
 | `/feed/chat`, `/feed/events` | built-in OBS docks (combined chat, activity feed); connect to the WebSocket server; `?transparent=1`, `?password=`, `?port=` |
