@@ -24,7 +24,7 @@ public sealed class StreamerBotApiCoverageTests
         var documented = Names("cph-methods.txt");
 
         Assert.Equal(202, documented.Count);
-        Assert.Empty(documented.Where(n => !methods.Contains(n)));
+        Assert.Equal(Array.Empty<string>(), documented.Where(n => !methods.Contains(n)).ToArray());
     }
 
     [Fact]
@@ -35,8 +35,8 @@ public sealed class StreamerBotApiCoverageTests
 
         Assert.Equal(508, types.Count);
         Assert.Equal(46, sources.Count);
-        Assert.Empty(types.Where(n => !Enum.IsDefined(typeof(EventType), n)));
-        Assert.Empty(sources.Where(n => !Enum.IsDefined(typeof(EventSource), n)));
+        Assert.Equal(Array.Empty<string>(), types.Where(n => !Enum.IsDefined(typeof(EventType), n)).ToArray());
+        Assert.Equal(Array.Empty<string>(), sources.Where(n => !Enum.IsDefined(typeof(EventSource), n)).ToArray());
         // Names earlier Cuebot versions used still parse, as aliases of the documented values.
         Assert.Equal(EventType.GlobalVariableCreated, Enum.Parse<EventType>("MiscGlobalVariableCreated"));
         Assert.Equal(EventType.SpeechToTextLog, Enum.Parse<EventType>("SpeechToTextDictation"));
@@ -52,6 +52,6 @@ public sealed class StreamerBotApiCoverageTests
         var documented = Names("types.txt").Select(n => n.Split('<')[0]).ToArray();
 
         Assert.Equal(35, documented.Length);
-        Assert.Empty(documented.Where(n => !exported.Contains(n)));
+        Assert.Equal(Array.Empty<string>(), documented.Where(n => !exported.Contains(n)).ToArray());
     }
 }
