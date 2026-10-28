@@ -26,7 +26,7 @@ internal sealed class FakeObsServer : IAsyncDisposable
     public const string Salt = "lM1GncleQOaCu9lT1yeUZhFYnqhsLLP1G5lAGo3ixaI=";
     public const string Challenge = "+IxH4CnCiqpX1rM9scsNynZzbOe4KhDeYcTNS3PDaeY=";
 
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly string? _password;
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
@@ -36,9 +36,15 @@ internal sealed class FakeObsServer : IAsyncDisposable
     private FakeObsServer(string? password)
     {
         _password = password;
-        Port = GetFreePort();
-        _listener.Prefixes.Add($"http://localhost:{Port}/");
-        _listener.Start();
+        // Another test can take the probed port before it is bound, so try a few.
+        for (var attempt = 1; ; attempt++)
+        {
+            Port = GetFreePort();
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://localhost:{Port}/");
+            try { _listener.Start(); break; }
+            catch (HttpListenerException) when (attempt < 5) { _listener.Close(); }
+        }
         _acceptLoop = Task.Run(AcceptLoopAsync);
     }
 

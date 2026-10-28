@@ -11,16 +11,22 @@ public sealed class FakeEventSubServer : IAsyncDisposable
 {
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly Channel<FakeEventSubConnection> _connections = Channel.CreateUnbounded<FakeEventSubConnection>();
     private readonly List<FakeEventSubConnection> _all = [];
     private readonly Task _acceptLoop;
 
     public FakeEventSubServer()
     {
-        Port = FreePort();
-        _listener.Prefixes.Add($"http://localhost:{Port}/");
-        _listener.Start();
+        // Another test can take the probed port before it is bound, so try a few.
+        for (var attempt = 1; ; attempt++)
+        {
+            Port = FreePort();
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://localhost:{Port}/");
+            try { _listener.Start(); break; }
+            catch (HttpListenerException) when (attempt < 5) { _listener.Close(); }
+        }
         _acceptLoop = AcceptLoopAsync();
     }
 

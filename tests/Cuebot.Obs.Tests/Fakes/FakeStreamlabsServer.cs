@@ -15,7 +15,7 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
 {
     public const string Token = "slobs-token";
 
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private readonly Task _acceptLoop;
@@ -23,9 +23,15 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
 
     public FakeStreamlabsServer()
     {
-        Port = GetFreePort();
-        _listener.Prefixes.Add($"http://localhost:{Port}/api/");
-        _listener.Start();
+        // Another test can take the probed port before it is bound, so try a few.
+        for (var attempt = 1; ; attempt++)
+        {
+            Port = GetFreePort();
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://localhost:{Port}/api/");
+            try { _listener.Start(); break; }
+            catch (HttpListenerException) when (attempt < 5) { _listener.Close(); }
+        }
         _acceptLoop = Task.Run(AcceptLoopAsync);
     }
 
