@@ -770,11 +770,27 @@ public sealed partial class StreamerBotMappingTable
         }
         if (string.IsNullOrEmpty(code)) throw new SbMappingException("the C# code could not be read");
         c.Warn($"'{c.ActionName}': contains C# code. The action was imported disabled; read the code before enabling it.");
-        if (Bool(s, "saveResultToVariable") == true)
-            c.Warn($"'{c.ActionName}': a C# step saved its result to %{Str(s, "saveToVariable")}%; Cuebot does not.");
         var step = Step("code.csharp", s, ("code", code));
         if (Str(s, "name") is { Length: > 0 } name) step.Parameters["name"] = name;
+        if (Str(s, "description") is { Length: > 0 } description) step.Parameters["description"] = description;
+        CodeOptions(s, step);
+        // Streamer.bot's "references" list names its own install's assemblies (mscorlib.dll, ...); Cuebot always
+        // references the framework, so it is not carried over. Custom DLLs go under the step's References.
+        if (Bool(s, "precompile") == true)
+            c.Warn($"'{c.ActionName}': a C# step precompiles at startup; that starts once you enable the action.");
         return step;
+    }
+
+    /// <summary>"Precompile on Application Start", "Delayed Start" and "Save Result to Variable" of C# steps.</summary>
+    private static void CodeOptions(JsonObject s, SubActionDefinition step)
+    {
+        if (Bool(s, "precompile") == true) step.Parameters["precompile"] = "true";
+        if (Bool(s, "delayStart", "delayedStart") == true) step.Parameters["delayedStart"] = "true";
+        if (Bool(s, "saveResultToVariable") == true)
+        {
+            step.Parameters["saveResult"] = "true";
+            step.Parameters["resultVariable"] = Str(s, "saveToVariable", "variableName") ?? "";
+        }
     }
 
     /// <summary>"Execute C# Method": a small script calling <c>CPH.ExecuteMethod</c> on the referenced code.</summary>
@@ -796,7 +812,9 @@ public sealed partial class StreamerBotMappingTable
                 }
             }
             """;
-        return Step("code.csharp", s, ("code", code));
+        var step = Step("code.csharp", s, ("code", code));
+        CodeOptions(s, step);
+        return step;
     }
 
     private static string Literal(string text) => JsonSerializer.Serialize(text); // a valid C# string literal for any text
