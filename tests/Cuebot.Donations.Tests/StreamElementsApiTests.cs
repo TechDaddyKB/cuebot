@@ -24,15 +24,19 @@ public sealed class StreamElementsApiTests
             FakeHttpHandler.Json($$"""{"channel":"{{Channel}}","username":"alice","points":1500,"pointsAlltime":4200,"rank":3}"""),
         ("PUT", $"/kappa/v2/points/{Channel}/alice/-50") =>
             FakeHttpHandler.Json($$"""{"channel":"{{Channel}}","username":"alice","amount":-50,"newAmount":1450,"message":"Removed 50 points"}"""),
-        ("GET", $"/kappa/v2/points/{Channel}/top?limit=2") =>
+        ("GET", $"/kappa/v2/points/{Channel}/top?limit=2&offset=0") =>
             FakeHttpHandler.Json("""{"_total":40,"users":[{"username":"alice","points":1500},{"username":"bob","points":900}]}"""),
-        ("GET", $"/kappa/v2/tips/{Channel}?limit=2&sort=-createdAt") => FakeHttpHandler.Json($$"""
+        ("GET", $"/kappa/v2/tips/{Channel}?limit=2&offset=0&sort=-createdAt") => FakeHttpHandler.Json($$"""
             {"docs":[{"donation":{"user":{"username":"Styler","geo":"ZZ","email":"styler@example.com"},"message":"gg","amount":4.2,"currency":"USD",
             "paymentMethod":"scheme"},"_id":"t1","channel":"{{Channel}}","provider":"paypal","approved":"allowed","status":"success",
-            "createdAt":"2025-02-19T15:07:09.302Z"}],"total":1,"limit":2,"offset":0}
+            "createdAt":"2025-02-19T15:07:09.302Z"},{"donation":{"user":{"username":"Gone"},"amount":1,"currency":"USD"},"deleted":true,"_id":"t0"}],"total":2,"limit":2,"offset":0}
             """),
-        ("GET", $"/kappa/v2/tips/{Channel}/leaderboard?limit=3") =>
-            FakeHttpHandler.Json("""[{"username":"Styler","total":104.2},{"_id":"bob","amount":20}]"""),
+        // The documented example of GET tips/{channel}/top (dev.streamelements.com), plus two more rows.
+        ("GET", $"/kappa/v2/tips/{Channel}/top") => FakeHttpHandler.Json("""
+            [{"username":"StreamElements","first":"2018-12-07T17:19:01.957Z","last":"2018-12-07T17:19:01.957Z","count":1,"total":100,"email":"streamelements@streamelements.com","average":100},
+             {"username":"Styler","first":"2025-02-19T15:07:09.302Z","last":"2025-02-19T15:07:09.302Z","count":3,"total":104.2,"email":"","average":34.73},
+             {"username":"bob","first":"2025-01-01T00:00:00.000Z","last":"2025-01-01T00:00:00.000Z","count":1,"total":20,"email":"","average":20}]
+            """),
         _ => FakeHttpHandler.Json("""{"statusCode":401,"error":"Unauthorized","message":"Invalid jwt-SECRET-value-0123456789"}""", HttpStatusCode.Unauthorized),
     };
 
@@ -50,8 +54,8 @@ public sealed class StreamElementsApiTests
         var tip = Assert.Single(await _api.GetTipsAsync(Jwt, Channel, 2, default));
         Assert.Equal(("t1", "Styler", 4.2, "USD", "gg", "$4.20"), (tip.Id, tip.UserName, tip.Amount, tip.Currency, tip.Message, tip.FormattedAmount));
 
-        Assert.Equal([new StreamElementsRank("Styler", 104.2), new StreamElementsRank("bob", 20)],
-            await _api.GetTipLeaderboardAsync(Jwt, Channel, 3, default));
+        Assert.Equal([new StreamElementsRank("Styler", 104.2), new StreamElementsRank("StreamElements", 100)],
+            await _api.GetTipLeaderboardAsync(Jwt, Channel, 2, default));
 
         Assert.All(_http.Requests, r => Assert.Equal("Bearer " + Jwt, r.Authorization));
         Assert.Equal(HttpMethod.Put, _http.Requests[2].Method);

@@ -67,10 +67,13 @@ internal static class PallyEventMapper
             ["campaignTitle"] = page.ValueKind == JsonValueKind.Object ? page.Str("title") : "",
             ["campaignUrl"] = page.ValueKind == JsonValueKind.Object ? page.Str("url") : "",
             ["isEcho"] = echo,
+            ["isReplay"] = false,
             ["isTest"] = isTest || echo,
             ["receivedAt"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
         };
-        return new DonationEvent(PallyEventTypes.CampaignTip, id.Length > 0 ? [$"pally:tip:{id}"] : [], args);
+        // Not deduplicated: Pally sends each tip once, and sends it again only when someone presses "Replay Alert"
+        // (docs.pally.gg/features/activity-feed: "re-broadcast … to all WebSockets"). PallyService flags those.
+        return new DonationEvent(PallyEventTypes.CampaignTip, [], args);
     }
 
     /// <summary>The documented sample event (docs.pally.gg/advanced/websockets).</summary>

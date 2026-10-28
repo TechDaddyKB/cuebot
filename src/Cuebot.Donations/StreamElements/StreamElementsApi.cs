@@ -53,26 +53,36 @@ internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
         return (long)json.Number("newAmount");
     }
 
+    /// <summary>
+    /// <c>GET points/{channel}/top?limit&amp;offset</c> (both documented as required). The response body is not
+    /// documented; <c>{"users":[{username, points}]}</c> is what community clients read; a bare array is accepted too.
+    /// </summary>
     public async Task<IReadOnlyList<StreamElementsRank>> GetPointsLeaderboardAsync(string jwt, string channel, int limit, CancellationToken ct)
     {
-        var json = await SendAsync(HttpMethod.Get, $"points/{Seg(channel)}/top?limit={Clamp(limit)}", jwt, ct).ConfigureAwait(false);
-        return json.Items("users").Select(u => new StreamElementsRank(u.Str("username"), u.Number("points"))).ToArray();
+        var json = await SendAsync(HttpMethod.Get, $"points/{Seg(channel)}/top?limit={Clamp(limit)}&offset=0", jwt, ct).ConfigureAwait(false);
+        var rows = json.ValueKind == JsonValueKind.Array ? json.EnumerateArray() : json.Items("users");
+        return rows.Where(u => u.ValueKind == JsonValueKind.Object)
+            .Select(u => new StreamElementsRank(u.Str("username"), u.Number("points"))).ToArray();
     }
 
+    /// <summary><c>GET tips/{channel}?limit&amp;offset&amp;sort=-createdAt</c> → <c>{docs:[…], total, limit, offset}</c>; deleted tips are skipped.</summary>
     public async Task<IReadOnlyList<StreamElementsTip>> GetTipsAsync(string jwt, string channel, int limit, CancellationToken ct)
     {
-        var json = await SendAsync(HttpMethod.Get, $"tips/{Seg(channel)}?limit={Clamp(limit)}&sort=-createdAt", jwt, ct).ConfigureAwait(false);
-        return json.Items("docs").Select(Tip).ToArray();
+        var json = await SendAsync(HttpMethod.Get, $"tips/{Seg(channel)}?limit={Clamp(limit)}&offset=0&sort=-createdAt", jwt, ct).ConfigureAwait(false);
+        return json.Items("docs").Where(d => d.Child("deleted") is not { ValueKind: JsonValueKind.True }).Select(Tip).ToArray();
     }
 
-    /// <summary>Top tippers (UNVERIFIED endpoint shape: accepts an array or an object with docs/users).</summary>
+    /// <summary>
+    /// Top tippers: <c>GET tips/{channel}/top</c> → <c>[{username, first, last, count, total, email, average}]</c> (the
+    /// documented endpoint; <c>tips/{channel}/leaderboard</c> has no documented response). It takes no limit.
+    /// </summary>
     public async Task<IReadOnlyList<StreamElementsRank>> GetTipLeaderboardAsync(string jwt, string channel, int limit, CancellationToken ct)
     {
-        var json = await SendAsync(HttpMethod.Get, $"tips/{Seg(channel)}/leaderboard?limit={Clamp(limit)}", jwt, ct).ConfigureAwait(false);
-        var rows = json.ValueKind == JsonValueKind.Array ? json.EnumerateArray()
-            : json.Items("docs").Concat(json.Items("users")).Concat(json.Items("leaderboard"));
+        var json = await SendAsync(HttpMethod.Get, $"tips/{Seg(channel)}/top", jwt, ct).ConfigureAwait(false);
+        var rows = json.ValueKind == JsonValueKind.Array ? json.EnumerateArray() : json.Items("docs");
         return rows.Where(r => r.ValueKind == JsonValueKind.Object)
-            .Select(r => new StreamElementsRank(r.First("username", "_id", "name"), Math.Round(r.Number(r.Has("total") ? "total" : "amount"), 2)))
+            .Select(r => new StreamElementsRank(r.First("username", "_id", "name"), Math.Round(r.Number("total"), 2)))
+            .OrderByDescending(r => r.Total)
             .Take(Clamp(limit))
             .ToArray();
     }

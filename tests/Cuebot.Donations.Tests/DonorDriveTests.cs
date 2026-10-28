@@ -76,7 +76,7 @@ public sealed class DonorDriveMappingTests
         Assert.Equal(DonorDriveEventTypes.Donation, e.Type);
         Assert.Equal(["donordrive:donation:F491FB1141299348"], e.Keys);
         Assert.Equal(("Jane Participant", 10d, "$10.00", "", false), (a["donorName"], a["donorAmount"], a["formattedAmount"], a["donorMessage"], a["donorIsAnonymous"]));
-        Assert.Equal(("Liam Bonham", "The Bonhams", 8000d, 4661d, 51, true, false), (a["profileName"], a["profileTeamName"], a["goal"], a["raised"], a["donations"], a["isParticipant"], a["isTeam"]));
+        Assert.Equal(("Liam Bonham", "The Bonhams", 8000d, 4661d, 51, true, false), (a["profileName"], a["profileTeamName"], a["goal"], a["raised"], a["numDonations"], a["isParticipant"], a["isTeam"]));
         Assert.Equal((true, "Spin the prize wheel!", 22d, "2021-04-01T07:00:00.0000000+00:00"), (a["isIncentive"], a["incentive.description"], a["incentive.amount"], a["incentive.startDate"]));
         Assert.Equal("2019-10-28T16:02:42.5830000+00:00", a["createdAt"]);
 
@@ -189,11 +189,16 @@ public sealed class DonorDriveServiceTests : IAsyncLifetime
         await _service.PollAsync(first: false, default);
         var donations = Events(DonorDriveEventTypes.Donation);
         Assert.Equal(["NEW1", "NEW2"], donations.Select(d => (string)d.Args["donationId"]!));   // oldest first
-        Assert.Equal(("Donor NEW1", "$10.00", 4693d, 53), (donations[0].Args["user"], donations[0].Args["formattedAmount"], donations[0].Args["raised"], donations[0].Args["donations"]));
+        Assert.Equal(("Donor NEW1", "$10.00", 4693d, 53), (donations[0].Args["user"], donations[0].Args["formattedAmount"], donations[0].Args["raised"], donations[0].Args["numDonations"]));
+        // "donations" is the list Streamer.bot documents ("An array of the donations"), newest first as the API returns it.
+        var list = Assert.IsType<List<Dictionary<string, object?>>>(donations[0].Args["donations"]);
+        Assert.Equal(["NEW2", "NEW1", "OLD1"], list.Select(d => (string)d["donationId"]!));
+        Assert.Equal(("Donor NEW2", 22d, "213F6CC8-9CFE-C59F-C3FE158798AFA7B1"), (list[0]["donorName"], list[0]["donorAmount"], list[0]["incentiveId"]));
         var incentive = Assert.Single(Events(DonorDriveEventTypes.Incentive));
         Assert.Equal(("Donor NEW2", "Spin the prize wheel!"), (incentive.Args["user"], incentive.Args["incentive.description"]));
         var updated = Assert.Single(Events(DonorDriveEventTypes.ProfileUpdated));
         Assert.Equal((4693d, 4661d), (updated.Args["raised"], updated.Args["previousRaised"]));
+        Assert.Equal((53, 3), (updated.Args["numDonations"], Assert.IsType<List<Dictionary<string, object?>>>(updated.Args["donations"]).Count));
         Assert.Contains(_service.RecentEvents(), r => r.Summary == "Donor NEW2 claimed the incentive \"Spin the prize wheel!\"");
     }
 

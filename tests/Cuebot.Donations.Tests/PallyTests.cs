@@ -21,7 +21,9 @@ public sealed class PallyMappingTests
     public void Maps_the_documented_tip_with_streamerbot_names()
     {
         var e = PallyEventMapper.Map(StreamlabsMappingTests.Parse(Tip))!;
-        Assert.Equal((PallyEventTypes.CampaignTip, "pally:tip:b1w2pjwjtb9fx0v1se9ex4n2"), (e.Type, e.Keys.Single()));
+        Assert.Equal(PallyEventTypes.CampaignTip, e.Type);
+        Assert.Empty(e.Keys);   // replays are wanted; PallyService marks them instead of dropping them
+        Assert.Equal(("b1w2pjwjtb9fx0v1se9ex4n2", false), (e.Args["tipId"], e.Args["isReplay"]));
         var a = e.Args;
         Assert.Equal(("Someone", 5d, "$5.00", 500L), (a["tipDisplayName"], a["tipGrossAmount"], a["tipGrossAmountFormatted"], a["tipGrossAmountInCents"]));
         Assert.Equal((5d, 0L, 0d), (a["tipNetAmount"], a["tipProccessingFeeInCents"], a["tipProcessingFee"]));
@@ -90,7 +92,7 @@ public sealed class PallyServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Connects_pings_publishes_tips_once_and_reconnects()
+    public async Task Connects_pings_publishes_tips_and_replays_and_reconnects()
     {
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
@@ -101,11 +103,13 @@ public sealed class PallyServiceTests : IAsyncLifetime
         socket.Push("pong");
         var tip = PallyMappingTests.Tip.ReplaceLineEndings("");
         socket.Push(tip);
-        socket.Push(tip);   // a manual replay from the activity feed: published once
-        await Wait.UntilAsync(() => Events(PallyEventTypes.CampaignTip).Length == 1, "tip");
-        await Task.Delay(100);
-        Assert.Single(Events(PallyEventTypes.CampaignTip));
-        Assert.Equal("Someone tipped $5.00 to Pally.gg's Team Page", Assert.Single(_service.RecentEvents()).Summary);
+        // "Replay Alert" in the activity feed re-broadcasts the tip to every websocket (docs.pally.gg/features/activity-feed);
+        // Pally sends a tip only once otherwise, so the second copy is a replay: published again, marked isReplay.
+        socket.Push(tip);
+        await Wait.UntilAsync(() => Events(PallyEventTypes.CampaignTip).Length == 2, "tip and replay");
+        var tips = Events(PallyEventTypes.CampaignTip);
+        Assert.Equal((false, true), (tips[0].Args["isReplay"], tips[1].Args["isReplay"]));
+        Assert.Equal("Someone tipped $5.00 to Pally.gg's Team Page", _service.RecentEvents()[0].Summary);
 
         socket.Close();
         await _server.NextAsync();

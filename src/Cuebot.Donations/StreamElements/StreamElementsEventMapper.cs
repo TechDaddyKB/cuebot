@@ -193,6 +193,43 @@ internal static class StreamElementsEventMapper
         _ => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(provider),
     };
 
+    /// <summary>
+    /// Maps the legacy realtime socket's <c>event:test</c> (what the dashboard's "emulate" buttons send). Its
+    /// argument has the widget shape <c>{listener: "tip-latest", event: {name, amount, message, items, …}}</c>
+    /// (dev.streamelements.com "Connecting via Websocket", "Structure as on … on-event"); only tips and merch are
+    /// mapped, always marked <c>isTest</c>.
+    /// </summary>
+    public static DonationEvent? MapWidgetTest(JsonElement test)
+    {
+        if (test.ValueKind != JsonValueKind.Object || test.Child("event") is not { ValueKind: JsonValueKind.Object } e) return null;
+        var type = test.Str("listener") switch
+        {
+            "tip-latest" => "tip",
+            "merch-latest" => "merch",
+            _ => "",
+        };
+        if (type.Length == 0) return null;
+        var name = e.First("name", "username", "displayName");
+        var data = new Dictionary<string, object?>
+        {
+            ["username"] = name,
+            ["displayName"] = e.First("displayName", "name"),
+            ["amount"] = e.Number("amount"),
+            ["currency"] = e.Str("currency"),
+            ["message"] = e.Str("message"),
+            ["avatar"] = e.Str("avatar"),
+        };
+        if (e.Child("items") is { ValueKind: JsonValueKind.Array } items) data["items"] = items;
+        var activity = JsonSerializer.SerializeToElement(new Dictionary<string, object?>
+        {
+            ["type"] = type,
+            ["provider"] = "streamelements",
+            ["data"] = data,
+            ["_id"] = e.Str("_id"),
+        });
+        return Map(activity, isTest: true);
+    }
+
     /// <summary>Sample activities for "send test event".</summary>
     public static readonly IReadOnlyDictionary<string, string> Samples = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {

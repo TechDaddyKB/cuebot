@@ -27,6 +27,7 @@ public sealed class DonorDriveService : DonationServiceBase
     private readonly Dictionary<string, DonorDriveIncentive> _incentives = new(StringComparer.OrdinalIgnoreCase);
     private string _profileTag = "";
     private string _donationsTag = "";
+    private IReadOnlyList<Dictionary<string, object?>> _recent = [];
     private int _donationChecksLeft;
 
     public DonorDriveService(JsonFile<DonationsSettings> settings, EventBus bus, AppLog log, HttpClient http)
@@ -79,17 +80,18 @@ public sealed class DonorDriveService : DonationServiceBase
         var profile = Profile ?? DonorDriveEventMapper.Profile(participant.RootElement, false)!;
         using var donation = JsonDocument.Parse(DonorDriveEventMapper.SampleDonation);
         var incentive = DonorDriveEventMapper.Incentive(sampleIncentive.RootElement);
+        IReadOnlyList<Dictionary<string, object?>> recent = [DonorDriveEventMapper.Summary(donation.RootElement), .. _recent];
         switch (kind.ToLowerInvariant())
         {
             case "donation":
-                return Publish(DonorDriveEventMapper.Donation(donation.RootElement, profile, null, Currency, isTest: true));
+                return Publish(DonorDriveEventMapper.Donation(donation.RootElement, profile, null, Currency, isTest: true, recent));
             case "incentive":
-                var e = DonorDriveEventMapper.Donation(donation.RootElement, profile, incentive, Currency, isTest: true);
+                var e = DonorDriveEventMapper.Donation(donation.RootElement, profile, incentive, Currency, isTest: true, recent);
                 Publish(e);
                 return Publish(DonorDriveEventMapper.IncentiveEvent(e, "TESTDONATION"));
             case "profile":
                 return Publish(DonorDriveEventMapper.ProfileUpdated(profile with { Raised = profile.Raised + 25, NumDonations = profile.NumDonations + 1 },
-                    profile, Currency, isTest: true));
+                    profile, Currency, isTest: true, recent));
             default:
                 return false;
         }
@@ -102,6 +104,7 @@ public sealed class DonorDriveService : DonationServiceBase
         _incentives.Clear();
         _profileTag = "";
         _donationsTag = "";
+        _recent = [];
         Profile = null;
         _donationChecksLeft = 0;
         return Task.CompletedTask;
@@ -169,19 +172,27 @@ public sealed class DonorDriveService : DonationServiceBase
                 _knownDonations.Add(DonorDriveEventMapper.DonationId(d));
             return;
         }
-        if (previous is not null && previous != current)
-        {
-            Publish(DonorDriveEventMapper.ProfileUpdated(current, previous, Currency));
-            // The donation list is cached separately (up to a minute), so keep looking for a few polls.
-            if (previous.NumDonations != current.NumDonations || previous.Raised != current.Raised) _donationChecksLeft = DonationChecks;
-        }
-        if (_donationChecksLeft <= 0) return;
+        var changed = previous is not null && previous != current;
+        // The donation list is cached separately (up to a minute), so keep looking for a few polls.
+        if (changed && (previous!.NumDonations != current.NumDonations || previous.Raised != current.Raised)) _donationChecksLeft = DonationChecks;
 
-        var fresh = (await LoadDonationsAsync(path, ct).ConfigureAwait(false))
-            .Where(d => DonorDriveEventMapper.DonationId(d) is { Length: > 0 } id && !_knownDonations.Contains(id))
-            .Reverse()   // newest first from the API; publish oldest first
-            .ToArray();
-        _donationChecksLeft--;
+        JsonElement[] fresh = [];
+        try
+        {
+            if (_donationChecksLeft > 0)
+            {
+                fresh = (await LoadDonationsAsync(path, ct).ConfigureAwait(false))
+                    .Where(d => DonorDriveEventMapper.DonationId(d) is { Length: > 0 } id && !_knownDonations.Contains(id))
+                    .Reverse()   // newest first from the API; publish oldest first
+                    .ToArray();
+                _donationChecksLeft--;
+            }
+        }
+        finally
+        {
+            // Published even when the donation list could not be read; it carries the list as last read.
+            if (changed) Publish(DonorDriveEventMapper.ProfileUpdated(current, previous, Currency, recent: _recent));
+        }
         foreach (var d in fresh)
         {
             var id = DonorDriveEventMapper.DonationId(d);
@@ -192,7 +203,7 @@ public sealed class DonorDriveService : DonationServiceBase
                 if (!_incentives.ContainsKey(incentiveId)) await LoadIncentivesAsync(path, ct).ConfigureAwait(false);
                 incentive = _incentives.GetValueOrDefault(incentiveId);
             }
-            var donation = DonorDriveEventMapper.Donation(d, current, incentive, Currency);
+            var donation = DonorDriveEventMapper.Donation(d, current, incentive, Currency, recent: _recent);
             Publish(donation);
             if (incentive is not null) Publish(DonorDriveEventMapper.IncentiveEvent(donation, id));
         }
@@ -202,9 +213,10 @@ public sealed class DonorDriveService : DonationServiceBase
     {
         var response = await _api.GetAsync(ApiBase, $"{profilePath}/donations?limit={PageSize}", _donationsTag, ct).ConfigureAwait(false);
         _donationsTag = response.ETag;
-        return response.Body is { ValueKind: JsonValueKind.Array } list
-            ? list.EnumerateArray().Where(d => d.ValueKind == JsonValueKind.Object).ToArray()
-            : [];
+        if (response.Body is not { ValueKind: JsonValueKind.Array } list) return [];
+        var donations = list.EnumerateArray().Where(d => d.ValueKind == JsonValueKind.Object).ToArray();
+        _recent = donations.Select(DonorDriveEventMapper.Summary).ToArray();
+        return donations;
     }
 
     private async Task LoadIncentivesAsync(string profilePath, CancellationToken ct)

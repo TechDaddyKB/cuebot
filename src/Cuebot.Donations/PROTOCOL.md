@@ -19,7 +19,7 @@ No service is contacted by the tests; `isTest` events from "Send test event" nev
 
 | Streamlabs `type` (`for`) | Bot event | Notes |
 | --- | --- | --- |
-| `donation` (none) | `streamlabs.donation` | `amount` (string or number), `currency`, `formatted_amount`/`formattedAmount`, `from`/`name`, `message`, `from_user_id` |
+| `donation` (none) | `streamlabs.donation` | `amount` (string or number), `currency`, `formatted_amount`/`formattedAmount`, `from`/`name`, `message`, `from_user_id`, `to.name` (`recipient`) |
 | `streamlabscharitydonation` (`streamlabs`) | `streamlabs.charityDonation` | `charityDonationId`, `campaignId`, `amount`, `formattedAmount`, `currency`, `createdAt`. Field names beyond the donation ones are not in the public docs; parsed tolerantly |
 | `merch` | `streamlabs.merch` | `from`, `product`, `message`, `image_href`/`imageHref` (undocumented shape; tolerant) |
 | `loyalty_store_redemption` | `streamlabs.loyaltyStoreRedemption` | same shape as merch (undocumented; tolerant) |
@@ -27,9 +27,9 @@ No service is contacted by the tests; `isTest` events from "Send test event" nev
 | `follow` (`twitch_account`, `youtube_account`, …) | `streamlabs.follow` | relayed |
 | `subscription`, `resub` | `streamlabs.subscription` | relayed; `months`, `sub_plan`, `sub_plan_name`, `sub_type`, `message` |
 | `bits` | `streamlabs.bits` | relayed; `amount` = bits |
-| `raid` | `streamlabs.raid` | relayed; `raiders` |
+| `raid` (the docs' table says `raids`; both accepted) | `streamlabs.raid` | relayed; `raiders` |
 | `host` | `streamlabs.host` | relayed; `viewers` |
-| `superchat` (`youtube_account`) | `streamlabs.superchat` | relayed; `amount` in micros, `displayString`, `comment` |
+| `superchat` (`youtube_account`) | `streamlabs.superchat` | relayed; `amount` in micros, `displayString`, `comment`; `channelId` = sender (`userId`), `id` = chat message (`superchatId`) |
 
 Relayed events (anything with a platform `for`) are published only with *Relay platform events* on (off by
 default, so they do not duplicate the native Twitch/YouTube modules). Other types (`alertPlaying`, `streamlabels`, …)
@@ -58,17 +58,20 @@ there are no Streamlabs REST sub-actions yet.
 
 ### Astro gateway (current; default)
 
-- `wss://astro.streamelements.com`. Subscribe per topic:
+- `wss://astro.streamelements.com`. The server sends `welcome` right after the upgrade; Cuebot subscribes when it arrives
+  (or after the open timeout if it never does), one command per 110 ms (Astro allows one per 100 ms). Subscribe per topic:
   `{"type":"subscribe","nonce":"<id>","data":{"topic":"channel.activities","token":"<jwt>","token_type":"jwt"}}`.
 - Responses: `{"type":"response","nonce","data":{"message","topic","room"}}`, or with `"error"`
   (`err_unauthorized`, `err_bad_request`, `rate_limit_exceeded`, …). An unauthorized response for every topic ends the
-  session as a refusal (shown as "StreamElements rejected the JWT token").
+  session as a refusal (shown as "StreamElements rejected the JWT token"). `err_deadline_exceeded` ("Retry the request") and
+  `rate_limit_exceeded` (sent without a nonce, so every unanswered subscription is re-sent) are retried after the reconnect
+  delay, up to 5 times per session. `room` is left out: it "defaults to the authenticated channel".
 - Messages: `{"id","ts","type":"message","topic","room","data":{…}}`.
 - Keep-alive: the server sends websocket PING frames every 30 s (answered by the .NET websocket); the client also
   sends its own keep-alive pings and drops the connection if no pong arrives.
 - Reconnect: a `{"type":"reconnect","data":{"reconnect_token":"…"}}` message makes Cuebot reconnect immediately to
   `wss://astro.streamelements.com/?reconnect_token=…` without resubscribing (the server restores subscriptions and
-  sends `welcome`). The token is used once.
+  sends `welcome`). The token is used once. That `welcome` counts as subscribed (status Connected).
 - Cuebot subscribes to **`channel.activities`** only. Its `data` is an activity:
   `{type, provider, channel, data:{username, displayName, providerId, avatar, amount, currency, message, items, …}, _id, activityId, createdAt}`.
   `channel.tips` (tip documents with `donation.user.username`, `donation.amount`, …) carries the same tips with
@@ -93,7 +96,9 @@ Dedupe: `activity:<activityId|_id>` (an updated activity is re-sent with the sam
 - `https://realtime.streamelements.com`, Socket.IO v2 (EIO=3, falls back to 4). After connecting, emit
   `42["authenticate",{"method":"jwt","token":"<jwt>"}]`; the server answers `authenticated` (or `unauthorized`) and
   then sends `event` with the same activity objects as above. Kept because it predates Astro and many tools still use
-  it; StreamElements presents Astro as the gateway for new integrations, so the legacy socket may be retired.
+  it; StreamElements presents Astro as the gateway for new integrations, so the legacy socket may be retired. The
+  dashboard's emulated alerts arrive as `event:test` in the widget shape `{listener, event:{name, amount, message, ...}}`;
+  `tip-latest` and `merch-latest` are published as tests (other listeners are ignored).
 
 ### REST API (`https://api.streamelements.com/kappa/v2/`, Bearer JWT)
 
@@ -102,9 +107,9 @@ Dedupe: `activity:<activityId|_id>` (an updated activity is re-sent with the sam
 | channel of the token | `GET channels/me` | `_id`, `username`, `displayName` (cached as `channelId`) |
 | user points | `GET points/{channel}/{user}` | `username`, `points`, `pointsAlltime`, `rank` |
 | add / remove points | `PUT points/{channel}/{user}/{amount}` (negative removes) | `newAmount` |
-| points leaderboard | `GET points/{channel}/top?limit=N` | `users[].username`, `users[].points` |
-| latest tips | `GET tips/{channel}?limit=N&sort=-createdAt` | `docs[]._id`, `donation.user.username`, `donation.amount`, `donation.currency`, `donation.message`, `createdAt` |
-| tip leaderboard | `GET tips/{channel}/leaderboard?limit=N` | **unverified shape**: array or `docs`/`users`, `username`/`_id`, `total`/`amount` |
+| points leaderboard | `GET points/{channel}/top?limit=N&offset=0` | `users[].username`, `users[].points` (response not documented; a bare array is accepted) |
+| latest tips | `GET tips/{channel}?limit=N&offset=0&sort=-createdAt` | `docs[]._id`, `donation.user.username`, `donation.amount`, `donation.currency`, `donation.message`, `createdAt` (tips with `deleted: true` are skipped) |
+| top tippers | `GET tips/{channel}/top` (takes no limit; Cuebot sorts by `total` and cuts) | array of `username`, `total` (also `count`, `average`, `first`, `last`, `email`) |
 
 `limit` is clamped to 1–100. User names are URL-escaped.
 
@@ -178,9 +183,9 @@ Streamer.bot's Donation variables are all set: `amount`, `avatar`, `currency`, `
 
 | Change | Bot event | Variables (Streamer.bot names + extras) |
 | --- | --- | --- |
-| new `donationID` | `donordrive.donation` | `donorName`, `donorAmount`, `donorMessage`, `donorAvatarUrl`, `donorIsAnonymous`, `recipientName`, `profileName`, `profileTeamName`, `eventName`, `goal`, `raised`, `donations`, `isParticipant`, `isTeam`, `isIncentive`, `incentive.*`; plus `donationId`, `createdAt`, `formattedRaised`/`formattedGoal`, `profileUrl` |
+| new `donationID` | `donordrive.donation` | `donorName`, `donorAmount`, `donorMessage`, `donorAvatarUrl`, `donorIsAnonymous`, `recipientName`, `profileName`, `profileTeamName`, `eventName`, `goal`, `raised`, `donations` (list of recent donations), `numDonations`, `isParticipant`, `isTeam`, `isIncentive`, `incentive.*`; plus `donationId`, `createdAt`, `formattedRaised`/`formattedGoal`, `profileUrl` |
 | donation with `incentiveID` | also `donordrive.incentive` | the donation's variables + `incentive.id/description/amount/quantity (-1 = unlimited)/quantityClaimed/isActive/startDate/endDate/image/links.donate` |
-| any profile field (name, goal, raised, count, event, team, live) | `donordrive.profileUpdated` | `name`, `teamName`, `eventName`, `goal`, `raised`, `donations`, `isParticipant`, `isTeam`, `previousRaised`, `previousGoal`, `previousDonations` |
+| any profile field (name, goal, raised, count, event, team, live) | `donordrive.profileUpdated` | `name`, `teamName`, `eventName`, `goal`, `raised`, `donations` (list), `numDonations`, `isParticipant`, `isTeam`, `previousRaised`, `previousGoal`, `previousDonations` |
 
 Only the donation is an activity-feed item (the Incentive and Profile Updated events would duplicate it). Amounts carry
 no currency in the API; the *Currency* setting (default USD) is used. Streamer.bot lets several providers be added;
@@ -235,7 +240,9 @@ Still operating (treatstream.com answers, "© 2026", Twitch/YouTube/Kick logos; 
 - **Keep-alive:** send the text `ping` (Pally asks for one at least every 60 s; Cuebot sends one after 30 s of silence)
   and expect `pong`; no answer = reconnect with backoff.
 - **Delivery:** each event goes once to the connections open at the time; there is **no replay** after a reconnect.
-  Manual replays from Pally's activity feed resend an event (deduped by tip id).
+  "Replay Alert" in Pally's activity feed re-broadcasts a tip to every websocket on purpose, so tips are not
+  deduplicated: a tip id seen before is published again with `isReplay` = true (the Campaign Tip trigger has an
+  *Include replayed alerts* option, on by default).
 - **Event:** `{"type":"campaigntip.notify","payload":{"campaignTip":{"id","createdAt","updatedAt","displayName",
   "message","grossAmountInCents","netAmountInCents","processingFeeInCents"},"page":{"id","slug","title","url"}}}`
   ("may contain additional/undocumented fields"). Amounts are US cents.
@@ -245,6 +252,114 @@ Still operating (treatstream.com answers, "© 2026", Twitch/YouTube/Kick logos; 
 - Bot event `pally.campaignTip`: Streamer.bot's `campaignId/Slug/Title/Url`, `createdAt`, `tipId`, `tipDisplayName`,
   `tipMessage`, `tipGrossAmount(/Formatted/InCents)`, `tipNetAmount(…)`, `tipProccessingFee(…)` (Streamer.bot's
   spelling) and the correctly spelled `tipProcessingFee(…)`.
+
+## Verification against the official documentation (2026-10-28)
+
+No donation account was available, so nothing here was tried with a real donation. Each integration was compared with
+the service's official documentation and example payloads (community sources are marked); the documented examples
+are test fixtures, copied verbatim, in `tests/Cuebot.Donations.Tests/DocumentedPayloadTests.cs`.
+
+### Streamlabs
+
+- **Sources:** https://dev.streamlabs.com/docs/socket-api (page `updatedAt` 2025-06-05), /reference/sockettoken,
+  /docs/scopes, /reference/donations (all fetched 2026-10-28).
+- **Verified:** endpoint and query token, websocket transport, Socket.IO `event` name, `{type, for, message:[…],
+  event_id}` envelope (the docs: the value "will always be an array type"), field names and types of every documented
+  sample (donation `amount` "13.37" as a string, `id` a number, `from_user_id` null; bits `amount` and host `viewers`
+  as strings; superchat `amount` in micros), `_id` per alert for dedupe, the `for` values. The Socket API token is
+  copied from the dashboard (or read with OAuth scope `socket.token` from `GET /api/v2.0/socket/token`).
+- **Changed:** `raids` (the docs' type table) is accepted besides `raid` (the sample); a donation's `to.name` is
+  `recipient`, `iconClassName` is kept; a superchat's sender is `channelId` (`userId`), its `id` the chat message
+  (`superchatId`); relayed events carry `createdAt` (`created_at`/`publishedAt`) and subscriptions `since`
+  (`sponsorSince`/`since`).
+- **Not settled by the docs:** the Socket.IO version the server speaks today (the page still loads client 2.0.3; Cuebot
+  keeps its EIO 4 → 3 fallback); merch, loyalty store redemption, charity (`streamlabscharitydonation`) and Prime gift
+  payloads are not documented at all (that the charity type exists comes from a Streamlabs developer quoted in a
+  TwitchSpawn issue, community); a test-event flag (none is documented); rate limits.
+
+### StreamElements
+
+- **Sources:** https://docs.streamelements.com/websockets, /websockets/examples, /websockets/topics,
+  /websockets/topics/channel-activities, /websockets/topics/channel-tips (read through
+  https://docs.streamelements.com/llms-full.txt); https://dev.streamelements.com/docs/api-docs (OAuth2, "Personal
+  Access - Using JWT", "Connecting via Websocket using OAuth2", and the reference pages points `/:channel/:user`,
+  `/:channel/:user/:amount`, `/:channel/top`, tips `/:channel`, `/:channel/top`, `/:channel/leaderboard`) (fetched
+  2026-10-28).
+- **Verified:** Astro URL, subscribe/response/message/reconnect shapes, error codes, `token_type` `jwt`, the 30 s
+  PING / 70 s pong rule, `reconnect_token` hand-off, the `channel.activities` payload (`type`, `provider`, `channel`,
+  `data.username/displayName/providerId/avatar`, `_id`, `activityId`, `createdAt`), its activity types and providers
+  (`StreamElements`, `represent`, `fourthwall`, ... keep their own platform names); the legacy socket's
+  `authenticate {method:"jwt"}` → `authenticated {channelId}`; REST base URL, `Authorization: Bearer <JWT>`, points
+  and tips paths.
+- **Changed:** subscribe only after `welcome` (as every documented client does); a resumed session's `welcome` now
+  reports Connected (it stayed at "Subscribing..."); `err_deadline_exceeded` / `rate_limit_exceeded` are retried; one
+  command per 110 ms; the tip leaderboard reads the documented `tips/{channel}/top` (`.../leaderboard` has no
+  documented response); `offset=0` is sent where the reference marks it required; deleted tips are left out of "latest
+  tips"; the legacy socket's `event:test` (dashboard emulations, widget shape `{listener, event}`) is mapped for
+  `tip-latest` and `merch-latest` and published as a test.
+- **Not settled by the docs:** the response bodies of `points/{channel}/{user}`, `PUT .../{amount}` and
+  `points/{channel}/top` (Cuebot reads `points`/`pointsAlltime`/`rank`, `newAmount`, `users[]`); the `tip`, `merch`
+  and `redemption` activity `data` beyond the common user fields (the websocket schema lists `tipId`, `amount`,
+  `currency`, `message`, `quantity`, `items`, `tier`, but no merch item or store item shape); whether Astro delivers
+  dashboard emulations; Streamer.bot's `merchItem#` numbering (Cuebot counts from 0); the `apikey` (overlay token)
+  and `oauth2` token types (Cuebot uses the JWT only).
+
+### TipeeeStream
+
+- **Sources:** https://api.tipeeestream.com/api-doc/socketio ("Updated on August 7th, 2019"; deploy tag 2026-08-25),
+  https://api.tipeeestream.com/api-doc/events, `GET https://api.tipeeestream.com/v2.0/site/socket` (answers
+  `{"code":200,"message":"success","datas":{"port":"443","host":"https://sso-cf.tipeeestream.com"}}`) (fetched
+  2026-10-28).
+- **Verified:** socket lookup, `access_token` query, `join-room {room: <API key>, username}`, `new-event`
+  `{appKey, event:{id, type, user, ref, inserted_at, created_at, parameters, formattedAmount, "parameters.amount"}}`,
+  REST `events.json?apiKey` with `type[]`, `limit` (default 10), `offset`, `sort`, `order`; event types
+  follow/subscription/donation/hosting; `resub` is a number in one sample and a string in the other.
+- **Changed:** nothing; the documented samples are now fixtures.
+- **Not settled by the docs:** `event.user` is the *streamer's* account in both samples (its `avatar` is an id such as
+  "5236", not a URL); Streamer.bot's `avatar` is filled from it, and no donor avatar is documented; fees, campaign,
+  recurring, cheers and raids are not in the docs (read tolerantly, as open-source clients see them, community); no
+  test flag beyond `ref` = `simulation...` (community); no rate limits.
+
+### DonorDrive / Extra Life
+
+- **Sources:** https://github.com/DonorDrive/PublicAPI (README, overview.md, how-tos.md, resources/participants.md,
+  teams.md, donations.md, incentives.md; last commit 2025-10-24) (fetched 2026-10-28).
+- **Verified:** unauthenticated GETs on `<site>/api/...`, the 15 s request interval and `If-None-Match`/304 pattern,
+  status codes (204 out-of-range page, 304, 400, 404, 412 bad version, 429, 503), `limit` max 100 (above = 400),
+  default order `createdDateUTC DESC`, all participant, team, donation and incentive field names and types (dates
+  like `2019-10-28T16:02:42.583+0000`, missing `quantity` = unlimited, `amount`/`displayName`/`donorID` absent for
+  private donors), `urlAlias` accepted in place of the numeric id.
+- **Changed:** `donations` is now what Streamer.bot documents ("An array of the donations"): the last list read (up
+  to 100, newest first; `donationId`, `donorName`, `donorAmount`, `donorMessage`, `donorAvatarUrl`,
+  `donorIsAnonymous`, `recipientName`, `incentiveId`, `createdAt` each); the count moved to `numDonations`. Profile
+  Updated is published after the donation list is read, so its list includes the new donation.
+- **Not settled by the docs:** the API version: the overview lists 1.0 as default and 1.4 as default from "Q1 '26";
+  Cuebot sends no `version` and needs only fields present since 1.0 (`isActive`, from 1.2, is optional); a numeric
+  rate limit (only "one every 15 seconds"); Retry-After on 429.
+
+### TreatStream
+
+- **Sources:** https://treatstream.com/api/details (fetched 2026-10-28).
+- **Verified:** `Oauth2/Authorize` (`response_type`, `client_id`, `redirect_uri`, `state`, `scope=userinfo`),
+  `Oauth2/Authorize/token` and `Oauth2/RefreshToken` fields and responses (`expires_in` 864000 in the examples although
+  the text says 30 days; refresh tokens expire after 180 days), `Oauth2/Authorize/socketToken` (`client_id`,
+  `access_token` → `socket_token`), `https://nodeapi.treatstream.com/` with `query: "token=..."` (socket.io 1.7.2
+  client), the `realTimeTreat` fields, `getMonthTreats/{access_token}` (letter codes `t`/`f` for sender/receiver types).
+- **Changed:** nothing.
+- **Not settled by the docs:** body encoding (the curl examples send JSON, the parameter lists look form-style; Cuebot
+  sends a form and retries as JSON); no treat id, amount or test flag; no rate limits.
+
+### Pally.gg
+
+- **Sources:** https://docs.pally.gg/advanced/websockets.md, https://docs.pally.gg/features/activity-feed.md,
+  https://docs.pally.gg/llms.txt (its `api-reference/openapi.json` answers 404) (fetched 2026-10-28).
+- **Verified:** `wss://events.pally.gg?auth=<key>&channel=firehose` and `...&channel=activity-feed&room=<slug>`, the
+  `ping`/`pong` keep-alive (at least every 60 s), `campaigntip.notify` with `campaignTip` (amounts in cents) and
+  `page`, the echo test message.
+- **Changed:** "Replay Alert" re-broadcasts a tip to every websocket on purpose, and Pally otherwise sends each event
+  once, so tips are no longer deduplicated by id: a repeat is published with `isReplay` = true (trigger option
+  *Include replayed alerts*, on by default).
+- **Not settled by the docs:** the feed is Beta; the currency (amounts in cents, assumed USD); no REST API.
 
 ## Where Cuebot goes beyond Streamer.bot's documented setup
 
@@ -258,11 +373,14 @@ Still operating (treatstream.com answers, "© 2026", Twitch/YouTube/Kick logos; 
 
 ## Sources
 
+All re-read on 2026-10-28 (see "Verification against the official documentation" above for what each settles).
+
 - Streamlabs Socket API: https://dev.streamlabs.com/docs/socket-api
 - StreamElements websockets (Astro): https://docs.streamelements.com/websockets, topics
   https://docs.streamelements.com/websockets/topics, https://docs.streamelements.com/websockets/topics/channel-activities,
   https://docs.streamelements.com/websockets/topics/channel-tips
-- StreamElements API reference: https://dev.streamelements.com/docs/api-docs
+- StreamElements API reference: https://dev.streamelements.com/docs/api-docs (legacy socket: "Connecting via Websocket using
+  OAuth2"; widget event shape used by `event:test`: https://docs.streamelements.com/overlays/events)
 - Socket.IO protocol: https://github.com/socketio/socket.io-protocol, Engine.IO protocol:
   https://github.com/socketio/engine.io-protocol
 - Streamer.bot trigger variable names (public docs): https://docs.streamer.bot/api/triggers/integrations/streamlabs,
