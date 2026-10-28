@@ -20,6 +20,9 @@ public sealed record ChatContext(string Platform, string User, string UserId, st
     public bool IsSubscriber { get; init; }
     public bool IsHighlighted { get; init; }
 
+    /// <summary>A whisper to the broadcaster (messageKind "Whisper"): commands run without chat replies.</summary>
+    public bool IsWhisper { get; init; }
+
     /// <summary>Message comes from another channel through Twitch shared chat.</summary>
     public bool IsSharedChat { get; init; }
 
@@ -61,6 +64,7 @@ public sealed record ChatContext(string Platform, string User, string UserId, st
             IsModerator = Flag("isModerator"),
             IsVip = Flag("isVip"),
             IsSubscriber = Flag("isSubscriber"),
+            IsWhisper = Get("messageKind").Equals("Whisper", StringComparison.OrdinalIgnoreCase),
             IsHighlighted = Flag("isHighlighted") || Get("msgType").Equals("highlighted-message", StringComparison.OrdinalIgnoreCase),
             IsSharedChat = IsShared(Flag("isSharedChat"), Get("sourceBroadcasterId") is { Length: > 0 } s ? s : Get("sourceRoomId"),
                 Get("broadcasterId") is { Length: > 0 } b ? b : Get("roomId")),

@@ -70,7 +70,9 @@
           </StackPanel>
           <WrapPanel>
             <CheckBox Content="Silence chat replies" IsChecked="{Binding SilenceOutput}" Margin="0,0,16,0" />
-            <CheckBox Content="Viewers may set their own nickname" IsChecked="{Binding AllowViewerNicknames}" />
+            <CheckBox Content="Viewers may set their own nickname" IsChecked="{Binding AllowViewerNicknames}" Margin="0,0,16,0" />
+            <CheckBox Content="Allow moderator whispers" IsChecked="{Binding AllowModeratorWhispers}"
+                      ToolTip.Tip="Moderators may whisper !tts and speaking commands to your Twitch account; they run as if typed in chat, without replies." />
           </WrapPanel>
 
           <TextBlock Classes="label" Text="Sub-commands" Margin="0,6,0,0" />

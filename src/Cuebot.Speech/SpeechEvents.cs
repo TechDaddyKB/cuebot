@@ -18,6 +18,9 @@ public static class SpeechEvents
     /// <summary>Platform-neutral activity (follows, subs...). See <see cref="EventSpeech"/> for the args read.</summary>
     internal const string ChatActivity = "chat.activity";
 
+    /// <summary>A whisper to the broadcaster's Twitch account (from the Twitch module); see "Allow Moderator Whispers".</summary>
+    internal const string Whisper = "twitch.whisper";
+
     /// <summary>
     /// Merch purchases from the donations module (args: service, user, product, formattedAmount, currency, message,
     /// merchQuantity). Spoken with the "Merch" template; see <see cref="EventSpeech.MerchArgs"/>.

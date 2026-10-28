@@ -543,7 +543,7 @@ permissions, event speech with weighted messages and event-state minimums, filte
 save-to-folder, highlight alias, WebSocket (incl. `Mode`) and UDP (incl. `profile`, `reg`) APIs, and the
 Streamer.bot Speaker.bot sub-actions.
 
-- M · Allow Moderator Whispers (mods whisper `!tts` commands to the broadcaster). Not done in w14-core: it needs the Twitch module to deliver whispers to the broadcaster account as chat messages, which is the platform area — `SP:1.guide/2.config/0.index.md`
+- F · Allow Moderator Whispers (w16): Speech > Chat > "Allow moderator whispers". A broadcaster whisper (`twitch.whisper`) that is a `!tts` or speaking command runs as if a moderator typed it, without chat replies, when Twitch (Helix moderation/moderators, cached 5 min) says the sender moderates the channel; other whispers are ignored — `SP:1.guide/2.config/0.index.md`
 - N/A · Speaker.bot Connected / Disconnected triggers: Cuebot's TTS is built in — `TR:integrations/speakerbot/*`
 
 ## 9. App shell

@@ -201,6 +201,7 @@ public sealed partial class SpeechChatViewModel : ObservableObject
     public bool CommandsEnabled { get => Commands.Enabled; set => Set(Commands.Enabled, value, v => Commands.Enabled = v); }
     public string Prefix { get => Commands.Prefix; set => Set(Commands.Prefix, (value ?? "").Trim(), v => Commands.Prefix = v); }
     public bool SilenceOutput { get => Commands.SilenceOutput; set => Set(Commands.SilenceOutput, value, v => Commands.SilenceOutput = v); }
+    public bool AllowModeratorWhispers { get => Commands.AllowModeratorWhispers; set => Set(Commands.AllowModeratorWhispers, value, v => Commands.AllowModeratorWhispers = v); }
     public string NotAllowedText { get => Commands.NotAllowedText; set => Set(Commands.NotAllowedText, value ?? "", v => Commands.NotAllowedText = v); }
     public decimal ViewerCooldownSeconds { get => Commands.ViewerCooldownSeconds; set => Set(Commands.ViewerCooldownSeconds, SpeechText.Clamp(value, 0, 3600), v => Commands.ViewerCooldownSeconds = v); }
     public bool AllowViewerNicknames { get => Commands.AllowViewerNicknames; set => Set(Commands.AllowViewerNicknames, value, v => Commands.AllowViewerNicknames = v); }

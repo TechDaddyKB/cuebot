@@ -24,7 +24,7 @@ internal sealed class SpeechHarness : IAsyncDisposable
         Bus = new EventBus(Log);
         Users = new SpeechUserDirectory(_users);
         Service = new SpeechService(_settings, engines.Length == 0 ? [Engine] : engines, Player, Bus, Log, Users, Chat,
-            input, [Emotes], Time, new Random(1234));
+            input, [Emotes], Time, new Random(1234), [Roles]);
         Settings.Aliases.Add(new VoiceAlias { Name = "Main", EngineId = Engine.Id, VoiceId = "v1" });
         Settings.Commands.ViewerCooldownSeconds = 0;
     }
@@ -35,6 +35,7 @@ internal sealed class SpeechHarness : IAsyncDisposable
     public FakeAudioPlayer Player { get; } = new();
     public FakeChatReplier Chat { get; } = new();
     public FakeEmotes Emotes { get; } = new();
+    public FakeChannelRoles Roles { get; } = new();
     public ManualTime Time { get; } = new();
     public SpeechUserDirectory Users { get; }
     public SpeechService Service { get; }
@@ -70,6 +71,20 @@ internal sealed class SpeechHarness : IAsyncDisposable
         Log.Dispose();
         try { Directory.Delete(_directory, recursive: true); }
         catch (IOException) { }
+    }
+}
+
+/// <summary>Twitch moderators by user id, as the Twitch module's Helix lookup would answer.</summary>
+internal sealed class FakeChannelRoles : Cuebot.Core.Chat.Moderation.IChannelRoles
+{
+    public HashSet<string> Moderators { get; } = new(StringComparer.Ordinal);
+    public List<string> Lookups { get; } = [];
+    public string Platform => "Twitch";
+
+    public Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default)
+    {
+        lock (Lookups) Lookups.Add(userId);
+        return Task.FromResult(Moderators.Contains(userId));
     }
 }
 
