@@ -50,6 +50,7 @@ public static class TwitchEventTypes
     public const string Cheer = "twitch.cheer";
     public const string BitsUsed = "twitch.bitsUsed";
     public const string PowerUp = "twitch.powerUp";
+    public const string CustomPowerUpRedemption = "twitch.customPowerUpRedemption";
     public const string SubCounterRollover = "twitch.subCounterRollover";
 
     // Raids

@@ -231,6 +231,25 @@ internal static class TwitchSubActions
                 c.Args["createClipUrl"] = $"https://clips.twitch.tv/{clip.Id}";
             }),
 
+        new("twitch.getClipDownloadUrls", "Get clip download URLs (clipDownloadUrl, clipPortraitDownloadUrl, clipDownload0.., clipDownloadCount)",
+            [new("clipId", "Clip id") { DefaultValue = "%clipId%", Help = "One of your channel's clips; up to 10 ids separated by commas" }],
+            async (api, c, p, ct) =>
+            {
+                var ids = p["clipId"].Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var downloads = await api.GetClipDownloadsAsync(ids, ct).ConfigureAwait(false);
+                c.Args["clipDownloadCount"] = downloads.Count;
+                var first = downloads.FirstOrDefault();
+                c.Args["clipDownloadUrl"] = first?.LandscapeUrl ?? "";
+                c.Args["clipLandscapeDownloadUrl"] = first?.LandscapeUrl ?? "";
+                c.Args["clipPortraitDownloadUrl"] = first?.PortraitUrl ?? "";
+                for (var i = 0; i < downloads.Count; i++)
+                {
+                    c.Args[$"clipDownload{i}.clipId"] = downloads[i].ClipId;
+                    c.Args[$"clipDownload{i}.landscapeUrl"] = downloads[i].LandscapeUrl;
+                    c.Args[$"clipDownload{i}.portraitUrl"] = downloads[i].PortraitUrl;
+                }
+            }),
+
         // ---------------------------------------------------------------- ads
         new("twitch.runAd", "Run commercial",
             [new("length", "Length (seconds)", ParameterKind.Choice) { DefaultValue = "30", Choices = ["30", "60", "90", "120", "150", "180"] }],
@@ -277,6 +296,31 @@ internal static class TwitchSubActions
             (api, c, p, ct) => ModerateAsync(api, c, p, "unTimedOutUser", "unTimedOutResult", api.UnbanAsync, ct)),
         new("twitch.warn", "Warn user (warnedUser, warnedUserName, warnedUserId, warnedResult)", [UserParam(), new("reason", "Reason")],
             (api, c, p, ct) => ModerateAsync(api, c, p, "warnedUser", "warnedResult", (id, t) => api.WarnAsync(id, p["reason"], t), ct)),
+        new("twitch.addSuspiciousStatus", "Add suspicious status (suspiciousUser, suspiciousUserId, suspiciousStatus, suspiciousStatusResult)",
+            [
+                UserParam(),
+                new("status", "Status", ParameterKind.Choice)
+                {
+                    DefaultValue = "Active Monitoring", Choices = ["Active Monitoring", "Restricted"],
+                    Help = "Active monitoring flags the user's messages for moderators; restricted keeps them out of chat",
+                },
+            ],
+            async (api, c, p, ct) =>
+            {
+                var restricted = p["status"].Replace(" ", "", StringComparison.Ordinal).Equals("Restricted", StringComparison.OrdinalIgnoreCase);
+                TwitchSuspiciousStatus? status = null;
+                await ModerateAsync(api, c, p, "suspiciousUser", "suspiciousStatusResult",
+                    async (id, t) => status = await api.AddSuspiciousStatusAsync(id, restricted, t).ConfigureAwait(false), ct).ConfigureAwait(false);
+                c.Args["suspiciousStatus"] = status?.Status is { Length: > 0 } s ? s : restricted ? "RESTRICTED" : "ACTIVE_MONITORING";
+                c.Args["suspiciousTypes"] = string.Join(",", status?.Types ?? []);
+            }),
+        new("twitch.removeSuspiciousStatus", "Remove suspicious status (suspiciousUser, suspiciousUserId, suspiciousStatusResult)", [UserParam()],
+            async (api, c, p, ct) =>
+            {
+                await ModerateAsync(api, c, p, "suspiciousUser", "suspiciousStatusResult",
+                    (id, t) => api.RemoveSuspiciousStatusAsync(id, t), ct).ConfigureAwait(false);
+                c.Args["suspiciousStatus"] = "NO_TREATMENT";
+            }),
         new("twitch.addVip", "Add VIP", [UserParam()],
             async (api, c, p, ct) => await api.AddVipAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), ct).ConfigureAwait(false)),
         new("twitch.removeVip", "Remove VIP", [UserParam()],

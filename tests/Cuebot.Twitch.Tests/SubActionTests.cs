@@ -129,6 +129,14 @@ public sealed class SubActionTests : IDisposable
         { "twitch.untimeout", "", "DELETE", "/helix/moderation/bans", "broadcaster_id=1337&moderator_id=1337&user_id=4242", "" },
         { "twitch.warn", "user=target;reason=be nice", "POST", "/helix/moderation/warnings", "broadcaster_id=1337&moderator_id=1337",
             "data.user_id=\"4242\";data.reason=\"be nice\"" },
+        { "twitch.addSuspiciousStatus", "user=target;status=Restricted", "POST", "/helix/moderation/suspicious_users", "broadcaster_id=1337&moderator_id=1337",
+            "user_id=\"4242\";status=\"RESTRICTED\"" },
+        { "twitch.addSuspiciousStatus", "user=id:99", "POST", "/helix/moderation/suspicious_users", "broadcaster_id=1337&moderator_id=1337",
+            "user_id=\"99\";status=\"ACTIVE_MONITORING\"" },
+        { "twitch.removeSuspiciousStatus", "user=target", "DELETE", "/helix/moderation/suspicious_users",
+            "broadcaster_id=1337&moderator_id=1337&user_id=4242", "" },
+        { "twitch.getClipDownloadUrls", "clipId=AbcClip, DefClip", "GET", "/helix/clips/downloads",
+            "editor_id=1337&broadcaster_id=1337&clip_id=AbcClip&clip_id=DefClip", "" },
         { "twitch.addVip", "user=target", "POST", "/helix/channels/vips", "broadcaster_id=1337&user_id=4242", "" },
         { "twitch.removeVip", "user=target", "DELETE", "/helix/channels/vips", "broadcaster_id=1337&user_id=4242", "" },
         { "twitch.addModerator", "user=target", "POST", "/helix/moderation/moderators", "broadcaster_id=1337&user_id=4242", "" },
@@ -312,6 +320,26 @@ public sealed class SubActionTests : IDisposable
 
         Assert.Equal(false, (await RunAsync("twitch.getStreamInfo")).Args["isLive"]);
         Assert.Equal("https://clips.twitch.tv/FunnyClip", (await RunAsync("twitch.createClip")).Args["clipUrl"]);
+
+        // Helix "Get Clips Download" example response: a null URL stays empty.
+        _h.On("GET /helix/clips/downloads",
+            """{"data":[{"clip_id":"FunnyClip","landscape_download_url":"https://production.assets.clips.twitchcdn.net/a","portrait_download_url":null},{"clip_id":"Other","landscape_download_url":null,"portrait_download_url":"https://production.assets.clips.twitchcdn.net/b"}]}""");
+        var downloads = (await RunAsync("twitch.getClipDownloadUrls", new() { ["clipId"] = "FunnyClip,Other" })).Args;
+        Assert.Equal(2, downloads["clipDownloadCount"]);
+        Assert.Equal("https://production.assets.clips.twitchcdn.net/a", downloads["clipDownloadUrl"]);
+        Assert.Equal("", downloads["clipPortraitDownloadUrl"]);
+        Assert.Equal("Other", downloads["clipDownload1.clipId"]);
+        Assert.Equal("https://production.assets.clips.twitchcdn.net/b", downloads["clipDownload1.portraitUrl"]);
+
+        // Helix "Add Suspicious Status To Chat User" example response.
+        _h.On("POST /helix/moderation/suspicious_users",
+            """{"data":[{"user_id":"4242","broadcaster_id":"1337","moderator_id":"1337","updated_at":"2025-12-01T23:08:18+00:00","status":"RESTRICTED","types":["MANUALLY_ADDED"]}]}""");
+        var suspicious = (await RunAsync("twitch.addSuspiciousStatus", new() { ["status"] = "Restricted" })).Args;
+        Assert.Equal("Viewer", suspicious["suspiciousUser"]);
+        Assert.Equal("4242", suspicious["suspiciousUserId"]);
+        Assert.Equal("RESTRICTED", suspicious["suspiciousStatus"]);
+        Assert.Equal("MANUALLY_ADDED", suspicious["suspiciousTypes"]);
+        Assert.Equal(true, suspicious["suspiciousStatusResult"]);
 
         var reward = (await RunAsync("twitch.getRewardInfo", new() { ["reward"] = "Hydrate" })).Args;
         Assert.Equal(500, reward["rewardCost"]);

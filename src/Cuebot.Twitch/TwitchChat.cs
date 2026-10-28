@@ -46,6 +46,8 @@ internal sealed class TwitchChatAdapter : IChatEventAdapter
                 with { Amount = $"{Int(e, "bits")} bits" },
             TwitchEventTypes.PowerUp => Item(e, FeedKind.Tip, user, $"{user} used a power-up ({PowerUpName(e)})", Str(e, "message"))
                 with { Amount = $"{Int(e, "bits")} bits" },
+            TwitchEventTypes.CustomPowerUpRedemption => Item(e, FeedKind.Tip, user, $"{user} used {Str(e, "rewardTitle")}", Str(e, "userInput"))
+                with { Amount = $"{Int(e, "bits")} bits" },
             TwitchEventTypes.BitsBadgeTier => Item(e, FeedKind.Other, user, $"{user} reached the {Int(e, "tier")} bits badge"),
             TwitchEventTypes.Raid => Item(e, FeedKind.Raid, user, $"{user} raided with {Int(e, "viewers")} viewers"),
             TwitchEventTypes.RaidSend => Item(e, FeedKind.Raid, user, $"Raided {user} with {Int(e, "viewers")} viewers"),

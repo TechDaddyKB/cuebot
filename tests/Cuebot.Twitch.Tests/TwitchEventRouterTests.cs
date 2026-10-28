@@ -244,11 +244,12 @@ public sealed class TwitchFeedTests
     [InlineData(TwitchEventTypes.ShoutoutReceived, FeedKind.Other, "Friend gave a shoutout")]
     [InlineData(TwitchEventTypes.AdRun, FeedKind.Other, "90s ad break started")]
     [InlineData(TwitchEventTypes.PowerUp, FeedKind.Tip, "Friend used a power-up (celebration)")]
+    [InlineData(TwitchEventTypes.CustomPowerUpRedemption, FeedKind.Tip, "Friend used Confetti")]
     [InlineData(TwitchEventTypes.UserTimedOut, FeedKind.Other, "Friend was timed out for 90s")]
     public void New_activity_reaches_the_feed(string type, FeedKind kind, string title)
     {
         var item = _adapter.ToFeedItem(Event(type, ("user", "Friend"), ("viewers", 12), ("level", 3), ("title", "Best?"),
-            ("duration", 90), ("powerUpType", "celebration"), ("bits", 50)))!;
+            ("duration", 90), ("powerUpType", "celebration"), ("bits", 50), ("rewardTitle", "Confetti")))!;
 
         Assert.Equal(kind, item.Kind);
         Assert.Equal(title, item.Title);

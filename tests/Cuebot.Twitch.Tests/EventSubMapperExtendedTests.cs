@@ -262,6 +262,23 @@ public sealed class EventSubMapperExtendedTests
         Assert.Equal(100, cheer.Args["bits"]);
     }
 
+    [Fact]
+    public void Custom_power_up_redemption()
+    {
+        // Twitch's channel.custom_power_up_redemption.add notification example.
+        var e = Map("channel.custom_power_up_redemption.add", Obj(B,
+            """ "id":"17fa2df1-ad76-4804-bfa5-a40ef63efe63","user_id":"9001","user_login":"cooler_user","user_name":"Cooler_User","user_input":"pogchamp","status":"unfulfilled","custom_power_up":{"id":"92af127c-7326-4483-a52b-b0da0be61c01","title":"title","bits":100,"prompt":"Power-up prompt"},"redeemed_at":"2026-05-01T17:16:03.17106713Z" """));
+
+        Assert.Equal(TwitchEventTypes.CustomPowerUpRedemption, e.Type);
+        Assert.Equal("Cooler_User", e.Args["user"]);
+        Assert.Equal("92af127c-7326-4483-a52b-b0da0be61c01", e.Args["rewardId"]);
+        Assert.Equal("title", e.Args["rewardTitle"]);
+        Assert.Equal("Power-up prompt", e.Args["rewardPrompt"]);
+        Assert.Equal(100, e.Args["bits"]);
+        Assert.Equal("pogchamp", e.Args["userInput"]);
+        Assert.Equal("unfulfilled", e.Args["status"]);
+    }
+
     // ---------------------------------------------------------------- channel points
 
     [Fact]

@@ -235,6 +235,11 @@ public sealed class EventTriggerTests
             new() { ["status"] = "canceled" }));
         Assert.True(Matches("twitch.powerUp", new() { ["powerUpType"] = "celebration" }, new() { ["powerUpType"] = "celebration" }));
         Assert.False(Matches("twitch.powerUp", new() { ["powerUpType"] = "message_effect" }, new() { ["powerUpType"] = "celebration" }));
+        var confetti = new Dictionary<string, object?> { ["rewardId"] = "cp-1", ["rewardTitle"] = "Confetti" };
+        Assert.True(Matches("twitch.customPowerUpRedemption", confetti));
+        Assert.True(Matches("twitch.customPowerUpRedemption", confetti, new() { ["powerUp"] = "confetti" }));
+        Assert.True(Matches("twitch.customPowerUpRedemption", confetti, new() { ["powerUp"] = "cp-1" }));
+        Assert.False(Matches("twitch.customPowerUpRedemption", confetti, new() { ["powerUp"] = "Fireworks" }));
     }
 
     [Fact]

@@ -398,6 +398,7 @@ public sealed class StreamerBotVariableTests
         { T.RewardRedemptionUpdated, "rewardTitle=X;userInput=hi;status=fulfilled;userId=1", "rewardName,rewardStatus,rawInputEscaped" },
         { T.AutomaticRewardRedemption, "rewardType=gigantify_an_emote;emoteId=25;emoteName=Kappa;message=Kappa;userId=1", "gigantifiedEmoteId,gigantifiedEmoteName,gigantifiedEmoteUrl" },
         { T.AutomaticRewardRedemption, "rewardType=random_sub_emote_unlock;emoteId=25;emoteName=Kappa;message=;userId=1", "unlockedEmoteId,unlockedEmoteName" },
+        { T.CustomPowerUpRedemption, "rewardId=p1;rewardTitle=X;userInput=hi;userId=1", "rewardName,customPowerUpId,rawInput,rawInputEscaped" },
         { T.Resub, "cumulativeMonths=3;streakMonths=2;durationMonths=1;message=hi;userId=1", "cumulative,monthStreak,isMultiMonth,multiMonthDuration" },
         { T.SharedChatResub, "cumulativeMonths=3;streakMonths=2;durationMonths=1;message=;messageId=m;userId=1;sourceBroadcasterId=9", "cumulative,monthStreak,source.userId" },
         { T.SubGift, "recipientUserId=7;durationMonths=1;cumulativeTotal=4;isAnonymous=false;communityGiftId=;userId=1", "recipientId,monthsGifted,totalSubsGifted,anonymous,fromGiftBomb,random" },

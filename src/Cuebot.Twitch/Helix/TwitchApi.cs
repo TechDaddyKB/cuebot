@@ -343,6 +343,23 @@ public sealed partial class TwitchApi
         return new TwitchClip(clip.Str("id"), clip.Str("edit_url"));
     }
 
+    /// <summary>
+    /// Temporary download URLs of up to 10 of the channel's clips (Helix "Get Clips Download"; the broadcaster is the
+    /// editor). A URL is empty when Twitch has none for that orientation.
+    /// </summary>
+    public async Task<IReadOnlyList<TwitchClipDownload>> GetClipDownloadsAsync(IReadOnlyCollection<string> clipIds, CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageClips, TwitchScopes.EditorManageClips);
+        var ids = clipIds.Select(i => i.Trim()).Where(i => i.Length > 0).Distinct(StringComparer.Ordinal).ToArray();
+        if (ids.Length == 0) throw new ArgumentException("No clip id given.");
+        if (ids.Length > 10) throw new ArgumentException("Twitch gives download URLs for at most 10 clips at a time.");
+        var json = await _helix.RequestAsync(HttpMethod.Get, "clips/downloads",
+            Q([("editor_id", BroadcasterId), ("broadcaster_id", BroadcasterId), .. ids.Select(i => ("clip_id", i))]), null,
+            "Getting clip download URLs", ct).ConfigureAwait(false);
+        return json.Items("data")
+            .Select(c => new TwitchClipDownload(c.Str("clip_id"), c.Str("landscape_download_url"), c.Str("portrait_download_url"))).ToArray();
+    }
+
     // ---------------------------------------------------------------- ads and raids
 
     /// <summary>Runs an ad of 30 to 180 seconds.</summary>
@@ -476,6 +493,39 @@ public sealed partial class TwitchApi
         if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("A warning needs a reason.");
         return _helix.RequestAsync(HttpMethod.Post, "moderation/warnings", Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)),
             new { data = new { user_id = userId, reason } }, "Warning user", ct);
+    }
+
+    /// <summary>
+    /// Marks a chatter as suspicious (Helix "Add Suspicious Status To Chat User"): active monitoring flags their
+    /// messages for moderators, restricted keeps their messages out of chat.
+    /// </summary>
+    public async Task<TwitchSuspiciousStatus> AddSuspiciousStatusAsync(string userId, bool restricted, CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageSuspiciousUsers);
+        RequireUser(userId);
+        var json = await _helix.RequestAsync(HttpMethod.Post, "moderation/suspicious_users",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)),
+            new { user_id = userId, status = restricted ? "RESTRICTED" : "ACTIVE_MONITORING" }, "Adding suspicious status", ct).ConfigureAwait(false);
+        return SuspiciousStatus(json, userId);
+    }
+
+    /// <summary>Removes a chatter's suspicious status (Helix "Remove Suspicious Status From Chat User").</summary>
+    public async Task<TwitchSuspiciousStatus> RemoveSuspiciousStatusAsync(string userId, CancellationToken ct = default)
+    {
+        Require(TwitchScopes.ManageSuspiciousUsers);
+        RequireUser(userId);
+        var json = await _helix.RequestAsync(HttpMethod.Delete, "moderation/suspicious_users",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId), ("user_id", userId)), null, "Removing suspicious status", ct)
+            .ConfigureAwait(false);
+        return SuspiciousStatus(json, userId);
+    }
+
+    private static TwitchSuspiciousStatus SuspiciousStatus(JsonElement json, string userId)
+    {
+        var item = json.Items("data").FirstOrDefault();
+        return item.ValueKind == JsonValueKind.Object
+            ? new TwitchSuspiciousStatus(item.Str("user_id"), item.Str("status"), item.Strings("types"))
+            : new TwitchSuspiciousStatus(userId, "", []);
     }
 
     public Task AddVipAsync(string userId, CancellationToken ct = default) =>

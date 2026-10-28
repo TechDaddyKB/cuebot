@@ -57,6 +57,12 @@ public sealed record TwitchAdSchedule(
 
 public sealed record TwitchClip(string Id, string EditUrl);
 
+/// <summary>A clip's temporary download URLs (Helix "Get Clips Download"); empty when Twitch has none.</summary>
+public sealed record TwitchClipDownload(string ClipId, string LandscapeUrl, string PortraitUrl);
+
+/// <summary>A chatter's suspicious status after a change: ACTIVE_MONITORING, RESTRICTED or NO_TREATMENT, and why.</summary>
+public sealed record TwitchSuspiciousStatus(string UserId, string Status, IReadOnlyList<string> Types);
+
 public sealed record TwitchMarker(string Id, int PositionSeconds, string Description);
 
 public sealed record TwitchChatSettings(

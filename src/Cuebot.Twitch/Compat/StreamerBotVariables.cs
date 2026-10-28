@@ -59,6 +59,11 @@ internal static class StreamerBotVariables
                 if (type == T.RewardRedemptionUpdated) Alias(a, "rewardStatus", "status");
                 AddInput(a, Text(a, "userInput"), words: false);
                 break;
+            case T.CustomPowerUpRedemption:
+                Alias(a, "rewardName", "rewardTitle");
+                Alias(a, "customPowerUpId", "rewardId");
+                AddInput(a, Text(a, "userInput"), words: false);
+                break;
             case T.RewardCreated or T.RewardUpdated or T.RewardDeleted:
                 Alias(a, "rewardName", "rewardTitle");
                 break;

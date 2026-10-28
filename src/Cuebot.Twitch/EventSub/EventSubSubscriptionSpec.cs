@@ -82,6 +82,7 @@ internal static class EventSubSubscriptions
         Broadcaster("channel.subscription.gift", "1", TwitchScopes.ReadSubscriptions),
         Broadcaster("channel.cheer", "1", TwitchScopes.ReadBits),
         Broadcaster("channel.bits.use", "1", TwitchScopes.ReadBits),
+        Broadcaster("channel.custom_power_up_redemption.add", "1", TwitchScopes.ReadBits),
 
         // Channel points, polls, predictions
         Broadcaster("channel.channel_points_custom_reward_redemption.add", "1", Redemptions),

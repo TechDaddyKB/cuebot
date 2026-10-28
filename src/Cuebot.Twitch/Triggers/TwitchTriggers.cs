@@ -94,6 +94,9 @@ internal sealed class TwitchTriggers : ITriggerProvider
             [new("powerUpType", "Power-up type", ParameterKind.Choice)
                 { DefaultValue = "Any", Choices = ["Any", "gigantify_an_emote", "celebration", "message_effect"] }],
             (e, s) => s["powerUpType"] == "Any" || Equal(e, "powerUpType", s["powerUpType"])),
+        Event(T.CustomPowerUpRedemption, "Custom power-up redemption",
+            [new("powerUp", "Power-up") { Help = "Title or id of one of your custom power-ups; leave empty to match every one" }],
+            (e, s) => Equal(e, "rewardTitle", s["powerUp"]) || Equal(e, "rewardId", s["powerUp"])),
         Event(T.SubCounterRollover, "Sub counter rollover"),
 
         // Raids
