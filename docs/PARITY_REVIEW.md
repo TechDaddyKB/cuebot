@@ -388,7 +388,7 @@ had it (the static check missed it) and a test now pins it. Stream Deck MCP is o
 **Not possible**
 - NP · Camera Hub Prompter and EpocCam: 44 triggers and 20 sub-actions (Camera Hub app has no public API; PARITY.md agrees) — `TR:elgato/camera-hub/**`, `SA:elgato/camera-hub/**`
 - NP · Elgato Studio: 9 triggers, 9 sub-actions — `TR:elgato/studio/*`, `SA:elgato/studio/**`
-- NP · StreamFog: 10 distinct sub-actions (lenses, outfits, reset look, video backgrounds) — `SA:integrations/streamfog/**`, `SA:streamfog/**`
+- Out of scope (removed from the requirements 2026-10-28) · StreamFog: 10 distinct sub-actions (lenses, outfits, reset look, video backgrounds) — `SA:integrations/streamfog/**`, `SA:streamfog/**`
 - NP · Lumia Set Color "Skip Queue" — `SA:integrations/lumia-stream/set-color.md`
 - NP · Voicemod Set Censor State (removed in Voicemod V3) — `SA:integrations/voicemod/set-censor-state.md`
 
