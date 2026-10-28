@@ -145,7 +145,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
 - **New sub-actions.** Streamlabs Desktop: scene filter state, random filter state, hide source's filters, hide group's
   sources, random group source (19 sub-actions now; some calls unverified). Discord Basic Webhook, IFTTT.
 - **Still different.** Camera Hub Set Dynamic Range / Noise Reduction / White Balance Tint ❌ (vendor-only controls behind
-  Camera Hub, not UVC); cloud backups: Google Drive replaces them (Streamer.bot's need a Streamer.bot account; see README "Google Drive backups"); `$math()$` uses Cuebot's evaluator, not mXparser;
+  Camera Hub, not UVC); cloud backups: Google Drive replaces them (Streamer.bot's need a Streamer.bot account; see README "Google Drive backups"); `$math()$` accepts mXparser 4.4's documented syntax (Cuebot's evaluator, not mXparser itself: errors instead of NaN, no calculus operators or units);
   keyboard shortcuts list and Speaker.bot "Allow Moderator Whispers" not done; see PARITY_REVIEW.md for the full list.
 
 ## 8. Speaker.bot (text-to-speech)

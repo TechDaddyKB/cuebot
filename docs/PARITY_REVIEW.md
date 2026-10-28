@@ -214,7 +214,7 @@ Present: 4 (the globals get/set/clear sub-actions); the generic variables, `%dat
 
 **Partial (not changed)**
 - P · `%__source%` / `%eventSource%` are not set as arguments. The Streamer.bot event-name map lives in the scripting module, and the docs say C# is needed to read them anyway; `CPH.GetEventType()`/`GetSource()` give the same values — `GD:01.core/03.variables.md`
-- P · `$math()$`: Cuebot's own evaluator, not mXparser, so the full mXparser token set is not guaranteed — `GD:01.core/03.variables.md`
+- P · `$math()$`: Cuebot's evaluator now takes mXparser 4.4's documented operators (`# ! % ^^`, all boolean, relation and bitwise operators), number literals, constants, random variables and the commonly used unary, binary, 3-argument and variadic functions (w16). Still different: errors are reported instead of `NaN`; no calculus/iterated operators (`sum(i,…)`, `int`, `der`, `solve`), units, physical/astronomical constants or the rarer special functions (`Bell`, `Ei`, `erf`, `LambW0`, …); mXparser itself was not added (since 5.0 it is dual-licensed and commercial use needs a paid licence; the BSD-licensed 4.x line is no longer maintained) — `GD:01.core/03.variables.md`
 
 ## 3. Commands, timers, users, points, quotes
 

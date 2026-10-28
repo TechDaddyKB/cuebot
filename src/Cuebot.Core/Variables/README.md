@@ -32,7 +32,7 @@ same name win.
 
 | Function | Result |
 | --- | --- |
-| `$math(expr)$` | Arithmetic: `+ - * / % ^`, parentheses, comparisons and `&& \|\| !` (1/0), `min max abs round floor ceil trunc sign sqrt pow exp ln log log10 sin cos tan clamp if random(a,b)`, `pi`, `e` |
+| `$math(expr)$` | mXparser 4.4 syntax, as Streamer.bot documents it: `+ - * / ^ #` (modulo), `n!`, `n%` (percent; `a % b` between two operands stays modulo), `^^`, relations `= == != <> ~= < <= > >=`, boolean `& && \| \|\| ~ ! (+) --> <-- <->` and friends, bitwise `@& @\| @^ @<< @>> @~` (1/0 results); literals `b.1010 o.17 h.1F b16.1F 1_2 2_3_4`; `pi e [phi] [gam] [true] [false] [NaN]`; random variables `[Uni] [Int] [Int1]..[Int9] [nat] [Nat] [Nor]`; functions such as `sin cos tg ctg sec asin acos atan sinh rad deg sqrt root abs sgn round(x,n) floor ceil ln log2 lg log(base,x) exp mod C(n,k) fact Gamma Fib ispr not if iff min max gcd lcm add multi mean med mode var std rUni rUnid rNor rList and or xor`, plus Cuebot's `trunc sign pow clamp random() random(a,b)`. Arguments may be separated by `,` or `;`. Note `log(a, b)` is mXparser's log of b to base a. An error (syntax, division by zero, unknown name) is reported instead of mXparser's `NaN`. Full list: `MathEvaluator.cs` |
 | `$length(text)$` | Length in characters (emoji count once) |
 | `$parse(name)$` | Value of the variable whose name is built at run time: `$parse(line%i%)$`; `%name%` / `~name~` pick arguments or globals; `name:format` allowed |
 | `$upper(t)$` `$lower(t)$` `$trim(t)$` `$urlencode(t)$` | Text helpers |
