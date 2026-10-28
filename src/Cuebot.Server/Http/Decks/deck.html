@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Cuebot Deck</title>
+<style>
+  :root { --bg: #16161c; --gap: 8px; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: #eee; font-family: system-ui, sans-serif; overflow: hidden; }
+  #wrap { display: flex; flex-direction: column; height: 100%; padding: var(--gap); gap: var(--gap); }
+  #grid { flex: 1; display: grid; gap: var(--gap); min-height: 0; }
+  .item { position: relative; border: 0; border-radius: 10px; background: #2a2a35 center / cover no-repeat; color: #fff;
+          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px;
+          font: 600 clamp(11px, 2.2vmin, 22px) system-ui, sans-serif; cursor: pointer; overflow: hidden; user-select: none;
+          -webkit-tap-highlight-color: transparent; transition: transform .06s, filter .06s; }
+  .item:active, .item.pressed { transform: scale(.96); filter: brightness(1.25); }
+  .item img.icon { width: 42%; max-height: 50%; object-fit: contain; pointer-events: none; }
+  .item .title { text-align: center; word-break: break-word; text-shadow: 0 1px 3px #000a; pointer-events: none; }
+  .item .value { position: absolute; top: 4px; right: 6px; font-size: .8em; background: #000a; border-radius: 6px; padding: 0 5px; }
+  #nav { display: none; align-items: center; justify-content: center; gap: 12px; }
+  #nav button { border: 0; border-radius: 8px; background: #2a2a35; color: #eee; font-size: 18px; padding: 6px 18px; cursor: pointer; }
+  #status { position: fixed; left: 8px; bottom: 8px; font-size: 12px; opacity: .6; }
+  #toasts { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 9; }
+  .toast { background: #333a; backdrop-filter: blur(6px); border-left: 4px solid #8ab4ff; border-radius: 8px; padding: 8px 14px; min-width: 220px; }
+  .toast b { display: block; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="grid"></div>
+  <div id="nav"><button id="prev" aria-label="Previous page">&#9664;</button><span id="pageName"></span><button id="next" aria-label="Next page">&#9654;</button></div>
+</div>
+<div id="toasts"></div>
+<div id="status">connecting...</div>
+<script>
+(() => {
+  const deckId = /*CUEBOT_DECK*/"";
+  const base = "/deck/" + deckId;
+  const grid = document.getElementById("grid");
+  const status = document.getElementById("status");
+
+  function iconSrc(item) {
+    if (item.iconUrl) return item.iconUrl;
+    if (!item.icon) return "";
+    const [set, name] = item.icon.includes(":") ? item.icon.split(":", 2) : ["mdi", item.icon];
+    const color = item.iconColor ? "?color=" + encodeURIComponent(item.iconColor) : "?color=%23ffffff";
+    return "https://api.iconify.design/" + encodeURIComponent(set) + "/" + encodeURIComponent(name) + ".svg" + color;
+  }
+
+  function render(view) {
+    document.title = view.name;
+    document.documentElement.style.setProperty("--bg", view.background || "#16161c");
+    document.documentElement.style.setProperty("--gap", (view.gap ?? 8) + "px");
+    grid.style.gridTemplateColumns = "repeat(" + view.columns + ", 1fr)";
+    grid.style.gridTemplateRows = "repeat(" + view.rows + ", 1fr)";
+    grid.replaceChildren();
+    for (const item of view.items) {
+      if (item.row >= view.rows || item.column >= view.columns) continue;
+      const el = document.createElement("button");
+      el.className = "item";
+      el.dataset.id = item.id;
+      el.dataset.state = item.state;
+      el.style.gridRow = (item.row + 1);
+      el.style.gridColumn = (item.column + 1);
+      if (item.background) el.style.backgroundColor = item.background;
+      if (item.backgroundImage) el.style.backgroundImage = "url(\"" + item.backgroundImage.replace(/"/g, "%22") + "\")";
+      const src = iconSrc(item);
+      if (src) {
+        const img = document.createElement("img");
+        img.className = "icon"; img.alt = ""; img.src = src;
+        el.appendChild(img);
+      }
+      if (item.title) {
+        const t = document.createElement("span");
+        t.className = "title"; t.textContent = item.title;
+        if (item.titleColor) t.style.color = item.titleColor;
+        el.appendChild(t);
+      }
+      if (item.value !== "" && item.value != null) {
+        const v = document.createElement("span");
+        v.className = "value"; v.textContent = item.value;
+        el.appendChild(v);
+      }
+      el.addEventListener("click", () => press(item.id, el));
+      grid.appendChild(el);
+    }
+    const nav = document.getElementById("nav");
+    nav.style.display = view.pageCount > 1 ? "flex" : "none";
+    document.getElementById("pageName").textContent = view.pageName + " (" + (view.page + 1) + "/" + view.pageCount + ")";
+  }
+
+  function post(path, body) {
+    return fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
+
+  function press(id, el) {
+    el.classList.add("pressed");
+    setTimeout(() => el.classList.remove("pressed"), 150);
+    post("/press", { item: id }).catch(() => toast("Not sent", "Cuebot did not answer"));
+  }
+
+  function toast(title, description) {
+    const box = document.createElement("div");
+    box.className = "toast";
+    const b = document.createElement("b"); b.textContent = title;
+    box.appendChild(b);
+    if (description) box.appendChild(document.createTextNode(description));
+    document.getElementById("toasts").appendChild(box);
+    setTimeout(() => box.remove(), 5000);
+  }
+
+  document.getElementById("prev").addEventListener("click", () => post("/page", { delta: -1 }));
+  document.getElementById("next").addEventListener("click", () => post("/page", { delta: 1 }));
+
+  function connect() {
+    const events = new EventSource(base + "/events");
+    events.addEventListener("open", () => status.textContent = "");
+    events.addEventListener("state", e => render(JSON.parse(e.data)));
+    events.addEventListener("notify", e => { const n = JSON.parse(e.data); toast(n.title, n.description); });
+    events.addEventListener("error", () => status.textContent = "reconnecting...");
+  }
+  fetch(base + "/state").then(r => r.ok ? r.json() : Promise.reject()).then(render).catch(() => status.textContent = "deck not found");
+  connect();
+})();
+</script>
+</body>
+</html>

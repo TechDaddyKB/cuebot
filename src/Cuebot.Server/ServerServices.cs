@@ -105,6 +105,11 @@ public sealed class ServerServices
 
     private IReadOnlyList<Api.IApiWebSocketRoute>? _webSocketRoutes;
 
+    /// <summary>Cuebot Decks, served by the HTTP server at /deck.</summary>
+    public Cuebot.Core.Decks.DeckService? Decks { get => _decks ??= _provider?.GetService<Cuebot.Core.Decks.DeckService>(); init => _decks = value; }
+
+    private Cuebot.Core.Decks.DeckService? _decks;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")

@@ -5,6 +5,7 @@ using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Commands;
+using Cuebot.Core.Decks;
 using Cuebot.Core.Storage;
 using Cuebot.Core.Transfer;
 using Cuebot.Core.Variables;
@@ -39,7 +40,8 @@ public static class CoreServiceCollectionExtensions
             .AddSystemFeatures()
             .AddChatExtrasFeatures()
             .AddWave4Features()
-            .AddTransferFeatures();
+            .AddTransferFeatures()
+            .AddDeckFeatures();
     }
 
     /// <summary>Registers a module's settings file (e.g. "twitch.json") as a singleton JsonFile.</summary>

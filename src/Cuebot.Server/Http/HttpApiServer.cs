@@ -30,13 +30,16 @@ public sealed class HttpApiServer : IAsyncDisposable
 
     private readonly Func<ServerSettings> _settings;
     private readonly StreamerBotRequests _requests;
+    private readonly DeckRoutes? _decks;
     private KestrelListener? _listener;
 
     /// <param name="settings">Read per request, so mapping and origin changes apply immediately.</param>
-    public HttpApiServer(Func<ServerSettings> settings, StreamerBotRequests requests)
+    /// <param name="decks">Cuebot Decks, served at <c>/deck</c> (null = no decks).</param>
+    public HttpApiServer(Func<ServerSettings> settings, StreamerBotRequests requests, Cuebot.Core.Decks.DeckService? decks = null)
     {
         _settings = settings;
         _requests = requests;
+        _decks = decks is null ? null : new DeckRoutes(decks);
     }
 
     public int Port => _listener?.Port ?? 0;
@@ -88,6 +91,12 @@ public sealed class HttpApiServer : IAsyncDisposable
                 return;
             }
             await HandleApiAsync(context, name).ConfigureAwait(false);
+            return;
+        }
+
+        if (_decks is not null && DeckRoutes.Matches(path))
+        {
+            await _decks.HandleAsync(context, originAllowed).ConfigureAwait(false);
             return;
         }
 
@@ -254,6 +263,7 @@ public sealed class HttpApiServer : IAsyncDisposable
         <body><h1>Cuebot HTTP server</h1><ul>
         <li><a href="/feed/chat">/feed/chat</a> - combined chat dock</li>
         <li><a href="/feed/events">/feed/events</a> - activity feed dock</li>
+        <li><a href="/deck">/deck</a> - Cuebot Decks</li>
         <li><a href="/api/GetActions">/api/GetActions</a></li></ul></body></html>
         """;
 
