@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\Cuebot.Donations\Cuebot.Donations.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Integrations\Cuebot.Integrations.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.StreamApps\Cuebot.StreamApps.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.Elgato\Cuebot.Elgato.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Relay\Cuebot.Relay.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Webhooks\Cuebot.Webhooks.csproj" />
   </ItemGroup>

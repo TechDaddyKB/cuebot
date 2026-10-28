@@ -117,6 +117,17 @@ install the community WebSocket plugin, add a WebSocket source with Port 9652 (o
 WebSocket Alert named `Cuebot Test` (or `CUEBOT_LIVE_POLYPOP_ALERT`). Cuebot listens and waits up to 90 s for the
 plugin (it retries every 5 s), then sends the alert with `<message>` = "dev testing".
 
+### Elgato lights, Camera Hub, Elgato Studio
+
+`ElgatoLiveTests` (nothing goes live). **Lights** run with `CUEBOT_LIVE_ELGATO_LIGHT_IP=<ip>` (Key Light, Key Light
+Air/Mini, Ring Light or Light Strip on the same network; Control Center does not need to run): the test adds the light
+by address, checks accessory info and state, polls, moves brightness one step and back (checking the Brightness Changed
+event), then sends one mDNS query and only reports what it finds (multicast is often blocked). **Camera Hub** runs with
+`CUEBOT_LIVE_CAMERAHUB=1`: on Linux plug in a Facecam (or any UVC webcam; the user must be in the `video` group) and
+the test reads its controls and writes the brightness back unchanged; on Windows/macOS start Camera Hub and the test
+only checks that Cuebot detects the app. **Elgato Studio** runs with `CUEBOT_LIVE_ELGATO_STUDIO=1`: start the app; the
+test checks that Cuebot detects it. Camera Hub and Studio have no public control API (see `src/Cuebot.Elgato/PROTOCOL.md`).
+
 ## Running
 
 ```powershell

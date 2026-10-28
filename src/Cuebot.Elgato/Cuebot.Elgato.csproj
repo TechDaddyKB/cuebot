@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.Elgato.Tests" />
+    <InternalsVisibleTo Include="Cuebot.LiveTests" />
+    <InternalsVisibleTo Include="Cuebot.UiTests" />
+  </ItemGroup>
+</Project>
