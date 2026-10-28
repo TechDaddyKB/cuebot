@@ -13,6 +13,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
 | `Cuebot.LiveTests` › Meld Studio / PolyPop | Meld: WebChannel handshake, scene list, re-show the current scene, optionally toggle a named layer and restore it (the session update must come back). PolyPop: the WebSocket plugin connects to Cuebot and a test alert is delivered | Meld Studio with remote connections on; PolyPop with the WebSocket plugin |
 | `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
+| `Cuebot.LiveTests` › MIDI | Port listing (WinMM / ALSA sequencer); optionally notes, a controller and SysEx sent to an output, a loopback round trip through the MIDI Message trigger variables, and learning a control you press | Nothing for the listing; a MIDI output, a loopback cable (loopMIDI, Midi Through) or a controller for the rest |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
 
@@ -128,6 +129,17 @@ event), then sends one mDNS query and only reports what it finds (multicast is o
 the test reads its controls and writes the brightness back unchanged; on Windows/macOS start Camera Hub and the test
 only checks that Cuebot detects the app. **Elgato Studio** runs with `CUEBOT_LIVE_ELGATO_STUDIO=1`: start the app; the
 test checks that Cuebot detects it. Camera Hub and Studio have no public control API (see `src/Cuebot.Elgato/PROTOCOL.md`).
+
+### MIDI
+
+`MidiLiveTests` (nothing goes live). `CUEBOT_LIVE_MIDI=1` lists the MIDI In and Out ports the real backend sees (WinMM on
+Windows, the ALSA sequencer on Linux) or prints why MIDI is unavailable. `CUEBOT_LIVE_MIDI_OUT=<output name>` opens that
+output and sends a quiet Note On/Off (velocity 1), All Notes Off and a SysEx Identity Request (on Windows "Microsoft GS
+Wavetable Synth" always exists; opening it can take seconds). `CUEBOT_LIVE_MIDI_LOOPBACK_IN=<input name>` (with
+`CUEBOT_LIVE_MIDI_LOOPBACK_OUT=<output name>`, default the same name) needs a loopback: on Windows a loopMIDI port, on
+Linux `Midi Through Port-0` (snd-seq-dummy) for both; it sends a Control Change and a SysEx and checks the MIDI Message
+variables and event matching. `CUEBOT_LIVE_MIDI_IN=<input name>` opens a real controller and waits 30 s for you to
+press a key, pad or knob (learn mode). Port names are printed by the listing test.
 
 ### Elgato Wave Link
 

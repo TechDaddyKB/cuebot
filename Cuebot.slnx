@@ -6,6 +6,7 @@
     <Project Path="src/Cuebot.Elgato/Cuebot.Elgato.csproj" />
     <Project Path="src/Cuebot.Integrations/Cuebot.Integrations.csproj" />
     <Project Path="src/Cuebot.Kick/Cuebot.Kick.csproj" />
+    <Project Path="src/Cuebot.Midi/Cuebot.Midi.csproj" />
     <Project Path="src/Cuebot.Obs/Cuebot.Obs.csproj" />
     <Project Path="src/Cuebot.Relay/Cuebot.Relay.csproj" />
     <Project Path="src/Cuebot.Rumble/Cuebot.Rumble.csproj" />
@@ -25,6 +26,7 @@
     <Project Path="tests/Cuebot.Integrations.Tests/Cuebot.Integrations.Tests.csproj" />
     <Project Path="tests/Cuebot.Kick.Tests/Cuebot.Kick.Tests.csproj" />
     <Project Path="tests/Cuebot.LiveTests/Cuebot.LiveTests.csproj" />
+    <Project Path="tests/Cuebot.Midi.Tests/Cuebot.Midi.Tests.csproj" />
     <Project Path="tests/Cuebot.Obs.Tests/Cuebot.Obs.Tests.csproj" />
     <Project Path="tests/Cuebot.Relay.Tests/Cuebot.Relay.Tests.csproj" />
     <Project Path="tests/Cuebot.Rumble.Tests/Cuebot.Rumble.Tests.csproj" />

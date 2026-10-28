@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Builds artifacts/Cuebot-<arch>.AppImage from a linux publish. Run on Linux (or in CI).
+# Native libraries come from the host, as for any desktop app: MIDI loads libasound.so.2 (ALSA sequencer) at runtime and
+# reports "not available" without it, so alsa-lib is deliberately not bundled (it must match the host kernel/config).
 #   packaging/linux/build-appimage.sh [linux-x64|linux-arm64]
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"

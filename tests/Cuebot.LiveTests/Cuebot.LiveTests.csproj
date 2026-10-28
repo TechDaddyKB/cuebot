@@ -24,5 +24,6 @@
     <ProjectReference Include="..\..\src\Cuebot.WaveLink\Cuebot.WaveLink.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Relay\Cuebot.Relay.csproj" />
     <ProjectReference Include="..\..\src\Cuebot.Webhooks\Cuebot.Webhooks.csproj" />
+    <ProjectReference Include="..\..\src\Cuebot.Midi\Cuebot.Midi.csproj" />
   </ItemGroup>
 </Project>
