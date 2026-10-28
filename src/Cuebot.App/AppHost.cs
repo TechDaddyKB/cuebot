@@ -1,4 +1,5 @@
 using Cuebot.App.Shell;
+using Cuebot.App.Shell.GoogleDrive;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.BuiltIn;
@@ -39,7 +40,8 @@ public sealed class AppHost : IAsyncDisposable
 
     /// <param name="paths">Data folder.</param>
     /// <param name="settings">The shell's already-loaded app.json; loaded from the data folder when null.</param>
-    public static AppHost Create(AppPaths paths, AppSettingsStore? settings = null)
+    /// <param name="overrides">Last-minute registrations that replace defaults (tests: fake HTTP endpoints).</param>
+    public static AppHost Create(AppPaths paths, AppSettingsStore? settings = null, Action<IServiceCollection>? overrides = null)
     {
         var firstRun = !File.Exists(paths.File("actions.json"));
         settings ??= new AppSettingsStore(paths);
@@ -71,6 +73,11 @@ public sealed class AppHost : IAsyncDisposable
         services.AddSingleton<Cuebot.Core.Desktop.Notifications.IToastPresenter, Cuebot.App.Views.Extras.Desktop.AvaloniaToastPresenter>();
         services.AddSingleton(settings);
         services.AddSingleton(_ => new BackupService(paths, () => settings.Settings.Backups.Keep));
+        // Its own client: uploads of big backups outlast the shared client's 30 s timeout.
+        services.AddSingleton(_ => new GoogleDriveClient(new HttpClient { Timeout = TimeSpan.FromMinutes(30) },
+            GoogleDriveEndpoints.Google, TimeProvider.System));
+        services.AddSingleton<GoogleDriveBackups>();
+        overrides?.Invoke(services);
         var host = new AppHost(services.BuildServiceProvider());
         TextCulture.Apply(host.Get<Cuebot.Core.Variables.TextEnvironment>(), settings.Settings.Text.Culture);
         if (firstRun)
@@ -89,6 +96,8 @@ public sealed class AppHost : IAsyncDisposable
     public AppSettingsStore Settings => Get<AppSettingsStore>();
 
     public BackupService Backups => Get<BackupService>();
+
+    public GoogleDriveBackups DriveBackups => Get<GoogleDriveBackups>();
 
     /// <summary>Starts the engine and auto-connects platforms. Never throws; failures are logged.</summary>
     public async Task StartAsync()
@@ -138,6 +147,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Python", () => Get<PythonRuntime>().StartAsync()),
             StartSafely(log, "C# precompile", () => Get<Cuebot.Scripting.CSharpPrecompiler>().StartAsync()),
             StartSafely(log, "Watchers", () => Get<Cuebot.Core.SystemTools.WatcherService>().StartAsync()),
+            StartSafely(log, "Google Drive backups", () => Get<GoogleDriveBackups>().StartAsync()),
             StartSafely(log, "Audio", () => Get<Cuebot.Speech.AudioOutput>().WarmUpAsync()));   // first sound plays without device-open delay
 
         Get<EventBus>().Publish(new BotEvent(CoreEvents.AppStarted));

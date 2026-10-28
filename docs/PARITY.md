@@ -145,7 +145,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
 - **New sub-actions.** Streamlabs Desktop: scene filter state, random filter state, hide source's filters, hide group's
   sources, random group source (19 sub-actions now; some calls unverified). Discord Basic Webhook, IFTTT.
 - **Still different.** Camera Hub Set Dynamic Range / Noise Reduction / White Balance Tint ❌ (vendor-only controls behind
-  Camera Hub, not UVC); cloud backups ❌ (no Cuebot cloud account); `$math()$` uses Cuebot's evaluator, not mXparser;
+  Camera Hub, not UVC); cloud backups: Google Drive replaces them (Streamer.bot's need a Streamer.bot account; see README "Google Drive backups"); `$math()$` uses Cuebot's evaluator, not mXparser;
   keyboard shortcuts list and Speaker.bot "Allow Moderator Whispers" not done; see PARITY_REVIEW.md for the full list.
 
 ## 8. Speaker.bot (text-to-speech)
@@ -170,6 +170,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
 | Windows + Linux native, Wayland-first, AppImage/Flatpak/AUR | ➕ | — |
 | Tray icon, minimize to tray, start minimized, headless mode, startup switches, single instance | ✅ | 2 |
 | Automatic backups (on start / before update), restore | ✅ | 2 |
+| Cloud backups (upload, keep newest N, list, restore) | ✅ Google Drive (your own OAuth client, `drive.file` scope) instead of a Streamer.bot account | 6 |
 | Update checker / release channels | ✅ (stable + pre-release; notifies, no auto-install) | 5 |
 | Light/dark theme toggle, keyboard shortcuts | ✅ themes; shortcuts Ctrl+S save, F1 support, F5 test trigger, Ctrl+Alt+I/E import/export, Ctrl+Alt+C chat, Ctrl+Alt+V variables, Ctrl+Alt+L log folder; Actions page Delete, Ctrl+D, Ctrl+O, Ctrl+Up/Down, copy/paste, undo/redo (listed under Settings > About) | 4 |
 

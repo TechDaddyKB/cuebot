@@ -139,7 +139,7 @@ How to read the counts:
 Close behind:
 - IFTTT (2 sub-actions) and the Discord Basic Webhook sub-action are missing; Discord works only through `CPH`.
 - Crowd Control variables use flat names (`effectId`) instead of `effect.*`, `game.*` and `gamePack.*`.
-- Cloud backups are missing.
+- Cloud backups: done with Google Drive (w16).
 - Range-trigger "Always Run" overlap semantics are missing.
 - If/Else regex captures (`match.count`, `match[i]`) are missing.
 
@@ -549,7 +549,7 @@ Streamer.bot Speaker.bot sub-actions.
 ## 9. App shell
 
 - F · `/shutdown` (also `--shutdown`): asks the instance running on the data folder, windowed or headless, to quit (w14-core) — `GD:05.advanced/02.switches.md`
-- M · Cloud backups (upload, restore from cloud). Not done: Streamer.bot backs up to its own account service; Cuebot has no cloud account. Local backups exist — `GD:01.core/10.backup.md`
+- F · Cloud backups (upload, restore from cloud): Google Drive instead of a Streamer.bot account (w16). Every backup is uploaded to a "Cuebot Backups" folder (`drive.file` scope, the user's own "Desktop app" OAuth client), the newest N are kept, and Settings > Google Drive lists and restores them — `GD:01.core/10.backup.md`
 - P · Keyboard shortcuts (not changed in w14-core):
   - Actions view: no Ctrl+R rename group or Ctrl+Home/End to move a sub-action to the top or bottom.
   - Commands, Timers, MIDI, Voice Control and Quotes views: none of the documented Delete / Ctrl+O / Ctrl+C / Ctrl+R shortcuts.

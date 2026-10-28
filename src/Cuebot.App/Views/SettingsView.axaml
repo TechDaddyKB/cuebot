@@ -151,6 +151,64 @@
           </DockPanel>
         </TabItem>
 
+        <TabItem Header="Google Drive">
+          <DockPanel Margin="0,12,0,24" MaxWidth="900" HorizontalAlignment="Left">
+            <Border DockPanel.Dock="Top" Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h2" Text="Google Drive backups" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Copies every backup to a &quot;Cuebot Backups&quot; folder in your Google Drive. Cuebot only sees the files it created there. Google needs your own OAuth client: in Google Cloud, enable the Drive API and create an OAuth client of type &quot;Desktop app&quot;, then paste its ID and secret here (see the docs)." />
+                <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                  <TextBlock Text="Client ID" VerticalAlignment="Center" />
+                  <TextBox x:Name="DriveClientId" Grid.Column="1" Text="{Binding DriveClientId}"
+                           PlaceholderText="1234567890-abc.apps.googleusercontent.com" />
+                  <TextBlock Grid.Row="1" Text="Client secret" VerticalAlignment="Center" />
+                  <TextBox x:Name="DriveClientSecret" Grid.Row="1" Grid.Column="1" Text="{Binding DriveClientSecret}" PasswordChar="•"
+                           PlaceholderText="GOCSPX-..." />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Content="Sign in with Google" Classes="accent" Command="{Binding DriveSignInCommand}"
+                          IsVisible="{Binding !DriveSignedIn}" />
+                  <Button Content="Cancel sign-in" Command="{Binding DriveSignInCancelCommand}"
+                          IsVisible="{Binding DriveSignInCommand.IsRunning}" />
+                  <Button Content="Sign out" Command="{Binding DriveSignOutCommand}" IsVisible="{Binding DriveSignedIn}" />
+                  <TextBlock Text="{Binding DriveAccount}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="8,0,0,0" />
+                </StackPanel>
+                <CheckBox Content="Upload every new backup to Google Drive" IsChecked="{Binding DriveEnabled}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <TextBlock Text="Keep the newest" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding DriveKeep}" Minimum="1" Maximum="1000" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="backups on Google Drive" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Backups contain your settings, including the sign-ins of connected accounts. Your Google Drive sign-in is kept when you restore a backup." />
+              </StackPanel>
+            </Border>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+              <Button Content="Upload now" Command="{Binding DriveUploadCommand}"
+                      ToolTip.Tip="Uploads the backup selected on the Backups tab, or the newest one" />
+              <Button Content="Refresh" Command="{Binding DriveRefreshCommand}" />
+              <Button Content="Restore..." Command="{Binding DriveRestoreCommand}" />
+              <TextBlock Text="{Binding DriveStatus}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding DriveError}" TextWrapping="Wrap" Margin="0,0,0,6"
+                       IsVisible="{Binding DriveError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding DriveSummary}" Margin="0,0,0,6" />
+            <ListBox x:Name="RemoteBackupList" ItemsSource="{Binding RemoteBackups}" SelectedItem="{Binding SelectedRemoteBackup}" MinHeight="120">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:RemoteBackupRowViewModel">
+                  <Grid ColumnDefinitions="170,120,90,*">
+                    <TextBlock Text="{Binding Created}" />
+                    <TextBlock Grid.Column="1" Text="{Binding Reason}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding Size}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{Binding Name}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </TabItem>
+
         <TabItem Header="About">
           <ScrollViewer>
             <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,12,0,24">
@@ -210,7 +268,7 @@
       <Border Classes="card" Width="520" HorizontalAlignment="Center" VerticalAlignment="Center">
         <StackPanel Spacing="12">
           <TextBlock Classes="h2" Text="Restore this backup?" />
-          <TextBlock TextWrapping="Wrap" Classes="muted" Text="{Binding SelectedBackupName}" />
+          <TextBlock TextWrapping="Wrap" Classes="muted" Text="{Binding RestoreTargetName}" />
           <TextBlock TextWrapping="Wrap"
                      Text="Your current data is replaced by the backup's. A safety backup of the current data is made first, so this can be undone by restoring that one. The restore is applied while Cuebot restarts." />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">

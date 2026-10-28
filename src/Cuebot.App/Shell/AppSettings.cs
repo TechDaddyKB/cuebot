@@ -51,6 +51,44 @@ public sealed class BackupSettings
 
     /// <summary>How many backups to keep; older ones are deleted.</summary>
     public int Keep { get; set; } = DefaultKeep;
+
+    /// <summary>The optional Google Drive copy of every backup.</summary>
+    public GoogleDriveBackupSettings GoogleDrive { get; set; } = new();
+}
+
+/// <summary>
+/// Google Drive backups. The OAuth client is the user's own ("Desktop app" client in Google Cloud); Google treats a
+/// desktop client's secret as non-confidential. The refresh token is stored here like other modules store theirs.
+/// </summary>
+public sealed class GoogleDriveBackupSettings
+{
+    public const int DefaultKeep = 10;
+
+    /// <summary>Upload every new backup (and, at start, the newest one if Drive does not have it yet).</summary>
+    public bool Enabled { get; set; } = true;
+
+    public string ClientId { get; set; } = "";
+    public string ClientSecret { get; set; } = "";
+    public string RefreshToken { get; set; } = "";
+
+    /// <summary>The signed-in Google account, shown in the UI.</summary>
+    public string AccountEmail { get; set; } = "";
+
+    /// <summary>The "Cuebot Backups" folder's id, found or created on the first upload.</summary>
+    public string FolderId { get; set; } = "";
+
+    /// <summary>How many backups to keep on Drive; older ones are deleted there.</summary>
+    public int Keep { get; set; } = DefaultKeep;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsSignedIn => RefreshToken.Length > 0;
+
+    public void SignOut()
+    {
+        RefreshToken = "";
+        AccountEmail = "";
+        FolderId = "";
+    }
 }
 
 /// <summary>Saved main window bounds, in device-independent pixels (position in screen pixels).</summary>
@@ -90,6 +128,7 @@ public sealed class AppSettingsStore
         lock (_gate)
         {
             Settings.Backups.Keep = Math.Clamp(Settings.Backups.Keep, 1, 1000);
+            Settings.Backups.GoogleDrive.Keep = Math.Clamp(Settings.Backups.GoogleDrive.Keep, 1, 1000);
             var temp = Path + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(Settings, Json.Options));
             File.Move(temp, Path, overwrite: true);
@@ -122,6 +161,8 @@ public sealed class AppSettingsStore
             settings.Backups ??= new BackupSettings();
             settings.Text ??= new TextSettings();
             if (settings.Backups.Keep < 1) settings.Backups.Keep = BackupSettings.DefaultKeep;
+            settings.Backups.GoogleDrive ??= new GoogleDriveBackupSettings();
+            if (settings.Backups.GoogleDrive.Keep < 1) settings.Backups.GoogleDrive.Keep = GoogleDriveBackupSettings.DefaultKeep;
             return settings;
         }
         catch (Exception ex) when (ex is JsonException or IOException or NotSupportedException)

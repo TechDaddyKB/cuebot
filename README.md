@@ -78,6 +78,33 @@ Backups: on every start (and before imports) the data folder is zipped into `bac
 are kept (configurable). Settings > Backups backs up on demand, opens the folder and restores: a restore is applied
 while Cuebot restarts, before anything is loaded, after a safety backup of the current data.
 
+### Google Drive backups
+
+Streamer.bot's cloud backups need a Streamer.bot account; Cuebot can copy its backups to your own Google Drive instead
+(Settings > Google Drive). Every new backup is uploaded into a **Cuebot Backups** folder that Cuebot creates, the newest
+10 are kept there (configurable, separately from the local count), and at start the newest local backup is uploaded if
+Drive does not have it yet (e.g. after being offline). The tab lists the backups on Drive; **Restore...** downloads one
+into `backups/downloads/` and schedules it exactly like a local restore (safety backup first, applied at the next
+start). Your Google Drive sign-in is kept when a backup is restored. Cuebot asks only for the `drive.file` scope, so it
+can see and change nothing in your Drive except the files it created.
+
+Google needs an OAuth client, and Cuebot ships none, so you create your own (free, once):
+
+1. Open the [Google Cloud console](https://console.cloud.google.com/), create a project (or pick one) and enable the
+   **Google Drive API** (APIs & Services > Library).
+2. Set up the consent screen (Google Auth Platform > Branding / Audience): user type **External**, then add your Google
+   account under **Test users**. Data access: add the scope `https://www.googleapis.com/auth/drive.file`.
+3. Clients > **Create client**, application type **Desktop app**. Copy the **Client ID** and **Client secret** into
+   Settings > Google Drive. (Google issues a secret for desktop clients but treats it as non-confidential; there is no
+   redirect URL to register: Cuebot listens on a random `http://127.0.0.1` port during sign-in, with PKCE.)
+4. Click **Sign in with Google**, pick the account and allow access. The page shows "Signed in as ...".
+
+While the project's publishing status is **Testing**, Google expires the sign-in after 7 days and Cuebot shows "sign in
+again"; publish the app (Audience > Publish app) to keep it signed in. The refresh token is stored in `app.json` like
+other modules store their sign-ins and is never logged. Backups contain your whole data folder, including the sign-ins
+of connected accounts, so they are as private as your Drive. Sign out revokes Cuebot's access at Google; backups
+already on Drive stay there.
+
 ## Linux
 
 Cuebot is **Wayland-first**: when a Wayland compositor is running it uses Avalonia's native Wayland backend,

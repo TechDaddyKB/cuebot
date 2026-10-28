@@ -1,4 +1,5 @@
 using System.Net;
+using Cuebot.Core.Auth;
 using Cuebot.YouTube.Auth;
 using Cuebot.YouTube.Tests.Support;
 
@@ -166,7 +167,7 @@ public sealed class AuthTests
     [Fact]
     public async Task Loopback_receiver_returns_the_redirect_query_and_ignores_other_paths()
     {
-        using var receiver = new LoopbackReceiver();
+        using var receiver = new LoopbackReceiver("YouTube");
         Assert.StartsWith("http://127.0.0.1:", receiver.RedirectUri);
         var wait = receiver.WaitForRedirectAsync(CancellationToken.None);
 

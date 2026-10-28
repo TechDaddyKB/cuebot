@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.App.Shell;
+using Cuebot.App.Shell.GoogleDrive;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Logging;
@@ -15,12 +16,24 @@ public sealed class BackupRowViewModel(BackupInfo info)
     public string Name => Info.Name;
     public string Created => Info.Created.ToString("yyyy-MM-dd HH:mm:ss");
     public string Reason => Info.Reason.Length == 0 ? "backup" : Info.Reason.Replace('-', ' ');
-    public string Size => Info.Size switch
+    public string Size => FormatSize(Info.Size);
+
+    public static string FormatSize(long size) => size switch
     {
-        < 1024 => $"{Info.Size} B",
-        < 1024 * 1024 => $"{Info.Size / 1024.0:0.#} KB",
-        _ => $"{Info.Size / (1024.0 * 1024):0.#} MB",
+        < 1024 => $"{size} B",
+        < 1024 * 1024 => $"{size / 1024.0:0.#} KB",
+        _ => $"{size / (1024.0 * 1024):0.#} MB",
     };
+}
+
+/// <summary>A backup in the Google Drive folder.</summary>
+public sealed class RemoteBackupRowViewModel(RemoteBackup info)
+{
+    public RemoteBackup Info { get; } = info;
+    public string Name => Info.Name;
+    public string Created => Info.Created.ToString("yyyy-MM-dd HH:mm:ss");
+    public string Reason => Info.Reason.Length == 0 ? "backup" : Info.Reason.Replace('-', ' ');
+    public string Size => BackupRowViewModel.FormatSize(Info.Size);
 }
 
 /// <summary>Settings page: General (tray, close, start, theme), Backups and About, bound to app.json.</summary>
@@ -29,6 +42,7 @@ public sealed partial class SettingsViewModel : PageViewModel
     private readonly AppHost _host;
     private readonly AppSettingsStore _store;
     private readonly BackupService _backups;
+    private readonly GoogleDriveBackups _drive;
     private readonly IShellHost _shell;
     private readonly AppLog _log;
     private bool _loading;
@@ -38,6 +52,7 @@ public sealed partial class SettingsViewModel : PageViewModel
         _host = host;
         _store = host.Settings;
         _backups = host.Backups;
+        _drive = host.DriveBackups;
         _shell = shell;
         _log = host.Get<AppLog>();
         DataFolder = host.Get<AppPaths>().Root;
@@ -51,12 +66,18 @@ public sealed partial class SettingsViewModel : PageViewModel
         _backupOnStart = s.Backups.OnStart;
         _backupBeforeImport = s.Backups.BeforeImport;
         _backupKeep = s.Backups.Keep;
+        _driveEnabled = s.Backups.GoogleDrive.Enabled;
+        _driveKeep = s.Backups.GoogleDrive.Keep;
+        _driveClientId = s.Backups.GoogleDrive.ClientId;
+        _driveClientSecret = s.Backups.GoogleDrive.ClientSecret;
         _textCulture = CultureOptions.FirstOrDefault(c => string.Equals(c.Name, s.Text.Culture, StringComparison.OrdinalIgnoreCase))
                        ?? CultureOptions[0];
         _loading = false;
 
         _backups.Changed += () => OnUi(RefreshBackups);
+        _drive.Changed += () => OnUi(RefreshDrive);
         shell.TrayAvailabilityChanged += () => OnUi(() => OnPropertyChanged(nameof(TrayStatus)));
+        RefreshDrive();
         RefreshBackups();
         _ = RefreshAudio();
     }
@@ -259,28 +280,57 @@ public sealed partial class SettingsViewModel : PageViewModel
 
     private bool CanRestore() => SelectedBackup is not null;
 
+    /// <summary>What the restore confirmation names: the local or the Google Drive backup.</summary>
+    [ObservableProperty] private string _restoreTargetName = "";
+
+    private bool _restoreFromDrive;
+
     /// <summary>Asks for confirmation; nothing changes until the user confirms.</summary>
     [RelayCommand(CanExecute = nameof(CanRestore))]
-    private void Restore() => IsConfirmingRestore = true;
+    private void Restore()
+    {
+        _restoreFromDrive = false;
+        RestoreTargetName = SelectedBackupName;
+        IsConfirmingRestore = true;
+    }
 
     [RelayCommand]
     private void CancelRestore() => IsConfirmingRestore = false;
 
-    /// <summary>Schedules the restore (a safety backup of the current data is made before it is applied) and restarts.</summary>
+    /// <summary>
+    /// Schedules the restore (a safety backup of the current data is made before it is applied) and restarts. A Drive
+    /// backup is downloaded first.
+    /// </summary>
     [RelayCommand]
-    private void ConfirmRestore(string? restartNow)
+    private async Task ConfirmRestore(string? restartNow)
     {
         IsConfirmingRestore = false;
-        if (SelectedBackup is not { } backup) return;
-        try
+        if (_restoreFromDrive)
         {
-            _backups.ScheduleRestore(backup.Info.Path);
-            _log.Info("Backups", $"Restore of {backup.Name} scheduled; the current data is backed up first");
+            if (SelectedRemoteBackup is not { } remote) return;
+            IsDriveBusy = true;
+            try
+            {
+                if (!await _drive.ScheduleRestoreAsync(remote.Info)) return;
+            }
+            finally
+            {
+                IsDriveBusy = false;
+            }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        else
         {
-            BackupStatus = $"Cannot restore: {ex.Message}";
-            return;
+            if (SelectedBackup is not { } backup) return;
+            try
+            {
+                _backups.ScheduleRestore(backup.Info.Path);
+                _log.Info("Backups", $"Restore of {backup.Name} scheduled; the current data is backed up first");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+            {
+                BackupStatus = $"Cannot restore: {ex.Message}";
+                return;
+            }
         }
         RefreshBackups();
         if (string.Equals(restartNow, "true", StringComparison.OrdinalIgnoreCase) && _shell.CanRestart) _shell.Restart();
@@ -292,6 +342,132 @@ public sealed partial class SettingsViewModel : PageViewModel
     {
         _backups.CancelRestore();
         BackupStatus = "Restore cancelled.";
+    }
+
+    // ---- Google Drive ----
+
+    public ObservableCollection<RemoteBackupRowViewModel> RemoteBackups { get; } = [];
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DriveRestoreCommand))]
+    private RemoteBackupRowViewModel? _selectedRemoteBackup;
+
+    [ObservableProperty] private bool _driveEnabled;
+    [ObservableProperty] private decimal? _driveKeep;
+    [ObservableProperty] private string _driveClientId = "";
+    [ObservableProperty] private string _driveClientSecret = "";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DriveRefreshCommand), nameof(DriveUploadCommand), nameof(DriveRestoreCommand), nameof(DriveSignInCommand))]
+    private bool _isDriveBusy;
+
+    [ObservableProperty] private bool _driveSignedIn;
+    [ObservableProperty] private string _driveAccount = "";
+    [ObservableProperty] private string _driveStatus = "";
+    [ObservableProperty] private string _driveError = "";
+
+    public string DriveSummary => !DriveSignedIn ? "Not signed in."
+        : RemoteBackups.Count == 0 ? "No backups on Google Drive yet (or not listed yet)."
+        : $"{RemoteBackups.Count} backup(s) in \"{GoogleDriveBackups.FolderName}\", newest first.";
+
+    partial void OnDriveEnabledChanged(bool value) => Update(s => s.Backups.GoogleDrive.Enabled = value);
+
+    partial void OnDriveKeepChanged(decimal? value) =>
+        Update(s => s.Backups.GoogleDrive.Keep = (int)Math.Clamp(value ?? GoogleDriveBackupSettings.DefaultKeep, 1, 1000));
+
+    partial void OnDriveClientIdChanged(string value)
+    {
+        Update(s => s.Backups.GoogleDrive.ClientId = value.Trim());
+        DriveSignInCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnDriveClientSecretChanged(string value) => Update(s => s.Backups.GoogleDrive.ClientSecret = value.Trim());
+
+    private void RefreshDrive()
+    {
+        DriveSignedIn = _drive.IsSignedIn;
+        DriveAccount = _drive.Settings.AccountEmail.Length > 0 ? $"Signed in as {_drive.Settings.AccountEmail}" : DriveSignedIn ? "Signed in" : "";
+        DriveStatus = _drive.Status;
+        DriveError = _drive.Error;
+        var selected = SelectedRemoteBackup?.Info.Id;
+        RemoteBackups.Clear();
+        foreach (var b in _drive.Remote) RemoteBackups.Add(new RemoteBackupRowViewModel(b));
+        SelectedRemoteBackup = RemoteBackups.FirstOrDefault(b => b.Info.Id == selected);
+        OnPropertyChanged(nameof(DriveSummary));
+        DriveSignInCommand.NotifyCanExecuteChanged();
+        DriveSignOutCommand.NotifyCanExecuteChanged();
+        DriveRefreshCommand.NotifyCanExecuteChanged();
+        DriveUploadCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanDriveSignIn() => !IsDriveBusy && DriveClientId.Trim().Length > 0;
+
+    /// <summary>Opens Google's consent page in the browser and waits for the loopback redirect (cancellable).</summary>
+    [RelayCommand(CanExecute = nameof(CanDriveSignIn), IncludeCancelCommand = true)]
+    private async Task DriveSignIn(CancellationToken ct)
+    {
+        IsDriveBusy = true;
+        try
+        {
+            await _drive.SignInAsync(ct);
+            await _drive.RefreshAsync(ct);
+        }
+        catch (Exception ex) when (ex is GoogleDriveException or HttpRequestException or IOException or OperationCanceledException
+                                       or System.Net.Sockets.SocketException)
+        {
+            // The service logged it and set its Error/Status.
+        }
+        finally
+        {
+            IsDriveBusy = false;
+            RefreshDrive();
+        }
+    }
+
+    private bool CanDriveSignOut() => DriveSignedIn;
+
+    [RelayCommand(CanExecute = nameof(CanDriveSignOut))]
+    private async Task DriveSignOut()
+    {
+        await _drive.SignOutAsync();
+        RefreshDrive();
+    }
+
+    private bool CanUseDrive() => DriveSignedIn && !IsDriveBusy;
+
+    [RelayCommand(CanExecute = nameof(CanUseDrive))]
+    private async Task DriveRefresh()
+    {
+        IsDriveBusy = true;
+        try { await _drive.RefreshAsync(); }
+        finally { IsDriveBusy = false; RefreshDrive(); }
+    }
+
+    /// <summary>Uploads the selected local backup (or the newest one when none is selected).</summary>
+    [RelayCommand(CanExecute = nameof(CanUseDrive))]
+    private async Task DriveUpload()
+    {
+        var backup = SelectedBackup?.Info ?? _backups.List().FirstOrDefault();
+        if (backup is null)
+        {
+            BackupStatus = "Back up first; there is nothing to upload yet.";
+            return;
+        }
+        IsDriveBusy = true;
+        try { await _drive.UploadAsync(backup); }
+        finally { IsDriveBusy = false; RefreshDrive(); }
+    }
+
+    private bool CanDriveRestore() => SelectedRemoteBackup is not null && !IsDriveBusy;
+
+    /// <summary>Asks for confirmation; the backup is downloaded only once the user confirms.</summary>
+    [RelayCommand(CanExecute = nameof(CanDriveRestore))]
+    private void DriveRestore()
+    {
+        if (SelectedRemoteBackup is not { } remote) return;
+        _restoreFromDrive = true;
+        RestoreTargetName = $"{remote.Name} (Google Drive)";
+        IsConfirmingRestore = true;
     }
 
     // ---- About ----

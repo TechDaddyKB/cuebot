@@ -1,5 +1,6 @@
 using System.Globalization;
 using Cuebot.Core;
+using Cuebot.Core.Auth;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
@@ -128,7 +129,7 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     public async Task SignInWithBrowserAsync(YouTubeAccountKind account, Action<Uri> openBrowser, CancellationToken ct = default)
     {
         RequireClient();
-        using var receiver = new LoopbackReceiver();
+        using var receiver = new LoopbackReceiver("YouTube");
         var verifier = Pkce.CreateVerifier();
         var state = Pkce.CreateState();
         openBrowser(_oauth.BuildAuthorizeUri(Settings.ClientId.Trim(), receiver.RedirectUri, YouTubeScopes.Loopback,

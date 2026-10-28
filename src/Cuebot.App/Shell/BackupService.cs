@@ -20,6 +20,9 @@ public sealed class BackupService
 {
     public const string FolderName = "backups";
     public const string PendingRestoreFile = "restore.pending";
+
+    /// <summary>Subfolder of <see cref="Folder"/> for backups downloaded from Google Drive (never listed or pruned).</summary>
+    public const string DownloadsFolderName = "downloads";
     private const string Prefix = "cuebot-";
     private const string StampFormat = "yyyyMMdd-HHmmss";
 
@@ -48,11 +51,17 @@ public sealed class BackupService
 
     public Func<int> Keep { get; }
 
+    /// <summary>Where backups downloaded for a restore go; outside the list, so pruning and uploads ignore them.</summary>
+    public string DownloadsFolder => Path.Combine(Folder, DownloadsFolderName);
+
     public static string Version { get; } =
         typeof(BackupService).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]
         ?? typeof(BackupService).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
     public event Action? Changed;
+
+    /// <summary>Raised (on the creating thread) after a backup zip was written, e.g. to upload it.</summary>
+    public event Action<BackupInfo>? Created;
 
     /// <summary>The pending restore's zip, if one is scheduled.</summary>
     public string? PendingRestore
@@ -75,7 +84,9 @@ public sealed class BackupService
     }
 
     /// <summary>Zips the data folder now and prunes old backups. <paramref name="reason"/> becomes part of the name.</summary>
-    public BackupInfo Create(string reason)
+    public BackupInfo Create(string reason) => Create(reason, prune: true);
+
+    private BackupInfo Create(string reason, bool prune)
     {
         BackupInfo info;
         lock (_gate)
@@ -109,9 +120,10 @@ public sealed class BackupService
             }
             File.Move(temp, path);
             info = Describe(path);
-            Prune();
+            if (prune) Prune();
         }
         Changed?.Invoke();
+        Created?.Invoke(info);
         return info;
     }
 
@@ -122,8 +134,10 @@ public sealed class BackupService
     public void Prune()
     {
         var keep = Math.Max(1, Keep());
+        var pending = PendingRestore;
         foreach (var old in List().Skip(keep))
         {
+            if (pending is not null && string.Equals(Path.GetFullPath(old.Path), pending, StringComparison.OrdinalIgnoreCase)) continue;
             try { File.Delete(old.Path); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
@@ -155,8 +169,16 @@ public sealed class BackupService
         if (zip is null) return null;
         File.Delete(Path.Combine(Root, PendingRestoreFile));
         if (!File.Exists(zip)) throw new FileNotFoundException("The backup scheduled for restore no longer exists", zip);
-        var safety = Create("pre-restore");
+        // Pruned only after the restore: the safety backup must not push the backup being restored out of the list.
+        var safety = Create("pre-restore", prune: false);
         RestoreNow(zip);
+        Prune();
+        if (string.Equals(Path.GetDirectoryName(Path.GetFullPath(zip)), Path.GetFullPath(DownloadsFolder), StringComparison.OrdinalIgnoreCase))
+        {
+            try { File.Delete(zip); }   // a downloaded copy has served its purpose; Drive keeps the original
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
         return safety;
     }
 
@@ -212,19 +234,31 @@ public sealed class BackupService
 
     private static BackupInfo Describe(string path)
     {
-        var name = Path.GetFileNameWithoutExtension(path);
         var created = File.GetLastWriteTime(path);
         var reason = "";
-        // cuebot-yyyyMMdd-HHmmss-reason-vX.Y.Z
-        if (name.Length > Prefix.Length + StampFormat.Length
-            && DateTime.TryParseExact(name.AsSpan(Prefix.Length, StampFormat.Length), StampFormat, CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var stamp))
+        if (TryParseName(Path.GetFileName(path), out var stamp, out var parsedReason))
         {
             created = stamp;
-            var rest = name[(Prefix.Length + StampFormat.Length)..].TrimStart('-');
-            var v = rest.IndexOf("-v", StringComparison.Ordinal);
-            reason = v >= 0 ? rest[..v] : rest;
+            reason = parsedReason;
         }
         return new BackupInfo(path, created, reason, new FileInfo(path).Length);
+    }
+
+    /// <summary>Reads the time and reason out of a backup file name (<c>cuebot-yyyyMMdd-HHmmss-reason-vX.Y.Z.zip</c>).</summary>
+    public static bool TryParseName(string fileName, out DateTime created, out string reason)
+    {
+        created = default;
+        reason = "";
+        if (!fileName.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase) || !fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            return false;
+        var name = fileName[..^4];
+        if (name.Length <= Prefix.Length + StampFormat.Length
+            || !DateTime.TryParseExact(name.AsSpan(Prefix.Length, StampFormat.Length), StampFormat, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out created))
+            return false;
+        var rest = name[(Prefix.Length + StampFormat.Length)..].TrimStart('-');
+        var v = rest.IndexOf("-v", StringComparison.Ordinal);
+        reason = v >= 0 ? rest[..v] : rest;
+        return true;
     }
 }

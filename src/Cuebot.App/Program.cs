@@ -101,7 +101,11 @@ internal static class Program
             if (backups.ApplyPendingRestore() is { } safety)
             {
                 notes.Add((LogLevel.Info, $"Restored a backup; the previous data was saved as {safety.Name}"));
+                var drive = settings.Settings.Backups.GoogleDrive;
                 settings = new AppSettingsStore(paths);   // app.json came from the backup too
+                // ...but the Google Drive sign-in stays the current one, so a restore from Drive never signs out of it.
+                settings.Settings.Backups.GoogleDrive = drive;
+                settings.TrySave();
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
