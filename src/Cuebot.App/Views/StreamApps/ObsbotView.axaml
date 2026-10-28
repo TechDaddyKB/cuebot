@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.ObsbotView"
+             x:DataType="vm:ObsbotViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="OBSBOT" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="OBSBOT Tiny, Meet and Tail cameras through OBSBOT Center's OSC server (or straight to a Tail 2 / Tail Air). Settings are stored in streamapps.json." />
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="OBSBOT Center (OSC)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In OBSBOT Center open Settings → OSC, switch OSC on and pick UDP or TCP. Enter its receive port below (and, for UDP, the port it sends replies to). OBSBOT Center runs on Windows and macOS; on Linux point Cuebot at a Tail 2 / Tail Air's own IP, or at a Windows/Mac PC running Center. OSC has no password: only allow it on networks you trust." />
+          <Grid ColumnDefinitions="Auto,*,Auto,120,Auto,100" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="ObsbotHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="ObsbotPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <ComboBox Grid.Column="5" Margin="12,0,0,0" ItemsSource="{Binding Transports}" SelectedIndex="{Binding TransportIndex}" />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,120,Auto,100,Auto,*" RowDefinitions="Auto">
+            <TextBlock Text="Reply port (UDP)" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <NumericUpDown Grid.Column="1" Value="{Binding ListenPort}" Minimum="0" Maximum="65535" FormatString="0" IsEnabled="{Binding IsUdp}" />
+            <TextBlock Grid.Column="2" Text="Poll every (s)" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding PollSeconds}" Minimum="0" Maximum="3600" FormatString="0" />
+            <ComboBox Grid.Column="5" Margin="12,0,0,0" ItemsSource="{Binding SeriesNames}" SelectedIndex="{Binding SeriesIndex}" />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Reconnect when the connection drops (or OBSBOT Center is not running yet)" IsChecked="{Binding AutoReconnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Refresh" Command="{Binding RefreshStateCommand}" IsEnabled="{Binding CanSend}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="ObsbotCamera" TextWrapping="Wrap">
+            <Run Text="Camera: " FontWeight="SemiBold" /><Run Text="{Binding Camera}" />
+          </TextBlock>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="Presets: " FontWeight="SemiBold" /><Run Text="{Binding Presets}" />
+          </TextBlock>
+          <TextBlock Text="Cameras in OBSBOT Center" FontWeight="SemiBold" />
+          <TextBlock Classes="muted" Text="Connect to list the cameras OBSBOT Center sees." IsVisible="{Binding HasNoDevices}" />
+          <ItemsControl Name="ObsbotDevices" ItemsSource="{Binding Devices}" />
+
+          <TextBlock Text="Quick controls" FontWeight="SemiBold" Margin="0,4,0,0" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="◀" Command="{Binding NudgeCommand}" CommandParameter="Left" IsEnabled="{Binding CanSend}" />
+            <Button Content="▲" Command="{Binding NudgeCommand}" CommandParameter="Up" IsEnabled="{Binding CanSend}" />
+            <Button Content="▼" Command="{Binding NudgeCommand}" CommandParameter="Down" IsEnabled="{Binding CanSend}" />
+            <Button Content="▶" Command="{Binding NudgeCommand}" CommandParameter="Right" IsEnabled="{Binding CanSend}" />
+            <Button Content="Reset gimbal" Command="{Binding ResetGimbalCommand}" IsEnabled="{Binding CanSend}" />
+            <Button Content="AI lock" Command="{Binding ToggleAiLockCommand}" IsEnabled="{Binding CanSend}" />
+            <Button Content="Snapshot" Command="{Binding SnapshotCommand}" IsEnabled="{Binding CanSend}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Zoom" VerticalAlignment="Center" />
+            <NumericUpDown Name="ObsbotZoom" Value="{Binding Zoom}" Minimum="0" Maximum="100" FormatString="0" Width="120" />
+            <Button Content="Set zoom" Command="{Binding ApplyZoomCommand}" IsEnabled="{Binding CanSend}" />
+            <TextBlock Text="Preset" VerticalAlignment="Center" Margin="12,0,0,0" />
+            <Button Content="1" Command="{Binding PresetCommand}" CommandParameter="1" IsEnabled="{Binding CanSend}" />
+            <Button Content="2" Command="{Binding PresetCommand}" CommandParameter="2" IsEnabled="{Binding CanSend}" />
+            <Button Content="3" Command="{Binding PresetCommand}" CommandParameter="3" IsEnabled="{Binding CanSend}" />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap">
+            <Run Text="Last OSC message: " /><Run Text="{Binding LastMessage}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

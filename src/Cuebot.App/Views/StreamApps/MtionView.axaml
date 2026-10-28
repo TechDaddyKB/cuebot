@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.MtionView"
+             x:DataType="vm:MtionViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="mtion studio" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Fire mtion studio's external triggers and read the open clubhouse through mtion's local developer API. Settings are stored in streamapps.json." />
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Developer API" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="mtion studio answers on http://localhost:35393 while it runs; there is nothing to switch on and no key. Add external triggers to your clubhouse in mtion, then use them in the &quot;Send trigger&quot; sub-action." />
+          <Grid ColumnDefinitions="Auto,*,Auto,120,Auto,100" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="MtionHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <TextBlock Grid.Column="4" Text="Check every (s)" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="5" Value="{Binding PollSeconds}" Minimum="1" Maximum="3600" FormatString="0" />
+          </Grid>
+          <CheckBox Content="Watch for mtion studio on startup" IsChecked="{Binding AutoConnect}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Start watching" Classes="accent" Command="{Binding ConnectCommand}" />
+            <Button Content="Stop" Command="{Binding DisconnectCommand}" />
+            <Button Content="Check now" Command="{Binding CheckCommand}" />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Name="MtionClubhouse" TextWrapping="Wrap">
+            <Run Text="Clubhouse: " FontWeight="SemiBold" /><Run Text="{Binding Clubhouse}" />
+          </TextBlock>
+          <TextBlock Text="External triggers" FontWeight="SemiBold" />
+          <TextBlock Classes="muted" Text="Start watching (or check now) to list the open clubhouse's external triggers." IsVisible="{Binding HasNoTriggers}" />
+          <ItemsControl Name="MtionTriggers" ItemsSource="{Binding Triggers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:MtionTriggerRowViewModel">
+                <Grid ColumnDefinitions="200,*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Details}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <Button Grid.Column="2" Content="Fire" Command="{Binding FireCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

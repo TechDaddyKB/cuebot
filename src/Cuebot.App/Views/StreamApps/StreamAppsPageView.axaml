@@ -13,5 +13,14 @@
     <TabItem Header="Meld &amp; PolyPop">
       <apps:StreamAppsView DataContext="{Binding Apps}" />
     </TabItem>
+    <TabItem Header="OBSBOT" IsVisible="{Binding Obsbot, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <apps:ObsbotView DataContext="{Binding Obsbot}" />
+    </TabItem>
+    <TabItem Header="mtion" IsVisible="{Binding Mtion, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <apps:MtionView DataContext="{Binding Mtion}" />
+    </TabItem>
+    <TabItem Header="StreamFog">
+      <apps:StreamFogView />
+    </TabItem>
   </TabControl>
 </UserControl>
