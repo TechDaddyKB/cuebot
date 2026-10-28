@@ -53,36 +53,14 @@ public sealed partial class CphProxy
         var host = _inline ?? throw Unsupported("no C# code host is available");
         var context = RequireContext();
         if (string.IsNullOrWhiteSpace(codeName) || string.IsNullOrWhiteSpace(methodName)) return false;
-        var code = FindInlineCode(codeName.Trim());
-        if (code is null)
+        var step = InlineCodeFinder.Find(Profile(nameof(ExecuteMethod)).Snapshot.Actions, codeName);
+        if (step is null)
         {
             LogWarn($"ExecuteMethod: no C# code (CPHInline class) named '{codeName}'");
             return false;
         }
-        var result = host.InvokeMethod(code, methodName.Trim(), this, context.Args);
+        var result = host.InvokeMethod(step.Parameters["code"], methodName.Trim(), this, context.Args, CSharpCodeSubAction.References(step));
         if (result is null) LogWarn($"ExecuteMethod: '{codeName}' has no public method {methodName}() without parameters");
         return result ?? false;
-    }
-
-    private string? FindInlineCode(string codeName)
-    {
-        var actions = Profile(nameof(ExecuteMethod)).Snapshot.Actions;
-        var named = actions.SelectMany(a => InlineCode(a.SubActions)).FirstOrDefault(s =>
-            s.Parameters.TryGetValue(CSharpCodeSubAction.NameParameter, out var name)
-            && string.Equals(name.Trim(), codeName, StringComparison.OrdinalIgnoreCase));
-        named ??= actions.Where(a => string.Equals(a.Name, codeName, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(a => InlineCode(a.SubActions)).FirstOrDefault();
-        return named?.Parameters.GetValueOrDefault("code");
-    }
-
-    /// <summary>Every C# sub-action holding a CPHInline class, branches included, in order.</summary>
-    private static IEnumerable<SubActionDefinition> InlineCode(IEnumerable<SubActionDefinition> steps)
-    {
-        foreach (var step in steps)
-        {
-            if (step.Type == "code.csharp" && step.Parameters.TryGetValue("code", out var code) && CphInlineHost.IsInlineClass(code))
-                yield return step;
-            foreach (var nested in step.Branches.Values.SelectMany(InlineCode)) yield return nested;
-        }
     }
 }

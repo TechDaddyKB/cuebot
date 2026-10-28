@@ -16,6 +16,7 @@ Each keeps its own license; full license texts are available from the linked pro
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM helpers | MIT |
 | [Microsoft.Extensions.DependencyInjection](https://github.com/dotnet/runtime) | Dependency injection | MIT |
 | [Roslyn scripting](https://github.com/dotnet/roslyn) (Microsoft.CodeAnalysis.CSharp.Scripting) | C# execute-code sub-actions | MIT |
+| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | Available to C# code, as in Streamer.bot | MIT |
 | [System.Speech](https://github.com/dotnet/runtime) | Windows SAPI voices and Windows speech recognition (voice control) | MIT |
 | [SoundFlow](https://github.com/LSXPrime/SoundFlow) | Audio playback and capture | MIT |
 | [miniaudio](https://github.com/mackron/miniaudio) (native library inside SoundFlow) | Audio backend | MIT No Attribution or public domain (Unlicense), at your choice |

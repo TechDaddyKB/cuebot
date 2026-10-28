@@ -37,12 +37,15 @@ internal sealed class CSharpScriptCompiler
     public int CachedCount => _cache.Count;
 
     /// <summary>Returns a runnable delegate for the code. Throws <see cref="ScriptException"/> on compile errors.</summary>
-    public ScriptRunner<object> GetRunner(string code)
+    /// <param name="references">Custom DLLs (full paths) the code needs besides the standard references.</param>
+    public ScriptRunner<object> GetRunner(string code, IReadOnlyList<string>? references = null)
     {
-        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+        references ??= [];
+        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code + CSharpReferences.Key(references))));
         if (_cache.TryGet(key, out var cached)) return cached;
 
-        var script = CSharpScript.Create<object>(code, Options, typeof(CSharpScriptGlobals));
+        var options = references.Count == 0 ? Options : Options.AddReferences(CSharpReferences.Load(references));
+        var script = CSharpScript.Create<object>(code, options, typeof(CSharpScriptGlobals));
         var errors = script.Compile().Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
         if (errors.Count > 0) throw new ScriptException(FormatErrors(errors));
 
@@ -79,5 +82,6 @@ internal sealed class CSharpScriptCompiler
         typeof(CSharpScriptGlobals).Assembly,
         typeof(Microsoft.CSharp.RuntimeBinder.Binder).Assembly,
         typeof(Cuebot.Core.Actions.ActionEngine).Assembly,
+        typeof(Newtonsoft.Json.JsonConvert).Assembly,   // add `using Newtonsoft.Json;` to use it
     ];
 }
