@@ -42,6 +42,7 @@ jobs:
         shell: pwsh
       - uses: actions/upload-artifact@v5
         with:
+          retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-win-x64
           path: artifacts/Cuebot-win-x64.zip
 
@@ -61,6 +62,7 @@ jobs:
         run: packaging/linux/build-appimage.sh linux-x64
       - uses: actions/upload-artifact@v5
         with:
+          retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-x86_64.AppImage
           path: artifacts/Cuebot-x86_64.AppImage
       - name: Build Flatpak
@@ -72,6 +74,7 @@ jobs:
           flatpak install --user -y --noninteractive artifacts/Cuebot-x86_64.flatpak
       - uses: actions/upload-artifact@v5
         with:
+          retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-x86_64.flatpak
           path: artifacts/Cuebot-x86_64.flatpak
       - name: Smoke test on Wayland (native backend, no X server), X11, Wayland-to-X11 fallback and hung-Wayland watchdog
@@ -90,6 +93,7 @@ jobs:
       - uses: actions/upload-artifact@v5
         if: always()
         with:
+          retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: linux-smoke-test
           path: artifacts/smoke-*
 
@@ -149,6 +153,7 @@ jobs:
       - uses: actions/upload-artifact@v5
         if: always()
         with:
+          retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: arch-packages
           path: |
             artifacts/*.pkg.tar.zst
@@ -174,5 +179,6 @@ jobs:
       - run: npm run pack
       - uses: actions/upload-artifact@v5
         with:
+          retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-StreamDeck-plugin
           path: streamdeck/dist/io.github.cuebot.streamdeck.streamDeckPlugin
