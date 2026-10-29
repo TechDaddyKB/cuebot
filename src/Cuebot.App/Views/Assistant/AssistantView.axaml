@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Assistant"
+             x:Class="Cuebot.App.Views.Assistant.AssistantView"
+             x:DataType="vm:AssistantViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,3" />
+    </Style>
+    <Style Selector="Border.bubble">
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Margin" Value="0,4" />
+    </Style>
+    <Style Selector="SelectableTextBlock.message">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Margin="24,24,24,12">
+    <!-- Which AI, its status and options. -->
+    <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,10">
+      <TextBlock Classes="h1" Text="Assistant" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Ask an AI to help you set Cuebot up: build or change actions, commands and timers, explain features, or work out an integration. It uses Cuebot's MCP tools; deleting, importing and sending chat messages wait for your Approve. It never talks to your viewers." />
+      <Border Classes="card">
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+          <TextBlock Classes="label" Text="AI" VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <ComboBox Name="AssistantProvider" ItemsSource="{Binding Choices}" SelectedItem="{Binding SelectedChoice}" MinWidth="280" />
+            <Ellipse Classes="status" Classes.good="{Binding ProviderReady}" Classes.bad="{Binding !ProviderReady}" VerticalAlignment="Center" />
+            <TextBlock Name="AssistantStatus" Text="{Binding ProviderStatus}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="560" />
+            <Button Content="Refresh" Command="{Binding RefreshStatusCommand}" ToolTip.Tip="Check again (after signing in to an AI app, for example)" />
+          </StackPanel>
+
+          <TextBlock Grid.Row="1" Classes="label" Text="Model" VerticalAlignment="Center" IsVisible="{Binding HasProvider}" />
+          <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasProvider}">
+            <TextBox Name="AssistantModel" Text="{Binding Model}" PlaceholderText="Default" MinWidth="280" />
+            <Button Content="List models" Command="{Binding LoadModelsCommand}" />
+            <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding Model}" MinWidth="200" IsVisible="{Binding Models.Count}"
+                      PlaceholderText="Pick a model" />
+            <TextBlock Classes="muted" Text="{Binding ModelHint}" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <TextBlock Grid.Row="2" Classes="label" Text="API key" VerticalAlignment="Center" IsVisible="{Binding UsesApiKey}" />
+          <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding UsesApiKey}">
+            <TextBox Name="AssistantApiKey" Text="{Binding ApiKey}" PasswordChar="•" MinWidth="280" PlaceholderText="Paste your API key" />
+            <TextBlock Classes="muted" Text="Stored in assistant.json in Cuebot's data folder." VerticalAlignment="Center" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </StackPanel>
+
+    <!-- Message box. Enter sends, Shift+Enter starts a new line. -->
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+      <TextBox Name="AssistantInput" Text="{Binding Input}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="200"
+               PlaceholderText="e.g. Make a !lurk command that thanks the viewer in chat and plays a sound" />
+      <StackPanel Grid.Column="1" Spacing="6" Margin="8,0,0,0" VerticalAlignment="Bottom">
+        <Button Name="AssistantSend" Content="Send" Classes="accent" Command="{Binding SendCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="New chat" Command="{Binding NewChatCommand}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Conversation. -->
+    <Border Classes="card" Padding="12">
+      <Panel>
+        <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding IsEmpty}" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520"
+                   TextAlignment="Center"
+                   Text="Ask anything about setting up Cuebot. Try: &quot;What actions do I have?&quot;, &quot;Add a timer that posts my socials every 20 minutes&quot; or &quot;How do I show alerts in OBS?&quot;" />
+        <ScrollViewer Name="AssistantScroll">
+          <ItemsControl Name="AssistantItems" ItemsSource="{Binding Items}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AssistantItem">
+                <Panel>
+                  <Border Classes="bubble" IsVisible="{Binding IsUser}" Background="{DynamicResource CuebotSelected}" HorizontalAlignment="Right" MaxWidth="720">
+                    <SelectableTextBlock Classes="message" Text="{Binding Text}" />
+                  </Border>
+                  <Border Classes="bubble" IsVisible="{Binding IsAssistant}" Background="{DynamicResource CuebotPanel}" HorizontalAlignment="Left" MaxWidth="820">
+                    <SelectableTextBlock Classes="message" Text="{Binding Text}" />
+                  </Border>
+                  <TextBlock IsVisible="{Binding IsTool}" Classes="muted" Margin="12,2" FontSize="12">
+                    <Run Text="⚙ " /><Run Text="{Binding Text}" /><Run Text=" - " /><Run Text="{Binding State}" />
+                  </TextBlock>
+                  <Border Classes="bubble" IsVisible="{Binding IsConfirmation}" BorderBrush="{DynamicResource CuebotAccent}" BorderThickness="1"
+                          HorizontalAlignment="Left" MaxWidth="720">
+                    <StackPanel Spacing="8">
+                      <TextBlock FontWeight="SemiBold" Text="The assistant wants to:" />
+                      <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                      <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding AwaitingAnswer}">
+                        <Button Content="Approve" Classes="accent" Command="{Binding ApproveCommand}" />
+                        <Button Content="Deny" Command="{Binding DenyCommand}" />
+                      </StackPanel>
+                      <TextBlock Classes="muted" Text="{Binding State}" IsVisible="{Binding !AwaitingAnswer}" />
+                    </StackPanel>
+                  </Border>
+                  <TextBlock IsVisible="{Binding IsError}" Classes="error" Text="{Binding Text}" TextWrapping="Wrap" Margin="12,4" />
+                  <TextBlock IsVisible="{Binding IsNotice}" Classes="muted" Text="{Binding Text}" FontStyle="Italic" Margin="12,4" />
+                </Panel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Panel>
+    </Border>
+  </DockPanel>
+</UserControl>

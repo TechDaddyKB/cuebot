@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Cuebot.App/Cuebot.App.csproj" />
+    <Project Path="src/Cuebot.Assistant/Cuebot.Assistant.csproj" />
     <Project Path="src/Cuebot.Controllers/Cuebot.Controllers.csproj" />
     <Project Path="src/Cuebot.Core/Cuebot.Core.csproj" />
     <Project Path="src/Cuebot.Donations/Cuebot.Donations.csproj" />
@@ -25,6 +26,7 @@
     <Project Path="src/Cuebot.YouTube/Cuebot.YouTube.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Cuebot.Assistant.Tests/Cuebot.Assistant.Tests.csproj" />
     <Project Path="tests/Cuebot.Controllers.Tests/Cuebot.Controllers.Tests.csproj" />
     <Project Path="tests/Cuebot.Donations.Tests/Cuebot.Donations.Tests.csproj" />
     <Project Path="tests/Cuebot.Elgato.Tests/Cuebot.Elgato.Tests.csproj" />

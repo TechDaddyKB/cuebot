@@ -1,12 +1,14 @@
 namespace Cuebot.Server;
 
 /// <summary>
-/// servers.json. Every server is off until enabled in the UI, and binds to 127.0.0.1 unless the user turns on
-/// <see cref="AllowLan"/> (then a server's address may be 0.0.0.0 or a LAN address). Every property is optional so
-/// older files keep loading.
+/// servers.json. Every server is off until enabled in the UI, except MCP, which a saved servers.json turns on (version 2,
+/// see ServerManager). Each binds to 127.0.0.1 unless the user turns on <see cref="AllowLan"/> (then a server's
+/// address may be 0.0.0.0 or a LAN address). Every property is optional so older files keep loading.
 /// </summary>
 public sealed class ServerSettings
 {
+    public const int CurrentVersion = 2;
+
     public int Version { get; set; } = 1;
 
     /// <summary>Allow binding to non-loopback addresses (LAN). Off: every server listens on 127.0.0.1 only.</summary>

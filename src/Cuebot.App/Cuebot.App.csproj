@@ -46,6 +46,7 @@
     <ProjectReference Include="..\Cuebot.Controllers\Cuebot.Controllers.csproj" />
     <ProjectReference Include="..\Cuebot.VoiceControl\Cuebot.VoiceControl.csproj" />
     <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
+    <ProjectReference Include="..\Cuebot.Assistant\Cuebot.Assistant.csproj" />
     <ProjectReference Include="..\Cuebot.Relay\Cuebot.Relay.csproj" />
     <ProjectReference Include="..\Cuebot.Webhooks\Cuebot.Webhooks.csproj" />
   </ItemGroup>

@@ -526,7 +526,7 @@ public sealed class ActionsUxTests : IAsyncDisposable
         try
         {
             Assert.Equal(["Main", "Automation", "Platforms", "Apps", "System"], vm.NavGroups.Select(g => g.Name));
-            Assert.Equal(["Dashboard", "Chat", "Actions", "Commands", "History"], vm.NavGroups[0].Pages.Select(p => p.Title));
+            Assert.Equal(["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant"], vm.NavGroups[0].Pages.Select(p => p.Title));
             // Every page is in exactly one group.
             var grouped = vm.NavGroups.SelectMany(g => g.Pages).ToList();
             Assert.Equal(vm.Pages.Count, grouped.Count);

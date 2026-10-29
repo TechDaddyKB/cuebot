@@ -26,7 +26,8 @@ public sealed class RegistrationTests
                 var manager = provider.GetRequiredService<ServerManager>();
                 Assert.False(manager.Settings.WebSocket.Enabled);
                 Assert.False(manager.Settings.Api.Enabled);
-                Assert.False(manager.Settings.Mcp.Enabled);
+                Assert.True(manager.Settings.Mcp.Enabled);   // a new servers.json starts MCP (version 2)
+                Assert.Equal(ServerSettings.CurrentVersion, manager.Settings.Version);
                 var services = provider.GetRequiredService<ServerServices>();
                 Assert.Same(registry, services.Registry);
                 Assert.NotNull(services.Timers);
