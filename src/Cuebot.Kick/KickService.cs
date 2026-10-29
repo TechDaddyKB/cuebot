@@ -622,6 +622,22 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         ["botUserId"] = Settings.Bot.UserId > 0 ? KickArgs.Id(Settings.Bot.UserId) : "",
     };
 
+    /// <summary>
+    /// Streamer.bot's Kick Present Viewers details from the last channel poll: isLive, title, viewerCount, startedAt and
+    /// the category (empty / 0 until the channel was read).
+    /// </summary>
+    internal void AddPresentViewersArgs(IDictionary<string, object?> a)
+    {
+        var channel = _channel;
+        a["isLive"] = IsLive;
+        a["title"] = channel?.Title ?? "";
+        a["viewerCount"] = channel?.ViewerCount ?? 0;
+        a["startedAt"] = channel?.StartTime?.LocalDateTime ?? default(DateTime);
+        a["categoryId"] = channel?.Category is { Id: > 0 } c ? KickArgs.Id(c.Id) : "";
+        a["categoryName"] = channel?.Category?.Name ?? "";
+        a["categoryThumbnail"] = channel?.Category?.Thumbnail ?? "";
+    }
+
     /// <summary>A Kick user id already seen in chat or events for <paramref name="userName"/> (no network lookup).</summary>
     public string? FindKnownUserId(string userName) => _hub.FindUserId(userName);
 

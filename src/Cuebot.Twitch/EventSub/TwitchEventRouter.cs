@@ -58,6 +58,7 @@ internal sealed class TwitchEventRouter(
     private TwitchBroadcasterArgs? _broadcaster;
     private (string Title, string GameId, string GameName)? _channel;
     private IReadOnlyList<string> _tags = [];
+    private readonly Dictionary<string, string> _boxArt = new(StringComparer.Ordinal);
     private readonly Dictionary<string, TwitchUserRoles> _roles = new(StringComparer.Ordinal);
     private int? _viewers;
     private (string User, string UserName, string UserId, string Image)? _raidTarget;
@@ -102,6 +103,24 @@ internal sealed class TwitchEventRouter(
             _channel = (channel.Title, channel.GameId, channel.GameName);
             _tags = channel.Tags;
         }
+    }
+
+    /// <summary>A category's box art (Helix's <c>box_art_url</c>), for Stream Update's gameBoxArt / oldGameBoxArt.</summary>
+    public void SeedBoxArt(string gameId, string boxArtUrl)
+    {
+        if (gameId.Length == 0) return;
+        lock (_gate)
+        {
+            if (_boxArt.Count > 200) _boxArt.Clear();
+            // Streamer.bot fills Helix's {width}x{height} template with 300x300.
+            _boxArt[gameId] = boxArtUrl.Replace("{width}x{height}", "300x300", StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>True when the box art of <paramref name="gameId"/> is known (or there is no category to look up).</summary>
+    public bool HasBoxArt(string gameId)
+    {
+        lock (_gate) return gameId.Length == 0 || _boxArt.ContainsKey(gameId);
     }
 
     public IReadOnlyList<BotEvent> Route(string subscriptionType, JsonElement payload, bool botSession = false)
@@ -216,9 +235,14 @@ internal sealed class TwitchEventRouter(
                 case TwitchEventTypes.StreamUpdate:
                     var before = _channel;
                     _channel = (Str(e, "title"), Str(e, "gameId"), Str(e, "gameName"));
-                    if (before is not { } old) return e;
+                    var newBoxArt = _boxArt.GetValueOrDefault(Str(e, "gameId"));
+                    if (before is not { } old)
+                        return newBoxArt is null ? e : Retype(e, e.Type, a => a["gameBoxArt"] = newBoxArt);
+                    var oldBoxArt = _boxArt.GetValueOrDefault(old.GameId);
                     return Retype(e, e.Type, a =>
                     {
+                        if (newBoxArt is not null) a["gameBoxArt"] = newBoxArt;
+                        if (oldBoxArt is not null) a["oldGameBoxArt"] = oldBoxArt;
                         // Streamer.bot reports these as text ("True" / "False").
                         a["statusUpdate"] = (old.Title != Str(e, "title")).ToString();
                         a["gameUpdate"] = (old.GameId != Str(e, "gameId")).ToString();

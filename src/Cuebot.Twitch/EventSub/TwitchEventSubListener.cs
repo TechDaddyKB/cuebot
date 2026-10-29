@@ -26,8 +26,12 @@ internal sealed class TwitchEventSubListener(
     EventBus bus,
     AppLog log,
     Action<ConnectionState, string> reportStatus,
-    Func<CancellationToken, Task>? onSubscribed = null) : IEventSubListener
+    Func<CancellationToken, Task>? onSubscribed = null,
+    Func<string, Task>? lookUpBoxArt = null) : IEventSubListener
 {
+    private readonly object _gate = new();
+    private Task _channelUpdates = Task.CompletedTask;
+
     /// <summary>Event types skipped at the last session start because a scope was missing or Twitch refused them.</summary>
     public IReadOnlyList<string> Unavailable { get; private set; } = [];
 
@@ -78,6 +82,41 @@ internal sealed class TwitchEventSubListener(
     }
 
     public void OnNotification(EventSubNotification notification)
+    {
+        // channel.update has no box art: a new category is looked up first (Stream Update's gameBoxArt). Updates
+        // wait for each other so the router still compares them in order.
+        if (lookUpBoxArt is not null && notification.SubscriptionType == "channel.update")
+        {
+            var categoryId = notification.Event.Str("category_id");
+            lock (_gate)
+            {
+                if (!_channelUpdates.IsCompleted || !router.HasBoxArt(categoryId))
+                {
+                    _channelUpdates = _channelUpdates.ContinueWith(async _ =>
+                    {
+                        if (!router.HasBoxArt(categoryId)) await LookUpAsync(categoryId).ConfigureAwait(false);
+                        Publish(notification);
+                    }, TaskScheduler.Default).Unwrap();
+                    return;
+                }
+            }
+        }
+        Publish(notification);
+    }
+
+    private async Task LookUpAsync(string categoryId)
+    {
+        try
+        {
+            await lookUpBoxArt!(categoryId).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            log.Debug("Twitch", $"Could not look up the box art of category {categoryId}: {ex.Message}");
+        }
+    }
+
+    private void Publish(EventSubNotification notification)
     {
         var events = router.Route(notification.SubscriptionType, notification.Event, account.IsBot);
         if (events.Count == 0) log.Debug("Twitch", $"Ignoring notification of type {notification.SubscriptionType}");

@@ -301,6 +301,14 @@ public sealed partial class TwitchApi
         return json.Items("data").Select(c => new TwitchCategory(c.Str("id"), c.Str("name"), c.Str("box_art_url"))).ToArray();
     }
 
+    /// <summary>The category with this id; null when Twitch knows none.</summary>
+    public async Task<TwitchCategory?> GetCategoryAsync(string id, CancellationToken ct = default)
+    {
+        RequireSignedIn();
+        var json = await _helix.RequestAsync(HttpMethod.Get, "games", Q(("id", id)), null, "Looking up category", ct).ConfigureAwait(false);
+        return json.Items("data").Select(c => new TwitchCategory(c.Str("id"), c.Str("name"), c.Str("box_art_url"))).FirstOrDefault();
+    }
+
     /// <summary>Finds a category by exact name (case-insensitive), falling back to the best search match.</summary>
     public async Task<TwitchCategory?> FindCategoryAsync(string name, CancellationToken ct = default)
     {

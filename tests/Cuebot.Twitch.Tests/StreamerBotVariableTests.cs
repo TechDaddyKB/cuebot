@@ -362,6 +362,33 @@ public sealed class StreamerBotVariableTests
     }
 
     [Fact]
+    public void Stream_update_has_the_box_art_of_both_categories_when_known()
+    {
+        _router.SeedChannel(new TwitchChannelInfo("1337", "streamer", "Streamer", "en", "1", "Art", "Title", [], [], false));
+        _router.SeedBoxArt("1", "https://static-cdn.jtvnw.net/ttv-boxart/1_IGDB-{width}x{height}.jpg");
+        _router.SeedBoxArt("2", "https://static-cdn.jtvnw.net/ttv-boxart/2_IGDB-{width}x{height}.jpg");
+
+        var e = First("channel.update", Obj(B, """ "title":"Title","language":"en","category_id":"2","category_name":"Chess","content_classification_labels":[] """));
+
+        Assert.Equal("https://static-cdn.jtvnw.net/ttv-boxart/2_IGDB-300x300.jpg", e.Args["gameBoxArt"]);
+        Assert.Equal("https://static-cdn.jtvnw.net/ttv-boxart/1_IGDB-300x300.jpg", e.Args["oldGameBoxArt"]);
+        Assert.Equal("True", e.Args["gameUpdate"]);
+    }
+
+    [Fact]
+    public void Stream_update_box_art_falls_back_to_the_placeholder()
+    {
+        _router.SeedChannel(new TwitchChannelInfo("1337", "streamer", "Streamer", "en", "1", "Art", "Title", [], [], false));
+
+        var e = First("channel.update", Obj(B, """ "title":"Title","language":"en","category_id":"2","category_name":"Chess","content_classification_labels":[] """));
+
+        Assert.Equal("", e.Args["gameBoxArt"]);
+        Assert.Equal("", e.Args["oldGameBoxArt"]);
+        Assert.False(_router.HasBoxArt("2"));
+        Assert.True(_router.HasBoxArt(""));
+    }
+
+    [Fact]
     public void Broadcaster_seed_adds_display_name_and_type()
     {
         _router.SeedBroadcaster(new TwitchUser("1337", "streamer", "StreamerGuy", "", "partner", "", "", "", null));

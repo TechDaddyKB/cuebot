@@ -170,6 +170,45 @@ public class UserRegistryTests : IDisposable
     }
 
     [Fact]
+    public void Present_viewers_get_the_platforms_stream_details()
+    {
+        using var users = new UserRegistry(null, _bus, _log, _clock, () => [new FakeStreamDetails("rumble"), new FailingStreamDetails()]);
+        users.UpdateSettings(s => s.PresentIntervalMinutes = 5);
+        users.Tick(_clock.Now);
+        Say("Alice", "1");
+        Say("Carol", "3", platform: "Rumble");
+        _events.Clear();
+        _clock.Advance(5 * 60);
+        users.Tick(_clock.Now);
+
+        var events = _events.OfType(UserEvents.PresentViewers).ToArray();
+        var rumble = Assert.Single(events, e => (string)e.Args["platform"]! == "Rumble");
+        Assert.Equal(true, rumble.Args["isLive"]);
+        Assert.Equal("Live now", rumble.Args["title"]);
+        var twitch = Assert.Single(events, e => (string)e.Args["platform"]! == "Twitch");
+        Assert.Equal(false, twitch.Args["isLive"]);
+        Assert.False(twitch.Args.ContainsKey("title"));
+    }
+
+    private sealed class FakeStreamDetails(string platform) : IPresentViewersArgs
+    {
+        public string Platform => platform;
+
+        public void Add(IDictionary<string, object?> args)
+        {
+            args["isLive"] = true;
+            args["title"] = "Live now";
+        }
+    }
+
+    private sealed class FailingStreamDetails : IPresentViewersArgs
+    {
+        public string Platform => "twitch";
+
+        public void Add(IDictionary<string, object?> args) => throw new InvalidOperationException("offline");
+    }
+
+    [Fact]
     public void Internal_and_anonymous_messages_are_not_tracked()
     {
         _bus.Publish(Chat.Message("hi", "Me", "0", extra: new() { ["isInternal"] = true }));

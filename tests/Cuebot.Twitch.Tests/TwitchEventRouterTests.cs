@@ -204,6 +204,66 @@ public sealed class TwitchEventSubListenerTests
     }
 
     [Fact]
+    public async Task Channel_update_waits_for_the_box_art_lookup_and_keeps_the_order()
+    {
+        var log = new AppLog();
+        var bus = new EventBus(log);
+        var published = new System.Collections.Concurrent.ConcurrentQueue<BotEvent>();
+        bus.Subscribe(published.Enqueue);
+        var router = new TwitchEventRouter(TimeProvider.System, () => "1337", () => "", new SentMessageTracker());
+        router.SeedChannel(new TwitchChannelInfo("1337", "streamer", "Streamer", "en", "1", "Art", "Title", [], [], false));
+        router.SeedBoxArt("1", "art-1");
+        var lookup = new TaskCompletionSource();
+        var lookups = new List<string>();
+        var listener = new TwitchEventSubListener(new HelixClient(new HttpClient(), new Uri("https://api.test/helix/"), new StaticTokens()),
+            new EventSubAccount("Twitch", () => "1337", () => "streamer", () => [], []), router, bus, log, (_, _) => { },
+            lookUpBoxArt: async id =>
+            {
+                lookups.Add(id);
+                await lookup.Task;
+                router.SeedBoxArt(id, "art-" + id);
+            });
+
+        listener.OnNotification(Update("n1", "2", "Chess"));
+        listener.OnNotification(Update("n2", "1", "Art")); // known, but must wait for the first
+        Assert.Empty(published);
+
+        lookup.SetResult();
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (published.Count(e => e.Type == TwitchEventTypes.StreamUpdate) < 2 && DateTime.UtcNow < deadline) await Task.Delay(10);
+
+        var updates = published.Where(e => e.Type == TwitchEventTypes.StreamUpdate).ToList();
+        Assert.Equal(["2", "1"], updates.Select(e => (string)e.Args["gameId"]!));
+        Assert.Equal("art-2", updates[0].Args["gameBoxArt"]);
+        Assert.Equal("art-1", updates[0].Args["oldGameBoxArt"]);
+        Assert.Equal("art-1", updates[1].Args["gameBoxArt"]);
+        Assert.Equal(["2"], lookups);
+
+        static EventSubNotification Update(string id, string categoryId, string name) => new(id, "channel.update", JsonSerializer.Deserialize<JsonElement>(
+            $$"""{"broadcaster_user_id":"1337","broadcaster_user_login":"streamer","broadcaster_user_name":"Streamer","title":"Title","language":"en","category_id":"{{categoryId}}","category_name":"{{name}}","content_classification_labels":[]}"""));
+    }
+
+    [Fact]
+    public async Task Channel_update_is_published_without_box_art_when_the_lookup_fails()
+    {
+        var log = new AppLog();
+        var bus = new EventBus(log);
+        var published = new System.Collections.Concurrent.ConcurrentQueue<BotEvent>();
+        bus.Subscribe(published.Enqueue);
+        var router = new TwitchEventRouter(TimeProvider.System, () => "1337", () => "", new SentMessageTracker());
+        var listener = new TwitchEventSubListener(new HelixClient(new HttpClient(), new Uri("https://api.test/helix/"), new StaticTokens()),
+            new EventSubAccount("Twitch", () => "1337", () => "streamer", () => [], []), router, bus, log, (_, _) => { },
+            lookUpBoxArt: _ => throw new InvalidOperationException("offline"));
+
+        listener.OnNotification(new("n1", "channel.update", JsonSerializer.Deserialize<JsonElement>(
+            """{"broadcaster_user_id":"1337","broadcaster_user_login":"streamer","broadcaster_user_name":"Streamer","title":"T","language":"en","category_id":"9","category_name":"X","content_classification_labels":[]}""")));
+
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (!published.Any(e => e.Type == TwitchEventTypes.StreamUpdate) && DateTime.UtcNow < deadline) await Task.Delay(10);
+        Assert.Equal("", Assert.Single(published, e => e.Type == TwitchEventTypes.StreamUpdate).Args["gameBoxArt"]);
+    }
+
+    [Fact]
     public void Every_scope_a_subscription_needs_is_requested_by_the_full_profile()
     {
         foreach (var spec in EventSubSubscriptions.All.Where(s => s.Scopes.Count > 0))

@@ -21,7 +21,7 @@ internal static class CommandAndUserFeatures
         services.AddSingleton(sp => new GroupStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>(),
             sp.GetRequiredService<EventBus>()));
         services.AddSingleton(sp => new UserRegistry(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<EventBus>(),
-            sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<AppLog>(), presentViewersArgs: sp.GetServices<IPresentViewersArgs>));
         services.AddSingleton(sp => new CommandService(sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<GroupStore>(),
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<UserRegistry>());

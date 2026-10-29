@@ -72,15 +72,20 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
     private readonly EventBus _bus;
     private readonly TimeProvider _time;
     private readonly IDisposable _subscription;
+    private readonly AppLog _log;
+    private readonly Func<IEnumerable<IPresentViewersArgs>>? _presentViewersArgs;
     private readonly object _gate = new();
     private DateTimeOffset? _nextPresent;
     private DateTimeOffset _lastSave;
     private bool _dirty;
     private bool _disposed;
 
-    public UserRegistry(AppPaths? paths, EventBus bus, AppLog log, TimeProvider? time = null)
+    public UserRegistry(AppPaths? paths, EventBus bus, AppLog log, TimeProvider? time = null,
+        Func<IEnumerable<IPresentViewersArgs>>? presentViewersArgs = null)
     {
         _bus = bus;
+        _log = log;
+        _presentViewersArgs = presentViewersArgs;
         _time = time ?? TimeProvider.System;
         if (paths is not null)
         {
@@ -254,7 +259,7 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
     /// <summary>Publishes present viewers when due and saves batched changes.</summary>
     public void Tick(DateTimeOffset now)
     {
-        List<BotEvent> events = [];
+        List<Dictionary<string, object?>> present = [];
         lock (_gate)
         {
             var interval = _data.Settings.PresentIntervalMinutes;
@@ -273,7 +278,7 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
                 foreach (var platform in _users.Values.Where(u => u.LastSeen >= since).GroupBy(u => u.Platform, StringComparer.OrdinalIgnoreCase))
                 {
                     var users = platform.OrderByDescending(u => u.LastSeen).ToArray();
-                    events.Add(new BotEvent(UserEvents.PresentViewers, new Dictionary<string, object?>
+                    present.Add(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["platform"] = platform.Key,
                         // Streamer.bot's list of users (id, userName, display, role 1-4, isSubscribed).
@@ -281,14 +286,37 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
                         ["userNames"] = string.Join(", ", users.Select(u => u.DisplayName)),
                         ["userIds"] = string.Join(", ", users.Select(u => u.UserId)),
                         ["count"] = users.Length,
-                        ["isLive"] = false,   // Streamer.bot's flag; the user list does not know the stream state
-                    }));
+                        ["isLive"] = false,   // Streamer.bot's flag; the platform's IPresentViewersArgs knows the stream state
+                    });
                 }
             }
 
             if (_dirty && now - _lastSave >= SaveInterval) SaveLocked(now);
         }
-        foreach (var e in events) _bus.Publish(e);
+        foreach (var args in present)
+        {
+            AddPresentViewersArgs(args);
+            _bus.Publish(new BotEvent(UserEvents.PresentViewers, args));
+        }
+    }
+
+    /// <summary>The platform's stream details (Streamer.bot's isLive, title, category...), outside the lock.</summary>
+    private void AddPresentViewersArgs(Dictionary<string, object?> args)
+    {
+        if (_presentViewersArgs is null) return;
+        var platform = args["platform"] as string;
+        foreach (var source in _presentViewersArgs())
+        {
+            if (!string.Equals(source.Platform, platform, StringComparison.OrdinalIgnoreCase)) continue;
+            try
+            {
+                source.Add(args);
+            }
+            catch (Exception ex)
+            {
+                _log.Debug("Users", $"Could not add the {platform} stream details to Present Viewers: {ex.Message}");
+            }
+        }
     }
 
     private static Dictionary<string, object?> PresentUser(UserRecord u) => new(StringComparer.OrdinalIgnoreCase)

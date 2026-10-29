@@ -201,6 +201,30 @@ public sealed class KickServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Present_viewers_get_the_live_state_title_viewers_and_category()
+    {
+        var before = new Dictionary<string, object?>();
+        _service.AddPresentViewersArgs(before);
+        Assert.Equal(false, before["isLive"]);
+        Assert.Equal("", before["categoryName"]);
+        Assert.Equal(0, before["viewerCount"]);
+
+        _live = true;
+        await ConnectAsync();
+        await Wait.UntilAsync(() => _service.Channel?.IsLive == true, "a poll while live");
+        var args = new Dictionary<string, object?>();
+        new KickPresentViewersArgs(_service).Add(args);
+
+        Assert.Equal(true, args["isLive"]);
+        Assert.Equal("Testing", args["title"]);
+        Assert.Equal(12, args["viewerCount"]);
+        Assert.Equal("15", args["categoryId"]);
+        Assert.Equal("Just Chatting", args["categoryName"]);
+        Assert.Equal("", args["categoryThumbnail"]);
+        Assert.IsType<DateTime>(args["startedAt"]);
+    }
+
+    [Fact]
     public async Task Polling_reports_going_live_once_even_when_realtime_said_so_first()
     {
         var conn = await ConnectAsync();
