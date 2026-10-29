@@ -25,8 +25,8 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
 
 ## Providers
 
-The **AI** picker lists every provider; **Automatic** uses the first ready one in this order: Codex, Claude Code (AI
-apps the streamer is already signed in to), then the API keys (Anthropic, OpenAI, xAI, Google).
+The **AI** picker lists every provider; **Automatic** uses the first ready one in this order: Codex, Claude Code, Grok
+(AI apps the streamer is already signed in to), then the API keys (Anthropic, OpenAI, xAI, Google).
 
 ### AI apps (CLIs)
 
@@ -42,13 +42,13 @@ Cuebot only runs an AI app it can limit to Cuebot's tools, and each one is check
 | --- | --- | --- |
 | **Codex** (`codex`) | `codex app-server` (the Codex IDE extensions' protocol), one process per conversation; **Sign in** starts Codex's Sign in with ChatGPT in the browser | `--disable` for every built-in tool feature (shell, unified exec, apps, plugins, browser and computer use, images, multi-agent, skills, hooks), `web_search="disabled"`, the streamer's other Codex MCP servers switched off for that process (`mcp_servers.<name>.enabled=false`), Cuebot's server added; read-only sandbox, no approvals (any approval request is declined), Cuebot's instructions as developer instructions, ephemeral (not in Codex's history). Status reads only whether `auth.json` holds a sign-in. |
 | **Claude Code** (`claude`) | `claude -p` in stream-json mode, one process per conversation; Stop sends Claude Code's interrupt request | `--restricted --tools ""` (no commands, files or web), `--strict-mcp-config --mcp-config` with Cuebot's server only (`Bearer ${CUEBOT_MCP_TOKEN}` from the environment), `--allowedTools mcp__cuebot --permission-mode dontAsk`, `--system-prompt`, `--disable-slash-commands`, `--no-session-persistence`. Status: `claude auth status`. |
-| Grok CLI | Not available yet | Checked with Grok CLI 1.0.67: in `grok agent stdio` it reads files, loads its own MCP servers, skills and instructions without asking, and ignores `--tools`; nothing per run turns that off. Use the xAI API key instead. |
+| **Grok CLI** (`grok`) | `grok agent stdio` (Agent Client Protocol), one process per conversation, with the streamer's existing Grok sign-in | `GrokIsolation`: a throwaway `GROK_HOME` per conversation in the temp folder (owner-only; none of the streamer's Grok MCP servers, skills or settings), every Claude/Cursor/Codex import off (`GROK_*_ENABLED=false`; `0` is not honoured), an agent profile in `session/new` whose tools are only `search_tool` and `use_tool` (so only the MCP servers connected, Cuebot's) and which carries Cuebot's instructions. Sign-in: Grok's documented external auth provider, a small command that prints the current access token read from `~/.grok/auth.json`; Cuebot never writes that file or uses its refresh token, and deletes the throwaway home (with Grok's copy of the access token) when the conversation ends. When the token is about to expire, opening Grok once refreshes it. Without these steps Grok 1.0.67's agent mode reads files and uses the streamer's MCP servers and instruction files without asking, and ignores `--tools`, project `.grok/config.toml` rules (untrusted folder) and `GROK_CONFIG` deny rules. |
 | Gemini CLI | Not available yet | Its file tools run without asking and Cuebot has not been able to confirm a way to turn them off. Use the Google API key instead. |
 
 The ACP driver (`AcpProvider`, Agent Client Protocol over stdio: Cuebot's MCP server in `session/new`, no file system or
-terminal offered, permission requests allowed only for Cuebot's tools) is in place for Grok and Gemini once they can be
-limited. The apps' own global instruction files (`~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`) may still be read by
-them; their tools and MCP servers are not available. In the Flatpak build the AI apps on the host are not reachable;
+terminal offered, permission requests allowed only for Cuebot's tools) runs Grok and is ready for Gemini once it can be
+limited. Codex and Claude Code may still read their own global instruction files (`~/.codex/AGENTS.md`,
+`~/.claude/CLAUDE.md`); Grok reads none. None of them gets its tools or MCP servers. In the Flatpak build the AI apps on the host are not reachable;
 use an API key there.
 
 ### API keys

@@ -15,27 +15,19 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
     /// <param name="Environment">Extra environment for the agent process.</param>
     /// <param name="SignedIn">Whether the app has a sign-in on this computer (checked without starting it), with a hint when not.</param>
     /// <param name="Blocked">Why this app can not be used yet: Cuebot only runs an AI CLI it can limit to Cuebot's tools.</param>
+    /// <param name="Prepare">Per-conversation setup (environment, session options, clean-up); null for none.</param>
     public sealed record Profile(string Id, string Name, string Command, string[] Arguments, string ModelFlag, string InstallHint,
-        IReadOnlyDictionary<string, string> Environment, Func<(bool SignedIn, string Message)> SignedIn, string? Blocked = null);
+        IReadOnlyDictionary<string, string> Environment, Func<(bool SignedIn, string Message)> SignedIn, string? Blocked = null,
+        Func<AssistantContext, AcpLaunch>? Prepare = null);
 
     public static readonly Profile Gemini = new("gemini", "Gemini CLI", "gemini", ["--acp", "--allowed-mcp-server-names", McpEndpoint.ServerName],
         "--model", "npm install -g @google/gemini-cli", new Dictionary<string, string>(), GeminiSignedIn,
         Blocked: "Not available yet: Cuebot has not been able to confirm that Gemini CLI can be limited to Cuebot's tools (its file "
                  + "tools run without asking). Use Gemini (Google API key) instead.");
 
-    /// <summary>Grok's own config can not be bypassed per run, but its imports of Claude and Cursor setups can.</summary>
+    /// <summary>Limited to Cuebot by <see cref="GrokIsolation"/> (throwaway home, tool allowlist, the streamer's sign-in read-only).</summary>
     public static readonly Profile Grok = new("grok", "Grok CLI", "grok", ["agent", "stdio"], "--model", "see x.ai/cli",
-        new Dictionary<string, string>
-        {
-            ["GROK_CLAUDE_MCPS_ENABLED"] = "0", ["GROK_CURSOR_MCPS_ENABLED"] = "0", ["GROK_CLAUDE_SKILLS_ENABLED"] = "0",
-            ["GROK_CLAUDE_RULES_ENABLED"] = "0", ["GROK_CLAUDE_HOOKS_ENABLED"] = "0", ["GROK_CURSOR_RULES_ENABLED"] = "0",
-            ["GROK_CURSOR_SKILLS_ENABLED"] = "0", ["GROK_CURSOR_HOOKS_ENABLED"] = "0", ["GROK_DISABLE_AUTOUPDATER"] = "1",
-        },
-        GrokSignedIn,
-        // Checked with the real app (Grok CLI 1.0.67): in agent mode it reads files, loads its own MCP servers, skills and
-        // instructions without asking, and ignores --tools; nothing per run turns that off.
-        Blocked: "Not available yet: Grok CLI can not be limited to Cuebot's tools (it reads files and uses its own MCP servers "
-                 + "without asking). Use Grok (xAI API key) instead.");
+        new Dictionary<string, string>(), GrokIsolation.SignedIn, Prepare: context => GrokIsolation.Prepare(context));
 
     internal Profile Definition => profile;
 
@@ -73,17 +65,12 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
         return (false, "Not signed in: run gemini once in a terminal and choose how to sign in");
     }
 
-    private static (bool, string) GrokSignedIn() =>
-        File.Exists(Path.Combine(System.Environment.GetEnvironmentVariable("GROK_HOME") is { Length: > 0 } h ? h : Path.Combine(Home, ".grok"), "auth.json"))
-        || System.Environment.GetEnvironmentVariable("XAI_API_KEY") is { Length: > 0 }
-            ? (true, "Signed in to Grok")
-            : (false, "Not signed in: run grok login in a terminal");
-
     private sealed class Session(AcpProvider provider, AssistantContext context) : IAssistantSession
     {
         private readonly HashSet<string> _cuebotTools = [.. context.Tools.List().Select(t => t.Name)];
         private CliProcess? _process;
         private JsonLineRpc? _rpc;
+        private AcpLaunch? _launch;
         private string? _sessionId;
         private bool _instructed;
 
@@ -91,7 +78,9 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
         {
             var rpc = await ConnectAsync(ct).ConfigureAwait(false);
             // ACP has no system prompt: the instructions lead the first message.
-            var prompt = _instructed ? text : $"<cuebot-instructions>\n{context.Instructions}\n</cuebot-instructions>\n\n{text}";
+            var prompt = _instructed || _launch?.InstructionsInSession == true
+                ? text
+                : $"<cuebot-instructions>\n{context.Instructions}\n</cuebot-instructions>\n\n{text}";
             _instructed = true;
             var turn = rpc.RequestAsync("session/prompt", new JsonObject
             {
@@ -157,10 +146,14 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
             _ => null,
         };
 
+        /// <summary>The Cuebot tool a call runs, also when the app wraps MCP calls (Grok's use_tool names it in its input).</summary>
         private string ToolName(JsonObject update)
         {
             var title = update["title"]?.GetValue<string>() ?? "tool";
-            return _cuebotTools.FirstOrDefault(t => title.Contains(t, StringComparison.Ordinal)) ?? title;
+            var input = update["rawInput"]?.ToJsonString() ?? "";
+            return _cuebotTools.FirstOrDefault(t => title.Contains(t, StringComparison.Ordinal))
+                   ?? _cuebotTools.FirstOrDefault(t => input.Contains(t, StringComparison.Ordinal))
+                   ?? title;
         }
 
         /// <summary>Permission requests: Cuebot's own tools yes, anything else no. No file system or terminal is offered.</summary>
@@ -186,7 +179,10 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
             if (provider.Executable is not { } executable) throw new InvalidOperationException($"{provider.Name} is not installed.");
             if (context.Mcp is not { } mcp) throw new InvalidOperationException($"Turn on the MCP server (Servers page): {provider.Name} reaches Cuebot through it.");
             string[] args = [.. provider.Definition.Arguments, .. context.Model.Length > 0 ? [provider.Definition.ModelFlag, context.Model] : Array.Empty<string>()];
-            _process = CliProcess.Start(executable, args, context.WorkingDirectory, provider.Definition.Environment);
+            var launch = _launch = provider.Definition.Prepare?.Invoke(context);
+            var environment = new Dictionary<string, string>(provider.Definition.Environment);
+            foreach (var (key, value) in launch?.Environment ?? new Dictionary<string, string>()) environment[key] = value;
+            _process = CliProcess.Start(executable, args, context.WorkingDirectory, environment);
             var rpc = _rpc = new JsonLineRpc(_process.Output, _process.Input);
             try
             {
@@ -204,7 +200,9 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
                 }, timeout.Token).ConfigureAwait(false);
                 if (init?["agentCapabilities"]?["mcpCapabilities"]?["http"]?.GetValue<bool>() != true)
                     throw new InvalidOperationException($"This version of {provider.Name} can not connect to MCP servers over HTTP; update it.");
-                var session = await rpc.RequestAsync("session/new", new JsonObject
+                if (launch?.Authenticate == true && (init?["authMethods"] as JsonArray)?.FirstOrDefault()?["id"]?.GetValue<string>() is { } method)
+                    await rpc.RequestAsync("authenticate", new JsonObject { ["methodId"] = method }, timeout.Token).ConfigureAwait(false);
+                var newSession = new JsonObject
                 {
                     ["cwd"] = context.WorkingDirectory,
                     ["mcpServers"] = new JsonArray(new JsonObject
@@ -214,7 +212,9 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
                         ["url"] = mcp.Url,
                         ["headers"] = new JsonArray(new JsonObject { ["name"] = "Authorization", ["value"] = "Bearer " + mcp.Token }),
                     }),
-                }, timeout.Token).ConfigureAwait(false);
+                };
+                if (launch?.SessionMeta is { } meta) newSession["_meta"] = meta.DeepClone();
+                var session = await rpc.RequestAsync("session/new", newSession, timeout.Token).ConfigureAwait(false);
                 _sessionId = session?["sessionId"]?.GetValue<string>() ?? throw new InvalidOperationException($"{provider.Name} did not start a session.");
                 return rpc;
             }
@@ -231,8 +231,10 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
         {
             if (_rpc is { } rpc) await rpc.DisposeAsync().ConfigureAwait(false);
             if (_process is { } process) await process.DisposeAsync().ConfigureAwait(false);
+            _launch?.Dispose();
             _rpc = null;
             _process = null;
+            _launch = null;
             _sessionId = null;
             _instructed = false;
         }
