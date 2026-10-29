@@ -88,8 +88,12 @@ public sealed class StreamerBotSetupBehaviourTests
         Assert.All(toggles, t => Assert.Equal(bot.Obs.Scenes["Alerts"].Single(i => i.Source == "Follow Alert").Id, t.Data.GetProperty("sceneItemId").GetInt32()));
         Assert.True(toggles[0].Data.GetProperty("sceneItemEnabled").GetBoolean());
         Assert.False(toggles[1].Data.GetProperty("sceneItemEnabled").GetBoolean());
+        // The imported wait is exactly three seconds; the real-time gap only has to show it was honoured (at least that
+        // long) and not doubled. Busy CI runners add more than a second on top (4.6 s seen on windows-latest).
+        var delay = Assert.Single(bot.Action("E2E Follow alert").SubActions, s => s.Type == "core.delay");
+        Assert.Equal("3000", delay.Parameters["milliseconds"]);
         var shown = toggles[1].At - toggles[0].At;
-        Assert.InRange(shown.TotalMilliseconds, 2900, 4500);
+        Assert.InRange(shown.TotalMilliseconds, 2900, 5900);
         Assert.False(bot.Obs.Scenes["Alerts"].Single(i => i.Source == "Follow Alert").Enabled);
     }
 

@@ -48,10 +48,16 @@ export LD_LIBRARY_PATH="$here/usr/lib/cuebot-deps${LD_LIBRARY_PATH:+:$LD_LIBRARY
 exec "$here/usr/lib/cuebot/Cuebot" "$@"
 EOF
 chmod +x "$appdir/AppRun"
+# The AppImage runs as whoever starts it: everything must be readable by all, and folders and programs executable
+# (publish output and umask leave some files 0744/0600; appimagetool refuses them since late 2026).
+chmod -R a+rX "$appdir"
+chmod a+rx "$appdir/AppRun"
 
-tool="$root/artifacts/appimagetool-$arch.AppImage"
+# A pinned release, so a change to the "continuous" build can not break packaging unannounced (override to try another).
+appimagetool_version="${APPIMAGETOOL_VERSION:-1.9.1}"
+tool="$root/artifacts/appimagetool-$appimagetool_version-$arch.AppImage"
 if [ ! -x "$tool" ]; then
-  curl -fsSL -o "$tool" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$arch.AppImage"
+  curl -fsSL -o "$tool" "https://github.com/AppImage/appimagetool/releases/download/$appimagetool_version/appimagetool-$arch.AppImage"
   chmod +x "$tool"
 fi
 # --appimage-extract-and-run lets this work in containers without FUSE.
