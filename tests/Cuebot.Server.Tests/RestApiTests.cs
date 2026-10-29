@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Events;
+using Cuebot.Core.Storage;
 using Cuebot.Server.Api;
 using Cuebot.Server.Mcp;
 
@@ -103,6 +104,36 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.True(token.Length > 40);
         Assert.NotEqual(token, fresh.Manager.RegenerateApiToken());
         Assert.DoesNotContain(fresh.Log.Recent(), e => e.Message.Contains(fresh.Manager.Settings.Api.Token, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(1, false, true)]    // version 1: off was only the default, MCP is switched on once
+    [InlineData(2, false, false)]   // version 2: the user turned it off, it stays off
+    [InlineData(2, true, true)]
+    public async Task Saved_settings_start_the_MCP_server_from_version_2(int version, bool enabled, bool expected)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "cuebot-mcp-default-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var path = Path.Combine(dir, "servers.json");
+            File.WriteAllText(path, $$$"""{"version":{{{version}}},"mcp":{"enabled":{{{(enabled ? "true" : "false")}}}}}""");
+            await using var bot = new TestBot();
+            using var file = new JsonFile<ServerSettings>(path, bot.Log);
+            var manager = new ServerManager(file, bot.Services);
+
+            Assert.Equal(expected, manager.Settings.Mcp.Enabled);
+            Assert.Equal(ServerSettings.CurrentVersion, manager.Settings.Version);
+            Assert.False(manager.Settings.Api.Enabled);
+            file.Flush();
+            using var reloaded = new JsonFile<ServerSettings>(path, bot.Log);
+            Assert.Equal(ServerSettings.CurrentVersion, reloaded.Value.Version);
+            Assert.Equal(expected, reloaded.Value.Mcp.Enabled);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
     }
 
     [Fact]

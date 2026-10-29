@@ -4,6 +4,8 @@
     <AvaloniaVersion>12.1.4</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Assistant: the official Anthropic SDK (MIT) for the Anthropic API-key provider. -->
+    <PackageVersion Include="Anthropic" Version="13.3.0" />
     <!-- UI -->
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />

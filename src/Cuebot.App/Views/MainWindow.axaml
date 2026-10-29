@@ -25,6 +25,8 @@
         xmlns:supv="using:Cuebot.App.Views.Support"
         xmlns:hvm="using:Cuebot.App.ViewModels.History"
         xmlns:hv="using:Cuebot.App.Views.History"
+        xmlns:asvm="using:Cuebot.App.ViewModels.Assistant"
+        xmlns:asv="using:Cuebot.App.Views.Assistant"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
@@ -49,6 +51,7 @@
   </Window.Styles>
   <Window.DataTemplates>
     <DataTemplate DataType="hvm:HistoryViewModel"><hv:HistoryView /></DataTemplate>
+    <DataTemplate DataType="asvm:AssistantViewModel"><asv:AssistantView /></DataTemplate>
     <DataTemplate DataType="vm:DashboardViewModel"><views:DashboardView /></DataTemplate>
     <DataTemplate DataType="vm:ChatViewModel"><views:ChatView /></DataTemplate>
     <DataTemplate DataType="actions:ActionsViewModel"><views:ActionsView /></DataTemplate>

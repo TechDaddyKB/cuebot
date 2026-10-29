@@ -56,6 +56,24 @@ public sealed class ServerManager : IAsyncDisposable
         ApiOperations = new Cuebot.Server.Api.ApiOperations(services, () => Statuses);
         Mcp = new Cuebot.Server.Mcp.McpServer(ApiOperations, services, () => Settings.Mcp);
         Api = new Cuebot.Server.Api.ApiServer(() => Settings, services, ApiOperations, Mcp);
+        MigrateSettings();
+    }
+
+    /// <summary>
+    /// servers.json version 2: the MCP server starts with Cuebot (127.0.0.1, bearer token, destructive tools still need
+    /// confirmation) so AI tools and the Assistant page can use it. Version 1 files had it off only because that was the
+    /// default, so it is switched on once; turning it off on the Servers page sticks. In-memory settings are left alone.
+    /// </summary>
+    private void MigrateSettings()
+    {
+        if (_file is null || Settings.Version >= ServerSettings.CurrentVersion) return;
+        if (Settings.Version < 2)
+        {
+            Settings.Mcp.Enabled = true;
+            _services.Log.Info(LogSource, "The MCP server now starts with Cuebot (local only, token required); turn it off on the Servers page");
+        }
+        Settings.Version = ServerSettings.CurrentVersion;
+        SaveSettings();
     }
 
     /// <summary>Raised (from any thread) when a server starts, stops or its clients change.</summary>

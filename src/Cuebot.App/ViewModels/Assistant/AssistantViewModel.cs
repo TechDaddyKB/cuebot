@@ -1,0 +1,271 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Cuebot.Assistant;
+
+namespace Cuebot.App.ViewModels.Assistant;
+
+/// <summary>
+/// Assistant page: chat with the AI the streamer picked (an AI CLI they are signed in to, or an API key) to set Cuebot up.
+/// The AI works through Cuebot's MCP tools; deletes, imports and chat sends wait for Approve.
+/// </summary>
+public sealed partial class AssistantViewModel : PageViewModel
+{
+    private readonly AssistantService _service;
+    private CancellationTokenSource? _turn;
+
+    public AssistantViewModel(AssistantService service) : base("Assistant")
+    {
+        _service = service;
+        Choices = [new ProviderChoice("", "Automatic (first one ready)", null), .. service.Providers.Select(p => new ProviderChoice(p.Id, p.Name, p))];
+        _selectedChoice = Choices.FirstOrDefault(c => c.Id.Equals(service.Settings.Provider, StringComparison.OrdinalIgnoreCase)) ?? Choices[0];
+        _ = RefreshStatusAsync();
+    }
+
+    internal AssistantService Service => _service;
+
+    // ---- Provider -----------------------------------------------------------------------------------------------
+
+    public IReadOnlyList<ProviderChoice> Choices { get; }
+
+    [ObservableProperty] private ProviderChoice _selectedChoice;
+    [ObservableProperty] private string _providerStatus = "";
+    [ObservableProperty] private bool _providerReady;
+
+    /// <summary>The provider the settings below apply to: the chosen one, or (automatic) the one in use.</summary>
+    [ObservableProperty] private IAssistantProvider? _effective;
+
+    public ObservableCollection<string> Models { get; } = [];
+
+    partial void OnSelectedChoiceChanged(ProviderChoice value)
+    {
+        _service.Settings.Provider = value.Id;
+        _service.SaveSettings();
+        _ = StartOverAsync();
+    }
+
+    partial void OnEffectiveChanged(IAssistantProvider? value)
+    {
+        Models.Clear();
+        OnPropertyChanged(nameof(Model));
+        OnPropertyChanged(nameof(ApiKey));
+        OnPropertyChanged(nameof(UsesApiKey));
+        OnPropertyChanged(nameof(HasProvider));
+        OnPropertyChanged(nameof(ModelHint));
+    }
+
+    public bool HasProvider => Effective is not null;
+    public bool UsesApiKey => Effective?.Kind == AssistantProviderKind.ApiKey;
+
+    public string ModelHint => Effective?.Kind == AssistantProviderKind.Cli
+        ? "Empty uses the app's own default model."
+        : "Empty uses the newest suitable model for this key.";
+
+    public string Model
+    {
+        get => Effective is { } p ? _service.Settings.For(p.Id).Model : "";
+        set
+        {
+            if (Effective is not { } p || _service.Settings.For(p.Id).Model == value.Trim()) return;
+            _service.Settings.For(p.Id).Model = value.Trim();
+            _service.SaveSettings();
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Shown masked; never logged.</summary>
+    public string ApiKey
+    {
+        get => Effective is { } p ? _service.Settings.For(p.Id).ApiKey : "";
+        set
+        {
+            if (Effective is not { } p || _service.Settings.For(p.Id).ApiKey == value.Trim()) return;
+            _service.Settings.For(p.Id).ApiKey = value.Trim();
+            _service.SaveSettings();
+            OnPropertyChanged();
+            _ = RefreshStatusAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshStatusAsync()
+    {
+        var chosen = SelectedChoice.Provider ?? await _service.ResolveProviderAsync();
+        Effective = chosen;
+        if (chosen is null)
+        {
+            ProviderReady = false;
+            ProviderStatus = "No AI is ready yet. Choose one in the AI list, then sign in to it or add its API key.";
+            return;
+        }
+        var status = await _service.SafeStatusAsync(chosen);
+        ProviderReady = status.Ready;
+        ProviderStatus = SelectedChoice.Provider is null ? $"Using {chosen.Name}: {status.Message}" : status.Message;
+    }
+
+    [RelayCommand]
+    private async Task LoadModelsAsync()
+    {
+        if (Effective is not { } provider) return;
+        try
+        {
+            var models = await provider.ListModelsAsync();
+            Models.Clear();
+            foreach (var model in models) Models.Add(model);
+            if (models.Count == 0) ProviderStatus = "This provider did not list any models; type a model name instead.";
+        }
+        catch (Exception ex)
+        {
+            ProviderStatus = ex.Message;
+        }
+    }
+
+    // ---- Conversation -------------------------------------------------------------------------------------------
+
+    public ObservableCollection<AssistantItem> Items { get; } = [];
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    private string _input = "";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+    private bool _isBusy;
+
+    public bool IsEmpty => Items.Count == 0;
+
+    private bool CanSend() => !IsBusy && Input.Trim().Length > 0;
+
+    [RelayCommand(CanExecute = nameof(CanSend))]
+    private async Task SendAsync()
+    {
+        var text = Input.Trim();
+        Input = "";
+        Add(new AssistantItem(AssistantItemKind.User, text));
+        IsBusy = true;
+        _turn = new CancellationTokenSource();
+        AssistantItem? answer = null;
+        try
+        {
+            await foreach (var update in _service.SendAsync(text, _turn.Token))
+            {
+                switch (update)
+                {
+                    case AssistantText t:
+                        if (answer is null) Add(answer = new AssistantItem(AssistantItemKind.Assistant, ""));
+                        answer.Text += t.Text;
+                        break;
+                    case AssistantToolStarted s:
+                        Add(new AssistantItem(AssistantItemKind.Tool, ToolLabel(s.Tool)) { CallId = s.CallId });
+                        answer = null;
+                        break;
+                    case AssistantToolFinished f:
+                        if (Items.LastOrDefault(i => i.CallId == f.CallId) is { } tool) tool.Finish(f.Failed);
+                        break;
+                    case AssistantConfirmation c:
+                        Add(new AssistantItem(AssistantItemKind.Confirmation, c.Summary) { Confirmation = c });
+                        answer = null;
+                        break;
+                    case AssistantError e:
+                        Add(new AssistantItem(AssistantItemKind.Error, e.Message));
+                        break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Add(new AssistantItem(AssistantItemKind.Notice, "Stopped."));
+        }
+        catch (Exception ex)
+        {
+            Add(new AssistantItem(AssistantItemKind.Error, ex.Message));
+        }
+        finally
+        {
+            foreach (var pending in Items.Where(i => i.AwaitingAnswer).ToList()) pending.Expire();
+            IsBusy = false;
+            _turn.Dispose();
+            _turn = null;
+            await RefreshStatusAsync();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsBusy))]
+    private void Stop() => _turn?.Cancel();
+
+    [RelayCommand]
+    private Task NewChatAsync() => StartOverAsync();
+
+    private async Task StartOverAsync()
+    {
+        _turn?.Cancel();
+        await _service.NewChatAsync();
+        Items.Clear();
+        OnPropertyChanged(nameof(IsEmpty));
+        await RefreshStatusAsync();
+    }
+
+    private void Add(AssistantItem item)
+    {
+        Items.Add(item);
+        OnPropertyChanged(nameof(IsEmpty));
+    }
+
+    private static string ToolLabel(string tool) => tool.Replace('_', ' ');
+}
+
+/// <summary>An entry in the provider picker; <see cref="Provider"/> is null for automatic.</summary>
+public sealed record ProviderChoice(string Id, string Name, IAssistantProvider? Provider)
+{
+    public override string ToString() => Name;
+}
+
+public enum AssistantItemKind { User, Assistant, Tool, Confirmation, Error, Notice }
+
+/// <summary>One entry in the conversation.</summary>
+public sealed partial class AssistantItem(AssistantItemKind kind, string text) : ObservableObject
+{
+    public AssistantItemKind Kind { get; } = kind;
+
+    [ObservableProperty] private string _text = text;
+    [ObservableProperty] private string _state = kind == AssistantItemKind.Tool ? "running" : "";
+
+    internal string? CallId { get; init; }
+
+    public AssistantConfirmation? Confirmation { get; init; }
+
+    public bool IsUser => Kind == AssistantItemKind.User;
+    public bool IsAssistant => Kind == AssistantItemKind.Assistant;
+    public bool IsTool => Kind == AssistantItemKind.Tool;
+    public bool IsConfirmation => Kind == AssistantItemKind.Confirmation;
+    public bool IsError => Kind == AssistantItemKind.Error;
+    public bool IsNotice => Kind == AssistantItemKind.Notice;
+
+    public bool AwaitingAnswer => Confirmation is { Answer.IsCompleted: false };
+
+    internal void Finish(bool failed) => State = failed ? "failed" : "done";
+
+    /// <summary>The turn ended before the streamer answered: nothing was done.</summary>
+    internal void Expire()
+    {
+        Confirmation?.Deny();
+        State = "Not answered - nothing was done";
+        OnPropertyChanged(nameof(AwaitingAnswer));
+    }
+
+    [RelayCommand]
+    private void Approve() => Answer(true);
+
+    [RelayCommand]
+    private void Deny() => Answer(false);
+
+    private void Answer(bool approve)
+    {
+        if (Confirmation is not { } c || c.Answer.IsCompleted) return;
+        if (approve) c.Approve();
+        else c.Deny();
+        State = approve ? "Approved" : "Declined";
+        OnPropertyChanged(nameof(AwaitingAnswer));
+    }
+}

@@ -21,7 +21,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public static readonly IReadOnlyList<(string Group, string[] Titles)> NavLayout =
     [
-        ("Main", ["Dashboard", "Chat", "Actions", "Commands", "History"]),
+        ("Main", ["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant"]),
         ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Decks", "Input", "Quotes", "Credits", "Points"]),
         ("Platforms", ["Twitch", "Rumble", "YouTube", "Kick"]),
         ("Apps", ["OBS", "Speech", "Donations", "Integrations", "Webhooks"]),
@@ -54,6 +54,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             actions,
             new CommandsViewModel(host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Users.GroupStore>()),
             history,
+            new Cuebot.App.ViewModels.Assistant.AssistantViewModel(host.Get<Cuebot.Assistant.AssistantService>()),
             queues,
             new TimersViewModel(host.Get<ProfileService>(), host.Get<TimerService>()),
             new UsersViewModel(host.Get<Cuebot.Core.Users.UserRegistry>(), host.Get<Cuebot.Core.Users.GroupStore>()),

@@ -1,5 +1,6 @@
 using Cuebot.App.Shell;
 using Cuebot.App.Shell.GoogleDrive;
+using Cuebot.Assistant;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.BuiltIn;
@@ -69,6 +70,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddServers()
             .AddStreamDeck()
             .AddRemote()     // links to other Cuebot instances (served on the REST API listener)
+            .AddAssistant()  // the Assistant page; its tools are the MCP server's
             .AddRelay();   // after every module, so it sees all IWebhookHandlers
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();

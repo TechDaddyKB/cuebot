@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+    <!-- The assistant's tools are Cuebot's MCP tools (in process for API keys, over /mcp for the AI CLIs). -->
+    <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.Assistant.Tests" />
+    <InternalsVisibleTo Include="Cuebot.LiveTests" />
+    <InternalsVisibleTo Include="Cuebot.UiTests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Anthropic" />
+  </ItemGroup>
+</Project>

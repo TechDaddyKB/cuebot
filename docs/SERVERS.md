@@ -269,7 +269,8 @@ Module: `src/Cuebot.Server/Api` (`ApiServer` routing, `ApiOperations` shared wit
 "REST API" card.
 
 - **Off by default.** Binds 127.0.0.1; another address only with `allowLan` (else downgraded with a warning). One
-  listener serves the REST API and MCP (`/mcp`); each half answers 404 while switched off.
+  listener serves the REST API and MCP (`/mcp`); each half answers 404 while switched off. The listener runs whenever
+  either half is on, and MCP is on by default (below), so it normally starts with Cuebot with only `/mcp` answering.
 - **Bearer token for every request** (`Authorization: Bearer cb_...`). Generated (32 random bytes, base64url) when the
   API or MCP is first enabled or started; shown masked on the Servers page with Show / Copy / Regenerate. Compared in
   constant time (SHA-256 of both, `FixedTimeEquals`), never logged. Wrong or missing token → 401 with
@@ -331,6 +332,12 @@ token; this instance connects to the ones in `remote.json` with theirs. One link
 Module: `src/Cuebot.Server/Mcp`. Settings: `servers.json` → `mcp {enabled, requireConfirmation (default true)}`; uses the
 API's port and token. UI: Servers page, "MCP server" card with the URL and copyable client configs. No SDK: JSON-RPC 2.0
 implemented in `McpServer`.
+
+- **Starts with Cuebot** (`servers.json` version 2), so AI tools on this computer and the Assistant page
+  ([ASSISTANT.md](ASSISTANT.md)) can use it: 127.0.0.1 only, the bearer token is required, and destructive tools still
+  need confirmation. A version 1 file had MCP off only because that was the default, so `ServerManager` switches it on
+  once (logged) and saves version 2; turning it off on the Servers page sticks. Settings built in memory (tests) keep
+  the old default, off.
 
 - Protocol revision **2025-06-18** (also answers 2025-11-25, 2025-03-26 and 2024-11-05 clients in their revision; an
   unknown one gets 2025-06-18). Capabilities: `tools`, `resources`, `prompts` (no list-changed notifications, no

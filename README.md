@@ -20,6 +20,7 @@ text-to-speech reader in one native desktop app, built on .NET 10 and Avalonia.
 | --- | --- |
 | `src/Cuebot.Core` | Event bus, flow-tree model, action engine, variables, timers, storage, script API. No UI, no platforms. |
 | `src/Cuebot.Twitch` / `Cuebot.Obs` / `Cuebot.Speech` / `Cuebot.Scripting` | Modules: each registers triggers, sub-actions and script functions through one `AddXxx()` call. |
+| `src/Cuebot.Assistant` | The Assistant page's backend: AI providers (API keys; AI CLIs) working through Cuebot's MCP tools. See `docs/ASSISTANT.md`. |
 | `src/Cuebot.App` | Avalonia UI and composition root (`AppHost`). Editors are generated from parameter descriptors. |
 | `tests/*` | xunit tests per project; `Cuebot.UiTests` renders every page headlessly and writes screenshots. |
 | `packaging/` | AppImage script, Flatpak manifest, desktop/metainfo files, icons. |
