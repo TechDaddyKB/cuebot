@@ -225,7 +225,9 @@ language. On Linux this is also the check that the bundled whisper.cpp libraries
 
 `AssistantCliLiveTests` runs with `CUEBOT_LIVE_AI_CLI=1` against the AI apps installed on this computer, with their own
 sign-ins (each run uses a little of that subscription): Codex (`codex login`, Sign in with ChatGPT), Claude Code
-(`claude`, signed in) and Grok CLI (`grok`, signed in). A real Cuebot MCP server starts on a random port with one action. Per app: the AI must find that
+(`claude`, signed in), Grok CLI (`grok`, signed in) and Antigravity CLI (`agy`, signed in; its tool gate runs the Cuebot app
+built in this repository, so build `src/Cuebot.App` first). `CUEBOT_LIVE_OPENAI_API_KEY` runs the OpenAI API-key provider:
+it lists the actions, and a delete request must come through Cuebot's Approve step before the action is gone. A real Cuebot MCP server starts on a random port with one action. Per app: the AI must find that
 action through Cuebot's tool, and it must not be able to read a file with a random secret in its working folder (only
 a file or shell tool could produce the secret). An app that is installed but not signed in is skipped with a note.
 

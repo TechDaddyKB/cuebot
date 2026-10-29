@@ -2,7 +2,7 @@ namespace Cuebot.Assistant;
 
 public enum AssistantProviderKind
 {
-    /// <summary>An AI CLI installed on this computer (Codex, Claude Code, Grok, Gemini), with its own sign-in.</summary>
+    /// <summary>An AI CLI installed on this computer (Codex, Claude Code, Grok, Antigravity), with its own sign-in.</summary>
     Cli,
 
     /// <summary>A provider's API, with an API key the streamer enters.</summary>

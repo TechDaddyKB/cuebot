@@ -15,7 +15,7 @@ public sealed class AssistantService : IAsyncDisposable
     private const string LogSource = "Assistant";
 
     /// <summary>Automatic choice order: AI CLIs the streamer already signed in to first, then API keys.</summary>
-    public static readonly string[] ProviderOrder = ["codex", "claude", "grok", "gemini", "anthropic", "openai", "xai", "google"];
+    public static readonly string[] ProviderOrder = ["codex", "claude", "grok", "antigravity", "anthropic", "openai", "xai", "google"];
 
     private readonly JsonFile<AssistantSettings>? _file;
     private readonly AssistantSettings _memorySettings = new();

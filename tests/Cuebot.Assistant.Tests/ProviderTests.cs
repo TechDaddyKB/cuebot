@@ -23,9 +23,9 @@ public sealed class OpenAiCompatibleProviderTests
                     Chunk("{}", "tool_calls"), "[DONE]"])
                 : FakeHttp.Sse([Chunk("""{"content":"You have one action: Hello."}"""), Chunk("{}", "stop"), "[DONE]"])
             : FakeHttp.Json("{}", HttpStatusCode.NotFound));
-        var settings = new AssistantProviderSettings { ApiKey = "sk-test", Model = "gpt-test" };
-        var provider = new OpenAiCompatibleProvider(OpenAiCompatibleProvider.OpenAi, new HttpClient(http), () => settings);
-        await using var session = provider.StartSession(bot.Context("gpt-test"));
+        var settings = new AssistantProviderSettings { ApiKey = "sk-test", Model = "grok-test" };
+        var provider = new OpenAiCompatibleProvider(OpenAiCompatibleProvider.Xai, new HttpClient(http), () => settings);
+        await using var session = provider.StartSession(bot.Context("grok-test"));
 
         var updates = await Updates.CollectAsync(session.SendAsync("What actions do I have?"));
 
@@ -35,7 +35,7 @@ public sealed class OpenAiCompatibleProviderTests
         var bodies = http.Bodies;
         Assert.Equal(2, bodies.Length);
         Assert.Equal("Bearer sk-test", http.Requests.First().Request.Headers.Authorization!.ToString());
-        Assert.Equal("gpt-test", bodies[0]["model"]!.GetValue<string>());
+        Assert.Equal("grok-test", bodies[0]["model"]!.GetValue<string>());
         Assert.True(bodies[0]["stream"]!.GetValue<bool>());
         Assert.Equal("system", bodies[0]["messages"]![0]!["role"]!.GetValue<string>());
         Assert.Contains(bodies[0]["tools"]!.AsArray(), t => t!["function"]!["name"]!.GetValue<string>() == "list_actions");
@@ -68,7 +68,7 @@ public sealed class OpenAiCompatibleProviderTests
         await using var bot = new Bot();
         var http = new FakeHttp((_, _) => FakeHttp.Json("""{"error":{"message":"Incorrect API key provided"}}""", HttpStatusCode.Unauthorized));
         var settings = new AssistantProviderSettings { ApiKey = "sk-secret-123", Model = "gpt-x" };
-        await using var session = new OpenAiCompatibleProvider(OpenAiCompatibleProvider.OpenAi, new HttpClient(http), () => settings).StartSession(bot.Context("gpt-x"));
+        await using var session = new OpenAiCompatibleProvider(OpenAiCompatibleProvider.Xai, new HttpClient(http), () => settings).StartSession(bot.Context("gpt-x"));
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => Updates.CollectAsync(session.SendAsync("hi")));
 
@@ -91,6 +91,40 @@ public sealed class OpenAiCompatibleProviderTests
         await using var session = provider.StartSession(bot.Context());
         await Updates.CollectAsync(session.SendAsync("hi"));
         Assert.Equal("gemini-3.1-pro-preview", http.Bodies.Single()["model"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task OpenAI_uses_the_Responses_API_and_sends_its_output_items_back_unchanged()
+    {
+        await using var bot = new Bot();
+        var round = 0;
+        static string E(string json) => json;
+        var http = new FakeHttp((request, _) => ++round == 1
+            ? FakeHttp.Sse([
+                E("""{"type":"response.output_text.delta","delta":"Looking. "}"""),
+                E("""{"type":"response.completed","response":{"status":"completed","output":[{"type":"reasoning","id":"rs_1","encrypted_content":"enc-1","summary":[]},{"type":"function_call","id":"fc_1","call_id":"call_1","name":"list_actions","arguments":"{}"}]}}""")])
+            : FakeHttp.Sse([
+                E("""{"type":"response.output_text.delta","delta":"You have Hello."}"""),
+                E("""{"type":"response.completed","response":{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"You have Hello."}]}]}}""")]));
+        var settings = new AssistantProviderSettings { ApiKey = "sk-test" };
+        await using var session = new OpenAiCompatibleProvider(OpenAiCompatibleProvider.OpenAi, new HttpClient(http), () => settings).StartSession(bot.Context("gpt-test"));
+
+        var updates = await Updates.CollectAsync(session.SendAsync("What actions?"));
+
+        Assert.Equal("Looking. You have Hello.", updates.Text());
+        Assert.Contains(updates, u => u is AssistantToolFinished { Tool: "list_actions", Failed: false });
+        Assert.All(http.Requests, r => Assert.EndsWith("/v1/responses", r.Request.RequestUri!.AbsolutePath));
+        var first = http.Bodies[0];
+        Assert.Equal("You help.", first["instructions"]!.GetValue<string>());
+        Assert.False(first["store"]!.GetValue<bool>());
+        Assert.Equal("reasoning.encrypted_content", first["include"]![0]!.GetValue<string>());
+        Assert.Contains(first["tools"]!.AsArray(), t => t!["name"]!.GetValue<string>() == "list_actions");
+        var input = http.Bodies[1]["input"]!.AsArray();
+        Assert.Equal("user", input[0]!["role"]!.GetValue<string>());
+        Assert.Equal("enc-1", input[1]!["encrypted_content"]!.GetValue<string>());
+        Assert.Equal("call_1", input[2]!["call_id"]!.GetValue<string>());
+        Assert.Equal("function_call_output", input[3]!["type"]!.GetValue<string>());
+        Assert.Contains("Hello", input[3]!["output"]!.GetValue<string>());
     }
 
     [Theory]
