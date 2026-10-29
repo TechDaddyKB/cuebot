@@ -28,6 +28,12 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
 
 
     [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Grok_lists_actions_through_Cuebot() => ListActionsAsync(s => new AcpProvider(AcpProvider.Grok, s));
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Grok_can_not_read_files() => CanNotReadFilesAsync(s => new AcpProvider(AcpProvider.Grok, s));
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
     public Task Codex_can_not_read_files() => CanNotReadFilesAsync(s => new CodexProvider(s));
 
     [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
@@ -44,7 +50,8 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
             (updates, text, secret) =>
             {
                 Assert.DoesNotContain(secret, text, StringComparison.OrdinalIgnoreCase);
-                Assert.All(updates.OfType<AssistantToolStarted>(), t => Assert.Contains(t.Tool, _cuebotTools));
+                // Grok reaches MCP tools through its search_tool gateway, which only sees the servers connected (Cuebot's).
+                Assert.All(updates.OfType<AssistantToolStarted>(), t => Assert.True(_cuebotTools.Contains(t.Tool) || t.Tool == "search_tool", t.Tool));
                 output.WriteLine("Answer: " + text);
             });
 

@@ -125,12 +125,10 @@ public sealed class CliProviderTests
             Assert.Contains(feature, CodexProvider.DisabledFeatures);
     }
 
-    [Theory]
-    [InlineData("grok")]
-    [InlineData("gemini")]
-    public async Task AI_CLIs_that_can_not_be_limited_to_Cuebots_tools_are_unavailable(string id)
+    [Fact]
+    public async Task An_AI_CLI_that_can_not_be_limited_to_Cuebots_tools_is_unavailable()
     {
-        var provider = new AcpProvider(id == "grok" ? AcpProvider.Grok : AcpProvider.Gemini, () => new AssistantProviderSettings());
+        var provider = new AcpProvider(AcpProvider.Gemini, () => new AssistantProviderSettings());
 
         var status = await provider.GetStatusAsync();
 
@@ -157,4 +155,84 @@ public sealed class CliProviderTests
             Directory.Delete(dir, true);
         }
     }
+}
+
+public sealed class GrokIsolationTests : IDisposable
+{
+    private readonly string _root = Directory.CreateTempSubdirectory("cuebot-grok-test-").FullName;
+    private string GrokHome => Path.Combine(_root, "grok-home");
+    private string Scratch => Path.Combine(_root, "scratch");
+
+    public GrokIsolationTests()
+    {
+        Directory.CreateDirectory(GrokHome);
+        Directory.CreateDirectory(Scratch);
+    }
+
+    private void SignIn(DateTimeOffset expires) => File.WriteAllText(Path.Combine(GrokHome, "auth.json"), new JsonObject
+    {
+        ["https://auth.x.ai::user"] = new JsonObject
+        {
+            ["key"] = "access-token-123",
+            ["refresh_token"] = "refresh-token-456",
+            ["expires_at"] = expires.ToString("O"),
+            ["oidc_issuer"] = "https://auth.x.ai",
+        },
+    }.ToJsonString());
+
+    [Fact]
+    public void Each_conversation_gets_a_private_throwaway_home_and_only_the_access_token()
+    {
+        SignIn(DateTimeOffset.UtcNow.AddHours(1));
+        var before = File.ReadAllText(Path.Combine(GrokHome, "auth.json"));
+
+        string home;
+        using (var launch = GrokIsolation.Prepare(new AssistantContext("Help with Cuebot.", null!, null, "", "/tmp"), GrokHome, Scratch))
+        {
+            home = launch.Environment["GROK_HOME"];
+            Assert.StartsWith(Scratch, home);
+            Assert.True(launch.Authenticate);
+            Assert.True(launch.InstructionsInSession);
+            Assert.Equal("1", launch.Environment["GROK_DISABLE_AUTOUPDATER"]);
+            foreach (var tool in new[] { "CLAUDE", "CURSOR", "CODEX" })
+                foreach (var kind in new[] { "SKILLS", "RULES", "AGENTS", "MCPS", "HOOKS", "SESSIONS" })
+                    Assert.Equal("false", launch.Environment[$"GROK_{tool}_{kind}_ENABLED"]);
+            var profile = launch.SessionMeta!["agentProfile"]!;
+            Assert.Equal("search_tool, use_tool", profile["tools"]!.GetValue<string>());
+            Assert.Equal("Help with Cuebot.", profile["prompt"]!.GetValue<string>());
+
+            var token = JsonNode.Parse(File.ReadAllText(Path.Combine(home, "cuebot-token.json")))!;
+            Assert.Equal("access-token-123", token["access_token"]!.GetValue<string>());
+            Assert.Equal("https://auth.x.ai", token["issuer"]!.GetValue<string>());
+            Assert.InRange(token["expires_in"]!.GetValue<long>(), 3000, 3600);
+            Assert.DoesNotContain("refresh-token-456", Directory.EnumerateFiles(home).Select(File.ReadAllText).Aggregate("", string.Concat));
+            Assert.Contains("auth_provider_command", File.ReadAllText(Path.Combine(home, "config.toml")));
+            Assert.DoesNotContain("mcp_servers", File.ReadAllText(Path.Combine(home, "config.toml")));
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(home));
+                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(Path.Combine(home, "cuebot-token.json")));
+                var script = Path.Combine(home, "cuebot-token.sh");
+                Assert.True(File.GetUnixFileMode(script).HasFlag(UnixFileMode.UserExecute));
+                using var cat = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(script) { RedirectStandardOutput = true })!;
+                Assert.Equal("access-token-123", JsonNode.Parse(cat.StandardOutput.ReadToEnd())!["access_token"]!.GetValue<string>());
+            }
+        }
+
+        Assert.False(Directory.Exists(home));
+        Assert.Equal(before, File.ReadAllText(Path.Combine(GrokHome, "auth.json")));
+    }
+
+    [Fact]
+    public void Without_a_usable_sign_in_nothing_is_started()
+    {
+        var context = new AssistantContext("", null!, null, "", "/tmp");
+        Assert.Contains("Not signed in", Assert.Throws<InvalidOperationException>(() => GrokIsolation.Prepare(context, GrokHome, Scratch)).Message);
+
+        SignIn(DateTimeOffset.UtcNow.AddSeconds(30));
+        Assert.Contains("refreshing", Assert.Throws<InvalidOperationException>(() => GrokIsolation.Prepare(context, GrokHome, Scratch)).Message);
+        Assert.Empty(Directory.EnumerateFileSystemEntries(Scratch));
+    }
+
+    public void Dispose() => Directory.Delete(_root, true);
 }

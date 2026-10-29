@@ -224,8 +224,8 @@ language. On Linux this is also the check that the bundled whisper.cpp libraries
 ### Assistant AI CLIs
 
 `AssistantCliLiveTests` runs with `CUEBOT_LIVE_AI_CLI=1` against the AI apps installed on this computer, with their own
-sign-ins (each run uses a little of that subscription): Codex (`codex login`, Sign in with ChatGPT) and Claude Code
-(`claude`, signed in). A real Cuebot MCP server starts on a random port with one action. Per app: the AI must find that
+sign-ins (each run uses a little of that subscription): Codex (`codex login`, Sign in with ChatGPT), Claude Code
+(`claude`, signed in) and Grok CLI (`grok`, signed in). A real Cuebot MCP server starts on a random port with one action. Per app: the AI must find that
 action through Cuebot's tool, and it must not be able to read a file with a random secret in its working folder (only
 a file or shell tool could produce the secret). An app that is installed but not signed in is skipped with a note.
 
