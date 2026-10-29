@@ -29,6 +29,12 @@ public sealed class McpException(int code, string message, JsonNode? data = null
 /// </summary>
 public sealed class McpServer
 {
+    /// <summary>Asks the streamer about a destructive tool call (tool, summary); true to go ahead.</summary>
+    public delegate Task<bool> AssistantConfirm(string tool, string summary, CancellationToken ct);
+
+    /// <summary>The <c>HttpContext.Items</c> key under which the API server passes an Assistant conversation's confirm.</summary>
+    internal const string ConfirmItem = "cuebot.mcp.assistant";
+
     public const string LatestProtocolVersion = "2025-06-18";
     public const string SessionHeader = "Mcp-Session-Id";
     public const string ProtocolHeader = "MCP-Protocol-Version";
@@ -42,6 +48,7 @@ public sealed class McpServer
     private readonly Func<McpServerSettings> _settings;
     private readonly Dictionary<string, McpTool> _tools;
     private readonly ConcurrentDictionary<string, Session> _sessions = new();
+    private readonly ConcurrentDictionary<string, AssistantConfirm> _assistant = new(StringComparer.Ordinal);
 
     public McpServer(ApiOperations operations, ServerServices services, Func<McpServerSettings> settings, McpConfirmations? confirmations = null)
     {
@@ -65,13 +72,36 @@ public sealed class McpServer
         + "Ask the user before deleting or overwriting anything; destructive tools may answer with a confirmationToken that must be "
         + "passed back after the user agrees.";
 
+    /// <summary>
+    /// A token for one Assistant conversation with an AI app: valid on <c>/mcp</c> only (not the REST API), until the
+    /// registration is disposed. Destructive tools called with it ask the streamer through <paramref name="confirm"/>
+    /// (Approve / Deny on the Assistant page) instead of answering with a confirmation token for the AI to relay.
+    /// </summary>
+    public (string Token, IDisposable Registration) RegisterAssistant(AssistantConfirm confirm)
+    {
+        var token = Api.ApiToken.Generate();
+        _assistant[token] = confirm;
+        return (token, new Unregister(() => _assistant.TryRemove(token, out _)));
+    }
+
+    /// <summary>The Assistant conversation a bearer token belongs to, or null.</summary>
+    internal AssistantConfirm? AssistantFor(string? token) =>
+        token is { Length: > 0 } && _assistant.TryGetValue(token, out var confirm) ? confirm : null;
+
+    private sealed class Unregister(Action action) : IDisposable
+    {
+        private Action? _action = action;
+
+        public void Dispose() => Interlocked.Exchange(ref _action, null)?.Invoke();
+    }
+
     // ---- JSON-RPC --------------------------------------------------------------------------------------------------
 
     /// <summary>
     /// Handles one message or a batch and returns the response(s), or null when nothing is to be answered
     /// (notifications and responses).
     /// </summary>
-    public async Task<JsonNode?> HandleAsync(JsonNode? message, CancellationToken ct = default)
+    public async Task<JsonNode?> HandleAsync(JsonNode? message, CancellationToken ct = default, AssistantConfirm? confirm = null)
     {
         if (message is JsonArray batch)
         {
@@ -79,14 +109,14 @@ public sealed class McpServer
             var responses = new JsonArray();
             foreach (var item in batch)
             {
-                if (await HandleOneAsync(item, ct).ConfigureAwait(false) is { } response) responses.Add(response);
+                if (await HandleOneAsync(item, ct, confirm).ConfigureAwait(false) is { } response) responses.Add(response);
             }
             return responses.Count == 0 ? null : responses;
         }
-        return await HandleOneAsync(message, ct).ConfigureAwait(false);
+        return await HandleOneAsync(message, ct, confirm).ConfigureAwait(false);
     }
 
-    private async Task<JsonNode?> HandleOneAsync(JsonNode? message, CancellationToken ct)
+    private async Task<JsonNode?> HandleOneAsync(JsonNode? message, CancellationToken ct, AssistantConfirm? confirm)
     {
         if (message is not JsonObject request || request["jsonrpc"]?.GetValueKind() != JsonValueKind.String
             || request["jsonrpc"]!.GetValue<string>() != "2.0")
@@ -111,7 +141,7 @@ public sealed class McpServer
 
         try
         {
-            var result = await DispatchAsync(method, parameters, ct).ConfigureAwait(false);
+            var result = await DispatchAsync(method, parameters, ct, confirm).ConfigureAwait(false);
             return new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["result"] = result };
         }
         catch (McpException ex)
@@ -133,14 +163,14 @@ public sealed class McpServer
         }
     }
 
-    private async Task<JsonNode> DispatchAsync(string method, JsonObject p, CancellationToken ct)
+    private async Task<JsonNode> DispatchAsync(string method, JsonObject p, CancellationToken ct, AssistantConfirm? confirm)
     {
         switch (method)
         {
             case "initialize": return Initialize(p);
             case "ping": return new JsonObject();
             case "tools/list": return new JsonObject { ["tools"] = new JsonArray([.. Tools.Select(t => (JsonNode)t.ToJson())]) };
-            case "tools/call": return await CallToolAsync(p, ct).ConfigureAwait(false);
+            case "tools/call": return await CallToolAsync(p, ct, confirm).ConfigureAwait(false);
             case "resources/list": return Catalog.ListResources();
             case "resources/templates/list": return McpCatalog.ListResourceTemplates();
             case "resources/read":
@@ -194,7 +224,7 @@ public sealed class McpServer
         };
     }
 
-    private async Task<JsonNode> CallToolAsync(JsonObject p, CancellationToken ct)
+    private async Task<JsonNode> CallToolAsync(JsonObject p, CancellationToken ct, AssistantConfirm? confirm)
     {
         var name = Param(p, "name");
         if (!_tools.TryGetValue(name, out var tool)) throw new McpException(McpException.InvalidParams, $"Unknown tool: {name}");
@@ -202,7 +232,14 @@ public sealed class McpServer
         _services.Log.Info(LogSource, $"Tool call: {name}");   // never the argument values
         try
         {
-            if (tool.Confirmation is { } describe && _settings().RequireConfirmation)
+            if (tool.Confirmation is { } describeForAssistant && _settings().RequireConfirmation && confirm is not null)
+            {
+                // Cuebot's own Assistant: the streamer answers on the Assistant page while the call waits.
+                var summary = describeForAssistant(args);
+                if (!await confirm(name, summary, ct).ConfigureAwait(false))
+                    return ToolResult(new JsonObject { ["declined"] = true, ["message"] = $"The streamer declined: {summary}. Nothing was done." }, isError: false);
+            }
+            else if (tool.Confirmation is { } describe && _settings().RequireConfirmation)
             {
                 var token = McpTools.OptStr(args, McpConfirmations.ArgumentName);
                 if (string.IsNullOrEmpty(token))
@@ -319,7 +356,7 @@ public sealed class McpServer
             return;
         }
 
-        var response = await HandleAsync(message, ct).ConfigureAwait(false);
+        var response = await HandleAsync(message, ct, context.Items[ConfirmItem] as AssistantConfirm).ConfigureAwait(false);
         if (IsInitialize(message) && response is JsonObject { } init && init["result"]?["protocolVersion"] is JsonValue version)
         {
             var created = new Session(Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant(), version.GetValue<string>());

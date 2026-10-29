@@ -185,7 +185,12 @@ public sealed class ClaudeCodeProvider(Func<AssistantProviderSettings> settings)
             if (provider.Executable is not { } claude) throw new InvalidOperationException("Claude Code is not installed.");
             if (context.Mcp is not { } mcp) throw new InvalidOperationException("Turn on the MCP server (Servers page): Claude Code reaches Cuebot through it.");
             _process = CliProcess.Start(claude, Arguments(context, mcp), context.WorkingDirectory,
-                new Dictionary<string, string> { [McpEndpoint.TokenVariable] = mcp.Token });
+                new Dictionary<string, string>
+                {
+                    [McpEndpoint.TokenVariable] = mcp.Token,
+                    // a destructive tool waits for the streamer's Approve
+                    ["MCP_TOOL_TIMEOUT"] = ((int)McpEndpoint.ToolTimeout.TotalMilliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                });
             _input = new StreamWriter(_process.Input, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
             _output = new StreamReader(_process.Output, new UTF8Encoding(false));
             return (_input, _output);

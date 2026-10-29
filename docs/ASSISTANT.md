@@ -15,14 +15,20 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   `/mcp`. Every call is logged as `MCP: Tool call: <name>`, never with argument values. API-key providers also get
   `read_cuebot_doc` for the `cuebot://docs/actions` and `cuebot://docs/variables` guides that MCP clients read as
   resources.
-- **Approval.** Destructive tools (deletes, imports over existing items, sending chat) use the MCP confirmation token:
-  with an API key, Cuebot shows the summary with **Approve** / **Deny** and only an Approve repeats the call with the
-  token; a stopped turn denies. API-key models are told to call such a tool straight away rather than ask in their reply
-  first, so the streamer is asked once. An AI app gets the token from the tool and must ask the streamer in its reply before
-  calling again. Turning off "require confirmation" on the Servers page turns this off too.
+- **Approval.** Destructive tools (deletes, imports over existing items, sending chat) wait for the streamer: Cuebot
+  shows the summary with **Approve** / **Deny** in the conversation, and the call goes ahead only on Approve; Deny, Stop
+  or the AI giving up on the call denies. Every model is told to call such a tool straight away rather than ask in its
+  reply first, so the streamer is asked once. With an API key the tools run in process; an AI app's conversation gets
+  its own MCP token (`McpServer.RegisterAssistant`: valid on `/mcp` only, never the REST API, gone when the conversation
+  ends), and Cuebot's MCP server asks the page directly while the AI app's call waits (tool timeout raised to 15
+  minutes for Codex and Claude Code; Grok's default is longer). Other MCP clients still get the confirmation token to
+  relay. Turning off "require confirmation" on the Servers page turns this off too.
 - **Instructions.** Every provider gets the same system prompt (`AssistantPrompt`): who the assistant is for, look things
   up before changing them, ask before destructive changes, no passwords or keys, plain short answers.
-- **Conversation.** One at a time, kept in memory; **New chat**, or changing the AI or model, starts a new one.
+- **Conversation.** One at a time; **New chat**, or changing the AI or model, starts a new one. The page keeps the last
+  conversation in `assistant-history.json` (newest 200 lines) and shows it again after a restart, marked as one the AI
+  does not remember. Answers render as Markdown (headings, lists, code, quotes, tables as monospace, bold, italic,
+  inline code; links open only for http and https).
 
 ## Providers
 
@@ -41,7 +47,7 @@ Cuebot only runs an AI app it can limit to Cuebot's tools, and each one is check
 
 | App | How Cuebot runs it | Limited to Cuebot by |
 | --- | --- | --- |
-| **Codex** (`codex`) | `codex app-server` (the Codex IDE extensions' protocol), one process per conversation; **Sign in** starts Codex's Sign in with ChatGPT in the browser | `--disable` for every built-in tool feature (shell, unified exec, apps, plugins, browser and computer use, images, multi-agent, skills, hooks), `web_search="disabled"`, the streamer's other Codex MCP servers switched off for that process (`mcp_servers.<name>.enabled=false`), Cuebot's server added; read-only sandbox, no approvals (any approval request is declined), Cuebot's instructions as developer instructions, ephemeral (not in Codex's history). Status reads only whether `auth.json` holds a sign-in. |
+| **Codex** (`codex`) | `codex app-server` (the Codex IDE extensions' protocol), one process per conversation; **Sign in** starts Codex's Sign in with ChatGPT in the browser | `--disable` for every built-in tool feature (shell, unified exec, apps, plugins, browser and computer use, images, multi-agent, skills, hooks), `web_search="disabled"`, the streamer's other Codex MCP servers switched off for that process (`mcp_servers.<name>.enabled=false`), Cuebot's server added; read-only sandbox, approvals on request: Codex asks before MCP tools marked destructive and only Cuebot's server's are accepted (Cuebot's card then decides); any command or file-change request is declined, Cuebot's instructions as developer instructions, ephemeral (not in Codex's history). Status reads only whether `auth.json` holds a sign-in. |
 | **Claude Code** (`claude`) | `claude -p` in stream-json mode, one process per conversation; Stop sends Claude Code's interrupt request | `--restricted --tools ""` (no commands, files or web), `--strict-mcp-config --mcp-config` with Cuebot's server only (`Bearer ${CUEBOT_MCP_TOKEN}` from the environment), `--allowedTools mcp__cuebot --permission-mode dontAsk`, `--system-prompt`, `--disable-slash-commands`, `--no-session-persistence`. Status: `claude auth status`. |
 | **Grok CLI** (`grok`) | `grok agent stdio` (Agent Client Protocol), one process per conversation, with the streamer's existing Grok sign-in | `GrokIsolation`: a throwaway `GROK_HOME` per conversation in the temp folder (owner-only; none of the streamer's Grok MCP servers, skills or settings), every Claude/Cursor/Codex import off (`GROK_*_ENABLED=false`; `0` is not honoured), an agent profile in `session/new` whose tools are only `search_tool` and `use_tool` (so only the MCP servers connected, Cuebot's) and which carries Cuebot's instructions. Sign-in: Grok's documented external auth provider, a small command that prints the current access token read from `~/.grok/auth.json`; Cuebot never writes that file or uses its refresh token, and deletes the throwaway home (with Grok's copy of the access token) when the conversation ends. When the token is about to expire, opening Grok once refreshes it. Without these steps Grok 1.0.67's agent mode reads files and uses the streamer's MCP servers and instruction files without asking, and ignores `--tools`, project `.grok/config.toml` rules (untrusted folder) and `GROK_CONFIG` deny rules. |
 | **Antigravity CLI** (`agy`) | `agy -p` in stream-json mode (one process per conversation, `{"event":"user","message":{...}}` lines in, `step_update`/`result` events out), with the streamer's own Antigravity sign-in. Not on Windows yet (the gate runs through `sh`). | `AntigravityIsolation`: a throwaway workspace per conversation in the temp folder (owner-only) holding `AGENTS.md` (Cuebot's instructions, read as project rules) and a `cuebot` plugin (`.agents/plugins/cuebot`: Cuebot's MCP server with its bearer token in an owner-only file, and a `PreToolUse` hook on every tool). The hook runs `Cuebot --assistant-tool-gate`, which allows only `call_mcp_tool` on Cuebot's server (`cuebot_cuebot`) and reads of the tool descriptions Antigravity keeps for it (`~/.gemini/antigravity-cli/mcp/cuebot_cuebot`, symlinks and `..` refused); every other tool (shell, files, browser, web, images, subagents, scheduling...) is hard-denied, also tools a later Antigravity adds. Cuebot's server is granted with session-only `--settings` (`permissions.allow: ["mcp(cuebot_cuebot/*)"]`, never saved) because print mode can not ask. Without this, agy 1.4.10's print mode reads files and runs commands without asking. Conversations still appear in Antigravity's own history. |

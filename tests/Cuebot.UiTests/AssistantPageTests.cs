@@ -28,6 +28,8 @@ public sealed class AssistantPageTests : IAsyncDisposable
     public AssistantPageTests() =>
         _host = AppHost.Create(new AppPaths(_dataDir), overrides: services => services.AddSingleton<IAssistantProvider>(_ai));
 
+    private const string Done = "Done. **Hello** is gone. Next steps:\n\n1. Open *Actions*\n2. Check the `Raid alert` action\n\n```\n!lurk\n```";
+
     /// <summary>Answers, calls delete_action on "Hello" (needs approval), then reports what happened.</summary>
     private sealed class ScriptedProvider : IAssistantProvider
     {
@@ -53,7 +55,7 @@ public sealed class AssistantPageTests : IAsyncDisposable
                 var approved = await confirmation.Answer;
                 owner.LastResult = approved ? "approved" : "declined";
                 yield return new AssistantToolFinished("c1", "delete_action", Failed: !approved);
-                yield return new AssistantText(approved ? "Done." : "Left it.");
+                yield return new AssistantText(approved ? Done : "Left it.");
                 _ = context;
             }
 
@@ -125,12 +127,24 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Assert.Equal("approved", _ai.LastResult);
         Assert.Equal("done", page.Items.Single(i => i.IsTool).State);
         Assert.Equal("Approved", page.Items.Single(i => i.IsConfirmation).State);
-        Assert.Equal("Done.", page.Items.Last(i => i.IsAssistant).Text);
+        Assert.Equal(Done, page.Items.Last(i => i.IsAssistant).Text);
         Screenshot(window, "assistant-done");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
 
+        // The conversation is kept: a new page (as after a restart) shows it, with a note that the AI starts fresh.
+        var reopened = new AssistantViewModel(page.Service);
+        Assert.Equal(page.Items.Select(i => i.Text), reopened.Items.SkipLast(1).Select(i => i.Text));
+        Assert.True(reopened.Items[^1].IsNotice);
+        Assert.Equal("Approved", reopened.Items.Single(i => i.IsConfirmation).State);
+        Assert.False(reopened.Items.Single(i => i.IsConfirmation).AwaitingAnswer);
+        Assert.Equal(page.Items.Count, new AssistantViewModel(page.Service).Items.Count - 1);   // the note is not saved
+
+        // Answers render as Markdown.
+        Assert.Contains(window.GetVisualDescendants().OfType<Cuebot.App.Controls.MarkdownText>(), m => m.Markdown == Done && m.Children.Count == 4);
+
         page.NewChatCommand.Execute(null);
         PumpUntil(() => page.IsEmpty);
+        Assert.Empty(page.Service.History);
     }
 
     public async ValueTask DisposeAsync()
