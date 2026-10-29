@@ -13,7 +13,7 @@ rm -rf "$stage"
 dotnet publish "$root/src/Cuebot.App/Cuebot.App.csproj" -c Release -r "$rid" --self-contained true \
   -p:DebugType=none -p:Version="$version" -o "$stage/lib"
 mkdir -p "$stage/share"
-cp "$root/packaging/linux/io.github.cuebot.Cuebot.desktop" "$root/packaging/linux/io.github.cuebot.Cuebot.metainfo.xml" "$root/LICENSE" "$root/THIRD-PARTY-NOTICES.md" "$stage/share/"
+cp "$root/packaging/linux/io.github.cuebot.Cuebot.desktop" "$root/packaging/linux/io.github.cuebot.Cuebot.metainfo.xml" "$root/packaging/linux/70-cuebot-streamdeck.rules" "$root/LICENSE" "$root/THIRD-PARTY-NOTICES.md" "$stage/share/"
 cp -r "$root/packaging/icons" "$stage/share/icons"
 tar -C "$root/artifacts" -czf "$root/artifacts/$name.tar.gz" "$name"
 echo "$root/artifacts/$name.tar.gz"

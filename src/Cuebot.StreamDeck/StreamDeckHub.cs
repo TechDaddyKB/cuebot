@@ -20,6 +20,19 @@ public interface IStreamDeckPeer
 }
 
 /// <summary>
+/// Something besides plugin connections that shows keys by button id (direct USB decks, <see cref="Hid.StreamDeckHidService"/>):
+/// the Stream Deck sub-actions reach it through <see cref="StreamDeckHub.SendCommandAsync"/>.
+/// </summary>
+public interface IStreamDeckKeyTarget
+{
+    /// <summary>Button ids it knows (for sub-action suggestions).</summary>
+    IEnumerable<string> ButtonIds { get; }
+
+    /// <summary>Applies the command; returns how many of its keys have the button id.</summary>
+    Task<int> ApplyAsync(StreamDeckCommand command, CancellationToken ct = default);
+}
+
+/// <summary>
 /// The Stream Deck integration: Cuebot's plugin connects to <c>/api/v1/streamdeck</c> on the REST API listener (same
 /// bearer token). Each connection is one Stream Deck app; it reports its devices and visible Cuebot keys, sends key and
 /// dial input (→ the Stream Deck Action trigger) and requests (list/run/toggle actions, set globals). Sub-actions push
@@ -38,6 +51,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
     private readonly Func<ApiOperations> _operations;
     private readonly Func<bool> _apiEnabled;
     private readonly ConcurrentDictionary<string, Session> _sessions = new();
+    private readonly List<IStreamDeckKeyTarget> _targets = [];
     private readonly string _appVersion;
 
     /// <param name="operations">Action/global operations (shared with the REST API so rules and logging match).</param>
@@ -81,10 +95,24 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
     public IReadOnlyList<StreamDeckInstanceInfo> Instances =>
         [.. _sessions.Values.Where(s => s.Ready).OrderBy(s => s.ConnectedAt).Select(s => s.Snapshot())];
 
-    /// <summary>Distinct button ids of every visible key (for sub-action suggestions).</summary>
+    /// <summary>Distinct button ids of every visible key and of direct USB decks (for sub-action suggestions).</summary>
     public IEnumerable<string> KnownButtonIds =>
-        Instances.SelectMany(i => i.Buttons).Select(b => b.ButtonId).Where(id => id.Length > 0)
+        Instances.SelectMany(i => i.Buttons).Select(b => b.ButtonId).Concat(Targets.SelectMany(t => t.ButtonIds)).Where(id => id.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Adds a key target (direct USB decks) that receives every appearance command too.</summary>
+    public void AddKeyTarget(IStreamDeckKeyTarget target)
+    {
+        lock (_targets)
+        {
+            if (!_targets.Contains(target)) _targets.Add(target);
+        }
+    }
+
+    private IStreamDeckKeyTarget[] Targets
+    {
+        get { lock (_targets) return [.. _targets]; }
+    }
 
     // ---- IApiWebSocketRoute ----------------------------------------------------------------------------------------
 
@@ -401,18 +429,31 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
 
     /// <summary>
     /// Sends an appearance command to every connected plugin (each applies it to all its keys with the button id and
-    /// remembers it for keys that appear later). Returns how many visible keys have that id.
+    /// remembers it for keys that appear later) and to direct USB decks. Returns how many visible keys have that id.
     /// </summary>
     public async Task<int> SendCommandAsync(StreamDeckCommand command, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(command.ButtonId)) throw new ArgumentException("A button id is required.");
         if (!StreamDeckProtocol.Commands.Contains(command.Command)) throw new ArgumentException($"Unknown command '{command.Command}'.");
         var normalized = command with { ButtonId = command.ButtonId.Trim() };
+        var direct = 0;
+        foreach (var target in Targets)
+        {
+            try
+            {
+                direct += await target.ApplyAsync(normalized, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _log.Error(Source, $"{command.Command} for '{normalized.ButtonId}' on a USB Stream Deck failed", ex);
+            }
+        }
         var sessions = _sessions.Values.Where(s => s.Ready).ToArray();
         if (sessions.Length == 0)
         {
-            _log.Warn(Source, $"{command.Command} for '{normalized.ButtonId}': no Stream Deck plugin is connected");
-            return 0;
+            if (direct == 0)
+                _log.Warn(Source, $"{command.Command} for '{normalized.ButtonId}': no Stream Deck plugin is connected and no USB Stream Deck key has that id");
+            return direct;
         }
         var text = StreamDeckProtocol.Command(normalized);
         await Task.WhenAll(sessions.Select(s => s.Peer.SendAsync(text, ct))).ConfigureAwait(false);
@@ -422,7 +463,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         {
             foreach (var s in sessions) s.ApplyState(normalized.ButtonId, command.Command == "toggleState" ? null : command.State);
         }
-        return matched;
+        return matched + direct;
     }
 
     private static string Plural(int n, string word) => $"{n} {word}{(n == 1 ? "" : "s")}";

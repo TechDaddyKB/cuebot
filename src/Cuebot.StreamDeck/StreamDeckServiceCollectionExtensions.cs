@@ -6,6 +6,7 @@ using Cuebot.Core.Scripting;
 using Cuebot.Core.Storage;
 using Cuebot.Server;
 using Cuebot.Server.Api;
+using Cuebot.StreamDeck.Hid;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.StreamDeck;
@@ -17,7 +18,8 @@ public static class StreamDeckServiceCollectionExtensions
     /// Adds <see cref="StreamDeckHub"/> (an <see cref="IConnectionStatus"/> and the <c>/api/v1/streamdeck</c> WebSocket
     /// route on the REST API listener), its triggers, sub-actions and script functions. Needs <c>AddServers()</c>. Nothing
     /// to start: the plugin connects whenever the REST API is on. No settings file of its own: the plugin uses the API
-    /// port and token.
+    /// port and token. Also adds direct USB mode (<see cref="StreamDeckHidService"/>, streamdeck-usb.json): decks driven
+    /// over HID without the Stream Deck app; it starts scanning in its <c>StartAsync</c>.
     /// </summary>
     public static IServiceCollection AddStreamDeck(this IServiceCollection services)
     {
@@ -43,6 +45,15 @@ public static class StreamDeckServiceCollectionExtensions
                 StreamDeckSubAction.Create(sp.GetRequiredService<StreamDeckHub>()).First(h => h.TypeId == typeId));
         }
         services.AddSingleton<IScriptFunctionProvider>(sp => new StreamDeckScriptFunctions(sp.GetRequiredService<StreamDeckHub>()));
+
+        services.AddSettingsFile<StreamDeckHidSettings>("streamdeck-usb.json");
+        services.AddSingleton(sp => new StreamDeckHidService(
+            sp.GetRequiredService<JsonFile<StreamDeckHidSettings>>(),
+            sp.GetRequiredService<EventBus>(),
+            sp.GetRequiredService<AppLog>(),
+            sp.GetRequiredService<StreamDeckHub>(),
+            images: new KeyImageLoader(sp.GetService<HttpClient>())));
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<StreamDeckHidService>());
         return services;
     }
 }

@@ -11,6 +11,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Server;
 using Cuebot.Server.Api;
 using Cuebot.StreamDeck;
+using Cuebot.StreamDeck.Hid;
 using Cuebot.UiTests.Speech;
 
 namespace Cuebot.UiTests.StreamDeck;
@@ -140,6 +141,90 @@ public sealed class StreamDeckPageTests : IAsyncDisposable
         {
             app.RequestedThemeVariant = original;
         }
+    }
+
+    /// <summary>A Stream Deck XL on USB, in memory (answers the feature reads, swallows images).</summary>
+    private sealed class FakeXlTransport : IHidTransport
+    {
+        public string? UnavailableReason => null;
+
+        public IReadOnlyList<HidDeviceInfo> Enumerate(ushort vendorId) =>
+        [
+            new("/dev/hidraw0", StreamDeckHidModels.ElgatoVendorId, 0x006C, "CL50K2A01783", "Elgato Stream Deck XL", "7-2"),
+            new(null, StreamDeckHidModels.ElgatoVendorId, 0x0080, "AL01", "Stream Deck MK.2", "3-1"),
+        ];
+
+        public IHidDevice Open(HidDeviceInfo device) => new Device();
+
+        private sealed class Device : IHidDevice
+        {
+            public int Read(byte[] buffer, int timeoutMs)
+            {
+                Thread.Sleep(Math.Min(timeoutMs, 20));
+                return 0;
+            }
+
+            public void Write(ReadOnlySpan<byte> report) { }
+
+            public byte[] GetFeature(byte reportId, int length)
+            {
+                var report = new byte[length];
+                "1.01.000"u8.CopyTo(report.AsSpan(6));
+                return report;
+            }
+
+            public void SetFeature(ReadOnlySpan<byte> report) { }
+
+            public void Dispose() { }
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Direct_usb_card_lists_decks_and_saves_key_ids()
+    {
+        TestApp.BindingErrors.Clear();
+        var settings = new Cuebot.Core.Storage.JsonFile<StreamDeckHidSettings>(Path.Combine(_pluginDir, "streamdeck-usb.json"), _log);
+        await using var usb = new StreamDeckHidService(settings, _bus, _log, _hub, new FakeXlTransport());
+        usb.Scan();
+        var vm = new StreamDeckViewModel(_hub, _servers, [_pluginDir], usb);
+        var window = Show(vm);
+
+        var card = Assert.IsType<StreamDeckUsbViewModel>(vm.Usb);
+        Assert.Equal("Connected", card.State);
+        Assert.Contains("Stream Deck XL (CL50K2A01783) on USB", card.StatusMessage);
+        Assert.Contains("another program has taken it over", card.StatusMessage);
+        Assert.Equal(2, card.Devices.Count);
+        var xl = card.Devices[0];
+        Assert.Equal(32, xl.Keys.Count);
+        Assert.Equal("Key 9 (row 2, column 2)", xl.Keys[9].Label);
+        Assert.Equal("hid-CL50K2A01783-9", xl.Keys[9].DefaultButtonId);
+        Assert.Empty(card.Devices[1].Keys);   // the taken-over MK.2 only shows why
+
+        xl.Keys[9].ButtonId = "go-live";
+        xl.Keys[9].Title = "LIVE";
+        xl.Name = "Desk XL";
+        await xl.SaveCommand.ExecuteAsync(null);
+        var saved = Assert.Single(usb.Settings.Devices);
+        Assert.Equal(("Desk XL", "go-live", "LIVE"), (saved.Name, Assert.Single(saved.Keys).ButtonId, saved.Keys[0].Title));
+        Assert.Contains("go-live", _hub.KnownButtonIds);
+        Assert.Contains("Saved", card.Message);
+
+        card.Brightness = 80;
+        Assert.Equal(80, usb.Settings.Brightness);
+        UiPump.Pump();
+        var texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text ?? "").ToArray();
+        Assert.Contains(texts, t => t == "Direct USB (no Stream Deck app)");
+        Assert.Contains(texts, t => t == "Key 9 (row 2, column 2)");
+        UiPump.Save(window, "streamdeck-usb");
+
+        card.Enabled = false;
+        usb.Scan();
+        UiPump.Pump();
+        Assert.Equal("Direct USB mode is off", card.StatusMessage);
+        Assert.True(card.HasNoDevices);
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+        settings.Dispose();
     }
 
     public async ValueTask DisposeAsync()

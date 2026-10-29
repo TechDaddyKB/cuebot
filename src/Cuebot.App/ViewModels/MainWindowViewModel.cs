@@ -78,7 +78,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 new Cuebot.App.ViewModels.WaveLink.WaveLinkViewModel(host.Get<Cuebot.WaveLink.WaveLinkService>()),
                 new Cuebot.App.ViewModels.GoXlr.GoXlrViewModel(host.Get<Cuebot.GoXlr.GoXlrService>()),
                 new Cuebot.App.ViewModels.StreamDeck.StreamDeckViewModel(host.Get<Cuebot.StreamDeck.StreamDeckHub>(),
-                    host.Get<Cuebot.Server.ServerManager>())),
+                    host.Get<Cuebot.Server.ServerManager>(), usb: host.Get<Cuebot.StreamDeck.Hid.StreamDeckHidService>())),
             new Cuebot.App.ViewModels.Webhooks.WebhooksPageViewModel(
                 new Cuebot.App.ViewModels.Webhooks.WebhookServicesViewModel(host.Get<Cuebot.Webhooks.WebhookServices>()),
                 new Cuebot.App.ViewModels.Webhooks.WebhooksViewModel(host.Get<Cuebot.Relay.RelayClient>(), host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>())),

@@ -132,11 +132,15 @@ public class EndToEndTests
         services.AddSingleton(new ProfileService(null, log));
         services.AddSingleton(new GlobalVariables(null, log));
         services.AddSingleton(sp => new ServerServices(sp));
+        var data = Directory.CreateTempSubdirectory("cuebot-sd-registration-");
+        services.AddSingleton(new AppPaths(data.FullName));
         services.AddStreamDeck();
         using var provider = services.BuildServiceProvider();
 
         var hub = provider.GetRequiredService<StreamDeckHub>();
-        Assert.Same(hub, provider.GetServices<IConnectionStatus>().Single());
+        var usb = provider.GetRequiredService<Cuebot.StreamDeck.Hid.StreamDeckHidService>();
+        Assert.Equal(new IConnectionStatus[] { hub, usb }, provider.GetServices<IConnectionStatus>());   // direct USB mode has its own dashboard line
+        Assert.Equal("Not started", usb.StatusMessage);   // nothing touches USB until StartAsync
         Assert.Same(hub, provider.GetServices<Cuebot.Server.Api.IApiWebSocketRoute>().Single());
         Assert.Same(hub, provider.GetRequiredService<ServerServices>().WebSocketRoutes.Single());
 
