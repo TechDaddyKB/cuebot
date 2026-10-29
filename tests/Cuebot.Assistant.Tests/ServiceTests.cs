@@ -123,6 +123,97 @@ public sealed class ServiceTests
 
         var mcp = cli.Sessions[1].Mcp!;
         Assert.Matches(@"^http://127\.0\.0\.1:\d+/mcp$", mcp.Url);
-        Assert.Equal(bot.Manager.Settings.Api.Token, mcp.Token);
+        Assert.NotEqual(bot.Manager.Settings.Api.Token, mcp.Token);   // the conversation's own token
+        Assert.StartsWith(Cuebot.Server.Api.ApiToken.Prefix, mcp.Token);
+    }
+
+    private const string DeleteHello =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"delete_action","arguments":{"action":"Hello"}}}""";
+
+    /// <summary>An AI app that deletes "Hello" through Cuebot's MCP server over HTTP, as Codex or Claude Code do.</summary>
+    private sealed class HttpDeletingProvider : IAssistantProvider
+    {
+        public string Id => "claude";
+        public string Name => "HTTP AI";
+        public AssistantProviderKind Kind => AssistantProviderKind.Cli;
+        public string? Answer { get; private set; }
+
+        public Task<AssistantProviderStatus> GetStatusAsync(CancellationToken ct = default) => Task.FromResult(AssistantProviderStatus.Available("ok"));
+
+        public IAssistantSession StartSession(AssistantContext context) => new Session(this, context);
+
+        private sealed class Session(HttpDeletingProvider owner, AssistantContext context) : IAssistantSession
+        {
+            public async IAsyncEnumerable<AssistantUpdate> SendAsync(string text, [EnumeratorCancellation] CancellationToken ct = default)
+            {
+                yield return new AssistantToolStarted("c1", "delete_action");
+                using var http = new HttpClient();
+                using var request = new HttpRequestMessage(HttpMethod.Post, context.Mcp!.Url)
+                {
+                    Content = new StringContent(DeleteHello, System.Text.Encoding.UTF8, "application/json"),
+                };
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.Mcp.Token);
+                using var response = await http.SendAsync(request, ct);
+                owner.Answer = await response.Content.ReadAsStringAsync(ct);
+                yield return new AssistantToolFinished("c1", "delete_action", false);
+                yield return new AssistantText("Done.");
+            }
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task An_AI_apps_destructive_call_waits_for_the_card_in_its_turn(bool approve)
+    {
+        await using var bot = new Bot();
+        bot.Manager.Settings.Mcp.Enabled = true;
+        bot.Manager.Settings.Api.Port = 0;
+        await bot.Manager.StartAsync();
+        var ai = new HttpDeletingProvider();
+        await using var service = Service(bot, ai);
+
+        var updates = await Updates.CollectAsync(service.SendAsync("delete Hello"), approve);
+
+        var card = Assert.Single(updates.OfType<AssistantConfirmation>());
+        Assert.Equal("Delete the action 'Hello'", card.Summary);
+        Assert.Equal(approve, await card.Answer);
+        Assert.Equal(approve, bot.Profile.Snapshot.FindAction("Hello") is null);
+        if (!approve) Assert.Contains("declined", ai.Answer);
+        Assert.Equal("Done.", updates.Text());
+    }
+
+    [Fact]
+    public async Task A_conversation_token_works_on_MCP_only_and_until_the_conversation_ends()
+    {
+        await using var bot = new Bot();
+        bot.Manager.Settings.Mcp.Enabled = true;
+        bot.Manager.Settings.Api.Enabled = true;
+        bot.Manager.Settings.Api.Port = 0;
+        await bot.Manager.StartAsync();
+        var asked = new List<string>();
+        var (token, registration) = bot.Manager.Mcp.RegisterAssistant((_, summary, _) =>
+        {
+            asked.Add(summary);
+            return Task.FromResult(true);
+        });
+        using var http = new HttpClient();
+        async Task<System.Net.HttpStatusCode> Post(string path, string body)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, bot.Manager.ApiBaseUrl + path) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") };
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            using var response = await http.SendAsync(request);
+            return response.StatusCode;
+        }
+
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, await Post("/api/v1/actions", "{}"));
+        Assert.Equal(System.Net.HttpStatusCode.OK, await Post("/mcp", DeleteHello));
+        Assert.Equal(["Delete the action 'Hello'"], asked);
+        Assert.Null(bot.Profile.Snapshot.FindAction("Hello"));
+
+        registration.Dispose();
+        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, await Post("/mcp", DeleteHello));
     }
 }

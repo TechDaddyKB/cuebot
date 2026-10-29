@@ -67,6 +67,9 @@ public sealed record McpEndpoint(string Url, string Token)
 
     /// <summary>The environment variable the AI CLI processes get the token in (never on a command line).</summary>
     public const string TokenVariable = "CUEBOT_MCP_TOKEN";
+
+    /// <summary>How long an AI app waits for one of Cuebot's tools: a destructive one waits for the streamer's Approve.</summary>
+    public static readonly TimeSpan ToolTimeout = TimeSpan.FromMinutes(15);
 }
 
 /// <summary>What happens during a turn, in order.</summary>

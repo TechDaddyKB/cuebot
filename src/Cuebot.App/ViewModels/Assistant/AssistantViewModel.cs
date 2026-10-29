@@ -21,6 +21,10 @@ public sealed partial class AssistantViewModel : PageViewModel
         _openUrl = openUrl ?? Cuebot.App.Shell.UrlLauncher.Open;
         Choices = [new ProviderChoice("", "Automatic (first one ready)", null), .. service.Providers.Select(p => new ProviderChoice(p.Id, p.Name, p))];
         _selectedChoice = Choices.FirstOrDefault(c => c.Id.Equals(service.Settings.Provider, StringComparison.OrdinalIgnoreCase)) ?? Choices[0];
+        foreach (var entry in service.History)
+            if (Enum.TryParse<AssistantItemKind>(entry.Kind, out var kind)) Items.Add(new AssistantItem(kind, entry.Text) { State = entry.State });
+        if (Items.Count > 0)
+            Items.Add(new AssistantItem(AssistantItemKind.Notice, "Earlier conversation: the AI does not remember it. New chat clears it.") { Saved = false });
         _ = RefreshStatusAsync();
     }
 
@@ -227,6 +231,7 @@ public sealed partial class AssistantViewModel : PageViewModel
             IsBusy = false;
             _turn.Dispose();
             _turn = null;
+            SaveHistory();
             await RefreshStatusAsync();
         }
     }
@@ -242,6 +247,7 @@ public sealed partial class AssistantViewModel : PageViewModel
         _turn?.Cancel();
         await _service.NewChatAsync();
         Items.Clear();
+        SaveHistory();
         OnPropertyChanged(nameof(IsEmpty));
         await RefreshStatusAsync();
     }
@@ -253,6 +259,9 @@ public sealed partial class AssistantViewModel : PageViewModel
     }
 
     private static string ToolLabel(string tool) => tool.Replace('_', ' ');
+
+    private void SaveHistory() =>
+        _service.SaveHistory(Items.Where(i => i.Saved).Select(i => new AssistantHistoryEntry { Kind = i.Kind.ToString(), Text = i.Text, State = i.State }));
 }
 
 /// <summary>An entry in the provider picker; <see cref="Provider"/> is null for automatic.</summary>
@@ -272,6 +281,9 @@ public sealed partial class AssistantItem(AssistantItemKind kind, string text) :
     [ObservableProperty] private string _state = kind == AssistantItemKind.Tool ? "running" : "";
 
     internal string? CallId { get; init; }
+
+    /// <summary>False for page notes that are not part of the conversation (not saved).</summary>
+    internal bool Saved { get; init; } = true;
 
     public AssistantConfirmation? Confirmation { get; init; }
 

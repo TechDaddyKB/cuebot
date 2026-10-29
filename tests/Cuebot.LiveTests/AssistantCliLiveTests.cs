@@ -38,8 +38,23 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
 
     /// <summary>A destructive tool waits for Approve; approved, the action is gone.</summary>
     [LiveServiceFact("CUEBOT_LIVE_OPENAI_API_KEY")]
-    public Task OpenAI_API_key_deletes_only_after_approval() =>
-        RunAsync(OpenAi, $"Delete my Cuebot action named \"{ActionName}\".", (updates, text, _) =>
+    public Task OpenAI_API_key_deletes_only_after_approval() => DeletesOnlyAfterApprovalAsync(OpenAi);
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Codex_deletes_only_after_approval() => DeletesOnlyAfterApprovalAsync(s => new CodexProvider(s));
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Claude_Code_deletes_only_after_approval() => DeletesOnlyAfterApprovalAsync(s => new ClaudeCodeProvider(s));
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Grok_deletes_only_after_approval() => DeletesOnlyAfterApprovalAsync(s => new AcpProvider(AcpProvider.Grok, s));
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Antigravity_deletes_only_after_approval() => DeletesOnlyAfterApprovalAsync(Antigravity);
+
+    /// <summary>A delete shows Cuebot's Approve card in the turn (API keys and AI apps alike) and happens only then.</summary>
+    private Task DeletesOnlyAfterApprovalAsync(Func<Func<AssistantProviderSettings>, IAssistantProvider> create) =>
+        RunAsync(create, $"Delete my Cuebot action named \"{ActionName}\".", (updates, text, _) =>
         {
             Assert.DoesNotContain(updates, u => u is AssistantError);
             var confirmation = Assert.Single(updates.OfType<AssistantConfirmation>());

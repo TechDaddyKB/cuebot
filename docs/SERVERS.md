@@ -353,6 +353,9 @@ implemented in `McpServer`.
   writes the answers to stdout (diagnostics on stderr). `CUEBOT_MCP_URL` / `CUEBOT_API_TOKEN` override. When Cuebot is
   not running, requests get JSON-RPC error -32000 "Cannot reach Cuebot ..."; an expired session is dropped and retried.
 - Tool calls are logged as `MCP: Tool call: <name>`, never with argument values.
+- **Assistant conversations** with an AI app get their own bearer token (`McpServer.RegisterAssistant`), accepted on
+  `/mcp` only (the REST API answers 401) until the conversation ends. With it, destructive tools ask the streamer on the
+  Assistant page while the call waits, instead of answering with a confirmation token ([ASSISTANT.md](ASSISTANT.md)).
 
 Tools (all backed by the REST operations; schemas include JSON Schemas built from the registry descriptors where it
 helps: `describe_*`, `create_action` with a recursive `$defs/subAction`):

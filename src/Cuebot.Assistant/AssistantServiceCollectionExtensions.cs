@@ -31,8 +31,10 @@ public static class AssistantServiceCollectionExtensions
             services.AddSingleton<IAssistantProvider>(sp => new OpenAiCompatibleProvider(profile,
                 sp.GetRequiredKeyedService<HttpClient>(nameof(AssistantService)), Settings(sp, profile.Id)));
 
+        services.AddSettingsFile<AssistantHistoryFile>("assistant-history.json");
         services.AddSingleton(sp => new AssistantService(sp.GetRequiredService<JsonFile<AssistantSettings>>(), sp.GetServices<IAssistantProvider>(),
-            sp.GetRequiredService<ServerManager>(), sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<ServerManager>(), sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>(),
+            sp.GetRequiredService<JsonFile<AssistantHistoryFile>>()));
         return services;
     }
 

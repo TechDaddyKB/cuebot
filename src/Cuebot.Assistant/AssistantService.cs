@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using Cuebot.Core;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
@@ -18,18 +19,23 @@ public sealed class AssistantService : IAsyncDisposable
     public static readonly string[] ProviderOrder = ["codex", "claude", "grok", "antigravity", "anthropic", "openai", "xai", "google"];
 
     private readonly JsonFile<AssistantSettings>? _file;
+    private readonly JsonFile<AssistantHistoryFile>? _history;
+    private readonly AssistantHistoryFile _memoryHistory = new();
     private readonly AssistantSettings _memorySettings = new();
     private readonly ServerManager _servers;
     private readonly AppLog _log;
     private readonly string _workingDirectory;
     private readonly SemaphoreSlim _turn = new(1, 1);
     private IAssistantSession? _session;
+    private IDisposable? _mcpRegistration;
+    private volatile ChannelWriter<AssistantUpdate>? _turnUpdates;
     private (string Provider, string Model)? _sessionKey;
 
     public AssistantService(JsonFile<AssistantSettings>? file, IEnumerable<IAssistantProvider> providers, ServerManager servers, AppPaths? paths,
-        AppLog log)
+        AppLog log, JsonFile<AssistantHistoryFile>? history = null)
     {
         _file = file;
+        _history = history;
         _servers = servers;
         _log = log;
         Providers = [.. providers.OrderBy(p => Array.IndexOf(ProviderOrder, p.Id) is var i and >= 0 ? i : int.MaxValue).ThenBy(p => p.Name)];
@@ -47,6 +53,17 @@ public sealed class AssistantService : IAsyncDisposable
     public string? ActiveProviderId => _sessionKey?.Provider;
 
     public void SaveSettings() => _file?.ScheduleSave();
+
+    /// <summary>The conversation as last saved (see <see cref="AssistantHistoryFile"/>).</summary>
+    public IReadOnlyList<AssistantHistoryEntry> History => (_history?.Value ?? _memoryHistory).Entries;
+
+    /// <summary>Saves the conversation as the page shows it (the newest <see cref="AssistantHistoryFile.MaxEntries"/> lines).</summary>
+    public void SaveHistory(IEnumerable<AssistantHistoryEntry> entries)
+    {
+        var list = entries.ToList();
+        (_history?.Value ?? _memoryHistory).Entries = list.Count > AssistantHistoryFile.MaxEntries ? list[^AssistantHistoryFile.MaxEntries..] : list;
+        _history?.ScheduleSave();
+    }
 
     public IAssistantProvider? Find(string id) => Providers.FirstOrDefault(p => p.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 
@@ -100,33 +117,53 @@ public sealed class AssistantService : IAsyncDisposable
             }
 
             var session = await SessionForAsync(provider).ConfigureAwait(false);
-            await using var updates = session.SendAsync(text, ct).GetAsyncEnumerator(ct);
-            while (true)
-            {
-                AssistantUpdate? update = null;
-                string? failure = null;
-                try
-                {
-                    if (!await updates.MoveNextAsync().ConfigureAwait(false)) break;
-                    update = updates.Current;
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    _log.Warn(LogSource, $"{provider.Name}: {ex.Message}");
-                    failure = ex.Message;
-                }
-                if (failure is not null)
-                {
-                    yield return new AssistantError(failure);
-                    yield break;
-                }
-                yield return update!;
-            }
+            // One stream for the turn: the AI's updates, plus Approve/Deny cards Cuebot's MCP server asks for while an AI
+            // app's tool call waits (see ConfirmAsync).
+            var turn = Channel.CreateUnbounded<AssistantUpdate>(new UnboundedChannelOptions { SingleReader = true });
+            _turnUpdates = turn.Writer;
+            var pump = PumpAsync(provider, session.SendAsync(text, ct), turn.Writer, ct);
+            await foreach (var update in turn.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false)) yield return update;
+            _turnUpdates = null;
+            await pump.ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
         }
         finally
         {
+            _turnUpdates = null;
             _turn.Release();
         }
+    }
+
+    private async Task PumpAsync(IAssistantProvider provider, IAsyncEnumerable<AssistantUpdate> updates, ChannelWriter<AssistantUpdate> turn,
+        CancellationToken ct)
+    {
+        try
+        {
+            await foreach (var update in updates.WithCancellation(ct).ConfigureAwait(false)) await turn.WriteAsync(update, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // stopped: the turn throws once the stream is read
+        }
+        catch (Exception ex)
+        {
+            _log.Warn(LogSource, $"{provider.Name}: {ex.Message}");
+            await turn.WriteAsync(new AssistantError(ex.Message), CancellationToken.None).ConfigureAwait(false);
+        }
+        turn.TryComplete();
+    }
+
+    /// <summary>
+    /// Cuebot's MCP server asks about a destructive tool an AI app called in this conversation: a card in the running
+    /// turn, and the call waits for Approve or Deny. Outside a turn, or when the turn or the call ends, it is denied.
+    /// </summary>
+    private async Task<bool> ConfirmAsync(string tool, string summary, CancellationToken ct)
+    {
+        if (_turnUpdates is not { } turn) return false;
+        var confirmation = new AssistantConfirmation(tool, summary);
+        if (!turn.TryWrite(confirmation)) return false;
+        using var cancel = ct.Register(confirmation.Deny);
+        return await confirmation.Answer.ConfigureAwait(false);
     }
 
     /// <summary>Forgets the conversation; the next message starts a new one.</summary>
@@ -135,6 +172,8 @@ public sealed class AssistantService : IAsyncDisposable
         var session = _session;
         _session = null;
         _sessionKey = null;
+        _mcpRegistration?.Dispose();
+        _mcpRegistration = null;
         if (session is not null) await DisposeQuietlyAsync(session).ConfigureAwait(false);
     }
 
@@ -145,6 +184,13 @@ public sealed class AssistantService : IAsyncDisposable
         await NewChatAsync().ConfigureAwait(false);
         Directory.CreateDirectory(_workingDirectory);
         var mcp = provider.Kind == AssistantProviderKind.Cli ? Mcp : null;
+        if (mcp is not null)
+        {
+            // The conversation's own MCP token: Cuebot asks the streamer (a card here) before destructive tools run.
+            var (token, registration) = _servers.Mcp.RegisterAssistant(ConfirmAsync);
+            _mcpRegistration = registration;
+            mcp = mcp with { Token = token };
+        }
         var context = new AssistantContext(AssistantPrompt.Build(toolsOverMcp: provider.Kind == AssistantProviderKind.Cli), Tools, mcp, model,
             _workingDirectory);
         _session = provider.StartSession(context);

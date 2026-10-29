@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels.Assistant"
+             xmlns:ctl="using:Cuebot.App.Controls"
              x:Class="Cuebot.App.Views.Assistant.AssistantView"
              x:DataType="vm:AssistantViewModel">
   <UserControl.Styles>
@@ -88,7 +89,7 @@
                     <SelectableTextBlock Classes="message" Text="{Binding Text}" />
                   </Border>
                   <Border Classes="bubble" IsVisible="{Binding IsAssistant}" Background="{DynamicResource CuebotPanel}" HorizontalAlignment="Left" MaxWidth="820">
-                    <SelectableTextBlock Classes="message" Text="{Binding Text}" />
+                    <ctl:MarkdownText Markdown="{Binding Text}" />
                   </Border>
                   <TextBlock IsVisible="{Binding IsTool}" Classes="muted" Margin="12,2" FontSize="12">
                     <Run Text="⚙ " /><Run Text="{Binding Text}" /><Run Text=" - " /><Run Text="{Binding State}" />

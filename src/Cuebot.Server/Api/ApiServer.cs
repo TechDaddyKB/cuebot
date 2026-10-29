@@ -93,7 +93,10 @@ public sealed class ApiServer : IAsyncDisposable
         }
 
         var token = ApiToken.FromAuthorizationHeader(request.Headers.Authorization.ToString());
-        if (!ApiToken.Matches(settings.Api.Token, token))
+        // An Assistant conversation's own token works on /mcp only.
+        var assistant = isMcp ? Mcp.AssistantFor(token) : null;
+        if (assistant is not null) context.Items[McpServer.ConfirmItem] = assistant;
+        else if (!ApiToken.Matches(settings.Api.Token, token))
         {
             context.Response.Headers.WWWAuthenticate = "Bearer realm=\"Cuebot\"";
             await WriteJsonAsync(context, 401, new JsonObject

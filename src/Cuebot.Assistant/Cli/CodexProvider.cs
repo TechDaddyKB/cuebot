@@ -154,6 +154,8 @@ public sealed class CodexProvider(Func<AssistantProviderSettings> settings) : IA
             foreach (var other in others) args.AddRange(["-c", $"mcp_servers.{TomlKey(other)}.enabled=false"]);
             args.AddRange(["-c", $"mcp_servers.{McpEndpoint.ServerName}.url=\"{mcp.Url}\"",
                            "-c", $"mcp_servers.{McpEndpoint.ServerName}.bearer_token_env_var=\"{McpEndpoint.TokenVariable}\"",
+                           // a destructive tool waits for the streamer's Approve
+                           "-c", $"mcp_servers.{McpEndpoint.ServerName}.tool_timeout_sec={(int)McpEndpoint.ToolTimeout.TotalSeconds}",
                            "-c", "web_search=\"disabled\""]);
             var codex = _codex = await CodexConnection.StartAsync(executable, args, context.WorkingDirectory,
                 new Dictionary<string, string> { [McpEndpoint.TokenVariable] = mcp.Token }, ct).ConfigureAwait(false);
@@ -161,7 +163,9 @@ public sealed class CodexProvider(Func<AssistantProviderSettings> settings) : IA
             {
                 ["cwd"] = context.WorkingDirectory,
                 ["sandbox"] = "read-only",
-                ["approvalPolicy"] = "never",
+                // Codex asks before an MCP tool marked destructive; only Cuebot's are let through, and Cuebot's own
+                // Approve card decides. Its command and file tools are switched off, so nothing else can ask.
+                ["approvalPolicy"] = "on-request",
                 ["developerInstructions"] = context.Instructions,
                 ["ephemeral"] = true,
                 ["model"] = context.Model.Length > 0 ? context.Model : null,
@@ -175,12 +179,17 @@ public sealed class CodexProvider(Func<AssistantProviderSettings> settings) : IA
         private static string TomlKey(string key) =>
             key.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-') ? key : "\"" + key.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 
-        /// <summary>Codex asks before commands, file changes and MCP form input; Cuebot's assistant allows none of them.</summary>
+        /// <summary>
+        /// Codex asks before commands, file changes and MCP tool calls: only Cuebot's server's calls are allowed (Cuebot then
+        /// asks the streamer itself); commands and file changes never.
+        /// </summary>
         private static Task Refuse(JsonLineRpc rpc, RpcIncoming request, CancellationToken ct) => request.Method switch
         {
             "item/commandExecution/requestApproval" or "item/fileChange/requestApproval" =>
                 rpc.RespondAsync(request.Id, new JsonObject { ["decision"] = "decline" }, ct),
             "execCommandApproval" or "applyPatchApproval" => rpc.RespondAsync(request.Id, new JsonObject { ["decision"] = "denied" }, ct),
+            "mcpServer/elicitation/request" when request.Params["serverName"]?.GetValue<string>() == McpEndpoint.ServerName =>
+                rpc.RespondAsync(request.Id, new JsonObject { ["action"] = "accept", ["content"] = new JsonObject() }, ct),
             "mcpServer/elicitation/request" => rpc.RespondAsync(request.Id, new JsonObject { ["action"] = "decline" }, ct),
             _ => rpc.RespondErrorAsync(request.Id, -32601, "Not available in Cuebot's assistant", ct),
         };
