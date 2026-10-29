@@ -90,7 +90,7 @@ Cuebot and fires its trigger; a wrong token is rejected (`RelayLiveTests`).
 | Run program, delay, log | ✅ | — | Hotkey triggers (Windows, XDG portal, X11); Keyboard Press sub-action (Windows SendInput; Linux XDG RemoteDesktop portal, asks once, X11 XTest fallback); Mouse Click trigger (Windows low-level hook; X11 XInput 2 raw events). See note below | ✅ | 4 |
 | Play sound (file; WAV/MP3/OGG/FLAC, mixed) | ✅ | 2 | Play from folder, stop sound, output device selection | ✅ | 2 |
 | File/folder watcher, file tails, process watcher, clipboard get/set/changed | ✅ | 2–4 | Toast notifications + activation (in-app, notify-send) | ✅ | 4 |
-| MIDI in/out | 🟡 all of 1.13 built (WinMM, ALSA sequencer; see src/Cuebot.Midi/PROTOCOL.md); verified on Windows output only; on Linux (2026-10-28) the ALSA sequencer lists ports, sends notes/CC/SysEx and passes the Midi Through loopback round trip; MIDI input from a real controller not yet tested | 5 | Voice control (speech-to-text, Whisper) | 🟡 module done: Whisper (Win+Linux) and Windows Speech engines, commands, both triggers, sub-actions, model download; verified end to end on Windows and Linux (live test; on Linux eSpeak NG + Whisper Tiny, 2026-10-28); page not yet wired into the app | 5 |
+| MIDI in/out | 🟡 all of 1.13 built (WinMM, ALSA sequencer; see src/Cuebot.Midi/PROTOCOL.md); verified on Windows output only; on Linux (2026-10-28) the ALSA sequencer lists ports, sends notes/CC/SysEx and passes the Midi Through loopback round trip; MIDI input from a real controller not yet tested | 5 | Voice control (speech-to-text, Whisper) | ✅ module done: Whisper (Win+Linux) and Windows Speech engines, commands, both triggers, sub-actions, model download; verified end to end on Windows and Linux (live test; on Linux eSpeak NG + Whisper Tiny, 2026-10-28); page on the Input page's Voice control tab | 5 |
 | Game-controller input [1.1α] | 🟡 Button / Axis / Hat triggers via SDL3 (Windows + Linux, background input, hot-plug, gamecontrollerdb override, deadzones, axis throttling) plus extras (Button Combo, Connected/Disconnected, rumble, LED, state sub-actions, scripts, learn); SDL starts live on Windows and Linux, not yet tried with a real controller; variables are Cuebot's (Streamer.bot documents none) | 5 | File read/write, HTTP request, JSON sub-actions | ✅ | 2 |
 
 **Input on Wayland.** Key presses work on Wayland through the RemoteDesktop portal (KDE Plasma, GNOME, and other
@@ -135,12 +135,15 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
   - Twitch: Subscription `isMultiMonth` (false) / `multiMonthDuration` (0) when the event has no duration,
     `multiMonthTenure` (0, also Resubscription); Gift Subscription recipient `cumulativeMonths` (0); Gift Bomb and shared
     Community Sub Gift `bonusGifts` (false); Stream Online `tagCount` (0), `tags` (empty list), `tagsDelimited` ("");
-    Stream Update `gameBoxArt`, `oldGameBoxArt` (""); Shoutout Created `shoutoutId` (""); Shared Chat Session
+    Shoutout Created `shoutoutId` (""); Shared Chat Session
     `host.isSubscribed`/`isModerator`/`isVip` (false); TwitchChat `isAction` (false); TwitchSharedChatSource
     `source.isSubscribed`/`isModerator`/`isVip` (false); TwitchUser `subscriptionTier` ("0"), `userGroups` (""),
     `userPreviousActive`; Get User Info `targetLastActive`, `targetPreviousActive`.
   - Now real instead: Stream Online `game`/`gameId` (last known category), TwitchChat `inSharedChat` (shared chat
-    session state), Present Viewers `isLive` (a stream lookup per poll); they fall back to the placeholder when unknown.
+    session state), Present Viewers `isLive` (a stream lookup per poll); Stream Update `gameBoxArt`/`oldGameBoxArt`
+    (w23: Helix box art per category, 300x300 as Streamer.bot reports it, looked up before the update is published);
+    Kick Present Viewers `isLive`, `title`, `viewerCount`, `startedAt`, `categoryId`, `categoryName`,
+    `categoryThumbnail` (w23: from the last channel poll). They fall back to the placeholder when unknown.
   - YouTube: Message `parts`, `emotes` (""); Super Sticker `stickerImageUrl` (""); YouTubeUser `isSubscribed` (false),
     `userPreviousActive`; YouTubeBroadcast `broadcast.publishedAt`, `.defaultLanguage`, `.defaultAudioLanguage`, `.tags`.
   - Kick: Subscription / Resubscription `badgeCount` (0), `badge` (empty list); KickUser `userGroups` (""),
@@ -223,7 +226,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
    CPH compatibility layer, Speaker.bot-compatible API; chat extras.
 4. **Done — services:** points (multiple currencies, multipliers), quotes, credits, hotkeys, keyboard/mouse input, toasts, donations,
    import/export, action history and copy/paste/undo, app shortcuts; Streamer.bot type codes: triggers and sub-actions verified against Streamer.bot 1.0.7.
-5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop + T.I.T.S. + Lumia + mtion + OBSBOT 🟡, StreamFog ❌ (no public API); Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control 🟡, game controllers 🟡 (built, not yet tried on real hardware); remote signals between instances ✅. Batch 7 (Streamer.bot compatibility from the docs review) ✅; see §7.
+5. **In progress — integrations:** VTube Studio ✅, Voicemod ✅, Pulsoid/HypeRate ✅, Cloudflare relay + Ko-fi/Patreon/Fourthwall/Shopify/Throne/custom webhooks + Kick webhooks ✅, StreamLoots ✅, Crowd Control ✅, TipeeeStream/DonorDrive/TreatStream/Pally.gg 🟡, Meld Studio + PolyPop + T.I.T.S. + Lumia + mtion + OBSBOT 🟡, StreamFog ❌ (no public API); Elgato (Stream Deck, Wave Link, lights, Camera Hub on Linux) 🟡, MIDI 🟡, voice control ✅, game controllers 🟡 (built, not yet tried on real hardware); remote signals between instances ✅. Batch 7 (Streamer.bot compatibility from the docs review) ✅; see §7.
 6. **Beyond parity:** MCP server + REST API ✅, crash/problem reporting ✅, update checker ✅; next: in-app AI assistant.
 
 Each wave ships with tests and updates this file; live tests cover anything that talks to a real service.

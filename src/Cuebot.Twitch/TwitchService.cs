@@ -288,7 +288,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
             if (cts.IsCancellationRequested) return;
             if (listener is not null) UnavailableEvents = listener.Unavailable;
             SetStatus(state, message);
-        }, SeedChatSettingsAsync);
+        }, SeedChatSettingsAsync, id => SeedBoxArtAsync(id, cts.Token));
         var eventSub = new EventSubClient(_endpoints.EventSub, listener, _log, _eventSubTimeouts);
         var poller = new TwitchPoller(Api, Settings, Publish, _log, _time);
         var run = Task.WhenAll(eventSub.RunAsync(cts.Token), ValidatePeriodicallyAsync(_tokens, cts, SetStatus), poller.RunAsync(cts.Token));
@@ -323,10 +323,19 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         }).ConfigureAwait(false);
         await SeedAsync("channel info", async () =>
         {
-            if (await Api.GetChannelAsync(null, ct).ConfigureAwait(false) is { } channel) _router.SeedChannel(channel);
+            if (await Api.GetChannelAsync(null, ct).ConfigureAwait(false) is not { } channel) return;
+            _router.SeedChannel(channel);
+            await SeedBoxArtAsync(channel.GameId, ct).ConfigureAwait(false);
         }).ConfigureAwait(false);
         if (Settings.Scopes.Contains(TwitchScopes.ReadRedemptions) || Settings.Scopes.Contains(TwitchScopes.ManageRedemptions))
             await SeedAsync("rewards", async () => _router.SeedRewards(await Api.GetRewardsAsync(ct).ConfigureAwait(false))).ConfigureAwait(false);
+    }
+
+    /// <summary>Remembers a category's box art for Stream Update's gameBoxArt / oldGameBoxArt.</summary>
+    private async Task SeedBoxArtAsync(string gameId, CancellationToken ct)
+    {
+        if (_router.HasBoxArt(gameId)) return;
+        if (await Api.GetCategoryAsync(gameId, ct).ConfigureAwait(false) is { } category) _router.SeedBoxArt(gameId, category.BoxArtUrl);
     }
 
     private async Task SeedAsync(string what, Func<Task> seed)

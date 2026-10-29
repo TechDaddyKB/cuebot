@@ -79,7 +79,7 @@ How to read the counts:
      of `poll.*`, `prediction.*`, `charity.*`, `goal.*`, `top.*`.
    - Bans and timeouts have no `createdBy*`. Raid Start/Send/Cancel have no `raidUser*`.
    - Source: `TR:twitch/**`.
-3. ✅ **Fixed (w14-vars-platforms), except the shared Core user-group sub-actions; see §4.** **Sub-action output variables are named differently.** Flagged: 32 of 36 Twitch, 12 of 12 Kick and 2 of 2
+3. ✅ **Fixed (w14-vars-platforms; the shared Core user-group sub-actions too, see §4).** **Sub-action output variables are named differently.** Flagged: 32 of 36 Twitch, 12 of 12 Kick and 2 of 2
    YouTube sub-actions that list outputs. Examples: `createClipUrl`/`createClipId` (Cuebot: `clipUrl`), `banResult`
    and `bannedUser*`, `timeoutResult`, `followAgeLong` / `followAgeShort` / `followDate`,
    `targetUserProfileImageUrl`, `targetIsPartner`, `poll.*` / `prediction.*` from the Get/Lock/Resolve sub-actions,
@@ -281,7 +281,7 @@ with the reason.
 - ✅ User Banned / Timed Out / Unbanned / Untimed Out, plus the 4 shared-chat versions: `createdById`, `createdByUsername`, `createdByDisplayName`, `createdAt` (8) — `TR:twitch/moderation/user-*.md`, `TR:twitch/shared-chat/user-*.md`
 - ✅ Raid Start / Send / Cancelled: `raidUser`, `raidUserName`, `raidUserId`, `raidUserProfileImageURL`, `raidUserProfileImageEscaped` (on Send and Cancelled the profile image and the cancelled target are known only for raids started from Cuebot) (3) — `TR:twitch/raid/*`
 - ✅ Pyramid Success / Broken: `totalPyramids`, `totalPyramidsBroken` (per session), `pyramidWidth`, `pyramidEmote`, `pyramidOwner*` (2) — `TR:twitch/pyramid/*`
-- ✅ Stream Update: `status`, `gameUpdate`, `statusUpdate`, `oldStatus`, `oldGameId`, `oldGameName` (compared with the channel read at connect). `gameBoxArt`, `oldGameBoxArt` are placeholders ("", w16; they need a category lookup per update) — `TR:twitch/general/stream-update.md`
+- ✅ Stream Update: `status`, `gameUpdate`, `statusUpdate`, `oldStatus`, `oldGameId`, `oldGameName` (compared with the channel read at connect). `gameBoxArt`, `oldGameBoxArt` (w23: Helix box art per category, 300x300 as in Streamer.bot 1.0.7's own Stream Update; a new category is looked up before the update is published, "" when the lookup fails) — `TR:twitch/general/stream-update.md`
 - P · Stream Online: `game`, `gameId` now come from the last known category (read at connect, kept by Stream Update; w16); `tagCount`, `tags`, `tagsDelimited` are placeholders (0, empty list, ""); `tag#` is not set (EventSub `stream.online` has none of these) — `TR:twitch/channel/stream-online.md`
 - ✅ Stream Offline: `endedAt` — `TR:twitch/channel/stream-offline.md`
 - ✅ Ad Run: `adLength`, `adLengthMs`, `adScheduled` — `TR:twitch/ads/ad-run.md`
@@ -298,7 +298,7 @@ with the reason.
 - ✅ Guest Star Guest Update: `moderatorUserLogin`, `guestUser*`. Different: Cuebot's `moderatorUserName` is the login, Streamer.bot's is the display name (kept for existing actions) — `TR:twitch/guest-star/guest-update.md`
 - ✅ Unban Request Created: `text`; AutoMod Message Held / Updated: `rawInput`, `input#` — `TR:twitch/moderation/*`
 - P · BetterTTV / SevenTV Emote Added/Removed: `imageUrl` is present (Core's emote events carry it); Cuebot still detects these only when the emote cache refreshes, not in real time (4) — `TR:twitch/emotes/*`
-- P · First Words: `firstMessage` — the trigger is Core's `users.firstWords`, outside the Twitch module — `TR:twitch/chat/first-words.md`
+- ✅ First Words: `firstMessage` (set by Core's `users.firstWords`, which the Twitch trigger uses) — `TR:twitch/chat/first-words.md`
 - ✅ Present Viewers: `isTest`, `isLive` (w16, a stream lookup per poll); since w18 `users` is Streamer.bot's list of dictionaries (`id`, `userName`, `display`, `role`, `isSubscribed`; role 1 and not subscribed, the chatter list has neither) and Cuebot's comma separated logins moved to `userLogins` — `TR:twitch/general/present-viewers.md`
 - Common variables, now checked against `3.api/.variables/twitch/*.md`:
   - ✅ `TwitchBroadcaster`: `broadcastUser`, `broadcastUserName`, `broadcastUserId` on every event; `broadcastIsAffiliate`/`broadcastIsPartner` once the broadcaster was read at connect; since w20 also the signed-in account block (`broadcasterChannel.*`, `broadcasterCreatedAt`, `broadcasterDescription`, `broadcasterIsAffiliate`/`IsPartner`/`IsOnboarded`, `broadcasterProfileUrl`, `broadcasterOfflineUrl`).
@@ -321,7 +321,7 @@ with the reason.
 - ✅ Create Poll / Get Active Poll: `success`, `active`, `poll.*` (2) — `SA:twitch/polls/*`
 - ✅ Create / Get Active / Lock / Cancel / Resolve Last / Resolve Last by Title prediction: `success`, `active`, `locked`, `cancelled`, `prediction.*`, `prediction.winningIndex`, `prediction.winningOutcome.*` (and the docs' `prediction.winningCutcome.title` spelling) (6) — `SA:twitch/predictions/*`
 - ✅ Get Reward Info: `rewardSkipRequestQueue`, `rewardMaxPerUserPerStream`, `rewardGlobalCooldown`, `rewardIsOurs` — `SA:twitch/rewards/get-reward-info.md`
-- P · Add User To Group / Remove User From Group / User in Group: `addResult`, `removeResult`, `foundUser*` — these are Core's shared `groups.*` sub-actions, outside the Twitch module (3) — `SA:twitch/user-groups/*`
+- ✅ Add User To Group / Remove User From Group / User in Group: `addResult`, `removeResult`, `inGroup`, `foundUser`, `foundUserName` (written by Core's shared `groups.*` sub-actions, `Cuebot.Core/Users/GroupActions.cs`) (3) — `SA:twitch/user-groups/*`
 
 **YouTube**
 - ✅ Super Chat / Super Sticker: `microAmount`, `currencyCode`. `stickerImageUrl` is a placeholder ("", w16; the Data API sends no image). Different: `amount` stays Cuebot's number, Streamer.bot's is the display text (Cuebot `amountText`) (2) — `TR:youtube/chat/super-chat.md`, `super-sticker.md`
@@ -346,7 +346,7 @@ with the reason.
 - ✅ Gift / Mass Gift Subscription: `recipient.*` / `recipient.#.*`, `count`, `subscribedAt` and `expiresAt` (webhook only) (2) — `TR:kick/subscriptions/gift-subscription.md`, `mass-gift-subscription.md`
 - ✅ User Banned / Timed Out: `createdAt`, `createdBy*` (2) — `TR:kick/moderation/*`
 - ✅ Chat Message: `isInternal` (messages Cuebot sent); `KickChat` `messageStripped`, `colorR/G/B`, `emotes.#.*`, `badgeCount`, `badge`, `badge.#.*`, `rawInput*`, `input.count`, `input#` variants; `KickUser` `userType`, `isSubscribed`; `KickBroadcaster` `broadcastUser`, `broadcastUsername`, `broadcastUserId` — `TR:kick/chat/message.md`
-- P · First Words: `firstMessage` (Core's `users.firstWords`); Present Viewers: `categoryName`, `categoryThumbnail` (Core's `users.presentViewers` has `users` as Streamer.bot's list since w18); `KickBroadcaster` `broadcastUserProfileImage`, `KickUser` `userGroups`/`userPreviousActive` are placeholders since w16 (2) — `TR:kick/chat/first-words.md`, `TR:kick/general/present-viewers.md`
+- ✅ First Words: `firstMessage` (Core's `users.firstWords`); Present Viewers: `isLive`, `title`, `viewerCount`, `startedAt`, `categoryId`, `categoryName`, `categoryThumbnail` (w23: Kick adds them to Core's `users.presentViewers` from its last channel poll through `IPresentViewersArgs`; `users` is Streamer.bot's list since w18). Still placeholders since w16: `KickBroadcaster` `broadcastUserProfileImage`, `KickUser` `userGroups`/`userPreviousActive` (2) — `TR:kick/chat/first-words.md`, `TR:kick/general/present-viewers.md`
 - ✅ Ban / Timeout / Unban / UnTimeout User: `*User*`/`*Result` outputs (4) — `SA:kick/moderation/*`
 - ✅ Set Channel Title / Category: `titleSuccess`, `category.success`/`id`/`name`/`thumbnail` (2) — `SA:kick/channel/*`
 - ✅ Add Broadcaster Information / Add Random Users / Get User Info for Target: `broadcastUserType`, `broadcasterProfileUrl` (best effort), `randomUserType#`, `targetDescriptionEscaped`, `targetUserProfileImageUrl` (+Escaped), `targetUserType` (3) — `SA:kick/user/*`
