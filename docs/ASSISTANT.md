@@ -17,7 +17,8 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   resources.
 - **Approval.** Destructive tools (deletes, imports over existing items, sending chat) use the MCP confirmation token:
   with an API key, Cuebot shows the summary with **Approve** / **Deny** and only an Approve repeats the call with the
-  token; a stopped turn denies. An AI app gets the token from the tool and must ask the streamer in its reply before
+  token; a stopped turn denies. API-key models are told to call such a tool straight away rather than ask in their reply
+  first, so the streamer is asked once. An AI app gets the token from the tool and must ask the streamer in its reply before
   calling again. Turning off "require confirmation" on the Servers page turns this off too.
 - **Instructions.** Every provider gets the same system prompt (`AssistantPrompt`): who the assistant is for, look things
   up before changing them, ask before destructive changes, no passwords or keys, plain short answers.
@@ -25,8 +26,8 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
 
 ## Providers
 
-The **AI** picker lists every provider; **Automatic** uses the first ready one in this order: Codex, Claude Code, Grok
-(AI apps the streamer is already signed in to), then the API keys (Anthropic, OpenAI, xAI, Google).
+The **AI** picker lists every provider; **Automatic** uses the first ready one in this order: Codex, Claude Code, Grok,
+Antigravity (AI apps the streamer is already signed in to), then the API keys (Anthropic, OpenAI, xAI, Google).
 
 ### AI apps (CLIs)
 
@@ -43,12 +44,11 @@ Cuebot only runs an AI app it can limit to Cuebot's tools, and each one is check
 | **Codex** (`codex`) | `codex app-server` (the Codex IDE extensions' protocol), one process per conversation; **Sign in** starts Codex's Sign in with ChatGPT in the browser | `--disable` for every built-in tool feature (shell, unified exec, apps, plugins, browser and computer use, images, multi-agent, skills, hooks), `web_search="disabled"`, the streamer's other Codex MCP servers switched off for that process (`mcp_servers.<name>.enabled=false`), Cuebot's server added; read-only sandbox, no approvals (any approval request is declined), Cuebot's instructions as developer instructions, ephemeral (not in Codex's history). Status reads only whether `auth.json` holds a sign-in. |
 | **Claude Code** (`claude`) | `claude -p` in stream-json mode, one process per conversation; Stop sends Claude Code's interrupt request | `--restricted --tools ""` (no commands, files or web), `--strict-mcp-config --mcp-config` with Cuebot's server only (`Bearer ${CUEBOT_MCP_TOKEN}` from the environment), `--allowedTools mcp__cuebot --permission-mode dontAsk`, `--system-prompt`, `--disable-slash-commands`, `--no-session-persistence`. Status: `claude auth status`. |
 | **Grok CLI** (`grok`) | `grok agent stdio` (Agent Client Protocol), one process per conversation, with the streamer's existing Grok sign-in | `GrokIsolation`: a throwaway `GROK_HOME` per conversation in the temp folder (owner-only; none of the streamer's Grok MCP servers, skills or settings), every Claude/Cursor/Codex import off (`GROK_*_ENABLED=false`; `0` is not honoured), an agent profile in `session/new` whose tools are only `search_tool` and `use_tool` (so only the MCP servers connected, Cuebot's) and which carries Cuebot's instructions. Sign-in: Grok's documented external auth provider, a small command that prints the current access token read from `~/.grok/auth.json`; Cuebot never writes that file or uses its refresh token, and deletes the throwaway home (with Grok's copy of the access token) when the conversation ends. When the token is about to expire, opening Grok once refreshes it. Without these steps Grok 1.0.67's agent mode reads files and uses the streamer's MCP servers and instruction files without asking, and ignores `--tools`, project `.grok/config.toml` rules (untrusted folder) and `GROK_CONFIG` deny rules. |
-| Gemini CLI | Not available yet | Its file tools run without asking and Cuebot has not been able to confirm a way to turn them off. Use the Google API key instead. |
+| **Antigravity CLI** (`agy`) | `agy -p` in stream-json mode (one process per conversation, `{"event":"user","message":{...}}` lines in, `step_update`/`result` events out), with the streamer's own Antigravity sign-in. Not on Windows yet (the gate runs through `sh`). | `AntigravityIsolation`: a throwaway workspace per conversation in the temp folder (owner-only) holding `AGENTS.md` (Cuebot's instructions, read as project rules) and a `cuebot` plugin (`.agents/plugins/cuebot`: Cuebot's MCP server with its bearer token in an owner-only file, and a `PreToolUse` hook on every tool). The hook runs `Cuebot --assistant-tool-gate`, which allows only `call_mcp_tool` on Cuebot's server (`cuebot_cuebot`) and reads of the tool descriptions Antigravity keeps for it (`~/.gemini/antigravity-cli/mcp/cuebot_cuebot`, symlinks and `..` refused); every other tool (shell, files, browser, web, images, subagents, scheduling...) is hard-denied, also tools a later Antigravity adds. Cuebot's server is granted with session-only `--settings` (`permissions.allow: ["mcp(cuebot_cuebot/*)"]`, never saved) because print mode can not ask. Without this, agy 1.4.10's print mode reads files and runs commands without asking. Conversations still appear in Antigravity's own history. |
 
 The ACP driver (`AcpProvider`, Agent Client Protocol over stdio: Cuebot's MCP server in `session/new`, no file system or
-terminal offered, permission requests allowed only for Cuebot's tools) runs Grok and is ready for Gemini once it can be
-limited. Codex and Claude Code may still read their own global instruction files (`~/.codex/AGENTS.md`,
-`~/.claude/CLAUDE.md`); Grok reads none. None of them gets its tools or MCP servers. In the Flatpak build the AI apps on the host are not reachable;
+terminal offered, permission requests allowed only for Cuebot's tools) runs Grok. Codex, Claude Code and Antigravity may still read their own global instruction files (`~/.codex/AGENTS.md`,
+`~/.claude/CLAUDE.md`, `~/.gemini/GEMINI.md`); Grok reads none. None of them gets its tools or MCP servers. In the Flatpak build the AI apps on the host are not reachable;
 use an API key there.
 
 ### API keys
@@ -56,7 +56,8 @@ use an API key there.
 | Provider | How | Default model |
 | --- | --- | --- |
 | Claude (Anthropic API key) | Official Anthropic C# SDK (`Anthropic` package), beta Messages API streamed: adaptive thinking, effort medium, prompt caching, `fallbacks: "default"` (`server-side-fallback-2026-07-01`) so a declined request can be answered by another model; thinking blocks go back into the history unchanged | `claude-opus-5-5` |
-| OpenAI / Grok (xAI) / Gemini (Google) API keys | One OpenAI-compatible Chat Completions client (`OpenAiCompatibleProvider`), streamed, with tool calls: `api.openai.com/v1`, `api.x.ai/v1`, `generativelanguage.googleapis.com/v1beta/openai` | The newest general chat model in the provider's own `/models` list (no image, audio, embedding, mini... models), so Cuebot does not go stale |
+| OpenAI API key | OpenAI's Responses API (`/v1/responses`), streamed, `store: false` with the model's output items (encrypted reasoning included) sent back unchanged each round; OpenAI's newer reasoning models only call tools there |
+| Grok (xAI) / Gemini (Google) API keys | One OpenAI-compatible Chat Completions client (`OpenAiCompatibleProvider`), streamed, with tool calls: `api.x.ai/v1`, `generativelanguage.googleapis.com/v1beta/openai` | The newest general chat model in the provider's own `/models` list (no image, audio, embedding, mini... models), so Cuebot does not go stale |
 
 **List models** fills a picker from the provider; the Model field accepts any id (for an AI app, empty uses the app's
 own default).

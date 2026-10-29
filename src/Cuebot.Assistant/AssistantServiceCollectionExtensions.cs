@@ -24,7 +24,7 @@ public static class AssistantServiceCollectionExtensions
         services.AddSingleton<IAssistantProvider>(sp => new CodexProvider(Settings(sp, "codex")));
         services.AddSingleton<IAssistantProvider>(sp => new ClaudeCodeProvider(Settings(sp, "claude")));
         services.AddSingleton<IAssistantProvider>(sp => new AcpProvider(AcpProvider.Grok, Settings(sp, "grok")));
-        services.AddSingleton<IAssistantProvider>(sp => new AcpProvider(AcpProvider.Gemini, Settings(sp, "gemini")));
+        services.AddSingleton<IAssistantProvider>(sp => new AntigravityProvider(Settings(sp, "antigravity"), AntigravityIsolation.CurrentGateCommand));
         // API keys.
         services.AddSingleton<IAssistantProvider>(sp => new AnthropicProvider(Settings(sp, "anthropic"), sp.GetRequiredKeyedService<HttpClient>(nameof(AssistantService))));
         foreach (var profile in new[] { OpenAiCompatibleProvider.OpenAi, OpenAiCompatibleProvider.Xai, OpenAiCompatibleProvider.Google })

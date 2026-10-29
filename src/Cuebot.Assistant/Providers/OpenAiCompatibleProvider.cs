@@ -20,10 +20,13 @@ public sealed partial class OpenAiCompatibleProvider(OpenAiCompatibleProvider.Pr
     /// <param name="ModelPrefix">Chat models start with this ("gpt-", "grok-", "gemini-").</param>
     /// <param name="Exclude">Model ids containing any of these are not general chat models (images, audio, embeddings...).</param>
     /// <param name="Prefer">Among the newest versions, ids containing these rank first.</param>
-    public sealed record Profile(string Id, string Name, Uri BaseUrl, string KeyHint, string ModelPrefix, string[] Exclude, string[] Prefer);
+    /// <param name="ResponsesApi">Use OpenAI's Responses API (<c>/responses</c>) instead of Chat Completions: OpenAI's newer
+    /// reasoning models only call tools there.</param>
+    public sealed record Profile(string Id, string Name, Uri BaseUrl, string KeyHint, string ModelPrefix, string[] Exclude, string[] Prefer,
+        bool ResponsesApi = false);
 
     public static readonly Profile OpenAi = new("openai", "OpenAI (API key)", new Uri("https://api.openai.com/v1/"), "platform.openai.com",
-        "gpt-", ["audio", "realtime", "transcribe", "tts", "image", "search", "instruct", "mini", "nano", "codex", "oss", "chat-latest"], []);
+        "gpt-", ["audio", "realtime", "transcribe", "tts", "image", "search", "instruct", "mini", "nano", "codex", "oss", "chat-latest"], [], ResponsesApi: true);
 
     public static readonly Profile Xai = new("xai", "Grok (xAI API key)", new Uri("https://api.x.ai/v1/"), "console.x.ai",
         "grok-", ["image", "imagine", "vision", "video", "voice", "mini", "build", "code"], ["-reasoning"]);
@@ -66,7 +69,8 @@ public sealed partial class OpenAiCompatibleProvider(OpenAiCompatibleProvider.Pr
             .ThenBy(id => id.Length)
             .FirstOrDefault();
 
-    public IAssistantSession StartSession(AssistantContext context) => new Session(this, context);
+    public IAssistantSession StartSession(AssistantContext context) =>
+        profile.ResponsesApi ? new ResponsesSession(this, context) : new Session(this, context);
 
     private string Key => settings().ApiKey.Trim();
 
@@ -209,7 +213,7 @@ public sealed partial class OpenAiCompatibleProvider(OpenAiCompatibleProvider.Pr
             yield return new AssistantError("Stopped after too many tool calls in one answer.");
         }
 
-        private static JsonObject? ParseArguments(string text)
+        internal static JsonObject? ParseArguments(string text)
         {
             if (text.Trim().Length == 0) return [];
             try
@@ -246,6 +250,106 @@ public sealed partial class OpenAiCompatibleProvider(OpenAiCompatibleProvider.Pr
                     if (chunk["error"] is JsonObject error) throw new InvalidOperationException($"{provider.Name}: {error["message"]?.GetValue<string>()}");
                     yield return chunk;
                 }
+            }
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// OpenAI's Responses API, streamed, with <c>store: false</c>: the conversation is kept here, and the model's output items
+    /// (encrypted reasoning included) go back unchanged on every request, so reasoning carries across tool calls.
+    /// </summary>
+    private sealed class ResponsesSession(OpenAiCompatibleProvider provider, AssistantContext context) : IAssistantSession
+    {
+        private const int MaxRounds = 30;
+        private readonly JsonArray _input = [];
+        private readonly JsonArray _tools = [.. context.Tools.List().Select(t => (JsonNode)new JsonObject
+        {
+            ["type"] = "function",
+            ["name"] = t.Name,
+            ["description"] = t.Description,
+            ["parameters"] = t.InputSchema.DeepClone(),
+            ["strict"] = false,
+        })];
+
+        public async IAsyncEnumerable<AssistantUpdate> SendAsync(string text, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            var model = await provider.ModelAsync(context, ct).ConfigureAwait(false);
+            _input.Add(new JsonObject { ["role"] = "user", ["content"] = text });
+            for (var round = 0; round < MaxRounds; round++)
+            {
+                JsonObject? response = null;
+                await foreach (var e in StreamAsync(model, ct).ConfigureAwait(false))
+                {
+                    switch (e["type"]?.GetValue<string>())
+                    {
+                        case "response.output_text.delta" when e["delta"]?.GetValue<string>() is { Length: > 0 } delta:
+                            yield return new AssistantText(delta);
+                            break;
+                        case "response.completed" or "response.incomplete":
+                            response = e["response"] as JsonObject;
+                            break;
+                        case "response.failed" or "error":
+                            throw new InvalidOperationException($"{provider.Name}: "
+                                + (e["response"]?["error"]?["message"] ?? e["error"]?["message"] ?? e["message"])?.GetValue<string>());
+                    }
+                }
+                if (response is null) throw new InvalidOperationException($"{provider.Name}: the answer stopped before it was complete.");
+
+                var output = response["output"] as JsonArray ?? [];
+                foreach (var item in output) _input.Add(item?.DeepClone());
+                var calls = output.OfType<JsonObject>().Where(o => o["type"]?.GetValue<string>() == "function_call").ToList();
+                if (calls.Count == 0)
+                {
+                    if (response["status"]?.GetValue<string>() == "incomplete") yield return new AssistantError("The answer was cut off (too long).");
+                    yield break;
+                }
+
+                foreach (var call in calls)
+                {
+                    var callId = call["call_id"]?.GetValue<string>() ?? "";
+                    var name = call["name"]?.GetValue<string>() ?? "";
+                    AssistantToolResult content;
+                    if (Session.ParseArguments(call["arguments"]?.GetValue<string>() ?? "") is { } arguments)
+                    {
+                        var result = new StrongBox<AssistantToolResult?>();
+                        await foreach (var update in ToolCalls.RunAsync(context.Tools, callId, name, arguments, result, ct).ConfigureAwait(false))
+                            yield return update;
+                        content = result.Value!;
+                    }
+                    else
+                    {
+                        content = new AssistantToolResult("""{"error":"The arguments were not valid JSON. Call the tool again with a JSON object."}""", true);
+                    }
+                    _input.Add(new JsonObject { ["type"] = "function_call_output", ["call_id"] = callId, ["output"] = content.Content });
+                }
+            }
+            yield return new AssistantError("Stopped after too many tool calls in one answer.");
+        }
+
+        private async IAsyncEnumerable<JsonObject> StreamAsync(string model, [EnumeratorCancellation] CancellationToken ct)
+        {
+            var body = new JsonObject
+            {
+                ["model"] = model,
+                ["instructions"] = context.Instructions,
+                ["input"] = _input.DeepClone(),
+                ["tools"] = _tools.DeepClone(),
+                ["stream"] = true,
+                ["store"] = false,
+                ["include"] = new JsonArray("reasoning.encrypted_content"),
+            };
+            using var request = provider.Request(HttpMethod.Post, "responses", body);
+            using var response = await provider._http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException(provider.ErrorMessage(response, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false)));
+            using var reader = new StreamReader(await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false), Encoding.UTF8, false);
+            while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
+            {
+                if (!line.StartsWith("data:", StringComparison.Ordinal)) continue;
+                var data = line[5..].Trim();
+                if (data.Length > 0 && data != "[DONE]" && JsonNode.Parse(data) is JsonObject e) yield return e;
             }
         }
 

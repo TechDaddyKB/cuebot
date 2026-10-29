@@ -126,18 +126,6 @@ public sealed class CliProviderTests
     }
 
     [Fact]
-    public async Task An_AI_CLI_that_can_not_be_limited_to_Cuebots_tools_is_unavailable()
-    {
-        var provider = new AcpProvider(AcpProvider.Gemini, () => new AssistantProviderSettings());
-
-        var status = await provider.GetStatusAsync();
-
-        Assert.False(status.Ready);
-        Assert.Contains("API key", status.Message);
-        Assert.Throws<InvalidOperationException>(() => provider.StartSession(new AssistantContext("", null!, null, "", "/tmp")));
-    }
-
-    [Fact]
     public void The_locator_takes_a_configured_program_or_searches_PATH()
     {
         var dir = Directory.CreateTempSubdirectory("cuebot-cli-").FullName;
@@ -232,6 +220,77 @@ public sealed class GrokIsolationTests : IDisposable
         SignIn(DateTimeOffset.UtcNow.AddSeconds(30));
         Assert.Contains("refreshing", Assert.Throws<InvalidOperationException>(() => GrokIsolation.Prepare(context, GrokHome, Scratch)).Message);
         Assert.Empty(Directory.EnumerateFileSystemEntries(Scratch));
+    }
+
+    public void Dispose() => Directory.Delete(_root, true);
+}
+
+public sealed class AntigravityIsolationTests : IDisposable
+{
+    private readonly string _root = Directory.CreateTempSubdirectory("cuebot-agy-test-").FullName;
+
+    private static string Call(string name, JsonObject args) =>
+        new JsonObject { ["lastUserInput"] = "use cuebot_cuebot please", ["toolCall"] = new JsonObject { ["name"] = name, ["args"] = args } }.ToJsonString();
+
+    private static string Decision(string answer) => JsonNode.Parse(answer)!["decision"]!.GetValue<string>();
+
+    [Fact]
+    public void The_gate_allows_only_Cuebots_MCP_server_and_its_tool_descriptions()
+    {
+        var schemas = Path.Combine(_root, "mcp", AntigravityIsolation.ServerName);
+        Directory.CreateDirectory(schemas);
+        File.WriteAllText(Path.Combine(schemas, "list_actions.json"), "{}");
+
+        var allowed = AntigravityIsolation.Decide(Call("call_mcp_tool", new JsonObject { ["ServerName"] = "cuebot_cuebot", ["ToolName"] = "list_actions", ["Arguments"] = new JsonObject() }), schemas);
+        Assert.Equal("allow", Decision(allowed));
+        Assert.Equal("mcp(cuebot_cuebot/list_actions)", JsonNode.Parse(allowed)!["permissionOverrides"]![0]!.GetValue<string>());
+        Assert.Equal("allow", Decision(AntigravityIsolation.Decide(Call("read_file", new JsonObject { ["Path"] = Path.Combine(schemas, "list_actions.json") }), schemas)));
+
+        // The user's words mention the server: only the call's own fields count.
+        Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("call_mcp_tool", new JsonObject { ["ServerName"] = "other_server", ["ToolName"] = "x" }), schemas)));
+        Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("call_mcp_tool", new JsonObject { ["ServerName"] = "cuebot_cuebot", ["ToolName"] = "a) mcp(other/*" }), schemas)));
+        Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("read_file", new JsonObject { ["Path"] = Path.Combine(schemas, "..", "..", "settings.json") }), schemas)));
+        Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("read_file", new JsonObject { ["Path"] = "/etc/passwd" }), schemas)));
+        Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("run_command", new JsonObject { ["CommandLine"] = "cat ~/.ssh/id_rsa" }), schemas)));
+        Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("search_web", new JsonObject { ["query"] = "x" }), schemas)));
+        if (!OperatingSystem.IsWindows())
+        {
+            File.CreateSymbolicLink(Path.Combine(schemas, "escape.json"), "/etc/passwd");
+            Assert.Equal("deny", Decision(AntigravityIsolation.Decide(Call("read_file", new JsonObject { ["Path"] = Path.Combine(schemas, "escape.json") }), schemas)));
+        }
+
+        using var output = new StringWriter();
+        Assert.Equal(0, AntigravityIsolation.RunGate(new StringReader("not json"), output));
+        Assert.Equal("deny", Decision(output.ToString()));
+    }
+
+    [Fact]
+    public void Each_conversation_gets_a_private_workspace_with_the_instructions_server_and_gate()
+    {
+        var mcp = new McpEndpoint("http://127.0.0.1:7475/mcp", "cb_token");
+        string dir;
+        using (var workspace = AntigravityIsolation.Prepare(new AssistantContext("Help with Cuebot.", null!, null, "", "/tmp"), mcp,
+                   ["/opt/Cue bot/cuebot", "it's", AntigravityIsolation.GateSwitch], _root))
+        {
+            dir = workspace.Directory;
+            Assert.Equal("Help with Cuebot.\n", File.ReadAllText(Path.Combine(dir, "AGENTS.md")));
+            var plugin = Path.Combine(dir, ".agents", "plugins", "cuebot");
+            var server = JsonNode.Parse(File.ReadAllText(Path.Combine(plugin, "mcp_config.json")))!["mcpServers"]!["cuebot"]!;
+            Assert.Equal("http://127.0.0.1:7475/mcp", server["serverUrl"]!.GetValue<string>());
+            Assert.Equal("Bearer cb_token", server["headers"]!["Authorization"]!.GetValue<string>());
+            var hook = JsonNode.Parse(File.ReadAllText(Path.Combine(plugin, "hooks.json")))!["cuebot-only"]!["PreToolUse"]![0]!;
+            Assert.Equal("*", hook["matcher"]!.GetValue<string>());
+            Assert.Equal("'/opt/Cue bot/cuebot' 'it'\\''s' '--assistant-tool-gate'", hook["hooks"]![0]!["command"]!.GetValue<string>());
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(dir));
+                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(Path.Combine(plugin, "mcp_config.json")));
+            }
+        }
+        Assert.False(Directory.Exists(dir));
+
+        var settings = JsonNode.Parse(AntigravityIsolation.SessionSettings())!;
+        Assert.Equal("mcp(cuebot_cuebot/*)", settings["permissions"]!["allow"]![0]!.GetValue<string>());
     }
 
     public void Dispose() => Directory.Delete(_root, true);

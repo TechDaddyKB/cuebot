@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Cuebot.Assistant.Cli;
 
 /// <summary>
-/// An AI CLI that speaks the Agent Client Protocol over stdio (Gemini CLI <c>--acp</c>, Grok <c>agent stdio</c>), with the
+/// An AI CLI that speaks the Agent Client Protocol over stdio (Grok <c>agent stdio</c>), with the
 /// streamer's own sign-in for that app. Cuebot's MCP server is added to the session (its token goes in the session
 /// request, not on a command line); Cuebot offers the agent no file system or terminal, and answers every permission
 /// request: Cuebot's own tools are allowed, everything else is refused.
@@ -19,11 +19,6 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
     public sealed record Profile(string Id, string Name, string Command, string[] Arguments, string ModelFlag, string InstallHint,
         IReadOnlyDictionary<string, string> Environment, Func<(bool SignedIn, string Message)> SignedIn, string? Blocked = null,
         Func<AssistantContext, AcpLaunch>? Prepare = null);
-
-    public static readonly Profile Gemini = new("gemini", "Gemini CLI", "gemini", ["--acp", "--allowed-mcp-server-names", McpEndpoint.ServerName],
-        "--model", "npm install -g @google/gemini-cli", new Dictionary<string, string>(), GeminiSignedIn,
-        Blocked: "Not available yet: Cuebot has not been able to confirm that Gemini CLI can be limited to Cuebot's tools (its file "
-                 + "tools run without asking). Use Gemini (Google API key) instead.");
 
     /// <summary>Limited to Cuebot by <see cref="GrokIsolation"/> (throwaway home, tool allowlist, the streamer's sign-in read-only).</summary>
     public static readonly Profile Grok = new("grok", "Grok CLI", "grok", ["agent", "stdio"], "--model", "see x.ai/cli",
@@ -49,21 +44,6 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
         profile.Blocked is { } blocked ? throw new InvalidOperationException(blocked) : new Session(this, context);
 
     private static string Home => System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-
-    private static (bool, string) GeminiSignedIn()
-    {
-        if (System.Environment.GetEnvironmentVariable("GEMINI_API_KEY") is { Length: > 0 }) return (true, "Uses GEMINI_API_KEY");
-        try
-        {
-            var settings = JsonNode.Parse(File.ReadAllText(Path.Combine(Home, ".gemini", "settings.json")));
-            var auth = settings?["security"]?["auth"]?["selectedType"]?.GetValue<string>() ?? settings?["selectedAuthType"]?.GetValue<string>();
-            if (auth is { Length: > 0 }) return (true, "Signed in to Gemini CLI");
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidOperationException)
-        {
-        }
-        return (false, "Not signed in: run gemini once in a terminal and choose how to sign in");
-    }
 
     private sealed class Session(AcpProvider provider, AssistantContext context) : IAssistantSession
     {

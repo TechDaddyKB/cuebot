@@ -33,6 +33,48 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
     [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
     public Task Grok_can_not_read_files() => CanNotReadFilesAsync(s => new AcpProvider(AcpProvider.Grok, s));
 
+    [LiveServiceFact("CUEBOT_LIVE_OPENAI_API_KEY")]
+    public Task OpenAI_API_key_lists_actions_through_Cuebot() => ListActionsAsync(OpenAi);
+
+    /// <summary>A destructive tool waits for Approve; approved, the action is gone.</summary>
+    [LiveServiceFact("CUEBOT_LIVE_OPENAI_API_KEY")]
+    public Task OpenAI_API_key_deletes_only_after_approval() =>
+        RunAsync(OpenAi, $"Delete my Cuebot action named \"{ActionName}\".", (updates, text, _) =>
+        {
+            Assert.DoesNotContain(updates, u => u is AssistantError);
+            var confirmation = Assert.Single(updates.OfType<AssistantConfirmation>());
+            Assert.Contains(ActionName, confirmation.Summary);
+            Assert.Null(_profile!.Snapshot.FindAction(ActionName));
+        }, approve: true);
+
+    private static IAssistantProvider OpenAi(Func<AssistantProviderSettings> settings)
+    {
+        var key = ServicesLiveEnvironment.Get("CUEBOT_LIVE_OPENAI_API_KEY")!;
+        return new Cuebot.Assistant.Providers.OpenAiCompatibleProvider(Cuebot.Assistant.Providers.OpenAiCompatibleProvider.OpenAi,
+            new HttpClient { Timeout = System.Threading.Timeout.InfiniteTimeSpan },
+            () => { var s = settings(); s.ApiKey = key; return s; });
+    }
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Antigravity_lists_actions_through_Cuebot() => ListActionsAsync(Antigravity);
+
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public Task Antigravity_can_not_read_files() => CanNotReadFilesAsync(Antigravity);
+
+    /// <summary>Antigravity's tool gate is the Cuebot app itself (<c>dotnet Cuebot.dll --assistant-tool-gate</c>), as built in this repository.</summary>
+    private static IAssistantProvider Antigravity(Func<AssistantProviderSettings> settings)
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Cuebot.slnx"))) root = root.Parent;
+        var app = root is null ? null : new[] { "Debug", "Release" }
+            .Select(c => new FileInfo(Path.Combine(root.FullName, "src", "Cuebot.App", "bin", c, "net10.0", "Cuebot.dll")))
+            .Where(f => f.Exists).OrderByDescending(f => f.LastWriteTimeUtc).FirstOrDefault();
+        Assert.True(app is not null, "Build src/Cuebot.App first: Antigravity's tool gate runs the Cuebot app.");
+        return new AntigravityProvider(settings, () => Environment.GetEnvironmentVariable("CUEBOT_DEBUG_GATE_LOG") is { Length: > 0 } log
+            ? ["sh", "-c", $"tee -a '{log}.in' | dotnet '{app!.FullName}' {AntigravityIsolation.GateSwitch} | tee -a '{log}.out'"]
+            : ["dotnet", app!.FullName, AntigravityIsolation.GateSwitch]);
+    }
+
     [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
     public Task Codex_can_not_read_files() => CanNotReadFilesAsync(s => new CodexProvider(s));
 
@@ -50,7 +92,8 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
             (updates, text, secret) =>
             {
                 Assert.DoesNotContain(secret, text, StringComparison.OrdinalIgnoreCase);
-                // Grok reaches MCP tools through its search_tool gateway, which only sees the servers connected (Cuebot's).
+                // Grok reaches MCP tools through its search_tool gateway, which only sees the servers connected (Cuebot's);
+                // Antigravity's gate allows only Cuebot's server.
                 Assert.All(updates.OfType<AssistantToolStarted>(), t => Assert.True(_cuebotTools.Contains(t.Tool) || t.Tool == "search_tool", t.Tool));
                 output.WriteLine("Answer: " + text);
             });
@@ -64,13 +107,15 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
                 Assert.Contains(ActionName, text, StringComparison.OrdinalIgnoreCase);
             });
 
+    private ProfileService? _profile;
+
     private async Task RunAsync(Func<Func<AssistantProviderSettings>, IAssistantProvider> create, string question,
-        Action<List<AssistantUpdate>, string, string> check)
+        Action<List<AssistantUpdate>, string, string> check, bool approve = false)
     {
         var log = new AppLog();
         log.EntryAdded += e => { try { output.WriteLine(e.ToString()); } catch (InvalidOperationException) { } };
         var bus = new EventBus(log);
-        var profile = new ProfileService(null, log);
+        var profile = _profile = new ProfileService(null, log);
         await profile.EditAsync(p => p.Actions.Add(new ActionDefinition { Name = ActionName }));
         var registry = new Registry([], [], []);
         var globals = new GlobalVariables(null, log);
@@ -105,6 +150,11 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
         {
             updates.Add(update);
             output.WriteLine(update.ToString());
+            if (update is AssistantConfirmation confirmation)
+            {
+                if (approve) confirmation.Approve();
+                else confirmation.Deny();
+            }
         }
 
         var text = string.Concat(updates.OfType<AssistantText>().Select(t => t.Text));

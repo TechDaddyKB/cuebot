@@ -17,6 +17,9 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Antigravity's tool-call hook (the Assistant page): answers on stdout, no UI, no settings.
+        if (Cuebot.Assistant.Cli.AntigravityIsolation.IsGateRequested(args))
+            return Cuebot.Assistant.Cli.AntigravityIsolation.RunGate(Console.In, Console.Out);
         var options = StartupOptions.Parse(args);
         if (options.ShowHelp || options.Errors.Count > 0)
         {
