@@ -12,11 +12,13 @@ namespace Cuebot.App.ViewModels.Assistant;
 public sealed partial class AssistantViewModel : PageViewModel
 {
     private readonly AssistantService _service;
+    private readonly Action<string> _openUrl;
     private CancellationTokenSource? _turn;
 
-    public AssistantViewModel(AssistantService service) : base("Assistant")
+    public AssistantViewModel(AssistantService service, Action<string>? openUrl = null) : base("Assistant")
     {
         _service = service;
+        _openUrl = openUrl ?? Cuebot.App.Shell.UrlLauncher.Open;
         Choices = [new ProviderChoice("", "Automatic (first one ready)", null), .. service.Providers.Select(p => new ProviderChoice(p.Id, p.Name, p))];
         _selectedChoice = Choices.FirstOrDefault(c => c.Id.Equals(service.Settings.Provider, StringComparison.OrdinalIgnoreCase)) ?? Choices[0];
         _ = RefreshStatusAsync();
@@ -50,12 +52,50 @@ public sealed partial class AssistantViewModel : PageViewModel
         OnPropertyChanged(nameof(Model));
         OnPropertyChanged(nameof(ApiKey));
         OnPropertyChanged(nameof(UsesApiKey));
+        OnPropertyChanged(nameof(IsCli));
+        OnPropertyChanged(nameof(CanSignIn));
+        OnPropertyChanged(nameof(Command));
         OnPropertyChanged(nameof(HasProvider));
         OnPropertyChanged(nameof(ModelHint));
     }
 
     public bool HasProvider => Effective is not null;
     public bool UsesApiKey => Effective?.Kind == AssistantProviderKind.ApiKey;
+    public bool IsCli => Effective?.Kind == AssistantProviderKind.Cli;
+    public bool CanSignIn => Effective?.CanSignIn == true;
+
+    /// <summary>AI CLIs: the program to run when Cuebot does not find it (empty = search PATH and the usual install folders).</summary>
+    public string Command
+    {
+        get => Effective is { } p ? _service.Settings.For(p.Id).Command : "";
+        set
+        {
+            if (Effective is not { } p || _service.Settings.For(p.Id).Command == value.Trim()) return;
+            _service.Settings.For(p.Id).Command = value.Trim();
+            _service.SaveSettings();
+            OnPropertyChanged();
+            _ = RefreshStatusAsync();
+        }
+    }
+
+    /// <summary>Starts the app's own sign-in (Codex: Sign in with ChatGPT) in the browser.</summary>
+    [RelayCommand]
+    private async Task SignInAsync()
+    {
+        if (Effective is not { CanSignIn: true } provider) return;
+        try
+        {
+            if (await provider.SignInAsync() is { } url)
+            {
+                _openUrl(url);
+                ProviderStatus = "Finish signing in in your browser, then press Refresh.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ProviderStatus = ex.Message;
+        }
+    }
 
     public string ModelHint => Effective?.Kind == AssistantProviderKind.Cli
         ? "Empty uses the app's own default model."
