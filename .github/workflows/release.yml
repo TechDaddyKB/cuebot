@@ -1,6 +1,7 @@
 name: release
 
-# Push a tag like v0.1.0 to publish a GitHub release and prepare the AUR packages.
+# Push a tag like v0.1.0 to publish a GitHub release and prepare the AUR packages. A tag with a hyphen (v0.1.0-rc.1) is
+# a release candidate: a GitHub pre-release (the app's pre-release update channel sees it), and nothing goes to the AUR.
 on:
   push:
     tags: ['v*']
@@ -41,11 +42,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -la dist
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Cuebot $GITHUB_REF_NAME" --generate-notes \
+          prerelease=()
+          case "$GITHUB_REF_NAME" in *-*) prerelease=(--prerelease) ;; esac
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Cuebot $GITHUB_REF_NAME" --generate-notes "${prerelease[@]}" \
             dist/Cuebot-win-x64.zip dist/Cuebot-x86_64.AppImage dist/Cuebot-x86_64.flatpak dist/Cuebot-*-linux-*.tar.gz
 
   aur:
     needs: publish
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
