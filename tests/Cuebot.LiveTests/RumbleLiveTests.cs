@@ -102,10 +102,11 @@ public sealed class RumbleLiveBot : IAsyncLifetime
         }
     }
 
-    /// <summary>Points OBS at <paramref name="target"/> until disposed, then restores OBS's previous stream settings.</summary>
+    /// <summary>Points OBS at <paramref name="target"/> until disposed, then restores OBS's previous stream settings and program scene.</summary>
     public async Task<IAsyncDisposable> UseStreamTargetAsync(StreamTarget target)
     {
         var previous = await Obs.RequestAsync("GetStreamServiceSettings");
+        var previousScene = (await Obs.RequestAsync("GetCurrentProgramScene")).GetProperty("currentProgramSceneName").GetString();
         await Obs.RequestAsync("SetStreamServiceSettings", new
         {
             streamServiceType = "rtmp_custom",
@@ -114,11 +115,15 @@ public sealed class RumbleLiveBot : IAsyncLifetime
         return new Restore(async () =>
         {
             await StopStreamIfActiveAsync();   // OBS refuses to change stream settings while live
-            await Obs.RequestAsync("SetStreamServiceSettings", new
-            {
-                streamServiceType = previous.GetProperty("streamServiceType").GetString(),
-                streamServiceSettings = previous.GetProperty("streamServiceSettings"),
-            });
+            // A fresh OBS profile has no stream settings yet, and OBS rejects restoring an empty object.
+            if (previous.GetProperty("streamServiceSettings").EnumerateObject().Any())
+                await Obs.RequestAsync("SetStreamServiceSettings", new
+                {
+                    streamServiceType = previous.GetProperty("streamServiceType").GetString(),
+                    streamServiceSettings = previous.GetProperty("streamServiceSettings"),
+                });
+            // The tests switch to the test card scene; put back what OBS was showing.
+            if (previousScene is not null) await Obs.SetCurrentSceneAsync(previousScene);
         });
     }
 
