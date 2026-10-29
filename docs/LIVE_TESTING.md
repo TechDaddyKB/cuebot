@@ -35,7 +35,12 @@ of the solution go live. To run that suite directly, set `CUEBOT_LIVE_TESTS=1` y
    **Public**, redirect `http://localhost`, and put its Client ID in `CUEBOT_LIVE_TWITCH_CLIENT_ID`.
 3. **OBS**: enable the websocket server (Tools → WebSocket Server Settings) and create a scene for test
    streams, e.g. "Cuebot Dev Testing" showing a card that says it is an automated test. Name it in
-   `CUEBOT_LIVE_OBS_SCENE`.
+   `CUEBOT_LIVE_OBS_SCENE`. Turn **Enhanced Broadcasting** (Settings → Stream → multitrack video) off in the profile
+   the tests use: the tests stream to a custom RTMP server, and with it on OBS 31+ stops at a "Missing config. Do you
+   want to continue streaming without Multitrack Video?" prompt, so `obs.streamStarted` never arrives. OBS reads the
+   setting when it starts, so changing it through obs-websocket or switching profiles is not enough; use a profile
+   with it off (e.g. a separate "Cuebot Dev Testing" profile) and restart OBS. The tests switch back to the scene OBS
+   was showing and restore its stream settings afterwards.
 4. **Platforms**: set each stream's title to something like "dev testing" beforehand; the tests stream
    whatever title the platform has. For YouTube use a reusable **stream key**, not OBS's "Connect Account"
    (that needs the Manage Broadcast dialog), and consider making it Unlisted.

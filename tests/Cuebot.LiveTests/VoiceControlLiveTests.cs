@@ -52,7 +52,11 @@ public sealed class VoiceControlLiveTests(ITestOutputHelper output)
         var tts = services.GetServices<ITtsEngine>().FirstOrDefault(e => e.Id is "windows" or "espeak" && e.IsAvailable)
             ?? throw new InvalidOperationException("No local text-to-speech engine (Windows SAPI or espeak-ng) is available to speak the phrase.");
         var voices = await tts.GetVoicesAsync(CancellationToken.None);
-        var speaker = voices.FirstOrDefault(v => v.Language?.StartsWith("en", StringComparison.OrdinalIgnoreCase) == true) ?? voices.First();
+        // Prefer US then British English: eSpeak NG lists regional voices (e.g. English (Caribbean)) first on Linux, and
+        // Whisper Tiny mishears those ("start the countdown" came back as "Time to come to the end.").
+        var speaker = new[] { "en-US", "en-GB", "en" }
+            .Select(lang => voices.FirstOrDefault(v => v.Language?.StartsWith(lang, StringComparison.OrdinalIgnoreCase) == true))
+            .FirstOrDefault(v => v is not null) ?? voices.First();
         var audio = await tts.SynthesizeAsync(new SynthesisRequest(Phrase, speaker.Id), CancellationToken.None);
         microphone.Clip = WavDecoder.Decode(audio.Data);
         output.WriteLine($"Spoke \"{Phrase}\" with {tts.DisplayName} / {speaker.Name}: {microphone.Clip.Duration.TotalSeconds:0.0} s at {microphone.Clip.SampleRate} Hz");
@@ -69,7 +73,8 @@ public sealed class VoiceControlLiveTests(ITestOutputHelper output)
             output.WriteLine($"Model {model.DisplayName} ready in {(DateTime.UtcNow - started).TotalSeconds:0} s at {voice.Models.PathFor(model)}");
         }
         voice.Settings.Commands.Clear();   // the data folder is reused between runs
-        voice.AddCommand("Countdown", Phrase);
+        // Start, not Exact: Whisper Tiny sometimes appends a word or two after the phrase ("Start the countdown to go.").
+        voice.AddCommand("Countdown", Phrase, CommandLocation.Start);
 
         var events = new ConcurrentQueue<BotEvent>();
         services.GetRequiredService<EventBus>().Subscribe(events.Enqueue);
