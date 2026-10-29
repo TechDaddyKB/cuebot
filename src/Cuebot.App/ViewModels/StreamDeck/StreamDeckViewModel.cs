@@ -6,6 +6,7 @@ using Cuebot.App.Shell;
 using Cuebot.Core;
 using Cuebot.Server;
 using Cuebot.StreamDeck;
+using Cuebot.StreamDeck.Hid;
 
 namespace Cuebot.App.ViewModels.StreamDeck;
 
@@ -22,10 +23,12 @@ public sealed partial class StreamDeckViewModel : ObservableObject
     private readonly string? _pluginFolder;
 
     /// <param name="pluginSearchFolders">Where to look for the bundled plugin file (default: next to the app and in ./streamdeck).</param>
-    public StreamDeckViewModel(StreamDeckHub hub, ServerManager servers, IEnumerable<string>? pluginSearchFolders = null)
+    /// <param name="usb">Direct USB mode (decks driven without the Stream Deck app); null hides its card.</param>
+    public StreamDeckViewModel(StreamDeckHub hub, ServerManager servers, IEnumerable<string>? pluginSearchFolders = null, StreamDeckHidService? usb = null)
     {
         _hub = hub;
         _servers = servers;
+        Usb = usb is null ? null : new StreamDeckUsbViewModel(usb);
         var folders = pluginSearchFolders ?? [AppContext.BaseDirectory, Path.Combine(AppContext.BaseDirectory, "streamdeck")];
         _pluginFolder = folders.FirstOrDefault(f => File.Exists(Path.Combine(f, PluginFileName)));
         hub.StatusChanged += () => OnUi(Refresh);
@@ -34,6 +37,11 @@ public sealed partial class StreamDeckViewModel : ObservableObject
     }
 
     public string Title => "Stream Deck";
+
+    /// <summary>The direct USB card, or null.</summary>
+    public StreamDeckUsbViewModel? Usb { get; }
+
+    public bool HasUsb => Usb is not null;
 
     // ---- Status ----------------------------------------------------------------------------------------------------
 

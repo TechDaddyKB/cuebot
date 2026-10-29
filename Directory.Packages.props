@@ -16,7 +16,11 @@
     <PackageVersion Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
     <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageVersion Include="SkiaSharp" Version="2.88.9" />
+    <!-- SkiaSharp (MIT) / Skia (BSD-3-Clause): the version Avalonia.Skia already ships, so the app carries one copy. Also
+         renders Stream Deck key images for direct USB mode (src/Cuebot.StreamDeck/Hid); NativeAssets.Linux brings
+         libSkiaSharp for Linux to projects that do not reference Avalonia (Windows/macOS natives come with SkiaSharp). -->
+    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <!-- Infrastructure -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
     <!-- Scripting / speech -->

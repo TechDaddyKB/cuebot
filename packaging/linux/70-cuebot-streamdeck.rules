@@ -1,0 +1,6 @@
+# Lets the logged-in user drive Elgato Stream Decks directly over USB HID (Cuebot's direct USB mode, see
+# src/Cuebot.StreamDeck/PROTOCOL.md). Most desktop distributions (systemd-logind "uaccess") already give the seat user
+# access to /dev/hidraw* of these devices; install this only if Cuebot says "no permission to open /dev/hidrawN":
+#   sudo cp 70-cuebot-streamdeck.rules /etc/udev/rules.d/ && sudo udevadm control --reload && sudo udevadm trigger
+# then unplug and replug the deck. Only hidraw nodes of vendor 0fd9 (Elgato) are affected.
+KERNEL=="hidraw*", ATTRS{idVendor}=="0fd9", TAG+="uaccess"

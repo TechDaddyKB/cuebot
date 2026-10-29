@@ -11,7 +11,7 @@ Each keeps its own license; full license texts are available from the linked pro
 | [Inter font](https://github.com/rsms/inter) (via Avalonia.Fonts.Inter) | UI font | SIL Open Font License 1.1 |
 | [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) | Code editor | MIT |
 | [TextMateSharp](https://github.com/danipen/TextMateSharp) (via AvaloniaEdit.TextMate) and its bundled grammars/themes | Syntax highlighting | MIT; grammars and themes keep their own (mostly MIT) licenses |
-| [SkiaSharp](https://github.com/mono/SkiaSharp) / Skia (via Avalonia) | Rendering | MIT / BSD-3-Clause |
+| [SkiaSharp](https://github.com/mono/SkiaSharp) / Skia (via Avalonia, and directly for Stream Deck key images) | Rendering | MIT / BSD-3-Clause |
 | [HarfBuzzSharp](https://github.com/mono/SkiaSharp) / HarfBuzz (via Avalonia) | Text shaping | MIT / Old MIT |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM helpers | MIT |
 | [Microsoft.Extensions.DependencyInjection](https://github.com/dotnet/runtime) | Dependency injection | MIT |

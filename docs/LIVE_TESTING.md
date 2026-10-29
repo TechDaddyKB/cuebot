@@ -15,6 +15,7 @@ services end to end through Cuebot's own modules and action engine, exactly as t
 | `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
 | `Cuebot.LiveTests` › GoXLR | Status load, faders and volumes, a ping, optionally a fader mute toggled and restored through the utility's patches | The GoXLR Utility with a GoXLR or GoXLR Mini |
 | `Cuebot.LiveTests` › MIDI | Port listing (WinMM / ALSA sequencer); optionally notes, a controller and SysEx sent to an output, a loopback round trip through the MIDI Message trigger variables, and learning a control you press | Nothing for the listing; a MIDI output, a loopback cable (loopMIDI, Midi Through) or a controller for the rest |
+| `Cuebot.LiveTests` › Stream Deck over USB | Direct HID (no Elgato software): serial and firmware read, brightness changed, a test image drawn on every key, then the direct USB service: Connected/Info events, Set Title / Set Background / Show Ok by default button id through the hub, turning it off fires Disconnected; the deck is left reset at 60 % brightness. Optionally waits for a key press | Linux with a Stream Deck (tested on an XL) that no other program holds |
 | `Cuebot.LiveTests` › Game controllers | SDL3 loads and starts on its own thread, connected controllers are listed, optionally the first input arrives as a controller event | Optional: any game controller (works with none connected) |
 | `Cuebot.LiveTests` › Voice control | Text-to-speech says "start the countdown", the audio is fed to voice control as a microphone, and Whisper (and on Windows also Windows Speech Recognition) must fire the Voice Control Command and Dictation triggers. Downloads a Whisper model on the first run | A local TTS voice (Windows SAPI or espeak-ng); about 32 MB download |
 | `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
@@ -166,6 +167,18 @@ Wavetable Synth" always exists; opening it can take seconds). `CUEBOT_LIVE_MIDI_
 Linux `Midi Through Port-0` (snd-seq-dummy) for both; it sends a Control Change and a SysEx and checks the MIDI Message
 variables and event matching. `CUEBOT_LIVE_MIDI_IN=<input name>` opens a real controller and waits 30 s for you to
 press a key, pad or knob (learn mode). Port names are printed by the listing test.
+
+### Stream Deck over USB
+
+`StreamDeckHidLiveTests` runs with `CUEBOT_LIVE_STREAMDECK_HID=1` on Linux with a Stream Deck plugged in (direct USB
+mode, no Elgato software; tested on an XL). It finds the deck through sysfs, opens its `/dev/hidrawN`, reads the serial
+(feature report 0x06, compared with sysfs) and firmware (0x05), sets the brightness to 20, 100 and 70 %, draws a
+numbered, coloured test image on every key (white corner top-left: check the orientation) and then runs the direct USB
+service end to end (Connected and Info events, Set Title / Set Background / Show Ok on the default button ids through
+the hub, 0 keys for an unknown id, turning the mode off fires Disconnected). The deck is always left reset (boot screen)
+at 60 % brightness. Nobody has to press anything; `CUEBOT_LIVE_STREAMDECK_HID_PRESS=1` also waits 30 s for a key press.
+Close StreamController or OpenDeck first: they detach the kernel HID driver, and the test then fails with "No usable
+Stream Deck". Without seat access to `/dev/hidraw*` install `packaging/linux/70-cuebot-streamdeck.rules`.
 
 ### Elgato Wave Link
 

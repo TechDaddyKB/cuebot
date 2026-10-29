@@ -5,6 +5,12 @@
     <ProjectReference Include="..\Cuebot.Server\Cuebot.Server.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Direct USB mode renders key images (titles, pictures) to JPEG. -->
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cuebot.LiveTests" />
     <InternalsVisibleTo Include="Cuebot.StreamDeck.Tests" />
     <InternalsVisibleTo Include="Cuebot.UiTests" />
   </ItemGroup>

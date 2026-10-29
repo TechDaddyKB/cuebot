@@ -140,6 +140,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Wave Link", () => Get<Cuebot.WaveLink.WaveLinkService>().StartAsync()),
             StartSafely(log, "GoXLR", () => Get<Cuebot.GoXlr.GoXlrService>().StartAsync()),
             StartSafely(log, "MIDI", () => Get<Cuebot.Midi.MidiService>().StartAsync()),
+            StartSafely(log, "Stream Deck USB", () => Get<Cuebot.StreamDeck.Hid.StreamDeckHidService>().StartAsync()),
             StartSafely(log, "Controllers", () => Get<Cuebot.Controllers.ControllerService>().StartAsync()),
             StartSafely(log, "Voice Control", () => Get<Cuebot.VoiceControl.VoiceControlService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
