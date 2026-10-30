@@ -54,6 +54,9 @@ public sealed partial class TriggerViewerViewModel : ObservableObject
     public ObservableCollection<NameValueRow> Args { get; } = [];
     public ObservableCollection<TriggerTypeOption> TriggerOptions { get; } = [];
 
+    /// <summary>Every event as it arrives, paused or not (the Dashboard's activity feed).</summary>
+    public event Action<TriggerEventRow>? Seen;
+
     /// <summary>Raised by "Create action from this trigger"; the main window creates the action and opens it.</summary>
     public event Action<ITriggerType>? CreateActionRequested;
 
@@ -112,12 +115,13 @@ public sealed partial class TriggerViewerViewModel : ObservableObject
     /// <summary>Records an event (UI thread).</summary>
     internal void Add(BotEvent e)
     {
+        var row = new TriggerEventRow(e, TriggersFor(e.Type));
+        Seen?.Invoke(row);
         if (IsPaused)
         {
             IgnoredWhilePaused++;
             return;
         }
-        var row = new TriggerEventRow(e, TriggersFor(e.Type));
         _all.AddFirst(row);
         TotalSeen++;
         if (Matches(row)) Events.Insert(0, row);

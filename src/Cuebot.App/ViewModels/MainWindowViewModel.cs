@@ -89,6 +89,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var actions = new ActionsViewModel(host.Get<ProfileService>(), host.Get<Registry>(), host.Get<ActionEngine>());
         var queues = new QueuesViewModel(host.Get<ProfileService>(), host.Get<ActionEngine>());
         var history = new History.HistoryViewModel(host.Get<ActionEngine>(), host.Get<EventBus>(), host.Get<Registry>());
+        history.Triggers.Seen += Dashboard.AddEvent;
         Pages =
         [
             Dashboard,

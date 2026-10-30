@@ -82,6 +82,57 @@ public sealed class MainWindowTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task Dashboard_shows_tiles_activity_and_quick_actions()
+    {
+        var profile = _host.Get<Cuebot.Core.Actions.ProfileService>();
+        profile.Profile.Actions.AddRange(
+        [
+            new Cuebot.Core.Actions.ActionDefinition { Name = "Shout out", SubActions = [new Cuebot.Core.Actions.SubActionDefinition { Type = "core.comment" }] },
+            new Cuebot.Core.Actions.ActionDefinition { Name = "Scene: BRB", SubActions = [new Cuebot.Core.Actions.SubActionDefinition { Type = "core.comment" }] },
+        ]);
+        profile.NotifyChanged();
+        TestApp.BindingErrors.Clear();
+        var (window, vm) = Open();
+        var dashboard = vm.Dashboard;
+        Assert.False(dashboard.HasEvents);
+        Assert.False(dashboard.HasQuickActions);
+        Assert.Equal($"0 of {dashboard.Connections.Count}", dashboard.ConnectedCount);
+        Save(window, "dashboard-empty");
+
+        _host.Get<Cuebot.Core.Events.EventBus>().Publish(new Cuebot.Core.Events.BotEvent("Twitch.ChatMessage",
+            new Dictionary<string, object?> { ["user"] = "Ann", ["message"] = "hello there" }));
+        var engine = _host.Get<Cuebot.Core.Actions.ActionEngine>();
+        foreach (var name in new[] { "Shout out", "Scene: BRB", "Shout out" })
+            Assert.True(await engine.RunAsync(profile.Snapshot.FindAction(name)!));
+        _host.Get<Cuebot.Core.Logging.AppLog>().Warn("Test", "Something to look at");
+        for (var i = 0; i < 100 && (dashboard.RunsToday < 3 || dashboard.EventsToday < 1 || dashboard.Warnings < 1); i++)
+        {
+            Pump();
+            await Task.Delay(10);
+        }
+
+        Assert.Equal(1, dashboard.EventsToday);
+        Assert.Equal(3, dashboard.RunsToday);
+        Assert.Equal("No failures", dashboard.RunsDetail);
+        Assert.True(dashboard.ProblemCount >= 1);
+        // One row per action, most recent first.
+        Assert.Equal(["Shout out", "Scene: BRB"], dashboard.QuickActions.Select(q => q.Name));
+        dashboard.QuickActions[1].RunCommand.Execute(null);
+        for (var i = 0; i < 100 && dashboard.RunsToday < 4; i++)
+        {
+            Pump();
+            await Task.Delay(10);
+        }
+        Assert.Equal(["Scene: BRB", "Shout out"], dashboard.QuickActions.Select(q => q.Name));
+        Save(window, "dashboard");
+        window.Width = 960;
+        window.Height = 600;
+        Save(window, "dashboard-960");
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
     /// <summary>"Users &amp; Groups" → "users-groups".</summary>
     internal static string FileName(string title)
     {
