@@ -476,6 +476,11 @@ public sealed partial class SettingsViewModel : PageViewModel
 
     // ---- About ----
 
+    /// <summary>The selected tab (General, Audio &amp; text, Backups, Google Drive, About).</summary>
+    [ObservableProperty] private int _selectedTab;
+
+    public void ShowAbout() => SelectedTab = 4;
+
     public string Version => BackupService.Version;
     public string DataFolder { get; }
     public string DisplayBackend => Program.BackendName;

@@ -15,6 +15,7 @@ public static class AppShortcuts
     public static readonly IReadOnlyList<AppShortcut> Window =
     [
         new("save", "Ctrl+S", "Save everything now", Anywhere),
+        new("jump", "Ctrl+K", "Jump to a page", Anywhere),
         new("help", "F1", "Open the Support page", Anywhere),
         new("testTrigger", "F5", "Test the selected action's trigger", ActionsPage),
         new("import", "Ctrl+Alt+I", "Import (opens Import / Export)", Anywhere),

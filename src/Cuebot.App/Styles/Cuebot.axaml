@@ -17,6 +17,7 @@
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://Cuebot/Styles/Icons.axaml" />
+        <ResourceInclude Source="avares://Cuebot/Styles/Brand.axaml" />
       </ResourceDictionary.MergedDictionaries>
       <SolidColorBrush x:Key="CuebotGround" Color="#0B1120" />
       <SolidColorBrush x:Key="CuebotRail" Color="#080D19" />

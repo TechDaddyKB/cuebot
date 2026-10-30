@@ -16,20 +16,62 @@ namespace Cuebot.App.ViewModels;
 public sealed partial class MainWindowViewModel : ObservableObject
 {
     /// <summary>
-    /// Sidebar sections, in order, and the page titles each one holds (in order). To place a new page, add its
-    /// <see cref="PageViewModel.Title"/> to a section here; a page that is not listed lands in <see cref="FallbackGroup"/>.
+    /// The sections of the icon rail, in order, and the page titles each one holds (in order). To place a new page, add
+    /// its <see cref="PageViewModel.Title"/> to a section here; a page that is not listed lands in
+    /// <see cref="FallbackGroup"/>. Icons are Lucide names (Styles/Icons.axaml).
     /// </summary>
-    public static readonly IReadOnlyList<(string Group, string[] Titles)> NavLayout =
+    public static readonly IReadOnlyList<NavSection> NavLayout =
     [
-        ("Main", ["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant"]),
-        ("Automation", ["Queues", "Timers", "Users & Groups", "Variables", "Watchers", "Hotkeys", "Decks", "Input", "Quotes", "Credits", "Points"]),
-        ("Platforms", ["Twitch", "Rumble", "YouTube", "Kick"]),
-        ("Apps", ["OBS", "Speech", "Donations", "Integrations", "Webhooks"]),
-        ("System", ["Import / Export", "Scripting", "Servers", "Support", "Settings"]),
+        new("Home", "Home", "house", ["Dashboard", "Assistant"]),
+        new("Automation", "Automation", "zap", ["Actions", "Commands", "Timers", "Queues", "Variables", "Watchers", "Hotkeys", "Scripting"]),
+        new("Chat & Events", "Chat", "message-square", ["Chat", "History", "Users & Groups", "Points", "Quotes", "Credits"]),
+        new("Audio", "Audio", "audio-lines", ["Speech"]),
+        new("Decks & Input", "Input", "layout-grid", ["Decks", "Input"]),
+        new("Platforms", "Platforms", "radio", ["Twitch", "YouTube", "Kick", "Rumble"]),
+        new("Overlays & Widgets", "Overlays", "layers", [OverlaysViewModel.PageTitle]),
+        new("Integrations", "Apps", "plug", ["OBS", "Integrations", "Donations", "Webhooks", "Servers"]),
+        new("Settings", "Settings", "settings", ["Settings", "Import / Export", "Support"], Bottom: true),
     ];
 
-    /// <summary>Section for pages missing from <see cref="NavLayout"/> (shown before System).</summary>
+    /// <summary>Section for pages missing from <see cref="NavLayout"/> (placed before the bottom sections).</summary>
     public const string FallbackGroup = "More";
+
+    /// <summary>The line under each page's title in the page header.</summary>
+    public static readonly IReadOnlyDictionary<string, string> PageDescriptions = new Dictionary<string, string>
+    {
+        ["Dashboard"] = "What is connected, and what just happened.",
+        ["Assistant"] = "Ask an AI assistant to help you set Cuebot up.",
+        ["Actions"] = "Create and manage actions, their triggers and sub-actions.",
+        ["Commands"] = "Chat commands and the actions they run.",
+        ["Timers"] = "Run actions on an interval or a schedule.",
+        ["Queues"] = "Run actions one after another.",
+        ["Variables"] = "Global and per-viewer values your actions use.",
+        ["Watchers"] = "React to files, folders and programs.",
+        ["Hotkeys"] = "Keyboard shortcuts that run actions.",
+        ["Scripting"] = "C# and Python for anything custom.",
+        ["Chat"] = "Read and answer chat across platforms.",
+        ["History"] = "What ran, and what triggered it.",
+        ["Users & Groups"] = "Viewers Cuebot knows, and the groups you put them in.",
+        ["Points"] = "Your channel currency.",
+        ["Quotes"] = "Quotes saved from your streams.",
+        ["Credits"] = "End-of-stream credits.",
+        ["Speech"] = "Text-to-speech voices, queue and filters.",
+        ["Decks"] = "Web control decks for your phone or tablet.",
+        ["Input"] = "Voice control, MIDI and game controllers.",
+        ["Twitch"] = "Your Twitch account, channel and settings.",
+        ["YouTube"] = "Your YouTube channel, chat and settings.",
+        ["Kick"] = "Your Kick account, channel and settings.",
+        ["Rumble"] = "Your Rumble channel and chat.",
+        [OverlaysViewModel.PageTitle] = "Overlays, widgets and alerts for OBS (coming soon).",
+        ["OBS"] = "OBS Studio and other streaming apps.",
+        ["Integrations"] = "Lights, mixers, Stream Deck and other apps.",
+        ["Donations"] = "Tips and charity services.",
+        ["Webhooks"] = "Events from web services, through your relay.",
+        ["Servers"] = "Local servers for decks, docks, other apps and AI tools.",
+        ["Settings"] = "Window, appearance, backups and more.",
+        ["Import / Export"] = "Bring in Streamer.bot data, or share your own.",
+        ["Support"] = "Report a problem and check for updates.",
+    };
 
     private bool _syncingSelection;
     private readonly AppHost _host;
@@ -107,6 +149,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Actions.GlobalVariables>(),
                 host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
+            new OverlaysViewModel(),
             new Cuebot.App.ViewModels.Servers.ServersViewModel(host.Get<Cuebot.Server.ServerManager>(),
                 new Cuebot.App.ViewModels.Servers.RemoteInstancesViewModel(host.Get<Cuebot.Remote.RemoteHub>())),
             Support,
@@ -129,6 +172,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         NavGroups = BuildGroups(Pages);
         _selectedPage = Dashboard;
+        _isSectionListOpen = !host.Settings.Settings.General.CollapseSectionList;
+        Status = new StatusBarViewModel(host, Dashboard);
+        Status.ProblemsRequested += () => SelectedPage = Support;
         SyncGroupSelection(Dashboard);
 
         PageViewModel Page(string title) => Pages.First(p => p.Title == title);
@@ -143,6 +189,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["chat"] = new RelayCommand(() => SelectedPage = Page("Chat"), NotTyping),
             ["variables"] = new RelayCommand(() => SelectedPage = Page("Variables"), NotTyping),
             ["logs"] = new RelayCommand(() => _shell.OpenFolder(_host.Get<AppPaths>().Logs), NotTyping),
+            ["jump"] = new RelayCommand(() => JumpRequested?.Invoke()),
         };
     }
 
@@ -196,15 +243,72 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Every page, flat (registration order).</summary>
     public IReadOnlyList<PageViewModel> Pages { get; }
 
-    /// <summary>The sidebar: collapsible sections of pages.</summary>
+    /// <summary>The sections: the icon rail shows them, the section list shows the current one's pages.</summary>
     public IReadOnlyList<NavGroupViewModel> NavGroups { get; }
 
-    [ObservableProperty] private PageViewModel _selectedPage;
+    public IEnumerable<NavGroupViewModel> RailTop => NavGroups.Where(g => !g.IsBottom);
+    public IEnumerable<NavGroupViewModel> RailBottom => NavGroups.Where(g => g.IsBottom);
+
+    /// <summary>The bottom bar: connections, counts, uptime, warnings.</summary>
+    public StatusBarViewModel Status { get; }
+
+    public string Version => BackupService.Version;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PageDescription))]
+    private PageViewModel _selectedPage;
+
+    /// <summary>The section of the selected page.</summary>
+    [ObservableProperty] private NavGroupViewModel? _currentGroup;
+
+    public string PageDescription => PageDescriptions.GetValueOrDefault(SelectedPage.Title, "");
+
+    /// <summary>The section list next to the rail; closing it leaves the rail only (remembered in app.json).</summary>
+    [ObservableProperty] private bool _isSectionListOpen;
+
+    partial void OnIsSectionListOpenChanged(bool value)
+    {
+        _host.Settings.Settings.General.CollapseSectionList = !value;
+        _host.Settings.TrySave();
+    }
+
+    [RelayCommand]
+    private void ToggleSectionList() => IsSectionListOpen = !IsSectionListOpen;
+
+    /// <summary>Rail click: the section's last page (its first page the first time).</summary>
+    [RelayCommand]
+    private void SelectGroup(NavGroupViewModel? group)
+    {
+        if (group is not null) SelectedPage = group.LastPage ?? group.Pages[0];
+    }
 
     partial void OnSelectedPageChanged(PageViewModel value) => SyncGroupSelection(value);
 
-    /// <summary>Shows a page and expands its section.</summary>
+    /// <summary>Shows a page (and its section).</summary>
     public void Navigate(PageViewModel page) => SelectedPage = page;
+
+    /// <summary>Page names for the jump box (Ctrl+K), in rail order.</summary>
+    public IReadOnlyList<string> JumpTargets => NavGroups.SelectMany(g => g.Pages).Select(p => p.Title).ToArray();
+
+    /// <summary>Ctrl+K: the window focuses the jump box.</summary>
+    public event Action? JumpRequested;
+
+    /// <summary>Opens the page with this title (case-insensitive); false when there is none.</summary>
+    public bool JumpTo(string? title)
+    {
+        var page = Pages.FirstOrDefault(p => string.Equals(p.Title, title?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (page is null) return false;
+        SelectedPage = page;
+        return true;
+    }
+
+    /// <summary>"by Tech Daddy Digital" in the top bar opens Settings (its About tab).</summary>
+    [RelayCommand]
+    private void OpenAbout()
+    {
+        SelectedPage = Settings;
+        Settings.ShowAbout();
+    }
 
     public NavGroupViewModel? GroupOf(PageViewModel page) => NavGroups.FirstOrDefault(g => g.Pages.Contains(page));
 
@@ -212,17 +316,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         var groups = new List<NavGroupViewModel>();
         var placed = new HashSet<PageViewModel>();
-        foreach (var (name, titles) in NavLayout)
+        foreach (var section in NavLayout)
         {
-            var members = titles.Select(t => pages.FirstOrDefault(p => p.Title == t)).OfType<PageViewModel>().ToList();
+            var members = section.Titles.Select(t => pages.FirstOrDefault(p => p.Title == t)).OfType<PageViewModel>().ToList();
             placed.UnionWith(members);
-            if (members.Count > 0) groups.Add(new NavGroupViewModel(this, name, members));
+            if (members.Count > 0) groups.Add(new NavGroupViewModel(this, section, members));
         }
         var rest = pages.Where(p => !placed.Contains(p)).ToList();
         if (rest.Count > 0)
         {
-            var at = groups.FindIndex(g => g.Name == "System");
-            groups.Insert(at < 0 ? groups.Count : at, new NavGroupViewModel(this, FallbackGroup, rest));
+            var at = groups.FindIndex(g => g.IsBottom);
+            groups.Insert(at < 0 ? groups.Count : at,
+                new NavGroupViewModel(this, new NavSection(FallbackGroup, FallbackGroup, "ellipsis", []), rest));
         }
         return groups;
     }
@@ -236,7 +341,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 var contains = group.Pages.Contains(page);
                 group.Selected = contains ? page : null;
-                if (contains) group.IsExpanded = true;
+                group.IsCurrent = contains;
+                if (!contains) continue;
+                group.LastPage = page;
+                CurrentGroup = group;
             }
         }
         finally
@@ -251,26 +359,35 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 }
 
-/// <summary>A collapsible sidebar section. Its list box selection mirrors the window's selected page.</summary>
-public sealed partial class NavGroupViewModel(MainWindowViewModel owner, string name, IReadOnlyList<PageViewModel> pages) : ObservableObject
-{
-    public string Name { get; } = name;
-    public string Header => Name.ToUpperInvariant();
-    public IReadOnlyList<PageViewModel> Pages { get; } = pages;
+/// <summary>A rail section and its pages (one row of <see cref="MainWindowViewModel.NavLayout"/>).</summary>
+public sealed record NavSection(string Name, string Label, string Icon, string[] Titles, bool Bottom = false);
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Chevron))]
-    private bool _isExpanded = true;
+/// <summary>A section of the icon rail. Its list box selection mirrors the window's selected page.</summary>
+public sealed partial class NavGroupViewModel(MainWindowViewModel owner, NavSection section, IReadOnlyList<PageViewModel> pages) : ObservableObject
+{
+    public string Name { get; } = section.Name;
+
+    /// <summary>Short label under the rail icon.</summary>
+    public string Label { get; } = section.Label;
+
+    /// <summary>Lucide icon name.</summary>
+    public string Icon { get; } = section.Icon;
+
+    /// <summary>Shown at the bottom of the rail (Settings).</summary>
+    public bool IsBottom { get; } = section.Bottom;
+
+    public IReadOnlyList<PageViewModel> Pages { get; } = pages;
 
     [ObservableProperty] private PageViewModel? _selected;
 
-    public string Chevron => IsExpanded ? "▾" : "▸";
+    /// <summary>True for the selected page's section (highlighted in the rail).</summary>
+    [ObservableProperty] private bool _isCurrent;
+
+    /// <summary>The page shown when the section is picked in the rail.</summary>
+    public PageViewModel? LastPage { get; set; }
 
     partial void OnSelectedChanged(PageViewModel? value)
     {
         if (value is not null) owner.OnGroupSelected(value);
     }
-
-    [RelayCommand]
-    private void Toggle() => IsExpanded = !IsExpanded;
 }

@@ -48,7 +48,7 @@ public sealed class IconTests
         var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
         Directory.CreateDirectory(ScreenshotDir);
-        frame!.Save(Path.Combine(ScreenshotDir, "icons.png"));
+        frame!.Save(Path.Combine(ScreenshotDir, "icons.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
 
         // Each icon cell has light (text-coloured) pixels on the dark ground.
         var first = (Icon)((StackPanel)grid.Children[0]).Children[0];

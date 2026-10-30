@@ -27,6 +27,9 @@ public sealed class GeneralSettings
     public bool StartMinimized { get; set; }
 
     public AppTheme Theme { get; set; } = AppTheme.Dark;
+
+    /// <summary>The section list next to the icon rail is closed (rail only).</summary>
+    public bool CollapseSectionList { get; set; }
 }
 
 /// <summary>How text templates format values (applied to the shared <c>TextEnvironment</c>).</summary>

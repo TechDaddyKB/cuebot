@@ -12,9 +12,51 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        // Tunnel: the list boxes would otherwise swallow Up/Down at their ends.
-        NavHost.AddHandler(KeyDownEvent, OnNavKeyDown, RoutingStrategies.Tunnel);
         DataContextChanged += (_, _) => BindShortcuts();
+        Jump.KeyDown += OnJumpKeyDown;
+        Jump.SelectionChanged += (_, _) => { if (Jump.SelectedItem is string title) JumpTo(title); };
+        if (OperatingSystem.IsWindows())
+        {
+            // The top bar is the title bar on Windows; the system caption buttons sit over its right end.
+            ExtendClientAreaToDecorationsHint = true;
+            ExtendClientAreaTitleBarHeightHint = 52;
+            var m = TopBarContent.Margin;
+            TopBarContent.Margin = new Avalonia.Thickness(m.Left, m.Top, m.Right + CaptionButtonsWidth, m.Bottom);
+        }
+    }
+
+    /// <summary>Room for the Windows minimize, maximize and close buttons.</summary>
+    private const double CaptionButtonsWidth = 140;
+
+    private MainWindowViewModel? _boundVm;
+
+    private void OnJumpRequested()
+    {
+        Jump.Focus(NavigationMethod.Tab);
+        Jump.IsDropDownOpen = true;
+    }
+
+    private void OnJumpKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            JumpTo(Jump.SelectedItem as string ?? Jump.Text);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            Jump.Text = "";
+            PageHost.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void JumpTo(string? title)
+    {
+        if (DataContext is not MainWindowViewModel vm || !vm.JumpTo(title)) return;
+        Jump.Text = "";
+        Jump.SelectedItem = null;
+        PageHost.Focus();
     }
 
     private const string ShortcutTag = "cuebot-shortcut";
@@ -23,7 +65,10 @@ public partial class MainWindow : Window
     private void BindShortcuts()
     {
         foreach (var old in KeyBindings.Where(k => Equals(k.CommandParameter, ShortcutTag)).ToArray()) KeyBindings.Remove(old);
+        if (_boundVm is not null) _boundVm.JumpRequested -= OnJumpRequested;
         if (DataContext is not MainWindowViewModel vm) return;
+        _boundVm = vm;
+        vm.JumpRequested += OnJumpRequested;
         vm.IsTypingText = IsTypingText;
         foreach (var shortcut in AppShortcuts.Window)
         {
@@ -39,40 +84,4 @@ public partial class MainWindow : Window
             || v.FindAncestorOfType<AutoCompleteBox>(includeSelf: true) is not null
             || v.FindAncestorOfType<Cuebot.App.Controls.CodeEditor>(includeSelf: true) is not null);
 
-    /// <summary>
-    /// Sidebar keyboard navigation: each section is its own list, so Up on the first page / Down on the last page moves
-    /// to the previous / next expanded section, like one continuous list. Tab reaches the section headers (Enter or
-    /// Space toggles them).
-    /// </summary>
-    private void OnNavKeyDown(object? sender, KeyEventArgs e)
-    {
-        if ((e.Source as Avalonia.Visual)?.FindAncestorOfType<ListBox>(includeSelf: true) is not { DataContext: NavGroupViewModel group }
-            || DataContext is not MainWindowViewModel vm) return;
-        if (e.Key is not (Key.Up or Key.Down) || e.KeyModifiers != KeyModifiers.None) return;
-        var index = group.Selected is null ? -1 : group.Pages.ToList().IndexOf(group.Selected);
-        var down = e.Key == Key.Down;
-        if ((down && index < group.Pages.Count - 1) || (!down && index > 0)) return; // the list moves within itself
-
-        var groups = vm.NavGroups;
-        var at = groups.ToList().IndexOf(group);
-        for (var i = at + (down ? 1 : -1); i >= 0 && i < groups.Count; i += down ? 1 : -1)
-        {
-            if (!groups[i].IsExpanded || groups[i].Pages.Count == 0) continue;
-            var target = down ? groups[i].Pages[0] : groups[i].Pages[^1];
-            vm.SelectedPage = target;
-            FocusPage(groups[i], target);
-            e.Handled = true;
-            return;
-        }
-    }
-
-    private void FocusPage(NavGroupViewModel group, PageViewModel page)
-    {
-        var list = NavHost.GetVisualDescendants().OfType<ListBox>().FirstOrDefault(l => l.DataContext == group);
-        if (list?.ContainerFromItem(page) is ListBoxItem item)
-        {
-            item.Focus(NavigationMethod.Directional);
-            item.BringIntoView();
-        }
-    }
 }

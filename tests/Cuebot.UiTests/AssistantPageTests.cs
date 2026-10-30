@@ -95,7 +95,7 @@ public sealed class AssistantPageTests : IAsyncDisposable
         var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
         window.Show();
         var page = Assert.IsType<AssistantViewModel>(vm.Pages.Single(p => p.Title == "Assistant"));
-        Assert.Contains(vm.NavGroups.Single(g => g.Name == "Main").Pages, p => p == page);
+        Assert.Contains(vm.NavGroups.Single(g => g.Name == "Home").Pages, p => p == page);
         vm.SelectedPage = page;
         Pump();
 

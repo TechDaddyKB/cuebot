@@ -386,7 +386,7 @@ public sealed class ActionsUxTests : IAsyncDisposable
         var (window, vm) = Open();
         var history = Page<HistoryViewModel>(vm);
         vm.SelectedPage = history;
-        Assert.Equal(vm.NavGroups.Single(g => g.Name == "Main"), vm.GroupOf(history));
+        Assert.Equal(vm.NavGroups.Single(g => g.Name == "Chat & Events"), vm.GroupOf(history));
 
         Assert.True(await Engine.RunAsync(Profile.Snapshot.FindAction("Echo")!,
             new Dictionary<string, object?> { ["user"] = "Dana" }, source: "Twitch › Chat message"));
@@ -517,7 +517,7 @@ public sealed class ActionsUxTests : IAsyncDisposable
     // ---- Navigation ----
 
     [AvaloniaFact]
-    public void Sidebar_groups_pages_selects_across_groups_and_fits_at_860()
+    public void Rail_and_section_list_navigate_and_fit_at_860()
     {
         TestApp.BindingErrors.Clear();
         var app = Avalonia.Application.Current!;
@@ -525,58 +525,64 @@ public sealed class ActionsUxTests : IAsyncDisposable
         var (window, vm) = Open();
         try
         {
-            Assert.Equal(["Main", "Automation", "Platforms", "Apps", "System"], vm.NavGroups.Select(g => g.Name));
-            Assert.Equal(["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant"], vm.NavGroups[0].Pages.Select(p => p.Title));
-            // Every page is in exactly one group.
+            Assert.Equal(["Home", "Automation", "Chat & Events", "Audio", "Decks & Input", "Platforms", "Overlays & Widgets", "Integrations", "Settings"],
+                vm.NavGroups.Select(g => g.Name));
+            Assert.Equal(["Settings"], vm.RailBottom.Select(g => g.Name));
+            Assert.Equal(["Dashboard", "Assistant"], vm.NavGroups[0].Pages.Select(p => p.Title));
+            // Every page is in exactly one section.
             var grouped = vm.NavGroups.SelectMany(g => g.Pages).ToList();
             Assert.Equal(vm.Pages.Count, grouped.Count);
             Assert.Equal(vm.Pages.ToHashSet(), grouped.ToHashSet());
+            Assert.All(vm.Pages, p => Assert.True(MainWindowViewModel.PageDescriptions.ContainsKey(p.Title), p.Title));
 
-            // Everything expanded fits at 860 px: no sidebar scrolling needed.
-            var scroll = window.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Name == "NavScroll");
+            // The rail fits at 860 px without scrolling.
+            var rail = window.GetVisualDescendants().OfType<ItemsControl>().Single(i => i.Name == "Rail");
+            var scroll = rail.FindAncestorOfType<ScrollViewer>()!;
             Assert.True(scroll.Extent.Height <= scroll.Viewport.Height + 0.5,
-                $"Sidebar needs {scroll.Extent.Height} px but has {scroll.Viewport.Height}");
+                $"Rail needs {scroll.Extent.Height} px but has {scroll.Viewport.Height}");
             foreach (var (theme, suffix) in new[] { (AppTheme.Dark, ""), (AppTheme.Light, "-light") })
             {
                 vm.Settings.Theme = theme;
-                Save(window, $"nav-groups{suffix}");
+                Save(window, $"shell{suffix}");
             }
 
-            // Selecting in a group's list selects the page and clears the other groups' selection.
-            var obs = vm.Pages.Single(p => p.Title == "OBS");
-            var apps = vm.GroupOf(obs)!;
-            apps.Selected = obs;
-            Assert.Same(obs, vm.SelectedPage);
-            Assert.All(vm.NavGroups.Where(g => g != apps), g => Assert.Null(g.Selected));
+            // A rail click opens the section's first page, then the page last visited there.
+            var automation = vm.NavGroups.Single(g => g.Name == "Automation");
+            vm.SelectGroupCommand.Execute(automation);
+            Assert.Same(automation.Pages[0], vm.SelectedPage);
+            Assert.Same(automation, vm.CurrentGroup);
+            Assert.True(automation.IsCurrent);
+            Assert.All(vm.NavGroups.Where(g => g != automation), g => Assert.False(g.IsCurrent));
+            automation.Selected = automation.Pages[2];
+            Assert.Same(automation.Pages[2], vm.SelectedPage);
+            vm.SelectGroupCommand.Execute(vm.NavGroups[0]);
+            vm.SelectGroupCommand.Execute(automation);
+            Assert.Same(automation.Pages[2], vm.SelectedPage);
+            Pump();
+            Assert.Equal(automation.Pages[2].Title, window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "PageTitle").Text);
+            Assert.Equal(MainWindowViewModel.PageDescriptions[automation.Pages[2].Title], vm.PageDescription);
 
-            // Collapsing hides a section; navigating to one of its pages expands it again.
-            var platforms = vm.NavGroups.Single(g => g.Name == "Platforms");
-            platforms.ToggleCommand.Execute(null);
-            Assert.False(platforms.IsExpanded);
+            // The section list shows only the current section; it can be closed (remembered) and opened again.
+            var list = window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "SectionPages");
+            Assert.Equal(automation.Pages.Count, list.ItemCount);
+            vm.ToggleSectionListCommand.Execute(null);
             Pump();
-            var lists = window.GetVisualDescendants().OfType<ListBox>().Where(l => l.DataContext is NavGroupViewModel).ToList();
-            Assert.False(lists.Single(l => l.DataContext == platforms).IsVisible);
-            Save(window, "nav-collapsed");
-            vm.SelectedPage = platforms.Pages[0];
-            Assert.True(platforms.IsExpanded);
-            Assert.Same(platforms.Pages[0], platforms.Selected);
+            Assert.False(list.IsEffectivelyVisible);
+            Assert.True(_host.Settings.Settings.General.CollapseSectionList);
+            Save(window, "shell-rail-only");
+            vm.ToggleSectionListCommand.Execute(null);
+            Assert.False(_host.Settings.Settings.General.CollapseSectionList);
 
-            // Keyboard: Down on the last page of a section moves to the first page of the next expanded one.
-            var main = vm.NavGroups[0];
-            vm.SelectedPage = main.Pages[^1];
-            Pump();
-            var mainList = lists.Single(l => l.DataContext == main);
-            ((ListBoxItem)mainList.ContainerFromItem(main.Pages[^1])!).Focus();
-            window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
-            Pump();
-            Assert.Same(vm.NavGroups[1].Pages[0], vm.SelectedPage);
-            window.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, null);
-            Pump();
-            Assert.Same(main.Pages[^1], vm.SelectedPage);
-            // Inside a section the list moves normally.
-            window.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, null);
-            Pump();
-            Assert.Same(main.Pages[^2], vm.SelectedPage);
+            // Jump to a page by name (Ctrl+K box).
+            Assert.True(vm.JumpTo("twitch"));
+            Assert.Equal("Twitch", vm.SelectedPage.Title);
+            Assert.Equal("Platforms", vm.CurrentGroup!.Name);
+            Assert.False(vm.JumpTo("no such page"));
+            Assert.Contains(AppShortcuts.Window, s => s.Id == "jump" && s.Gesture == "Ctrl+K");
+
+            // The status bar counts actions and triggers.
+            Assert.StartsWith("Actions ", vm.Status.Counts);
+            Assert.Equal("Nothing connected", vm.Status.Connections);
         }
         finally
         {

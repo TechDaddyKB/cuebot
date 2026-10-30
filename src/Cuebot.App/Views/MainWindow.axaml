@@ -27,26 +27,62 @@
         xmlns:hv="using:Cuebot.App.Views.History"
         xmlns:asvm="using:Cuebot.App.ViewModels.Assistant"
         xmlns:asv="using:Cuebot.App.Views.Assistant"
+        xmlns:c="using:Cuebot.App.Controls"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
         Icon="avares://Cuebot/Assets/cuebot.ico"
         Width="1360" Height="860" MinWidth="960" MinHeight="600"
+        Background="{DynamicResource CuebotGround}"
         WindowStartupLocation="CenterScreen">
   <Window.Styles>
-    <!-- Sidebar: compact rows so every section fits expanded at 860 px. -->
-    <Style Selector="ListBox.nav ListBoxItem">
-      <Setter Property="Padding" Value="14,1" />
-      <Setter Property="Margin" Value="6,0" />
+    <!-- Icon rail -->
+    <Style Selector="Button.rail">
+      <Setter Property="Width" Value="66" />
       <Setter Property="MinHeight" Value="0" />
-    </Style>
-    <Style Selector="Button.navgroup">
+      <Setter Property="Padding" Value="2,8" />
+      <Setter Property="Margin" Value="0,1" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Padding" Value="14,5,14,2" />
-      <Setter Property="Margin" Value="6,1,6,0" />
-      <Setter Property="HorizontalContentAlignment" Value="Left" />
-      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+    </Style>
+    <Style Selector="Button.rail:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+    </Style>
+    <Style Selector="Button.rail.current">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotText}" />
+    </Style>
+    <Style Selector="Button.rail.current /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
+    </Style>
+    <Style Selector="Button.rail.current c|Icon">
+      <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+    </Style>
+    <Style Selector="Button.flat">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="6" />
+      <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+    </Style>
+    <!-- Section list -->
+    <Style Selector="ListBox.nav ListBoxItem">
+      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="Margin" Value="0,1" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <!-- Pages draw their own title for now; the page header shows it (until phase 3 removes them). -->
+    <Style Selector="ContentControl#PageHost TextBlock.h1">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <!-- Status bar -->
+    <Style Selector="Border#StatusBar TextBlock">
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
   </Window.Styles>
   <Window.DataTemplates>
@@ -83,63 +119,158 @@
     <DataTemplate DataType="tvm:ImportExportViewModel"><tviews:ImportExportView /></DataTemplate>
     <DataTemplate DataType="supvm:SupportViewModel"><supv:SupportView /></DataTemplate>
     <DataTemplate DataType="vm:SettingsViewModel"><views:SettingsView /></DataTemplate>
+    <DataTemplate DataType="vm:OverlaysViewModel"><views:OverlaysView /></DataTemplate>
   </Window.DataTemplates>
 
-  <Grid ColumnDefinitions="200,*">
-    <Border Background="{DynamicResource CuebotSidebar}">
-      <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,18,18,14" Spacing="10">
-          <Image Source="avares://Cuebot/Assets/cuebot.png" Width="28" Height="28" />
-          <TextBlock Text="Cuebot" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
-        </StackPanel>
-        <!-- Connection status: only connections in use, in two compact columns, so the navigation keeps its room at 860 px. -->
-        <TextBlock DockPanel.Dock="Bottom" Margin="14,6,10,12" Classes="muted" FontSize="12" Text="Nothing connected yet"
-                   IsVisible="{Binding !Dashboard.HasSidebarConnections}" />
-        <ItemsControl DockPanel.Dock="Bottom" Margin="14,6,10,12" ItemsSource="{Binding Dashboard.SidebarConnections}"
-                      IsVisible="{Binding Dashboard.HasSidebarConnections}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate DataType="vm:ConnectionStatusViewModel">
-              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" ToolTip.Tip="{Binding Message}" Background="Transparent">
-                <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" />
-                <TextBlock Text="{Binding Name}" Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="72" />
+  <Grid RowDefinitions="52,*,28">
+    <!-- ===== Top bar ===== -->
+    <Border x:Name="TopBar" Background="{DynamicResource CuebotRail}">
+      <Grid>
+        <DockPanel Margin="14,0,0,0" x:Name="TopBarContent">
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Image Source="avares://Cuebot/Assets/cuebot.png" Width="26" Height="26" />
+            <TextBlock Text="Cuebot" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Version}" Classes="muted" FontSize="11" VerticalAlignment="Center" />
+            <Border Width="1" Height="18" Background="{DynamicResource CuebotLine}" Margin="2,0" />
+            <Button x:Name="TddMark" Classes="flat" Command="{Binding OpenAboutCommand}" ToolTip.Tip="About Cuebot"
+                    AutomationProperties.Name="About Cuebot, made by Tech Daddy Digital">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Path Data="{StaticResource Brand.TddHead}" Fill="{DynamicResource CuebotText}" Stretch="Uniform" Height="18" />
+                <TextBlock Text="by Tech Daddy Digital" FontSize="11" VerticalAlignment="Center" />
               </StackPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <Border DockPanel.Dock="Bottom" Height="1" Margin="12,0" Background="{DynamicResource CuebotCardBorder}" />
-        <ScrollViewer x:Name="NavScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <ItemsControl x:Name="NavHost" ItemsSource="{Binding NavGroups}" Margin="0,0,0,6">
+            </Button>
+          </StackPanel>
+          <!-- Connection chips: only connections in use. -->
+          <ItemsControl x:Name="Chips" DockPanel.Dock="Right" ItemsSource="{Binding Dashboard.SidebarConnections}" VerticalAlignment="Center" Margin="0,0,12,0">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
-              <DataTemplate DataType="vm:NavGroupViewModel">
-                <StackPanel>
-                  <Button Classes="navgroup" Command="{Binding ToggleCommand}" HorizontalAlignment="Stretch"
-                          AutomationProperties.Name="{Binding Name}" ToolTip.Tip="Show or hide this section">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <TextBlock Text="{Binding Chevron}" Width="10" FontSize="11" Classes="muted" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding Header}" FontSize="11" FontWeight="SemiBold" Classes="muted" VerticalAlignment="Center" />
+              <DataTemplate DataType="vm:ConnectionStatusViewModel">
+                <Border Background="{DynamicResource CuebotCard}" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="1" CornerRadius="7"
+                        Padding="8,4" ToolTip.Tip="{Binding Message}">
+                  <StackPanel Orientation="Horizontal" Spacing="7">
+                    <Border Width="16" Height="16" CornerRadius="4" Background="{Binding Name, Converter={x:Static c:PlatformBrush.Instance}}">
+                      <TextBlock Text="{Binding Name, Converter={x:Static c:PlatformBrush.Initial}}" FontSize="9" FontWeight="Bold"
+                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding State}" FontSize="10" Classes="muted" />
                     </StackPanel>
-                  </Button>
-                  <ListBox Classes="nav" ItemsSource="{Binding Pages}" SelectedItem="{Binding Selected}" IsVisible="{Binding IsExpanded}"
- ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate DataType="vm:PageViewModel">
-                        <TextBlock Text="{Binding Title}" FontSize="13" />
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </StackPanel>
+                    <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" />
+                  </StackPanel>
+                </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-        </ScrollViewer>
+          <AutoCompleteBox x:Name="Jump" Width="340" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           ItemsSource="{Binding JumpTargets}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
+                           PlaceholderText="Jump to a page…   Ctrl+K" AutomationProperties.Name="Jump to a page" />
+        </DockPanel>
+        <!-- Brand line under the bar -->
+        <Border Height="2" VerticalAlignment="Bottom" Background="{StaticResource CuebotBrand}" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="72,Auto,*">
+      <!-- ===== Icon rail ===== -->
+      <Border Background="{DynamicResource CuebotRail}" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="0,0,1,0">
+        <DockPanel Margin="0,8">
+          <ItemsControl DockPanel.Dock="Bottom" ItemsSource="{Binding RailBottom}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:NavGroupViewModel">
+                <Button Classes="rail" Classes.current="{Binding IsCurrent}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SelectGroupCommand}"
+                        CommandParameter="{Binding}" ToolTip.Tip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+                  <StackPanel Spacing="3">
+                    <c:Icon Kind="{Binding Icon}" Width="20" Height="20" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding Label}" FontSize="10" HorizontalAlignment="Center" />
+                  </StackPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button DockPanel.Dock="Top" Classes="rail" Command="{Binding ToggleSectionListCommand}" IsVisible="{Binding !IsSectionListOpen}"
+                  ToolTip.Tip="Show the page list" AutomationProperties.Name="Show the page list">
+            <c:Icon Kind="panel-left-open" Width="18" Height="18" />
+          </Button>
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="Rail" ItemsSource="{Binding RailTop}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:NavGroupViewModel">
+                  <Button Classes="rail" Classes.current="{Binding IsCurrent}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SelectGroupCommand}"
+                          CommandParameter="{Binding}" ToolTip.Tip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+                    <StackPanel Spacing="3">
+                      <c:Icon Kind="{Binding Icon}" Width="20" Height="20" HorizontalAlignment="Center" />
+                      <TextBlock Text="{Binding Label}" FontSize="10" HorizontalAlignment="Center" />
+                    </StackPanel>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <!-- ===== Section list ===== -->
+      <Border Grid.Column="1" Width="210" IsVisible="{Binding IsSectionListOpen}"
+              BorderBrush="{DynamicResource CuebotLine}" BorderThickness="0,0,1,0">
+        <DockPanel Margin="10,14,10,10">
+          <DockPanel DockPanel.Dock="Top" Margin="6,0,0,10">
+            <Button DockPanel.Dock="Right" Classes="flat" Command="{Binding ToggleSectionListCommand}"
+                    ToolTip.Tip="Hide the page list" AutomationProperties.Name="Hide the page list">
+              <c:Icon Kind="panel-left-close" Width="16" Height="16" />
+            </Button>
+            <TextBlock Text="{Binding CurrentGroup.Name}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+          </DockPanel>
+          <ListBox x:Name="SectionPages" Classes="nav" ItemsSource="{Binding CurrentGroup.Pages}" SelectedItem="{Binding CurrentGroup.Selected}"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="vm:PageViewModel">
+                <TextBlock Text="{Binding Title}" FontSize="13" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+
+      <!-- ===== Page ===== -->
+      <DockPanel Grid.Column="2">
+        <supv:CrashBannerView DockPanel.Dock="Top" DataContext="{Binding Support.CrashBanner}" />
+        <StackPanel x:Name="PageHeader" DockPanel.Dock="Top" Margin="24,16,24,2" Spacing="2">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding CurrentGroup.Name}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource CuebotAccent}" />
+            <TextBlock Text="/" FontSize="20" Classes="muted" VerticalAlignment="Center" />
+            <TextBlock x:Name="PageTitle" Text="{Binding SelectedPage.Title}" FontSize="20" FontWeight="SemiBold" />
+          </StackPanel>
+          <TextBlock Text="{Binding PageDescription}" Classes="hint" FontSize="12.5" />
+        </StackPanel>
+        <ContentControl x:Name="PageHost" Content="{Binding SelectedPage}" />
+      </DockPanel>
+    </Grid>
+
+    <!-- ===== Status bar ===== -->
+    <Border x:Name="StatusBar" Grid.Row="2" Background="{DynamicResource CuebotRail}" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="0,1,0,0">
+      <DockPanel Margin="14,0" DataContext="{Binding Status}">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="16">
+          <Button Classes="flat" Padding="2,0" Command="{Binding OpenProblemsCommand}" ToolTip.Tip="Open Support">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Ellipse Classes="status good" IsVisible="{Binding !HasWarnings}" />
+              <Ellipse Classes="status warn" IsVisible="{Binding HasWarnings}" />
+              <TextBlock Text="{Binding Problems}" />
+            </StackPanel>
+          </Button>
+          <TextBlock Text="{Binding Clock}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="18">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Ellipse Classes="status" Classes.good="{Binding AllConnected}" />
+            <TextBlock Text="{Binding Connections}" />
+          </StackPanel>
+          <TextBlock Text="{Binding Counts}" />
+          <TextBlock Text="{Binding Uptime}" />
+        </StackPanel>
       </DockPanel>
     </Border>
-    <DockPanel Grid.Column="1">
-      <supv:CrashBannerView DockPanel.Dock="Top" DataContext="{Binding Support.CrashBanner}" />
-      <ContentControl Content="{Binding SelectedPage}" />
-    </DockPanel>
   </Grid>
 </Window>

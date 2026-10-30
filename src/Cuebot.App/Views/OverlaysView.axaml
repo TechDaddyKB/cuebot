@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
+             x:Class="Cuebot.App.Views.OverlaysView">
+  <Border Classes="card" Margin="24" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <StackPanel MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+      <Border Width="64" Height="64" CornerRadius="16" Background="{StaticResource CuebotBrand}" HorizontalAlignment="Center">
+        <c:Icon Kind="layers" Width="30" Height="30" Foreground="White" />
+      </Border>
+      <TextBlock Text="Overlays &amp; Widgets are on the way" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+      <TextBlock Classes="hint" TextAlignment="Center"
+                 Text="Design your own overlays, widgets and alerts in Cuebot and add them to OBS as browser sources. Cuebot hosts them on this computer, so nothing depends on a third-party service." />
+      <TextBlock Classes="hint" TextAlignment="Center"
+                 Text="Alert box, event list, goal bars and chat box · a drag-and-drop designer with your own images, sounds and fonts · triggered by the same events as actions." />
+    </StackPanel>
+  </Border>
+</UserControl>

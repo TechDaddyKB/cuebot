@@ -7,7 +7,7 @@
   <Grid>
     <DockPanel Margin="24,24,24,0">
       <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Settings" />
-      <TabControl x:Name="Sections">
+      <TabControl x:Name="Sections" SelectedIndex="{Binding SelectedTab}">
         <TabControl.Styles>
           <Style Selector="TabItem">
             <Setter Property="FontSize" Value="17" />
