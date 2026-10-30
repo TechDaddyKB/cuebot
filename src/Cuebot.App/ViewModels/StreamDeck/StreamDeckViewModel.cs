@@ -14,7 +14,7 @@ namespace Cuebot.App.ViewModels.StreamDeck;
 /// Stream Deck tab: setup steps (REST API on, token, plugin file) and the connected Stream Deck apps with their devices
 /// and visible Cuebot keys. The plugin connects to the REST API listener, so everything here is about that server.
 /// </summary>
-public sealed partial class StreamDeckViewModel : ObservableObject
+public sealed partial class StreamDeckViewModel : PageViewModel
 {
     public const string PluginFileName = "io.github.cuebot.streamdeck.streamDeckPlugin";
 
@@ -25,6 +25,7 @@ public sealed partial class StreamDeckViewModel : ObservableObject
     /// <param name="pluginSearchFolders">Where to look for the bundled plugin file (default: next to the app and in ./streamdeck).</param>
     /// <param name="usb">Direct USB mode (decks driven without the Stream Deck app); null hides its card.</param>
     public StreamDeckViewModel(StreamDeckHub hub, ServerManager servers, IEnumerable<string>? pluginSearchFolders = null, StreamDeckHidService? usb = null)
+        : base("Stream Deck")
     {
         _hub = hub;
         _servers = servers;
@@ -35,8 +36,6 @@ public sealed partial class StreamDeckViewModel : ObservableObject
         servers.StatusChanged += () => OnUi(Refresh);
         Refresh();
     }
-
-    public string Title => "Stream Deck";
 
     /// <summary>The direct USB card, or null.</summary>
     public StreamDeckUsbViewModel? Usb { get; }
@@ -148,11 +147,6 @@ public sealed partial class StreamDeckViewModel : ObservableObject
         OnPropertyChanged(string.Empty);
     }
 
-    private static void OnUi(Action action)
-    {
-        if (Dispatcher.UIThread.CheckAccess()) action();
-        else Dispatcher.UIThread.Post(action);
-    }
 }
 
 /// <summary>One connected Stream Deck app (one plugin instance).</summary>

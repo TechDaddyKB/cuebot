@@ -1,17 +1,15 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels.StreamDeck"
              x:Class="Cuebot.App.Views.StreamDeck.StreamDeckView"
              x:DataType="vm:StreamDeckViewModel">
-  <ScrollViewer Padding="24">
+  <ScrollViewer Padding="24,8,24,24">
     <StackPanel MaxWidth="860" HorizontalAlignment="Left">
-      <TextBlock Classes="h1" Text="Elgato Stream Deck" />
+      <c:StatusHeader Title="Stream Deck plugin" Brand="Stream Deck" State="{Binding State}" Detail="{Binding StatusMessage}" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
                  Text="The Cuebot plugin for Stream Deck runs actions, toggles them, sets global variables and fires the Stream Deck Action trigger. Cuebot's Stream Deck sub-actions change a key's title, state, image and value by its button id." />
 
-      <TextBlock TextWrapping="Wrap" Margin="0,0,0,8">
-        <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Name="StreamDeckStatus" Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
-      </TextBlock>
 
       <!-- Direct USB: decks driven without the Stream Deck app -->
       <ContentControl Name="UsbCard" Content="{Binding Usb}" IsVisible="{Binding HasUsb}">

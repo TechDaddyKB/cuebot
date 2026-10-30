@@ -62,7 +62,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         {
             Assert.Equal(
                 ["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant", "Queues", "Timers", "Users & Groups", "Variables", "Watchers",
-                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Input", "Apps & devices", "Webhooks", "Quotes", "Credits", "Points", "Decks", "Hotkeys", "Stream apps", "Speech", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
+                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Voice Control", "Input", "Apps & devices", "Stream Deck", "Webhooks", "Quotes", "Credits", "Points", "Decks", "Hotkeys", "Stream apps", "Speech", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
                 vm.Pages.Select(p => p.Title));
             foreach (var (theme, suffix) in new[] { (Cuebot.App.Shell.AppTheme.Dark, ""), (Cuebot.App.Shell.AppTheme.Light, "-light") })
             {
@@ -176,7 +176,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         Assert.Equal("StreamFog", apps.SubPageTitle);
 
         var devices = vm.Pages.OfType<Cuebot.App.ViewModels.Integrations.IntegrationsPageViewModel>().Single();
-        Assert.Equal(["Apps & services", "Lights & cameras", "Wave Link", "GoXLR", "Stream Deck"], devices.SubPages);
+        Assert.Equal(["Apps & services", "Lights & cameras", "Wave Link", "GoXLR"], devices.SubPages);
         vm.SelectedPage = devices;
         devices.SubPageIndex = 2;
         Pump();
@@ -187,6 +187,33 @@ public sealed class MainWindowTests : IAsyncDisposable
         vm.SelectedPage = apps;
         Pump();
         Save(window, "stream-apps-streamfog");
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Section_map_places_voice_control_stream_deck_input_and_settings_sub_pages()
+    {
+        TestApp.BindingErrors.Clear();
+        var (window, vm) = Open();
+        Assert.Equal(["Speech", "Voice Control"], vm.NavGroups.Single(g => g.Name == "Audio").Pages.Select(p => p.Title));
+        Assert.Equal(["Decks", "Stream Deck", "Input"], vm.NavGroups.Single(g => g.Name == "Decks & Input").Pages.Select(p => p.Title));
+
+        var input = vm.Pages.OfType<InputPageViewModel>().Single();
+        Assert.Equal(["MIDI", "Game controllers"], input.SubPages);
+        vm.SelectedPage = input;
+        input.SubPageIndex = 1;
+        Pump();
+        Assert.Equal(1, window.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "Tabs").SelectedIndex);
+        Save(window, "input-game-controllers");
+
+        Assert.Equal(["General", "Audio & text", "Backups", "Google Drive", "About"], vm.Settings.SubPages);
+        vm.OpenAboutCommand.Execute(null);
+        Pump();
+        Assert.Same(vm.Settings, vm.SelectedPage);
+        Assert.Equal("About", vm.Settings.SubPageTitle);
+        Assert.Equal(4, vm.Settings.SubPageIndex);
+        Save(window, "settings-about");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();
     }

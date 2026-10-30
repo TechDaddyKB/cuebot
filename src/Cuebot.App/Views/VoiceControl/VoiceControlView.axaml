@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels.VoiceControl"
              x:Class="Cuebot.App.Views.VoiceControl.VoiceControlView"
              x:DataType="vm:VoiceControlViewModel">
@@ -16,23 +17,24 @@
     </Style>
   </UserControl.Styles>
 
-  <DockPanel Margin="24,24,24,8">
-    <!-- Status bar: listening state, level meter, what is being heard right now. -->
+  <DockPanel Margin="24,8,24,8">
+    <!-- Listening state, level meter, what is being heard right now. -->
     <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
-      <TextBlock Classes="h1" Text="Voice Control" />
+      <c:StatusHeader Title="Voice Control" Brand="Voice Control" State="{Binding State}" Detail="{Binding StatusMessage}" Margin="0,0,0,4">
+        <c:StatusHeader.Actions>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ProgressBar Minimum="-70" Maximum="0" Value="{Binding LevelDb}" Width="160" Height="10" MinHeight="10" VerticalAlignment="Center"
+                         ToolTip.Tip="Microphone level" />
+            <Button Content="Start Listening" Classes="accent" Command="{Binding StartCommand}" Name="VoiceStart" />
+            <Button Content="Stop Listening" Command="{Binding StopCommand}" Name="VoiceStop" />
+          </StackPanel>
+        </c:StatusHeader.Actions>
+      </c:StatusHeader>
       <TextBlock Classes="muted" TextWrapping="Wrap"
                  Text="Say a command phrase to fire the Voice Control Command trigger; everything recognised also fires Dictation. Recognition runs on this PC (Whisper on Windows and Linux, or Windows Speech Recognition). Settings are stored in voicecontrol.json." />
-      <Grid ColumnDefinitions="Auto,Auto,*,200">
-        <Button Content="Start Listening" Classes="accent" Command="{Binding StartCommand}" Name="VoiceStart" />
-        <Button Grid.Column="1" Content="Stop Listening" Command="{Binding StopCommand}" Margin="8,0" Name="VoiceStop" />
-        <TextBlock Grid.Column="2" VerticalAlignment="Center" TextWrapping="Wrap">
-          <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
-        </TextBlock>
-        <ProgressBar Grid.Column="3" Minimum="-70" Maximum="0" Value="{Binding LevelDb}" Height="10" MinHeight="10" VerticalAlignment="Center"
-                     ToolTip.Tip="Microphone level" />
-      </Grid>
       <TextBlock Classes="muted" FontStyle="Italic" Text="{Binding Hearing}" IsVisible="{Binding IsListening}" TextWrapping="Wrap" />
-      <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+      <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}"
+                 IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
 
     <TabControl Name="VoiceTabs">

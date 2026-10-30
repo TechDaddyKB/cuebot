@@ -28,6 +28,10 @@
         xmlns:asvm="using:Cuebot.App.ViewModels.Assistant"
         xmlns:asv="using:Cuebot.App.Views.Assistant"
         xmlns:c="using:Cuebot.App.Controls"
+        xmlns:vcvm="using:Cuebot.App.ViewModels.VoiceControl"
+        xmlns:vcv="using:Cuebot.App.Views.VoiceControl"
+        xmlns:sdvm="using:Cuebot.App.ViewModels.StreamDeck"
+        xmlns:sdv="using:Cuebot.App.Views.StreamDeck"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Cuebot"
@@ -113,6 +117,8 @@
     <DataTemplate DataType="intvm:IntegrationsViewModel"><intv:IntegrationsView /></DataTemplate>
     <DataTemplate DataType="intvm:IntegrationsPageViewModel"><intv:IntegrationsPageView /></DataTemplate>
     <DataTemplate DataType="vm:InputPageViewModel"><views:InputPageView /></DataTemplate>
+    <DataTemplate DataType="vcvm:VoiceControlViewModel"><vcv:VoiceControlView /></DataTemplate>
+    <DataTemplate DataType="sdvm:StreamDeckViewModel"><sdv:StreamDeckView /></DataTemplate>
     <DataTemplate DataType="whvm:WebhooksPageViewModel"><whv:WebhooksPageView /></DataTemplate>
     <DataTemplate DataType="xvm:QuotesViewModel"><xviews:QuotesView /></DataTemplate>
     <DataTemplate DataType="xvm:CreditsViewModel"><xviews:CreditsView /></DataTemplate>

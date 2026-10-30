@@ -479,6 +479,23 @@ public sealed partial class SettingsViewModel : PageViewModel
     /// <summary>The selected tab (General, Audio &amp; text, Backups, Google Drive, About).</summary>
     [ObservableProperty] private int _selectedTab;
 
+    public override IReadOnlyList<string> SubPages { get; } = ["General", "Audio & text", "Backups", "Google Drive", "About"];
+
+    public override int SubPageIndex
+    {
+        get => SelectedTab;
+        set
+        {
+            if (value >= 0) SelectedTab = value;
+        }
+    }
+
+    partial void OnSelectedTabChanged(int value)
+    {
+        OnPropertyChanged(nameof(SubPageIndex));
+        OnPropertyChanged(nameof(SubPageTitle));
+    }
+
     public void ShowAbout() => SelectedTab = 4;
 
     public string Version => BackupService.Version;

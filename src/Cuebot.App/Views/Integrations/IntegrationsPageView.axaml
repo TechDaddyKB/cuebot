@@ -5,7 +5,6 @@
              xmlns:elgv="using:Cuebot.App.Views.Elgato"
              xmlns:wlv="using:Cuebot.App.Views.WaveLink"
              xmlns:gxv="using:Cuebot.App.Views.GoXlr"
-             xmlns:sdv="using:Cuebot.App.Views.StreamDeck"
              x:Class="Cuebot.App.Views.Integrations.IntegrationsPageView"
              x:DataType="vm:IntegrationsPageViewModel">
   <!-- One sub-page at a time, picked in the section list; each brings its own scrolling and padding. -->
@@ -23,9 +22,6 @@
       </TabItem>
       <TabItem Header="GoXLR">
         <gxv:GoXlrView DataContext="{Binding GoXlr}" />
-      </TabItem>
-      <TabItem Header="Stream Deck">
-        <sdv:StreamDeckView DataContext="{Binding StreamDeck}" />
       </TabItem>
     </TabControl>
   </DockPanel>

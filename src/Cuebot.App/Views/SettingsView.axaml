@@ -5,15 +5,10 @@
              x:Class="Cuebot.App.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <Grid>
-    <DockPanel Margin="24,24,24,0">
-      <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Settings" />
-      <TabControl x:Name="Sections" SelectedIndex="{Binding SelectedTab}">
-        <TabControl.Styles>
-          <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="17" />
-            <Setter Property="MinHeight" Value="40" />
-          </Style>
-        </TabControl.Styles>
+    <DockPanel Margin="24,8,24,0">
+      <TextBlock x:Name="SubPageTitle" DockPanel.Dock="Top" Text="{Binding SubPageTitle}" FontSize="16" FontWeight="SemiBold" />
+      <!-- One sub-page at a time (General, Audio & text, Backups, Google Drive, About), picked in the section list. -->
+      <TabControl x:Name="Sections" Classes="subpages" SelectedIndex="{Binding SelectedTab}">
         <TabItem Header="General">
           <ScrollViewer>
             <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="0,12,0,24">

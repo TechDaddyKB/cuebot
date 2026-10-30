@@ -1,21 +1,35 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels"
              x:Class="Cuebot.App.Views.CommandsView"
              x:DataType="vm:CommandsViewModel"
              x:Name="Root">
-  <Grid ColumnDefinitions="320,*">
+  <Grid ColumnDefinitions="300,12,*" Margin="16,12,16,16">
     <!-- Command list, grouped -->
-    <Border x:Name="CommandList" Focusable="True" Background="{DynamicResource CuebotPanel}" BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,0,1,0">
-      <DockPanel Margin="12">
-        <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Commands" />
+    <Border x:Name="CommandList" Focusable="True" Classes="card" Margin="0" Padding="10,12">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="2,0,0,8">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+            <Button Classes="accent" Command="{Binding NewCommandCommand}" ToolTip.Tip="New command" Padding="6"
+                    AutomationProperties.Name="New command">
+              <c:Icon Kind="plus" Width="14" Height="14" />
+            </Button>
+            <Button Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Duplicate" Padding="6"
+                    AutomationProperties.Name="Duplicate command">
+              <c:Icon Kind="copy" Width="14" Height="14" />
+            </Button>
+            <Button Command="{Binding DeleteCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Delete (Delete)" Padding="6"
+                    AutomationProperties.Name="Delete command">
+              <c:Icon Kind="trash-2" Width="14" Height="14" />
+            </Button>
+          </StackPanel>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Commands" FontWeight="SemiBold" FontSize="15" />
+            <TextBlock Classes="muted" Text="{Binding Summary}" FontSize="12" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </DockPanel>
         <TextBox DockPanel.Dock="Top" PlaceholderText="Search commands" Text="{Binding Filter}" Margin="0,0,0,8" />
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
-          <Button Content="New" Classes="accent" Command="{Binding NewCommandCommand}" />
-          <Button Content="Duplicate" Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" />
-          <Button Content="Delete" Command="{Binding DeleteCommandCommand}" IsEnabled="{Binding HasSelection}" />
-        </StackPanel>
-        <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,6" />
         <ScrollViewer>
           <ItemsControl ItemsSource="{Binding Groups}">
             <ItemsControl.ItemTemplate>
@@ -53,11 +67,11 @@
       </DockPanel>
     </Border>
 
-    <TextBlock Grid.Column="1" IsVisible="{Binding !HasSelection}" Classes="muted" FontSize="14"
+    <TextBlock Grid.Column="2" IsVisible="{Binding !HasSelection}" Classes="muted" FontSize="14"
                HorizontalAlignment="Center" VerticalAlignment="Center" Text="Create or select a command" />
 
     <!-- Editor -->
-    <ScrollViewer Grid.Column="1" IsVisible="{Binding HasSelection}" Padding="24,16">
+    <ScrollViewer Grid.Column="2" IsVisible="{Binding HasSelection}" Padding="0,0,8,0">
       <ContentControl Content="{Binding Editor}">
         <ContentControl.DataTemplates>
           <DataTemplate DataType="vm:CommandEditorViewModel">
