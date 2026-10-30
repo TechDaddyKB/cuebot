@@ -4,6 +4,7 @@ using Cuebot.Core.Desktop.Input;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Tests.Commands;
+using System.Runtime.Versioning;
 
 namespace Cuebot.Tests.Extras;
 
@@ -197,6 +198,7 @@ public sealed class InputTests : IDisposable
     }
 
     [Fact]
+    [SupportedOSPlatform("linux")]
     public void X11_mouse_probes_survive_many_threads()
     {
         // libXi destroys its process-wide state when the last XInput display closes; unserialized this crashed the
