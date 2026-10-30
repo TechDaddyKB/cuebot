@@ -7,8 +7,10 @@ public sealed class ChatPageSettings
 {
     public bool ShowEmotes { get; set; } = true;
 
-    /// <summary>Show alejo.io pronouns next to Twitch names.</summary>
-    public bool ShowPronouns { get; set; } = true;
+    /// <summary>
+    /// Show alejo.io pronouns next to Twitch names. Off by default: it sends chatters' Twitch names to that service.
+    /// </summary>
+    public bool ShowPronouns { get; set; }
 
     public HighlightRules Highlights { get; set; } = new();
 

@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Server.Api;
 
 /// <summary>
@@ -14,5 +15,6 @@ public sealed class ApiServerSettings
     public int Port { get; set; } = DefaultPort;
 
     /// <summary>Bearer token for the REST API and MCP. Generated when the server first starts; never logged.</summary>
+    [Secret]
     public string Token { get; set; } = "";
 }

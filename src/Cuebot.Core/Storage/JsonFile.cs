@@ -19,7 +19,8 @@ public static class Json
 /// <summary>
 /// A JSON document persisted to disk. Saves are debounced and atomic (write temp file, then rename).
 /// The value is serialized on the calling thread when a save is scheduled, so the writer never
-/// observes a half-edited object.
+/// observes a half-edited object. <see cref="SecretAttribute"/> properties go to the folder's
+/// <see cref="SecretStore"/> instead of the file (see <see cref="SecretJson"/>).
 /// </summary>
 public sealed class JsonFile<T> : IDisposable where T : class, new()
 {
@@ -35,14 +36,15 @@ public sealed class JsonFile<T> : IDisposable where T : class, new()
         _path = path;
         _log = log;
         _timer = new Timer(_ => Flush());
-        Value = Load();
+        Value = Load(out var needsSave);
+        if (needsSave) SaveNow();   // move secrets still stored in the file into the secret store
     }
 
     public T Value { get; private set; }
 
     public void ScheduleSave()
     {
-        var text = JsonSerializer.Serialize(Value, Json.Options);
+        var text = SecretJson.Serialize(Value, _path);
         lock (_gate) _pending = text;
         _timer.Change(Debounce, Timeout.InfiniteTimeSpan);
     }
@@ -74,12 +76,13 @@ public sealed class JsonFile<T> : IDisposable where T : class, new()
         }
     }
 
-    private T Load()
+    private T Load(out bool needsSave)
     {
+        needsSave = false;
         if (!File.Exists(_path)) return new T();
         try
         {
-            return JsonSerializer.Deserialize<T>(File.ReadAllText(_path), Json.Options) ?? new T();
+            return SecretJson.Deserialize<T>(File.ReadAllText(_path), _path, out needsSave) ?? new T();
         }
         catch (Exception ex)
         {

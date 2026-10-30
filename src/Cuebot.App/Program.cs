@@ -4,6 +4,7 @@ using Cuebot.App.Platform;
 using Cuebot.App.Shell;
 using Cuebot.Core;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Storage;
 
 namespace Cuebot.App;
 
@@ -46,6 +47,13 @@ internal static class Program
         // AI clients spawn "Cuebot --mcp-stdio"; it only bridges stdio to the running instance's MCP endpoint.
         if (Cuebot.Server.Mcp.McpStdioBridge.IsRequested(args))
             return Cuebot.Server.Mcp.McpStdioBridge.Run(paths.Root);
+
+        // Stored sign-ins and keys are encrypted; on Linux the key lives in the desktop keyring (Windows: DPAPI).
+        var dataRoot = Path.GetFullPath(paths.Root);
+        SecretStore.Warn = m => StartupWarnings.Add("Secrets", m);
+        SecretStore.ProtectorFor = folder => OperatingSystem.IsLinux() && folder == dataRoot
+            ? new SecretServiceKeyProtector(m => StartupWarnings.Add("Secrets", m))
+            : FileKeyProtector.Instance;
 
         // One instance per data folder: a second launch brings the first one forward and exits.
         var instance = SingleInstance.TryAcquire(paths.Root);

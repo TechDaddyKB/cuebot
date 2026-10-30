@@ -76,14 +76,16 @@ public sealed partial class UsersViewModel : PageViewModel
 {
     private readonly UserRegistry _users;
     private readonly GroupStore _groups;
+    private readonly ViewerData? _viewerData;
     private readonly Dictionary<string, GroupRowViewModel> _groupRows = new(StringComparer.OrdinalIgnoreCase);
     private bool _usersRefreshPosted;
     private bool _loading;
 
-    public UsersViewModel(UserRegistry users, GroupStore groups) : base("Users & Groups")
+    public UsersViewModel(UserRegistry users, GroupStore groups, ViewerData? viewerData = null) : base("Users & Groups")
     {
         _users = users;
         _groups = groups;
+        _viewerData = viewerData;
 
         _loading = true;
         var settings = users.Settings;
@@ -117,7 +119,43 @@ public sealed partial class UsersViewModel : PageViewModel
 
     partial void OnSearchChanged(string value) => RefreshUsers();
 
-    partial void OnSelectedUserChanged(UserRowViewModel? value) => AddSelectedUserToGroupCommand.NotifyCanExecuteChanged();
+    partial void OnSelectedUserChanged(UserRowViewModel? value)
+    {
+        AddSelectedUserToGroupCommand.NotifyCanExecuteChanged();
+        ForgetSelectedUserCommand.NotifyCanExecuteChanged();
+        IsConfirmingForget = false;
+    }
+
+    // ---- forget a viewer ----
+
+    /// <summary>True while the "Forget viewer" confirmation is shown.</summary>
+    [ObservableProperty] private bool _isConfirmingForget;
+
+    public string ForgetPrompt => SelectedUser is { } u
+        ? $"Forget {u.Name} ({u.Platform}) everywhere? This removes their stored points and other values, group memberships, command counts and voice settings, and their name from quotes. It cannot be undone; logs and older backups keep what they already have."
+        : "";
+
+    private bool CanForgetSelectedUser() => SelectedUser is not null && _viewerData is not null;
+
+    [RelayCommand(CanExecute = nameof(CanForgetSelectedUser))]
+    private void ForgetSelectedUser()
+    {
+        OnPropertyChanged(nameof(ForgetPrompt));
+        IsConfirmingForget = true;
+    }
+
+    [RelayCommand]
+    private void CancelForget() => IsConfirmingForget = false;
+
+    [RelayCommand]
+    private void ConfirmForget()
+    {
+        IsConfirmingForget = false;
+        if (SelectedUser is not { } row || _viewerData is null) return;
+        var result = _viewerData.Forget(row.User.Platform, row.User.UserId, row.User.UserName);
+        UsersStatus = $"Forgot {row.Name} ({result.Total} record(s) removed).";
+        RefreshUsers();
+    }
 
     private void ScheduleUsersRefresh()
     {

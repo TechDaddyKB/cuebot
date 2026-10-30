@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Server;
 
 /// <summary>
@@ -47,6 +48,7 @@ public sealed class StreamerBotWebSocketSettings
     public bool AuthenticationEnabled { get; set; }
 
     /// <summary>Never logged.</summary>
+    [Secret]
     public string Password { get; set; } = "";
 
     /// <summary>With authentication on: true requires it for every request, false only for privileged ones.</summary>

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cuebot.Core.Storage;
 
 namespace Cuebot.Obs.Streamlabs;
 
@@ -9,6 +10,7 @@ public sealed class StreamlabsSettings
     public int Port { get; set; } = 59650;
 
     /// <summary>The Remote Control API token (Streamlabs Desktop: Settings → Remote Control → Show details).</summary>
+    [Secret]
     public string Token { get; set; } = "";
 
     public bool AutoConnect { get; set; }

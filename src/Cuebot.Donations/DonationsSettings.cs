@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Donations;
 
 /// <summary>Persisted donation service configuration (donations.json). Tokens and keys are never logged.</summary>
@@ -14,6 +15,7 @@ public sealed class DonationsSettings
 public sealed class StreamlabsSettings
 {
     /// <summary>Socket API token (Streamlabs dashboard → Settings → API Settings → API Tokens). A secret.</summary>
+    [Secret]
     public string SocketToken { get; set; } = "";
 
     public bool AutoConnect { get; set; } = true;
@@ -40,6 +42,7 @@ public enum StreamElementsTransport
 public sealed class StreamElementsSettings
 {
     /// <summary>JWT token (StreamElements dashboard → Account → Channels → Show secrets). A secret.</summary>
+    [Secret]
     public string JwtToken { get; set; } = "";
 
     public bool AutoConnect { get; set; } = true;
@@ -59,6 +62,7 @@ public sealed class StreamElementsSettings
 public sealed class TipeeeStreamSettings
 {
     /// <summary>API key (tipeeestream.com dashboard → My account / API). A secret.</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>TipeeeStream user name, sent when joining the room (the server does not appear to check it).</summary>
@@ -116,6 +120,7 @@ public sealed class TreatStreamSettings
     public string ClientId { get; set; } = "";
 
     /// <summary>OAuth client secret of that app. A secret.</summary>
+    [Secret]
     public string ClientSecret { get; set; } = "";
 
     /// <summary>Port of the sign-in redirect, http://localhost:{port}/callback (register it in the TreatStream app).</summary>
@@ -125,9 +130,11 @@ public sealed class TreatStreamSettings
     public const int DefaultRedirectPort = 8913;
 
     /// <summary>OAuth access token (from signing in, or pasted). A secret.</summary>
+    [Secret]
     public string AccessToken { get; set; } = "";
 
     /// <summary>OAuth refresh token. A secret.</summary>
+    [Secret]
     public string RefreshToken { get; set; } = "";
 
     public DateTimeOffset? AccessTokenExpiresAt { get; set; }
@@ -138,6 +145,7 @@ public sealed class TreatStreamSettings
 public sealed class PallySettings
 {
     /// <summary>API key (pally.gg → Dashboard → Settings → API Keys). A secret.</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>Only this page's tips (its slug, pally.gg/p/&lt;slug&gt;); empty = every page you own (firehose).</summary>

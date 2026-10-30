@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Webhooks;
 
 /// <summary>
@@ -35,6 +36,7 @@ public sealed class WebhooksSettings
     /// Outgoing: the IFTTT Webhooks key used by the IFTTT Notification sub-actions when they give none
     /// (ifttt.com/maker_webhooks → Documentation). A secret.
     /// </summary>
+    [Secret]
     public string IftttKey { get; set; } = "";
 }
 
@@ -44,6 +46,7 @@ public sealed class WebhookServiceSettings
     public bool Enabled { get; set; } = true;
 
     /// <summary>The signing secret / verification token. A secret.</summary>
+    [Secret]
     public string Secret { get; set; } = "";
 }
 
@@ -53,6 +56,7 @@ public sealed class CustomWebhookSettings
     public string Name { get; set; } = "";
 
     /// <summary>Sent as <c>?token=</c> or the <c>X-Cuebot-Token</c> header. A secret.</summary>
+    [Secret]
     public string Token { get; set; } = "";
 
     public bool Enabled { get; set; } = true;

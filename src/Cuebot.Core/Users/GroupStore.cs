@@ -47,7 +47,7 @@ public static class GroupEvents
 /// every change persists, raises <see cref="Changed"/> and publishes a <see cref="GroupEvents"/> bus event.
 /// Group names are case-insensitive.
 /// </summary>
-public sealed class GroupStore : IDisposable
+public sealed class GroupStore : IViewerDataStore, IDisposable
 {
     private readonly JsonFile<GroupsFile>? _file;
     private readonly List<GroupDefinition> _groups;
@@ -232,6 +232,26 @@ public sealed class GroupStore : IDisposable
 
     private GroupDefinition? Find(string group) =>
         _groups.FirstOrDefault(g => string.Equals(g.Name, group.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    string IViewerDataStore.Name => "groups";
+
+    int IViewerDataStore.Forget(Func<ViewerRef, bool> match)
+    {
+        lock (_gate)
+        {
+            var viewers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var group in _groups)
+            {
+                foreach (var member in group.Users.Where(m => match(new ViewerRef(m.Platform, m.UserId, m.UserName))).ToList())
+                {
+                    group.Users.Remove(member);
+                    viewers.Add(UserRecord.KeyOf(member.Platform, member.UserId, member.UserName));
+                }
+            }
+            if (viewers.Count > 0) Save();
+            return viewers.Count;
+        }
+    }
 
     private void Save() => _file?.ScheduleSave();
 

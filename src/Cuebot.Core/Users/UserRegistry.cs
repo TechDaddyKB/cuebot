@@ -61,7 +61,7 @@ public static class UserEvents
 /// Subscribes to the bus when constructed; <see cref="IPeriodicService.Tick"/> (driven by the timer service)
 /// handles present viewers and batched saving. Thread-safe.
 /// </summary>
-public sealed class UserRegistry : IPeriodicService, IDisposable
+public sealed class UserRegistry : IPeriodicService, IViewerDataStore, IDisposable
 {
     private static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
 
@@ -336,6 +336,24 @@ public sealed class UserRegistry : IPeriodicService, IDisposable
             if (_dirty) SaveLocked(_time.GetUtcNow());
         }
         _file?.Flush();
+    }
+
+    string IViewerDataStore.Name => "users";
+
+    int IViewerDataStore.Forget(Func<ViewerRef, bool> match)
+    {
+        lock (_gate)
+        {
+            var gone = _users.Where(u => match(new ViewerRef(u.Value.Platform, u.Value.UserId, u.Value.UserName))).ToList();
+            foreach (var (key, user) in gone)
+            {
+                _users.Remove(key);
+                _data.Users.Remove(user);
+                _spoken.Remove(key);
+            }
+            if (gone.Count > 0) SaveLocked(_time.GetUtcNow());
+            return gone.Count;
+        }
     }
 
     private void MarkDirty() => _dirty = true;

@@ -11,6 +11,7 @@ internal static class VariableFeatures
     public static IServiceCollection AddVariableFeatures(this IServiceCollection services)
     {
         services.AddSingleton(sp => new UserVariables(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<Logging.AppLog>()));
+        services.AddSingleton<Users.IViewerDataStore>(sp => sp.GetRequiredService<UserVariables>());
         services.AddSingleton(sp => sp.GetRequiredService<GlobalVariables>().Text);
         services.AddSingleton<VariableViewer>();
         services.AddSingleton<ITriggerProvider, VariableTriggers>();

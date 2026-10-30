@@ -7,7 +7,7 @@ namespace Cuebot.Core.Commands;
 /// Owns commands.json and command-counters.json. Thread-safe: callers get copies and change commands through the
 /// methods here, which persist and raise <see cref="Changed"/> (raised on the calling thread; the UI marshals).
 /// </summary>
-public sealed class CommandStore : IDisposable
+public sealed class CommandStore : Users.IViewerDataStore, IDisposable
 {
     private readonly JsonFile<CommandsFile>? _file;
     private readonly JsonFile<CommandCountersFile>? _countersFile;
@@ -251,6 +251,35 @@ public sealed class CommandStore : IDisposable
         }
         Changed?.Invoke();
         return true;
+    }
+
+    string Users.IViewerDataStore.Name => "command counters";
+
+    int Users.IViewerDataStore.Forget(Func<Users.ViewerRef, bool> match)
+    {
+        lock (_gate)
+        {
+            var viewers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var users in _userCounters.Values)
+            {
+                foreach (var key in users.Keys.Where(k => match(FromKey(k))).ToList())
+                {
+                    users.Remove(key);
+                    viewers.Add(key);
+                }
+            }
+            if (viewers.Count > 0) SaveCounters();
+            return viewers.Count;
+        }
+
+        // Counter keys are "platform:userId" (user name when there is no id).
+        static Users.ViewerRef FromKey(string key)
+        {
+            var colon = key.IndexOf(':');
+            var platform = colon < 0 ? "" : key[..colon];
+            var who = colon < 0 ? key : key[(colon + 1)..];
+            return new Users.ViewerRef(platform, who, who);
+        }
     }
 
     /// <summary>Writes only counters of commands that ask for persistence. Caller holds the lock.</summary>

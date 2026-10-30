@@ -68,7 +68,9 @@ public sealed class GoogleDriveBackupSettings
     public bool Enabled { get; set; } = true;
 
     public string ClientId { get; set; } = "";
+    [Secret]
     public string ClientSecret { get; set; } = "";
+    [Secret]
     public string RefreshToken { get; set; } = "";
 
     /// <summary>The signed-in Google account, shown in the UI.</summary>
@@ -110,8 +112,9 @@ public sealed class AppSettingsStore
     public AppSettingsStore(AppPaths paths)
     {
         Path = paths.File(FileName);
-        Settings = Load(Path, out var error);
+        Settings = Load(Path, out var error, out var needsSave);
         LoadError = error;
+        if (needsSave) TrySave();   // move secrets still stored in app.json into the secret store
     }
 
     public string Path { get; }
@@ -130,7 +133,7 @@ public sealed class AppSettingsStore
             Settings.Backups.Keep = Math.Clamp(Settings.Backups.Keep, 1, 1000);
             Settings.Backups.GoogleDrive.Keep = Math.Clamp(Settings.Backups.GoogleDrive.Keep, 1, 1000);
             var temp = Path + ".tmp";
-            File.WriteAllText(temp, JsonSerializer.Serialize(Settings, Json.Options));
+            File.WriteAllText(temp, SecretJson.Serialize(Settings, Path));
             File.Move(temp, Path, overwrite: true);
         }
         Saved?.Invoke();
@@ -150,13 +153,14 @@ public sealed class AppSettingsStore
         }
     }
 
-    private static AppSettings Load(string path, out string? error)
+    private static AppSettings Load(string path, out string? error, out bool needsSave)
     {
         error = null;
+        needsSave = false;
         if (!File.Exists(path)) return new AppSettings();
         try
         {
-            var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Json.Options) ?? new AppSettings();
+            var settings = SecretJson.Deserialize<AppSettings>(File.ReadAllText(path), path, out needsSave) ?? new AppSettings();
             settings.General ??= new GeneralSettings();
             settings.Backups ??= new BackupSettings();
             settings.Text ??= new TextSettings();

@@ -18,13 +18,18 @@ public static class ChatExtrasFeatures
         services.AddSingleton<IEmoteProvider>(sp => new SevenTvEmoteProvider(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton<IEmoteProvider>(sp => new BttvEmoteProvider(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton<IEmoteProvider>(sp => new FfzEmoteProvider(sp.GetRequiredService<HttpClient>()));
-        services.AddSingleton(sp => new EmoteService(
-            sp.GetRequiredService<Events.EventBus>(),
-            sp.GetRequiredService<AppLog>(),
-            EmoteDiskCache.For(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()),
-            () => sp.GetRequiredService<JsonFile<EmoteSettings>>().Value,
-            sp.GetServices<IEmoteProvider>(),
-            sp.GetServices<IEmoteChannelSource>()));
+        services.AddSingleton(sp =>
+        {
+            // Resolved once: the chat page can still ask for emotes while the app shuts down and the provider is gone.
+            var settings = sp.GetRequiredService<JsonFile<EmoteSettings>>();
+            return new EmoteService(
+                sp.GetRequiredService<Events.EventBus>(),
+                sp.GetRequiredService<AppLog>(),
+                EmoteDiskCache.For(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()),
+                () => settings.Value,
+                sp.GetServices<IEmoteProvider>(),
+                sp.GetServices<IEmoteChannelSource>());
+        });
         services.AddSingleton<ISubActionHandler, RefreshEmotesSubAction>();
         services.AddSingleton<ITriggerProvider, EmoteTriggers>();
         services.AddSingleton<IScriptFunctionProvider, EmoteScriptFunctions>();

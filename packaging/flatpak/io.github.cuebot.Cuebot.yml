@@ -17,6 +17,7 @@ finish-args:
                            # --device=input is narrower but needs Flatpak 1.15.6+ and skips hidraw.
   - --filesystem=xdg-music:ro   # sound files used by "Play sound"
   - --talk-name=org.kde.StatusNotifierWatcher   # tray icon (StatusNotifierItem); without it Cuebot runs trayless
+  - --talk-name=org.freedesktop.secrets         # desktop keyring for the key of stored sign-ins (else a key file)
 modules:
   - name: espeak-ng
     buildsystem: autotools

@@ -46,7 +46,7 @@ public static class QuoteEvents
 /// <see cref="MarkShown"/> is called (by "Get quote"). Remembers the last game/category reported by any platform event
 /// (arguments gameName, categoryName or game) so new quotes record what was being streamed. Thread-safe.
 /// </summary>
-public sealed class QuoteStore : IDisposable
+public sealed class QuoteStore : Users.IViewerDataStore, IDisposable
 {
     private static readonly string[] GameKeys = ["gameName", "categoryName", "game"];
 
@@ -286,6 +286,24 @@ public sealed class QuoteStore : IDisposable
             if (value.Length == 0) continue;
             CurrentGame = value;
             return;
+        }
+    }
+
+    string Users.IViewerDataStore.Name => "quotes";
+
+    /// <summary>Keeps the quotes (the stream's content) but removes who said or added them.</summary>
+    int Users.IViewerDataStore.Forget(Func<Users.ViewerRef, bool> match)
+    {
+        lock (_gate)
+        {
+            var quotes = _data.Quotes.Where(q => q.Platform.Length > 0 && match(new Users.ViewerRef(q.Platform, q.UserId, q.User))).ToList();
+            foreach (var q in quotes)
+            {
+                q.User = "";
+                q.UserId = "";
+            }
+            if (quotes.Count > 0) Save();
+            return quotes.Count;
         }
     }
 

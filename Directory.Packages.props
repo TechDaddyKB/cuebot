@@ -29,6 +29,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.9.0" />
     <!-- Newtonsoft.Json (MIT): Streamer.bot ships it, so pasted C# code that uses it compiles in Cuebot too. -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
     <PackageVersion Include="System.Speech" Version="10.0.14" />
     <!-- Audio: SoundFlow (MIT) wraps miniaudio (MIT or public domain/Unlicense) and ships its native libraries for
          win-x64/x86/arm64 and linux-x64/arm/arm64; NVorbis (MIT) decodes Ogg Vorbis in managed code. -->

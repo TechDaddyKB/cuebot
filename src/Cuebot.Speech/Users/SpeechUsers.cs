@@ -51,7 +51,7 @@ public sealed class SpeechUser
 }
 
 /// <summary>Thread-safe access to <see cref="SpeechUserStore"/>; users are matched by platform and id, else by name.</summary>
-public sealed class SpeechUserDirectory
+public sealed class SpeechUserDirectory : Cuebot.Core.Users.IViewerDataStore
 {
     private readonly object _gate = new();
     private readonly SpeechUserStore _store;
@@ -124,6 +124,16 @@ public sealed class SpeechUserDirectory
         bool removed;
         lock (_gate) removed = _store.Users.Remove(user);
         if (removed) Save();
+        return removed;
+    }
+
+    string Cuebot.Core.Users.IViewerDataStore.Name => "voice settings";
+
+    int Cuebot.Core.Users.IViewerDataStore.Forget(Func<Cuebot.Core.Users.ViewerRef, bool> match)
+    {
+        int removed;
+        lock (_gate) removed = _store.Users.RemoveAll(u => match(new Cuebot.Core.Users.ViewerRef(u.Platform, u.UserId, u.UserName)));
+        if (removed > 0) Save();
         return removed;
     }
 

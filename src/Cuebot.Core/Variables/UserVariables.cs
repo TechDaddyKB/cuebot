@@ -3,6 +3,8 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 
+using Cuebot.Core.Users;
+
 namespace Cuebot.Core.Variables;
 
 /// <summary>One per-user variable as shown in the viewer.</summary>
@@ -42,7 +44,7 @@ public sealed class UserVariablesRecord
 /// display and lookups. Persisted values go to user-variables.json; temporary ones last until restart or
 /// <see cref="ClearTemporary"/>. Saves are debounced and done off the calling thread.
 /// </summary>
-public sealed class UserVariables : IDisposable
+public sealed class UserVariables : IViewerDataStore, IDisposable
 {
     public const string FileName = "user-variables.json";
     private static readonly TimeSpan SaveDelay = TimeSpan.FromMilliseconds(500);
@@ -263,6 +265,30 @@ public sealed class UserVariables : IDisposable
         if (persist || old?.Persisted == true) MarkDirty();
         return new UserVariableChange(user.Platform, user.UserId, user.UserName, key,
             existed ? VariableChangeKind.Updated : VariableChangeKind.Created, old?.Value, value, persist);
+    }
+
+    string IViewerDataStore.Name => "user variables";
+
+    int IViewerDataStore.Forget(Func<ViewerRef, bool> match)
+    {
+        var users = 0;
+        var changes = new List<UserVariableChange>();
+        lock (_gate)
+        {
+            foreach (var (key, user) in _users.ToArray())
+            {
+                if (!match(new ViewerRef(user.Platform, user.UserId, user.UserName))) continue;
+                users++;
+                foreach (var entry in user.Vars.Values)
+                {
+                    changes.Add(Deleted(user, entry));
+                    if (entry.Persisted) MarkDirty();
+                }
+                _users.Remove(key);
+            }
+        }
+        foreach (var change in changes) Raise(change);
+        return users;
     }
 
     private int RemoveWhere(string? platform, string? userId, Func<Entry, bool> predicate)

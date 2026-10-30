@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
 using Cuebot.Core;
+using Cuebot.Core.Storage;
 
 namespace Cuebot.App.Shell;
 
@@ -30,9 +31,15 @@ public sealed class BackupService
     public static readonly IReadOnlySet<string> ExcludedFolders =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "logs", "python", FolderName };
 
-    /// <summary>Top-level files never included in (or replaced by) a backup.</summary>
+    /// <summary>
+    /// Top-level files never included in (or replaced by) a backup. The secret store stays on this computer: a backup
+    /// (and its copy on Google Drive) holds no sign-ins or keys, and restoring one here keeps the current ones.
+    /// </summary>
     public static readonly IReadOnlySet<string> ExcludedFiles =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { PendingRestoreFile, SingleInstance.LockFileName, SingleInstance.SocketFileName };
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            PendingRestoreFile, SingleInstance.LockFileName, SingleInstance.SocketFileName, SecretStore.FileName, FileKeyProtector.FileName,
+        };
 
     private readonly object _gate = new();
     private readonly Func<DateTime> _clock;
@@ -221,7 +228,8 @@ public sealed class BackupService
         foreach (var file in Directory.EnumerateFiles(Root))
         {
             var name = Path.GetFileName(file);
-            if (ExcludedFiles.Contains(name) || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)) continue;
+            if (ExcludedFiles.Contains(name) || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith(SecretStore.FileName + ".", StringComparison.OrdinalIgnoreCase)) continue;
             yield return file;
         }
         foreach (var dir in Directory.EnumerateDirectories(Root))

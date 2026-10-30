@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.YouTube;
 
 /// <summary>Persisted YouTube configuration and sign-in state (youtube.json). Tokens and the client secret are never logged.</summary>
@@ -10,6 +11,7 @@ public sealed class YouTubeSettings
     /// OAuth client secret of that client. Google issues one even to installed apps and requires it at the token
     /// endpoint; it is not confidential for installed apps, but Cuebot still treats it like a secret.
     /// </summary>
+    [Secret]
     public string ClientSecret { get; set; } = "";
 
     public bool AutoConnect { get; set; } = true;
@@ -53,7 +55,9 @@ public sealed class YouTubeSettings
 /// <summary>A signed-in Google account / YouTube channel.</summary>
 public sealed class YouTubeAccount
 {
+    [Secret]
     public string AccessToken { get; set; } = "";
+    [Secret]
     public string RefreshToken { get; set; } = "";
     public DateTimeOffset AccessTokenExpiresAt { get; set; }
     public List<string> Scopes { get; set; } = [];

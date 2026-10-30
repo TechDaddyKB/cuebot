@@ -83,6 +83,7 @@ public sealed class AppHost : IAsyncDisposable
         services.AddSingleton<GoogleDriveBackups>();
         overrides?.Invoke(services);
         var host = new AppHost(services.BuildServiceProvider());
+        Platform.StartupWarnings.Attach(host.Get<AppLog>());
         TextCulture.Apply(host.Get<Cuebot.Core.Variables.TextEnvironment>(), settings.Settings.Text.Culture);
         if (firstRun)
         {
@@ -112,6 +113,10 @@ public sealed class AppHost : IAsyncDisposable
         Get<Cuebot.Core.Chat.Emotes.EmoteService>();   // indexes emote args from the first message on
         Get<ActionEngine>().Start();
         Get<TimerService>().Start();
+        Get<Cuebot.Core.Users.ViewerData>().Start();   // YouTube data retention
+        log.Info("Cuebot", $"Stored sign-ins and keys are encrypted (key kept by the {Cuebot.Core.Storage.SecretStore.For(Get<AppPaths>().Root).ProtectorName})");
+        var pruned = Cuebot.Core.Storage.DataRetention.PruneDataFolder(Get<AppPaths>(), DateTime.Now);
+        if (pruned > 0) log.Info("Cuebot", $"Deleted {pruned} report(s) and cached image(s) older than {Cuebot.Core.Storage.DataRetention.KeepDays} days");
 
         await Task.WhenAll(
             StartSafely(log, "Twitch", () => Get<TwitchService>().StartAsync()),

@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Integrations;
 
 /// <summary>Persisted integration configuration (integrations.json). Tokens and keys are never logged.</summary>
@@ -19,6 +20,7 @@ public sealed class VTubeStudioSettings
     public int Port { get; set; } = 8001;
 
     /// <summary>Plugin token issued by VTube Studio after the user approved Cuebot. A secret; renewed automatically.</summary>
+    [Secret]
     public string AuthToken { get; set; } = "";
 
     public bool AutoConnect { get; set; }
@@ -40,6 +42,7 @@ public sealed class VoicemodSettings
     public bool TryAllPorts { get; set; } = true;
 
     /// <summary>The Control API client key ("API key") Voicemod issued to the user. A secret.</summary>
+    [Secret]
     public string ClientKey { get; set; } = "";
 
     public bool AutoConnect { get; set; }
@@ -51,6 +54,7 @@ public sealed class VoicemodSettings
 public sealed class PulsoidSettings
 {
     /// <summary>Access token from pulsoid.net/ui/keys (scope data:heart_rate:read). A secret.</summary>
+    [Secret]
     public string AccessToken { get; set; } = "";
 
     public bool AutoConnect { get; set; }
@@ -62,6 +66,7 @@ public sealed class PulsoidSettings
 public sealed class HypeRateSettings
 {
     /// <summary>The developer websocket API key from hyperate.io/api. A secret.</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>The HypeRate ID / session id shown in the HypeRate app (e.g. "12AB"); "internal-testing" sends fake data.</summary>
@@ -79,6 +84,7 @@ public sealed class StreamLootsSettings
     /// The Alerts widget URL from the StreamLoots dashboard (https://widgets.streamloots.com/alerts/&lt;alert id&gt;) or the bare
     /// alert id. Anyone with it can read the alerts, so it is treated as a secret.
     /// </summary>
+    [Secret]
     public string AlertsUrl { get; set; } = "";
 
     public bool AutoConnect { get; set; }
@@ -90,6 +96,7 @@ public sealed class CrowdControlSettings
     /// The private Overlay URL from the Crowd Control app (Overlays &amp; Assets; it carries the overlay key as <c>?key=</c>),
     /// or the bare overlay key. A secret.
     /// </summary>
+    [Secret]
     public string OverlayUrl { get; set; } = "";
 
     public bool AutoConnect { get; set; }

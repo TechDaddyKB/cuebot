@@ -57,7 +57,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new Cuebot.App.ViewModels.Assistant.AssistantViewModel(host.Get<Cuebot.Assistant.AssistantService>()),
             queues,
             new TimersViewModel(host.Get<ProfileService>(), host.Get<TimerService>()),
-            new UsersViewModel(host.Get<Cuebot.Core.Users.UserRegistry>(), host.Get<Cuebot.Core.Users.GroupStore>()),
+            new UsersViewModel(host.Get<Cuebot.Core.Users.UserRegistry>(), host.Get<Cuebot.Core.Users.GroupStore>(), host.Get<Cuebot.Core.Users.ViewerData>()),
             new VariablesViewModel(host.Get<Cuebot.Core.Variables.VariableViewer>()),
             new WatchersViewModel(host.Get<Cuebot.Core.SystemTools.WatcherService>()),
             new TwitchViewModel(host.Get<TwitchService>()),

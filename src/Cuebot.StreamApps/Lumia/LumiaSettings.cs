@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.StreamApps;
 
 /// <summary>Lumia Stream Developer API settings.</summary>
@@ -10,6 +11,7 @@ public sealed class LumiaSettings
     public int Port { get; set; } = 39231;
 
     /// <summary>The token from Lumia's Settings → API ("Enable Developers API", "Copy Token"). Never logged.</summary>
+    [Secret]
     public string Token { get; set; } = "";
 
     public bool AutoConnect { get; set; }

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Cuebot.Core.Storage;
 
 namespace Cuebot.Speech;
 
@@ -9,6 +10,7 @@ public sealed class SpeechSettings
     public bool Enabled { get; set; } = true;
 
     /// <summary>ElevenLabs API key; the ElevenLabs engine is available only when this is set. Never log it.</summary>
+    [Secret]
     public string ElevenLabsApiKey { get; set; } = "";
 
     /// <summary>Credentials and options of the cloud engines. Never log the secrets in here.</summary>
@@ -132,6 +134,7 @@ public sealed class EngineSettings
 public sealed class AzureSettings
 {
     /// <summary>Speech resource key ("KEY 1").</summary>
+    [Secret]
     public string Key { get; set; } = "";
 
     /// <summary>Resource region, e.g. "eastus".</summary>
@@ -141,6 +144,7 @@ public sealed class AzureSettings
 public sealed class PollySettings
 {
     public string AccessKeyId { get; set; } = "";
+    [Secret]
     public string SecretAccessKey { get; set; } = "";
     public string Region { get; set; } = "us-east-1";
 
@@ -151,6 +155,7 @@ public sealed class PollySettings
 public sealed class GoogleSettings
 {
     /// <summary>API key restricted to the Text-to-Speech API.</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>Path to a service-account JSON key file, used when no API key is set.</summary>
@@ -159,6 +164,7 @@ public sealed class GoogleSettings
 
 public sealed class WatsonSettings
 {
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>Service instance URL, e.g. https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/...</summary>
@@ -171,21 +177,25 @@ public sealed class WatsonSettings
 public sealed class UberDuckSettings
 {
     /// <summary>API key (public key).</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>API secret.</summary>
+    [Secret]
     public string ApiSecret { get; set; } = "";
 }
 
 public sealed class TtsMonsterSettings
 {
     /// <summary>API key from the TTS Monster console, or the overlay URL that contains it.</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 }
 
 public sealed class AcapelaSettings
 {
     public string Email { get; set; } = "";
+    [Secret]
     public string Password { get; set; } = "";
 }
 
@@ -195,6 +205,7 @@ public sealed class CereProcSettings
     public string Email { get; set; } = "";
 
     /// <summary>CereVoice Cloud account password.</summary>
+    [Secret]
     public string Password { get; set; } = "";
 }
 

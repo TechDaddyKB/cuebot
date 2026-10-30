@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Remote;
 
 /// <summary>
@@ -35,6 +36,7 @@ public sealed class RemoteInstanceDefinition
     public int Port { get; set; } = Cuebot.Server.Api.ApiServerSettings.DefaultPort;
 
     /// <summary>The other instance's REST API token (Servers page there). Never logged.</summary>
+    [Secret]
     public string Token { get; set; } = "";
 
     /// <summary>Connect when Cuebot starts and keep reconnecting.</summary>

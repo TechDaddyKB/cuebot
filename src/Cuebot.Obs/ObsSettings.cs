@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Obs;
 
 /// <summary>One named obs-websocket connection.</summary>
@@ -10,6 +11,7 @@ public class ObsConnectionSettings
     public int Port { get; set; } = 4455;
 
     /// <summary>obs-websocket server password; empty when authentication is disabled in OBS.</summary>
+    [Secret]
     public string Password { get; set; } = "";
 
     /// <summary>Connect on startup and keep reconnecting while OBS is unreachable.</summary>

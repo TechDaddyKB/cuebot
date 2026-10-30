@@ -108,8 +108,10 @@ public sealed class ChatPageTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Pronouns_show_next_to_twitch_names_and_can_be_turned_off()
+    public void Pronouns_are_off_by_default_show_next_to_twitch_names_when_on_and_can_be_turned_off()
     {
+        Assert.False(new Cuebot.App.ViewModels.Chat.ChatPageSettings().ShowPronouns);   // they send names to alejo.io
+        _f.Settings.Value.ShowPronouns = true;
         var vm = _f.CreateViewModel();
         _f.Chat("Alice", "hi");
         _f.Chat("Bob", "hey");

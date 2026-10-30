@@ -9,7 +9,9 @@ same on Windows and Linux, and has WebSockets built in. An empty host is used: n
 
 ## Security defaults
 
-- Every server is **off** until enabled on the Servers page.
+- Every server is **off** until enabled on the Servers page, except the MCP endpoint (`/mcp` on the API listener,
+  127.0.0.1:7475), which is on by default for the Assistant page and AI apps: it needs the API token, and destructive
+  tools ask for confirmation. Turn it off on the Servers page.
 - Every server binds **127.0.0.1**. A non-loopback address (0.0.0.0, a LAN IP) is used only when "Allow LAN
   connections" (`allowLan`) is on; otherwise it is downgraded to 127.0.0.1 with a log warning.
 - **Origin check** on every WebSocket upgrade and every HTTP API call: no Origin (apps, plugins, curl), `null`

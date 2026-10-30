@@ -17,6 +17,7 @@ public static class SpeechServiceCollectionExtensions
         services.AddSettingsFile<SpeechSettings>("speech.json");
         services.AddSettingsFile<SpeechUserStore>("speech-users.json");
         services.AddSingleton(sp => new SpeechUserDirectory(sp.GetRequiredService<JsonFile<SpeechUserStore>>()));
+        services.AddSingleton<Cuebot.Core.Users.IViewerDataStore>(sp => sp.GetRequiredService<SpeechUserDirectory>());
 
         AddEngines(services);
 

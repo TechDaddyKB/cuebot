@@ -7,7 +7,10 @@ public sealed record LogEntry(DateTimeOffset Time, LogLevel Level, string Source
     public override string ToString() => $"{Time:HH:mm:ss} [{Level}] {Source}: {Message}";
 }
 
-/// <summary>Application log: keeps a bounded in-memory history for the UI and appends to a daily file.</summary>
+/// <summary>
+/// Application log: keeps a bounded in-memory history for the UI and appends to a daily file. Daily files older than
+/// <see cref="Storage.DataRetention.KeepDays"/> days are deleted at start.
+/// </summary>
 public sealed class AppLog : IDisposable
 {
     private const int HistorySize = 1000;
@@ -18,6 +21,7 @@ public sealed class AppLog : IDisposable
     public AppLog(AppPaths? paths = null)
     {
         if (paths is null) return;
+        Storage.DataRetention.PruneLogs(paths.Logs, DateTime.Now);
         var path = Path.Combine(paths.Logs, $"cuebot-{DateTime.Now:yyyyMMdd}.log");
         _file = new StreamWriter(new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
     }

@@ -49,8 +49,19 @@
             <Button Grid.Column="8" Content="Add user" Command="{Binding AddSelectedUserToGroupCommand}"
                     ToolTip.Tip="Add the selected user to the chosen group" />
           </Grid>
+          <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8" IsVisible="{Binding IsConfirmingForget}">
+            <StackPanel Spacing="8">
+              <TextBlock Text="{Binding ForgetPrompt}" TextWrapping="Wrap" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Forget viewer" Classes="accent" Command="{Binding ConfirmForgetCommand}" />
+                <Button Content="Cancel" Command="{Binding CancelForgetCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
-            <TextBlock DockPanel.Dock="Right" Text="{Binding UsersStatus}" Classes="muted" />
+            <Button DockPanel.Dock="Right" Content="Forget viewer…" Command="{Binding ForgetSelectedUserCommand}" Margin="8,0,0,0"
+                    ToolTip.Tip="Remove everything Cuebot keeps about the selected viewer (for example when they ask to be deleted)" />
+            <TextBlock DockPanel.Dock="Right" Text="{Binding UsersStatus}" Classes="muted" VerticalAlignment="Center" />
             <TextBlock Text="{Binding UsersSummary}" Classes="muted" />
           </DockPanel>
           <Grid DockPanel.Dock="Top" ColumnDefinitions="*,90,140,140,90,*" Margin="12,4,12,4">

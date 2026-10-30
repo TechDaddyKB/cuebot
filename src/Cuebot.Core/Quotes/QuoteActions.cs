@@ -14,6 +14,7 @@ public static class QuoteFeatures
     {
         services.AddSingleton(sp => new QuoteStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>(),
             sp.GetRequiredService<EventBus>()));
+        services.AddSingleton<Users.IViewerDataStore>(sp => sp.GetRequiredService<QuoteStore>());
         services.AddSingleton<ITriggerProvider, QuoteTriggers>();
         services.AddSingleton<ISubActionHandler, AddQuoteSubAction>();
         services.AddSingleton<ISubActionHandler, GetQuoteSubAction>();

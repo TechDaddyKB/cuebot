@@ -1,9 +1,12 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Kick;
 
 /// <summary>Tokens and identity of one signed-in Kick account. Tokens are secrets and are never logged.</summary>
 public sealed class KickAccountTokens
 {
+    [Secret]
     public string AccessToken { get; set; } = "";
+    [Secret]
     public string RefreshToken { get; set; } = "";
 
     /// <summary>When the access token expires (UTC); it is refreshed shortly before.</summary>
@@ -33,6 +36,7 @@ public sealed class KickSettings
     public string ClientId { get; set; } = "";
 
     /// <summary>Client secret of that app. Kick's token endpoint requires it even with PKCE. Never logged.</summary>
+    [Secret]
     public string ClientSecret { get; set; } = "";
 
     /// <summary>Port of the loopback redirect http://localhost:{port}/callback, which must be registered in the app.</summary>

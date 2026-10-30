@@ -1,3 +1,4 @@
+using Cuebot.Core.Storage;
 namespace Cuebot.Assistant;
 
 /// <summary>
@@ -24,6 +25,7 @@ public sealed class AssistantProviderSettings
     public string Model { get; set; } = "";
 
     /// <summary>API-key providers only. Never logged.</summary>
+    [Secret]
     public string ApiKey { get; set; } = "";
 
     /// <summary>AI CLI providers only: the program to run when it is not on PATH (e.g. "/opt/bin/codex").</summary>
