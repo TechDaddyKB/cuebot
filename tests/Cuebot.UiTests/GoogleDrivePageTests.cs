@@ -105,8 +105,9 @@ public sealed class GoogleDrivePageTests : IAsyncDisposable
 
             // A new backup is uploaded automatically (on a background task).
             await settings.BackUpNowCommand.ExecuteAsync(null);
-            await Until(() => settings.RemoteBackups.Count == 2, "the new backup reached Google Drive");
-            Assert.Contains("Uploaded", settings.DriveStatus);
+            // The list can refresh a moment before the status line does.
+            await Until(() => settings.RemoteBackups.Count == 2 && settings.DriveStatus.Contains("Uploaded"),
+                "the new backup reached Google Drive");
             Save(window, "settings-google-drive-dark");
             app.RequestedThemeVariant = ThemeVariant.Light;
             Save(window, "settings-google-drive-light");
