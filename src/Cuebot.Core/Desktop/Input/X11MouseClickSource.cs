@@ -20,6 +20,14 @@ internal sealed class X11MouseClickSource : IMouseClickSource
     private const int XiAllMasterDevices = 1;
     private const uint ShiftMask = 1, ControlMask = 4, Mod1Mask = 8, Mod4Mask = 64;
 
+    /// <summary>
+    /// libXi keeps one process-wide extension record that its first use on a display creates and that closing the
+    /// last such display destroys, both without any lock (XInitThreads does not cover it). Concurrent probes on
+    /// several threads (e.g. parallel tests) then crash in XCloseDisplay or corrupt the heap. Every libXi call that
+    /// can create or destroy that record (the first XInput call on a display, and closing it) holds this gate.
+    /// </summary>
+    private static readonly object XInputGate = new();
+
     private readonly AppLog _log;
     private readonly object _gate = new();
     private Thread? _thread;
@@ -40,13 +48,16 @@ internal sealed class X11MouseClickSource : IMouseClickSource
         {
             var display = XOpenDisplay(IntPtr.Zero);
             if (display == IntPtr.Zero) return (null, "Cannot open the X display");
-            try
+            lock (XInputGate)
             {
-                return Open(display, out _, out var reason) ? (new X11MouseClickSource(log), "") : (null, reason);
-            }
-            finally
-            {
-                XCloseDisplay(display);
+                try
+                {
+                    return Open(display, out _, out var reason) ? (new X11MouseClickSource(log), "") : (null, reason);
+                }
+                finally
+                {
+                    XCloseDisplay(display);
+                }
             }
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
@@ -84,11 +95,16 @@ internal sealed class X11MouseClickSource : IMouseClickSource
                 _status = "Cannot open the X display";
                 return false;
             }
-            if (!Open(display, out var opcode, out var reason) || !SelectRawPresses(display))
+            int opcode;
+            string reason;
+            lock (XInputGate)
             {
-                XCloseDisplay(display);
-                _status = reason.Length > 0 ? reason : "Could not select XInput 2 events";
-                return false;
+                if (!Open(display, out opcode, out reason) || !SelectRawPresses(display))
+                {
+                    XCloseDisplay(display);
+                    _status = reason.Length > 0 ? reason : "Could not select XInput 2 events";
+                    return false;
+                }
             }
             _running = true;
             _thread = new Thread(() => Loop(display, opcode)) { IsBackground = true, Name = "Cuebot X11 mouse" };
@@ -185,7 +201,7 @@ internal sealed class X11MouseClickSource : IMouseClickSource
         }
         finally
         {
-            XCloseDisplay(display);
+            lock (XInputGate) XCloseDisplay(display);
             Marshal.FreeHGlobal(ev);
         }
     }

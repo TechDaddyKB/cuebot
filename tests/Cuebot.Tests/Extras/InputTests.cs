@@ -196,6 +196,26 @@ public sealed class InputTests : IDisposable
         Assert.False(InputFeatures.UsesMouseClicks(new ProfileSnapshot([], [])));
     }
 
+    [Fact]
+    public void X11_mouse_probes_survive_many_threads()
+    {
+        // libXi destroys its process-wide state when the last XInput display closes; unserialized this crashed the
+        // test host (SIGSEGV in XCloseDisplay, or heap corruption) when parallel tests probed the mouse source.
+        if (!OperatingSystem.IsLinux() || Environment.GetEnvironmentVariable("DISPLAY") is not { Length: > 0 }) return;
+        var threads = Enumerable.Range(0, 8).Select(i => new Thread(() =>
+        {
+            for (var n = 0; n < 25; n++)
+            {
+                var (source, _) = X11MouseClickSource.TryCreate(_log);
+                if (source is null || n % 5 != i % 5) continue;
+                source.Start();
+                source.Stop();
+            }
+        })).ToList();
+        threads.ForEach(t => t.Start());
+        threads.ForEach(t => t.Join());
+    }
+
     public void Dispose() => _log.Dispose();
 
     private sealed class RecordingKeyboard : KeyboardOutputBase
