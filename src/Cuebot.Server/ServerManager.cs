@@ -8,6 +8,7 @@ using Cuebot.Scripting.Compat;
 using Cuebot.Server.Custom;
 using Cuebot.Server.Hosting;
 using Cuebot.Server.Http;
+using Cuebot.Server.Overlays;
 using Cuebot.Server.SpeakerBot;
 using Cuebot.Server.StreamerBot;
 using Cuebot.Server.Udp;
@@ -15,7 +16,7 @@ using Cuebot.Server.Udp;
 namespace Cuebot.Server;
 
 /// <summary>Which built-in server a status or restart refers to.</summary>
-public enum ServerKind { WebSocket, Http, Udp, SpeakerBotWebSocket, SpeakerBotUdp, Api }
+public enum ServerKind { WebSocket, Http, Udp, SpeakerBotWebSocket, SpeakerBotUdp, Api, Overlays }
 
 /// <summary>State of one built-in server, for the UI.</summary>
 public sealed record ServerStatus(ServerKind Kind, string Name, bool Enabled, bool Running, string Address, int Port, int Clients, string Message);
@@ -56,13 +57,15 @@ public sealed class ServerManager : IAsyncDisposable
         ApiOperations = new Cuebot.Server.Api.ApiOperations(services, () => Statuses);
         Mcp = new Cuebot.Server.Mcp.McpServer(ApiOperations, services, () => Settings.Mcp);
         Api = new Cuebot.Server.Api.ApiServer(() => Settings, services, ApiOperations, Mcp);
+        Overlays = new OverlayServer(() => Settings, services);
         MigrateSettings();
     }
 
     /// <summary>
     /// servers.json version 2: the MCP server starts with Cuebot (127.0.0.1, bearer token, destructive tools still need
     /// confirmation) so AI tools and the Assistant page can use it. Version 1 files had it off only because that was the
-    /// default, so it is switched on once; turning it off on the Servers page sticks. In-memory settings are left alone.
+    /// default, so it is switched on once; turning it off on the Servers page sticks. Version 3 does the same for the
+    /// overlay server (127.0.0.1, a token per overlay), which OBS browser sources need. In-memory settings are left alone.
     /// </summary>
     private void MigrateSettings()
     {
@@ -71,6 +74,11 @@ public sealed class ServerManager : IAsyncDisposable
         {
             Settings.Mcp.Enabled = true;
             _services.Log.Info(LogSource, "The MCP server now starts with Cuebot (local only, token required); turn it off on the Servers page");
+        }
+        if (Settings.Version < 3)
+        {
+            Settings.Overlays.Enabled = true;
+            _services.Log.Info(LogSource, "The overlay server now starts with Cuebot (local only, a token per overlay); turn it off on the Servers page");
         }
         Settings.Version = ServerSettings.CurrentVersion;
         SaveSettings();
@@ -99,6 +107,9 @@ public sealed class ServerManager : IAsyncDisposable
 
     /// <summary>The MCP server (protocol handling; served by <see cref="Api"/>).</summary>
     public Cuebot.Server.Mcp.McpServer Mcp { get; }
+
+    /// <summary>The overlay server (OBS browser sources).</summary>
+    public OverlayServer Overlays { get; private set; }
 
     public void SaveSettings() => _file?.ScheduleSave();
 
@@ -136,6 +147,23 @@ public sealed class ServerManager : IAsyncDisposable
         }
     }
 
+    /// <summary>Base URL of the overlay server as OBS on this computer reaches it (http://127.0.0.1:7476).</summary>
+    public string OverlayBaseUrl
+    {
+        get
+        {
+            IPAddress? bound;
+            lock (_errors) bound = _bound.GetValueOrDefault(ServerKind.Overlays);
+            var host = bound is not null && !IPAddress.Any.Equals(bound) && !IPAddress.IPv6Any.Equals(bound)
+                ? (bound.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{bound}]" : bound.ToString())
+                : "127.0.0.1";
+            return $"http://{host}:{(Overlays.IsRunning ? Overlays.Port : Settings.Overlays.Port)}";
+        }
+    }
+
+    /// <summary>The browser source URL for an overlay.</summary>
+    public string OverlayUrl(Cuebot.Core.Overlays.Overlay overlay) => OverlayBaseUrl + OverlayServer.PathFor(overlay);
+
     private IReadOnlyCollection<string> Origins() => Settings.AllowedOrigins;
 
     public IReadOnlyList<ServerStatus> Statuses
@@ -156,6 +184,8 @@ public sealed class ServerManager : IAsyncDisposable
                     SpeakerBotUdp?.Port ?? s.SpeakerBot.UdpPort, 0),
                 Status(ServerKind.Api, "REST API and MCP server", s.Api.Enabled || s.Mcp.Enabled, Api.IsRunning,
                     Api.IsRunning ? Api.Port : s.Api.Port, 0),
+                Status(ServerKind.Overlays, "Overlay server", s.Overlays.Enabled, Overlays.IsRunning,
+                    Overlays.IsRunning ? Overlays.Port : s.Overlays.Port, Overlays.ClientCount),
             ];
         }
     }
@@ -221,6 +251,7 @@ public sealed class ServerManager : IAsyncDisposable
         ServerKind.SpeakerBotWebSocket => Settings.SpeakerBot.WebSocketEnabled,
         ServerKind.SpeakerBotUdp => Settings.SpeakerBot.UdpEnabled,
         ServerKind.Api => Settings.Api.Enabled || Settings.Mcp.Enabled,
+        ServerKind.Overlays => Settings.Overlays.Enabled,
         _ => false,
     };
 
@@ -244,6 +275,7 @@ public sealed class ServerManager : IAsyncDisposable
             ServerKind.Http => s.Http.Address,
             ServerKind.Udp => s.Udp.Address,
             ServerKind.Api => s.Api.Address,
+            ServerKind.Overlays => s.Overlays.Address,
             _ => s.SpeakerBot.Address,
         };
         try
@@ -278,6 +310,11 @@ public sealed class ServerManager : IAsyncDisposable
                     Api = new Cuebot.Server.Api.ApiServer(() => Settings, _services, ApiOperations, Mcp);
                     await Api.StartAsync(address, ct).ConfigureAwait(false);
                     break;
+                case ServerKind.Overlays:
+                    Overlays = new OverlayServer(() => Settings, _services);
+                    Overlays.ClientsChanged += RaiseChanged;
+                    await Overlays.StartAsync(address, ct).ConfigureAwait(false);
+                    break;
             }
             lock (_errors)
             {
@@ -304,6 +341,7 @@ public sealed class ServerManager : IAsyncDisposable
         ServerKind.Udp => Udp?.Port ?? 0,
         ServerKind.SpeakerBotWebSocket => SpeakerBotWebSocket?.Port ?? 0,
         ServerKind.Api => Api.Port,
+        ServerKind.Overlays => Overlays.Port,
         _ => SpeakerBotUdp?.Port ?? 0,
     };
 
@@ -314,6 +352,7 @@ public sealed class ServerManager : IAsyncDisposable
         ServerKind.Udp => Settings.Udp.Port,
         ServerKind.SpeakerBotWebSocket => Settings.SpeakerBot.WebSocketPort,
         ServerKind.Api => Settings.Api.Port,
+        ServerKind.Overlays => Settings.Overlays.Port,
         _ => Settings.SpeakerBot.UdpPort,
     };
 
@@ -345,6 +384,10 @@ public sealed class ServerManager : IAsyncDisposable
                 break;
             case ServerKind.Api:
                 await Api.DisposeAsync().ConfigureAwait(false);
+                break;
+            case ServerKind.Overlays:
+                Overlays.ClientsChanged -= RaiseChanged;
+                await Overlays.DisposeAsync().ConfigureAwait(false);
                 break;
         }
         lock (_errors) _bound.Remove(kind);

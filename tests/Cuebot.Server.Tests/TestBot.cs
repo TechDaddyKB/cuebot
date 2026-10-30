@@ -48,6 +48,7 @@ internal sealed class TestBot : IAsyncDisposable
             Credits = Credits, Registry = Registry, Timers = Timers, Transfer = Transfer, Scripts = Api,
             Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
             Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
+            Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -68,6 +69,10 @@ internal sealed class TestBot : IAsyncDisposable
     ];
 
     public AppLog Log { get; } = new();
+    public Cuebot.Core.Overlays.OverlayStore Overlays { get; } = new(null, new AppLog());
+    public Cuebot.Core.Overlays.AssetStore OverlayAssets { get; } = new(null);
+    public Cuebot.Core.Overlays.OverlayFeed OverlayFeed => _overlayFeed ??= new Cuebot.Core.Overlays.OverlayFeed(Log);
+    private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
     public Cuebot.Core.Chat.Emotes.EmoteService? Emotes { get; }
     public Cuebot.Core.Credits.CreditsCollector Credits => _credits ??= new Cuebot.Core.Credits.CreditsCollector(null, Bus, Log);
     private Cuebot.Core.Credits.CreditsCollector? _credits;
@@ -107,6 +112,7 @@ internal sealed class TestBot : IAsyncDisposable
         to.CustomClients = from.CustomClients;
         to.Api = from.Api;
         to.Mcp = from.Mcp;
+        to.Overlays = from.Overlays;
     }
 
     /// <summary>Adds an action that ends with a capture step (optionally after a C# step and with triggers).</summary>
@@ -152,6 +158,8 @@ internal sealed class TestBot : IAsyncDisposable
     {
         await Manager.DisposeAsync();
         Emotes?.Dispose();
+        Overlays.Dispose();
+        OverlayAssets.Dispose();
         Scripts.Dispose();
         Engine.Dispose();
         Timers.Dispose();

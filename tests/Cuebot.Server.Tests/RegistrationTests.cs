@@ -27,12 +27,16 @@ public sealed class RegistrationTests
                 Assert.False(manager.Settings.WebSocket.Enabled);
                 Assert.False(manager.Settings.Api.Enabled);
                 Assert.True(manager.Settings.Mcp.Enabled);   // a new servers.json starts MCP (version 2)
+                Assert.True(manager.Settings.Overlays.Enabled);   // and the overlay server (version 3)
                 Assert.Equal(ServerSettings.CurrentVersion, manager.Settings.Version);
                 var services = provider.GetRequiredService<ServerServices>();
                 Assert.Same(registry, services.Registry);
                 Assert.NotNull(services.Timers);
                 Assert.NotNull(services.Transfer);
                 Assert.NotNull(services.Scripts);
+                Assert.NotNull(services.Overlays);
+                Assert.NotNull(services.OverlayAssets);
+                Assert.NotNull(services.OverlayFeed);
                 Assert.True(manager.ApiOperations.ListSubActions()["count"]!.GetValue<int>() > 10);
                 Assert.NotNull(provider.GetRequiredService<CSharpScriptEngine>());
             }

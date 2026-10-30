@@ -64,6 +64,12 @@ public sealed partial class ServersViewModel : PageViewModel
     public string WebSocketPassword { get => Settings.WebSocket.Password; set { Settings.WebSocket.Password = value; Changed(); } }
     public bool WebSocketEnforce { get => Settings.WebSocket.EnforceAuthentication; set { Settings.WebSocket.EnforceAuthentication = value; Changed(); } }
 
+    // ---- Overlays --------------------------------------------------------------------------------------------------
+
+    public bool OverlaysEnabled { get => Settings.Overlays.Enabled; set { Settings.Overlays.Enabled = value; Changed(); } }
+    public string OverlaysAddress { get => Settings.Overlays.Address; set { Settings.Overlays.Address = value.Trim(); Changed(); } }
+    public decimal OverlaysPort { get => Settings.Overlays.Port; set { Settings.Overlays.Port = (int)value; Changed(); } }
+
     // ---- HTTP ------------------------------------------------------------------------------------------------------
 
     public bool HttpEnabled { get => Settings.Http.Enabled; set { Settings.Http.Enabled = value; Changed(); } }

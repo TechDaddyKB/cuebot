@@ -150,6 +150,35 @@ public sealed class RestApiTests : IAsyncLifetime
         }
     }
 
+    [Theory]
+    [InlineData(2, false, true)]    // version 2: off was only the default, the overlay server is switched on once
+    [InlineData(3, false, false)]   // version 3: the user turned it off, it stays off
+    [InlineData(3, true, true)]
+    public async Task Saved_settings_start_the_overlay_server_from_version_3(int version, bool enabled, bool expected)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "cuebot-overlay-default-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var path = Path.Combine(dir, "servers.json");
+            File.WriteAllText(path, $$$"""{"version":{{{version}}},"mcp":{"enabled":true},"overlays":{"enabled":{{{(enabled ? "true" : "false")}}}}}""");
+            await using var bot = new TestBot();
+            using var file = new JsonFile<ServerSettings>(path, bot.Log);
+            var manager = new ServerManager(file, bot.Services);
+
+            Assert.Equal(expected, manager.Settings.Overlays.Enabled);
+            Assert.True(manager.Settings.Mcp.Enabled);
+            Assert.Equal(ServerSettings.CurrentVersion, manager.Settings.Version);
+            file.Flush();
+            using var reloaded = new JsonFile<ServerSettings>(path, bot.Log);
+            Assert.Equal(expected, reloaded.Value.Overlays.Enabled);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
     [Fact]
     public async Task Lan_addresses_are_downgraded_unless_allowed()
     {

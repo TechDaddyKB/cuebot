@@ -1,17 +1,60 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:c="using:Cuebot.App.Controls"
-             x:Class="Cuebot.App.Views.OverlaysView">
-  <Border Classes="card" Margin="24" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-    <StackPanel MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
-      <Border Width="64" Height="64" CornerRadius="16" Background="{StaticResource CuebotBrand}" HorizontalAlignment="Center">
-        <c:Icon Kind="layers" Width="30" Height="30" Foreground="White" />
-      </Border>
-      <TextBlock Text="Overlays &amp; Widgets are on the way" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
-      <TextBlock Classes="hint" TextAlignment="Center"
-                 Text="Design your own overlays, widgets and alerts in Cuebot and add them to OBS as browser sources. Cuebot hosts them on this computer, so nothing depends on a third-party service." />
-      <TextBlock Classes="hint" TextAlignment="Center"
-                 Text="Alert box, event list, goal bars and chat box · a drag-and-drop designer with your own images, sounds and fonts · triggered by the same events as actions." />
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.OverlaysView"
+             x:DataType="vm:OverlaysViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4">
+      <TextBlock Classes="h1" Text="Overlays &amp; Widgets" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Each overlay is a page Cuebot hosts on this computer. Add it to OBS as a browser source with the overlay's link and canvas size. The designer for widgets and alerts is on the way; for now you can create overlays and their links." />
     </StackPanel>
-  </Border>
+
+    <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ServerHint}" TextWrapping="Wrap" Margin="0,8,0,0"
+               IsVisible="{Binding ServerHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <!-- New overlay -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
+      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto">
+        <TextBox Text="{Binding NewName}" PlaceholderText="New overlay name" />
+        <ComboBox Grid.Column="2" ItemsSource="{x:Static vm:OverlaysViewModel.Presets}" SelectedItem="{Binding NewCanvas}" HorizontalAlignment="Stretch" />
+        <NumericUpDown Grid.Column="4" Value="{Binding NewWidth}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
+                       IsVisible="{Binding IsCustomSize}" ToolTip.Tip="Width in pixels" />
+        <NumericUpDown Grid.Column="6" Value="{Binding NewHeight}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
+                       IsVisible="{Binding IsCustomSize}" ToolTip.Tip="Height in pixels" />
+        <Button Grid.Column="8" Content="+ Overlay" Classes="accent" Command="{Binding CreateCommand}" />
+      </Grid>
+    </Border>
+
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,0,0,6" TextWrapping="Wrap"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="220,110,*,Auto" Margin="12,4,12,4" IsVisible="{Binding HasOverlays}">
+      <TextBlock Classes="muted" Text="NAME" />
+      <TextBlock Grid.Column="1" Classes="muted" Text="CANVAS" />
+      <TextBlock Grid.Column="2" Classes="muted" Text="OBS BROWSER SOURCE LINK" />
+    </Grid>
+    <Grid>
+      <ListBox ItemsSource="{Binding Overlays}" IsVisible="{Binding HasOverlays}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:OverlayRowViewModel">
+            <Grid ColumnDefinitions="220,110,*,Auto">
+              <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
+              <TextBlock Grid.Column="1" Text="{Binding Canvas}" Classes="muted" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding DisplayUrl}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   FontFamily="monospace" FontSize="12" Margin="0,0,8,0" />
+              <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
+                <Button Content="Copy link" Click="OnCopyLink" />
+                <Button Content="New link" Command="{Binding NewLinkCommand}"
+                        ToolTip.Tip="Replace the link (for example if someone else saw it); OBS needs the new one" />
+                <Button Content="Delete" Command="{Binding DeleteCommand}" />
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Classes="hint" Text="No overlays yet. Create one above, then add its link to OBS as a browser source."
+                 HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasOverlays}" />
+    </Grid>
+  </DockPanel>
 </UserControl>

@@ -1,6 +1,7 @@
 # Overlays & Widgets designer: plan (draft)
 
-Status: discussion in progress, nothing built yet. Started 2026-10-30.
+Status: phase 0 in progress. Part 1 (overlay server, stores, Overlays page list) built 2026-10-30; part 2 (event
+adapters) and part 3 (session data) next. Started 2026-10-30.
 
 ## Goal
 
@@ -142,6 +143,69 @@ Each phase ships something usable. Full StreamElements parity is the goal by the
   and emote ranges for Kick, Rumble and YouTube).
 - Session data store across platforms: latest, session, week, month, total, count, goal, recent, leaderboards;
   resets 15 min after going offline.
+
+#### Phase 0 design
+
+Where the code goes, following existing patterns:
+- **Contracts in `Cuebot.Core/Overlays`**: `OverlayEvent(Listener, Event JSON)`, `IOverlayEventAdapter` (one per
+  module, like `IChatEventAdapter`: turns that module's `BotEvent`s into SE-shaped events), `IBadgeSource` (badge set
+  and version to image URL), `SessionDataStore`, `OverlayStore`, `ElementStore`, `AssetStore`.
+- **Adapters in each platform module** (`Cuebot.Twitch`, `Cuebot.Kick`, `Cuebot.Rumble`, `Cuebot.YouTube`,
+  `Cuebot.Donations`), registered in their `Add*()` extensions. They read the args the module already publishes, so no
+  platform service changes.
+- **The overlay server in `Cuebot.Server/Overlays`**, as a new `ServerKind.Overlays` started by `ServerManager`. It
+  reuses `KestrelListener`, `NetworkPolicy` (follows `AllowLan`) and `ApiToken`.
+
+Overlay server (`servers.json` gains `Overlays { Enabled, Address, Port = 7476 }`, on by default from settings version 3):
+- `GET /o/{overlayId}?token=...`: the overlay page. One random token per overlay (`ApiToken.Generate`), compared in
+  constant time; a wrong or missing token is a 404, so overlay IDs are not discoverable.
+- `GET /o/{overlayId}/ws?token=...`: WebSocket. On open, sends `onWidgetLoad` data (fieldData placeholders arrive in
+  phase 1); then every converted event, session update and overlay command (reload, mute, skip).
+- `GET /runtime/*`: Cuebot's own scripts and styles, embedded resources, cached by content hash.
+- `GET /assets/{sha256}.{ext}`: user uploads (images, video, sound, fonts) from `AppPaths/overlays/assets`, served
+  immutable and cacheable; content-addressed so the same file is stored once.
+- No designer routes yet (phase 2); the network switch will cover them too, protected by the same token scheme.
+- Events reach sockets through a channel pump off the publishing thread, like `ServerManager`'s outbox, with a bounded
+  queue per connection (slow OBS sources drop the oldest chat messages, never alerts).
+
+Storage (`JsonFile<T>` with debounced atomic writes, `AppPaths` null = in-memory for tests):
+- `overlays.json`: overlays (id, name, canvas width/height, token, layers with position, size, opacity, rotation,
+  animations, element reference or inline settings).
+- `elements.json`: the reusable library (alerts and widgets).
+- Custom widget code in `overlays/widgets/{id}/{html,css,js,fields,data}` so large purchased scripts stay out of the
+  JSON files and diff cleanly.
+- `session-data.json`: the session store below.
+
+Event conversion (SE shapes from the research section):
+- Chat: `chat.message` plus the platform args become `message` with `nick`, `userId`, `displayName`,
+  `displayColor` (platform colour, or a stable colour from the user ID when the platform has none), `text`, `msgId`,
+  `badges[]` with image URLs from `IBadgeSource`, `emotes[]` with ranges and URLs from `EmoteService`, `renderedText`
+  (HTML with emote images), Twitch-style `tags` (filled for Twitch, synthesized for the rest so widgets reading
+  `tags.mod`/`tags.subscriber` work), and `service`.
+- Deletes: neutral `chat.messageDeleted`/`chat.userBanned`/`chat.userTimedOut` become `delete-message` and
+  `delete-messages`. Rumble has no delete events; nothing to send.
+- Alerts: the trigger mapping table above becomes `follower-latest`, `subscriber-latest`, `tip-latest`,
+  `cheer-latest`, `raid-latest`, `superchat-latest`, `kicks-latest` with SE fields (`name`, `amount`, `message`,
+  `tier`, `gifted`, `sender`, `bulkGifted`, `isCommunityGift`), plus a raw `event` listener for everything.
+- Badge images: Twitch from Helix global and channel badges (cached under `cache/badges`); Kick from the channel's
+  subscriber badges plus built-in icons for broadcaster, moderator, VIP, OG, founder, verified; Rumble and YouTube from
+  built-in icons keyed by the badge names they already publish.
+
+Session data store:
+- Keys `<type>-{latest,session,week,month,total,count,goal,recent}` for follower, subscriber, tip, cheer, raid,
+  superchat, kicks, plus top donation and donator per period, built from the same converted events so every platform
+  counts.
+- Session resets 15 minutes after the last platform goes offline (or on the next StreamOnline after that); week and
+  month roll over by calendar; totals persist.
+- Changes are coalesced (at most a few per second) and sent as `onSessionUpdate`.
+- Goals are set by the user (phase 4 UI); until then they are stored but empty.
+
+Delivery in three merges, each with tests:
+1. Overlay server, settings, token URLs, WebSocket, runtime and asset routes, stores (`Cuebot.Server.Tests`,
+   `Cuebot.Core.Tests`).
+2. Event adapters and badge sources for the four platforms and donations (converter tests from recorded args; no
+   signed-in data in fixtures).
+3. Session data store (period rollover and reset tests with a fake clock).
 
 ### Phase 1: widget runtime and chat
 - SE-compatible host: sandboxed iframe per widget; `onWidgetLoad`, `onEventReceived`, `onSessionUpdate`; `SE_API`

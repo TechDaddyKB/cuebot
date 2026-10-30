@@ -11,7 +11,8 @@ same on Windows and Linux, and has WebSockets built in. An empty host is used: n
 
 - Every server is **off** until enabled on the Servers page, except the MCP endpoint (`/mcp` on the API listener,
   127.0.0.1:7475), which is on by default for the Assistant page and AI apps: it needs the API token, and destructive
-  tools ask for confirmation. Turn it off on the Servers page.
+  tools ask for confirmation; and the overlay server (127.0.0.1:7476), which OBS browser sources need: each overlay
+  has its own token. Turn either off on the Servers page.
 - Every server binds **127.0.0.1**. A non-loopback address (0.0.0.0, a LAN IP) is used only when "Allow LAN
   connections" (`allowLan`) is on; otherwise it is downgraded to 127.0.0.1 with a log warning.
 - **Origin check** on every WebSocket upgrade and every HTTP API call: no Origin (apps, plugins, curl), `null`
@@ -121,6 +122,25 @@ against it (Cuebot additions are listed in `StreamerBotEventCatalogTests.CuebotE
 | wavelink.*, elgato.* | Elgato.WaveLinkV3*, Elgato.CameraHub* / ControlCenter* (ControlCenterDeviceOn/Off, DeviceBrightnessChanged, DeviceTemperatureChanged) |
 | custom.codeEvent; websocket.client* / server* | Custom.CodeEvent; WebsocketClient.* / WebsocketCustomServer.* |
 | speech.*, chat.message / activity, rumble.*, lumia.*, mtion.*, obsbot.*, polypop.*, points.*, controller.connected / disconnected | Cuebot sources (no Streamer.bot counterpart): Speech.*, Chat.*, Rumble.*, Lumia.*, Mtion.*, Obsbot.*, PolyPop.*, Points.*, Controller.* |
+
+## Overlay server (default 127.0.0.1:7476)
+
+Serves Cuebot overlays (`src/Cuebot.Server/Overlays`, stores in `src/Cuebot.Core/Overlays`; plan in
+`docs/OVERLAYS_PLAN.md`). On by default from servers.json version 3; overlays are managed on the Overlays & Widgets
+page.
+
+| Route | |
+| --- | --- |
+| `GET /o/{id}?token=...` | The overlay page (transparent, the overlay's canvas size). A wrong or missing token answers 404, like an unknown id. |
+| `GET /o/{id}/ws?token=...` (WebSocket) | `{"type":"hello","overlay":{id,name,width,height}}`, then every `OverlayFeed` message for that overlay: `{"type":"event","listener","event"}` (StreamElements-shaped), `{"type":"session","session"}`, `{"type":"command","command"}`. The page's own origin, loopback pages and `allowedOrigins` may connect. |
+| `GET /runtime/overlay.js`, `/runtime/overlay.css` | The page runtime (`window.Cuebot`: `overlay`, `on(type, fn)`, `send(text)`; reconnects with backoff, `reload` command reloads). |
+| `GET /assets/{sha256}.{ext}` | Files from `overlays/assets` (images, video, audio, fonts), `Cache-Control: immutable`, `Content-Security-Policy: sandbox`. |
+
+- Tokens: `ov_` + 32 random bytes, one per overlay in `overlays.json`, compared in constant time; "New link" replaces it.
+- Every response has `Referrer-Policy: no-referrer` (the page also sets it), so the token in the page URL never
+  reaches sites that widgets load from, and `X-Content-Type-Options: nosniff`. Only GET/HEAD.
+- Each page has its own outbox: past 500 waiting messages the oldest chat message or session update is dropped;
+  alerts and commands are kept up to 5000.
 
 ## HTTP server (default 127.0.0.1:7474)
 

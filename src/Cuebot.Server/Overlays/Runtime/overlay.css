@@ -1,0 +1,12 @@
+/* Cuebot overlay page: a transparent stage the size of the overlay's canvas. */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+#cuebot-stage {
+  position: relative;
+  overflow: hidden;
+}

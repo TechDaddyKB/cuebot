@@ -12,6 +12,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Http\Feeds\*.html" LogicalName="Cuebot.Server.Feeds.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Http\Decks\*.html" LogicalName="Cuebot.Server.Decks.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Overlays\Runtime\*" LogicalName="Cuebot.Server.Overlays.%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Server.Tests" />

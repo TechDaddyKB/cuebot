@@ -4,11 +4,12 @@ namespace Cuebot.Server;
 /// <summary>
 /// servers.json. Every server is off until enabled in the UI, except MCP, which a saved servers.json turns on (version 2,
 /// see ServerManager). Each binds to 127.0.0.1 unless the user turns on <see cref="AllowLan"/> (then a server's
-/// address may be 0.0.0.0 or a LAN address). Every property is optional so older files keep loading.
+/// address may be 0.0.0.0 or a LAN address). Every property is optional so older files keep loading. Version 3 turns
+/// the overlay server on once, like version 2 did for MCP.
 /// </summary>
 public sealed class ServerSettings
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     public int Version { get; set; } = 1;
 
@@ -34,6 +35,20 @@ public sealed class ServerSettings
 
     /// <summary>The MCP endpoint (<c>/mcp</c>) on the API listener.</summary>
     public Mcp.McpServerSettings Mcp { get; set; } = new();
+
+    /// <summary>The overlay server (OBS browser sources for Cuebot overlays).</summary>
+    public OverlayServerSettings Overlays { get; set; } = new();
+}
+
+/// <summary>
+/// The overlay server: each overlay at <c>/o/{id}?token=...</c>, its WebSocket feed, Cuebot's overlay scripts and the
+/// overlay asset files. Saved settings turn it on from version 3 (see ServerManager); new in-memory settings start off.
+/// </summary>
+public sealed class OverlayServerSettings
+{
+    public bool Enabled { get; set; }
+    public string Address { get; set; } = "127.0.0.1";
+    public int Port { get; set; } = 7476;
 }
 
 /// <summary>The Streamer.bot-compatible WebSocket server (for @streamerbot/client overlays and tools).</summary>

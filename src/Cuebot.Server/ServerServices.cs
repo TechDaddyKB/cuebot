@@ -128,6 +128,31 @@ public sealed class ServerServices
 
     private Cuebot.Core.Chat.Emotes.EmoteService? _emotes;
 
+    /// <summary>Overlays, their asset files and the feed to overlay pages (the overlay server).</summary>
+    public Cuebot.Core.Overlays.OverlayStore? Overlays
+    {
+        get => _overlays ??= _provider?.GetService<Cuebot.Core.Overlays.OverlayStore>();
+        init => _overlays = value;
+    }
+
+    private Cuebot.Core.Overlays.OverlayStore? _overlays;
+
+    public Cuebot.Core.Overlays.AssetStore? OverlayAssets
+    {
+        get => _overlayAssets ??= _provider?.GetService<Cuebot.Core.Overlays.AssetStore>();
+        init => _overlayAssets = value;
+    }
+
+    private Cuebot.Core.Overlays.AssetStore? _overlayAssets;
+
+    public Cuebot.Core.Overlays.OverlayFeed? OverlayFeed
+    {
+        get => _overlayFeed ??= _provider?.GetService<Cuebot.Core.Overlays.OverlayFeed>();
+        init => _overlayFeed = value;
+    }
+
+    private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")
