@@ -128,12 +128,12 @@ else
   ok=0
 fi
 
-# The Cuebot process itself: launchers (AppImage runtime, flatpak run) may not pass SIGTERM on.
+# The Cuebot process itself (named cuebot in the Flatpak): launchers (AppImage runtime, bwrap) do not pass SIGTERM on.
 cuebot_pid() {
   local queue=("$app") p child
   while [ ${#queue[@]} -gt 0 ]; do
     p="${queue[0]}"; queue=("${queue[@]:1}")
-    [ "$(cat /proc/"$p"/comm 2>/dev/null)" = Cuebot ] && { echo "$p"; return; }
+    [[ "$(cat /proc/"$p"/comm 2>/dev/null)" == [Cc]uebot ]] && { echo "$p"; return; }
     for child in $(pgrep -P "$p"); do queue+=("$child"); done
   done
   echo "$app"
