@@ -210,6 +210,9 @@ public sealed class WidgetCodeTests : IDisposable
     [InlineData("eventlist", "onEventReceived")]
     [InlineData("credits", "session-users")]
     [InlineData("countdown", "SE_API.store")]
+    [InlineData("emoterain", "emotes")]
+    [InlineData("hypecup", "cuebot-hypecup:")]
+    [InlineData("hypeboss", "cuebot-hypeboss:")]
     public void Labels_goals_and_lists_ship_complete(string kind, string uses)
     {
         var widget = BuiltInWidgets.For(kind)!;
@@ -240,6 +243,12 @@ public sealed class WidgetCodeTests : IDisposable
         var uhd = overlays.Create("4K", 3840, 2160);
         var goal = library.AddBuiltIn(uhd.Id, "goal")!;
         Assert.Equal((80.0, 260.0, 1400.0, 220.0), (goal.X, goal.Y, goal.Width, goal.Height));
+
+        var boss = library.AddBuiltIn(hd.Id, "hypeboss")!;
+        Assert.Equal(("Hype boss", 640.0, 40.0, 640.0, 140.0), (boss.Name, boss.X, boss.Y, boss.Width, boss.Height));
+        var cup = library.AddBuiltIn(hd.Id, "hypecup")!;
+        Assert.Equal((1560.0, 540.0, 320.0, 500.0), (cup.X, cup.Y, cup.Width, cup.Height));
+        Assert.Equal((0.0, 1920.0), (library.AddBuiltIn(hd.Id, "emoterain")!.X, library.AddBuiltIn(hd.Id, "emoterain")!.Width));
 
         Assert.Null(library.AddBuiltIn(hd.Id, "alertbox"));   // has its own method
         Assert.Null(library.AddBuiltIn(Guid.NewGuid(), "label"));

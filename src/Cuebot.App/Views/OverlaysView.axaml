@@ -82,6 +82,13 @@
                                 ToolTip.Tip="An end-of-stream roll of this stream's subs, followers, tippers and raiders" />
                       <MenuItem Header="Countdown" Command="{Binding AddBuiltInCommand}" CommandParameter="countdown"
                                 ToolTip.Tip="Counts down minutes or to a time; reloading does not restart it" />
+                      <Separator />
+                      <MenuItem Header="Emote rain" Command="{Binding AddBuiltInCommand}" CommandParameter="emoterain"
+                                ToolTip.Tip="Chat emotes fly across the overlay; a command and alerts send bursts" />
+                      <MenuItem Header="Hype cup" Command="{Binding AddBuiltInCommand}" CommandParameter="hypecup"
+                                ToolTip.Tip="Follows, subs, bits, Kicks and tips fill a cup with balls" />
+                      <MenuItem Header="Hype boss" Command="{Binding AddBuiltInCommand}" CommandParameter="hypeboss"
+                                ToolTip.Tip="Support damages the boss; the final hit makes you the next boss" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>

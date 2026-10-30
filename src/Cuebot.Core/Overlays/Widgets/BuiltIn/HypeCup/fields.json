@@ -1,0 +1,27 @@
+{
+  "title": { "type": "text", "label": "Title", "value": "Hype cup", "group": "Cup" },
+  "cupName": { "type": "text", "label": "Cup name (cups with the same name share their contents)", "value": "hype-cup", "group": "Cup" },
+  "capacity": { "type": "number", "label": "Balls when full", "value": 150, "min": 10, "max": 400, "group": "Cup" },
+  "fullText": { "type": "text", "label": "When full", "value": "The cup is full!", "group": "Cup" },
+  "ballSize": { "type": "slider", "label": "Ball size", "value": 36, "min": 12, "max": 120, "step": 2, "group": "Cup" },
+
+  "perFollow": { "type": "number", "label": "Balls per follow", "value": 1, "min": 0, "max": 50, "group": "What fills it" },
+  "perSub": { "type": "number", "label": "Balls per sub (each gift counts)", "value": 3, "min": 0, "max": 50, "group": "What fills it" },
+  "perHundredBits": { "type": "number", "label": "Balls per 100 bits or Kicks", "value": 1, "min": 0, "max": 50, "group": "What fills it" },
+  "perDollar": { "type": "number", "label": "Balls per 1.00 tipped or Super Chat", "value": 1, "min": 0, "max": 50, "group": "What fills it" },
+  "perRaid": { "type": "number", "label": "Balls per raid", "value": 5, "min": 0, "max": 50, "group": "What fills it" },
+  "maxPerEvent": { "type": "number", "label": "Balls from one event at most", "value": 30, "min": 1, "max": 200, "group": "What fills it" },
+
+  "followColor": { "type": "colorpicker", "label": "Follow colour", "value": "#ff4fa3", "group": "Look" },
+  "subColor": { "type": "colorpicker", "label": "Sub colour", "value": "#9146ff", "group": "Look" },
+  "bitsColor": { "type": "colorpicker", "label": "Bits and Kicks colour", "value": "#53fc18", "group": "Look" },
+  "tipColor": { "type": "colorpicker", "label": "Tip and Super Chat colour", "value": "#ffcc33", "group": "Look" },
+  "raidColor": { "type": "colorpicker", "label": "Raid colour", "value": "#3d8bfd", "group": "Look" },
+  "glassColor": { "type": "colorpicker", "label": "Cup colour", "value": "rgba(255, 255, 255, 0.85)", "group": "Look" },
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 28, "min": 0, "max": 80, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Title colour", "value": "#ffffff", "group": "Look" },
+
+  "testFill": { "type": "button", "label": "Add test balls", "value": "", "group": "Controls" },
+  "empty": { "type": "button", "label": "Empty the cup", "value": "", "group": "Controls" }
+}

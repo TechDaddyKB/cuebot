@@ -107,7 +107,8 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
     }
 
     /// <summary>
-    /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, countdown) in a
+    /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, countdown, emote
+    /// rain, hype cup, hype boss) in a
     /// sensible spot for its kind, scaled to the canvas. Returns the layer, or null for an unknown kind or overlay.
     /// </summary>
     public OverlayLayer? AddBuiltIn(Guid overlayId, string kind)
@@ -122,7 +123,9 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
             "goal" => (40 * s, 130 * s, 700 * s, 110 * s),
             "eventlist" => (w - 420 * s, 40 * s, 380 * s, 420 * s),
             "countdown" => ((w - 640 * s) / 2, (h - 260 * s) / 2, 640 * s, 260 * s),
-            _ => (0.0, 0.0, w, h),   // credits roll over the whole canvas
+            "hypecup" => (w - 360 * s, h - 540 * s, 320 * s, 500 * s),
+            "hypeboss" => ((w - 640 * s) / 2, 40 * s, 640 * s, 140 * s),
+            _ => (0.0, 0.0, w, h),   // credits and emote rain cover the whole canvas
         };
         MoveLayer(overlayId, layer.Id, Math.Round(x), Math.Round(y), Math.Round(width), Math.Round(height));
         return overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layer.Id);

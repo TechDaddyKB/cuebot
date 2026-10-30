@@ -225,6 +225,20 @@ queue (no `widgetDuration`).
   store under its timer name (`cuebot-countdown:{name}`), so reloading or another page shows the same timer; a finished
   one starts again when loaded hours later (setting), or with its "Start the countdown again" button.
 
+Engagement widgets (phase 5a), built the same way:
+
+- **Emote rain**: emotes in chat from every platform (their emote images, as chat events carry them) fly across the
+  overlay as rain, a fountain, floating up or bouncing; a chat command (`!rain`, who may use it and a cooldown set in
+  its settings) sends a big burst of the emotes in it; follows, subs, tips, cheers, Kicks and raids send bursts of
+  recently seen emotes (or set fallback images or emoji before any were seen).
+- **Hype cup**: follows, subs (each gift counts), bits and Kicks per 100, tips and Super Chats per 1.00, and raids drop
+  coloured balls (simple 2D physics) into a cup until it is full. The contents are kept in the widget store
+  (`cuebot-hypecup:{name}`), so reloading keeps them; "Empty the cup" starts over.
+- **Hype boss**: the same support deals damage to the boss; the final hit makes that supporter the next boss with more
+  health (gift subs are the gifter's attack), and with "self heal" the boss's own support heals them. The fight is kept
+  in the widget store (`cuebot-hypeboss:{name}`). Several pages showing the same cup or fight each apply the same
+  events and save the same result.
+
 The widget editor's preview loads the real stream totals and recent alerts (`session`, `recents` in the preview
 answer), so these preview with live numbers.
 

@@ -1,0 +1,25 @@
+{
+  "style": { "type": "dropdown", "label": "Animation", "value": "rain", "group": "Emotes",
+    "options": { "rain": "Rain from the top", "fountain": "Fountain from the bottom", "float": "Float up", "bounce": "Bounce around" } },
+  "chatEmotes": { "type": "checkbox", "label": "Emotes in chat", "value": true, "group": "Emotes" },
+  "perMessage": { "type": "number", "label": "Emotes per chat message at most", "value": 3, "min": 1, "max": 20, "group": "Emotes" },
+  "size": { "type": "slider", "label": "Emote size", "value": 64, "min": 16, "max": 256, "step": 2, "group": "Emotes" },
+  "duration": { "type": "slider", "label": "Seconds on screen", "value": 5, "min": 1, "max": 20, "step": 0.5, "group": "Emotes" },
+  "maxOnScreen": { "type": "number", "label": "Emotes on screen at most", "value": 150, "min": 10, "max": 600, "group": "Emotes" },
+
+  "command": { "type": "text", "label": "Chat command for a big burst (empty: off)", "value": "!rain", "group": "Command" },
+  "commandWho": { "type": "dropdown", "label": "Who can use it", "value": "mods", "group": "Command",
+    "options": { "everyone": "Everyone", "subs": "Subscribers, VIPs and mods", "mods": "Moderators and the broadcaster" } },
+  "commandCount": { "type": "number", "label": "Emotes in a command burst", "value": 40, "min": 1, "max": 300, "group": "Command" },
+  "cooldown": { "type": "number", "label": "Command cooldown (seconds)", "value": 30, "min": 0, "max": 3600, "group": "Command" },
+
+  "alertBursts": { "type": "checkbox", "label": "Bursts for follows, subs, tips, cheers and raids", "value": true, "group": "Alerts" },
+  "burstFollow": { "type": "number", "label": "Emotes for a follow", "value": 10, "min": 0, "max": 300, "group": "Alerts" },
+  "burstSub": { "type": "number", "label": "Emotes for a sub (per sub in gifts)", "value": 20, "min": 0, "max": 300, "group": "Alerts" },
+  "burstRaid": { "type": "number", "label": "Emotes for a raid", "value": 60, "min": 0, "max": 300, "group": "Alerts" },
+  "burstPerDollar": { "type": "number", "label": "Emotes per 1.00 tipped or Super Chat", "value": 4, "min": 0, "max": 100, "group": "Alerts" },
+  "burstPer100Bits": { "type": "number", "label": "Emotes per 100 bits or Kicks", "value": 5, "min": 0, "max": 100, "group": "Alerts" },
+  "fallback": { "type": "text", "label": "Images for alerts before any emote was seen (URLs or emoji, comma separated)", "value": "🎉, ⭐, 💜", "group": "Alerts" },
+
+  "testBurst": { "type": "button", "label": "Test a burst", "value": "", "group": "Test" }
+}

@@ -1,0 +1,18 @@
+.stage { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.emote {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: {{size}}px;
+  height: {{size}}px;
+  object-fit: contain;
+  will-change: transform, opacity;
+  user-select: none;
+}
+.emote.text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc({{size}}px * 0.8);
+  line-height: 1;
+}

@@ -12,7 +12,7 @@ namespace Cuebot.UiTests;
 
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
-/// in both layouts, "widgets" for the label, goal, event list, credits and countdown, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
+/// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
 /// token in api-token.txt) and speech paused, so alert TTS and the queue controls can be tried): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
@@ -28,7 +28,8 @@ public sealed class OverlayWidgetDemo
         var chatBox = zip == "chatbox";
         var alertBox = zip == "alertbox";
         var builtIns = zip == "widgets";
-        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !File.Exists(zip)),
+        var engagement = zip == "engagement";
+        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !File.Exists(zip)),
             "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" or \"alertbox\" for Cuebot's own) to run the overlay demo");
         var seconds = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_DEMO_SECONDS"), out var s) ? s : 120;
         var output = Environment.GetEnvironmentVariable("CUEBOT_DEMO_OUT") ?? Path.GetTempPath();
@@ -68,6 +69,13 @@ public sealed class OverlayWidgetDemo
                 var library = host.Get<WidgetLibrary>();
                 layer = library.AddBuiltIn(overlay.Id, "label")!;
                 foreach (var kind in new[] { "goal", "eventlist", "credits", "countdown" }) library.AddBuiltIn(overlay.Id, kind);
+            }
+            else if (engagement)
+            {
+                var library = host.Get<WidgetLibrary>();
+                layer = library.AddBuiltIn(overlay.Id, "emoterain")!;
+                library.AddBuiltIn(overlay.Id, "hypecup");
+                library.AddBuiltIn(overlay.Id, "hypeboss");
             }
             else if (alertBox)
             {

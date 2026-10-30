@@ -23,7 +23,7 @@ public static class BuiltInWidgets
     /// <summary>A built-in widget placed with <see cref="WidgetLibrary.AddBuiltIn"/>: its kind, name and resource folder.</summary>
     public sealed record Kind(string Id, string Name, string Folder);
 
-    /// <summary>Labels, goals and lists (phase 4), each edited with the widget editor's settings form.</summary>
+    /// <summary>Labels, goals, lists and engagement widgets, each edited with the widget editor's settings form.</summary>
     public static readonly IReadOnlyList<Kind> Kinds =
     [
         new("label", "Label", "Label"),
@@ -31,6 +31,9 @@ public static class BuiltInWidgets
         new("eventlist", "Event list", "EventList"),
         new("credits", "Credits", "Credits"),
         new("countdown", "Countdown", "Countdown"),
+        new("emoterain", "Emote rain", "EmoteRain"),
+        new("hypecup", "Hype cup", "HypeCup"),
+        new("hypeboss", "Hype boss", "HypeBoss"),
     ];
 
     /// <summary>A built-in widget's code by kind id (see <see cref="Kinds"/>), or null for an unknown kind.</summary>

@@ -1,0 +1,26 @@
+{
+  "bossName": { "type": "text", "label": "First boss", "value": "The streamer", "group": "Boss" },
+  "fightName": { "type": "text", "label": "Fight name (bosses with the same name share one fight)", "value": "hype-boss", "group": "Boss" },
+  "startHp": { "type": "number", "label": "First boss health", "value": 1000, "min": 1, "group": "Boss" },
+  "hpIncrease": { "type": "number", "label": "Extra health for each new boss", "value": 500, "min": 0, "group": "Boss" },
+  "selfHeal": { "type": "checkbox", "label": "The boss's own support heals them", "value": true, "group": "Boss" },
+
+  "perFollow": { "type": "number", "label": "Damage per follow", "value": 10, "min": 0, "group": "Damage" },
+  "perSub": { "type": "number", "label": "Damage per sub (each gift counts)", "value": 100, "min": 0, "group": "Damage" },
+  "perBit": { "type": "number", "label": "Damage per bit or Kick", "value": 1, "min": 0, "step": 0.1, "group": "Damage" },
+  "perDollar": { "type": "number", "label": "Damage per 1.00 tipped or Super Chat", "value": 100, "min": 0, "group": "Damage" },
+  "perRaider": { "type": "number", "label": "Damage per raiding viewer", "value": 2, "min": 0, "step": 0.1, "group": "Damage" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "nameSize": { "type": "slider", "label": "Name size", "value": 30, "min": 10, "max": 80, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "hpColor": { "type": "colorpicker", "label": "Health colour", "value": "#e8364f", "group": "Look" },
+  "hpColor2": { "type": "colorpicker", "label": "Health end colour (gradient)", "value": "#ff8a3d", "group": "Look" },
+  "trackColor": { "type": "colorpicker", "label": "Health track colour", "value": "rgba(0, 0, 0, 0.6)", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Background", "value": "rgba(16, 18, 24, 0.75)", "group": "Look" },
+  "damageColor": { "type": "colorpicker", "label": "Damage numbers", "value": "#ffcc33", "group": "Look" },
+  "healColor": { "type": "colorpicker", "label": "Heal numbers", "value": "#2bd576", "group": "Look" },
+
+  "testHit": { "type": "button", "label": "Test a hit", "value": "", "group": "Controls" },
+  "reset": { "type": "button", "label": "Start over with the first boss", "value": "", "group": "Controls" }
+}

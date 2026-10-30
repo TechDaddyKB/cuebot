@@ -1,0 +1,59 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --name: {{nameSize}}px;
+  --text: {{textColor}};
+  --hp: {{hpColor}};
+  --hp2: {{hpColor2}};
+  --track: {{trackColor}};
+  --bg: {{background}};
+  --damage: {{damageColor}};
+  --heal: {{healColor}};
+}
+
+.boss {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  overflow: hidden;
+}
+.boss .avatar {
+  position: relative;
+  flex: 0 0 auto;
+  height: 80%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--hp), var(--hp2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+}
+.boss .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.boss .avatar img[src=""] { display: none; }
+.boss .avatar .initial { font-size: calc(var(--name) * 1.4); font-weight: 900; }
+.boss .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.boss .name { font-size: var(--name); font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.boss .level { font-size: calc(var(--name) * 0.5); opacity: 0.8; text-transform: uppercase; letter-spacing: 0.08em; }
+.boss .track { position: relative; height: calc(var(--name) * 1.1); border-radius: 999px; background: var(--track); overflow: hidden; }
+.boss .hp { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--hp), var(--hp2)); transition: width 0.5s ease-out; }
+.boss .numbers { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700;
+  font-size: calc(var(--name) * 0.6); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.boss .popups { position: absolute; inset: 0; pointer-events: none; }
+.boss .popup { position: absolute; font-weight: 900; font-size: calc(var(--name) * 1.1); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  animation: boss-popup 1.4s ease-out forwards; }
+.boss .popup.damage { color: var(--damage); }
+.boss .popup.heal { color: var(--heal); }
+.boss.hit .avatar { animation: boss-hit 0.4s ease-out; }
+.boss.defeated { animation: boss-defeated 1s ease-out; }
+
+@keyframes boss-popup { from { opacity: 1; transform: translateY(0) scale(1.2); } to { opacity: 0; transform: translateY(-60px) scale(1); } }
+@keyframes boss-hit { 25% { transform: translateX(-6px) rotate(-4deg); } 75% { transform: translateX(6px) rotate(4deg); } }
+@keyframes boss-defeated { 0% { filter: brightness(2.5); } 100% { filter: none; } }
