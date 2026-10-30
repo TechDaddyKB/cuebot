@@ -39,6 +39,30 @@ public sealed class ShortcutsTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void F11_toggles_full_screen_and_Esc_leaves_it()
+    {
+        var (window, _) = Open();
+        window.KeyPress(Key.F11, RawInputModifiers.None, PhysicalKey.F11, null);
+        Pump();
+        Assert.Equal(WindowState.FullScreen, window.WindowState);
+        window.KeyPress(Key.F11, RawInputModifiers.None, PhysicalKey.F11, null);
+        Pump();
+        Assert.Equal(WindowState.Normal, window.WindowState);
+
+        // Full screen from the caption button, out with Esc, back to where it was.
+        window.WindowState = WindowState.Maximized;
+        window.WindowState = WindowState.FullScreen;
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Pump();
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+
+        // Esc outside full screen changes nothing.
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Pump();
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+    }
+
+    [AvaloniaFact]
     public void Window_shortcuts_are_key_bindings_and_listed_in_settings()
     {
         var (window, vm) = Open();

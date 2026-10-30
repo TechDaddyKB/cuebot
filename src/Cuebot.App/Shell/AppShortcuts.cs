@@ -17,6 +17,7 @@ public static class AppShortcuts
         new("save", "Ctrl+S", "Save everything now", Anywhere),
         new("jump", "Ctrl+K", "Jump to a page", Anywhere),
         new("help", "F1", "Open the Support page", Anywhere),
+        new("fullScreen", "F11", "Full screen on or off (Esc also leaves full screen)", Anywhere),
         new("testTrigger", "F5", "Test the selected action's trigger", ActionsPage),
         new("import", "Ctrl+Alt+I", "Import (opens Import / Export)", Anywhere),
         new("export", "Ctrl+Alt+E", "Export (opens Import / Export)", Anywhere),

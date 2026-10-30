@@ -17,6 +17,14 @@ public partial class MainWindow : Window
         // Tunnel: the box itself takes the first Enter (to close its list) before a bubbling handler sees it.
         Jump.AddHandler(KeyDownEvent, OnJumpKeyDown, RoutingStrategies.Tunnel);
         Jump.SelectionChanged += (_, _) => { if (Jump.SelectedItem is string title) JumpTo(title); };
+        // Esc leaves full screen (the decorations' own way back is not reachable on every platform). Fields that use
+        // Esc themselves, like the jump box, mark it handled first.
+        KeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Escape || e.Handled || WindowState != WindowState.FullScreen) return;
+            ToggleFullScreen();
+            e.Handled = true;
+        };
         if (OperatingSystem.IsWindows())
         {
             // The top bar is the title bar on Windows; the system caption buttons sit over its right end.
@@ -35,6 +43,19 @@ public partial class MainWindow : Window
     private const double CaptionButtonsWidth = 140;
 
     private MainWindowViewModel? _boundVm;
+
+    /// <summary>The state to go back to when full screen ends (it may have started from the ⤡ caption button).</summary>
+    private WindowState _beforeFullScreen = WindowState.Normal;
+
+    protected override void OnPropertyChanged(Avalonia.AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == WindowStateProperty && change.NewValue is WindowState.FullScreen)
+            _beforeFullScreen = change.OldValue is WindowState.Maximized ? WindowState.Maximized : WindowState.Normal;
+    }
+
+    private void ToggleFullScreen() =>
+        WindowState = WindowState == WindowState.FullScreen ? _beforeFullScreen : WindowState.FullScreen;
 
     private void OnJumpRequested()
     {
@@ -72,10 +93,15 @@ public partial class MainWindow : Window
     private void BindShortcuts()
     {
         foreach (var old in KeyBindings.Where(k => Equals(k.CommandParameter, ShortcutTag)).ToArray()) KeyBindings.Remove(old);
-        if (_boundVm is not null) _boundVm.JumpRequested -= OnJumpRequested;
+        if (_boundVm is not null)
+        {
+            _boundVm.JumpRequested -= OnJumpRequested;
+            _boundVm.FullScreenRequested -= ToggleFullScreen;
+        }
         if (DataContext is not MainWindowViewModel vm) return;
         _boundVm = vm;
         vm.JumpRequested += OnJumpRequested;
+        vm.FullScreenRequested += ToggleFullScreen;
         vm.IsTypingText = IsTypingText;
         foreach (var shortcut in AppShortcuts.Window)
         {

@@ -190,6 +190,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["variables"] = new RelayCommand(() => SelectedPage = Page("Variables"), NotTyping),
             ["logs"] = new RelayCommand(() => _shell.OpenFolder(_host.Get<AppPaths>().Logs), NotTyping),
             ["jump"] = new RelayCommand(() => JumpRequested?.Invoke()),
+            ["fullScreen"] = new RelayCommand(() => FullScreenRequested?.Invoke()),
         };
     }
 
@@ -292,6 +293,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Ctrl+K: the window focuses the jump box.</summary>
     public event Action? JumpRequested;
+
+    /// <summary>F11: the window turns full screen on or off.</summary>
+    public event Action? FullScreenRequested;
 
     /// <summary>
     /// Opens the page with this title (case-insensitive), or else the first page in the jump list whose title contains
