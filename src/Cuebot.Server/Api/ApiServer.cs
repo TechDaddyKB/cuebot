@@ -259,6 +259,15 @@ public sealed class ApiServer : IAsyncDisposable
                 result = ops.History(QInt("limit", 50), Q("action"), QBool("includeArgs") ?? false);
                 break;
 
+            case "giveaway" when s.Length == 1 && method == "GET": result = ops.Giveaway(); break;
+            case "giveaway" when s.Length == 1 && method == "POST":
+                result = ops.GiveawayCommand("open", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
+                break;
+            case "giveaway" when s.Length == 2 && method == "POST": result = ops.GiveawayCommand(s[1].ToLowerInvariant(), []); break;
+            case "store" when s.Length == 1 && method == "GET": result = ops.Store(); break;
+            case "store" when s.Length == 4 && method == "POST" && s[1].Equals("redemptions", StringComparison.OrdinalIgnoreCase):
+                result = ops.ReviewRedemption(s[2], s[3].ToLowerInvariant());
+                break;
             case "polls" when s.Length == 1 && method == "GET": result = ops.Polls(); break;
             case "polls" when s.Length == 1 && method == "POST":
                 result = ops.ChatPollCommand("startPoll", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
@@ -321,7 +330,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "giveaway", "store", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);

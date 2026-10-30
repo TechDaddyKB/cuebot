@@ -127,6 +127,7 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
         var hello = await client.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
         Assert.Equal((false, true), (hello["alerts"]!["paused"]!.GetValue<bool>(), hello["alerts"]!["muted"]!.GetValue<bool>()));
         Assert.Empty(hello["polls"]!.AsArray());
+        Assert.Null(hello["giveaway"]);
         _bot.ChatPolls.StartPoll("Snack?", ["Chips", "Fruit"], 0);
         var poll = await client.NextAsync(m => m["listener"]?.GetValue<string>() == "cuebot-poll");
         Assert.Equal("Snack?", poll["event"]!["title"]!.GetValue<string>());

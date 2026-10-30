@@ -12,7 +12,7 @@ namespace Cuebot.UiTests;
 
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
-/// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, "polls" for a Cuebot chat poll voted from every platform, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
+/// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, "polls" for a Cuebot chat poll voted from every platform, "giveaway" for a giveaway entered from every platform, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
 /// token in api-token.txt) and speech paused, so alert TTS and the queue controls can be tried): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
@@ -30,7 +30,8 @@ public sealed class OverlayWidgetDemo
         var builtIns = zip == "widgets";
         var engagement = zip == "engagement";
         var polls = zip == "polls";
-        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !File.Exists(zip)),
+        var giveaway = zip == "giveaway";
+        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !File.Exists(zip)),
             "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" or \"alertbox\" for Cuebot's own) to run the overlay demo");
         var seconds = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_DEMO_SECONDS"), out var s) ? s : 120;
         var output = Environment.GetEnvironmentVariable("CUEBOT_DEMO_OUT") ?? Path.GetTempPath();
@@ -45,7 +46,7 @@ public sealed class OverlayWidgetDemo
             var servers = host.Get<ServerManager>();
             servers.Settings.Overlays = new OverlayServerSettings { Enabled = true, Port = 7499 };
             await servers.RestartAsync(ServerKind.Overlays, TestContext.Current.CancellationToken);
-            if (alertBox || polls)
+            if (alertBox || polls || giveaway)
             {
                 var token = Cuebot.Server.Api.ApiToken.Generate();
                 servers.Settings.Api = new Cuebot.Server.Api.ApiServerSettings { Enabled = true, Port = 7498, Token = token };
@@ -70,6 +71,13 @@ public sealed class OverlayWidgetDemo
                 var library = host.Get<WidgetLibrary>();
                 layer = library.AddBuiltIn(overlay.Id, "label")!;
                 foreach (var kind in new[] { "goal", "eventlist", "credits", "countdown" }) library.AddBuiltIn(overlay.Id, kind);
+            }
+            else if (giveaway)
+            {
+                layer = host.Get<WidgetLibrary>().AddBuiltIn(overlay.Id, "giveaway")!;
+                var giveaways = host.Get<Cuebot.Core.Giveaways.Giveaways>();
+                giveaways.AnnounceWinners = false;
+                giveaways.Open(new Cuebot.Core.Giveaways.GiveawayOptions { Title = "A Steam game of your choice", Seconds = 0 });
             }
             else if (polls)
             {
@@ -104,6 +112,7 @@ public sealed class OverlayWidgetDemo
             {
                 foreach (var e in Step(i)) bus.Publish(e);
                 if (polls) bus.Publish(Vote(i));
+                if (giveaway) bus.Publish(Vote(i, "!join"));
                 await Task.Delay(TimeSpan.FromSeconds(2.5), TestContext.Current.CancellationToken);
             }
         }
@@ -160,11 +169,11 @@ public sealed class OverlayWidgetDemo
     }
 
     /// <summary>A new viewer on each platform in turn votes in the Cuebot chat poll.</summary>
-    private static BotEvent Vote(int i)
+    private static BotEvent Vote(int i, string? text = null)
     {
         var platform = (string[])["twitch", "kick", "rumble", "youtube"];
         var name = $"Voter{i + 1}";
-        return Chat($"{platform[i % 4]}.chatMessage", name, $"voter{i}", $"!vote {1 + i * i % 3}", new() { ["userName"] = name.ToLowerInvariant() });
+        return Chat($"{platform[i % 4]}.chatMessage", name, $"voter{i}", text ?? $"!vote {1 + i * i % 3}", new() { ["userName"] = name.ToLowerInvariant() });
     }
 
     private static BotEvent Chat(string type, string user, string userId, string message, Dictionary<string, object?> extra)

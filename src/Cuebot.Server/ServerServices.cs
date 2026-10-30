@@ -180,6 +180,24 @@ public sealed class ServerServices
 
     private Cuebot.Core.Polls.ChatPolls? _chatPolls;
 
+    /// <summary>Cuebot giveaways (their state is sent to overlay pages when they connect).</summary>
+    public Cuebot.Core.Giveaways.Giveaways? Giveaways
+    {
+        get => _giveaways ??= _provider?.GetService<Cuebot.Core.Giveaways.Giveaways>();
+        init => _giveaways = value;
+    }
+
+    private Cuebot.Core.Giveaways.Giveaways? _giveaways;
+
+    /// <summary>The Cuebot points store.</summary>
+    public Cuebot.Core.Store.PointsStore? Store
+    {
+        get => _store ??= _provider?.GetService<Cuebot.Core.Store.PointsStore>();
+        init => _store = value;
+    }
+
+    private Cuebot.Core.Store.PointsStore? _store;
+
     /// <summary>Stream totals sent to overlay pages when they connect.</summary>
     public Cuebot.Core.Overlays.Session.SessionDataStore? SessionData
     {

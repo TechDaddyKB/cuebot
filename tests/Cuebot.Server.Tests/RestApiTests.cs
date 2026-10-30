@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Events;
 using Cuebot.Core.Storage;
+using Cuebot.Core.Store;
 using Cuebot.Server.Api;
 using Cuebot.Server.Mcp;
 
@@ -449,6 +450,37 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.Equal(200, (await _host.SendAsync(HttpMethod.Delete, "/api/v1/globals/score")).Status);
         Assert.False(Bot.Globals.Contains("score"));
         Assert.Equal(404, (await _host.GetAsync("/api/v1/globals/score")).Status);
+    }
+
+    // ---- giveaways and store ----
+
+    [Fact]
+    public async Task Giveaways_and_store_redemptions_are_run_over_the_api()
+    {
+        var (status, opened) = await _host.PostAsync("/api/v1/giveaway", new { title = "A game", winners = 1 });
+        Assert.Equal((200, "open", "!join"), (status, opened!["status"]!.GetValue<string>(), opened["command"]!.GetValue<string>()));
+        Assert.Equal(409, (await _host.PostAsync("/api/v1/giveaway", new { title = "Again" })).Status);
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/giveaway/explode", new { })).Status);
+        Bot.Bus.Publish(new BotEvent(Cuebot.Core.Chat.ChatHub.MessageEvent, new Dictionary<string, object?>
+        {
+            ["platform"] = "Kick", ["user"] = "Bob", ["userId"] = "b1", ["message"] = "!join",
+        }));
+        var (_, drawn) = await _host.PostAsync("/api/v1/giveaway/draw", new { });
+        Assert.Equal("Bob", drawn!["winners"]![0]!["name"]!.GetValue<string>());
+        var (_, now) = await _host.GetAsync("/api/v1/giveaway");
+        Assert.Equal("drawn", now!["giveaway"]!["status"]!.GetValue<string>());
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/giveaway/cancel", new { })).Status);
+
+        Bot.Points.Add("Kick", "b1", "Bob", 500);
+        Bot.Store.Add(new Cuebot.Core.Store.StoreItem { Name = "Hydrate", Cost = 100, NeedsApproval = true });
+        Assert.Equal(PointsStore.Refusal.None, Bot.Store.Redeem("Hydrate", "Kick", "b1", "Bob").Refusal);
+        var (_, store) = await _host.GetAsync("/api/v1/store");
+        Assert.Equal("!redeem", store!["command"]!.GetValue<string>());
+        var id = store["pending"]![0]!["id"]!.GetValue<string>();
+        var (approved, after) = await _host.PostAsync($"/api/v1/store/redemptions/{id}/approve", new { });
+        Assert.Equal(200, approved);
+        Assert.Equal(("Hydrate", "approved"), (after!["history"]![0]!["itemName"]!.GetValue<string>(), after["history"]![0]!["status"]!.GetValue<string>()));
+        Assert.Equal(404, (await _host.PostAsync($"/api/v1/store/redemptions/{id}/reject", new { })).Status);
     }
 
     // ---- polls ----

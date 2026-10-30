@@ -267,6 +267,29 @@ The **Poll and prediction** widget shows the running poll or prediction from any
 both): bars with votes, percent and points, the time left, how to vote for Cuebot polls, and the winner; it hides a
 set time after the end.
 
+### Giveaways and the points store (`Cuebot.Core/Giveaways`, `Cuebot.Core/Store`, phase 5c)
+
+Both work in every platform's chat with Cuebot points and are run from the "Giveaways & Store" page, sub-actions and
+the REST API.
+
+- **Giveaways** (giveaways.json): opened with a prize, join command (`!join`, `!join 3` for more tickets), points per
+  ticket (0: free), most tickets per viewer, points currency, subscriber luck (their tickets count that many times),
+  subscribers only, a time limit (0: until closed) and the number of winners. Drawing picks winners at random weighted
+  by tickets and luck, never the same viewer twice; "draw one more" adds a winner; cancelling refunds every ticket.
+  Winners can be announced in chat on every platform. States go to overlays as `cuebot-giveaway` (never held by the
+  alert queue; in the hello as `giveaway`). Triggers: giveaway opened, entered, closed, winner drawn, cancelled.
+  Sub-actions: "Open giveaway", "Close, draw or cancel giveaway". REST: `GET /giveaway`, `POST /giveaway`,
+  `POST /giveaway/{close, draw, redraw, cancel}`.
+- **Store** (store.json): items with a cost (and currency), stock (-1 unlimited), per-viewer and global cooldowns,
+  subscribers only and "needs approval". Viewers buy with `!redeem item name anything else` (the longest matching name;
+  the rest is the input). A purchase fires "Store item redeemed" (filtered by item; args item, cost, user, platform,
+  input/rawInput) and shows on overlays as a `redemption-latest` alert with `store: true`; approval items wait in the
+  pending list (approve, or reject to refund and restock). Sub-actions: "Set store item" (available, stock),
+  "Approve or reject store redemption". REST: `GET /store`, `POST /store/redemptions/{id}/{approve, reject}`.
+
+The **Giveaway** widget shows the prize, how to enter (with the ticket cost), entries, the latest entrants and the time
+left, and on the draw spins through the entrants' names before showing the winners.
+
 The widget editor's preview loads the real stream totals and recent alerts (`session`, `recents` in the preview
 answer), so these preview with live numbers.
 
@@ -551,6 +574,8 @@ JSON shapes are those of actions.json / commands.json (camelCase, enums as strin
 | `POST /timers/{id}/state` `{enabled, intervalSeconds}` | runtime override (like "Set timer state", not saved) |
 | `GET /globals?persisted=`, `GET` / `PUT` / `DELETE /globals/{name}` | PUT `{value, persisted (default true)}` |
 | `GET /history?limit=&action=&includeArgs=` | recent and pending runs, newest first |
+| `GET /giveaway`, `POST /giveaway` `{title, command, ticketCost, maxTickets, currency, subscriberLuck, subscribersOnly, seconds, winners}`, `POST /giveaway/{close, draw, redraw, cancel}` | the current giveaway; open one (409 while one runs), close entries, draw, draw one more, cancel and refund |
+| `GET /store`, `POST /store/redemptions/{id}/{approve, reject}` | store items, pending and latest redemptions; approve or reject (refunds) a pending one |
 | `GET /polls`, `POST /polls` `{title, choices, duration}`, `POST /polls/end` | latest poll and prediction per source; start or end a Cuebot chat poll (409 while one runs) |
 | `POST /predictions` `{title, outcomes, window, currency}`, `POST /predictions/{lock, resolve, cancel}` `{winner}` | Cuebot predictions with points (409 without points or while one is open; resolve takes the winner's number from 1 or title) |
 | `GET /speech`, `POST /speech/{next, pause, resume, skip}` | speech state `{enabled, paused, queueLength, current}`; `next` stops the text playing and, while paused, lets exactly one waiting text play (`stepped` says whether anything happened): pause, then call `next` to step through the queue one text at a time |

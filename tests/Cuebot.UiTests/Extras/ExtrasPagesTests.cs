@@ -100,6 +100,59 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
         });
 
     [AvaloniaFact]
+    public void Giveaways_and_store_run_from_the_page()
+    {
+        var giveaways = Get<Cuebot.Core.Giveaways.Giveaways>();
+        var store = Get<Cuebot.Core.Store.PointsStore>();
+        var points = Get<PointsService>();
+        giveaways.AnnounceWinners = false;
+        var vm = new GiveawaysStoreViewModel(giveaways, store);
+        var window = Open(new GiveawaysStoreView(), vm);
+        Assert.Equal("No giveaway yet.", vm.GiveawaySummary);
+
+        vm.Prize = "A Steam game";
+        vm.OpenGiveawayCommand.Execute(null);
+        Pump();
+        Assert.True(vm.CanClose);
+        Assert.Equal("Giveaway open: viewers type !join to enter.", vm.Status);
+        Bus.Publish(new BotEvent(ChatHub.MessageEvent, new Dictionary<string, object?>
+        {
+            ["platform"] = "Kick", ["user"] = "Bob", ["userId"] = "b1", ["message"] = "!join",
+        }));
+        Pump();
+        Assert.Equal("Taking entries: 1 entry, 1 ticket", vm.GiveawaySummary);
+        vm.DrawGiveawayCommand.Execute(null);
+        Pump();
+        Assert.Equal("Won by Bob (Kick) (1 entry, 1 ticket)", vm.GiveawaySummary);
+        Assert.True(vm.CanRedraw);
+
+        vm.NewItemName = "Hydrate";
+        vm.NewItemCost = 50;
+        vm.AddItemCommand.Execute(null);
+        Pump();
+        var row = Assert.Single(vm.Items);
+        row.NeedsApproval = true;
+        row.Name = "";                       // refused: an item needs a name
+        Assert.Equal("Hydrate", row.Name);
+        Assert.Equal("An item needs a name", vm.Status);
+        points.Add("Kick", "b1", "Bob", 100);
+        Bus.Publish(new BotEvent(ChatHub.MessageEvent, new Dictionary<string, object?>
+        {
+            ["platform"] = "Kick", ["user"] = "Bob", ["userId"] = "b1", ["message"] = "!redeem hydrate now",
+        }));
+        Pump();
+        var pending = Assert.Single(vm.Pending);
+        Assert.Equal("Bob (Kick) wants Hydrate: now", pending.Text);
+        SaveBothThemes(window, "giveaways-store");
+        pending.ApproveCommand.Execute(null);
+        Pump();
+        Assert.Empty(vm.Pending);
+        Assert.Contains("Bob (Kick): Hydrate — now", vm.Recent[0]);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Quotes_page_searches_edits_deletes_and_imports()
     {
         var store = Get<QuoteStore>();

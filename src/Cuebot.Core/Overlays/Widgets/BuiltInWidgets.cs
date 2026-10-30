@@ -35,6 +35,7 @@ public static class BuiltInWidgets
         new("hypecup", "Hype cup", "HypeCup"),
         new("hypeboss", "Hype boss", "HypeBoss"),
         new("poll", "Poll and prediction", "Poll"),
+        new("giveaway", "Giveaway", "Giveaway"),
     ];
 
     /// <summary>A built-in widget's code by kind id (see <see cref="Kinds"/>), or null for an unknown kind.</summary>

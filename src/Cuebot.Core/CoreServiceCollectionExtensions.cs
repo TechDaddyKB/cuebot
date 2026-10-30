@@ -7,6 +7,7 @@ using Cuebot.Core.Scripting;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Decks;
 using Cuebot.Core.Overlays;
+using Cuebot.Core.Giveaways;
 using Cuebot.Core.Polls;
 using Cuebot.Core.Storage;
 using Cuebot.Core.Transfer;
@@ -45,7 +46,8 @@ public static class CoreServiceCollectionExtensions
             .AddTransferFeatures()
             .AddDeckFeatures()
             .AddOverlayFeatures()
-            .AddPollFeatures();
+            .AddPollFeatures()
+            .AddGiveawayAndStoreFeatures();
     }
 
     /// <summary>Registers a module's settings file (e.g. "twitch.json") as a singleton JsonFile.</summary>

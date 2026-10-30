@@ -126,6 +126,30 @@ public static class OpenApiDocument
                     [Query("limit", "Maximum runs (default 50)", Int()), Query("action", "Only this action (id or name)"), Query("includeArgs", "Include the arguments", Bool())],
                     responses: Ok(Obj(("runs", Arr(Ref("Run"))), ("count", Int())))),
             },
+            ["/giveaway"] = new JsonObject
+            {
+                ["get"] = Op("getGiveaway", "Giveaways", "The current (or last) giveaway", responses: Ok(Obj(("giveaway", Ref("Giveaway"))))),
+                ["post"] = Op("openGiveaway", "Giveaways", "Open a giveaway entered with a chat command on every platform; tickets can cost Cuebot points",
+                    body: Obj(("title", Str()), ("command", Str()), ("ticketCost", Int()), ("maxTickets", Int()), ("currency", Str()),
+                        ("subscriberLuck", new JsonObject { ["type"] = "number" }), ("subscribersOnly", Bool()), ("seconds", Int()), ("winners", Int())),
+                    responses: Responses(("200", "Opened", Ref("Giveaway")), Bad(), Err("409", "A giveaway is still running"))),
+            },
+            ["/giveaway/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("command", "close, draw, redraw (one more winner) or cancel (refunds tickets)")),
+                ["post"] = Op("controlGiveaway", "Giveaways", "Close entries, draw winners or cancel", responses: Responses(("200", "OK", Ref("Giveaway")), NotFound())),
+            },
+            ["/store"] = new JsonObject
+            {
+                ["get"] = Op("getStore", "Store", "The points store: redeem command, items, pending redemptions and the latest finished ones",
+                    responses: Ok(Obj(("command", Str()), ("items", Arr(new JsonObject { ["type"] = "object" })),
+                        ("pending", Arr(new JsonObject { ["type"] = "object" })), ("history", Arr(new JsonObject { ["type"] = "object" }))))),
+            },
+            ["/store/redemptions/{id}/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(IdParam("Redemption id"), PathParam("command", "approve or reject (refunds the points)")),
+                ["post"] = Op("reviewRedemption", "Store", "Approve or reject a pending store redemption", responses: Responses(("200", "OK", new JsonObject { ["type"] = "object" }), NotFound())),
+            },
             ["/polls"] = new JsonObject
             {
                 ["get"] = Op("getPolls", "Polls", "The latest poll and prediction from each source (twitch, youtube, cuebot) and Cuebot's vote and bet commands",
@@ -246,6 +270,9 @@ public static class OpenApiDocument
     private static JsonObject Schemas() => new()
     {
         ["Error"] = Obj(("error", Str()), ("details", Arr(Ref("Problem")))),
+        ["Giveaway"] = Obj(("id", Str()), ("title", Str()), ("status", Str("open, closed, drawn or canceled")), ("command", Str()),
+            ("ticketCost", Int()), ("maxTickets", Int()), ("currency", Str()), ("subscribersOnly", Bool()), ("endsAt", Str()), ("entrants", Int()),
+            ("tickets", Int()), ("recent", Arr(Str())), ("winners", Arr(Obj(("name", Str()), ("platform", Str()))))),
         ["Poll"] = Obj(("source", Str("twitch, youtube or cuebot")), ("kind", Str("poll or prediction")), ("id", Str()), ("title", Str()),
             ("status", Str("active, locked, ended or canceled")),
             ("choices", Arr(Obj(("id", Str()), ("title", Str()), ("votes", Int()), ("points", Int()), ("percent", new JsonObject { ["type"] = "number" })))),

@@ -131,6 +131,8 @@
                                 ToolTip.Tip="Support damages the boss; the final hit makes you the next boss" />
                       <MenuItem Header="Poll and prediction" Command="{Binding AddBuiltInCommand}" CommandParameter="poll"
                                 ToolTip.Tip="Twitch and YouTube polls and predictions, and Cuebot chat polls on every platform" />
+                      <MenuItem Header="Giveaway" Command="{Binding AddBuiltInCommand}" CommandParameter="giveaway"
+                                ToolTip.Tip="The prize, how to enter, entries and a spinning winner reveal" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>

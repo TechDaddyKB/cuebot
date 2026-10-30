@@ -193,6 +193,7 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         json["session"] = services.SessionData?.Snapshot() ?? new JsonObject();
         json["recents"] = services.SessionData?.Recents() ?? new JsonArray();
         json["polls"] = services.Polls?.Snapshot() ?? new JsonArray();
+        json["giveaway"] = services.Giveaways?.Snapshot();
         return json;
     }
 

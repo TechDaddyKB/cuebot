@@ -61,6 +61,7 @@
       session: { data: (hello && hello.session) || {}, settings: { autoReset: true, calendar: true, resetOnStart: false } },
       overlay: { isEditorMode: false, muted: muted, paused: paused },
       polls: (hello && hello.polls) || [],   // Cuebot: the latest poll and prediction per source
+      giveaway: (hello && hello.giveaway) || null,   // Cuebot: the current giveaway
       emulated: false
     };
   }
@@ -235,6 +236,7 @@
             return !(p.source === message.event.source && p.kind === message.event.kind);
           }).concat([message.event]);
         }
+        if (message.listener === "cuebot-giveaway" && hello) hello.giveaway = message.event;
         broadcast({ type: "event", listener: message.listener, event: message.event });
         break;
       case "session":

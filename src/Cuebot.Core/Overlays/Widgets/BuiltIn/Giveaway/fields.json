@@ -1,0 +1,16 @@
+{
+  "heading": { "type": "text", "label": "Heading above the prize", "value": "GIVEAWAY", "group": "What it shows" },
+  "showHow": { "type": "checkbox", "label": "Show how to enter", "value": true, "group": "What it shows" },
+  "showRecent": { "type": "checkbox", "label": "Show the latest entrants", "value": true, "group": "What it shows" },
+  "showTimer": { "type": "checkbox", "label": "Show the time left", "value": true, "group": "What it shows" },
+  "spinSeconds": { "type": "number", "label": "Name spin before the winner (seconds)", "value": 4, "min": 0, "max": 20, "group": "What it shows" },
+  "hideAfter": { "type": "number", "label": "Keep the winner up for (seconds, 0 = until the next giveaway)", "value": 30, "min": 0, "max": 3600, "group": "What it shows" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "prizeSize": { "type": "slider", "label": "Prize size", "value": 36, "min": 12, "max": 120, "step": 1, "group": "Look" },
+  "textSize": { "type": "slider", "label": "Text size", "value": 20, "min": 10, "max": 60, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "accent": { "type": "colorpicker", "label": "Accent colour", "value": "#ffcc33", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Background", "value": "rgba(16, 18, 24, 0.85)", "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 16, "min": 0, "max": 40, "step": 1, "group": "Look" }
+}

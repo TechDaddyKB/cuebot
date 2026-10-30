@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.GiveawaysStoreView"
+             x:DataType="vm:GiveawaysStoreViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4">
+      <TextBlock Classes="h1" Text="Giveaways &amp; Store" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Both work in chat on every platform with Cuebot points. Show giveaways on stream with the Giveaway widget (Overlays &amp; Widgets); store purchases fire the 'Store item redeemed' trigger and show as redemption alerts." />
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,8,0,0" TextWrapping="Wrap"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <ScrollViewer Margin="0,12,0,0">
+      <StackPanel Spacing="12">
+        <!-- Giveaway -->
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Giveaway" FontWeight="SemiBold" FontSize="16" />
+            <Grid ColumnDefinitions="*,8,140" RowDefinitions="Auto,Auto">
+              <TextBox Text="{Binding Prize}" PlaceholderText="Prize, e.g. A Steam game of your choice" />
+              <TextBox Grid.Column="2" Text="{Binding JoinCommand}" PlaceholderText="!join" ToolTip.Tip="The chat command to enter" />
+            </Grid>
+            <WrapPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
+                <TextBlock Text="Ticket cost" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding TicketCost}" Minimum="0" Maximum="100000000" FormatString="0" Width="130" ToolTip.Tip="Points per ticket (0: free)" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
+                <TextBlock Text="Tickets per viewer" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding MaxTickets}" Minimum="1" Maximum="1000" FormatString="0" Width="110" ToolTip.Tip="Viewers buy more with !join 3" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
+                <TextBlock Text="Subscriber luck" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding SubscriberLuck}" Minimum="1" Maximum="10" Increment="0.5" FormatString="0.#" Width="100"
+                               ToolTip.Tip="2 makes a subscriber's tickets count double" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
+                <TextBlock Text="Seconds" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding Seconds}" Minimum="0" Maximum="86400" FormatString="0" Width="110" ToolTip.Tip="How long it takes entries (0: until you close it)" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
+                <TextBlock Text="Winners" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding WinnerCount}" Minimum="1" Maximum="100" FormatString="0" Width="90" />
+              </StackPanel>
+              <CheckBox Content="Subscribers only" IsChecked="{Binding SubscribersOnly}" Margin="0,0,16,6" />
+              <CheckBox Content="Announce winners in chat" IsChecked="{Binding AnnounceWinners}" Margin="0,0,16,6" />
+            </WrapPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="Open giveaway" Classes="accent" Command="{Binding OpenGiveawayCommand}" IsEnabled="{Binding CanOpen}" />
+              <Button Content="Close entries" Command="{Binding CloseGiveawayCommand}" IsEnabled="{Binding CanClose}" />
+              <Button Content="Draw winners" Command="{Binding DrawGiveawayCommand}" IsEnabled="{Binding GiveawayRunning}" />
+              <Button Content="Draw one more" Command="{Binding RedrawGiveawayCommand}" IsEnabled="{Binding CanRedraw}"
+                      ToolTip.Tip="When a winner does not answer" />
+              <Button Content="Cancel and refund" Command="{Binding CancelGiveawayCommand}" IsEnabled="{Binding GiveawayRunning}" />
+            </StackPanel>
+            <TextBlock Text="{Binding GiveawaySummary}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- Store -->
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto,8,140">
+              <TextBlock Text="Store" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="Redeem command" Classes="muted" VerticalAlignment="Center" />
+              <TextBox Grid.Column="3" Text="{Binding RedeemCommand, UpdateSourceTrigger=LostFocus}"
+                       ToolTip.Tip="Viewers type it with the item's name, then anything the item needs (a song, a message)" />
+            </Grid>
+            <Grid ColumnDefinitions="*,8,130,8,Auto">
+              <TextBox Text="{Binding NewItemName}" PlaceholderText="New item name, e.g. Hydrate" />
+              <NumericUpDown Grid.Column="2" Value="{Binding NewItemCost}" Minimum="0" Maximum="100000000" FormatString="0" ToolTip.Tip="Cost in points" />
+              <Button Grid.Column="4" Content="+ Item" Classes="accent" Command="{Binding AddItemCommand}" />
+            </Grid>
+            <Grid ColumnDefinitions="*,110,90,100,100,Auto" Margin="8,4,8,0">
+              <TextBlock Classes="muted" Text="ITEM" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="COST" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="STOCK" ToolTip.Tip="-1 is unlimited" />
+              <TextBlock Grid.Column="3" Classes="muted" Text="PER VIEWER" ToolTip.Tip="Cooldown in seconds for each viewer" />
+              <TextBlock Grid.Column="4" Classes="muted" Text="EVERYONE" ToolTip.Tip="Cooldown in seconds for everyone" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Items}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:StoreItemRowViewModel">
+                  <StackPanel Spacing="4" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="*,110,90,100,100,Auto">
+                      <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
+                      <NumericUpDown Grid.Column="1" Value="{Binding Cost}" Minimum="0" Maximum="100000000" FormatString="0" Margin="0,0,8,0" />
+                      <NumericUpDown Grid.Column="2" Value="{Binding Stock}" Minimum="-1" Maximum="1000000" FormatString="0" Margin="0,0,8,0" />
+                      <NumericUpDown Grid.Column="3" Value="{Binding UserCooldown}" Minimum="0" Maximum="86400" FormatString="0" Margin="0,0,8,0" />
+                      <NumericUpDown Grid.Column="4" Value="{Binding GlobalCooldown}" Minimum="0" Maximum="86400" FormatString="0" Margin="0,0,8,0" />
+                      <Button Grid.Column="5" Content="Delete" Command="{Binding DeleteCommand}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                      <TextBox Text="{Binding Description, UpdateSourceTrigger=LostFocus}" PlaceholderText="Description (optional)" Margin="0,0,8,0" />
+                      <CheckBox Grid.Column="1" Content="Available" IsChecked="{Binding Enabled}" Margin="0,0,12,0" />
+                      <CheckBox Grid.Column="2" Content="Needs approval" IsChecked="{Binding NeedsApproval}" Margin="0,0,12,0"
+                                ToolTip.Tip="Purchases wait for you below; rejecting refunds them" />
+                      <CheckBox Grid.Column="3" Content="Subscribers only" IsChecked="{Binding SubscribersOnly}" />
+                    </Grid>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="Waiting for approval" FontWeight="SemiBold" IsVisible="{Binding HasPending}" />
+            <ItemsControl ItemsSource="{Binding Pending}" IsVisible="{Binding HasPending}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:PendingRedemptionViewModel">
+                  <Grid ColumnDefinitions="50,*,Auto,6,Auto" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding When}" Classes="muted" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <Button Grid.Column="2" Content="Approve" Classes="accent" Command="{Binding ApproveCommand}" />
+                    <Button Grid.Column="4" Content="Reject (refund)" Command="{Binding RejectCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="Latest purchases" FontWeight="SemiBold" />
+            <ItemsControl ItemsSource="{Binding Recent}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" Classes="muted" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

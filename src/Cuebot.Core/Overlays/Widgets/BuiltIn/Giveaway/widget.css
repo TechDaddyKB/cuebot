@@ -1,0 +1,49 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --prize: {{prizeSize}}px;
+  --text-size: {{textSize}}px;
+  --text: {{textColor}};
+  --accent: {{accent}};
+  --bg: {{background}};
+  --radius: {{radius}}px;
+}
+
+.giveaway {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 22px;
+  text-align: center;
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-family: var(--font);
+  font-size: var(--text-size);
+  color: var(--text);
+  overflow: hidden;
+  transition: opacity 0.5s, transform 0.5s;
+}
+.giveaway.hidden { opacity: 0; transform: scale(0.96); }
+.giveaway .heading { font-size: calc(var(--text-size) * 0.8); font-weight: 900; letter-spacing: 0.2em; color: var(--accent); }
+.giveaway .heading:empty { display: none; }
+.giveaway .prize { font-size: var(--prize); font-weight: 900; line-height: 1.1; }
+.giveaway .line:empty { display: none; }
+.giveaway .how b { color: var(--accent); }
+.giveaway .stats { display: flex; gap: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.giveaway .stats span:empty { display: none; }
+.giveaway .recent { font-size: calc(var(--text-size) * 0.8); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.giveaway .winner { display: none; flex-direction: column; gap: 4px; }
+.giveaway.drawing .winner, .giveaway.drawn .winner { display: flex; }
+.giveaway.drawing .how, .giveaway.drawn .how, .giveaway.drawing .recent, .giveaway.drawn .recent { display: none; }
+.giveaway .winner .label { font-size: calc(var(--text-size) * 0.8); font-weight: 700; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.1em; }
+.giveaway .winner .names { font-size: calc(var(--prize) * 1.05); font-weight: 900; color: var(--accent); }
+.giveaway.drawn .winner .names { animation: giveaway-win 0.9s ease-out; }
+
+@keyframes giveaway-win {
+  0% { transform: scale(0.6); filter: brightness(2); }
+  60% { transform: scale(1.12); }
+  100% { transform: none; filter: none; }
+}

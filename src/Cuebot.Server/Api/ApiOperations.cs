@@ -651,6 +651,74 @@ public sealed class ApiOperations(ServerServices services, Func<IReadOnlyList<Se
         }
     }
 
+    /// <summary>The current (or last) giveaway: <c>{giveaway}</c> (null when there has been none).</summary>
+    public JsonObject Giveaway() =>
+        new() { ["giveaway"] = (services.Giveaways ?? throw ApiException.Unavailable("Giveaways are not available")).Snapshot() };
+
+    /// <summary>
+    /// <c>open {title, command, ticketCost, maxTickets, currency, subscriberLuck, subscribersOnly, seconds, winners}</c>,
+    /// <c>close</c>, <c>draw</c>, <c>redraw</c> (one more winner) or <c>cancel</c> (refunds tickets). Returns the state.
+    /// </summary>
+    public JsonObject GiveawayCommand(string command, JsonObject body)
+    {
+        var giveaways = services.Giveaways ?? throw ApiException.Unavailable("Giveaways are not available");
+        static string Text(JsonNode? node) => node is JsonValue v && v.TryGetValue<string>(out var s) ? s : node?.ToJsonString() ?? "";
+        static double Num(JsonNode? node, double fallback) => node is JsonValue v && v.TryGetValue<double>(out var d) ? d : fallback;
+        try
+        {
+            var state = command switch
+            {
+                "open" => giveaways.Open(new Cuebot.Core.Giveaways.GiveawayOptions
+                {
+                    Title = Text(body["title"]), Command = body["command"] is null ? "!join" : Text(body["command"]),
+                    TicketCost = (long)Num(body["ticketCost"], 0), MaxTickets = (int)Num(body["maxTickets"], 1), Currency = Text(body["currency"]),
+                    SubscriberLuck = Num(body["subscriberLuck"], 1), SubscribersOnly = body["subscribersOnly"] is JsonValue b && b.TryGetValue<bool>(out var only) && only,
+                    Seconds = (int)Num(body["seconds"], 0), Winners = (int)Num(body["winners"], 1),
+                }),
+                "close" => giveaways.Close(),
+                "draw" => giveaways.Draw(),
+                "redraw" => giveaways.Draw(oneMore: true),
+                "cancel" => giveaways.Cancel(),
+                _ => throw ApiException.NotFound($"Unknown giveaway command '{command}' (close, draw, redraw or cancel)"),
+            };
+            return state ?? throw ApiException.NotFound("There is no giveaway to " + command);
+        }
+        catch (ArgumentException ex)
+        {
+            throw ApiException.BadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw ApiException.Conflict(ex.Message);
+        }
+    }
+
+    /// <summary>The points store: <c>{command, items, pending, history}</c> (the latest 20 finished redemptions).</summary>
+    public JsonObject Store()
+    {
+        var store = services.Store ?? throw ApiException.Unavailable("The store is not available");
+        return new JsonObject
+        {
+            ["command"] = store.Command,
+            ["items"] = JsonSerializer.SerializeToNode(store.Items, JsonOptions),
+            ["pending"] = JsonSerializer.SerializeToNode(store.Pending, JsonOptions),
+            ["history"] = JsonSerializer.SerializeToNode(store.History.Take(20), JsonOptions),
+        };
+    }
+
+    /// <summary>Approves or rejects (refunds) a pending redemption; 404 when it is not pending.</summary>
+    public JsonObject ReviewRedemption(string id, string command)
+    {
+        var store = services.Store ?? throw ApiException.Unavailable("The store is not available");
+        var done = command switch
+        {
+            "approve" => store.Approve(id),
+            "reject" => store.Reject(id),
+            _ => throw ApiException.NotFound($"Unknown command '{command}' (approve or reject)"),
+        };
+        return done ? Store() : throw ApiException.NotFound($"No pending redemption '{id}'");
+    }
+
     public JsonObject Chat(int limit = 50)
     {
         var chat = services.Chat ?? throw ApiException.Unavailable("Chat is not available");
