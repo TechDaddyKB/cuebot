@@ -15,7 +15,14 @@
         </c:StatusHeader.Detail>
         <c:StatusHeader.Actions>
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding CanConnect}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}">
+            <Button.IsEnabled>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="CanConnect" />
+                <Binding Path="State" Converter="{x:Static c:ConnectionStates.CanConnect}" />
+              </MultiBinding>
+            </Button.IsEnabled>
+          </Button>
             <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.IsActive}}" />
           </StackPanel>
         </c:StatusHeader.Actions>
