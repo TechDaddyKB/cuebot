@@ -82,7 +82,8 @@ internal sealed class ChatPageFixture : IDisposable
     public ChatViewModel CreateViewModel() => new(Hub, Services);
 
     /// <summary>Publishes a Twitch-module-style chat event (with emote ranges and first-message flag when given).</summary>
-    public void Chat(string user, string text, string? emotes = null, bool firstMessage = false, string platform = "Twitch", string? id = null)
+    public void Chat(string user, string text, string? emotes = null, bool firstMessage = false, string platform = "Twitch", string? id = null,
+        bool broadcaster = false)
     {
         var args = new Dictionary<string, object?>
         {
@@ -94,6 +95,7 @@ internal sealed class ChatPageFixture : IDisposable
         };
         if (emotes is not null) args["emotes"] = emotes;
         if (firstMessage) args["isFirstMessage"] = true;
+        if (broadcaster) args["isBroadcaster"] = true;
         Bus.Publish(new BotEvent($"{platform.ToLowerInvariant()}.chatMessage", args));
     }
 
@@ -140,7 +142,8 @@ internal sealed class FakeAdapter(string platform) : IChatEventAdapter
         return new ChatMessage(platform, S("messageId"), S("user"), S("userId"), S("message"), e.Time)
         {
             Color = platform == "Twitch" ? "#FF7F50" : null,
-            Roles = S("user") == "Mod" ? ChatRoles.Moderator : ChatRoles.None,
+            Roles = (S("user") == "Mod" ? ChatRoles.Moderator : ChatRoles.None)
+                    | (e.Args.GetValueOrDefault("isBroadcaster") is true ? ChatRoles.Broadcaster : ChatRoles.None),
         };
     }
 

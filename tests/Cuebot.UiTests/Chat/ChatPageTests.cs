@@ -162,13 +162,13 @@ public sealed class ChatPageTests : IDisposable
         var (window, _) = Show(vm);
         var bob = vm.Messages[0];
 
-        Assert.Equal(["Delete message", "Timeout 1 minute", "Timeout 10 minutes", "Ban Bob", "-", "Shout out", "Hello", "-", "Copy message to send box"],
+        Assert.Equal(["Delete message", "Timeout 1 minute", "Timeout 10 minutes", "Ban Bob…", "-", "Shout out", "Hello", "-", "Copy message to send box"],
             vm.GetMenu(bob).Select(e => e.Label));
         Assert.Equal(["Shout out", "Hello", "-", "Copy message to send box"], vm.GetMenu(vm.Messages[1]).Select(e => e.Label));
 
         vm.GetMenu(bob).Single(e => e.Label == "Delete message").Run!().GetAwaiter().GetResult();
         vm.GetMenu(bob).Single(e => e.Label == "Timeout 10 minutes").Run!().GetAwaiter().GetResult();
-        vm.GetMenu(bob).Single(e => e.Label == "Ban Bob").Run!().GetAwaiter().GetResult();
+        vm.GetMenu(bob).Single(e => e.Label == "Ban Bob…").Run!().GetAwaiter().GetResult();
         Assert.Equal(["delete msg-1", "timeout id-bob bob 600", "ban id-bob bob"], _f.Moderator.Calls);
         Assert.True(bob.IsDeleted);
         Assert.DoesNotContain(vm.GetMenu(bob), e => e.Label == "Delete message");
@@ -179,7 +179,29 @@ public sealed class ChatPageTests : IDisposable
         var menu = ChatView.BuildMenu(vm, bob);
         Assert.Equal(["Timeout 1 minute", "Timeout 10 minutes"], menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!).Take(2));
         Assert.Equal(2, menu.Items.OfType<Separator>().Count());
+
+        // Ban asks first: the menu entry opens a submenu whose single item bans.
+        _f.Moderator.Available = Cuebot.Core.Chat.Moderation.ChatModerationActions.Ban;
+        var ban = ChatView.BuildMenu(vm, bob).Items.OfType<MenuItem>().Single(i => (string)i.Header! == "Ban Bob…");
+        Assert.Equal(["Yes, ban Bob"], ban.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
         Save(window, "chat-deleted-message");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Broadcaster_messages_offer_delete_but_not_timeout_or_ban()
+    {
+        var vm = _f.CreateViewModel();
+        _f.Chat("Streamer", "welcome in", id: "msg-host", broadcaster: true);
+        var (window, _) = Show(vm);
+        var own = vm.Messages[0];
+
+        Assert.Equal(["Delete message", "-", "Shout out", "Hello", "-", "Copy message to send box"], vm.GetMenu(own).Select(e => e.Label));
+        vm.SelectedLine = own;
+        Assert.True(vm.CanDeleteSelected);
+        Assert.False(vm.CanTimeoutSelected);
+        Assert.False(vm.CanBanSelected);
+        Assert.Contains("broadcaster's own message", vm.ModerationHint);
         window.Close();
     }
 

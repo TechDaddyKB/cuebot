@@ -114,7 +114,16 @@ public partial class ChatView : UserControl
                 continue;
             }
             var item = new MenuItem { Header = entry.Label };
-            item.Click += async (_, _) => await entry.Run!();
+            if (entry.ConfirmLabel is { } confirm)
+            {
+                var yes = new MenuItem { Header = confirm };
+                yes.Click += async (_, _) => await entry.Run!();
+                item.Items.Add(yes);
+            }
+            else
+            {
+                item.Click += async (_, _) => await entry.Run!();
+            }
             menu.Items.Add(item);
         }
         return menu;

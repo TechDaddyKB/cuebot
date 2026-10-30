@@ -182,7 +182,7 @@
                     </Button>
                   </WrapPanel>
                   <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                             IsVisible="{Binding !CanTimeoutSelected}" Text="This platform offers no moderation from Cuebot right now." />
+                             IsVisible="{Binding ModerationHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Text="{Binding ModerationHint}" />
                 </StackPanel>
 
                 <!-- Recent messages -->

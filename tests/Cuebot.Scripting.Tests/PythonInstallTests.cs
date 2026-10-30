@@ -25,7 +25,10 @@ public sealed class PythonInstallTests : IDisposable
         var settings = new JsonFile<ScriptingSettings>(Path.Combine(_data.Path, "scripting.json"), _log);
         using var http = new HttpClient();
         await using var runtime = new PythonRuntime(new AppPaths(_data.Path), settings, http, _log);
-        using var bot = new TestBot((api, log) => [new PythonCodeSubAction(new PythonScriptHost(runtime, api, log))]);
+        PythonScriptHost? host = null;
+        using var bot = new TestBot((api, log) => [new PythonCodeSubAction(host = new PythonScriptHost(runtime, api, log))]);
+        // Stop the Python worker before the data folder is deleted: Windows keeps a running interpreter's files locked.
+        await using var stopWorker = new AsyncDisposer(() => host?.DisposeAsync() ?? ValueTask.CompletedTask);
         var action = bot.AddAction("Test", "code.python", "import sys\ncb.set_arg(\"v\", sys.version.split()[0])\nreturn True", timeoutSeconds: 60);
 
         var first = await bot.RunAsync(action);
@@ -40,4 +43,9 @@ public sealed class PythonInstallTests : IDisposable
     }
 
     public void Dispose() => _data.Dispose();
+
+    private sealed class AsyncDisposer(Func<ValueTask> dispose) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => dispose();
+    }
 }

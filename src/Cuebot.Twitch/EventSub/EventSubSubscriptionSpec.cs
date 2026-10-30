@@ -71,7 +71,7 @@ internal static class EventSubSubscriptions
         Broadcaster("stream.offline"),
         new("channel.raid", "1", [], id => Condition(("to_broadcaster_user_id", id))),
         new("channel.raid", "1", [], id => Condition(("from_broadcaster_user_id", id))),
-        new("channel.ad_break.begin", "1", [TwitchScopes.ReadAds], id => Condition(("broadcaster_id", id))),
+        Broadcaster("channel.ad_break.begin", "1", TwitchScopes.ReadAds),
         Broadcaster("channel.shared_chat.begin"),
         Broadcaster("channel.shared_chat.update"),
         Broadcaster("channel.shared_chat.end"),

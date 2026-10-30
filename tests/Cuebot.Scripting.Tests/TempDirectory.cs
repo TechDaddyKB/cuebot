@@ -7,13 +7,19 @@ internal sealed class TempDirectory : IDisposable
 
     public void Dispose()
     {
-        try
+        // On Windows a process that is still exiting (a killed Python worker and its child) keeps its files locked
+        // for a moment, so retry briefly before leaving the folder for the OS to clean up.
+        for (var attempt = 0; attempt < 10; attempt++)
         {
-            Directory.Delete(Path, recursive: true);
-        }
-        catch (IOException)
-        {
-            // A process may still hold a file briefly; the OS cleans temp eventually.
+            try
+            {
+                Directory.Delete(Path, recursive: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(200);
+            }
         }
     }
 }

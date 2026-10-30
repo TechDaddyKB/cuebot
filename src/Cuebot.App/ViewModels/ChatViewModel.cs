@@ -127,7 +127,11 @@ public sealed class EmoteSuggestionViewModel(Emote emote) : EmoteSegment(new Emo
 }
 
 /// <summary>An entry in a chat line's actions menu; a null <see cref="Run"/> is a separator.</summary>
-public sealed record ChatMenuEntry(string Label, Func<Task>? Run)
+/// <summary>
+/// One entry of a chat line's menu. With <see cref="ConfirmLabel"/> the entry opens a submenu holding one item with that
+/// label, and only that item runs <see cref="Run"/> (used for Ban, which cannot be undone from Cuebot).
+/// </summary>
+public sealed record ChatMenuEntry(string Label, Func<Task>? Run, string? ConfirmLabel = null)
 {
     public bool IsSeparator => Run is null;
     public static ChatMenuEntry Separator { get; } = new("-", null);
@@ -234,6 +238,7 @@ public sealed partial class ChatViewModel : PageViewModel
         OnPropertyChanged(nameof(CanDeleteSelected));
         OnPropertyChanged(nameof(CanTimeoutSelected));
         OnPropertyChanged(nameof(CanBanSelected));
+        OnPropertyChanged(nameof(ModerationHint));
         DeleteSelectedCommand.NotifyCanExecuteChanged();
     }
 
@@ -249,10 +254,19 @@ public sealed partial class ChatViewModel : PageViewModel
 
     public bool CanDeleteSelected => SelectedModeration.HasFlag(ChatModerationActions.DeleteMessage)
                                      && SelectedLine is { IsDeleted: false, Message.Id.Length: > 0 };
-    public bool CanTimeoutSelected => SelectedModeration.HasFlag(ChatModerationActions.Timeout);
-    public bool CanBanSelected => SelectedModeration.HasFlag(ChatModerationActions.Ban);
+    public bool CanTimeoutSelected => SelectedModeration.HasFlag(ChatModerationActions.Timeout) && SelectedLine is { } line && CanPunish(line);
+    public bool CanBanSelected => SelectedModeration.HasFlag(ChatModerationActions.Ban) && SelectedLine is { } line && CanPunish(line);
 
-    /// <summary>Ban asks once more in the pane ("Confirm ban"); the message menu bans straight away as before.</summary>
+    /// <summary>Why the pane offers no Timeout/Ban for the selected line, or "" when it does (or nothing is selected).</summary>
+    public string ModerationHint =>
+        SelectedLine is not { } line || CanTimeoutSelected || CanBanSelected ? ""
+        : !CanPunish(line) ? "This is the broadcaster's own message: they can't be timed out or banned in their own chat."
+        : "This platform offers no moderation from Cuebot right now.";
+
+    /// <summary>Timeout and Ban make no sense for the channel's own account (the platforms refuse them).</summary>
+    private static bool CanPunish(ChatLineViewModel line) => !line.Message.Roles.HasFlag(ChatRoles.Broadcaster);
+
+    /// <summary>Ban asks once more in the pane ("Confirm ban"); the message menu asks through a submenu.</summary>
     [ObservableProperty] private bool _confirmingBan;
 
     private void RefreshUserLines()
@@ -617,12 +631,13 @@ public sealed partial class ChatViewModel : PageViewModel
         var available = _services.Moderation?.AvailableFor(line.Platform) ?? ChatModerationActions.None;
         if (available.HasFlag(ChatModerationActions.DeleteMessage) && !line.IsDeleted && line.Message.Id.Length > 0)
             entries.Add(new("Delete message", () => DeleteAsync(line)));
-        if (available.HasFlag(ChatModerationActions.Timeout))
+        if (available.HasFlag(ChatModerationActions.Timeout) && CanPunish(line))
         {
             entries.Add(new("Timeout 1 minute", () => TimeoutAsync(line, TimeSpan.FromMinutes(1))));
             entries.Add(new("Timeout 10 minutes", () => TimeoutAsync(line, TimeSpan.FromMinutes(10))));
         }
-        if (available.HasFlag(ChatModerationActions.Ban)) entries.Add(new($"Ban {line.User}", () => BanAsync(line)));
+        if (available.HasFlag(ChatModerationActions.Ban) && CanPunish(line))
+            entries.Add(new($"Ban {line.User}…", () => BanAsync(line), $"Yes, ban {line.User}"));
 
         var quick = _settings.QuickActions.Where(q => q.ActionName.Length > 0).ToArray();
         if (quick.Length > 0 && entries.Count > 0) entries.Add(ChatMenuEntry.Separator);
