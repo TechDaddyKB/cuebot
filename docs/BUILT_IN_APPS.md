@@ -44,8 +44,9 @@ One Google Cloud project for both:
 1. Enable **YouTube Data API v3** and **Google Drive API**.
 2. Google Auth Platform → Branding: app name "Cuebot", support e-mail, a homepage and a **privacy policy** URL on a
    domain you own and verify in Search Console. Audience: **External**, then **Publish app**.
-3. Data access: `https://www.googleapis.com/auth/youtube`, `https://www.googleapis.com/auth/youtube.force-ssl`
-   (sensitive) and `https://www.googleapis.com/auth/drive.file` (non-sensitive).
+3. Data access: `https://www.googleapis.com/auth/youtube` (sensitive) and
+   `https://www.googleapis.com/auth/drive.file` (non-sensitive). Do not add `youtube.force-ssl`: Cuebot does not
+   request it, and every extra sensitive scope has to be justified in Google's verification.
 4. Clients → Create client → **Desktop app** → `CUEBOT_GOOGLE_CLIENT_ID` / `_SECRET`. Optionally a second client of
    type **TVs and Limited Input devices** → `CUEBOT_GOOGLE_DEVICE_CLIENT_ID` / `_SECRET` (without it, YouTube offers
    browser sign-in only). No redirect URLs: Cuebot uses a random `http://127.0.0.1` port with PKCE.

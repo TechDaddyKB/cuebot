@@ -21,7 +21,7 @@ user's own), because Google refreshes a token only through the client that issue
    - **TVs and Limited Input devices** (recommended): Cuebot shows a code; you enter it at google.com/device on any
      device. Scope requested: `https://www.googleapis.com/auth/youtube`.
    - or **Desktop app**: Cuebot opens the browser and receives the result on `http://127.0.0.1:<random port>/`
-     (PKCE). Scopes: `youtube` and `youtube.force-ssl`.
+     (PKCE). Scope: `youtube`.
 5. Copy the client ID and client secret into Cuebot's YouTube page (*Advanced*) and sign in the **broadcaster** (pick the
    channel/brand account you stream on). Optionally sign in a second account as the **bot** for chat messages.
 

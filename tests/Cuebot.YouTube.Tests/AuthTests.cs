@@ -151,7 +151,7 @@ public sealed class AuthTests
         Assert.Equal("STATE", r.Query("state"));
         Assert.Equal("offline", r.Query("access_type"));
         Assert.Equal("http://127.0.0.1:5555/", r.Query("redirect_uri"));
-        Assert.Contains("youtube.force-ssl", r.Query("scope"));
+        Assert.Equal("https://www.googleapis.com/auth/youtube", r.Query("scope"));
     }
 
     [Fact]
