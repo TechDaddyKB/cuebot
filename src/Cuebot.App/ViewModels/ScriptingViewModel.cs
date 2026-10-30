@@ -32,6 +32,15 @@ public sealed partial class ScriptingViewModel : PageViewModel
     public bool IsReady => _python.State == PythonRuntimeState.Ready;
     public bool CanInstall => _python.State is PythonRuntimeState.NotInstalled or PythonRuntimeState.Error;
 
+    /// <summary>Install the managed Python the first time a Python step runs.</summary>
+    public bool InstallPythonAutomatically
+    {
+        get => _python.Settings.InstallPythonAutomatically;
+        set { _python.Settings.InstallPythonAutomatically = value; _python.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public string InstallButtonText => _python.ManagedPythonDescription is { } python ? $"Install {python}" : "Install built-in Python";
+
     public string CustomPythonPath
     {
         get => _python.Settings.CustomPythonPath;

@@ -1,4 +1,5 @@
 using Cuebot.Core;
+using Cuebot.Core.Actions;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 
@@ -9,11 +10,26 @@ public sealed class PythonRuntimeTests : IDisposable
     private readonly TempDirectory _data = new();
     private readonly AppLog _log = new();
 
-    private PythonRuntime CreateRuntime(string customPath = "")
+    private readonly RecordingHandler _http = new();
+
+    private PythonRuntime CreateRuntime(string customPath = "", bool installAutomatically = false)
     {
         var settings = new JsonFile<ScriptingSettings>(Path.Combine(_data.Path, "scripting.json"), _log);
         settings.Value.CustomPythonPath = customPath;
-        return new PythonRuntime(new AppPaths(_data.Path), settings, new HttpClient(), _log);
+        settings.Value.InstallPythonAutomatically = installAutomatically;
+        return new PythonRuntime(new AppPaths(_data.Path), settings, new HttpClient(_http), _log);
+    }
+
+    /// <summary>Answers every request with 404 and remembers the URLs, so no test downloads anything.</summary>
+    private sealed class RecordingHandler : HttpMessageHandler
+    {
+        public List<string> Urls { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            lock (Urls) Urls.Add(request.RequestUri!.ToString());
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
+        }
     }
 
     [Fact]
@@ -45,7 +61,42 @@ public sealed class PythonRuntimeTests : IDisposable
         var run = await bot.RunAsync(bot.AddAction("Test", "code.python", "pass"));
 
         Assert.False(run.Success);
-        Assert.Contains("Install Python from the Scripting page", run.Error);
+        Assert.Contains("Install it on Automation > Scripting", run.Error);
+        Assert.Empty(_http.Urls);
+    }
+
+    [Fact]
+    public async Task First_python_step_starts_installing_the_pinned_build()
+    {
+        if (PinnedPython.ForThisComputer() is null) return;
+        await using var runtime = CreateRuntime(installAutomatically: true);
+        using var bot = new TestBot((api, log) => [new PythonCodeSubAction(new PythonScriptHost(runtime, api, log))]);
+
+        var run = await bot.RunAsync(bot.AddAction("Test", "code.python", "pass"));
+        await runtime.InstallInBackground();
+
+        Assert.False(run.Success);
+        Assert.Contains("Python is being installed for the first Python step", run.Error);
+        var url = Assert.Single(_http.Urls);
+        Assert.Equal(PinnedPython.ForThisComputer()!.DownloadUrl, url);
+        Assert.Equal(PythonRuntimeState.Error, runtime.State);   // the fake server answered 404
+    }
+
+    [Fact]
+    public async Task Install_notice_offers_the_install_until_python_is_ready()
+    {
+        if (PinnedPython.ForThisComputer() is null) return;
+        await using var runtime = CreateRuntime(installAutomatically: true);
+        var notice = new PythonInstallNotice(runtime);
+
+        var current = Assert.IsType<ParameterNotice>(notice.Current);
+        Assert.Equal("Install Python", current.ButtonText);
+        Assert.Contains($"Python {PinnedPython.Version}", current.Text);
+        Assert.Contains("installed the first time this step runs", current.Text);
+
+        await using var custom = CreateRuntime(Path.Combine(_data.Path, "missing", "python"));
+        await custom.RefreshAsync();
+        Assert.Null(new PythonInstallNotice(custom).Current!.ButtonText);
     }
 
     [Fact]

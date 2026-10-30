@@ -73,8 +73,18 @@ public sealed class PythonScriptHost : IAsyncDisposable
         throw new ScriptException($"Python error: {outcome.Error}");
     }
 
+    /// <summary>The interpreter scripts run with.</summary>
+    public PythonRuntime Runtime => _runtime;
+
     private async Task<PythonWorker> GetWorkerAsync(CancellationToken ct)
     {
+        if (_runtime.PythonExecutable is null && _runtime.ShouldInstallAutomatically)
+        {
+            // First Python step on this computer: install now, skip this run (the download takes a while).
+            _ = _runtime.InstallInBackground();
+            throw new ScriptException(
+                "Python is being installed for the first Python step (a one-time download); this step was skipped and runs normally once it finishes. Progress is on Automation > Scripting");
+        }
         var executable = _runtime.PythonExecutable ?? throw new ScriptException(_runtime.NotReadyMessage());
         if (_worker is { HasExited: false } current && current.Executable == executable)
             return current;

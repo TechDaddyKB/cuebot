@@ -278,6 +278,11 @@ public sealed class MainWindowTests : IAsyncDisposable
         cheer.AddStep(python, new StepInsertTarget(cheer.Steps, cheer.Steps.Items.Count));
         actions.IsGraphView = false;
         Save(window, "actions-code");
+        // Python is not installed in the test data folder: the editor offers to install it.
+        var code = cheer.Selected!.Parameters.OfType<Cuebot.App.ViewModels.Actions.CodeParameterViewModel>().Single();
+        Assert.True(code.HasNotice);
+        Assert.Equal("Install Python", code.NoticeButtonText);
+        Assert.True(code.HasNoticeButton);
 
         actions.AddStepCommand.Execute(null);
         Save(window, "actions-picker");

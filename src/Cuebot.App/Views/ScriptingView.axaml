@@ -19,8 +19,9 @@
               <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding Version}" />
             </TextBlock>
             <TextBlock Text="{Binding StatusMessage}" Classes="muted" TextWrapping="Wrap" />
-            <Button Content="Install built-in Python" Classes="accent" Command="{Binding InstallRuntimeCommand}"
+            <Button Content="{Binding InstallButtonText}" Classes="accent" Command="{Binding InstallRuntimeCommand}"
                     IsVisible="{Binding CanInstall}" IsEnabled="{Binding !IsBusy}" />
+            <CheckBox Content="Install Python automatically the first time a Python step runs" IsChecked="{Binding InstallPythonAutomatically}" />
             <TextBlock Text="Advanced: use an existing Python interpreter instead" Classes="muted" />
             <TextBox Text="{Binding CustomPythonPath}" PlaceholderText="/usr/bin/python3 or C:\Python313\python.exe" />
           </StackPanel>

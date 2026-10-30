@@ -88,6 +88,13 @@ code.
 - Update the docs when behaviour changes.
 - By contributing you agree that your work is licensed under the project's [MIT license](LICENSE).
 
+## Python runtime pin
+
+Cuebot installs one exact python-build-standalone build per platform, checked against SHA-256 sums in
+`src/Cuebot.Scripting/Python/PinnedPython.cs`. To move to a newer build, run `tools/update-python-pin.py [release-tag]`
+and paste its output into that file. `CUEBOT_TEST_PYTHON_INSTALL=1 dotnet test tests/Cuebot.Scripting.Tests` then
+downloads and installs the new build for real.
+
 ## Releases (maintainers)
 
 Push a tag such as `v0.1.0`. The release workflow builds and tests everything, publishes a GitHub release (Windows

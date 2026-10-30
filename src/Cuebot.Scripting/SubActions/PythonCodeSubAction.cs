@@ -25,7 +25,8 @@ public sealed class PythonCodeSubAction(PythonScriptHost host) : ISubActionHandl
         {
             Language = "python",
             DefaultValue = DefaultCode,
-            Help = "Script body using cb. Install Python and packages from the Scripting page. Scripts run with full access to your computer; only use code you trust.",
+            Help = "Script body using cb. Python is installed the first time a Python step runs (or from Automation > Scripting, which also manages packages). Scripts run with full access to your computer; only use code you trust.",
+            Notice = new PythonInstallNotice(host.Runtime),
         },
         ScriptSubActions.TimeoutParameter,
     ];

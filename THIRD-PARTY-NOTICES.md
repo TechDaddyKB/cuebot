@@ -44,7 +44,7 @@ Each keeps its own license; full license texts are available from the linked pro
 
 | Component | When | License |
 |---|---|---|
-| [python-build-standalone](https://github.com/astral-sh/python-build-standalone) | The first time a Python execute-code sub-action needs the built-in interpreter | Python Software Foundation License, plus the licenses of the libraries it bundles (OpenSSL, SQLite, libffi, zlib, …) listed in the distribution |
+| [python-build-standalone](https://github.com/astral-sh/python-build-standalone) | The first time a Python execute-code sub-action needs the built-in interpreter: a pinned CPython build, checked against a SHA-256 sum compiled into Cuebot | Python Software Foundation License, plus the licenses of the libraries it bundles (OpenSSL, SQLite, libffi, zlib, …) listed in the distribution |
 | [Whisper models](https://huggingface.co/ggerganov/whisper.cpp) (ggml conversions of OpenAI's Whisper) | When you click Download in Voice Control → Settings; saved in the data folder (`models/whisper`) and checked against a SHA-256 sum | MIT |
 | Python packages installed with the library manager | When you install them | Each package's own license |
 

@@ -1,10 +1,12 @@
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core.Actions;
 
 namespace Cuebot.App.ViewModels.Actions;
 
 /// <summary>Editor model for one trigger setting or sub-action parameter, writing through to the definition.</summary>
-public abstract class ParameterViewModel : ObservableObject
+public abstract partial class ParameterViewModel : ObservableObject
 {
     private readonly Dictionary<string, string> _store;
     private readonly Action _changed;
@@ -14,6 +16,58 @@ public abstract class ParameterViewModel : ObservableObject
         Descriptor = descriptor;
         _store = store;
         _changed = changed;
+        if (descriptor.Notice is { } source) WatchNotice(source, new WeakReference<ParameterViewModel>(this));
+    }
+
+    /// <summary>
+    /// Refreshes the notice when its source changes. The source outlives editors (it belongs to a module), so it holds
+    /// this editor only weakly and drops the handler once the editor is gone.
+    /// </summary>
+    private static void WatchNotice(IParameterNoticeSource source, WeakReference<ParameterViewModel> editor)
+    {
+        Action? handler = null;
+        handler = () =>
+        {
+            if (editor.TryGetTarget(out var vm)) Dispatcher.UIThread.Post(vm.RefreshNotice);
+            else source.Changed -= handler;
+        };
+        source.Changed += handler;
+    }
+
+    private ParameterNotice? Notice => Descriptor.Notice?.Current;
+    public bool HasNotice => Notice is not null;
+    public string NoticeText => Notice?.Text ?? "";
+    public string NoticeButtonText => Notice?.ButtonText ?? "";
+    public bool HasNoticeButton => Notice is { ButtonText: not null, Run: not null };
+
+    [ObservableProperty] private bool _isRunningNotice;
+
+    [RelayCommand]
+    private async Task RunNotice()
+    {
+        if (Notice?.Run is not { } run || IsRunningNotice) return;
+        IsRunningNotice = true;
+        try
+        {
+            await run();
+        }
+        catch (Exception)
+        {
+            // The source reports the failure through its next notice (for Python, the runtime's error state).
+        }
+        finally
+        {
+            IsRunningNotice = false;
+            RefreshNotice();
+        }
+    }
+
+    private void RefreshNotice()
+    {
+        OnPropertyChanged(nameof(HasNotice));
+        OnPropertyChanged(nameof(NoticeText));
+        OnPropertyChanged(nameof(NoticeButtonText));
+        OnPropertyChanged(nameof(HasNoticeButton));
     }
 
     public ParameterDescriptor Descriptor { get; }

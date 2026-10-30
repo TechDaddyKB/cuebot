@@ -22,6 +22,21 @@ public sealed record ParameterDescriptor(string Key, string Label, ParameterKind
     public string? Language { get; init; }
 
     public string? Help { get; init; }
+
+    /// <summary>A live message shown above the editor, such as "Python is not installed [Install Python]".</summary>
+    public IParameterNoticeSource? Notice { get; init; }
+}
+
+/// <summary>A message shown with a parameter's editor, with an optional button that runs <see cref="Run"/>.</summary>
+public sealed record ParameterNotice(string Text, string? ButtonText = null, Func<Task>? Run = null);
+
+/// <summary>Supplies a parameter's current notice and says when it changes (possibly on a background thread).</summary>
+public interface IParameterNoticeSource
+{
+    /// <summary>The notice to show now, or null for none.</summary>
+    ParameterNotice? Current { get; }
+
+    event Action? Changed;
 }
 
 /// <summary>Read access to parameter values with descriptor defaults and typed parsing.</summary>

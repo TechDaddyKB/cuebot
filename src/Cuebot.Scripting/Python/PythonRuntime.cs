@@ -20,6 +20,8 @@ public sealed class PythonRuntime : IAsyncDisposable
     private readonly AppLog _log;
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
+    private readonly Lock _backgroundLock = new();
+    private Task? _backgroundInstall;
 
     public PythonRuntime(AppPaths paths, JsonFile<ScriptingSettings> settings, HttpClient http, AppLog log)
     {
@@ -48,6 +50,46 @@ public sealed class PythonRuntime : IAsyncDisposable
     internal Func<Task>? ReleaseInterpreter { get; set; }
 
     private string CustomPath => Settings.CustomPythonPath.Trim();
+
+    /// <summary>True when scripts use the managed Python rather than a custom interpreter.</summary>
+    public bool UsesManagedPython => CustomPath.Length == 0;
+
+    /// <summary>The managed Python build for this computer, or null when there is none (then only a custom path works).</summary>
+    public string? ManagedPythonDescription =>
+        PinnedPython.ForThisComputer() is { } build ? $"Python {PinnedPython.Version} (about {build.Megabytes} MB)" : null;
+
+    /// <summary>
+    /// True when a Python step that finds no interpreter should start installing the managed Python itself:
+    /// the setting is on, no custom interpreter is set, this computer has a managed build, and it is not installed.
+    /// </summary>
+    public bool ShouldInstallAutomatically =>
+        Settings.InstallPythonAutomatically && UsesManagedPython && PinnedPython.ForThisComputer() is not null
+        && State is PythonRuntimeState.NotInstalled or PythonRuntimeState.Installing;
+
+    /// <summary>
+    /// Starts installing the managed Python in the background unless an install started this way is still running.
+    /// Failures are logged and shown in <see cref="State"/>; the returned task never faults.
+    /// </summary>
+    public Task InstallInBackground()
+    {
+        lock (_backgroundLock)
+        {
+            if (_backgroundInstall is { IsCompleted: false } running) return running;
+            _log.Info(Source, "Installing Python for the first Python step");
+            _backgroundInstall = Task.Run(async () =>
+            {
+                try
+                {
+                    await InstallAsync(ct: _lifetime.Token).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // Logged by InstallAsync and shown in State/StatusMessage; a later run or the Scripting page retries.
+                }
+            });
+            return _backgroundInstall;
+        }
+    }
 
     /// <summary>Saves <see cref="Settings"/>. Call <see cref="RefreshAsync"/> afterwards to apply an interpreter change.</summary>
     public void SaveSettings() => _settings.SaveNow();
@@ -165,9 +207,10 @@ public sealed class PythonRuntime : IAsyncDisposable
     /// <summary>Message explaining why Python cannot run right now.</summary>
     internal string NotReadyMessage() => State switch
     {
-        PythonRuntimeState.Installing => "Python is still being installed",
+        PythonRuntimeState.Installing =>
+            "Python is being installed (a one-time download); this step was skipped and runs normally once it finishes. Progress is on Automation > Scripting",
         PythonRuntimeState.Error => $"Python is not available: {StatusMessage}",
-        _ => "Python is not installed. Install Python from the Scripting page",
+        _ => "Python is not installed. Install it on Automation > Scripting",
     };
 
     /// <summary>Quick file-based detection so the state is right before <see cref="StartAsync"/> runs.</summary>

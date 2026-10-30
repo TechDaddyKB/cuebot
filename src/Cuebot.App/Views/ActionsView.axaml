@@ -62,6 +62,13 @@
     </DataTemplate>
     <DataTemplate DataType="vm:CodeParameterViewModel">
       <StackPanel Spacing="4">
+        <Border Classes="card" Padding="10,8" IsVisible="{Binding HasNotice}">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock Text="{Binding NoticeText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="accent" Content="{Binding NoticeButtonText}" Command="{Binding RunNoticeCommand}"
+                    IsVisible="{Binding HasNoticeButton}" IsEnabled="{Binding !IsRunningNotice}" VerticalAlignment="Center" />
+          </Grid>
+        </Border>
         <TextBlock Text="{Binding Label}" />
         <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="1" CornerRadius="4">
           <controls:CodeEditor Text="{Binding Value, Mode=TwoWay}" Language="{Binding Language}" Height="380" />

@@ -10,6 +10,12 @@ public sealed class ScriptingSettings
     public string CustomPythonPath { get; set; } = "";
 
     /// <summary>
+    /// Install the managed Python (<see cref="PinnedPython"/>) automatically the first time a Python step runs, instead
+    /// of only from the Scripting page. Ignored while <see cref="CustomPythonPath"/> is set.
+    /// </summary>
+    public bool InstallPythonAutomatically { get; set; } = true;
+
+    /// <summary>
     /// Extra .NET DLLs every C# code is compiled with (Streamer.bot's C# compiler references), as full paths. Only
     /// these files are loaded; nothing is downloaded. Each "Execute C# code" step can list more of its own.
     /// </summary>
