@@ -1,0 +1,73 @@
+#alerts {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 100%;
+  max-height: 100%;
+  text-align: center;
+}
+
+.alert.layout-above { flex-direction: column; }
+.alert.layout-side { flex-direction: row; text-align: left; }
+.alert.layout-overlay { display: grid; }
+.alert.layout-overlay > * { grid-area: 1 / 1; }
+.alert.layout-overlay .text { align-self: end; padding-bottom: 6%; }
+
+.alert .media { flex: 0 1 auto; min-height: 0; display: flex; justify-content: center; }
+.alert .media img, .alert .media video { max-width: 100%; max-height: 60vh; object-fit: contain; display: block; }
+.alert.layout-side .media img, .alert.layout-side .media video { max-height: 90vh; max-width: 45vw; }
+
+.alert .headline {
+  font-weight: 800;
+  line-height: 1.15;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+  overflow-wrap: anywhere;
+}
+.alert .hl { color: var(--highlight); }
+.alert .message {
+  margin-top: 8px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+  overflow-wrap: anywhere;
+}
+.alert .message img.emote { height: 1.4em; vertical-align: middle; }
+
+/* Enter and exit animations (animate.css names, written for Cuebot). */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: none; } }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-60px); } to { opacity: 1; transform: none; } }
+@keyframes fadeInLeft { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
+@keyframes fadeInRight { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
+@keyframes slideInUp { from { transform: translateY(100vh); } to { transform: none; } }
+@keyframes slideInDown { from { transform: translateY(-100vh); } to { transform: none; } }
+@keyframes slideInLeft { from { transform: translateX(-100vw); } to { transform: none; } }
+@keyframes slideInRight { from { transform: translateX(100vw); } to { transform: none; } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: none; } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.06); }
+  70% { transform: scale(0.95); }
+  100% { transform: none; }
+}
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes fadeOutUp { to { opacity: 0; transform: translateY(-60px); } }
+@keyframes fadeOutDown { to { opacity: 0; transform: translateY(60px); } }
+@keyframes fadeOutLeft { to { opacity: 0; transform: translateX(-60px); } }
+@keyframes fadeOutRight { to { opacity: 0; transform: translateX(60px); } }
+@keyframes slideOutUp { to { transform: translateY(-100vh); } }
+@keyframes slideOutDown { to { transform: translateY(100vh); } }
+@keyframes slideOutLeft { to { transform: translateX(-100vw); } }
+@keyframes slideOutRight { to { transform: translateX(100vw); } }
+@keyframes zoomOut { to { opacity: 0; transform: scale(0.3); } }
+@keyframes bounceOut { 20% { transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } to { opacity: 0; transform: scale(0.3); } }

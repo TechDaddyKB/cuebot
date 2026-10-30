@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Cuebot.Core;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Overlays;
+using Cuebot.Core.Overlays.Events;
 using Cuebot.Core.Overlays.Widgets;
 
 namespace Cuebot.Tests.Overlays;
@@ -176,6 +177,51 @@ public sealed class WidgetCodeTests : IDisposable
         Assert.Equal((20.0, 1040.0, 920.0), (tall.X, tall.Width, tall.Height));
         Assert.Equal("youtube", library.CodeFor(tall).FieldData()["layout"]!.GetValue<string>());
         Assert.Null(library.AddChatBox(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void The_alert_box_ships_a_design_for_every_alert_type()
+    {
+        var box = BuiltInWidgets.AlertBox();
+        Assert.Contains("id=\"alerts\"", box.Html);
+        Assert.Contains("SE_API.resumeQueue", box.Js);
+        Assert.Contains("@keyframes bounceIn", box.Css);
+        var data = box.FieldData();
+        Assert.Equal(90, WidgetCode.WidgetDuration(data));   // the queue waits for the alert to release it
+        var types = data["alerts"]!["types"]!.AsObject();
+        foreach (var listener in new[]
+                 {
+                     OverlayAlerts.Follower, OverlayAlerts.Subscriber, OverlayAlerts.Tip, OverlayAlerts.Cheer, OverlayAlerts.Raid,
+                     OverlayAlerts.SuperChat, OverlayAlerts.Kicks, OverlayAlerts.Redemption, OverlayAlerts.Jewels, OverlayAlerts.CharityDonation,
+                 })
+        {
+            var type = types[listener.Replace("-latest", "")]!;
+            Assert.False(string.IsNullOrWhiteSpace(type["design"]!["template"]!.GetValue<string>()), listener);
+        }
+        Assert.NotNull(types["custom"]);
+        var subscriber = types["subscriber"]!["variations"]!.AsArray();
+        Assert.Equal(["bulk", "gifted", "amount"], subscriber.Select(v => v!["param"]!.GetValue<string>()));
+        Assert.Equal("{sender} gifted {name} a sub!", subscriber[1]!["design"]!["template"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void The_alert_box_sits_at_the_top_and_is_marked_for_the_alert_designer()
+    {
+        using var overlays = new OverlayStore(null, _log);
+        using var elements = new ElementStore(null, _log);
+        using var code = new WidgetCodeStore(null);
+        var library = new WidgetLibrary(overlays, elements, code);
+
+        var main = overlays.Create("Main", 1920, 1080);
+        var box = library.AddAlertBox(main.Id)!;
+        Assert.Equal(("Alert box", 384.0, 54.0, 1152.0, 540.0), (box.Name, box.X, box.Y, box.Width, box.Height));
+        Assert.True(BuiltInWidgets.IsAlertBox(elements.Get(box.ElementId!.Value)));
+        Assert.Contains("resumeQueue", library.CodeFor(box).Js);
+        // A copy in the library is still an alert box; an imported widget is not.
+        Assert.True(BuiltInWidgets.IsAlertBox(library.Duplicate(box.ElementId!.Value)));
+        var chat = library.AddChatBox(main.Id)!;
+        Assert.False(BuiltInWidgets.IsAlertBox(elements.Get(chat.ElementId!.Value)));
+        Assert.Null(library.AddAlertBox(Guid.NewGuid()));
     }
 
     [Fact]

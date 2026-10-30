@@ -78,6 +78,8 @@ public sealed class OverlayEventBridge : IDisposable
         foreach (var adapter in _adapters)
         {
             if (adapter.ToAlert(e) is not { } alert) continue;
+            // Which platform it came from, like chat messages' "service" (alert box variations can match on it).
+            alert.Event["service"] = adapter.Service;
             var raw = new JsonObject
             {
                 ["type"] = alert.Event["type"]?.DeepClone(),

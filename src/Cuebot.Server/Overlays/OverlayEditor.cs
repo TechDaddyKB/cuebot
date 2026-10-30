@@ -16,7 +16,7 @@ namespace Cuebot.Server.Overlays;
 /// The web widget editor on the overlay server's main port, opened with the editor token (not an overlay link):
 /// <list type="bullet">
 /// <item><c>GET /edit/{overlayId}/{layerId}</c>: the editor page (settings form from FIELDS, code panes, CSS override,
-/// preview and per-platform Emulate).</item>
+/// preview and per-platform Emulate); for Cuebot's alert box the alert designer instead, unless <c>?code=1</c>.</item>
 /// <item><c>GET|POST /edit/api/{overlayId}/{layerId}</c>: the widget's code, or saving it (which reloads its overlays).</item>
 /// <item><c>POST .../preview</c>: a draft document for the preview, served briefly from the widget port at <c>/p/{id}</c>.</item>
 /// <item><c>POST .../request</c>: the preview's SE_API requests.</item>
@@ -119,7 +119,9 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
             ["widgetPort"] = WidgetPort(),
             ["emulate"] = JsonSerializer.SerializeToNode(OverlayEmulator.Kinds),
         };
-        var page = OverlayServer.Resource("editor.html")
+        var alertBox = BuiltInWidgets.IsAlertBox(layer.ElementId is { } id ? services.Elements?.Get(id) : null)
+                       && context.Request.Query["code"] != "1";
+        var page = OverlayServer.Resource(alertBox ? "alerts.html" : "editor.html")
             .Replace("/*CUEBOT_EDITOR*/{}", OverlayServer.ScriptJson(config), StringComparison.Ordinal)
             .Replace("{{title}}", WebUtility.HtmlEncode(layer.Name), StringComparison.Ordinal);
         context.Response.ContentType = "text/html; charset=utf-8";

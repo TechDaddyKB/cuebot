@@ -59,10 +59,10 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
     /// Creates a custom widget element named <paramref name="name"/> with <paramref name="widget"/>'s code and places it on
     /// the overlay, covering the whole canvas. Returns the new layer, or null when the overlay does not exist.
     /// </summary>
-    public OverlayLayer? AddCustomWidget(Guid overlayId, string name, WidgetCode widget)
+    public OverlayLayer? AddCustomWidget(Guid overlayId, string name, WidgetCode widget, JsonObject? settings = null)
     {
         if (overlays.Get(overlayId) is not { } overlay) return null;
-        var element = elements.Add(new OverlayElement { Name = name, Type = CustomType });
+        var element = elements.Add(new OverlayElement { Name = name, Type = CustomType, Settings = settings ?? [] });
         code.Write(element.Id, widget);
         var layer = new OverlayLayer
         {
@@ -88,6 +88,21 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
         var vertical = overlay.Height > overlay.Width;
         var (width, height) = vertical ? (overlay.Width - 40.0, overlay.Height / 2.0 - 40) : (Math.Min(480.0, overlay.Width - 40), Math.Min(600.0, overlay.Height - 40));
         MoveLayer(overlayId, layer.Id, 20, overlay.Height - height - 20, width, height);
+        return overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layer.Id);
+    }
+
+    /// <summary>
+    /// Adds Cuebot's alert box to an overlay: the upper middle of the canvas (60% of its width, half its height).
+    /// Returns the layer, or null when the overlay does not exist.
+    /// </summary>
+    public OverlayLayer? AddAlertBox(Guid overlayId)
+    {
+        if (overlays.Get(overlayId) is not { } overlay) return null;
+        var settings = new JsonObject { ["builtIn"] = BuiltInWidgets.AlertBoxKind };
+        if (AddCustomWidget(overlayId, "Alert box", BuiltInWidgets.AlertBox(), settings) is not { } layer) return null;
+        var width = Math.Round(overlay.Width * 0.6);
+        var height = Math.Round(overlay.Height * 0.5);
+        MoveLayer(overlayId, layer.Id, Math.Round((overlay.Width - width) / 2), Math.Round(overlay.Height * 0.05), width, height);
         return overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layer.Id);
     }
 

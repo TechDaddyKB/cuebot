@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · Cuebot alert designer</title>
+<link rel="stylesheet" href="/runtime/editor.css">
+<link rel="stylesheet" href="/runtime/alerts.css">
+<script>window.CUEBOT_EDITOR = /*CUEBOT_EDITOR*/{};</script>
+<script src="/runtime/alerts.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="title">
+    <strong id="widget-name"></strong>
+    <span id="overlay-name" class="muted"></span>
+  </div>
+  <span id="status" class="muted" role="status"></span>
+  <a id="code-link" class="button" target="_blank" rel="noopener" title="The alert box's code, fields and My CSS">Code editor</a>
+  <button id="save" class="primary" disabled>Save</button>
+</header>
+<main>
+  <section class="side alerts-side">
+    <div class="types-head">
+      <strong>Alerts</strong>
+      <label class="small"><input type="checkbox" id="random-pick"> Pick a random matching variation</label>
+    </div>
+    <ul id="types" class="types" role="listbox" aria-label="Alert types"></ul>
+    <div id="designs" class="designs"></div>
+    <div id="form" class="alert-form"></div>
+  </section>
+  <section class="preview">
+    <div class="emulate">
+      <button id="play" class="primary" title="Show the selected design in the preview">Test this design</button>
+      <label>Emulate
+        <select id="emulate-platform"></select>
+      </label>
+      <span id="emulate-buttons"></span>
+      <label class="small"><input type="checkbox" id="mute"> Mute preview</label>
+    </div>
+    <div id="stage-wrap"><div id="stage"><iframe id="preview" title="Alert box preview" sandbox="allow-scripts allow-same-origin" allow="autoplay"></iframe></div></div>
+    <p class="muted small">The preview uses your unsaved designs. Emulated events go through the alert queue and pick variations as live alerts do, but only in this preview.</p>
+  </section>
+</main>
+</body>
+</html>

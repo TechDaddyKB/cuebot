@@ -85,6 +85,10 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     [RelayCommand]
     private void AddChatBox() => owner.AddChatBox(overlay.Id);
 
+    /// <summary>Adds Cuebot's alert box (a design per alert type) to this overlay.</summary>
+    [RelayCommand]
+    private void AddAlertBox() => owner.AddAlertBox(overlay.Id);
+
     [RelayCommand]
     private void Delete() => owner.Delete(overlay.Id);
 }
@@ -222,6 +226,14 @@ public sealed partial class OverlaysViewModel : PageViewModel
         Edit(() => _widgets.AddChatBox(overlayId));
         Refresh();
         Status = "Added a chat box in the lower left. Use Edit… to change its look, or its Layout setting for YouTube chat CSS themes.";
+    }
+
+    internal void AddAlertBox(Guid overlayId)
+    {
+        if (_widgets is null) return;
+        Edit(() => _widgets.AddAlertBox(overlayId));
+        Refresh();
+        Status = "Added an alert box at the top of the canvas. Use Edit… to design each alert.";
     }
 
     internal void MoveLayer(Guid overlayId, OverlayLayer layer) =>

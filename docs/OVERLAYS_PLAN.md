@@ -7,8 +7,10 @@ per-platform Emulate; built 2026-10-30, jQuery bundled); 1c the built-in chat bo
 YouTube chat CSS themes, and avatars and Twitch pronouns in chat events (built 2026-10-30). Phase 1 is done.
 Phase 2 split: 2a the web designer (canvas, snapping, layers, groups, properties, animations, text/image/video/slideshow,
 canvas sizes, undo; built 2026-10-30); 2b the element library in the designer (rename, delete when unused, duplicate,
-see where an element is used) and text/image/video/slideshow templates (built 2026-10-30). Phase 2 is done; phase 3
-(alerts) is next. Details in
+see where an element is used) and text/image/video/slideshow templates (built 2026-10-30). Phase 2 is done.
+Phase 3 split: 3a the alert box (a design per alert type, variations by amount, tier, platform, name, gifts and
+chance, image/video, sounds, text templates, enter/exit animations) and the alert designer with live preview (built
+2026-10-30); 3b TTS, queue pause/skip/mute from the app and actions, and a "Show alert" sub-action, is next. Details in
 docs/SERVERS.md.
 
 ## Goal

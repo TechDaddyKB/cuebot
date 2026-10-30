@@ -69,7 +69,7 @@ public sealed class OverlayDesignerTests : IAsyncLifetime
     [Fact]
     public async Task Static_layers_chat_boxes_library_widgets_and_zips_can_be_added()
     {
-        foreach (var type in new[] { "text", "image", "video", "slideshow", "chatbox", "chatbox-youtube" })
+        foreach (var type in new[] { "text", "image", "video", "slideshow", "chatbox", "chatbox-youtube", "alertbox" })
             await Post($"{Api}/add?{Auth}", Json(new JsonObject { ["type"] = type }));
         await Post($"{Api}/add?{Auth}", Json(new JsonObject { ["type"] = "element", ["elementId"] = _widget.ElementId!.Value.ToString() }));
         await Post($"{Api}/add?{Auth}", Json(new JsonObject { ["type"] = "script" }), HttpStatusCode.BadRequest);
@@ -82,11 +82,12 @@ public sealed class OverlayDesignerTests : IAsyncLifetime
         Assert.NotNull(imported["layer"]);
 
         var layers = _bot.Overlays.Get(_overlay.Id)!.Layers;
-        Assert.Equal(["custom", "text", "image", "video", "slideshow", "custom", "custom", "custom", "custom"], layers.Select(l => l.Type));
+        Assert.Equal(["custom", "text", "image", "video", "slideshow", "custom", "custom", "custom", "custom", "custom"], layers.Select(l => l.Type));
         var text = layers[1];
         Assert.Equal((660.0, 480.0, "Your text here"), (text.X, text.Y, text.Settings!["text"]!.GetValue<string>()));
-        Assert.Equal(_widget.ElementId, layers[7].ElementId);   // the library widget is shared, not copied
-        Assert.Equal("cool widget", layers[8].Name);
+        Assert.Equal("Alert box", layers[7].Name);
+        Assert.Equal(_widget.ElementId, layers[8].ElementId);   // the library widget is shared, not copied
+        Assert.Equal("cool widget", layers[9].Name);
     }
 
     [Fact]

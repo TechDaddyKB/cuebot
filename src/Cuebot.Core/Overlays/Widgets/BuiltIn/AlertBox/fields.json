@@ -1,0 +1,341 @@
+{
+  "alerts": {
+    "type": "hidden",
+    "label": "Alert designs (edited in the alert designer)",
+    "value": {
+      "version": 1,
+      "randomPick": false,
+      "types": {
+        "follower": {
+          "enabled": true,
+          "design": {
+            "template": "{name} followed!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "subscriber": {
+          "enabled": true,
+          "design": {
+            "template": "{name} subscribed!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": [
+            {
+              "name": "Community gift",
+              "enabled": true,
+              "param": "bulk",
+              "op": "is",
+              "value": true,
+              "chance": 100,
+              "design": {
+                "template": "{name} gifted {amount} subs!",
+                "showMessage": true,
+                "duration": 8,
+                "media": "",
+                "mediaVolume": 50,
+                "sound": "chime",
+                "volume": 60,
+                "layout": "above",
+                "font": "Inter",
+                "size": 42,
+                "color": "#ffffff",
+                "highlight": "#ffcc33",
+                "messageSize": 26,
+                "enter": "bounceIn",
+                "exit": "fadeOut",
+                "tts": false
+              }
+            },
+            {
+              "name": "Gifted sub",
+              "enabled": true,
+              "param": "gifted",
+              "op": "is",
+              "value": true,
+              "chance": 100,
+              "design": {
+                "template": "{sender} gifted {name} a sub!",
+                "showMessage": true,
+                "duration": 8,
+                "media": "",
+                "mediaVolume": 50,
+                "sound": "chime",
+                "volume": 60,
+                "layout": "above",
+                "font": "Inter",
+                "size": 42,
+                "color": "#ffffff",
+                "highlight": "#ffcc33",
+                "messageSize": 26,
+                "enter": "bounceIn",
+                "exit": "fadeOut",
+                "tts": false
+              }
+            },
+            {
+              "name": "Resub",
+              "enabled": true,
+              "param": "amount",
+              "op": "atLeast",
+              "value": 2,
+              "chance": 100,
+              "design": {
+                "template": "{name} resubscribed for {amount} months!",
+                "showMessage": true,
+                "duration": 8,
+                "media": "",
+                "mediaVolume": 50,
+                "sound": "chime",
+                "volume": 60,
+                "layout": "above",
+                "font": "Inter",
+                "size": 42,
+                "color": "#ffffff",
+                "highlight": "#ffcc33",
+                "messageSize": 26,
+                "enter": "bounceIn",
+                "exit": "fadeOut",
+                "tts": false
+              }
+            }
+          ]
+        },
+        "tip": {
+          "enabled": true,
+          "design": {
+            "template": "{name} tipped {formattedAmount}!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "cheer": {
+          "enabled": true,
+          "design": {
+            "template": "{name} cheered {amount} bits!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "raid": {
+          "enabled": true,
+          "design": {
+            "template": "{name} is raiding with {amount} viewers!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "superchat": {
+          "enabled": true,
+          "design": {
+            "template": "{name} sent a {formattedAmount} Super Chat!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "kicks": {
+          "enabled": true,
+          "design": {
+            "template": "{name} sent {amount} Kicks!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "redemption": {
+          "enabled": false,
+          "design": {
+            "template": "{name} redeemed {redemption}!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "jewels": {
+          "enabled": true,
+          "design": {
+            "template": "{name} sent {amount} Jewels!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "charityCampaignDonation": {
+          "enabled": true,
+          "design": {
+            "template": "{name} donated {formattedAmount} to charity!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        },
+        "custom": {
+          "enabled": true,
+          "design": {
+            "template": "{message}",
+            "showMessage": false,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false
+          },
+          "variations": []
+        }
+      }
+    }
+  },
+  "widgetDuration": {
+    "type": "hidden",
+    "value": 90
+  },
+  "widgetName": {
+    "type": "hidden",
+    "value": "Cuebot Alert box"
+  }
+}

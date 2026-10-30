@@ -142,6 +142,7 @@ public sealed class OverlayEventBridgeTests : IDisposable
         Assert.Equal("follower-latest", alert["listener"]!.GetValue<string>());
         Assert.Equal(("Kris", 1, "follower", "42"), (alert["event"]!["name"]!.GetValue<string>(), alert["event"]!["amount"]!.GetValue<int>(),
             alert["event"]!["type"]!.GetValue<string>(), alert["event"]!["providerId"]!.GetValue<string>()));
+        Assert.Equal("fake", alert["event"]!["service"]!.GetValue<string>());   // the platform, as on chat messages
         var raw = _sent[1];
         Assert.Equal("event", raw["listener"]!.GetValue<string>());
         Assert.Equal(("follower", "fake"), (raw["event"]!["type"]!.GetValue<string>(), raw["event"]!["provider"]!.GetValue<string>()));

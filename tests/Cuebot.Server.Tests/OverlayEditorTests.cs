@@ -66,6 +66,25 @@ public sealed class OverlayEditorTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_alert_box_opens_the_alert_designer_and_its_code_stays_reachable()
+    {
+        var box = _bot.Widgets.AddAlertBox(_overlay.Id)!;
+        var page = await _http.GetStringAsync($"/edit/{_overlay.Id}/{box.Id}?{Auth}");
+        Assert.Contains("/runtime/alerts.js", page);
+        Assert.Contains("Cuebot alert designer", page);
+        Assert.Contains($"\"layerId\":\"{box.Id}\"", page);
+        var code = await _http.GetStringAsync($"/edit/{_overlay.Id}/{box.Id}?{Auth}&code=1");
+        Assert.Contains("/runtime/editor.js", code);
+        // Other widgets keep the widget editor.
+        Assert.Contains("/runtime/editor.js", await _http.GetStringAsync($"/edit/{_overlay.Id}/{_layer.Id}?{Auth}"));
+        foreach (var file in new[] { "alerts.js", "alerts.css" })
+        {
+            using var runtime = await _http.GetAsync($"/runtime/{file}");
+            Assert.Equal(HttpStatusCode.OK, runtime.StatusCode);
+        }
+    }
+
+    [Fact]
     public async Task Code_is_loaded_and_saved_and_saving_reloads_the_overlay()
     {
         var code = JsonNode.Parse(await _http.GetStringAsync($"{Api}?{Auth}"))!;

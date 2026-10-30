@@ -168,6 +168,26 @@ may need adjusting.
 Chat events also carry `data.avatar` (YouTube and Kick profile pictures) and `data.pronouns` (Twitch chatters with
 pronouns on alejo.io; read from Cuebot's cache, a chatter's first message starts the lookup and later ones carry it).
 
+### Built-in alert box (`Cuebot.Core/Overlays/Widgets/BuiltIn/AlertBox`)
+
+"Add alert box" on the Overlays page (or in the designer's Add menu) adds Cuebot's alert box, also written on the
+StreamElements widget API. Its element is marked `{"builtIn": "alertbox"}`, so its editor link opens the alert designer
+(`alerts.html`; `?code=1` opens the widget editor for its code and My CSS). The designs are the `alerts` value in the
+widget's DATA (the hidden `alerts` field holds the defaults): `{version, randomPick, types: {follower, subscriber, tip,
+cheer, raid, superchat, kicks, redemption, jewels, charityCampaignDonation, custom}}`, each type `{enabled, design,
+variations[]}`. A design is `{template, showMessage, duration, media, mediaVolume, sound, volume, layout, font, size,
+color, highlight, messageSize, enter, exit}`; templates use `{name}`, `{amount}`, `{formattedAmount}`, `{currency}`,
+`{message}`, `{tier}`, `{sender}`, `{platform}` and `{redemption}`, shown in the highlight colour. A variation is
+`{name, enabled, param, op, value, value2, chance, design}`: `param` is `amount`, `tier`, `platform` (the event's
+`service`), `name` (comma-separated list), `gifted`, `bulk`, `currency` or `message`; `op` is `atLeast`, `exact`,
+`between`, `is` or `contains`. The first matching variation from the top is shown (or a random matching one with
+`randomPick`), each only `chance` percent of the time; otherwise the type's own design. The sound is a file, `none` or
+`chime` (synthesized, no file needed). The alert box holds the queue (`widgetDuration` 90) and releases it with
+`SE_API.resumeQueue()` after each alert's exit animation, so alerts play one at a time; `event:skip` ends the current
+alert and `alertService:toggleSound` mutes sound and video. `cuebot-alert` events show the `custom` design (or the
+type named by `alertType`). The designer previews unsaved designs with sample events (shaped to match the selected
+variation) and through Emulate, which goes through the queue like live alerts.
+
 ### Overlay designer (`/design/...`, `OverlayDesigner`)
 
 "Design…" on the Overlays page opens it (editor token). The canvas shows the live overlay with a box per layer: drag
@@ -230,7 +250,8 @@ with every platform:
 - `chat.messageDeleted` becomes `delete-message {msgId}`; `chat.userBanned` / `chat.userTimedOut` `delete-messages {userId}`.
 - Each platform module's `IOverlayEventAdapter` turns its alerts into `*-latest` events (`{name, displayName, amount,
   message, type, providerId, avatar, _id, createdAt}` plus `tier`, `gifted`, `sender`, `bulkGifted`,
-  `isCommunityGift`, `currency`... as StreamElements has them), each followed by the raw `event {type, provider, data}`.
+  `isCommunityGift`, `currency`... as StreamElements has them, and `service`, the platform, as on chat messages), each
+  followed by the raw `event {type, provider, data}`.
 
 | Listener | Twitch | Kick | Rumble | YouTube | Donations |
 | --- | --- | --- | --- | --- | --- |

@@ -12,7 +12,7 @@ namespace Cuebot.UiTests;
 
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
-/// in both layouts): the app's real services serve an
+/// in both layouts, or "alertbox" for Cuebot's alert box beside its chat box): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
 /// send chat and alerts from Twitch, Kick, Rumble and YouTube for CUEBOT_DEMO_SECONDS (default 120), so the widget can be
@@ -25,8 +25,9 @@ public sealed class OverlayWidgetDemo
     {
         var zip = Environment.GetEnvironmentVariable("CUEBOT_DEMO_WIDGET");
         var chatBox = zip == "chatbox";
-        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !File.Exists(zip)),
-            "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" for Cuebot's chat box) to run the overlay demo");
+        var alertBox = zip == "alertbox";
+        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !File.Exists(zip)),
+            "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" or \"alertbox\" for Cuebot's own) to run the overlay demo");
         var seconds = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_DEMO_SECONDS"), out var s) ? s : 120;
         var output = Environment.GetEnvironmentVariable("CUEBOT_DEMO_OUT") ?? Path.GetTempPath();
 
@@ -49,6 +50,11 @@ public sealed class OverlayWidgetDemo
                 layer = host.Get<WidgetLibrary>().AddChatBox(overlay.Id)!;
                 var youtube = host.Get<WidgetLibrary>().AddChatBox(overlay.Id, "youtube")!;
                 host.Get<WidgetLibrary>().MoveLayer(overlay.Id, youtube.Id, 1400, youtube.Y, 480, youtube.Height);
+            }
+            else if (alertBox)
+            {
+                layer = host.Get<WidgetLibrary>().AddAlertBox(overlay.Id)!;
+                host.Get<WidgetLibrary>().AddChatBox(overlay.Id);
             }
             else
             {

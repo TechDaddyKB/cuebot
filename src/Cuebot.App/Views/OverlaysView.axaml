@@ -52,6 +52,8 @@
                         ToolTip.Tip="Arrange this overlay's widgets, text, images and video in your browser" />
                 <Button Content="Add chat box" Command="{Binding AddChatBoxCommand}"
                         ToolTip.Tip="Cuebot's chat box: chat from every connected platform, with badges, emotes and pronouns" />
+                <Button Content="Add alert box" Command="{Binding AddAlertBoxCommand}"
+                        ToolTip.Tip="Cuebot's alert box: a design for each alert type, with variations by amount, tier, platform and more" />
                 <Button Content="Add widget…" Click="OnAddWidget"
                         ToolTip.Tip="Import a StreamElements custom widget (.zip, for example one bought on Etsy)" />
                 <Button Content="Delete" Command="{Binding DeleteCommand}" />
