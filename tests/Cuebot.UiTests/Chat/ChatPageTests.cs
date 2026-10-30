@@ -184,6 +184,62 @@ public sealed class ChatPageTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Chatter_pane_shows_the_selected_user_with_moderation_and_recent_messages()
+    {
+        TestApp.BindingErrors.Clear();
+        var vm = _f.CreateViewModel();
+        _f.Chat("Bob", "first message", id: "msg-1");
+        _f.Chat("Alice", "hi Bob");
+        _f.Chat("Bob", "second message", id: "msg-2");
+        var (window, view) = Show(vm);
+        Assert.False(vm.HasSelectedLine);
+        Save(window, "chat-panes-empty");
+
+        var bob = vm.Messages[2];
+        vm.SelectedLine = bob;
+        Assert.True(vm.HasSelectedLine);
+        Assert.Equal(["second message", "first message"], vm.UserLines.Select(l => l.Text));
+        Assert.True(vm.CanDeleteSelected && vm.CanTimeoutSelected && vm.CanBanSelected);
+
+        // A new line from the same chatter joins the list at the top.
+        _f.Chat("Bob", "third message", id: "msg-3");
+        ChatPageFixture.Pump();
+        Assert.Equal("third message", vm.UserLines[0].Text);
+
+        // Ban asks once more in the pane; selecting another message cancels the question.
+        vm.BanSelectedCommand.Execute(null);
+        Assert.True(vm.ConfirmingBan);
+        Assert.Empty(_f.Moderator.Calls);
+        Save(window, "chat-panes");
+        vm.SelectedLine = vm.Messages[1];
+        Assert.False(vm.ConfirmingBan);
+        vm.SelectedLine = bob;
+        vm.BanSelectedCommand.Execute(null);
+        vm.BanSelectedCommand.Execute(null);
+        ChatPageFixture.Until(() => _f.Moderator.Calls.Count == 1);
+        Assert.Equal(["ban id-bob bob"], _f.Moderator.Calls);
+
+        vm.ReplyToSelectedCommand.Execute(null);
+        Assert.StartsWith("@Bob ", vm.Draft);
+        Assert.Equal("Twitch", vm.SendTarget);
+
+        // Activity filter chips map kinds to groups.
+        Assert.Equal("Subs", ChatViewModel.FeedGroup(Cuebot.Core.Chat.FeedKind.GiftSubscription));
+        Assert.Equal("Stream", ChatViewModel.FeedGroup(Cuebot.Core.Chat.FeedKind.StreamOffline));
+        vm.FeedFilter = "Tips";
+        Assert.False(vm.HasVisibleFeed);
+
+        // Narrow: the activity feed becomes a tab next to the chatter.
+        Assert.False(view.ActivityFolded);
+        window.Width = 900;
+        ChatPageFixture.Pump();
+        Assert.True(view.ActivityFolded);
+        Save(window, "chat-panes-narrow");
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Typing_a_colon_offers_emotes_and_tab_completes_them()
     {
         TestApp.BindingErrors.Clear();

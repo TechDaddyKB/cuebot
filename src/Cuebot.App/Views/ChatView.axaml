@@ -3,22 +3,62 @@
              xmlns:vm="using:Cuebot.App.ViewModels"
              xmlns:vmc="using:Cuebot.App.ViewModels.Chat"
              xmlns:chat="using:Cuebot.App.Views.Chat"
+             xmlns:c="using:Cuebot.App.Controls"
              x:Class="Cuebot.App.Views.ChatView"
              x:DataType="vm:ChatViewModel">
-  <Grid ColumnDefinitions="2*,12,*" Margin="24">
-    <!-- Combined chat -->
-    <Border Classes="card" Margin="0">
+  <UserControl.Resources>
+    <!-- The activity feed: its own column on wide pages, a tab of the side pane on narrow ones. -->
+    <DataTemplate x:Key="ActivityPane" x:DataType="vm:ChatViewModel">
       <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
-            <ToggleButton x:Name="OptionsToggle" Content="Options" IsChecked="{Binding ShowOptions}" ToolTip.Tip="Chat options: emotes, pronouns, highlights, quick actions" />
-            <ComboBox ItemsSource="{Binding PlatformFilters}" SelectedItem="{Binding Filter}" MinWidth="130" />
-          </StackPanel>
-          <TextBlock Classes="h2" Text="Chat" VerticalAlignment="Center" Margin="0" />
+          <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearFeedCommand}" Padding="8,3" />
+          <TextBlock Text="Activity" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
         </DockPanel>
+        <ListBox DockPanel.Dock="Top" Classes="chips" ItemContainerTheme="{StaticResource ChipItem}"
+                 ItemsSource="{Binding FeedFilters}" SelectedItem="{Binding FeedFilter}" Margin="0,0,0,4" />
+        <Panel>
+          <ListBox ItemsSource="{Binding VisibleFeed}" Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="vm:FeedLineViewModel">
+                <Grid ColumnDefinitions="Auto,*">
+                  <Border Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="0,0,10,0" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
+                    <TextBlock Classes="muted" FontSize="12">
+                      <Run Text="{Binding Platform}" /><Run Text=" · " /><Run Text="{Binding Kind}" /><Run Text=" · " /><Run Text="{Binding Time}" />
+                    </TextBlock>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock Classes="muted" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="12"
+                     IsVisible="{Binding !HasVisibleFeed}" Text="Follows, subs, tips, raids and redemptions show up here." />
+        </Panel>
+      </DockPanel>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid x:Name="Panes" ColumnDefinitions="*,12,300,12,300" Margin="16,12,16,16">
+    <!-- ===== Chat ===== -->
+    <Border Classes="card" Margin="0" Padding="12">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+          <ToggleButton x:Name="OptionsToggle" DockPanel.Dock="Right" IsChecked="{Binding ShowOptions}" Padding="8,5"
+                        ToolTip.Tip="Chat options: emotes, pronouns, highlights, quick actions" AutomationProperties.Name="Chat options">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <c:Icon Kind="settings" Width="14" Height="14" />
+              <TextBlock Text="Options" />
+            </StackPanel>
+          </ToggleButton>
+          <TextBlock Text="Chat" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+        </DockPanel>
+        <ListBox x:Name="PlatformChips" DockPanel.Dock="Top" Classes="chips" ItemContainerTheme="{StaticResource ChipItem}"
+                 ItemsSource="{Binding PlatformFilters}" SelectedItem="{Binding Filter}" Margin="0,0,0,4" />
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
-          <!-- Quick actions -->
+          <!-- Quick actions (global ones work without a selection) -->
           <ItemsControl x:Name="QuickActionBar" ItemsSource="{Binding QuickActions}" IsVisible="{Binding HasQuickActions}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -56,7 +96,8 @@
             <TextBox x:Name="DraftBox" Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message (type : for emotes, /help for commands)" />
             <Button Grid.Column="4" Content="Send" Classes="accent" Command="{Binding SendCommand}" />
           </Grid>
-          <TextBlock x:Name="StatusText" Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+          <TextBlock x:Name="StatusText" Text="{Binding Status}" Classes="muted" TextWrapping="Wrap"
+                     IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
 
         <ListBox x:Name="ChatList" ItemsSource="{Binding Messages}" SelectedItem="{Binding SelectedLine}" Background="Transparent"
@@ -79,38 +120,98 @@
       </DockPanel>
     </Border>
 
-    <!-- Activity feed -->
-    <Border Grid.Column="2" Classes="card" Margin="0" IsVisible="{Binding !ShowOptions}">
-      <DockPanel>
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-          <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearFeedCommand}" />
-          <TextBlock Classes="h2" Text="Activity" VerticalAlignment="Center" Margin="0" />
-        </DockPanel>
-        <ListBox ItemsSource="{Binding Feed}" Background="Transparent">
-          <ListBox.ItemTemplate>
-            <DataTemplate DataType="vm:FeedLineViewModel">
-              <Grid ColumnDefinitions="Auto,*">
-                <Border Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="0,0,10,0" />
-                <StackPanel Grid.Column="1">
-                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
-                  <TextBlock Classes="muted">
-                    <Run Text="{Binding Platform}" /><Run Text=" · " /><Run Text="{Binding Kind}" /><Run Text=" · " /><Run Text="{Binding Time}" />
-                  </TextBlock>
+    <!-- ===== Activity (own column when wide) ===== -->
+    <Border x:Name="ActivityPane" Grid.Column="2" Classes="card" Margin="0" Padding="12">
+      <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ActivityPane}" />
+    </Border>
+
+    <!-- ===== Chatter details, or the chat options ===== -->
+    <Border Grid.Column="4" Classes="card" Margin="0" Padding="12" IsVisible="{Binding !ShowOptions}">
+      <TabControl x:Name="SideTabs" SelectedIndex="1">
+        <TabItem x:Name="ActivityTab" Header="Activity" IsVisible="False">
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ActivityPane}" />
+        </TabItem>
+        <TabItem Header="Chatter">
+          <Panel>
+            <TextBlock Classes="muted" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="12"
+                       IsVisible="{Binding !HasSelectedLine}"
+                       Text="Select a message to see who wrote it, moderate them and run quick actions." />
+            <ScrollViewer x:Name="ChatterDetails" IsVisible="{Binding HasSelectedLine}">
+              <StackPanel Spacing="12" Margin="0,4,6,0">
+                <!-- Profile -->
+                <ContentControl Content="{Binding SelectedLine}">
+                  <ContentControl.ContentTemplate>
+                    <DataTemplate DataType="vm:ChatLineViewModel">
+                      <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="Auto,*">
+                          <Border Width="40" Height="40" CornerRadius="20" Background="{Binding PlatformBrush}" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding Platform, Converter={x:Static c:PlatformBrush.Initial}}" FontWeight="Bold"
+                                       Foreground="#111" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding User}" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis">
+                              <Run Text="{Binding Platform}" /><Run Text=" · " /><Run Text="{Binding Login}" />
+                            </TextBlock>
+                          </StackPanel>
+                        </Grid>
+                        <WrapPanel ItemSpacing="6" LineSpacing="4">
+                          <TextBlock Text="{Binding Badges}" Classes="muted" FontSize="12"
+                                     IsVisible="{Binding Badges, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                          <TextBlock Text="{Binding Pronouns}" Classes="muted" FontSize="12" IsVisible="{Binding HasPronouns}" />
+                        </WrapPanel>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ContentControl.ContentTemplate>
+                </ContentControl>
+
+                <!-- Moderation -->
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="label" Text="MODERATION" />
+                  <WrapPanel ItemSpacing="6" LineSpacing="6">
+                    <Button Content="Reply" Command="{Binding ReplyToSelectedCommand}" ToolTip.Tip="Start a reply in the send box" />
+                    <Button Content="Delete message" Command="{Binding DeleteSelectedCommand}" IsVisible="{Binding CanDeleteSelected}" />
+                    <Button Content="Timeout 1 min" Command="{Binding TimeoutSelectedCommand}" CommandParameter="1" IsVisible="{Binding CanTimeoutSelected}" />
+                    <Button Content="Timeout 10 min" Command="{Binding TimeoutSelectedCommand}" CommandParameter="10" IsVisible="{Binding CanTimeoutSelected}" />
+                    <Button Command="{Binding BanSelectedCommand}" IsVisible="{Binding CanBanSelected}"
+                            Classes.danger="{Binding ConfirmingBan}">
+                      <Panel>
+                        <TextBlock Text="Ban…" IsVisible="{Binding !ConfirmingBan}" />
+                        <TextBlock Text="Confirm ban" IsVisible="{Binding ConfirmingBan}" />
+                      </Panel>
+                    </Button>
+                  </WrapPanel>
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                             IsVisible="{Binding !CanTimeoutSelected}" Text="This platform offers no moderation from Cuebot right now." />
                 </StackPanel>
-              </Grid>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
+
+                <!-- Recent messages -->
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="label" Text="RECENT MESSAGES" />
+                  <ItemsControl x:Name="UserLines" ItemsSource="{Binding UserLines}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vm:ChatLineViewModel">
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                          <TextBlock Text="{Binding Time}" Classes="muted" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Top" />
+                          <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </Panel>
+        </TabItem>
+      </TabControl>
     </Border>
 
     <!-- Options -->
-    <Border x:Name="OptionsPanel" Grid.Column="2" Classes="card" Margin="0" IsVisible="{Binding ShowOptions}">
+    <Border x:Name="OptionsPanel" Grid.Column="4" Classes="card" Margin="0" Padding="12" IsVisible="{Binding ShowOptions}">
       <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
           <Button DockPanel.Dock="Right" Content="Close" Command="{Binding ToggleOptionsCommand}" />
-          <TextBlock Classes="h2" Text="Chat options" VerticalAlignment="Center" Margin="0" />
+          <TextBlock Text="Chat options" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
         </DockPanel>
         <ScrollViewer DataContext="{Binding Options}" x:DataType="vmc:ChatOptionsViewModel">
           <StackPanel Spacing="6" Margin="0,0,8,0">

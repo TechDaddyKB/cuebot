@@ -161,6 +161,7 @@ public sealed partial class ChatViewModel : PageViewModel
 
         foreach (var message in hub.RecentMessages()) AddLine(message);
         foreach (var item in hub.RecentFeed()) Feed.Insert(0, new FeedLineViewModel(item));
+        RefilterFeed();
         // Always queued (even on the UI thread): the hub raises this while the platform event is still being
         // published, before the emote service has indexed that event's emote arguments.
         hub.MessageReceived += m => Avalonia.Threading.Dispatcher.UIThread.Post(() => AddLine(m));
@@ -202,7 +203,102 @@ public sealed partial class ChatViewModel : PageViewModel
     partial void OnSelectedLineChanged(ChatLineViewModel? value)
     {
         foreach (var q in QuickActions) q.Refresh();
+        ConfirmingBan = false;
+        RefreshUserLines();
+        OnPropertyChanged(nameof(HasSelectedLine));
+        OnPropertyChanged(nameof(CanDeleteSelected));
+        OnPropertyChanged(nameof(CanTimeoutSelected));
+        OnPropertyChanged(nameof(CanBanSelected));
+        DeleteSelectedCommand.NotifyCanExecuteChanged();
     }
+
+    // ---------------------------------------------------------------- user details (right pane)
+
+    public bool HasSelectedLine => SelectedLine is not null;
+
+    /// <summary>The selected chatter's recent messages on that platform, newest first.</summary>
+    public ObservableCollection<ChatLineViewModel> UserLines { get; } = [];
+
+    private ChatModerationActions SelectedModeration =>
+        SelectedLine is { } line ? _services.Moderation?.AvailableFor(line.Platform) ?? ChatModerationActions.None : ChatModerationActions.None;
+
+    public bool CanDeleteSelected => SelectedModeration.HasFlag(ChatModerationActions.DeleteMessage)
+                                     && SelectedLine is { IsDeleted: false, Message.Id.Length: > 0 };
+    public bool CanTimeoutSelected => SelectedModeration.HasFlag(ChatModerationActions.Timeout);
+    public bool CanBanSelected => SelectedModeration.HasFlag(ChatModerationActions.Ban);
+
+    /// <summary>Ban asks once more in the pane ("Confirm ban"); the message menu bans straight away as before.</summary>
+    [ObservableProperty] private bool _confirmingBan;
+
+    private void RefreshUserLines()
+    {
+        UserLines.Clear();
+        if (SelectedLine is not { } line) return;
+        foreach (var m in Messages.Reverse().Where(m => m.Platform == line.Platform && m.Login == line.Login).Take(20))
+            UserLines.Add(m);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanDeleteSelected))]
+    private Task DeleteSelected() => SelectedLine is { } line ? DeleteAsync(line) : Task.CompletedTask;
+
+    [RelayCommand]
+    private Task TimeoutSelected(string minutes) =>
+        SelectedLine is { } line ? TimeoutAsync(line, TimeSpan.FromMinutes(double.Parse(minutes, System.Globalization.CultureInfo.InvariantCulture))) : Task.CompletedTask;
+
+    [RelayCommand]
+    private async Task BanSelected()
+    {
+        if (SelectedLine is not { } line) return;
+        if (!ConfirmingBan)
+        {
+            ConfirmingBan = true;
+            return;
+        }
+        ConfirmingBan = false;
+        await BanAsync(line);
+    }
+
+    [RelayCommand]
+    private void ReplyToSelected()
+    {
+        if (SelectedLine is not { } line) return;
+        SendTarget = SendTargets.FirstOrDefault(t => string.Equals(t, line.Platform, StringComparison.OrdinalIgnoreCase)) ?? SendTarget;
+        Draft = "@" + line.User + " " + Draft.TrimStart();
+    }
+
+    // ---------------------------------------------------------------- activity filter
+
+    /// <summary>Activity filter chips: All, then the kinds that can happen.</summary>
+    public IReadOnlyList<string> FeedFilters { get; } = ["All", "Follows", "Subs", "Tips", "Raids", "Redemptions", "Stream", "Other"];
+
+    [ObservableProperty] private string _feedFilter = "All";
+
+    /// <summary>The activity feed under the current filter (<see cref="Feed"/> keeps everything).</summary>
+    public ObservableCollection<FeedLineViewModel> VisibleFeed { get; } = [];
+
+    public bool HasVisibleFeed => VisibleFeed.Count > 0;
+
+    partial void OnFeedFilterChanged(string value) => RefilterFeed();
+
+    private void RefilterFeed()
+    {
+        VisibleFeed.Clear();
+        foreach (var line in Feed.Where(InFeedFilter)) VisibleFeed.Add(line);
+        OnPropertyChanged(nameof(HasVisibleFeed));
+    }
+
+    internal static string FeedGroup(FeedKind kind) => kind switch
+    {
+        FeedKind.Follow => "Follows",
+        FeedKind.Subscription or FeedKind.GiftSubscription => "Subs",
+        FeedKind.Tip => "Tips",
+        FeedKind.Raid => "Raids",
+        FeedKind.Redemption => "Redemptions",
+        FeedKind.StreamOnline or FeedKind.StreamOffline => "Stream",
+        _ => "Other",
+    };
+
+    private bool InFeedFilter(FeedLineViewModel line) => FeedFilter == "All" || FeedGroup(line.Item.Kind) == FeedFilter;
 
     partial void OnDraftChanged(string value) => UpdateSuggestions();
 
@@ -216,8 +312,10 @@ public sealed partial class ChatViewModel : PageViewModel
         _all.Add(message);
         if (_all.Count > MaxLines) _all.RemoveAt(0);
         if (!Visible(message)) return;
-        Messages.Add(CreateLine(message));
+        var line = CreateLine(message);
+        Messages.Add(line);
         while (Messages.Count > MaxLines) Messages.RemoveAt(0);
+        if (SelectedLine is { } selected && selected.Platform == line.Platform && selected.Login == line.Login) UserLines.Insert(0, line);
         LineAdded?.Invoke();
     }
 
@@ -293,8 +391,12 @@ public sealed partial class ChatViewModel : PageViewModel
 
     private void AddFeed(FeedItem item)
     {
-        Feed.Insert(0, new FeedLineViewModel(item));
+        var line = new FeedLineViewModel(item);
+        Feed.Insert(0, line);
         while (Feed.Count > MaxLines) Feed.RemoveAt(Feed.Count - 1);
+        if (InFeedFilter(line)) VisibleFeed.Insert(0, line);
+        while (VisibleFeed.Count > MaxLines) VisibleFeed.RemoveAt(VisibleFeed.Count - 1);
+        OnPropertyChanged(nameof(HasVisibleFeed));
     }
 
     // ---------------------------------------------------------------- send box
@@ -421,7 +523,11 @@ public sealed partial class ChatViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void ClearFeed() => Feed.Clear();
+    private void ClearFeed()
+    {
+        Feed.Clear();
+        RefilterFeed();
+    }
 
     [RelayCommand]
     private void ToggleOptions() => ShowOptions = !ShowOptions;

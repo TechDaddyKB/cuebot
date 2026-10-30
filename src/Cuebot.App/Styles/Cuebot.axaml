@@ -103,6 +103,31 @@
           <Color x:Key="CuebotOverlayColor">#66000000</Color>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Filter chips: a ListBox with Classes="chips" and ItemContainerTheme="{StaticResource ChipItem}". -->
+      <ControlTheme x:Key="ChipItem" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Padding" Value="10,3" />
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="CornerRadius" Value="12" />
+          <Setter Property="BorderThickness" Value="1" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+        </Style>
+        <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+        </Style>
+        <Style Selector="^:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter, ^:selected:focus /template/ ContentPresenter#PART_ContentPresenter, ^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ^:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="Foreground" Value="White" />
+        </Style>
+      </ControlTheme>
     </ResourceDictionary>
   </Styles.Resources>
 
@@ -182,6 +207,12 @@
   </Style>
 
   <!-- Selectable rows in the action list editor -->
+  <!-- A destructive step waiting for its confirming click (e.g. "Confirm ban"). -->
+  <Style Selector="Button.danger /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource CuebotBad}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotBad}" />
+  </Style>
   <Style Selector="Button.row">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -250,20 +281,30 @@
   </Style>
 
   <!-- ===== Lists ===== -->
+  <Style Selector="ListBox.chips">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <WrapPanel />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+  </Style>
   <Style Selector="ListBoxItem">
     <Setter Property="CornerRadius" Value="6" />
   </Style>
-  <Style Selector="ListBox:not(.plain) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.plain):not(.chips) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
   </Style>
-  <Style Selector="ListBox:not(.plain) ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.plain):not(.chips) ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
   </Style>
-  <Style Selector="ListBox:not(.plain) ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.plain):not(.chips) ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
   </Style>
   <!-- The soft fill alone is hard to see on the dark ground, so a selected row also gets an accent outline. -->
-  <Style Selector="ListBox:not(.nav):not(.plain) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.nav):not(.plain):not(.chips) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>

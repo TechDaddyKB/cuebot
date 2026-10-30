@@ -21,6 +21,23 @@ public partial class ChatView : UserControl
         };
         // Tunnel so Enter/Tab/arrows reach us before the TextBox uses them.
         DraftBox.AddHandler(KeyDownEvent, OnDraftKeyDown, RoutingStrategies.Tunnel);
+        SizeChanged += (_, e) => FoldActivityPane(e.NewSize.Width < NarrowWidth);
+    }
+
+    /// <summary>Below this page width (about 1280 px of window) the activity feed becomes a tab of the side pane.</summary>
+    internal const double NarrowWidth = 1000;
+
+    internal bool ActivityFolded { get; private set; }
+
+    private void FoldActivityPane(bool fold)
+    {
+        if (fold == ActivityFolded) return;
+        ActivityFolded = fold;
+        ActivityPane.IsVisible = !fold;
+        Panes.ColumnDefinitions[2].Width = new GridLength(fold ? 0 : 300);
+        Panes.ColumnDefinitions[3].Width = new GridLength(fold ? 0 : 12);
+        ActivityTab.IsVisible = fold;
+        if (!fold && ActivityTab.IsSelected) SideTabs.SelectedIndex = 1;
     }
 
     private void ScrollToNewest()
