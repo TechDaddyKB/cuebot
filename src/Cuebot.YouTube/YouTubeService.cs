@@ -35,18 +35,20 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private readonly Dictionary<string, string> _banIds = new(StringComparer.Ordinal);
     private readonly IDisposable _pollWatch;
+    private readonly IChatStream? _chatStream;
     private YouTubeConnection? _connection;
     private int _lastSavedQuota;
     private string? _activePollMessageId;
 
     public YouTubeService(JsonFile<YouTubeSettings> settings, HttpClient http, EventBus bus, AppLog log)
-        : this(settings, http, bus, log, YouTubeEndpoints.Production, TimeProvider.System, YouTubeTimings.Default)
+        : this(settings, http, bus, log, YouTubeEndpoints.Production, TimeProvider.System, YouTubeTimings.Default,
+            chatStream: quota => new GrpcChatStream(quota))
     {
     }
 
     internal YouTubeService(JsonFile<YouTubeSettings> settings, HttpClient http, EventBus bus, AppLog log,
         YouTubeEndpoints endpoints, TimeProvider time, YouTubeTimings timings, AppCredentials? builtInBrowserApp = null,
-        AppCredentials? builtInDeviceApp = null)
+        AppCredentials? builtInDeviceApp = null, Func<QuotaTracker, IChatStream>? chatStream = null)
     {
         _apps = new YouTubeApps(builtInBrowserApp ?? YouTubeApps.BuiltIn.Browser, builtInDeviceApp ?? YouTubeApps.BuiltIn.Device);
         _settings = settings;
@@ -62,6 +64,7 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
         quota.Changed += OnQuotaChanged;
         quota.Exhausted += OnQuotaExhausted;
         _api = new YouTubeApi(new YouTubeApiClient(http, endpoints.Api, quota));
+        _chatStream = chatStream?.Invoke(quota);
         _pollWatch = bus.Subscribe(TrackPolls);
     }
 
@@ -102,6 +105,20 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
 
     public BroadcastStatistics? StatisticsOf(string broadcastId) => _connection?.StatisticsOf(broadcastId);
 
+    /// <summary>True while live chat arrives through the chat stream (see <see cref="YouTubeSettings.StreamChat"/>).</summary>
+    public bool IsChatStreaming => _connection?.IsChatStreaming ?? false;
+
+    /// <summary>
+    /// Opens the chat stream for <paramref name="liveChatId"/> as the broadcaster and returns after the first page, or
+    /// throws YouTube's error. For the live tests, which have no broadcast to read.
+    /// </summary>
+    internal async Task<ChatPage?> ReadChatStreamOnceAsync(string liveChatId, CancellationToken ct)
+    {
+        if (_chatStream is null) throw new InvalidOperationException("This service has no chat stream");
+        await foreach (var page in _chatStream.ReadAsync(_broadcaster, liveChatId, null, ct).ConfigureAwait(false)) return page;
+        return null;
+    }
+
     public int QuotaUsedToday => _api.Quota.UsedToday;
     public DateTimeOffset? QuotaExhaustedUntil => _api.Quota.ExhaustedUntil;
     public DateTimeOffset QuotaResetsAt => _api.Quota.NextReset;
@@ -115,7 +132,7 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
             YouTubeTimings.Clamp(s.BroadcastPollSeconds, _timings.MinimumBroadcastPoll).TotalSeconds,
             YouTubeTimings.Clamp(s.LivePollSeconds, _timings.MinimumLivePoll).TotalSeconds,
             YouTubeTimings.Clamp(s.SubscriberPollSeconds, _timings.MinimumSubscriberPoll).TotalSeconds,
-            s.MonitorUpcoming, s.PollNewSubscribers);
+            s.MonitorUpcoming, s.PollNewSubscribers, s.StreamChat);
     }
 
     // ---------------------------------------------------------------- sign-in
@@ -240,7 +257,8 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
                 SetStatus(ConnectionState.Error, ex.Message);
                 throw;
             }
-            var connection = new YouTubeConnection(_api, _broadcaster, () => Settings, _chatters, _bus, _log, _timings, _time, UpdateStatus);
+            var connection = new YouTubeConnection(_api, _broadcaster, () => Settings, _chatters, _bus, _log, _timings, _time, UpdateStatus,
+                _chatStream);
             _connection = connection;
             connection.Start();
             _log.Info("YouTube", $"Connected as {Settings.Broadcaster.ChannelTitle}");
@@ -283,6 +301,7 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     {
         await DisconnectAsync().ConfigureAwait(false);
         _pollWatch.Dispose();
+        (_chatStream as IDisposable)?.Dispose();
         _settings.Value.QuotaDay = _api.Quota.Day;
         _settings.Value.QuotaUsed = _api.Quota.UsedToday;
         _settings.ScheduleSave();

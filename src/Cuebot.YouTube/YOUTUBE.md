@@ -27,13 +27,14 @@ user's own), because Google refreshes a token only through the client that issue
 
 Tokens and the client secret are stored in `youtube.json` in the data folder and are never logged.
 
-## What is polled, and what it costs
+## What is read, and what it costs
 
 | Call | Units | When |
 | --- | --- | --- |
 | `liveBroadcasts.list` (active) | 5 | every *broadcast check* (default 120 s), always while connected |
 | `liveBroadcasts.list` (upcoming) | 5 | same interval, only with "Watch scheduled broadcasts" |
-| `liveChatMessages.list` | 5 | per chat poll while live: YouTube's `pollingIntervalMillis`, but at least *minimum chat seconds* (default 8 s) |
+| `liveChatMessages.streamList` (gRPC) | 5 | per chat stream connection while live (*Stream live chat*, on by default); reconnects resume from the last page token |
+| `liveChatMessages.list` | 5 | per chat poll while live, only when chat is polled: YouTube's `pollingIntervalMillis`, but at least *minimum chat seconds* (default 8 s) |
 | `videos.list` (statistics, title, end) | 1 | every *statistics* interval (default 60 s) while live |
 | `subscriptions.list` (myRecentSubscribers) | 1 | every *subscriber* interval (default 300 s), optional |
 | `channels.list` | 1 | on connect/sign-in, and resolving an `@handle` |
@@ -41,10 +42,12 @@ Tokens and the client secret are stored in `youtube.json` in the data folder and
 | `liveChatModerators.list` | 50 | removing a moderator |
 | `videos.update` (+ one `videos.list`) | 50 + 1 | set title / description / category / tags / privacy |
 
-With the defaults that is roughly **2,500 units per hour live** (chat dominates) and **160 per hour idle**, i.e.
-about four hours of streaming per default daily quota. Raise *minimum chat seconds* to stream longer, or request a
-quota increase from Google. The page shows the estimate for the current settings and the units Cuebot has spent
-today (Cuebot's own count; Google's console is authoritative).
+With the defaults and a streamed chat that is roughly **280 units per hour live** and **160 per hour idle**; the page's
+estimate assumes the chat stream reconnects every 5 minutes, since YouTube does not document how long it keeps a
+stream open. With chat polled every 8 s it is roughly **2,500 units per hour live** (chat dominates), i.e. about four
+hours of streaming per default daily quota; raise *minimum chat seconds* to stream longer. The page shows the
+estimate for the current settings and the units Cuebot has spent today (Cuebot's own count; Google's console is
+authoritative).
 
 When YouTube answers `403 quotaExceeded`, Cuebot publishes `youtube.quotaExceeded`, shows the error in the status,
 and pauses **all** polling until the next Pacific midnight instead of retrying. Other errors back off
@@ -56,8 +59,14 @@ exponentially (5 s up to 5 min). `rateLimitExceeded` (polling too fast) is treat
   already live when Cuebot connects fire *Monitoring started* only; going live later fires *Started* too. A broadcast
   ends when it leaves the active list, its video reports an end time, or its chat ends. Actions without a broadcast id
   use the **latest** monitored broadcast.
-- **Chat**: the first page after attaching only seeds the de-duplication set (no history replay). Pages follow
-  `nextPageToken`; items are de-duplicated by id (polls by id + state, since YouTube re-sends them as votes change).
+- **Chat**: by default Cuebot holds `liveChatMessages.streamList` open over gRPC (`youtube.googleapis.com:443`), so
+  messages arrive as they are posted. When YouTube closes the stream Cuebot reconnects from the last `nextPageToken`
+  (after a pause if it closed within 30 s). If the stream cannot be opened three times in a row before any page
+  arrived, that chat is polled with `liveChatMessages.list` instead. Turning *Stream live chat* off always polls.
+  History is not replayed: the first page, and streamed items published before the stream opened, only seed the
+  de-duplication set. Items are de-duplicated by id (polls by id + state, since YouTube re-sends them as votes change).
+  The stream's protobuf messages are converted to the REST JSON shape (enum names such as `TEXT_MESSAGE_EVENT`
+  become `textMessageEvent`), so both paths publish the same events.
 - **Roles**: chat owner → broadcaster, moderator → moderator, member ("sponsor") → `isSubscriber`/`isMember`,
   verified → `isVerified`. The bot account's own messages carry `isBotAccount`.
 - **Users** in sub-actions/functions may be a channel id (`UC...`), an `@handle` (one `channels.list` call) or the
@@ -69,8 +78,10 @@ exponentially (5 s up to 5 min). `rateLimitExceeded` (polling too fast) is treat
 
 ## Limitations
 
-- Polling, not push: chat latency is the poll interval. (The gRPC `liveChatMessages.streamList` endpoint would be
-  cheaper but needs a gRPC stack; not used.)
+- The stream's published protobuf definition (`Api/Grpc/stream_list.proto`, from Google's guide) has no
+  `messageDeletedEvent` type, so a streamed chat may not report *Message Deleted*; polling does.
+- gRPC errors cannot tell a disabled chat from an ended one; both stop that chat's reader as "unavailable", and the
+  broadcast check notices when the broadcast itself ends.
 - YouTube returns ban ids only to whoever created the ban, so **Unban** works only for bans/timeouts Cuebot placed in
   the current session; lift others in YouTube Studio.
 - New Subscriber only sees subscribers whose subscriptions are public.

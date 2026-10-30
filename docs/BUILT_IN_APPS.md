@@ -52,10 +52,12 @@ One Google Cloud project for both:
 5. Submit the app for **verification** (the YouTube scopes are sensitive: Google asks for a demo video and the privacy
    policy). Until it is verified, users see an "unverified app" warning and at most 100 users can sign in in total.
 
-**Quota.** All users of the built-in app share the project's YouTube quota: 10,000 units a day by default, and one
-live stream with default settings uses about 2,500 units an hour (chat polling dominates; see
-`src/Cuebot.YouTube/YOUTUBE.md`). Request a higher quota (the YouTube API Services audit) before relying on it, and
-point heavy users to **Advanced: use my own Google Cloud project**, which gives them their own quota.
+**Quota.** All users of the built-in app share the project's YouTube quota: 10,000 units a day by default. With
+default settings Cuebot streams chat (`liveChatMessages.streamList`), so one live stream uses roughly 280 units an
+hour, mostly broadcast checks; a user who turns streaming off, or whose stream falls back to polling, uses about 2,500
+(see `src/Cuebot.YouTube/YOUTUBE.md`). Even so the default quota covers only a few dozen streaming hours a day across
+all users: request a higher quota (the YouTube API Services audit) before relying on it, and point heavy users to
+**Advanced: use my own Google Cloud project**, which gives them their own quota.
 
 ### Kick
 

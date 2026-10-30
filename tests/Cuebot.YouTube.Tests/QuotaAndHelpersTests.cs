@@ -50,6 +50,16 @@ public sealed class QuotaAndHelpersTests
     }
 
     [Fact]
+    public void Streamed_chat_costs_one_call_per_assumed_reconnect_instead_of_per_poll()
+    {
+        var (live, idle) = QuotaCosts.EstimatePerHour(chatSeconds: 8, broadcastSeconds: 120, liveSeconds: 60, subscriberSeconds: 300,
+            monitorUpcoming: false, pollSubscribers: true, streamChat: true);
+        // 12 connections x 5 (one every 5 minutes) instead of 450 polls x 5.
+        Assert.Equal(162, idle);
+        Assert.Equal(162 + 60 + 60, live);
+    }
+
+    [Fact]
     public void Timings_clamp_chat_delay_and_back_off()
     {
         var t = YouTubeTimings.Default;

@@ -46,6 +46,11 @@
     <PackageVersion Include="Whisper.net" Version="1.9.1" />
     <PackageVersion Include="Whisper.net.Runtime" Version="1.9.1" />
     <PackageVersion Include="Whisper.net.Runtime.NoAvx" Version="1.9.1" />
+    <!-- YouTube chat streaming (liveChatMessages.streamList is gRPC only): Grpc.Net.Client (Apache-2.0), Google.Protobuf
+         (BSD-3-Clause); Grpc.Tools (Apache-2.0) generates the client from the proto at build time and is not shipped. -->
+    <PackageVersion Include="Grpc.Net.Client" Version="2.84.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
+    <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
     <!-- Tests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />

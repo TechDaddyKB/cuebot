@@ -24,6 +24,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
     private readonly YouTubeTimings _timings;
     private readonly TimeProvider _time;
     private readonly Action _statusChanged;
+    private readonly IChatStream? _chatStream;
     private readonly CancellationTokenSource _cts = new();
     private readonly ConcurrentDictionary<string, RunningChat> _chats = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, BroadcastStatistics> _statistics = new(StringComparer.Ordinal);
@@ -31,7 +32,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
     private int _disposed;
 
     public YouTubeConnection(YouTubeApi api, AccountTokens broadcaster, Func<YouTubeSettings> settings, ChatterDirectory chatters,
-        EventBus bus, AppLog log, YouTubeTimings timings, TimeProvider time, Action statusChanged)
+        EventBus bus, AppLog log, YouTubeTimings timings, TimeProvider time, Action statusChanged, IChatStream? chatStream = null)
     {
         _api = api;
         _broadcaster = broadcaster;
@@ -42,9 +43,13 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         _timings = timings;
         _time = time;
         _statusChanged = statusChanged;
+        _chatStream = chatStream;
     }
 
     public BroadcastTracker Broadcasts { get; } = new();
+
+    /// <summary>True while at least one live chat arrives through the chat stream rather than by polling.</summary>
+    public bool IsChatStreaming => _chats.Values.Any(c => c.Poller.IsStreaming);
 
     /// <summary>Publishes an event with Streamer.bot's argument names added (broadcaster and broadcast included).</summary>
     private void Publish(BotEvent e)
@@ -189,7 +194,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
         var context = new ChatContext(broadcast.Id, broadcast.LiveChatId, _chatters) { BotChannelId = _settings().Bot.ChannelId };
         var poller = new ChatPoller(_api, _broadcaster, context, Publish, _timings, _time, () => _settings().MinimumChatPollSeconds,
-            _log, SetProblem);
+            _log, SetProblem, _settings().StreamChat ? _chatStream : null);
         var task = Task.Run(async () =>
         {
             try

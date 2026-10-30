@@ -91,9 +91,10 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Polling and quota" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="The YouTube Data API is polled and every call costs quota from your project's daily allowance. Slower polling makes the quota last longer but delays chat and events." />
+                       Text="Every call to the YouTube Data API costs quota from your project's daily allowance. Broadcasts, statistics and subscribers are polled: slower polling makes the quota last longer but delays events." />
+            <CheckBox Content="Stream live chat (messages arrive as they are posted, for a fraction of the quota)" IsChecked="{Binding StreamChat}" />
             <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
-              <TextBlock Text="Minimum seconds between chat checks" VerticalAlignment="Center" />
+              <TextBlock Text="Minimum seconds between chat polls" VerticalAlignment="Center" />
               <NumericUpDown Grid.Column="1" Value="{Binding MinimumChatPollSeconds}" Minimum="2" Maximum="120" Increment="1" FormatString="0" Width="140" />
               <TextBlock Grid.Row="1" Text="Seconds between checks for a live broadcast" VerticalAlignment="Center" />
               <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BroadcastPollSeconds}" Minimum="30" Maximum="3600" Increment="30" FormatString="0" Width="140" />

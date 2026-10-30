@@ -23,8 +23,14 @@ public sealed class YouTubeSettings
     public YouTubeAccount Bot { get; set; } = new();
 
     /// <summary>
+    /// Receive live chat as a stream (liveChatMessages.streamList): messages arrive as they are posted, for one quota
+    /// charge per connection. Off, or when the stream cannot be opened, chat is polled instead.
+    /// </summary>
+    public bool StreamChat { get; set; } = true;
+
+    /// <summary>
     /// Lower bound for the time between live chat polls. YouTube suggests an interval with each response (often
-    /// only a few seconds); every poll costs quota, so Cuebot waits at least this long.
+    /// only a few seconds); every poll costs quota, so Cuebot waits at least this long. Applies when chat is polled.
     /// </summary>
     public int MinimumChatPollSeconds { get; set; } = 8;
 

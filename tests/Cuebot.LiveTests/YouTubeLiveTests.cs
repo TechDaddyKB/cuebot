@@ -26,8 +26,20 @@ public sealed class YouTubeLiveTests(YouTubeLiveBot bot)
         Assert.True(bot.YouTube.QuotaUsedToday > 0);
     }
 
+    [LiveYouTubeFact]
+    public async Task Chat_stream_reaches_youtube_and_rejects_an_unknown_chat()
+    {
+        // No broadcast is needed: a made-up chat id proves the gRPC transport, the sign-in and the error mapping.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        var ex = await Assert.ThrowsAsync<YouTubeApiException>(() => bot.YouTube.ReadChatStreamOnceAsync("Cg0KC2N1ZWJvdC10ZXN0", timeout.Token));
+
+        // YouTube answered over gRPC (a made-up id is rejected as INVALID_ARGUMENT), so the call got past sign-in.
+        Assert.True(ex.IsChatGone || ex.Reason is "invalidArgument" or "forbidden", $"{ex.Reason}: {ex.Message}");
+    }
+
     [LiveYouTubeChatFact]
-    public async Task Sent_chat_message_comes_back_through_the_chat_poll()
+    public async Task Sent_chat_message_comes_back_through_the_chat_stream()
     {
         await YouTubeLiveBot.WaitUntilAsync(() => bot.YouTube.IsLive, TimeSpan.FromMinutes(3), "a live YouTube broadcast to be monitored");
         var since = DateTimeOffset.Now;
@@ -36,6 +48,7 @@ public sealed class YouTubeLiveTests(YouTubeLiveBot bot)
         await bot.YouTube.SendChatMessageAsync(text);
 
         await bot.WaitForEventAsync(YouTubeEventTypes.ChatMessage, since, ChatTimeout, e => e.Args["message"] as string == text);
+        Assert.True(bot.YouTube.IsChatStreaming, "chat arrived by polling: the chat stream did not open");
     }
 }
 

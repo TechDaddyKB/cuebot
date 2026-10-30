@@ -82,6 +82,12 @@ public sealed partial class YouTubeViewModel : PageViewModel
 
     // ------------------------------------------------------------ polling and quota
 
+    public bool StreamChat
+    {
+        get => _youtube.Settings.StreamChat;
+        set { _youtube.Settings.StreamChat = value; Save(); }
+    }
+
     public decimal MinimumChatPollSeconds
     {
         get => _youtube.Settings.MinimumChatPollSeconds;
@@ -131,6 +137,7 @@ public sealed partial class YouTubeViewModel : PageViewModel
             var used = _youtube.QuotaUsedToday;
             var text = string.Format(CultureInfo.CurrentCulture, "About {0:N0} of {1:N0} units used today (resets {2:t})",
                 used, _youtube.Settings.DailyQuota, _youtube.QuotaResetsAt.ToLocalTime());
+            if (_youtube.IsChatStreaming) text += ". Live chat is streaming";
             return _youtube.QuotaExhaustedUntil is null ? text : text + ". Quota exhausted: polling is paused until the reset.";
         }
     }
@@ -143,8 +150,9 @@ public sealed partial class YouTubeViewModel : PageViewModel
             var budget = _youtube.Settings.DailyQuota;
             var hours = live > 0 ? budget / live : 0;
             return string.Format(CultureInfo.CurrentCulture,
-                "Polling costs about {0:N0} units/hour while live and {1:N0} units/hour while waiting, so {2:N0} units last about {3:0.#} hours of streaming. Sending a message, moderating or changing the title costs 50 units each.",
-                live, idle, budget, hours);
+                "Reading YouTube costs about {0:N0} units/hour while live and {1:N0} units/hour while waiting, so {2:N0} units last about {3:0.#} hours of streaming{4}. Sending a message, moderating or changing the title costs 50 units each.",
+                live, idle, budget, hours,
+                _youtube.Settings.StreamChat ? " (estimated: streamed chat costs 5 units each time it reconnects)" : "");
         }
     }
 

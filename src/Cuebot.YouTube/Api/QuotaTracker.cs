@@ -11,6 +11,8 @@ internal static class QuotaCosts
     public const int SubscriptionsList = 1;
     public const int LiveBroadcastsList = 5;
     public const int LiveChatMessagesList = 5;
+    /// <summary>liveChatMessages.streamList: per call, however long the stream stays open.</summary>
+    public const int LiveChatMessagesStream = 5;
     public const int LiveChatModeratorsList = 50;
     public const int LiveChatMessagesInsert = 50;
     public const int LiveChatMessagesDelete = 50;
@@ -22,17 +24,25 @@ internal static class QuotaCosts
     public const int VideosUpdate = 50;
 
     /// <summary>
-    /// Units per hour spent by polling alone. <paramref name="chatSeconds"/> is the effective chat interval;
-    /// chat and live statistics are only polled while live.
+    /// Assumed time between chat stream (re)connections, for the estimate only: YouTube does not document how long it
+    /// keeps a stream open.
+    /// </summary>
+    public const double AssumedStreamSeconds = 300;
+
+    /// <summary>
+    /// Units per hour spent by polling alone. <paramref name="chatSeconds"/> is the effective chat interval when chat is
+    /// polled; a streamed chat costs one call per (re)connection instead. Chat and live statistics are only read while
+    /// live.
     /// </summary>
     public static (double Live, double Idle) EstimatePerHour(double chatSeconds, double broadcastSeconds, double liveSeconds,
-        double subscriberSeconds, bool monitorUpcoming, bool pollSubscribers)
+        double subscriberSeconds, bool monitorUpcoming, bool pollSubscribers, bool streamChat = false)
     {
         static double PerHour(double seconds, int cost) => seconds > 0 ? 3600 / seconds * cost : 0;
         var broadcast = PerHour(broadcastSeconds, LiveBroadcastsList) * (monitorUpcoming ? 2 : 1);
         var subscribers = pollSubscribers ? PerHour(subscriberSeconds, SubscriptionsList) : 0;
         var idle = broadcast + subscribers;
-        var live = idle + PerHour(chatSeconds, LiveChatMessagesList) + PerHour(liveSeconds, VideosList);
+        var chat = streamChat ? PerHour(AssumedStreamSeconds, LiveChatMessagesStream) : PerHour(chatSeconds, LiveChatMessagesList);
+        var live = idle + chat + PerHour(liveSeconds, VideosList);
         return (Math.Round(live), Math.Round(idle));
     }
 }
