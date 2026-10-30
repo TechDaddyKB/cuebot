@@ -22,6 +22,9 @@ public interface ISpeakerBackend
     void Stop();
     void Clear();
 
+    /// <summary>Stops the text playing and, while the queue is paused, lets one waiting text play; false when nothing happened.</summary>
+    bool SpeakNext();
+
     /// <summary>"all" or "command" (read only !say-style commands). False for an unknown mode.</summary>
     bool SetMode(string mode);
 
@@ -72,6 +75,7 @@ public sealed class SpeechServiceBackend(SpeechService speech) : ISpeakerBackend
     }
 
     public void Stop() => speech.SkipCurrent();
+    public bool SpeakNext() => speech.SpeakNext();
     public void Clear() => speech.ClearQueue();
 
     public bool SetMode(string mode)

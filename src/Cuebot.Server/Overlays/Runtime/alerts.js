@@ -269,8 +269,8 @@
     return el("div", { class: "row" }, [slider, num]);
   }
 
-  function check(obj, key, label) {
-    var box = el("input", { type: "checkbox", onchange: function () { obj[key] = box.checked; changed(true); } });
+  function check(obj, key, label, after) {
+    var box = el("input", { type: "checkbox", onchange: function () { obj[key] = box.checked; changed(true); if (after) after(); } });
     box.checked = bool(obj[key]);
     return el("label", { class: "check" }, [box, document.createTextNode(label)]);
   }
@@ -389,6 +389,15 @@
     if (custom || d.sound === "") form.appendChild(field("Sound file (MP3, OGG, WAV)", file(d, "sound", "audio/*")));
     form.appendChild(field("Sound volume", range(d, "volume")));
 
+    form.appendChild(el("h3", { text: "Text to speech" }));
+    form.appendChild(field("", check(d, "tts", "Read the alert out with Cuebot's speech", renderForm)));
+    if (bool(d.tts)) {
+      form.appendChild(field("Text to read", text(d, "ttsText"), "Same placeholders as the headline, e.g. {name} says {message}"));
+      form.appendChild(field("Voice alias", text(d, "ttsAlias", "voices"), "Empty: the default voice. Filters for bad words and links apply."));
+      form.appendChild(el("p", { class: "muted small", text:
+        "Alerts join Cuebot's speech queue, so pausing speech or Speak next works on them too. Test this design speaks; the automatic preview does not." }));
+    }
+
     form.appendChild(el("h3", { text: "Timing" }));
     form.appendChild(field("Show for (seconds)", number(d, "duration", 1, 120)));
     form.appendChild(el("div", { class: "pair" }, [field("Enter", choice(d, "enter", ENTER)), field("Exit", choice(d, "exit", EXIT))]));
@@ -426,8 +435,8 @@
     }).catch(function (e) { status("Preview failed: " + e.message, true); });
   }
 
-  /** Sends the current designs to the preview (a fresh onWidgetLoad) and shows the selected one. */
-  function play() {
+  /** Sends the current designs to the preview (a fresh onWidgetLoad) and shows the selected one; "talk" lets its TTS speak. */
+  function play(talk) {
     if (!frameLoaded) return;
     var fieldData = clone(previewDoc.fieldData || {});
     fieldData.alerts = alerts;
@@ -435,13 +444,13 @@
     sendToPreview({ type: "event", listener: "alertService:toggleSound", event: { muted: $("mute").checked } });
     sendToPreview({
       type: "event", listener: "event:test",
-      event: { listener: "alertbox-preview", alertType: selected.type, variation: selected.variation, alerts: alerts }
+      event: { listener: "alertbox-preview", alertType: selected.type, variation: selected.variation, alerts: alerts, speak: talk === true }
     });
   }
 
   function schedulePreview() {
     clearTimeout(previewTimer);
-    previewTimer = setTimeout(play, 600);
+    previewTimer = setTimeout(function () { play(false); }, 600);
   }
 
   function loadDetail(fieldData) {
@@ -549,12 +558,15 @@
   var fontList = el("datalist", { id: "fonts" });
   FONTS.forEach(function (f) { fontList.appendChild(el("option", { value: f })); });
   document.body.appendChild(fontList);
+  var voiceList = el("datalist", { id: "voices" });
+  (cfg.voices || []).forEach(function (v) { voiceList.appendChild(el("option", { value: v })); });
+  document.body.appendChild(voiceList);
 
   $("random-pick").addEventListener("change", function () { alerts.randomPick = $("random-pick").checked; changed(true); });
   $("mute").addEventListener("change", function () {
     sendToPreview({ type: "event", listener: "alertService:toggleSound", event: { muted: $("mute").checked } });
   });
-  $("play").addEventListener("click", play);
+  $("play").addEventListener("click", function () { play(true); });
   $("save").addEventListener("click", save);
   document.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "s") {

@@ -119,6 +119,36 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Only_the_alert_box_can_speak_through_cuebot()
+    {
+        var box = _bot.Widgets.AddAlertBox(_overlay.Id)!;
+        _bot.AlertQueue.Muted = true;
+        await using var client = await WsClient.ConnectAsync(_bot.Manager.Overlays.Port, $"/o/{_overlay.Id}/ws?token={Token}");
+        var hello = await client.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
+        Assert.Equal((false, true), (hello["alerts"]!["paused"]!.GetValue<bool>(), hello["alerts"]!["muted"]!.GetValue<bool>()));
+
+        async Task<JsonObject> Ask(string id, OverlayLayer layer, string text)
+        {
+            await client.SendRawAsync(new JsonObject
+            {
+                ["type"] = "request", ["id"] = id, ["layer"] = layer.Id.ToString(), ["request"] = "cuebot_tts",
+                ["data"] = new JsonObject { ["text"] = text, ["alias"] = "Narrator" },
+            }.ToJsonString());
+            return await client.NextAsync(m => m["type"]?.GetValue<string>() == "response" && m["id"]?.GetValue<string>() == id);
+        }
+
+        Assert.True((await Ask("1", box, "Kris tipped $5"))["result"]!["queued"]!.GetValue<bool>());
+        Assert.Contains("speak:Narrator:Kris tipped $5:True:False:False", _bot.Speaker.Log);   // filters on, not waiting
+        Assert.Contains("alert box", (await Ask("2", _layer, "I am a bought widget"))["error"]!.GetValue<string>());
+        Assert.False((await Ask("3", box, "   "))["result"]!["queued"]!.GetValue<bool>());
+        await Ask("4", box, new string('a', 600));
+        Assert.Contains(_bot.Speaker.Log, l => l == $"speak:Narrator:{new string('a', OverlayWidgetHost.MaxTtsLength)}:True:False:False");
+
+        _bot.AlertQueue.Paused = true;
+        Assert.Equal("pause", (await client.NextAsync(m => m["type"]?.GetValue<string>() == "command"))["command"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task Changing_the_overlay_or_its_widget_reloads_the_page()
     {
         await using var client = await WsClient.ConnectAsync(_bot.Manager.Overlays.Port, $"/o/{_overlay.Id}/ws?token={Token}");

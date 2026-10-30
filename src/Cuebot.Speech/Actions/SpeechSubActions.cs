@@ -93,6 +93,24 @@ internal sealed class SkipSpeechSubAction(SpeechService speech) : ISubActionHand
     }
 }
 
+/// <summary>
+/// Steps the speech queue forward one text: stops the one playing and, while the queue is paused, lets exactly one
+/// waiting text play. Pause the queue and run this from a button, Stream Deck key or the API to go one at a time.
+/// </summary>
+internal sealed class SpeakNextSubAction(SpeechService speech) : ISubActionHandler
+{
+    public string TypeId => "speech.next";
+    public string Category => SpeechCategories.Speech;
+    public string DisplayName => "Speak next in queue";
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } = [];
+
+    public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues parameters, CancellationToken ct)
+    {
+        context.Args["success"] = speech.SpeakNext();
+        return Task.FromResult(SubActionResult.Next);
+    }
+}
+
 /// <summary>Drops every text waiting in the speech queue.</summary>
 internal sealed class ClearSpeechQueueSubAction(SpeechService speech) : ISubActionHandler
 {

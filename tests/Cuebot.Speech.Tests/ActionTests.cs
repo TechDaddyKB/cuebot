@@ -80,6 +80,7 @@ public class ActionTests
         services.AddSingleton<ISubActionHandler, StopUserSpeechSubAction>();
         services.AddSingleton<ISubActionHandler, ActivateVoiceGateSubAction>();
         services.AddSingleton<ISubActionHandler, SkipSpeechSubAction>();
+        services.AddSingleton<ISubActionHandler, SpeakNextSubAction>();
         services.AddSingleton<ISubActionHandler, ClearSpeechQueueSubAction>();
         services.AddSingleton<ISubActionHandler, PauseSpeechSubAction>();
         services.AddSingleton<ISubActionHandler>(capture);
@@ -196,6 +197,20 @@ public class ActionTests
         Assert.Equal("Main", h.Users.Find("Twitch", "b1", null)!.Alias);
         Assert.Equal(1, args["stoppedCount"]);
         Assert.Equal(0, h.Service.QueueLength);
+    }
+
+    [Fact]
+    public async Task Speak_next_lets_one_queued_text_through_a_pause()
+    {
+        await using var h = await SpeechHarness.StartAsync();
+        Assert.Equal(false, (await RunAsync(h, "speech.next", new()))["success"]);
+        h.Service.Paused = true;
+        _ = h.Service.SpeakAsync("first", new SpeakOptions());
+        _ = h.Service.SpeakAsync("second", new SpeakOptions());
+
+        Assert.Equal(true, (await RunAsync(h, "speech.next", new()))["success"]);
+        await h.Player.NextAsync();
+        Assert.Equal(1, h.Service.QueueLength);
     }
 
     [Fact]

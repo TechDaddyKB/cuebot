@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cuebot.Core.Overlays;
 
 /// <summary>
-/// Registration for overlays: overlays.json, elements.json, the asset folder, the feed to overlay pages, the bridge that
+/// Registration for overlays: overlays.json, elements.json, the asset folder, the feed to overlay pages, the alert queue
+/// controls and their sub-actions (with "Show alert"), the bridge that
 /// fills it from bot events (platform modules add <see cref="IOverlayEventAdapter"/>s) and the stream totals
 /// (session-data.json). The app creates the bridge and the totals at startup.
 /// </summary>
@@ -25,6 +26,9 @@ public static class OverlayFeatures
         services.AddSingleton(sp => new Widgets.WidgetLibrary(sp.GetRequiredService<OverlayStore>(), sp.GetRequiredService<ElementStore>(),
             sp.GetRequiredService<Widgets.WidgetCodeStore>()));
         services.AddSingleton(sp => new OverlayFeed(sp.GetRequiredService<AppLog>()));
+        services.AddSingleton(sp => new OverlayAlertQueue(sp.GetRequiredService<OverlayFeed>()));
+        services.AddSingleton<ISubActionHandler, AlertQueueSubAction>();
+        services.AddSingleton<ISubActionHandler, ShowAlertSubAction>();
         services.AddSingleton(sp => new OverlayEventBridge(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(),
             sp.GetServices<IOverlayEventAdapter>(), sp.GetRequiredService<AppLog>(), sp.GetService<EmoteService>(),
             sp.GetService<Chat.Pronouns.PronounService>()));

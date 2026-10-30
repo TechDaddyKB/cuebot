@@ -132,7 +132,7 @@ page.
 | Route | |
 | --- | --- |
 | `GET /o/{id}?token=...` | The overlay page (transparent, the overlay's canvas size). A wrong or missing token answers 404, like an unknown id. |
-| `GET /o/{id}/ws?token=...` (WebSocket) | `{"type":"hello","overlay":{id,name,width,height},"session":{...},"recents":[...]}`, then every `OverlayFeed` message for that overlay: `{"type":"event","listener","event"}` (StreamElements-shaped), `{"type":"session","session"}`, `{"type":"command","command"}`. The page's own origin, loopback pages and `allowedOrigins` may connect. |
+| `GET /o/{id}/ws?token=...` (WebSocket) | `{"type":"hello","overlay":{id,name,width,height},"session":{...},"recents":[...],"alerts":{paused,muted}}`, then every `OverlayFeed` message for that overlay: `{"type":"event","listener","event"}` (StreamElements-shaped), `{"type":"session","session"}`, `{"type":"command","command"}`. The page's own origin, loopback pages and `allowedOrigins` may connect. |
 | `GET /o/{id}/l/{layerId}?token=...` | A layer's widget settings: `{src, fieldData, widgetDuration}`; `src` is the document's path on the widget port. |
 | `GET /runtime/overlay.js`, `/runtime/overlay.css` | The page runtime (`window.Cuebot`: `overlay`, `on(type, fn)`, `send(text)`; reconnects with backoff, `reload` command reloads; runs each layer's widget in a frame and relays messages). |
 | Widget port (default 7477) `GET /w/{id}/{layerId}?key=...` | The widget document: jQuery 3.7.1 (bundled, `/runtime/jquery-3.7.1.min.js`, as StreamElements preloads it), `/runtime/se-widget.js`, then the CSS pane, your CSS override, the HTML and JS panes, with `{field}` / `{{field}}` filled in. The key is HMAC-SHA256 of the layer id with the overlay token (it opens only that layer and changes with a new link). The widget port also serves `/runtime` and `/assets`, and nothing else. |
@@ -176,7 +176,7 @@ StreamElements widget API. Its element is marked `{"builtIn": "alertbox"}`, so i
 widget's DATA (the hidden `alerts` field holds the defaults): `{version, randomPick, types: {follower, subscriber, tip,
 cheer, raid, superchat, kicks, redemption, jewels, charityCampaignDonation, custom}}`, each type `{enabled, design,
 variations[]}`. A design is `{template, showMessage, duration, media, mediaVolume, sound, volume, layout, font, size,
-color, highlight, messageSize, enter, exit}`; templates use `{name}`, `{amount}`, `{formattedAmount}`, `{currency}`,
+color, highlight, messageSize, enter, exit, tts, ttsText, ttsAlias}`; templates use `{name}`, `{amount}`, `{formattedAmount}`, `{currency}`,
 `{message}`, `{tier}`, `{sender}`, `{platform}` and `{redemption}`, shown in the highlight colour. A variation is
 `{name, enabled, param, op, value, value2, chance, design}`: `param` is `amount`, `tier`, `platform` (the event's
 `service`), `name` (comma-separated list), `gifted`, `bulk`, `currency` or `message`; `op` is `atLeast`, `exact`,
@@ -187,6 +187,21 @@ color, highlight, messageSize, enter, exit}`; templates use `{name}`, `{amount}`
 alert and `alertService:toggleSound` mutes sound and video. `cuebot-alert` events show the `custom` design (or the
 type named by `alertType`). The designer previews unsaved designs with sample events (shaped to match the selected
 variation) and through Emulate, which goes through the queue like live alerts.
+
+With `tts` on, the alert box asks Cuebot's speech to read `ttsText` (same placeholders, default `{message}`) with the
+`ttsAlias` voice, through the widget request `cuebot_tts {text, alias}`. Only a layer whose element is Cuebot's alert
+box may make it (any other widget gets an error); the text is cut at 500 characters, speech's bad word, link and length
+filters apply, and it joins the speech queue, so Pause and Speak next work on it. Muted alerts do not speak. The
+designer's Test button speaks; its automatic preview does not.
+
+**Alert queue controls** (`OverlayAlertQueue`, not saved): pause (the alert playing finishes, new ones wait; the
+runtime's queue stops delivering), resume, skip (ends the alert playing; the runtime tells the widget before releasing
+the queue, so the next alert is not ended too) and mute (sound, video and alert TTS). Pages get the state in their
+hello and `pause` / `resume` / `skip` / `mute` / `unmute` commands when it changes; the overlay page passes pause on as
+`{type: "queue", paused}` and in `onWidgetLoad`'s `overlay.paused`. Controlled from the Overlays page (Pause alerts, Skip
+alert, Mute alerts), the "Alert queue" sub-action, `POST /api/v1/alerts/{command}` and the `control_alerts` MCP tool.
+The "Show alert" sub-action sends a `cuebot-alert` event (design, name, message, amount, currency, platform), which
+waits its turn in the queue like a real alert.
 
 ### Overlay designer (`/design/...`, `OverlayDesigner`)
 
@@ -466,6 +481,8 @@ JSON shapes are those of actions.json / commands.json (camelCase, enums as strin
 | `POST /timers/{id}/state` `{enabled, intervalSeconds}` | runtime override (like "Set timer state", not saved) |
 | `GET /globals?persisted=`, `GET` / `PUT` / `DELETE /globals/{name}` | PUT `{value, persisted (default true)}` |
 | `GET /history?limit=&action=&includeArgs=` | recent and pending runs, newest first |
+| `GET /speech`, `POST /speech/{next, pause, resume, skip}` | speech state `{enabled, paused, queueLength, current}`; `next` stops the text playing and, while paused, lets exactly one waiting text play (`stepped` says whether anything happened): pause, then call `next` to step through the queue one text at a time |
+| `GET /alerts`, `POST /alerts/{pause, resume, skip, mute, unmute}` | overlay alert queue `{paused, muted}` |
 | `GET /chat?limit=`, `POST /chat` `{message, platform (default All)}` | combined chat + activity feed / send (409 when nothing can send) |
 | `POST /import/preview` `{data}`, `POST /import/apply` `{data, mode, items}` | Cuebot bundles and Streamer.bot exports; `mode` overwrite / addAsNew / skip; `items: [{kind, name or sourceId, include, mode}]` |
 | `GET /export?actions=&commands=&timers=&globals=&includeDependencies=&name=` | `{data: "CUEBOT1:...", counts}` (comma separated ids or names) |
@@ -533,6 +550,7 @@ helps: `describe_*`, `create_action` with a recursive `$defs/subAction`):
 | list_timers, create_timer, update_timer, set_timer_state, delete_timer (destructive) | |
 | get_globals (all or one), set_global, delete_global (destructive) | |
 | get_status, get_history, get_recent_chat, send_chat_message (destructive) | |
+| control_speech (status, next, pause, resume, skip), control_alerts (status, pause, resume, skip, mute, unmute) | |
 | preview_import, apply_import (destructive), export_bundle | |
 
 Annotations: read-only tools `readOnlyHint: true`; destructive tools `destructiveHint: true`; everything else

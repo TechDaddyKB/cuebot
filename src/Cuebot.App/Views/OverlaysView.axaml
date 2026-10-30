@@ -26,6 +26,20 @@
       </Grid>
     </Border>
 
+    <!-- Alert queue on every overlay -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8" IsVisible="{Binding HasAlertQueue}">
+      <Grid ColumnDefinitions="Auto,12,*,Auto">
+        <TextBlock Text="Alerts" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
+                   Text="For every overlay: pause holds new alerts until resumed, skip ends the one playing, mute silences alert sound and alert TTS." />
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
+          <ToggleButton Content="Pause alerts" IsChecked="{Binding AlertsPaused}" ToolTip.Tip="The alert playing finishes; new ones wait" />
+          <Button Content="Skip alert" Command="{Binding SkipAlertCommand}" ToolTip.Tip="End the alert playing now" />
+          <ToggleButton Content="Mute alerts" IsChecked="{Binding AlertsMuted}" ToolTip.Tip="Silence alert sounds, videos and alert TTS" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
     <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,0,0,6" TextWrapping="Wrap"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 

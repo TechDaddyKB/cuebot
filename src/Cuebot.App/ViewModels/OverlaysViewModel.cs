@@ -104,6 +104,7 @@ public sealed partial class OverlaysViewModel : PageViewModel
     private readonly OverlayStore? _store;
     private readonly ServerManager? _servers;
     private readonly WidgetLibrary? _widgets;
+    private readonly OverlayAlertQueue? _alerts;
 
     /// <summary>Opens a link in the browser (tests replace it).</summary>
     public Action<string> OpenUrl { get; init; } = Cuebot.App.Shell.UrlLauncher.Open;
@@ -127,12 +128,16 @@ public sealed partial class OverlaysViewModel : PageViewModel
     /// <summary>Design-time and tests without services.</summary>
     public OverlaysViewModel() : base(PageTitle) => _newCanvas = Presets[0];
 
-    public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null) : base(PageTitle)
+    public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null, OverlayAlertQueue? alerts = null)
+        : base(PageTitle)
     {
         _store = store;
         _servers = servers;
         _widgets = widgets;
+        _alerts = alerts;
         _newCanvas = Presets[0];
+        if (alerts is not null)
+            alerts.Changed += () => OnUi(() => { OnPropertyChanged(nameof(AlertsPaused)); OnPropertyChanged(nameof(AlertsMuted)); });
         store.Changed += _ => OnUi(() => { if (!_editing) Refresh(); });
         servers.StatusChanged += () => OnUi(() => OnPropertyChanged(nameof(ServerHint)));
         Refresh();
@@ -148,6 +153,32 @@ public sealed partial class OverlaysViewModel : PageViewModel
     ];
 
     public ObservableCollection<OverlayRowViewModel> Overlays { get; } = [];
+
+    public bool HasAlertQueue => _alerts is not null;
+
+    /// <summary>Alerts on every overlay wait (the one playing finishes) until resumed.</summary>
+    public bool AlertsPaused
+    {
+        get => _alerts?.Paused ?? false;
+        set
+        {
+            if (_alerts is not null) _alerts.Paused = value;
+        }
+    }
+
+    /// <summary>Alert sounds, videos and alert TTS are silent on every overlay.</summary>
+    public bool AlertsMuted
+    {
+        get => _alerts?.Muted ?? false;
+        set
+        {
+            if (_alerts is not null) _alerts.Muted = value;
+        }
+    }
+
+    /// <summary>Ends the alert playing on every overlay.</summary>
+    [RelayCommand]
+    private void SkipAlert() => _alerts?.Skip();
 
     public bool IsCustomSize => NewCanvas.Width == 0;
     public bool HasOverlays => Overlays.Count > 0;

@@ -67,6 +67,29 @@ public sealed class OverlaysPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void Alert_queue_buttons_pause_skip_and_mute_every_overlay()
+    {
+        var queue = _services.GetRequiredService<OverlayAlertQueue>();
+        var commands = new List<string>();
+        using var feed = _services.GetRequiredService<OverlayFeed>().Subscribe(m => commands.Add(System.Text.Json.Nodes.JsonNode.Parse(m.Json)!["command"]!.GetValue<string>()));
+        var vm = new OverlaysViewModel(Store, Servers, alerts: queue);
+        var window = Open(new OverlaysView(), vm);
+        Assert.True(vm.HasAlertQueue);
+
+        vm.AlertsPaused = true;
+        vm.SkipAlertCommand.Execute(null);
+        vm.AlertsMuted = true;
+        Assert.Equal((true, true), (queue.Paused, queue.Muted));
+        queue.Paused = false;   // from an action or the API: the page follows
+        Pump();
+        Assert.False(vm.AlertsPaused);
+        Assert.Equal(["pause", "skip", "mute", "resume"], commands);
+        Assert.False(new OverlaysViewModel(Store, Servers).HasAlertQueue);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Overlays_are_created_renamed_relinked_and_deleted()
     {
         var vm = new OverlaysViewModel(Store, Servers);

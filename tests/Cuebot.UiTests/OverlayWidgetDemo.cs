@@ -12,7 +12,8 @@ namespace Cuebot.UiTests;
 
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
-/// in both layouts, or "alertbox" for Cuebot's alert box beside its chat box): the app's real services serve an
+/// in both layouts, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
+/// token in api-token.txt) and speech paused, so alert TTS and the queue controls can be tried): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
 /// send chat and alerts from Twitch, Kick, Rumble and YouTube for CUEBOT_DEMO_SECONDS (default 120), so the widget can be
@@ -41,6 +42,16 @@ public sealed class OverlayWidgetDemo
             var servers = host.Get<ServerManager>();
             servers.Settings.Overlays = new OverlayServerSettings { Enabled = true, Port = 7499 };
             await servers.RestartAsync(ServerKind.Overlays, TestContext.Current.CancellationToken);
+            if (alertBox)
+            {
+                var token = Cuebot.Server.Api.ApiToken.Generate();
+                servers.Settings.Api = new Cuebot.Server.Api.ApiServerSettings { Enabled = true, Port = 7498, Token = token };
+                await servers.RestartAsync(ServerKind.Api, TestContext.Current.CancellationToken);
+                await File.WriteAllTextAsync(Path.Combine(output, "api-token.txt"), token, TestContext.Current.CancellationToken);
+                var speech = host.Get<Cuebot.Speech.SpeechService>();
+                speech.Paused = true;
+                await speech.StartAsync(TestContext.Current.CancellationToken);
+            }
 
             var overlay = host.Get<OverlayStore>().Create("Widget demo", 1920, 1080);
             OverlayLayer layer;

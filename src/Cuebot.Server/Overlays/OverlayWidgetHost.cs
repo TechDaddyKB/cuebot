@@ -10,7 +10,8 @@ namespace Cuebot.Server.Overlays;
 /// <summary>
 /// The server side of StreamElements-compatible widgets: each layer's widget document (panes with field placeholders
 /// filled in, plus jQuery and Cuebot's <c>se-widget.js</c> shim) and the answers to the <c>SE_API</c> requests widgets make
-/// through their overlay page (<c>store_get</c>, <c>store_set</c>, <c>counter_get</c>, <c>sanitize</c>, <c>cheer_filter</c>).
+/// through their overlay page (<c>store_get</c>, <c>store_set</c>, <c>counter_get</c>, <c>sanitize</c>, <c>cheer_filter</c>,
+/// and Cuebot's own <c>cuebot_tts</c> for its alert box).
 /// </summary>
 internal static partial class OverlayWidgetHost
 {
@@ -86,11 +87,42 @@ internal static partial class OverlayWidgetHost
             """;
     }
 
+    /// <summary>The alert box asks Cuebot's speech to read an alert (<c>{text, alias}</c>).</summary>
+    public const string TtsRequest = "cuebot_tts";
+
+    /// <summary>Longest alert text spoken; the rest is cut.</summary>
+    public const int MaxTtsLength = 500;
+
     /// <summary>
-    /// Answers one widget request; returns the result, or throws <see cref="ArgumentException"/> for an unknown or
-    /// malformed request (the page passes the message back to the widget as a rejected promise).
+    /// Answers one widget request from <paramref name="layer"/>; returns the result, or throws
+    /// <see cref="ArgumentException"/> for an unknown or malformed request (the page passes the message back to the
+    /// widget as a rejected promise).
     /// </summary>
-    public static JsonNode? Answer(string request, JsonObject? data, ServerServices services)
+    public static async Task<JsonNode?> AnswerAsync(string request, JsonObject? data, OverlayLayer? layer, ServerServices services)
+    {
+        if (request == TtsRequest) return await SpeakAsync(data, layer, services).ConfigureAwait(false);
+        return Answer(request, data, services);
+    }
+
+    /// <summary>
+    /// Speaks an alert with Cuebot's speech (bad word, link and length filters on). Only Cuebot's alert box may: a
+    /// bought widget gets no voice through Cuebot. <c>{queued}</c> says whether speech took it (false when speech is
+    /// off or the text is empty).
+    /// </summary>
+    private static async Task<JsonNode?> SpeakAsync(JsonObject? data, OverlayLayer? layer, ServerServices services)
+    {
+        if (!BuiltInWidgets.IsAlertBox(layer?.ElementId is { } id ? services.Elements?.Get(id) : null))
+            throw new ArgumentException("Only Cuebot's alert box can use Cuebot's speech");
+        string Text(string key) => data?[key] is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>().Trim() : "";
+        var text = Text("text");
+        if (text.Length > MaxTtsLength) text = text[..MaxTtsLength];
+        if (text.Length == 0 || services.Speaker is not { } speaker) return new JsonObject { ["queued"] = false };
+        var result = await speaker.SpeakAsync(text, Text("alias"), badWordFilter: true, wait: false, silent: false, CancellationToken.None)
+            .ConfigureAwait(false);
+        return new JsonObject { ["queued"] = result.Success };
+    }
+
+    private static JsonNode? Answer(string request, JsonObject? data, ServerServices services)
     {
         switch (request)
         {

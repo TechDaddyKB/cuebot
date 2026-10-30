@@ -153,7 +153,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>()),
             new ScriptingViewModel(host.Get<PythonRuntime>(), host.Get<Cuebot.Core.Scripting.ScriptApi>()),
             new OverlaysViewModel(host.Get<Cuebot.Core.Overlays.OverlayStore>(), host.Get<Cuebot.Server.ServerManager>(),
-                host.Get<Cuebot.Core.Overlays.Widgets.WidgetLibrary>()),
+                host.Get<Cuebot.Core.Overlays.Widgets.WidgetLibrary>(), host.Get<Cuebot.Core.Overlays.OverlayAlertQueue>()),
             new Cuebot.App.ViewModels.Servers.ServersViewModel(host.Get<Cuebot.Server.ServerManager>(),
                 new Cuebot.App.ViewModels.Servers.RemoteInstancesViewModel(host.Get<Cuebot.Remote.RemoteHub>())),
             Support,

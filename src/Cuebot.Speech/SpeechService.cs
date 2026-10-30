@@ -47,6 +47,9 @@ public sealed class SpeechService : IAsyncDisposable
     private readonly LinkedList<SpeechHistoryEntry> _history = new();
     private SpeechRequest? _current;
     private CancellationTokenSource? _currentPlayback;
+    private bool _stepGranted;
+    private TaskCompletionSource _stepped = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private Task? _openWait;   // the queue worker's wait for pause and VoiceGate to open, kept across steps
     private Task? _worker;
     private IDisposable? _subscription;
 
@@ -115,7 +118,9 @@ public sealed class SpeechService : IAsyncDisposable
         get => _pause.IsPaused;
         set
         {
-            if (_pause.Set(value)) RaiseStateChanged(publish: true);
+            if (!_pause.Set(value)) return;
+            lock (_gate) _stepGranted = false;   // a step granted while running does not carry over into a pause
+            RaiseStateChanged(publish: true);
         }
     }
 
@@ -211,6 +216,27 @@ public sealed class SpeechService : IAsyncDisposable
     public void SkipCurrent()
     {
         lock (_gate) _currentPlayback?.Cancel();
+    }
+
+    /// <summary>
+    /// Steps forward one text: stops the one playing, and while the queue is held (paused, or held by VoiceGate) lets
+    /// exactly one waiting text start. Pausing the queue and calling this steps through it one text at a time. Returns
+    /// false when there was nothing to stop or start.
+    /// </summary>
+    public bool SpeakNext()
+    {
+        lock (_gate)
+        {
+            var playing = _currentPlayback is not null;
+            _currentPlayback?.Cancel();
+            var release = (_pause.IsPaused || _voiceGate.IsHolding) && _queue.Count > 0;
+            if (release)
+            {
+                _stepGranted = true;
+                _stepped.TrySetResult();
+            }
+            return playing || release;
+        }
     }
 
     /// <summary>Drops every waiting text (the one playing is not affected). Waiting callers see cancellation.</summary>
@@ -644,8 +670,20 @@ public sealed class SpeechService : IAsyncDisposable
                 await _queue.WaitAsync(shutdown).ConfigureAwait(false);
                 while (_pause.IsPaused || _voiceGate.IsHolding)
                 {
-                    await _pause.WaitAsync(shutdown).ConfigureAwait(false);
-                    await _voiceGate.WaitOpenAsync(shutdown).ConfigureAwait(false);
+                    Task stepped;
+                    lock (_gate)
+                    {
+                        if (_stepGranted)
+                        {
+                            _stepGranted = false;   // SpeakNext: this one text goes ahead while the queue stays held
+                            break;
+                        }
+                        if (_stepped.Task.IsCompleted) _stepped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                        stepped = _stepped.Task;
+                    }
+                    if (_openWait is null || _openWait.IsCompleted) _openWait = WaitOpenAsync(shutdown);
+                    await Task.WhenAny(_openWait, stepped).ConfigureAwait(false);
+                    shutdown.ThrowIfCancellationRequested();
                 }
                 shutdown.ThrowIfCancellationRequested();
                 if (_queue.TryTake() is { IsFinished: false } request) await PlayAsync(request, shutdown).ConfigureAwait(false);
@@ -655,6 +693,12 @@ public sealed class SpeechService : IAsyncDisposable
         {
             // Shutting down.
         }
+    }
+
+    private async Task WaitOpenAsync(CancellationToken ct)
+    {
+        await _pause.WaitAsync(ct).ConfigureAwait(false);
+        await _voiceGate.WaitOpenAsync(ct).ConfigureAwait(false);
     }
 
     private sealed record Rendered(SynthesizedAudio Audio, ResolvedVoice Voice, SpeechResult Result);

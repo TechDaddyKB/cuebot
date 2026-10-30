@@ -451,6 +451,38 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.Equal(404, (await _host.GetAsync("/api/v1/globals/score")).Status);
     }
 
+    // ---- speech and alert queues ----
+
+    [Fact]
+    public async Task Speech_and_alert_queues_are_controlled_over_the_api()
+    {
+        var (status, speech) = await _host.GetAsync("/api/v1/speech");
+        Assert.Equal(200, status);
+        Assert.False(speech!["paused"]!.GetValue<bool>());
+
+        var (_, paused) = await _host.PostAsync("/api/v1/speech/pause", new { });
+        Assert.True(paused!["paused"]!.GetValue<bool>());
+        var (_, stepped) = await _host.PostAsync("/api/v1/speech/next", new { });
+        Assert.True(stepped!["stepped"]!.GetValue<bool>());
+        await _host.PostAsync("/api/v1/speech/skip", new { });
+        var (_, resumed) = await _host.PostAsync("/api/v1/speech/resume", new { });
+        Assert.False(resumed!["paused"]!.GetValue<bool>());
+        Assert.Equal(["next", "stop"], Bot.Speaker.Log.Where(l => l is "next" or "stop"));
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/speech/explode", new { })).Status);
+        Assert.Equal(405, (await _host.GetAsync("/api/v1/speech/next")).Status);
+
+        var sent = new List<string>();
+        using var feed = Bot.OverlayFeed.Subscribe(m => sent.Add(m.Json));
+        var (_, alerts) = await _host.PostAsync("/api/v1/alerts/pause", new { });
+        Assert.Equal((true, false), (alerts!["paused"]!.GetValue<bool>(), alerts["muted"]!.GetValue<bool>()));
+        await _host.PostAsync("/api/v1/alerts/mute", new { });
+        await _host.PostAsync("/api/v1/alerts/skip", new { });
+        var (_, now) = await _host.GetAsync("/api/v1/alerts");
+        Assert.Equal((true, true), (now!["paused"]!.GetValue<bool>(), now["muted"]!.GetValue<bool>()));
+        Assert.Equal(["pause", "mute", "skip"], sent.Select(j => JsonNode.Parse(j)!["command"]!.GetValue<string>()));
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/alerts/toggle", new { })).Status);
+    }
+
     // ---- chat, import/export, events ----
 
     [Fact]

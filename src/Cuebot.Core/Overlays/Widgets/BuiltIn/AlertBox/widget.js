@@ -1,7 +1,8 @@
 // Cuebot alert box: one design per alert type, with variations picked by amount, tier, platform, name, gifts or
 // chance. Built on the StreamElements widget API: the runtime holds the alert queue (widgetDuration) and each alert
-// releases it with SE_API.resumeQueue() once its exit animation has played. Designs live in the hidden "alerts"
-// field and are edited in Cuebot's alert designer.
+// releases it with SE_API.resumeQueue() once its exit animation has played. A design can have the alert read out by
+// Cuebot's speech (it goes into Cuebot's speech queue). Designs live in the hidden "alerts" field and are edited in
+// Cuebot's alert designer.
 (function () {
   "use strict";
 
@@ -221,6 +222,18 @@
     if (started && started.catch) started.catch(function () { });
   }
 
+  /** The design's TTS text (its own template, "{message}" by default) as plain text, read by Cuebot's speech. */
+  function speak(design, event) {
+    if (!bool(design.tts) || muted || !window.SE_API) return;
+    var values = tokens(event);
+    var text = String(design.ttsText || "{message}").replace(/\{([a-zA-Z]+)\}/g, function (all, key) {
+      return Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : all;
+    }).trim();
+    if (!text) return;
+    var sent = SE_API.sendMessage("cuebot_tts", { text: text, alias: String(design.ttsAlias || "") });
+    if (sent && sent.catch) sent.catch(function () { });
+  }
+
   // ---- Showing an alert -------------------------------------------------------------------------------------------
 
   function animate(node, name, seconds) {
@@ -238,8 +251,11 @@
     if (alert.release && window.SE_API) SE_API.resumeQueue();
   }
 
-  /** Shows a design for an event; "release" says it came through the queue, which it releases when it is done. */
-  function show(design, event, release) {
+  /**
+   * Shows a design for an event; "release" says it came through the queue, which it releases when it is done, and
+   * "talk" lets the design's TTS speak (live alerts, and the designer's Test button).
+   */
+  function show(design, event, release, talk) {
     if (current) finish(current);
     var built = build(design, event);
     var alert = { node: built.node, timers: [], audio: [], release: release };
@@ -247,6 +263,7 @@
     root.appendChild(built.node);
     animate(built.node, design.enter || "fadeIn", ENTER_SECONDS);
     playSound(design, alert.audio);
+    if (talk) speak(design, event);
     if (built.video) {
       var started = built.video.play();
       if (started && started.catch) started.catch(function () { });
@@ -264,7 +281,7 @@
       if (window.SE_API) SE_API.resumeQueue();
       return;
     }
-    show(design, event, true);
+    show(design, event, true, true);
   }
 
   // ---- Previews (the alert designer and the editor's test buttons) ------------------------------------------------
@@ -308,7 +325,7 @@
     if (!config) return;
     var variation = (config.variations || [])[request.variation];
     var event = sampleFor(variation, merge(merge(SAMPLES[type] || SAMPLES.follower, { service: "twitch" }), request.event));
-    show(merge(config.design, variation ? variation.design : null), event, false);
+    show(merge(config.design, variation ? variation.design : null), event, false, !!request.speak);
   }
 
   // ---- Events -----------------------------------------------------------------------------------------------------

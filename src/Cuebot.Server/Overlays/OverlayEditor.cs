@@ -77,8 +77,8 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
             case ["edit", "api", var o, var l, "preview"] when isPost && Find(o, l) is (_, _):
                 await JsonAsync(context, Preview(ReadCode(await ReadJsonAsync(context).ConfigureAwait(false)))).ConfigureAwait(false);
                 return true;
-            case ["edit", "api", var o, var l, "request"] when isPost && Find(o, l) is (_, _):
-                await AnswerAsync(context).ConfigureAwait(false);
+            case ["edit", "api", var o, var l, "request"] when isPost && Find(o, l) is (_, var layer):
+                await AnswerAsync(context, layer).ConfigureAwait(false);
                 return true;
         }
         response.StatusCode = StatusCodes.Status404NotFound;
@@ -118,6 +118,7 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
             ["editor"] = settings().Overlays.EditorToken,
             ["widgetPort"] = WidgetPort(),
             ["emulate"] = JsonSerializer.SerializeToNode(OverlayEmulator.Kinds),
+            ["voices"] = new JsonArray([.. (services.Speaker?.Aliases ?? []).Select(a => (JsonNode)a)]),
         };
         var alertBox = BuiltInWidgets.IsAlertBox(layer.ElementId is { } id ? services.Elements?.Get(id) : null)
                        && context.Request.Query["code"] != "1";
@@ -202,12 +203,13 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         return new JsonObject { ["messages"] = messages };
     }
 
-    private async Task AnswerAsync(HttpContext context)
+    private async Task AnswerAsync(HttpContext context, OverlayLayer layer)
     {
         var json = await ReadJsonAsync(context).ConfigureAwait(false);
         try
         {
-            var result = OverlayWidgetHost.Answer(json?["request"]?.GetValue<string>() ?? "", json?["data"] as JsonObject, services);
+            var result = await OverlayWidgetHost.AnswerAsync(json?["request"]?.GetValue<string>() ?? "", json?["data"] as JsonObject, layer, services)
+                .ConfigureAwait(false);
             await JsonAsync(context, new JsonObject { ["result"] = result }).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or FormatException)

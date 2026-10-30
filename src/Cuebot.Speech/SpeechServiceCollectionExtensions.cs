@@ -42,6 +42,7 @@ public static class SpeechServiceCollectionExtensions
 
         services.AddSingleton<ISubActionHandler, SpeakSubAction>();
         services.AddSingleton<ISubActionHandler, SkipSpeechSubAction>();
+        services.AddSingleton<ISubActionHandler, SpeakNextSubAction>();
         services.AddSingleton<ISubActionHandler, ClearSpeechQueueSubAction>();
         services.AddSingleton<ISubActionHandler, PauseSpeechSubAction>();
         services.AddSingleton<ISubActionHandler, SetSpeechEnabledSubAction>();

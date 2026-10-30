@@ -169,6 +169,18 @@ public static class McpTools
                 Confirmation = a => $"Send \"{ReqStr(a, "message")}\" to {OptStr(a, "platform") ?? "every connected platform"}",
             },
 
+            // ---- speech and alert queues ----
+            new("control_speech", "Control speech",
+                "Cuebot's speech (TTS) queue: next stops the text playing and, while paused, lets exactly one waiting text play "
+                + "(pause, then next, steps through the queue one text at a time); pause, resume, skip; status only reads it.",
+                Schema(["command"], ("command", Enum("status", "next", "pause", "resume", "skip"))), write,
+                (a, _) => Done(ReqStr(a, "command") == "status" ? ops.Speech() : ops.SpeechControl(ReqStr(a, "command")))),
+            new("control_alerts", "Control overlay alerts",
+                "The alert queue on every overlay page: pause (the alert playing finishes, new ones wait), resume, skip the alert "
+                + "playing, mute or unmute alert sound; status only reads it.",
+                Schema(["command"], ("command", Enum("status", "pause", "resume", "skip", "mute", "unmute"))), write,
+                (a, _) => Done(ReqStr(a, "command") == "status" ? ops.Alerts() : ops.AlertControl(ReqStr(a, "command")))),
+
             // ---- import / export ----
             new("preview_import", "Preview import",
                 "Show what importing a Cuebot bundle (CUEBOT1:...) or a Streamer.bot export would add or overwrite. Changes nothing.",

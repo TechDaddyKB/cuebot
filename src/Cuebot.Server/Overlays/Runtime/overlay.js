@@ -14,6 +14,7 @@
   var layers = {};
   var hello = null;
   var muted = false;
+  var paused = false;   // the alert queue (Cuebot's Alert queue controls)
 
   var CURRENCY = { code: "USD", name: "U.S. Dollar", symbol: "$" };
 
@@ -58,7 +59,7 @@
       fieldData: entry.doc.fieldData || {},
       recents: (hello && hello.recents) || [],
       session: { data: (hello && hello.session) || {}, settings: { autoReset: true, calendar: true, resetOnStart: false } },
-      overlay: { isEditorMode: false, muted: muted },
+      overlay: { isEditorMode: false, muted: muted, paused: paused },
       emulated: false
     };
   }
@@ -220,6 +221,10 @@
     switch (message.type) {
       case "hello":
         hello = message;
+        if (message.alerts) {
+          setMuted(!!message.alerts.muted);
+          setPaused(!!message.alerts.paused);
+        }
         Object.keys(layers).forEach(function (id) { startLayer(layers[id]); });
         break;
       case "event":
@@ -237,14 +242,25 @@
           location.reload();
           return;
         }
-        if (message.command === "mute" || message.command === "unmute") {
-          muted = message.command === "mute";
-          broadcast({ type: "event", listener: "alertService:toggleSound", event: { muted: muted } });
-        }
+        if (message.command === "mute" || message.command === "unmute") setMuted(message.command === "mute");
+        if (message.command === "pause" || message.command === "resume") setPaused(message.command === "pause");
         if (message.command === "skip") broadcast({ type: "event", listener: "event:skip", event: {} });
         break;
     }
     emit(message.type, message);
+  }
+
+  function setMuted(value) {
+    if (value === muted) return;
+    muted = value;
+    broadcast({ type: "event", listener: "alertService:toggleSound", event: { muted: muted } });
+  }
+
+  /** Paused: widgets finish the alert playing and hold the rest of their queue. */
+  function setPaused(value) {
+    if (value === paused) return;
+    paused = value;
+    broadcast({ type: "queue", paused: paused });
   }
 
   function connect() {

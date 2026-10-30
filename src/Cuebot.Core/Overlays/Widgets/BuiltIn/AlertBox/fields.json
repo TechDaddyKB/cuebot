@@ -24,7 +24,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -46,7 +48,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": [
             {
@@ -72,7 +76,9 @@
                 "messageSize": 26,
                 "enter": "bounceIn",
                 "exit": "fadeOut",
-                "tts": false
+                "tts": false,
+                "ttsText": "{message}",
+                "ttsAlias": ""
               }
             },
             {
@@ -98,7 +104,9 @@
                 "messageSize": 26,
                 "enter": "bounceIn",
                 "exit": "fadeOut",
-                "tts": false
+                "tts": false,
+                "ttsText": "{message}",
+                "ttsAlias": ""
               }
             },
             {
@@ -124,7 +132,9 @@
                 "messageSize": 26,
                 "enter": "bounceIn",
                 "exit": "fadeOut",
-                "tts": false
+                "tts": false,
+                "ttsText": "{message}",
+                "ttsAlias": ""
               }
             }
           ]
@@ -147,7 +157,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -169,7 +181,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -191,7 +205,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -213,7 +229,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -235,7 +253,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -257,7 +277,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -279,7 +301,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -301,7 +325,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         },
@@ -323,7 +349,9 @@
             "messageSize": 26,
             "enter": "bounceIn",
             "exit": "fadeOut",
-            "tts": false
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
           },
           "variations": []
         }

@@ -549,6 +549,54 @@ public sealed class ApiOperations(ServerServices services, Func<IReadOnlyList<Se
         return json;
     }
 
+    /// <summary>Cuebot speech's state: <c>{enabled, paused, queueLength, current}</c>.</summary>
+    public JsonObject Speech()
+    {
+        var speech = services.Speaker ?? throw ApiException.Unavailable("Speech is not available");
+        return new JsonObject
+        {
+            ["enabled"] = speech.Enabled,
+            ["paused"] = speech.Paused,
+            ["queueLength"] = speech.QueueLength,
+            ["current"] = speech.CurrentText,
+        };
+    }
+
+    /// <summary>
+    /// A speech queue control: <c>next</c> (stop the text playing; while paused, let one waiting text play),
+    /// <c>pause</c>, <c>resume</c> or <c>skip</c> (stop the text playing). Returns the state, with <c>stepped</c> for next.
+    /// </summary>
+    public JsonObject SpeechControl(string command)
+    {
+        var speech = services.Speaker ?? throw ApiException.Unavailable("Speech is not available");
+        bool? stepped = null;
+        switch (command.ToLowerInvariant())
+        {
+            case "next": stepped = speech.SpeakNext(); break;
+            case "pause": speech.Paused = true; break;
+            case "resume": speech.Paused = false; break;
+            case "skip": speech.Stop(); break;
+            default: throw ApiException.NotFound($"Unknown speech command '{command}' (next, pause, resume or skip)");
+        }
+        var json = Speech();
+        if (stepped is { } s) json["stepped"] = s;
+        return json;
+    }
+
+    /// <summary>The overlay alert queue: <c>{paused, muted}</c>.</summary>
+    public JsonObject Alerts() =>
+        (services.AlertQueue ?? throw ApiException.Unavailable("Overlays are not available")).Snapshot();
+
+    /// <summary>An alert queue control: <c>pause</c>, <c>resume</c>, <c>skip</c>, <c>mute</c> or <c>unmute</c>; returns the state.</summary>
+    public JsonObject AlertControl(string command)
+    {
+        var queue = services.AlertQueue ?? throw ApiException.Unavailable("Overlays are not available");
+        if (command.ToLowerInvariant() is not ("pause" or "resume" or "skip" or "mute" or "unmute")
+            || !Cuebot.Core.Overlays.AlertQueueSubAction.Apply(queue, command))
+            throw ApiException.NotFound($"Unknown alert command '{command}' (pause, resume, skip, mute or unmute)");
+        return queue.Snapshot();
+    }
+
     public JsonObject Chat(int limit = 50)
     {
         var chat = services.Chat ?? throw ApiException.Unavailable("Chat is not available");

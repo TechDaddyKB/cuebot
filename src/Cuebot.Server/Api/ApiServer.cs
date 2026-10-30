@@ -259,6 +259,11 @@ public sealed class ApiServer : IAsyncDisposable
                 result = ops.History(QInt("limit", 50), Q("action"), QBool("includeArgs") ?? false);
                 break;
 
+            case "speech" when s.Length == 1 && method == "GET": result = ops.Speech(); break;
+            case "speech" when s.Length == 2 && method == "POST": result = ops.SpeechControl(s[1]); break;
+            case "alerts" when s.Length == 1 && method == "GET": result = ops.Alerts(); break;
+            case "alerts" when s.Length == 2 && method == "POST": result = ops.AlertControl(s[1]); break;
+
             case "chat" when s.Length == 1 && method == "GET": result = ops.Chat(QInt("limit", 50)); break;
             case "chat" when s.Length == 1 && method == "POST":
             {
@@ -299,7 +304,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "chat", "import", "export", "events"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "speech", "alerts", "chat", "import", "export", "events"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);

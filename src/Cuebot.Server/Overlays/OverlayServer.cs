@@ -315,7 +315,7 @@ public sealed class OverlayServer : IAsyncDisposable
         var connection = new WebSocketConnection(socket, $"{context.Connection.RemoteIpAddress}:{context.Connection.RemotePort}");
         using var client = new OverlayClient(overlay.Id, connection);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token, context.RequestAborted);
-        client.Outbox.Enqueue(Hello(overlay, _services.SessionData));
+        client.Outbox.Enqueue(Hello(overlay, _services.SessionData, _services.AlertQueue));
         _clients[connection.Id] = client;
         ClientsChanged?.Invoke();
         var sending = client.SendLoopAsync(linked.Token);
@@ -334,8 +334,12 @@ public sealed class OverlayServer : IAsyncDisposable
         }
     }
 
-    /// <summary>The overlay, plus the current stream totals and recent alerts (StreamElements' <c>session.data</c> and <c>recents</c>).</summary>
-    private static OverlayMessage Hello(Overlay overlay, Cuebot.Core.Overlays.Session.SessionDataStore? session) => new(new JsonObject
+    /// <summary>
+    /// The overlay, plus the current stream totals and recent alerts (StreamElements' <c>session.data</c> and
+    /// <c>recents</c>) and whether the alert queue is paused or muted (<c>alerts {paused, muted}</c>).
+    /// </summary>
+    private static OverlayMessage Hello(Overlay overlay, Cuebot.Core.Overlays.Session.SessionDataStore? session,
+        OverlayAlertQueue? alerts) => new(new JsonObject
     {
         ["type"] = "hello",
         ["overlay"] = new JsonObject
@@ -347,35 +351,38 @@ public sealed class OverlayServer : IAsyncDisposable
         },
         ["session"] = session?.Snapshot() ?? new JsonObject(),
         ["recents"] = session?.Recents() ?? new JsonArray(),
+        ["alerts"] = alerts?.Snapshot() ?? new JsonObject { ["paused"] = false, ["muted"] = false },
     }.ToJsonString(), overlay.Id);
 
     /// <summary>
     /// Pings get pongs; widget requests (<c>{"type":"request", id, layer, request, data}</c>) get
     /// <c>{"type":"response", id, layer, result}</c> or <c>{..., error}</c>, to that page only.
     /// </summary>
-    private Task OnMessageAsync(OverlayClient client, string message)
+    private async Task OnMessageAsync(OverlayClient client, string message)
     {
         if (message == "ping")
         {
             client.Outbox.Enqueue(new OverlayMessage("\"pong\"", client.OverlayId, Droppable: true));
-            return Task.CompletedTask;
+            return;
         }
         JsonObject? json;
         try { json = JsonNode.Parse(message) as JsonObject; }
-        catch (JsonException) { return Task.CompletedTask; }
-        if (json?["type"]?.GetValue<string>() != "request") return Task.CompletedTask;
+        catch (JsonException) { return; }
+        if (json?["type"]?.GetValue<string>() != "request") return;
 
         var reply = new JsonObject { ["type"] = "response", ["id"] = json["id"]?.DeepClone(), ["layer"] = json["layer"]?.DeepClone() };
         try
         {
-            reply["result"] = OverlayWidgetHost.Answer(json["request"]?.GetValue<string>() ?? "", json["data"] as JsonObject, _services);
+            var layerId = json["layer"] is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : "";
+            var layer = _services.Overlays?.Get(client.OverlayId)?.Layers.FirstOrDefault(l => l.Id.ToString("D") == layerId);
+            reply["result"] = await OverlayWidgetHost.AnswerAsync(json["request"]?.GetValue<string>() ?? "", json["data"] as JsonObject, layer, _services)
+                .ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or FormatException)
         {
             reply["error"] = ex.Message;
         }
         client.Outbox.Enqueue(new OverlayMessage(reply.ToJsonString(), client.OverlayId));
-        return Task.CompletedTask;
     }
 
     internal static string Resource(string name)

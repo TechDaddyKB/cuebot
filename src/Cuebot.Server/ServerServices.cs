@@ -153,6 +153,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
 
+    /// <summary>Pause, skip and mute for overlay alert queues (sent to pages when they connect).</summary>
+    public Cuebot.Core.Overlays.OverlayAlertQueue? AlertQueue
+    {
+        get => _alertQueue ??= _provider?.GetService<Cuebot.Core.Overlays.OverlayAlertQueue>();
+        init => _alertQueue = value;
+    }
+
+    private Cuebot.Core.Overlays.OverlayAlertQueue? _alertQueue;
+
     /// <summary>Stream totals sent to overlay pages when they connect.</summary>
     public Cuebot.Core.Overlays.Session.SessionDataStore? SessionData
     {

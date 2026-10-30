@@ -12,7 +12,7 @@ public sealed class McpTests : IAsyncLifetime
         "list_actions", "get_action", "create_action", "update_action", "delete_action", "run_action", "set_action_enabled",
         "list_trigger_types", "list_subaction_types", "describe_subaction_type", "list_commands", "create_command", "update_command",
         "list_timers", "create_timer", "get_globals", "set_global", "get_status", "get_recent_chat", "send_chat_message", "get_history",
-        "preview_import", "apply_import", "export_bundle",
+        "preview_import", "apply_import", "export_bundle", "control_speech", "control_alerts",
     ];
 
     private ApiHost _host = null!;
@@ -286,6 +286,22 @@ public sealed class McpTests : IAsyncLifetime
         Assert.Empty(Bot.Commands.All());
         Assert.Empty(Bot.Profile.Snapshot.Timers);
         Assert.False(Bot.Globals.Contains("secretish"));
+    }
+
+    [Fact]
+    public async Task Speech_and_alert_queue_tools()
+    {
+        var (_, paused) = await _host.CallAsync("control_speech", Args(("command", "pause")));
+        Assert.True(paused["paused"]!.GetValue<bool>());
+        var (_, stepped) = await _host.CallAsync("control_speech", Args(("command", "next")));
+        Assert.True(stepped["stepped"]!.GetValue<bool>());
+        var (_, status) = await _host.CallAsync("control_speech", Args(("command", "status")));
+        Assert.Null(status["stepped"]);
+
+        var (_, muted) = await _host.CallAsync("control_alerts", Args(("command", "mute")));
+        Assert.True(muted["muted"]!.GetValue<bool>());
+        var (_, alerts) = await _host.CallAsync("control_alerts", Args(("command", "status")));
+        Assert.Equal((false, true), (alerts["paused"]!.GetValue<bool>(), alerts["muted"]!.GetValue<bool>()));
     }
 
     [Fact]

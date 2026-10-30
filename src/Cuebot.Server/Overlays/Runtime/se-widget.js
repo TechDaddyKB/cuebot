@@ -19,6 +19,7 @@
   var holdTimer = null;
   var widgetDuration = 0;
   var muted = false;
+  var paused = false;   // Cuebot's alert queue pause: the alert playing finishes, the rest wait
   var editorMode = false;
 
   function request(name, data) {
@@ -44,7 +45,7 @@
   }
 
   function pump() {
-    while (loaded && !holding && queue.length > 0) {
+    while (loaded && !holding && !paused && queue.length > 0) {
       deliver(queue.shift());
       if (widgetDuration > 0) {
         holding = true;
@@ -83,6 +84,8 @@
       case "load":
         widgetDuration = Number(m.widgetDuration) || 0;
         editorMode = !!(m.detail && m.detail.overlay && m.detail.overlay.isEditorMode);
+        muted = !!(m.detail && m.detail.overlay && m.detail.overlay.muted);
+        paused = !!(m.detail && m.detail.overlay && m.detail.overlay.paused);
         whenLoaded(function () {
           dispatch("onWidgetLoad", m.detail);
           loaded = true;
@@ -91,13 +94,23 @@
         break;
       case "event":
         if (m.listener === "alertService:toggleSound" && m.event) muted = !!m.event.muted;
-        if (m.listener === "event:skip") release();
+        if (m.listener === "event:skip") {
+          // The widget ends the alert playing first; only then does the next one start (released the other way
+          // round, the widget's skip would end the new alert and leave the queue held).
+          if (loaded) deliver(m);
+          release();
+          break;
+        }
         if (NOT_QUEUED[m.listener]) {
           if (loaded) deliver(m);
         } else {
           queue.push(m);
           pump();
         }
+        break;
+      case "queue":
+        paused = !!m.paused;
+        pump();
         break;
       case "session":
         if (loaded) dispatch("onSessionUpdate", { session: m.session });

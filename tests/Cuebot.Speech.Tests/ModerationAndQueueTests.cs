@@ -35,6 +35,40 @@ public class ModerationTests
     }
 
     [Fact]
+    public async Task Speak_next_steps_through_a_paused_queue_one_text_at_a_time()
+    {
+        await using var h = await StartAsync();
+        Assert.False(h.Service.SpeakNext());   // nothing playing, nothing waiting
+        h.Service.Paused = true;
+        h.Player.Block = true;
+        foreach (var text in new[] { "one", "two", "three" }) await h.SayAsync(Message("Bob", text));
+        Assert.Equal(3, h.Service.QueueLength);
+
+        Assert.True(h.Service.SpeakNext());
+        var first = await h.Player.NextAsync();
+        Assert.Equal(["one"], h.Spoken);
+        await Task.Delay(100);
+        Assert.Equal(0, h.Player.Pending);      // still paused: only the one text went ahead
+        Assert.Equal(2, h.Service.QueueLength);
+
+        Assert.True(h.Service.SpeakNext());     // stops "one" and lets "two" start
+        await h.Player.NextAsync();
+        Assert.True(h.Service.History.Single(e => e.Text == "one").Skipped);
+        Assert.Equal(["one", "two"], h.Spoken);
+        Assert.Equal(1, h.Service.QueueLength);
+        first.Release();
+
+        // Not paused: Speak next stops the one playing and the queue carries on by itself.
+        h.Player.Block = false;
+        h.Service.Paused = false;
+        Assert.True(h.Service.SpeakNext());
+        await h.DrainAsync();
+        Assert.Equal(["one", "two", "three"], h.Spoken);
+        Assert.True(h.Service.History.Single(e => e.Text == "two").Skipped);
+        Assert.False(h.Service.SpeakNext());
+    }
+
+    [Fact]
     public async Task Deleting_the_playing_message_stops_it()
     {
         await using var h = await StartAsync();

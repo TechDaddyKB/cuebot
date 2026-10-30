@@ -126,6 +126,28 @@ public static class OpenApiDocument
                     [Query("limit", "Maximum runs (default 50)", Int()), Query("action", "Only this action (id or name)"), Query("includeArgs", "Include the arguments", Bool())],
                     responses: Ok(Obj(("runs", Arr(Ref("Run"))), ("count", Int())))),
             },
+            ["/speech"] = new JsonObject
+            {
+                ["get"] = Op("getSpeech", "Speech", "Cuebot speech's state", responses: Responses(("200", "OK", SpeechState()), Err("503", "Speech is not available"))),
+            },
+            ["/speech/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("command", "next, pause, resume or skip")),
+                ["post"] = Op("controlSpeech", "Speech",
+                    "Control the speech queue. next stops the text playing and, while the queue is paused, lets exactly one waiting text play: pause, then call next to step through the queue one text at a time",
+                    responses: Responses(("200", "OK", SpeechState()), NotFound(), Err("503", "Speech is not available"))),
+            },
+            ["/alerts"] = new JsonObject
+            {
+                ["get"] = Op("getAlerts", "Overlays", "Whether overlay alert queues are paused or muted",
+                    responses: Responses(("200", "OK", Obj(("paused", Bool()), ("muted", Bool()))), Err("503", "Overlays are not available"))),
+            },
+            ["/alerts/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("command", "pause, resume, skip, mute or unmute")),
+                ["post"] = Op("controlAlerts", "Overlays", "Pause, resume, skip or mute the alert queue on every overlay page",
+                    responses: Responses(("200", "OK", Obj(("paused", Bool()), ("muted", Bool()))), NotFound(), Err("503", "Overlays are not available"))),
+            },
             ["/chat"] = new JsonObject
             {
                 ["get"] = Op("getChat", "Chat", "Recent combined chat messages and activity feed", [Query("limit", "Maximum items (default 50)", Int())],
@@ -297,6 +319,9 @@ public static class OpenApiDocument
         ["description"] = description,
         ["content"] = new JsonObject { ["application/json"] = new JsonObject { ["schema"] = Ref("Error") } },
     };
+
+    private static JsonObject SpeechState() =>
+        Obj(("enabled", Bool()), ("paused", Bool()), ("queueLength", Int()), ("current", Str("The text playing, or null")), ("stepped", Bool()));
 
     private static JsonObject Saved(string key, string schema) => Obj((key, Ref(schema)), ("warnings", Arr(Ref("Problem"))));
 

@@ -175,6 +175,10 @@ public sealed partial class SpeechOverviewViewModel : ObservableObject
     [RelayCommand]
     private void Skip() => Speech.SkipCurrent();
 
+    /// <summary>Steps the queue forward one text (one waiting text plays even while paused).</summary>
+    [RelayCommand]
+    private void SpeakNext() => Speech.SpeakNext();
+
     [RelayCommand]
     private void ClearQueue() => Speech.ClearQueue();
 
