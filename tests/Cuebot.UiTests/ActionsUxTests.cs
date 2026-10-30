@@ -60,7 +60,7 @@ public sealed class ActionsUxTests : IAsyncDisposable
     private static void Save(Window window, string name)
     {
         Pump();
-        window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, name + ".png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+        TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, name + ".png"));
     }
 
     private static void AssertNoBindingErrors() =>

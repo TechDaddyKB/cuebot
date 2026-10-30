@@ -1,6 +1,8 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Logging;
+using Avalonia.Media.Imaging;
 using Cuebot.UiTests;
 
 [assembly: AvaloniaTestApplication(typeof(TestApp))]
@@ -19,6 +21,19 @@ public static class TestApp
             .UseHarfBuzz()
             .WithInterFont()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+    }
+
+    /// <summary>Saves the window's last rendered frame as a PNG (the screenshots the tests leave behind).</summary>
+    /// <remarks>
+    /// Always save through this. Avalonia's Skia bitmap encodes a view of its own pixels and nothing keeps the bitmap
+    /// alive meanwhile, so with <c>CaptureRenderedFrame()?.Save(...)</c> a GC can finalize it and free the pixels
+    /// mid-encode: a SIGSEGV that ends the test process, and the runner then reports the tests that ran as if they
+    /// were all of them. Holding the frame until the save returns (and disposing it) closes that window.
+    /// </remarks>
+    public static void SaveFrame(TopLevel window, string path)
+    {
+        using var frame = window.CaptureRenderedFrame();
+        frame?.Save(path, PngBitmapEncoderOptions.Default);
     }
 }
 

@@ -67,8 +67,7 @@ public sealed class ImportExportPageTests : IAsyncDisposable
             {
                 app.RequestedThemeVariant = theme;
                 Pump();
-                window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, $"transfer-{name}{suffix}.png"),
-                    Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+                TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, $"transfer-{name}{suffix}.png"));
             }
         }
         finally

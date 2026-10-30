@@ -74,8 +74,7 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
             {
                 app.RequestedThemeVariant = theme;
                 Pump();
-                window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, $"extras-{name}{suffix}.png"),
-                    Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+                TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, $"extras-{name}{suffix}.png"));
             }
         }
         finally

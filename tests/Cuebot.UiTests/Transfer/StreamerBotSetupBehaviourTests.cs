@@ -88,12 +88,17 @@ public sealed class StreamerBotSetupBehaviourTests
         Assert.All(toggles, t => Assert.Equal(bot.Obs.Scenes["Alerts"].Single(i => i.Source == "Follow Alert").Id, t.Data.GetProperty("sceneItemId").GetInt32()));
         Assert.True(toggles[0].Data.GetProperty("sceneItemEnabled").GetBoolean());
         Assert.False(toggles[1].Data.GetProperty("sceneItemEnabled").GetBoolean());
-        // The imported wait is exactly three seconds; the real-time gap only has to show it was honoured (at least that
-        // long) and not doubled. Busy CI runners add more than a second on top (4.6 s seen on windows-latest).
+        // The imported wait is exactly three seconds and runs once, for 3000 ms: that is what shows it is not doubled.
+        // Wall-clock time only proves it was honoured, as a lower bound; a loaded machine (the full solution in
+        // parallel) can stretch the gap by any amount, so an upper bound on real time is not checked.
         var delay = Assert.Single(bot.Action("E2E Follow alert").SubActions, s => s.Type == "core.delay");
         Assert.Equal("3000", delay.Parameters["milliseconds"]);
+        var run = Assert.Single(await bot.RunsOfAsync("E2E Follow alert", 1));
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(3000, Convert.ToInt32(run.Arguments!["delayMs"], CultureInfo.InvariantCulture));
+        Assert.Single(bot.Steps, s => s.Action == "E2E Follow alert" && s.Type == "core.delay");
         var shown = toggles[1].At - toggles[0].At;
-        Assert.InRange(shown.TotalMilliseconds, 2900, 5900);
+        Assert.True(shown.TotalMilliseconds >= 2900, $"The alert was shown for {shown.TotalMilliseconds:0} ms");
         Assert.False(bot.Obs.Scenes["Alerts"].Single(i => i.Source == "Follow Alert").Enabled);
     }
 
@@ -285,6 +290,7 @@ public sealed class StreamerBotSetupBehaviourTests
         public FakeStreamlabsServer Slobs { get; } = new();
         public ConcurrentQueue<(DateTime At, string Type, JsonElement Data)> ObsRequests { get; } = new();
         public ConcurrentQueue<ActionRunRecord> Runs { get; } = new();
+        public ConcurrentQueue<(string Action, string Type)> Steps { get; } = new();
         public ImportPlan Plan { get; private set; } = null!;
 
         public ProfileService Profile => _host.Get<ProfileService>();
@@ -343,6 +349,7 @@ public sealed class StreamerBotSetupBehaviourTests
             _host.Get<Cuebot.Core.Chat.ChatHub>();
             var engine = _host.Get<ActionEngine>();
             engine.RunCompleted += r => Runs.Enqueue(r);
+            engine.SubActionStarting += s => Steps.Enqueue((s.Action.Name, s.Step.Type));
             engine.Start();
 
             var twitch = _host.Get<TwitchService>();
@@ -425,9 +432,10 @@ public sealed class StreamerBotSetupBehaviourTests
             return Runs.Where(r => r.ActionName == actionName).ToArray();
         }
 
+        // Generous: it only bounds a failure, and the full solution in parallel can stall this process for many seconds.
         private static async Task Until(Func<bool> condition, string what)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(15);
+            var deadline = DateTime.UtcNow.AddSeconds(60);
             while (!condition())
             {
                 Assert.True(DateTime.UtcNow < deadline, $"Timed out: {what}");

@@ -45,7 +45,7 @@ public sealed class IconTests
         var window = new Window { Width = 820, Height = 520, Content = grid };
         window.Show();
 
-        var frame = window.CaptureRenderedFrame();
+        using var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
         Directory.CreateDirectory(ScreenshotDir);
         frame!.Save(Path.Combine(ScreenshotDir, "icons.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);

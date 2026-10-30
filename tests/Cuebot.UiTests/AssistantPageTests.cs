@@ -74,7 +74,7 @@ public sealed class AssistantPageTests : IAsyncDisposable
     {
         Pump();
         Directory.CreateDirectory(ScreenshotDir);
-        window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, name + ".png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+        TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, name + ".png"));
     }
 
     private static void PumpUntil(Func<bool> condition, [CallerArgumentExpression(nameof(condition))] string what = "")

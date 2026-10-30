@@ -49,7 +49,7 @@ public sealed class GoogleDrivePageTests : IAsyncDisposable
     private static void Save(Window window, string name)
     {
         Pump();
-        window.CaptureRenderedFrame()?.Save(Path.Combine(ScreenshotDir, name + ".png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+        TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, name + ".png"));
     }
 
     private static async Task Until(Func<bool> condition, string what)
