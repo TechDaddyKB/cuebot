@@ -56,6 +56,21 @@ public sealed class ShortcutsTests : IAsyncDisposable
         Pump();
         Assert.Equal(WindowState.Maximized, window.WindowState);
 
+        // In full screen, Esc first clears the jump box; the next Esc leaves full screen even with focus still in the box.
+        window.WindowState = WindowState.FullScreen;
+        var jump = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == "Jump");
+        jump.Focus();
+        jump.Text = "obs";
+        Pump();
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Pump();
+        Assert.Equal("", jump.Text);
+        Assert.Equal(WindowState.FullScreen, window.WindowState);
+        jump.Focus();
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Pump();
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+
         // Esc outside full screen changes nothing.
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
         Pump();
