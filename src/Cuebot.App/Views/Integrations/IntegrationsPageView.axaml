@@ -8,22 +8,25 @@
              xmlns:sdv="using:Cuebot.App.Views.StreamDeck"
              x:Class="Cuebot.App.Views.Integrations.IntegrationsPageView"
              x:DataType="vm:IntegrationsPageViewModel">
-  <!-- Each tab brings its own heading, scrolling and padding. -->
-  <TabControl Margin="12,8,12,0">
-    <TabItem Header="Apps &amp; services">
-      <intv:IntegrationsView DataContext="{Binding Integrations}" />
-    </TabItem>
-    <TabItem Header="Elgato lights &amp; webcams">
-      <elgv:ElgatoView DataContext="{Binding Elgato}" />
-    </TabItem>
-    <TabItem Header="Wave Link">
-      <wlv:WaveLinkView DataContext="{Binding WaveLink}" />
-    </TabItem>
-    <TabItem Header="GoXLR">
-      <gxv:GoXlrView DataContext="{Binding GoXlr}" />
-    </TabItem>
-    <TabItem Header="Stream Deck">
-      <sdv:StreamDeckView DataContext="{Binding StreamDeck}" />
-    </TabItem>
-  </TabControl>
+  <!-- One sub-page at a time, picked in the section list; each brings its own scrolling and padding. -->
+  <DockPanel>
+    <TextBlock x:Name="SubPageTitle" DockPanel.Dock="Top" Text="{Binding SubPageTitle}" FontSize="16" FontWeight="SemiBold" Margin="24,8,24,0" />
+    <TabControl x:Name="Tabs" Classes="subpages" SelectedIndex="{Binding SelectedTab}" Margin="12,0,12,0">
+      <TabItem Header="Apps &amp; services">
+        <intv:IntegrationsView DataContext="{Binding Integrations}" />
+      </TabItem>
+      <TabItem Header="Elgato lights &amp; webcams">
+        <elgv:ElgatoView DataContext="{Binding Elgato}" />
+      </TabItem>
+      <TabItem Header="Wave Link">
+        <wlv:WaveLinkView DataContext="{Binding WaveLink}" />
+      </TabItem>
+      <TabItem Header="GoXLR">
+        <gxv:GoXlrView DataContext="{Binding GoXlr}" />
+      </TabItem>
+      <TabItem Header="Stream Deck">
+        <sdv:StreamDeckView DataContext="{Binding StreamDeck}" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
 </UserControl>

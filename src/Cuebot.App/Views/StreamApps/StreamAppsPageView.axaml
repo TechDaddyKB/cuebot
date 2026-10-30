@@ -5,28 +5,31 @@
              xmlns:apps="using:Cuebot.App.Views.StreamApps"
              x:Class="Cuebot.App.Views.StreamApps.StreamAppsPageView"
              x:DataType="vm:StreamAppsPageViewModel">
-  <!-- Each tab brings its own heading, scrolling and padding. -->
-  <TabControl Margin="12,8,12,0">
-    <TabItem Header="OBS &amp; Streamlabs Desktop">
-      <views:ObsView DataContext="{Binding Obs}" />
-    </TabItem>
-    <TabItem Header="Meld &amp; PolyPop">
-      <apps:StreamAppsView DataContext="{Binding Apps}" />
-    </TabItem>
-    <TabItem Header="T.I.T.S." IsVisible="{Binding Tits, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <apps:TitsView DataContext="{Binding Tits}" />
-    </TabItem>
-    <TabItem Header="Lumia Stream" IsVisible="{Binding Lumia, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <apps:LumiaView DataContext="{Binding Lumia}" />
-    </TabItem>
-    <TabItem Header="OBSBOT" IsVisible="{Binding Obsbot, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <apps:ObsbotView DataContext="{Binding Obsbot}" />
-    </TabItem>
-    <TabItem Header="mtion" IsVisible="{Binding Mtion, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <apps:MtionView DataContext="{Binding Mtion}" />
-    </TabItem>
-    <TabItem Header="StreamFog">
-      <apps:StreamFogView />
-    </TabItem>
-  </TabControl>
+  <!-- One sub-page at a time, picked in the section list; each brings its own scrolling and padding. -->
+  <DockPanel>
+    <TextBlock x:Name="SubPageTitle" DockPanel.Dock="Top" Text="{Binding SubPageTitle}" FontSize="16" FontWeight="SemiBold" Margin="24,8,24,0" />
+    <TabControl x:Name="Tabs" Classes="subpages" SelectedIndex="{Binding SelectedTab}" Margin="12,0,12,0">
+      <TabItem Header="OBS &amp; Streamlabs Desktop">
+        <views:ObsView DataContext="{Binding Obs}" />
+      </TabItem>
+      <TabItem Header="Meld &amp; PolyPop">
+        <apps:StreamAppsView DataContext="{Binding Apps}" />
+      </TabItem>
+      <TabItem Header="T.I.T.S." IsVisible="{Binding Tits, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <apps:TitsView DataContext="{Binding Tits}" />
+      </TabItem>
+      <TabItem Header="Lumia Stream" IsVisible="{Binding Lumia, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <apps:LumiaView DataContext="{Binding Lumia}" />
+      </TabItem>
+      <TabItem Header="OBSBOT" IsVisible="{Binding Obsbot, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <apps:ObsbotView DataContext="{Binding Obsbot}" />
+      </TabItem>
+      <TabItem Header="mtion" IsVisible="{Binding Mtion, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <apps:MtionView DataContext="{Binding Mtion}" />
+      </TabItem>
+      <TabItem Header="StreamFog">
+        <apps:StreamFogView />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
 </UserControl>

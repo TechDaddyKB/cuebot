@@ -419,6 +419,11 @@
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
+  <!-- Pages with sub-pages: the section list picks the tab, so the tab strip stays hidden. -->
+  <Style Selector="TabControl.subpages /template/ ItemsPresenter#PART_ItemsPresenter">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
   <!-- Shell section list -->
   <Style Selector="ListBox.sections, ListBox.subnav">
     <Setter Property="Background" Value="Transparent" />

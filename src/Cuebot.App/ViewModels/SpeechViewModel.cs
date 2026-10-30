@@ -55,8 +55,6 @@ public sealed partial class SpeechViewModel : PageViewModel
         }
     }
 
-    public string SubPageTitle => SubPages[Math.Clamp(SelectedTab, 0, SubPages.Count - 1)];
-
     partial void OnSelectedTabChanged(int value)
     {
         OnPropertyChanged(nameof(SubPageIndex));

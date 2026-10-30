@@ -29,7 +29,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new("Decks & Input", "Input", "layout-grid", ["Decks", "Input"]),
         new("Platforms", "Platforms", "radio", ["Twitch", "YouTube", "Kick", "Rumble"]),
         new("Overlays & Widgets", "Overlays", "layers", [OverlaysViewModel.PageTitle]),
-        new("Integrations", "Apps", "plug", ["OBS", "Integrations", "Donations", "Webhooks", "Servers"]),
+        new("Integrations", "Apps", "plug", ["Stream apps", "Apps & devices", "Donations", "Webhooks", "Servers"]),
         new("Settings", "Settings", "settings", ["Settings", "Import / Export", "Support"], Bottom: true),
     ];
 
@@ -63,8 +63,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ["Kick"] = "Your Kick account, channel and settings.",
         ["Rumble"] = "Your Rumble channel and chat.",
         [OverlaysViewModel.PageTitle] = "Overlays, widgets and alerts for OBS (coming soon).",
-        ["OBS"] = "OBS Studio and other streaming apps.",
-        ["Integrations"] = "Lights, mixers, Stream Deck and other apps.",
+        ["Stream apps"] = "OBS Studio, Streamlabs Desktop and other streaming apps.",
+        ["Apps & devices"] = "VTube Studio, lights, mixers, Stream Deck and other apps.",
         ["Donations"] = "Tips and charity services.",
         ["Webhooks"] = "Events from web services, through your relay.",
         ["Servers"] = "Local servers for decks, docks, other apps and AI tools.",

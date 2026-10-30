@@ -6,10 +6,6 @@
              x:DataType="vm:SpeechViewModel">
   <!-- Styles shared by every Speech tab (they cascade into the tab views). -->
   <UserControl.Styles>
-    <!-- The section list picks the sub-page (Speech › Engines…); the tab strip itself stays hidden. -->
-    <Style Selector="TabControl#Tabs /template/ ItemsPresenter#PART_ItemsPresenter">
-      <Setter Property="IsVisible" Value="False" />
-    </Style>
     <Style Selector="TextBlock.label">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -58,7 +54,7 @@
         <TextBlock x:Name="Status" Text="{Binding StatusText}" FontSize="12" />
       </Border>
     </StackPanel>
-    <TabControl x:Name="Tabs" SelectedIndex="{Binding SelectedTab}">
+    <TabControl x:Name="Tabs" Classes="subpages" SelectedIndex="{Binding SelectedTab}">
       <TabItem Header="Overview">
         <sv:SpeechOverviewView DataContext="{Binding Overview}" />
       </TabItem>

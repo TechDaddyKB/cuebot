@@ -99,6 +99,7 @@
     </Style>
   </UserControl.Styles>
 
+  <!-- Bindings through SelectedAction use ?. : the editor stays bound (hidden) while no action is selected. -->
   <UserControl.Resources>
     <ControlTheme x:Key="ActionRowContainer" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
       <Setter Property="Padding" Value="0,1" />
@@ -137,12 +138,12 @@
           </Button>
           <TextBlock VerticalAlignment="Center">
             <Run Text="Triggers" FontWeight="SemiBold" FontSize="15" />
-            <Run Text="  " /><Run Text="{Binding SelectedAction.Triggers.Count}" Foreground="{DynamicResource CuebotMuted}" />
+            <Run Text="  " /><Run Text="{Binding SelectedAction?.Triggers.Count}" Foreground="{DynamicResource CuebotMuted}" />
           </TextBlock>
         </DockPanel>
         <Panel Grid.Row="1">
           <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding SelectedAction.Triggers}">
+            <ItemsControl ItemsSource="{Binding SelectedAction?.Triggers}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="vm:TriggerItemViewModel">
                   <Button Classes="row" Classes.selected="{Binding IsSelected}" Click="OnItemClick">
@@ -162,14 +163,14 @@
             </ItemsControl>
           </ScrollViewer>
           <TextBlock Classes="muted" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="12"
-                     IsVisible="{Binding !SelectedAction.Triggers.Count}"
+                     IsVisible="{Binding !SelectedAction?.Triggers.Count}"
                      Text="No triggers yet: the action runs only when started by hand, a command or another action." />
         </Panel>
         <Border Grid.Row="2" Height="1" Background="{DynamicResource CuebotLine}" Margin="0,8"
-                IsVisible="{Binding SelectedAction.SelectedTrigger, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                IsVisible="{Binding SelectedAction?.SelectedTrigger, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <ScrollViewer Grid.Row="3" MaxHeight="420"
-                      IsVisible="{Binding SelectedAction.SelectedTrigger, Converter={x:Static ObjectConverters.IsNotNull}}">
-          <ContentControl Content="{Binding SelectedAction.SelectedTrigger}">
+                      IsVisible="{Binding SelectedAction?.SelectedTrigger, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <ContentControl Content="{Binding SelectedAction?.SelectedTrigger}">
             <ContentControl.DataTemplates>
                 <DataTemplate DataType="vm:TriggerItemViewModel">
                   <StackPanel Spacing="12">
@@ -264,9 +265,9 @@
           <Border DockPanel.Dock="Top" Padding="16,12,16,8" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="0,0,0,1">
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,8,180,Auto">
-                <TextBox Text="{Binding SelectedAction.Name}" FontSize="16" FontWeight="SemiBold" PlaceholderText="Action name" />
-                <TextBox Grid.Column="2" Text="{Binding SelectedAction.Group}" PlaceholderText="Group" />
-                <ToggleSwitch Grid.Column="3" IsChecked="{Binding SelectedAction.Enabled}" OnContent="On" OffContent="Off"
+                <TextBox Text="{Binding SelectedAction?.Name}" FontSize="16" FontWeight="SemiBold" PlaceholderText="Action name" />
+                <TextBox Grid.Column="2" Text="{Binding SelectedAction?.Group}" PlaceholderText="Group" />
+                <ToggleSwitch Grid.Column="3" IsChecked="{Binding SelectedAction?.Enabled}" OnContent="On" OffContent="Off"
                               Margin="12,0,0,0" VerticalAlignment="Center" ToolTip.Tip="The action is on (Ctrl+O in the list)" />
               </Grid>
               <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
@@ -294,21 +295,21 @@
                         <Border Height="1" Background="{DynamicResource CuebotLine}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
                           <TextBlock Text="Queue" VerticalAlignment="Center" />
-                          <ComboBox x:Name="QueuePicker" ItemsSource="{Binding SelectedAction.QueueOptions}"
-                                    SelectedItem="{Binding SelectedAction.Queue}" MinWidth="160"
+                          <ComboBox x:Name="QueuePicker" ItemsSource="{Binding SelectedAction?.QueueOptions}"
+                                    SelectedItem="{Binding SelectedAction?.Queue}" MinWidth="160"
                                     ToolTip.Tip="Runs wait in this queue. Pause, resume and blocking are set on the Queues page." />
                         </StackPanel>
-                        <CheckBox Content="Allow concurrent runs (Default queue only)" IsChecked="{Binding SelectedAction.Concurrent}"
-                                  IsEnabled="{Binding !SelectedAction.HasQueue}"
+                        <CheckBox Content="Allow concurrent runs (Default queue only)" IsChecked="{Binding SelectedAction?.Concurrent}"
+                                  IsEnabled="{Binding !SelectedAction?.HasQueue}"
                                   ToolTip.Tip="Only for actions in the Default queue. Off: runs of this action wait for each other. Actions in a named queue follow that queue's Blocking setting instead." />
-                        <CheckBox Content="Random action" IsChecked="{Binding SelectedAction.RandomAction}"
+                        <CheckBox Content="Random action" IsChecked="{Binding SelectedAction?.RandomAction}"
                                   ToolTip.Tip="Run only ONE enabled top-level sub-action, picked by weight" />
-                        <CheckBox Content="Concurrent sub-actions" IsChecked="{Binding SelectedAction.ConcurrentSubActions}"
-                                  IsEnabled="{Binding !SelectedAction.RandomAction}"
+                        <CheckBox Content="Concurrent sub-actions" IsChecked="{Binding SelectedAction?.ConcurrentSubActions}"
+                                  IsEnabled="{Binding !SelectedAction?.RandomAction}"
                                   ToolTip.Tip="Run all top-level sub-actions at the same time (ignored with Random action)" />
-                        <CheckBox Content="Always run" IsChecked="{Binding SelectedAction.AlwaysRun}"
+                        <CheckBox Content="Always run" IsChecked="{Binding SelectedAction?.AlwaysRun}"
                                   ToolTip.Tip="Start even while the action's queue is paused" />
-                        <CheckBox Content="Exclude from history" IsChecked="{Binding SelectedAction.ExcludeFromHistory}"
+                        <CheckBox Content="Exclude from history" IsChecked="{Binding SelectedAction?.ExcludeFromHistory}"
                                   ToolTip.Tip="Keep runs out of the Pending and History lists" />
                       </StackPanel>
                     </Flyout>
@@ -341,7 +342,7 @@
                     </Button>
                   </StackPanel>
                   <TextBlock Classes="muted" VerticalAlignment="Center" FontSize="12">
-                    <Run Text="{Binding SelectedAction.Steps.Items.Count}" /><Run Text=" top-level" />
+                    <Run Text="{Binding SelectedAction?.Steps.Items.Count}" /><Run Text=" top-level" />
                   </TextBlock>
                 </DockPanel>
                 <ScrollViewer Grid.Row="1" x:Name="ListEditor" Padding="0,0,8,8" Background="Transparent">
@@ -357,13 +358,13 @@
                       <MenuItem Header="Redo" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}" />
                     </ContextMenu>
                   </ScrollViewer.ContextMenu>
-                  <ItemsControl ItemsSource="{Binding SelectedAction.Steps.Items}" />
+                  <ItemsControl ItemsSource="{Binding SelectedAction?.Steps.Items}" />
                 </ScrollViewer>
                 <Border Grid.Row="2" Height="1" Background="{DynamicResource CuebotLine}" Margin="0,4,0,8"
-                        IsVisible="{Binding SelectedAction.SelectedStep, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        IsVisible="{Binding SelectedAction?.SelectedStep, Converter={x:Static ObjectConverters.IsNotNull}}" />
                 <ScrollViewer Grid.Row="3" MaxHeight="320" Padding="4,0,8,12"
-                              IsVisible="{Binding SelectedAction.SelectedStep, Converter={x:Static ObjectConverters.IsNotNull}}">
-                  <ContentControl x:Name="StepDetails" Content="{Binding SelectedAction.SelectedStep}">
+                              IsVisible="{Binding SelectedAction?.SelectedStep, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <ContentControl x:Name="StepDetails" Content="{Binding SelectedAction?.SelectedStep}">
                     <ContentControl.DataTemplates>
                       <DataTemplate DataType="vm:SubActionItemViewModel">
                         <StackPanel Spacing="12">

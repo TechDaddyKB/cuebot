@@ -62,7 +62,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         {
             Assert.Equal(
                 ["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant", "Queues", "Timers", "Users & Groups", "Variables", "Watchers",
-                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Input", "Integrations", "Webhooks", "Quotes", "Credits", "Points", "Decks", "Hotkeys", "OBS", "Speech", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
+                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Input", "Apps & devices", "Webhooks", "Quotes", "Credits", "Points", "Decks", "Hotkeys", "Stream apps", "Speech", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
                 vm.Pages.Select(p => p.Title));
             foreach (var (theme, suffix) in new[] { (Cuebot.App.Shell.AppTheme.Dark, ""), (Cuebot.App.Shell.AppTheme.Light, "-light") })
             {
@@ -159,6 +159,34 @@ public sealed class MainWindowTests : IAsyncDisposable
         speech.SelectedTab = 0;
         Pump();
         Assert.Equal(0, visible.SelectedIndex);
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Stream_apps_and_apps_devices_show_their_tabs_as_sub_pages()
+    {
+        TestApp.BindingErrors.Clear();
+        var (window, vm) = Open();
+        var apps = vm.Pages.OfType<Cuebot.App.ViewModels.StreamApps.StreamAppsPageViewModel>().Single();
+        Assert.Equal("OBS & Streamlabs Desktop", apps.SubPages[0]);
+        Assert.Equal("StreamFog", apps.SubPages[^1]);
+        apps.SubPageIndex = apps.SubPages.Count - 1;
+        Assert.Equal(6, apps.SelectedTab);             // the last tab, whatever optional apps this host shows
+        Assert.Equal("StreamFog", apps.SubPageTitle);
+
+        var devices = vm.Pages.OfType<Cuebot.App.ViewModels.Integrations.IntegrationsPageViewModel>().Single();
+        Assert.Equal(["Apps & services", "Lights & cameras", "Wave Link", "GoXLR", "Stream Deck"], devices.SubPages);
+        vm.SelectedPage = devices;
+        devices.SubPageIndex = 2;
+        Pump();
+        var tabs = window.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "Tabs");
+        Assert.Equal(2, tabs.SelectedIndex);
+        Assert.Equal("Wave Link", devices.SubPageTitle);
+        Save(window, "apps-devices-wave-link");
+        vm.SelectedPage = apps;
+        Pump();
+        Save(window, "stream-apps-streamfog");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();
     }
