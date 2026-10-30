@@ -231,11 +231,25 @@
             </Button>
             <TextBlock Text="{Binding CurrentGroup.Name}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
           </DockPanel>
-          <ListBox x:Name="SectionPages" Classes="nav" ItemsSource="{Binding CurrentGroup.Pages}" SelectedItem="{Binding CurrentGroup.Selected}"
-                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox x:Name="SectionPages" Classes="sections plain" ItemsSource="{Binding CurrentGroup.Pages}" SelectedItem="{Binding CurrentGroup.Selected}"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemContainerTheme="{StaticResource NavPageItem}">
             <ListBox.ItemTemplate>
               <DataTemplate DataType="vm:PageViewModel">
-                <TextBlock Text="{Binding Title}" FontSize="13" />
+                <StackPanel>
+                  <Border Classes="navRow" Classes.selected="{Binding $parent[ListBoxItem].IsSelected}">
+                    <TextBlock Text="{Binding Title}" FontSize="13" />
+                  </Border>
+                  <!-- Sub-pages of the open page (e.g. Speech › Engines). -->
+                  <ListBox x:Name="SubPages" Classes="subnav plain" ItemsSource="{Binding SubPages}" SelectedIndex="{Binding SubPageIndex}"
+                           ItemContainerTheme="{StaticResource NavSubItem}">
+                    <ListBox.IsVisible>
+                      <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="HasSubPages" />
+                        <Binding Path="$parent[ListBoxItem].IsSelected" />
+                      </MultiBinding>
+                    </ListBox.IsVisible>
+                  </ListBox>
+                </StackPanel>
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>

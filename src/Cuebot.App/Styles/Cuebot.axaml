@@ -122,10 +122,106 @@
         <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
           <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
         </Style>
-        <Style Selector="^:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter, ^:selected:focus /template/ ContentPresenter#PART_ContentPresenter, ^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ^:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Style Selector="^:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
           <Setter Property="Background" Value="{DynamicResource CuebotAccentFill}" />
           <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccentFill}" />
           <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="^:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="^:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccentFill}" />
+          <Setter Property="Foreground" Value="White" />
+        </Style>
+      </ControlTheme>
+
+      <!-- Shell section list: the page row (Border.navRow) draws hover and selection, so its sub-pages sit outside it. -->
+      <ControlTheme x:Key="NavPageItem" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="6,1" />
+        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="^:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+        </Style>
+      </ControlTheme>
+      <ControlTheme x:Key="NavSubItem" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Padding" Value="12,5" />
+        <Setter Property="Margin" Value="14,0,0,0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+          <Setter Property="BorderThickness" Value="2,0,0,0" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+          <Setter Property="CornerRadius" Value="0" />
+        </Style>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+          <Setter Property="BorderThickness" Value="2,0,0,0" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+          <Setter Property="CornerRadius" Value="0" />
+        </Style>
+        <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+          <Setter Property="BorderThickness" Value="2,0,0,0" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+          <Setter Property="CornerRadius" Value="0" />
+        </Style>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Foreground" Value="{DynamicResource CuebotText}" />
+        </Style>
+        <Style Selector="^:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="^:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="^:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
+          <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
       </ControlTheme>
     </ResourceDictionary>
@@ -321,6 +417,23 @@
   <Style Selector="ListBox.nav ListBoxItem:selected">
     <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
     <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- Shell section list -->
+  <Style Selector="ListBox.sections, ListBox.subnav">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Border.navRow">
+    <Setter Property="Padding" Value="14,9" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Border.navRow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+  </Style>
+  <Style Selector="Border.navRow.selected">
+    <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
+    <Setter Property="TextElement.FontWeight" Value="SemiBold" />
   </Style>
 
   <!-- ===== Expanders, tooltips, menus ===== -->

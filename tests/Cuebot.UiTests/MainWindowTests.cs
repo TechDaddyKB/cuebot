@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Cuebot.App;
 using Cuebot.App.ViewModels;
 using Cuebot.App.ViewModels.Actions;
@@ -129,6 +130,35 @@ public sealed class MainWindowTests : IAsyncDisposable
         window.Width = 960;
         window.Height = 600;
         Save(window, "dashboard-960");
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Speech_sub_pages_sit_under_it_in_the_section_list()
+    {
+        TestApp.BindingErrors.Clear();
+        var (window, vm) = Open();
+        var speech = vm.Pages.OfType<SpeechViewModel>().Single();
+        Assert.True(speech.HasSubPages);
+        Assert.False(vm.Dashboard.HasSubPages);
+        vm.SelectedPage = speech;
+        Pump();
+
+        var subLists = window.GetVisualDescendants().OfType<ListBox>().Where(l => l.Name == "SubPages").ToList();
+        var visible = Assert.Single(subLists, l => l.IsEffectivelyVisible);
+        Assert.Equal(speech.SubPages, visible.ItemsSource);
+        visible.SelectedIndex = 1;
+        Pump();
+        Assert.Equal(1, speech.SelectedTab);
+        Assert.Equal("Engines", speech.SubPageTitle);
+        var tabs = window.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "Tabs");
+        Assert.Equal(1, tabs.SelectedIndex);
+        Save(window, "speech-sub-pages");
+
+        speech.SelectedTab = 0;
+        Pump();
+        Assert.Equal(0, visible.SelectedIndex);
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();
     }

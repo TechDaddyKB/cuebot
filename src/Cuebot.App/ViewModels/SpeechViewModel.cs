@@ -5,7 +5,7 @@ using Cuebot.Speech;
 namespace Cuebot.App.ViewModels;
 
 /// <summary>
-/// Text-to-speech page (Speaker.bot parity): one tab per area. Every edit writes straight into the live
+/// Text-to-speech page (Speaker.bot parity): one sub-page per area (listed under Speech in the section list). Every edit writes straight into the live
 /// <see cref="SpeechSettings"/> and schedules a save; service events are marshaled to the UI thread.
 /// </summary>
 public sealed partial class SpeechViewModel : PageViewModel
@@ -43,8 +43,24 @@ public sealed partial class SpeechViewModel : PageViewModel
 
     public string StatusText => Overview.StatusText;
 
+    public override IReadOnlyList<string> SubPages { get; } =
+        ["Overview", "Engines", "Voice aliases", "Users", "Chat & commands", "Filters", "Events", "VoiceGate & queue"];
+
+    public override int SubPageIndex
+    {
+        get => SelectedTab;
+        set
+        {
+            if (value >= 0) SelectedTab = value;
+        }
+    }
+
+    public string SubPageTitle => SubPages[Math.Clamp(SelectedTab, 0, SubPages.Count - 1)];
+
     partial void OnSelectedTabChanged(int value)
     {
+        OnPropertyChanged(nameof(SubPageIndex));
+        OnPropertyChanged(nameof(SubPageTitle));
         if (value == UsersTab) Users.Refresh(); // the directory changes as chatters speak
         if (value == EnginesTab) Engines.RefreshStatus();
     }
