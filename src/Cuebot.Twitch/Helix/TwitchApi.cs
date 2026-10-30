@@ -1027,6 +1027,9 @@ public sealed partial class TwitchApi
 
     private static bool HasScope(TwitchTokenManager tokens, string scope) => tokens.Scopes.Contains(scope, StringComparer.Ordinal);
 
+    /// <summary>True when the broadcaster token carries <paramref name="scope"/> (what the chat's moderation offers).</summary>
+    public bool HasBroadcasterScope(string scope) => HasScope(_tokens, scope);
+
     internal static TwitchApiException MissingScope(string scope, string account) =>
         new($"Cuebot is not authorized for this: {account} did not grant the Twitch scope '{scope}'. "
             + "Enable it on the Twitch page (Settings tab) and sign in again.", 403);

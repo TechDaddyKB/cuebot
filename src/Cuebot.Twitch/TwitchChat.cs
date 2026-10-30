@@ -151,3 +151,34 @@ internal sealed class TwitchChannelRoles(Func<TwitchApi> api, Cuebot.Core.Loggin
         return result;
     }
 }
+
+/// <summary>
+/// Delete, timeout and ban for the combined chat, as the broadcaster (Helix moderation). Offered while connected and
+/// only for the scopes the broadcaster granted.
+/// </summary>
+internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connected) : Cuebot.Core.Chat.Moderation.IChatModerator
+{
+    public string Platform => TwitchChatAdapter.PlatformName;
+
+    public Cuebot.Core.Chat.Moderation.ChatModerationActions Available
+    {
+        get
+        {
+            var actions = Cuebot.Core.Chat.Moderation.ChatModerationActions.None;
+            if (!connected()) return actions;
+            if (api().HasBroadcasterScope(TwitchScopes.ManageChatMessages))
+                actions |= Cuebot.Core.Chat.Moderation.ChatModerationActions.DeleteMessage;
+            if (api().HasBroadcasterScope(TwitchScopes.ManageBannedUsers))
+                actions |= Cuebot.Core.Chat.Moderation.ChatModerationActions.Timeout | Cuebot.Core.Chat.Moderation.ChatModerationActions.Ban;
+            return actions;
+        }
+    }
+
+    public Task DeleteMessageAsync(string messageId, CancellationToken ct = default) => api().DeleteMessageAsync(messageId, ct);
+
+    public Task TimeoutAsync(string userId, string userName, TimeSpan duration, string? reason, CancellationToken ct = default) =>
+        api().TimeoutAsync(userId, (int)Math.Ceiling(duration.TotalSeconds), reason ?? "", ct);
+
+    public Task BanAsync(string userId, string userName, string? reason, CancellationToken ct = default) =>
+        api().BanAsync(userId, reason ?? "", ct);
+}

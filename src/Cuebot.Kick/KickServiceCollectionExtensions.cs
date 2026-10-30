@@ -41,6 +41,7 @@ public static class KickServiceCollectionExtensions
         services.AddSingleton<IEmoteChannelSource>(sp => new KickEmoteChannelSource(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatEventAdapter, KickChatAdapter>();
         services.AddSingleton<IPresentViewersArgs>(sp => new KickPresentViewersArgs(sp.GetRequiredService<KickService>()));
+        services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new KickChatModerator(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatSender, KickChatSender>();
         services.AddSingleton<ITriggerProvider, KickTriggers>();
         services.AddSingleton<ISubActionHandler, SendMessageSubAction>();
