@@ -39,6 +39,9 @@ public sealed partial class DonationsViewModel : PageViewModel
             TreatStream = new TreatStreamCardViewModel(all.TreatStream);
             Pally = new PallyCardViewModel(all.Pally);
         }
+        Cards = new DonationCardViewModel?[] { Streamlabs, StreamElements, TipeeeStream, DonorDrive, TreatStream, Pally }
+            .OfType<DonationCardViewModel>().ToArray();
+        SelectedCard = Cards[0];
         _services = all is null ? [streamlabs, streamElements] : [.. all.All];
         foreach (var service in _services) service.RecentChanged += () => OnUi(RefreshRecent);
         RefreshRecent();
@@ -52,6 +55,17 @@ public sealed partial class DonationsViewModel : PageViewModel
     public DonorDriveCardViewModel? DonorDrive { get; }
     public TreatStreamCardViewModel? TreatStream { get; }
     public PallyCardViewModel? Pally { get; }
+
+    /// <summary>The services this page shows, in list order.</summary>
+    public IReadOnlyList<DonationCardViewModel> Cards { get; }
+
+    [ObservableProperty] private DonationCardViewModel? _selectedCard;
+
+    partial void OnSelectedCardChanged(DonationCardViewModel? oldValue, DonationCardViewModel? newValue)
+    {
+        if (oldValue is not null) oldValue.IsSelected = false;
+        if (newValue is not null) newValue.IsSelected = true;
+    }
 
     /// <summary>Newest first, every service.</summary>
     public ObservableCollection<DonationRecordViewModel> RecentEvents { get; } = [];
@@ -98,6 +112,10 @@ public abstract partial class DonationCardViewModel : ObservableObject
     public string State => _service.State.ToString();
     public string StatusMessage => _service.StatusMessage;
     public bool IsConnected => _service.State == Cuebot.Core.ConnectionState.Connected;
+    public bool IsError => _service.State == Cuebot.Core.ConnectionState.Error;
+
+    /// <summary>The service shown in the page's detail area (the list on the left picks it).</summary>
+    [ObservableProperty] private bool _isSelected;
 
     /// <summary>The token; the view masks it (PasswordChar).</summary>
     public string Token

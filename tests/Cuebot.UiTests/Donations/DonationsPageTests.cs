@@ -129,8 +129,18 @@ public sealed class DonationsPageTests : IAsyncDisposable
             var vm = new DonationsViewModel(all);
             var window = Show(vm);
             Assert.NotNull(vm.TipeeeStream);
-            var cards = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("card") && b.IsVisible).ToArray();
-            Assert.Equal(7, cards.Length);   // six services + last events
+            // Six services in the list; the page shows the picked one's card (plus the list and last events).
+            Assert.Equal(6, vm.Cards.Count);
+            foreach (var card in vm.Cards)
+            {
+                vm.SelectedCard = card;
+                UiPump.Pump();
+                var shown = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("card") && b.IsEffectivelyVisible).ToArray();
+                Assert.Equal(3, shown.Length);
+                Assert.Contains(shown, b => b.DataContext == card);
+            }
+            vm.SelectedCard = vm.Cards[0];
+            UiPump.Pump();
 
             vm.TipeeeStream!.Token = " TIPEEE-key-ABCDEFGHIJ5678 ";
             vm.Pally!.Token = "PALLY-key-ABCDEFGHIJKL9999";

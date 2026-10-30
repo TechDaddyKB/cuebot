@@ -3,13 +3,33 @@
              xmlns:vm="using:Cuebot.App.ViewModels.Donations"
              x:Class="Cuebot.App.Views.Donations.DonationsView"
              x:DataType="vm:DonationsViewModel">
-  <ScrollViewer Padding="24">
-    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
-      <TextBlock Classes="h1" Text="Donations" />
-      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Tips, donations, treats and store redemptions from Streamlabs, StreamElements, TipeeeStream, DonorDrive (Extra Life), TreatStream and Pally.gg become triggers, activity feed items, credits and event speech. Keys and tokens are stored in donations.json, masked here and never written to the log." />
+  <Grid ColumnDefinitions="240,12,*" Margin="24,12,24,0">
+    <!-- Services, with their state -->
+    <Border Classes="card" VerticalAlignment="Top" Padding="8,12">
+      <StackPanel>
+        <TextBlock Text="Services" FontWeight="SemiBold" FontSize="15" Margin="8,0,0,8" />
+        <ListBox x:Name="ServiceList" ItemsSource="{Binding Cards}" SelectedItem="{Binding SelectedCard}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:DonationCardViewModel">
+              <Grid ColumnDefinitions="Auto,*">
+                <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding State}" Classes="muted" FontSize="12" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </StackPanel>
+    </Border>
 
-      <Border Classes="card" DataContext="{Binding Streamlabs}" x:DataType="vm:StreamlabsCardViewModel">
+    <ScrollViewer Grid.Column="2" Padding="0,0,8,24">
+    <StackPanel>
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Tips, donations, treats and store redemptions become triggers, activity feed items, credits and event speech. Keys and tokens are stored in donations.json, masked here and never written to the log." />
+
+      <Border Classes="card" DataContext="{Binding Streamlabs}" x:DataType="vm:StreamlabsCardViewModel" IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Streamlabs" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -34,7 +54,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card" DataContext="{Binding StreamElements}" x:DataType="vm:StreamElementsCardViewModel">
+      <Border Classes="card" DataContext="{Binding StreamElements}" x:DataType="vm:StreamElementsCardViewModel" IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="StreamElements" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -62,7 +82,7 @@
       </Border>
 
       <Border Classes="card" DataContext="{Binding TipeeeStream}" x:DataType="vm:TipeeeStreamCardViewModel"
-              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+              IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="TipeeeStream" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -89,7 +109,7 @@
       </Border>
 
       <Border Classes="card" DataContext="{Binding DonorDrive}" x:DataType="vm:DonorDriveCardViewModel"
-              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+              IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="DonorDrive (Extra Life and other charities)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -124,7 +144,7 @@
       </Border>
 
       <Border Classes="card" DataContext="{Binding TreatStream}" x:DataType="vm:TreatStreamCardViewModel"
-              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+              IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="TreatStream" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -167,7 +187,7 @@
       </Border>
 
       <Border Classes="card" DataContext="{Binding Pally}" x:DataType="vm:PallyCardViewModel"
-              IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+              IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Pally.gg" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -212,5 +232,6 @@
         </StackPanel>
       </Border>
     </StackPanel>
-  </ScrollViewer>
+    </ScrollViewer>
+  </Grid>
 </UserControl>
