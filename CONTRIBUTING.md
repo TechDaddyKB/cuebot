@@ -99,6 +99,7 @@ downloads and installs the new build for real.
 
 Push a tag such as `v0.1.0`. The release workflow builds and tests everything, publishes a GitHub release (Windows
 zip, AppImage, Flatpak, Linux tarballs) and prepares the AUR `PKGBUILD`/`.SRCINFO` files, pushing them to the AUR when
-the repository has an `AUR_SSH_PRIVATE_KEY` secret. A tag with a hyphen (`v0.1.0-rc.1`) is a release candidate: a
+the repository has an `AUR_SSH_PRIVATE_KEY` secret. Windows packages are code-signed with Azure Artifact Signing when the signing environment is
+set up; see [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md). A tag with a hyphen (`v0.1.0-rc.1`) is a release candidate: a
 GitHub pre-release, and nothing goes to the AUR. CI also smoke-tests every Linux package on a headless Wayland
 compositor and on X11.
