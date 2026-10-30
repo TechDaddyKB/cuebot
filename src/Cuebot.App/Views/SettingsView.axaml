@@ -157,15 +157,7 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h2" Text="Google Drive backups" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Copies every backup to a &quot;Cuebot Backups&quot; folder in your Google Drive. Cuebot only sees the files it created there. Google needs your own OAuth client: in Google Cloud, enable the Drive API and create an OAuth client of type &quot;Desktop app&quot;, then paste its ID and secret here (see the docs)." />
-                <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto" RowSpacing="8">
-                  <TextBlock Text="Client ID" VerticalAlignment="Center" />
-                  <TextBox x:Name="DriveClientId" Grid.Column="1" Text="{Binding DriveClientId}"
-                           PlaceholderText="1234567890-abc.apps.googleusercontent.com" />
-                  <TextBlock Grid.Row="1" Text="Client secret" VerticalAlignment="Center" />
-                  <TextBox x:Name="DriveClientSecret" Grid.Row="1" Grid.Column="1" Text="{Binding DriveClientSecret}" PasswordChar="•"
-                           PlaceholderText="GOCSPX-..." />
-                </Grid>
+                           Text="Copies every backup to a &quot;Cuebot Backups&quot; folder in your Google Drive. Cuebot only sees the files it created there." />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Content="Sign in with Google" Classes="accent" Command="{Binding DriveSignInCommand}"
                           IsVisible="{Binding !DriveSignedIn}" />
@@ -174,6 +166,21 @@
                   <Button Content="Sign out" Command="{Binding DriveSignOutCommand}" IsVisible="{Binding DriveSignedIn}" />
                   <TextBlock Text="{Binding DriveAccount}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="8,0,0,0" />
                 </StackPanel>
+                <Expander Header="Advanced: use my own Google Cloud project" HorizontalAlignment="Stretch"
+                          IsExpanded="{Binding DriveShowOwnApp, Mode=OneTime}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="muted" TextWrapping="Wrap"
+                               Text="Optional unless this build has no Google app of its own. In Google Cloud, enable the Drive API and create an OAuth client of type &quot;Desktop app&quot;, then paste its ID and secret here and sign in again (see the docs). Leave them empty to use Cuebot's." />
+                    <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                      <TextBlock Text="Client ID" VerticalAlignment="Center" />
+                      <TextBox x:Name="DriveClientId" Grid.Column="1" Text="{Binding DriveClientId}"
+                               PlaceholderText="1234567890-abc.apps.googleusercontent.com" />
+                      <TextBlock Grid.Row="1" Text="Client secret" VerticalAlignment="Center" />
+                      <TextBox x:Name="DriveClientSecret" Grid.Row="1" Grid.Column="1" Text="{Binding DriveClientSecret}" PasswordChar="•"
+                               PlaceholderText="GOCSPX-..." />
+                    </Grid>
+                  </StackPanel>
+                </Expander>
                 <CheckBox Content="Upload every new backup to Google Drive" IsChecked="{Binding DriveEnabled}" />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                   <TextBlock Text="Keep the newest" VerticalAlignment="Center" />

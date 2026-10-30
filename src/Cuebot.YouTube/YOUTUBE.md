@@ -1,10 +1,14 @@
 # YouTube module
 
-Cuebot talks to YouTube only through the official **YouTube Data API v3** with the user's **own** Google Cloud
-project, so every request counts against that project's quota (10,000 units per day by default, reset at
-midnight Pacific time). Built from Google's public API reference only.
+Cuebot talks to YouTube only through the official **YouTube Data API v3**. Release builds sign in with Cuebot's own
+Google project (see `docs/BUILT_IN_APPS.md`), whose quota all its users share; a user's **own** Google Cloud project,
+entered under *Advanced*, gives them their own quota (10,000 units per day by default, reset at midnight Pacific
+time). Built from Google's public API reference only.
 
-## Setting up Google Cloud (once)
+Each account records which client signed it in (`SignedInWith`: `builtin`, `builtin-device`, or empty for the
+user's own), because Google refreshes a token only through the client that issued it.
+
+## Setting up your own Google Cloud project (optional)
 
 1. Open <https://console.cloud.google.com>, create a project (e.g. "Cuebot").
 2. *APIs & Services → Library*: enable **YouTube Data API v3**.
@@ -18,7 +22,7 @@ midnight Pacific time). Built from Google's public API reference only.
      device. Scope requested: `https://www.googleapis.com/auth/youtube`.
    - or **Desktop app**: Cuebot opens the browser and receives the result on `http://127.0.0.1:<random port>/`
      (PKCE). Scopes: `youtube` and `youtube.force-ssl`.
-5. Copy the client ID and client secret into Cuebot's YouTube page and sign in the **broadcaster** (pick the
+5. Copy the client ID and client secret into Cuebot's YouTube page (*Advanced*) and sign in the **broadcaster** (pick the
    channel/brand account you stream on). Optionally sign in a second account as the **bot** for chat messages.
 
 Tokens and the client secret are stored in `youtube.json` in the data folder and are never logged.

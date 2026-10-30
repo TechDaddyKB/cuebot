@@ -83,14 +83,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Kick app and sign-in" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Create an app at kick.com → Settings → Developer, add the redirect URL below exactly, and paste the app's Client ID and Client Secret. Sign-in opens your browser; Kick sends you back to Cuebot on this computer (OAuth 2.1 with PKCE)." />
-          <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
-          <TextBox Text="{Binding ClientSecret}" PlaceholderText="Client Secret" PasswordChar="•" />
-          <Grid ColumnDefinitions="Auto,8,140,16,*">
-            <TextBlock VerticalAlignment="Center" Text="Redirect port" />
-            <NumericUpDown Grid.Column="2" Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" />
-            <SelectableTextBlock Grid.Column="4" VerticalAlignment="Center" Text="{Binding RedirectUri}" />
-          </Grid>
+                     Text="Sign-in opens Kick in your browser; Kick then sends you back to Cuebot on this computer." />
           <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsSigningIn}">
             <Button Content="Sign in broadcaster" Classes="accent" Command="{Binding SignInBroadcasterCommand}" />
             <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" />
@@ -104,6 +97,19 @@
               <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
             </StackPanel>
           </StackPanel>
+          <Expander Header="Advanced: use my own Kick app" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="Optional unless this build has no Kick app of its own. Create an app at kick.com → Settings → Developer, add the redirect URL below exactly, and paste the app's Client ID and Client Secret, then sign in again. Leave them empty to use Cuebot's." />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
+              <TextBox Text="{Binding ClientSecret}" PlaceholderText="Client Secret" PasswordChar="•" />
+              <Grid ColumnDefinitions="Auto,8,140,16,*">
+                <TextBlock VerticalAlignment="Center" Text="Redirect port" />
+                <NumericUpDown Grid.Column="2" Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" />
+                <SelectableTextBlock Grid.Column="4" VerticalAlignment="Center" Text="{Binding RedirectUri}" />
+              </Grid>
+            </StackPanel>
+          </Expander>
         </StackPanel>
       </Border>
 

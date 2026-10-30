@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Cuebot.Core;
+using Cuebot.Core.Auth;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
@@ -27,6 +28,7 @@ public sealed class TreatStreamService : DonationServiceBase
     private readonly TreatStreamApi _api;
     private readonly Func<int, IOAuthRedirectReceiver> _receivers;
     private readonly TimeProvider _time;
+    private readonly AppCredentials _builtInApp;
     private string _socketToken = "";
 
     public TreatStreamService(JsonFile<DonationsSettings> settings, EventBus bus, AppLog log, HttpClient http)
@@ -37,9 +39,11 @@ public sealed class TreatStreamService : DonationServiceBase
     }
 
     internal TreatStreamService(JsonFile<DonationsSettings> settings, EventBus bus, AppLog log, Func<IWebSocketTransport> transports,
-        Uri socketServer, DonationsTimings timings, TreatStreamApi api, Func<int, IOAuthRedirectReceiver> receivers, TimeProvider time)
+        Uri socketServer, DonationsTimings timings, TreatStreamApi api, Func<int, IOAuthRedirectReceiver> receivers, TimeProvider time,
+        AppCredentials? builtInApp = null)
         : base(settings, bus, log)
     {
+        _builtInApp = builtInApp ?? BuiltInApps.TreatStream;
         _transports = transports;
         _socketServer = socketServer;
         _timings = timings;
@@ -58,15 +62,24 @@ public sealed class TreatStreamService : DonationServiceBase
     protected override string DisconnectedEvent => TreatStreamEventTypes.Disconnected;
     public override IReadOnlyList<string> TestEventKinds => [.. TreatStreamEventMapper.Samples.Keys];
 
+    /// <summary>The TreatStream app signed in with: the user's own (Advanced) or the one built into Cuebot.</summary>
+    public AppCredentials App => AppCredentials.Choose(Settings.ClientId, Settings.ClientSecret, _builtInApp);
+
+    /// <summary>True when this build has a TreatStream app of its own.</summary>
+    public bool HasBuiltInApp => _builtInApp.IsSet;
+
+    /// <summary>Cuebot's app has the default port registered; the user's own app uses the port they chose.</summary>
+    public int RedirectPort => App.IsBuiltIn ? TreatStreamSettings.DefaultRedirectPort : Settings.RedirectPort;
+
     /// <summary>The redirect URL to register in the TreatStream app.</summary>
-    public string RedirectUri => $"http://localhost:{Settings.RedirectPort}/callback";
+    public string RedirectUri => $"http://localhost:{RedirectPort}/callback";
 
     public bool IsSignedIn => Settings.AccessToken.Length > 0;
 
     private protected override string RedactSecrets(string? text)
     {
         var result = text ?? "";
-        foreach (var secret in new[] { Settings.AccessToken, Settings.RefreshToken, Settings.ClientSecret, _socketToken })
+        foreach (var secret in new[] { Settings.AccessToken, Settings.RefreshToken, App.ClientSecret, _socketToken })
             result = Secrets.Redact(result, secret);
         return result;
     }
@@ -87,13 +100,14 @@ public sealed class TreatStreamService : DonationServiceBase
     /// </summary>
     public async Task SignInAsync(Action<string> openBrowser, CancellationToken ct = default)
     {
-        var clientId = Settings.ClientId.Trim();
-        var secret = Settings.ClientSecret.Trim();
+        var (clientId, secret) = (App.ClientId, App.ClientSecret);
         if (clientId.Length == 0 || secret.Length == 0)
-            throw new InvalidOperationException("Enter the Client ID and Client Secret of your TreatStream API app first.");
+            throw new InvalidOperationException(HasBuiltInApp
+                ? "Enter the Client Secret of your TreatStream API app under Advanced, or clear its Client ID to use Cuebot's."
+                : "This build has no TreatStream app of its own; enter the Client ID and Client Secret of your TreatStream API app under Advanced.");
         var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         var redirect = RedirectUri;
-        using var receiver = _receivers(Settings.RedirectPort);
+        using var receiver = _receivers(RedirectPort);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(SignInTimeout);
         openBrowser(_api.AuthorizeUrl(clientId, redirect, state).AbsoluteUri);
@@ -140,14 +154,15 @@ public sealed class TreatStreamService : DonationServiceBase
     /// <summary>Refreshes the access token when it is about to expire, then gets a socket token.</summary>
     private protected override async Task PrepareAsync(CancellationToken ct)
     {
-        var clientId = Settings.ClientId.Trim();
-        if (clientId.Length == 0) throw new InvalidOperationException("Enter the Client ID of your TreatStream API app first.");
+        var app = App;
+        var clientId = app.ClientId;
+        if (clientId.Length == 0) throw new InvalidOperationException("Enter the Client ID of your TreatStream API app under Advanced first.");
         if (Settings.AccessTokenExpiresAt is { } expires && expires - _time.GetUtcNow() < RefreshWindow
-            && Settings.RefreshToken.Length > 0 && Settings.ClientSecret.Trim().Length > 0)
+            && Settings.RefreshToken.Length > 0 && app.ClientSecret.Length > 0)
         {
             try
             {
-                Save(await _api.RefreshAsync(clientId, Settings.ClientSecret.Trim(), Settings.RefreshToken, ct).ConfigureAwait(false));
+                Save(await _api.RefreshAsync(clientId, app.ClientSecret, Settings.RefreshToken, ct).ConfigureAwait(false));
                 Log.Info(Name, "Refreshed the TreatStream access token");
             }
             catch (TreatStreamApiException ex)

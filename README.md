@@ -89,20 +89,21 @@ into `backups/downloads/` and schedules it exactly like a local restore (safety 
 start). Your Google Drive sign-in is kept when a backup is restored. Cuebot asks only for the `drive.file` scope, so it
 can see and change nothing in your Drive except the files it created.
 
-Google needs an OAuth client, and Cuebot ships none, so you create your own (free, once):
+Click **Sign in with Google**, pick the account and allow access; the page shows "Signed in as ...". Release builds
+sign in with Cuebot's own Google app. To use your own instead (or in a build without one, such as a source build),
+open **Advanced: use my own Google Cloud project** and create an OAuth client (free, once):
 
 1. Open the [Google Cloud console](https://console.cloud.google.com/), create a project (or pick one) and enable the
    **Google Drive API** (APIs & Services > Library).
 2. Set up the consent screen (Google Auth Platform > Branding / Audience): user type **External**, then add your Google
    account under **Test users**. Data access: add the scope `https://www.googleapis.com/auth/drive.file`.
 3. Clients > **Create client**, application type **Desktop app**. Copy the **Client ID** and **Client secret** into
-   Settings > Google Drive. (Google issues a secret for desktop clients but treats it as non-confidential; there is no
-   redirect URL to register: Cuebot listens on a random `http://127.0.0.1` port during sign-in, with PKCE.)
-4. Click **Sign in with Google**, pick the account and allow access. The page shows "Signed in as ...".
+   Settings > Google Drive > Advanced. (Google issues a secret for desktop clients but treats it as non-confidential;
+   there is no redirect URL to register: Cuebot listens on a random `http://127.0.0.1` port during sign-in, with PKCE.)
+4. Sign in again. While your project's publishing status is **Testing**, Google expires the sign-in after 7 days and
+   Cuebot shows "sign in again"; publish the app (Audience > Publish app) to keep it signed in.
 
-While the project's publishing status is **Testing**, Google expires the sign-in after 7 days and Cuebot shows "sign in
-again"; publish the app (Audience > Publish app) to keep it signed in. The refresh token is stored in `app.json` like
-other modules store their sign-ins and is never logged. Backups contain your whole data folder, including the sign-ins
+The refresh token is stored in `app.json` like other modules store their sign-ins and is never logged. Backups contain your whole data folder, including the sign-ins
 of connected accounts, so they are as private as your Drive. Sign out revokes Cuebot's access at Google; backups
 already on Drive stay there.
 

@@ -11,6 +11,7 @@ internal sealed class TwitchTokenManager(
     JsonFile<TwitchSettings> settings,
     TwitchAuthClient auth,
     AppLog log,
+    Func<string> clientId,
     Func<TwitchSettings, ITwitchAccount>? account = null,
     string label = "Twitch") : ITwitchTokenSource
 {
@@ -19,7 +20,7 @@ internal sealed class TwitchTokenManager(
 
     private ITwitchAccount Account => _account(settings.Value);
 
-    public string ClientId => settings.Value.ClientId.Trim();
+    public string ClientId => clientId();
     public string AccessToken => Account.AccessToken;
     public string UserId => Account.UserId;
     public string Login => Account.Login;

@@ -22,6 +22,7 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     private const int QuotaSaveStep = 25;
 
     private readonly JsonFile<YouTubeSettings> _settings;
+    private readonly YouTubeApps _apps;
     private readonly EventBus _bus;
     private readonly AppLog _log;
     private readonly TimeProvider _time;
@@ -44,16 +45,18 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     }
 
     internal YouTubeService(JsonFile<YouTubeSettings> settings, HttpClient http, EventBus bus, AppLog log,
-        YouTubeEndpoints endpoints, TimeProvider time, YouTubeTimings timings)
+        YouTubeEndpoints endpoints, TimeProvider time, YouTubeTimings timings, AppCredentials? builtInBrowserApp = null,
+        AppCredentials? builtInDeviceApp = null)
     {
+        _apps = new YouTubeApps(builtInBrowserApp ?? YouTubeApps.BuiltIn.Browser, builtInDeviceApp ?? YouTubeApps.BuiltIn.Device);
         _settings = settings;
         _bus = bus;
         _log = log;
         _time = time;
         _timings = timings;
         _oauth = new GoogleOAuthClient(http, endpoints, time);
-        _broadcaster = new AccountTokens(settings, YouTubeAccountKind.Broadcaster, _oauth, time, timings, log);
-        _bot = new AccountTokens(settings, YouTubeAccountKind.Bot, _oauth, time, timings, log);
+        _broadcaster = new AccountTokens(settings, YouTubeAccountKind.Broadcaster, _oauth, time, timings, log, _apps);
+        _bot = new AccountTokens(settings, YouTubeAccountKind.Bot, _oauth, time, timings, log, _apps);
         var quota = new QuotaTracker(time);
         quota.Restore(Settings.QuotaDay, Settings.QuotaUsed);
         quota.Changed += OnQuotaChanged;
@@ -71,8 +74,17 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
 
     public void SaveSettings() => _settings.ScheduleSave();
 
-    /// <summary>True when the Google OAuth client ID and secret are entered.</summary>
-    public bool IsConfigured => Settings.ClientId.Trim().Length > 0 && Settings.ClientSecret.Trim().Length > 0;
+    /// <summary>True when a Google OAuth client is available: the user's own (ID and secret) or one built into Cuebot.</summary>
+    public bool IsConfigured => CanSignInWithBrowser || CanSignInWithCode;
+
+    /// <summary>True when this build has a Google client of its own.</summary>
+    public bool HasBuiltInApp => _apps.Browser.IsSet || _apps.Device.IsSet;
+
+    public bool CanSignInWithBrowser => HasClient(_apps.ForBrowser(Settings));
+
+    public bool CanSignInWithCode => HasClient(_apps.ForDevice(Settings));
+
+    private static bool HasClient(AppCredentials app) => app.IsSet && app.ClientSecret.Length > 0;
 
     public bool IsBroadcasterSignedIn => Settings.Broadcaster.IsSignedIn;
     public bool IsBotSignedIn => Settings.Bot.IsSignedIn;
@@ -111,15 +123,19 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     /// <summary>Starts a device-code sign-in (needs a "TVs and Limited Input devices" OAuth client). Show the returned code.</summary>
     public Task<DeviceAuthorization> BeginDeviceSignInAsync(YouTubeAccountKind account, CancellationToken ct = default)
     {
-        RequireClient();
-        return _oauth.StartDeviceFlowAsync(account, Settings.ClientId.Trim(), YouTubeScopes.Device, ct);
+        if (!CanSignInWithCode)
+            throw new InvalidOperationException(HasBuiltInApp
+                ? "This build cannot sign in to YouTube with a code; use the browser."
+                : NoClientMessage);
+        return _oauth.StartDeviceFlowAsync(account, _apps.ForDevice(Settings).ClientId, YouTubeScopes.Device, ct);
     }
 
     /// <summary>Waits for the user to approve the code, stores the tokens and channel, and connects after a broadcaster sign-in.</summary>
     public async Task CompleteDeviceSignInAsync(DeviceAuthorization auth, CancellationToken ct = default)
     {
-        var tokens = await _oauth.PollDeviceTokenAsync(auth, Settings.ClientId.Trim(), Settings.ClientSecret.Trim(), ct).ConfigureAwait(false);
-        await FinishSignInAsync(auth.Account, tokens, ct).ConfigureAwait(false);
+        var app = _apps.ForDevice(Settings);
+        var tokens = await _oauth.PollDeviceTokenAsync(auth, app.ClientId, app.ClientSecret, ct).ConfigureAwait(false);
+        await FinishSignInAsync(auth.Account, tokens, YouTubeApps.Marker(app, device: true), ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -128,11 +144,15 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
     /// </summary>
     public async Task SignInWithBrowserAsync(YouTubeAccountKind account, Action<Uri> openBrowser, CancellationToken ct = default)
     {
-        RequireClient();
+        if (!CanSignInWithBrowser)
+            throw new InvalidOperationException(HasBuiltInApp
+                ? "This build cannot sign in to YouTube through the browser; sign in with a code."
+                : NoClientMessage);
+        var app = _apps.ForBrowser(Settings);
         using var receiver = new LoopbackReceiver("YouTube");
         var verifier = Pkce.CreateVerifier();
         var state = Pkce.CreateState();
-        openBrowser(_oauth.BuildAuthorizeUri(Settings.ClientId.Trim(), receiver.RedirectUri, YouTubeScopes.Loopback,
+        openBrowser(_oauth.BuildAuthorizeUri(app.ClientId, receiver.RedirectUri, YouTubeScopes.Loopback,
             Pkce.Challenge(verifier), state));
         var result = await receiver.WaitForRedirectAsync(ct).ConfigureAwait(false);
         if (result.GetValueOrDefault("state") != state)
@@ -140,9 +160,9 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
         if (result.TryGetValue("error", out var error))
             throw new YouTubeApiException(error == "access_denied" ? "Sign-in was denied in the browser." : $"Google sign-in failed: {error}", 0, error);
         var code = result.GetValueOrDefault("code") ?? "";
-        var tokens = await _oauth.ExchangeCodeAsync(Settings.ClientId.Trim(), Settings.ClientSecret.Trim(), code, verifier,
+        var tokens = await _oauth.ExchangeCodeAsync(app.ClientId, app.ClientSecret, code, verifier,
             receiver.RedirectUri, ct).ConfigureAwait(false);
-        await FinishSignInAsync(account, tokens, ct).ConfigureAwait(false);
+        await FinishSignInAsync(account, tokens, YouTubeApps.Marker(app, device: false), ct).ConfigureAwait(false);
     }
 
     /// <summary>Forgets an account's tokens (revoking them at Google in the background). Signing out the broadcaster disconnects.</summary>
@@ -175,10 +195,11 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
         }
     }
 
-    private async Task FinishSignInAsync(YouTubeAccountKind account, OAuthTokens tokens, CancellationToken ct)
+    private async Task FinishSignInAsync(YouTubeAccountKind account, OAuthTokens tokens, string signedInWith, CancellationToken ct)
     {
         var target = Tokens(account);
         target.Store(tokens);
+        target.Account.SignedInWith = signedInWith;
         var channel = await _api.GetMyChannelAsync(target, ct).ConfigureAwait(false)
             ?? throw new YouTubeApiException("This Google account has no YouTube channel. Create one, or pick the right (brand) account when signing in.", 0, "noChannel");
         var a = target.Account;
@@ -462,10 +483,12 @@ public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
         if (!IsBroadcasterSignedIn) throw new InvalidOperationException("Sign in the YouTube broadcaster account first.");
     }
 
+    private const string NoClientMessage =
+        "This build has no Google app of its own; enter the OAuth client ID and secret from your Google Cloud project under Advanced.";
+
     private void RequireClient()
     {
-        if (!IsConfigured)
-            throw new InvalidOperationException("Enter the OAuth client ID and client secret from your Google Cloud project first.");
+        if (!IsConfigured) throw new InvalidOperationException(NoClientMessage);
     }
 
     private AccountTokens Tokens(YouTubeAccountKind kind) => kind == YouTubeAccountKind.Bot ? _bot : _broadcaster;

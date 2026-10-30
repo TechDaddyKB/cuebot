@@ -26,29 +26,17 @@
 
       <Border Classes="card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Google Cloud OAuth client" />
-          <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Cuebot uses your own Google Cloud project, so the API quota is yours. In console.cloud.google.com create a project, enable the YouTube Data API v3, set up the OAuth consent screen (External; add yourself as a test user or publish it), then create an OAuth client ID of type 'TVs and Limited Input devices' (sign in with a code) or 'Desktop app' (sign in through the browser). Paste its client ID and secret here." />
-          <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID (....apps.googleusercontent.com)" />
-          <TextBox Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
-          <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="While the consent screen is in 'Testing', Google ends sign-ins after 7 days; publish it ('In production', no verification needed for your own use) to stay signed in." />
-        </StackPanel>
-      </Border>
-
-      <Border Classes="card">
-        <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Accounts" />
           <TextBlock Text="{Binding BroadcasterAccount, StringFormat='Broadcaster: {0}'}" TextWrapping="Wrap" />
           <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
-            <Button Content="Sign in with a code" Classes="accent" Command="{Binding SignInBroadcasterCommand}" />
-            <Button Content="Sign in with the browser" Command="{Binding BrowserSignInBroadcasterCommand}" />
+            <Button Content="Sign in with the browser" Classes="accent" Command="{Binding BrowserSignInBroadcasterCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
+            <Button Content="Sign in with a code" Command="{Binding SignInBroadcasterCommand}" IsVisible="{Binding ShowCodeSignIn}" />
             <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsVisible="{Binding IsBroadcasterSignedIn}" />
           </StackPanel>
           <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" TextWrapping="Wrap" Margin="0,8,0,0" />
           <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
-            <Button Content="Sign in bot with a code" Command="{Binding SignInBotCommand}" />
-            <Button Content="Sign in bot with the browser" Command="{Binding BrowserSignInBotCommand}" />
+            <Button Content="Sign in bot with the browser" Command="{Binding BrowserSignInBotCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
+            <Button Content="Sign in bot with a code" Command="{Binding SignInBotCommand}" IsVisible="{Binding ShowCodeSignIn}" />
             <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsVisible="{Binding IsBotSignedIn}" />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -69,6 +57,19 @@
             <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
           </StackPanel>
         </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <Expander Header="Advanced: use my own Google Cloud project" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Optional unless this build has no Google app of its own. Your own project gives you your own YouTube API quota instead of sharing Cuebot's. In console.cloud.google.com create a project, enable the YouTube Data API v3, set up the OAuth consent screen (External; add yourself as a test user or publish it), then create an OAuth client ID of type 'TVs and Limited Input devices' (sign in with a code) or 'Desktop app' (sign in through the browser). Paste its client ID and secret here, then sign in again. Leave them empty to use Cuebot's." />
+            <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID (....apps.googleusercontent.com)" />
+            <TextBox Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="While the consent screen is in 'Testing', Google ends sign-ins after 7 days; publish it ('In production', no verification needed for your own use) to stay signed in." />
+          </StackPanel>
+        </Expander>
       </Border>
 
       <Border Classes="card">

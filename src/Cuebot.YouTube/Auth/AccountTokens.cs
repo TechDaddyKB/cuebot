@@ -13,7 +13,8 @@ internal sealed class AccountTokens(
     GoogleOAuthClient oauth,
     TimeProvider time,
     YouTubeTimings timings,
-    AppLog log)
+    AppLog log,
+    YouTubeApps apps)
 {
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
@@ -61,8 +62,10 @@ internal sealed class AccountTokens(
             if (account.RefreshToken.Length == 0)
                 throw new YouTubeApiException($"The YouTube {Label} sign-in has expired. Sign in again.", 401, "signInRequired");
 
-            var s = settings.Value;
-            Store(await oauth.RefreshAsync(s.ClientId.Trim(), s.ClientSecret.Trim(), account.RefreshToken, ct).ConfigureAwait(false));
+            var app = apps.ForAccount(settings.Value, account);
+            if (!app.IsSet)
+                throw new YouTubeApiException($"The YouTube {Label} account was signed in with an app that is no longer set up. Sign in again.", 401, "signInRequired");
+            Store(await oauth.RefreshAsync(app.ClientId, app.ClientSecret, account.RefreshToken, ct).ConfigureAwait(false));
             log.Info("YouTube", $"Access token of the {Label} account refreshed");
         }
         finally

@@ -400,7 +400,11 @@ public sealed partial class SettingsViewModel : PageViewModel
         DriveUploadCommand.NotifyCanExecuteChanged();
     }
 
-    private bool CanDriveSignIn() => !IsDriveBusy && DriveClientId.Trim().Length > 0;
+    private bool CanDriveSignIn() => !IsDriveBusy && _drive.IsConfigured;
+
+    /// <summary>Advanced starts open when the user's own Google client is needed or already in use.</summary>
+    public bool DriveShowOwnApp => _driveShowOwnApp ??= !_drive.HasBuiltInApp || DriveClientId.Trim().Length > 0;
+    private bool? _driveShowOwnApp;
 
     /// <summary>Opens Google's consent page in the browser and waits for the loopback redirect (cancellable).</summary>
     [RelayCommand(CanExecute = nameof(CanDriveSignIn), IncludeCancelCommand = true)]

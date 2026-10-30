@@ -3,6 +3,7 @@ using System.Net;
 using Cuebot.App.Shell;
 using Cuebot.App.Shell.GoogleDrive;
 using Cuebot.Core;
+using Cuebot.Core.Auth;
 using Cuebot.Core.Logging;
 
 namespace Cuebot.UiTests;
@@ -28,8 +29,12 @@ public sealed class GoogleDriveBackupTests : IDisposable
         _store.Settings.Backups.GoogleDrive.ClientId = FakeGoogleDrive.ClientId;
         _store.Settings.Backups.GoogleDrive.ClientSecret = FakeGoogleDrive.ClientSecret;
         _backups = new BackupService(_paths, () => 50, () => _now);
+        // No built-in Google app (tests set their own client), and never the real browser.
         _service = new GoogleDriveBackups(_store, _backups,
-            new GoogleDriveClient(new HttpClient(_drive), FakeGoogleDrive.Endpoints, _time), new AppLog());
+            new GoogleDriveClient(new HttpClient(_drive), FakeGoogleDrive.Endpoints, _time), new AppLog(), AppCredentials.None)
+        {
+            OpenBrowser = uri => throw new InvalidOperationException($"A test tried to open the browser: {uri.GetLeftPart(UriPartial.Path)}"),
+        };
     }
 
     public void Dispose()

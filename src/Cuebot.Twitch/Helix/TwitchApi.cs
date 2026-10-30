@@ -1004,7 +1004,7 @@ public sealed partial class TwitchApi
 
     private void RequireSignedIn()
     {
-        if (_settings().ClientId.Trim().Length == 0 || !_tokens.HasToken || _tokens.UserId.Length == 0)
+        if (_tokens.ClientId.Length == 0 || !_tokens.HasToken || _tokens.UserId.Length == 0)
             throw new InvalidOperationException("Sign in to Twitch first.");
     }
 

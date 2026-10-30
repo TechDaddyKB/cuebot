@@ -12,6 +12,8 @@ using Cuebot.Kick.Pusher;
 using Cuebot.Kick.Realtime;
 using Cuebot.Kick.SevenTv;
 using Cuebot.Kick.Webhooks;
+using AppCredentials = Cuebot.Core.Auth.AppCredentials;
+using BuiltInApps = Cuebot.Core.Auth.BuiltInApps;
 
 namespace Cuebot.Kick;
 
@@ -22,6 +24,7 @@ namespace Cuebot.Kick;
 public sealed class KickService : IConnectionStatus, IAsyncDisposable
 {
     private readonly JsonFile<KickSettings> _settings;
+    private readonly AppCredentials _builtInApp;
     private readonly EventBus _bus;
     private readonly AppLog _log;
     private readonly TimeProvider _time;
@@ -55,8 +58,9 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     /// <param name="sevenTvTransports">Websockets for 7TV's EventAPI; null leaves real-time 7TV events off (tests).</param>
     internal KickService(JsonFile<KickSettings> settings, HttpClient http, EventBus bus, AppLog log, KickEndpoints endpoints,
         KickTimings timings, TimeProvider time, Func<IPusherTransport> transports, Func<int, IOAuthReceiver> receivers,
-        Func<IPusherTransport>? sevenTvTransports = null, SevenTvEndpoints? sevenTvEndpoints = null)
+        Func<IPusherTransport>? sevenTvTransports = null, SevenTvEndpoints? sevenTvEndpoints = null, AppCredentials? builtInApp = null)
     {
+        _builtInApp = builtInApp ?? BuiltInApps.Kick;
         _settings = settings;
         _bus = bus;
         _log = log;
@@ -64,7 +68,7 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
         _timings = timings;
         _receivers = receivers;
         _auth = new KickAuthClient(http, endpoints, time);
-        _tokens = new KickTokenManager(settings, _auth, time, log);
+        _tokens = new KickTokenManager(settings, _auth, time, log, () => App);
         _api = new KickApiClient(http, endpoints, _tokens);
         _web = new KickWebClient(http, endpoints);
         Counters = new KickRewardCounters(() => Settings, SaveSettings);
@@ -174,7 +178,16 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     public bool IsLive => _hub.IsLive ?? _channel?.IsLive ?? false;
     public bool IsRealtimeConnected => _realtime.IsConnected;
 
-    public string RedirectUri => KickEndpoints.RedirectUri(Settings.RedirectPort);
+    /// <summary>The Kick app signed in with: the user's own (Advanced) or the one built into Cuebot.</summary>
+    public AppCredentials App => AppCredentials.Choose(Settings.ClientId, Settings.ClientSecret, _builtInApp);
+
+    /// <summary>True when this build has a Kick app of its own.</summary>
+    public bool HasBuiltInApp => _builtInApp.IsSet;
+
+    /// <summary>Cuebot's app has the default port registered; the user's own app uses the port they chose.</summary>
+    public int RedirectPort => App.IsBuiltIn ? KickEndpoints.DefaultRedirectPort : Settings.RedirectPort;
+
+    public string RedirectUri => KickEndpoints.RedirectUri(RedirectPort);
 
     // ---- sign-in ----
 
@@ -184,14 +197,16 @@ public sealed class KickService : IConnectionStatus, IAsyncDisposable
     /// </summary>
     public async Task SignInAsync(KickAccount account, Action<Uri> openBrowser, CancellationToken ct = default)
     {
-        var clientId = Settings.ClientId.Trim();
-        var secret = Settings.ClientSecret.Trim();
+        var app = App;
+        var (clientId, secret) = (app.ClientId, app.ClientSecret);
         if (clientId.Length == 0 || secret.Length == 0)
-            throw new InvalidOperationException("Enter the Client ID and Client Secret of your Kick app first.");
+            throw new InvalidOperationException(HasBuiltInApp
+                ? "Enter the Client Secret of your Kick app under Advanced, or clear its Client ID to use Cuebot's."
+                : "This build has no Kick app of its own; enter the Client ID and Client Secret of your Kick app under Advanced.");
         var redirect = RedirectUri;
         var pkce = PkceRequest.Create();
         OAuthCallbackResult callback;
-        using (var receiver = _receivers(Settings.RedirectPort))
+        using (var receiver = _receivers(RedirectPort))
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
         {
             timeout.CancelAfter(_timings.SignInTimeout);

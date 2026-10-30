@@ -43,6 +43,12 @@ public sealed partial class KickViewModel : PageViewModel
 
     public string RedirectUri => _kick.RedirectUri;
 
+    public bool HasBuiltInApp => _kick.HasBuiltInApp;
+
+    /// <summary>Advanced starts open when the user's own app is needed or already in use.</summary>
+    public bool ShowOwnApp => _showOwnApp ??= !_kick.HasBuiltInApp || S.ClientId.Trim().Length > 0;
+    private bool? _showOwnApp;
+
     public bool AutoConnect
     {
         get => S.AutoConnect;

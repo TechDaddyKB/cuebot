@@ -1,5 +1,6 @@
 using System.Globalization;
 using Cuebot.Core;
+using Cuebot.Core.Auth;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
@@ -20,6 +21,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     private static readonly TimeSpan SignOutGrace = TimeSpan.FromSeconds(5);
 
     private readonly JsonFile<TwitchSettings> _settings;
+    private readonly AppCredentials _builtInApp;
     private readonly EventBus _bus;
     private readonly AppLog _log;
     private readonly TwitchEndpoints _endpoints;
@@ -44,17 +46,18 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     }
 
     internal TwitchService(JsonFile<TwitchSettings> settings, HttpClient http, EventBus bus, AppLog log,
-        TwitchEndpoints endpoints, TimeProvider time, EventSubTimeouts eventSubTimeouts)
+        TwitchEndpoints endpoints, TimeProvider time, EventSubTimeouts eventSubTimeouts, AppCredentials? builtInApp = null)
     {
         _settings = settings;
+        _builtInApp = builtInApp ?? BuiltInApps.Twitch;
         _bus = bus;
         _log = log;
         _endpoints = endpoints;
         _time = time;
         _eventSubTimeouts = eventSubTimeouts;
         _auth = new TwitchAuthClient(http, endpoints.Auth, time);
-        _tokens = new TwitchTokenManager(settings, _auth, log);
-        _botTokens = new TwitchTokenManager(settings, _auth, log, s => new BotAccount(s), "Twitch bot");
+        _tokens = new TwitchTokenManager(settings, _auth, log, () => App.ClientId);
+        _botTokens = new TwitchTokenManager(settings, _auth, log, () => App.ClientId, s => new BotAccount(s), "Twitch bot");
         _helix = new HelixClient(http, endpoints.Helix, _tokens);
         _botHelix = new HelixClient(http, endpoints.Helix, _botTokens);
         var sent = new SentMessageTracker();
@@ -76,11 +79,17 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
 
     public TwitchSettings Settings => _settings.Value;
 
+    /// <summary>The Twitch application signed in with: the user's own (Advanced) or the one built into Cuebot.</summary>
+    public AppCredentials App => AppCredentials.Choose(Settings.ClientId, "", _builtInApp);
+
+    /// <summary>True when this build has a Twitch application of its own.</summary>
+    public bool HasBuiltInApp => _builtInApp.IsSet;
+
     /// <summary>True when a Client ID and an access token are stored.</summary>
-    public bool IsAuthorized => Settings.ClientId.Trim().Length > 0 && Settings.AccessToken.Length > 0;
+    public bool IsAuthorized => App.IsSet && Settings.AccessToken.Length > 0;
 
     /// <summary>True when the bot account has a stored token.</summary>
-    public bool IsBotAuthorized => Settings.ClientId.Trim().Length > 0 && Settings.Bot.AccessToken.Length > 0;
+    public bool IsBotAuthorized => App.IsSet && Settings.Bot.AccessToken.Length > 0;
 
     /// <summary>Login of the account while a connection is active; otherwise null.</summary>
     public string? ConnectedLogin { get; private set; }
@@ -137,7 +146,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     /// <summary>Forgets the bot account and revokes its token in the background.</summary>
     public Task SignOutBotAsync()
     {
-        var clientId = Settings.ClientId.Trim();
+        var clientId = App.ClientId;
         var token = Settings.Bot.AccessToken;
         _botTokens.Clear();
         _log.Info("Twitch", "Bot account signed out");
@@ -231,7 +240,7 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
     /// </summary>
     public Task SignOutAsync()
     {
-        var clientId = Settings.ClientId.Trim();
+        var clientId = App.ClientId;
         var token = Settings.AccessToken;
         _tokens.Clear();
         _log.Info("Twitch", "Signed out");
@@ -452,8 +461,9 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
 
     private string RequireClientId()
     {
-        var clientId = Settings.ClientId.Trim();
-        if (clientId.Length == 0) throw new InvalidOperationException("Enter your Twitch application's Client ID first.");
+        var clientId = App.ClientId;
+        if (clientId.Length == 0)
+            throw new InvalidOperationException("This build has no Twitch app of its own; enter your Twitch application's Client ID under Advanced.");
         return clientId;
     }
 

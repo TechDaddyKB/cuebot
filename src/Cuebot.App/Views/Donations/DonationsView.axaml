@@ -128,19 +128,25 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="TreatStream" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="TreatStream uses OAuth: create an API app in your TreatStream account settings, set its redirect URL to the address below, copy its Client ID and Client Secret here and sign in. Cuebot then gets a socket token and receives treats as they are sent." />
-          <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
-          <TextBox Name="TreatStreamSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="Redirect port" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="140" />
-            <SelectableTextBlock Text="{Binding RedirectUri}" VerticalAlignment="Center" />
-          </StackPanel>
+                     Text="Sign in with TreatStream in your browser. Cuebot then gets a socket token and receives treats as they are sent." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Sign in with TreatStream" Classes="accent" Command="{Binding SignInCommand}" IsEnabled="{Binding !IsSigningIn}" />
             <Button Content="Sign out" Command="{Binding SignOutCommand}" />
             <TextBlock Classes="muted" Text="{Binding SignInState}" VerticalAlignment="Center" />
           </StackPanel>
+          <Expander Header="Advanced: use my own TreatStream app" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="Optional unless this build has no TreatStream app of its own. Create an API app in your TreatStream account settings, set its redirect URL to the address below, copy its Client ID and Client Secret here and sign in again. Leave them empty to use Cuebot's." />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
+              <TextBox Name="TreatStreamSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Redirect port" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="140" />
+                <SelectableTextBlock Text="{Binding RedirectUri}" VerticalAlignment="Center" />
+              </StackPanel>
+            </StackPanel>
+          </Expander>
           <TextBox Name="TreatStreamToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Access token (filled in by signing in)" />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
           <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />

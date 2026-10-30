@@ -1,3 +1,4 @@
+using Cuebot.Core.Auth;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 
@@ -16,9 +17,11 @@ internal interface IKickTokenSource
 }
 
 /// <summary>Owns the tokens stored in <see cref="KickSettings"/>: storing, refreshing (single-flight per account), clearing.</summary>
-internal sealed class KickTokenManager(JsonFile<KickSettings> settings, KickAuthClient auth, TimeProvider time, AppLog log)
-    : IKickTokenSource
+internal sealed class KickTokenManager(JsonFile<KickSettings> settings, KickAuthClient auth, TimeProvider time, AppLog log,
+    Func<AppCredentials>? app = null) : IKickTokenSource
 {
+    private readonly Func<AppCredentials> _app = app ?? (() => AppCredentials.Choose(settings.Value.ClientId, settings.Value.ClientSecret, AppCredentials.None));
+
     private static readonly TimeSpan RefreshMargin = TimeSpan.FromMinutes(1);
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
@@ -64,8 +67,8 @@ internal sealed class KickTokenManager(JsonFile<KickSettings> settings, KickAuth
             var t = Tokens(account);
             if (t.AccessToken != rejectedToken && t.AccessToken.Length > 0) return true; // someone else refreshed already
             if (t.RefreshToken.Length == 0) return false;
-            var refreshed = await auth.RefreshAsync(Settings.ClientId.Trim(), Settings.ClientSecret.Trim(), t.RefreshToken, ct)
-                .ConfigureAwait(false);
+            var app = _app();
+            var refreshed = await auth.RefreshAsync(app.ClientId, app.ClientSecret, t.RefreshToken, ct).ConfigureAwait(false);
             Store(account, refreshed);
             log.Info("Kick", $"{account} access token refreshed");
             return true;

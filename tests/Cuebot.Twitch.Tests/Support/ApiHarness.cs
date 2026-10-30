@@ -31,8 +31,8 @@ public sealed class ApiHarness : IDisposable
         Http = new FakeHttpHandler(Respond);
         var client = new HttpClient(Http);
         var auth = new TwitchAuthClient(client, new Uri("https://id.test/oauth2/"), TimeProvider.System);
-        var tokens = new TwitchTokenManager(Settings, auth, log);
-        var botTokens = new TwitchTokenManager(Settings, auth, log, x => new BotAccount(x), "Twitch bot");
+        var tokens = new TwitchTokenManager(Settings, auth, log, () => Settings.Value.ClientId.Trim());
+        var botTokens = new TwitchTokenManager(Settings, auth, log, () => Settings.Value.ClientId.Trim(), x => new BotAccount(x), "Twitch bot");
         var helixBase = new Uri("https://api.test/helix/");
         Sent = new SentMessageTracker();
         Api = new TwitchApi(new HelixClient(client, helixBase, tokens), tokens, new HelixClient(client, helixBase, botTokens), botTokens,

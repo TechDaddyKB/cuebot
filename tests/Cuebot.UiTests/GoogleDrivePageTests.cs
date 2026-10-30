@@ -83,7 +83,8 @@ public sealed class GoogleDrivePageTests : IAsyncDisposable
             Pump();
             var settings = vm.Settings;
             Assert.False(settings.DriveSignedIn);
-            Assert.False(settings.DriveSignInCommand.CanExecute(null));   // no client ID yet
+            // Without a client ID, sign-in needs the build's own Google app.
+            Assert.Equal(_host.DriveBackups.HasBuiltInApp, settings.DriveSignInCommand.CanExecute(null));
             Save(window, "settings-google-drive-signed-out");
 
             settings.DriveClientId = FakeGoogleDrive.ClientId;

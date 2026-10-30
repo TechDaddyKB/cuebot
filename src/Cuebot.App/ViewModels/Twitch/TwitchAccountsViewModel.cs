@@ -19,6 +19,11 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
         set { Twitch.Settings.ClientId = value.Trim(); Twitch.SaveSettings(); OnPropertyChanged(); }
     }
 
+    public bool HasBuiltInApp => Twitch.HasBuiltInApp;
+
+    /// <summary>Advanced starts open when the user's own app is needed or already in use.</summary>
+    public bool ShowOwnApp { get; } = !twitch.HasBuiltInApp || twitch.Settings.ClientId.Trim().Length > 0;
+
     public bool AutoConnect
     {
         get => Twitch.Settings.AutoConnect;
@@ -66,9 +71,9 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
     private async Task Authorize()
     {
         Error = "";
-        if (string.IsNullOrWhiteSpace(ClientId))
+        if (!Twitch.App.IsSet)
         {
-            Error = "Enter the Client ID of your Twitch application first.";
+            Error = "Enter the Client ID of your Twitch application under Advanced first.";
             return;
         }
         _authorizing = new CancellationTokenSource();
@@ -104,9 +109,9 @@ public sealed partial class TwitchAccountsViewModel(TwitchService twitch) : Twit
     private async Task AuthorizeBot()
     {
         Error = "";
-        if (string.IsNullOrWhiteSpace(ClientId))
+        if (!Twitch.App.IsSet)
         {
-            Error = "Enter the Client ID of your Twitch application first.";
+            Error = "Enter the Client ID of your Twitch application under Advanced first.";
             return;
         }
         _botAuthorizing = new CancellationTokenSource();

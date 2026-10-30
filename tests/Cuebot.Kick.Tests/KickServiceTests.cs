@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
+using Cuebot.Core.Auth;
 using Cuebot.Core.Chat;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
@@ -140,6 +141,32 @@ public sealed class KickServiceTests : IAsyncLifetime
         var ex = await Assert.ThrowsAsync<KickApiException>(() => _service.SignInAsync(KickAccount.Broadcaster, _ => { }));
         Assert.Contains("cancelled", ex.Message);
         Assert.False(_service.IsBroadcasterSignedIn);
+    }
+
+    [Fact]
+    public async Task Without_an_own_app_the_built_in_app_signs_in_on_its_registered_port()
+    {
+        _settings.Value.ClientId = "";
+        _settings.Value.ClientSecret = "";
+        _settings.Value.RedirectPort = 50001;   // only the user's own app may use another port
+        await using var service = new KickService(_settings, new HttpClient(_http), new EventBus(_log), _log, Endpoints, TestTimings.Fast,
+            TimeProvider.System, _pusher.Create, port => { Assert.Equal(KickEndpoints.DefaultRedirectPort, port); return _receiver; },
+            builtInApp: new AppCredentials("builtin-cid", "builtin-secret", true));
+        Uri? opened = null;
+        _receiver.Respond = _ => new OAuthCallbackResult("the-code", null);
+        await service.SignInAsync(KickAccount.Broadcaster, url => opened = url);
+
+        var query = OAuthCallback.ParseQuery(opened!.Query);
+        Assert.Equal("builtin-cid", query["client_id"]);
+        Assert.Equal("http://localhost:47582/callback", query["redirect_uri"]);
+        var form = OAuthCallback.ParseQuery(_http.Requests.Single(r => r.Path == "/oauth/token").Body);
+        Assert.Equal("builtin-secret", form["client_secret"]);
+
+        // The user's own app, once entered, replaces it (with the port they chose).
+        _settings.Value.ClientId = "own-cid";
+        _settings.Value.ClientSecret = "own-secret";
+        Assert.False(service.App.IsBuiltIn);
+        Assert.Equal("http://localhost:50001/callback", service.RedirectUri);
     }
 
     [Fact]

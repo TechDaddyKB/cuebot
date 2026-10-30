@@ -138,6 +138,8 @@ public sealed class DonationsPageTests : IAsyncDisposable
             Assert.Equal("TIPEEE-key-ABCDEFGHIJ5678", all.TipeeeStream.Settings.ApiKey);
             Assert.Equal("Saved token: ••••••••9999", vm.Pally.MaskedToken);
             UiPump.Pump();
+            foreach (var expander in window.GetVisualDescendants().OfType<Expander>()) expander.IsExpanded = true;   // own-app fields
+            UiPump.Pump();
             var secrets = window.GetVisualDescendants().OfType<TextBox>()
                 .Where(t => t.Name is "TipeeeStreamKey" or "PallyKey" or "TreatStreamSecret" or "TreatStreamToken").ToArray();
             Assert.Equal(4, secrets.Length);

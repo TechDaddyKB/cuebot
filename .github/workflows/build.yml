@@ -33,6 +33,18 @@ jobs:
   windows-package:
     needs: test
     runs-on: windows-latest
+    # The OAuth apps registered for Cuebot (docs/BUILT_IN_APPS.md), compiled into the packages. Empty in builds without
+    # the secrets (forks, pull requests): those packages ask users for their own apps instead.
+    env:
+      CUEBOT_TWITCH_CLIENT_ID: ${{ secrets.CUEBOT_TWITCH_CLIENT_ID }}
+      CUEBOT_GOOGLE_CLIENT_ID: ${{ secrets.CUEBOT_GOOGLE_CLIENT_ID }}
+      CUEBOT_GOOGLE_CLIENT_SECRET: ${{ secrets.CUEBOT_GOOGLE_CLIENT_SECRET }}
+      CUEBOT_GOOGLE_DEVICE_CLIENT_ID: ${{ secrets.CUEBOT_GOOGLE_DEVICE_CLIENT_ID }}
+      CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET: ${{ secrets.CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET }}
+      CUEBOT_KICK_CLIENT_ID: ${{ secrets.CUEBOT_KICK_CLIENT_ID }}
+      CUEBOT_KICK_CLIENT_SECRET: ${{ secrets.CUEBOT_KICK_CLIENT_SECRET }}
+      CUEBOT_TREATSTREAM_CLIENT_ID: ${{ secrets.CUEBOT_TREATSTREAM_CLIENT_ID }}
+      CUEBOT_TREATSTREAM_CLIENT_SECRET: ${{ secrets.CUEBOT_TREATSTREAM_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -49,6 +61,18 @@ jobs:
   linux-package:
     needs: test
     runs-on: ubuntu-24.04   # pinned: its sway 1.9 is what makes Avalonia fail on Wayland for the X11-fallback smoke test
+    # The OAuth apps registered for Cuebot (docs/BUILT_IN_APPS.md), compiled into the packages. Empty in builds without
+    # the secrets (forks, pull requests): those packages ask users for their own apps instead.
+    env:
+      CUEBOT_TWITCH_CLIENT_ID: ${{ secrets.CUEBOT_TWITCH_CLIENT_ID }}
+      CUEBOT_GOOGLE_CLIENT_ID: ${{ secrets.CUEBOT_GOOGLE_CLIENT_ID }}
+      CUEBOT_GOOGLE_CLIENT_SECRET: ${{ secrets.CUEBOT_GOOGLE_CLIENT_SECRET }}
+      CUEBOT_GOOGLE_DEVICE_CLIENT_ID: ${{ secrets.CUEBOT_GOOGLE_DEVICE_CLIENT_ID }}
+      CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET: ${{ secrets.CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET }}
+      CUEBOT_KICK_CLIENT_ID: ${{ secrets.CUEBOT_KICK_CLIENT_ID }}
+      CUEBOT_KICK_CLIENT_SECRET: ${{ secrets.CUEBOT_KICK_CLIENT_SECRET }}
+      CUEBOT_TREATSTREAM_CLIENT_ID: ${{ secrets.CUEBOT_TREATSTREAM_CLIENT_ID }}
+      CUEBOT_TREATSTREAM_CLIENT_SECRET: ${{ secrets.CUEBOT_TREATSTREAM_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5

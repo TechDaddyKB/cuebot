@@ -339,8 +339,14 @@ public sealed partial class TreatStreamCardViewModel : DonationCardViewModel
     public string ClientId
     {
         get => S.ClientId;
-        set { S.ClientId = value.Trim(); Save(); OnPropertyChanged(); }
+        set { S.ClientId = value.Trim(); Save(); OnPropertyChanged(); OnPropertyChanged(nameof(RedirectUri)); }
     }
+
+    public bool HasBuiltInApp => _service.HasBuiltInApp;
+
+    /// <summary>Advanced starts open when the user's own app is needed or already in use.</summary>
+    public bool ShowOwnApp => _showOwnApp ??= !_service.HasBuiltInApp || S.ClientId.Trim().Length > 0;
+    private bool? _showOwnApp;
 
     /// <summary>The client secret; the view masks it.</summary>
     public string ClientSecret

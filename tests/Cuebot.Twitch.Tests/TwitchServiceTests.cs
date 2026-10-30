@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
+using Cuebot.Core.Auth;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Scripting;
@@ -36,7 +37,7 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         bus.Subscribe(_published.Enqueue);
         var endpoints = new TwitchEndpoints(new Uri("https://id.test/oauth2/"), new Uri("https://api.test/helix/"), _server.Url());
         _service = new TwitchService(_settings, new HttpClient(_http), bus, _log, endpoints, TimeProvider.System,
-            EventSubTimeouts.Default with { InitialRetryDelay = TimeSpan.FromMilliseconds(50) });
+            EventSubTimeouts.Default with { InitialRetryDelay = TimeSpan.FromMilliseconds(50) }, builtInApp: AppCredentials.None);
         return Task.CompletedTask;
     }
 
@@ -60,6 +61,25 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         ("/helix/chat/messages", _) => FakeHttpHandler.Json(HttpStatusCode.OK, """{"data":[{"message_id":"m","is_sent":true}]}"""),
         _ => new HttpResponseMessage(HttpStatusCode.NotFound),
     };
+
+    [Fact]
+    public async Task Without_an_own_client_id_the_built_in_app_signs_in_and_refreshes()
+    {
+        _settings.Value.ClientId = "";
+        var http = new FakeHttpHandler(Respond);
+        var endpoints = new TwitchEndpoints(new Uri("https://id.test/oauth2/"), new Uri("https://api.test/helix/"), _server.Url());
+        await using var service = new TwitchService(_settings, new HttpClient(http), new EventBus(_log), _log, endpoints, TimeProvider.System,
+            EventSubTimeouts.Default, builtInApp: new AppCredentials("builtin-client", "", true));
+
+        Assert.True(service.HasBuiltInApp);
+        Assert.True(service.App.IsBuiltIn);
+        Assert.True(service.IsAuthorized);
+        await Assert.ThrowsAnyAsync<Exception>(() => service.BeginAuthorizationAsync());   // the stand-in has no device endpoint
+        Assert.Equal("builtin-client", http.Requests.Single(r => r.Path == "/oauth2/device").Form["client_id"]);
+
+        _settings.Value.ClientId = "own-client";
+        Assert.Equal(new AppCredentials("own-client", "", false), service.App);
+    }
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {

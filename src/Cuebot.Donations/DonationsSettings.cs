@@ -119,7 +119,10 @@ public sealed class TreatStreamSettings
     public string ClientSecret { get; set; } = "";
 
     /// <summary>Port of the sign-in redirect, http://localhost:{port}/callback (register it in the TreatStream app).</summary>
-    public int RedirectPort { get; set; } = 8913;
+    public int RedirectPort { get; set; } = DefaultRedirectPort;
+
+    /// <summary>The port registered for Cuebot's built-in TreatStream app.</summary>
+    public const int DefaultRedirectPort = 8913;
 
     /// <summary>OAuth access token (from signing in, or pasted). A secret.</summary>
     public string AccessToken { get; set; } = "";

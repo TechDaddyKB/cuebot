@@ -87,6 +87,7 @@ public static partial class SecretScrubber
         if (string.IsNullOrEmpty(text)) return text ?? "";
         options ??= ScrubOptions.Default;
         var s = text;
+        foreach (var secret in Cuebot.Core.Auth.BuiltInApps.Secrets) s = s.Replace(secret, Redacted, StringComparison.Ordinal);
         s = DiscordWebhook().Replace(s, "https://discord.com/api/webhooks/" + Redacted);
         s = SlackWebhook().Replace(s, "https://hooks.slack.com/" + Redacted);
         s = IftttKeyPath().Replace(s, m => m.Groups[1].Value + Redacted);

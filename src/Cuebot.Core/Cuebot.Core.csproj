@@ -5,4 +5,40 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Tests" />
   </ItemGroup>
+
+  <!--
+    The OAuth apps registered for Cuebot (BuiltInApps), compiled in from environment variables that CI fills from
+    repository secrets. Unset variables leave that service without a built-in app. See docs/BUILT_IN_APPS.md.
+  -->
+  <ItemGroup>
+    <_CuebotBuiltInApp Include="TwitchClientId" Value="$(CUEBOT_TWITCH_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="GoogleClientId" Value="$(CUEBOT_GOOGLE_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="GoogleClientSecret" Value="$(CUEBOT_GOOGLE_CLIENT_SECRET)" />
+    <_CuebotBuiltInApp Include="GoogleDeviceClientId" Value="$(CUEBOT_GOOGLE_DEVICE_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="GoogleDeviceClientSecret" Value="$(CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET)" />
+    <_CuebotBuiltInApp Include="KickClientId" Value="$(CUEBOT_KICK_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="KickClientSecret" Value="$(CUEBOT_KICK_CLIENT_SECRET)" />
+    <_CuebotBuiltInApp Include="TreatStreamClientId" Value="$(CUEBOT_TREATSTREAM_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="TreatStreamClientSecret" Value="$(CUEBOT_TREATSTREAM_CLIENT_SECRET)" />
+  </ItemGroup>
+
+  <Target Name="CuebotGenerateBuiltInApps" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_CuebotBuiltInAppsFile>$(IntermediateOutputPath)BuiltInApps.g.cs</_CuebotBuiltInAppsFile>
+    </PropertyGroup>
+    <!-- OAuth client IDs and secrets are URL-safe tokens; anything else is a misconfigured secret. -->
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('%(_CuebotBuiltInApp.Value)', '^[A-Za-z0-9._~+/=-]*$'))"
+           Text="Built-in app value %(_CuebotBuiltInApp.Identity) has characters an OAuth client ID or secret cannot contain." />
+    <ItemGroup>
+      <_CuebotBuiltInAppLine Include="namespace Cuebot.Core.Auth%3B" />
+      <_CuebotBuiltInAppLine Include="partial class BuiltInApps {" />
+      <_CuebotBuiltInAppLine Include="@(_CuebotBuiltInApp->'    private const string %(Identity) = &quot;%(Value)&quot;%3B')" />
+      <_CuebotBuiltInAppLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(_CuebotBuiltInAppsFile)" Lines="// &lt;auto-generated/&gt;;@(_CuebotBuiltInAppLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(_CuebotBuiltInAppsFile)" />
+      <FileWrites Include="$(_CuebotBuiltInAppsFile)" />
+    </ItemGroup>
+  </Target>
 </Project>

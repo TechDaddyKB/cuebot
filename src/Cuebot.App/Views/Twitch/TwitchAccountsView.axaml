@@ -28,8 +28,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Sign in" />
           <TextBlock Classes="hint"
-                     Text="Register an application at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID. Cuebot signs in with the device-code flow, so no client secret is needed. Choose which permissions to request on the Settings tab." />
-          <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID" />
+                     Text="Twitch opens in your browser; confirm the code shown here. Choose which permissions to request on the Settings tab." />
           <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}" />
           <StackPanel Spacing="8" IsVisible="{Binding IsAuthorizing}">
             <TextBlock TextWrapping="Wrap" Text="A browser window has opened. Confirm this code on Twitch:" />
@@ -39,6 +38,13 @@
               <Button Content="Cancel" Command="{Binding CancelAuthorizeCommand}" />
             </StackPanel>
           </StackPanel>
+          <Expander Header="Advanced: use my own Twitch application" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="hint" TextWrapping="Wrap"
+                         Text="Optional unless this build has no Twitch application of its own. Register one at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID; no client secret is needed. Leave it empty to use Cuebot's. Sign in again after changing it." />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID" />
+            </StackPanel>
+          </Expander>
         </StackPanel>
       </Border>
 

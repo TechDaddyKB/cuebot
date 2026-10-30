@@ -18,23 +18,32 @@ public sealed class GoogleDriveBackups : IDisposable
     private readonly BackupService _backups;
     private readonly GoogleDriveClient _client;
     private readonly AppLog _log;
+    private readonly AppCredentials _builtInApp;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly CancellationTokenSource _shutdown = new();
     private IReadOnlyList<RemoteBackup> _remote = [];
 
-    public GoogleDriveBackups(AppSettingsStore store, BackupService backups, GoogleDriveClient client, AppLog log)
+    public GoogleDriveBackups(AppSettingsStore store, BackupService backups, GoogleDriveClient client, AppLog log,
+        AppCredentials? builtInApp = null)
     {
         _store = store;
+        _builtInApp = builtInApp ?? BuiltInApps.Google;
         _backups = backups;
         _client = client;
         _log = log;
-        _client.Credentials = () => (Settings.ClientId.Trim(), Settings.ClientSecret.Trim(), Settings.RefreshToken);
+        _client.Credentials = () => (App.ClientId, App.ClientSecret, Settings.RefreshToken);
         _backups.Created += OnBackupCreated;
     }
 
     public GoogleDriveBackupSettings Settings => _store.Settings.Backups.GoogleDrive;
 
-    public bool IsConfigured => Settings.ClientId.Trim().Length > 0;
+    /// <summary>The Google client signed in with: the user's own (Advanced) or the one built into Cuebot.</summary>
+    public AppCredentials App => AppCredentials.Choose(Settings.ClientId, Settings.ClientSecret, _builtInApp);
+
+    /// <summary>True when this build has a Google client of its own.</summary>
+    public bool HasBuiltInApp => _builtInApp.IsSet;
+
+    public bool IsConfigured => App.IsSet;
 
     public bool IsSignedIn => Settings.IsSignedIn;
 
@@ -79,12 +88,14 @@ public sealed class GoogleDriveBackups : IDisposable
     /// <summary>Browser sign-in: listens on a loopback port, opens Google's consent page, exchanges the code (PKCE).</summary>
     public async Task SignInAsync(CancellationToken ct = default)
     {
-        if (!IsConfigured) throw new GoogleDriveException("Enter the OAuth client ID of your Google Cloud \"Desktop app\" client first.");
+        if (!IsConfigured)
+            throw new GoogleDriveException("This build has no Google app of its own; enter the OAuth client ID of your Google Cloud \"Desktop app\" client under Advanced.");
+        var app = App;
         using var receiver = new LoopbackReceiver("Google Drive");
         var verifier = Pkce.CreateVerifier();
         var state = Pkce.CreateState();
         SetStatus("Waiting for the Google sign-in in your browser...");
-        OpenBrowser(_client.BuildAuthorizeUri(Settings.ClientId.Trim(), receiver.RedirectUri, Pkce.Challenge(verifier), state));
+        OpenBrowser(_client.BuildAuthorizeUri(app.ClientId, receiver.RedirectUri, Pkce.Challenge(verifier), state));
         try
         {
             var result = await receiver.WaitForRedirectAsync(ct).ConfigureAwait(false);
@@ -92,7 +103,7 @@ public sealed class GoogleDriveBackups : IDisposable
                 throw new GoogleDriveException(error == "access_denied" ? "Sign-in was cancelled in the browser." : $"Google sign-in failed: {error}");
             if (result.GetValueOrDefault("state") != state)
                 throw new GoogleDriveException("The sign-in response did not match this request. Try again.");
-            var tokens = await _client.ExchangeCodeAsync(Settings.ClientId.Trim(), Settings.ClientSecret.Trim(),
+            var tokens = await _client.ExchangeCodeAsync(app.ClientId, app.ClientSecret,
                 result.GetValueOrDefault("code") ?? "", verifier, receiver.RedirectUri, ct).ConfigureAwait(false);
             Settings.RefreshToken = tokens.RefreshToken;
             Settings.FolderId = "";

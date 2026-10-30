@@ -15,6 +15,7 @@ public sealed partial class YouTubeViewModel : PageViewModel
     public YouTubeViewModel(YouTubeService youtube) : base("YouTube")
     {
         _youtube = youtube;
+        ShowOwnApp = !youtube.HasBuiltInApp || youtube.Settings.ClientId.Trim().Length > 0;
         youtube.StatusChanged += () => OnUi(() => OnPropertyChanged(string.Empty));
     }
 
@@ -32,6 +33,15 @@ public sealed partial class YouTubeViewModel : PageViewModel
         get => _youtube.Settings.ClientSecret;
         set { _youtube.Settings.ClientSecret = value.Trim(); Save(); }
     }
+
+    public bool HasBuiltInApp => _youtube.HasBuiltInApp;
+
+    /// <summary>Advanced starts open when the user's own client is needed or already in use.</summary>
+    public bool ShowOwnApp { get; }
+
+    /// <summary>Each sign-in kind is offered when a client for it exists (both when none does, so the error explains why).</summary>
+    public bool ShowCodeSignIn => _youtube.CanSignInWithCode || !_youtube.IsConfigured;
+    public bool ShowBrowserSignIn => _youtube.CanSignInWithBrowser || !_youtube.IsConfigured;
 
     public bool AutoConnect
     {
@@ -227,7 +237,7 @@ public sealed partial class YouTubeViewModel : PageViewModel
     {
         Error = "";
         if (_youtube.IsConfigured) return true;
-        Error = "Enter the OAuth client ID and client secret of your Google Cloud project first.";
+        Error = "Enter the OAuth client ID and client secret of your Google Cloud project under Advanced first.";
         return false;
     }
 

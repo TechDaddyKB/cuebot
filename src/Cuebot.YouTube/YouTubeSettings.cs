@@ -3,7 +3,7 @@ namespace Cuebot.YouTube;
 /// <summary>Persisted YouTube configuration and sign-in state (youtube.json). Tokens and the client secret are never logged.</summary>
 public sealed class YouTubeSettings
 {
-    /// <summary>OAuth client ID from the user's own Google Cloud project.</summary>
+    /// <summary>OAuth client ID from the user's own Google Cloud project (Advanced); empty uses Cuebot's built-in client.</summary>
     public string ClientId { get; set; } = "";
 
     /// <summary>
@@ -62,6 +62,12 @@ public sealed class YouTubeAccount
     public string CustomUrl { get; set; } = "";
     public string ProfileImageUrl { get; set; } = "";
 
+    /// <summary>
+    /// Which client issued the tokens: "builtin" (Cuebot's browser client), "builtin-device" (Cuebot's code client)
+    /// or empty (the user's own client).
+    /// </summary>
+    public string SignedInWith { get; set; } = "";
+
     public bool IsSignedIn => RefreshToken.Length > 0 || AccessToken.Length > 0;
 
     internal void Clear()
@@ -74,6 +80,7 @@ public sealed class YouTubeAccount
         ChannelTitle = "";
         CustomUrl = "";
         ProfileImageUrl = "";
+        SignedInWith = "";
     }
 }
 

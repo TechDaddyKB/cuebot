@@ -12,10 +12,30 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+    secrets: inherit   # the built-in app credentials (docs/BUILT_IN_APPS.md)
 
   tarballs:
     runs-on: ubuntu-latest
+    # The OAuth apps registered for Cuebot (docs/BUILT_IN_APPS.md), compiled into the packages. Empty in builds without
+    # the secrets (forks, pull requests): those packages ask users for their own apps instead.
+    env:
+      CUEBOT_TWITCH_CLIENT_ID: ${{ secrets.CUEBOT_TWITCH_CLIENT_ID }}
+      CUEBOT_GOOGLE_CLIENT_ID: ${{ secrets.CUEBOT_GOOGLE_CLIENT_ID }}
+      CUEBOT_GOOGLE_CLIENT_SECRET: ${{ secrets.CUEBOT_GOOGLE_CLIENT_SECRET }}
+      CUEBOT_GOOGLE_DEVICE_CLIENT_ID: ${{ secrets.CUEBOT_GOOGLE_DEVICE_CLIENT_ID }}
+      CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET: ${{ secrets.CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET }}
+      CUEBOT_KICK_CLIENT_ID: ${{ secrets.CUEBOT_KICK_CLIENT_ID }}
+      CUEBOT_KICK_CLIENT_SECRET: ${{ secrets.CUEBOT_KICK_CLIENT_SECRET }}
+      CUEBOT_TREATSTREAM_CLIENT_ID: ${{ secrets.CUEBOT_TREATSTREAM_CLIENT_ID }}
+      CUEBOT_TREATSTREAM_CLIENT_SECRET: ${{ secrets.CUEBOT_TREATSTREAM_CLIENT_SECRET }}
     steps:
+      - name: Report built-in apps missing from this release
+        run: |
+          for name in TWITCH_CLIENT_ID GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_DEVICE_CLIENT_ID GOOGLE_DEVICE_CLIENT_SECRET \
+                      KICK_CLIENT_ID KICK_CLIENT_SECRET TREATSTREAM_CLIENT_ID TREATSTREAM_CLIENT_SECRET; do
+            var="CUEBOT_$name"
+            [ -n "${!var}" ] || echo "::warning::Secret $var is not set: this release asks users for their own app there."
+          done
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
         with:

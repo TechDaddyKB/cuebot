@@ -1,3 +1,4 @@
+using Cuebot.Core.Auth;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 using Cuebot.YouTube.Api;
@@ -35,8 +36,8 @@ internal sealed class TestApi : IDisposable
         Http = new FakeHttpHandler(respond);
         Quota = new QuotaTracker(Time);
         var oauth = new GoogleOAuthClient(new HttpClient(Http), Endpoints, Time);
-        Broadcaster = new AccountTokens(Settings, YouTubeAccountKind.Broadcaster, oauth, Time, Timings, Log);
-        Bot = new AccountTokens(Settings, YouTubeAccountKind.Bot, oauth, Time, Timings, Log);
+        Broadcaster = new AccountTokens(Settings, YouTubeAccountKind.Broadcaster, oauth, Time, Timings, Log, new YouTubeApps(AppCredentials.None, AppCredentials.None));
+        Bot = new AccountTokens(Settings, YouTubeAccountKind.Bot, oauth, Time, Timings, Log, new YouTubeApps(AppCredentials.None, AppCredentials.None));
         Api = new YouTubeApi(new YouTubeApiClient(new HttpClient(Http), Endpoints.Api, Quota));
     }
 

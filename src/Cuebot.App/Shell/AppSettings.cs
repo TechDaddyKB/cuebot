@@ -57,8 +57,8 @@ public sealed class BackupSettings
 }
 
 /// <summary>
-/// Google Drive backups. The OAuth client is the user's own ("Desktop app" client in Google Cloud); Google treats a
-/// desktop client's secret as non-confidential. The refresh token is stored here like other modules store theirs.
+/// Google Drive backups. The OAuth client is Cuebot's built-in one, or the user's own ("Desktop app" client in Google
+/// Cloud) when entered under Advanced; Google treats a desktop client's secret as non-confidential. The refresh token is stored here like other modules store theirs.
 /// </summary>
 public sealed class GoogleDriveBackupSettings
 {
