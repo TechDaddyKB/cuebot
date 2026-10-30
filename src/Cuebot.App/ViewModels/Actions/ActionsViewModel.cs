@@ -120,7 +120,21 @@ public sealed partial class ActionsViewModel : PageViewModel
             .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray());
         SelectedAction = selected is not null && Actions.Contains(selected) ? selected : null;
+        string? group = null;
+        foreach (var action in Actions)
+        {
+            var first = group is null || !string.Equals(group, action.Group, StringComparison.OrdinalIgnoreCase);
+            group = action.Group;
+            action.GroupHeader = first ? (action.Group.Length == 0 ? "No group" : action.Group) : null;
+            action.GroupCount = first ? Actions.Count(a => string.Equals(a.Group, action.Group, StringComparison.OrdinalIgnoreCase)) : 0;
+        }
+        OnPropertyChanged(nameof(ActionCount));
     }
+
+    /// <summary>"12 actions" (or "3 of 12" while searching).</summary>
+    public string ActionCount => Actions.Count == _all.Count ? Plural(_all.Count, "action") : $"{Actions.Count} of {_all.Count}";
+
+    private static string Plural(int n, string word) => n == 1 ? $"1 {word}" : $"{n} {word}s";
 
     private ActionItemViewModel Add(ActionDefinition definition)
     {

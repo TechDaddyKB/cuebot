@@ -51,7 +51,20 @@ public sealed partial class ActionItemViewModel : ObservableObject
     {
         if (oldValue is not null) oldValue.IsSelected = false;
         if (newValue is not null) newValue.IsSelected = true;
+        OnPropertyChanged(nameof(SelectedTrigger));
+        OnPropertyChanged(nameof(SelectedStep));
     }
+
+    /// <summary>The selection when it is a trigger (shown under the trigger list).</summary>
+    public TriggerItemViewModel? SelectedTrigger => Selected as TriggerItemViewModel;
+
+    /// <summary>The selection when it is a sub-action or branch (shown under the sub-action list).</summary>
+    public EditorItemViewModel? SelectedStep => Selected is TriggerItemViewModel ? null : Selected;
+
+    /// <summary>Set by the page on the first action of each group in the list: the group's folder row.</summary>
+    [ObservableProperty] private string? _groupHeader;
+
+    [ObservableProperty] private int _groupCount;
 
     public string Name
     {

@@ -253,17 +253,17 @@
   <Style Selector="ListBoxItem">
     <Setter Property="CornerRadius" Value="6" />
   </Style>
-  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.plain) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
   </Style>
-  <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.plain) ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
   </Style>
-  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.plain) ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
   </Style>
   <!-- The soft fill alone is hard to see on the dark ground, so a selected row also gets an accent outline. -->
-  <Style Selector="ListBox:not(.nav) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="ListBox:not(.nav):not(.plain) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>

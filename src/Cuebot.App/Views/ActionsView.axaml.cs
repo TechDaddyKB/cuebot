@@ -36,6 +36,23 @@ public partial class ActionsView : UserControl
         // Right-click selects what is under the pointer first, so the context menu acts on it.
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+        SizeChanged += (_, e) => FoldTriggerPane(e.NewSize.Width < NarrowWidth);
+    }
+
+    /// <summary>Below this page width (about 1280 px of window) the trigger pane becomes a tab of the main pane.</summary>
+    internal const double NarrowWidth = 1000;
+
+    internal bool TriggersFolded { get; private set; }
+
+    private void FoldTriggerPane(bool fold)
+    {
+        if (fold == TriggersFolded) return;
+        TriggersFolded = fold;
+        TriggerPane.IsVisible = !fold;
+        Panes.ColumnDefinitions[2].Width = new GridLength(fold ? 0 : 300);
+        Panes.ColumnDefinitions[3].Width = new GridLength(fold ? 0 : 12);
+        TriggersTab.IsVisible = fold;
+        if (!fold && TriggersTab.IsSelected) EditorTabs.SelectedIndex = 0;
     }
 
     private ActionsViewModel? ViewModel => DataContext as ActionsViewModel;

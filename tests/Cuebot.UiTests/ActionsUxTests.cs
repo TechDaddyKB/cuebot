@@ -85,6 +85,52 @@ public sealed class ActionsUxTests : IAsyncDisposable
     }
 
     /// <summary>An action with a trigger, a plain step and a Group holding two children.</summary>
+    [AvaloniaFact]
+    public void Actions_page_has_folders_and_folds_the_trigger_pane_on_narrow_windows()
+    {
+        AddGroupedAction();
+        TestApp.BindingErrors.Clear();
+        var (window, vm) = Open();
+        var actions = Page<ActionsViewModel>(vm);
+        vm.SelectedPage = actions;
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Grouped");
+        Pump();
+
+        // Groups are folders: the first action of each group carries the folder row and its count.
+        var firsts = actions.Actions.Where(a => a.GroupHeader is not null).ToList();
+        Assert.Equal(actions.Actions.Select(a => a.Group).Distinct(StringComparer.OrdinalIgnoreCase).Count(), firsts.Count);
+        Assert.Equal(actions.Actions.Count, firsts.Sum(a => a.GroupCount));
+        Assert.Contains("action", actions.ActionCount);
+
+        // A selected trigger shows under the trigger list, a selected sub-action under the sub-action list.
+        var item = actions.SelectedAction!;
+        actions.SelectCommand.Execute(item.Triggers[0]);
+        Assert.Same(item.Triggers[0], item.SelectedTrigger);
+        Assert.Null(item.SelectedStep);
+        actions.SelectCommand.Execute(item.Steps.Items[0]);
+        Assert.Same(item.Steps.Items[0], item.SelectedStep);
+        Assert.Null(item.SelectedTrigger);
+
+        var view = window.GetVisualDescendants().OfType<ActionsView>().Single();
+        var triggersTab = window.GetVisualDescendants().OfType<TabItem>().Single(t => t.Name == "TriggersTab");
+        Assert.False(view.TriggersFolded);
+        Assert.False(triggersTab.IsVisible);
+        Save(window, "actions-wide");
+
+        window.Width = 1100;
+        Pump();
+        Assert.True(view.TriggersFolded);
+        Assert.True(triggersTab.IsVisible);
+        triggersTab.IsSelected = true;
+        Save(window, "actions-narrow");
+        window.Width = 1360;
+        Pump();
+        Assert.False(view.TriggersFolded);
+        Assert.False(triggersTab.IsSelected);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
     private ActionDefinition AddGroupedAction(string name = "Grouped")
     {
         var group = Step(GroupSubAction.Id, ("name", "Greeting"));
