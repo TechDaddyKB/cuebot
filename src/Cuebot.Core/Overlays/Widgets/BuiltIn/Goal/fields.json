@@ -1,0 +1,28 @@
+{
+  "title": { "type": "text", "label": "Title", "value": "Follower goal", "group": "Goal" },
+  "type": { "type": "dropdown", "label": "Counts", "value": "follower", "group": "Goal",
+    "options": { "follower": "Followers", "subscriber": "Subscribers", "tip": "Tips", "cheer": "Cheers (bits)", "superchat": "Super Chats",
+      "kicks": "Kicks", "jewels": "YouTube Jewels", "charityCampaignDonation": "Charity donations",
+      "revenue": "Revenue (tips, Super Chats and charity added up)" } },
+  "measure": { "type": "dropdown", "label": "Measure", "value": "auto", "group": "Goal",
+    "options": { "auto": "Amount for money, bits and Kicks; otherwise how many", "count": "How many", "amount": "Amount" } },
+  "period": { "type": "dropdown", "label": "Counting", "value": "session", "group": "Goal",
+    "options": { "session": "This stream", "week": "This week", "month": "This month", "total": "All time" } },
+  "goal": { "type": "number", "label": "Goal", "value": 100, "min": 1, "group": "Goal" },
+  "start": { "type": "number", "label": "Already counted before (added to the progress)", "value": 0, "min": 0, "group": "Goal" },
+
+  "numbers": { "type": "dropdown", "label": "Numbers on the bar", "value": "both", "group": "Text",
+    "options": { "both": "12 / 100 (12%)", "progress": "12 / 100", "percent": "12%", "none": "None" } },
+  "doneText": { "type": "text", "label": "When reached (empty: keep the numbers)", "value": "Goal reached!", "group": "Text" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 24, "min": 0, "max": 80, "step": 1, "group": "Look" },
+  "textSize": { "type": "slider", "label": "Bar text size", "value": 20, "min": 8, "max": 60, "step": 1, "group": "Look" },
+  "barHeight": { "type": "slider", "label": "Bar height", "value": 40, "min": 8, "max": 200, "step": 1, "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 20, "min": 0, "max": 100, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "barColor": { "type": "colorpicker", "label": "Bar colour", "value": "#9146ff", "group": "Look" },
+  "barColor2": { "type": "colorpicker", "label": "Bar end colour (gradient)", "value": "#ff4fa3", "group": "Look" },
+  "trackColor": { "type": "colorpicker", "label": "Track colour", "value": "rgba(0, 0, 0, 0.55)", "group": "Look" },
+  "doneColor": { "type": "colorpicker", "label": "Bar colour when reached", "value": "#2bd576", "group": "Look" }
+}

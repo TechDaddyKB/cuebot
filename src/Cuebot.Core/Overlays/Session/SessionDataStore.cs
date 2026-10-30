@@ -45,6 +45,9 @@ public sealed class SessionTypeData
 
     /// <summary>Subscriber kinds this session ("new", "resub", "gifted").</summary>
     public Dictionary<string, long> SubscriberKinds { get; set; } = [];
+
+    /// <summary>Everyone this session, in the order they first appeared, with their summed amount (for credit rolls).</summary>
+    public Dictionary<string, double> SessionUsers { get; set; } = [];
 }
 
 /// <summary>session-data.json.</summary>
@@ -67,8 +70,9 @@ public sealed class SessionDataDocument
 /// <summary>
 /// Stream totals across every platform, in StreamElements' session data shape, for goal bars, labels and event lists:
 /// <c>{type}-latest</c>, <c>-session</c>, <c>-week</c>, <c>-month</c>, <c>-total</c> (<c>{count, amount}</c>),
-/// <c>-goal</c>, <c>-recent</c>, and for amounts the <c>{session,weekly,monthly,alltime}-top-{donation,donator}</c>
-/// leaderboards. Types are the alert listeners without "-latest" ("follower", "subscriber", "tip", "cheer", "raid",
+/// <c>-goal</c>, <c>-recent</c>, <c>-session-users</c> (everyone this session, <c>[{name, amount}]</c> in the order they
+/// first appeared, at most <see cref="SessionUsersSize"/>), and for amounts the
+/// <c>{session,weekly,monthly,alltime}-top-{donation,donator}</c> leaderboards. Types are the alert listeners without "-latest" ("follower", "subscriber", "tip", "cheer", "raid",
 /// "superchat", "kicks", ...). Amounts of different currencies are added as they are.
 /// <para>
 /// The session resets <see cref="ResetDelay"/> after the last live platform goes offline (or on <see cref="ResetSession"/>);
@@ -80,6 +84,7 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
 {
     public static readonly TimeSpan ResetDelay = TimeSpan.FromMinutes(15);
     public const int RecentSize = 25;
+    public const int SessionUsersSize = 1000;
 
     /// <summary>Types whose amount is money or currency-like (bits, Kicks, Jewels), with leaderboards.</summary>
     public static readonly IReadOnlySet<string> AmountTypes = new HashSet<string>(StringComparer.Ordinal)
@@ -131,6 +136,11 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
                 data[$"{type}-count"] = new JsonObject { ["count"] = t.Total.Count };
                 data[$"{type}-goal"] = new JsonObject { ["amount"] = OverlayAlerts.ToNode(t.Goal) };
                 data[$"{type}-recent"] = new JsonArray([.. t.Recent.Select(r => r.DeepClone())]);
+                data[$"{type}-session-users"] = new JsonArray([.. t.SessionUsers.Select(u => (JsonNode)new JsonObject
+                {
+                    ["name"] = u.Key,
+                    ["amount"] = OverlayAlerts.ToNode(Math.Round(u.Value, 2)),
+                })]);
                 if (AmountTypes.Contains(type))
                 {
                     foreach (var period in Periods)
@@ -202,6 +212,11 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
                 ["amount"] = e["amount"]?.DeepClone(),
                 ["tier"] = e["tier"]?.DeepClone(),
                 ["message"] = e["message"]?.DeepClone(),
+                ["currency"] = e["currency"]?.DeepClone(),
+                ["gifted"] = e["gifted"]?.DeepClone(),
+                ["bulkGifted"] = e["bulkGifted"]?.DeepClone(),
+                ["sender"] = e["sender"]?.DeepClone(),
+                ["redemption"] = e["redemption"]?.DeepClone(),
                 ["service"] = service,
                 ["createdAt"] = time.UtcDateTime.ToString("o", CultureInfo.InvariantCulture),
             };
@@ -218,6 +233,9 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
                     donators[name] = donators.GetValueOrDefault(name) + amount;
                 }
             }
+
+            if (name.Length > 0 && (t.SessionUsers.ContainsKey(name) || t.SessionUsers.Count < SessionUsersSize))
+                t.SessionUsers[name] = t.SessionUsers.GetValueOrDefault(name) + counted;
 
             if (type == "subscriber" && alert.Count > 0)
             {
@@ -285,6 +303,7 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
             t.TopDonation.Remove("session");
             t.Donators.Remove("session");
             t.SubscriberKinds.Clear();
+            t.SessionUsers.Clear();
         }
         Data.OfflineSince = null;
         Data.SessionStarted = now;

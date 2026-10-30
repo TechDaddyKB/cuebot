@@ -106,6 +106,28 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
         return overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layer.Id);
     }
 
+    /// <summary>
+    /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, countdown) in a
+    /// sensible spot for its kind, scaled to the canvas. Returns the layer, or null for an unknown kind or overlay.
+    /// </summary>
+    public OverlayLayer? AddBuiltIn(Guid overlayId, string kind)
+    {
+        if (overlays.Get(overlayId) is not { } overlay || BuiltInWidgets.For(kind) is not { } widget) return null;
+        var name = BuiltInWidgets.Kinds.First(k => k.Id == kind).Name;
+        if (AddCustomWidget(overlayId, name, widget) is not { } layer) return null;
+        double w = overlay.Width, h = overlay.Height, s = Math.Min(w / 1920, h / 1080);
+        var (x, y, width, height) = kind switch
+        {
+            "label" => (40 * s, 40 * s, 700 * s, 70 * s),
+            "goal" => (40 * s, 130 * s, 700 * s, 110 * s),
+            "eventlist" => (w - 420 * s, 40 * s, 380 * s, 420 * s),
+            "countdown" => ((w - 640 * s) / 2, (h - 260 * s) / 2, 640 * s, 260 * s),
+            _ => (0.0, 0.0, w, h),   // credits roll over the whole canvas
+        };
+        MoveLayer(overlayId, layer.Id, Math.Round(x), Math.Round(y), Math.Round(width), Math.Round(height));
+        return overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layer.Id);
+    }
+
     /// <summary>Removes a layer; its element and code stay in the library.</summary>
     public bool RemoveLayer(Guid overlayId, Guid layerId)
     {

@@ -1,0 +1,30 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --title: {{titleSize}}px;
+  --time: {{timeSize}}px;
+  --text: {{textColor}};
+  --time-color: {{timeColor}};
+}
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: var(--font);
+  color: var(--text);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+.countdown.align-left { align-items: flex-start; text-align: left; }
+.countdown.align-center { align-items: center; text-align: center; }
+.countdown.align-right { align-items: flex-end; text-align: right; }
+.countdown .title { font-size: var(--title); font-weight: 700; }
+.countdown .title:empty { display: none; }
+.countdown .time { font-size: var(--time); font-weight: 900; color: var(--time-color); font-variant-numeric: tabular-nums; line-height: 1.05; }
+.countdown.done .time { animation: countdown-done 1.2s ease-out; }
+
+@keyframes countdown-done {
+  0% { transform: scale(1.2); }
+  100% { transform: none; }
+}

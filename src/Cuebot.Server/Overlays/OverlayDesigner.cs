@@ -244,6 +244,8 @@ internal sealed class OverlayDesigner(Func<ServerSettings> settings, ServerServi
                 return widgets.AddChatBox(overlay.Id, "youtube")?.Id;
             case BuiltInWidgets.AlertBoxKind:
                 return widgets.AddAlertBox(overlay.Id)?.Id;
+            case var kind when BuiltInWidgets.Kinds.Any(k => k.Id == kind):
+                return widgets.AddBuiltIn(overlay.Id, kind)?.Id;
             case "element" when Guid.TryParse(elementId, out var id):
                 return widgets.AddFromLibrary(overlay.Id, id)?.Id;
             default:

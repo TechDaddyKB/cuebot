@@ -1,0 +1,19 @@
+{
+  "title": { "type": "text", "label": "Title", "value": "Starting soon", "group": "Timer" },
+  "mode": { "type": "dropdown", "label": "Count down", "value": "duration", "group": "Timer",
+    "options": { "duration": "A number of minutes", "until": "To a time" } },
+  "minutes": { "type": "number", "label": "Minutes", "value": 10, "min": 0, "step": 0.5, "group": "Timer" },
+  "until": { "type": "text", "label": "Time (20:00, or 2026-11-01 20:00)", "value": "20:00", "group": "Timer" },
+  "timerName": { "type": "text", "label": "Timer name (countdowns with the same name share one timer)", "value": "countdown", "group": "Timer" },
+  "doneText": { "type": "text", "label": "When it reaches zero", "value": "Starting now!", "group": "Timer" },
+  "restartHours": { "type": "number", "label": "A finished timer starts again when loaded this many hours later", "value": 1, "min": 0, "max": 168, "group": "Timer" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 32, "min": 0, "max": 120, "step": 1, "group": "Look" },
+  "timeSize": { "type": "slider", "label": "Time size", "value": 96, "min": 16, "max": 300, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Title colour", "value": "#ffffff", "group": "Look" },
+  "timeColor": { "type": "colorpicker", "label": "Time colour", "value": "#ffffff", "group": "Look" },
+  "align": { "type": "dropdown", "label": "Align", "value": "center", "group": "Look",
+    "options": { "left": "Left", "center": "Centre", "right": "Right" } },
+  "restart": { "type": "button", "label": "Start the countdown again", "value": "", "group": "Controls" }
+}

@@ -1,0 +1,27 @@
+{
+  "type": { "type": "dropdown", "label": "Alert type", "value": "follower", "group": "What it shows",
+    "options": { "follower": "Followers", "subscriber": "Subscribers", "tip": "Tips", "cheer": "Cheers (bits)", "raid": "Raids",
+      "superchat": "Super Chats", "kicks": "Kicks", "jewels": "YouTube Jewels", "charityCampaignDonation": "Charity donations",
+      "redemption": "Channel points", "revenue": "Revenue (tips, Super Chats and charity added up)" } },
+  "show": { "type": "dropdown", "label": "Show", "value": "latest", "group": "What it shows",
+    "options": { "latest": "Latest name", "latestAmount": "Latest name and amount", "count": "Count", "amount": "Amount (money, bits...)",
+      "topDonation": "Top single donation", "topDonator": "Top donator (added up)", "recent": "Recent names" } },
+  "period": { "type": "dropdown", "label": "For counts, amounts and tops", "value": "session", "group": "What it shows",
+    "options": { "session": "This stream", "week": "This week", "month": "This month", "total": "All time" } },
+  "recentCount": { "type": "number", "label": "Recent names shown", "value": 5, "min": 1, "max": 25, "group": "What it shows" },
+  "separator": { "type": "text", "label": "Between recent names", "value": " • ", "group": "What it shows" },
+  "prefix": { "type": "text", "label": "Text before", "value": "Latest follower: ", "group": "Text" },
+  "suffix": { "type": "text", "label": "Text after", "value": "", "group": "Text" },
+  "emptyText": { "type": "text", "label": "When there is nothing yet", "value": "—", "group": "Text" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "fontSize": { "type": "slider", "label": "Text size", "value": 32, "min": 10, "max": 120, "step": 1, "group": "Look" },
+  "fontWeight": { "type": "dropdown", "label": "Weight", "value": "700", "group": "Look",
+    "options": { "400": "Regular", "600": "Semi-bold", "700": "Bold", "900": "Black" } },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "valueColor": { "type": "colorpicker", "label": "Value colour", "value": "#ffcc33", "group": "Look" },
+  "align": { "type": "dropdown", "label": "Align", "value": "left", "group": "Look",
+    "options": { "left": "Left", "center": "Centre", "right": "Right" } },
+  "shadow": { "type": "checkbox", "label": "Text shadow", "value": true, "group": "Look" },
+  "flash": { "type": "checkbox", "label": "Flash when it changes", "value": true, "group": "Look" }
+}

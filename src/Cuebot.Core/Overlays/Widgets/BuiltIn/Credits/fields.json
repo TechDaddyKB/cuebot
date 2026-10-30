@@ -1,0 +1,24 @@
+{
+  "title": { "type": "text", "label": "Title", "value": "Thanks for watching!", "group": "Content" },
+  "subscriberTitle": { "type": "text", "label": "Subscribers heading (empty: leave out)", "value": "Subscribers", "group": "Content" },
+  "followerTitle": { "type": "text", "label": "Followers heading (empty: leave out)", "value": "New followers", "group": "Content" },
+  "tipTitle": { "type": "text", "label": "Tips heading (tips, Super Chats and charity; empty: leave out)", "value": "Tips", "group": "Content" },
+  "cheerTitle": { "type": "text", "label": "Cheers heading (empty: leave out)", "value": "Cheers", "group": "Content" },
+  "kicksTitle": { "type": "text", "label": "Kicks heading (empty: leave out)", "value": "Kicks", "group": "Content" },
+  "raidTitle": { "type": "text", "label": "Raiders heading (empty: leave out)", "value": "Raiders", "group": "Content" },
+  "showAmounts": { "type": "checkbox", "label": "Show amounts (tips, bits, Kicks, raid size)", "value": false, "group": "Content" },
+  "emptyText": { "type": "text", "label": "When nobody is in the credits yet", "value": "Thanks to everyone in chat!", "group": "Content" },
+  "endText": { "type": "text", "label": "Closing line", "value": "See you next stream!", "group": "Content" },
+
+  "speed": { "type": "slider", "label": "Scroll speed (pixels per second)", "value": 60, "min": 10, "max": 400, "step": 5, "group": "Rolling" },
+  "loop": { "type": "checkbox", "label": "Start over at the end", "value": true, "group": "Rolling" },
+  "pause": { "type": "number", "label": "Pause before starting over (seconds)", "value": 3, "min": 0, "max": 120, "group": "Rolling" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 56, "min": 16, "max": 160, "step": 1, "group": "Look" },
+  "headingSize": { "type": "slider", "label": "Heading size", "value": 36, "min": 12, "max": 120, "step": 1, "group": "Look" },
+  "nameSize": { "type": "slider", "label": "Name size", "value": 28, "min": 10, "max": 100, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Name colour", "value": "#ffffff", "group": "Look" },
+  "headingColor": { "type": "colorpicker", "label": "Title and heading colour", "value": "#ffcc33", "group": "Look" },
+  "restart": { "type": "button", "label": "Start the roll again", "value": "", "group": "Test" }
+}

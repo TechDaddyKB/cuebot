@@ -172,6 +172,11 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         row = Assert.Single(vm.Overlays);
         Assert.Equal(["pink chat widget", "Chat box", "Alert box"], row.Layers.Select(l => l.Name));
         Assert.Contains("alert box", vm.Status);
+        row.AddBuiltInCommand.Execute("goal");
+        Pump();
+        row = Assert.Single(vm.Overlays);
+        Assert.Equal("Goal", row.Layers.Last().Name);
+        Assert.Equal("Added a goal. Use Edit… to choose what it shows and how it looks.", vm.Status);
         layer = row.Layers[0];
 
         row.DesignCommand.Execute(null);
@@ -185,7 +190,7 @@ public sealed class OverlaysPageTests : IAsyncDisposable
 
         layer.RemoveCommand.Execute(null);
         Pump();
-        Assert.Equal(["Chat box", "Alert box"], Store.Get(row.Id)!.Layers.Select(l => l.Name));
+        Assert.Equal(["Chat box", "Alert box", "Goal"], Store.Get(row.Id)!.Layers.Select(l => l.Name));
         AssertNoBindingErrors();
         window.Close();
     }

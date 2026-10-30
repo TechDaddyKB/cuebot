@@ -1,0 +1,34 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --size: {{fontSize}}px;
+  --weight: {{fontWeight}};
+  --text: {{textColor}};
+  --value: {{valueColor}};
+}
+
+.label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  font-family: var(--font);
+  font-size: var(--size);
+  font-weight: var(--weight);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label.align-left { justify-content: flex-start; }
+.label.align-center { justify-content: center; }
+.label.align-right { justify-content: flex-end; }
+.label.shadow { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7); }
+.label .value { color: var(--value); margin: 0 0.15em; }
+.label .prefix, .label .suffix { white-space: pre; }
+.label.flash .value { animation: label-flash 1.2s ease-out; }
+
+@keyframes label-flash {
+  0% { transform: scale(1.25); filter: brightness(1.8); }
+  100% { transform: none; filter: none; }
+}
+.label .value { display: inline-block; }

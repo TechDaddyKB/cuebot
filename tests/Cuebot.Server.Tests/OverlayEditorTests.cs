@@ -122,10 +122,14 @@ public sealed class OverlayEditorTests : IAsyncLifetime
     [Fact]
     public async Task Drafts_preview_unsaved_changes_on_the_widget_port()
     {
+        _bot.SessionData.Record(new OverlayAlert("tip-latest", new JsonObject { ["name"] = "Kris", ["amount"] = 5 }, 1), "rumble", DateTimeOffset.UtcNow);
         var draft = new JsonObject { ["html"] = "<i>{text}</i>", ["fields"] = """{"text":{"type":"text","value":"draft"}}""", ["data"] = "{}" };
         using var response = await Post($"{Api}/preview?{Auth}", draft.ToJsonString());
         var preview = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
         Assert.Equal("draft", preview["fieldData"]!["text"]!.GetValue<string>());
+        // The real stream totals and recent alerts, so labels, goals and lists preview with them.
+        Assert.Equal(5, preview["session"]!["tip-session"]!["amount"]!.GetValue<int>());
+        Assert.Equal("Kris", preview["recents"]![0]!["name"]!.GetValue<string>());
         var src = preview["src"]!.GetValue<string>();
         Assert.StartsWith("/p/", src);
 

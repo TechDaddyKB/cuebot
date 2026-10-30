@@ -20,6 +20,25 @@ public static class BuiltInWidgets
     public static WidgetCode AlertBox() =>
         new(Read("AlertBox", "widget.html"), Read("AlertBox", "widget.css"), Read("AlertBox", "widget.js"), Read("AlertBox", "fields.json"), "{}");
 
+    /// <summary>A built-in widget placed with <see cref="WidgetLibrary.AddBuiltIn"/>: its kind, name and resource folder.</summary>
+    public sealed record Kind(string Id, string Name, string Folder);
+
+    /// <summary>Labels, goals and lists (phase 4), each edited with the widget editor's settings form.</summary>
+    public static readonly IReadOnlyList<Kind> Kinds =
+    [
+        new("label", "Label", "Label"),
+        new("goal", "Goal", "Goal"),
+        new("eventlist", "Event list", "EventList"),
+        new("credits", "Credits", "Credits"),
+        new("countdown", "Countdown", "Countdown"),
+    ];
+
+    /// <summary>A built-in widget's code by kind id (see <see cref="Kinds"/>), or null for an unknown kind.</summary>
+    public static WidgetCode? For(string kind) =>
+        Kinds.FirstOrDefault(k => k.Id == kind) is { } k
+            ? new(Read(k.Folder, "widget.html"), Read(k.Folder, "widget.css"), Read(k.Folder, "widget.js"), Read(k.Folder, "fields.json"), "{}")
+            : null;
+
     /// <summary>Marks an element as Cuebot's alert box (in its settings), so its editor link opens the alert designer.</summary>
     public const string AlertBoxKind = "alertbox";
 

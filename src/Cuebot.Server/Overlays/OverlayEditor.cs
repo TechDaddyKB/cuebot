@@ -175,7 +175,10 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         await JsonAsync(context, new JsonObject { ["saved"] = true }).ConfigureAwait(false);
     }
 
-    /// <summary><c>{src, fieldData, widgetDuration}</c> for a draft; the draft id is the only key to it.</summary>
+    /// <summary>
+    /// <c>{src, fieldData, widgetDuration, session, recents}</c> for a draft (with the real stream totals and recent
+    /// alerts, so labels, goals and lists preview with them); the draft id is the only key to it.
+    /// </summary>
     private JsonObject Preview(WidgetCode code)
     {
         var now = DateTimeOffset.UtcNow;
@@ -187,6 +190,8 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         _drafts[id] = (OverlayWidgetHost.Document(code), now + DraftLifetime);
         var json = OverlayWidgetHost.Settings(code);
         json["src"] = "/p/" + id;
+        json["session"] = services.SessionData?.Snapshot() ?? new JsonObject();
+        json["recents"] = services.SessionData?.Recents() ?? new JsonArray();
         return json;
     }
 

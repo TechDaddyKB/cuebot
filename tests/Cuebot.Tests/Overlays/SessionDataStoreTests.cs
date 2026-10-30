@@ -66,6 +66,28 @@ public sealed class SessionDataStoreTests : IDisposable
     }
 
     [Fact]
+    public void Everyone_this_session_is_kept_for_credits_until_the_session_resets()
+    {
+        using var store = Store();
+        Alert(store, "tip-latest", "Alice", 5, edit: e => e["currency"] = "EUR");
+        Alert(store, "tip-latest", "Bob", 2);
+        Alert(store, "tip-latest", "Alice", 3);
+        Alert(store, "subscriber-latest", "Cara", 12, edit: e => (e["gifted"], e["sender"]) = (true, "Dan"));
+
+        var data = store.Snapshot();
+        var tippers = data["tip-session-users"]!.AsArray().Select(u => (u!["name"]!.GetValue<string>(), OverlayAlerts.NumberOf(u["amount"]))).ToArray();
+        Assert.Equal([("Alice", 8.0), ("Bob", 2.0)], tippers);   // first-seen order, amounts added up
+        Assert.Equal("Cara", data["subscriber-session-users"]![0]!["name"]!.GetValue<string>());
+        // Recents carry what event lists show: the currency and gift details.
+        var recents = store.Recents();
+        Assert.Equal(("Dan", true), (recents[0]!["sender"]!.GetValue<string>(), recents[0]!["gifted"]!.GetValue<bool>()));
+        Assert.Equal("EUR", recents.Last()!["currency"]!.GetValue<string>());
+
+        store.ResetSession();
+        Assert.Empty(store.Snapshot()["tip-session-users"]!.AsArray());
+    }
+
+    [Fact]
     public void Amounts_sum_and_build_leaderboards()
     {
         using var store = Store();

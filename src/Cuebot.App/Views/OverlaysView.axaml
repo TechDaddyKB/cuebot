@@ -64,10 +64,27 @@
                         ToolTip.Tip="Replace the link (for example if someone else saw it); OBS needs the new one" />
                 <Button Content="Design…" Classes="accent" Command="{Binding DesignCommand}"
                         ToolTip.Tip="Arrange this overlay's widgets, text, images and video in your browser" />
-                <Button Content="Add chat box" Command="{Binding AddChatBoxCommand}"
-                        ToolTip.Tip="Cuebot's chat box: chat from every connected platform, with badges, emotes and pronouns" />
-                <Button Content="Add alert box" Command="{Binding AddAlertBoxCommand}"
-                        ToolTip.Tip="Cuebot's alert box: a design for each alert type, with variations by amount, tier, platform and more" />
+                <DropDownButton Content="Add Cuebot widget" ToolTip.Tip="Widgets Cuebot ships: chat, alerts, labels, goals, lists and timers">
+                  <DropDownButton.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                      <MenuItem Header="Chat box" Command="{Binding AddChatBoxCommand}"
+                                ToolTip.Tip="Chat from every connected platform, with badges, emotes and pronouns" />
+                      <MenuItem Header="Alert box" Command="{Binding AddAlertBoxCommand}"
+                                ToolTip.Tip="A design for each alert type, with variations by amount, tier, platform and more" />
+                      <Separator />
+                      <MenuItem Header="Label" Command="{Binding AddBuiltInCommand}" CommandParameter="label"
+                                ToolTip.Tip="Latest follower, sub or tip, a count or amount, the top donor or recent names" />
+                      <MenuItem Header="Goal bar" Command="{Binding AddBuiltInCommand}" CommandParameter="goal"
+                                ToolTip.Tip="Progress to a follower, sub, tip, bits, Kicks or revenue goal" />
+                      <MenuItem Header="Event list" Command="{Binding AddBuiltInCommand}" CommandParameter="eventlist"
+                                ToolTip.Tip="The latest follows, subs, tips and more from every platform" />
+                      <MenuItem Header="Credits roll" Command="{Binding AddBuiltInCommand}" CommandParameter="credits"
+                                ToolTip.Tip="An end-of-stream roll of this stream's subs, followers, tippers and raiders" />
+                      <MenuItem Header="Countdown" Command="{Binding AddBuiltInCommand}" CommandParameter="countdown"
+                                ToolTip.Tip="Counts down minutes or to a time; reloading does not restart it" />
+                    </MenuFlyout>
+                  </DropDownButton.Flyout>
+                </DropDownButton>
                 <Button Content="Add widget…" Click="OnAddWidget"
                         ToolTip.Tip="Import a StreamElements custom widget (.zip, for example one bought on Etsy)" />
                 <Button Content="Delete" Command="{Binding DeleteCommand}" />

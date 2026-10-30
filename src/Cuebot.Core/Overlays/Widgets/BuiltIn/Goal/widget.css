@@ -1,0 +1,58 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --title: {{titleSize}}px;
+  --text-size: {{textSize}}px;
+  --height: {{barHeight}}px;
+  --radius: {{radius}}px;
+  --text: {{textColor}};
+  --bar: {{barColor}};
+  --bar2: {{barColor2}};
+  --track: {{trackColor}};
+  --done: {{doneColor}};
+}
+
+.goal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font);
+  color: var(--text);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.goal .title { font-size: var(--title); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal .title:empty { display: none; }
+.goal .track {
+  position: relative;
+  height: var(--height);
+  border-radius: var(--radius);
+  background: var(--track);
+  overflow: hidden;
+}
+.goal .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, var(--bar), var(--bar2));
+  border-radius: var(--radius);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s;
+}
+.goal.done .fill { background: var(--done); }
+.goal .numbers {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-size);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.goal.bump .track { animation: goal-bump 0.6s ease-out; }
+
+@keyframes goal-bump {
+  30% { transform: scale(1.03); }
+  100% { transform: none; }
+}

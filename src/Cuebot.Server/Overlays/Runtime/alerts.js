@@ -458,8 +458,8 @@
       channel: { username: "", apiToken: "", id: "", providerId: "", avatar: "" },
       currency: { code: "USD", name: "U.S. Dollar", symbol: "$" },
       fieldData: fieldData,
-      recents: [],
-      session: { data: {}, settings: { autoReset: true, calendar: true, resetOnStart: false } },
+      recents: (previewDoc && previewDoc.recents) || [],
+      session: { data: (previewDoc && previewDoc.session) || {}, settings: { autoReset: true, calendar: true, resetOnStart: false } },
       overlay: { isEditorMode: true, muted: $("mute").checked },
       emulated: true
     };

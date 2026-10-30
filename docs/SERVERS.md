@@ -203,6 +203,31 @@ alert, Mute alerts), the "Alert queue" sub-action, `POST /api/v1/alerts/{command
 The "Show alert" sub-action sends a `cuebot-alert` event (design, name, message, amount, currency, platform), which
 waits its turn in the queue like a real alert.
 
+### Labels, goals and lists (`Cuebot.Core/Overlays/Widgets/BuiltIn/{Label,Goal,EventList,Credits,Countdown}`)
+
+Five more built-in widgets on the StreamElements widget API (`BuiltInWidgets.Kinds`, added with
+`WidgetLibrary.AddBuiltIn`, placed for their kind and scaled to the canvas; on the Overlays page under "Add Cuebot
+widget" and in the designer's Add menu). Each is edited with the widget editor's settings form; none holds the alert
+queue (no `widgetDuration`).
+
+- **Label**: the latest name (or name and amount), a count or amount for this stream, week, month or all time, the top
+  single donation or top donator, or recent names, for one alert type or "revenue" (tips, Super Chats and charity
+  donations added up; amounts of different currencies are added as they are). Flashes when it changes.
+- **Goal**: a bar towards a goal of followers, subs, tips, bits, Kicks, Jewels or revenue for a period, counting how
+  many or the amount, plus a starting offset; numbers as "12 / 100 (12%)", progress, percent or none; a text and colour
+  when reached.
+- **Event list**: recent alerts from every platform (from the page's `recents`, then live `*-latest` events), filtered
+  by type, newest at the top or bottom, with the platform and optionally tip messages; can hide events after a time.
+- **Credits**: a roll of this stream's subscribers, followers, tippers (tips, Super Chats and charity), cheerers, Kicks
+  senders and raiders from `{type}-session-users`, with headings, optional amounts, speed and looping (new names join at
+  the next pass).
+- **Countdown**: minutes, or to a time ("20:00", or a date and time). A minutes countdown keeps its end in the widget
+  store under its timer name (`cuebot-countdown:{name}`), so reloading or another page shows the same timer; a finished
+  one starts again when loaded hours later (setting), or with its "Start the countdown again" button.
+
+The widget editor's preview loads the real stream totals and recent alerts (`session`, `recents` in the preview
+answer), so these preview with live numbers.
+
 ### Overlay designer (`/design/...`, `OverlayDesigner`)
 
 "Design…" on the Overlays page opens it (editor token). The canvas shows the live overlay with a box per layer: drag
@@ -286,6 +311,9 @@ with every platform:
 Counted from the alerts above, across every platform, in StreamElements' `session.data` shape (sent in `hello` and as
 `{"type":"session"}` after each change). Types are the listeners without `-latest`.
 
+- `{type}-session-users` (everyone this session in first-seen order with their summed amount, at most 1000; cleared
+  with the session), used by the credits roll. Recents also carry `currency`, `gifted`, `bulkGifted`, `sender` and
+  `redemption`.
 - `{type}-latest` (the last alert plus `service`), `{type}-session`, `-week`, `-month`, `-total` (`{count, amount}`),
   `{type}-count` (`{count}`, all time), `{type}-goal` (`{amount}`), `{type}-recent` (25, newest first).
 - For tip, cheer, superchat, kicks, jewels and charityCampaignDonation the amount is summed (currencies are added as

@@ -89,6 +89,10 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     [RelayCommand]
     private void AddAlertBox() => owner.AddAlertBox(overlay.Id);
 
+    /// <summary>Adds a label, goal bar, event list, credits roll or countdown (by kind id).</summary>
+    [RelayCommand]
+    private void AddBuiltIn(string kind) => owner.AddBuiltIn(overlay.Id, kind);
+
     [RelayCommand]
     private void Delete() => owner.Delete(overlay.Id);
 }
@@ -265,6 +269,14 @@ public sealed partial class OverlaysViewModel : PageViewModel
         Edit(() => _widgets.AddAlertBox(overlayId));
         Refresh();
         Status = "Added an alert box at the top of the canvas. Use Edit… to design each alert.";
+    }
+
+    internal void AddBuiltIn(Guid overlayId, string kind)
+    {
+        if (_widgets is null || BuiltInWidgets.Kinds.FirstOrDefault(k => k.Id == kind) is not { } found) return;
+        Edit(() => _widgets.AddBuiltIn(overlayId, kind));
+        Refresh();
+        Status = $"Added a {found.Name.ToLowerInvariant()}. Use Edit… to choose what it shows and how it looks.";
     }
 
     internal void MoveLayer(Guid overlayId, OverlayLayer layer) =>

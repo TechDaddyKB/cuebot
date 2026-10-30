@@ -1,0 +1,52 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --size: {{fontSize}}px;
+  --text: {{textColor}};
+  --name: {{nameColor}};
+  --bg: {{background}};
+  --radius: {{radius}}px;
+  --twitch: {{twitchColor}};
+  --kick: {{kickColor}};
+  --rumble: {{rumbleColor}};
+  --youtube: {{youtubeColor}};
+}
+
+.events {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  overflow: hidden;
+  font-family: var(--font);
+  font-size: var(--size);
+  color: var(--text);
+}
+.events.newest-bottom { justify-content: flex-end; }
+
+.event {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  padding: 0.35em 0.7em;
+  border-radius: var(--radius);
+  background: var(--bg);
+  border-left: 4px solid transparent;
+  animation: event-in 0.4s ease-out;
+  flex-shrink: 0;
+}
+.event.twitch { border-left-color: var(--twitch); }
+.event.kick { border-left-color: var(--kick); }
+.event.rumble { border-left-color: var(--rumble); }
+.event.youtube { border-left-color: var(--youtube); }
+.event .name { color: var(--name); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+.event .what { opacity: 0.92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event .platform { margin-left: auto; font-size: 0.7em; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
+.event .message { display: block; font-size: 0.85em; opacity: 0.85; }
+.event.leaving { opacity: 0; transition: opacity 0.4s; }
+
+@keyframes event-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: none; }
+}

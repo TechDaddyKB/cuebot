@@ -13,7 +13,9 @@ chance, image/video, sounds, text templates, enter/exit animations) and the aler
 2026-10-30); 3b alert TTS through Cuebot speech, alert queue pause/skip/mute (Overlays page, "Alert queue" sub-action,
 REST API, MCP), a "Show alert" sub-action, and Speak next for the speech queue (step through a paused queue one text at a
 time from the Speech page, the "Speak next in queue" sub-action for Stream Deck keys, the REST API and MCP; built
-2026-10-30). Phase 3 is done; phase 4 (labels, goals and lists) is next. Details in docs/SERVERS.md.
+2026-10-30). Phase 3 is done. Phase 4 (labels with latest, totals, top donation and donator and recent names; goal
+bars including revenue; event list; credits roll; countdown; built 2026-10-30) is done; phase 5 (engagement and
+service widgets) is next. Details in docs/SERVERS.md.
 
 ## Goal
 

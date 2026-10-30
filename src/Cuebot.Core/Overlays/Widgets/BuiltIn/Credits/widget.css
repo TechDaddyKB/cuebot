@@ -1,0 +1,26 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --title: {{titleSize}}px;
+  --heading: {{headingSize}}px;
+  --name: {{nameSize}}px;
+  --text: {{textColor}};
+  --accent: {{headingColor}};
+}
+
+.viewport { position: absolute; inset: 0; overflow: hidden; }
+.credits {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  text-align: center;
+  font-family: var(--font);
+  color: var(--text);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  will-change: transform;
+}
+.credits h1 { font-size: var(--title); color: var(--accent); margin: 0 0 1.2em; font-weight: 900; }
+.credits h2 { font-size: var(--heading); color: var(--accent); margin: 1.4em 0 0.5em; font-weight: 700; }
+.credits .name { font-size: var(--name); font-weight: 600; line-height: 1.5; }
+.credits .amount { opacity: 0.75; font-weight: 400; }
+.credits .end { font-size: var(--heading); margin-top: 2em; font-weight: 700; }

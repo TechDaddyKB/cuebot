@@ -204,6 +204,47 @@ public sealed class WidgetCodeTests : IDisposable
         Assert.Equal("{sender} gifted {name} a sub!", subscriber[1]!["design"]!["template"]!.GetValue<string>());
     }
 
+    [Theory]
+    [InlineData("label", "onSessionUpdate")]
+    [InlineData("goal", "onSessionUpdate")]
+    [InlineData("eventlist", "onEventReceived")]
+    [InlineData("credits", "session-users")]
+    [InlineData("countdown", "SE_API.store")]
+    public void Labels_goals_and_lists_ship_complete(string kind, string uses)
+    {
+        var widget = BuiltInWidgets.For(kind)!;
+        Assert.Contains(uses, widget.Js);
+        var fields = JsonNode.Parse(widget.Fields)!.AsObject();
+        Assert.All(fields, f => Assert.NotNull(f.Value!["type"]));
+        // No widgetDuration: these never hold the alert queue.
+        Assert.Equal(0, WidgetCode.WidgetDuration(widget.FieldData()));
+        var substituted = WidgetFields.Substitute(widget.Html + widget.Css, widget.FieldData());
+        Assert.DoesNotMatch(@"\{\{[A-Za-z]", substituted);   // every placeholder is a field
+    }
+
+    [Fact]
+    public void Built_in_widgets_are_placed_for_their_kind_and_scaled_to_the_canvas()
+    {
+        using var overlays = new OverlayStore(null, _log);
+        using var elements = new ElementStore(null, _log);
+        using var code = new WidgetCodeStore(null);
+        var library = new WidgetLibrary(overlays, elements, code);
+
+        var hd = overlays.Create("Main", 1920, 1080);
+        var events = library.AddBuiltIn(hd.Id, "eventlist")!;
+        Assert.Equal(("Event list", 1500.0, 40.0, 380.0, 420.0), (events.Name, events.X, events.Y, events.Width, events.Height));
+        var credits = library.AddBuiltIn(hd.Id, "credits")!;
+        Assert.Equal((0.0, 0.0, 1920.0, 1080.0), (credits.X, credits.Y, credits.Width, credits.Height));
+        Assert.Contains("cuebot-countdown:", library.CodeFor(library.AddBuiltIn(hd.Id, "countdown")!).Js);
+
+        var uhd = overlays.Create("4K", 3840, 2160);
+        var goal = library.AddBuiltIn(uhd.Id, "goal")!;
+        Assert.Equal((80.0, 260.0, 1400.0, 220.0), (goal.X, goal.Y, goal.Width, goal.Height));
+
+        Assert.Null(library.AddBuiltIn(hd.Id, "alertbox"));   // has its own method
+        Assert.Null(library.AddBuiltIn(Guid.NewGuid(), "label"));
+    }
+
     [Fact]
     public void The_alert_box_sits_at_the_top_and_is_marked_for_the_alert_designer()
     {

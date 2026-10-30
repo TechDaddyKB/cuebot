@@ -1,0 +1,30 @@
+{
+  "showFollower": { "type": "checkbox", "label": "Follows", "value": true, "group": "Events" },
+  "showSubscriber": { "type": "checkbox", "label": "Subs and gifts", "value": true, "group": "Events" },
+  "showTip": { "type": "checkbox", "label": "Tips", "value": true, "group": "Events" },
+  "showCheer": { "type": "checkbox", "label": "Cheers", "value": true, "group": "Events" },
+  "showRaid": { "type": "checkbox", "label": "Raids", "value": true, "group": "Events" },
+  "showSuperchat": { "type": "checkbox", "label": "Super Chats", "value": true, "group": "Events" },
+  "showKicks": { "type": "checkbox", "label": "Kicks", "value": true, "group": "Events" },
+  "showJewels": { "type": "checkbox", "label": "YouTube Jewels", "value": true, "group": "Events" },
+  "showCharity": { "type": "checkbox", "label": "Charity donations", "value": true, "group": "Events" },
+  "showRedemption": { "type": "checkbox", "label": "Channel point redemptions", "value": false, "group": "Events" },
+
+  "maxItems": { "type": "number", "label": "Events shown", "value": 6, "min": 1, "max": 25, "group": "Layout" },
+  "direction": { "type": "dropdown", "label": "Newest at the", "value": "top", "group": "Layout",
+    "options": { "top": "Top", "bottom": "Bottom" } },
+  "showPlatform": { "type": "checkbox", "label": "Show the platform", "value": true, "group": "Layout" },
+  "showMessage": { "type": "checkbox", "label": "Show messages with tips and Super Chats", "value": false, "group": "Layout" },
+  "hideAfter": { "type": "number", "label": "Hide events after (seconds, 0 = never)", "value": 0, "min": 0, "max": 3600, "group": "Layout" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "fontSize": { "type": "slider", "label": "Text size", "value": 18, "min": 10, "max": 48, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "nameColor": { "type": "colorpicker", "label": "Name colour", "value": "#ffcc33", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Background", "value": "rgba(16, 18, 24, 0.72)", "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 10, "min": 0, "max": 24, "step": 1, "group": "Look" },
+  "twitchColor": { "type": "colorpicker", "label": "Twitch colour", "value": "#9146FF", "group": "Look" },
+  "kickColor": { "type": "colorpicker", "label": "Kick colour", "value": "#53FC18", "group": "Look" },
+  "rumbleColor": { "type": "colorpicker", "label": "Rumble colour", "value": "#85C742", "group": "Look" },
+  "youtubeColor": { "type": "colorpicker", "label": "YouTube colour", "value": "#FF0033", "group": "Look" }
+}
