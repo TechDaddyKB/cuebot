@@ -48,7 +48,7 @@ internal sealed class TestBot : IAsyncDisposable
             Credits = Credits, Registry = Registry, Timers = Timers, Transfer = Transfer, Scripts = Api,
             Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
             Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
-            Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed,
+            Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -73,6 +73,8 @@ internal sealed class TestBot : IAsyncDisposable
     public Cuebot.Core.Overlays.AssetStore OverlayAssets { get; } = new(null);
     public Cuebot.Core.Overlays.OverlayFeed OverlayFeed => _overlayFeed ??= new Cuebot.Core.Overlays.OverlayFeed(Log);
     private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
+    public Cuebot.Core.Overlays.Session.SessionDataStore SessionData => _sessionData ??= new(null, Log, Bus, OverlayFeed, null);
+    private Cuebot.Core.Overlays.Session.SessionDataStore? _sessionData;
     public Cuebot.Core.Chat.Emotes.EmoteService? Emotes { get; }
     public Cuebot.Core.Credits.CreditsCollector Credits => _credits ??= new Cuebot.Core.Credits.CreditsCollector(null, Bus, Log);
     private Cuebot.Core.Credits.CreditsCollector? _credits;
@@ -160,6 +162,7 @@ internal sealed class TestBot : IAsyncDisposable
         Emotes?.Dispose();
         Overlays.Dispose();
         OverlayAssets.Dispose();
+        _sessionData?.Dispose();
         Scripts.Dispose();
         Engine.Dispose();
         Timers.Dispose();

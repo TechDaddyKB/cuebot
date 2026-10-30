@@ -49,13 +49,14 @@ internal sealed class KickOverlayAdapter : IOverlayEventAdapter
                 new("isCommunityGift", Bool(a, "fromMassGift")),
                 new("providerId", Str(a, "recipientId")),
             ])),
+            // The recipients arrive as giftSubscription alerts and are counted there.
             KickEventTypes.MassGiftSubscription => new(Subscriber, Event(e, "subscriber", Math.Max(1, Number(a, "gifts")), extra:
             [
                 new("tier", "1000"),
                 new("gifted", false),
                 new("bulkGifted", true),
                 new("sender", Str(a, "user")),
-            ])),
+            ]), Count: 0),
             KickEventTypes.KicksGifted => new(Kicks, Event(e, "kicks", Number(a, "kicks"), extra: [new("giftName", Str(a, "giftName"))])),
             KickEventTypes.Host => new(Raid, Event(e, "raid", Number(a, "viewers"))),
             KickEventTypes.RewardRedemption => new(Redemption, Event(e, "channelPointsRedemption", Number(a, "rewardCost"),

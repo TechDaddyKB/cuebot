@@ -153,6 +153,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
 
+    /// <summary>Stream totals sent to overlay pages when they connect.</summary>
+    public Cuebot.Core.Overlays.Session.SessionDataStore? SessionData
+    {
+        get => _sessionData ??= _provider?.GetService<Cuebot.Core.Overlays.Session.SessionDataStore>();
+        init => _sessionData = value;
+    }
+
+    private Cuebot.Core.Overlays.Session.SessionDataStore? _sessionData;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")

@@ -36,12 +36,13 @@ internal sealed class YouTubeOverlayAdapter : IOverlayEventAdapter
             YouTubeEventTypes.NewSubscriber => new(Follower, Event(e, "follower")),
             YouTubeEventTypes.NewSponsor => new(Subscriber, Event(e, "subscriber", 1, message: "", extra: Member(a))),
             YouTubeEventTypes.MemberMilestone => new(Subscriber, Event(e, "subscriber", Math.Max(1, Number(a, "months")), extra: Member(a))),
+            // The recipients arrive as giftMembershipReceived alerts and are counted there.
             YouTubeEventTypes.MembershipGift => new(Subscriber, Event(e, "subscriber", Math.Max(1, Number(a, "total")), message: "", extra:
             [
                 .. Member(a),
                 new("bulkGifted", true),
                 new("sender", Str(a, "user")),
-            ])),
+            ]), Count: 0),
             YouTubeEventTypes.GiftMembershipReceived => new(Subscriber, Event(e, "subscriber", 1, message: "", extra:
             [
                 .. Member(a),

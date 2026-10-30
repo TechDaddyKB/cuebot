@@ -37,6 +37,9 @@ public sealed class OverlayEventBridge : IDisposable
         _subscription = bus.Subscribe(OnEvent);
     }
 
+    /// <summary>Raised (on the publisher's thread) after an alert went to the feed, with the adapter's service and the event time.</summary>
+    public event Action<OverlayAlert, string, DateTimeOffset>? AlertSent;
+
     private void OnEvent(BotEvent e)
     {
         try
@@ -63,6 +66,7 @@ public sealed class OverlayEventBridge : IDisposable
                     ["provider"] = adapter.Service,
                     ["data"] = alert.Event.DeepClone(),
                 }));
+                AlertSent?.Invoke(alert, adapter.Service, e.Time);
                 return;
             }
         }

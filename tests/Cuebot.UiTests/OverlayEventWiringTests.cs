@@ -40,4 +40,21 @@ public sealed class OverlayEventWiringTests : IAsyncDisposable
         Assert.Equal("Kris", sent[0]["event"]!["name"]!.GetValue<string>());
         Assert.Equal(provider, sent[1]["event"]!["provider"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void Alerts_update_the_stream_totals()
+    {
+        _host.Get<OverlayEventBridge>();
+        var session = _host.Get<Cuebot.Core.Overlays.Session.SessionDataStore>();
+        var bus = _host.Get<EventBus>();
+        bus.Publish(new BotEvent("rumble.rant", new Dictionary<string, object?> { ["user"] = "Kris", ["amount"] = 5.0 }));
+        bus.Publish(new BotEvent("streamelements.tip", new Dictionary<string, object?> { ["user"] = "Lee", ["amount"] = 12.5 }));
+        bus.Publish(new BotEvent("kick.follow", new Dictionary<string, object?> { ["user"] = "Ash" }));
+
+        var data = session.Snapshot();
+        Assert.Equal(17.5, OverlayAlerts.NumberOf(data["tip-session"]!["amount"]));
+        Assert.Equal(2, data["tip-session"]!["count"]!.GetValue<long>());
+        Assert.Equal("Lee", data["tip-session-top-donation"]!["name"]!.GetValue<string>());
+        Assert.Equal(1, data["follower-session"]!["count"]!.GetValue<long>());
+    }
 }

@@ -36,13 +36,14 @@ internal sealed class RumbleOverlayAdapter : IOverlayEventAdapter
         {
             RumbleEventTypes.Follow => new(Follower, Event(e, "follower")),
             RumbleEventTypes.Subscribe => new(Subscriber, Event(e, "subscriber", 1, extra: [new("tier", "1000"), new("gifted", false)])),
+            // Rumble reports gifted subs only as a bundle, so the bundle counts every gift.
             RumbleEventTypes.GiftSub => new(Subscriber, Event(e, "subscriber", Math.Max(1, Number(a, "total")), extra:
             [
                 new("tier", "1000"),
                 new("gifted", false),
                 new("bulkGifted", true),
                 new("sender", Str(a, "user")),
-            ])),
+            ]), Count: (int)Math.Max(1, Number(a, "total"))),
             RumbleEventTypes.Rant => new(Tip, Event(e, "tip", Number(a, "amount"), extra:
                 [new("currency", Str(a, "currency") is { Length: > 0 } c ? c : Money.Currency)])),
             _ => null,

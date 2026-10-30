@@ -132,7 +132,7 @@ page.
 | Route | |
 | --- | --- |
 | `GET /o/{id}?token=...` | The overlay page (transparent, the overlay's canvas size). A wrong or missing token answers 404, like an unknown id. |
-| `GET /o/{id}/ws?token=...` (WebSocket) | `{"type":"hello","overlay":{id,name,width,height}}`, then every `OverlayFeed` message for that overlay: `{"type":"event","listener","event"}` (StreamElements-shaped), `{"type":"session","session"}`, `{"type":"command","command"}`. The page's own origin, loopback pages and `allowedOrigins` may connect. |
+| `GET /o/{id}/ws?token=...` (WebSocket) | `{"type":"hello","overlay":{id,name,width,height},"session":{...},"recents":[...]}`, then every `OverlayFeed` message for that overlay: `{"type":"event","listener","event"}` (StreamElements-shaped), `{"type":"session","session"}`, `{"type":"command","command"}`. The page's own origin, loopback pages and `allowedOrigins` may connect. |
 | `GET /runtime/overlay.js`, `/runtime/overlay.css` | The page runtime (`window.Cuebot`: `overlay`, `on(type, fn)`, `send(text)`; reconnects with backoff, `reload` command reloads). |
 | `GET /assets/{sha256}.{ext}` | Files from `overlays/assets` (images, video, audio, fonts), `Cache-Control: immutable`, `Content-Security-Policy: sandbox`. |
 
@@ -169,6 +169,21 @@ with every platform:
 | `charityCampaignDonation-latest` | | | | | charity donations, DonorDrive |
 | `redemption-latest` (Cuebot) | rewardRedemption | rewardRedemption | | | |
 | `jewels-latest` (Cuebot) | | | | jewelsGifted | |
+
+### Stream totals (`Cuebot.Core/Overlays/Session/SessionDataStore`, session-data.json)
+
+Counted from the alerts above, across every platform, in StreamElements' `session.data` shape (sent in `hello` and as
+`{"type":"session"}` after each change). Types are the listeners without `-latest`.
+
+- `{type}-latest` (the last alert plus `service`), `{type}-session`, `-week`, `-month`, `-total` (`{count, amount}`),
+  `{type}-count` (`{count}`, all time), `{type}-goal` (`{amount}`), `{type}-recent` (25, newest first).
+- For tip, cheer, superchat, kicks, jewels and charityCampaignDonation the amount is summed (currencies are added as
+  they are) and there are `{type}-{session,weekly,monthly,alltime}-top-donation` (largest single) and
+  `-top-donator` (largest sum per name). For other types the amount equals the count.
+- `subscriber-new-session`, `subscriber-resub-session`, `subscriber-gifted-session` (`{count}`). Gift bundles whose
+  recipients arrive as their own alerts count 0; Rumble's gift bundles count every gift.
+- The session resets 15 minutes after the last live platform goes offline (checked every second, and when a platform
+  goes live); week (ISO week, local time) and month totals roll over by the calendar. Totals, goals and recents persist.
 
 Badge images: Twitch's own (global and channel badges, loaded when the broadcaster connects); for Kick, Rumble,
 YouTube and until Twitch's load, Cuebot's built-in icons at `/runtime/badge-{broadcaster,moderator,vip,subscriber,

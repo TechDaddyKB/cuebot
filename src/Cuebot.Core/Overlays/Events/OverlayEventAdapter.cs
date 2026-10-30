@@ -5,7 +5,11 @@ using Cuebot.Core.Events;
 namespace Cuebot.Core.Overlays.Events;
 
 /// <summary>An alert for overlay widgets, in StreamElements' shape: a listener such as "follower-latest" and its event.</summary>
-public sealed record OverlayAlert(string Listener, JsonObject Event);
+/// <param name="Count">
+/// How many the alert adds to session counts: 1 for most; for a gift bundle whose recipients arrive as their own alerts,
+/// 0 (they are counted one by one); for a bundle without recipient alerts, the number of gifts.
+/// </param>
+public sealed record OverlayAlert(string Listener, JsonObject Event, int Count = 1);
 
 /// <summary>A chat badge as StreamElements widgets read it (<c>badges[]</c> of a "message" event).</summary>
 public sealed record OverlayBadge(string Type, string Version, string Url, string Description);
@@ -107,6 +111,12 @@ public static class OverlayAlerts
         bool b => JsonValue.Create(b),
         _ => JsonValue.Create(Convert.ToString(value, CultureInfo.InvariantCulture)),
     };
+
+    /// <summary>A JSON number as a double, whatever type it was stored as (null and non-numbers give <paramref name="fallback"/>).</summary>
+    public static double NumberOf(JsonNode? node, double fallback = 0) =>
+        node is JsonValue value && value.GetValueKind() == System.Text.Json.JsonValueKind.Number
+            ? double.Parse(value.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture)
+            : fallback;
 
     /// <summary>StreamElements' tier: "1000", "2000", "3000" or "prime" (from "1", "2", "3", "Prime", "1000"...).</summary>
     public static string Tier(string tier) => tier.Trim().ToLowerInvariant() switch

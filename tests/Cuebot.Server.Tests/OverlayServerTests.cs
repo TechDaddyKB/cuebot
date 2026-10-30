@@ -112,6 +112,8 @@ public sealed class OverlayServerTests : IAsyncLifetime
 
         var hello = await client.NextAsync();
         Assert.Equal("hello", hello["type"]!.GetValue<string>());
+        Assert.NotNull(hello["session"]);
+        Assert.NotNull(hello["recents"]);
         Assert.Equal(_overlay.Id.ToString("D"), hello["overlay"]!["id"]!.GetValue<string>());
         Assert.Equal(720, hello["overlay"]!["height"]!.GetValue<int>());
         await otherClient.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
@@ -128,6 +130,23 @@ public sealed class OverlayServerTests : IAsyncLifetime
         Assert.Equal("reload", reload["command"]!.GetValue<string>());
         var alsoFollow = await otherClient.NextAsync();
         Assert.Equal("follower-latest", alsoFollow["listener"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Hello_carries_the_stream_totals_and_updates_follow()
+    {
+        _bot.SessionData.Record(new Cuebot.Core.Overlays.Events.OverlayAlert("tip-latest", new JsonObject { ["name"] = "Kris", ["amount"] = 5 }),
+            "rumble", DateTimeOffset.UtcNow);
+        await using var client = await WsClient.ConnectAsync(Port, Ws(_overlay));
+
+        var hello = await client.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
+        Assert.Equal(5, hello["session"]!["tip-session"]!["amount"]!.GetValue<int>());
+        Assert.Equal("Kris", hello["recents"]![0]!["name"]!.GetValue<string>());
+        await WaitForClientsAsync(1);
+
+        _bot.SessionData.SetGoal("tip", 100);
+        var update = await client.NextAsync(m => m["type"]?.GetValue<string>() == "session");
+        Assert.Equal(100, update["session"]!["tip-goal"]!["amount"]!.GetValue<int>());
     }
 
     [Fact]

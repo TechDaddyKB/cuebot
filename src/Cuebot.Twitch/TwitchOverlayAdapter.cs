@@ -64,12 +64,13 @@ internal sealed class TwitchOverlayAdapter(Func<IReadOnlyDictionary<string, (str
                     new("providerId", Str(a, "recipientUserId")),
                 ]));
             case TwitchEventTypes.GiftBomb:
+                // The recipients arrive as subGift alerts and are counted there.
                 return new(Subscriber, Event(e, "subscriber", Math.Max(1, Number(a, "total")), extra:
                 [
                     .. Sub(a),
                     new("bulkGifted", true),
                     new("sender", Str(a, "user")),
-                ]));
+                ]), Count: 0);
             case TwitchEventTypes.Cheer:
                 return new(Cheer, Event(e, "cheer", Number(a, "bits")));
             case TwitchEventTypes.Raid:
