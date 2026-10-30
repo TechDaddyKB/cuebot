@@ -282,14 +282,14 @@
                 <Border Width="1" Height="22" Margin="4,0" Background="{DynamicResource CuebotLine}" VerticalAlignment="Center" />
                 <Button x:Name="UndoButton" Content="↶" AutomationProperties.Name="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Undo the last change to this action (Ctrl+Z)" />
                 <Button x:Name="RedoButton" Content="↷" AutomationProperties.Name="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y or Ctrl+Shift+Z)" />
-                <DropDownButton Content="More">
+                <DropDownButton x:Name="MoreButton" Content="More">
                   <DropDownButton.Flyout>
                     <Flyout Placement="BottomEdgeAlignedLeft">
                       <StackPanel Spacing="8" MaxWidth="360">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                          <Button Content="Copy" Command="{Binding CopyItemCommand}"
+                          <Button Content="Copy" Command="{Binding CopyItemCommand}" Click="OnMoreItemClick"
                                   ToolTip.Tip="Copy the selected trigger or sub-action, or the whole action when nothing is selected (Ctrl+C)" />
-                          <Button Content="Paste" Command="{Binding PasteCommand}"
+                          <Button Content="Paste" Command="{Binding PasteCommand}" Click="OnMoreItemClick"
                                   ToolTip.Tip="Paste an action, sub-actions or triggers, also from another Cuebot (Ctrl+V)" />
                         </StackPanel>
                         <Border Height="1" Background="{DynamicResource CuebotLine}" />

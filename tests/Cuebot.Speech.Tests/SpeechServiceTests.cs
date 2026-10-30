@@ -18,6 +18,20 @@ public class SpeechServiceTests
     }
 
     [Fact]
+    public async Task The_last_state_change_after_a_text_already_sees_it_in_the_history()
+    {
+        await using var h = await SpeechHarness.StartAsync();
+        var seen = new List<int>();
+        h.Service.StateChanged += () => { lock (seen) seen.Add(h.Service.History.Count); };
+
+        await h.Service.SpeakAsync("one", wait: true);
+
+        // The page refreshes its Spoken list on StateChanged: the last one must come after the entry is added.
+        lock (seen) Assert.Equal(1, seen[^1]);
+        Assert.Equal("one", h.Service.History[0].Text);
+    }
+
+    [Fact]
     public async Task Uses_alias_voice_and_rate_and_applies_replacements()
     {
         await using var h = await SpeechHarness.StartAsync();

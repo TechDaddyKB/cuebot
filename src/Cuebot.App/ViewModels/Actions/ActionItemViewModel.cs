@@ -358,6 +358,9 @@ public sealed partial class ActionItemViewModel : ObservableObject
         // Typing a name or group is one undo step per pause; each toggle is its own step.
         MarkChanged(structural: false, coalesceKey: typeof(T) == typeof(string) ? name : null);
     }
+
+    /// <summary>The action's name (screen readers read list items through this).</summary>
+    public override string ToString() => Name;
 }
 
 /// <summary>Identifies a trigger or step (or a step's branch) across view model rebuilds.</summary>

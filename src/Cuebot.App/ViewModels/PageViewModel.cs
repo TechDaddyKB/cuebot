@@ -30,6 +30,11 @@ public abstract class PageViewModel(string title) : ObservableObject
     protected static int SubPageOf(IReadOnlyList<(string Name, int Tab)> tabs, int selectedTab) =>
         Math.Max(0, tabs.ToList().FindIndex(t => t.Tab == selectedTab));
 
+    /// <summary>Called when the window moves to another page; pages close their dialogs here.</summary>
+    public virtual void OnLeft()
+    {
+    }
+
     /// <summary>Services raise events on background threads; view models update on the UI thread.</summary>
     protected static void OnUi(Action action)
     {

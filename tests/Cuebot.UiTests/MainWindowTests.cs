@@ -218,6 +218,22 @@ public sealed class MainWindowTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void Narrow_number_boxes_leave_room_for_three_digits()
+    {
+        // Pages use NumericUpDowns 90-140 px wide; the arrow buttons must not eat the text area (found on Windows).
+        var box = new NumericUpDown { Width = 110, Value = 100, FormatString = "0" };
+        var window = new Window { Content = new StackPanel { Children = { box } }, Width = 400, Height = 200 };
+        window.Show();
+        Pump();
+        var text = box.GetVisualDescendants().OfType<TextBox>().Single();
+        var digits = new Avalonia.Media.FormattedText("1000", System.Globalization.CultureInfo.InvariantCulture,
+            Avalonia.Media.FlowDirection.LeftToRight, new Avalonia.Media.Typeface(text.FontFamily), text.FontSize, null);
+        Assert.True(text.Bounds.Width - text.Padding.Left - text.Padding.Right >= digits.Width,
+            $"text area {text.Bounds.Width} px (padding {text.Padding}) is narrower than four digits ({digits.Width:0} px)");
+        window.Close();
+    }
+
     /// <summary>"Users &amp; Groups" → "users-groups".</summary>
     internal static string FileName(string title)
     {

@@ -60,7 +60,7 @@
       <c:StatusHeader.Actions>
         <StackPanel Orientation="Horizontal" Spacing="6">
           <Button Content="Connect" Classes="accent" Command="{Binding Accounts.ConnectCommand}" IsEnabled="{Binding Accounts.IsAuthorized}" />
-          <Button Content="Disconnect" Command="{Binding Accounts.DisconnectCommand}" />
+          <Button Content="Disconnect" Command="{Binding Accounts.DisconnectCommand}" IsEnabled="{Binding Accounts.State, Converter={x:Static c:ConnectionStates.IsActive}}" />
         </StackPanel>
       </c:StatusHeader.Actions>
     </c:StatusHeader>

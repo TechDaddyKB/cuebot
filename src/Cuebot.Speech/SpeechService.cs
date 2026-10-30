@@ -797,6 +797,7 @@ public sealed class SpeechService : IAsyncDisposable
                 request.Options.UserName, request.Options.Source, result.Skipped));
             while (_history.Count > HistorySize) _history.RemoveLast();
         }
+        RaiseStateChanged();   // the state change from clearing the current text came before this entry existed
     }
 
     private string PrepareText(string text) =>

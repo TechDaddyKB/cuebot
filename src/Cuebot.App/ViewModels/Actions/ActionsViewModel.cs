@@ -84,6 +84,13 @@ public sealed partial class ActionsViewModel : PageViewModel
 
     public bool HasSelection => SelectedAction is not null;
 
+    /// <summary>Leaving the page closes the test-trigger and type-picker dialogs, which would otherwise wait hidden.</summary>
+    public override void OnLeft()
+    {
+        if (Test.IsOpen) Test.CancelCommand.Execute(null);
+        if (Picker.IsOpen) Picker.CancelCommand.Execute(null);
+    }
+
     public bool CanUndo => SelectedAction is { } a && History(a).CanUndo;
     public bool CanRedo => SelectedAction is { } a && History(a).CanRedo;
 

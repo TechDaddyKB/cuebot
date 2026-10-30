@@ -295,6 +295,13 @@
     <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
+  <!-- Number box arrows: the button padding above made each about 50 px wide and clipped 2-3 digit values. -->
+  <!-- ":not(.wide)" makes this a triggered style, which outranks the MinWidth="34" set inside the template. -->
+  <Style Selector="ButtonSpinner /template/ RepeatButton:not(.wide)">
+    <Setter Property="Padding" Value="2,0" />
+    <Setter Property="MinWidth" Value="22" />
+    <Setter Property="MinHeight" Value="0" />
+  </Style>
   <Style Selector="Button.accent">
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>

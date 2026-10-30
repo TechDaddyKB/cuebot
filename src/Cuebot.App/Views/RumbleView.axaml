@@ -16,7 +16,7 @@
         <c:StatusHeader.Actions>
           <StackPanel Orientation="Horizontal" Spacing="6">
             <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.IsActive}}" />
           </StackPanel>
         </c:StatusHeader.Actions>
       </c:StatusHeader>

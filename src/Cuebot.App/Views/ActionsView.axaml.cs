@@ -85,6 +85,9 @@ public partial class ActionsView : UserControl
         }
     }
 
+    /// <summary>Copy and Paste in the More menu close it, as menu items do.</summary>
+    private void OnMoreItemClick(object? sender, RoutedEventArgs e) => MoreButton.Flyout?.Hide();
+
     private void OnItemClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Control { DataContext: EditorItemViewModel item }) ViewModel?.SelectCommand.Execute(item);
@@ -140,6 +143,13 @@ public partial class ActionsView : UserControl
     /// </summary>
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
+        // Esc closes the open dialog (test trigger or type picker), even from its text fields.
+        if (e.Key == Key.Escape && ViewModel is { } open && (open.Test.IsOpen || open.Picker.IsOpen))
+        {
+            (open.Test.IsOpen ? open.Test.CancelCommand : open.Picker.CancelCommand).Execute(null);
+            e.Handled = true;
+            return;
+        }
         if (ViewModel is not { } vm || vm.Picker.IsOpen || vm.Test.IsOpen || IsTextInput(e.Source)) return;
         var command = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
         var inActionList = ActionList.IsKeyboardFocusWithin;

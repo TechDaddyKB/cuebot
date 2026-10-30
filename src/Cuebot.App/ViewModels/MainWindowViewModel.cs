@@ -286,7 +286,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (group is not null) SelectedPage = group.LastPage ?? group.Pages[0];
     }
 
-    partial void OnSelectedPageChanged(PageViewModel value) => SyncGroupSelection(value);
+    partial void OnSelectedPageChanged(PageViewModel? oldValue, PageViewModel newValue)
+    {
+        oldValue?.OnLeft();
+        SyncGroupSelection(newValue);
+    }
 
     /// <summary>Shows a page (and its section).</summary>
     public void Navigate(PageViewModel page) => SelectedPage = page;

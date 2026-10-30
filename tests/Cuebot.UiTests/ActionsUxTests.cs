@@ -131,6 +131,40 @@ public sealed class ActionsUxTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void Esc_or_leaving_the_page_closes_the_test_trigger_and_picker_dialogs()
+    {
+        AddGroupedAction();
+        var (window, vm) = Open();
+        var actions = Page<ActionsViewModel>(vm);
+        vm.SelectedPage = actions;
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Grouped");
+        Pump();
+
+        actions.TestTriggerCommand.Execute(null);
+        Pump();
+        Assert.True(actions.Test.IsOpen);
+        window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "TestArguments").Focus();
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Pump();
+        Assert.False(actions.Test.IsOpen);
+
+        actions.AddStepCommand.Execute(null);
+        Pump();
+        Assert.True(actions.Picker.IsOpen);
+        window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "PickerSearch").Focus();
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Pump();
+        Assert.False(actions.Picker.IsOpen);
+
+        // Left open, a dialog would wait hidden and block the page's shortcuts on return.
+        actions.TestTriggerCommand.Execute(null);
+        Assert.True(actions.Test.IsOpen);
+        vm.SelectedPage = vm.Dashboard;
+        Assert.False(actions.Test.IsOpen);
+        window.Close();
+    }
+
     private ActionDefinition AddGroupedAction(string name = "Grouped")
     {
         var group = Step(GroupSubAction.Id, ("name", "Greeting"));
