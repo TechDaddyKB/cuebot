@@ -1,0 +1,33 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --size: {{textSize}}px;
+  --text: {{textColor}};
+  --accent: {{accent}};
+  --bg: {{background}};
+  --radius: {{radius}}px;
+}
+
+.media {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font);
+  font-size: var(--size);
+  color: var(--text);
+}
+.media .screen { position: relative; flex: 1; min-height: 0; border-radius: var(--radius); overflow: hidden; background: #000; }
+.media .screen iframe, .media #player { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.media.no-video .screen { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.media.idle .screen { visibility: hidden; }
+.media .bar { display: flex; flex-direction: column; gap: 2px; padding: 0.5em 0.8em; border-radius: var(--radius); background: var(--bg);
+  border-left: 4px solid var(--accent); }
+.media .bar.hidden { display: none; }
+.media .now { display: flex; align-items: baseline; gap: 0.5em; min-width: 0; }
+.media .label { font-size: 0.7em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); white-space: nowrap; }
+.media .title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.media .by { font-size: 0.8em; opacity: 0.75; white-space: nowrap; }
+.media .next { font-size: 0.8em; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.media .next:empty { display: none; }
+.media.no-video { justify-content: flex-end; }

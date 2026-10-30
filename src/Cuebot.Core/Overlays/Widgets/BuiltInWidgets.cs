@@ -36,6 +36,7 @@ public static class BuiltInWidgets
         new("hypeboss", "Hype boss", "HypeBoss"),
         new("poll", "Poll and prediction", "Poll"),
         new("giveaway", "Giveaway", "Giveaway"),
+        new("media", "Media request player", "MediaPlayer"),
     ];
 
     /// <summary>A built-in widget's code by kind id (see <see cref="Kinds"/>), or null for an unknown kind.</summary>
@@ -47,8 +48,11 @@ public static class BuiltInWidgets
     /// <summary>Marks an element as Cuebot's alert box (in its settings), so its editor link opens the alert designer.</summary>
     public const string AlertBoxKind = "alertbox";
 
-    public static bool IsAlertBox(OverlayElement? element) =>
-        element?.Settings["builtIn"] is JsonValue v && v.TryGetValue<string>(out var kind) && kind == AlertBoxKind;
+    public static bool IsAlertBox(OverlayElement? element) => KindOf(element) == AlertBoxKind;
+
+    /// <summary>Which built-in widget an element is ("alertbox", "media"...), or null for any other widget.</summary>
+    public static string? KindOf(OverlayElement? element) =>
+        element?.Settings["builtIn"] is JsonValue v && v.TryGetValue<string>(out var kind) ? kind : null;
 
     private static string Read(string widget, string file)
     {

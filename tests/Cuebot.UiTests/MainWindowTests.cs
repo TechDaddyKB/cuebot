@@ -62,7 +62,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         {
             Assert.Equal(
                 ["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant", "Queues", "Timers", "Users & Groups", "Variables", "Watchers",
-                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Voice Control", "Input", "Apps & devices", "Stream Deck", "Webhooks", "Quotes", "Credits", "Points", "Giveaways & Store", "Decks", "Hotkeys", "Stream apps", "Speech", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
+                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Voice Control", "Input", "Apps & devices", "Stream Deck", "Webhooks", "Quotes", "Credits", "Points", "Giveaways & Store", "Decks", "Hotkeys", "Stream apps", "Speech", "Media Requests", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
                 vm.Pages.Select(p => p.Title));
             foreach (var (theme, suffix) in new[] { (Cuebot.App.Shell.AppTheme.Dark, ""), (Cuebot.App.Shell.AppTheme.Light, "-light") })
             {
@@ -196,7 +196,7 @@ public sealed class MainWindowTests : IAsyncDisposable
     {
         TestApp.BindingErrors.Clear();
         var (window, vm) = Open();
-        Assert.Equal(["Speech", "Voice Control"], vm.NavGroups.Single(g => g.Name == "Audio").Pages.Select(p => p.Title));
+        Assert.Equal(["Speech", "Media Requests", "Voice Control"], vm.NavGroups.Single(g => g.Name == "Audio").Pages.Select(p => p.Title));
         Assert.Equal(["Decks", "Stream Deck", "Input"], vm.NavGroups.Single(g => g.Name == "Decks & Input").Pages.Select(p => p.Title));
 
         var input = vm.Pages.OfType<InputPageViewModel>().Single();

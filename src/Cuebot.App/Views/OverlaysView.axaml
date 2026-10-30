@@ -133,6 +133,8 @@
                                 ToolTip.Tip="Twitch and YouTube polls and predictions, and Cuebot chat polls on every platform" />
                       <MenuItem Header="Giveaway" Command="{Binding AddBuiltInCommand}" CommandParameter="giveaway"
                                 ToolTip.Tip="The prize, how to enter, entries and a spinning winner reveal" />
+                      <MenuItem Header="Media request player" Command="{Binding AddBuiltInCommand}" CommandParameter="media"
+                                ToolTip.Tip="Plays the YouTube videos viewers request in chat, with what plays and what is next" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>

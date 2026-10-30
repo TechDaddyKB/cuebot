@@ -108,14 +108,15 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
 
     /// <summary>
     /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, countdown, emote
-    /// rain, hype cup, hype boss, poll, giveaway) in a
+    /// rain, hype cup, hype boss, poll, giveaway, media request player) in a
     /// sensible spot for its kind, scaled to the canvas. Returns the layer, or null for an unknown kind or overlay.
     /// </summary>
     public OverlayLayer? AddBuiltIn(Guid overlayId, string kind)
     {
         if (overlays.Get(overlayId) is not { } overlay || BuiltInWidgets.For(kind) is not { } widget) return null;
         var name = BuiltInWidgets.Kinds.First(k => k.Id == kind).Name;
-        if (AddCustomWidget(overlayId, name, widget) is not { } layer) return null;
+        // Marked with its kind, so the server can tell the media player (which may move the queue on) from other widgets.
+        if (AddCustomWidget(overlayId, name, widget, new JsonObject { ["builtIn"] = kind }) is not { } layer) return null;
         double w = overlay.Width, h = overlay.Height, s = Math.Min(w / 1920, h / 1080);
         var (x, y, width, height) = kind switch
         {
@@ -127,6 +128,7 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
             "hypeboss" => ((w - 640 * s) / 2, 40 * s, 640 * s, 140 * s),
             "poll" => (40 * s, (h - 380 * s) / 2, 560 * s, 380 * s),
             "giveaway" => ((w - 600 * s) / 2, h - 320 * s, 600 * s, 280 * s),
+            "media" => (w - 680 * s, h - 460 * s, 640 * s, 420 * s),
             _ => (0.0, 0.0, w, h),   // credits and emote rain cover the whole canvas
         };
         MoveLayer(overlayId, layer.Id, Math.Round(x), Math.Round(y), Math.Round(width), Math.Round(height));

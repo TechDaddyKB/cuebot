@@ -1,0 +1,14 @@
+{
+  "showVideo": { "type": "checkbox", "label": "Show the video (off: sound only, with the now playing card)", "value": true, "group": "Player" },
+  "showNowPlaying": { "type": "checkbox", "label": "Show what plays and who asked for it", "value": true, "group": "Player" },
+  "showNext": { "type": "checkbox", "label": "Show what is next", "value": true, "group": "Player" },
+  "showHow": { "type": "checkbox", "label": "Show how to request when nothing plays", "value": true, "group": "Player" },
+  "idleText": { "type": "text", "label": "When nothing plays", "value": "No requests right now", "group": "Player" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "textSize": { "type": "slider", "label": "Text size", "value": 18, "min": 10, "max": 48, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "accent": { "type": "colorpicker", "label": "Accent colour", "value": "#ff0033", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Bar background", "value": "rgba(16, 18, 24, 0.85)", "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 14, "min": 0, "max": 40, "step": 1, "group": "Look" }
+}

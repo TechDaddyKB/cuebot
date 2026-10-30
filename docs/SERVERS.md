@@ -290,6 +290,29 @@ the REST API.
 The **Giveaway** widget shows the prize, how to enter (with the ticket cost), entries, the latest entrants and the time
 left, and on the draw spins through the entrants' names before showing the winners.
 
+### Media requests (`Cuebot.Core/Media`, phase 5d)
+
+Viewers on every platform request YouTube videos in chat (`!sr` with a watch, youtu.be, shorts, embed or music link,
+or a bare id); `!wrongsong` takes back their latest (refunded); moderators `!skip`. Each video is looked up with
+YouTube's oEmbed endpoint (title and channel, no API key or quota; private and removed videos are refused before
+anyone pays). Settings (media-requests.json, with the queue and the latest 20 played): open, the three commands, cost in
+Cuebot points (and currency), requests per viewer, queue size, the longest play (the player moves on after it), subscribers only,
+answering in chat (place in the queue, or why it was refused) and the volume. Removing, taking back or clearing waiting
+requests refunds them; what plays is not refunded when skipped.
+
+The **Media request player** widget plays the queue with YouTube's player (video, or sound only with the now playing
+bar), follows pause and volume, and reports through the widget request `cuebot_media {action, id}` when a video ends or
+reaches the length limit (`ended`) or YouTube will not play it (`failed`: refunded, as owners can block playing
+outside YouTube, which oEmbed does not tell). Only Cuebot's media player may send it (built-in widget elements carry
+`{"builtIn": kind}`), and only for the video playing, so several players (OBS and a browser) move the queue on once. In
+the editor preview it is muted and never reports. The state goes to overlays as `cuebot-media` (and `media` in the
+hello).
+
+Controlled from the "Media Requests" page (Audio: now playing, pause, skip, volume, the queue with remove and reorder,
+adding a link yourself, settings), the "Add media request" and "Control media requests" sub-actions, triggers (media
+requested, started playing, skipped) and REST (`GET /media`, `POST /media/requests {link, user}`,
+`DELETE /media/requests/{id}`, `POST /media/{skip, pause, resume, clear, open, close}`).
+
 The widget editor's preview loads the real stream totals and recent alerts (`session`, `recents` in the preview
 answer), so these preview with live numbers.
 
@@ -574,6 +597,7 @@ JSON shapes are those of actions.json / commands.json (camelCase, enums as strin
 | `POST /timers/{id}/state` `{enabled, intervalSeconds}` | runtime override (like "Set timer state", not saved) |
 | `GET /globals?persisted=`, `GET` / `PUT` / `DELETE /globals/{name}` | PUT `{value, persisted (default true)}` |
 | `GET /history?limit=&action=&includeArgs=` | recent and pending runs, newest first |
+| `GET /media`, `POST /media/requests` `{link, user}`, `DELETE /media/requests/{id}`, `POST /media/{skip, pause, resume, clear, open, close}` | media requests: the player and the queue; add a video (free; 400 with the reason when refused); remove a waiting one (refunded); control |
 | `GET /giveaway`, `POST /giveaway` `{title, command, ticketCost, maxTickets, currency, subscriberLuck, subscribersOnly, seconds, winners}`, `POST /giveaway/{close, draw, redraw, cancel}` | the current giveaway; open one (409 while one runs), close entries, draw, draw one more, cancel and refund |
 | `GET /store`, `POST /store/redemptions/{id}/{approve, reject}` | store items, pending and latest redemptions; approve or reject (refunds) a pending one |
 | `GET /polls`, `POST /polls` `{title, choices, duration}`, `POST /polls/end` | latest poll and prediction per source; start or end a Cuebot chat poll (409 while one runs) |

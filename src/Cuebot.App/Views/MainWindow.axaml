@@ -129,6 +129,7 @@
     <DataTemplate DataType="vm:ObsViewModel"><views:ObsView /></DataTemplate>
     <DataTemplate DataType="savm:StreamAppsPageViewModel"><sav:StreamAppsPageView /></DataTemplate>
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
+    <DataTemplate DataType="vm:MediaRequestsViewModel"><views:MediaRequestsView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
     <DataTemplate DataType="srvvm:ServersViewModel"><srvv:ServersView /></DataTemplate>
     <DataTemplate DataType="tvm:ImportExportViewModel"><tviews:ImportExportView /></DataTemplate>

@@ -116,6 +116,7 @@ public sealed class AppHost : IAsyncDisposable
         Get<Cuebot.Core.Polls.ChatPolls>();   // polls and predictions (with the tracker) for overlays
         Get<Cuebot.Core.Giveaways.Giveaways>();   // giveaways and the points store hear chat from the start
         Get<Cuebot.Core.Store.PointsStore>();
+        Get<Cuebot.Core.Media.MediaRequests>();   // media requests from chat
         Get<ActionEngine>().Start();
         Get<TimerService>().Start();
         Get<Cuebot.Core.Users.ViewerData>().Start();   // YouTube data retention

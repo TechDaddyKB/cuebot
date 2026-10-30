@@ -198,6 +198,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Store.PointsStore? _store;
 
+    /// <summary>Media requests (their state is sent to overlay pages when they connect).</summary>
+    public Cuebot.Core.Media.MediaRequests? Media
+    {
+        get => _media ??= _provider?.GetService<Cuebot.Core.Media.MediaRequests>();
+        init => _media = value;
+    }
+
+    private Cuebot.Core.Media.MediaRequests? _media;
+
     /// <summary>Stream totals sent to overlay pages when they connect.</summary>
     public Cuebot.Core.Overlays.Session.SessionDataStore? SessionData
     {

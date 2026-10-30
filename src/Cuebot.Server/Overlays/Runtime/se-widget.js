@@ -9,7 +9,7 @@
   var NOT_QUEUED = {
     "message": true, "delete-message": true, "delete-messages": true, "bot:counter": true, "event": true,
     "event:test": true, "event:skip": true, "alertService:toggleSound": true, "kvstore:update": true, "widget-button": true,
-    "cuebot-poll": true, "cuebot-giveaway": true
+    "cuebot-poll": true, "cuebot-giveaway": true, "cuebot-media": true
   };
 
   var pending = {};

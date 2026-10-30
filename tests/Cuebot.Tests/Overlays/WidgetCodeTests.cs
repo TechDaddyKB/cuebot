@@ -215,6 +215,7 @@ public sealed class WidgetCodeTests : IDisposable
     [InlineData("hypeboss", "cuebot-hypeboss:")]
     [InlineData("poll", "cuebot-poll")]
     [InlineData("giveaway", "cuebot-giveaway")]
+    [InlineData("media", "cuebot_media")]
     public void Labels_goals_and_lists_ship_complete(string kind, string uses)
     {
         var widget = BuiltInWidgets.For(kind)!;
@@ -257,6 +258,10 @@ public sealed class WidgetCodeTests : IDisposable
 
         var giveaway = library.AddBuiltIn(hd.Id, "giveaway")!;
         Assert.Equal((660.0, 760.0, 600.0, 280.0), (giveaway.X, giveaway.Y, giveaway.Width, giveaway.Height));
+
+        var player = library.AddBuiltIn(hd.Id, "media")!;
+        Assert.Equal((1240.0, 620.0, 640.0, 420.0), (player.X, player.Y, player.Width, player.Height));
+        Assert.Equal("media", BuiltInWidgets.KindOf(elements.Get(player.ElementId!.Value)));   // so only it may move the queue on
 
         Assert.Null(library.AddBuiltIn(hd.Id, "alertbox"));   // has its own method
         Assert.Null(library.AddBuiltIn(Guid.NewGuid(), "label"));

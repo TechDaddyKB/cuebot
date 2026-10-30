@@ -90,6 +90,30 @@ internal static partial class OverlayWidgetHost
     /// <summary>The alert box asks Cuebot's speech to read an alert (<c>{text, alias}</c>).</summary>
     public const string TtsRequest = "cuebot_tts";
 
+    /// <summary>
+    /// The media request player reports <c>{action: "ended", id}</c> when a video finishes (or is cut short), and
+    /// <c>{action: "failed", id}</c> when YouTube will not play it (refunded).
+    /// </summary>
+    public const string MediaRequest = "cuebot_media";
+
+    /// <summary>
+    /// The media player's "ended": the next request starts. Only Cuebot's media request player may send it (any other
+    /// widget gets an error), and only for the video playing, so several players (OBS and a browser) move on once.
+    /// </summary>
+    private static JsonNode? Media(JsonObject? data, OverlayLayer? layer, ServerServices services)
+    {
+        if (BuiltInWidgets.KindOf(layer?.ElementId is { } id ? services.Elements?.Get(id) : null) != "media")
+            throw new ArgumentException("Only Cuebot's media request player can do that");
+        var action = data?["action"] is JsonValue a && a.TryGetValue<string>(out var s) ? s : "";
+        var itemId = data?["id"] is JsonValue v && v.TryGetValue<string>(out var i) ? i : "";
+        return action switch
+        {
+            "ended" => new JsonObject { ["moved"] = services.Media?.Ended(itemId) ?? false },
+            "failed" => new JsonObject { ["moved"] = services.Media?.Failed(itemId) ?? false },
+            _ => throw new ArgumentException($"Unknown media action '{action}'"),
+        };
+    }
+
     /// <summary>Longest alert text spoken; the rest is cut.</summary>
     public const int MaxTtsLength = 500;
 
@@ -101,6 +125,7 @@ internal static partial class OverlayWidgetHost
     public static async Task<JsonNode?> AnswerAsync(string request, JsonObject? data, OverlayLayer? layer, ServerServices services)
     {
         if (request == TtsRequest) return await SpeakAsync(data, layer, services).ConfigureAwait(false);
+        if (request == MediaRequest) return Media(data, layer, services);
         return Answer(request, data, services);
     }
 

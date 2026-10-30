@@ -719,6 +719,48 @@ public sealed class ApiOperations(ServerServices services, Func<IReadOnlyList<Se
         return done ? Store() : throw ApiException.NotFound($"No pending redemption '{id}'");
     }
 
+    /// <summary>Media requests: the player state (<see cref="Cuebot.Core.Media.MediaRequests.Snapshot"/>) plus the whole queue.</summary>
+    public JsonObject Media()
+    {
+        var media = services.Media ?? throw ApiException.Unavailable("Media requests are not available");
+        var json = media.Snapshot();
+        json["queue"] = JsonSerializer.SerializeToNode(media.Queue, JsonOptions);
+        return json;
+    }
+
+    /// <summary>Adds a request (free, outside the per-viewer limit): <c>{link, user}</c>. 400 with the reason when refused.</summary>
+    public async Task<JsonObject> AddMediaAsync(JsonObject body, CancellationToken ct)
+    {
+        var media = services.Media ?? throw ApiException.Unavailable("Media requests are not available");
+        var user = body["user"] is JsonValue u && u.TryGetValue<string>(out var name) && name.Trim().Length > 0 ? name.Trim() : "API";
+        var link = body["link"] is JsonValue l && l.TryGetValue<string>(out var text) ? text : "";
+        var (item, error) = await media.RequestAsync(link, "API", user.ToLowerInvariant(), user, free: true, ct: ct).ConfigureAwait(false);
+        return item is null ? throw ApiException.BadRequest(error) : Media();
+    }
+
+    /// <summary><c>skip</c>, <c>pause</c>, <c>resume</c>, <c>clear</c> (refunds), <c>open</c> or <c>close</c> requests.</summary>
+    public JsonObject MediaCommand(string command)
+    {
+        var media = services.Media ?? throw ApiException.Unavailable("Media requests are not available");
+        switch (command)
+        {
+            case "skip": if (!media.Skip()) throw ApiException.NotFound("Nothing is playing"); break;
+            case "pause": media.SetPaused(true); break;
+            case "resume": media.SetPaused(false); break;
+            case "clear": media.Clear(); break;
+            case "open": media.UpdateSettings(s => s.Open = true); break;
+            case "close": media.UpdateSettings(s => s.Open = false); break;
+            default: throw ApiException.NotFound($"Unknown media command '{command}' (skip, pause, resume, clear, open or close)");
+        }
+        return Media();
+    }
+
+    /// <summary>Removes a waiting request (refunded); 404 when it is not waiting.</summary>
+    public JsonObject RemoveMedia(string id) =>
+        (services.Media ?? throw ApiException.Unavailable("Media requests are not available")).Remove(id)
+            ? Media()
+            : throw ApiException.NotFound($"No waiting request '{id}'");
+
     public JsonObject Chat(int limit = 50)
     {
         var chat = services.Chat ?? throw ApiException.Unavailable("Chat is not available");

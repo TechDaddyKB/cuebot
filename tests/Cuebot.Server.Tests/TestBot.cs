@@ -50,7 +50,7 @@ internal sealed class TestBot : IAsyncDisposable
             Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
             Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
-            AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store,
+            AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -93,6 +93,10 @@ internal sealed class TestBot : IAsyncDisposable
     public Cuebot.Core.Giveaways.Giveaways Giveaways => _giveaways ??= new(null, Log, Bus, OverlayFeed, Points);
     private Cuebot.Core.Giveaways.Giveaways? _giveaways;
     public Cuebot.Core.Store.PointsStore Store => _store ??= new(null, Log, Bus, Points, OverlayFeed);
+
+    /// <summary>Media requests; video ids starting with "ok" exist (titled "Video " + id), any other is refused.</summary>
+    public Cuebot.Core.Media.MediaRequests Media => _media ??= new(null, Log, Bus, OverlayFeed, new FakeMediaLookup(), Points);
+    private Cuebot.Core.Media.MediaRequests? _media;
     private Cuebot.Core.Store.PointsStore? _store;
     private Cuebot.Core.Overlays.OverlayAlertQueue? _alertQueue;
     public Cuebot.Core.Overlays.OverlayFeed OverlayFeed => _overlayFeed ??= new Cuebot.Core.Overlays.OverlayFeed(Log);
@@ -298,6 +302,12 @@ internal sealed class FakeFunctions : IScriptFunctionProvider
             return Task.FromResult<object?>(null);
         }),
     ];
+}
+
+internal sealed class FakeMediaLookup : Cuebot.Core.Media.IMediaLookup
+{
+    public Task<(string Title, string Author)?> FindAsync(string videoId, CancellationToken ct) =>
+        Task.FromResult<(string, string)?>(videoId.StartsWith("ok", StringComparison.Ordinal) ? ("Video " + videoId, "Channel") : null);
 }
 
 internal sealed class FakeSpeaker : ISpeakerBackend

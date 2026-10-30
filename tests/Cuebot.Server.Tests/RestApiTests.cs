@@ -452,6 +452,31 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.Equal(404, (await _host.GetAsync("/api/v1/globals/score")).Status);
     }
 
+    // ---- media requests ----
+
+    [Fact]
+    public async Task Media_requests_are_added_controlled_and_removed_over_the_api()
+    {
+        var (status, added) = await _host.PostAsync("/api/v1/media/requests", new { link = "https://youtu.be/okVideo0001", user = "Kris" });
+        Assert.Equal(200, status);
+        Assert.Equal(("Video okVideo0001", "Kris"), (added!["current"]!["title"]!.GetValue<string>(), added["current"]!["user"]!.GetValue<string>()));
+        await _host.PostAsync("/api/v1/media/requests", new { link = "okVideo0002" });
+        var (refused, body) = await _host.PostAsync("/api/v1/media/requests", new { link = "badVideo001" });
+        Assert.Equal((400, "that video cannot be played here (private, removed or not embeddable)"), (refused, body!["error"]!.GetValue<string>()));
+
+        var (_, paused) = await _host.PostAsync("/api/v1/media/pause", new { });
+        Assert.True(paused!["paused"]!.GetValue<bool>());
+        var (_, media) = await _host.GetAsync("/api/v1/media");
+        var waiting = media!["queue"]![0]!["id"]!.GetValue<string>();
+        Assert.Equal(200, (await _host.SendAsync(HttpMethod.Delete, $"/api/v1/media/requests/{waiting}", null)).Status);
+        Assert.Equal(404, (await _host.SendAsync(HttpMethod.Delete, $"/api/v1/media/requests/{waiting}", null)).Status);
+        var (_, skipped) = await _host.PostAsync("/api/v1/media/skip", new { });
+        Assert.Null(skipped!["current"]);
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/media/skip", new { })).Status);
+        var (_, closed) = await _host.PostAsync("/api/v1/media/close", new { });
+        Assert.False(closed!["open"]!.GetValue<bool>());
+    }
+
     // ---- giveaways and store ----
 
     [Fact]

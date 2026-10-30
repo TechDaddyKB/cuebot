@@ -62,6 +62,7 @@
       overlay: { isEditorMode: false, muted: muted, paused: paused },
       polls: (hello && hello.polls) || [],   // Cuebot: the latest poll and prediction per source
       giveaway: (hello && hello.giveaway) || null,   // Cuebot: the current giveaway
+      media: (hello && hello.media) || null,         // Cuebot: media requests
       emulated: false
     };
   }
@@ -237,6 +238,7 @@
           }).concat([message.event]);
         }
         if (message.listener === "cuebot-giveaway" && hello) hello.giveaway = message.event;
+        if (message.listener === "cuebot-media" && hello) hello.media = message.event;
         broadcast({ type: "event", listener: message.listener, event: message.event });
         break;
       case "session":

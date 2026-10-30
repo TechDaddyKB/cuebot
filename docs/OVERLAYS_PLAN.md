@@ -18,8 +18,9 @@ bars including revenue; event list; credits roll; countdown; built 2026-10-30) i
 hype cup and hype boss (built 2026-10-30); 5b polls and predictions (Twitch and YouTube native, Cuebot chat polls and
 points predictions for every platform, the Poll and prediction widget; built 2026-10-30); 5c giveaways and the points
 store (Cuebot points on every platform, the Giveaways & Store page, the Giveaway widget; built 2026-10-30; contests are
-5b's points predictions). Next: 5d media requests (a YouTube player with a viewer queue), then 5e the
-StreamElements-account widgets (merch, charity, seasonal). Details in docs/SERVERS.md.
+5b's points predictions); 5d media requests (YouTube videos requested in chat on every platform, the Media Requests
+page and the Media request player widget; built 2026-10-30). Next: 5e the StreamElements-account widgets (merch,
+charity, seasonal). Details in docs/SERVERS.md.
 
 ## Goal
 

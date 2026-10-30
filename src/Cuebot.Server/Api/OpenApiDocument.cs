@@ -126,6 +126,28 @@ public static class OpenApiDocument
                     [Query("limit", "Maximum runs (default 50)", Int()), Query("action", "Only this action (id or name)"), Query("includeArgs", "Include the arguments", Bool())],
                     responses: Ok(Obj(("runs", Arr(Ref("Run"))), ("count", Int())))),
             },
+            ["/media"] = new JsonObject
+            {
+                ["get"] = Op("getMedia", "Media requests", "Media requests: what plays, the queue, open, paused, volume",
+                    responses: Ok(new JsonObject { ["type"] = "object" })),
+            },
+            ["/media/requests"] = new JsonObject
+            {
+                ["post"] = Op("addMediaRequest", "Media requests", "Add a YouTube video to the queue (free); 400 with the reason when refused",
+                    body: Obj(("link", Str("YouTube link or video id")), ("user", Str("Who it is for (default API)"))),
+                    responses: Responses(("200", "Added", new JsonObject { ["type"] = "object" }), Bad())),
+            },
+            ["/media/requests/{id}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(IdParam("Request id")),
+                ["delete"] = Op("removeMediaRequest", "Media requests", "Remove a waiting request (refunded)",
+                    responses: Responses(("200", "Removed", new JsonObject { ["type"] = "object" }), NotFound())),
+            },
+            ["/media/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("command", "skip, pause, resume, clear (refunds the queue), open or close requests")),
+                ["post"] = Op("controlMedia", "Media requests", "Control media requests", responses: Responses(("200", "OK", new JsonObject { ["type"] = "object" }), NotFound())),
+            },
             ["/giveaway"] = new JsonObject
             {
                 ["get"] = Op("getGiveaway", "Giveaways", "The current (or last) giveaway", responses: Ok(Obj(("giveaway", Ref("Giveaway"))))),

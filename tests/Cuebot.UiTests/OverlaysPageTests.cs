@@ -134,6 +134,50 @@ public sealed class OverlaysPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public async Task The_media_requests_page_runs_the_queue()
+    {
+        using var media = new Cuebot.Core.Media.MediaRequests(null, new Cuebot.Core.Logging.AppLog(), _services.GetRequiredService<Cuebot.Core.Events.EventBus>(),
+            _services.GetRequiredService<OverlayFeed>(), new TitleLookup());
+        var vm = new MediaRequestsViewModel(media);
+        var window = Open(new MediaRequestsView(), vm);
+        Assert.Equal(("Nothing is playing.", "The queue is empty."), (vm.NowPlaying, vm.QueueSummary));
+
+        vm.NewLink = "https://youtu.be/dQw4w9WgXcQ";
+        await vm.AddCommand.ExecuteAsync(null);
+        vm.NewLink = "M7lc1UVf-VE";
+        await vm.AddCommand.ExecuteAsync(null);
+        Pump();
+        Assert.Equal("Video dQw4w9WgXcQ — asked by you (Cuebot)", vm.NowPlaying);
+        Assert.Equal("1 waiting", vm.QueueSummary);
+        vm.NewLink = "not a link";
+        await vm.AddCommand.ExecuteAsync(null);
+        Assert.Equal("Not added: that is not a YouTube link.", vm.Status);
+
+        vm.MaxMinutes = 2.5m;
+        vm.Cost = 50;
+        vm.ModSkipCommand = "!next song";
+        Assert.Equal((150, 50L, "!next"), (media.Settings.MaxSeconds, media.Settings.Cost, media.Settings.SkipCommand));
+        vm.TogglePauseCommand.Execute(null);
+        Pump();
+        Assert.True(vm.Paused);
+        vm.SkipCommand.Execute(null);
+        Pump();
+        Assert.Equal(("Nothing is playing.", 1), (vm.NowPlaying, vm.Queue.Count));   // paused: the next waits
+        vm.Queue[0].RemoveCommand.Execute(null);
+        Pump();
+        Assert.Empty(vm.Queue);
+        Assert.Equal(["Video dQw4w9WgXcQ — you"], vm.Played);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    private sealed class TitleLookup : Cuebot.Core.Media.IMediaLookup
+    {
+        public Task<(string Title, string Author)?> FindAsync(string videoId, CancellationToken ct) =>
+            Task.FromResult<(string, string)?>(("Video " + videoId, "Channel"));
+    }
+
+    [AvaloniaFact]
     public void Overlays_are_created_renamed_relinked_and_deleted()
     {
         var vm = new OverlaysViewModel(Store, Servers);

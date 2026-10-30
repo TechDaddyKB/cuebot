@@ -128,6 +128,7 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
         Assert.Equal((false, true), (hello["alerts"]!["paused"]!.GetValue<bool>(), hello["alerts"]!["muted"]!.GetValue<bool>()));
         Assert.Empty(hello["polls"]!.AsArray());
         Assert.Null(hello["giveaway"]);
+        Assert.Null(hello["media"]!["current"]);
         _bot.ChatPolls.StartPoll("Snack?", ["Chips", "Fruit"], 0);
         var poll = await client.NextAsync(m => m["listener"]?.GetValue<string>() == "cuebot-poll");
         Assert.Equal("Snack?", poll["event"]!["title"]!.GetValue<string>());
@@ -151,6 +152,41 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
 
         _bot.AlertQueue.Paused = true;
         Assert.Equal("pause", (await client.NextAsync(m => m["type"]?.GetValue<string>() == "command"))["command"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Only_the_media_player_moves_the_queue_on_and_only_for_what_plays()
+    {
+        var player = _bot.Widgets.AddBuiltIn(_overlay.Id, "media")!;
+        await _bot.Media.RequestAsync("okVideo0001", "Kick", "a", "Ann", free: true);
+        await _bot.Media.RequestAsync("okVideo0002", "Kick", "a", "Ann", free: true);
+        await using var client = await WsClient.ConnectAsync(_bot.Manager.Overlays.Port, $"/o/{_overlay.Id}/ws?token={Token}");
+        var hello = await client.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
+        var playing = hello["media"]!["current"]!["id"]!.GetValue<string>();
+
+        async Task<JsonObject> Ask(string id, OverlayLayer layer, string item)
+        {
+            await client.SendRawAsync(new JsonObject
+            {
+                ["type"] = "request", ["id"] = id, ["layer"] = layer.Id.ToString(), ["request"] = "cuebot_media",
+                ["data"] = new JsonObject { ["action"] = "ended", ["id"] = item },
+            }.ToJsonString());
+            return await client.NextAsync(m => m["type"]?.GetValue<string>() == "response" && m["id"]?.GetValue<string>() == id);
+        }
+
+        Assert.Contains("media request player", (await Ask("1", _layer, playing))["error"]!.GetValue<string>());
+        Assert.False((await Ask("2", player, "something-else"))["result"]!["moved"]!.GetValue<bool>());
+        Assert.True((await Ask("3", player, playing))["result"]!["moved"]!.GetValue<bool>());
+        Assert.False((await Ask("4", player, playing))["result"]!["moved"]!.GetValue<bool>());   // a second player's report
+        Assert.Equal("Video okVideo0002", _bot.Media.Current!.Title);
+        await client.SendRawAsync(new JsonObject
+        {
+            ["type"] = "request", ["id"] = "5", ["layer"] = player.Id.ToString(), ["request"] = "cuebot_media",
+            ["data"] = new JsonObject { ["action"] = "failed", ["id"] = _bot.Media.Current.Id },
+        }.ToJsonString());
+        var failed = await client.NextAsync(m => m["type"]?.GetValue<string>() == "response" && m["id"]?.GetValue<string>() == "5");
+        Assert.True(failed["result"]!["moved"]!.GetValue<bool>());
+        Assert.Null(_bot.Media.Current);
     }
 
     [Fact]

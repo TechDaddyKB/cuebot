@@ -304,6 +304,7 @@
         overlay: { isEditorMode: true, muted: false },
         polls: previewDoc.polls || [],
         giveaway: previewDoc.giveaway || null,
+        media: previewDoc.media || null,
         emulated: true
       }
     });

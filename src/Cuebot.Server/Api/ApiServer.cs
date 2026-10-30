@@ -259,6 +259,14 @@ public sealed class ApiServer : IAsyncDisposable
                 result = ops.History(QInt("limit", 50), Q("action"), QBool("includeArgs") ?? false);
                 break;
 
+            case "media" when s.Length == 1 && method == "GET": result = ops.Media(); break;
+            case "media" when s.Length == 2 && method == "POST" && s[1].Equals("requests", StringComparison.OrdinalIgnoreCase):
+                result = await ops.AddMediaAsync(await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? [], ct).ConfigureAwait(false);
+                break;
+            case "media" when s.Length == 3 && method == "DELETE" && s[1].Equals("requests", StringComparison.OrdinalIgnoreCase):
+                result = ops.RemoveMedia(s[2]);
+                break;
+            case "media" when s.Length == 2 && method == "POST": result = ops.MediaCommand(s[1].ToLowerInvariant()); break;
             case "giveaway" when s.Length == 1 && method == "GET": result = ops.Giveaway(); break;
             case "giveaway" when s.Length == 1 && method == "POST":
                 result = ops.GiveawayCommand("open", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
@@ -330,7 +338,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "giveaway", "store", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);
