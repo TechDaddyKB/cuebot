@@ -338,7 +338,12 @@ public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
         }).ConfigureAwait(false);
         if (Settings.Scopes.Contains(TwitchScopes.ReadRedemptions) || Settings.Scopes.Contains(TwitchScopes.ManageRedemptions))
             await SeedAsync("rewards", async () => _router.SeedRewards(await Api.GetRewardsAsync(ct).ConfigureAwait(false))).ConfigureAwait(false);
+        await SeedAsync("chat badges", async () => ChatBadges = await Api.GetChatBadgesAsync(ct).ConfigureAwait(false)).ConfigureAwait(false);
     }
+
+    /// <summary>Chat badge images ("set/version" → 4x image URL and title), loaded when the broadcaster connects.</summary>
+    public IReadOnlyDictionary<string, (string Url, string Title)> ChatBadges { get; private set; } =
+        new Dictionary<string, (string Url, string Title)>();
 
     /// <summary>Remembers a category's box art for Stream Update's gameBoxArt / oldGameBoxArt.</summary>
     private async Task SeedBoxArtAsync(string gameId, CancellationToken ct)

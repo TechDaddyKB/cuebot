@@ -142,6 +142,38 @@ page.
 - Each page has its own outbox: past 500 waiting messages the oldest chat message or session update is dropped;
   alerts and commands are kept up to 5000.
 
+### Events on the overlay feed (`Cuebot.Core/Overlays/Events`)
+
+`OverlayEventBridge` turns bot events into StreamElements-shaped messages, so widgets made for StreamElements work
+with every platform:
+
+- Combined chat (`chat.message`) becomes `message`: `{data: {time, tags, nick, userId, displayName, displayColor,
+  channel, text, isAction, msgId, badges[{type, version, url, description}], emotes[{type, name, id, gif, urls, start,
+  end}]}, renderedText, service}`. Twitch-style `tags` (`mod`, `subscriber`, `vip`, `badges`, `color`, ...) are filled
+  for every platform. Kick's emote tokens become emote names in `text`, ranges and `renderedText`. A chatter without a
+  platform colour gets a stable one of Twitch's default colours.
+- `chat.messageDeleted` becomes `delete-message {msgId}`; `chat.userBanned` / `chat.userTimedOut` `delete-messages {userId}`.
+- Each platform module's `IOverlayEventAdapter` turns its alerts into `*-latest` events (`{name, displayName, amount,
+  message, type, providerId, avatar, _id, createdAt}` plus `tier`, `gifted`, `sender`, `bulkGifted`,
+  `isCommunityGift`, `currency`... as StreamElements has them), each followed by the raw `event {type, provider, data}`.
+
+| Listener | Twitch | Kick | Rumble | YouTube | Donations |
+| --- | --- | --- | --- | --- | --- |
+| `follower-latest` | follow | follow | follow | newSubscriber | |
+| `subscriber-latest` | sub (not gift copies), resub (amount = months), prime/gift paid upgrade, subGift (recipient, `sender`, `gifted`, `isCommunityGift`), giftBomb (`bulkGifted`, amount = gifts) | subscription, resubscription, giftSubscription, massGiftSubscription | subscribe, giftSub (`bulkGifted`) | newSponsor, memberMilestone, membershipGift (`bulkGifted`), giftMembershipReceived | |
+| `cheer-latest` | cheer (bits) | | | | |
+| `kicks-latest` | | kicksGifted | | | |
+| `tip-latest` | | | rant (dollars) | | Streamlabs, StreamElements, TipeeeStream, Pally, TreatStream |
+| `superchat-latest` | | | | superChat, superSticker (`sticker`) | |
+| `raid-latest` | raid | host | | | |
+| `charityCampaignDonation-latest` | | | | | charity donations, DonorDrive |
+| `redemption-latest` (Cuebot) | rewardRedemption | rewardRedemption | | | |
+| `jewels-latest` (Cuebot) | | | | jewelsGifted | |
+
+Badge images: Twitch's own (global and channel badges, loaded when the broadcaster connects); for Kick, Rumble,
+YouTube and until Twitch's load, Cuebot's built-in icons at `/runtime/badge-{broadcaster,moderator,vip,subscriber,
+founder,og,verified,staff,gifter,premium}.svg`.
+
 ## HTTP server (default 127.0.0.1:7474)
 
 | Endpoint | Behaviour |

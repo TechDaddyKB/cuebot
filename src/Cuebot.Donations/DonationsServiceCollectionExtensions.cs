@@ -68,6 +68,7 @@ public static class DonationsServiceCollectionExtensions
         services.AddSingleton<IChatEventAdapter, DonorDriveChatAdapter>();
         services.AddSingleton<IChatEventAdapter, TreatStreamChatAdapter>();
         services.AddSingleton<IChatEventAdapter, PallyChatAdapter>();
+        services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, DonationOverlayAdapter>();
         services.AddSingleton<ITriggerProvider, StreamlabsTriggers>();
         services.AddSingleton<ITriggerProvider, StreamElementsTriggers>();
         services.AddSingleton<ITriggerProvider, TipeeeStreamTriggers>();

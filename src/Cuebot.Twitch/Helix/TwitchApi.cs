@@ -252,6 +252,35 @@ public sealed partial class TwitchApi
         return json.Items("data").Select(t => new TwitchTeam(t.Str("id"), t.Str("team_name"), t.Str("team_display_name"))).ToArray();
     }
 
+    // ---------------------------------------------------------------- chat badges
+
+    /// <summary>
+    /// Chat badge images keyed "set/version" (e.g. "subscriber/12"): the global set, with the channel's own badges
+    /// (subscriber and bits badges) replacing global ones of the same key. Values are (4x image URL, title).
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, (string Url, string Title)>> GetChatBadgesAsync(CancellationToken ct = default)
+    {
+        RequireSignedIn();
+        var badges = new Dictionary<string, (string, string)>(StringComparer.Ordinal);
+        var global = await _helix.RequestAsync(HttpMethod.Get, "chat/badges/global", null, null, "Getting chat badges", ct).ConfigureAwait(false);
+        var channel = await _helix.RequestAsync(HttpMethod.Get, "chat/badges", Q(("broadcaster_id", BroadcasterId)), null,
+            "Getting channel chat badges", ct).ConfigureAwait(false);
+        foreach (var json in new[] { global, channel })
+        {
+            foreach (var set in json.Items("data"))
+            {
+                foreach (var version in set.Items("versions"))
+                {
+                    var url = version.Str("image_url_4x");
+                    if (url.Length == 0) url = version.Str("image_url_2x");
+                    if (url.Length == 0) url = version.Str("image_url_1x");
+                    if (url.Length > 0) badges[$"{set.Str("set_id")}/{version.Str("id")}"] = (url, version.Str("title"));
+                }
+            }
+        }
+        return badges;
+    }
+
     // ---------------------------------------------------------------- channel and stream
 
     /// <summary>Channel information of the broadcaster, or of <paramref name="broadcasterId"/>.</summary>

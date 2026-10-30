@@ -1,7 +1,7 @@
 # Overlays & Widgets designer: plan (draft)
 
-Status: phase 0 in progress. Part 1 (overlay server, stores, Overlays page list) built 2026-10-30; part 2 (event
-adapters) and part 3 (session data) next. Started 2026-10-30.
+Status: phase 0 in progress. Part 1 (overlay server, stores, Overlays page list) and part 2 (event bridge, platform
+adapters, badge images; mapping in docs/SERVERS.md) built 2026-10-30; part 3 (session data) next. Started 2026-10-30.
 
 ## Goal
 

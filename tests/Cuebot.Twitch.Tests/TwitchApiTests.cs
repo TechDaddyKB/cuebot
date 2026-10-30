@@ -67,6 +67,29 @@ public sealed class TwitchApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Chat_badges_merge_global_and_channel_sets()
+    {
+        _h.On("GET /helix/chat/badges/global", """
+            {"data":[
+              {"set_id":"moderator","versions":[{"id":"1","image_url_1x":"https://g/mod1x","image_url_4x":"https://g/mod4x","title":"Moderator"}]},
+              {"set_id":"subscriber","versions":[{"id":"0","image_url_4x":"https://g/sub0","title":"Subscriber"}]}
+            ]}
+            """);
+        _h.On("GET /helix/chat/badges", """
+            {"data":[{"set_id":"subscriber","versions":[
+              {"id":"0","image_url_4x":"https://c/sub0","title":"Channel sub"},
+              {"id":"12","image_url_2x":"https://c/sub12-2x","title":"1-Year"}]}]}
+            """);
+
+        var badges = await _h.Api.GetChatBadgesAsync();
+
+        Assert.Equal(("https://g/mod4x", "Moderator"), badges["moderator/1"]);
+        Assert.Equal(("https://c/sub0", "Channel sub"), badges["subscriber/0"]);   // the channel's own badge wins
+        Assert.Equal("https://c/sub12-2x", badges["subscriber/12"].Url);          // largest image there is
+        Assert.Contains(_h.Http.Requests, r => r.Query.StartsWith("broadcaster_id=", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Starting_a_raid_publishes_raid_start()
     {
         _h.On("POST /helix/raids", """{"data":[{"created_at":"2026-01-01T12:00:00Z","is_mature":false}]}""");

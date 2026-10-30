@@ -74,6 +74,13 @@ public sealed class OverlayServerTests : IAsyncLifetime
         using var css = await _http.GetAsync("/runtime/overlay.css");
         Assert.Equal(HttpStatusCode.OK, css.StatusCode);
 
+        using var badge = await _http.GetAsync("/runtime/badge-moderator.svg");
+        Assert.Equal(HttpStatusCode.OK, badge.StatusCode);
+        Assert.Equal("image/svg+xml", badge.Content.Headers.ContentType!.MediaType);
+        Assert.StartsWith("<svg", await badge.Content.ReadAsStringAsync());
+        using var unknownBadge = await _http.GetAsync("/runtime/badge-nope.svg");
+        Assert.Equal(HttpStatusCode.NotFound, unknownBadge.StatusCode);
+
         using var html = await _http.GetAsync("/runtime/overlay.html");
         Assert.Equal(HttpStatusCode.NotFound, html.StatusCode);
     }

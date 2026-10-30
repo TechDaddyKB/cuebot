@@ -27,6 +27,7 @@ public static class TwitchServiceCollectionExtensions
             services.AddSingleton<ISubActionHandler>(sp => new TwitchSubAction(spec, () => sp.GetRequiredService<TwitchService>().Api));
         services.AddSingleton<IScriptFunctionProvider, TwitchScriptFunctions>();
         services.AddSingleton<Cuebot.Core.Chat.IChatEventAdapter, TwitchChatAdapter>();
+        services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter>(sp => new TwitchOverlayAdapter(sp.GetRequiredService<TwitchService>()));
         services.AddSingleton<Cuebot.Core.Chat.IChatSender, TwitchChatSender>();
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp =>
         {

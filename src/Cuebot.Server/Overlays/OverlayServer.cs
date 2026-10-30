@@ -14,7 +14,7 @@ namespace Cuebot.Server.Overlays;
 /// <item><c>GET /o/{id}?token=...</c>: the overlay page.</item>
 /// <item><c>GET /o/{id}/ws?token=...</c>: its WebSocket; first a "hello" with the overlay, then everything the
 /// <see cref="OverlayFeed"/> publishes for it, in order.</item>
-/// <item><c>GET /runtime/{file}</c>: Cuebot's overlay scripts and styles.</item>
+/// <item><c>GET /runtime/{file}</c>: Cuebot's overlay scripts, styles and built-in badge icons.</item>
 /// <item><c>GET /assets/{sha256}.{ext}</c>: files from the <see cref="AssetStore"/>.</item>
 /// </list>
 /// A wrong or missing token answers 404, the same as an unknown overlay, so overlay ids cannot be probed. Pages are
@@ -27,7 +27,8 @@ public sealed class OverlayServer : IAsyncDisposable
     private static readonly FileExtensionContentTypeProvider ContentTypes = new();
 
     /// <summary>Runtime files served at /runtime (embedded resources "Cuebot.Server.Overlays.{name}").</summary>
-    private static readonly HashSet<string> RuntimeFiles = new(["overlay.js", "overlay.css"], StringComparer.Ordinal);
+    private static readonly HashSet<string> RuntimeFiles = new(
+        ["overlay.js", "overlay.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
 
     private readonly Func<ServerSettings> _settings;
     private readonly ServerServices _services;
@@ -133,7 +134,12 @@ public sealed class OverlayServer : IAsyncDisposable
 
     private static async Task WriteRuntimeAsync(HttpContext context, string file)
     {
-        context.Response.ContentType = file.EndsWith(".js", StringComparison.Ordinal) ? "text/javascript; charset=utf-8" : "text/css; charset=utf-8";
+        context.Response.ContentType = Path.GetExtension(file) switch
+        {
+            ".js" => "text/javascript; charset=utf-8",
+            ".svg" => "image/svg+xml",
+            _ => "text/css; charset=utf-8",
+        };
         context.Response.Headers.CacheControl = "no-cache";
         await context.Response.WriteAsync(Resource(file)).ConfigureAwait(false);
     }

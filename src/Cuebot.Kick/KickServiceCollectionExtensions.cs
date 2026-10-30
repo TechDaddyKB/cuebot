@@ -40,6 +40,7 @@ public static class KickServiceCollectionExtensions
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<KickService>());
         services.AddSingleton<IEmoteChannelSource>(sp => new KickEmoteChannelSource(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatEventAdapter, KickChatAdapter>();
+        services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, KickOverlayAdapter>();
         services.AddSingleton<IPresentViewersArgs>(sp => new KickPresentViewersArgs(sp.GetRequiredService<KickService>()));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new KickChatModerator(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatSender, KickChatSender>();
