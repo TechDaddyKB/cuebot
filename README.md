@@ -126,11 +126,15 @@ GNOME with the AppIndicator extension. Plain GNOME and some minimal Wayland sess
 (no `org.kde.StatusNotifierWatcher` on the session bus) and then minimizes instead of hiding to the tray, so the window
 is never lost. Launching Cuebot again always brings the window back.
 
+Quitting: SIGTERM, SIGINT and SIGHUP (logout, `kill`, a closed terminal) quit like the tray's Quit, flushing every
+store. If the Wayland compositor restarts, Cuebot keeps running (streams, timers and servers carry on) and its window
+comes back when the compositor does. If the X server goes away, Cuebot flushes its stores and exits.
+
 - Audio playback uses `pw-play`, `paplay` or `aplay` (whichever is installed).
 - Offline TTS on Linux uses `espeak-ng` (bundled in the Flatpak).
 
 CI smoke-tests every Linux package on a headless Wayland compositor (sway, no X server) and on X11 (Xvfb),
-and builds and installs both AUR packages in an Arch Linux container.
+including quitting on SIGTERM, and builds and installs both AUR packages in an Arch Linux container.
 
 ## Releases
 

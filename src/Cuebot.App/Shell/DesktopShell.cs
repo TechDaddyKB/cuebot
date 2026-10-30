@@ -1,8 +1,10 @@
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Cuebot.App.Platform;
 using Cuebot.App.ViewModels;
 using Cuebot.App.Views;
 using Cuebot.Core;
@@ -28,6 +30,7 @@ public sealed class DesktopShell : IShellHost, IDisposable
     private TrayIcon? _tray;
     private NativeMenuItem? _toggleItem;
     private readonly List<(IConnectionStatus Status, NativeMenuItem Item)> _statusItems = [];
+    private readonly List<PosixSignalRegistration> _signals = [];
     private bool _trayAvailable;
     private bool _quitting;
     private bool _wasMaximized;
@@ -94,9 +97,53 @@ public sealed class DesktopShell : IShellHost, IDisposable
                 _log.Warn("Cuebot", $"Later launches cannot bring this window forward ({error})");
         }
 
+        HandleSignals();
+        if (Program.BackendName == nameof(Platform.DisplayBackend.X11))
+            X11ConnectionLoss.Handle(() =>
+            {
+                Console.Error.WriteLine("Lost the connection to the X server; exiting.");
+                _host.ShutDown(SignalQuitTimeout);
+            });
+
         // The probe may still be running; act on its answer when it arrives.
         _ = _ctx.TrayProbe.ContinueWith(t => Dispatcher.UIThread.Post(() => SetTrayAvailable(t.IsCompletedSuccessfully && t.Result)),
             TaskScheduler.Default);
+    }
+
+    /// <summary>Time a signal-requested quit gets before the process exits without the UI thread.</summary>
+    internal static readonly TimeSpan SignalQuitTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>Time the window lifetime gets to end on its own once the stores are flushed.</summary>
+    private static readonly TimeSpan SignalExitGrace = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// SIGTERM, SIGINT and SIGHUP (a closed terminal, a logout, a service manager stopping us) quit like the tray's
+    /// Quit, so stores are flushed. If the window lifetime cannot end (the Wayland compositor is gone and Avalonia is
+    /// waiting to reconnect, or the UI thread is stuck), the process exits once the stores are flushed.
+    /// </summary>
+    private void HandleSignals()
+    {
+        foreach (var signal in new[] { PosixSignal.SIGINT, PosixSignal.SIGTERM, PosixSignal.SIGHUP })
+        {
+            try
+            {
+                _signals.Add(PosixSignalRegistration.Create(signal, c =>
+                {
+                    c.Cancel = true;
+                    _log.Info("Cuebot", $"Received {c.Signal}; quitting");
+                    Dispatcher.UIThread.Post(Quit);
+                    _ = Task.Run(() =>
+                    {
+                        // Same flush Quit starts; this waits for it whether or not the UI thread got there.
+                        var flushed = _host.ShutDown(SignalQuitTimeout);
+                        Thread.Sleep(SignalExitGrace);   // normally Main has returned by now
+                        Console.Error.WriteLine("The window did not close in time; exiting.");
+                        Environment.Exit(flushed ? 0 : 1);
+                    });
+                }));
+            }
+            catch (PlatformNotSupportedException) { }
+        }
     }
 
     private bool WaitForTrayProbe()
@@ -307,6 +354,8 @@ public sealed class DesktopShell : IShellHost, IDisposable
 
     public void Dispose()
     {
+        foreach (var signal in _signals) signal.Dispose();
+        _signals.Clear();
         foreach (var (status, _) in _statusItems) status.StatusChanged -= OnStatusChanged;
         _tray?.Dispose();
         _tray = null;

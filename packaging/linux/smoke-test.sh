@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Launches a packaged Cuebot on a headless display server, checks the window appears and the expected
-# display backend was used, and saves a screenshot.
+# display backend was used, and saves a screenshot. In the x11 and wayland modes it then sends SIGTERM and checks
+# that Cuebot quits on its own, flushing its stores.
 #   packaging/linux/smoke-test.sh <x11|wayland|wayland-weston|fallback|hang> <name> <command...>
 # x11: xvfb xdotool scrot. wayland: sway grim jq. wayland-weston: weston. fallback: sway + x11 tools. hang: python3 + x11 tools.
 # Writes artifacts/smoke-<name>-<mode>.png and .log.
@@ -127,7 +128,36 @@ else
   ok=0
 fi
 
+# The Cuebot process itself: launchers (AppImage runtime, flatpak run) may not pass SIGTERM on.
+cuebot_pid() {
+  local queue=("$app") p child
+  while [ ${#queue[@]} -gt 0 ]; do
+    p="${queue[0]}"; queue=("${queue[@]:1}")
+    [ "$(cat /proc/"$p"/comm 2>/dev/null)" = Cuebot ] && { echo "$p"; return; }
+    for child in $(pgrep -P "$p"); do queue+=("$child"); done
+  done
+  echo "$app"
+}
+
+quit_checked=0
+if [ "$ok" = 1 ] && [[ "$mode" == x11 || "$mode" == wayland* ]]; then
+  quit_checked=1
+  kill -TERM "$(cuebot_pid)"
+  for _ in $(seq 1 15); do kill -0 "$app" 2>/dev/null || break; sleep 1; done
+  if kill -0 "$app" 2>/dev/null; then
+    echo "Cuebot did not quit within 15 s of SIGTERM ($name, $mode)" >&2
+    ok=0
+  else
+    echo "Cuebot quit on SIGTERM ($name, $mode)"
+  fi
+fi
+
 cat "$data"/logs/*.log 2>/dev/null >>"$out.log"
+if [ "$quit_checked" = 1 ] && ! grep -q "Shutting down" "$out.log"; then
+  echo "Expected Cuebot to flush its stores after SIGTERM; output:" >&2
+  cat "$out.log" >&2
+  ok=0
+fi
 if ! grep -q "display backend: $expected" "$out.log"; then
   echo "Expected the $expected display backend; app log:" >&2
   cat "$data"/logs/*.log >&2 2>/dev/null
