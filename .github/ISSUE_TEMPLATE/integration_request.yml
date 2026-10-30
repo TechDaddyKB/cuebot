@@ -1,0 +1,22 @@
+name: Integration request
+description: Ask for support for a platform, service, app or device.
+labels: ["integration"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Service, app or device
+      placeholder: For example "Throne", "Elgato Wave:3", "Discord"
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Website or API documentation
+  - type: textarea
+    id: use
+    attributes:
+      label: What should Cuebot do with it?
+      description: Events that should trigger actions, and things actions should be able to do.
+    validations:
+      required: true

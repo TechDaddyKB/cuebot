@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest something Cuebot should do.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe what you are trying to do on stream and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could Cuebot help?
+      description: The feature or change you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: Does another tool do this?
+      description: If Streamer.bot, Speaker.bot or another app has this, how does it work there?

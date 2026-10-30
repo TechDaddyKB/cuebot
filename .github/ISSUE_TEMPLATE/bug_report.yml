@@ -1,0 +1,69 @@
+name: Bug report
+description: Something in Cuebot does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The quickest way is from Cuebot itself: **Settings > Support** builds a report with your
+        log and system details, removes tokens, passwords, stream keys and API keys, shows you exactly what will be
+        sent, and can open this issue for you. Never paste tokens, passwords or stream keys into an issue.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Platforms > Twitch
+        2. Click Sign in with Twitch
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Cuebot version
+      description: Shown in the top bar and under Settings > About.
+      placeholder: 0.1.0-rc.2
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Linux
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: How did you install Cuebot?
+      options:
+        - Windows zip
+        - AppImage
+        - Linux tarball
+        - Flatpak
+        - AUR (cuebot or cuebot-bin)
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: linux
+    attributes:
+      label: Linux distribution and desktop
+      description: Only for Linux, for example "Arch, Hyprland (Wayland)" or "Ubuntu 24.04, GNOME".
+  - type: textarea
+    id: logs
+    attributes:
+      label: Problem report or log
+      description: Paste the report from Settings > Support (Copy report), or the relevant log lines. Remove anything private first.
+      render: text

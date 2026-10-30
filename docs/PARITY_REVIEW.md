@@ -1,9 +1,9 @@
 # Parity review: Cuebot against the public Streamer.bot and Speaker.bot docs
 
-Review date 2026-10-28, against Cuebot `4a479c4`. This is a review draft and is not committed.
+Review date 2026-10-28, against Cuebot `4a479c4`.
 
-**Sources.** Public docs only: `sb-docs` (github.com/Streamerbot/docs) and `sb-wiki` (the older wiki), both under
-`C:\Users\docker\cuebot-sb-exports\`. On the Cuebot side I used Cuebot's own source. Nothing under `decompiled/` was opened.
+**Sources.** Public docs only: `sb-docs` (github.com/Streamerbot/docs) and `sb-wiki` (the older public wiki), read
+from local copies. On the Cuebot side, Cuebot's own source.
 
 **Method.**
 - **Documented items.** A script read the front matter (title, parameters, variables) of every page: 379 sub-action
