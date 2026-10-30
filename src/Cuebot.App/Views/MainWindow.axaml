@@ -35,11 +35,15 @@
         Width="1360" Height="860" MinWidth="960" MinHeight="600"
         Background="{DynamicResource CuebotGround}"
         WindowStartupLocation="CenterScreen">
+  <!-- The top bar shows the name; the title the drawn decorations (Windows) would put over the icon is hidden. -->
+  <Window.WindowDecorationsTheme>
+    <ControlTheme TargetType="WindowDrawnDecorations" BasedOn="{StaticResource {x:Type WindowDrawnDecorations}}">
+      <Style Selector="^ /template/ Panel#PART_TitleTextPanel > TextBlock">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </ControlTheme>
+  </Window.WindowDecorationsTheme>
   <Window.Styles>
-    <!-- The top bar shows the name; the title the decorations draw on Windows would sit over the icon. -->
-    <Style Selector=":is(Control)#PART_TitleTextPanel">
-      <Setter Property="IsVisible" Value="False" />
-    </Style>
     <!-- Icon rail -->
     <Style Selector="Button.rail">
       <Setter Property="Width" Value="66" />

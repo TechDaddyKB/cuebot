@@ -14,7 +14,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContextChanged += (_, _) => BindShortcuts();
-        Jump.KeyDown += OnJumpKeyDown;
+        // Tunnel: the box itself takes the first Enter (to close its list) before a bubbling handler sees it.
+        Jump.AddHandler(KeyDownEvent, OnJumpKeyDown, RoutingStrategies.Tunnel);
         Jump.SelectionChanged += (_, _) => { if (Jump.SelectedItem is string title) JumpTo(title); };
         if (OperatingSystem.IsWindows())
         {
@@ -46,6 +47,7 @@ public partial class MainWindow : Window
         if (e.Key == Key.Enter)
         {
             JumpTo(Jump.SelectedItem as string ?? Jump.Text);
+            Jump.IsDropDownOpen = false;
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)

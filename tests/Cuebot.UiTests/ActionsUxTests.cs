@@ -581,6 +581,17 @@ public sealed class ActionsUxTests : IAsyncDisposable
             Assert.Equal("Twitch", vm.SelectedPage.Title);
             Assert.False(vm.JumpTo("no such page"));
             Assert.False(vm.JumpTo("  "));
+            // One Enter in the box jumps, even while its list is open (the box would otherwise take that Enter).
+            vm.Navigate(automation.Pages[0]);
+            var jump = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == "Jump");
+            jump.Focus();
+            jump.Text = "twit";
+            jump.IsDropDownOpen = true;
+            Pump();
+            window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+            Pump();
+            Assert.Equal("Twitch", vm.SelectedPage.Title);
+            Assert.Equal("", jump.Text);
             Assert.Contains(AppShortcuts.Window, s => s.Id == "jump" && s.Gesture == "Ctrl+K");
 
             // The status bar counts actions and triggers.
