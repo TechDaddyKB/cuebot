@@ -157,7 +157,10 @@ public static class AntigravityIsolation
                     ["PreToolUse"] = new JsonArray(new JsonObject
                     {
                         ["matcher"] = "*",
-                        ["hooks"] = new JsonArray(new JsonObject { ["type"] = "command", ["command"] = ShellCommand(gate), ["timeout"] = 20 }),
+                        ["hooks"] = new JsonArray(new JsonObject
+                        {
+                            ["type"] = "command", ["command"] = HookCommand(gate, OperatingSystem.IsWindows()), ["timeout"] = 20,
+                        }),
                     }),
                 },
             }.ToJsonString());
@@ -169,6 +172,24 @@ public static class AntigravityIsolation
             throw;
         }
     }
+
+    /// <summary>
+    /// The hook's command line for the shell Antigravity runs it in: PowerShell on Windows (its default there, and sh is
+    /// usually not on PATH), sh elsewhere.
+    /// </summary>
+    internal static string HookCommand(IReadOnlyList<string> words, bool windows) => windows ? PowerShellCommand(words) : ShellCommand(words);
+
+    /// <summary>
+    /// A command line for PowerShell. Plain words (a path without spaces or quotes) are written as they are, which cmd
+    /// and sh also understand; otherwise every word is single-quoted and run with the call operator.
+    /// </summary>
+    internal static string PowerShellCommand(IReadOnlyList<string> words) =>
+        words.All(IsPlainWord)
+            ? string.Join(" ", words)
+            : "& " + string.Join(" ", words.Select(w => "'" + w.Replace("'", "''") + "'"));
+
+    private static bool IsPlainWord(string word) =>
+        word.Length > 0 && word.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.' or ':' or '\\' or '/');
 
     /// <summary>A command line for sh, every word single-quoted.</summary>
     internal static string ShellCommand(IEnumerable<string> words) => string.Join(" ", words.Select(w => "'" + w.Replace("'", "'\\''") + "'"));

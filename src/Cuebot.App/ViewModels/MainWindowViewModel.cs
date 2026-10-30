@@ -293,10 +293,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Ctrl+K: the window focuses the jump box.</summary>
     public event Action? JumpRequested;
 
-    /// <summary>Opens the page with this title (case-insensitive); false when there is none.</summary>
+    /// <summary>
+    /// Opens the page with this title (case-insensitive), or else the first page in the jump list whose title contains
+    /// it (what the jump box's list shows first); false when there is none.
+    /// </summary>
     public bool JumpTo(string? title)
     {
-        var page = Pages.FirstOrDefault(p => string.Equals(p.Title, title?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var text = title?.Trim();
+        if (string.IsNullOrEmpty(text)) return false;
+        var partial = JumpTargets.FirstOrDefault(t => t.Contains(text, StringComparison.OrdinalIgnoreCase));
+        var page = Pages.FirstOrDefault(p => string.Equals(p.Title, text, StringComparison.OrdinalIgnoreCase))
+                   ?? Pages.FirstOrDefault(p => p.Title == partial);
         if (page is null) return false;
         SelectedPage = page;
         return true;

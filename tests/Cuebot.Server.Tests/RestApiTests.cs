@@ -30,6 +30,20 @@ public sealed class RestApiTests : IAsyncLifetime
     // ---- security ----
 
     [Fact]
+    public async Task The_shared_listener_logs_what_it_serves()
+    {
+        await using var bot = new TestBot();
+        var s = bot.Manager.Settings;
+        (s.Api.Enabled, s.Mcp.Enabled) = (true, true);
+        Assert.Equal("REST API and MCP", bot.Manager.ListenerName(ServerKind.Api));
+        s.Mcp.Enabled = false;
+        Assert.Equal("REST API", bot.Manager.ListenerName(ServerKind.Api));
+        (s.Api.Enabled, s.Mcp.Enabled) = (false, true);
+        Assert.Equal("MCP (REST API off)", bot.Manager.ListenerName(ServerKind.Api));
+        Assert.Equal("WebSocket", bot.Manager.ListenerName(ServerKind.WebSocket));
+    }
+
+    [Fact]
     public async Task Every_request_needs_the_token()
     {
         using var anonymous = new HttpClient { BaseAddress = _host.Http.BaseAddress };

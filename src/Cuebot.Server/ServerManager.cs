@@ -224,6 +224,17 @@ public sealed class ServerManager : IAsyncDisposable
         _ => false,
     };
 
+    /// <summary>
+    /// The name a listener has in the log. The API listener also carries MCP and starts when either is on, so it says
+    /// which ones it serves.
+    /// </summary>
+    internal string ListenerName(ServerKind kind) => kind != ServerKind.Api ? kind.ToString() : (Settings.Api.Enabled, Settings.Mcp.Enabled) switch
+    {
+        (true, true) => "REST API and MCP",
+        (true, false) => "REST API",
+        _ => "MCP (REST API off)",
+    };
+
     private async Task StartCoreAsync(ServerKind kind, CancellationToken ct)
     {
         var s = Settings;
@@ -238,7 +249,7 @@ public sealed class ServerManager : IAsyncDisposable
         try
         {
             var address = NetworkPolicy.BindAddress(configured, s.AllowLan, out var downgraded);
-            if (downgraded) _services.Log.Warn(LogSource, $"{kind}: LAN access is off, listening on 127.0.0.1 instead of {configured}");
+            if (downgraded) _services.Log.Warn(LogSource, $"{ListenerName(kind)}: LAN access is off, listening on 127.0.0.1 instead of {configured}");
             switch (kind)
             {
                 case ServerKind.WebSocket:
@@ -273,7 +284,7 @@ public sealed class ServerManager : IAsyncDisposable
                 _errors.Remove(kind);
                 _bound[kind] = address;
             }
-            _services.Log.Info(LogSource, $"{kind} listening on {address}:{PortOf(kind)}");
+            _services.Log.Info(LogSource, $"{ListenerName(kind)} listening on {address}:{PortOf(kind)}");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

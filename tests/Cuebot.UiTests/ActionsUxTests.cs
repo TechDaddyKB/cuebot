@@ -577,7 +577,10 @@ public sealed class ActionsUxTests : IAsyncDisposable
             Assert.True(vm.JumpTo("twitch"));
             Assert.Equal("Twitch", vm.SelectedPage.Title);
             Assert.Equal("Platforms", vm.CurrentGroup!.Name);
+            Assert.True(vm.JumpTo("twit"));   // Enter with part of a name opens the first page listed
+            Assert.Equal("Twitch", vm.SelectedPage.Title);
             Assert.False(vm.JumpTo("no such page"));
+            Assert.False(vm.JumpTo("  "));
             Assert.Contains(AppShortcuts.Window, s => s.Id == "jump" && s.Gesture == "Ctrl+K");
 
             // The status bar counts actions and triggers.

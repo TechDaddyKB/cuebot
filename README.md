@@ -50,6 +50,10 @@ packaging/linux/build-appimage.sh linux-x64
 flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.github.cuebot.Cuebot.yml
 ```
 
+On Windows, clone to a short folder (for example `C:\cb\cuebot`) or run `git config --global core.longpaths true`
+first: some repository paths are long, and deep folders can pass Windows' 260-character path limit. A Windows build
+copies only the Windows native libraries into `bin` (set `-p:CuebotLocalRuntimeFamily=` to keep every platform's).
+
 CI (`.github/workflows/build.yml`) tests on Windows and Ubuntu and produces the Windows zip, the AppImage and
 a Flatpak bundle.
 

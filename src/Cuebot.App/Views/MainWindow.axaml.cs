@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Chrome;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
@@ -22,6 +23,10 @@ public partial class MainWindow : Window
             ExtendClientAreaTitleBarHeightHint = 52;
             var m = TopBarContent.Margin;
             TopBarContent.Margin = new Avalonia.Thickness(m.Left, m.Top, m.Right + CaptionButtonsWidth, m.Bottom);
+            // Empty parts of the bar move the window (and double-click maximizes); its controls stay clickable.
+            WindowDecorationProperties.SetElementRole(TopBar, WindowDecorationsElementRole.TitleBar);
+            foreach (var control in new Control[] { Jump, TddMark, Chips })
+                WindowDecorationProperties.SetElementRole(control, WindowDecorationsElementRole.User);
         }
     }
 

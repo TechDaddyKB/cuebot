@@ -262,6 +262,11 @@
   <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
   </Style>
+  <!-- The soft fill alone is hard to see on the dark ground, so a selected row also gets an accent outline. -->
+  <Style Selector="ListBox:not(.nav) ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
 
   <!-- Navigation -->
   <Style Selector="ListBox.nav">

@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Nodes;
 
@@ -23,8 +22,6 @@ public sealed class AntigravityProvider(Func<AssistantProviderSettings> settings
     {
         if (Executable is null) return Task.FromResult(AssistantProviderStatus.Unavailable("Antigravity CLI is not installed (antigravity.google), or set its path"));
         if (Gate is null) return Task.FromResult(AssistantProviderStatus.Unavailable("Cuebot can not find its own program to check Antigravity's tool calls"));
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return Task.FromResult(AssistantProviderStatus.Unavailable("Not available on Windows yet: Cuebot's tool check for Antigravity runs through sh"));
         // Antigravity keeps its sign-in in the system keyring, so it is checked when the conversation starts.
         return Task.FromResult(AssistantProviderStatus.Available("Uses your Antigravity sign-in"));
     }

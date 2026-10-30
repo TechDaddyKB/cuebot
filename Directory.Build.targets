@@ -16,4 +16,21 @@
     <RemoveDir Directories="@(_CuebotForeignWhisperDir)" />
     <Delete Files="$(PublishDir)ggml-metal.metal" Condition="!$(RuntimeIdentifier.StartsWith('osx'))" />
   </Target>
+  <!--
+    A build without a RuntimeIdentifier copies every package's native libraries for every platform into
+    bin/.../runtimes/ (Linux, Android, iOS frameworks and more). On Windows those deep folders push paths over the
+    260-character limit when the clone itself sits in a long folder, and Windows can only load its own anyway, so a
+    Windows build keeps runtimes/win* only. CuebotLocalRuntimeFamily picks the family kept (empty keeps everything).
+  -->
+  <PropertyGroup>
+    <CuebotLocalRuntimeFamily Condition="'$(CuebotLocalRuntimeFamily)' == '' and '$(OS)' == 'Windows_NT'">win</CuebotLocalRuntimeFamily>
+  </PropertyGroup>
+  <Target Name="CuebotDropForeignRuntimes" AfterTargets="ResolvePackageAssets"
+          Condition="'$(RuntimeIdentifier)' == '' and '$(CuebotLocalRuntimeFamily)' != ''">
+    <ItemGroup>
+      <_CuebotForeignRuntime Include="@(RuntimeTargetsCopyLocalItems)"
+                             Condition="$([System.String]::Copy('%(DestinationSubDirectory)').Replace('\','/').StartsWith('runtimes/')) and !$([System.String]::Copy('%(DestinationSubDirectory)').Replace('\','/').StartsWith('runtimes/$(CuebotLocalRuntimeFamily)'))" />
+      <RuntimeTargetsCopyLocalItems Remove="@(_CuebotForeignRuntime)" />
+    </ItemGroup>
+  </Target>
 </Project>

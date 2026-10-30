@@ -227,6 +227,18 @@ public sealed class GrokIsolationTests : IDisposable
 
 public sealed class AntigravityIsolationTests : IDisposable
 {
+    [Fact]
+    public void Hook_commands_quote_for_sh_and_for_PowerShell()
+    {
+        Assert.Equal("'/opt/Cue bot/cuebot' 'it'\\''s' '--assistant-tool-gate'",
+            AntigravityIsolation.HookCommand(["/opt/Cue bot/cuebot", "it's", "--assistant-tool-gate"], windows: false));
+        // Windows: a plain path runs as is in PowerShell, cmd and sh alike; anything else uses PowerShell's call operator.
+        Assert.Equal(@"C:\Cuebot\Cuebot.exe --assistant-tool-gate",
+            AntigravityIsolation.HookCommand([@"C:\Cuebot\Cuebot.exe", "--assistant-tool-gate"], windows: true));
+        Assert.Equal(@"& 'C:\Program Files\Kris''s Cuebot\Cuebot.exe' '--assistant-tool-gate'",
+            AntigravityIsolation.HookCommand([@"C:\Program Files\Kris's Cuebot\Cuebot.exe", "--assistant-tool-gate"], windows: true));
+    }
+
     private readonly string _root = Directory.CreateTempSubdirectory("cuebot-agy-test-").FullName;
 
     private static string Call(string name, JsonObject args) =>
@@ -280,7 +292,8 @@ public sealed class AntigravityIsolationTests : IDisposable
             Assert.Equal("Bearer cb_token", server["headers"]!["Authorization"]!.GetValue<string>());
             var hook = JsonNode.Parse(File.ReadAllText(Path.Combine(plugin, "hooks.json")))!["cuebot-only"]!["PreToolUse"]![0]!;
             Assert.Equal("*", hook["matcher"]!.GetValue<string>());
-            Assert.Equal("'/opt/Cue bot/cuebot' 'it'\\''s' '--assistant-tool-gate'", hook["hooks"]![0]!["command"]!.GetValue<string>());
+            Assert.Equal(AntigravityIsolation.HookCommand(["/opt/Cue bot/cuebot", "it's", "--assistant-tool-gate"], OperatingSystem.IsWindows()),
+                hook["hooks"]![0]!["command"]!.GetValue<string>());
             if (!OperatingSystem.IsWindows())
             {
                 Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(dir));
