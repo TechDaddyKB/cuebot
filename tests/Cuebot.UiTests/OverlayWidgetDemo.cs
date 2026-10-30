@@ -57,6 +57,7 @@ public sealed class OverlayWidgetDemo
             }
             var url = servers.OverlayUrl(host.Get<OverlayStore>().Get(overlay.Id)!);
             await File.WriteAllTextAsync(Path.Combine(output, "editor-url.txt"), servers.EditorUrl(overlay.Id, layer.Id), TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(output, "designer-url.txt"), servers.DesignerUrl(overlay.Id), TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(Path.Combine(output, "overlay-url.txt"), url, TestContext.Current.CancellationToken);
 
             var bus = host.Get<EventBus>();

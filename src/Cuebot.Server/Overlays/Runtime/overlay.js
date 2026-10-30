@@ -69,22 +69,125 @@
     entry.frame.contentWindow.postMessage({ type: "load", widgetDuration: entry.doc.widgetDuration || 0, detail: loadDetail(entry) }, "*");
   }
 
+  /** Only http(s) addresses and Cuebot's own assets are used for media. */
+  function safeUrl(url) {
+    url = String(url || "").trim();
+    return /^https?:\/\//i.test(url) || url.indexOf("/assets/") === 0 ? url : "";
+  }
+
+  /**
+   * The positioned box every layer lives in: place, size, opacity and its enter animation; content goes in
+   * box.inner, which carries the rotation (so the animation's transforms do not undo it).
+   */
+  function layerBox(layer) {
+    var box = document.createElement("div");
+    box.className = "cuebot-layer";
+    box.dataset.layer = layer.id;
+    box.style.left = layer.x + "px";
+    box.style.top = layer.y + "px";
+    box.style.width = layer.width + "px";
+    box.style.height = layer.height + "px";
+    box.style.opacity = layer.opacity;
+    var enter = layer.enter || {};
+    if (enter.name && enter.name !== "none") box.style.animation = "cuebot-" + enter.name + " " + (Number(enter.duration) || 1) + "s both";
+    box.inner = document.createElement("div");
+    box.inner.className = "cuebot-turn";
+    if (layer.rotation) box.inner.style.transform = "rotate(" + layer.rotation + "deg)";
+    box.appendChild(box.inner);
+    return box;
+  }
+
+  function fontLink(family) {
+    if (!family || document.querySelector('link[data-font="' + family + '"]')) return;
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.dataset.font = family;
+    link.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(family).replace(/%20/g, "+") + ":wght@400;600;700;900&display=swap";
+    document.head.appendChild(link);
+  }
+
+  function media(tag, url, s) {
+    var el = document.createElement(tag);
+    el.className = "cuebot-media";
+    el.style.objectFit = ["contain", "cover", "fill"].indexOf(s.fit) !== -1 ? s.fit : "contain";
+    if (url) el.src = url;
+    return el;
+  }
+
+  /** Text, image, video and slideshow layers, drawn here from their settings. */
+  function staticLayer(box, layer) {
+    var s = layer.settings || {};
+    switch (layer.type) {
+      case "text":
+        var text = document.createElement("div");
+        text.className = "cuebot-text";
+        text.textContent = s.text || "";
+        fontLink(s.font);
+        text.style.fontFamily = "'" + String(s.font || "Inter").replace(/'/g, "") + "', system-ui, sans-serif";
+        text.style.fontSize = (Number(s.size) || 48) + "px";
+        text.style.color = s.color || "#ffffff";
+        text.style.fontWeight = s.weight || "700";
+        text.style.textAlign = ["left", "center", "right"].indexOf(s.align) !== -1 ? s.align : "center";
+        text.style.justifyContent = { left: "flex-start", right: "flex-end" }[s.align] || "center";
+        text.style.padding = (Number(s.padding) || 0) + "px";
+        if (s.background) text.style.background = s.background;
+        if (s.shadow) text.style.textShadow = "0 2px 6px rgba(0, 0, 0, 0.6)";
+        box.inner.appendChild(text);
+        break;
+      case "image":
+        box.inner.appendChild(media("img", safeUrl(s.url), s));
+        break;
+      case "video":
+        var video = media("video", safeUrl(s.url), s);
+        video.autoplay = true;
+        video.loop = s.loop !== false;
+        video.muted = s.muted !== false;
+        video.volume = Math.max(0, Math.min(1, (Number(s.volume) || 0) / 100));
+        video.playsInline = true;
+        box.inner.appendChild(video);
+        break;
+      case "slideshow":
+        var urls = (s.urls || []).map(safeUrl).filter(Boolean);
+        if (urls.length === 0) break;
+        var index = 0;
+        var slides = urls.map(function (url, i) {
+          var isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(url);
+          var el = media(isVideo ? "video" : "img", url, s);
+          if (isVideo) { el.autoplay = true; el.loop = true; el.muted = true; el.playsInline = true; }
+          el.classList.add("cuebot-slide");
+          if (s.transition === "fade") el.classList.add("fade");
+          if (i === 0) el.classList.add("shown");
+          box.inner.appendChild(el);
+          return el;
+        });
+        if (slides.length > 1) {
+          setInterval(function () {
+            slides[index].classList.remove("shown");
+            index = (index + 1) % slides.length;
+            slides[index].classList.add("shown");
+          }, Math.max(1, Number(s.seconds) || 8) * 1000);
+        }
+        break;
+    }
+  }
+
   function buildLayers(stage) {
     (config.layers || []).forEach(function (layer) {
       if (!layer.visible) return;
+      var box = layerBox(layer);
+      stage.appendChild(box);
+      if (layer.type !== "custom") {
+        staticLayer(box, layer);
+        return;
+      }
+
       var frame = document.createElement("iframe");
       // Scripts on the widget's own origin; no popups, forms or navigating the overlay page.
       frame.setAttribute("sandbox", "allow-scripts allow-same-origin");
       frame.setAttribute("allow", "autoplay");
       frame.setAttribute("title", layer.name || "Widget");
-      frame.className = "cuebot-layer";
-      frame.style.left = layer.x + "px";
-      frame.style.top = layer.y + "px";
-      frame.style.width = layer.width + "px";
-      frame.style.height = layer.height + "px";
-      frame.style.opacity = layer.opacity;
-      if (layer.rotation) frame.style.transform = "rotate(" + layer.rotation + "deg)";
-      stage.appendChild(frame);
+      frame.className = "cuebot-frame";
+      box.inner.appendChild(frame);
 
       var entry = { layer: layer, frame: frame, doc: null, frameReady: false, loaded: false };
       layers[layer.id] = entry;

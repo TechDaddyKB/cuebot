@@ -126,6 +126,23 @@ public sealed class OverlayStoreTests : IDisposable
         Assert.StartsWith("ov_", store.Get(id)!.Token);
     }
 
+    [Theory]
+    [InlineData(OverlayLayerTypes.Text, 600, 120)]
+    [InlineData(OverlayLayerTypes.Image, 400, 300)]
+    [InlineData(OverlayLayerTypes.Video, 640, 360)]
+    [InlineData(OverlayLayerTypes.Slideshow, 640, 360)]
+    public void New_static_layers_are_centred_with_defaults(string type, double width, double height)
+    {
+        var overlay = new Overlay { Width = 1920, Height = 1080 };
+        var layer = OverlayLayerTypes.NewStatic(type, overlay);
+        Assert.Equal((type, width, height), (layer.Type, layer.Width, layer.Height));
+        Assert.Equal(((1920 - width) / 2, (1080 - height) / 2), (layer.X, layer.Y));
+        Assert.NotNull(layer.Settings);
+        var tiny = OverlayLayerTypes.NewStatic(type, new Overlay { Width = 200, Height = 100 });
+        Assert.Equal((200.0, 100.0, 0.0, 0.0), (tiny.Width, tiny.Height, tiny.X, tiny.Y));
+        Assert.Throws<ArgumentException>(() => OverlayLayerTypes.NewStatic("custom", overlay));
+    }
+
     [Fact]
     public void Element_ids_stay_unique()
     {

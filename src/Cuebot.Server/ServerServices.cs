@@ -189,6 +189,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Overlays.Widgets.WidgetKeyValueStore? _widgetStore;
 
+    /// <summary>The element library (the designer lists it and checks layers against it).</summary>
+    public Cuebot.Core.Overlays.ElementStore? Elements
+    {
+        get => _elements ??= _provider?.GetService<Cuebot.Core.Overlays.ElementStore>();
+        init => _elements = value;
+    }
+
+    private Cuebot.Core.Overlays.ElementStore? _elements;
+
     /// <summary>Converts emulated events for the widget editor's preview.</summary>
     public Cuebot.Core.Overlays.Events.OverlayEventBridge? OverlayBridge
     {

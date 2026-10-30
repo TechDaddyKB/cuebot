@@ -175,6 +175,10 @@ public sealed class ServerManager : IAsyncDisposable
         return Settings.Overlays.EditorToken;
     }
 
+    /// <summary>The web designer for an overlay (opened in the browser from the Overlays page).</summary>
+    public string DesignerUrl(Guid overlayId) =>
+        $"{OverlayBaseUrl}/design/{overlayId:D}?editor={Uri.EscapeDataString(EnsureEditorToken())}";
+
     /// <summary>The web editor for one widget layer (opened in the browser from the Overlays page).</summary>
     public string EditorUrl(Guid overlayId, Guid layerId) =>
         $"{OverlayBaseUrl}/edit/{overlayId:D}/{layerId:D}?editor={Uri.EscapeDataString(EnsureEditorToken())}";

@@ -4,8 +4,10 @@ Status: phase 0 done 2026-10-30 (overlay server, stores, event bridge, platform 
 totals). Phase 1 split in three: 1a widget runtime, zip import and widget layers on the Overlays page (built 2026-10-30;
 widgets run on a second port, see docs/SERVERS.md); 1b the web widget editor (fields form, code panes, CSS override,
 per-platform Emulate; built 2026-10-30, jQuery bundled); 1c the built-in chat box with a YouTube popout layout for
-YouTube chat CSS themes, and avatars and Twitch pronouns in chat events (built 2026-10-30). Phase 1 is done; phase 2
-(the visual designer) is next. Details in
+YouTube chat CSS themes, and avatars and Twitch pronouns in chat events (built 2026-10-30). Phase 1 is done.
+Phase 2 split: 2a the web designer (canvas, snapping, layers, groups, properties, animations, text/image/video/slideshow,
+canvas sizes, undo; built 2026-10-30); 2b the element library page (rename, delete, duplicate, see where an element is
+used) and saving static layers to the library. Details in
 docs/SERVERS.md.
 
 ## Goal

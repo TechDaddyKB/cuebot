@@ -19,6 +19,7 @@ namespace Cuebot.Server.Overlays;
 /// <see cref="OverlayFeed"/> publishes for it, in order. Widgets' <c>SE_API</c> requests come back over it.</item>
 /// <item><c>GET /o/{id}/l/{layerId}?token=...</c>: a layer's widget settings and the address of its document (JSON).</item>
 /// <item><c>/edit/...?editor=...</c>: the widget editor (see <see cref="OverlayEditor"/>).</item>
+/// <item><c>/design/...?editor=...</c>: the overlay designer (see <see cref="OverlayDesigner"/>).</item>
 /// <item>On the widget port, <c>GET /w/{id}/{layerId}?key=...</c>: the widget document, which the page shows in a frame.
 /// The widget port is another web origin, so a widget cannot reach the page, its token or Cuebot's API; its key, derived
 /// from the overlay token, opens only that layer. <c>/runtime</c> and <c>/assets</c> are served there too.</item>
@@ -36,7 +37,7 @@ public sealed class OverlayServer : IAsyncDisposable
 
     /// <summary>Runtime files served at /runtime (embedded resources "Cuebot.Server.Overlays.{name}").</summary>
     private static readonly HashSet<string> RuntimeFiles = new(
-        ["overlay.js", "overlay.css", "se-widget.js", "jquery-3.7.1.min.js", "editor.js", "editor.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
+        ["overlay.js", "overlay.css", "se-widget.js", "jquery-3.7.1.min.js", "editor.js", "editor.css", "designer.js", "designer.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
 
     private readonly Func<ServerSettings> _settings;
     private readonly ServerServices _services;
@@ -45,6 +46,7 @@ public sealed class OverlayServer : IAsyncDisposable
     private KestrelListener? _listener;
     private KestrelListener? _widgetListener;
     private readonly OverlayEditor _editor;
+    private readonly OverlayDesigner _designer;
     private IDisposable? _feed;
     private int _disposed;
     private Action<Guid>? _overlayChanged;
@@ -58,6 +60,7 @@ public sealed class OverlayServer : IAsyncDisposable
         _settings = settings;
         _services = services;
         _editor = new OverlayEditor(settings, services) { WidgetPort = () => WidgetPort };
+        _designer = new OverlayDesigner(settings, services);
     }
 
     public int Port => _listener?.Port ?? 0;
@@ -150,6 +153,7 @@ public sealed class OverlayServer : IAsyncDisposable
 
         var segments = (request.Path.Value ?? "/").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (await _editor.TryHandleAsync(context, segments).ConfigureAwait(false)) return;
+        if (await _designer.TryHandleAsync(context, segments).ConfigureAwait(false)) return;
         if (!HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method))
         {
             response.StatusCode = StatusCodes.Status405MethodNotAllowed;

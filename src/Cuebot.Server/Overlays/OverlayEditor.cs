@@ -42,7 +42,7 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         if (segments is not ["edit", ..]) return false;
         var request = context.Request;
         var response = context.Response;
-        if (!Authorized(request))
+        if (!Authorized(settings(), request))
         {
             response.StatusCode = StatusCodes.Status404NotFound;
             return true;
@@ -85,16 +85,17 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         return true;
     }
 
-    private bool Authorized(HttpRequest request)
+    /// <summary>Whether the request carries the editor token (<c>?editor=...</c>), compared in constant time.</summary>
+    internal static bool Authorized(ServerSettings settings, HttpRequest request)
     {
-        var expected = settings().Overlays.EditorToken;
+        var expected = settings.Overlays.EditorToken;
         var candidate = request.Query["editor"].ToString();
         if (expected.Length == 0 || candidate.Length == 0) return false;
         return CryptographicOperations.FixedTimeEquals(SHA256.HashData(Encoding.UTF8.GetBytes(expected)),
             SHA256.HashData(Encoding.UTF8.GetBytes(candidate)));
     }
 
-    private static bool SameOrigin(HttpRequest request) =>
+    internal static bool SameOrigin(HttpRequest request) =>
         string.Equals(request.Headers.Origin.ToString(), $"{request.Scheme}://{request.Host.Value}", StringComparison.OrdinalIgnoreCase);
 
     private (Overlay Overlay, OverlayLayer Layer)? Find(string overlayId, string layerId)
@@ -232,7 +233,7 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         }
     }
 
-    private static async Task<JsonObject?> ReadJsonAsync(HttpContext context)
+    internal static async Task<JsonObject?> ReadJsonAsync(HttpContext context)
     {
         if (context.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } limit) limit.MaxRequestBodySize = MaxCodeBytes;
         try
@@ -245,7 +246,7 @@ internal sealed class OverlayEditor(Func<ServerSettings> settings, ServerService
         }
     }
 
-    private static async Task JsonAsync(HttpContext context, JsonObject json, int status = StatusCodes.Status200OK)
+    internal static async Task JsonAsync(HttpContext context, JsonObject json, int status = StatusCodes.Status200OK)
     {
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/json; charset=utf-8";

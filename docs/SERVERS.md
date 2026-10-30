@@ -168,6 +168,28 @@ may need adjusting.
 Chat events also carry `data.avatar` (YouTube and Kick profile pictures) and `data.pronouns` (Twitch chatters with
 pronouns on alejo.io; read from Cuebot's cache, a chatter's first message starts the lookup and later ones carry it).
 
+### Overlay designer (`/design/...`, `OverlayDesigner`)
+
+"Design…" on the Overlays page opens it (editor token). The canvas shows the live overlay with a box per layer: drag
+to move (snapping to the canvas and other layers' edges and centres; Alt turns snapping off), handles to resize
+(Shift keeps the shape), arrow keys to nudge (Shift: 10 px). The layer list orders layers (front first), shows/hides,
+locks, groups (moved and selected together), duplicates and deletes. The properties panel sets name, position, size,
+opacity, rotation, enter and exit animations (animate.css names, Cuebot's own keyframes in overlay.css) and the settings
+of text, image, video and slideshow layers (uploads go through `/edit/api/assets`); widget layers link to the widget
+editor. Canvas presets (1080p, 1440p, 4K, vertical) or a custom size. Undo/redo (Ctrl+Z / Ctrl+Y), Ctrl+D duplicate,
+Ctrl+G group. Changes save on their own; the overlay (and OBS) reloads with them.
+
+| Route | |
+| --- | --- |
+| `GET /design/{overlayId}?editor=...` | The designer page. |
+| `GET` / `POST /design/api/{overlayId}` | The overlay and the element library; saving name, canvas and layers. Saving checks every layer: known types only, widget layers must use an existing library element, sizes and positions clamped, opacity 0 to 1, animation names from the list (durations 0.1 to 10 s), duplicate ids renewed, one-member groups cleared. |
+| `POST .../add` `{type, elementId?}` | `text`, `image`, `video`, `slideshow` (centred, with defaults), `chatbox`, `chatbox-youtube`, or `element` (a library widget, shared rather than copied). |
+| `POST .../import?name=...` | A widget zip (raw body) as a new widget layer. |
+
+Static layers are drawn by the overlay page itself (no frame): text with a Google Font, colour, weight, alignment,
+shadow, background and padding; images and videos (`http(s)` or `/assets/` addresses only) with fit, loop, mute and
+volume; slideshows of images and videos with a time per slide and a fade.
+
 ### Widget editor (`/edit/...`, `OverlayEditor`)
 
 Opened from the Overlays page ("Edit…") with the editor token (`overlays.editorToken` in servers.json, a secret,

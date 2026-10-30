@@ -146,6 +146,9 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         SaveBothThemes(window, "overlays-chatbox");
         layer = row.Layers[0];
 
+        row.DesignCommand.Execute(null);
+        Assert.Contains("designer runs on the overlay server", vm.Status);
+        Assert.Empty(opened);
         layer.EditCommand.Execute(null);
         Assert.Contains("not running", vm.Status);   // the overlay server is not started in this test
 

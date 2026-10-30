@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · Cuebot overlay designer</title>
+<link rel="stylesheet" href="/runtime/designer.css">
+<script>window.CUEBOT_DESIGNER = /*CUEBOT_DESIGNER*/{};</script>
+<script src="/runtime/designer.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <input id="overlay-name" class="name" aria-label="Overlay name">
+  <label class="canvas-size">Canvas
+    <select id="canvas-preset" aria-label="Canvas size"></select>
+    <input id="canvas-width" type="number" min="16" max="7680" aria-label="Canvas width">
+    <span class="muted">×</span>
+    <input id="canvas-height" type="number" min="16" max="7680" aria-label="Canvas height">
+  </label>
+  <div class="menu">
+    <button id="add-button" aria-haspopup="true" aria-expanded="false">+ Add</button>
+    <div id="add-menu" class="menu-list" hidden>
+      <button data-add="text">Text</button>
+      <button data-add="image">Image</button>
+      <button data-add="video">Video</button>
+      <button data-add="slideshow">Slideshow</button>
+      <hr>
+      <button data-add="chatbox">Chat box</button>
+      <button data-add="chatbox-youtube">Chat box (YouTube popout layout)</button>
+      <hr>
+      <button data-add="zip">StreamElements widget (.zip)…</button>
+      <button data-add="library">From the library…</button>
+    </div>
+  </div>
+  <div class="group-buttons">
+    <button id="undo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+    <button id="redo" title="Redo (Ctrl+Y)" disabled>Redo</button>
+  </div>
+  <div class="group-buttons">
+    <button id="zoom-out" title="Zoom out">−</button>
+    <button id="zoom-fit" title="Fit to screen">Fit</button>
+    <button id="zoom-in" title="Zoom in">+</button>
+  </div>
+  <label class="check"><input id="snap" type="checkbox" checked> Snap</label>
+  <span id="status" class="muted" role="status"></span>
+  <input id="zip-input" type="file" accept=".zip" hidden>
+  <input id="upload-input" type="file" hidden>
+</header>
+<main>
+  <aside class="layers">
+    <h2>Layers</h2>
+    <ul id="layer-list" role="listbox" aria-label="Layers, front first"></ul>
+    <div class="layer-actions">
+      <button id="raise" title="Bring forward">▲</button>
+      <button id="lower" title="Send backward">▼</button>
+      <button id="duplicate" title="Duplicate (Ctrl+D)">Duplicate</button>
+      <button id="group" title="Group the selected layers (Ctrl+G)">Group</button>
+      <button id="ungroup" title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
+      <button id="delete" class="danger" title="Delete (Del)">Delete</button>
+    </div>
+  </aside>
+  <section id="viewport" class="viewport">
+    <div id="canvas" class="canvas">
+      <iframe id="live" title="Live overlay" tabindex="-1"></iframe>
+      <div id="boxes" class="boxes"></div>
+    </div>
+  </section>
+  <aside class="props">
+    <h2>Properties</h2>
+    <div id="props"><p class="muted">Select a layer to change it.</p></div>
+  </aside>
+</main>
+<dialog id="library">
+  <h2>Add from the library</h2>
+  <p class="muted">Widgets you added before. A widget used on several overlays shares its settings and code.</p>
+  <ul id="library-list"></ul>
+  <form method="dialog"><button>Close</button></form>
+</dialog>
+</body>
+</html>

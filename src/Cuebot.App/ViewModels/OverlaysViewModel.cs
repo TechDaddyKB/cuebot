@@ -77,6 +77,10 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     [RelayCommand]
     private void NewLink() => owner.RegenerateLink(overlay.Id);
 
+    /// <summary>Opens the overlay designer in the browser.</summary>
+    [RelayCommand]
+    private void Design() => owner.Design(overlay.Id);
+
     /// <summary>Adds Cuebot's chat box (chat from every platform) to this overlay.</summary>
     [RelayCommand]
     private void AddChatBox() => owner.AddChatBox(overlay.Id);
@@ -225,15 +229,24 @@ public sealed partial class OverlaysViewModel : PageViewModel
 
     internal void EditLayer(Guid overlayId, Guid layerId)
     {
-        if (_servers is null) return;
-        var status = _servers.Statuses.FirstOrDefault(s => s.Kind == ServerKind.Overlays);
-        if (status is not { Running: true })
-        {
-            Status = "The widget editor runs on the overlay server, which is not running. Turn it on on the Servers page.";
-            return;
-        }
-        OpenUrl(_servers.EditorUrl(overlayId, layerId));
+        if (!ServerRunning("widget editor")) return;
+        OpenUrl(_servers!.EditorUrl(overlayId, layerId));
         Status = "Opened the widget editor in your browser.";
+    }
+
+    internal void Design(Guid overlayId)
+    {
+        if (!ServerRunning("designer")) return;
+        OpenUrl(_servers!.DesignerUrl(overlayId));
+        Status = "Opened the designer in your browser. Changes there save on their own.";
+    }
+
+    private bool ServerRunning(string what)
+    {
+        if (_servers is null) return false;
+        if (_servers.Statuses.FirstOrDefault(s => s.Kind == ServerKind.Overlays) is { Running: true }) return true;
+        Status = $"The {what} runs on the overlay server, which is not running. Turn it on on the Servers page.";
+        return false;
     }
 
     internal void RemoveLayer(Guid overlayId, Guid layerId)

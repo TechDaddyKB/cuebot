@@ -7,7 +7,7 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4">
       <TextBlock Classes="h1" Text="Overlays &amp; Widgets" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Each overlay is a page Cuebot hosts on this computer. Add it to OBS as a browser source with the overlay's link and canvas size. Add StreamElements custom widgets (.zip) to an overlay; they get chat and alerts from every platform Cuebot is connected to. The visual designer is on the way." />
+                 Text="Each overlay is a page Cuebot hosts on this computer. Add it to OBS as a browser source with the overlay's link and canvas size. Design… opens the overlay in your browser to arrange widgets, text, images and video; StreamElements custom widgets (.zip) get chat and alerts from every platform Cuebot is connected to." />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ServerHint}" TextWrapping="Wrap" Margin="0,8,0,0"
@@ -48,6 +48,8 @@
                 <Button Content="Copy link" Click="OnCopyLink" />
                 <Button Content="New link" Command="{Binding NewLinkCommand}"
                         ToolTip.Tip="Replace the link (for example if someone else saw it); OBS needs the new one" />
+                <Button Content="Design…" Classes="accent" Command="{Binding DesignCommand}"
+                        ToolTip.Tip="Arrange this overlay's widgets, text, images and video in your browser" />
                 <Button Content="Add chat box" Command="{Binding AddChatBoxCommand}"
                         ToolTip.Tip="Cuebot's chat box: chat from every connected platform, with badges, emotes and pronouns" />
                 <Button Content="Add widget…" Click="OnAddWidget"

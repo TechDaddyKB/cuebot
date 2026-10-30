@@ -30,6 +30,10 @@ internal static partial class OverlayWidgetHost
         ["opacity"] = layer.Opacity,
         ["rotation"] = layer.Rotation,
         ["visible"] = layer.Visible,
+        ["enter"] = new JsonObject { ["name"] = layer.Enter.Name, ["duration"] = layer.Enter.Duration },
+        ["exit"] = new JsonObject { ["name"] = layer.Exit.Name, ["duration"] = layer.Exit.Duration },
+        // Static layers are drawn by the page from these; widget layers get their settings from the widget itself.
+        ["settings"] = OverlayLayerTypes.Static.Contains(layer.Type) ? layer.Settings?.DeepClone() : null,
     };
 
     /// <summary><c>{fieldData, widgetDuration}</c>: the widget's settings and its queue hold in seconds.</summary>
