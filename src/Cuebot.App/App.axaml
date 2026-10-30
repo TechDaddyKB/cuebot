@@ -3,7 +3,28 @@
              x:Class="Cuebot.App.App"
              RequestedThemeVariant="Dark">
   <Application.Styles>
-    <FluentTheme />
+    <!--
+      Fluent's palettes carry Cuebot's tokens (see Styles/Cuebot.axaml and docs/RESTYLE_PLAN): every standard control
+      takes its colours from them. Accent is the darkened brand blue, which keeps white button text readable (4.7:1).
+    -->
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#0079BC" RegionColor="#0B1120" ErrorText="#F04B5A"
+                               AltHigh="#0B1120" AltLow="#0B1120" AltMedium="#0B1120" AltMediumHigh="#0B1120" AltMediumLow="#0B1120"
+                               BaseHigh="#E6ECF5" BaseMediumHigh="#C3CCDA" BaseMedium="#9AA8BF" BaseMediumLow="#5B6880" BaseLow="#22304A"
+                               ChromeAltLow="#C3CCDA" ChromeBlackHigh="#000000" ChromeBlackLow="#C3CCDA" ChromeBlackMedium="#000000"
+                               ChromeBlackMediumLow="#000000" ChromeDisabledHigh="#22304A" ChromeDisabledLow="#5B6880" ChromeGray="#9AA8BF"
+                               ChromeHigh="#9AA8BF" ChromeLow="#0E1527" ChromeMedium="#111A2B" ChromeMediumLow="#16213A" ChromeWhite="#FFFFFF"
+                               ListLow="#16213A" ListMedium="#22304A" />
+        <ColorPaletteResources x:Key="Light" Accent="#006FAD" RegionColor="#F3F5F9" ErrorText="#DC2626"
+                               AltHigh="#FFFFFF" AltLow="#FFFFFF" AltMedium="#FFFFFF" AltMediumHigh="#FFFFFF" AltMediumLow="#FFFFFF"
+                               BaseHigh="#152033" BaseMediumHigh="#2C3A52" BaseMedium="#5A6780" BaseMediumLow="#8794AA" BaseLow="#D9DFEA"
+                               ChromeAltLow="#2C3A52" ChromeBlackHigh="#000000" ChromeBlackLow="#D9DFEA" ChromeBlackMedium="#2C3A52"
+                               ChromeBlackMediumLow="#8794AA" ChromeDisabledHigh="#D9DFEA" ChromeDisabledLow="#8794AA" ChromeGray="#5A6780"
+                               ChromeHigh="#C3CCDA" ChromeLow="#F7F9FC" ChromeMedium="#F1F4F9" ChromeMediumLow="#FFFFFF" ChromeWhite="#FFFFFF"
+                               ListLow="#EEF2F8" ListMedium="#D9DFEA" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     <StyleInclude Source="avares://Cuebot/Styles/Cuebot.axaml" />
   </Application.Styles>

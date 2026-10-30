@@ -13,7 +13,8 @@ public static class ThemeBrushes
 {
     public static readonly IReadOnlyList<string> Keys =
     [
-        "CuebotSidebar", "CuebotPanel", "CuebotCard", "CuebotCardBorder", "CuebotMuted",
+        "CuebotGround", "CuebotRail", "CuebotRaised", "CuebotLine", "CuebotText", "CuebotAccentFill", "CuebotAccentSoft",
+        "CuebotWarn", "CuebotSidebar", "CuebotPanel", "CuebotCard", "CuebotCardBorder", "CuebotMuted",
         "CuebotAccent", "CuebotGood", "CuebotBad", "CuebotSelected", "CuebotOverlay",
     ];
 

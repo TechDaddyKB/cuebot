@@ -9,6 +9,7 @@ Each keeps its own license; full license texts are available from the linked pro
 |---|---|---|
 | [Avalonia](https://github.com/AvaloniaUI/Avalonia) (Avalonia, Desktop, Wayland, Themes.Fluent) | UI framework | MIT |
 | [Inter font](https://github.com/rsms/inter) (via Avalonia.Fonts.Inter) | UI font | SIL Open Font License 1.1 |
+| [Lucide icons](https://lucide.dev) 1.56.0 (converted into Styles/Icons.axaml by tools/icons/lucide.py) | Interface icons | ISC; icons derived from [Feather](https://github.com/feathericons/feather) MIT |
 | [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) | Code editor | MIT |
 | [TextMateSharp](https://github.com/danipen/TextMateSharp) (via AvaloniaEdit.TextMate) and its bundled grammars/themes | Syntax highlighting | MIT; grammars and themes keep their own (mostly MIT) licenses |
 | [SkiaSharp](https://github.com/mono/SkiaSharp) / Skia (via Avalonia, and directly for Stream Deck key images) | Rendering | MIT / BSD-3-Clause |

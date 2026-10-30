@@ -1,51 +1,111 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <!--
-    Theme-aware brushes. Each Cuebot* brush is one shared instance whose colour follows the active theme:
+    Cuebot's design tokens (docs/RESTYLE_PLAN.md, section 3) and control styles on top of the Fluent theme, whose
+    palettes in App.axaml carry the same colours.
+
+    Theme-aware brushes: each Cuebot* brush is one shared instance whose colour follows the active theme.
     Shell/ThemeBrushes copies the current variant's Cuebot*Color into it, so StaticResource and DynamicResource users
     alike update in place when the theme changes at runtime. The brushes start out with the dark colours.
+
+    Tokens: Ground (window), Rail (navigation bars), Panel (cards and panes), Raised (selected rows, inputs, popups),
+    Line (borders), Text, Muted, Accent (fills with white text), AccentText (accent-coloured text, focus),
+    AccentSoft (selected items), Good / Warn / Bad. The older names (Sidebar, Card, CardBorder, Selected) stay as
+    aliases for views that use them.
   -->
   <Styles.Resources>
     <ResourceDictionary>
-      <SolidColorBrush x:Key="CuebotSidebar" Color="#16181D" />
-      <SolidColorBrush x:Key="CuebotPanel" Color="#1C1E24" />
-      <SolidColorBrush x:Key="CuebotCard" Color="#22252C" />
-      <SolidColorBrush x:Key="CuebotCardBorder" Color="#30343E" />
-      <SolidColorBrush x:Key="CuebotMuted" Color="#9AA1AE" />
-      <SolidColorBrush x:Key="CuebotAccent" Color="#6CA8FF" />
-      <SolidColorBrush x:Key="CuebotGood" Color="#4CAF50" />
-      <SolidColorBrush x:Key="CuebotBad" Color="#E5534B" />
-      <SolidColorBrush x:Key="CuebotSelected" Color="#2F3B52" />
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Cuebot/Styles/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <SolidColorBrush x:Key="CuebotGround" Color="#0B1120" />
+      <SolidColorBrush x:Key="CuebotRail" Color="#080D19" />
+      <SolidColorBrush x:Key="CuebotRaised" Color="#16213A" />
+      <SolidColorBrush x:Key="CuebotLine" Color="#22304A" />
+      <SolidColorBrush x:Key="CuebotText" Color="#E6ECF5" />
+      <SolidColorBrush x:Key="CuebotAccentFill" Color="#0079BC" />
+      <SolidColorBrush x:Key="CuebotAccentSoft" Color="#2E0195DA" />
+      <SolidColorBrush x:Key="CuebotWarn" Color="#F5A524" />
+      <SolidColorBrush x:Key="CuebotSidebar" Color="#080D19" />
+      <SolidColorBrush x:Key="CuebotPanel" Color="#0B1120" />
+      <SolidColorBrush x:Key="CuebotCard" Color="#111A2B" />
+      <SolidColorBrush x:Key="CuebotCardBorder" Color="#22304A" />
+      <SolidColorBrush x:Key="CuebotMuted" Color="#9AA8BF" />
+      <SolidColorBrush x:Key="CuebotAccent" Color="#3DB4EE" />
+      <SolidColorBrush x:Key="CuebotGood" Color="#00B361" />
+      <SolidColorBrush x:Key="CuebotBad" Color="#F04B5A" />
+      <SolidColorBrush x:Key="CuebotSelected" Color="#2E0195DA" />
       <SolidColorBrush x:Key="CuebotOverlay" Color="#99000000" />
+
+      <!-- Brand gradient (Tech Daddy Digital): blue, green, magenta, purple. Accents only, never behind text. -->
+      <LinearGradientBrush x:Key="CuebotBrand" StartPoint="0%,20%" EndPoint="100%,80%">
+        <GradientStop Offset="0" Color="#0195DA" />
+        <GradientStop Offset="0.32" Color="#0195DA" />
+        <GradientStop Offset="0.55" Color="#00B361" />
+        <GradientStop Offset="0.77" Color="#AF0070" />
+        <GradientStop Offset="1" Color="#6E0075" />
+      </LinearGradientBrush>
+
+      <!-- Platform colours (chips, chat names). -->
+      <SolidColorBrush x:Key="CuebotTwitch" Color="#9146FF" />
+      <SolidColorBrush x:Key="CuebotYouTube" Color="#FF0033" />
+      <SolidColorBrush x:Key="CuebotKick" Color="#53FC18" />
+      <SolidColorBrush x:Key="CuebotRumble" Color="#85C742" />
+
+      <!-- Shape and type -->
+      <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+      <CornerRadius x:Key="OverlayCornerRadius">8</CornerRadius>
+      <x:Double x:Key="ControlContentThemeFontSize">13</x:Double>
+      <!-- Fluent's tab template reads these: compact pill tabs without the selection underline. -->
+      <x:Double x:Key="TabItemMinHeight">32</x:Double>
+      <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill" Color="Transparent" />
+
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
-          <Color x:Key="CuebotSidebarColor">#16181D</Color>
-          <Color x:Key="CuebotPanelColor">#1C1E24</Color>
-          <Color x:Key="CuebotCardColor">#22252C</Color>
-          <Color x:Key="CuebotCardBorderColor">#30343E</Color>
-          <Color x:Key="CuebotMutedColor">#9AA1AE</Color>
-          <Color x:Key="CuebotAccentColor">#6CA8FF</Color>
-          <Color x:Key="CuebotGoodColor">#4CAF50</Color>
-          <Color x:Key="CuebotBadColor">#E5534B</Color>
-          <Color x:Key="CuebotSelectedColor">#2F3B52</Color>
+          <Color x:Key="CuebotGroundColor">#0B1120</Color>
+          <Color x:Key="CuebotRailColor">#080D19</Color>
+          <Color x:Key="CuebotRaisedColor">#16213A</Color>
+          <Color x:Key="CuebotLineColor">#22304A</Color>
+          <Color x:Key="CuebotTextColor">#E6ECF5</Color>
+          <Color x:Key="CuebotAccentFillColor">#0079BC</Color>
+          <Color x:Key="CuebotAccentSoftColor">#2E0195DA</Color>
+          <Color x:Key="CuebotWarnColor">#F5A524</Color>
+          <Color x:Key="CuebotSidebarColor">#080D19</Color>
+          <Color x:Key="CuebotPanelColor">#0B1120</Color>
+          <Color x:Key="CuebotCardColor">#111A2B</Color>
+          <Color x:Key="CuebotCardBorderColor">#22304A</Color>
+          <Color x:Key="CuebotMutedColor">#9AA8BF</Color>
+          <Color x:Key="CuebotAccentColor">#3DB4EE</Color>
+          <Color x:Key="CuebotGoodColor">#00B361</Color>
+          <Color x:Key="CuebotBadColor">#F04B5A</Color>
+          <Color x:Key="CuebotSelectedColor">#2E0195DA</Color>
           <Color x:Key="CuebotOverlayColor">#99000000</Color>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
-          <Color x:Key="CuebotSidebarColor">#E9ECF1</Color>
-          <Color x:Key="CuebotPanelColor">#F3F5F8</Color>
+          <Color x:Key="CuebotGroundColor">#F3F5F9</Color>
+          <Color x:Key="CuebotRailColor">#E8ECF3</Color>
+          <Color x:Key="CuebotRaisedColor">#F1F4F9</Color>
+          <Color x:Key="CuebotLineColor">#D9DFEA</Color>
+          <Color x:Key="CuebotTextColor">#152033</Color>
+          <Color x:Key="CuebotAccentFillColor">#006FAD</Color>
+          <Color x:Key="CuebotAccentSoftColor">#1F0195DA</Color>
+          <Color x:Key="CuebotWarnColor">#B45309</Color>
+          <Color x:Key="CuebotSidebarColor">#E8ECF3</Color>
+          <Color x:Key="CuebotPanelColor">#F3F5F9</Color>
           <Color x:Key="CuebotCardColor">#FFFFFF</Color>
-          <Color x:Key="CuebotCardBorderColor">#D3D8E0</Color>
-          <Color x:Key="CuebotMutedColor">#5C6370</Color>
-          <Color x:Key="CuebotAccentColor">#2563C9</Color>
-          <Color x:Key="CuebotGoodColor">#2E7D32</Color>
-          <Color x:Key="CuebotBadColor">#C62828</Color>
-          <Color x:Key="CuebotSelectedColor">#D6E3F8</Color>
+          <Color x:Key="CuebotCardBorderColor">#D9DFEA</Color>
+          <Color x:Key="CuebotMutedColor">#5A6780</Color>
+          <Color x:Key="CuebotAccentColor">#006AA6</Color>
+          <Color x:Key="CuebotGoodColor">#00843F</Color>
+          <Color x:Key="CuebotBadColor">#DC2626</Color>
+          <Color x:Key="CuebotSelectedColor">#1F0195DA</Color>
           <Color x:Key="CuebotOverlayColor">#66000000</Color>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
   </Styles.Resources>
 
+  <!-- ===== Type ===== -->
   <Style Selector="TextBlock.h1">
     <Setter Property="FontSize" Value="22" />
     <Setter Property="FontWeight" Value="SemiBold" />
@@ -60,9 +120,24 @@
     <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
     <Setter Property="FontSize" Value="12" />
   </Style>
+  <Style Selector="TextBlock.hint">
+    <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.label">
+    <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.4" />
+  </Style>
   <Style Selector="TextBlock.error">
     <Setter Property="Foreground" Value="{DynamicResource CuebotBad}" />
     <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- ===== Surfaces ===== -->
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource CuebotGround}" />
   </Style>
   <Style Selector="Border.card">
     <Setter Property="Background" Value="{DynamicResource CuebotCard}" />
@@ -73,16 +148,36 @@
     <Setter Property="Margin" Value="0,0,0,12" />
   </Style>
   <Style Selector="Ellipse.status">
-    <Setter Property="Width" Value="10" />
-    <Setter Property="Height" Value="10" />
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
     <Setter Property="Fill" Value="{DynamicResource CuebotMuted}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="Ellipse.status.good">
     <Setter Property="Fill" Value="{DynamicResource CuebotGood}" />
   </Style>
+  <Style Selector="Ellipse.status.warn">
+    <Setter Property="Fill" Value="{DynamicResource CuebotWarn}" />
+  </Style>
   <Style Selector="Ellipse.status.bad">
     <Setter Property="Fill" Value="{DynamicResource CuebotBad}" />
+  </Style>
+
+  <!-- ===== Buttons ===== -->
+  <Style Selector="Button, RepeatButton, ToggleButton, DropDownButton, SplitButton">
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="Button:not(.accent):not(.row), RepeatButton, DropDownButton">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.accent">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector=":is(Button):focus-visible /template/ ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
   </Style>
 
   <!-- Selectable rows in the action list editor -->
@@ -90,7 +185,9 @@
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="8,6" />
+    <Setter Property="MinHeight" Value="0" />
     <Setter Property="Margin" Value="0,1" />
     <Setter Property="CornerRadius" Value="6" />
   </Style>
@@ -101,13 +198,105 @@
     <Setter Property="Background" Value="{DynamicResource CuebotSelected}" />
   </Style>
 
+  <!-- ===== Inputs: a shade darker than the card they sit on ===== -->
+  <Style Selector="TextBox, ComboBox, NumericUpDown, AutoCompleteBox, CalendarDatePicker, TimePicker">
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="TextBox, ComboBox">
+    <Setter Property="Background" Value="{DynamicResource CuebotGround}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+  </Style>
+  <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement, ComboBox:pointerover /template/ Border#Background">
+    <Setter Property="Background" Value="{DynamicResource CuebotGround}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotMuted}" />
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource CuebotGround}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <!-- ===== Pill tabs ===== -->
+  <Style Selector="TabControl">
+    <Setter Property="Padding" Value="0,8,0,0" />
+  </Style>
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="Padding" Value="14,5" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Foreground" Value="{DynamicResource CuebotMuted}" />
+  </Style>
+  <Style Selector="TabItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector="TabItem /template/ Border#PART_SelectedPipe">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+  </Style>
+  <Style Selector="TabItem:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
+  </Style>
+  <Style Selector="TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource CuebotText}" />
+  </Style>
+  <Style Selector="TabItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource CuebotText}" />
+  </Style>
+
+  <!-- ===== Lists ===== -->
+  <Style Selector="ListBoxItem">
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
+  </Style>
+  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+  </Style>
+
   <!-- Navigation -->
   <Style Selector="ListBox.nav">
     <Setter Property="Background" Value="Transparent" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem">
-    <Setter Property="Padding" Value="14,10" />
+    <Setter Property="Padding" Value="14,9" />
     <Setter Property="Margin" Value="6,1" />
     <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="ListBox.nav ListBoxItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource CuebotAccent}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- ===== Expanders, tooltips, menus ===== -->
+  <Style Selector="Expander">
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+  <Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+  </Style>
+  <Style Selector="Expander /template/ Border#ExpanderContent">
+    <Setter Property="Background" Value="{DynamicResource CuebotCard}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+  </Style>
+  <Style Selector="ToolTip">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+    <Setter Property="Foreground" Value="{DynamicResource CuebotText}" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="FlyoutPresenter, MenuFlyoutPresenter, ContextMenu">
+    <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
+    <Setter Property="CornerRadius" Value="8" />
   </Style>
 </Styles>

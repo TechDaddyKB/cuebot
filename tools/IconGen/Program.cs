@@ -11,9 +11,11 @@ static byte[] Render(int size)
     c.Clear(SKColors.Transparent);
     c.Scale(size / 256f);
 
+    // Tech Daddy Digital brand gradient (blue, green, magenta, purple), along the banner's diagonal.
     using var bg = new SKPaint { IsAntialias = true, Shader = SKShader.CreateLinearGradient(
-        new SKPoint(0, 0), new SKPoint(256, 256),
-        [SKColor.Parse("#4F8DF7"), SKColor.Parse("#7B5CF0")], SKShaderTileMode.Clamp) };
+        new SKPoint(0, 51), new SKPoint(256, 205),
+        [SKColor.Parse("#0195DA"), SKColor.Parse("#0195DA"), SKColor.Parse("#00B361"), SKColor.Parse("#AF0070"), SKColor.Parse("#6E0075")],
+        [0f, 0.30f, 0.55f, 0.78f, 1f], SKShaderTileMode.Clamp) };
     c.DrawRoundRect(new SKRect(8, 8, 248, 248), 56, 56, bg);
 
     // A cue: a play triangle flowing out of a node.
