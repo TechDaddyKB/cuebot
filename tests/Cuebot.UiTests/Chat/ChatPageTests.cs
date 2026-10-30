@@ -193,9 +193,14 @@ public sealed class ChatPageTests : IDisposable
         _f.Chat("Bob", "second message", id: "msg-2");
         var (window, view) = Show(vm);
         Assert.False(vm.HasSelectedLine);
+        // Filter chips: All plus the platforms that have spoken, in the hub's order.
+        Assert.Equal(["All", "Twitch"], vm.PlatformChips);
+        _f.Chat("Kicker", "hi from kick", platform: "Kick");
+        ChatPageFixture.Pump();
+        Assert.Equal(["All", "Twitch", "Kick"], vm.PlatformChips);
         Save(window, "chat-panes-empty");
 
-        var bob = vm.Messages[2];
+        var bob = vm.Messages.Where(m => m.User == "Bob").Last();
         vm.SelectedLine = bob;
         Assert.True(vm.HasSelectedLine);
         Assert.Equal(["second message", "first message"], vm.UserLines.Select(l => l.Text));
@@ -211,7 +216,7 @@ public sealed class ChatPageTests : IDisposable
         Assert.True(vm.ConfirmingBan);
         Assert.Empty(_f.Moderator.Calls);
         Save(window, "chat-panes");
-        vm.SelectedLine = vm.Messages[1];
+        vm.SelectedLine = vm.Messages.First(m => m.User == "Alice");
         Assert.False(vm.ConfirmingBan);
         vm.SelectedLine = bob;
         vm.BanSelectedCommand.Execute(null);

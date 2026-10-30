@@ -153,6 +153,7 @@ public sealed partial class ChatViewModel : PageViewModel
         _services = services ?? new ChatPageServices();
         _settings = _services.Settings?.Value ?? new ChatPageSettings();
         PlatformFilters = [ChatHub.AllPlatforms, .. hub.Platforms];
+        PlatformChips.Add(ChatHub.AllPlatforms);
         SendTargets = [ChatHub.AllPlatforms, .. hub.Platforms];
         Options = new ChatOptionsViewModel(_settings, () => _services.Settings?.ScheduleSave(), _services.Emotes,
             _services.EmoteSettings, _services.ActionNames ?? (() => []));
@@ -178,6 +179,22 @@ public sealed partial class ChatViewModel : PageViewModel
     public ObservableCollection<QuickActionButtonViewModel> QuickActions { get; } = [];
     public ObservableCollection<EmoteSuggestionViewModel> Suggestions { get; } = [];
     public IReadOnlyList<string> PlatformFilters { get; }
+
+    /// <summary>
+    /// The chat's filter chips: All, then the platforms that have sent a message (in <see cref="PlatformFilters"/>
+    /// order), so two dozen sources that are not in use do not crowd the chat.
+    /// </summary>
+    public ObservableCollection<string> PlatformChips { get; } = [];
+
+    private void AddPlatformChip(string platform)
+    {
+        var name = PlatformFilters.FirstOrDefault(p => string.Equals(p, platform, StringComparison.OrdinalIgnoreCase));
+        if (name is null || PlatformChips.Contains(name)) return;
+        var order = PlatformFilters.ToList();
+        var index = 1;
+        while (index < PlatformChips.Count && order.IndexOf(PlatformChips[index]) < order.IndexOf(name)) index++;
+        PlatformChips.Insert(index, name);
+    }
     public IReadOnlyList<string> SendTargets { get; }
     public ChatOptionsViewModel Options { get; }
     public bool HasQuickActions => QuickActions.Count > 0;
@@ -196,6 +213,14 @@ public sealed partial class ChatViewModel : PageViewModel
 
     partial void OnFilterChanged(string value)
     {
+        // The chips list only platforms seen so far: a filter set from code gets its chip, and a cleared chip
+        // selection means All.
+        if (value is null)
+        {
+            Filter = ChatHub.AllPlatforms;
+            return;
+        }
+        if (value != ChatHub.AllPlatforms) AddPlatformChip(value);
         Messages.Clear();
         foreach (var m in _all.Where(Visible)) Messages.Add(CreateLine(m));
     }
@@ -310,6 +335,7 @@ public sealed partial class ChatViewModel : PageViewModel
     private void AddLine(ChatMessage message)
     {
         _all.Add(message);
+        AddPlatformChip(message.Platform);
         if (_all.Count > MaxLines) _all.RemoveAt(0);
         if (!Visible(message)) return;
         var line = CreateLine(message);

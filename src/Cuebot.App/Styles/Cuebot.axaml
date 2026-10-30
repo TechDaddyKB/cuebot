@@ -114,13 +114,13 @@
           <Setter Property="CornerRadius" Value="12" />
           <Setter Property="BorderThickness" Value="1" />
           <Setter Property="BorderBrush" Value="{DynamicResource CuebotLine}" />
-          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
         </Style>
         <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-          <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
         </Style>
         <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
-          <Setter Property="Background" Value="{DynamicResource CuebotRaised}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
         </Style>
         <Style Selector="^:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
           <Setter Property="Background" Value="{DynamicResource CuebotAccentFill}" />

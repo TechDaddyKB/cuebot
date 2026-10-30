@@ -55,7 +55,7 @@
           <TextBlock Text="Chat" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
         </DockPanel>
         <ListBox x:Name="PlatformChips" DockPanel.Dock="Top" Classes="chips" ItemContainerTheme="{StaticResource ChipItem}"
-                 ItemsSource="{Binding PlatformFilters}" SelectedItem="{Binding Filter}" Margin="0,0,0,4" />
+                 ItemsSource="{Binding PlatformChips}" SelectedItem="{Binding Filter}" Margin="0,0,0,4" />
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
           <!-- Quick actions (global ones work without a selection) -->
