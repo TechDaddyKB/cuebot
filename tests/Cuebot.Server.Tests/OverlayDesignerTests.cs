@@ -116,6 +116,29 @@ public sealed class OverlayDesignerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_library_can_be_kept_from_the_designer()
+    {
+        var added = await Post($"{Api}/add?{Auth}", Json(new JsonObject { ["type"] = "image" }));
+        var imageId = added["layer"]!.GetValue<string>();
+        var saved = await Post($"{Api}/save-to-library?{Auth}", Json(new JsonObject { ["layerId"] = imageId }));
+        var templateId = saved["element"]!.GetValue<string>();
+        Assert.Contains(saved["state"]!["elements"]!.AsArray(), e => e!["type"]!.GetValue<string>() == "image");
+        await Post($"{Api}/save-to-library?{Auth}", Json(new JsonObject { ["layerId"] = _widget.Id.ToString() }), HttpStatusCode.BadRequest);
+
+        var widgetElement = _widget.ElementId!.Value;
+        var inUse = await Post($"/design/api/library/{widgetElement}/delete?{Auth}&overlay={_overlay.Id}", Json(new JsonObject()), HttpStatusCode.BadRequest);
+        Assert.Contains("Still used on Main", inUse["error"]!.GetValue<string>());
+
+        var renamed = await Post($"/design/api/library/{widgetElement}/rename?{Auth}&overlay={_overlay.Id}", Json(new JsonObject { ["name"] = "Pink chat" }));
+        Assert.Contains(renamed["elements"]!.AsArray(), e => e!["name"]!.GetValue<string>() == "Pink chat"
+            && e["usedBy"]!.AsArray().Single()!.GetValue<string>() == "Main");
+        await Post($"/design/api/library/{widgetElement}/duplicate?{Auth}&overlay={_overlay.Id}", Json(new JsonObject()));
+        await Post($"/design/api/library/{templateId}/delete?{Auth}&overlay={_overlay.Id}", Json(new JsonObject()));
+        Assert.Equal(["Pink chat", "Pink chat copy"], _bot.Elements.All().Select(e => e.Name).Order());
+        await Post($"/design/api/library/{widgetElement}/explode?{Auth}", Json(new JsonObject()), HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Overlay_pages_get_static_settings_and_animations()
     {
         _bot.Overlays.Update(_overlay.Id, o =>

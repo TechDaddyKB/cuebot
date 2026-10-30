@@ -179,6 +179,65 @@ public sealed class WidgetCodeTests : IDisposable
     }
 
     [Fact]
+    public void Library_templates_are_copied_and_widgets_shared()
+    {
+        using var overlays = new OverlayStore(null, _log);
+        using var elements = new ElementStore(null, _log);
+        using var code = new WidgetCodeStore(null);
+        var library = new WidgetLibrary(overlays, elements, code);
+        var main = overlays.Create("Main");
+        var other = overlays.Create("Other", 1280, 720);
+
+        var text = OverlayLayerTypes.NewStatic(OverlayLayerTypes.Text, main);
+        text.Name = "BRB";
+        text.Width = 900;
+        text.Settings!["text"] = "Be right back";
+        overlays.Update(main.Id, o => o.Layers.Add(text));
+        var template = library.SaveToLibrary(main.Id, text.Id)!;
+        Assert.Equal(("BRB", "text"), (template.Name, template.Type));
+
+        var copy = library.AddFromLibrary(other.Id, template.Id)!;
+        Assert.Equal(("Be right back", 900.0, 190.0), (copy.Settings!["text"]!.GetValue<string>(), copy.Width, copy.X));
+        Assert.Null(copy.ElementId);   // a template is copied: changing it later does not touch this layer
+
+        var widget = library.AddChatBox(main.Id)!;
+        Assert.Null(library.SaveToLibrary(main.Id, widget.Id));   // widgets are in the library already
+        var shared = library.AddFromLibrary(other.Id, widget.ElementId!.Value)!;
+        Assert.Equal(widget.ElementId, shared.ElementId);
+
+        var entry = library.Library().Single(e => e.Element.Id == widget.ElementId);
+        Assert.Equal(["Main", "Other"], entry.UsedBy.Select(o => o.Name));
+        Assert.Null(library.AddFromLibrary(other.Id, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void Library_elements_are_renamed_duplicated_and_deleted_safely()
+    {
+        using var overlays = new OverlayStore(null, _log);
+        using var elements = new ElementStore(null, _log);
+        using var code = new WidgetCodeStore(null);
+        var library = new WidgetLibrary(overlays, elements, code);
+        var main = overlays.Create("Main");
+        var layer = library.AddCustomWidget(main.Id, "Chat", new WidgetCode("<p>original</p>", "", "", "{}", "{}"))!;
+        var id = layer.ElementId!.Value;
+
+        Assert.True(library.Rename(id, "Pink chat"));
+        Assert.False(library.Rename(id, " "));
+        Assert.Equal("Pink chat", overlays.Get(main.Id)!.Layers.Single().Name);   // layers follow the widget's name
+
+        var duplicate = library.Duplicate(id)!;
+        Assert.Equal("Pink chat copy", duplicate.Name);
+        code.Write(duplicate.Id, new WidgetCode("<p>changed</p>", "", "", "{}", "{}"));
+        Assert.Equal("<p>original</p>", code.Read(id).Html);   // a separate copy of the code
+
+        Assert.Equal(["Main"], library.Delete(id).Select(o => o.Name));   // still used: kept
+        Assert.NotNull(elements.Get(id));
+        Assert.Empty(library.Delete(duplicate.Id));
+        Assert.Null(elements.Get(duplicate.Id));
+        Assert.False(code.Exists(duplicate.Id));
+    }
+
+    [Fact]
     public void The_library_places_moves_and_removes_widgets()
     {
         using var overlays = new OverlayStore(null, _log);

@@ -6,8 +6,9 @@ widgets run on a second port, see docs/SERVERS.md); 1b the web widget editor (fi
 per-platform Emulate; built 2026-10-30, jQuery bundled); 1c the built-in chat box with a YouTube popout layout for
 YouTube chat CSS themes, and avatars and Twitch pronouns in chat events (built 2026-10-30). Phase 1 is done.
 Phase 2 split: 2a the web designer (canvas, snapping, layers, groups, properties, animations, text/image/video/slideshow,
-canvas sizes, undo; built 2026-10-30); 2b the element library page (rename, delete, duplicate, see where an element is
-used) and saving static layers to the library. Details in
+canvas sizes, undo; built 2026-10-30); 2b the element library in the designer (rename, delete when unused, duplicate,
+see where an element is used) and text/image/video/slideshow templates (built 2026-10-30). Phase 2 is done; phase 3
+(alerts) is next. Details in
 docs/SERVERS.md.
 
 ## Goal

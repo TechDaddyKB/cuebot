@@ -112,6 +112,109 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
         return found;
     }
 
+    // ---- Library ----------------------------------------------------------------------------------------------------
+
+    /// <summary>A library element and the overlays that use it.</summary>
+    public sealed record LibraryEntry(OverlayElement Element, IReadOnlyList<Overlay> UsedBy);
+
+    /// <summary>Every library element, by name, with the overlays whose layers use it (widgets only; static ones are templates).</summary>
+    public IReadOnlyList<LibraryEntry> Library()
+    {
+        var all = overlays.All();
+        return elements.All()
+            .OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(e => new LibraryEntry(e, all.Where(o => o.Layers.Any(l => l.ElementId == e.Id)).ToArray()))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Saves a text, image, video or slideshow layer to the library as a template (its settings and size). Adding it
+    /// later makes a new layer from a copy. Returns the element, or null when the layer is not a static one.
+    /// </summary>
+    public OverlayElement? SaveToLibrary(Guid overlayId, Guid layerId)
+    {
+        if (overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layerId) is not { } layer
+            || !OverlayLayerTypes.Static.Contains(layer.Type))
+            return null;
+        return elements.Add(new OverlayElement
+        {
+            Name = layer.Name,
+            Type = layer.Type,
+            Settings = new JsonObject
+            {
+                ["settings"] = layer.Settings?.DeepClone() ?? new JsonObject(),
+                ["width"] = layer.Width,
+                ["height"] = layer.Height,
+            },
+        });
+    }
+
+    /// <summary>
+    /// Places a library element on an overlay: a widget as a layer that shares the element (and its code); a template
+    /// as a new layer with a copy of its settings, centred. Returns the layer, or null when either does not exist.
+    /// </summary>
+    public OverlayLayer? AddFromLibrary(Guid overlayId, Guid elementId)
+    {
+        if (overlays.Get(overlayId) is not { } overlay || elements.Get(elementId) is not { } element) return null;
+        OverlayLayer layer;
+        if (element.Type == CustomType)
+        {
+            layer = new OverlayLayer { Name = element.Name, Type = CustomType, ElementId = element.Id, Width = overlay.Width, Height = overlay.Height };
+        }
+        else if (OverlayLayerTypes.Static.Contains(element.Type))
+        {
+            layer = OverlayLayerTypes.NewStatic(element.Type, overlay);
+            layer.Name = element.Name;
+            if (element.Settings["settings"] is JsonObject settings) layer.Settings = settings.DeepClone().AsObject();
+            var width = Math.Min(Number(element.Settings["width"], layer.Width), overlay.Width);
+            var height = Math.Min(Number(element.Settings["height"], layer.Height), overlay.Height);
+            (layer.Width, layer.Height) = (width, height);
+            (layer.X, layer.Y) = (Math.Round((overlay.Width - width) / 2), Math.Round((overlay.Height - height) / 2));
+        }
+        else
+        {
+            return null;
+        }
+        overlays.Update(overlayId, o => o.Layers.Add(layer));
+        return layer;
+    }
+
+    /// <summary>A copy of an element under a new name ("… copy"), with its own copy of the code for widgets.</summary>
+    public OverlayElement? Duplicate(Guid elementId)
+    {
+        if (elements.Get(elementId) is not { } element) return null;
+        var copy = elements.Add(new OverlayElement { Name = element.Name + " copy", Type = element.Type, Settings = element.Settings });
+        if (element.Type == CustomType) code.Write(copy.Id, code.Read(element.Id));
+        return copy;
+    }
+
+    public bool Rename(Guid elementId, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        var renamed = elements.Update(elementId, e => e.Name = name.Trim());
+        if (renamed)
+        {
+            // Layers that use a widget show its name; keep them in step.
+            foreach (var overlay in overlays.All().Where(o => o.Layers.Any(l => l.ElementId == elementId)))
+                overlays.Update(overlay.Id, o => o.Layers.Where(l => l.ElementId == elementId).ToList().ForEach(l => l.Name = name.Trim()));
+        }
+        return renamed;
+    }
+
+    /// <summary>
+    /// Deletes an element (and a widget's code) that no overlay uses. Returns the overlays still using it, which must
+    /// lose those layers first; empty when deleted.
+    /// </summary>
+    public IReadOnlyList<Overlay> Delete(Guid elementId)
+    {
+        var users = overlays.All().Where(o => o.Layers.Any(l => l.ElementId == elementId)).ToArray();
+        if (users.Length > 0) return users;
+        if (elements.Delete(elementId)) code.Delete(elementId);
+        return [];
+    }
+
+    private static double Number(JsonNode? node, double fallback) => Events.OverlayAlerts.NumberOf(node, fallback);
+
     /// <summary>The code a layer runs: its element's, or empty for layers without one.</summary>
     public WidgetCode CodeFor(OverlayLayer layer) => layer.ElementId is { } id ? code.Read(id) : WidgetCode.Empty;
 }

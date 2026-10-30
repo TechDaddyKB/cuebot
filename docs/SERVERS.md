@@ -185,6 +185,12 @@ Ctrl+G group. Changes save on their own; the overlay (and OBS) reloads with them
 | `GET` / `POST /design/api/{overlayId}` | The overlay and the element library; saving name, canvas and layers. Saving checks every layer: known types only, widget layers must use an existing library element, sizes and positions clamped, opacity 0 to 1, animation names from the list (durations 0.1 to 10 s), duplicate ids renewed, one-member groups cleared. |
 | `POST .../add` `{type, elementId?}` | `text`, `image`, `video`, `slideshow` (centred, with defaults), `chatbox`, `chatbox-youtube`, or `element` (a library widget, shared rather than copied). |
 | `POST .../import?name=...` | A widget zip (raw body) as a new widget layer. |
+| `POST .../save-to-library` `{layerId}` | A text, image, video or slideshow layer as a library template (settings and size). |
+| `POST /design/api/library/{elementId}/rename\|duplicate\|delete?overlay=...` | Library upkeep. Renaming a widget renames the layers that use it; duplicating a widget copies its code; deleting is refused while an overlay uses the element (the error names them). The reply is the given overlay's state. |
+
+The library ("Library…" in the designer's Add menu) lists every element with the overlays using it. Widgets are
+shared: one set of settings and code wherever they are placed. Templates are copied: adding one makes an independent
+layer.
 
 Static layers are drawn by the overlay page itself (no frame): text with a Google Font, colour, weight, alignment,
 shadow, background and padding; images and videos (`http(s)` or `/assets/` addresses only) with fit, loop, mute and

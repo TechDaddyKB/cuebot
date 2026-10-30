@@ -18,6 +18,9 @@ namespace Cuebot.Server.Overlays;
 /// <item><c>POST .../add</c> <c>{type, elementId?}</c>: a new text, image, video or slideshow layer, a chat box, or a
 /// layer using a library element.</item>
 /// <item><c>POST .../import?name=...</c>: a widget zip (raw body) as a new custom widget layer.</item>
+/// <item><c>POST .../save-to-library</c> <c>{layerId}</c>: a text, image, video or slideshow layer as a library template.</item>
+/// <item><c>POST /design/api/library/{elementId}/rename|duplicate|delete</c>: library upkeep (delete only when no
+/// overlay uses the element).</item>
 /// </list>
 /// Uploads for image and video layers use the widget editor's <c>/edit/api/assets</c>. Every POST must come from the
 /// designer page's own origin.
@@ -71,6 +74,17 @@ internal sealed class OverlayDesigner(Func<ServerSettings> settings, ServerServi
                     : new JsonObject { ["layer"] = added.Value.ToString("D"), ["state"] = State(overlays.Get(overlay.Id)!) },
                     added is null ? StatusCodes.Status400BadRequest : StatusCodes.Status200OK).ConfigureAwait(false);
                 return true;
+            case ["design", "api", "library", var elementId, var action] when isPost && Guid.TryParse(elementId, out var element):
+                await LibraryAsync(context, element, action).ConfigureAwait(false);
+                return true;
+            case ["design", "api", var id, "save-to-library"] when isPost && Get(id) is { } overlay:
+                var body = await OverlayEditor.ReadJsonAsync(context).ConfigureAwait(false);
+                var saved = Guid.TryParse(body?["layerId"]?.GetValue<string>(), out var layerId) ? services.Widgets?.SaveToLibrary(overlay.Id, layerId) : null;
+                await OverlayEditor.JsonAsync(context, saved is null
+                    ? new JsonObject { ["error"] = "Only text, image, video and slideshow layers are saved this way; widgets are in the library already" }
+                    : new JsonObject { ["element"] = saved.Id.ToString("D"), ["state"] = State(overlays.Get(overlay.Id)!) },
+                    saved is null ? StatusCodes.Status400BadRequest : StatusCodes.Status200OK).ConfigureAwait(false);
+                return true;
             case ["design", "api", var id, "import"] when isPost && Get(id) is { } overlay:
                 await ImportAsync(context, overlay).ConfigureAwait(false);
                 return true;
@@ -111,13 +125,42 @@ internal sealed class OverlayDesigner(Func<ServerSettings> settings, ServerServi
             ["layers"] = JsonSerializer.SerializeToNode(overlay.Layers, Json.Options),
             ["preview"] = OverlayServer.PathFor(overlay),
         },
-        ["elements"] = new JsonArray([.. (services.Elements?.All() ?? []).Select(e => (JsonNode)new JsonObject
+        ["elements"] = new JsonArray([.. (services.Widgets?.Library() ?? []).Select(entry => (JsonNode)new JsonObject
         {
-            ["id"] = e.Id.ToString("D"),
-            ["name"] = e.Name,
-            ["type"] = e.Type,
+            ["id"] = entry.Element.Id.ToString("D"),
+            ["name"] = entry.Element.Name,
+            ["type"] = entry.Element.Type,
+            ["usedBy"] = new JsonArray([.. entry.UsedBy.Select(o => (JsonNode)o.Name)]),
         })]),
     };
+
+    private async Task LibraryAsync(HttpContext context, Guid elementId, string action)
+    {
+        var widgets = services.Widgets;
+        var json = await OverlayEditor.ReadJsonAsync(context).ConfigureAwait(false);
+        string? error = null;
+        switch (action)
+        {
+            case "rename" when widgets is not null:
+                if (!widgets.Rename(elementId, json?["name"]?.GetValue<string>() ?? "")) error = "Give it a name";
+                break;
+            case "duplicate" when widgets is not null:
+                if (widgets.Duplicate(elementId) is null) error = "That element no longer exists";
+                break;
+            case "delete" when widgets is not null:
+                var users = widgets.Delete(elementId);
+                if (users.Count > 0) error = "Still used on " + string.Join(", ", users.Select(o => o.Name)) + "; remove it from there first";
+                break;
+            default:
+                error = "Unknown library action";
+                break;
+        }
+        // The designer's own overlay comes along, so the dialog and the canvas stay in step.
+        var overlay = Get(context.Request.Query["overlay"].ToString());
+        var reply = overlay is null ? new JsonObject() : State(overlay);
+        if (error is not null) reply["error"] = error;
+        await OverlayEditor.JsonAsync(context, reply, error is null ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest).ConfigureAwait(false);
+    }
 
     /// <summary>Saves name, canvas and layers; returns an error message, or null when saved.</summary>
     internal string? Save(Guid overlayId, JsonObject? json)
@@ -199,17 +242,8 @@ internal sealed class OverlayDesigner(Func<ServerSettings> settings, ServerServi
                 return widgets.AddChatBox(overlay.Id)?.Id;
             case "chatbox-youtube":
                 return widgets.AddChatBox(overlay.Id, "youtube")?.Id;
-            case "element" when Guid.TryParse(elementId, out var id) && services.Elements?.Get(id) is { Type: OverlayLayerTypes.Custom } element:
-                var layer = new OverlayLayer
-                {
-                    Name = element.Name,
-                    Type = OverlayLayerTypes.Custom,
-                    ElementId = element.Id,
-                    Width = overlay.Width,
-                    Height = overlay.Height,
-                };
-                services.Overlays!.Update(overlay.Id, o => o.Layers.Add(layer));
-                return layer.Id;
+            case "element" when Guid.TryParse(elementId, out var id):
+                return widgets.AddFromLibrary(overlay.Id, id)?.Id;
             default:
                 return null;
         }

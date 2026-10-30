@@ -50,6 +50,7 @@
   function el(tag, attrs, children) {
     var node = document.createElement(tag);
     Object.keys(attrs || {}).forEach(function (k) {
+      if (attrs[k] === null || attrs[k] === undefined) return;
       if (k === "text") node.textContent = attrs[k];
       else if (k.indexOf("on") === 0) node.addEventListener(k.slice(2), attrs[k]);
       else node.setAttribute(k, attrs[k]);
@@ -526,12 +527,25 @@
         parts.push(row("Transition", settingInput(l, "transition", "select", { options: { fade: "Fade", none: "None" } })));
         break;
       case "custom":
-        parts.push(el("p", { class: "muted", text: "A widget. Its settings, code and test events are in the widget editor." }));
+        parts.push(el("p", { class: "muted", text: "A widget from the library: other overlays can use the same one. Its settings, code and test events are in the widget editor." }));
         parts.push(el("button", {
           class: "wide primary", text: "Edit widget…",
           onclick: function () { window.open("/edit/" + encodeURIComponent(cfg.overlayId) + "/" + encodeURIComponent(l.id) + "?" + auth, "_blank", "noopener"); }
         }));
         break;
+    }
+    if (l.type !== "custom") {
+      parts.push(el("button", {
+        class: "wide", text: "Save to library", title: "Keep this " + (TYPE_NAMES[l.type] || "layer").toLowerCase() + " as a template to add to any overlay",
+        onclick: function () {
+          flushThen(function () {
+            post(api + "/save-to-library?" + auth, { layerId: l.id }).then(function (json) {
+              elements = json.state.elements || [];
+              status("Saved \"" + l.name + "\" to the library");
+            }).catch(function (e) { status(e.message, true); });
+          });
+        }
+      }));
     }
     return el("div", { class: "section" }, parts);
   }
@@ -631,18 +645,56 @@
       .then(fn).catch(function (e) { status("Could not save: " + e.message, true); });
   }
 
+  /** Library upkeep; the reply carries this overlay's state, so the canvas and the dialog stay in step. */
+  function libraryAction(element, action, body) {
+    return flushThenPromise().then(function () {
+      return post("/design/api/library/" + encodeURIComponent(element.id) + "/" + action + "?" + auth + "&overlay=" + encodeURIComponent(cfg.overlayId), body || {});
+    }).then(function (state) {
+      load(state);
+      showLibrary();
+    }).catch(function (e) { status(e.message, true); refresh(); });
+  }
+
+  function refresh() {
+    fetch(api + "?" + auth, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (state) { load(state); showLibrary(); });
+  }
+
+  function flushThenPromise() {
+    return new Promise(function (resolve) { flushThen(resolve); });
+  }
+
   function showLibrary() {
     var list = $("library-list");
     list.textContent = "";
-    var widgets = elements.filter(function (e) { return e.type === "custom"; });
-    if (!widgets.length) list.appendChild(el("li", { class: "muted", text: "The library is empty. Widgets you add are kept here." }));
-    widgets.forEach(function (e) {
+    if (!elements.length) {
+      list.appendChild(el("li", { class: "muted", text: "The library is empty. Widgets you add are kept here, and text, image, video and slideshow layers can be saved to it from their properties." }));
+    }
+    elements.forEach(function (e) {
+      var used = e.usedBy || [];
+      var shared = e.type === "custom";
+      var info = shared
+        ? (used.length ? "Widget · on " + used.join(", ") : "Widget · not on any overlay")
+        : (TYPE_NAMES[e.type] || e.type) + " template";
       list.appendChild(el("li", {}, [
-        el("span", { text: e.name }),
-        el("button", { text: "Add", onclick: function () { $("library").close(); add("element", e.id); } })
+        el("div", { class: "lib-info" }, [el("strong", { text: e.name }), el("div", { class: "muted small", text: info })]),
+        el("div", { class: "lib-actions" }, [
+          el("button", { class: "primary", text: "Add", onclick: function () { $("library").close(); add("element", e.id); } }),
+          el("button", {
+            text: "Rename", onclick: function () {
+              var name = prompt("New name for " + e.name, e.name);
+              if (name && name.trim()) libraryAction(e, "rename", { name: name.trim() });
+            }
+          }),
+          el("button", { text: "Duplicate", title: shared ? "A separate copy of the widget, with its own settings and code" : "Copy the template", onclick: function () { libraryAction(e, "duplicate"); } }),
+          el("button", {
+            class: "danger", text: "Delete", title: used.length ? "Remove it from " + used.join(", ") + " first" : "Delete from the library",
+            disabled: used.length ? "disabled" : null,
+            onclick: function () { if (confirm("Delete " + e.name + " from the library?")) libraryAction(e, "delete"); }
+          })
+        ])
       ]));
     });
-    $("library").showModal();
+    if (!$("library").open) $("library").showModal();
   }
 
   // ---- Wiring -----------------------------------------------------------------------------------------------------
