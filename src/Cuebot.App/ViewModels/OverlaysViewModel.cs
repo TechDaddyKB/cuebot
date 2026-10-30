@@ -77,6 +77,10 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     [RelayCommand]
     private void NewLink() => owner.RegenerateLink(overlay.Id);
 
+    /// <summary>Adds Cuebot's chat box (chat from every platform) to this overlay.</summary>
+    [RelayCommand]
+    private void AddChatBox() => owner.AddChatBox(overlay.Id);
+
     [RelayCommand]
     private void Delete() => owner.Delete(overlay.Id);
 }
@@ -206,6 +210,14 @@ public sealed partial class OverlaysViewModel : PageViewModel
         {
             Status = "Could not add the widget: " + ex.Message;
         }
+    }
+
+    internal void AddChatBox(Guid overlayId)
+    {
+        if (_widgets is null) return;
+        Edit(() => _widgets.AddChatBox(overlayId));
+        Refresh();
+        Status = "Added a chat box in the lower left. Use Edit… to change its look, or its Layout setting for YouTube chat CSS themes.";
     }
 
     internal void MoveLayer(Guid overlayId, OverlayLayer layer) =>

@@ -12,7 +12,8 @@ namespace Cuebot.Core.Overlays.Events;
 /// <c>{data: {time, tags, nick, userId, displayName, displayColor, channel, text, isAction, msgId, badges[], emotes[]},
 /// renderedText, service}</c>. Kick's "[emote:id:name]" tokens become the emote's name, so <c>text</c>, emote ranges
 /// and <c>renderedText</c> agree on every platform. Twitch-style <c>tags</c> are filled for all platforms, so widgets
-/// that read <c>tags.mod</c> or <c>tags.subscriber</c> work everywhere.
+/// that read <c>tags.mod</c> or <c>tags.subscriber</c> work everywhere. Cuebot adds <c>data.avatar</c> (when the
+/// platform reports a picture) and <c>data.pronouns</c> (Twitch chatters with pronouns set on alejo.io, once looked up).
 /// </summary>
 public static class OverlayChatMessage
 {
@@ -101,6 +102,8 @@ public static class OverlayChatMessage
                 ["msgId"] = msgId,
                 ["badges"] = badgeArray,
                 ["emotes"] = emoteArray,
+                ["avatar"] = OverlayAlerts.First(platformArgs, "userProfileUrl", "userProfilePicture", "profileImageUrl"),
+                ["pronouns"] = OverlayAlerts.Str(args, "pronouns"),
             },
             ["renderedText"] = RenderHtml(text, ranges),
             ["service"] = service,

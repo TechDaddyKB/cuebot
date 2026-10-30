@@ -6,6 +6,8 @@ using Cuebot.Core.Logging;
 using Cuebot.Core.Overlays;
 using Cuebot.Core.Overlays.Events;
 
+using Cuebot.Tests.ChatExtras;
+
 namespace Cuebot.Tests.Overlays;
 
 public sealed class OverlayEventBridgeTests : IDisposable
@@ -144,6 +146,28 @@ public sealed class OverlayEventBridgeTests : IDisposable
         Assert.Equal("event", raw["listener"]!.GetValue<string>());
         Assert.Equal(("follower", "fake"), (raw["event"]!["type"]!.GetValue<string>(), raw["event"]!["provider"]!.GetValue<string>()));
         Assert.Equal("Kris", raw["event"]!["data"]!["name"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Chat_carries_avatars_and_known_twitch_pronouns()
+    {
+        const string api = "https://pronouns.test/";
+        var http = new FakeHttp();
+        http.Json(api + "pronouns", """{"theythem":{"name":"theythem","subject":"They","object":"Them","singular":false}}""");
+        http.Json(api + "users/alice", """{"channel_id":"1","channel_login":"alice","pronoun_id":"theythem","alt_pronoun_id":null}""");
+        var pronouns = new Cuebot.Core.Chat.Pronouns.PronounService(http.Client(), _log, baseUrl: api);
+        using var bridge = new OverlayEventBridge(_bus, _feed, [_adapter], _log, pronouns: pronouns);
+
+        var twitch = new Dictionary<string, object?> { ["message"] = "hi", ["userName"] = "alice" };
+        _bus.Publish(Chat("Twitch", "hi", twitch));   // not looked up yet: sent without, lookup started
+        for (var i = 0; i < 50 && !pronouns.TryGetCached("alice").Known; i++) await Task.Delay(20);
+        _bus.Publish(Chat("Twitch", "again", twitch));
+        _bus.Publish(Chat("YouTube", "yo", new Dictionary<string, object?> { ["userProfileUrl"] = "https://img.test/a.png", ["userName"] = "alice" }));
+
+        Assert.Equal("", _sent[0]["event"]!["data"]!["pronouns"]!.GetValue<string>());
+        Assert.Equal("They/Them", _sent[1]["event"]!["data"]!["pronouns"]!.GetValue<string>());
+        Assert.Equal("", _sent[2]["event"]!["data"]!["pronouns"]!.GetValue<string>());   // Twitch only
+        Assert.Equal("https://img.test/a.png", _sent[2]["event"]!["data"]!["avatar"]!.GetValue<string>());
     }
 
     [Fact]

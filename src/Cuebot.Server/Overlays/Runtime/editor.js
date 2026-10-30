@@ -15,7 +15,7 @@
     js: "The widget's JavaScript. It gets onWidgetLoad, onEventReceived and SE_API, as on StreamElements.",
     fields: "The settings schema: field name → {type, label, value, group, ...}. The Settings tab is built from it.",
     data: "Saved setting values (what the Settings tab edits).",
-    cssOverride: "Your own CSS, applied after the widget's. Restyle a bought widget here without touching its code; chat messages carry the platform in data.service (\"twitch\", \"kick\", \"rumble\", \"youtube\")."
+    cssOverride: "Your own CSS, applied after the widget's. Restyle a bought widget here without touching its code; chat messages carry the platform in data.service (\"twitch\", \"kick\", \"rumble\", \"youtube\"). For Cuebot's chat box set Layout to YouTube popout and paste a YouTube chat CSS theme here."
   };
 
   var state = { html: "", css: "", js: "", fields: "{}", data: "{}", cssOverride: "" };

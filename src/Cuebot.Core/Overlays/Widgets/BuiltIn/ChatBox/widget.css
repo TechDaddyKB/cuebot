@@ -1,0 +1,100 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --size: {{fontSize}}px;
+  --text: {{textColor}};
+  --bg: {{background}};
+  --radius: {{radius}}px;
+  --twitch: {{twitchColor}};
+  --kick: {{kickColor}};
+  --rumble: {{rumbleColor}};
+  --youtube: {{youtubeColor}};
+}
+
+.chat {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  overflow: hidden;
+  font-family: var(--font);
+  font-size: var(--size);
+  color: var(--text);
+}
+
+.chat.align-bottom { justify-content: flex-end; }
+.chat.align-top { justify-content: flex-start; }
+
+/* ---- Cuebot layout ---- */
+
+.layout-cuebot .msg {
+  background: var(--bg);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--platform, transparent);
+  padding: 6px 10px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.layout-cuebot .head { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; vertical-align: middle; }
+.layout-cuebot .platform {
+  font-size: 0.6em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--platform);
+  color: #000;
+}
+.layout-cuebot .platform.twitch, .layout-cuebot .platform.youtube { color: #fff; }
+.layout-cuebot .avatar { width: 1.4em; height: 1.4em; border-radius: 50%; object-fit: cover; }
+.layout-cuebot .badges img { height: 1.1em; vertical-align: middle; margin-right: 2px; }
+.layout-cuebot .name { font-weight: 700; }
+.layout-cuebot .pronouns { font-size: 0.7em; opacity: 0.8; border: 1px solid currentColor; border-radius: 6px; padding: 0 4px; }
+.layout-cuebot .text img.emote { height: 1.6em; vertical-align: middle; }
+.layout-cuebot .alert { text-align: center; font-weight: 600; font-size: 0.85em; }
+
+.msg.twitch { --platform: var(--twitch); }
+.msg.kick { --platform: var(--kick); }
+.msg.rumble { --platform: var(--rumble); }
+.msg.youtube { --platform: var(--youtube); }
+
+/* ---- YouTube popout layout: YouTube-like look; paste a YouTube chat CSS theme into My CSS to restyle it ---- */
+
+.layout-youtube { gap: 0; padding: 0; }
+.layout-youtube yt-live-chat-text-message-renderer,
+.layout-youtube yt-live-chat-paid-message-renderer,
+.layout-youtube yt-live-chat-membership-item-renderer {
+  display: flex;
+  align-items: flex-start;
+  padding: 4px 24px;
+  font-size: 13px;
+  line-height: 16px;
+  color: #fff;
+  font-family: Roboto, Arial, sans-serif;
+}
+.layout-youtube #author-photo { margin-right: 16px; flex: none; }
+.layout-youtube #author-photo img { width: 24px; height: 24px; border-radius: 50%; display: block; }
+.layout-youtube #content { flex: 1; overflow-wrap: anywhere; }
+.layout-youtube #timestamp { display: none; }
+.layout-youtube yt-live-chat-author-chip { display: inline-flex; align-items: baseline; margin-right: 8px; }
+.layout-youtube #author-name { font-weight: 500; color: rgba(255, 255, 255, 0.7); }
+.layout-youtube #author-name.owner { background: #ffd600; color: rgba(0, 0, 0, 0.87); border-radius: 2px; padding: 2px 4px; }
+.layout-youtube #author-name.moderator { color: #5e84f1; }
+.layout-youtube #author-name.member { color: #2ba640; }
+.layout-youtube #chat-badges, .layout-youtube yt-live-chat-author-badge-renderer,
+.layout-youtube yt-live-chat-author-badge-renderer #image { display: inline-flex; align-items: center; }
+.layout-youtube #chat-badges img { width: 16px; height: 16px; vertical-align: middle; margin-left: 2px; }
+.layout-youtube #message img.emoji { width: 24px; height: 24px; vertical-align: middle; margin: -1px 2px 1px; }
+.layout-youtube yt-live-chat-paid-message-renderer #card { background: #1e88e5; border-radius: 4px; padding: 8px 16px; }
+
+/* ---- Animations ---- */
+
+.anim-slide { animation: cb-slide 0.35s ease-out both; }
+.anim-fade { animation: cb-fade 0.4s ease-out both; }
+.leaving { animation: cb-fade 0.4s ease-in reverse both; }
+
+@keyframes cb-slide { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes cb-fade { from { opacity: 0; } to { opacity: 1; } }

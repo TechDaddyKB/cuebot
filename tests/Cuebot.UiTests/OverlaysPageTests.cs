@@ -138,15 +138,23 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         Assert.Equal((40.0, 600.0), (saved.X, saved.Width));
         SaveBothThemes(window, "overlays-widgets");
 
+        row.AddChatBoxCommand.Execute(null);
+        Pump();
+        row = Assert.Single(vm.Overlays);
+        Assert.Equal(["pink chat widget", "Chat box"], row.Layers.Select(l => l.Name));
+        Assert.Contains("chat box", vm.Status);
+        SaveBothThemes(window, "overlays-chatbox");
+        layer = row.Layers[0];
+
         layer.EditCommand.Execute(null);
         Assert.Contains("not running", vm.Status);   // the overlay server is not started in this test
 
-                vm.AddWidget(row.Id, new MemoryStream([1, 2, 3]), "broken.zip");
+        vm.AddWidget(row.Id, new MemoryStream([1, 2, 3]), "broken.zip");
         Assert.StartsWith("Could not add the widget", vm.Status);
 
         layer.RemoveCommand.Execute(null);
         Pump();
-        Assert.Empty(Store.Get(row.Id)!.Layers);
+        Assert.Equal("Chat box", Assert.Single(Store.Get(row.Id)!.Layers).Name);
         AssertNoBindingErrors();
         window.Close();
     }

@@ -76,6 +76,21 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
         return layer;
     }
 
+    /// <summary>
+    /// Adds Cuebot's chat box to an overlay: 480 × 600 in the lower left of a landscape canvas, the full width of the
+    /// lower half on a vertical one. Returns the layer, or null when the overlay does not exist.
+    /// </summary>
+    public OverlayLayer? AddChatBox(Guid overlayId, string layout = "cuebot")
+    {
+        if (overlays.Get(overlayId) is not { } overlay) return null;
+        var name = layout == "youtube" ? "Chat box (YouTube popout layout)" : "Chat box";
+        if (AddCustomWidget(overlayId, name, BuiltInWidgets.ChatBox(layout)) is not { } layer) return null;
+        var vertical = overlay.Height > overlay.Width;
+        var (width, height) = vertical ? (overlay.Width - 40.0, overlay.Height / 2.0 - 40) : (Math.Min(480.0, overlay.Width - 40), Math.Min(600.0, overlay.Height - 40));
+        MoveLayer(overlayId, layer.Id, 20, overlay.Height - height - 20, width, height);
+        return overlays.Get(overlayId)?.Layers.FirstOrDefault(l => l.Id == layer.Id);
+    }
+
     /// <summary>Removes a layer; its element and code stay in the library.</summary>
     public bool RemoveLayer(Guid overlayId, Guid layerId)
     {

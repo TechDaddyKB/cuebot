@@ -28,10 +28,14 @@ public sealed class OverlayEventBridge : IDisposable
     private readonly IReadOnlyList<IOverlayEventAdapter> _adapters;
     private readonly IDisposable _subscription;
 
-    public OverlayEventBridge(EventBus bus, OverlayFeed feed, IEnumerable<IOverlayEventAdapter> adapters, AppLog log, EmoteService? emotes = null)
+    private readonly Chat.Pronouns.PronounService? _pronouns;
+
+    public OverlayEventBridge(EventBus bus, OverlayFeed feed, IEnumerable<IOverlayEventAdapter> adapters, AppLog log, EmoteService? emotes = null,
+        Chat.Pronouns.PronounService? pronouns = null)
     {
         _feed = feed;
         _emotes = emotes;
+        _pronouns = pronouns;
         _log = log;
         _adapters = adapters.ToArray();
         _subscription = bus.Subscribe(OnEvent);
@@ -96,8 +100,23 @@ public sealed class OverlayEventBridge : IDisposable
             : OverlayAlerts.Str(e.Args, "message");
         var emotes = _emotes?.FindEmotes(platform, text, platformArgs) ?? [];
         var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase) { ["message"] = text };
+        if (Pronouns(platform, platformArgs) is { } pronouns) args["pronouns"] = pronouns;
         return OverlayChatMessage.Build(args, platformArgs, emotes, adapter?.Badges(platformArgs) ?? [],
             adapter?.Service ?? platform.ToLowerInvariant(), e.Time);
+    }
+
+    /// <summary>
+    /// A Twitch chatter's pronouns when Cuebot already knows them; otherwise starts the lookup (alejo.io) so their next
+    /// message has them. Chat is never held up waiting for it. Other platforms have no pronoun service.
+    /// </summary>
+    private string? Pronouns(string platform, IReadOnlyDictionary<string, object?> platformArgs)
+    {
+        if (_pronouns is null || !platform.Equals("Twitch", StringComparison.OrdinalIgnoreCase)) return null;
+        var login = OverlayAlerts.Str(platformArgs, "userName");
+        if (login.Length == 0) return null;
+        var (known, value) = _pronouns.TryGetCached(login);
+        if (!known) _ = _pronouns.GetAsync(login);
+        return value?.Display;
     }
 
     public void Dispose() => _subscription.Dispose();

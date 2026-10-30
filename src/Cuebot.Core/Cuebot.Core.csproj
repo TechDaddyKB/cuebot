@@ -6,6 +6,10 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Widgets Cuebot ships (e.g. the chat box), as Cuebot.Core.Widgets.{Folder}.{file}. -->
+    <EmbeddedResource Include="Overlays\Widgets\BuiltIn\**\*" LogicalName="Cuebot.Core.Widgets.%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
 
   <!--
     The OAuth apps registered for Cuebot (BuiltInApps), compiled in from environment variables that CI fills from

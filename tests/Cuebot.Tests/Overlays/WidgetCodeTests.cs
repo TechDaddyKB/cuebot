@@ -141,6 +141,44 @@ public sealed class WidgetCodeTests : IDisposable
     }
 
     [Fact]
+    public void The_chat_box_ships_complete_and_editable()
+    {
+        var box = BuiltInWidgets.ChatBox();
+        Assert.Contains("id=\"chat\"", box.Html);
+        Assert.Contains("onEventReceived", box.Js);
+        Assert.Contains("yt-live-chat-text-message-renderer", box.Js);   // the YouTube popout layout
+        Assert.Contains("--twitch", box.Css);
+        var fields = JsonNode.Parse(box.Fields)!.AsObject();
+        Assert.All(fields, f => Assert.NotNull(f.Value!["type"]));
+        var data = box.FieldData();
+        Assert.Equal(("cuebot", 20), (data["layout"]!.GetValue<string>(), data["maxMessages"]!.GetValue<int>()));
+        Assert.Equal("youtube", BuiltInWidgets.ChatBox("youtube").FieldData()["layout"]!.GetValue<string>());
+        // Every placeholder in the panes is a field (none would be left as text).
+        var substituted = WidgetFields.Substitute(box.Html + box.Css, data);
+        Assert.DoesNotMatch(@"\{\{[A-Za-z]", substituted);
+    }
+
+    [Fact]
+    public void The_chat_box_sits_in_the_lower_left_or_fills_a_vertical_canvas()
+    {
+        using var overlays = new OverlayStore(null, _log);
+        using var elements = new ElementStore(null, _log);
+        using var code = new WidgetCodeStore(null);
+        var library = new WidgetLibrary(overlays, elements, code);
+
+        var landscape = overlays.Create("Main", 1920, 1080);
+        var box = library.AddChatBox(landscape.Id)!;
+        Assert.Equal((20.0, 460.0, 480.0, 600.0), (box.X, box.Y, box.Width, box.Height));
+        Assert.Equal("Chat box", box.Name);
+
+        var vertical = overlays.Create("Phone", 1080, 1920);
+        var tall = library.AddChatBox(vertical.Id, "youtube")!;
+        Assert.Equal((20.0, 1040.0, 920.0), (tall.X, tall.Width, tall.Height));
+        Assert.Equal("youtube", library.CodeFor(tall).FieldData()["layout"]!.GetValue<string>());
+        Assert.Null(library.AddChatBox(Guid.NewGuid()));
+    }
+
+    [Fact]
     public void The_library_places_moves_and_removes_widgets()
     {
         using var overlays = new OverlayStore(null, _log);

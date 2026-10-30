@@ -1,0 +1,33 @@
+{
+  "layout": { "type": "dropdown", "label": "Layout", "value": "cuebot", "group": "Layout",
+    "options": { "cuebot": "Cuebot chat box", "youtube": "YouTube popout (for YouTube chat CSS themes)" } },
+  "direction": { "type": "dropdown", "label": "New messages appear at the", "value": "bottom", "group": "Layout",
+    "options": { "bottom": "Bottom", "top": "Top" } },
+  "maxMessages": { "type": "number", "label": "Messages shown at most", "value": 20, "min": 1, "max": 100, "group": "Layout" },
+  "hideAfter": { "type": "number", "label": "Hide messages after (seconds, 0 = never)", "value": 0, "min": 0, "max": 3600, "group": "Layout" },
+  "animation": { "type": "dropdown", "label": "Animation", "value": "slide", "group": "Layout",
+    "options": { "slide": "Slide in", "fade": "Fade in", "none": "None" } },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "fontSize": { "type": "slider", "label": "Text size", "value": 18, "min": 10, "max": 48, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Message colour", "value": "#ffffff", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Message background", "value": "rgba(16, 18, 24, 0.72)", "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 10, "min": 0, "max": 24, "step": 1, "group": "Look" },
+  "useNameColors": { "type": "checkbox", "label": "Use chatters' name colours", "value": true, "group": "Look" },
+
+  "showPlatform": { "type": "checkbox", "label": "Show which platform each message is from", "value": true, "group": "Details" },
+  "showBadges": { "type": "checkbox", "label": "Show badges", "value": true, "group": "Details" },
+  "showAvatars": { "type": "checkbox", "label": "Show profile pictures (where the platform has them)", "value": false, "group": "Details" },
+  "showPronouns": { "type": "checkbox", "label": "Show pronouns (Twitch chatters who set them)", "value": true, "group": "Details" },
+  "showAlerts": { "type": "checkbox", "label": "Show follows, subs, tips and raids in the chat", "value": true, "group": "Details" },
+
+  "hideCommands": { "type": "checkbox", "label": "Hide commands (messages starting with !)", "value": true, "group": "Filters" },
+  "ignoredUsers": { "type": "text", "label": "Hide these users (comma separated)", "value": "Nightbot, StreamElements, Streamlabs", "group": "Filters" },
+
+  "twitchColor": { "type": "colorpicker", "label": "Twitch colour", "value": "#9146FF", "group": "Platform colours" },
+  "kickColor": { "type": "colorpicker", "label": "Kick colour", "value": "#53FC18", "group": "Platform colours" },
+  "rumbleColor": { "type": "colorpicker", "label": "Rumble colour", "value": "#85C742", "group": "Platform colours" },
+  "youtubeColor": { "type": "colorpicker", "label": "YouTube colour", "value": "#FF0033", "group": "Platform colours" },
+
+  "testMessage": { "type": "button", "label": "Send a test message", "value": "", "group": "Test" }
+}

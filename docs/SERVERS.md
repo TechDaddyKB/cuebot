@@ -153,6 +153,21 @@ page.
   widget.io zips (`widget.ini`) or zips with the five panes by name. Changing an overlay or its widget code reloads the
   pages that show it.
 
+### Built-in chat box (`Cuebot.Core/Overlays/Widgets/BuiltIn/ChatBox`)
+
+"Add chat box" on the Overlays page adds Cuebot's chat box (embedded resources, written on the StreamElements widget API
+and stored like any imported widget, so the editor and My CSS work on it): chat from every platform with platform
+tags and colours, badges, emotes, profile pictures where the platform has them, Twitch pronouns, in-chat follow, sub,
+tip, cheer, Kicks, Super Chat and raid lines, command and user filters, message limit, hide-after and animation. Its
+"YouTube popout" layout builds YouTube popout chat's elements (`yt-live-chat-text-message-renderer` with
+`author-type`, `#author-photo`, `yt-live-chat-author-chip`, `#author-name` with owner/moderator/member classes,
+`#chat-badges`, `#message` with `img.emoji`), so YouTube chat CSS themes pasted into My CSS restyle chat from every
+platform. This follows YouTube's popout structure as themes target it; themes relying on other parts of YouTube's page
+may need adjusting.
+
+Chat events also carry `data.avatar` (YouTube and Kick profile pictures) and `data.pronouns` (Twitch chatters with
+pronouns on alejo.io; read from Cuebot's cache, a chatter's first message starts the lookup and later ones carry it).
+
 ### Widget editor (`/edit/...`, `OverlayEditor`)
 
 Opened from the Overlays page ("Edit…") with the editor token (`overlays.editorToken` in servers.json, a secret,
