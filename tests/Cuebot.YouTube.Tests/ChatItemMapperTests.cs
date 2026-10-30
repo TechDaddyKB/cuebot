@@ -224,6 +224,15 @@ public sealed class ChatItemMapperTests
         var closed = Single(Poll("closed", 3, 5), YouTubeEventTypes.PollClosed);
         Assert.Equal("Pear", closed.Args["pollWinningChoice"]);
         Assert.Equal(5L, closed.Args["pollWinningVotes"]);
+
+        // As overlay poll states: open while running, the winner once closed.
+        var adapter = new YouTubePollAdapter();
+        var live = adapter.ToPoll(updated)!;
+        Assert.Equal(("youtube", "poll1", "Best fruit?", "active", -1), (live.Source, live.Id, live.Title, live.Status, live.Winner));
+        Assert.Equal([3L, 1], live.Choices.Select(c => c.Votes));
+        var result = adapter.ToPoll(closed)!;
+        Assert.Equal(("ended", 1), (result.Status, result.Winner));
+        Assert.Null(adapter.ToPoll(new Cuebot.Core.Events.BotEvent("youtube.chatMessage", new Dictionary<string, object?>())));
     }
 
     [Fact]

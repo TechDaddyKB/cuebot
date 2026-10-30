@@ -451,6 +451,33 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.Equal(404, (await _host.GetAsync("/api/v1/globals/score")).Status);
     }
 
+    // ---- polls ----
+
+    [Fact]
+    public async Task Chat_polls_are_started_voted_and_ended_over_the_api()
+    {
+        var (status, started) = await _host.PostAsync("/api/v1/polls", new { title = "Next game?", choices = new[] { "Horror", "Racing" }, duration = 0 });
+        Assert.Equal(200, status);
+        Assert.Equal(("cuebot", "active", "!vote"), (started!["source"]!.GetValue<string>(), started["status"]!.GetValue<string>(),
+            started["command"]!.GetValue<string>()));
+        Assert.Equal(409, (await _host.PostAsync("/api/v1/polls", new { title = "Again", choices = new[] { "A", "B" } })).Status);
+        Assert.Equal(400, (await _host.PostAsync("/api/v1/predictions/resolve", new { winner = "x" })).Status);
+
+        Bot.Bus.Publish(new BotEvent(Cuebot.Core.Chat.ChatHub.MessageEvent, new Dictionary<string, object?>
+        {
+            ["platform"] = "Kick", ["user"] = "Bob", ["userId"] = "b1", ["message"] = "!vote racing",
+        }));
+        var (_, polls) = await _host.GetAsync("/api/v1/polls");
+        Assert.Equal(1, polls!["polls"]![0]!["choices"]![1]!["votes"]!.GetValue<int>());
+
+        var (_, ended) = await _host.PostAsync("/api/v1/polls/end", new { });
+        Assert.Equal(("ended", 1), (ended!["status"]!.GetValue<string>(), ended["winner"]!.GetValue<int>()));
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/polls/end", new { })).Status);
+        // Predictions take Cuebot points; this test bot has none.
+        Assert.Equal(409, (await _host.PostAsync("/api/v1/predictions", new { title = "Win?", outcomes = new[] { "Yes", "No" } })).Status);
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/predictions/cancel", new { })).Status);
+    }
+
     // ---- speech and alert queues ----
 
     [Fact]

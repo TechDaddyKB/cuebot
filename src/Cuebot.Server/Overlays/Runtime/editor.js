@@ -302,6 +302,7 @@
         recents: previewDoc.recents || [],
         session: { data: previewDoc.session || {}, settings: { autoReset: true, calendar: true, resetOnStart: false } },
         overlay: { isEditorMode: true, muted: false },
+        polls: previewDoc.polls || [],
         emulated: true
       }
     });

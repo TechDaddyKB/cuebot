@@ -162,6 +162,24 @@ public sealed class ServerServices
 
     private Cuebot.Core.Overlays.OverlayAlertQueue? _alertQueue;
 
+    /// <summary>The latest poll and prediction from each source (sent to overlay pages when they connect).</summary>
+    public Cuebot.Core.Polls.PollTracker? Polls
+    {
+        get => _polls ??= _provider?.GetService<Cuebot.Core.Polls.PollTracker>();
+        init => _polls = value;
+    }
+
+    private Cuebot.Core.Polls.PollTracker? _polls;
+
+    /// <summary>Cuebot's own chat polls and predictions.</summary>
+    public Cuebot.Core.Polls.ChatPolls? ChatPolls
+    {
+        get => _chatPolls ??= _provider?.GetService<Cuebot.Core.Polls.ChatPolls>();
+        init => _chatPolls = value;
+    }
+
+    private Cuebot.Core.Polls.ChatPolls? _chatPolls;
+
     /// <summary>Stream totals sent to overlay pages when they connect.</summary>
     public Cuebot.Core.Overlays.Session.SessionDataStore? SessionData
     {

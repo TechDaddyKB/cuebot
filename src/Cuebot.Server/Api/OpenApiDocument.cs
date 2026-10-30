@@ -126,6 +126,30 @@ public static class OpenApiDocument
                     [Query("limit", "Maximum runs (default 50)", Int()), Query("action", "Only this action (id or name)"), Query("includeArgs", "Include the arguments", Bool())],
                     responses: Ok(Obj(("runs", Arr(Ref("Run"))), ("count", Int())))),
             },
+            ["/polls"] = new JsonObject
+            {
+                ["get"] = Op("getPolls", "Polls", "The latest poll and prediction from each source (twitch, youtube, cuebot) and Cuebot's vote and bet commands",
+                    responses: Ok(Obj(("polls", Arr(Ref("Poll"))), ("voteCommand", Str()), ("betCommand", Str())))),
+                ["post"] = Op("startChatPoll", "Polls", "Start a Cuebot chat poll, voted with the vote command on every platform (duration 0: until ended)",
+                    body: Obj(("title", Str()), ("choices", Arr(Str())), ("duration", Int())),
+                    responses: Responses(("200", "Started", Ref("Poll")), Bad(), Err("409", "A chat poll is already running"))),
+            },
+            ["/polls/end"] = new JsonObject
+            {
+                ["post"] = Op("endChatPoll", "Polls", "End the running Cuebot chat poll", responses: Responses(("200", "Ended", Ref("Poll")), NotFound())),
+            },
+            ["/predictions"] = new JsonObject
+            {
+                ["post"] = Op("startChatPrediction", "Polls", "Start a Cuebot prediction: viewers bet Cuebot points with the bet command (window 0: until locked)",
+                    body: Obj(("title", Str()), ("outcomes", Arr(Str())), ("window", Int()), ("currency", Str())),
+                    responses: Responses(("200", "Started", Ref("Poll")), Bad(), Err("409", "A prediction is still open, or points are not available"))),
+            },
+            ["/predictions/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("command", "lock, resolve (body {winner: number from 1 or title}) or cancel (refunds every bet)")),
+                ["post"] = Op("controlChatPrediction", "Polls", "Lock, resolve or cancel the Cuebot prediction", body: Obj(("winner", Str())),
+                    responses: Responses(("200", "OK", Ref("Poll")), Bad(), NotFound())),
+            },
             ["/speech"] = new JsonObject
             {
                 ["get"] = Op("getSpeech", "Speech", "Cuebot speech's state", responses: Responses(("200", "OK", SpeechState()), Err("503", "Speech is not available"))),
@@ -222,6 +246,10 @@ public static class OpenApiDocument
     private static JsonObject Schemas() => new()
     {
         ["Error"] = Obj(("error", Str()), ("details", Arr(Ref("Problem")))),
+        ["Poll"] = Obj(("source", Str("twitch, youtube or cuebot")), ("kind", Str("poll or prediction")), ("id", Str()), ("title", Str()),
+            ("status", Str("active, locked, ended or canceled")),
+            ("choices", Arr(Obj(("id", Str()), ("title", Str()), ("votes", Int()), ("points", Int()), ("percent", new JsonObject { ["type"] = "number" })))),
+            ("winner", Int()), ("endsAt", Str()), ("totalVotes", Int()), ("totalPoints", Int()), ("currency", Str()), ("command", Str())),
         ["Problem"] = Obj(("path", Str()), ("message", Str())),
         ["Deleted"] = Obj(("deleted", Bool()), ("id", Str()), ("name", Str())),
         ["Status"] = Obj(("app", Obj(("name", Str()), ("version", Str()), ("runtime", Str()), ("os", Str()), ("instanceId", Str()), ("apiVersion", Str()))),

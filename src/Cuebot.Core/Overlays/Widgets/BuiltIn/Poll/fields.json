@@ -1,0 +1,23 @@
+{
+  "source": { "type": "dropdown", "label": "Polls from", "value": "any", "group": "What it shows",
+    "options": { "any": "Any platform", "cuebot": "Cuebot chat polls (every platform)", "twitch": "Twitch", "youtube": "YouTube" } },
+  "show": { "type": "dropdown", "label": "Show", "value": "both", "group": "What it shows",
+    "options": { "both": "Polls and predictions", "poll": "Polls only", "prediction": "Predictions only" } },
+  "hideAfter": { "type": "number", "label": "Keep the result up for (seconds, 0 = until the next one)", "value": 20, "min": 0, "max": 3600, "group": "What it shows" },
+  "numbers": { "type": "dropdown", "label": "Numbers", "value": "both", "group": "What it shows",
+    "options": { "both": "Votes and percent", "votes": "Votes (points for predictions)", "percent": "Percent", "none": "None" } },
+  "showTimer": { "type": "checkbox", "label": "Show the time left", "value": true, "group": "What it shows" },
+  "showHint": { "type": "checkbox", "label": "Show how to vote or bet (Cuebot chat polls)", "value": true, "group": "What it shows" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Question size", "value": 28, "min": 12, "max": 80, "step": 1, "group": "Look" },
+  "textSize": { "type": "slider", "label": "Choice size", "value": 20, "min": 10, "max": 60, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Background", "value": "rgba(16, 18, 24, 0.82)", "group": "Look" },
+  "barColor": { "type": "colorpicker", "label": "Poll bar colour", "value": "#9146ff", "group": "Look" },
+  "barColor2": { "type": "colorpicker", "label": "Second prediction outcome colour", "value": "#f5009b", "group": "Look" },
+  "predictionColor": { "type": "colorpicker", "label": "First prediction outcome colour", "value": "#387aff", "group": "Look" },
+  "winnerColor": { "type": "colorpicker", "label": "Winner colour", "value": "#2bd576", "group": "Look" },
+  "trackColor": { "type": "colorpicker", "label": "Bar track colour", "value": "rgba(255, 255, 255, 0.12)", "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 14, "min": 0, "max": 40, "step": 1, "group": "Look" }
+}

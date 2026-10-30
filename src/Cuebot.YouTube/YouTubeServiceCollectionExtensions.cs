@@ -29,6 +29,7 @@ public static class YouTubeServiceCollectionExtensions
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<YouTubeService>());
         services.AddSingleton<IChatEventAdapter, YouTubeChatAdapter>();
         services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, YouTubeOverlayAdapter>();
+        services.AddSingleton<Cuebot.Core.Polls.IPollAdapter, YouTubePollAdapter>();
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new YouTubeChatModerator(sp.GetRequiredService<YouTubeService>()));
         services.AddSingleton<IChatSender, YouTubeChatSender>();
         services.AddSingleton<ITriggerProvider, YouTubeTriggers>();

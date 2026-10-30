@@ -50,7 +50,7 @@ internal sealed class TestBot : IAsyncDisposable
             Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
             Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
-            AlertQueue = AlertQueue,
+            AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -81,6 +81,12 @@ internal sealed class TestBot : IAsyncDisposable
     public Cuebot.Core.Overlays.Events.OverlayEventBridge OverlayBridge => _overlayBridge ??= new(Bus, OverlayFeed, [], Log);
     private Cuebot.Core.Overlays.Events.OverlayEventBridge? _overlayBridge;
     public Cuebot.Core.Overlays.OverlayAlertQueue AlertQueue => _alertQueue ??= new(OverlayFeed);
+    public Cuebot.Core.Polls.PollTracker Polls => _polls ??= new(Bus, OverlayFeed, [], Log);
+    private Cuebot.Core.Polls.PollTracker? _polls;
+
+    /// <summary>Cuebot chat polls, without points (predictions answer that points are needed).</summary>
+    public Cuebot.Core.Polls.ChatPolls ChatPolls => _chatPolls ??= new(null, Log, Bus, Polls);
+    private Cuebot.Core.Polls.ChatPolls? _chatPolls;
     private Cuebot.Core.Overlays.OverlayAlertQueue? _alertQueue;
     public Cuebot.Core.Overlays.OverlayFeed OverlayFeed => _overlayFeed ??= new Cuebot.Core.Overlays.OverlayFeed(Log);
     private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;

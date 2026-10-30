@@ -315,7 +315,7 @@ public sealed class OverlayServer : IAsyncDisposable
         var connection = new WebSocketConnection(socket, $"{context.Connection.RemoteIpAddress}:{context.Connection.RemotePort}");
         using var client = new OverlayClient(overlay.Id, connection);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopping.Token, context.RequestAborted);
-        client.Outbox.Enqueue(Hello(overlay, _services.SessionData, _services.AlertQueue));
+        client.Outbox.Enqueue(Hello(overlay, _services.SessionData, _services.AlertQueue, _services.Polls));
         _clients[connection.Id] = client;
         ClientsChanged?.Invoke();
         var sending = client.SendLoopAsync(linked.Token);
@@ -336,10 +336,11 @@ public sealed class OverlayServer : IAsyncDisposable
 
     /// <summary>
     /// The overlay, plus the current stream totals and recent alerts (StreamElements' <c>session.data</c> and
-    /// <c>recents</c>) and whether the alert queue is paused or muted (<c>alerts {paused, muted}</c>).
+    /// <c>recents</c>), whether the alert queue is paused or muted (<c>alerts {paused, muted}</c>) and the latest poll
+    /// and prediction from each source (<c>polls</c>).
     /// </summary>
     private static OverlayMessage Hello(Overlay overlay, Cuebot.Core.Overlays.Session.SessionDataStore? session,
-        OverlayAlertQueue? alerts) => new(new JsonObject
+        OverlayAlertQueue? alerts, Cuebot.Core.Polls.PollTracker? polls) => new(new JsonObject
     {
         ["type"] = "hello",
         ["overlay"] = new JsonObject
@@ -352,6 +353,7 @@ public sealed class OverlayServer : IAsyncDisposable
         ["session"] = session?.Snapshot() ?? new JsonObject(),
         ["recents"] = session?.Recents() ?? new JsonArray(),
         ["alerts"] = alerts?.Snapshot() ?? new JsonObject { ["paused"] = false, ["muted"] = false },
+        ["polls"] = polls?.Snapshot() ?? new JsonArray(),
     }.ToJsonString(), overlay.Id);
 
     /// <summary>

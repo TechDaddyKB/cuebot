@@ -331,6 +331,18 @@ public sealed class EventSubMapperExtendedTests
         Assert.Equal("No!", e.Args["choice1Title"]);
         Assert.Equal(26, e.Args["totalVotes"]);
         Assert.Equal("No!", e.Args["winningChoice"]);
+
+        // The overlay poll state: open while running, the winner once it ends; archived polls are not shown.
+        var poll = new TwitchPollAdapter().ToPoll(e);
+        if (expected == TwitchEventTypes.PollArchived)
+        {
+            Assert.Null(poll);
+            return;
+        }
+        var open = expected is TwitchEventTypes.PollCreated or TwitchEventTypes.PollUpdated;
+        Assert.Equal(("twitch", Cuebot.Core.Polls.PollState.Poll, open ? "active" : "ended", open ? -1 : 1),
+            (poll!.Source, poll.Kind, poll.Status, poll.Winner));
+        Assert.Equal([12L, 14], poll.Choices.Select(c => c.Votes));
     }
 
     private const string Outcomes =
@@ -351,6 +363,17 @@ public sealed class EventSubMapperExtendedTests
         Assert.Equal(14, e.Args["totalUsers"]);
         Assert.Equal(17000, e.Args["totalChannelPoints"]);
         Assert.Equal("No!", e.Args["winningOutcome"]);
+
+        var prediction = new TwitchPollAdapter().ToPoll(e)!;
+        var shown = expected switch
+        {
+            TwitchEventTypes.PredictionLocked => "locked",
+            TwitchEventTypes.PredictionCompleted => "ended",
+            TwitchEventTypes.PredictionCanceled => "canceled",
+            _ => "active",
+        };
+        Assert.Equal((Cuebot.Core.Polls.PollState.Prediction, shown, 1, 15000L), (prediction.Kind, prediction.Status, prediction.Winner, prediction.Choices[0].Points));
+        Assert.Equal(new DateTimeOffset(2020, 7, 15, 17, 21, 3, TimeSpan.Zero), prediction.EndsAt!.Value.AddTicks(-prediction.EndsAt.Value.Ticks % TimeSpan.TicksPerSecond));
     }
 
     // ---------------------------------------------------------------- hype train, goals, charity

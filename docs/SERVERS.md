@@ -239,6 +239,34 @@ Engagement widgets (phase 5a), built the same way:
   in the widget store (`cuebot-hypeboss:{name}`). Several pages showing the same cup or fight each apply the same
   events and save the same result.
 
+### Polls and predictions (`Cuebot.Core/Polls`, phase 5b)
+
+`PollTracker` keeps the latest poll and prediction from each source in one shape (`PollState`: `{source: twitch |
+youtube | cuebot, kind: poll | prediction, id, title, status: active | locked | ended | canceled, choices: [{id, title,
+votes, points, percent}], winner, endsAt, totalVotes, totalPoints, currency, command}`). Twitch (EventSub polls and
+predictions) and YouTube (live chat polls) report through `IPollAdapter`s. Every change goes to overlay pages as the
+`cuebot-poll` event (never held by the alert queue; vote counts while open may be dropped for a slow page, final states
+never are), and pages get the current ones in their hello (`polls`) and widgets in `onWidgetLoad`'s `polls`.
+
+`ChatPolls` runs Cuebot's own, for every platform's chat (Kick and Rumble have none of their own), kept in
+chat-polls.json:
+
+- **Chat polls**: `!vote 2` or `!vote choice title` (the last vote counts; a bare number votes too when turned on);
+  2 to 10 choices; ends after its seconds (or 0: when ended). Starting one while one runs is refused.
+- **Predictions with Cuebot points**: `!bet outcome amount` (or `all`) takes the points; one side per viewer (more on
+  the same side adds up); bets close after the window or when locked. Resolving pays each winner their share of the
+  whole pot (pot × bet ÷ winning bets, rounded down, never less than the bet); cancelling refunds every bet. Bets are
+  saved, so a restart keeps them.
+- Controlled from the Overlays page ("Chat poll and prediction"), the Polls sub-actions ("Start chat poll", "End chat
+  poll", "Start chat prediction", "Lock, resolve or cancel chat prediction"), and the REST API (`GET /polls`,
+  `POST /polls`, `POST /polls/end`, `POST /predictions`, `POST /predictions/{lock, resolve, cancel}`). Triggers: chat
+  poll started and ended, chat prediction started, locked, resolved and cancelled (`cuebot.*` events with the title,
+  choices or outcomes, votes, points and winner).
+
+The **Poll and prediction** widget shows the running poll or prediction from any source or one (polls, predictions or
+both): bars with votes, percent and points, the time left, how to vote for Cuebot polls, and the winner; it hides a
+set time after the end.
+
 The widget editor's preview loads the real stream totals and recent alerts (`session`, `recents` in the preview
 answer), so these preview with live numbers.
 
@@ -523,6 +551,8 @@ JSON shapes are those of actions.json / commands.json (camelCase, enums as strin
 | `POST /timers/{id}/state` `{enabled, intervalSeconds}` | runtime override (like "Set timer state", not saved) |
 | `GET /globals?persisted=`, `GET` / `PUT` / `DELETE /globals/{name}` | PUT `{value, persisted (default true)}` |
 | `GET /history?limit=&action=&includeArgs=` | recent and pending runs, newest first |
+| `GET /polls`, `POST /polls` `{title, choices, duration}`, `POST /polls/end` | latest poll and prediction per source; start or end a Cuebot chat poll (409 while one runs) |
+| `POST /predictions` `{title, outcomes, window, currency}`, `POST /predictions/{lock, resolve, cancel}` `{winner}` | Cuebot predictions with points (409 without points or while one is open; resolve takes the winner's number from 1 or title) |
 | `GET /speech`, `POST /speech/{next, pause, resume, skip}` | speech state `{enabled, paused, queueLength, current}`; `next` stops the text playing and, while paused, lets exactly one waiting text play (`stepped` says whether anything happened): pause, then call `next` to step through the queue one text at a time |
 | `GET /alerts`, `POST /alerts/{pause, resume, skip, mute, unmute}` | overlay alert queue `{paused, muted}` |
 | `GET /chat?limit=`, `POST /chat` `{message, platform (default All)}` | combined chat + activity feed / send (409 when nothing can send) |

@@ -34,6 +34,7 @@ public static class BuiltInWidgets
         new("emoterain", "Emote rain", "EmoteRain"),
         new("hypecup", "Hype cup", "HypeCup"),
         new("hypeboss", "Hype boss", "HypeBoss"),
+        new("poll", "Poll and prediction", "Poll"),
     ];
 
     /// <summary>A built-in widget's code by kind id (see <see cref="Kinds"/>), or null for an unknown kind.</summary>

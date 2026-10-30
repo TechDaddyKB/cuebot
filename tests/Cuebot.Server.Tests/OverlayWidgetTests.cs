@@ -126,6 +126,10 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
         await using var client = await WsClient.ConnectAsync(_bot.Manager.Overlays.Port, $"/o/{_overlay.Id}/ws?token={Token}");
         var hello = await client.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
         Assert.Equal((false, true), (hello["alerts"]!["paused"]!.GetValue<bool>(), hello["alerts"]!["muted"]!.GetValue<bool>()));
+        Assert.Empty(hello["polls"]!.AsArray());
+        _bot.ChatPolls.StartPoll("Snack?", ["Chips", "Fruit"], 0);
+        var poll = await client.NextAsync(m => m["listener"]?.GetValue<string>() == "cuebot-poll");
+        Assert.Equal("Snack?", poll["event"]!["title"]!.GetValue<string>());
 
         async Task<JsonObject> Ask(string id, OverlayLayer layer, string text)
         {

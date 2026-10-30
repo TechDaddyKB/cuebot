@@ -259,6 +259,23 @@ public sealed class ApiServer : IAsyncDisposable
                 result = ops.History(QInt("limit", 50), Q("action"), QBool("includeArgs") ?? false);
                 break;
 
+            case "polls" when s.Length == 1 && method == "GET": result = ops.Polls(); break;
+            case "polls" when s.Length == 1 && method == "POST":
+                result = ops.ChatPollCommand("startPoll", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
+                break;
+            case "polls" when s.Length == 2 && method == "POST" && s[1].Equals("end", StringComparison.OrdinalIgnoreCase):
+                result = ops.ChatPollCommand("endPoll", []);
+                break;
+            case "predictions" when s.Length == 1 && method == "POST":
+                result = ops.ChatPollCommand("startPrediction", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
+                break;
+            case "predictions" when s.Length == 2 && method == "POST":
+            {
+                var command = s[1].ToLowerInvariant();   // anything else answers 404 with the known commands
+                result = ops.ChatPollCommand(command is "lock" or "resolve" or "cancel" ? command : "unknown " + command,
+                    await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
+                break;
+            }
             case "speech" when s.Length == 1 && method == "GET": result = ops.Speech(); break;
             case "speech" when s.Length == 2 && method == "POST": result = ops.SpeechControl(s[1]); break;
             case "alerts" when s.Length == 1 && method == "GET": result = ops.Alerts(); break;
@@ -304,7 +321,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "speech", "alerts", "chat", "import", "export", "events"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);

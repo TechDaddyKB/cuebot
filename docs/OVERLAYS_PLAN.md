@@ -15,8 +15,8 @@ REST API, MCP), a "Show alert" sub-action, and Speak next for the speech queue (
 time from the Speech page, the "Speak next in queue" sub-action for Stream Deck keys, the REST API and MCP; built
 2026-10-30). Phase 3 is done. Phase 4 (labels with latest, totals, top donation and donator and recent names; goal
 bars including revenue; event list; credits roll; countdown; built 2026-10-30) is done. Phase 5 split: 5a emote rain,
-hype cup and hype boss (built 2026-10-30); 5b polls and predictions (Twitch and YouTube native, a Cuebot chat poll for
-Kick, Rumble and every platform) is next; then 5c giveaways and contests, media requests and store redemptions as
+hype cup and hype boss (built 2026-10-30); 5b polls and predictions (Twitch and YouTube native, Cuebot chat polls and
+points predictions for every platform, the Poll and prediction widget; built 2026-10-30); next 5c giveaways and contests, media requests and store redemptions as
 Cuebot features; 5d the StreamElements-account widgets (merch, charity, seasonal). Details in docs/SERVERS.md.
 
 ## Goal

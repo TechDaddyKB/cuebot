@@ -40,6 +40,46 @@
       </Grid>
     </Border>
 
+    <!-- Cuebot chat polls and predictions -->
+    <Expander DockPanel.Dock="Top" Header="Chat poll and prediction (every platform)" Margin="0,0,0,8" HorizontalAlignment="Stretch"
+              IsVisible="{Binding HasPolls}">
+      <StackPanel Spacing="8" DataContext="{Binding Polls}" x:DataType="vm:ChatPollPanelViewModel">
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Commands}" />
+        <Grid ColumnDefinitions="*,16,*">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Poll" FontWeight="SemiBold" />
+            <TextBox Text="{Binding PollTitle}" PlaceholderText="Question" />
+            <TextBox Text="{Binding PollChoices}" PlaceholderText="Choices, one per line" AcceptsReturn="True" MinHeight="72" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <NumericUpDown Value="{Binding PollSeconds}" Minimum="0" Maximum="3600" FormatString="0" Width="120"
+                             ToolTip.Tip="Seconds it runs (0: until you end it)" />
+              <Button Content="Start poll" Classes="accent" Command="{Binding StartPollCommand}" IsEnabled="{Binding !PollRunning}" />
+              <Button Content="End poll" Command="{Binding EndPollCommand}" IsEnabled="{Binding PollRunning}" />
+            </StackPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="6">
+            <TextBlock Text="Prediction (Cuebot points)" FontWeight="SemiBold" />
+            <TextBox Text="{Binding PredictionTitle}" PlaceholderText="Question" />
+            <TextBox Text="{Binding PredictionOutcomes}" PlaceholderText="Outcomes, one per line" AcceptsReturn="True" MinHeight="72" />
+            <WrapPanel>
+              <NumericUpDown Value="{Binding PredictionSeconds}" Minimum="0" Maximum="3600" FormatString="0" Width="120" Margin="0,0,6,6"
+                             ToolTip.Tip="Seconds taking bets (0: until you lock it)" />
+              <Button Content="Start" Classes="accent" Command="{Binding StartPredictionCommand}" IsEnabled="{Binding CanStartPrediction}" Margin="0,0,6,6" />
+              <Button Content="Lock bets" Command="{Binding LockPredictionCommand}" IsEnabled="{Binding CanLock}" Margin="0,0,6,6" />
+              <ComboBox ItemsSource="{Binding Outcomes}" SelectedItem="{Binding Winner}" PlaceholderText="Winner" MinWidth="120"
+                        IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6" />
+              <Button Content="Pay out" Command="{Binding ResolvePredictionCommand}" IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6"
+                      ToolTip.Tip="Winners share the whole pot in proportion to their bets" />
+              <Button Content="Cancel" Command="{Binding CancelPredictionCommand}" IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6"
+                      ToolTip.Tip="Refund every bet" />
+            </WrapPanel>
+          </StackPanel>
+        </Grid>
+        <TextBlock Text="{Binding Message}" Classes="muted" TextWrapping="Wrap"
+                   IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Expander>
+
     <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,0,0,6" TextWrapping="Wrap"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
@@ -89,6 +129,8 @@
                                 ToolTip.Tip="Follows, subs, bits, Kicks and tips fill a cup with balls" />
                       <MenuItem Header="Hype boss" Command="{Binding AddBuiltInCommand}" CommandParameter="hypeboss"
                                 ToolTip.Tip="Support damages the boss; the final hit makes you the next boss" />
+                      <MenuItem Header="Poll and prediction" Command="{Binding AddBuiltInCommand}" CommandParameter="poll"
+                                ToolTip.Tip="Twitch and YouTube polls and predictions, and Cuebot chat polls on every platform" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>

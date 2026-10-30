@@ -213,6 +213,7 @@ public sealed class WidgetCodeTests : IDisposable
     [InlineData("emoterain", "emotes")]
     [InlineData("hypecup", "cuebot-hypecup:")]
     [InlineData("hypeboss", "cuebot-hypeboss:")]
+    [InlineData("poll", "cuebot-poll")]
     public void Labels_goals_and_lists_ship_complete(string kind, string uses)
     {
         var widget = BuiltInWidgets.For(kind)!;
@@ -249,6 +250,9 @@ public sealed class WidgetCodeTests : IDisposable
         var cup = library.AddBuiltIn(hd.Id, "hypecup")!;
         Assert.Equal((1560.0, 540.0, 320.0, 500.0), (cup.X, cup.Y, cup.Width, cup.Height));
         Assert.Equal((0.0, 1920.0), (library.AddBuiltIn(hd.Id, "emoterain")!.X, library.AddBuiltIn(hd.Id, "emoterain")!.Width));
+
+        var poll = library.AddBuiltIn(hd.Id, "poll")!;
+        Assert.Equal(("Poll and prediction", 40.0, 350.0, 560.0, 380.0), (poll.Name, poll.X, poll.Y, poll.Width, poll.Height));
 
         Assert.Null(library.AddBuiltIn(hd.Id, "alertbox"));   // has its own method
         Assert.Null(library.AddBuiltIn(Guid.NewGuid(), "label"));

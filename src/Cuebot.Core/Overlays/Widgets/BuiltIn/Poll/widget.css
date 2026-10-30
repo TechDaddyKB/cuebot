@@ -1,0 +1,45 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --title: {{titleSize}}px;
+  --text-size: {{textSize}}px;
+  --text: {{textColor}};
+  --bg: {{background}};
+  --bar: {{barColor}};
+  --bar2: {{barColor2}};
+  --prediction: {{predictionColor}};
+  --winner: {{winnerColor}};
+  --track: {{trackColor}};
+  --radius: {{radius}}px;
+}
+
+.poll {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  overflow: hidden;
+  transition: opacity 0.5s, transform 0.5s;
+}
+.poll.hidden { opacity: 0; transform: translateY(16px); }
+.poll .head { display: flex; align-items: baseline; gap: 12px; }
+.poll .title { flex: 1; font-size: var(--title); font-weight: 900; line-height: 1.15; }
+.poll .status { font-size: calc(var(--text-size) * 0.8); opacity: 0.85; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.poll .choices { display: flex; flex-direction: column; gap: 8px; }
+.poll .choice { position: relative; border-radius: calc(var(--radius) * 0.6); background: var(--track); overflow: hidden; }
+.poll .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--bar); opacity: 0.85; transition: width 0.6s ease-out; }
+.poll.prediction .choice:nth-child(1) .fill { background: var(--prediction); }
+.poll.prediction .choice:nth-child(2) .fill { background: var(--bar2); }
+.poll .choice.winner .fill { background: var(--winner); }
+.poll .row { position: relative; display: flex; justify-content: space-between; gap: 12px; padding: 0.35em 0.7em;
+  font-size: var(--text-size); font-weight: 700; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+.poll .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.poll .numbers { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.poll .choice.loser { opacity: 0.55; }
+.poll .hint { font-size: calc(var(--text-size) * 0.8); opacity: 0.85; }
+.poll .hint:empty { display: none; }

@@ -90,6 +90,50 @@ public sealed class OverlaysPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void The_chat_poll_panel_runs_polls_and_predictions()
+    {
+        var polls = _services.GetRequiredService<Cuebot.Core.Polls.ChatPolls>();
+        var points = _services.GetRequiredService<Cuebot.Core.Points.PointsService>();
+        var panel = new ChatPollPanelViewModel(polls, _services.GetRequiredService<Cuebot.Core.Polls.PollTracker>());
+        var vm = new OverlaysViewModel(Store, Servers, polls: panel);
+        var window = Open(new OverlaysView(), vm);
+        Assert.True(vm.HasPolls);
+
+        panel.PollTitle = "Next game?";
+        panel.PollChoices = "Horror\nRacing";
+        panel.PollSeconds = 0;
+        panel.StartPollCommand.Execute(null);
+        Pump();
+        Assert.True(panel.PollRunning);
+        Assert.Equal("Poll started; end it when you are ready.", panel.Message);
+        panel.StartPollCommand.Execute(null);
+        Assert.Contains("already running", panel.Message);
+        panel.EndPollCommand.Execute(null);
+        Pump();
+        Assert.False(panel.PollRunning);
+
+        points.Add("Twitch", "a1", "Ann", 100);
+        panel.PredictionTitle = "Win?";
+        panel.PredictionOutcomes = "Yes\nNo";
+        panel.StartPredictionCommand.Execute(null);
+        Pump();
+        Assert.Equal(["Yes", "No"], panel.Outcomes);
+        Assert.True(panel.CanLock);
+        panel.ResolvePredictionCommand.Execute(null);
+        Assert.Equal("Pick the winning outcome first.", panel.Message);
+        panel.LockPredictionCommand.Execute(null);
+        Pump();
+        Assert.False(panel.CanLock);
+        panel.Winner = "No";
+        panel.ResolvePredictionCommand.Execute(null);
+        Pump();
+        Assert.False(panel.PredictionOpen);
+        Assert.Equal("\"No\" won; winners have been paid.", panel.Message);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Overlays_are_created_renamed_relinked_and_deleted()
     {
         var vm = new OverlaysViewModel(Store, Servers);

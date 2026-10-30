@@ -132,9 +132,11 @@ public sealed partial class OverlaysViewModel : PageViewModel
     /// <summary>Design-time and tests without services.</summary>
     public OverlaysViewModel() : base(PageTitle) => _newCanvas = Presets[0];
 
-    public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null, OverlayAlertQueue? alerts = null)
+    public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null, OverlayAlertQueue? alerts = null,
+        ChatPollPanelViewModel? polls = null)
         : base(PageTitle)
     {
+        Polls = polls;
         _store = store;
         _servers = servers;
         _widgets = widgets;
@@ -159,6 +161,11 @@ public sealed partial class OverlaysViewModel : PageViewModel
     public ObservableCollection<OverlayRowViewModel> Overlays { get; } = [];
 
     public bool HasAlertQueue => _alerts is not null;
+
+    /// <summary>Cuebot chat polls and predictions (null when not available).</summary>
+    public ChatPollPanelViewModel? Polls { get; }
+
+    public bool HasPolls => Polls is not null;
 
     /// <summary>Alerts on every overlay wait (the one playing finishes) until resumed.</summary>
     public bool AlertsPaused

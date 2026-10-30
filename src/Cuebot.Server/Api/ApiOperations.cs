@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
+using Cuebot.Core.Polls;
 using Cuebot.Core.Chat;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Storage;
@@ -595,6 +596,59 @@ public sealed class ApiOperations(ServerServices services, Func<IReadOnlyList<Se
             || !Cuebot.Core.Overlays.AlertQueueSubAction.Apply(queue, command))
             throw ApiException.NotFound($"Unknown alert command '{command}' (pause, resume, skip, mute or unmute)");
         return queue.Snapshot();
+    }
+
+    /// <summary>The latest poll and prediction from each source, and Cuebot's chat commands for voting and betting.</summary>
+    public JsonObject Polls()
+    {
+        var tracker = services.Polls ?? throw ApiException.Unavailable("Polls are not available");
+        return new JsonObject
+        {
+            ["polls"] = tracker.Snapshot(),
+            ["voteCommand"] = services.ChatPolls?.VoteCommand ?? "",
+            ["betCommand"] = services.ChatPolls?.BetCommand ?? "",
+        };
+    }
+
+    /// <summary>
+    /// Cuebot chat polls and predictions: <c>startPoll {title, choices, duration}</c>, <c>endPoll</c>,
+    /// <c>startPrediction {title, outcomes, window, currency}</c>, <c>lock</c>, <c>resolve {winner}</c> (number from 1 or
+    /// title) and <c>cancel</c>. Returns the new state; 404 when there was nothing to end, lock, resolve or cancel.
+    /// </summary>
+    public JsonObject ChatPollCommand(string command, JsonObject body)
+    {
+        var polls = services.ChatPolls ?? throw ApiException.Unavailable("Polls are not available");
+        static string Text(JsonNode? node) => node is JsonValue v && v.TryGetValue<string>(out var s) ? s : node?.ToJsonString() ?? "";
+        static IEnumerable<string> List(JsonNode? node) => node switch
+        {
+            JsonArray a => a.Select(Text),
+            JsonValue v when v.TryGetValue<string>(out var s) => s.Split('\n'),
+            _ => [],
+        };
+        static int Int(JsonNode? node, int fallback) => node is JsonValue v && v.TryGetValue<double>(out var d) ? (int)d : fallback;
+        try
+        {
+            var state = command switch
+            {
+                "startPoll" => polls.StartPoll(Text(body["title"]), List(body["choices"]), Int(body["duration"], 60)),
+                "endPoll" => polls.EndPoll(),
+                "startPrediction" => polls.StartPrediction(Text(body["title"]), List(body["outcomes"]), Int(body["window"], 120), Text(body["currency"])),
+                "lock" => polls.LockPrediction(),
+                "resolve" => polls.ResolvePrediction(ChatPolls.Find(polls.PredictionOutcomes, Text(body["winner"])) is var w && w >= 0
+                    ? w : throw new ArgumentException("winner must be an outcome's number (from 1) or title")),
+                "cancel" => polls.CancelPrediction(),
+                _ => throw ApiException.NotFound($"Unknown command '{command.Replace("unknown ", "")}' (lock, resolve or cancel)"),
+            };
+            return state?.ToJson() ?? throw ApiException.NotFound(command == "endPoll" ? "No chat poll is running" : "No chat prediction is open");
+        }
+        catch (ArgumentException ex)
+        {
+            throw ApiException.BadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw ApiException.Conflict(ex.Message);
+        }
     }
 
     public JsonObject Chat(int limit = 50)

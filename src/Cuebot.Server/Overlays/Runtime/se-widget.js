@@ -8,7 +8,8 @@
   // Delivered at once and never held by the queue (as on StreamElements).
   var NOT_QUEUED = {
     "message": true, "delete-message": true, "delete-messages": true, "bot:counter": true, "event": true,
-    "event:test": true, "event:skip": true, "alertService:toggleSound": true, "kvstore:update": true, "widget-button": true
+    "event:test": true, "event:skip": true, "alertService:toggleSound": true, "kvstore:update": true, "widget-button": true,
+    "cuebot-poll": true
   };
 
   var pending = {};
