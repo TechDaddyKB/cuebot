@@ -53,8 +53,10 @@ the subscription.
    and pick the validated identity.
 5. **App registration for GitHub.** In Microsoft Entra ID create an app registration (for example
    `cuebot-github-signing`). Under **Certificates & secrets** > **Federated credentials** add a credential for GitHub
-   Actions: organization `TechDaddyKB`, repository `cuebot`, entity type **Environment**, environment `signing`. The
-   subject is `repo:TechDaddyKB/cuebot:environment:signing`.
+   Actions: organization `TechDaddyKB` (ID `6316740`), repository `cuebot` (ID `1435222275`), entity type
+   **Environment**, environment `signing`. The repository uses GitHub's immutable OIDC subjects, so the subject is
+   `repo:TechDaddyKB@6316740/cuebot@1435222275:environment:signing`; check the current format with
+   `gh api repos/TechDaddyKB/cuebot/actions/oidc/customization/sub`.
 6. **Permission.** On the certificate profile (or the signing account), add a role assignment: role **Artifact Signing
    Certificate Profile Signer**, member the app registration from step 5.
 7. **GitHub.** Create the environment **signing** in the repository and set the variables above on it. Optionally limit
