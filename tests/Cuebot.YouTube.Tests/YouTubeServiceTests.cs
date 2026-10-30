@@ -190,6 +190,27 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Chat_moderator_deletes_while_connected_and_bans_during_a_live_broadcast()
+    {
+        var moderator = new YouTubeChatModerator(_service);
+        Assert.Equal("YouTube", moderator.Platform);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.None, moderator.Available);
+
+        await ConnectLiveAsync();
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.DeleteMessage | Cuebot.Core.Chat.Moderation.ChatModerationActions.Timeout
+                     | Cuebot.Core.Chat.Moderation.ChatModerationActions.Ban, moderator.Available);
+
+        await moderator.TimeoutAsync(Alice, "Alice", TimeSpan.FromMinutes(1), null);
+        await moderator.BanAsync(Alice, "Alice", null);
+        await moderator.DeleteMessageAsync("m1");
+        var bans = _http.To("/liveChat/bans");
+        Assert.Equal(("temporary", 60), (bans[0].Json.GetProperty("snippet").GetProperty("type").GetString(),
+            bans[0].Json.GetProperty("snippet").GetProperty("banDurationSeconds").GetInt32()));
+        Assert.Equal(Alice, bans[1].Json.GetProperty("snippet").GetProperty("bannedUserDetails").GetProperty("channelId").GetString());
+        Assert.Contains(_http.To("/liveChat/messages"), r => r.Method == HttpMethod.Delete && r.Query("id") == "m1");
+    }
+
+    [Fact]
     public async Task Moderation_resolves_recent_chatters_and_lifts_its_own_bans()
     {
         await ConnectLiveAsync();

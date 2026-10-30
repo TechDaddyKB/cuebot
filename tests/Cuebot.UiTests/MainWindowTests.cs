@@ -234,6 +234,18 @@ public sealed class MainWindowTests : IAsyncDisposable
         window.Close();
     }
 
+    [Fact]
+    public void The_app_offers_chat_moderation_for_twitch_youtube_and_kick()
+    {
+        var moderation = _host.Get<Cuebot.Core.Chat.Moderation.ChatModerationService>();
+        foreach (var platform in new[] { "Twitch", "YouTube", "Kick" })
+        {
+            Assert.NotNull(moderation.ModeratorFor(platform));
+            // Nothing is connected in the test host, so nothing is offered yet.
+            Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.None, moderation.AvailableFor(platform));
+        }
+    }
+
     /// <summary>"Users &amp; Groups" → "users-groups".</summary>
     internal static string FileName(string title)
     {

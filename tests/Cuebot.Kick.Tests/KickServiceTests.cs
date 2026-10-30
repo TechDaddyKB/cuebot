@@ -303,6 +303,28 @@ public sealed class KickServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Chat_moderator_offers_the_granted_scopes_while_connected_and_bans_by_user_id()
+    {
+        var moderator = new KickChatModerator(_service);
+        Assert.Equal("Kick", moderator.Platform);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.None, moderator.Available);   // not connected
+
+        await ConnectAsync();
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.None, moderator.Available);   // no moderation scopes
+        _settings.Value.Broadcaster.Scopes = [Auth.KickScopes.ModerationBan];
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.Timeout | Cuebot.Core.Chat.Moderation.ChatModerationActions.Ban,
+            moderator.Available);
+        _settings.Value.Broadcaster.Scopes = [Auth.KickScopes.ModerationBan, Auth.KickScopes.ModerationChat];
+        Assert.True(moderator.Available.HasFlag(Cuebot.Core.Chat.Moderation.ChatModerationActions.DeleteMessage));
+
+        await moderator.TimeoutAsync("12345", "someone", TimeSpan.FromSeconds(90), "calm down");
+        var timeout = Body(_http.Requests.Last(r => r.Path == "/public/v1/moderation/bans"));
+        Assert.Equal((12345L, 2), (timeout.GetProperty("user_id").GetInt64(), timeout.GetProperty("duration").GetInt32()));
+        await moderator.BanAsync("12345", "someone", null);
+        Assert.False(Body(_http.Requests.Last(r => r.Path == "/public/v1/moderation/bans")).TryGetProperty("duration", out _));
+    }
+
+    [Fact]
     public async Task Moderation_resolves_users_from_chat_ids_and_kick_lookups()
     {
         var conn = await ConnectAsync();
