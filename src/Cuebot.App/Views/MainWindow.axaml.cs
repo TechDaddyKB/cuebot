@@ -71,7 +71,8 @@ public partial class MainWindow : Window
             Jump.IsDropDownOpen = false;
             e.Handled = true;
         }
-        else if (e.Key == Key.Escape)
+        // An empty, closed box lets Esc through (it leaves full screen): focus can stay in the box after a jump.
+        else if (e.Key == Key.Escape && (!string.IsNullOrEmpty(Jump.Text) || Jump.IsDropDownOpen))
         {
             Jump.Text = "";
             PageHost.Focus();
