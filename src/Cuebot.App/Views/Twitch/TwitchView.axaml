@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels"
              xmlns:tv="using:Cuebot.App.Views.Twitch"
              x:Class="Cuebot.App.Views.TwitchView"
@@ -48,13 +49,21 @@
     </Style>
   </UserControl.Styles>
 
-  <DockPanel Margin="24,24,24,0">
-    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12">
-      <TextBlock Classes="h1" Text="Twitch" />
-      <Border Classes="pill" Margin="0,0,0,12">
-        <TextBlock x:Name="Status" Text="{Binding StatusText}" FontSize="12" />
-      </Border>
-    </StackPanel>
+  <DockPanel Margin="24,8,24,0">
+    <c:StatusHeader DockPanel.Dock="Top" Title="Twitch" Brand="Twitch" State="{Binding Accounts.State}">
+      <c:StatusHeader.Detail>
+        <MultiBinding StringFormat="{}{0} · {1}">
+          <Binding Path="Accounts.Account" />
+          <Binding Path="Accounts.StatusMessage" />
+        </MultiBinding>
+      </c:StatusHeader.Detail>
+      <c:StatusHeader.Actions>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Content="Connect" Classes="accent" Command="{Binding Accounts.ConnectCommand}" IsEnabled="{Binding Accounts.IsAuthorized}" />
+          <Button Content="Disconnect" Command="{Binding Accounts.DisconnectCommand}" />
+        </StackPanel>
+      </c:StatusHeader.Actions>
+    </c:StatusHeader>
     <TabControl x:Name="Tabs" SelectedIndex="{Binding SelectedTab}">
       <TabItem Header="Accounts">
         <tv:TwitchAccountsView DataContext="{Binding Accounts}" />

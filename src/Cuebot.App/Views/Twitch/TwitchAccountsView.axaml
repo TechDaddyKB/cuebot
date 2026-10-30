@@ -1,90 +1,88 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
              x:Class="Cuebot.App.Views.Twitch.TwitchAccountsView"
              x:DataType="tw:TwitchAccountsViewModel">
   <ScrollViewer>
-    <StackPanel MaxWidth="860" HorizontalAlignment="Left" Margin="0,12,0,24">
+    <StackPanel Margin="0,12,0,24">
       <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Broadcaster account" />
-          <TextBlock>
-            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
-          </TextBlock>
-          <TextBlock Text="{Binding Account, StringFormat='Account: {0}'}" />
-          <WrapPanel Classes="actions">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding IsAuthorized}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-            <Button Content="Sign out" Command="{Binding SignOutCommand}" IsEnabled="{Binding IsAuthorized}" />
-          </WrapPanel>
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-        </StackPanel>
-      </Border>
-
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Sign in" />
-          <TextBlock Classes="hint"
-                     Text="Twitch opens in your browser; confirm the code shown here. Choose which permissions to request on the Settings tab." />
-          <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}" />
-          <StackPanel Spacing="8" IsVisible="{Binding IsAuthorizing}">
-            <TextBlock TextWrapping="Wrap" Text="A browser window has opened. Confirm this code on Twitch:" />
-            <TextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
-              <Button Content="Cancel" Command="{Binding CancelAuthorizeCommand}" />
-            </StackPanel>
+      <c:CardColumns>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Broadcaster account" />
+            <TextBlock Text="{Binding Account, StringFormat='Account: {0}'}" />
+            <WrapPanel Classes="actions">
+              <Button Content="Sign out" Command="{Binding SignOutCommand}" IsEnabled="{Binding IsAuthorized}" />
+            </WrapPanel>
+            <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
           </StackPanel>
-          <Expander Header="Advanced: use my own Twitch application" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
-            <StackPanel Spacing="8">
-              <TextBlock Classes="hint" TextWrapping="Wrap"
-                         Text="Optional unless this build has no Twitch application of its own. Register one at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID; no client secret is needed. Leave it empty to use Cuebot's. Sign in again after changing it." />
-              <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID" />
-            </StackPanel>
-          </Expander>
-        </StackPanel>
-      </Border>
+        </Border>
 
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Bot account (optional)" />
-          <TextBlock Classes="hint"
-                     Text="A second Twitch account that sends chat messages and whispers. The broadcaster account still receives every event. Before signing in, log in to twitch.tv as the bot in your browser (or open the link in a private window)." />
-          <TextBlock>
-            <Run Text="{Binding BotState}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding BotStatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
-          </TextBlock>
-          <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" />
-          <WrapPanel Classes="actions" IsVisible="{Binding !IsBotAuthorizing}">
-            <Button Content="Sign in bot" Classes="accent" Command="{Binding AuthorizeBotCommand}" />
-            <Button Content="Reconnect bot" Command="{Binding ConnectBotCommand}" IsEnabled="{Binding IsBotAuthorized}" />
-            <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsEnabled="{Binding IsBotAuthorized}" />
-          </WrapPanel>
-          <StackPanel Spacing="8" IsVisible="{Binding IsBotAuthorizing}">
-            <TextBlock TextWrapping="Wrap" Text="Confirm this code on Twitch while logged in as the bot:" />
-            <TextBlock Text="{Binding BotUserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Open page again" Command="{Binding OpenBotVerificationPageCommand}" />
-              <Button Content="Cancel" Command="{Binding CancelAuthorizeBotCommand}" />
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Sign in" />
+            <TextBlock Classes="hint"
+                       Text="Twitch opens in your browser; confirm the code shown here. Choose which permissions to request on the Settings tab." />
+            <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}" />
+            <StackPanel Spacing="8" IsVisible="{Binding IsAuthorizing}">
+              <TextBlock TextWrapping="Wrap" Text="A browser window has opened. Confirm this code on Twitch:" />
+              <TextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
+                <Button Content="Cancel" Command="{Binding CancelAuthorizeCommand}" />
+              </StackPanel>
             </StackPanel>
+            <Expander Header="Advanced: use my own Twitch application" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="hint" TextWrapping="Wrap"
+                           Text="Optional unless this build has no Twitch application of its own. Register one at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID; no client secret is needed. Leave it empty to use Cuebot's. Sign in again after changing it." />
+                <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID" />
+              </StackPanel>
+            </Expander>
           </StackPanel>
-          <CheckBox Content="Send chat messages as the bot" IsChecked="{Binding SendChatAsBot}" />
-          <CheckBox Content="Send whispers as the bot" IsChecked="{Binding SendWhispersAsBot}" />
-        </StackPanel>
-      </Border>
+        </Border>
 
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Send a test message" />
-          <Grid ColumnDefinitions="*,8,160,8,Auto">
-            <TextBox Text="{Binding TestMessage}" PlaceholderText="Message" />
-            <ComboBox Grid.Column="2" ItemsSource="{x:Static tw:TwitchAccountsViewModel.SenderChoices}" SelectedItem="{Binding TestSender}" />
-            <Button Grid.Column="4" Content="Send" Command="{Binding SendTestCommand}" />
-          </Grid>
-        </StackPanel>
-      </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Bot account (optional)" />
+            <TextBlock Classes="hint"
+                       Text="A second Twitch account that sends chat messages and whispers. The broadcaster account still receives every event. Before signing in, log in to twitch.tv as the bot in your browser (or open the link in a private window)." />
+            <TextBlock>
+              <Run Text="{Binding BotState}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding BotStatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
+            </TextBlock>
+            <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" />
+            <WrapPanel Classes="actions" IsVisible="{Binding !IsBotAuthorizing}">
+              <Button Content="Sign in bot" Classes="accent" Command="{Binding AuthorizeBotCommand}" />
+              <Button Content="Reconnect bot" Command="{Binding ConnectBotCommand}" IsEnabled="{Binding IsBotAuthorized}" />
+              <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsEnabled="{Binding IsBotAuthorized}" />
+            </WrapPanel>
+            <StackPanel Spacing="8" IsVisible="{Binding IsBotAuthorizing}">
+              <TextBlock TextWrapping="Wrap" Text="Confirm this code on Twitch while logged in as the bot:" />
+              <TextBlock Text="{Binding BotUserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Open page again" Command="{Binding OpenBotVerificationPageCommand}" />
+                <Button Content="Cancel" Command="{Binding CancelAuthorizeBotCommand}" />
+              </StackPanel>
+            </StackPanel>
+            <CheckBox Content="Send chat messages as the bot" IsChecked="{Binding SendChatAsBot}" />
+            <CheckBox Content="Send whispers as the bot" IsChecked="{Binding SendWhispersAsBot}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Send a test message" />
+            <Grid ColumnDefinitions="*,8,160,8,Auto">
+              <TextBox Text="{Binding TestMessage}" PlaceholderText="Message" />
+              <ComboBox Grid.Column="2" ItemsSource="{x:Static tw:TwitchAccountsViewModel.SenderChoices}" SelectedItem="{Binding TestSender}" />
+              <Button Grid.Column="4" Content="Send" Command="{Binding SendTestCommand}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </c:CardColumns>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

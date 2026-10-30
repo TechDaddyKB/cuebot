@@ -1,110 +1,119 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels.YouTube"
              x:Class="Cuebot.App.Views.YouTube.YouTubeView"
              x:DataType="vm:YouTubeViewModel">
   <ScrollViewer Padding="24">
-    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
-      <TextBlock Classes="h1" Text="YouTube" />
-
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Status" />
-          <TextBlock TextWrapping="Wrap">
-            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
-          </TextBlock>
-          <TextBlock Text="{Binding CurrentBroadcast}" TextWrapping="Wrap" />
-          <Button Content="Open broadcast on YouTube" Command="{Binding OpenBroadcastCommand}" IsVisible="{Binding HasBroadcast}" />
-          <StackPanel Orientation="Horizontal" Spacing="8">
+    <StackPanel>
+      <c:StatusHeader Title="YouTube" Brand="YouTube" State="{Binding State}">
+        <c:StatusHeader.Detail>
+          <MultiBinding StringFormat="{}{0} · {1}">
+            <Binding Path="BroadcasterAccount" />
+            <Binding Path="StatusMessage" />
+          </MultiBinding>
+        </c:StatusHeader.Detail>
+        <c:StatusHeader.Actions>
+          <StackPanel Orientation="Horizontal" Spacing="6">
             <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding CanConnect}" />
             <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
           </StackPanel>
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" />
-        </StackPanel>
-      </Border>
+        </c:StatusHeader.Actions>
+      </c:StatusHeader>
 
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Accounts" />
-          <TextBlock Text="{Binding BroadcasterAccount, StringFormat='Broadcaster: {0}'}" TextWrapping="Wrap" />
-          <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
-            <Button Content="Sign in with the browser" Classes="accent" Command="{Binding BrowserSignInBroadcasterCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
-            <Button Content="Sign in with a code" Command="{Binding SignInBroadcasterCommand}" IsVisible="{Binding ShowCodeSignIn}" />
-            <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsVisible="{Binding IsBroadcasterSignedIn}" />
+      <c:CardColumns>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Connection" />
+            <TextBlock Text="{Binding CurrentBroadcast}" TextWrapping="Wrap" />
+            <Button Content="Open broadcast on YouTube" Command="{Binding OpenBroadcastCommand}" IsVisible="{Binding HasBroadcast}" />
+            <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+            <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
-          <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" TextWrapping="Wrap" Margin="0,8,0,0" />
-          <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
-            <Button Content="Sign in bot with the browser" Command="{Binding BrowserSignInBotCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
-            <Button Content="Sign in bot with a code" Command="{Binding SignInBotCommand}" IsVisible="{Binding ShowCodeSignIn}" />
-            <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsVisible="{Binding IsBotSignedIn}" />
-          </StackPanel>
-          <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Pick the channel (brand account) you stream on when Google asks. The bot is a separate Google account that can post chat messages; moderation and title changes always use the broadcaster." />
+        </Border>
 
-          <StackPanel Spacing="8" IsVisible="{Binding IsShowingCode}">
-            <TextBlock TextWrapping="Wrap">
-              <Run Text="Signing in the " /><Run Text="{Binding SigningInAs}" /><Run Text=" account. A browser window has opened; enter this code at " /><Run Text="{Binding VerificationUrl}" FontWeight="SemiBold" />
-            </TextBlock>
-            <SelectableTextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Accounts" />
+            <TextBlock Text="{Binding BroadcasterAccount, StringFormat='Broadcaster: {0}'}" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
+              <Button Content="Sign in with the browser" Classes="accent" Command="{Binding BrowserSignInBroadcasterCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
+              <Button Content="Sign in with a code" Command="{Binding SignInBroadcasterCommand}" IsVisible="{Binding ShowCodeSignIn}" />
+              <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsVisible="{Binding IsBroadcasterSignedIn}" />
+            </StackPanel>
+            <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" TextWrapping="Wrap" Margin="0,8,0,0" />
+            <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
+              <Button Content="Sign in bot with the browser" Command="{Binding BrowserSignInBotCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
+              <Button Content="Sign in bot with a code" Command="{Binding SignInBotCommand}" IsVisible="{Binding ShowCodeSignIn}" />
+              <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsVisible="{Binding IsBotSignedIn}" />
+            </StackPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Pick the channel (brand account) you stream on when Google asks. The bot is a separate Google account that can post chat messages; moderation and title changes always use the broadcaster." />
+
+            <StackPanel Spacing="8" IsVisible="{Binding IsShowingCode}">
+              <TextBlock TextWrapping="Wrap">
+                <Run Text="Signing in the " /><Run Text="{Binding SigningInAs}" /><Run Text=" account. A browser window has opened; enter this code at " /><Run Text="{Binding VerificationUrl}" FontWeight="SemiBold" />
+              </TextBlock>
+              <SelectableTextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
+                <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Spacing="8" IsVisible="{Binding IsWaitingForBrowser}">
+              <TextBlock TextWrapping="Wrap" Text="Finish signing in in the browser window that opened; Cuebot receives the result automatically." />
               <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
             </StackPanel>
           </StackPanel>
-          <StackPanel Spacing="8" IsVisible="{Binding IsWaitingForBrowser}">
-            <TextBlock TextWrapping="Wrap" Text="Finish signing in in the browser window that opened; Cuebot receives the result automatically." />
-            <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
-          </StackPanel>
-        </StackPanel>
-      </Border>
+        </Border>
 
-      <Border Classes="card">
-        <Expander Header="Advanced: use my own Google Cloud project" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+        <Border Classes="card">
+          <Expander Header="Advanced: use my own Google Cloud project" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="Optional unless this build has no Google app of its own. Your own project gives you your own YouTube API quota instead of sharing Cuebot's. In console.cloud.google.com create a project, enable the YouTube Data API v3, set up the OAuth consent screen (External; add yourself as a test user or publish it), then create an OAuth client ID of type 'TVs and Limited Input devices' (sign in with a code) or 'Desktop app' (sign in through the browser). Paste its client ID and secret here, then sign in again. Leave them empty to use Cuebot's." />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID (....apps.googleusercontent.com)" />
+              <TextBox Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="While the consent screen is in 'Testing', Google ends sign-ins after 7 days; publish it ('In production', no verification needed for your own use) to stay signed in." />
+            </StackPanel>
+          </Expander>
+        </Border>
+
+        <Border Classes="card">
           <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Polling and quota" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Optional unless this build has no Google app of its own. Your own project gives you your own YouTube API quota instead of sharing Cuebot's. In console.cloud.google.com create a project, enable the YouTube Data API v3, set up the OAuth consent screen (External; add yourself as a test user or publish it), then create an OAuth client ID of type 'TVs and Limited Input devices' (sign in with a code) or 'Desktop app' (sign in through the browser). Paste its client ID and secret here, then sign in again. Leave them empty to use Cuebot's." />
-            <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID (....apps.googleusercontent.com)" />
-            <TextBox Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
-            <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="While the consent screen is in 'Testing', Google ends sign-ins after 7 days; publish it ('In production', no verification needed for your own use) to stay signed in." />
+                       Text="The YouTube Data API is polled and every call costs quota from your project's daily allowance. Slower polling makes the quota last longer but delays chat and events." />
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+              <TextBlock Text="Minimum seconds between chat checks" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="1" Value="{Binding MinimumChatPollSeconds}" Minimum="2" Maximum="120" Increment="1" FormatString="0" Width="140" />
+              <TextBlock Grid.Row="1" Text="Seconds between checks for a live broadcast" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BroadcastPollSeconds}" Minimum="30" Maximum="3600" Increment="30" FormatString="0" Width="140" />
+              <TextBlock Grid.Row="2" Text="Seconds between viewer statistics updates" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding LivePollSeconds}" Minimum="15" Maximum="3600" Increment="15" FormatString="0" Width="140" />
+              <TextBlock Grid.Row="3" Text="Seconds between new subscriber checks" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SubscriberPollSeconds}" Minimum="60" Maximum="3600" Increment="60" FormatString="0" Width="140" />
+              <TextBlock Grid.Row="4" Text="Daily quota of your project (units)" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding DailyQuota}" Minimum="1" Maximum="10000000" Increment="1000" FormatString="0" Width="140" />
+            </Grid>
+            <CheckBox Content="Check for new subscribers (only public subscriptions are visible)" IsChecked="{Binding PollNewSubscribers}" />
+            <CheckBox Content="Watch scheduled broadcasts (Broadcast added / removed triggers; doubles the broadcast check cost)" IsChecked="{Binding MonitorUpcoming}" />
+            <TextBlock Text="{Binding QuotaEstimate}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding QuotaUsage}" TextWrapping="Wrap" Classes="muted" />
           </StackPanel>
-        </Expander>
-      </Border>
+        </Border>
 
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Polling and quota" />
-          <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="The YouTube Data API is polled and every call costs quota from your project's daily allowance. Slower polling makes the quota last longer but delays chat and events." />
-          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
-            <TextBlock Text="Minimum seconds between chat checks" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="1" Value="{Binding MinimumChatPollSeconds}" Minimum="2" Maximum="120" Increment="1" FormatString="0" Width="140" />
-            <TextBlock Grid.Row="1" Text="Seconds between checks for a live broadcast" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BroadcastPollSeconds}" Minimum="30" Maximum="3600" Increment="30" FormatString="0" Width="140" />
-            <TextBlock Grid.Row="2" Text="Seconds between viewer statistics updates" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding LivePollSeconds}" Minimum="15" Maximum="3600" Increment="15" FormatString="0" Width="140" />
-            <TextBlock Grid.Row="3" Text="Seconds between new subscriber checks" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SubscriberPollSeconds}" Minimum="60" Maximum="3600" Increment="60" FormatString="0" Width="140" />
-            <TextBlock Grid.Row="4" Text="Daily quota of your project (units)" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding DailyQuota}" Minimum="1" Maximum="10000000" Increment="1000" FormatString="0" Width="140" />
-          </Grid>
-          <CheckBox Content="Check for new subscribers (only public subscriptions are visible)" IsChecked="{Binding PollNewSubscribers}" />
-          <CheckBox Content="Watch scheduled broadcasts (Broadcast added / removed triggers; doubles the broadcast check cost)" IsChecked="{Binding MonitorUpcoming}" />
-          <TextBlock Text="{Binding QuotaEstimate}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding QuotaUsage}" TextWrapping="Wrap" Classes="muted" />
-        </StackPanel>
-      </Border>
-
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Send a test message" />
-          <Grid ColumnDefinitions="*,8,Auto">
-            <TextBox Text="{Binding TestMessage}" PlaceholderText="Message to the live chat" />
-            <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" />
-          </Grid>
-        </StackPanel>
-      </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Send a test message" />
+            <Grid ColumnDefinitions="*,8,Auto">
+              <TextBox Text="{Binding TestMessage}" PlaceholderText="Message to the live chat" />
+              <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </c:CardColumns>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

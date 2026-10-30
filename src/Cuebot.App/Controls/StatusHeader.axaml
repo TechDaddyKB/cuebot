@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
+             x:Class="Cuebot.App.Controls.StatusHeader"
+            >
+  <!-- A page's account and connection header: brand tile, name and account, state chip, and the page's buttons. -->
+  <Border Classes="card" Margin="0,0,0,12" Padding="14,12">
+    <Grid ColumnDefinitions="Auto,*,Auto">
+      <Border Width="40" Height="40" CornerRadius="10" Background="{Binding $parent[c:StatusHeader].Brand, Converter={x:Static c:PlatformBrush.Instance}}"
+              Margin="0,0,12,0" VerticalAlignment="Center">
+        <TextBlock Text="{Binding $parent[c:StatusHeader].Brand, Converter={x:Static c:PlatformBrush.Initial}}" FontWeight="Bold" FontSize="18"
+                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="{Binding $parent[c:StatusHeader].Title}" FontWeight="Bold" FontSize="17" VerticalAlignment="Center" />
+          <Border x:Name="StateChip" CornerRadius="10" Padding="8,2" Background="{DynamicResource CuebotRaised}" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Ellipse x:Name="StateDot" Classes="status" VerticalAlignment="Center" />
+              <TextBlock x:Name="StateText" Text="{Binding $parent[c:StatusHeader].State}" FontSize="12" FontWeight="SemiBold" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        <TextBlock x:Name="DetailText" Text="{Binding $parent[c:StatusHeader].Detail}" Classes="muted" FontSize="12.5" TextTrimming="CharacterEllipsis"
+                   IsVisible="{Binding $parent[c:StatusHeader].Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+      <ContentPresenter Grid.Column="2" Content="{Binding $parent[c:StatusHeader].Actions}" VerticalAlignment="Center" Margin="12,0,0,0" />
+    </Grid>
+  </Border>
+</UserControl>

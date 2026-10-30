@@ -1,81 +1,84 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Cuebot.App.Controls"
              xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
              xmlns:t="using:Cuebot.Twitch"
              x:Class="Cuebot.App.Views.Twitch.TwitchChannelView"
              x:DataType="tw:TwitchChannelViewModel">
   <ScrollViewer>
-    <StackPanel MaxWidth="980" HorizontalAlignment="Left" Margin="0,12,0,24">
+    <StackPanel Margin="0,12,0,24">
       <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-      <Border Classes="card">
-        <StackPanel Spacing="10">
-          <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Classes="h2" Text="Stream info" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-              <TextBlock Classes="hint" Text="{Binding StreamStatus}" VerticalAlignment="Center" />
-              <Button Content="Load from Twitch" Command="{Binding LoadCommand}" IsEnabled="{Binding IsSignedIn}" />
-            </StackPanel>
-          </Grid>
-          <StackPanel>
-            <TextBlock Classes="label" Text="Title" />
-            <TextBox Text="{Binding Title}" MaxLength="140" />
-          </StackPanel>
-          <Grid ColumnDefinitions="*,16,*">
+      <c:CardColumns>
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="h2" Text="Stream info" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Classes="hint" Text="{Binding StreamStatus}" VerticalAlignment="Center" />
+                <Button Content="Load from Twitch" Command="{Binding LoadCommand}" IsEnabled="{Binding IsSignedIn}" />
+              </StackPanel>
+            </Grid>
             <StackPanel>
-              <TextBlock Classes="label" Text="Category" />
-              <TextBox Text="{Binding GameName}" IsReadOnly="True" />
-              <TextBlock Classes="hint" Text="{Binding GameId, StringFormat='Category id: {0}'}" Margin="0,4,0,0" />
+              <TextBlock Classes="label" Text="Title" />
+              <TextBox Text="{Binding Title}" MaxLength="140" />
             </StackPanel>
-            <StackPanel Grid.Column="2">
-              <TextBlock Classes="label" Text="Find a category" />
-              <Grid ColumnDefinitions="*,8,Auto">
-                <TextBox Text="{Binding CategoryQuery}" PlaceholderText="e.g. Just Chatting" />
-                <Button Grid.Column="2" Content="Search" Command="{Binding SearchCategoriesCommand}" IsEnabled="{Binding IsSignedIn}" />
-              </Grid>
-              <ListBox Classes="list" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" MaxHeight="160" Margin="0,6,0,0">
-                <ListBox.ItemTemplate>
-                  <DataTemplate DataType="t:TwitchCategory">
-                    <TextBlock Text="{Binding Name}" />
-                  </DataTemplate>
-                </ListBox.ItemTemplate>
-              </ListBox>
+            <Grid ColumnDefinitions="*,16,*">
+              <StackPanel>
+                <TextBlock Classes="label" Text="Category" />
+                <TextBox Text="{Binding GameName}" IsReadOnly="True" />
+                <TextBlock Classes="hint" Text="{Binding GameId, StringFormat='Category id: {0}'}" Margin="0,4,0,0" />
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <TextBlock Classes="label" Text="Find a category" />
+                <Grid ColumnDefinitions="*,8,Auto">
+                  <TextBox Text="{Binding CategoryQuery}" PlaceholderText="e.g. Just Chatting" />
+                  <Button Grid.Column="2" Content="Search" Command="{Binding SearchCategoriesCommand}" IsEnabled="{Binding IsSignedIn}" />
+                </Grid>
+                <ListBox Classes="list" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" MaxHeight="160" Margin="0,6,0,0">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="t:TwitchCategory">
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+            </Grid>
+            <StackPanel>
+              <TextBlock Classes="label" Text="Tags" />
+              <TextBox Text="{Binding Tags}" PlaceholderText="Comma separated, at most 10 (letters and digits only)" />
             </StackPanel>
-          </Grid>
-          <StackPanel>
-            <TextBlock Classes="label" Text="Tags" />
-            <TextBox Text="{Binding Tags}" PlaceholderText="Comma separated, at most 10 (letters and digits only)" />
+            <CheckBox Content="Branded content (sponsored stream)" IsChecked="{Binding IsBrandedContent}" />
+            <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding IsSignedIn}" />
           </StackPanel>
-          <CheckBox Content="Branded content (sponsored stream)" IsChecked="{Binding IsBrandedContent}" />
-          <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding IsSignedIn}" />
-        </StackPanel>
-      </Border>
+        </Border>
 
-      <Border Classes="card">
-        <StackPanel Spacing="10">
-          <TextBlock Classes="h2" Text="Quick actions" />
-          <Grid ColumnDefinitions="*,8,Auto,8,Auto">
-            <TextBox Text="{Binding MarkerDescription}" PlaceholderText="Marker description (optional)" />
-            <Button Grid.Column="2" Content="Create marker" Command="{Binding CreateMarkerCommand}" />
-            <Button Grid.Column="4" Content="Create clip" Command="{Binding CreateClipCommand}" />
-          </Grid>
-          <Grid ColumnDefinitions="120,8,Auto,8,Auto">
-            <ComboBox ItemsSource="{x:Static tw:TwitchChannelViewModel.AdLengths}" SelectedItem="{Binding AdLength}" />
-            <Button Grid.Column="2" Content="Run ad" Command="{Binding RunAdCommand}" />
-            <Button Grid.Column="4" Content="Snooze next ad" Command="{Binding SnoozeAdCommand}" />
-          </Grid>
-          <Grid ColumnDefinitions="*,8,Auto,8,Auto">
-            <TextBox Text="{Binding RaidTarget}" PlaceholderText="Channel to raid" />
-            <Button Grid.Column="2" Content="Start raid" Command="{Binding StartRaidCommand}" />
-            <Button Grid.Column="4" Content="Cancel raid" Command="{Binding CancelRaidCommand}" />
-          </Grid>
-          <Grid ColumnDefinitions="*,8,Auto">
-            <TextBox Text="{Binding ShoutoutTarget}" PlaceholderText="Channel to shout out" />
-            <Button Grid.Column="2" Content="Send shoutout" Command="{Binding ShoutoutCommand}" />
-          </Grid>
-        </StackPanel>
-      </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h2" Text="Quick actions" />
+            <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+              <TextBox Text="{Binding MarkerDescription}" PlaceholderText="Marker description (optional)" />
+              <Button Grid.Column="2" Content="Create marker" Command="{Binding CreateMarkerCommand}" />
+              <Button Grid.Column="4" Content="Create clip" Command="{Binding CreateClipCommand}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,8,Auto,8,Auto">
+              <ComboBox ItemsSource="{x:Static tw:TwitchChannelViewModel.AdLengths}" SelectedItem="{Binding AdLength}" />
+              <Button Grid.Column="2" Content="Run ad" Command="{Binding RunAdCommand}" />
+              <Button Grid.Column="4" Content="Snooze next ad" Command="{Binding SnoozeAdCommand}" />
+            </Grid>
+            <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+              <TextBox Text="{Binding RaidTarget}" PlaceholderText="Channel to raid" />
+              <Button Grid.Column="2" Content="Start raid" Command="{Binding StartRaidCommand}" />
+              <Button Grid.Column="4" Content="Cancel raid" Command="{Binding CancelRaidCommand}" />
+            </Grid>
+            <Grid ColumnDefinitions="*,8,Auto">
+              <TextBox Text="{Binding ShoutoutTarget}" PlaceholderText="Channel to shout out" />
+              <Button Grid.Column="2" Content="Send shoutout" Command="{Binding ShoutoutCommand}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </c:CardColumns>
     </StackPanel>
   </ScrollViewer>
 </UserControl>
