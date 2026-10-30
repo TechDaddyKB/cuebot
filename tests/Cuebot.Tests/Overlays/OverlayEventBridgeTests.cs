@@ -147,6 +147,15 @@ public sealed class OverlayEventBridgeTests : IDisposable
     }
 
     [Fact]
+    public void Convert_returns_the_messages_without_sending_them()
+    {
+        using var bridge = Bridge(emotes: false);
+        var messages = bridge.Convert(new BotEvent("fake.follow", new Dictionary<string, object?> { ["user"] = "Kris" }));
+        Assert.Equal(["follower-latest", "event"], messages.Select(m => m.Listener));
+        Assert.Empty(_sent);
+    }
+
+    [Fact]
     public void A_failing_adapter_is_logged_not_thrown()
     {
         using var bridge = Bridge(emotes: false);

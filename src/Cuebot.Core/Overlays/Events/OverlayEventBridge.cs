@@ -44,31 +44,9 @@ public sealed class OverlayEventBridge : IDisposable
     {
         try
         {
-            switch (e.Type)
-            {
-                case ChatHub.MessageEvent:
-                    OnChat(e);
-                    return;
-                case MessageDeleted when OverlayAlerts.Str(e.Args, "messageId") is { Length: > 0 } id:
-                    _feed.Publish(OverlayMessage.Event("delete-message", new JsonObject { ["msgId"] = id }));
-                    return;
-                case UserBanned or UserTimedOut when OverlayAlerts.Str(e.Args, "userId") is { Length: > 0 } userId:
-                    _feed.Publish(OverlayMessage.Event("delete-messages", new JsonObject { ["userId"] = userId }));
-                    return;
-            }
-            foreach (var adapter in _adapters)
-            {
-                if (adapter.ToAlert(e) is not { } alert) continue;
-                _feed.Publish(OverlayMessage.Event(alert.Listener, alert.Event));
-                _feed.Publish(OverlayMessage.Event("event", new JsonObject
-                {
-                    ["type"] = alert.Event["type"]?.DeepClone(),
-                    ["provider"] = adapter.Service,
-                    ["data"] = alert.Event.DeepClone(),
-                }));
-                AlertSent?.Invoke(alert, adapter.Service, e.Time);
-                return;
-            }
+            var (messages, alert, service) = ConvertCore(e);
+            foreach (var (listener, data) in messages) _feed.Publish(OverlayMessage.Event(listener, data));
+            if (alert is not null) AlertSent?.Invoke(alert, service!, e.Time);
         }
         catch (Exception ex)
         {
@@ -76,7 +54,38 @@ public sealed class OverlayEventBridge : IDisposable
         }
     }
 
-    private void OnChat(BotEvent e)
+    /// <summary>
+    /// The overlay events a bot event becomes (<c>(listener, event)</c> pairs), without sending them anywhere: the widget
+    /// editor uses this to show emulated events in its preview only.
+    /// </summary>
+    public IReadOnlyList<(string Listener, JsonNode? Event)> Convert(BotEvent e) => ConvertCore(e).Messages;
+
+    private (List<(string, JsonNode?)> Messages, OverlayAlert? Alert, string? Service) ConvertCore(BotEvent e)
+    {
+        switch (e.Type)
+        {
+            case ChatHub.MessageEvent:
+                return ([("message", ChatMessage(e))], null, null);
+            case MessageDeleted when OverlayAlerts.Str(e.Args, "messageId") is { Length: > 0 } id:
+                return ([("delete-message", new JsonObject { ["msgId"] = id })], null, null);
+            case UserBanned or UserTimedOut when OverlayAlerts.Str(e.Args, "userId") is { Length: > 0 } userId:
+                return ([("delete-messages", new JsonObject { ["userId"] = userId })], null, null);
+        }
+        foreach (var adapter in _adapters)
+        {
+            if (adapter.ToAlert(e) is not { } alert) continue;
+            var raw = new JsonObject
+            {
+                ["type"] = alert.Event["type"]?.DeepClone(),
+                ["provider"] = adapter.Service,
+                ["data"] = alert.Event.DeepClone(),
+            };
+            return ([(alert.Listener, alert.Event), ("event", raw)], alert, adapter.Service);
+        }
+        return ([], null, null);
+    }
+
+    private JsonObject ChatMessage(BotEvent e)
     {
         var platform = OverlayAlerts.Str(e.Args, "platform");
         var platformArgs = e.Args.GetValueOrDefault(ChatHub.PlatformArgsKey) as IReadOnlyDictionary<string, object?> ?? e.Args;
@@ -87,9 +96,8 @@ public sealed class OverlayEventBridge : IDisposable
             : OverlayAlerts.Str(e.Args, "message");
         var emotes = _emotes?.FindEmotes(platform, text, platformArgs) ?? [];
         var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase) { ["message"] = text };
-        var message = OverlayChatMessage.Build(args, platformArgs, emotes, adapter?.Badges(platformArgs) ?? [],
+        return OverlayChatMessage.Build(args, platformArgs, emotes, adapter?.Badges(platformArgs) ?? [],
             adapter?.Service ?? platform.ToLowerInvariant(), e.Time);
-        _feed.Publish(OverlayMessage.Event("message", message));
     }
 
     public void Dispose() => _subscription.Dispose();

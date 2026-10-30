@@ -14,8 +14,8 @@ namespace Cuebot.Server.Overlays;
 /// </summary>
 internal static partial class OverlayWidgetHost
 {
-    /// <summary>jQuery, which StreamElements preloads for widgets (loaded from jQuery's own CDN, as StreamElements uses its CDN).</summary>
-    public const string JQueryUrl = "https://code.jquery.com/jquery-3.7.1.min.js";
+    /// <summary>jQuery, which StreamElements preloads for widgets; Cuebot ships it (unmodified 3.7.1), so widgets work offline.</summary>
+    public const string JQueryUrl = "/runtime/jquery-3.7.1.min.js";
 
     /// <summary>The page config entry for one layer (position, size and look; the document is fetched separately).</summary>
     public static JsonObject LayerConfig(OverlayLayer layer) => new()
@@ -60,13 +60,16 @@ internal static partial class OverlayWidgetHost
             <head>
             <meta charset="utf-8">
             <meta name="referrer" content="no-referrer">
-            <script src="{JQueryUrl}" crossorigin="anonymous"></script>
+            <script src="{JQueryUrl}"></script>
             <script src="/runtime/se-widget.js"></script>
             <style>
-            html, body {"{"} margin: 0; padding: 0; background: transparent; overflow: hidden; {"}"}
+            html, body {"{"} margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; {"}"}
             </style>
             <style>
             {WidgetFields.Substitute(code.Css, fieldData)}
+            </style>
+            <style id="cuebot-override">
+            {WidgetFields.Substitute(code.CssOverride, fieldData)}
             </style>
             </head>
             <body>

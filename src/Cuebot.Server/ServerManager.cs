@@ -164,6 +164,21 @@ public sealed class ServerManager : IAsyncDisposable
     /// <summary>The browser source URL for an overlay.</summary>
     public string OverlayUrl(Cuebot.Core.Overlays.Overlay overlay) => OverlayBaseUrl + OverlayServer.PathFor(overlay);
 
+    /// <summary>The widget editor's token, generated (and saved) when there is none yet.</summary>
+    public string EnsureEditorToken()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.Overlays.EditorToken))
+        {
+            Settings.Overlays.EditorToken = Cuebot.Server.Api.ApiToken.Generate();
+            SaveSettings();
+        }
+        return Settings.Overlays.EditorToken;
+    }
+
+    /// <summary>The web editor for one widget layer (opened in the browser from the Overlays page).</summary>
+    public string EditorUrl(Guid overlayId, Guid layerId) =>
+        $"{OverlayBaseUrl}/edit/{overlayId:D}/{layerId:D}?editor={Uri.EscapeDataString(EnsureEditorToken())}";
+
     private IReadOnlyCollection<string> Origins() => Settings.AllowedOrigins;
 
     public IReadOnlyList<ServerStatus> Statuses

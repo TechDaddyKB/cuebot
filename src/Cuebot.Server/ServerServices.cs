@@ -189,6 +189,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Overlays.Widgets.WidgetKeyValueStore? _widgetStore;
 
+    /// <summary>Converts emulated events for the widget editor's preview.</summary>
+    public Cuebot.Core.Overlays.Events.OverlayEventBridge? OverlayBridge
+    {
+        get => _overlayBridge ??= _provider?.GetService<Cuebot.Core.Overlays.Events.OverlayEventBridge>();
+        init => _overlayBridge = value;
+    }
+
+    private Cuebot.Core.Overlays.Events.OverlayEventBridge? _overlayBridge;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")

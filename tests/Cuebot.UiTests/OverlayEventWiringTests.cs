@@ -42,6 +42,30 @@ public sealed class OverlayEventWiringTests : IAsyncDisposable
     }
 
     [Fact]
+    public void Every_emulate_button_converts_through_the_real_adapters()
+    {
+        var bridge = _host.Get<OverlayEventBridge>();
+        var expected = new Dictionary<string, string>
+        {
+            ["chat"] = "message", ["follow"] = "follower-latest", ["sub"] = "subscriber-latest", ["resub"] = "subscriber-latest",
+            ["gift"] = "subscriber-latest", ["cheer"] = "cheer-latest", ["raid"] = "raid-latest", ["kicks"] = "kicks-latest",
+            ["superchat"] = "superchat-latest",
+        };
+        foreach (var (platform, kinds) in OverlayEmulator.Kinds)
+        {
+            foreach (var kind in kinds)
+            {
+                var e = OverlayEmulator.Create(platform, kind, new Random(1));
+                Assert.NotNull(e);
+                var messages = bridge.Convert(e);
+                var listener = kind == "tip" ? (platform == "donations" || platform == "rumble" ? "tip-latest" : "?") : expected[kind];
+                Assert.True(messages.Count > 0 && messages[0].Listener == listener, $"{platform} {kind}: {string.Join(", ", messages.Select(m => m.Listener))}");
+            }
+        }
+        Assert.Null(OverlayEmulator.Create("rumble", "kicks"));
+    }
+
+    [Fact]
     public void Alerts_update_the_stream_totals()
     {
         _host.Get<OverlayEventBridge>();

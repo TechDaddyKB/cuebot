@@ -55,6 +55,13 @@ public sealed class OverlayServerSettings
     /// overlay page, its token or Cuebot's API, yet can still load Cuebot's scripts, badges and your uploaded files.
     /// </summary>
     public int WidgetPort { get; set; } = 7477;
+
+    /// <summary>
+    /// Opens the widget editor (<c>/edit/...?editor=...</c>). Separate from the overlay links, so someone with an OBS link
+    /// cannot change widgets. Created when the editor is first opened; never logged.
+    /// </summary>
+    [Secret]
+    public string EditorToken { get; set; } = "";
 }
 
 /// <summary>The Streamer.bot-compatible WebSocket server (for @streamerbot/client overlays and tools).</summary>

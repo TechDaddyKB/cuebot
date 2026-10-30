@@ -3,7 +3,8 @@
 Status: phase 0 done 2026-10-30 (overlay server, stores, event bridge, platform adapters, badge images, stream
 totals). Phase 1 split in three: 1a widget runtime, zip import and widget layers on the Overlays page (built 2026-10-30;
 widgets run on a second port, see docs/SERVERS.md); 1b the web widget editor (fields form, code panes, CSS override,
-per-platform Emulate); 1c the built-in chat box, YouTube popout CSS themes and the pronouns proxy. Details in
+per-platform Emulate; built 2026-10-30, jQuery bundled); 1c the built-in chat box, YouTube popout CSS themes and the
+pronouns proxy. Details in
 docs/SERVERS.md.
 
 ## Goal

@@ -32,6 +32,10 @@ public sealed partial class LayerRowViewModel(Guid overlayId, OverlayLayer layer
 
     [RelayCommand]
     private void Remove() => owner.RemoveLayer(overlayId, layer.Id);
+
+    /// <summary>Opens the web widget editor (settings, code, preview, Emulate) in the browser.</summary>
+    [RelayCommand]
+    private void Edit() => owner.EditLayer(overlayId, layer.Id);
 }
 
 /// <summary>One overlay row: its name, canvas, browser source link and widgets.</summary>
@@ -88,6 +92,9 @@ public sealed partial class OverlaysViewModel : PageViewModel
     private readonly OverlayStore? _store;
     private readonly ServerManager? _servers;
     private readonly WidgetLibrary? _widgets;
+
+    /// <summary>Opens a link in the browser (tests replace it).</summary>
+    public Action<string> OpenUrl { get; init; } = Cuebot.App.Shell.UrlLauncher.Open;
     private bool _editing;
 
     [ObservableProperty]
@@ -203,6 +210,19 @@ public sealed partial class OverlaysViewModel : PageViewModel
 
     internal void MoveLayer(Guid overlayId, OverlayLayer layer) =>
         Edit(() => _widgets?.MoveLayer(overlayId, layer.Id, layer.X, layer.Y, layer.Width, layer.Height));
+
+    internal void EditLayer(Guid overlayId, Guid layerId)
+    {
+        if (_servers is null) return;
+        var status = _servers.Statuses.FirstOrDefault(s => s.Kind == ServerKind.Overlays);
+        if (status is not { Running: true })
+        {
+            Status = "The widget editor runs on the overlay server, which is not running. Turn it on on the Servers page.";
+            return;
+        }
+        OpenUrl(_servers.EditorUrl(overlayId, layerId));
+        Status = "Opened the widget editor in your browser.";
+    }
 
     internal void RemoveLayer(Guid overlayId, Guid layerId)
     {

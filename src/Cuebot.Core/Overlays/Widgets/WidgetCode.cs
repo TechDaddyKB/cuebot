@@ -9,10 +9,14 @@ namespace Cuebot.Core.Overlays.Widgets;
 
 /// <summary>
 /// A StreamElements-style custom widget: the HTML, CSS and JS panes, the FIELDS schema (JSON object of field name →
-/// {type, label, value, ...}) and the DATA pane (saved field values, a flat JSON object).
+/// {type, label, value, ...}) and the DATA pane (saved field values, a flat JSON object), plus Cuebot's
+/// <see cref="CssOverride"/>: your own CSS, applied after the widget's, so a purchased widget can be restyled (for example
+/// per platform) without editing its code.
 /// </summary>
 public sealed record WidgetCode(string Html, string Css, string Js, string Fields, string Data)
 {
+    public string CssOverride { get; init; } = "";
+
     public static readonly WidgetCode Empty = new("", "", "", "{}", "{}");
 
     /// <summary>The largest import accepted (all panes together).</summary>

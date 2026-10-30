@@ -4,7 +4,7 @@ namespace Cuebot.Core.Overlays.Widgets;
 
 /// <summary>
 /// Custom widget code, one folder per library element (<c>overlays/widgets/{elementId}/</c> with <c>widget.html</c>,
-/// <c>widget.css</c>, <c>widget.js</c>, <c>fields.json</c>, <c>data.json</c>), so large purchased scripts stay out of
+/// <c>widget.css</c>, <c>widget.js</c>, <c>fields.json</c>, <c>data.json</c>, <c>override.css</c>), so large purchased scripts stay out of
 /// elements.json. With no <c>paths</c> it uses a temporary folder deleted on dispose (tests).
 /// </summary>
 public sealed class WidgetCodeStore : IDisposable
@@ -12,7 +12,7 @@ public sealed class WidgetCodeStore : IDisposable
     private static readonly (string File, Func<WidgetCode, string> Get)[] Files =
     [
         ("widget.html", c => c.Html), ("widget.css", c => c.Css), ("widget.js", c => c.Js),
-        ("fields.json", c => c.Fields), ("data.json", c => c.Data),
+        ("fields.json", c => c.Fields), ("data.json", c => c.Data), ("override.css", c => c.CssOverride),
     ];
 
     private readonly bool _temporary;
@@ -41,7 +41,10 @@ public sealed class WidgetCodeStore : IDisposable
         if (!Directory.Exists(dir)) return WidgetCode.Empty;
         string Get(string file, string fallback = "") =>
             File.Exists(Path.Combine(dir, file)) ? File.ReadAllText(Path.Combine(dir, file), Encoding.UTF8) : fallback;
-        return new WidgetCode(Get("widget.html"), Get("widget.css"), Get("widget.js"), Get("fields.json", "{}"), Get("data.json", "{}"));
+        return new WidgetCode(Get("widget.html"), Get("widget.css"), Get("widget.js"), Get("fields.json", "{}"), Get("data.json", "{}"))
+        {
+            CssOverride = Get("override.css"),
+        };
     }
 
     public bool Exists(Guid elementId) => Directory.Exists(Dir(elementId));

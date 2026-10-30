@@ -113,7 +113,8 @@ public sealed class OverlaysPageTests : IAsyncDisposable
     public void Widgets_are_imported_moved_and_removed()
     {
         var library = _services.GetRequiredService<WidgetLibrary>();
-        var vm = new OverlaysViewModel(Store, Servers, library);
+        var opened = new List<string>();
+        var vm = new OverlaysViewModel(Store, Servers, library) { OpenUrl = opened.Add };
         var window = Open(new OverlaysView(), vm);
         vm.CreateCommand.Execute(null);
         Pump();
@@ -137,7 +138,10 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         Assert.Equal((40.0, 600.0), (saved.X, saved.Width));
         SaveBothThemes(window, "overlays-widgets");
 
-        vm.AddWidget(row.Id, new MemoryStream([1, 2, 3]), "broken.zip");
+        layer.EditCommand.Execute(null);
+        Assert.Contains("not running", vm.Status);   // the overlay server is not started in this test
+
+                vm.AddWidget(row.Id, new MemoryStream([1, 2, 3]), "broken.zip");
         Assert.StartsWith("Could not add the widget", vm.Status);
 
         layer.RemoveCommand.Execute(null);

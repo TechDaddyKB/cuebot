@@ -70,7 +70,11 @@
                     <TextBlock Grid.Column="13" Classes="muted" Text="H" VerticalAlignment="Center" />
                     <NumericUpDown Grid.Column="15" Value="{Binding Height}" Minimum="1" Maximum="7680" FormatString="0" Width="110"
                                    ToolTip.Tip="Height (pixels)" />
-                    <Button Grid.Column="17" Content="Remove" Command="{Binding RemoveCommand}" />
+                    <StackPanel Grid.Column="17" Orientation="Horizontal" Spacing="6">
+                      <Button Content="Edit…" Command="{Binding EditCommand}"
+                              ToolTip.Tip="Change the widget's settings and code, and try it with sample events, in your browser" />
+                      <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                    </StackPanel>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>

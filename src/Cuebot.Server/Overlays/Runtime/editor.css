@@ -1,0 +1,156 @@
+/* Cuebot widget editor. Follows the OS light/dark preference. */
+:root {
+  --bg: #f4f5f8;
+  --panel: #ffffff;
+  --border: #d9dce3;
+  --text: #1c1f26;
+  --muted: #5d6573;
+  --accent: #0b6bcb;
+  --accent-text: #ffffff;
+  --input: #ffffff;
+  --checker: #e6e8ee;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1218;
+    --panel: #171b23;
+    --border: #2b313d;
+    --text: #e6e9ef;
+    --muted: #98a1b2;
+    --accent: #3d8bfd;
+    --accent-text: #ffffff;
+    --input: #0f1218;
+    --checker: #1f242e;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+button {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.bar .title { flex: 1; display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.bar .title strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+main {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) 1fr;
+  height: calc(100% - 51px);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border); }
+.tabs button { padding: 4px 10px; }
+.tabs button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+.panel { display: none; flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.panel.active { display: flex; flex-direction: column; }
+
+#code {
+  flex: 1;
+  width: 100%;
+  min-height: 300px;
+  resize: none;
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font: 12px/1.5 ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  tab-size: 2;
+  white-space: pre;
+}
+
+#form { display: flex; flex-direction: column; gap: 10px; }
+
+details.group { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
+details.group > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+details.group[open] > summary { margin-bottom: 6px; }
+
+.field { display: grid; gap: 4px; margin: 6px 0; }
+.field > label { font-size: 13px; color: var(--muted); }
+.field input[type=text], .field input[type=number], .field select, .field textarea {
+  width: 100%;
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.field textarea { min-height: 70px; }
+.field .row { display: flex; gap: 6px; align-items: center; }
+.field .row > input[type=text] { flex: 1; }
+.field input[type=color] { width: 40px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: none; }
+.field input[type=range] { flex: 1; }
+.field .check { display: flex; gap: 8px; align-items: center; color: var(--text); font-size: 14px; }
+.field img.thumb { max-height: 48px; max-width: 120px; border-radius: 4px; }
+
+.preview { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 12px; gap: 10px; }
+
+.emulate { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.emulate select { margin-left: 6px; padding: 4px; border-radius: 6px; border: 1px solid var(--border); background: var(--input); }
+
+#stage-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--checker);
+  background-image:
+    linear-gradient(45deg, rgba(128, 128, 128, 0.15) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(128, 128, 128, 0.15) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(128, 128, 128, 0.15) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(128, 128, 128, 0.15) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  position: relative;
+}
+
+#stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#preview { border: 0; width: 100%; height: 100%; background: transparent; color-scheme: normal; }
+
+@media (max-width: 800px) {
+  main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+  .side { border-right: 0; border-bottom: 1px solid var(--border); max-height: 60vh; }
+  #stage-wrap { min-height: 360px; }
+}

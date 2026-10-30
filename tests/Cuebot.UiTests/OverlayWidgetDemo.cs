@@ -12,7 +12,8 @@ namespace Cuebot.UiTests;
 
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip: the app's real services serve an
-/// overlay with that widget on port 7499 (its URL is written to overlay-url.txt in CUEBOT_DEMO_OUT, or the temp folder) and
+/// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
+/// in CUEBOT_DEMO_OUT, or the temp folder) and
 /// send chat and alerts from Twitch, Kick, Rumble and YouTube for CUEBOT_DEMO_SECONDS (default 120), so the widget can be
 /// watched in a browser or OBS. The widget file is only read, never copied into the repository.
 /// </summary>
@@ -38,9 +39,11 @@ public sealed class OverlayWidgetDemo
             await servers.RestartAsync(ServerKind.Overlays, TestContext.Current.CancellationToken);
 
             var overlay = host.Get<OverlayStore>().Create("Widget demo", 1920, 1080);
+            OverlayLayer layer;
             await using (var file = File.OpenRead(zip!))
-                host.Get<WidgetLibrary>().AddCustomWidget(overlay.Id, Path.GetFileNameWithoutExtension(zip!), WidgetImport.FromZip(file));
+                layer = host.Get<WidgetLibrary>().AddCustomWidget(overlay.Id, Path.GetFileNameWithoutExtension(zip!), WidgetImport.FromZip(file))!;
             var url = servers.OverlayUrl(host.Get<OverlayStore>().Get(overlay.Id)!);
+            await File.WriteAllTextAsync(Path.Combine(output, "editor-url.txt"), servers.EditorUrl(overlay.Id, layer.Id), TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(Path.Combine(output, "overlay-url.txt"), url, TestContext.Current.CancellationToken);
 
             var bus = host.Get<EventBus>();

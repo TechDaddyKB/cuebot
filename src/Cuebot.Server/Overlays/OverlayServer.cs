@@ -18,6 +18,7 @@ namespace Cuebot.Server.Overlays;
 /// <item><c>GET /o/{id}/ws?token=...</c>: its WebSocket; first a "hello" with the overlay, then everything the
 /// <see cref="OverlayFeed"/> publishes for it, in order. Widgets' <c>SE_API</c> requests come back over it.</item>
 /// <item><c>GET /o/{id}/l/{layerId}?token=...</c>: a layer's widget settings and the address of its document (JSON).</item>
+/// <item><c>/edit/...?editor=...</c>: the widget editor (see <see cref="OverlayEditor"/>).</item>
 /// <item>On the widget port, <c>GET /w/{id}/{layerId}?key=...</c>: the widget document, which the page shows in a frame.
 /// The widget port is another web origin, so a widget cannot reach the page, its token or Cuebot's API; its key, derived
 /// from the overlay token, opens only that layer. <c>/runtime</c> and <c>/assets</c> are served there too.</item>
@@ -35,7 +36,7 @@ public sealed class OverlayServer : IAsyncDisposable
 
     /// <summary>Runtime files served at /runtime (embedded resources "Cuebot.Server.Overlays.{name}").</summary>
     private static readonly HashSet<string> RuntimeFiles = new(
-        ["overlay.js", "overlay.css", "se-widget.js", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
+        ["overlay.js", "overlay.css", "se-widget.js", "jquery-3.7.1.min.js", "editor.js", "editor.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
 
     private readonly Func<ServerSettings> _settings;
     private readonly ServerServices _services;
@@ -43,6 +44,7 @@ public sealed class OverlayServer : IAsyncDisposable
     private readonly CancellationTokenSource _stopping = new();
     private KestrelListener? _listener;
     private KestrelListener? _widgetListener;
+    private readonly OverlayEditor _editor;
     private IDisposable? _feed;
     private int _disposed;
     private Action<Guid>? _overlayChanged;
@@ -55,6 +57,7 @@ public sealed class OverlayServer : IAsyncDisposable
     {
         _settings = settings;
         _services = services;
+        _editor = new OverlayEditor(settings, services) { WidgetPort = () => WidgetPort };
     }
 
     public int Port => _listener?.Port ?? 0;
@@ -145,13 +148,14 @@ public sealed class OverlayServer : IAsyncDisposable
         response.Headers.XContentTypeOptions = "nosniff";
         response.Headers["Referrer-Policy"] = "no-referrer";
 
+        var segments = (request.Path.Value ?? "/").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (await _editor.TryHandleAsync(context, segments).ConfigureAwait(false)) return;
         if (!HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method))
         {
             response.StatusCode = StatusCodes.Status405MethodNotAllowed;
             return;
         }
 
-        var segments = (request.Path.Value ?? "/").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
         switch (segments)
         {
             case ["o", var id] when Authorize(id, request) is { } overlay:
@@ -225,6 +229,11 @@ public sealed class OverlayServer : IAsyncDisposable
         var segments = (request.Path.Value ?? "/").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
         switch (segments)
         {
+            case ["p", var draftId] when _editor.Draft(draftId) is { } draft:
+                response.ContentType = "text/html; charset=utf-8";
+                response.Headers.CacheControl = "no-store";
+                await response.WriteAsync(draft).ConfigureAwait(false);
+                return;
             case ["w", var id, var layerId] when WidgetLayer(id, layerId, request.Query["key"].ToString()) is { } layer:
                 response.ContentType = "text/html; charset=utf-8";
                 response.Headers.CacheControl = "no-store";
@@ -365,7 +374,7 @@ public sealed class OverlayServer : IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    private static string Resource(string name)
+    internal static string Resource(string name)
     {
         using var stream = typeof(OverlayServer).Assembly.GetManifestResourceStream("Cuebot.Server.Overlays." + name)
                            ?? throw new InvalidOperationException($"Missing overlay resource '{name}'");

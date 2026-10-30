@@ -32,6 +32,7 @@ Each keeps its own license; full license texts are available from the linked pro
 | [whisper.cpp](https://github.com/ggml-org/whisper.cpp) / ggml (native libraries inside the Whisper.net runtimes) | Voice control speech-to-text | MIT |
 | [Microsoft.Extensions.AI.Abstractions](https://github.com/dotnet/extensions) (dependency of Whisper.net) | — | MIT |
 | [.NET runtime](https://github.com/dotnet/runtime) (self-contained builds) | Runtime | MIT |
+| [jQuery](https://jquery.com) 3.7.1 (`src/Cuebot.Server/Overlays/Runtime/jquery-3.7.1.min.js`, unmodified, sha256 `/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=`) | Preloaded for overlay widgets, as StreamElements does | MIT, © OpenJS Foundation and other contributors |
 
 ## System libraries used, not bundled
 

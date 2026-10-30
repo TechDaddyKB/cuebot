@@ -135,7 +135,7 @@ page.
 | `GET /o/{id}/ws?token=...` (WebSocket) | `{"type":"hello","overlay":{id,name,width,height},"session":{...},"recents":[...]}`, then every `OverlayFeed` message for that overlay: `{"type":"event","listener","event"}` (StreamElements-shaped), `{"type":"session","session"}`, `{"type":"command","command"}`. The page's own origin, loopback pages and `allowedOrigins` may connect. |
 | `GET /o/{id}/l/{layerId}?token=...` | A layer's widget settings: `{src, fieldData, widgetDuration}`; `src` is the document's path on the widget port. |
 | `GET /runtime/overlay.js`, `/runtime/overlay.css` | The page runtime (`window.Cuebot`: `overlay`, `on(type, fn)`, `send(text)`; reconnects with backoff, `reload` command reloads; runs each layer's widget in a frame and relays messages). |
-| Widget port (default 7477) `GET /w/{id}/{layerId}?key=...` | The widget document: jQuery 3.7.1 (from code.jquery.com, as StreamElements preloads it), `/runtime/se-widget.js`, then the CSS, HTML and JS panes with `{field}` / `{{field}}` filled in. The key is HMAC-SHA256 of the layer id with the overlay token (it opens only that layer and changes with a new link). The widget port also serves `/runtime` and `/assets`, and nothing else. |
+| Widget port (default 7477) `GET /w/{id}/{layerId}?key=...` | The widget document: jQuery 3.7.1 (bundled, `/runtime/jquery-3.7.1.min.js`, as StreamElements preloads it), `/runtime/se-widget.js`, then the CSS pane, your CSS override, the HTML and JS panes, with `{field}` / `{{field}}` filled in. The key is HMAC-SHA256 of the layer id with the overlay token (it opens only that layer and changes with a new link). The widget port also serves `/runtime` and `/assets`, and nothing else. |
 | `GET /assets/{sha256}.{ext}` | Files from `overlays/assets` (images, video, audio, fonts), `Cache-Control: immutable`, `Content-Security-Policy: sandbox`. |
 
 - Tokens: `ov_` + 32 random bytes, one per overlay in `overlays.json`, compared in constant time; "New link" replaces it.
@@ -149,9 +149,26 @@ page.
   never held), `onSessionUpdate`, and `SE_API`: `store.get/set` (widget-store.json, shared by all widgets; each set
   sends `kvstore:update`), `counters.get` (numeric global variables only; changes send `bot:counter`), `sanitize` (no
   word filter yet), `cheerFilter`, `getOverlayStatus`, `resumeQueue`; `setField` does nothing outside an editor.
-- Widget code lives in `overlays/widgets/{elementId}/` (`widget.html/css/js`, `fields.json`, `data.json`); imports take
+- Widget code lives in `overlays/widgets/{elementId}/` (`widget.html/css/js`, `fields.json`, `data.json`, `override.css`); imports take
   widget.io zips (`widget.ini`) or zips with the five panes by name. Changing an overlay or its widget code reloads the
   pages that show it.
+
+### Widget editor (`/edit/...`, `OverlayEditor`)
+
+Opened from the Overlays page ("Edit…") with the editor token (`overlays.editorToken` in servers.json, a secret,
+created on first use); overlay links do not open it. Same network setting as overlays.
+
+| Route | |
+| --- | --- |
+| `GET /edit/{overlayId}/{layerId}?editor=...` | The editor: settings form built from FIELDS (text, textarea, number, slider, checkbox, colorpicker, dropdown, image/video/sound inputs with upload, googleFont, button; `group` sections; `hidden` and `widget*` fields not shown), code panes (HTML, CSS, JS, Fields, Data, My CSS), a scaled preview of unsaved changes and Emulate buttons per platform. |
+| `GET` / `POST /edit/api/{overlayId}/{layerId}?editor=...` | The widget's panes; saving them (FIELDS must be a JSON object) reloads the overlays that use the widget. |
+| `POST .../preview` | A draft document, served for 10 minutes from the widget port at `/p/{id}` (the random id is the only key). |
+| `POST .../request` | The preview's SE_API requests. |
+| `POST /edit/api/emulate` `{platform, kind}` | Sample events (`OverlayEmulator`) converted by the real adapters (`OverlayEventBridge.Convert`) and returned to the editor; they are never broadcast to live overlays. |
+| `POST /edit/api/assets?name=...` | Uploads a file (raw body, up to 200 MB) to the asset folder; returns `/assets/{sha256}.{ext}`. |
+
+Every POST must carry the editor page's own Origin. Field buttons are sent as StreamElements' editor sends them:
+`event:test` with `{listener: "widget-button", field, value}`.
 - Every response has `Referrer-Policy: no-referrer` (the page also sets it), so the token in the page URL never
   reaches sites that widgets load from, and `X-Content-Type-Options: nosniff`. Only GET/HEAD.
 - Each page has its own outbox: past 500 waiting messages the oldest chat message or session update is dropped;

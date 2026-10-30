@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · Cuebot widget editor</title>
+<link rel="stylesheet" href="/runtime/editor.css">
+<script>window.CUEBOT_EDITOR = /*CUEBOT_EDITOR*/{};</script>
+<script src="/runtime/editor.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="title">
+    <strong id="widget-name"></strong>
+    <span id="overlay-name" class="muted"></span>
+  </div>
+  <span id="status" class="muted" role="status"></span>
+  <button id="save" class="primary" disabled>Save</button>
+</header>
+<main>
+  <section class="side">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="settings" class="active">Settings</button>
+      <button role="tab" data-tab="html">HTML</button>
+      <button role="tab" data-tab="css">CSS</button>
+      <button role="tab" data-tab="js">JS</button>
+      <button role="tab" data-tab="fields">Fields</button>
+      <button role="tab" data-tab="data">Data</button>
+      <button role="tab" data-tab="cssOverride" title="Your own CSS, applied after the widget's">My CSS</button>
+    </nav>
+    <div id="panel-settings" class="panel active"><div id="form"></div></div>
+    <div id="panel-code" class="panel">
+      <p id="code-hint" class="muted"></p>
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    </div>
+  </section>
+  <section class="preview">
+    <div class="emulate">
+      <label>Emulate
+        <select id="emulate-platform"></select>
+      </label>
+      <span id="emulate-buttons"></span>
+      <button id="emulate-clear" title="Reload the preview">Reset</button>
+    </div>
+    <div id="stage-wrap"><div id="stage"><iframe id="preview" title="Widget preview" sandbox="allow-scripts allow-same-origin" allow="autoplay"></iframe></div></div>
+    <p class="muted small">The preview uses your unsaved changes. Emulated events only go to this preview, never to your live overlays.</p>
+  </section>
+</main>
+</body>
+</html>

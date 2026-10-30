@@ -112,10 +112,11 @@ public sealed class WidgetCodeTests : IDisposable
         {
             store.Changed += changed.Add;
             Assert.Same(WidgetCode.Empty, store.Read(id));
-            store.Write(id, new WidgetCode("<b>é</b>", "c", "j", Fields, "{}"));
+            store.Write(id, new WidgetCode("<b>é</b>", "c", "j", Fields, "{}") { CssOverride = ".x{}" });
         }
         using var again = new WidgetCodeStore(paths);
         Assert.Equal("<b>é</b>", again.Read(id).Html);
+        Assert.Equal(".x{}", again.Read(id).CssOverride);
         Assert.Equal([id], changed);
         again.Delete(id);
         Assert.False(again.Exists(id));
