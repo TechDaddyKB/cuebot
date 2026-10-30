@@ -92,11 +92,14 @@
             <TextBlock Classes="muted" TextWrapping="Wrap"
                        Text="Serves your Cuebot overlays to OBS browser sources. Each overlay has its own secret link on the Overlays &amp; Widgets page; with LAN access on, other computers on your network can load overlays too." />
             <CheckBox Content="Enabled" IsChecked="{Binding OverlaysEnabled}" />
-            <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
+            <Grid ColumnDefinitions="*,12,140,12,140" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
               <TextBlock Grid.Column="2" Text="Port" />
+              <TextBlock Grid.Column="4" Text="Widget port" />
               <TextBox Grid.Row="1" Text="{Binding OverlaysAddress}" />
               <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding OverlaysPort}" Minimum="1" Maximum="65535" FormatString="0" />
+              <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding OverlaysWidgetPort}" Minimum="1" Maximum="65535" FormatString="0"
+                             ToolTip.Tip="Widgets load from this second port, so they cannot reach the overlay page or Cuebot" />
             </Grid>
           </StackPanel>
         </Border>

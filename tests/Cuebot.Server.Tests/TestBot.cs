@@ -49,6 +49,7 @@ internal sealed class TestBot : IAsyncDisposable
             Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
             Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
             Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
+            Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -71,6 +72,11 @@ internal sealed class TestBot : IAsyncDisposable
     public AppLog Log { get; } = new();
     public Cuebot.Core.Overlays.OverlayStore Overlays { get; } = new(null, new AppLog());
     public Cuebot.Core.Overlays.AssetStore OverlayAssets { get; } = new(null);
+    public Cuebot.Core.Overlays.ElementStore Elements { get; } = new(null, new AppLog());
+    public Cuebot.Core.Overlays.Widgets.WidgetCodeStore WidgetCode { get; } = new(null);
+    public Cuebot.Core.Overlays.Widgets.WidgetKeyValueStore WidgetStore { get; } = new(null, new AppLog());
+    public Cuebot.Core.Overlays.Widgets.WidgetLibrary Widgets => _widgets ??= new(Overlays, Elements, WidgetCode);
+    private Cuebot.Core.Overlays.Widgets.WidgetLibrary? _widgets;
     public Cuebot.Core.Overlays.OverlayFeed OverlayFeed => _overlayFeed ??= new Cuebot.Core.Overlays.OverlayFeed(Log);
     private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
     public Cuebot.Core.Overlays.Session.SessionDataStore SessionData => _sessionData ??= new(null, Log, Bus, OverlayFeed, null);
@@ -162,6 +168,9 @@ internal sealed class TestBot : IAsyncDisposable
         Emotes?.Dispose();
         Overlays.Dispose();
         OverlayAssets.Dispose();
+        Elements.Dispose();
+        WidgetCode.Dispose();
+        WidgetStore.Dispose();
         _sessionData?.Dispose();
         Scripts.Dispose();
         Engine.Dispose();

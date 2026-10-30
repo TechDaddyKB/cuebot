@@ -7,7 +7,7 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4">
       <TextBlock Classes="h1" Text="Overlays &amp; Widgets" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Each overlay is a page Cuebot hosts on this computer. Add it to OBS as a browser source with the overlay's link and canvas size. The designer for widgets and alerts is on the way; for now you can create overlays and their links." />
+                 Text="Each overlay is a page Cuebot hosts on this computer. Add it to OBS as a browser source with the overlay's link and canvas size. Add StreamElements custom widgets (.zip) to an overlay; they get chat and alerts from every platform Cuebot is connected to. The visual designer is on the way." />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ServerHint}" TextWrapping="Wrap" Margin="0,8,0,0"
@@ -38,6 +38,7 @@
       <ListBox ItemsSource="{Binding Overlays}" IsVisible="{Binding HasOverlays}">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:OverlayRowViewModel">
+            <StackPanel Spacing="6">
             <Grid ColumnDefinitions="220,110,*,Auto">
               <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
               <TextBlock Grid.Column="1" Text="{Binding Canvas}" Classes="muted" VerticalAlignment="Center" />
@@ -47,9 +48,34 @@
                 <Button Content="Copy link" Click="OnCopyLink" />
                 <Button Content="New link" Command="{Binding NewLinkCommand}"
                         ToolTip.Tip="Replace the link (for example if someone else saw it); OBS needs the new one" />
+                <Button Content="Add widget…" Click="OnAddWidget"
+                        ToolTip.Tip="Import a StreamElements custom widget (.zip, for example one bought on Etsy)" />
                 <Button Content="Delete" Command="{Binding DeleteCommand}" />
               </StackPanel>
             </Grid>
+            <ItemsControl ItemsSource="{Binding Layers}" IsVisible="{Binding HasLayers}" Margin="16,0,0,0">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:LayerRowViewModel">
+                  <Grid ColumnDefinitions="204,Auto,6,Auto,14,Auto,6,Auto,14,Auto,6,Auto,14,Auto,6,Auto,*,Auto" Margin="0,2">
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1" Classes="muted" Text="X" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding X}" Minimum="-7680" Maximum="7680" FormatString="0" Width="110"
+                                   ToolTip.Tip="Left edge (pixels)" />
+                    <TextBlock Grid.Column="5" Classes="muted" Text="Y" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="7" Value="{Binding Y}" Minimum="-7680" Maximum="7680" FormatString="0" Width="110"
+                                   ToolTip.Tip="Top edge (pixels)" />
+                    <TextBlock Grid.Column="9" Classes="muted" Text="W" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="11" Value="{Binding Width}" Minimum="1" Maximum="7680" FormatString="0" Width="110"
+                                   ToolTip.Tip="Width (pixels)" />
+                    <TextBlock Grid.Column="13" Classes="muted" Text="H" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="15" Value="{Binding Height}" Minimum="1" Maximum="7680" FormatString="0" Width="110"
+                                   ToolTip.Tip="Height (pixels)" />
+                    <Button Grid.Column="17" Content="Remove" Command="{Binding RemoveCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            </StackPanel>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>

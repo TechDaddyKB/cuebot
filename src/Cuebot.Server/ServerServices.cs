@@ -162,6 +162,33 @@ public sealed class ServerServices
 
     private Cuebot.Core.Overlays.Session.SessionDataStore? _sessionData;
 
+    /// <summary>Custom widget code for overlay layers.</summary>
+    public Cuebot.Core.Overlays.Widgets.WidgetLibrary? Widgets
+    {
+        get => _widgets ??= _provider?.GetService<Cuebot.Core.Overlays.Widgets.WidgetLibrary>();
+        init => _widgets = value;
+    }
+
+    private Cuebot.Core.Overlays.Widgets.WidgetLibrary? _widgets;
+
+    /// <summary>Widget code changes (to reload the overlays that use it).</summary>
+    public Cuebot.Core.Overlays.Widgets.WidgetCodeStore? WidgetCode
+    {
+        get => _widgetCode ??= _provider?.GetService<Cuebot.Core.Overlays.Widgets.WidgetCodeStore>();
+        init => _widgetCode = value;
+    }
+
+    private Cuebot.Core.Overlays.Widgets.WidgetCodeStore? _widgetCode;
+
+    /// <summary>StreamElements' SE_API.store for widgets.</summary>
+    public Cuebot.Core.Overlays.Widgets.WidgetKeyValueStore? WidgetStore
+    {
+        get => _widgetStore ??= _provider?.GetService<Cuebot.Core.Overlays.Widgets.WidgetKeyValueStore>();
+        init => _widgetStore = value;
+    }
+
+    private Cuebot.Core.Overlays.Widgets.WidgetKeyValueStore? _widgetStore;
+
     private T Required<T>() where T : notnull =>
         _provider is null
             ? throw new InvalidOperationException($"{typeof(T).Name} was not provided")

@@ -69,6 +69,7 @@ public sealed partial class ServersViewModel : PageViewModel
     public bool OverlaysEnabled { get => Settings.Overlays.Enabled; set { Settings.Overlays.Enabled = value; Changed(); } }
     public string OverlaysAddress { get => Settings.Overlays.Address; set { Settings.Overlays.Address = value.Trim(); Changed(); } }
     public decimal OverlaysPort { get => Settings.Overlays.Port; set { Settings.Overlays.Port = (int)value; Changed(); } }
+    public decimal OverlaysWidgetPort { get => Settings.Overlays.WidgetPort; set { Settings.Overlays.WidgetPort = (int)value; Changed(); } }
 
     // ---- HTTP ------------------------------------------------------------------------------------------------------
 

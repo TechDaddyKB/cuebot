@@ -10,3 +10,10 @@ html, body {
   position: relative;
   overflow: hidden;
 }
+
+.cuebot-layer {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  color-scheme: normal;
+}

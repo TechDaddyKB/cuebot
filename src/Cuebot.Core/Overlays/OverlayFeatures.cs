@@ -20,6 +20,10 @@ public static class OverlayFeatures
         services.AddSingleton(sp => new OverlayStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new ElementStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new AssetStore(sp.GetRequiredService<AppPaths>()));
+        services.AddSingleton(sp => new Widgets.WidgetCodeStore(sp.GetRequiredService<AppPaths>()));
+        services.AddSingleton(sp => new Widgets.WidgetKeyValueStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton(sp => new Widgets.WidgetLibrary(sp.GetRequiredService<OverlayStore>(), sp.GetRequiredService<ElementStore>(),
+            sp.GetRequiredService<Widgets.WidgetCodeStore>()));
         services.AddSingleton(sp => new OverlayFeed(sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new OverlayEventBridge(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(),
             sp.GetServices<IOverlayEventAdapter>(), sp.GetRequiredService<AppLog>(), sp.GetService<EmoteService>()));

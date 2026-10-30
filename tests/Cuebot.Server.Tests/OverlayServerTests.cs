@@ -14,7 +14,7 @@ public sealed class OverlayServerTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _bot = new TestBot(new ServerSettings { Overlays = new OverlayServerSettings { Enabled = true, Port = 0 } });
+        _bot = new TestBot(new ServerSettings { Overlays = new OverlayServerSettings { Enabled = true, Port = 0, WidgetPort = 0 } });
         _overlay = _bot.Overlays.Create("Main <Stage>", 1280, 720);
         await _bot.Manager.StartAsync();
         _http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{_bot.Manager.Overlays.Port}") };

@@ -49,6 +49,12 @@ public sealed class OverlayServerSettings
     public bool Enabled { get; set; }
     public string Address { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 7476;
+
+    /// <summary>
+    /// The port widget frames load from. A different port is a different web origin, so widgets cannot reach the
+    /// overlay page, its token or Cuebot's API, yet can still load Cuebot's scripts, badges and your uploaded files.
+    /// </summary>
+    public int WidgetPort { get; set; } = 7477;
 }
 
 /// <summary>The Streamer.bot-compatible WebSocket server (for @streamerbot/client overlays and tools).</summary>

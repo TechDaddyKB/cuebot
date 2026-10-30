@@ -1,7 +1,10 @@
 using System.Collections.Concurrent;
+using System.Globalization;
+using System.Text.Json;
 using System.Net;
 using System.Text.Json.Nodes;
 using Cuebot.Core.Overlays;
+using Cuebot.Core.Overlays.Widgets;
 using Cuebot.Server.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
@@ -13,7 +16,11 @@ namespace Cuebot.Server.Overlays;
 /// <list type="bullet">
 /// <item><c>GET /o/{id}?token=...</c>: the overlay page.</item>
 /// <item><c>GET /o/{id}/ws?token=...</c>: its WebSocket; first a "hello" with the overlay, then everything the
-/// <see cref="OverlayFeed"/> publishes for it, in order.</item>
+/// <see cref="OverlayFeed"/> publishes for it, in order. Widgets' <c>SE_API</c> requests come back over it.</item>
+/// <item><c>GET /o/{id}/l/{layerId}?token=...</c>: a layer's widget settings and the address of its document (JSON).</item>
+/// <item>On the widget port, <c>GET /w/{id}/{layerId}?key=...</c>: the widget document, which the page shows in a frame.
+/// The widget port is another web origin, so a widget cannot reach the page, its token or Cuebot's API; its key, derived
+/// from the overlay token, opens only that layer. <c>/runtime</c> and <c>/assets</c> are served there too.</item>
 /// <item><c>GET /runtime/{file}</c>: Cuebot's overlay scripts, styles and built-in badge icons.</item>
 /// <item><c>GET /assets/{sha256}.{ext}</c>: files from the <see cref="AssetStore"/>.</item>
 /// </list>
@@ -28,15 +35,20 @@ public sealed class OverlayServer : IAsyncDisposable
 
     /// <summary>Runtime files served at /runtime (embedded resources "Cuebot.Server.Overlays.{name}").</summary>
     private static readonly HashSet<string> RuntimeFiles = new(
-        ["overlay.js", "overlay.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
+        ["overlay.js", "overlay.css", "se-widget.js", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
 
     private readonly Func<ServerSettings> _settings;
     private readonly ServerServices _services;
     private readonly ConcurrentDictionary<string, OverlayClient> _clients = new();
     private readonly CancellationTokenSource _stopping = new();
     private KestrelListener? _listener;
+    private KestrelListener? _widgetListener;
     private IDisposable? _feed;
     private int _disposed;
+    private Action<Guid>? _overlayChanged;
+    private Action<Guid>? _codeChanged;
+    private Action<string, JsonNode?>? _storeChanged;
+    private Action<Cuebot.Core.Actions.GlobalVariableChange>? _globalChanged;
 
     /// <param name="settings">Read per request, so origin changes apply immediately.</param>
     public OverlayServer(Func<ServerSettings> settings, ServerServices services)
@@ -46,6 +58,9 @@ public sealed class OverlayServer : IAsyncDisposable
     }
 
     public int Port => _listener?.Port ?? 0;
+
+    /// <summary>The bound widget port (another origin for widget frames).</summary>
+    public int WidgetPort => _widgetListener?.Port ?? 0;
     public bool IsRunning => _listener is not null;
 
     /// <summary>Connected overlay pages.</summary>
@@ -58,7 +73,58 @@ public sealed class OverlayServer : IAsyncDisposable
     {
         if (_listener is not null) return;
         _listener = await KestrelListener.StartAsync(address, _settings().Overlays.Port, HandleAsync, ct).ConfigureAwait(false);
+        try
+        {
+            _widgetListener = await KestrelListener.StartAsync(address, _settings().Overlays.WidgetPort, HandleWidgetAsync, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            await _listener.DisposeAsync().ConfigureAwait(false);
+            _listener = null;
+            throw;
+        }
         _feed = _services.OverlayFeed?.Subscribe(Deliver);
+        WatchChanges();
+    }
+
+    /// <summary>
+    /// Overlay and widget changes reload the pages they affect; SE_API.store changes become "kvstore:update" and numeric
+    /// global variable changes "bot:counter" events, as StreamElements sends them.
+    /// </summary>
+    private void WatchChanges()
+    {
+        if (_services.OverlayFeed is not { } feed) return;
+        if (_services.Overlays is { } overlays)
+        {
+            _overlayChanged = id => feed.Publish(OverlayMessage.Command("reload", id));
+            overlays.Changed += _overlayChanged;
+        }
+        if (_services.WidgetCode is { } code && _services.Overlays is { } store)
+        {
+            _codeChanged = elementId =>
+            {
+                foreach (var overlay in store.All().Where(o => o.Layers.Any(l => l.ElementId == elementId)))
+                    feed.Publish(OverlayMessage.Command("reload", overlay.Id));
+            };
+            code.Changed += _codeChanged;
+        }
+        if (_services.WidgetStore is { } kv)
+        {
+            _storeChanged = (key, value) => feed.Publish(OverlayMessage.Event("kvstore:update",
+                new JsonObject { ["data"] = new JsonObject { ["key"] = "customWidget." + key, ["value"] = value?.DeepClone() } }));
+            kv.Changed += _storeChanged;
+        }
+        _globalChanged = change =>
+        {
+            if (change.NewValue is not (long or int or decimal or double)) return;
+            feed.Publish(OverlayMessage.Event("bot:counter", new JsonObject
+            {
+                ["counter"] = change.Name,
+                ["value"] = Convert.ToDouble(change.NewValue, CultureInfo.InvariantCulture),
+            }));
+        };
+        try { _services.Globals.VariableChanged += _globalChanged; }
+        catch (InvalidOperationException) { _globalChanged = null; }   // no globals (tests without a provider)
     }
 
     /// <summary>The page's path and query for an overlay (relative to the server's base URL).</summary>
@@ -89,10 +155,14 @@ public sealed class OverlayServer : IAsyncDisposable
         switch (segments)
         {
             case ["o", var id] when Authorize(id, request) is { } overlay:
-                await WritePageAsync(context, overlay).ConfigureAwait(false);
+                await WritePageAsync(context, overlay, WidgetPort).ConfigureAwait(false);
                 return;
             case ["o", var id, "ws"] when Authorize(id, request) is { } overlay:
                 await AcceptAsync(context, overlay).ConfigureAwait(false);
+                return;
+            case ["o", var id, "l", var layerId] when Authorize(id, request) is { } overlay
+                                                    && overlay.Layers.FirstOrDefault(l => l.Id.ToString("D") == layerId) is { } layer:
+                await WriteLayerAsync(context, overlay, layer).ConfigureAwait(false);
                 return;
             case ["runtime", var file] when RuntimeFiles.Contains(file):
                 await WriteRuntimeAsync(context, file).ConfigureAwait(false);
@@ -109,7 +179,7 @@ public sealed class OverlayServer : IAsyncDisposable
     private Overlay? Authorize(string id, HttpRequest request) =>
         Guid.TryParse(id, out var guid) ? _services.Overlays?.Authorize(guid, request.Query["token"].ToString()) : null;
 
-    private static async Task WritePageAsync(HttpContext context, Overlay overlay)
+    private static async Task WritePageAsync(HttpContext context, Overlay overlay, int widgetPort)
     {
         var config = new JsonObject
         {
@@ -118,6 +188,8 @@ public sealed class OverlayServer : IAsyncDisposable
             ["width"] = overlay.Width,
             ["height"] = overlay.Height,
             ["token"] = overlay.Token,
+            ["layers"] = new JsonArray([.. overlay.Layers.Select(OverlayWidgetHost.LayerConfig)]),
+            ["widgetPort"] = widgetPort,
         };
         var page = Resource("overlay.html")
             .Replace("/*CUEBOT_OVERLAY*/{}", ScriptJson(config), StringComparison.Ordinal)
@@ -125,6 +197,60 @@ public sealed class OverlayServer : IAsyncDisposable
         context.Response.ContentType = "text/html; charset=utf-8";
         context.Response.Headers.CacheControl = "no-store";
         await context.Response.WriteAsync(page).ConfigureAwait(false);
+    }
+
+    /// <summary><c>{src, fieldData, widgetDuration}</c>: the document's path on the widget port and the widget's settings.</summary>
+    private async Task WriteLayerAsync(HttpContext context, Overlay overlay, OverlayLayer layer)
+    {
+        var code = _services.Widgets?.CodeFor(layer) ?? WidgetCode.Empty;
+        var json = OverlayWidgetHost.Settings(code);
+        json["src"] = $"/w/{overlay.Id:D}/{layer.Id:D}?key={OverlayWidgetHost.FrameKey(overlay.Token, layer.Id)}";
+        context.Response.ContentType = "application/json; charset=utf-8";
+        context.Response.Headers.CacheControl = "no-store";
+        await context.Response.WriteAsync(json.ToJsonString()).ConfigureAwait(false);
+    }
+
+    /// <summary>The widget port: widget documents (by frame key), runtime files and assets; nothing else.</summary>
+    internal async Task HandleWidgetAsync(HttpContext context)
+    {
+        var request = context.Request;
+        var response = context.Response;
+        response.Headers.XContentTypeOptions = "nosniff";
+        response.Headers["Referrer-Policy"] = "no-referrer";
+        if (!HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method))
+        {
+            response.StatusCode = StatusCodes.Status405MethodNotAllowed;
+            return;
+        }
+        var segments = (request.Path.Value ?? "/").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        switch (segments)
+        {
+            case ["w", var id, var layerId] when WidgetLayer(id, layerId, request.Query["key"].ToString()) is { } layer:
+                response.ContentType = "text/html; charset=utf-8";
+                response.Headers.CacheControl = "no-store";
+                await response.WriteAsync(OverlayWidgetHost.Document(_services.Widgets?.CodeFor(layer) ?? WidgetCode.Empty)).ConfigureAwait(false);
+                return;
+            case ["runtime", var file] when RuntimeFiles.Contains(file):
+                await WriteRuntimeAsync(context, file).ConfigureAwait(false);
+                return;
+            case ["assets", var name] when _services.OverlayAssets?.PathOf(name) is { } path:
+                await WriteAssetAsync(context, path).ConfigureAwait(false);
+                return;
+            default:
+                response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+        }
+    }
+
+    private OverlayLayer? WidgetLayer(string overlayId, string layerId, string key)
+    {
+        if (!Guid.TryParse(overlayId, out var id) || !Guid.TryParse(layerId, out var layer)) return null;
+        if (_services.Overlays?.Get(id) is not { } overlay) return null;
+        var expected = OverlayWidgetHost.FrameKey(overlay.Token, layer);
+        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(expected), System.Text.Encoding.UTF8.GetBytes(key.Length == expected.Length ? key : expected + "x")))
+            return null;
+        return overlay.Layers.FirstOrDefault(l => l.Id == layer);
     }
 
     /// <summary>JSON safe inside a &lt;script&gt; element (no "&lt;/script&gt;" or comment openers).</summary>
@@ -210,10 +336,32 @@ public sealed class OverlayServer : IAsyncDisposable
         ["recents"] = session?.Recents() ?? new JsonArray(),
     }.ToJsonString(), overlay.Id);
 
-    /// <summary>Pages send nothing Cuebot acts on yet (widget requests come with the widget runtime); pings get pongs.</summary>
-    private static Task OnMessageAsync(OverlayClient client, string message)
+    /// <summary>
+    /// Pings get pongs; widget requests (<c>{"type":"request", id, layer, request, data}</c>) get
+    /// <c>{"type":"response", id, layer, result}</c> or <c>{..., error}</c>, to that page only.
+    /// </summary>
+    private Task OnMessageAsync(OverlayClient client, string message)
     {
-        if (message == "ping") client.Outbox.Enqueue(new OverlayMessage("\"pong\"", client.OverlayId, Droppable: true));
+        if (message == "ping")
+        {
+            client.Outbox.Enqueue(new OverlayMessage("\"pong\"", client.OverlayId, Droppable: true));
+            return Task.CompletedTask;
+        }
+        JsonObject? json;
+        try { json = JsonNode.Parse(message) as JsonObject; }
+        catch (JsonException) { return Task.CompletedTask; }
+        if (json?["type"]?.GetValue<string>() != "request") return Task.CompletedTask;
+
+        var reply = new JsonObject { ["type"] = "response", ["id"] = json["id"]?.DeepClone(), ["layer"] = json["layer"]?.DeepClone() };
+        try
+        {
+            reply["result"] = OverlayWidgetHost.Answer(json["request"]?.GetValue<string>() ?? "", json["data"] as JsonObject, _services);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or FormatException)
+        {
+            reply["error"] = ex.Message;
+        }
+        client.Outbox.Enqueue(new OverlayMessage(reply.ToJsonString(), client.OverlayId));
         return Task.CompletedTask;
     }
 
@@ -229,11 +377,17 @@ public sealed class OverlayServer : IAsyncDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         _feed?.Dispose();
+        if (_overlayChanged is not null && _services.Overlays is { } overlays) overlays.Changed -= _overlayChanged;
+        if (_codeChanged is not null && _services.WidgetCode is { } code) code.Changed -= _codeChanged;
+        if (_storeChanged is not null && _services.WidgetStore is { } kv) kv.Changed -= _storeChanged;
+        if (_globalChanged is not null) _services.Globals.VariableChanged -= _globalChanged;
         _feed = null;
         await _stopping.CancelAsync().ConfigureAwait(false);
         await Task.WhenAll(_clients.Values.Select(c => c.Connection.CloseAsync())).ConfigureAwait(false);
         if (_listener is not null) await _listener.DisposeAsync().ConfigureAwait(false);
+        if (_widgetListener is not null) await _widgetListener.DisposeAsync().ConfigureAwait(false);
         _listener = null;
+        _widgetListener = null;
         _stopping.Dispose();
     }
 

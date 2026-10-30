@@ -7,6 +7,7 @@ using Cuebot.App.ViewModels;
 using Cuebot.App.Views;
 using Cuebot.Core;
 using Cuebot.Core.Overlays;
+using Cuebot.Core.Overlays.Widgets;
 using Cuebot.Scripting;
 using Cuebot.Server;
 using Microsoft.Extensions.DependencyInjection;
@@ -108,7 +109,45 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         window.Close();
     }
 
-    private static void SaveBothThemes(Window window)
+    [AvaloniaFact]
+    public void Widgets_are_imported_moved_and_removed()
+    {
+        var library = _services.GetRequiredService<WidgetLibrary>();
+        var vm = new OverlaysViewModel(Store, Servers, library);
+        var window = Open(new OverlaysView(), vm);
+        vm.CreateCommand.Execute(null);
+        Pump();
+        var row = Assert.Single(vm.Overlays);
+
+        var zip = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(zip, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        using (var writer = new StreamWriter(archive.CreateEntry("html.txt").Open()))
+            writer.Write("<div></div>");
+        zip.Position = 0;
+        vm.AddWidget(row.Id, zip, "pink_chat_widget.zip");
+        Pump();
+
+        row = Assert.Single(vm.Overlays);
+        var layer = Assert.Single(row.Layers);
+        Assert.Equal("pink chat widget", layer.Name);
+        Assert.Equal((1920m, 1080m), (layer.Width, layer.Height));
+        layer.X = 40;
+        layer.Width = 600;
+        var saved = Store.Get(row.Id)!.Layers.Single();
+        Assert.Equal((40.0, 600.0), (saved.X, saved.Width));
+        SaveBothThemes(window, "overlays-widgets");
+
+        vm.AddWidget(row.Id, new MemoryStream([1, 2, 3]), "broken.zip");
+        Assert.StartsWith("Could not add the widget", vm.Status);
+
+        layer.RemoveCommand.Execute(null);
+        Pump();
+        Assert.Empty(Store.Get(row.Id)!.Layers);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    private static void SaveBothThemes(Window window, string name = "overlays")
     {
         var app = Avalonia.Application.Current!;
         var original = app.RequestedThemeVariant;
@@ -118,7 +157,7 @@ public sealed class OverlaysPageTests : IAsyncDisposable
             {
                 app.RequestedThemeVariant = theme;
                 Pump();
-                TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, $"overlays{suffix}.png"));
+                TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, $"{name}{suffix}.png"));
             }
         }
         finally
