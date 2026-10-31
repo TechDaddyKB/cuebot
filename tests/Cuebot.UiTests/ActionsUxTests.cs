@@ -60,6 +60,8 @@ public sealed class ActionsUxTests : IAsyncDisposable
         var (window, vm) = Open();
         var actions = Page<ActionsViewModel>(vm);
         var timers = Page<TimersViewModel>(vm);
+        vm.SelectedPage = actions;   // the page on screen, so its bindings are live when the selected action goes away
+        TestApp.BindingErrors.Clear();
         var api = new Cuebot.Server.Api.ApiOperations(_host.Get<Cuebot.Server.ServerServices>());
         var before = Profile.Snapshot.Actions.Count;
 
@@ -84,6 +86,7 @@ public sealed class ActionsUxTests : IAsyncDisposable
         Pump();
         Assert.DoesNotContain(actions.Actions, a => a.Name == "Pause everything");
         Assert.Null(actions.SelectedAction);
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
 
         actions.NewActionCommand.Execute(null); // the page's own add still makes exactly one
         Pump();

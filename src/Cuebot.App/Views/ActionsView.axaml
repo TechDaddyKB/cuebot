@@ -175,7 +175,7 @@
             </ItemsControl>
           </ScrollViewer>
           <TextBlock Classes="muted" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="12"
-                     IsVisible="{Binding !SelectedAction?.Triggers.Count}"
+                     IsVisible="{Binding SelectedAction?.Triggers.Count, Converter={x:Static vm:EditorConverters.IsZero}}"
                      Text="No triggers yet: the action runs only when started by hand, a command or another action." />
         </Panel>
         <Border Grid.Row="2" Height="1" Background="{DynamicResource CuebotLine}" Margin="0,8"
@@ -321,12 +321,12 @@
                                     ToolTip.Tip="Runs wait in this queue. Pause, resume and blocking are set on the Queues page." />
                         </StackPanel>
                         <CheckBox Content="Allow concurrent runs (Default queue only)" IsChecked="{Binding SelectedAction?.Concurrent}"
-                                  IsEnabled="{Binding !SelectedAction?.HasQueue}"
+                                  IsEnabled="{Binding SelectedAction?.HasQueue, Converter={x:Static vm:EditorConverters.IsFalse}}"
                                   ToolTip.Tip="Only for actions in the Default queue. Off: runs of this action wait for each other. Actions in a named queue follow that queue's Blocking setting instead." />
                         <CheckBox Content="Random action" IsChecked="{Binding SelectedAction?.RandomAction}"
                                   ToolTip.Tip="Run only ONE enabled top-level sub-action, picked by weight" />
                         <CheckBox Content="Concurrent sub-actions" IsChecked="{Binding SelectedAction?.ConcurrentSubActions}"
-                                  IsEnabled="{Binding !SelectedAction?.RandomAction}"
+                                  IsEnabled="{Binding SelectedAction?.RandomAction, Converter={x:Static vm:EditorConverters.IsFalse}}"
                                   ToolTip.Tip="Run all top-level sub-actions at the same time (ignored with Random action)" />
                         <CheckBox Content="Always run" IsChecked="{Binding SelectedAction?.AlwaysRun}"
                                   ToolTip.Tip="Start even while the action's queue is paused" />
