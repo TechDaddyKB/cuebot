@@ -77,7 +77,9 @@ public sealed class ActionHelpTests : IAsyncDisposable
                 File.WriteAllText(path, text);
             }
         }
-        var stale = pages.Where(p => !File.Exists(Path.Combine(root, p.Key)) || File.ReadAllText(Path.Combine(root, p.Key)) != p.Value)
+        // Compare without line endings: a Windows checkout may turn the committed \n into \r\n.
+        static string Lf(string text) => text.Replace("\r\n", "\n");
+        var stale = pages.Where(p => !File.Exists(Path.Combine(root, p.Key)) || Lf(File.ReadAllText(Path.Combine(root, p.Key))) != p.Value)
             .Select(p => p.Key).Order(StringComparer.Ordinal).ToArray();
         var extra = new[] { "triggers", "sub-actions" }
             .Select(d => Path.Combine(root, d)).Where(Directory.Exists)
