@@ -188,7 +188,11 @@ public sealed partial class AssistantViewModel : PageViewModel
     [RelayCommand]
     private async Task RefreshStatusAsync()
     {
-        var chosen = SelectedChoice.Provider ?? await _service.ResolveProviderAsync();
+        // A check that finishes after the streamer picked another AI must not overwrite the newer one's fields (the
+        // page's first Automatic check could land after a quick switch and show the wrong provider).
+        var asked = SelectedChoice;
+        var chosen = asked.Provider ?? await _service.ResolveProviderAsync();
+        if (!ReferenceEquals(asked, SelectedChoice)) return;
         Effective = chosen;
         if (chosen is null)
         {
@@ -197,6 +201,7 @@ public sealed partial class AssistantViewModel : PageViewModel
             return;
         }
         var status = await _service.SafeStatusAsync(chosen);
+        if (!ReferenceEquals(asked, SelectedChoice)) return;
         ProviderReady = status.Ready;
         ProviderStatus = SelectedChoice.Provider is null ? $"Using {chosen.Name}: {status.Message}" : status.Message;
         // Offer the provider's models straight away instead of only after List models.
