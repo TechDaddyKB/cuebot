@@ -7,6 +7,9 @@ public enum AssistantProviderKind
 
     /// <summary>A provider's API, with an API key the streamer enters.</summary>
     ApiKey,
+
+    /// <summary>A model running on the streamer's own computer (or network) through Ollama, LM Studio or llama.cpp.</summary>
+    Local,
 }
 
 /// <summary>Whether a provider can be used now, and why not.</summary>

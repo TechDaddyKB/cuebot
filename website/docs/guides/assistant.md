@@ -19,6 +19,9 @@ The assistant does not have its own AI. It borrows one you already use. Pick **o
 - **An API key**: a secret code from an AI company that lets programs use its AI. Cuebot works with keys for
   **Claude (Anthropic)**, **OpenAI**, **Grok (xAI)** and **Gemini (Google)**. The company may charge you for what you
   use.
+- **A model on your own computer**, through the free program **Ollama** (or LM Studio). It costs nothing and nothing
+  leaves your computer, but these small models make many more mistakes and can be slow. See
+  [Running the assistant on your own computer](local-models.md) before you choose it.
 
 !!! note "Flatpak on Linux"
     The Flatpak version of Cuebot cannot reach other apps on your computer, so it needs an API key.
@@ -29,8 +32,8 @@ The assistant does not have its own AI. It borrows one you already use. Pick **o
 2. In **AI**, pick your choice. **Automatic (first one ready)** uses the first one that works.
 3. Using an AI app? Click **Sign in** if Cuebot asks you to, then **Refresh**. **Program** is usually found by itself.
 4. Using an API key? Paste it into **API key**. It is saved in Cuebot's data folder and hidden on screen.
-5. Optional: pick a **Model** (the AI's "brain" size). Leave it on **Default** if you are unsure. **List models** shows
-   the choices.
+5. Optional: pick a **Model** (the AI's "brain" size). Leave it on **Default** if you are unsure. Once the AI is ready,
+   the list next to **List models** shows the choices by itself; pick one, or type a model name.
 
 ## Using it
 

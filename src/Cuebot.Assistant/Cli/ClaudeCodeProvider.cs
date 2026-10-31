@@ -42,15 +42,14 @@ public sealed class ClaudeCodeProvider(Func<AssistantProviderSettings> settings)
         return status;
     }
 
-    private static async Task<string> RunAsync(string path, string[] args, CancellationToken ct)
-    {
-        await using var process = CliProcess.Start(path, args, Path.GetTempPath());
-        process.Input.Close();
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(20));
-        using var reader = new StreamReader(process.Output, new UTF8Encoding(false));
-        return await reader.ReadToEndAsync(timeout.Token).ConfigureAwait(false);
-    }
+    private static Task<string> RunAsync(string path, string[] args, CancellationToken ct) => CliProcess.RunToEndAsync(path, args, ct);
+
+    /// <summary>
+    /// Claude Code has no list command; its <c>--model</c> takes these aliases for the latest model of each family (or a
+    /// full model id, which the field accepts too).
+    /// </summary>
+    public Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<string>>(Executable is null ? [] : ["fable", "opus", "sonnet", "haiku"]);
 
     public IAssistantSession StartSession(AssistantContext context) => new Session(this, context);
 

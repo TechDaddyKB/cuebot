@@ -41,6 +41,9 @@ public sealed class AssistantPageTests : IAsyncDisposable
         public Task<AssistantProviderStatus> GetStatusAsync(CancellationToken ct = default) =>
             Task.FromResult(AssistantProviderStatus.Available("ready"));
 
+        public Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<string>>(["scripted-large", "scripted-small"]);
+
         public IAssistantSession StartSession(AssistantContext context) => new Session(this, context);
 
         private sealed class Session(ScriptedProvider owner, AssistantContext context) : IAssistantSession
@@ -89,6 +92,37 @@ public sealed class AssistantPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void Local_model_shows_its_server_and_options_instead_of_a_key()
+    {
+        var vm = new MainWindowViewModel(_host);
+        var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
+        window.Show();
+        var page = Assert.IsType<AssistantViewModel>(vm.Pages.Single(p => p.Title == "Assistant"));
+        vm.SelectedPage = page;
+        page.SelectedChoice = page.Choices.Single(c => c.Id == "local");
+        PumpUntil(() => page.IsLocal);
+
+        Assert.False(page.UsesApiKey);
+        Assert.False(page.IsCli);
+        Assert.Equal(32768m, page.ContextLength);
+        Assert.False(page.Thinking);
+        Assert.False(page.AllTools);
+        page.ServerUrl = " http://127.0.0.1:1234 ";
+        page.ContextLength = 1000;   // below what Cuebot's tools need
+        page.Thinking = true;
+        var saved = page.Service.Settings.For("local");
+        Assert.Equal("http://127.0.0.1:1234", saved.ServerUrl);
+        Assert.Equal(4096, saved.ContextLength);
+        Assert.True(saved.Thinking);
+        Pump();
+        Assert.True(window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "AssistantServerUrl").IsEffectivelyVisible);
+        Assert.False(window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "AssistantApiKey").IsEffectivelyVisible);
+        Screenshot(window, "assistant-local");
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Chat_streams_the_answer_and_waits_for_Approve()
     {
         var vm = new MainWindowViewModel(_host);
@@ -99,10 +133,12 @@ public sealed class AssistantPageTests : IAsyncDisposable
         vm.SelectedPage = page;
         Pump();
 
-        // Picking the provider stores it; the API key field belongs to it.
+        // Picking the provider stores it; the API key field belongs to it, and its models are offered straight away.
         page.SelectedChoice = page.Choices.Single(c => c.Id == "scripted");
         PumpUntil(() => page.ProviderReady);
         Assert.True(page.UsesApiKey);
+        PumpUntil(() => page.HasModels);
+        Assert.Equal(["scripted-large", "scripted-small"], page.Models);
         page.ApiKey = "  key-123 ";
         Assert.Equal("scripted", page.Service.Settings.Provider);
         Assert.Equal("key-123", page.Service.Settings.For("scripted").ApiKey);

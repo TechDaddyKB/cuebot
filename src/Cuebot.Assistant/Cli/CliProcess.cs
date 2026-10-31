@@ -64,6 +64,18 @@ public static class CliLocator
 /// </summary>
 public sealed class CliProcess : IAsyncDisposable
 {
+    /// <summary>Runs a short command (a status or list query) and returns its output; gives up after 20 seconds.</summary>
+    public static async Task<string> RunToEndAsync(string path, string[] arguments, CancellationToken ct,
+        IReadOnlyDictionary<string, string>? environment = null)
+    {
+        await using var process = Start(path, arguments, Path.GetTempPath(), environment);
+        process.Input.Close();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(20));
+        using var reader = new StreamReader(process.Output, new System.Text.UTF8Encoding(false));
+        return await reader.ReadToEndAsync(timeout.Token).ConfigureAwait(false);
+    }
+
     private const int StderrKeep = 4000;
     private readonly Process _process;
     private readonly StringBuilder _stderr = new();

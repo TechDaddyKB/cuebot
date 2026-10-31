@@ -73,6 +73,48 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
     [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
     public Task Antigravity_lists_actions_through_Cuebot() => ListActionsAsync(Antigravity);
 
+    /// <summary>Each installed AI app offers its models on the Assistant page (skipped for apps that are not installed).</summary>
+    [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
+    public async Task AI_apps_list_their_models()
+    {
+        var settings = new AssistantProviderSettings();
+        IAssistantProvider[] apps =
+        [
+            new CodexProvider(() => settings), new ClaudeCodeProvider(() => settings),
+            new AcpProvider(AcpProvider.Grok, () => settings), Antigravity(() => settings),
+        ];
+        foreach (var app in apps)
+        {
+            var status = await app.GetStatusAsync();
+            if (status.Message.Contains("not installed", StringComparison.OrdinalIgnoreCase)) continue;
+            var models = await app.ListModelsAsync();
+            output.WriteLine($"{app.Name}: {string.Join(", ", models)}");
+            Assert.NotEmpty(models);
+        }
+    }
+
+    /// <summary>A model in Ollama (or CUEBOT_LIVE_LOCAL_SERVER) on this computer; the recommended one is picked when downloaded.</summary>
+    [LiveServiceFact("CUEBOT_LIVE_LOCAL_MODEL", flag: true)]
+    public Task Local_model_lists_actions_through_Cuebot() => ListActionsAsync(Local);
+
+    /// <summary>
+    /// Small models sometimes ask "type yes" in their answer before calling the delete tool; the test then says yes, as the
+    /// streamer would. Either way the action goes only through Cuebot's Approve card.
+    /// </summary>
+    [LiveServiceFact("CUEBOT_LIVE_LOCAL_MODEL", flag: true)]
+    public Task Local_model_deletes_only_after_approval() =>
+        RunAsync(Local, $"Delete my Cuebot action named \"{ActionName}\".", (updates, text, _) =>
+        {
+            Assert.DoesNotContain(updates, u => u is AssistantError);
+            var confirmation = Assert.Single(updates.OfType<AssistantConfirmation>());
+            Assert.Contains(ActionName, confirmation.Summary);
+            Assert.Null(_profile!.Snapshot.FindAction(ActionName));
+        }, approve: true, followUp: "Yes, delete it.");
+
+    private static IAssistantProvider Local(Func<AssistantProviderSettings> settings) =>
+        new Cuebot.Assistant.Providers.LocalModelProvider(new HttpClient { Timeout = System.Threading.Timeout.InfiniteTimeSpan },
+            () => { var s = settings(); s.ServerUrl = ServicesLiveEnvironment.Get("CUEBOT_LIVE_LOCAL_SERVER") ?? ""; return s; });
+
     [LiveServiceFact("CUEBOT_LIVE_AI_CLI", flag: true)]
     public Task Antigravity_can_not_read_files() => CanNotReadFilesAsync(Antigravity);
 
@@ -124,8 +166,9 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
 
     private ProfileService? _profile;
 
+    /// <param name="followUp">Sent as a second message when the first turn asked no confirmation (the AI asked in its answer).</param>
     private async Task RunAsync(Func<Func<AssistantProviderSettings>, IAssistantProvider> create, string question,
-        Action<List<AssistantUpdate>, string, string> check, bool approve = false)
+        Action<List<AssistantUpdate>, string, string> check, bool approve = false, string? followUp = null)
     {
         var log = new AppLog();
         log.EntryAdded += e => { try { output.WriteLine(e.ToString()); } catch (InvalidOperationException) { } };
@@ -161,14 +204,18 @@ public sealed class AssistantCliLiveTests(ITestOutputHelper output)
         await using var service = new AssistantService(null, [provider], manager, new Cuebot.Core.AppPaths(data), log);
         using var cts = new CancellationTokenSource(Timeout);
         var updates = new List<AssistantUpdate>();
-        await foreach (var update in service.SendAsync(question, cts.Token))
+        foreach (var message in new[] { question, followUp })
         {
-            updates.Add(update);
-            output.WriteLine(update.ToString());
-            if (update is AssistantConfirmation confirmation)
+            if (message is null || (message != question && updates.OfType<AssistantConfirmation>().Any())) continue;
+            await foreach (var update in service.SendAsync(message, cts.Token))
             {
-                if (approve) confirmation.Approve();
-                else confirmation.Deny();
+                updates.Add(update);
+                output.WriteLine(update.ToString());
+                if (update is AssistantConfirmation confirmation)
+                {
+                    if (approve) confirmation.Approve();
+                    else confirmation.Deny();
+                }
             }
         }
 

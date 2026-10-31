@@ -30,6 +30,9 @@ public static class AssistantServiceCollectionExtensions
         foreach (var profile in new[] { OpenAiCompatibleProvider.OpenAi, OpenAiCompatibleProvider.Xai, OpenAiCompatibleProvider.Google })
             services.AddSingleton<IAssistantProvider>(sp => new OpenAiCompatibleProvider(profile,
                 sp.GetRequiredKeyedService<HttpClient>(nameof(AssistantService)), Settings(sp, profile.Id)));
+        // A model on this computer (Ollama, LM Studio, llama.cpp): last, so Automatic prefers the stronger AIs.
+        services.AddSingleton<IAssistantProvider>(sp => new LocalModelProvider(sp.GetRequiredKeyedService<HttpClient>(nameof(AssistantService)),
+            Settings(sp, LocalModelProvider.ProviderId)));
 
         services.AddSettingsFile<AssistantHistoryFile>("assistant-history.json");
         services.AddSingleton(sp => new AssistantService(sp.GetRequiredService<JsonFile<AssistantSettings>>(), sp.GetServices<IAssistantProvider>(),

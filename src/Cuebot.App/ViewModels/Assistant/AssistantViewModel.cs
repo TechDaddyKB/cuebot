@@ -53,6 +53,7 @@ public sealed partial class AssistantViewModel : PageViewModel
     partial void OnEffectiveChanged(IAssistantProvider? value)
     {
         Models.Clear();
+        OnPropertyChanged(nameof(HasModels));
         OnPropertyChanged(nameof(Model));
         OnPropertyChanged(nameof(ApiKey));
         OnPropertyChanged(nameof(UsesApiKey));
@@ -61,11 +62,61 @@ public sealed partial class AssistantViewModel : PageViewModel
         OnPropertyChanged(nameof(Command));
         OnPropertyChanged(nameof(HasProvider));
         OnPropertyChanged(nameof(ModelHint));
+        OnPropertyChanged(nameof(IsLocal));
+        OnPropertyChanged(nameof(ServerUrl));
+        OnPropertyChanged(nameof(Thinking));
+        OnPropertyChanged(nameof(ContextLength));
+        OnPropertyChanged(nameof(AllTools));
     }
 
     public bool HasProvider => Effective is not null;
     public bool UsesApiKey => Effective?.Kind == AssistantProviderKind.ApiKey;
     public bool IsCli => Effective?.Kind == AssistantProviderKind.Cli;
+    public bool IsLocal => Effective?.Kind == AssistantProviderKind.Local;
+
+    /// <summary>Local model: the server's address (empty = Ollama on this computer).</summary>
+    public string ServerUrl
+    {
+        get => Effective is { } p ? _service.Settings.For(p.Id).ServerUrl : "";
+        set
+        {
+            if (Effective is not { } p || _service.Settings.For(p.Id).ServerUrl == value.Trim()) return;
+            _service.Settings.For(p.Id).ServerUrl = value.Trim();
+            _service.SaveSettings();
+            OnPropertyChanged();
+            _ = RefreshStatusAsync();
+        }
+    }
+
+    /// <summary>Local model: think before answering (slower).</summary>
+    public bool Thinking
+    {
+        get => Effective is { } p && _service.Settings.For(p.Id).Thinking;
+        set => UpdateLocal(s => s.Thinking = value);
+    }
+
+    /// <summary>Local model: the context size in tokens.</summary>
+    public decimal ContextLength
+    {
+        get => Effective is { } p ? _service.Settings.For(p.Id).ContextLength : 32768;
+        set => UpdateLocal(s => s.ContextLength = (int)Math.Clamp(value, 4096, 262144));
+    }
+
+    /// <summary>Local model: every tool instead of the focused set.</summary>
+    public bool AllTools
+    {
+        get => Effective is { } p && _service.Settings.For(p.Id).AllTools;
+        set => UpdateLocal(s => s.AllTools = value);
+    }
+
+    /// <summary>Changes a local-model option; it applies from the next conversation (New chat), so typing does not clear this one.</summary>
+    private void UpdateLocal(Action<AssistantProviderSettings> change, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        if (Effective is not { } p) return;
+        change(_service.Settings.For(p.Id));
+        _service.SaveSettings();
+        OnPropertyChanged(name);
+    }
     public bool CanSignIn => Effective?.CanSignIn == true;
 
     /// <summary>AI CLIs: the program to run when Cuebot does not find it (empty = search PATH and the usual install folders).</summary>
@@ -101,9 +152,12 @@ public sealed partial class AssistantViewModel : PageViewModel
         }
     }
 
-    public string ModelHint => Effective?.Kind == AssistantProviderKind.Cli
-        ? "Empty uses the app's own default model."
-        : "Empty uses the newest suitable model for this key.";
+    public string ModelHint => Effective?.Kind switch
+    {
+        AssistantProviderKind.Cli => "Empty uses the app's own default model.",
+        AssistantProviderKind.Local => "Empty picks a downloaded model (Qwen3.5 if you have it).",
+        _ => "Empty uses the newest suitable model for this key.",
+    };
 
     public string Model
     {
@@ -145,24 +199,32 @@ public sealed partial class AssistantViewModel : PageViewModel
         var status = await _service.SafeStatusAsync(chosen);
         ProviderReady = status.Ready;
         ProviderStatus = SelectedChoice.Provider is null ? $"Using {chosen.Name}: {status.Message}" : status.Message;
+        // Offer the provider's models straight away instead of only after List models.
+        if (status.Ready && Models.Count == 0) await FillModelsAsync(reportEmpty: false);
     }
 
     [RelayCommand]
-    private async Task LoadModelsAsync()
+    private Task LoadModelsAsync() => FillModelsAsync(reportEmpty: true);
+
+    private async Task FillModelsAsync(bool reportEmpty)
     {
         if (Effective is not { } provider) return;
         try
         {
             var models = await provider.ListModelsAsync();
+            if (!ReferenceEquals(provider, Effective)) return;   // the streamer switched providers meanwhile
             Models.Clear();
             foreach (var model in models) Models.Add(model);
-            if (models.Count == 0) ProviderStatus = "This provider did not list any models; type a model name instead.";
+            OnPropertyChanged(nameof(HasModels));
+            if (models.Count == 0 && reportEmpty) ProviderStatus = "This provider did not list any models; type a model name instead.";
         }
         catch (Exception ex)
         {
-            ProviderStatus = ex.Message;
+            if (reportEmpty) ProviderStatus = ex.Message;   // a silent refresh keeps the status line
         }
     }
+
+    public bool HasModels => Models.Count > 0;
 
     // ---- Conversation -------------------------------------------------------------------------------------------
 

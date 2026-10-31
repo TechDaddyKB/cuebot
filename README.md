@@ -40,7 +40,8 @@ a Stream Deck button or a timer. Text-to-speech, chat moderation and your stream
 - **Your gear.** Stream Deck (with or without the Elgato software), MIDI controllers, game controllers, Elgato lights,
   GoXLR and Wave Link can trigger actions or be controlled by them.
 - **Scripting.** C# and Python steps for anything custom, plus a WebSocket and HTTP API for other tools.
-- **Setup help.** A built-in assistant can set things up for you, using the AI service you choose.
+- **Setup help.** A built-in assistant can set things up for you, using the AI service you choose, or a free model
+  on your own computer through Ollama (smaller and less reliable; see the docs).
 - **Coming from Streamer.bot?** Paste a Streamer.bot import string into Cuebot to bring your actions across.
 
 <p align="center">

@@ -28,7 +28,7 @@
       <TextBlock Classes="muted" TextWrapping="Wrap"
                  Text="Ask an AI to help you set Cuebot up: build or change actions, commands and timers, explain features, or work out an integration. It works through Cuebot's own set of tools (called MCP tools). Before it deletes something, imports something or sends a chat message, it waits for you to press Approve. It never talks to your viewers." />
       <Border Classes="card">
-        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
           <TextBlock Classes="label" Text="AI" VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
             <ComboBox Name="AssistantProvider" ItemsSource="{Binding Choices}" SelectedItem="{Binding SelectedChoice}" MinWidth="280"
@@ -44,8 +44,8 @@
             <TextBox Name="AssistantModel" Text="{Binding Model}" PlaceholderText="Default" MinWidth="280"
                      ToolTip.Tip="Which version of the AI to use. Leave it empty to use the default one." />
             <Button Content="List models" Command="{Binding LoadModelsCommand}" ToolTip.Tip="Asks the AI which versions (models) you can pick from and fills the list next to this button." />
-            <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding Model}" MinWidth="200" IsVisible="{Binding Models.Count}"
-                      PlaceholderText="Pick a model" />
+            <ComboBox Name="AssistantModelPicker" ItemsSource="{Binding Models}" SelectedItem="{Binding Model}" MinWidth="200" IsVisible="{Binding HasModels}"
+                      PlaceholderText="Pick a model" ToolTip.Tip="The models this AI offers you. Picking one fills in the Model box." />
             <TextBlock Classes="muted" Text="{Binding ModelHint}" VerticalAlignment="Center" />
           </StackPanel>
 
@@ -56,6 +56,25 @@
             <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="560"
                        Text="Uses this app's own sign-in. It gets only Cuebot's tools: no commands, files or web." />
           </StackPanel>
+
+          <TextBlock Grid.Row="2" Classes="label" Text="Server" VerticalAlignment="Center" IsVisible="{Binding IsLocal}" />
+          <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsLocal}">
+            <TextBox Name="AssistantServerUrl" Text="{Binding ServerUrl}" PlaceholderText="http://127.0.0.1:11434 (Ollama)" MinWidth="280"
+                     ToolTip.Tip="Where the program that runs the model listens. Leave it empty for Ollama on this computer. LM Studio is usually http://127.0.0.1:1234." />
+            <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="560"
+                       Text="Runs on your own computer: free and private, but small models make more mistakes and can be slow. Check what it builds." />
+          </StackPanel>
+          <TextBlock Grid.Row="3" Classes="label" Text="Options" VerticalAlignment="Center" IsVisible="{Binding IsLocal}" />
+          <WrapPanel Grid.Row="3" Grid.Column="1" IsVisible="{Binding IsLocal}">
+            <TextBlock Text="Memory (tokens)" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <NumericUpDown Name="AssistantContextLength" Value="{Binding ContextLength}" Minimum="4096" Maximum="262144" Increment="4096" FormatString="0" Width="150" Margin="0,0,16,0"
+                           ToolTip.Tip="How much of the conversation the model can keep in mind. 32768 is right for most computers. Bigger uses more memory on your graphics card; smaller than 16384 and Cuebot's tools do not fit." />
+            <CheckBox Content="Let it think first" IsChecked="{Binding Thinking}" Margin="0,0,16,0"
+                      ToolTip.Tip="Ticked: the model thinks before it answers. That is much slower (minutes on a computer without a graphics card) and in Cuebot's tests was not more accurate. Most people leave it off." />
+            <CheckBox Content="Give it every tool" IsChecked="{Binding AllTools}" Margin="0,0,16,0"
+                      ToolTip.Tip="Off: the model gets the tools for actions, commands and timers and finds the others when it needs them. Small models do much better that way. Tick it only for big models (30B and up)." />
+            <TextBlock Classes="muted" Text="Changes apply from the next New chat." VerticalAlignment="Center" />
+          </WrapPanel>
 
           <TextBlock Grid.Row="2" Classes="label" Text="API key" VerticalAlignment="Center" IsVisible="{Binding UsesApiKey}" />
           <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding UsesApiKey}">

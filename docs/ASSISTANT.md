@@ -68,8 +68,65 @@ use an API key there.
 | OpenAI API key | OpenAI's Responses API (`/v1/responses`), streamed, `store: false` with the model's output items (encrypted reasoning included) sent back unchanged each round; OpenAI's newer reasoning models only call tools there |
 | Grok (xAI) / Gemini (Google) API keys | One OpenAI-compatible Chat Completions client (`OpenAiCompatibleProvider`), streamed, with tool calls: `api.x.ai/v1`, `generativelanguage.googleapis.com/v1beta/openai` | The newest general chat model in the provider's own `/models` list (no image, audio, embedding, mini... models), so Cuebot does not go stale |
 
-**List models** fills a picker from the provider; the Model field accepts any id (for an AI app, empty uses the app's
-own default).
+### Local model
+
+**Local model (Ollama, LM Studio)** (`LocalModelProvider`, id `local`) runs a model on the streamer's computer (or
+network). Settings: **Server** (`ServerUrl`, empty = Ollama on `http://127.0.0.1:11434`; a trailing `/v1` is fine),
+**Memory** (`ContextLength`, default 32768), **Let it think first** (`Thinking`, default off) and **Give it every tool**
+(`AllTools`, default off). Automatic lists it last, so it is used only when nothing else is ready.
+
+- **Ollama** (detected by `GET /api/version`) is driven through its own `/api/chat`, streamed: that is the only way to
+  set the context size (`options.num_ctx`) and switch thinking off (`think: false`). Ollama's default context depends
+  on VRAM (4K on small cards), which would silently cut off Cuebot's tools. Status and **List models** use
+  `/api/tags`; embedding models are left out. An empty Model picks `qwen3.5:9b`, `qwen3.5:4b`, other Qwen3.5/Qwen3,
+  then Gemma 4, else the first listed.
+- **Other servers** (LM Studio, llama.cpp's `llama-server`) use the OpenAI-style `/v1/chat/completions` and
+  `/v1/models`, with `reasoning_effort: "none"` unless thinking is on. Their context size is set in the server.
+- **Focused tools** (`LocalToolSet`): list/get/create/update/delete for actions, commands and timers, `test_action`, the
+  trigger and sub-action catalogue and `read_cuebot_doc` (19 tools, a few thousand tokens, instead of 117 and about 14K),
+  plus `find_cuebot_tools`, which matches its search words against the other tools and switches the best eight on for
+  the rest of the conversation. The deletes are in the focused set because without them a small model asked to delete
+  something switched it off instead.
+- **Shorter instructions** (`AssistantPrompt.BuildLocal`): the full prompt made Qwen3.5 9B (thinking off) answer with
+  nothing for some requests every time; dropping any one of its paragraphs fixed it, so local models get a short prompt
+  with the one rule they most often missed (a chat command needs a command and a `command.triggered` action).
+- **Small-model fixes:** a 5xx before any output is retried once (Qwen3.5 sometimes writes a tool call Ollama cannot
+  parse); an empty answer gets one "please answer" or "continue" nudge per turn; tool results are cut to 12,000
+  characters; when Ollama reports the prompt filled the context, the answer says so.
+
+Measured on an RTX 4090 with Ollama 0.40.13 (31 October 2026), through the real provider on a complete Cuebot
+(`LocalModelBuildTests`, five runs each; it checks what was built, not the answer):
+
+| Request | Qwen3.5 9B | Qwen3.5 4B |
+| --- | --- | --- |
+| !lurk command that thanks the viewer by name | 5/5 | 3/5 |
+| Moderator-only !pausealerts / !resumealerts for alerts and TTS (2 commands, 2 actions, 2 steps each) | 4/5 | 1/5 |
+| Socials message every 15 minutes (timer plus action) | 5/5 | 4/5 |
+
+Before the focused tools and short prompt (same models, OpenAI-style API, all 117 tools) they managed 1 to 2 of 4 such
+requests. VRAM at 32K context: about 6.2 GB (9B), 3.8 GB (4B). CPU only (Ryzen 9 7950X3D, 8 threads): one request takes
+about 26 s (4B) or 48 s (9B); a whole build ran from 30 s (thinking off) to over 5 minutes (thinking on). Known small-model
+pitfalls, also on the website's local model page: they say "done" when an action is missing or not linked, sometimes ask
+the streamer to type "yes" instead of calling the delete tool (Cuebot still shows Approve), and occasionally do
+something other than what was asked.
+
+Live checks: `CUEBOT_LIVE_LOCAL_MODEL=1` runs `AssistantCliLiveTests.Local_model_*` (list and delete through Cuebot's
+MCP tools) and `Cuebot.UiTests` `LocalModelBuildTests` (the table above); `CUEBOT_LIVE_LOCAL_SERVER` points at another
+server and `CUEBOT_LIVE_LOCAL_MODEL_NAME` picks the model.
+
+### Models
+
+The Model field accepts any id (empty: the provider's default). The list next to **List models** fills by itself when
+the AI is ready, and again whenever another provider is picked:
+
+| Provider | Where the list comes from |
+| --- | --- |
+| Anthropic, OpenAI, xAI, Google | The provider's models API (needs the key) |
+| Codex | `model/list` on Codex's app-server (hidden models left out) |
+| Claude Code | Its `--model` aliases: fable, opus, sonnet, haiku (it has no list command) |
+| Grok CLI | `grok models`, run in a throwaway `GROK_HOME` like the conversations (sign-in passed in read-only); Grok 1.0.67 lists only its standard models there, so a model only some accounts have must be typed |
+| Antigravity CLI | `agy models` |
+| Local model | Ollama's `/api/tags` or the server's `/v1/models` |
 
 ## Security
 

@@ -18,11 +18,11 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
     /// <param name="Prepare">Per-conversation setup (environment, session options, clean-up); null for none.</param>
     public sealed record Profile(string Id, string Name, string Command, string[] Arguments, string ModelFlag, string InstallHint,
         IReadOnlyDictionary<string, string> Environment, Func<(bool SignedIn, string Message)> SignedIn, string? Blocked = null,
-        Func<AssistantContext, AcpLaunch>? Prepare = null);
+        Func<AssistantContext, AcpLaunch>? Prepare = null, string[]? ModelsArguments = null);
 
     /// <summary>Limited to Cuebot by <see cref="GrokIsolation"/> (throwaway home, tool allowlist, the streamer's sign-in read-only).</summary>
     public static readonly Profile Grok = new("grok", "Grok CLI", "grok", ["agent", "stdio"], "--model", "see x.ai/cli",
-        new Dictionary<string, string>(), GrokIsolation.SignedIn, Prepare: context => GrokIsolation.Prepare(context));
+        new Dictionary<string, string>(), GrokIsolation.SignedIn, Prepare: context => GrokIsolation.Prepare(context), ModelsArguments: ["models"]);
 
     internal Profile Definition => profile;
 
@@ -42,6 +42,54 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
 
     public IAssistantSession StartSession(AssistantContext context) =>
         profile.Blocked is { } blocked ? throw new InvalidOperationException(blocked) : new Session(this, context);
+
+    /// <summary>
+    /// The models the app lists (<c>grok models</c>). It runs in the same throwaway home as a conversation (the streamer's
+    /// sign-in passed in read-only when there is one), so none of their own Grok settings are read or written. Grok 1.0.67
+    /// lists its standard models there even for an account that has more; the Model field still takes any id.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct = default)
+    {
+        if (profile.ModelsArguments is not { } args || Executable is not { } executable) return [];
+        AcpLaunch? launch = null;
+        try
+        {
+            if (profile.SignedIn().SignedIn && profile.Prepare is { } prepare)
+                launch = prepare(new AssistantContext("", null!, null, "", Path.GetTempPath()));   // only the environment is used
+        }
+        catch (InvalidOperationException)
+        {
+            launch = null;
+        }
+        var home = launch is null ? Directory.CreateTempSubdirectory("cuebot-models-").FullName : null;
+        try
+        {
+            var environment = launch?.Environment
+                ?? new Dictionary<string, string> { ["GROK_HOME"] = home!, ["GROK_DISABLE_AUTOUPDATER"] = "1" };
+            return ParseModelList(await CliProcess.RunToEndAsync(executable, args, ct, environment).ConfigureAwait(false));
+        }
+        finally
+        {
+            launch?.Dispose();
+            if (home is not null)
+            {
+                try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+        }
+    }
+
+    internal static IReadOnlyList<string> ParseModelList(string output)
+    {
+        var models = new List<string>();
+        foreach (var raw in output.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.StartsWith("Default model:", StringComparison.OrdinalIgnoreCase)) models.Insert(0, line["Default model:".Length..].Trim());
+            else if (line.StartsWith("- ", StringComparison.Ordinal) || line.StartsWith("* ", StringComparison.Ordinal))
+                models.Add(line[2..].Replace("(default)", "", StringComparison.Ordinal).Trim());
+        }
+        return [.. models.Where(m => m.Length > 0).Distinct(StringComparer.Ordinal)];
+    }
 
     private static string Home => System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
 

@@ -30,4 +30,16 @@ public sealed class AssistantProviderSettings
 
     /// <summary>AI CLI providers only: the program to run when it is not on PATH (e.g. "/opt/bin/codex").</summary>
     public string Command { get; set; } = "";
+
+    /// <summary>Local model only: the model server's address; empty is Ollama on this computer (http://127.0.0.1:11434).</summary>
+    public string ServerUrl { get; set; } = "";
+
+    /// <summary>Local model only: let the model think before it answers (slower; off is faster and about as accurate for small models).</summary>
+    public bool Thinking { get; set; }
+
+    /// <summary>Local model only: how many tokens the model may keep in mind (Ollama's num_ctx); Cuebot's tools need at least 16K.</summary>
+    public int ContextLength { get; set; } = 32768;
+
+    /// <summary>Local model only: send every Cuebot tool instead of the focused set (only for big models: it is about 14K tokens).</summary>
+    public bool AllTools { get; set; }
 }

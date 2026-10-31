@@ -191,8 +191,10 @@ public sealed class AssistantService : IAsyncDisposable
             _mcpRegistration = registration;
             mcp = mcp with { Token = token };
         }
-        var context = new AssistantContext(AssistantPrompt.Build(toolsOverMcp: provider.Kind == AssistantProviderKind.Cli), Tools, mcp, model,
-            _workingDirectory);
+        var instructions = provider.Kind == AssistantProviderKind.Local
+            ? AssistantPrompt.BuildLocal()
+            : AssistantPrompt.Build(toolsOverMcp: provider.Kind == AssistantProviderKind.Cli);
+        var context = new AssistantContext(instructions, Tools, mcp, model, _workingDirectory);
         _session = provider.StartSession(context);
         _sessionKey = (provider.Id, model);
         _log.Info(LogSource, $"New conversation with {provider.Name}{(model.Length > 0 ? $" ({model})" : "")}");

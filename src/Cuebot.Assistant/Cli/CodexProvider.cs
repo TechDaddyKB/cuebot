@@ -53,6 +53,18 @@ public sealed class CodexProvider(Func<AssistantProviderSettings> settings) : IA
         return Task.FromResult(AssistantProviderStatus.Unavailable("Not signed in: use Sign in (Sign in with ChatGPT)"));
     }
 
+    /// <summary>The models Codex offers this account (app-server <c>model/list</c>, hidden ones left out).</summary>
+    public async Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct = default)
+    {
+        if (Executable is not { } codex) return [];
+        await using var probe = await CodexConnection.StartAsync(codex, [], Path.GetTempPath(), null, ct).ConfigureAwait(false);
+        var list = await probe.Rpc.RequestAsync("model/list", new JsonObject(), ct).ConfigureAwait(false);
+        return [.. (list?["data"] as JsonArray ?? [])
+            .Where(m => m?["hidden"]?.GetValue<bool>() != true)
+            .Select(m => m?["model"]?.GetValue<string>() ?? m?["id"]?.GetValue<string>())
+            .OfType<string>().Distinct(StringComparer.Ordinal)];
+    }
+
     /// <summary>Starts Codex's Sign in with ChatGPT; the returned URL opens in the browser and Codex finishes the login.</summary>
     public async Task<string?> SignInAsync(CancellationToken ct = default)
     {

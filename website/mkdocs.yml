@@ -67,6 +67,7 @@ nav:
       - Stream Deck: guides/stream-deck.md
       - Donations and integrations: guides/donations-and-integrations.md
       - The setup assistant and AI tools: guides/assistant.md
+      - The assistant on your own computer: guides/local-models.md
       - Moving from Streamer.bot: guides/moving-from-streamer-bot.md
       - Backups and your data: guides/backups-and-your-data.md
       - Linux: guides/linux.md

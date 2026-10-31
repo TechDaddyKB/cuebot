@@ -28,6 +28,17 @@ public sealed class AntigravityProvider(Func<AssistantProviderSettings> settings
 
     public IAssistantSession StartSession(AssistantContext context) => new Session(this, context);
 
+    /// <summary>The models <c>agy models</c> lists ("id&lt;TAB&gt;Display name" lines).</summary>
+    public async Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct = default)
+    {
+        if (Executable is not { } agy) return [];
+        return ParseModelList(await CliProcess.RunToEndAsync(agy, ["models"], ct).ConfigureAwait(false));
+    }
+
+    internal static IReadOnlyList<string> ParseModelList(string output) =>
+        [.. output.Split('\n').Select(l => l.Trim()).Where(l => l.Contains('\t')).Select(l => l[..l.IndexOf('\t')].Trim())
+            .Where(id => id.Length > 0 && !id.Contains(' ')).Distinct(StringComparer.Ordinal)];
+
     private sealed class Session(AntigravityProvider provider, AssistantContext context) : IAssistantSession
     {
         private CliProcess? _process;
