@@ -11,7 +11,7 @@ namespace Cuebot.Obs.Streamlabs;
 /// The app's connection to Streamlabs Desktop's Remote Control API: reconnects automatically, caches scenes and
 /// sources, republishes scene, streaming and recording changes as bot events and offers the commands sub-actions use.
 /// </summary>
-public sealed class StreamlabsDesktopService : IConnectionStatus, IAsyncDisposable
+public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
 {
     private const string LogSource = "Streamlabs Desktop";
     private static readonly TimeSpan DefaultReconnectDelay = TimeSpan.FromSeconds(5);

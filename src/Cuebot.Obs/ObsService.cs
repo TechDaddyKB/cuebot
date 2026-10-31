@@ -12,7 +12,7 @@ namespace Cuebot.Obs;
 /// The app's OBS connections: the default one (stored at the top level of obs.json) plus any additional named ones.
 /// Members that do not take a connection act on the default connection, so single-OBS code keeps working.
 /// </summary>
-public sealed class ObsService : IConnectionStatus, IAsyncDisposable
+public sealed class ObsService : IConnectable, IAsyncDisposable
 {
     private static readonly TimeSpan DefaultReconnectDelay = TimeSpan.FromSeconds(5);
 

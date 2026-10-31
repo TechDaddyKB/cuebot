@@ -12,7 +12,7 @@ namespace Cuebot.Rumble;
 /// The Rumble connection: polls the user's Live Stream API for channel activity, reads the live chat while a
 /// stream is live, and (after an explicit sign-in) sends chat messages.
 /// </summary>
-public sealed class RumbleService : IConnectionStatus, IAsyncDisposable
+public sealed class RumbleService : IConnectable, IAsyncDisposable
 {
     private readonly JsonFile<RumbleSettings> _settings;
     private readonly EventBus _bus;

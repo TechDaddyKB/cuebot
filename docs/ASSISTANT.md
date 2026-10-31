@@ -10,7 +10,10 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
 ## How it works
 
 - **Tools.** The AI works only through Cuebot's MCP tools ([SERVERS.md](SERVERS.md#mcp-server-mcp-on-the-api-listener)):
-  list and describe trigger and sub-action types, create and edit actions, commands, timers and variables, and so on.
+  build and test actions (triggers and sub-actions), commands, timers and variables; run any sub-action once; start polls,
+  predictions and giveaways; build overlays, add widgets and edit their settings and the alert box's designs; manage
+  quotes, points, groups, the store, media requests, speech voices, hotkeys, decks and connections; and send sample
+  events to try alerts. Sign-ins, API keys, server settings and tokens stay out of reach (cuebot://docs/capabilities).
   API-key providers call them in process through `McpServer` (`AssistantTools`); AI CLIs reach the same server over
   `/mcp`. Every call is logged as `MCP: Tool call: <name>`, never with argument values. API-key providers also get
   `read_cuebot_doc` for the `cuebot://docs/actions` and `cuebot://docs/variables` guides that MCP clients read as

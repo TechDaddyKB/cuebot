@@ -213,6 +213,22 @@ public sealed class ServerServices
     }
     private Cuebot.Core.Overlays.Widgets.IStreamElementsOverlaySource? _seOverlays;
 
+    /// <summary>Cuebot's speech (aliases, voices, settings).</summary>
+    public Cuebot.Speech.SpeechService? Speech
+    {
+        get => _speech ??= _provider?.GetService<Cuebot.Speech.SpeechService>();
+        init => _speech = value;
+    }
+    private Cuebot.Speech.SpeechService? _speech;
+
+    /// <summary>Global hotkeys.</summary>
+    public Cuebot.Core.Desktop.Hotkeys.HotkeyService? Hotkeys
+    {
+        get => _hotkeys ??= _provider?.GetService<Cuebot.Core.Desktop.Hotkeys.HotkeyService>();
+        init => _hotkeys = value;
+    }
+    private Cuebot.Core.Desktop.Hotkeys.HotkeyService? _hotkeys;
+
     /// <summary>Quotes (!quote).</summary>
     public Cuebot.Core.Quotes.QuoteStore? Quotes
     {

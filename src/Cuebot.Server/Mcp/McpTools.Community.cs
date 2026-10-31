@@ -42,14 +42,17 @@ public static partial class McpTools
                 ("args", new JsonObject { ["type"] = "object", ["description"] = "Extra or overriding arguments, e.g. {\"user\": \"tester\"}" })),
             new McpToolHints(ReadOnly: false, OpenWorld: true),
             async (a, ct) => await ops.TestTriggerAsync(ReqStr(a, "action"), OptStr(a, "trigger"), a["args"], ct).ConfigureAwait(false)),
-        new("list_emulated_events", "List sample events", "The sample platform events emulate_event can send (follow, sub, cheer, raid, tip, chat...).",
+        new("list_emulated_events", "List sample events",
+            "The sample platform events emulate_event can send (follow, sub, cheer, raid, tip, chat...) with each one's arguments, which args can override "
+            + "(a raid's size is \"viewers\", a cheer's \"bits\"...).",
             Schema([]), ReadOnlyHints, (_, _) => Done(ApiOperations.EmulatableEvents())),
         new("emulate_event", "Send a sample event",
             "Send a sample platform event with a made-up viewer, e.g. a Twitch follow to test the alert box. target \"overlays\" (default) shows "
             + "it on every overlay only; \"everything\" publishes it as a real event so matching actions run too (they may post to chat).",
             Schema(["platform", "kind"], ("platform", Str("twitch, kick, rumble, youtube or donations")), ("kind", Str("follow, sub, resub, gift, cheer, raid, tip, superchat, kicks or chat")),
-                ("target", Enum("overlays", "everything"))),
-            WriteHints, (a, _) => Done(ops.Emulate(ReqStr(a, "platform"), ReqStr(a, "kind"), OptStr(a, "target")))),
+                ("target", Enum("overlays", "everything")),
+                ("args", new JsonObject { ["type"] = "object", ["description"] = "Override the sample's arguments (names from list_emulated_events), e.g. {\"viewers\": 75} for a raid or {\"user\": \"Alice\"}" })),
+            WriteHints, (a, _) => Done(ops.Emulate(ReqStr(a, "platform"), ReqStr(a, "kind"), OptStr(a, "target"), a["args"] as JsonObject))),
 
         // ---- queues ----
         new("list_queues", "List action queues", "Action queues with their settings and live state (blocking, paused, waiting, running).",

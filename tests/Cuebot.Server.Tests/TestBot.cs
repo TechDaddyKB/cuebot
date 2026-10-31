@@ -46,12 +46,13 @@ internal sealed class TestBot : IAsyncDisposable
             Engine = Engine, Profile = Profile, Globals = Globals, Bus = Bus, Log = Log, UserVariables = UserVariables,
             Users = Users, Commands = Commands, Chat = Chat, CodeTriggers = CodeTriggers, Speaker = Speaker,
             Credits = Credits, Registry = Registry, Timers = Timers, Transfer = Transfer, Scripts = Api,
-            Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected)],
+            Connections = [new FakeConnection("Twitch", ConnectionState.Connected), new FakeConnection("YouTube", ConnectionState.Disconnected), Obs],
             Pronouns = options.Pronouns, Emotes = options.Emotes?.Invoke(Bus, Log),
             Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
+            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -100,6 +101,21 @@ internal sealed class TestBot : IAsyncDisposable
 
     /// <summary>A StreamElements account with the overlays in <see cref="FakeStreamElements.Overlays"/>.</summary>
     public FakeStreamElements StreamElements { get; } = new();
+
+    /// <summary>A connection that connect_service can start and stop.</summary>
+    public FakeConnectable Obs { get; } = new("OBS");
+
+    /// <summary>Speech with one fake engine ("fake": voices Ann and Bob) and no audio output; settings in a temp file.</summary>
+    public Cuebot.Speech.SpeechService Speech => _speech ??= new(
+        new Cuebot.Core.Storage.JsonFile<Cuebot.Speech.SpeechSettings>(Path.Combine(Path.GetTempPath(), $"cuebot-speech-{Guid.NewGuid():N}.json"), Log),
+        [new FakeVoices()], new SilentPlayer(), Bus, Log);
+    private Cuebot.Speech.SpeechService? _speech;
+
+    public Cuebot.Core.Desktop.Hotkeys.HotkeyService Hotkeys => _hotkeys ??= new(null, new Cuebot.Core.Desktop.Hotkeys.UnavailableGlobalHotkeys("test"), Bus, Log);
+    private Cuebot.Core.Desktop.Hotkeys.HotkeyService? _hotkeys;
+
+    public Cuebot.Core.Decks.DeckService Decks => _decks ??= new(null, Bus, Log);
+    private Cuebot.Core.Decks.DeckService? _decks;
 
     public Cuebot.Core.Quotes.QuoteStore Quotes => _quotes ??= new(null, Log, Bus);
     private Cuebot.Core.Quotes.QuoteStore? _quotes;
@@ -211,6 +227,9 @@ internal sealed class TestBot : IAsyncDisposable
         WidgetStore.Dispose();
         _sessionData?.Dispose();
         _quotes?.Dispose();
+        if (_speech is not null) await _speech.DisposeAsync();
+        _hotkeys?.Dispose();
+        _decks?.Dispose();
         _overlayBridge?.Dispose();
         Scripts.Dispose();
         Engine.Dispose();
@@ -397,4 +416,46 @@ public sealed class FakeStreamElements : Cuebot.Core.Overlays.Widgets.IStreamEle
 
     public Task<System.Text.Json.Nodes.JsonObject> GetOverlayAsync(string id, CancellationToken ct) =>
         Task.FromResult((System.Text.Json.Nodes.JsonObject)Overlays[id].DeepClone());
+}
+
+public sealed class FakeConnectable(string name) : IConnectable
+{
+    public string Name => name;
+    public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
+    public string StatusMessage => State.ToString();
+    public event Action? StatusChanged;
+
+    public Task ConnectAsync(CancellationToken ct = default)
+    {
+        State = ConnectionState.Connected;
+        StatusChanged?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    public Task DisconnectAsync()
+    {
+        State = ConnectionState.Disconnected;
+        StatusChanged?.Invoke();
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeVoices : Cuebot.Speech.ITtsEngine
+{
+    public string Id => "fake";
+    public string DisplayName => "Fake";
+    public bool IsAvailable => true;
+    public string? UnavailableReason => null;
+
+    public Task<IReadOnlyList<Cuebot.Speech.VoiceInfo>> GetVoicesAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Cuebot.Speech.VoiceInfo>>([new("ann", "Ann", "en-US"), new("bob", "Bob", "en-GB")]);
+
+    public Task<Cuebot.Speech.SynthesizedAudio> SynthesizeAsync(Cuebot.Speech.SynthesisRequest request, CancellationToken ct) =>
+        throw new NotSupportedException();
+}
+
+internal sealed class SilentPlayer : Cuebot.Speech.IAudioPlayer
+{
+    public Task PlayAsync(byte[] audio, Cuebot.Speech.PlaybackOptions options, CancellationToken ct) => Task.CompletedTask;
+    public IReadOnlyList<Cuebot.Speech.AudioDevice> GetOutputDevices() => [];
 }

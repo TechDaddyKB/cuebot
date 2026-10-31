@@ -220,6 +220,7 @@ public static partial class McpTools
             .. EngagementTools(ops),
             .. CommunityTools(ops),
             .. OverlayTools(ops),
+            .. SystemTools(ops),
         ];
     }
 

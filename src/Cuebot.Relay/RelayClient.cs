@@ -57,7 +57,7 @@ public static class RelayEvents
 /// arrival order; acknowledges it afterwards whatever the outcome (so the relay drops it from its buffer); drops
 /// replays of ids already handled; publishes <see cref="RelayEvents.Delivery"/> and keeps a short history for the UI.
 /// </summary>
-public sealed class RelayClient : IConnectionStatus, IAsyncDisposable
+public sealed class RelayClient : IConnectable, IAsyncDisposable
 {
     /// <summary>Close code the relay uses when a newer connection replaced this one.</summary>
     public const int ReplacedCloseCode = 4000;

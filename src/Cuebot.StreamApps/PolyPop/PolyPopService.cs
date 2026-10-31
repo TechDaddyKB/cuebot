@@ -14,7 +14,7 @@ namespace Cuebot.StreamApps.PolyPop;
 /// <see cref="PolyPopMode.Client"/> connects out instead, for plugin builds that listen. Either way alerts are sent as
 /// <see cref="PolyPopProtocol.Alert"/> to every connected plugin instance and messages from PolyPop become events.
 /// </summary>
-public sealed class PolyPopService : IConnectionStatus, IAsyncDisposable
+public sealed class PolyPopService : IConnectable, IAsyncDisposable
 {
     public const string Prefix = "polypop";
     public const string ConnectedEvent = "polypop.connected";

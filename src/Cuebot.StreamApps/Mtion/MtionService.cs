@@ -14,7 +14,7 @@ namespace Cuebot.StreamApps.Mtion;
 /// different clubhouse being opened. Sub-actions call the API directly and report <c>mtion.running</c> whether or not
 /// the watcher runs.
 /// </summary>
-public sealed class MtionService : IConnectionStatus, IAsyncDisposable
+public sealed class MtionService : IConnectable, IAsyncDisposable
 {
     public const string ConnectedEvent = "mtion.connected";
     public const string DisconnectedEvent = "mtion.disconnected";

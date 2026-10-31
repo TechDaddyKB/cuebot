@@ -81,21 +81,37 @@ public sealed partial class ApiOperations
         return new JsonObject { ["action"] = action.Name, ["trigger"] = chosen?.Type, ["success"] = success };
     }
 
-    /// <summary>The sample events <see cref="Emulate"/> can send, by platform.</summary>
-    public static JsonObject EmulatableEvents() =>
-        new() { ["platforms"] = new JsonObject([.. OverlayEmulator.Kinds.Select(k => KeyValuePair.Create(k.Key, (JsonNode?)CatalogJson.Strings(k.Value)))]) };
+    /// <summary>The sample events <see cref="Emulate"/> can send, by platform, with each one's arguments (what overrides can change).</summary>
+    public static JsonObject EmulatableEvents() => new()
+    {
+        ["platforms"] = new JsonObject([.. OverlayEmulator.Kinds.Select(k => KeyValuePair.Create(k.Key, (JsonNode?)new JsonObject([.. k.Value.Select(kind =>
+        {
+            var sample = OverlayEmulator.Create(k.Key, kind)!;
+            var args = Args(sample.Args);
+            foreach (var key in new[] { "user", "userId", "userName", "isTest", "messageId", "platform" }) args.Remove(key);
+            return KeyValuePair.Create(kind, (JsonNode?)new JsonObject { ["event"] = sample.Type, ["args"] = args });
+        })])))]),
+    };
 
     /// <summary>
     /// Sends a sample platform event (a follow, sub, cheer, raid, tip, chat message...) with a made-up viewer.
     /// <paramref name="target"/> "overlays" (default) shows it on every overlay only, like the widget editor's Emulate;
     /// "everything" publishes it as a real event, so actions with matching triggers run too (they may post to chat).
+    /// <paramref name="overrides"/> replace sample arguments (amount, user, message, tier...).
     /// </summary>
-    public JsonObject Emulate(string platform, string kind, string? target)
+    public JsonObject Emulate(string platform, string kind, string? target, JsonObject? overrides = null)
     {
         platform = platform.Trim().ToLowerInvariant();
         kind = kind.Trim().ToLowerInvariant();
         var e = OverlayEmulator.Create(platform, kind)
                 ?? throw ApiException.BadRequest($"No sample '{kind}' for '{platform}'. Use list_emulated_events for the choices.");
+        if (overrides is { Count: > 0 })
+        {
+            // e.g. {"amount": 75} to try a variation for big raids, or {"user": "Alice", "message": "hi"}.
+            var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase);
+            foreach (var (key, value) in StreamerBotRequests.ToArgs(JsonSerializer.SerializeToElement(overrides))) args[key] = value;
+            e = new Cuebot.Core.Events.BotEvent(e.Type, args);
+        }
         var everything = string.Equals(target, "everything", StringComparison.OrdinalIgnoreCase);
         if (everything)
         {

@@ -21,7 +21,7 @@ namespace Cuebot.Kick;
 /// The Kick connection. Official API (OAuth 2.1 + PKCE sign-in, channel info and polling, title/category, chat,
 /// moderation) plus event sources: the unofficial real-time websocket now, and the webhook relay later.
 /// </summary>
-public sealed class KickService : IConnectionStatus, IAsyncDisposable
+public sealed class KickService : IConnectable, IAsyncDisposable
 {
     private readonly JsonFile<KickSettings> _settings;
     private readonly AppCredentials _builtInApp;

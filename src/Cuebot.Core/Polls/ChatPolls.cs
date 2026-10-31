@@ -104,6 +104,12 @@ public sealed class ChatPolls : IPeriodicService, IDisposable
         get { lock (_gate) return Doc.BetCommand; }
     }
 
+    /// <summary>Whether a bare number in chat ("2") votes in a running poll.</summary>
+    public bool NumbersVote
+    {
+        get { lock (_gate) return Doc.NumbersVote; }
+    }
+
     /// <summary>Changes the chat commands (empty keeps the old one) and whether a bare number votes.</summary>
     public void SetCommands(string? voteCommand, string? betCommand, bool? numbersVote)
     {

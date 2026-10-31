@@ -10,3 +10,10 @@ public interface IConnectionStatus
     string StatusMessage { get; }
     event Action? StatusChanged;
 }
+
+/// <summary>A connection that can be started and stopped on request (the API and MCP tools use it, as the app's pages do).</summary>
+public interface IConnectable : IConnectionStatus
+{
+    Task ConnectAsync(CancellationToken ct = default);
+    Task DisconnectAsync();
+}

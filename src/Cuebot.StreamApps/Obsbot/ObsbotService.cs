@@ -12,7 +12,7 @@ namespace Cuebot.StreamApps.Obsbot;
 /// events. UDP has no connection, so the service counts as connected once Center answered; commands are sent as soon as
 /// the socket is open either way. Reconnects (TCP) or keeps saying hello (UDP) with exponential backoff.
 /// </summary>
-public sealed class ObsbotService : IConnectionStatus, IAsyncDisposable
+public sealed class ObsbotService : IConnectable, IAsyncDisposable
 {
     public const string ConnectedEvent = "obsbot.connected";
     public const string DisconnectedEvent = "obsbot.disconnected";

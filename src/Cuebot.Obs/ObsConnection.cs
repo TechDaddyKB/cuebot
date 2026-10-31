@@ -13,7 +13,7 @@ namespace Cuebot.Obs;
 /// input, transition, profile and scene collection names for editors and the UI, and republishes OBS activity as bot
 /// events tagged with the connection's name. Commands live in ObsConnection.Commands.cs.
 /// </summary>
-public sealed partial class ObsConnection : IConnectionStatus, IAsyncDisposable
+public sealed partial class ObsConnection : IConnectable, IAsyncDisposable
 {
     private static readonly TimeSpan ReplaySaveTimeout = TimeSpan.FromSeconds(10);
 

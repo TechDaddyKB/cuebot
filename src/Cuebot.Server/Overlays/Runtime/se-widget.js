@@ -47,11 +47,14 @@
 
   function pump() {
     while (loaded && !holding && !paused && queue.length > 0) {
-      deliver(queue.shift());
+      var next = queue.shift();
+      // Held before delivering: a widget that releases at once (an alert type it does not show) calls
+      // SE_API.resumeQueue() while still in deliver(), and that release must win over the hold.
       if (widgetDuration > 0) {
         holding = true;
         holdTimer = setTimeout(release, widgetDuration * 1000);
       }
+      deliver(next);
     }
   }
 

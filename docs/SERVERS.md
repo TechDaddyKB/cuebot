@@ -765,9 +765,27 @@ helps: `describe_*`, `create_action` with a recursive `$defs/subAction`):
 | get_status, get_history, get_recent_chat, send_chat_message (destructive) | |
 | control_speech (status, next, pause, resume, skip), control_alerts (status, pause, resume, skip, mute, unmute) | |
 | preview_import, apply_import (destructive), export_bundle | |
+| run_subactions (destructive: any catalogue sub-action once, unsaved; validated before the confirmation), test_action (as if a trigger fired, `isTest`), list_emulated_events (each sample's arguments), emulate_event (sample follow/sub/cheer/raid/tip/chat; `overlays` only by default or `everything`; `args` override the sample's arguments) | `ApiOperations.Automation` |
+| list_queues, create_queue, update_queue (rename moves its actions), delete_queue (destructive; actions move to the default queue), control_queue (pause, resume, clear; one or "all") | |
+| get_polls, start_poll, end_poll, start_prediction, control_prediction (lock, resolve, cancel); get_giveaway, start_giveaway, control_giveaway (close, draw, redraw, cancel) | Cuebot chat polls; native Twitch/YouTube polls via run_subactions |
+| get_store, add_store_item, update_store_item, delete_store_item (destructive), review_redemption; get_media_requests, add_media_request, control_media, remove_media_request | |
+| list_quotes, add_quote, update_quote, delete_quote (destructive); list_points_currencies, get_user_points, change_user_points (add, remove, set), points_leaderboard | `ApiOperations.Community` |
+| list_groups, manage_group (create, rename; clear and delete need confirmation), set_group_member; find_viewers, get_viewer_variables, set_viewer_variable, delete_viewer_variable (destructive) | viewers by name or id (chat, points or variables) |
+| list_overlays, get_overlay, get_overlay_link (the OBS link, with its token), create_overlay, update_overlay, delete_overlay (destructive) | `ApiOperations.Overlays` |
+| list_widget_kinds, add_widget (Cuebot widgets and text/image/video/slideshow layers, with first settings and place), add_custom_widget (panes), update_layer (place, look, animations, static settings), remove_layer | same validation as the designer |
+| get_widget (fields with options and current values; `includeCode`), update_widget_settings (by field key; unknown keys saved with a warning), update_widget_code (html, css, js, fields, cssOverride) | open overlays reload |
+| get_alert_designs (every alert type with its design, variations and what each design field means), update_alert_designs (per type: enabled, design fields merged, variations replaced; randomPick) | Cuebot's alert box only |
+| list_gallery, import_gallery_item; list_streamelements_overlays, import_streamelements_overlay | read only on GitHub and StreamElements |
+| list_connections, connect_service (connections implementing `IConnectable`: platforms, OBS, donation services, stream apps, GoXLR, Wave Link, the relay; with the sign-in saved in Cuebot) | `ApiOperations.System` |
+| get_speech_settings, update_speech_settings (enabled, defaultAlias, speakChat, replacements, masterVolume, filters only; never engine keys), list_speech_voices, save_voice_alias, delete_voice_alias (destructive), speak, set_viewer_voice | |
+| get_feature_settings, update_feature_settings (points, media, polls, viewers; merged, unknown keys refused), get_stream_totals, set_stream_totals (setGoal; reset needs confirmation) | |
+| list_hotkeys, save_hotkey, delete_hotkey (destructive); list_decks, get_deck, save_deck, delete_deck (destructive) | |
 
-Annotations: read-only tools `readOnlyHint: true`; destructive tools `destructiveHint: true`; everything else
-`destructiveHint: false`; run_action, get_recent_chat and send_chat_message `openWorldHint: true`. With
+Annotations: read-only tools `readOnlyHint: true`; destructive tools (every delete_*, apply_import, send_chat_message,
+run_subactions, manage_group, set_stream_totals) `destructiveHint: true`; everything else `destructiveHint: false`;
+tools that reach other services (run_action, run_subactions, test_action, get_recent_chat, send_chat_message,
+add_media_request, the gallery and StreamElements tools, connect_service) `openWorldHint: true`. A tool's confirmation
+can depend on its arguments (manage_group asks only for clear and delete, set_stream_totals only for reset). With
 `requireConfirmation` on, a destructive tool first answers `{confirmationRequired: true, action: "Delete the action 'X'",
 confirmationToken, expiresInSeconds: 300}` and does nothing; calling it again with the same arguments plus
 `confirmationToken` performs it. Tokens are single-use, bound to the tool and its exact arguments, and expire after 5
@@ -777,7 +795,9 @@ errors (-32602 / -32601).
 Resources: `cuebot://actions` (summaries), `cuebot://actions/{id}` (template; every action is also listed),
 `cuebot://catalog/subactions`, `cuebot://catalog/triggers` (full catalogue with schemas), `cuebot://docs/variables`
 (%arguments%, ~globals~, formats, $functions()$), `cuebot://docs/actions` (how actions, branches, commands and timers
-fit together). Unknown → -32002.
+fit together), `cuebot://docs/capabilities` (which tool for which job, and what is deliberately not available:
+sign-ins, keys and tokens, server and network settings, the API/MCP tokens, updates), `cuebot://docs/overlays`
+(overlays, widgets, alert box designs and variations, alerts for any trigger with `overlays.showAlert`). Unknown → -32002.
 
 Prompts: `create_action_from_description {description, trigger?}` (a step-by-step recipe using the catalogue tools) and
 `troubleshoot_action {action, problem?}` (embeds the action JSON and its last 10 runs with arguments).

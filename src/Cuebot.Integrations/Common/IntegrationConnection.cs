@@ -13,7 +13,7 @@ internal sealed record IntegrationEndpoint(Uri Url, string Display, IReadOnlyDic
 /// endpoint in turn), runs a session and reconnects with backoff until the user disconnects or the credentials are
 /// refused, Connected/Disconnected bot events, and secret redaction for everything logged or shown.
 /// </summary>
-public abstract class IntegrationConnection : IConnectionStatus, IAsyncDisposable
+public abstract class IntegrationConnection : IConnectable, IAsyncDisposable
 {
     private readonly Func<IWebSocketTransport> _transportFactory;
     private readonly SemaphoreSlim _connectGate = new(1, 1);

@@ -17,7 +17,7 @@ namespace Cuebot.WaveLink;
 /// notifications into Cuebot events and runs commands. Reconnects with exponential backoff while auto-reconnect is on.
 /// Wave Link only exists for Windows and macOS: elsewhere the service reports that and never connects.
 /// </summary>
-public sealed class WaveLinkService : IConnectionStatus, IAsyncDisposable, IWaveLinkHost
+public sealed class WaveLinkService : IConnectable, IAsyncDisposable, IWaveLinkHost
 {
     private readonly JsonFile<WaveLinkSettings> _settings;
     private readonly EventBus _bus;

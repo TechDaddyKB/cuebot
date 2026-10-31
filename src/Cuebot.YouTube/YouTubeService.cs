@@ -17,7 +17,7 @@ namespace Cuebot.YouTube;
 /// account, broadcast monitoring, live chat polling, sending and moderation, and broadcast/video updates through the
 /// YouTube Data API v3. All calls count against the user's own Google Cloud project quota (see YOUTUBE.md).
 /// </summary>
-public sealed class YouTubeService : IConnectionStatus, IAsyncDisposable
+public sealed class YouTubeService : IConnectable, IAsyncDisposable
 {
     private const int QuotaSaveStep = 25;
 

@@ -20,7 +20,7 @@ public enum GoXlrMuteAction { Toggle, Mute, MuteToAll, Unmute }
 /// the utility's JSON patches, turns the differences into Cuebot events and runs commands. Reconnects with exponential
 /// backoff while auto-reconnect is on.
 /// </summary>
-public sealed class GoXlrService : IConnectionStatus, IAsyncDisposable
+public sealed class GoXlrService : IConnectable, IAsyncDisposable
 {
     private readonly JsonFile<GoXlrSettings> _settings;
     private readonly EventBus _bus;

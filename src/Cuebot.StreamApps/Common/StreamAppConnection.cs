@@ -9,7 +9,7 @@ namespace Cuebot.StreamApps.Common;
 /// A websocket client connection to a local app: dashboard status, a background loop that connects, runs a session and
 /// reconnects with exponential backoff (when enabled) until the user disconnects, and Connected/Disconnected events.
 /// </summary>
-public abstract class StreamAppConnection : IConnectionStatus, IAsyncDisposable
+public abstract class StreamAppConnection : IConnectable, IAsyncDisposable
 {
     private readonly Func<IWebSocketTransport> _transportFactory;
     private readonly SemaphoreSlim _connectGate = new(1, 1);

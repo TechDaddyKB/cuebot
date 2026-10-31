@@ -69,6 +69,8 @@ public sealed class McpServer
         "Cuebot is a streaming bot (Streamer.bot / Speaker.bot replacement). Actions = triggers + sub-actions. Before building an action, "
         + "look up trigger and sub-action types with list_trigger_types / list_subaction_types and their parameters with "
         + "describe_subaction_type; read cuebot://docs/actions and cuebot://docs/variables. All parameter values are strings. "
+        + "Almost everything else in Cuebot has a tool too (overlays and alert designs, polls, giveaways, points, speech, queues, "
+        + "connections...): cuebot://docs/capabilities says which; run_subactions does any one-off step right now. "
         + "Ask the user before deleting or overwriting anything; destructive tools may answer with a confirmationToken that must be "
         + "passed back after the user agrees.";
 

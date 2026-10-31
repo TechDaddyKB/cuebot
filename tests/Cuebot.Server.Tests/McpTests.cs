@@ -156,7 +156,8 @@ public sealed class McpTests : IAsyncLifetime
             var annotations = tool["annotations"]!;
             var name = tool["name"]!.GetValue<string>();
             var destructive = annotations["destructiveHint"]!.GetValue<bool>();
-            Assert.Equal(name.StartsWith("delete_", StringComparison.Ordinal) || name is "apply_import" or "send_chat_message" or "run_subactions" or "manage_group",
+            Assert.Equal(name.StartsWith("delete_", StringComparison.Ordinal) || name is "apply_import" or "send_chat_message" or "run_subactions" or "manage_group"
+                    or "set_stream_totals",
                 destructive);
             if (annotations["readOnlyHint"]!.GetValue<bool>()) Assert.False(destructive);
             if (destructive) Assert.True(tool["inputSchema"]!["properties"]!.AsObject().ContainsKey(McpConfirmations.ArgumentName));

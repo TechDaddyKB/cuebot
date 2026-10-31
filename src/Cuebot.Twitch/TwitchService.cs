@@ -15,7 +15,7 @@ namespace Cuebot.Twitch;
 /// WebSocket for incoming events, Helix (<see cref="Api"/>) for everything Cuebot does on Twitch, and the periodic
 /// token validation Twitch requires.
 /// </summary>
-public sealed class TwitchService : IConnectionStatus, IAsyncDisposable
+public sealed class TwitchService : IConnectable, IAsyncDisposable
 {
     private static readonly TimeSpan ValidationInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan SignOutGrace = TimeSpan.FromSeconds(5);

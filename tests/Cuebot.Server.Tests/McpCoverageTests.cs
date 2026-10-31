@@ -27,6 +27,9 @@ public sealed class McpCoverageTests : IAsyncLifetime
         "list_widget_kinds", "add_widget", "add_custom_widget", "update_layer", "remove_layer",
         "get_widget", "update_widget_settings", "update_widget_code", "get_alert_designs", "update_alert_designs",
         "list_gallery", "import_gallery_item", "list_streamelements_overlays", "import_streamelements_overlay",
+        "list_connections", "connect_service", "get_speech_settings", "update_speech_settings", "list_speech_voices", "save_voice_alias",
+        "delete_voice_alias", "speak", "set_viewer_voice", "get_feature_settings", "update_feature_settings", "get_stream_totals",
+        "set_stream_totals", "list_hotkeys", "save_hotkey", "delete_hotkey", "list_decks", "get_deck", "save_deck", "delete_deck",
     ];
 
     private ApiHost _host = null!;
@@ -101,7 +104,7 @@ public sealed class McpCoverageTests : IAsyncLifetime
     public async Task Sample_events_go_to_overlays_or_everywhere()
     {
         var kinds = await Ok("list_emulated_events", []);
-        Assert.Contains("follow", kinds["platforms"]!["twitch"]!.AsArray().Select(S));
+        Assert.Equal(42, kinds["platforms"]!["twitch"]!["raid"]!["args"]!["viewers"]!.GetValue<int>());   // what an override can change
 
         var published = new List<BotEvent>();
         using var _ = Bot.Bus.Subscribe(published.Add);
@@ -109,8 +112,8 @@ public sealed class McpCoverageTests : IAsyncLifetime
         Assert.Equal(("twitch.follow", "overlays"), (S(overlays["event"]), S(overlays["target"])));
         Assert.Empty(published);   // overlays only: no actions run
 
-        await Ok("emulate_event", Args(("platform", "twitch"), ("kind", "raid"), ("target", "everything")));
-        Assert.Contains(published, e => e.Type == "twitch.raid");
+        await Ok("emulate_event", Args(("platform", "twitch"), ("kind", "raid"), ("target", "everything"), ("args", new JsonObject { ["viewers"] = 75 })));
+        Assert.Contains(published, e => e.Type == "twitch.raid" && Convert.ToInt32(e.Args["viewers"]) == 75);
         await Fails("emulate_event", Args(("platform", "twitch"), ("kind", "superchat")));
     }
 
@@ -325,5 +328,64 @@ public sealed class McpCoverageTests : IAsyncLifetime
         Assert.Equal(("Old scene", 1), (S(se["overlay"]!["name"]), se["imported"]!.GetValue<int>()));
         Bot.StreamElements.HasToken = false;
         Assert.Contains("JWT", (await Fails("list_streamelements_overlays", [])).ToJsonString());
+    }
+
+    [Fact]
+    public async Task Connections_speech_settings_totals_hotkeys_and_decks()
+    {
+        var connections = await Ok("list_connections", []);
+        Assert.Contains(connections["connections"]!.AsArray(), c => S(c!["name"]) == "OBS" && c["controllable"]!.GetValue<bool>());
+        Assert.Equal("Connected", S((await Ok("connect_service", Args(("name", "obs"), ("connect", true))))["state"]));
+        Assert.Equal("Disconnected", S((await Ok("connect_service", Args(("name", "OBS"), ("connect", false))))["state"]));
+        await Fails("connect_service", Args(("name", "Twitch"), ("connect", true)));   // not controllable
+        await Fails("connect_service", Args(("name", "Nope"), ("connect", true)));
+
+        // Speech: never the engine keys; aliases, voices, viewer voices.
+        Bot.Speech.Settings.ElevenLabsApiKey = "secret-key";
+        var speech = await Ok("get_speech_settings", []);
+        Assert.DoesNotContain("secret-key", speech.ToJsonString());
+        await Fails("update_speech_settings", Args(("changes", new JsonObject { ["elevenLabsApiKey"] = "x" })));
+        var louder = await Ok("update_speech_settings", Args(("changes", new JsonObject { ["masterVolume"] = 80 })));
+        Assert.Equal(80, louder["masterVolume"]!.GetValue<int>());
+        var voices = await Ok("list_speech_voices", []);
+        Assert.Equal("Ann", S(voices["engines"]![0]!["voices"]![0]!["name"]));
+        await Fails("save_voice_alias", Args(("alias", new JsonObject { ["name"] = "Narrator", ["engineId"] = "nope" })));
+        var saved = await Ok("save_voice_alias", Args(("alias", new JsonObject { ["name"] = "Narrator", ["engineId"] = "fake", ["voiceId"] = "bob", ["rate"] = 2 })));
+        Assert.Contains(saved["aliases"]!.AsArray(), a => S(a!["name"]) == "Narrator" && S(a["voiceId"]) == "bob");
+        Bot.Points.Add("twitch", "u1", "Alice", 1);
+        Assert.Equal("Narrator", S((await Ok("set_viewer_voice", Args(("platform", "twitch"), ("user", "Alice"), ("alias", "Narrator"))))["alias"]));
+        await Ok("speak", Args(("text", "Hello chat"), ("alias", "Narrator")));
+        Assert.Contains(Bot.Speaker.Log, l => l.Contains("Hello chat", StringComparison.Ordinal));
+        await Confirmed("delete_voice_alias", Args(("name", "Narrator")));
+
+        // Feature settings: merged, unknown keys refused.
+        var media = await Ok("update_feature_settings", Args(("feature", "media"), ("changes", new JsonObject { ["maxSeconds"] = 240 })));
+        Assert.Equal(240, media["maxSeconds"]!.GetValue<int>());
+        Assert.Equal(240, Bot.Media.Settings.MaxSeconds);
+        await Fails("update_feature_settings", Args(("feature", "media"), ("changes", new JsonObject { ["madeUp"] = 1 })));
+        var polls = await Ok("update_feature_settings", Args(("feature", "polls"), ("changes", new JsonObject { ["voteCommand"] = "!pick" })));
+        Assert.Equal("!pick", S(polls["voteCommand"]));
+        Assert.NotNull((await Ok("get_feature_settings", Args(("feature", "points"))))["name"]);
+        await Fails("get_feature_settings", Args(("feature", "secrets")));
+
+        // Stream totals: setting a goal needs no confirmation, resetting does.
+        await Ok("set_stream_totals", Args(("command", "setGoal"), ("type", "follower"), ("amount", 100)));
+        Assert.NotNull((await Ok("get_stream_totals", []))["session"]);
+        await Confirmed("set_stream_totals", Args(("command", "reset")));
+
+        // Hotkeys run actions; decks hold buttons.
+        Bot.AddAction("Scene: BRB");
+        var hotkeys = await Ok("save_hotkey", Args(("hotkey", new JsonObject { ["name"] = "BRB", ["gesture"] = "Ctrl+Shift+F1", ["action"] = "scene: brb" })));
+        Assert.Equal("Scene: BRB", S(hotkeys["hotkeys"]![0]!["action"]));
+        await Fails("save_hotkey", Args(("hotkey", new JsonObject { ["name"] = "Bad", ["gesture"] = "" })));
+        Assert.Single((await Ok("list_hotkeys", []))["hotkeys"]!.AsArray());
+        await Confirmed("delete_hotkey", Args(("hotkey", "BRB")));
+
+        var deck = await Ok("save_deck", Args(("deck", new JsonObject { ["name"] = "Phone" })));
+        Assert.Equal("Phone", S(deck["name"]));
+        Assert.Equal("Phone", S((await Ok("get_deck", Args(("deck", "phone"))))["name"]));
+        Assert.Single((await Ok("list_decks", []))["decks"]!.AsArray());
+        await Confirmed("delete_deck", Args(("deck", "Phone")));
+        Assert.Empty(Bot.Decks.Decks);
     }
 }

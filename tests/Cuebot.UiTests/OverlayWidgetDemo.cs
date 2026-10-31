@@ -57,6 +57,8 @@ public sealed class OverlayWidgetDemo
             {
                 var token = Cuebot.Server.Api.ApiToken.Generate();
                 servers.Settings.Api = new Cuebot.Server.Api.ApiServerSettings { Enabled = true, Port = 7498, Token = token };
+                // MCP too (on the API port at /mcp, same token), so an AI app can drive the demo.
+                servers.Settings.Mcp = new Cuebot.Server.Mcp.McpServerSettings { Enabled = true, RequireConfirmation = true };
                 await servers.RestartAsync(ServerKind.Api, TestContext.Current.CancellationToken);
                 await File.WriteAllTextAsync(Path.Combine(output, "api-token.txt"), token, TestContext.Current.CancellationToken);
                 var speech = host.Get<Cuebot.Speech.SpeechService>();

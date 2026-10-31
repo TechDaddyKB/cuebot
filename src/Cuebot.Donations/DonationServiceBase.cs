@@ -9,7 +9,7 @@ namespace Cuebot.Donations;
 /// Shared plumbing of the donation service connections: status, a background run loop with
 /// connect/disconnect, dedupe, publishing, the "last events" list and local test events.
 /// </summary>
-public abstract class DonationServiceBase : IConnectionStatus, IAsyncDisposable
+public abstract class DonationServiceBase : IConnectable, IAsyncDisposable
 {
     private const int RecentSize = 50;
     private readonly RecentIds _seen = new();
