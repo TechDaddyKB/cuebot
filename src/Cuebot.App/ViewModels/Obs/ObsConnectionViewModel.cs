@@ -141,8 +141,15 @@ public sealed partial class ObsConnectionViewModel : ObservableObject
     [RelayCommand]
     private Task StudioTransition() => Run(() => Connection.TriggerStudioTransitionAsync());
 
+    /// <summary>Start / stop stream asks for a second click: going live (or ending the stream) is seen by your viewers right away.</summary>
+    public ConfirmClick StreamConfirm { get; } = new("Start / stop stream", "Click again to start / stop stream");
+
     [RelayCommand]
-    private Task ToggleStream() => Run(() => Connection.ControlStreamAsync(OutputCommand.Toggle));
+    private Task ToggleStream()
+    {
+        if (!StreamConfirm.Confirm()) return Task.CompletedTask;
+        return Run(() => Connection.ControlStreamAsync(OutputCommand.Toggle));
+    }
 
     [RelayCommand]
     private Task ToggleRecord() => Run(() => Connection.ControlRecordAsync(OutputCommand.Toggle));

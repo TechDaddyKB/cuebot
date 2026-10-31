@@ -21,7 +21,7 @@
                            ToolTip.Tip="The name you pick in an action's Timer trigger." />
                   <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}"
                             ToolTip.Tip="Tick to run the timer. Untick to pause it without deleting it." />
-                  <CheckBox Grid.Column="4" Content="Repeat" IsChecked="{Binding Repeat}"
+                  <CheckBox Grid.Column="4" Content="Repeat (untick to run only once)" IsChecked="{Binding Repeat}"
                             ToolTip.Tip="Ticked: the timer keeps going off again and again. Unticked: it goes off only once after it is enabled (or Cuebot starts), then waits until you enable it again." />
                   <Button Grid.Column="6" Content="Remove"
                           Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this timer. Actions that used it will no longer be started by it." />

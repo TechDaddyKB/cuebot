@@ -99,7 +99,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Dashboard,
             new ChatViewModel(host.Get<Cuebot.Core.Chat.ChatHub>(), Cuebot.App.ViewModels.Chat.ChatPageServices.From(host)),
             actions,
-            new CommandsViewModel(host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Users.GroupStore>()),
+            new CommandsViewModel(host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Users.GroupStore>(), host.Get<ProfileService>()),
             history,
             new Cuebot.App.ViewModels.Assistant.AssistantViewModel(host.Get<Cuebot.Assistant.AssistantService>()),
             queues,

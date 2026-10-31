@@ -20,7 +20,8 @@ Go to **Apps > Stream apps**. Each app has its own tab.
 3. Click **Connect**, and tick **Connect automatically and reconnect when OBS restarts**.
 
 Once connected, the page shows your scenes and sources, with buttons like **Start / stop stream**, **Start / stop
-recording** and **Save replay**. Your actions can now switch scenes (**Set scene**), show and hide sources (**Set source
+recording** and **Save replay**. Your viewers see the stream start or stop right away, so **Start / stop stream** asks
+first: click it, then click again within 5 seconds. Your actions can now switch scenes (**Set scene**), show and hide sources (**Set source
 visibility**), change text and filters, and much more. OBS events, like "scene changed" or "stream started", become
 triggers.
 

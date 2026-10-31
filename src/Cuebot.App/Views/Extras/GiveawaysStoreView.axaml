@@ -53,7 +53,9 @@
               <Button Content="Draw winners" Command="{Binding DrawGiveawayCommand}" IsEnabled="{Binding GiveawayRunning}" ToolTip.Tip="Picks the winners at random from everyone who entered." />
               <Button Content="Draw one more" Command="{Binding RedrawGiveawayCommand}" IsEnabled="{Binding CanRedraw}"
                       ToolTip.Tip="Picks one more winner, for example when a winner does not answer." />
-              <Button Content="Cancel and refund" Command="{Binding CancelGiveawayCommand}" IsEnabled="{Binding GiveawayRunning}" ToolTip.Tip="Ends the giveaway without a winner and gives the entry points back to the viewers." />
+              <Button Content="{Binding CancelConfirm.Text}" Command="{Binding CancelGiveawayCommand}" IsEnabled="{Binding GiveawayRunning}"
+                      Classes.danger="{Binding CancelConfirm.IsArmed}"
+                      ToolTip.Tip="Ends the giveaway without a winner and gives the entry points back to the viewers. Click once, then click again within 5 seconds to confirm." />
             </StackPanel>
             <TextBlock Text="{Binding GiveawaySummary}" TextWrapping="Wrap" />
           </StackPanel>

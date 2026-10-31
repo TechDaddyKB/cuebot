@@ -68,7 +68,7 @@
                 <StackPanel Spacing="8">
                   <TextBlock Classes="h2" Text="Controls" />
                   <WrapPanel ItemSpacing="8" LineSpacing="8">
-                    <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" ToolTip.Tip="Starts your live stream if it is off, or ends it if it is on. Your viewers see this right away." />
+                    <Button Content="{Binding StreamConfirm.Text}" Command="{Binding ToggleStreamCommand}" Classes.danger="{Binding StreamConfirm.IsArmed}" ToolTip.Tip="Starts your live stream if it is off, or ends it if it is on. Your viewers see this right away. Click once, then click again within 5 seconds to confirm." />
                     <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" ToolTip.Tip="Starts saving a video file if OBS is not recording, or stops recording if it is." />
                     <Button Content="Save replay" Command="{Binding SaveReplayCommand}" ToolTip.Tip="Saves the last moments from OBS's replay buffer as a video file. The replay buffer must be running in OBS." />
                     <Button Content="Studio mode on / off" Command="{Binding ToggleStudioModeCommand}" ToolTip.Tip="Turns OBS Studio Mode on or off. In Studio Mode you prepare a scene in Preview before sending it live." />
@@ -154,7 +154,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to Streamlabs Desktop now." />
                   <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Disconnects from Streamlabs Desktop." />
-                  <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" IsVisible="{Binding IsGood}" ToolTip.Tip="Starts your live stream if it is off, or ends it if it is on. Your viewers see this right away." />
+                  <Button Content="{Binding StreamConfirm.Text}" Command="{Binding ToggleStreamCommand}" Classes.danger="{Binding StreamConfirm.IsArmed}" IsVisible="{Binding IsGood}" ToolTip.Tip="Starts your live stream if it is off, or ends it if it is on. Your viewers see this right away. Click once, then click again within 5 seconds to confirm." />
                   <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" IsVisible="{Binding IsGood}" ToolTip.Tip="Starts saving a video file if it is not recording, or stops recording if it is." />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">

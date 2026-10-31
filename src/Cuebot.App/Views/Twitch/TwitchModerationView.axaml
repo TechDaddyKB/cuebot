@@ -24,7 +24,8 @@
             </StackPanel>
             <WrapPanel Classes="actions">
               <Button Content="Timeout" Command="{Binding TimeoutCommand}" ToolTip.Tip="Stops this viewer from chatting for the number of seconds you chose. They can chat again afterwards." />
-              <Button Content="Ban" Command="{Binding BanCommand}" ToolTip.Tip="Bans this viewer from your chat until you unban them." />
+              <Button Content="{Binding BanConfirm.Text}" Command="{Binding BanCommand}" Classes.danger="{Binding BanConfirm.IsArmed}"
+                      ToolTip.Tip="Bans this viewer from your chat until you unban them. Click once, then click again within 5 seconds to confirm." />
               <Button Content="Unban / untimeout" Command="{Binding UnbanCommand}" ToolTip.Tip="Lets this viewer chat again, whether they were banned or in a timeout." />
               <Button Content="Warn" Command="{Binding WarnCommand}" ToolTip.Tip="Sends this viewer a warning with your reason. They must accept it before they can chat again." />
             </WrapPanel>
@@ -53,14 +54,17 @@
               <CheckBox Content="Subscriber-only" IsChecked="{Binding SubscriberMode}" ToolTip.Tip="Only your subscribers (and moderators) can chat. Press Apply to turn it on." />
               <CheckBox Content="Unique chat" IsChecked="{Binding UniqueChatMode}" ToolTip.Tip="Blocks messages that are the same as one just sent, to stop copy-paste spam. Press Apply to turn it on." />
               <WrapPanel Classes="actions">
-                <Button Content="Apply" Classes="accent" Command="{Binding ApplyChatSettingsCommand}" ToolTip.Tip="Sends the chat modes above to Twitch now. The ticks do nothing until you press this." />
+                <Button Content="Apply" Classes.accent="{Binding HasPendingChatModes}" Command="{Binding ApplyChatSettingsCommand}" ToolTip.Tip="Sends the chat modes above to Twitch now. The ticks do nothing until you press this." />
                 <Button Content="Load current" Command="{Binding LoadChatSettingsCommand}" ToolTip.Tip="Shows the chat modes that are on right now on Twitch, replacing what you changed here." />
               </WrapPanel>
+              <TextBlock Classes="warning" Text="Not sent yet: press Apply to change your chat." TextWrapping="Wrap"
+                         IsVisible="{Binding HasPendingChatModes}" />
               <Grid ColumnDefinitions="*,8,Auto">
                 <CheckBox Content="Shield mode" IsChecked="{Binding ShieldMode}" ToolTip.Tip="Twitch's emergency protection against raids of trolls and hate. It uses the settings you made on Twitch. Press Apply shield mode to switch it." />
                 <Button Grid.Column="2" Content="Apply shield mode" Command="{Binding ApplyShieldModeCommand}" ToolTip.Tip="Turns Twitch shield mode on or off to match the tick box." />
               </Grid>
-              <Button Content="Clear chat" Command="{Binding ClearChatCommand}" ToolTip.Tip="Wipes all messages from your chat right now for everyone." />
+              <Button Content="{Binding ClearChatConfirm.Text}" Command="{Binding ClearChatCommand}" Classes.danger="{Binding ClearChatConfirm.IsArmed}"
+                      ToolTip.Tip="Wipes all messages from your chat right now for everyone. Click once, then click again within 5 seconds to confirm." />
             </StackPanel>
           </Border>
           <Border Classes="card">

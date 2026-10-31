@@ -123,6 +123,8 @@ public sealed class TwitchPageTests : IAsyncDisposable
         Assert.Contains("Sign in", vm.Channel.Error);
 
         vm.Moderation.User = "someone";
+        await vm.Moderation.BanCommand.ExecuteAsync(null);   // the first click only asks for a second one
+        Assert.Equal("", vm.Moderation.Error);
         await vm.Moderation.BanCommand.ExecuteAsync(null);
         Assert.Contains("Sign in", vm.Moderation.Error);
 

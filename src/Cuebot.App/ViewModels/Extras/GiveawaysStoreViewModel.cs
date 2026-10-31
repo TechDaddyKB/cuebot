@@ -164,7 +164,18 @@ public sealed partial class GiveawaysStoreViewModel : PageViewModel
     private void RedrawGiveaway() => Try(() => _giveaways.Draw(oneMore: true), "Drew one more winner.");
 
     [RelayCommand]
-    private void CancelGiveaway() => Try(() => _giveaways.Cancel(), "Giveaway cancelled; tickets were refunded.");
+    private void CancelGiveaway()
+    {
+        if (!CancelConfirm.Confirm())
+        {
+            Status = "Click again within 5 seconds to end the giveaway with no winner and give everyone their points back.";
+            return;
+        }
+        Try(() => _giveaways.Cancel(), "Giveaway cancelled; tickets were refunded.");
+    }
+
+    /// <summary>Cancel and refund asks for a second click: it ends the giveaway for everyone who entered.</summary>
+    public ConfirmClick CancelConfirm { get; } = new("Cancel and refund", "Click again to cancel and refund");
 
     // ---- Store ------------------------------------------------------------------------------------------------------
 

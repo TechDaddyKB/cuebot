@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
 using Cuebot.Core.Storage;
 using Cuebot.Core.Users;
@@ -101,16 +102,19 @@ public sealed partial class CommandEditorViewModel : ObservableObject
 {
     private readonly CommandStore _store;
     private readonly GroupStore _groups;
+    private readonly Func<CommandDefinition, string> _findDuplicates;
     private CommandDefinition _c;
     private string _aliasesText;
     private string _sourcesText;
     private string _allowedUsersText;
     private string _deniedUsersText;
 
-    public CommandEditorViewModel(CommandStore store, GroupStore groups, CommandDefinition command)
+    public CommandEditorViewModel(CommandStore store, GroupStore groups, CommandDefinition command,
+        Func<CommandDefinition, string>? findDuplicates = null)
     {
         _store = store;
         _groups = groups;
+        _findDuplicates = findDuplicates ?? (_ => "");
         _c = command;
         _aliasesText = string.Join('\n', command.Commands);
         _sourcesText = string.Join('\n', command.Sources);
@@ -139,6 +143,16 @@ public sealed partial class CommandEditorViewModel : ObservableObject
     public bool HasRegexErrors => RegexErrors.Length > 0;
 
     partial void OnRegexErrorsChanged(string value) => OnPropertyChanged(nameof(HasRegexErrors));
+
+    /// <summary>One line per command word that another enabled command or action also answers ("" when none).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDuplicateWarning))]
+    private string _duplicateWarning = "";
+
+    public bool HasDuplicateWarning => DuplicateWarning.Length > 0;
+
+    /// <summary>Checks the command words again (another command or action changed).</summary>
+    public void RefreshDuplicates() => DuplicateWarning = _findDuplicates(_c);
 
     /// <summary>The store's copy changed elsewhere (e.g. "Set command state"): reload unless it matches ours.</summary>
     public void Reload(CommandDefinition stored)
@@ -183,7 +197,12 @@ public sealed partial class CommandEditorViewModel : ObservableObject
     public bool Enabled
     {
         get => _c.Enabled;
-        set { if (_c.Enabled != value) Save(() => _c.Enabled = value); }
+        set
+        {
+            if (_c.Enabled == value) return;
+            Save(() => _c.Enabled = value);
+            Validate();
+        }
     }
 
     public bool Include
@@ -353,6 +372,7 @@ public sealed partial class CommandEditorViewModel : ObservableObject
 
     private void Validate()
     {
+        RefreshDuplicates();
         if (_c.Mode != CommandMode.Regex)
         {
             RegexErrors = "";
@@ -372,15 +392,22 @@ public sealed partial class CommandEditorViewModel : ObservableObject
 /// <summary>Commands page: commands.json grouped by group, with an editor for the selected command.</summary>
 public sealed partial class CommandsViewModel : PageViewModel
 {
+    /// <summary>The type id of the Twitch "Chat command" trigger (Cuebot.Twitch's CommandTriggerType) and its setting.</summary>
+    private const string ChatCommandTrigger = "twitch.command";
+    private const string ChatCommandSetting = "command";
+
     private readonly CommandStore _store;
     private readonly GroupStore _groups;
+    private readonly ProfileService? _profile;
     private readonly Dictionary<Guid, CommandRowViewModel> _rows = [];
     private readonly HashSet<string> _collapsed = new(StringComparer.OrdinalIgnoreCase);
 
-    public CommandsViewModel(CommandStore store, GroupStore groups) : base("Commands")
+    public CommandsViewModel(CommandStore store, GroupStore groups, ProfileService? profile = null) : base("Commands")
     {
         _store = store;
         _groups = groups;
+        _profile = profile;
+        if (profile is not null) profile.Changed += () => OnUi(() => Editor?.RefreshDuplicates());
         store.Changed += () => OnUi(Refresh);
         store.CountersChanged += id => OnUi(() =>
         {
@@ -433,7 +460,11 @@ public sealed partial class CommandsViewModel : PageViewModel
 
         if (Editor is { } editor)
         {
-            if (_store.Get(editor.Id) is { } stored) editor.Reload(stored);
+            if (_store.Get(editor.Id) is { } stored)
+            {
+                editor.Reload(stored);
+                editor.RefreshDuplicates();
+            }
             else Select(null);
         }
         OnPropertyChanged(nameof(Summary));
@@ -443,7 +474,43 @@ public sealed partial class CommandsViewModel : PageViewModel
     private void Select(CommandRowViewModel? row)
     {
         foreach (var r in _rows.Values) r.IsSelected = r == row;
-        Editor = row is not null && _store.Get(row.Id) is { } copy ? new CommandEditorViewModel(_store, _groups, copy) : null;
+        Editor = row is not null && _store.Get(row.Id) is { } copy ? new CommandEditorViewModel(_store, _groups, copy, FindDuplicates) : null;
+    }
+
+    /// <summary>
+    /// The warning for command words that another enabled command, or an enabled action's Twitch "Chat command"
+    /// trigger, also answers: viewers would get two replies. Empty when the command is off or uses search patterns.
+    /// </summary>
+    internal string FindDuplicates(CommandDefinition command)
+    {
+        if (!command.Enabled || command.Mode == CommandMode.Regex) return "";
+        var commands = _store.Snapshot;
+        var actions = _profile?.Snapshot.Actions ?? [];
+        var lines = new List<string>();
+        foreach (var word in command.Commands.Select(w => w.Trim()).Where(w => w.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var others = new List<string>();
+            foreach (var other in commands)
+            {
+                if (other.Id == command.Id || !other.Enabled || other.Mode == CommandMode.Regex) continue;
+                if (other.Commands.Any(w => string.Equals(w.Trim(), word, StringComparison.OrdinalIgnoreCase)))
+                    others.Add($"the command '{other.Name}'{InGroup(other.Group)}");
+            }
+            foreach (var action in actions)
+            {
+                if (!action.Enabled) continue;
+                if (action.Triggers.Any(t => t.Enabled && t.Type == ChatCommandTrigger
+                                             && t.Settings.TryGetValue(ChatCommandSetting, out var w)
+                                             && string.Equals(w.Trim(), word, StringComparison.OrdinalIgnoreCase)))
+                    others.Add($"the action '{action.Name}'{InGroup(action.Group)}");
+            }
+            if (others.Count == 0) continue;
+            var list = others.Count == 1 ? others[0] : string.Join(", ", others.Take(others.Count - 1)) + " and " + others[^1];
+            lines.Add($"{word} is also answered by {list}. Turn one off, or viewers get two replies.");
+        }
+        return string.Join('\n', lines);
+
+        static string InGroup(string group) => group.Length > 0 ? $" ({group})" : "";
     }
 
     internal void SetEnabled(CommandRowViewModel row, bool enabled) => _store.SetEnabled(row.Id, enabled);

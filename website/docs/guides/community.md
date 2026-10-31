@@ -70,7 +70,8 @@ Go to **Chat > Giveaways & Store**. Both use your Cuebot points.
 5. Click **Open giveaway**.
 6. When it is time, click **Close entries**, then **Draw winners**. Winner not here? **Draw one more**.
 
-**Cancel and refund** stops it and gives everyone their points back. Show it on stream with the **Giveaway** widget on
+**Cancel and refund** stops it and gives everyone their points back. Click it twice: the first click only asks you to
+click again within 5 seconds. Show it on stream with the **Giveaway** widget on
 your [overlay](overlays.md).
 
 ### The store

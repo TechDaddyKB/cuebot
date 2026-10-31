@@ -65,8 +65,15 @@ public sealed partial class StreamlabsViewModel : ObservableObject
     [RelayCommand]
     private Task SwitchScene(string scene) => Run(() => _slobs.SetSceneAsync(scene));
 
+    /// <summary>Start / stop stream asks for a second click: going live (or ending the stream) is seen by your viewers right away.</summary>
+    public ConfirmClick StreamConfirm { get; } = new("Start / stop stream", "Click again to start / stop stream");
+
     [RelayCommand]
-    private Task ToggleStream() => Run(() => _slobs.ControlStreamingAsync(OutputCommand.Toggle));
+    private Task ToggleStream()
+    {
+        if (!StreamConfirm.Confirm()) return Task.CompletedTask;
+        return Run(() => _slobs.ControlStreamingAsync(OutputCommand.Toggle));
+    }
 
     [RelayCommand]
     private Task ToggleRecord() => Run(() => _slobs.ControlRecordingAsync(OutputCommand.Toggle));

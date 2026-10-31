@@ -256,6 +256,10 @@
     <Setter Property="Foreground" Value="{DynamicResource CuebotBad}" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
+  <Style Selector="TextBlock.warning">
+    <Setter Property="Foreground" Value="{DynamicResource CuebotWarn}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
 
   <!-- ===== Surfaces ===== -->
   <Style Selector="Window">

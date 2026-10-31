@@ -121,6 +121,7 @@
                     <TextBlock Text="Commands (one per line; aliases share the cooldown and counter)" />
                     <TextBox Text="{Binding AliasesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="80" FontFamily="monospace" ToolTip.Tip="What viewers type to use this command, like !hello. Put each word on its own line." />
                     <TextBlock Classes="error" Text="{Binding RegexErrors}" IsVisible="{Binding HasRegexErrors}" />
+                    <TextBlock Classes="warning" Text="{Binding DuplicateWarning}" IsVisible="{Binding HasDuplicateWarning}" />
                     <TextBlock Classes="muted" TextWrapping="Wrap"
                                Text="Start: the message begins with the command. Exact: the whole message is the command. Anywhere: the command appears as a separate word. Regex: each line is a search pattern (an advanced way to match text); named parts of the pattern become variables." />
                   </StackPanel>
