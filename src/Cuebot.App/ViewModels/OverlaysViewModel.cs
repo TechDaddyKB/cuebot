@@ -97,6 +97,16 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     private void Delete() => owner.Delete(overlay.Id);
 }
 
+/// <summary>An overlay in the connected StreamElements account, offered for import.</summary>
+public sealed partial class StreamElementsOverlayRowViewModel(StreamElementsOverlaySummary overlay, OverlaysViewModel owner) : ObservableObject
+{
+    public string Name => overlay.Name;
+    public string Canvas => $"{overlay.Width} × {overlay.Height}";
+
+    [RelayCommand]
+    private Task Import() => owner.ImportFromStreamElementsAsync(overlay);
+}
+
 /// <summary>
 /// The Overlays &amp; Widgets page. For now it manages the overlays themselves (create, rename, copy the OBS link,
 /// replace the link, delete); the designer comes in a later phase.
@@ -109,6 +119,7 @@ public sealed partial class OverlaysViewModel : PageViewModel
     private readonly ServerManager? _servers;
     private readonly WidgetLibrary? _widgets;
     private readonly OverlayAlertQueue? _alerts;
+    private readonly IStreamElementsOverlaySource? _streamElements;
 
     /// <summary>Opens a link in the browser (tests replace it).</summary>
     public Action<string> OpenUrl { get; init; } = Cuebot.App.Shell.UrlLauncher.Open;
@@ -133,10 +144,11 @@ public sealed partial class OverlaysViewModel : PageViewModel
     public OverlaysViewModel() : base(PageTitle) => _newCanvas = Presets[0];
 
     public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null, OverlayAlertQueue? alerts = null,
-        ChatPollPanelViewModel? polls = null)
+        ChatPollPanelViewModel? polls = null, IStreamElementsOverlaySource? streamElements = null)
         : base(PageTitle)
     {
         Polls = polls;
+        _streamElements = streamElements;
         _store = store;
         _servers = servers;
         _widgets = widgets;
@@ -184,6 +196,78 @@ public sealed partial class OverlaysViewModel : PageViewModel
         set
         {
             if (_alerts is not null) _alerts.Muted = value;
+        }
+    }
+
+    // ---- Import from StreamElements ----
+
+    public bool CanImportFromStreamElements => _streamElements is not null && _widgets is not null;
+
+    /// <summary>The account's overlays, listed after "Import from StreamElements…".</summary>
+    public ObservableCollection<StreamElementsOverlayRowViewModel> StreamElementsOverlays { get; } = [];
+
+    [ObservableProperty]
+    private bool _streamElementsOpen;
+
+    [ObservableProperty]
+    private bool _streamElementsBusy;
+
+    /// <summary>Lists the overlays in the connected StreamElements account (read only).</summary>
+    [RelayCommand]
+    private async Task ShowStreamElementsOverlays()
+    {
+        if (_streamElements is null) return;
+        if (!_streamElements.HasToken)
+        {
+            Status = "Connect StreamElements first: paste your JWT token on the Donations page, then try again.";
+            return;
+        }
+        StreamElementsBusy = true;
+        try
+        {
+            var list = await _streamElements.ListOverlaysAsync(CancellationToken.None);
+            StreamElementsOverlays.Clear();
+            foreach (var overlay in list) StreamElementsOverlays.Add(new StreamElementsOverlayRowViewModel(overlay, this));
+            StreamElementsOpen = true;
+            Status = list.Count == 0 ? "Your StreamElements account has no overlays." : "Pick an overlay to copy into Cuebot. Your StreamElements overlays are not changed.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or Cuebot.Donations.StreamElements.StreamElementsApiException)
+        {
+            Status = "Could not list your StreamElements overlays: " + ex.Message;
+        }
+        finally
+        {
+            StreamElementsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseStreamElementsOverlays() => StreamElementsOpen = false;
+
+    /// <summary>Copies one StreamElements overlay into a new Cuebot overlay.</summary>
+    internal async Task ImportFromStreamElementsAsync(StreamElementsOverlaySummary summary)
+    {
+        if (_streamElements is null || _store is null || _widgets is null) return;
+        StreamElementsBusy = true;
+        try
+        {
+            var json = await _streamElements.GetOverlayAsync(summary.Id, CancellationToken.None);
+            StreamElementsImportResult? result = null;
+            Edit(() => result = StreamElementsOverlayImport.Import(json, _store, _widgets));
+            Refresh();
+            if (result is null) return;
+            Status = $"Imported \"{result.Overlay.Name}\" with {result.Imported} widget{(result.Imported == 1 ? "" : "s")}."
+                     + (result.Skipped.Count > 0 ? " Not imported: " + string.Join(", ", result.Skipped) + "." : "")
+                     + " Copy its link into OBS; alert and label settings can be changed with Edit….";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidDataException
+                                       or Cuebot.Donations.StreamElements.StreamElementsApiException)
+        {
+            Status = $"Could not import \"{summary.Name}\": {ex.Message}";
+        }
+        finally
+        {
+            StreamElementsBusy = false;
         }
     }
 

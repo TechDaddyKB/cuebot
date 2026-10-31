@@ -37,8 +37,22 @@ public sealed class StreamElementsApiTests
              {"username":"Styler","first":"2025-02-19T15:07:09.302Z","last":"2025-02-19T15:07:09.302Z","count":3,"total":104.2,"email":"","average":34.73},
              {"username":"bob","first":"2025-01-01T00:00:00.000Z","last":"2025-01-01T00:00:00.000Z","count":1,"total":20,"email":"","average":20}]
             """),
+        ("GET", $"/kappa/v2/overlays/{Channel}") => FakeHttpHandler.Json("""{"docs":[{"_id":"o1","name":"Main","settings":{"width":1920,"height":1080}}]}"""),
+        ("GET", $"/kappa/v2/overlays/{Channel}/o1") => FakeHttpHandler.Json("""{"_id":"o1","name":"Main","widgets":[{"type":"text"}]}"""),
         _ => FakeHttpHandler.Json("""{"statusCode":401,"error":"Unauthorized","message":"Invalid jwt-SECRET-value-0123456789"}""", HttpStatusCode.Unauthorized),
     };
+
+    [Fact]
+    public async Task Overlays_are_listed_and_read_with_get_requests_only()
+    {
+        var list = await _api.GetOverlaysAsync(Jwt, Channel, default);
+        Assert.Equal("Main", list!["docs"]![0]!["name"]!.GetValue<string>());
+        var overlay = await _api.GetOverlayAsync(Jwt, Channel, "o1", default);
+        Assert.Equal("text", overlay["widgets"]![0]!["type"]!.GetValue<string>());
+        Assert.All(_http.Requests, r => Assert.Equal(("GET", "Bearer " + Jwt), (r.Method.Method, r.Authorization)));
+        var error = await Assert.ThrowsAsync<StreamElementsApiException>(() => _api.GetOverlayAsync(Jwt, Channel, "missing", default));
+        Assert.DoesNotContain(Jwt, error.Message);
+    }
 
     [Fact]
     public async Task Requests_use_the_kappa_v2_paths_and_a_bearer_jwt()

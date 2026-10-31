@@ -23,7 +23,9 @@ page and the Media request player widget; built 2026-10-30); 5e merch, charity a
 StreamElements, Streamlabs, Fourthwall, Shopify and Ko-fi; Twitch charity campaigns; the Charity campaign, Product
 showcase and Seasonal effects widgets; built 2026-10-30; SE's private merch catalogue is not used). Phase 5 is done.
 6a Streamlabs custom widgets (chat box, alert box, event list, goal and generic code run through `sl-widget.js`;
-built 2026-10-30); 6b (importing StreamElements overlays) is next. Details in docs/SERVERS.md.
+built 2026-10-30); 6b importing StreamElements overlays through the connected account (custom widgets, text, images,
+video, labels and the alert box with its variations; built 2026-10-30). Phase 6 is done; phase 7 (sharing) is next.
+Details in docs/SERVERS.md.
 
 ## Goal
 
@@ -278,9 +280,8 @@ Delivery in three merges, each with tests:
 - Community gallery: hosting, accounts, uploads, moderation, reporting and takedowns.
 
 ## Open questions
-- SE overlay import (phase 6): the dashboard lists overlays with `GET api.streamelements.com/kappa/v2/overlays/{channelId}`
-  (seen 2026-10-30). The per-overlay JSON (layers, widget settings, custom code) has not been inspected yet; check it
-  through Cuebot's own StreamElements connection at the start of phase 6.
+- SE overlay import: goal widgets (`*-goal`), Kappagen and other StreamElements-only widgets are not imported yet (they
+  are listed as skipped); a later pass could map goals to Cuebot's goal widget.
 - Designer access: because the designer shares the overlay network switch, turning it on lets anyone on the LAN edit
   overlays. Decide in phase 0 whether that switch needs a password or a warning.
 - Gallery repo: name, contribution template, and the automated checks a pull request runs (package validity, no

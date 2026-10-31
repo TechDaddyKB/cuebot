@@ -13,7 +13,7 @@ namespace Cuebot.UiTests;
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
 /// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, "polls" for a Cuebot chat poll voted from every platform, "giveaway" for a giveaway entered from every platform, "media" for the media request player (requests over the API), "extras" for the charity, product showcase and seasonal
-/// widgets (with merch purchases and Twitch charity progress), "streamlabs" for sample Streamlabs chat box, alert box and event list code, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
+/// widgets (with merch purchases and Twitch charity progress), "streamlabs" for sample Streamlabs chat box, alert box and event list code, a folder of StreamElements overlay JSON files to import them, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
 /// token in api-token.txt) and speech paused, so alert TTS and the queue controls can be tried): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
@@ -35,7 +35,9 @@ public sealed class OverlayWidgetDemo
         var media = zip == "media";
         var extras = zip == "extras";
         var streamlabs = zip == "streamlabs";
-        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !media && !extras && !streamlabs
+        // A folder of StreamElements overlay JSON files (as the overlays API returns them), imported read only.
+        var seImport = Directory.Exists(zip);
+        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !media && !extras && !streamlabs && !seImport
                                                       && !File.Exists(zip)),
             "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" or \"alertbox\" for Cuebot's own) to run the overlay demo");
         var seconds = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_DEMO_SECONDS"), out var s) ? s : 120;
@@ -76,6 +78,21 @@ public sealed class OverlayWidgetDemo
                 var library = host.Get<WidgetLibrary>();
                 layer = library.AddBuiltIn(overlay.Id, "label")!;
                 foreach (var kind in new[] { "goal", "eventlist", "credits", "countdown" }) library.AddBuiltIn(overlay.Id, kind);
+            }
+            else if (seImport)
+            {
+                var urls = new List<string>();
+                OverlayLayer? first = null;
+                foreach (var file in Directory.GetFiles(zip!, "*.json").Order())
+                {
+                    var json = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken))!.AsObject();
+                    var result = StreamElementsOverlayImport.Import(json, host.Get<OverlayStore>(), host.Get<WidgetLibrary>());
+                    first ??= result.Overlay.Layers.FirstOrDefault();
+                    urls.Add($"{result.Overlay.Name}\t{result.Imported} imported\tskipped: {string.Join("; ", result.Skipped)}\t{servers.OverlayUrl(result.Overlay)}");
+                }
+                await File.WriteAllLinesAsync(Path.Combine(output, "se-import.txt"), urls, TestContext.Current.CancellationToken);
+                layer = first!;
+                overlay = host.Get<OverlayStore>().All().First(o => o.Layers.Any(l => l.Id == layer.Id));
             }
             else if (streamlabs)
             {

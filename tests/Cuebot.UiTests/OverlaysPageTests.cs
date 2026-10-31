@@ -171,6 +171,58 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task Overlays_are_imported_from_the_streamelements_account()
+    {
+        var source = new FakeStreamElements();
+        var vm = new OverlaysViewModel(Store, Servers, _services.GetRequiredService<WidgetLibrary>(), streamElements: source);
+        var window = Open(new OverlaysView(), vm);
+        Assert.True(vm.CanImportFromStreamElements);
+
+        await vm.ShowStreamElementsOverlaysCommand.ExecuteAsync(null);
+        Assert.StartsWith("Connect StreamElements first", vm.Status);
+        Assert.False(vm.StreamElementsOpen);
+
+        source.HasToken = true;
+        await vm.ShowStreamElementsOverlaysCommand.ExecuteAsync(null);
+        Pump();
+        Assert.True(vm.StreamElementsOpen);
+        var row = Assert.Single(vm.StreamElementsOverlays);
+        Assert.Equal(("Stream scene", "1280 × 720"), (row.Name, row.Canvas));
+        TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, "overlays-streamelements.png"));
+
+        await row.ImportCommand.ExecuteAsync(null);
+        Pump();
+        var imported = Assert.Single(vm.Overlays);
+        Assert.Equal(("Stream scene", "1280 × 720", 1), (imported.Name, imported.Canvas, imported.Layers.Count));
+        Assert.Equal("Imported \"Stream scene\" with 1 widget. Not imported: se-widget-kappagen (not supported). Copy its link into OBS; alert and label settings can be changed with Edit….", vm.Status);
+
+        source.Fail = true;
+        await row.ImportCommand.ExecuteAsync(null);
+        Assert.Equal("Could not import \"Stream scene\": StreamElements API error 500", vm.Status);
+        vm.CloseStreamElementsOverlaysCommand.Execute(null);
+        Assert.False(vm.StreamElementsOpen);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    private sealed class FakeStreamElements : IStreamElementsOverlaySource
+    {
+        public bool HasToken { get; set; }
+        public bool Fail { get; set; }
+
+        public Task<IReadOnlyList<StreamElementsOverlaySummary>> ListOverlaysAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<StreamElementsOverlaySummary>>([new("o1", "Stream scene", 1280, 720)]);
+
+        public Task<System.Text.Json.Nodes.JsonObject> GetOverlayAsync(string id, CancellationToken ct) => Fail
+            ? throw new Cuebot.Donations.StreamElements.StreamElementsApiException("StreamElements API error 500", 500)
+            : Task.FromResult(System.Text.Json.Nodes.JsonNode.Parse("""
+                {"name":"Stream scene","settings":{"width":1280,"height":720},"widgets":[
+                  {"type":"text","css":{"top":"10px","left":"10px","width":"200px","height":"40px"},"text":{"value":"Hi"}},
+                  {"type":"se-widget-kappagen"}]}
+                """)!.AsObject());
+    }
+
     private sealed class TitleLookup : Cuebot.Core.Media.IMediaLookup
     {
         public Task<(string Title, string Author)?> FindAsync(string videoId, CancellationToken ct) =>

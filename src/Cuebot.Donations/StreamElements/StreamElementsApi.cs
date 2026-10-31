@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Cuebot.Donations.StreamElements;
 
@@ -85,6 +86,20 @@ internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
             .OrderByDescending(r => r.Total)
             .Take(Clamp(limit))
             .ToArray();
+    }
+
+    /// <summary><c>GET overlays/{channel}</c> → <c>{docs: [{_id, name, settings: {width, height}, ...}]}</c> (read only).</summary>
+    public async Task<JsonNode?> GetOverlaysAsync(string jwt, string channel, CancellationToken ct)
+    {
+        var json = await SendAsync(HttpMethod.Get, $"overlays/{Seg(channel)}", jwt, ct).ConfigureAwait(false);
+        return JsonNode.Parse(json.GetRawText());
+    }
+
+    /// <summary><c>GET overlays/{channel}/{id}</c>: the overlay with its <c>widgets</c> (read only).</summary>
+    public async Task<JsonObject> GetOverlayAsync(string jwt, string channel, string id, CancellationToken ct)
+    {
+        var json = await SendAsync(HttpMethod.Get, $"overlays/{Seg(channel)}/{Seg(id)}", jwt, ct).ConfigureAwait(false);
+        return JsonNode.Parse(json.GetRawText()) as JsonObject ?? throw new StreamElementsApiException("StreamElements returned no overlay");
     }
 
     internal static StreamElementsTip Tip(JsonElement doc)

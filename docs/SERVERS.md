@@ -173,6 +173,25 @@ page.
   clears after `widgetDuration`, which also holds the queue. Goals fire `goalLoad` and `goalEvent` (on each session
   update) from the session's `{type}-goal`. Streamlabs' boss and spin wheel events are not sent.
 
+### Importing StreamElements overlays (`StreamElementsOverlayImport`)
+- The Overlays page's "Import from StreamElements…" lists the overlays in the account whose JWT token is set on the
+  Donations page (`GET kappa/v2/overlays/{channel}`) and copies one into a new Cuebot overlay
+  (`GET kappa/v2/overlays/{channel}/{id}`). Both are GET requests; StreamElements is never changed. Shape (seen
+  2026-10-30): `{name, settings: {width, height}, widgets: [{type, name, visible, locked, listener, css: {top, left,
+  width, height, z-index, opacity, transform}, text: {value, enableShadow, css: {...}}, variables: {...}}]}`.
+- Mapping: any widget whose `variables` has `html`/`js` (custom widgets, `se-widget-custom-event-list`) becomes a custom
+  widget with those panes, `fields` (a JSON string) and `fieldData` as its data; `text` becomes a text layer; `image`
+  and `video` (`{type}.src`) become image and video layers; label listeners (`follower-latest`,
+  `subscriber-new-latest`, `cheer-latest`, `tip-session`, `*-week|month|total|count|recent`) become Cuebot labels (text
+  before and after the first and last `{token}` as prefix and suffix, `noData` as the empty text, font, size, colour,
+  weight, alignment and shadow); `se-widget-alert-box` becomes Cuebot's alert box, each known alert type (follower,
+  subscriber, tip, cheer, raid, merch, charityCampaignDonation, superchat, redemption) with its message
+  (`{currency}{amount}` → `{formattedAmount}`), duration, graphics and sound (left on StreamElements' CDN), volumes,
+  layout (`row` → beside), fonts and colours, animations (the type's, else the alert box's, else fade) and TTS on/off,
+  and its variations (amount at least / exactly, sorted largest first; gift → gifted; community gift → bulk; tier).
+  Layers keep their place, size ("auto" sizes: a label gets one line of its text, up to 700 px wide), stacking order
+  (`z-index`), opacity, `rotate()` and visibility. Goals and other widgets are reported as skipped.
+
 ### Built-in chat box (`Cuebot.Core/Overlays/Widgets/BuiltIn/ChatBox`)
 
 "Add chat box" on the Overlays page adds Cuebot's chat box (embedded resources, written on the StreamElements widget API

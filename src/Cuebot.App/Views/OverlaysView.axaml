@@ -15,7 +15,7 @@
 
     <!-- New overlay -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
-      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto">
+      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto,8,Auto">
         <TextBox Text="{Binding NewName}" PlaceholderText="New overlay name" />
         <ComboBox Grid.Column="2" ItemsSource="{x:Static vm:OverlaysViewModel.Presets}" SelectedItem="{Binding NewCanvas}" HorizontalAlignment="Stretch" />
         <NumericUpDown Grid.Column="4" Value="{Binding NewWidth}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
@@ -23,7 +23,32 @@
         <NumericUpDown Grid.Column="6" Value="{Binding NewHeight}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
                        IsVisible="{Binding IsCustomSize}" ToolTip.Tip="Height in pixels" />
         <Button Grid.Column="8" Content="+ Overlay" Classes="accent" Command="{Binding CreateCommand}" />
+        <Button Grid.Column="10" Content="Import from StreamElements…" Command="{Binding ShowStreamElementsOverlaysCommand}"
+                IsVisible="{Binding CanImportFromStreamElements}" IsEnabled="{Binding !StreamElementsBusy}"
+                ToolTip.Tip="Copy an overlay from your StreamElements account (custom widgets, text, images, labels and the alert box). Your StreamElements overlays are not changed." />
       </Grid>
+    </Border>
+
+    <!-- StreamElements overlays to import -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8" IsVisible="{Binding StreamElementsOpen}">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Your StreamElements overlays" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Content="Close" Command="{Binding CloseStreamElementsOverlaysCommand}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding StreamElementsOverlays}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:StreamElementsOverlayRowViewModel">
+              <Grid ColumnDefinitions="*,120,Auto" Margin="0,2">
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding Canvas}" Classes="muted" VerticalAlignment="Center" />
+                <Button Grid.Column="2" Content="Import" Command="{Binding ImportCommand}"
+                        IsEnabled="{Binding !$parent[ItemsControl].((vm:OverlaysViewModel)DataContext).StreamElementsBusy}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
     </Border>
 
     <!-- Alert queue on every overlay -->

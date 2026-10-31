@@ -92,14 +92,16 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
     }
 
     /// <summary>
-    /// Adds Cuebot's alert box to an overlay: the upper middle of the canvas (60% of its width, half its height).
-    /// Returns the layer, or null when the overlay does not exist.
+    /// Adds Cuebot's alert box to an overlay: the upper middle of the canvas (60% of its width, half its height), with
+    /// <paramref name="data"/> as its saved settings when given. Returns the layer, or null when the overlay does not exist.
     /// </summary>
-    public OverlayLayer? AddAlertBox(Guid overlayId)
+    public OverlayLayer? AddAlertBox(Guid overlayId, JsonObject? data = null)
     {
         if (overlays.Get(overlayId) is not { } overlay) return null;
         var settings = new JsonObject { ["builtIn"] = BuiltInWidgets.AlertBoxKind };
-        if (AddCustomWidget(overlayId, "Alert box", BuiltInWidgets.AlertBox(), settings) is not { } layer) return null;
+        var widget = BuiltInWidgets.AlertBox();
+        if (data is not null) widget = widget with { Data = data.ToJsonString() };
+        if (AddCustomWidget(overlayId, "Alert box", widget, settings) is not { } layer) return null;
         var width = Math.Round(overlay.Width * 0.6);
         var height = Math.Round(overlay.Height * 0.5);
         MoveLayer(overlayId, layer.Id, Math.Round((overlay.Width - width) / 2), Math.Round(overlay.Height * 0.05), width, height);
@@ -109,12 +111,13 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
     /// <summary>
     /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, countdown, emote
     /// rain, hype cup, hype boss, poll, giveaway, media request player, charity campaign, product showcase, seasonal
-    /// effects) in a sensible spot for its kind, scaled to the canvas. Returns the layer, or null for an unknown kind or
-    /// overlay.
+    /// effects) in a sensible spot for its kind, scaled to the canvas, with <paramref name="data"/> as its saved settings
+    /// when given. Returns the layer, or null for an unknown kind or overlay.
     /// </summary>
-    public OverlayLayer? AddBuiltIn(Guid overlayId, string kind)
+    public OverlayLayer? AddBuiltIn(Guid overlayId, string kind, JsonObject? data = null)
     {
         if (overlays.Get(overlayId) is not { } overlay || BuiltInWidgets.For(kind) is not { } widget) return null;
+        if (data is not null) widget = widget with { Data = data.ToJsonString() };
         var name = BuiltInWidgets.Kinds.First(k => k.Id == kind).Name;
         // Marked with its kind, so the server can tell the media player (which may move the queue on) from other widgets.
         if (AddCustomWidget(overlayId, name, widget, new JsonObject { ["builtIn"] = kind }) is not { } layer) return null;

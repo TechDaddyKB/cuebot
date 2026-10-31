@@ -1,7 +1,9 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Cuebot.Core;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Overlays.Widgets;
 using Cuebot.Core.Storage;
 using Cuebot.Donations.SocketIo;
 using Cuebot.Donations.Transport;
@@ -13,7 +15,7 @@ namespace Cuebot.Donations.StreamElements;
 /// platform events) over the Astro gateway, or the legacy realtime Socket.IO endpoint as a fallback, plus the
 /// REST API for points and tips. Authenticated with the channel's JWT token.
 /// </summary>
-public sealed class StreamElementsService : DonationServiceBase
+public sealed class StreamElementsService : DonationServiceBase, IStreamElementsOverlaySource
 {
     public static readonly Uri AstroEndpoint = new("wss://astro.streamelements.com");
     public static readonly Uri RealtimeEndpoint = new("https://realtime.streamelements.com");
@@ -95,6 +97,17 @@ public sealed class StreamElementsService : DonationServiceBase
 
     public async Task<IReadOnlyList<StreamElementsTip>> GetTipsAsync(int limit, CancellationToken ct = default) =>
         await _api.GetTipsAsync(Settings.JwtToken, await GetChannelIdAsync(ct).ConfigureAwait(false), limit, ct).ConfigureAwait(false);
+
+    // ---- Overlays (read only, for importing them into Cuebot) ----
+
+    public bool HasToken => Settings.JwtToken.Trim().Length > 0;
+
+    public async Task<IReadOnlyList<StreamElementsOverlaySummary>> ListOverlaysAsync(CancellationToken ct) =>
+        StreamElementsOverlayImport.ParseList(await _api.GetOverlaysAsync(Settings.JwtToken, await GetChannelIdAsync(ct).ConfigureAwait(false), ct)
+            .ConfigureAwait(false));
+
+    public async Task<JsonObject> GetOverlayAsync(string id, CancellationToken ct) =>
+        await _api.GetOverlayAsync(Settings.JwtToken, await GetChannelIdAsync(ct).ConfigureAwait(false), id, ct).ConfigureAwait(false);
 
     public async Task<IReadOnlyList<StreamElementsRank>> GetTipLeaderboardAsync(int limit, CancellationToken ct = default) =>
         await _api.GetTipLeaderboardAsync(Settings.JwtToken, await GetChannelIdAsync(ct).ConfigureAwait(false), limit, ct).ConfigureAwait(false);
