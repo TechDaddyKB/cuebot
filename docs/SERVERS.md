@@ -152,6 +152,26 @@ page.
 - Widget code lives in `overlays/widgets/{elementId}/` (`widget.html/css/js`, `fields.json`, `data.json`, `override.css`); imports take
   widget.io zips (`widget.ini`) or zips with the five panes by name. Changing an overlay or its widget code reloads the
   pages that show it.
+- Streamlabs custom code (`StreamlabsWidget`, `sl-widget.js`, written from Streamlabs' public custom widget docs and
+  starter templates): imported or pasted code is recognised by its template ids (`chatlist_item` → chat box,
+  `eventlist_item` → event list, `alert-wrap` → alert box) or its `document` events (`goalLoad`/`goalEvent` → goal, any
+  other → generic); code that uses `onWidgetLoad` is StreamElements code and left alone. Adapting converts the custom
+  fields (`textfield` → `text`, `fontpicker` → `googleFont`, slider `steps` → `step`), adds the settings Streamlabs
+  fills its built-in tokens from (chat box: `background_color`, `text_color`, `font_size`, `message_hide_delay`; event
+  list: `background`, `font_family`, `max_events`, animations...; alert box: `widgetDuration` and a
+  `messageTemplate_{type}` per alert; goal: `goalType`, `goalTitle`, `goalTarget`, `goalStart`), and marks it with the
+  hidden `widgetFormat: "streamlabs"` and `widgetSlType` fields; it runs once (a saved widget keeps its fields). The
+  document then also loads `sl-widget.js`, which fires `onLoad` and `onEventReceived` on `document`: the chat box
+  renders each message into `#log` from `#chatlist_item` (`{from}`, `{messageId}`, `{color}`, `{message}` with emotes,
+  badges into `.badges`, at most 100) and then sends Streamlabs' PRIVMSG detail (`platform` is `{service}_account`);
+  deletes remove `[data-id]` / `[data-user-id]` items. Alerts become `{type, from, name, message, amount,
+  formattedAmount, currency, tag, ...}` (follow, subscription, donation, bits, raid, host, superchat, merch,
+  twitchcharitydonation, redemption...); the event list prepends `#eventlist_item` (`{eventType}`, `{tag}`, `{from}`)
+  to `.widget-EventList` (made if missing; filled from recents at load). An alert box's HTML and JS are not in the
+  page: each alert fills `{name}`, `{amount}`, `{message}`, `{userMessage}`, `{img}`, `{count}`, `{product}` and
+  `{messageTemplate}` (HTML-escaped in the HTML, string-safe in the JS), shows it in `#sl-alert`, runs the JS, and
+  clears after `widgetDuration`, which also holds the queue. Goals fire `goalLoad` and `goalEvent` (on each session
+  update) from the session's `{type}-goal`. Streamlabs' boss and spin wheel events are not sent.
 
 ### Built-in chat box (`Cuebot.Core/Overlays/Widgets/BuiltIn/ChatBox`)
 

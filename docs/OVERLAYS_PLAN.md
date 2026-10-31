@@ -21,8 +21,9 @@ store (Cuebot points on every platform, the Giveaways & Store page, the Giveaway
 5b's points predictions); 5d media requests (YouTube videos requested in chat on every platform, the Media Requests
 page and the Media request player widget; built 2026-10-30); 5e merch, charity and seasonal (merch alerts from
 StreamElements, Streamlabs, Fourthwall, Shopify and Ko-fi; Twitch charity campaigns; the Charity campaign, Product
-showcase and Seasonal effects widgets; built 2026-10-30; SE's private merch catalogue is not used). Phase 5 is done;
-phase 6 (Streamlabs widgets and importing StreamElements overlays) is next. Details in docs/SERVERS.md.
+showcase and Seasonal effects widgets; built 2026-10-30; SE's private merch catalogue is not used). Phase 5 is done.
+6a Streamlabs custom widgets (chat box, alert box, event list, goal and generic code run through `sl-widget.js`;
+built 2026-10-30); 6b (importing StreamElements overlays) is next. Details in docs/SERVERS.md.
 
 ## Goal
 

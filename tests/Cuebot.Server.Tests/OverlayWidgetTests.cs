@@ -37,6 +37,8 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
 
     private string Token => Uri.EscapeDataString(_overlay.Token);
 
+    private string WidgetPath(Guid layerId) => $"/w/{_overlay.Id}/{layerId}?key={OverlayWidgetHost.FrameKey(_overlay.Token, layerId)}";
+
     [Fact]
     public async Task The_page_lists_layers_and_the_widget_port()
     {
@@ -68,6 +70,32 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
 
         using var shim = await _widgets.GetAsync("/runtime/se-widget.js");
         Assert.Equal(HttpStatusCode.OK, shim.StatusCode);
+    }
+
+    [Fact]
+    public async Task Streamlabs_widgets_get_the_streamlabs_runtime_and_an_alert_box_carries_its_code_for_each_alert()
+    {
+        var chat = _bot.Widgets.AddCustomWidget(_overlay.Id, "SL chat", WidgetImport.FromPanes(
+            "<div id=\"log\"></div><script type=\"text/template\" id=\"chatlist_item\"><div>{from}</div></script>",
+            "body { color: {text_color}; }", "document.addEventListener('onEventReceived', function () {});", "", ""))!;
+        var alert = _bot.Widgets.AddCustomWidget(_overlay.Id, "SL alert", WidgetImport.FromPanes(
+            "<div id=\"alert-wrap\">{messageTemplate}</div>", "", "var who = '{name}'; // </script>", "", ""))!;
+        _overlay = _bot.Overlays.Get(_overlay.Id)!;
+
+        var chatHtml = await _widgets.GetStringAsync(WidgetPath(chat.Id));
+        Assert.Contains("/runtime/sl-widget.js", chatHtml);
+        Assert.Contains("body { color: #ffffff; }", chatHtml);
+        Assert.Contains("id=\"chatlist_item\"><div>{from}</div>", chatHtml);   // the runtime fills it per message
+
+        var alertHtml = await _widgets.GetStringAsync(WidgetPath(alert.Id));
+        Assert.Contains("window.__slAlertHtml = ", alertHtml);
+        Assert.DoesNotContain("<div id=\"alert-wrap\">", alertHtml);   // not shown until an alert comes
+        Assert.DoesNotContain("// </script>", alertHtml);               // carried as an escaped string
+
+        var se = await _widgets.GetStringAsync(WidgetPath(_layer.Id));
+        Assert.DoesNotContain("sl-widget.js", se);
+        using var runtime = await _widgets.GetAsync("/runtime/sl-widget.js");
+        Assert.Equal(HttpStatusCode.OK, runtime.StatusCode);
     }
 
     [Fact]

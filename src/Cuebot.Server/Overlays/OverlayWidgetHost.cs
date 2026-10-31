@@ -55,10 +55,23 @@ internal static partial class OverlayWidgetHost
         return Convert.ToBase64String(mac, 0, 24).Replace('+', '-').Replace('/', '_');
     }
 
-    /// <summary>The widget document: panes with field placeholders filled in, after jQuery and Cuebot's SE_API shim.</summary>
+    /// <summary>
+    /// The widget document: panes with field placeholders filled in, after jQuery and Cuebot's SE_API shim. Streamlabs
+    /// code (<see cref="StreamlabsWidget"/>) also gets <c>sl-widget.js</c>; a Streamlabs alert box's HTML and JS are
+    /// handed to it to run once per alert with that alert's tokens.
+    /// </summary>
     public static string Document(WidgetCode code)
     {
         var fieldData = code.FieldData();
+        var streamlabs = StreamlabsWidget.IsStreamlabs(fieldData);
+        var alertBox = streamlabs && fieldData[StreamlabsWidget.TypeField]?.ToString() == "alertbox";
+        var html = WidgetFields.Substitute(code.Html, fieldData);
+        var js = WidgetFields.Substitute(code.Js, fieldData);
+        var runtime = streamlabs ? "<script src=\"/runtime/sl-widget.js\"></script>" : "";
+        // JSON strings escape <, > and &, so the code cannot close the script it is carried in.
+        var body = alertBox
+            ? $"<script>window.__slAlertHtml = {JsonSerializer.Serialize(html)}; window.__slAlertJs = {JsonSerializer.Serialize(js)};</script>"
+            : $"{html}\n<script>\n{js}\n</script>";
         return $"""
             <!doctype html>
             <html>
@@ -67,6 +80,7 @@ internal static partial class OverlayWidgetHost
             <meta name="referrer" content="no-referrer">
             <script src="{JQueryUrl}"></script>
             <script src="/runtime/se-widget.js"></script>
+            {runtime}
             <style>
             html, body {"{"} margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; {"}"}
             </style>
@@ -78,10 +92,7 @@ internal static partial class OverlayWidgetHost
             </style>
             </head>
             <body>
-            {WidgetFields.Substitute(code.Html, fieldData)}
-            <script>
-            {WidgetFields.Substitute(code.Js, fieldData)}
-            </script>
+            {body}
             </body>
             </html>
             """;

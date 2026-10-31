@@ -13,7 +13,7 @@ namespace Cuebot.UiTests;
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
 /// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, "polls" for a Cuebot chat poll voted from every platform, "giveaway" for a giveaway entered from every platform, "media" for the media request player (requests over the API), "extras" for the charity, product showcase and seasonal
-/// widgets (with merch purchases and Twitch charity progress), or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
+/// widgets (with merch purchases and Twitch charity progress), "streamlabs" for sample Streamlabs chat box, alert box and event list code, or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
 /// token in api-token.txt) and speech paused, so alert TTS and the queue controls can be tried): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
@@ -34,7 +34,8 @@ public sealed class OverlayWidgetDemo
         var giveaway = zip == "giveaway";
         var media = zip == "media";
         var extras = zip == "extras";
-        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !media && !extras
+        var streamlabs = zip == "streamlabs";
+        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !media && !extras && !streamlabs
                                                       && !File.Exists(zip)),
             "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" or \"alertbox\" for Cuebot's own) to run the overlay demo");
         var seconds = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_DEMO_SECONDS"), out var s) ? s : 120;
@@ -75,6 +76,16 @@ public sealed class OverlayWidgetDemo
                 var library = host.Get<WidgetLibrary>();
                 layer = library.AddBuiltIn(overlay.Id, "label")!;
                 foreach (var kind in new[] { "goal", "eventlist", "credits", "countdown" }) library.AddBuiltIn(overlay.Id, kind);
+            }
+            else if (streamlabs)
+            {
+                var library = host.Get<WidgetLibrary>();
+                layer = library.AddCustomWidget(overlay.Id, "Streamlabs chat", WidgetImport.FromPanes(SlChatHtml, SlChatCss, SlChatJs, "", ""))!;
+                library.MoveLayer(overlay.Id, layer.Id, 40, 400, 600, 640);
+                var alert = library.AddCustomWidget(overlay.Id, "Streamlabs alert", WidgetImport.FromPanes(SlAlertHtml, SlAlertCss, SlAlertJs, "", ""))!;
+                library.MoveLayer(overlay.Id, alert.Id, 660, 80, 600, 300);
+                var list = library.AddCustomWidget(overlay.Id, "Streamlabs events", WidgetImport.FromPanes(SlListHtml, SlListCss, "", "", ""))!;
+                library.MoveLayer(overlay.Id, list.Id, 1400, 80, 480, 600);
             }
             else if (extras)
             {
@@ -145,6 +156,67 @@ public sealed class OverlayWidgetDemo
             try { Directory.Delete(data, recursive: true); } catch (IOException) { }
         }
     }
+
+    // Sample Streamlabs custom code written for this demo (the shapes of Streamlabs' starter templates).
+    private const string SlChatHtml = """
+        <div id="log" class="sl__chat__layout"></div>
+        <script type="text/template" id="chatlist_item">
+          <div data-from="{from}" data-id="{messageId}">
+            <span class="meta" style="color: {color}"><span class="badges"></span><span class="name">{from}</span></span>
+            <span class="message">{message}</span>
+          </div>
+        </script>
+        """;
+
+    private const string SlChatCss = """
+        body { background: {background_color}; color: {text_color}; font: 700 {font_size} sans-serif; }
+        #log { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px; }
+        #log > div { background: rgba(20, 20, 30, .8); border-radius: 8px; margin: 6px 0; padding: 6px 10px; }
+        #log .badge { height: 18px; margin-right: 4px; vertical-align: middle; }
+        #log .emote { height: 24px; vertical-align: middle; }
+        #log .platform { font-size: 12px; opacity: .6; margin-left: 6px; }
+        """;
+
+    private const string SlChatJs = """
+        document.addEventListener('onEventReceived', function (obj) {
+          if (obj.detail.command !== 'PRIVMSG') return;
+          var item = document.querySelector('[data-id="' + obj.detail.messageId + '"] .meta');
+          if (item) item.insertAdjacentHTML('beforeend', '<span class="platform">' + obj.detail.platform + ' ' + obj.detail.userType + '</span>');
+        });
+        """;
+
+    private const string SlAlertHtml = """
+        <div id="alert-wrap"><div id="inner-wrap">
+          <div id="alert-text">{messageTemplate}</div>
+          <div id="alert-message">{userMessage}</div>
+        </div></div>
+        """;
+
+    private const string SlAlertCss = """
+        #alert-wrap { font: 900 36px sans-serif; color: #fff; text-align: center; text-shadow: 0 2px 6px #000; padding-top: 40px; }
+        #alert-text .sl-name, #alert-text .sl-amount { color: #ffcc33; }
+        #alert-message { font-size: 22px; font-weight: 600; margin-top: 10px; }
+        #alert-type { font-size: 14px; opacity: .7; }
+        """;
+
+    private const string SlAlertJs = """
+        $(document).ready(function () {
+          $('#inner-wrap').append('<div id="alert-type">' + '{name}' + ' via Streamlabs code</div>');
+        });
+        """;
+
+    private const string SlListHtml = """
+        <script type="text/template" id="eventlist_item">
+          <li class="{eventType}"><span class="tag">{tag}</span> <span class="from">{from}</span></li>
+        </script>
+        """;
+
+    private const string SlListCss = """
+        .widget-EventList { list-style: none; margin: 0; padding: 0; font: 700 {font_size} "{font_family}", sans-serif; color: {text_color}; }
+        .widget-EventList li { background: rgba(20, 20, 30, .8); border-left: 4px solid #4ea1ff; margin: 6px 0; padding: 8px 12px; }
+        .widget-EventList li.donation, .widget-EventList li.superchat { border-color: #ffcc33; }
+        .widget-EventList .tag { color: #4ea1ff; }
+        """;
 
     private static IEnumerable<BotEvent> Step(int i)
     {

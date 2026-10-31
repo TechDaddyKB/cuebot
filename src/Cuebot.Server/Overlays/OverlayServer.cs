@@ -37,7 +37,7 @@ public sealed class OverlayServer : IAsyncDisposable
 
     /// <summary>Runtime files served at /runtime (embedded resources "Cuebot.Server.Overlays.{name}").</summary>
     private static readonly HashSet<string> RuntimeFiles = new(
-        ["overlay.js", "overlay.css", "se-widget.js", "jquery-3.7.1.min.js", "editor.js", "editor.css", "designer.js", "designer.css", "alerts.js", "alerts.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
+        ["overlay.js", "overlay.css", "se-widget.js", "sl-widget.js", "jquery-3.7.1.min.js", "editor.js", "editor.css", "designer.js", "designer.css", "alerts.js", "alerts.css", .. Cuebot.Core.Overlays.Events.BuiltInBadges.Names.Select(n => $"badge-{n}.svg")], StringComparer.Ordinal);
 
     private readonly Func<ServerSettings> _settings;
     private readonly ServerServices _services;

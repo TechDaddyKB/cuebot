@@ -136,7 +136,10 @@ public static class WidgetImport
             panes.GetValueOrDefault("fields", ""), panes.GetValueOrDefault("data", ""));
     }
 
-    /// <summary>A widget from pasted panes; empty FIELDS and DATA become <c>{}</c>. Throws for invalid FIELDS JSON.</summary>
+    /// <summary>
+    /// A widget from pasted panes; empty FIELDS and DATA become <c>{}</c>, and Streamlabs code is adapted
+    /// (<see cref="StreamlabsWidget.Adapt"/>). Throws for invalid FIELDS JSON.
+    /// </summary>
     public static WidgetCode FromPanes(string html, string css, string js, string fields, string data)
     {
         if (Encoding.UTF8.GetByteCount(html) + Encoding.UTF8.GetByteCount(css) + Encoding.UTF8.GetByteCount(js)
@@ -146,7 +149,7 @@ public static class WidgetImport
         data = string.IsNullOrWhiteSpace(data) ? "{}" : data.Trim();
         if (fields != "{}" && WidgetCode.ParseObject(fields).Count == 0 && !IsEmptyObject(fields))
             throw new InvalidDataException("The FIELDS pane is not a JSON object.");
-        return new WidgetCode(html, css, js, fields, data);
+        return StreamlabsWidget.Adapt(new WidgetCode(html, css, js, fields, data));
     }
 
     private static bool IsEmptyObject(string json) => json.Replace(" ", "").Replace("\n", "").Replace("\r", "").Replace("\t", "") == "{}";
