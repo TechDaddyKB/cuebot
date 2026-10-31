@@ -553,6 +553,13 @@ public sealed class McpTests : IAsyncLifetime
             Assert.NotNull(McpStdioBridge.ResolveTarget(folder, _ => null, out var off));
             Assert.Contains("MCP server is off", off);
 
+            // Cuebot saves the token in the secret store and only a reference in servers.json; the bridge reads the real one.
+            var saved = new ServerSettings { Api = { Port = 7998, Token = "cb_secret" } };
+            var path = Path.Combine(folder, "servers.json");
+            File.WriteAllText(path, Cuebot.Core.Storage.SecretJson.Serialize(saved, path));
+            Assert.DoesNotContain("cb_secret", File.ReadAllText(path));
+            Assert.Equal("cb_secret", McpStdioBridge.ResolveTarget(folder, _ => null, out _)!.Token);
+
             Assert.True(McpStdioBridge.IsRequested(["--data", "x", "--MCP-STDIO"]));
             Assert.False(McpStdioBridge.IsRequested(["--headless"]));
         }

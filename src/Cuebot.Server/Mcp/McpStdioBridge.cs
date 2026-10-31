@@ -71,7 +71,8 @@ public static class McpStdioBridge
         {
             try
             {
-                settings = JsonSerializer.Deserialize<ServerSettings>(File.ReadAllText(file), Json.Options);
+                // The token is kept in the folder's secret store; servers.json only holds a reference to it.
+                settings = SecretJson.Deserialize<ServerSettings>(File.ReadAllText(file), file, out _);
             }
             catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
             {

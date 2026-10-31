@@ -44,16 +44,22 @@ internal static class Program
             return 1;
         }
 
-        // AI clients spawn "Cuebot --mcp-stdio"; it only bridges stdio to the running instance's MCP endpoint.
-        if (Cuebot.Server.Mcp.McpStdioBridge.IsRequested(args))
-            return Cuebot.Server.Mcp.McpStdioBridge.Run(paths.Root);
-
         // Stored sign-ins and keys are encrypted; on Linux the key lives in the desktop keyring (Windows: DPAPI).
         var dataRoot = Path.GetFullPath(paths.Root);
-        SecretStore.Warn = m => StartupWarnings.Add("Secrets", m);
+        var bridging = Cuebot.Server.Mcp.McpStdioBridge.IsRequested(args);
+        void SecretWarning(string m)
+        {
+            if (bridging) Console.Error.WriteLine(m); // stdout carries MCP messages
+            else StartupWarnings.Add("Secrets", m);
+        }
+        SecretStore.Warn = SecretWarning;
         SecretStore.ProtectorFor = folder => OperatingSystem.IsLinux() && folder == dataRoot
-            ? new SecretServiceKeyProtector(m => StartupWarnings.Add("Secrets", m))
+            ? new SecretServiceKeyProtector(SecretWarning)
             : FileKeyProtector.Instance;
+
+        // AI clients spawn "Cuebot --mcp-stdio"; it only bridges stdio to the running instance's MCP endpoint, reading
+        // the API token from the secret store set up above.
+        if (bridging) return Cuebot.Server.Mcp.McpStdioBridge.Run(paths.Root);
 
         // One instance per data folder: a second launch brings the first one forward and exits.
         var instance = SingleInstance.TryAcquire(paths.Root);
