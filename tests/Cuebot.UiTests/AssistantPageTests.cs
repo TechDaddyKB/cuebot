@@ -116,7 +116,18 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Assert.True(saved.Thinking);
         // The fields follow the provider once the page has laid out (slower on CI).
         bool Shown(string name) => window.GetVisualDescendants().OfType<TextBox>().Any(t => t.Name == name && t.IsEffectivelyVisible);
-        PumpUntil(() => Shown("AssistantServerUrl"));
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!Shown("AssistantServerUrl") && DateTime.UtcNow < deadline)
+        {
+            Pump();
+            Thread.Sleep(5);
+        }
+        var boxes = window.GetVisualDescendants().OfType<TextBox>().Where(t => t.Name == "AssistantServerUrl")
+            .Select(t => $"visible={t.IsVisible} effective={t.IsEffectivelyVisible} parentVisible={(t.Parent as Avalonia.Visual)?.IsVisible} dc={t.DataContext?.GetType().Name}");
+        Assert.True(Shown("AssistantServerUrl"),
+            $"IsLocal={page.IsLocal} Effective={page.Effective?.Id} Choice={page.SelectedChoice.Id} Status={page.ProviderStatus} "
+            + $"Page={vm.SelectedPage?.Title} Views={window.GetVisualDescendants().OfType<Cuebot.App.Views.Assistant.AssistantView>().Count()} "
+            + $"Boxes=[{string.Join("; ", boxes)}]");
         Assert.False(Shown("AssistantApiKey"));
         Screenshot(window, "assistant-local");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
