@@ -471,6 +471,90 @@ public sealed partial class ApiOperations
         }
     }
 
+    // ---- package files (.cuebot-overlay) ------------------------------------------------------------------------------
+
+    /// <summary>Packages larger than this come back only as a file, not inline.</summary>
+    public const int MaxInlinePackageBytes = 8 * 1024 * 1024;
+
+    /// <summary>
+    /// Writes an overlay, or one of its layers, as a .cuebot-overlay package: to <paramref name="path"/> (a new file on
+    /// this computer), or inline as base64. Custom widget code is shipped only when <paramref name="includeCustomCode"/>.
+    /// </summary>
+    public JsonObject ExportOverlayPackage(string overlay, string? layer, bool includeCustomCode, string? path)
+    {
+        var packages = services.Packages ?? throw ApiException.Unavailable("Packages are not available");
+        var o = FindOverlay(overlay);
+        Guid? layerId = string.IsNullOrWhiteSpace(layer) ? null : FindLayer(overlay, layer).Layer.Id;
+        var file = path is null ? null : PackagePath(path, mustExist: false);
+        using var buffer = new MemoryStream();
+        var result = layerId is { } id
+            ? packages.ExportWidget(o.Id, id, buffer, includeCustomCode)
+            : packages.ExportOverlay(o.Id, buffer, includeCustomCode);
+        var json = new JsonObject
+        {
+            ["overlay"] = o.Name, ["widgets"] = result.Widgets, ["assets"] = result.Assets, ["bytes"] = buffer.Length,
+            ["leftOut"] = CatalogJson.Strings(result.LeftOut),
+            ["customWidgets"] = CatalogJson.Strings(packages.CustomWidgets(o.Id, layerId)),
+        };
+        if (file is not null)
+        {
+            File.WriteAllBytes(file, buffer.ToArray());
+            json["path"] = file;
+        }
+        else if (buffer.Length > MaxInlinePackageBytes)
+            throw ApiException.BadRequest($"The package is {buffer.Length / 1024 / 1024} MB; give a path to save it to a file instead");
+        else
+            json["data"] = Convert.ToBase64String(buffer.GetBuffer(), 0, (int)buffer.Length);
+        return json;
+    }
+
+    /// <summary>Imports a .cuebot-overlay package from a file or base64: an overlay package becomes a new overlay; a widget package goes onto <paramref name="overlay"/>.</summary>
+    public async Task<JsonObject> ImportOverlayPackageAsync(string? path, string? data, string? overlay, CancellationToken ct)
+    {
+        var packages = services.Packages ?? throw ApiException.Unavailable("Packages are not available");
+        if ((path is null) == (data is null)) throw ApiException.BadRequest("Give either path or data");
+        Guid? target = string.IsNullOrWhiteSpace(overlay) ? null : FindOverlay(overlay).Id;
+        byte[] bytes;
+        try
+        {
+            bytes = path is not null ? await File.ReadAllBytesAsync(PackagePath(path, mustExist: true), ct).ConfigureAwait(false) : Convert.FromBase64String(data!);
+        }
+        catch (FormatException)
+        {
+            throw ApiException.BadRequest("data is not base64");
+        }
+        try
+        {
+            using var input = new MemoryStream(bytes, writable: false);
+            var result = await packages.ImportAsync(input, target, ct).ConfigureAwait(false);
+            return new JsonObject
+            {
+                ["kind"] = result.Kind, ["layers"] = result.Layers,
+                ["leftOut"] = CatalogJson.Strings(result.LeftOut), ["overlay"] = OverlayJson(result.Overlay),
+            };
+        }
+        catch (PackageFormatException ex)
+        {
+            throw ApiException.BadRequest(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            throw ApiException.BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>A full path to a .cuebot-overlay file: an existing one to read, or a new one to write (never overwritten).</summary>
+    private static string PackagePath(string path, bool mustExist)
+    {
+        var full = Path.GetFullPath(Environment.ExpandEnvironmentVariables(path.Trim()));
+        if (!full.EndsWith(OverlayPackages.FileExtension, StringComparison.OrdinalIgnoreCase))
+            throw ApiException.BadRequest($"The file name must end in {OverlayPackages.FileExtension}");
+        if (mustExist && !File.Exists(full)) throw ApiException.NotFound($"No file {full}");
+        if (!mustExist && File.Exists(full)) throw ApiException.BadRequest($"{full} already exists; choose a new file name");
+        if (!mustExist && Path.GetDirectoryName(full) is { } dir && !Directory.Exists(dir)) throw ApiException.NotFound($"No folder {dir}");
+        return full;
+    }
+
     // ---- StreamElements overlays -----------------------------------------------------------------------------------
 
     public async Task<JsonObject> StreamElementsOverlaysAsync(CancellationToken ct)

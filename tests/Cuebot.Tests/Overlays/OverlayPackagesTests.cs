@@ -86,7 +86,7 @@ public sealed class OverlayPackagesTests : IDisposable
         var copy = result.Overlay;
         Assert.NotEqual(overlay.Id, copy.Id);
         Assert.NotEqual(overlay.Token, copy.Token);
-        Assert.Equal(("Main scene", 1280, 720), (copy.Name, copy.Width, copy.Height));
+        Assert.Equal(("Main scene (2)", 1280, 720), (copy.Name, copy.Width, copy.Height));   // the original is still there
         Assert.Equal(["Alert box", "Label", "Image"], copy.Layers.Select(l => l.Name));
 
         var alert = copy.Layers[0];

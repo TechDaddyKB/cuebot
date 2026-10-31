@@ -26,6 +26,7 @@ public sealed class McpCoverageTests : IAsyncLifetime
         "list_overlays", "get_overlay", "get_overlay_link", "create_overlay", "update_overlay", "delete_overlay",
         "list_widget_kinds", "add_widget", "add_custom_widget", "update_layer", "remove_layer",
         "get_widget", "update_widget_settings", "update_widget_code", "get_alert_designs", "update_alert_designs",
+        "export_overlay_package", "import_overlay_package",
         "list_gallery", "import_gallery_item", "list_streamelements_overlays", "import_streamelements_overlay",
         "list_connections", "connect_service", "get_speech_settings", "update_speech_settings", "list_speech_voices", "save_voice_alias",
         "delete_voice_alias", "speak", "set_viewer_voice", "get_feature_settings", "update_feature_settings", "get_stream_totals",
@@ -318,6 +319,29 @@ public sealed class McpCoverageTests : IAsyncLifetime
         var imported = await Ok("import_gallery_item", Args(("id", "neon")));
         Assert.Equal(("Neon", 1), (S(imported["overlay"]!["name"]), imported["layers"]!.GetValue<int>()));
         await Fails("import_gallery_item", Args(("id", "missing")));
+
+        // Package files: base64 round trip, then a file (never overwritten; only .cuebot-overlay).
+        var exported = await Ok("export_overlay_package", Args(("overlay", "Neon")));
+        Assert.Equal(1, exported["widgets"]!.GetValue<int>());
+        var copy = await Ok("import_overlay_package", Args(("data", S(exported["data"]))));
+        Assert.Equal("Neon (2)", S(copy["overlay"]!["name"]));   // a second copy is told apart by its name
+        var file = Path.Combine(Path.GetTempPath(), $"cuebot-{Guid.NewGuid():N}.cuebot-overlay");
+        try
+        {
+            Assert.Equal(file, S((await Ok("export_overlay_package", Args(("overlay", "Neon"), ("path", file))))["path"]));
+            await Fails("export_overlay_package", Args(("overlay", "Neon"), ("path", file)));
+            await Fails("export_overlay_package", Args(("overlay", "Neon"), ("path", Path.ChangeExtension(file, ".txt"))));
+            var fromFile = await Ok("import_overlay_package", Args(("path", file)));
+            Assert.Equal(1, fromFile["layers"]!.GetValue<int>());
+            var widget = await Ok("export_overlay_package", Args(("overlay", "Neon"), ("layer", S(fromFile["overlay"]!["layers"]![0]!["name"]))));
+            Assert.Equal("widget", S((await Ok("import_overlay_package", Args(("data", S(widget["data"])), ("overlay", "Neon"))))["kind"]));
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+        await Fails("import_overlay_package", []);
+        await Fails("import_overlay_package", Args(("data", "not base64!")));
 
         Bot.StreamElements.Overlays["se1"] = JsonNode.Parse("""
             {"name":"Old scene","settings":{"width":1920,"height":1080},"widgets":[

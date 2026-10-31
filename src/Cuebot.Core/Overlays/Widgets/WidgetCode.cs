@@ -89,8 +89,8 @@ public static partial class WidgetFields
 /// <summary>
 /// Reads widget packages: the widget.io zip format (<c>widget.ini</c> naming <c>html.txt</c>, <c>css.txt</c>,
 /// <c>js.txt</c>, <c>fields.txt</c>, <c>data.txt</c>) and zips that just contain those panes under common names
-/// (<c>html/css/js/fields/data</c> with <c>.txt</c>, <c>.html</c>, <c>.css</c>, <c>.js</c> or <c>.json</c>), in the root or
-/// one folder down. Missing panes are empty.
+/// (<c>html/css/js/fields/data</c> with <c>.txt</c>, <c>.html</c>, <c>.css</c>, <c>.js</c> or <c>.json</c>, or Cuebot's own
+/// <c>widget.html</c>, <c>widget.css</c>, <c>widget.js</c>), in the root or one folder down. Missing panes are empty.
 /// </summary>
 public static class WidgetImport
 {
@@ -127,8 +127,12 @@ public static class WidgetImport
         {
             var entry = files
                 .Where(e => e.FullName.Count(c => c == '/') <= 1)
-                .FirstOrDefault(e => Path.GetFileNameWithoutExtension(e.Name).Equals(pane, StringComparison.OrdinalIgnoreCase)
-                                     && Extensions[pane].Contains(Path.GetExtension(e.Name).ToLowerInvariant()));
+                .Where(e => Extensions[pane].Contains(Path.GetExtension(e.Name).ToLowerInvariant()))
+                .OrderBy(e => Path.GetFileNameWithoutExtension(e.Name).Equals(pane, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .FirstOrDefault(e => Path.GetFileNameWithoutExtension(e.Name) is var stem
+                                     && (stem.Equals(pane, StringComparison.OrdinalIgnoreCase)
+                                         || (pane is "html" or "css" or "js" && stem.Equals("widget", StringComparison.OrdinalIgnoreCase)
+                                             && !Path.GetExtension(e.Name).Equals(".txt", StringComparison.OrdinalIgnoreCase))));
             if (entry is not null) panes[pane] = Read(entry);
         }
         if (!panes.ContainsKey("html") && !panes.ContainsKey("js"))

@@ -20,6 +20,9 @@ public sealed record StreamDeckHidDeviceInfo(
 {
     public string ModelName => Model?.Name ?? "Stream Deck";
 
+    /// <summary>Another program (the Stream Deck app, StreamController, a VM) has the deck: not a fault in Cuebot.</summary>
+    public bool InUseElsewhere { get; init; }
+
     public string Summary => Connected
         ? $"{Name} · {ModelName} · serial {Serial}{(Firmware.Length > 0 ? " · firmware " + Firmware : "")}"
         : $"{ModelName}{(Serial.Length > 0 ? " · serial " + Serial : "")}: {Problem}";
@@ -228,10 +231,11 @@ public sealed class StreamDeckHidService : IConnectionStatus, IStreamDeckKeyTarg
     private void TryOpen(HidDeviceInfo info, StreamDeckHidModel model)
     {
         string? problem = null;
+        var elsewhere = false;
         if (!model.Supported)
             problem = "not supported in direct USB mode yet; use the Stream Deck app with the Cuebot plugin";
         else if (!info.HasHidInterface)
-            problem = "on USB, but another program has taken it over (StreamController and other libusb programs detach the kernel HID driver). Close that program; unplug and replug the deck if it does not come back";
+            (elsewhere, problem) = (true, "on USB, but another program has taken it over (StreamController and other libusb programs detach the kernel HID driver). Close that program; unplug and replug the deck if it does not come back");
 
         if (problem is null)
         {
@@ -251,6 +255,7 @@ public sealed class StreamDeckHidService : IConnectionStatus, IStreamDeckKeyTarg
             }
             catch (HidOpenException ex)
             {
+                elsewhere = ex.Error == HidOpenError.Busy;
                 problem = ex.Error == HidOpenError.Busy && info.Path is not null
                     ? ex.Message + " (close it, or turn direct USB mode off)"
                     : ex.Message;
@@ -261,7 +266,10 @@ public sealed class StreamDeckHidService : IConnectionStatus, IStreamDeckKeyTarg
             }
         }
 
-        var entry = new StreamDeckHidDeviceInfo(info.Key, info.Serial, model.Name, model, "", info.Path ?? "", false, problem);
+        var entry = new StreamDeckHidDeviceInfo(info.Key, info.Serial, model.Name, model, "", info.Path ?? "", false, problem)
+        {
+            InUseElsewhere = elsewhere,
+        };
         bool changed;
         lock (_gate)
         {
@@ -745,7 +753,8 @@ public sealed class StreamDeckHidService : IConnectionStatus, IStreamDeckKeyTarg
         }
         else if (problems.Length > 0)
         {
-            (state, message) = (ConnectionState.Error, problemText);
+            // A deck another program holds is waiting, not broken: no red error chip for it.
+            (state, message) = (problems.All(p => p.InUseElsewhere) ? ConnectionState.Disconnected : ConnectionState.Error, problemText);
         }
         else
         {

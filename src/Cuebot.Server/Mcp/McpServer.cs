@@ -220,7 +220,7 @@ public sealed class McpServer
             {
                 ["name"] = "cuebot",
                 ["title"] = "Cuebot",
-                ["version"] = typeof(McpServer).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
+                ["version"] = ApiOperations.AppVersion,
             },
             ["instructions"] = Instructions,
         };

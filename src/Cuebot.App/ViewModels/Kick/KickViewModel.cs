@@ -138,7 +138,7 @@ public sealed partial class KickViewModel : PageViewModel
                 OnUi(() => SignInUrl = url.ToString());
                 Cuebot.App.Shell.UrlLauncher.Open(url.ToString());
             }, _signIn.Token);
-            Info = account == KickAccount.Bot ? "Bot account signed in." : "Signed in. Connect to start receiving events.";
+            Info = account == KickAccount.Bot ? "Bot account signed in." : "Signed in and connected.";
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) { Error = ex.Message; }

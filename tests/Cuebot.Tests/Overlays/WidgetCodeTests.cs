@@ -94,6 +94,18 @@ public sealed class WidgetCodeTests : IDisposable
     }
 
     [Fact]
+    public void Zips_with_cuebots_own_pane_names_are_read()
+    {
+        var code = WidgetImport.FromZip(Zip(("widget.html", "<p>hi</p>"), ("widget.css", "p{}"), ("widget.js", "go()"), ("widget.txt", "notes"),
+            ("fields.json", Fields), ("data.json", "{\"size\":30}")));
+        Assert.Equal(("<p>hi</p>", "p{}", "go()"), (code.Html, code.Css, code.Js));
+        Assert.Equal(30, code.FieldData()["size"]!.GetValue<int>());
+
+        // A pane under its plain name wins over widget.*.
+        Assert.Equal("<b>plain</b>", WidgetImport.FromZip(Zip(("widget.html", "<p>hi</p>"), ("html.html", "<b>plain</b>"))).Html);
+    }
+
+    [Fact]
     public void Zips_without_a_widget_or_too_big_are_refused()
     {
         Assert.Throws<InvalidDataException>(() => WidgetImport.FromZip(Zip(("readme.txt", "hello"))));

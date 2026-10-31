@@ -169,7 +169,9 @@ public sealed partial class OverlayPackages(OverlayStore overlays, ElementStore 
             Overlay overlay;
             if (kind == "overlay")
             {
-                overlay = overlays.Create(Str(manifest["name"]) is { Length: > 0 } n ? n : "Imported overlay",
+                // A second import of the same package gets "Name (2)", so the two can be told apart.
+                var taken = overlays.All().Select(o => o.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                overlay = overlays.Create(Transfer.BundleImporter.UniqueName(Str(manifest["name"]) is { Length: > 0 } n ? n : "Imported overlay", taken),
                     Math.Clamp(Int(manifest["width"], 1920), 16, 7680), Math.Clamp(Int(manifest["height"], 1080), 16, 7680));
             }
             else

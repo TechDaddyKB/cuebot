@@ -191,7 +191,7 @@ public sealed class HidServiceTests : IAsyncDisposable
         // On USB without hidraw: StreamController (libusb) detached the kernel driver.
         _transport.Add(new HidDeviceInfo(null, 0x0FD9, 0x006C, Serial, "Stream Deck XL", "7-2"));
         Service.Scan();
-        Assert.Equal(ConnectionState.Error, Service.State);
+        Assert.Equal(ConnectionState.Disconnected, Service.State);   // waiting for the other program, not an error
         Assert.Contains("another program has taken it over", Service.StatusMessage);
         Assert.Contains("StreamController", Service.StatusMessage);
         Assert.False(Assert.Single(Service.Devices).Connected);

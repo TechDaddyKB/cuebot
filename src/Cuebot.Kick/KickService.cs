@@ -237,6 +237,8 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         _log.Info("Kick", $"Signed in to Kick as {user.Name} ({account})");
         if (account == KickAccount.Broadcaster) PublishAuthenticated();
         StatusChanged?.Invoke();
+        // Like Twitch and YouTube: a fresh broadcaster sign-in connects straight away.
+        if (account == KickAccount.Broadcaster && !_connected) await ConnectAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>Forgets an account (revoking its tokens at Kick, best effort). Signing out the broadcaster disconnects.</summary>

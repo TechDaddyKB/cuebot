@@ -227,7 +227,7 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         package.Position = 0;
         await vm.ImportPackageAsync(package);
         Pump();
-        Assert.Equal("Imported \"Main scene\" with 1 layer. It has its own new link for OBS. Not included: Bought chat (shared without its code; add the widget yourself).", vm.Status);
+        Assert.Equal("Imported \"Main scene (2)\" with 1 layer. It has its own new link for OBS. Not included: Bought chat (shared without its code; add the widget yourself).", vm.Status);
         Assert.Equal(2, vm.Overlays.Count);
 
         using var widget = new MemoryStream();

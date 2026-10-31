@@ -246,7 +246,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
         | Quotes, points, groups, viewers | list_quotes / add_quote; get_user_points / change_user_points; manage_group / set_group_member; find_viewers |
         | Overlays and widgets | list_overlays, create_overlay, add_widget, add_custom_widget, update_layer, get_widget, update_widget_settings, get_overlay_link |
         | Alert box | get_alert_designs, update_alert_designs, then emulate_event to see it |
-        | Gallery and StreamElements | list_gallery, import_gallery_item; list_streamelements_overlays, import_streamelements_overlay |
+        | Sharing, gallery, StreamElements | export_overlay_package, import_overlay_package (.cuebot-overlay files); list_gallery, import_gallery_item; list_streamelements_overlays, import_streamelements_overlay |
         | Speech | speak, get_speech_settings / update_speech_settings, list_speech_voices, save_voice_alias, set_viewer_voice, control_speech |
         | Connections | list_connections, connect_service (uses the sign-in saved in Cuebot) |
         | Hotkeys, decks | save_hotkey; get_deck / save_deck |

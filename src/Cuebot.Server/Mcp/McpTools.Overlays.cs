@@ -102,6 +102,20 @@ public static partial class McpTools
             Schema(["id"], ("id", Str("Item id (list_gallery)")), ("overlay", Str("For widget items: the overlay to add it to"))),
             new McpToolHints(ReadOnly: false, OpenWorld: true),
             async (a, ct) => await ops.ImportGalleryItemAsync(ReqStr(a, "id"), OptStr(a, "overlay"), ct).ConfigureAwait(false)),
+        new("export_overlay_package", "Export overlay package",
+            "Write an overlay, or one of its layers, as a .cuebot-overlay package (canvas, widgets, settings, alert designs and images) to share. "
+            + "Saved to path when given (a new file on the computer running Cuebot), otherwise returned as base64 in data. Code of custom widgets "
+            + "(customWidgets lists them) is only included with includeCustomCode; Cuebot's own widgets always come along.",
+            Schema(["overlay"], ("overlay", Str(OverlayRef)), ("layer", Str("Only this layer, as a widget package (" + LayerRef + ")")),
+                ("includeCustomCode", Bool("Include the code of custom widgets (default false)")), ("path", Str("File to create, ending in .cuebot-overlay"))),
+            WriteHints,
+            (a, _) => Done(ops.ExportOverlayPackage(ReqStr(a, "overlay"), OptStr(a, "layer"), OptBool(a, "includeCustomCode") ?? false, OptStr(a, "path")))),
+        new("import_overlay_package", "Import overlay package",
+            "Import a .cuebot-overlay package from a file (path) or base64 (data): an overlay package becomes a new overlay; a widget package is added to overlay. "
+            + "Nothing existing is changed or replaced.",
+            Schema([], ("path", Str("A .cuebot-overlay file on the computer running Cuebot")), ("data", Str("The package as base64")),
+                ("overlay", Str("For widget packages: the overlay to add it to (" + OverlayRef + ")"))),
+            WriteHints, async (a, ct) => await ops.ImportOverlayPackageAsync(OptStr(a, "path"), OptStr(a, "data"), OptStr(a, "overlay"), ct).ConfigureAwait(false)),
         new("list_streamelements_overlays", "List StreamElements overlays", "Overlays in the connected StreamElements account (read only).",
             Schema([]), new McpToolHints(ReadOnly: true, OpenWorld: true), async (_, ct) => await ops.StreamElementsOverlaysAsync(ct).ConfigureAwait(false)),
         new("import_streamelements_overlay", "Import a StreamElements overlay",

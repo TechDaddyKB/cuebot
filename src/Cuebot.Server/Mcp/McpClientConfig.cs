@@ -6,7 +6,12 @@ namespace Cuebot.Server.Mcp;
 /// <summary>Ready-to-paste MCP client configuration for the Servers page.</summary>
 public static class McpClientConfig
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions Indented = new()
+    {
+        WriteIndented = true,
+        // Pasted into config files, not HTML: keep "<TOKEN>", "+" and non-ASCII paths readable.
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     /// <summary>The MCP endpoint URL for a port (host 127.0.0.1 unless another one is given).</summary>
     public static string Url(int port, string host = "127.0.0.1") => $"http://{host}:{port}{Api.ApiServer.McpPath}";

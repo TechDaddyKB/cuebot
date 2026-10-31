@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
+using Cuebot.Server.Api;
 using Cuebot.Server.Mcp;
 
 namespace Cuebot.Server.Tests;
@@ -312,6 +313,8 @@ public sealed class McpTests : IAsyncLifetime
         var (_, status) = await _host.CallAsync("get_status");
         Assert.Contains(status["connections"]!.AsArray(), c => c!["name"]!.GetValue<string>() == "Twitch");
         Assert.DoesNotContain(ApiHost.Token, status.ToJsonString());
+        Assert.Equal(ApiOperations.AppVersion, status["app"]!["version"]!.GetValue<string>());
+        Assert.DoesNotContain("+", ApiOperations.AppVersion);   // the release version ("0.1.0-rc.3"), without build metadata
 
         var (_, chat) = await _host.CallAsync("get_recent_chat", Args(("limit", 5)));
         Assert.NotNull(chat["messages"]);
@@ -568,6 +571,7 @@ public sealed class McpTests : IAsyncLifetime
             McpClientConfig.ClaudeCodeCommand(url, "TOKEN"));
         var http = JsonNode.Parse(McpClientConfig.HttpJson(url, "TOKEN"))!;
         Assert.Equal("Bearer TOKEN", http["mcpServers"]!["cuebot"]!["headers"]!["Authorization"]!.GetValue<string>());
+        Assert.Contains("\"Bearer <TOKEN>\"", McpClientConfig.HttpJson(url, "<TOKEN>"));   // shown as typed, not \u003C escapes
 
         var (command, args) = McpClientConfig.StdioLaunch("/usr/bin/dotnet", "/app/Cuebot.dll", "/data");
         Assert.Equal("/usr/bin/dotnet", command);

@@ -132,6 +132,7 @@ public sealed class KickServiceTests : IAsyncLifetime
         Assert.Equal("CuebotDev", account.UserName);
         Assert.Equal("cuebotdev", _settings.Value.ChannelSlug);
         Assert.Equal("CuebotDev", Published(KickEventTypes.BroadcasterAuthenticated).Args["user"]);
+        Assert.True(_service.IsConnected);   // a fresh broadcaster sign-in connects, as Twitch and YouTube do
     }
 
     [Fact]

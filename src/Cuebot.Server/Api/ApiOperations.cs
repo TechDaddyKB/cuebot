@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -25,6 +26,11 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
 
     /// <summary>actions.json shape (camelCase, enums as strings), not indented.</summary>
     public static readonly JsonSerializerOptions JsonOptions = new(Json.Options) { WriteIndented = false };
+
+    /// <summary>Cuebot's version as released ("0.1.0-rc.3"), without the build metadata.</summary>
+    public static string AppVersion { get; } =
+        typeof(ApiOperations).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]
+        ?? typeof(ApiOperations).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
     private ProfileService Profile => services.Profile;
     private Registry Registry => services.Registry ?? throw ApiException.Unavailable("The action registry is not available");
@@ -468,7 +474,7 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
             ["app"] = new JsonObject
             {
                 ["name"] = "Cuebot",
-                ["version"] = typeof(ApiOperations).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
+                ["version"] = AppVersion,
                 ["runtime"] = RuntimeInformation.FrameworkDescription,
                 ["os"] = RuntimeInformation.OSDescription,
                 ["instanceId"] = StreamerBotRequests.InstanceId,
