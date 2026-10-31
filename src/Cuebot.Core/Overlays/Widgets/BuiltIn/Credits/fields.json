@@ -3,6 +3,7 @@
   "subscriberTitle": { "type": "text", "label": "Subscribers heading (empty: leave out)", "value": "Subscribers", "group": "Content" },
   "followerTitle": { "type": "text", "label": "Followers heading (empty: leave out)", "value": "New followers", "group": "Content" },
   "tipTitle": { "type": "text", "label": "Tips heading (tips, Super Chats and charity; empty: leave out)", "value": "Tips", "group": "Content" },
+  "merchTitle": { "type": "text", "label": "Merch heading (empty: leave out)", "value": "Merch", "group": "Content" },
   "cheerTitle": { "type": "text", "label": "Cheers heading (empty: leave out)", "value": "Cheers", "group": "Content" },
   "kicksTitle": { "type": "text", "label": "Kicks heading (empty: leave out)", "value": "Kicks", "group": "Content" },
   "raidTitle": { "type": "text", "label": "Raiders heading (empty: leave out)", "value": "Raiders", "group": "Content" },

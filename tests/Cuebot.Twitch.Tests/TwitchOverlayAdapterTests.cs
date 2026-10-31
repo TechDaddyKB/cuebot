@@ -83,4 +83,18 @@ public sealed class TwitchOverlayAdapterTests
             reward["message"]!.GetValue<string>()));
         Assert.Null(adapter.ToAlert(E(TwitchEventTypes.ChatMessage, ("user", "Kris"))));
     }
+
+    [Fact]
+    public void Charity_donations_are_alerts_and_the_campaign_goes_to_charity_widgets()
+    {
+        var donation = Alert(Adapter(), E(TwitchEventTypes.CharityDonation, ("user", "Kris"), ("amount", 25.0), ("currency", "USD"),
+            ("charityName", "Hearts")), "charityCampaignDonation-latest");
+        Assert.Equal(("Kris", 25.0, "Hearts"), (donation["name"]!.GetValue<string>(), OverlayAlerts.NumberOf(donation["amount"]), donation["charity"]!.GetValue<string>()));
+
+        var progress = Alert(Adapter(), E(TwitchEventTypes.CharityProgress, ("charityName", "Hearts"), ("currentAmount", 125.5), ("targetAmount", 500.0),
+            ("currency", "USD"), ("charityLogo", "https://example.com/logo.png")), "cuebot-charity");
+        Assert.Equal(("Hearts", 125.5, 500, "active"), (progress["charity"]!.GetValue<string>(), progress["raised"]!.GetValue<double>(),
+            progress["target"]!.GetValue<int>(), progress["status"]!.GetValue<string>()));
+        Assert.Equal("ended", Alert(Adapter(), E(TwitchEventTypes.CharityCompleted, ("charityName", "Hearts")), "cuebot-charity")["status"]!.GetValue<string>());
+    }
 }

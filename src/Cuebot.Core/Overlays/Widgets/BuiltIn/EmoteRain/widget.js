@@ -149,7 +149,7 @@
       case "follower": count = num(settings.burstFollow, 10); break;
       case "subscriber": count = num(settings.burstSub, 20) * (bool(e.bulkGifted) ? Math.max(1, amount) : 1); break;
       case "raid": count = num(settings.burstRaid, 60); break;
-      case "tip": case "superchat": case "charityCampaignDonation": count = amount * num(settings.burstPerDollar, 4); break;
+      case "tip": case "superchat": case "charityCampaignDonation": case "merch": count = amount * num(settings.burstPerDollar, 4); break;
       case "cheer": case "kicks": count = amount / 100 * num(settings.burstPer100Bits, 5); break;
     }
     burst(alertImages(), count);

@@ -1,0 +1,18 @@
+{
+  "title": { "type": "text", "label": "Title (empty: the charity's name)", "value": "", "group": "Campaign" },
+  "goal": { "type": "number", "label": "Goal when no Twitch charity campaign runs", "value": 500, "min": 1, "group": "Campaign" },
+  "period": { "type": "dropdown", "label": "Counting donations (without a Twitch campaign)", "value": "session", "group": "Campaign",
+    "options": { "session": "This stream", "week": "This week", "month": "This month", "total": "All time" } },
+  "showLogo": { "type": "checkbox", "label": "Show the charity's logo", "value": true, "group": "Campaign" },
+  "showLatest": { "type": "checkbox", "label": "Show the latest donation", "value": true, "group": "Campaign" },
+  "doneText": { "type": "text", "label": "When the goal is reached", "value": "Goal reached, thank you!", "group": "Campaign" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 26, "min": 10, "max": 80, "step": 1, "group": "Look" },
+  "textSize": { "type": "slider", "label": "Text size", "value": 18, "min": 8, "max": 60, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "barColor": { "type": "colorpicker", "label": "Bar colour", "value": "#2bd576", "group": "Look" },
+  "trackColor": { "type": "colorpicker", "label": "Track colour", "value": "rgba(0, 0, 0, 0.55)", "group": "Look" },
+  "background": { "type": "colorpicker", "label": "Background", "value": "rgba(16, 18, 24, 0.82)", "group": "Look" },
+  "radius": { "type": "slider", "label": "Corner rounding", "value": 14, "min": 0, "max": 40, "step": 1, "group": "Look" }
+}

@@ -11,9 +11,9 @@
   var TYPES = {
     follower: "Follow", subscriber: "Subscriber", tip: "Tip / donation", cheer: "Cheer (bits)", raid: "Raid",
     superchat: "Super Chat", kicks: "Kicks", redemption: "Channel points", jewels: "YouTube Jewels",
-    charityCampaignDonation: "Charity donation", custom: "Custom (actions)"
+    charityCampaignDonation: "Charity donation", merch: "Merch", custom: "Custom (actions)"
   };
-  var TOKENS = ["name", "amount", "formattedAmount", "currency", "message", "tier", "sender", "platform", "redemption"];
+  var TOKENS = ["name", "amount", "formattedAmount", "currency", "message", "tier", "sender", "platform", "redemption", "items"];
   var PARAMS = {
     amount: "Amount (months, bits, viewers, money…)", tier: "Sub tier", platform: "Platform", name: "User name",
     gifted: "Gifted sub", bulk: "Community gift", currency: "Currency", message: "Message"

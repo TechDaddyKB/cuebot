@@ -89,7 +89,7 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
     /// <summary>Types whose amount is money or currency-like (bits, Kicks, Jewels), with leaderboards.</summary>
     public static readonly IReadOnlySet<string> AmountTypes = new HashSet<string>(StringComparer.Ordinal)
     {
-        "tip", "cheer", "superchat", "kicks", "jewels", "charityCampaignDonation",
+        "tip", "cheer", "superchat", "kicks", "jewels", "charityCampaignDonation", "merch",
     };
 
     private static readonly string[] Periods = ["session", "weekly", "monthly", "alltime"];

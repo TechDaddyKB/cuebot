@@ -15,6 +15,7 @@
     { title: "subscriberTitle", types: ["subscriber"] },
     { title: "followerTitle", types: ["follower"] },
     { title: "tipTitle", types: ["tip", "superchat", "charityCampaignDonation"], money: true },
+    { title: "merchTitle", types: ["merch"], money: true },
     { title: "cheerTitle", types: ["cheer"], unit: " bits" },
     { title: "kicksTitle", types: ["kicks"], unit: " Kicks" },
     { title: "raidTitle", types: ["raid"], unit: " viewers" }

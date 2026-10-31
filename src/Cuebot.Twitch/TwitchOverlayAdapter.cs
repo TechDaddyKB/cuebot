@@ -75,6 +75,27 @@ internal sealed class TwitchOverlayAdapter(Func<IReadOnlyDictionary<string, (str
                 return new(Cheer, Event(e, "cheer", Number(a, "bits")));
             case TwitchEventTypes.Raid:
                 return new(Raid, Event(e, "raid", Number(a, "viewers")));
+            case TwitchEventTypes.CharityDonation:
+                return new(CharityDonation, Event(e, "charityCampaignDonation", Number(a, "amount"), extra:
+                [
+                    new("currency", Str(a, "currency")),
+                    new("charity", Str(a, "charityName")),
+                ]));
+            case TwitchEventTypes.CharityStarted or TwitchEventTypes.CharityProgress or TwitchEventTypes.CharityCompleted:
+                // The campaign itself, for charity widgets (not an alert, so it is not counted in the stream totals).
+                return new(Charity, new JsonObject
+                {
+                    ["campaignId"] = Str(a, "campaignId"),
+                    ["charity"] = Str(a, "charityName"),
+                    ["description"] = Str(a, "charityDescription"),
+                    ["logo"] = Str(a, "charityLogo"),
+                    ["website"] = Str(a, "charityWebsite"),
+                    ["raised"] = OverlayAlerts.ToNode(Number(a, "currentAmount")),
+                    ["target"] = OverlayAlerts.ToNode(Number(a, "targetAmount")),
+                    ["currency"] = Str(a, "currency"),
+                    ["status"] = e.Type == TwitchEventTypes.CharityCompleted ? "ended" : "active",
+                    ["service"] = "twitch",
+                });
             case TwitchEventTypes.RewardRedemption:
                 return new(Redemption, Event(e, "channelPointsRedemption", Number(a, "rewardCost"), message: Str(a, "userInput"), extra:
                 [

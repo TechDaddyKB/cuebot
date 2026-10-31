@@ -12,7 +12,8 @@ namespace Cuebot.UiTests;
 
 /// <summary>
 /// A manual check, skipped unless CUEBOT_DEMO_WIDGET names a StreamElements widget zip (or is "chatbox" for Cuebot's chat box
-/// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, "polls" for a Cuebot chat poll voted from every platform, "giveaway" for a giveaway entered from every platform, "media" for the media request player (requests over the API), or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
+/// in both layouts, "widgets" for the label, goal, event list, credits and countdown, "engagement" for the emote rain, hype cup and hype boss, "polls" for a Cuebot chat poll voted from every platform, "giveaway" for a giveaway entered from every platform, "media" for the media request player (requests over the API), "extras" for the charity, product showcase and seasonal
+/// widgets (with merch purchases and Twitch charity progress), or "alertbox" for Cuebot's alert box beside its chat box, with the REST API on port 7498 (a throwaway
 /// token in api-token.txt) and speech paused, so alert TTS and the queue controls can be tried): the app's real services serve an
 /// overlay with that widget on port 7499 (its URL is written to overlay-url.txt, and the widget editor's to editor-url.txt,
 /// in CUEBOT_DEMO_OUT, or the temp folder) and
@@ -32,7 +33,9 @@ public sealed class OverlayWidgetDemo
         var polls = zip == "polls";
         var giveaway = zip == "giveaway";
         var media = zip == "media";
-        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !media && !File.Exists(zip)),
+        var extras = zip == "extras";
+        Assert.SkipWhen(string.IsNullOrEmpty(zip) || (!chatBox && !alertBox && !builtIns && !engagement && !polls && !giveaway && !media && !extras
+                                                      && !File.Exists(zip)),
             "Set CUEBOT_DEMO_WIDGET to a widget zip (or \"chatbox\" or \"alertbox\" for Cuebot's own) to run the overlay demo");
         var seconds = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_DEMO_SECONDS"), out var s) ? s : 120;
         var output = Environment.GetEnvironmentVariable("CUEBOT_DEMO_OUT") ?? Path.GetTempPath();
@@ -72,6 +75,13 @@ public sealed class OverlayWidgetDemo
                 var library = host.Get<WidgetLibrary>();
                 layer = library.AddBuiltIn(overlay.Id, "label")!;
                 foreach (var kind in new[] { "goal", "eventlist", "credits", "countdown" }) library.AddBuiltIn(overlay.Id, kind);
+            }
+            else if (extras)
+            {
+                var library = host.Get<WidgetLibrary>();
+                layer = library.AddBuiltIn(overlay.Id, "products")!;
+                library.AddBuiltIn(overlay.Id, "charity");
+                library.AddBuiltIn(overlay.Id, "seasonal");
             }
             else if (media)
             {
@@ -119,6 +129,14 @@ public sealed class OverlayWidgetDemo
                 foreach (var e in Step(i)) bus.Publish(e);
                 if (polls) bus.Publish(Vote(i));
                 if (giveaway) bus.Publish(Vote(i, "!join"));
+                if (extras && i % 3 == 1)
+                    bus.Publish(Alert("streamelements.merch", $"Buyer{i}", new() { ["amount"] = 45.0, ["currency"] = "USD", ["product"] = "Cuebot hoodie" }));
+                if (extras)
+                    bus.Publish(new BotEvent("twitch.charityProgress", new Dictionary<string, object?>
+                    {
+                        ["charityName"] = "Hearts for Kids", ["currentAmount"] = 50.0 * (i + 1), ["targetAmount"] = 1000.0, ["currency"] = "USD",
+                        ["charityLogo"] = "",
+                    }));
                 await Task.Delay(TimeSpan.FromSeconds(2.5), TestContext.Current.CancellationToken);
             }
         }

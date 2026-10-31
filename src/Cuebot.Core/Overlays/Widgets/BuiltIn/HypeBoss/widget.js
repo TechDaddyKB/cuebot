@@ -76,7 +76,7 @@
       case "follower": return num(settings.perFollow, 10);
       case "subscriber": return num(settings.perSub, 100) * (bool(e.bulkGifted) ? Math.max(1, amount) : 1);
       case "cheer": case "kicks": return amount * num(settings.perBit, 1);
-      case "tip": case "superchat": case "charityCampaignDonation": return amount * num(settings.perDollar, 100);
+      case "tip": case "superchat": case "charityCampaignDonation": case "merch": return amount * num(settings.perDollar, 100);
       case "raid": return amount * num(settings.perRaider, 2);
       default: return 0;
     }

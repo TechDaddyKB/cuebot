@@ -10,7 +10,7 @@
 
   var SHOW = {
     follower: "showFollower", subscriber: "showSubscriber", tip: "showTip", cheer: "showCheer", raid: "showRaid",
-    superchat: "showSuperchat", kicks: "showKicks", jewels: "showJewels", charityCampaignDonation: "showCharity",
+    superchat: "showSuperchat", kicks: "showKicks", jewels: "showJewels", charityCampaignDonation: "showCharity", merch: "showMerch",
     redemption: "showRedemption"
   };
   var PLATFORMS = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", streamelements: "StreamElements" };
@@ -36,6 +36,7 @@
         return amount > 1 ? "subscribed for " + amount + " months" : "subscribed";
       case "tip": return "tipped " + money(amount, e.currency);
       case "charityCampaignDonation": return "donated " + money(amount, e.currency) + " to charity";
+      case "merch": return "bought " + (e.items || "merch") + (amount > 0 ? " (" + money(amount, e.currency) + ")" : "");
       case "superchat": return "sent a " + money(amount, e.currency) + " Super Chat";
       case "cheer": return "cheered " + amount + " bits";
       case "raid": return "raided with " + amount;

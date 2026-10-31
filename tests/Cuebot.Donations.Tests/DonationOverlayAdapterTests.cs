@@ -31,6 +31,17 @@ public sealed class DonationOverlayAdapterTests
     }
 
     [Fact]
+    public void Merch_is_its_own_alert_with_what_was_bought()
+    {
+        var merch = _adapter.ToAlert(E(StreamElementsEventTypes.Merch, ("user", "Kris"), ("amount", 45.0), ("currency", "USD"),
+            ("product", "2x Hoodie, Mug"), ("merchQuantity", 3)))!;
+        Assert.Equal(("merch-latest", "2x Hoodie, Mug", 3, 45.0), (merch.Listener, merch.Event["items"]!.GetValue<string>(),
+            merch.Event["quantity"]!.GetValue<int>(), Cuebot.Core.Overlays.Events.OverlayAlerts.NumberOf(merch.Event["amount"])));
+        var streamlabs = _adapter.ToAlert(E(StreamlabsEventTypes.Merch, ("user", "Ann"), ("product", "Test Hoodie"), ("imageUrl", "https://example.com/h.png")))!;
+        Assert.Equal(("Test Hoodie", "https://example.com/h.png"), (streamlabs.Event["items"]!.GetValue<string>(), streamlabs.Event["image"]!.GetValue<string>()));
+    }
+
+    [Fact]
     public void Relayed_platform_events_are_left_to_the_platforms()
     {
         Assert.Null(_adapter.ToAlert(E(StreamElementsEventTypes.Follow, ("user", "Kris"))));

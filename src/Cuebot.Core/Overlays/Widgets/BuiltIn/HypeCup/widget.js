@@ -126,7 +126,7 @@
       case "follower": add("follow", num(settings.perFollow, 1), true); break;
       case "subscriber": add("sub", num(settings.perSub, 3) * (bool(e.bulkGifted) ? Math.max(1, amount) : 1), true); break;
       case "cheer": case "kicks": add("bits", amount / 100 * num(settings.perHundredBits, 1), true); break;
-      case "tip": case "superchat": case "charityCampaignDonation": add("tip", amount * num(settings.perDollar, 1), true); break;
+      case "tip": case "superchat": case "charityCampaignDonation": case "merch": add("tip", amount * num(settings.perDollar, 1), true); break;
       case "raid": add("raid", num(settings.perRaid, 5), true); break;
     }
   }

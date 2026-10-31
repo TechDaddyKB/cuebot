@@ -31,6 +31,7 @@ public static class WebhooksServiceCollectionExtensions
         Add<CustomWebhookHandler>(services, (s, b, l) => new CustomWebhookHandler(s, b, l));
         services.AddSingleton<WebhookServices>();
         foreach (var adapter in WebhookChatAdapter.All()) services.AddSingleton<IChatEventAdapter>(adapter);
+        foreach (var adapter in WebhookOverlayAdapter.All()) services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter>(adapter);
         services.AddSingleton<ITriggerProvider, KofiTriggers>();
         services.AddSingleton<ITriggerProvider, PatreonTriggers>();
         services.AddSingleton<ITriggerProvider, ShopifyTriggers>();

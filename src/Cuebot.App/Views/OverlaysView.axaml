@@ -135,6 +135,13 @@
                                 ToolTip.Tip="The prize, how to enter, entries and a spinning winner reveal" />
                       <MenuItem Header="Media request player" Command="{Binding AddBuiltInCommand}" CommandParameter="media"
                                 ToolTip.Tip="Plays the YouTube videos viewers request in chat, with what plays and what is next" />
+                      <Separator />
+                      <MenuItem Header="Charity campaign" Command="{Binding AddBuiltInCommand}" CommandParameter="charity"
+                                ToolTip.Tip="A Twitch charity campaign's progress, or your charity donations against a goal" />
+                      <MenuItem Header="Product showcase" Command="{Binding AddBuiltInCommand}" CommandParameter="products"
+                                ToolTip.Tip="Rotates your products with where to buy them, and shows merch purchases" />
+                      <MenuItem Header="Seasonal effects" Command="{Binding AddBuiltInCommand}" CommandParameter="seasonal"
+                                ToolTip.Tip="Snow, leaves, hearts, confetti, blossoms, bubbles or stars over the overlay" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>

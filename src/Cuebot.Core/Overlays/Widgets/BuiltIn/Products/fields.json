@@ -1,0 +1,191 @@
+{
+  "shopText": {
+    "type": "text",
+    "label": "Shop line (where to buy)",
+    "value": "Shop: mystore.com",
+    "group": "Showcase"
+  },
+  "rotateSeconds": {
+    "type": "number",
+    "label": "Seconds per product",
+    "value": 8,
+    "min": 2,
+    "max": 120,
+    "group": "Showcase"
+  },
+  "animation": {
+    "type": "dropdown",
+    "label": "Change with",
+    "value": "slide",
+    "group": "Showcase",
+    "options": {
+      "slide": "Slide",
+      "fade": "Fade",
+      "none": "No animation"
+    }
+  },
+  "showPurchases": {
+    "type": "checkbox",
+    "label": "Show who just bought merch (any shop Cuebot hears from)",
+    "value": true,
+    "group": "Showcase"
+  },
+  "purchaseSeconds": {
+    "type": "number",
+    "label": "Seconds a purchase shows",
+    "value": 8,
+    "min": 2,
+    "max": 60,
+    "group": "Showcase"
+  },
+  "product1Name": {
+    "type": "text",
+    "label": "Name",
+    "value": "Cuebot hoodie",
+    "group": "Product 1"
+  },
+  "product1Price": {
+    "type": "text",
+    "label": "Price",
+    "value": "$45",
+    "group": "Product 1"
+  },
+  "product1Image": {
+    "type": "image-input",
+    "label": "Image",
+    "value": "",
+    "group": "Product 1"
+  },
+  "product2Name": {
+    "type": "text",
+    "label": "Name",
+    "value": "Sticker pack",
+    "group": "Product 2"
+  },
+  "product2Price": {
+    "type": "text",
+    "label": "Price",
+    "value": "$5",
+    "group": "Product 2"
+  },
+  "product2Image": {
+    "type": "image-input",
+    "label": "Image",
+    "value": "",
+    "group": "Product 2"
+  },
+  "product3Name": {
+    "type": "text",
+    "label": "Name",
+    "value": "",
+    "group": "Product 3"
+  },
+  "product3Price": {
+    "type": "text",
+    "label": "Price",
+    "value": "",
+    "group": "Product 3"
+  },
+  "product3Image": {
+    "type": "image-input",
+    "label": "Image",
+    "value": "",
+    "group": "Product 3"
+  },
+  "product4Name": {
+    "type": "text",
+    "label": "Name",
+    "value": "",
+    "group": "Product 4"
+  },
+  "product4Price": {
+    "type": "text",
+    "label": "Price",
+    "value": "",
+    "group": "Product 4"
+  },
+  "product4Image": {
+    "type": "image-input",
+    "label": "Image",
+    "value": "",
+    "group": "Product 4"
+  },
+  "product5Name": {
+    "type": "text",
+    "label": "Name",
+    "value": "",
+    "group": "Product 5"
+  },
+  "product5Price": {
+    "type": "text",
+    "label": "Price",
+    "value": "",
+    "group": "Product 5"
+  },
+  "product5Image": {
+    "type": "image-input",
+    "label": "Image",
+    "value": "",
+    "group": "Product 5"
+  },
+  "product6Name": {
+    "type": "text",
+    "label": "Name",
+    "value": "",
+    "group": "Product 6"
+  },
+  "product6Price": {
+    "type": "text",
+    "label": "Price",
+    "value": "",
+    "group": "Product 6"
+  },
+  "product6Image": {
+    "type": "image-input",
+    "label": "Image",
+    "value": "",
+    "group": "Product 6"
+  },
+  "fontFamily": {
+    "type": "googleFont",
+    "label": "Font",
+    "value": "Inter",
+    "group": "Look"
+  },
+  "nameSize": {
+    "type": "slider",
+    "label": "Name size",
+    "value": 26,
+    "min": 10,
+    "max": 80,
+    "step": 1,
+    "group": "Look"
+  },
+  "textColor": {
+    "type": "colorpicker",
+    "label": "Text colour",
+    "value": "#ffffff",
+    "group": "Look"
+  },
+  "accent": {
+    "type": "colorpicker",
+    "label": "Price colour",
+    "value": "#ffcc33",
+    "group": "Look"
+  },
+  "background": {
+    "type": "colorpicker",
+    "label": "Background",
+    "value": "rgba(16, 18, 24, 0.85)",
+    "group": "Look"
+  },
+  "radius": {
+    "type": "slider",
+    "label": "Corner rounding",
+    "value": 16,
+    "min": 0,
+    "max": 40,
+    "step": 1,
+    "group": "Look"
+  }
+}

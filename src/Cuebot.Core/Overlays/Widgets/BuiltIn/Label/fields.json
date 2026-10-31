@@ -1,8 +1,8 @@
 {
   "type": { "type": "dropdown", "label": "Alert type", "value": "follower", "group": "What it shows",
     "options": { "follower": "Followers", "subscriber": "Subscribers", "tip": "Tips", "cheer": "Cheers (bits)", "raid": "Raids",
-      "superchat": "Super Chats", "kicks": "Kicks", "jewels": "YouTube Jewels", "charityCampaignDonation": "Charity donations",
-      "redemption": "Channel points", "revenue": "Revenue (tips, Super Chats and charity added up)" } },
+      "superchat": "Super Chats", "kicks": "Kicks", "jewels": "YouTube Jewels", "charityCampaignDonation": "Charity donations", "merch": "Merch",
+      "redemption": "Channel points", "revenue": "Revenue (tips, Super Chats, charity and merch added up)" } },
   "show": { "type": "dropdown", "label": "Show", "value": "latest", "group": "What it shows",
     "options": { "latest": "Latest name", "latestAmount": "Latest name and amount", "count": "Count", "amount": "Amount (money, bits...)",
       "topDonation": "Top single donation", "topDonator": "Top donator (added up)", "recent": "Recent names" } },

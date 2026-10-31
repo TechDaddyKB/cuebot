@@ -10,8 +10,8 @@
   var root = null;
   var last = null;
 
-  var MONEY = { tip: true, superchat: true, charityCampaignDonation: true, revenue: true };
-  var REVENUE = ["tip", "superchat", "charityCampaignDonation"];
+  var MONEY = { tip: true, superchat: true, charityCampaignDonation: true, merch: true, revenue: true };
+  var REVENUE = ["tip", "superchat", "charityCampaignDonation", "merch"];
   var TOP_PERIOD = { session: "session", week: "weekly", month: "monthly", total: "alltime" };
 
   function bool(value) { return value === true || value === "true"; }

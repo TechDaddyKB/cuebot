@@ -331,6 +331,30 @@
           },
           "variations": []
         },
+        "merch": {
+          "enabled": true,
+          "design": {
+            "template": "{name} bought {items}!",
+            "showMessage": true,
+            "duration": 8,
+            "media": "",
+            "mediaVolume": 50,
+            "sound": "chime",
+            "volume": 60,
+            "layout": "above",
+            "font": "Inter",
+            "size": 42,
+            "color": "#ffffff",
+            "highlight": "#ffcc33",
+            "messageSize": 26,
+            "enter": "bounceIn",
+            "exit": "fadeOut",
+            "tts": false,
+            "ttsText": "{message}",
+            "ttsAlias": ""
+          },
+          "variations": []
+        },
         "custom": {
           "enabled": true,
           "design": {

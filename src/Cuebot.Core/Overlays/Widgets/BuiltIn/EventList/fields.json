@@ -8,6 +8,7 @@
   "showKicks": { "type": "checkbox", "label": "Kicks", "value": true, "group": "Events" },
   "showJewels": { "type": "checkbox", "label": "YouTube Jewels", "value": true, "group": "Events" },
   "showCharity": { "type": "checkbox", "label": "Charity donations", "value": true, "group": "Events" },
+  "showMerch": { "type": "checkbox", "label": "Merch", "value": true, "group": "Events" },
   "showRedemption": { "type": "checkbox", "label": "Channel point redemptions", "value": false, "group": "Events" },
 
   "maxItems": { "type": "number", "label": "Events shown", "value": 6, "min": 1, "max": 25, "group": "Layout" },

@@ -46,6 +46,24 @@ public static class OverlayAlerts
     public const string Kicks = "kicks-latest";
     public const string CharityDonation = "charityCampaignDonation-latest";
 
+    /// <summary>Merch bought (StreamElements and Streamlabs merch, Fourthwall, Shopify and Ko-fi shop orders).</summary>
+    public const string Merch = "merch-latest";
+
+    /// <summary>A charity campaign started, moved or ended: <c>{campaignId, charity, description, logo, website, raised, target, currency, status}</c>.</summary>
+    public const string Charity = "cuebot-charity";
+
+    /// <summary>
+    /// What was bought, as text: <c>items</c>, <c>product</c> or <c>fw.items</c>, or Ko-fi's <c>item0</c>, <c>item1</c>...
+    /// </summary>
+    public static string Items(IReadOnlyDictionary<string, object?> a)
+    {
+        var text = First(a, "items", "product", "fw.items");
+        if (text.Length > 0) return text;
+        var names = new List<string>();
+        for (var i = 0; a.ContainsKey($"item{i}"); i++) names.Add(Str(a, $"item{i}"));
+        return string.Join(", ", names.Where(n => n.Length > 0));
+    }
+
     /// <summary>Cuebot listeners for alerts StreamElements has no listener for (channel points, YouTube Jewels).</summary>
     public const string Redemption = "redemption-latest";
     public const string Jewels = "jewels-latest";

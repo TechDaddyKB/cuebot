@@ -69,7 +69,7 @@ public sealed class ShowAlertSubAction(OverlayFeed feed) : ISubActionHandler
     public const string Listener = "cuebot-alert";
 
     public static readonly IReadOnlyList<string> AlertTypes =
-        ["custom", "follower", "subscriber", "tip", "cheer", "raid", "superchat", "kicks", "redemption", "jewels", "charityCampaignDonation"];
+        ["custom", "follower", "subscriber", "tip", "cheer", "raid", "superchat", "kicks", "redemption", "jewels", "charityCampaignDonation", "merch"];
 
     public string TypeId => "overlays.showAlert";
     public string Category => OverlayCategories.Overlays;

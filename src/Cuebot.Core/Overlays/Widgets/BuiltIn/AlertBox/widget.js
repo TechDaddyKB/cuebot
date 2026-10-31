@@ -117,7 +117,8 @@
       tier: tierName(event.tier),
       sender: event.sender || "",
       platform: PLATFORM_NAMES[event.service] || event.service || "",
-      redemption: event.redemption || ""
+      redemption: event.redemption || "",
+      items: event.items || ""
     };
   }
 
@@ -297,6 +298,7 @@
     redemption: { name: "Cuebot", amount: 500, redemption: "Hydrate!" },
     jewels: { name: "Cuebot", amount: 25 },
     charityCampaignDonation: { name: "Cuebot", amount: 20, currency: "USD" },
+    merch: { name: "Cuebot", amount: 30, currency: "USD", items: "Cuebot hoodie" },
     custom: { name: "Cuebot", message: "A custom alert from an action" }
   };
 

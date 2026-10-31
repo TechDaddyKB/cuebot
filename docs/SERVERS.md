@@ -313,6 +313,25 @@ adding a link yourself, settings), the "Add media request" and "Control media re
 requested, started playing, skipped) and REST (`GET /media`, `POST /media/requests {link, user}`,
 `DELETE /media/requests/{id}`, `POST /media/{skip, pause, resume, clear, open, close}`).
 
+### Merch, charity and seasonal (phase 5e)
+
+- **Merch** is an alert type (`merch-latest`, `{name, amount, currency, formattedAmount, items, quantity, image}`):
+  StreamElements and Streamlabs merch, Fourthwall orders, Shopify orders once paid and Ko-fi shop orders (the webhook
+  adapters also send Ko-fi and Fourthwall donations as tips). It counts in the stream totals and leaderboards, has an
+  alert box design (`{items}` in templates), and is in labels, goals, revenue (now tips, Super Chats, charity and
+  merch), the event list, credits and the "Show alert" sub-action; emote rain, hype cup and hype boss count it like tips.
+- **Charity**: Twitch charity donations are `charityCampaignDonation-latest` alerts; a campaign's start, progress and end
+  go to widgets as `cuebot-charity` (`{campaignId, charity, description, logo, website, raised, target, currency,
+  status}`, never queued). The **Charity campaign** widget follows a running Twitch campaign (and keeps the last one in
+  the widget store), otherwise counts charity donations for a period against your goal, with the latest donation.
+- **Product showcase** rotates up to six products you enter (image, name, price) with a shop line, for any shop, and
+  shows who just bought merch.
+- **Seasonal effects**: snow, autumn leaves, hearts, confetti, cherry blossoms, bubbles or twinkling stars over the
+  overlay (canvas), with density, speed, size, wind, colours and a burst for every alert.
+
+StreamElements' own merch product catalogue and seasonal store items need SE's private APIs; Cuebot covers them with
+the widgets above instead.
+
 The widget editor's preview loads the real stream totals and recent alerts (`session`, `recents` in the preview
 answer), so these preview with live numbers.
 
@@ -376,7 +395,7 @@ with every platform:
   for every platform. Kick's emote tokens become emote names in `text`, ranges and `renderedText`. A chatter without a
   platform colour gets a stable one of Twitch's default colours.
 - `chat.messageDeleted` becomes `delete-message {msgId}`; `chat.userBanned` / `chat.userTimedOut` `delete-messages {userId}`.
-- Each platform module's `IOverlayEventAdapter` turns its alerts into `*-latest` events (`{name, displayName, amount,
+- Each platform module's `IOverlayEventAdapter` (and the donation and webhook modules') turns its alerts into `*-latest` events (`{name, displayName, amount,
   message, type, providerId, avatar, _id, createdAt}` plus `tier`, `gifted`, `sender`, `bulkGifted`,
   `isCommunityGift`, `currency`... as StreamElements has them, and `service`, the platform, as on chat messages), each
   followed by the raw `event {type, provider, data}`.

@@ -37,6 +37,9 @@ public static class BuiltInWidgets
         new("poll", "Poll and prediction", "Poll"),
         new("giveaway", "Giveaway", "Giveaway"),
         new("media", "Media request player", "MediaPlayer"),
+        new("charity", "Charity campaign", "Charity"),
+        new("products", "Product showcase", "Products"),
+        new("seasonal", "Seasonal effects", "Seasonal"),
     ];
 
     /// <summary>A built-in widget's code by kind id (see <see cref="Kinds"/>), or null for an unknown kind.</summary>

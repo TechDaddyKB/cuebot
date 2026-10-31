@@ -193,6 +193,7 @@ public sealed class WidgetCodeTests : IDisposable
                  {
                      OverlayAlerts.Follower, OverlayAlerts.Subscriber, OverlayAlerts.Tip, OverlayAlerts.Cheer, OverlayAlerts.Raid,
                      OverlayAlerts.SuperChat, OverlayAlerts.Kicks, OverlayAlerts.Redemption, OverlayAlerts.Jewels, OverlayAlerts.CharityDonation,
+                     OverlayAlerts.Merch,
                  })
         {
             var type = types[listener.Replace("-latest", "")]!;
@@ -216,6 +217,9 @@ public sealed class WidgetCodeTests : IDisposable
     [InlineData("poll", "cuebot-poll")]
     [InlineData("giveaway", "cuebot-giveaway")]
     [InlineData("media", "cuebot_media")]
+    [InlineData("charity", "cuebot-charity")]
+    [InlineData("products", "merch-latest")]
+    [InlineData("seasonal", "requestAnimationFrame")]
     public void Labels_goals_and_lists_ship_complete(string kind, string uses)
     {
         var widget = BuiltInWidgets.For(kind)!;
@@ -262,6 +266,10 @@ public sealed class WidgetCodeTests : IDisposable
         var player = library.AddBuiltIn(hd.Id, "media")!;
         Assert.Equal((1240.0, 620.0, 640.0, 420.0), (player.X, player.Y, player.Width, player.Height));
         Assert.Equal("media", BuiltInWidgets.KindOf(elements.Get(player.ElementId!.Value)));   // so only it may move the queue on
+
+        var charity = library.AddBuiltIn(hd.Id, "charity")!;
+        Assert.Equal((610.0, 40.0, 700.0, 150.0), (charity.X, charity.Y, charity.Width, charity.Height));
+        Assert.Equal((0.0, 1920.0), (library.AddBuiltIn(hd.Id, "seasonal")!.X, library.AddBuiltIn(hd.Id, "seasonal")!.Width));
 
         Assert.Null(library.AddBuiltIn(hd.Id, "alertbox"));   // has its own method
         Assert.Null(library.AddBuiltIn(Guid.NewGuid(), "label"));

@@ -9,9 +9,9 @@
   var root = null;
   var lastProgress = null;
 
-  var MONEY = { tip: true, superchat: true, charityCampaignDonation: true, revenue: true };
-  var AMOUNT = { tip: true, superchat: true, charityCampaignDonation: true, revenue: true, cheer: true, kicks: true, jewels: true };
-  var REVENUE = ["tip", "superchat", "charityCampaignDonation"];
+  var MONEY = { tip: true, superchat: true, charityCampaignDonation: true, merch: true, revenue: true };
+  var AMOUNT = { tip: true, superchat: true, charityCampaignDonation: true, merch: true, revenue: true, cheer: true, kicks: true, jewels: true };
+  var REVENUE = ["tip", "superchat", "charityCampaignDonation", "merch"];
 
   function num(value) { return Number(value) || 0; }
 
