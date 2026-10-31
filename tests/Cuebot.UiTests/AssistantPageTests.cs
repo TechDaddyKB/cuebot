@@ -173,7 +173,7 @@ public sealed class AssistantPageTests : IAsyncDisposable
         var changes = Assert.Single(page.Items, i => i.IsChanges);
         Assert.Equal("The assistant deleted the action '!hello'.", changes.Text);
         Assert.Null(_host.Get<Cuebot.Core.Actions.ProfileService>().Snapshot.FindAction("!hello"));
-        Assert.True(window.GetVisualDescendants().OfType<Button>().Any(b => b.Name == "AssistantUndo" && b.IsEffectivelyVisible));
+        Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "AssistantUndo" && b.IsEffectivelyVisible);
         changes.UndoChangesCommand.Execute(null);
         PumpUntil(() => changes.State.Length > 0);
         Assert.NotNull(_host.Get<Cuebot.Core.Actions.ProfileService>().Snapshot.FindAction("!hello"));
