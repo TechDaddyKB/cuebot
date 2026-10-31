@@ -114,9 +114,10 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Assert.Equal("http://127.0.0.1:1234", saved.ServerUrl);
         Assert.Equal(4096, saved.ContextLength);
         Assert.True(saved.Thinking);
-        Pump();
-        Assert.True(window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "AssistantServerUrl").IsEffectivelyVisible);
-        Assert.False(window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "AssistantApiKey").IsEffectivelyVisible);
+        // The fields follow the provider once the page has laid out (slower on CI).
+        TextBox? Box(string name) => window.GetVisualDescendants().OfType<TextBox>().SingleOrDefault(t => t.Name == name);
+        PumpUntil(() => Box("AssistantServerUrl")?.IsEffectivelyVisible == true);
+        Assert.False(Box("AssistantApiKey")!.IsEffectivelyVisible);
         Screenshot(window, "assistant-local");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();
