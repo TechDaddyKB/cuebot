@@ -25,6 +25,8 @@ public static class OverlayFeatures
         services.AddSingleton(sp => new Widgets.WidgetKeyValueStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new Widgets.WidgetLibrary(sp.GetRequiredService<OverlayStore>(), sp.GetRequiredService<ElementStore>(),
             sp.GetRequiredService<Widgets.WidgetCodeStore>()));
+        services.AddSingleton(sp => new Sharing.OverlayPackages(sp.GetRequiredService<OverlayStore>(), sp.GetRequiredService<ElementStore>(),
+            sp.GetRequiredService<Widgets.WidgetCodeStore>(), sp.GetRequiredService<AssetStore>(), sp.GetRequiredService<Widgets.WidgetLibrary>()));
         services.AddSingleton(sp => new OverlayFeed(sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new OverlayAlertQueue(sp.GetRequiredService<OverlayFeed>()));
         services.AddSingleton<ISubActionHandler, AlertQueueSubAction>();

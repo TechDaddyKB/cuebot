@@ -24,8 +24,9 @@ StreamElements, Streamlabs, Fourthwall, Shopify and Ko-fi; Twitch charity campai
 showcase and Seasonal effects widgets; built 2026-10-30; SE's private merch catalogue is not used). Phase 5 is done.
 6a Streamlabs custom widgets (chat box, alert box, event list, goal and generic code run through `sl-widget.js`;
 built 2026-10-30); 6b importing StreamElements overlays through the connected account (custom widgets, text, images,
-video, labels and the alert box with its variations; built 2026-10-30). Phase 6 is done; phase 7 (sharing) is next.
-Details in docs/SERVERS.md.
+video, labels and the alert box with its variations; built 2026-10-30). Phase 6 is done. 7a one-file overlay and
+widget packages (`.cuebot-overlay`; code that is not Cuebot's own only when the user confirms the rights; built
+2026-10-30); 7b (the community gallery, a public GitHub repo) is next. Details in docs/SERVERS.md.
 
 ## Goal
 

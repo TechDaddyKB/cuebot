@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core.Overlays;
+using Cuebot.Core.Overlays.Sharing;
 using Cuebot.Core.Overlays.Widgets;
 using Cuebot.Server;
 
@@ -17,7 +18,14 @@ public sealed record CanvasPreset(string Name, int Width, int Height)
 public sealed partial class LayerRowViewModel(Guid overlayId, OverlayLayer layer, OverlaysViewModel owner) : ObservableObject
 {
     public Guid Id => layer.Id;
+    public Guid OverlayId => overlayId;
     public string Name => layer.Name;
+
+    /// <summary>Packages can be made (the export menu is shown).</summary>
+    public bool CanShare => owner.CanShare;
+
+    /// <summary>Its code is not Cuebot's own, so sharing it needs the user's word that they may.</summary>
+    public bool HasCustomCode => owner.CustomWidgets(overlayId, layer.Id).Count > 0;
 
     public decimal X { get => (decimal)layer.X; set { layer.X = (double)value; Save(); } }
     public decimal Y { get => (decimal)layer.Y; set { layer.Y = (double)value; Save(); } }
@@ -54,6 +62,11 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     public ObservableCollection<LayerRowViewModel> Layers { get; } = [];
     public bool HasLayers => Layers.Count > 0;
     public Guid Id => overlay.Id;
+    public bool CanShare => owner.CanShare;
+
+    /// <summary>Some widgets' code is not Cuebot's own (bought, imported or written by someone else).</summary>
+    public bool HasCustomCode => owner.CustomWidgets(overlay.Id).Count > 0;
+
     public int CanvasWidth => overlay.Width;
     public int CanvasHeight => overlay.Height;
     public string Canvas => $"{overlay.Width} × {overlay.Height}";
@@ -120,6 +133,7 @@ public sealed partial class OverlaysViewModel : PageViewModel
     private readonly WidgetLibrary? _widgets;
     private readonly OverlayAlertQueue? _alerts;
     private readonly IStreamElementsOverlaySource? _streamElements;
+    private readonly OverlayPackages? _packages;
 
     /// <summary>Opens a link in the browser (tests replace it).</summary>
     public Action<string> OpenUrl { get; init; } = Cuebot.App.Shell.UrlLauncher.Open;
@@ -144,9 +158,10 @@ public sealed partial class OverlaysViewModel : PageViewModel
     public OverlaysViewModel() : base(PageTitle) => _newCanvas = Presets[0];
 
     public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null, OverlayAlertQueue? alerts = null,
-        ChatPollPanelViewModel? polls = null, IStreamElementsOverlaySource? streamElements = null)
+        ChatPollPanelViewModel? polls = null, IStreamElementsOverlaySource? streamElements = null, OverlayPackages? packages = null)
         : base(PageTitle)
     {
+        _packages = packages;
         Polls = polls;
         _streamElements = streamElements;
         _store = store;
@@ -196,6 +211,64 @@ public sealed partial class OverlaysViewModel : PageViewModel
         set
         {
             if (_alerts is not null) _alerts.Muted = value;
+        }
+    }
+
+    // ---- Packages ----
+
+    public bool CanShare => _packages is not null;
+
+    internal IReadOnlyList<string> CustomWidgets(Guid overlayId, Guid? layerId = null) => _packages?.CustomWidgets(overlayId, layerId) ?? [];
+
+    /// <summary>
+    /// Writes an overlay (or one of its widgets) as a package. Code that is not Cuebot's own goes in only with
+    /// <paramref name="includeCustomCode"/>, which the user picks to confirm they may share it.
+    /// </summary>
+    internal void Export(Guid overlayId, Guid? layerId, Stream output, bool includeCustomCode)
+    {
+        if (_packages is null) return;
+        try
+        {
+            var result = layerId is { } id
+                ? _packages.ExportWidget(overlayId, id, output, includeCustomCode)
+                : _packages.ExportOverlay(overlayId, output, includeCustomCode);
+            Status = "Saved the package"
+                     + (result.Assets > 0 ? $" with {result.Assets} file{(result.Assets == 1 ? "" : "s")}" : "") + "."
+                     + (result.LeftOut.Count > 0 ? " Left out (code not yours to share): " + string.Join(", ", result.LeftOut) + "." : "");
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
+        {
+            Status = "Could not save the package: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Opens a package: an overlay package becomes a new overlay; a widget package is added to <paramref name="overlayId"/>.
+    /// </summary>
+    public async Task ImportPackageAsync(Stream input, Guid? overlayId = null)
+    {
+        if (_packages is null) return;
+        try
+        {
+            PackageImportResult? result = null;
+            _editing = true;
+            try
+            {
+                result = await _packages.ImportAsync(input, overlayId);
+            }
+            finally
+            {
+                _editing = false;
+            }
+            Refresh();
+            var what = result.Kind == "overlay"
+                ? $"Imported \"{result.Overlay.Name}\" with {result.Layers} layer{(result.Layers == 1 ? "" : "s")}. It has its own new link for OBS."
+                : $"Added the widget to \"{result.Overlay.Name}\".";
+            Status = what + (result.LeftOut.Count > 0 ? " Not included: " + string.Join(", ", result.LeftOut) + "." : "");
+        }
+        catch (Exception ex) when (ex is PackageFormatException or ArgumentException or IOException or InvalidDataException)
+        {
+            Status = "Could not import the package: " + ex.Message;
         }
     }
 

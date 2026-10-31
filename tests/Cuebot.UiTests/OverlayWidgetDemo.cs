@@ -89,6 +89,13 @@ public sealed class OverlayWidgetDemo
                     var result = StreamElementsOverlayImport.Import(json, host.Get<OverlayStore>(), host.Get<WidgetLibrary>());
                     first ??= result.Overlay.Layers.FirstOrDefault();
                     urls.Add($"{result.Overlay.Name}\t{result.Imported} imported\tskipped: {string.Join("; ", result.Skipped)}\t{servers.OverlayUrl(result.Overlay)}");
+                    // And back through a package, as if shared: the copy should look the same.
+                    var packages = host.Get<Cuebot.Core.Overlays.Sharing.OverlayPackages>();
+                    using var package = new MemoryStream();
+                    var exported = packages.ExportOverlay(result.Overlay.Id, package, includeCustomCode: true);
+                    package.Position = 0;
+                    var copy = await packages.ImportAsync(package, ct: TestContext.Current.CancellationToken);
+                    urls.Add($"{copy.Overlay.Name} (package, {package.Length} bytes)\t{copy.Layers} layers\tleft out: {string.Join("; ", copy.LeftOut)}\t{servers.OverlayUrl(copy.Overlay)}");
                 }
                 await File.WriteAllLinesAsync(Path.Combine(output, "se-import.txt"), urls, TestContext.Current.CancellationToken);
                 layer = first!;

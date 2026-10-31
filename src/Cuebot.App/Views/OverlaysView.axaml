@@ -15,7 +15,7 @@
 
     <!-- New overlay -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
-      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto,8,Auto">
+      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
         <TextBox Text="{Binding NewName}" PlaceholderText="New overlay name" />
         <ComboBox Grid.Column="2" ItemsSource="{x:Static vm:OverlaysViewModel.Presets}" SelectedItem="{Binding NewCanvas}" HorizontalAlignment="Stretch" />
         <NumericUpDown Grid.Column="4" Value="{Binding NewWidth}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
@@ -26,6 +26,8 @@
         <Button Grid.Column="10" Content="Import from StreamElements…" Command="{Binding ShowStreamElementsOverlaysCommand}"
                 IsVisible="{Binding CanImportFromStreamElements}" IsEnabled="{Binding !StreamElementsBusy}"
                 ToolTip.Tip="Copy an overlay from your StreamElements account (custom widgets, text, images, labels and the alert box). Your StreamElements overlays are not changed." />
+        <Button Grid.Column="12" Content="Import package…" Click="OnImportPackage" IsVisible="{Binding CanShare}"
+                ToolTip.Tip="Open a Cuebot overlay package (.cuebot-overlay) someone shared; it becomes a new overlay with its own link" />
       </Grid>
     </Border>
 
@@ -171,7 +173,18 @@
                   </DropDownButton.Flyout>
                 </DropDownButton>
                 <Button Content="Add widget…" Click="OnAddWidget"
-                        ToolTip.Tip="Import a StreamElements custom widget (.zip, for example one bought on Etsy)" />
+                        ToolTip.Tip="Import a StreamElements or Streamlabs custom widget (.zip, for example one bought on Etsy), or a Cuebot widget package (.cuebot-overlay)" />
+                <DropDownButton Content="Share" IsVisible="{Binding CanShare}" ToolTip.Tip="Save this overlay as one file to share or back up">
+                  <DropDownButton.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                      <MenuItem Header="Export package…" Click="OnExport" Tag="own"
+                                ToolTip.Tip="Layers, settings and files; widgets whose code is not Cuebot's own are left out" />
+                      <MenuItem Header="Export with custom widget code (I own the rights to share it)…" Click="OnExport" Tag="custom"
+                                IsVisible="{Binding HasCustomCode}"
+                                ToolTip.Tip="Only for code you wrote or may share: widgets bought from a creator usually may not be passed on" />
+                    </MenuFlyout>
+                  </DropDownButton.Flyout>
+                </DropDownButton>
                 <Button Content="Delete" Command="{Binding DeleteCommand}" />
               </StackPanel>
             </Grid>
@@ -195,6 +208,16 @@
                     <StackPanel Grid.Column="17" Orientation="Horizontal" Spacing="6">
                       <Button Content="Edit…" Command="{Binding EditCommand}"
                               ToolTip.Tip="Change the widget's settings and code, and try it with sample events, in your browser" />
+                      <DropDownButton Content="Share" IsVisible="{Binding CanShare}" ToolTip.Tip="Save this widget (for example an alert box with its designs) as one file">
+                        <DropDownButton.Flyout>
+                          <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuItem Header="Export package…" Click="OnExport" Tag="own" IsVisible="{Binding !HasCustomCode}" />
+                            <MenuItem Header="Export with its code (I own the rights to share it)…" Click="OnExport" Tag="custom"
+                                      IsVisible="{Binding HasCustomCode}"
+                                      ToolTip.Tip="Only for code you wrote or may share: widgets bought from a creator usually may not be passed on" />
+                          </MenuFlyout>
+                        </DropDownButton.Flyout>
+                      </DropDownButton>
                       <Button Content="Remove" Command="{Binding RemoveCommand}" />
                     </StackPanel>
                   </Grid>

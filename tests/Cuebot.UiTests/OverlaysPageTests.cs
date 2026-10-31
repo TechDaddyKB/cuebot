@@ -206,6 +206,44 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task Overlays_and_widgets_are_shared_as_packages()
+    {
+        var library = _services.GetRequiredService<WidgetLibrary>();
+        var packages = _services.GetRequiredService<Cuebot.Core.Overlays.Sharing.OverlayPackages>();
+        var source = Store.Create("Main scene", 1920, 1080);
+        library.AddAlertBox(source.Id);
+        library.AddCustomWidget(source.Id, "Bought chat", new WidgetCode("<p></p>", "", "/* paid */", "{}", "{}"));
+        var vm = new OverlaysViewModel(Store, Servers, library, packages: packages);
+        var window = Open(new OverlaysView(), vm);
+        var row = Assert.Single(vm.Overlays);
+        Assert.True((row.CanShare, row.HasCustomCode) == (true, true));
+        Assert.Equal([false, true], row.Layers.Select(l => l.HasCustomCode));
+        TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, "overlays-share.png"));
+
+        using var package = new MemoryStream();
+        vm.Export(row.Id, null, package, includeCustomCode: false);
+        Assert.Equal("Saved the package. Left out (code not yours to share): Bought chat.", vm.Status);
+        package.Position = 0;
+        await vm.ImportPackageAsync(package);
+        Pump();
+        Assert.Equal("Imported \"Main scene\" with 1 layer. It has its own new link for OBS. Not included: Bought chat (shared without its code; add the widget yourself).", vm.Status);
+        Assert.Equal(2, vm.Overlays.Count);
+
+        using var widget = new MemoryStream();
+        vm.Export(row.Id, row.Layers[1].Id, widget, includeCustomCode: true);
+        widget.Position = 0;
+        await vm.ImportPackageAsync(widget, row.Id);
+        Pump();
+        Assert.Equal("Added the widget to \"Main scene\".", vm.Status);
+        Assert.Equal(3, Store.Get(source.Id)!.Layers.Count);
+
+        await vm.ImportPackageAsync(new MemoryStream([1, 2, 3]));
+        Assert.Equal("Could not import the package: This file is not a Cuebot overlay package.", vm.Status);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
     private sealed class FakeStreamElements : IStreamElementsOverlaySource
     {
         public bool HasToken { get; set; }

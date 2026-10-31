@@ -159,7 +159,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new OverlaysViewModel(host.Get<Cuebot.Core.Overlays.OverlayStore>(), host.Get<Cuebot.Server.ServerManager>(),
                 host.Get<Cuebot.Core.Overlays.Widgets.WidgetLibrary>(), host.Get<Cuebot.Core.Overlays.OverlayAlertQueue>(),
                 new ChatPollPanelViewModel(host.Get<Cuebot.Core.Polls.ChatPolls>(), host.Get<Cuebot.Core.Polls.PollTracker>()),
-                host.Get<Cuebot.Donations.StreamElements.StreamElementsService>()),
+                host.Get<Cuebot.Donations.StreamElements.StreamElementsService>(), host.Get<Cuebot.Core.Overlays.Sharing.OverlayPackages>()),
             new Cuebot.App.ViewModels.Servers.ServersViewModel(host.Get<Cuebot.Server.ServerManager>(),
                 new Cuebot.App.ViewModels.Servers.RemoteInstancesViewModel(host.Get<Cuebot.Remote.RemoteHub>())),
             Support,

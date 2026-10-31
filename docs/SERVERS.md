@@ -173,6 +173,24 @@ page.
   clears after `widgetDuration`, which also holds the queue. Goals fire `goalLoad` and `goalEvent` (on each session
   update) from the session's `{type}-goal`. Streamlabs' boss and spin wheel events are not sent.
 
+### Overlay and widget packages (`Cuebot.Core/Overlays/Sharing/OverlayPackages`)
+- The Overlays page's Share menu (on an overlay, or on one widget such as an alert box) saves a `.cuebot-overlay` file:
+  a zip with `package.json` (`{format: "cuebot-overlay", version: 1, kind: "overlay"|"widget", name, width, height,
+  layers: [{name, type, x, y, width, height, opacity, rotation, visible, locked, enter, exit, settings, widget}],
+  widgets: {w1: {name, builtIn, cuebot}}, assets: [...], leftOut: [...]}`), `widgets/{id}/` with the six panes
+  (`widget.html/css/js`, `fields.json`, `data.json`, `override.css`) and `assets/` with every `/assets/{sha256}.{ext}`
+  file the layers' settings or widget panes mention.
+- Cuebot's own widgets (built-ins marked with their kind, and the chat box) always travel. Any other widget's code
+  (bought, imported or written by someone else) goes in only through "Export with custom widget code (I own the
+  rights to share it)"; otherwise its layer is written as left out and the import says so.
+- "Import package…" makes an overlay package a new overlay with a new link; a widget package opened with an overlay's
+  "Add widget…" is added to that overlay. Files are stored by content and one whose content does not match its name is
+  reported. Cuebot's alert box and media player always get Cuebot's own code on import (only `data.json` and
+  `override.css` come from the package), so a package cannot give its code alert TTS or the media queue; other
+  built-in kinds keep their packaged code. A package from a newer Cuebot (higher `version`), one that is not a
+  Cuebot package, or one over 500 MB (or with a pane over 5 MB) is refused, and a failed overlay import leaves no
+  overlay behind.
+
 ### Importing StreamElements overlays (`StreamElementsOverlayImport`)
 - The Overlays page's "Import from StreamElements…" lists the overlays in the account whose JWT token is set on the
   Donations page (`GET kappa/v2/overlays/{channel}`) and copies one into a new Cuebot overlay
