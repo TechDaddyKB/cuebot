@@ -18,8 +18,7 @@ internal static class RumbleHttp
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
         };
         var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
-        var version = typeof(RumbleHttp).Assembly.GetName().Version?.ToString(3) ?? "0";
-        client.DefaultRequestHeaders.UserAgent.ParseAdd($"Cuebot/{version}");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"Cuebot/{Cuebot.Core.AppVersion.Current}");
         return client;
     }
 }

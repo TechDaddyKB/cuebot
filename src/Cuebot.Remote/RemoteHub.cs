@@ -50,7 +50,7 @@ public sealed class RemoteHub : IApiWebSocketRoute, IConnectionStatus, IAsyncDis
         _log = log;
         _signals = signals;
         _apiEnabled = apiEnabled ?? (() => true);
-        _version = typeof(RemoteHub).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        _version = Cuebot.Core.AppVersion.Current;
         if (_settings.InstanceId == Guid.Empty)
         {
             _settings.InstanceId = Guid.NewGuid();

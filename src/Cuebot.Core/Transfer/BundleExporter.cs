@@ -62,7 +62,7 @@ public static class BundleExporter
         }
 
         var header = Json.Clone(selection.Header);
-        if (header.Generator.Length == 0) header.Generator = "Cuebot " + typeof(BundleExporter).Assembly.GetName().Version?.ToString(3);
+        if (header.Generator.Length == 0) header.Generator = "Cuebot " + AppVersion.Current;
         return new TransferBundle
         {
             Header = header,

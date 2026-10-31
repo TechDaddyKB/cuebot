@@ -176,7 +176,7 @@ public sealed class AcpProvider(AcpProvider.Profile profile, Func<AssistantProvi
                         ["fs"] = new JsonObject { ["readTextFile"] = false, ["writeTextFile"] = false },
                         ["terminal"] = false,
                     },
-                    ["clientInfo"] = new JsonObject { ["name"] = "cuebot", ["title"] = "Cuebot", ["version"] = typeof(AcpProvider).Assembly.GetName().Version?.ToString(3) },
+                    ["clientInfo"] = new JsonObject { ["name"] = "cuebot", ["title"] = "Cuebot", ["version"] = Cuebot.Core.AppVersion.Current },
                 }, timeout.Token).ConfigureAwait(false);
                 if (init?["agentCapabilities"]?["mcpCapabilities"]?["http"]?.GetValue<bool>() != true)
                     throw new InvalidOperationException($"This version of {provider.Name} can not connect to MCP servers over HTTP; update it.");

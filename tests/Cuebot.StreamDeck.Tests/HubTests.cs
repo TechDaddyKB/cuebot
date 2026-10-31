@@ -23,6 +23,9 @@ public class HubTests
         var welcome = Assert.Single(peer.OfType("welcome"));
         Assert.Equal(1, (int?)welcome["protocol"]);
         Assert.Equal("peer-1", (string?)welcome["session"]);
+        Assert.Equal(Cuebot.Core.AppVersion.Current, (string?)welcome["app"]!["version"]);   // what the property inspector shows
+        Assert.DoesNotContain("+", Cuebot.Core.AppVersion.Current);
+        Assert.Matches(@"^\d+\.\d+\.\d+", Cuebot.Core.AppVersion.Current);
 
         var connected = Assert.Single(h.EventsOf(StreamDeckHub.ConnectedEvent));
         Assert.Equal("0.1.0", connected.Args["pluginVersion"]);

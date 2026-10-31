@@ -63,7 +63,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         _log = log;
         _operations = operations;
         _apiEnabled = apiEnabled ?? (() => true);
-        _appVersion = typeof(StreamDeckHub).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        _appVersion = Cuebot.Core.AppVersion.Current;
         if (profile is not null) profile.Changed += () => _ = BroadcastActionsAsync();
         if (globals is not null) globals.VariableChanged += c => _ = BroadcastAsync(StreamDeckProtocol.GlobalChanged(c.Name, globals.Get(c.Name)));
     }

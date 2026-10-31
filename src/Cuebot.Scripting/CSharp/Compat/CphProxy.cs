@@ -103,8 +103,7 @@ public sealed partial class CphProxy
     public double NextDouble() => Random.Shared.NextDouble();
 
     /// <summary>Cuebot's version (Streamer.bot returns its own).</summary>
-    public string GetVersion() =>
-        typeof(CphProxy).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+    public string GetVersion() => Cuebot.Core.AppVersion.Current;
 
     // ---- Helpers --------------------------------------------------------------------------------------------------
 

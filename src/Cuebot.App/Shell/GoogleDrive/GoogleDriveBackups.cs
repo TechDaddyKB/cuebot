@@ -110,7 +110,7 @@ public sealed class GoogleDriveBackups : IDisposable
             Save();
             Settings.AccountEmail = await _client.GetAccountEmailAsync(ct).ConfigureAwait(false);
             Save();
-            _log.Info(Source, $"Signed in to Google Drive{(Settings.AccountEmail.Length > 0 ? " as " + Settings.AccountEmail : "")}");
+            _log.Info(Source, "Signed in to Google Drive");   // not the e-mail address: logs are shared in reports and read over MCP
             Error = "";
             SetStatus("Signed in. New backups are copied to Google Drive.");
         }

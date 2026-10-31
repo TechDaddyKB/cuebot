@@ -231,7 +231,7 @@ internal sealed class CodexConnection(CliProcess? process, JsonLineRpc rpc) : IA
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
         await Rpc.RequestAsync("initialize", new JsonObject
         {
-            ["clientInfo"] = new JsonObject { ["name"] = "cuebot", ["title"] = "Cuebot", ["version"] = typeof(CodexConnection).Assembly.GetName().Version?.ToString(3) },
+            ["clientInfo"] = new JsonObject { ["name"] = "cuebot", ["title"] = "Cuebot", ["version"] = Cuebot.Core.AppVersion.Current },
         }, timeout.Token).ConfigureAwait(false);
         await Rpc.NotifyAsync("initialized", null, ct).ConfigureAwait(false);
     }

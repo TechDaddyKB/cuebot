@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.IO.Compression;
-using System.Reflection;
 using Cuebot.Core;
 using Cuebot.Core.Storage;
 
@@ -61,9 +60,7 @@ public sealed class BackupService
     /// <summary>Where backups downloaded for a restore go; outside the list, so pruning and uploads ignore them.</summary>
     public string DownloadsFolder => Path.Combine(Folder, DownloadsFolderName);
 
-    public static string Version { get; } =
-        typeof(BackupService).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]
-        ?? typeof(BackupService).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+    public static string Version => Cuebot.Core.AppVersion.Current;
 
     public event Action? Changed;
 

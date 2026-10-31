@@ -94,7 +94,7 @@ public sealed class StreamerBotRequests(ServerServices services)
         ["os"] = OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsLinux() ? "linux" : "other",
         ["osVersion"] = RuntimeInformation.OSDescription,
         ["version"] = "1.0.0",
-        ["cuebotVersion"] = typeof(StreamerBotRequests).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
+        ["cuebotVersion"] = Cuebot.Core.AppVersion.Current,
         ["mode"] = "ui",
         ["darkMode"] = true,
         ["source"] = "websocketServer",

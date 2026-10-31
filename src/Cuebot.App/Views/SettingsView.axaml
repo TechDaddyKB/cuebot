@@ -183,7 +183,7 @@
                   <TextBlock Text="backups on Google Drive" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Backups contain your settings, including the sign-ins of connected accounts. Your Google Drive sign-in is kept when you restore a backup." />
+                           Text="Backups contain your settings, actions and overlays, but no sign-ins, tokens or keys: those stay on this computer. Restoring on another computer means signing in to your accounts again there." />
               </StackPanel>
             </Border>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
