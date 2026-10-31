@@ -81,6 +81,7 @@ public sealed class DeckTests : IDisposable
         var e = Assert.Single(events.Events);
         Assert.Equal(("Main", "Mute", 1, 0, "10.0.0.5", "1"), (e.Args["deckName"], e.Args["deckItemName"], e.Args["deckItemState"],
             e.Args["deckPage"], e.Args["deckClient"], e.Args["deckArg"]));
+        Assert.Equal(1, e.Args["deckPageNumber"]); // counts from 1, like the page sub-actions
         Assert.Equal(1, (int)Item("Mute")["state"]!);
         Assert.False(_decks.Press(_deck.Id, Guid.NewGuid()));
         Assert.False(_decks.Press(Guid.NewGuid(), mute.Id));

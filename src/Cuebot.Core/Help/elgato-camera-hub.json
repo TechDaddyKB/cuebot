@@ -17,7 +17,7 @@
     "elgato.cameraHub.webcam.connected": {
       "description": "Runs when Cuebot finds a webcam that was not there before, for example when you plug one in. Webcam control only works on Linux for now.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -28,7 +28,7 @@
     "elgato.cameraHub.webcam.disconnected": {
       "description": "Runs when a webcam goes away, for example when you unplug it.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -39,7 +39,7 @@
     "elgato.cameraHub.webcam.brightnessChanged": {
       "description": "Runs when a webcam's brightness changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -52,7 +52,7 @@
     "elgato.cameraHub.webcam.contrastChanged": {
       "description": "Runs when a webcam's contrast changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -65,7 +65,7 @@
     "elgato.cameraHub.webcam.saturationChanged": {
       "description": "Runs when a webcam's color strength (saturation) changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -78,7 +78,7 @@
     "elgato.cameraHub.webcam.sharpnessChanged": {
       "description": "Runs when a webcam's sharpness changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -91,7 +91,7 @@
     "elgato.cameraHub.webcam.focusChanged": {
       "description": "Runs when a webcam's focus changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -104,7 +104,7 @@
     "elgato.cameraHub.webcam.panChanged": {
       "description": "Runs when a webcam's picture is moved left or right (pan). Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -117,7 +117,7 @@
     "elgato.cameraHub.webcam.tiltChanged": {
       "description": "Runs when a webcam's picture is moved up or down (tilt). Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -130,7 +130,7 @@
     "elgato.cameraHub.webcam.zoomChanged": {
       "description": "Runs when a webcam's zoom changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -146,7 +146,7 @@
     "elgato.cameraHub.webcam.whiteBalanceChanged": {
       "description": "Runs when you change a webcam's white balance (how warm or cool the colors look) by hand. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -159,7 +159,7 @@
     "elgato.cameraHub.webcam.liveWhiteBalanceChanged": {
       "description": "Runs when the webcam changes its own white balance (how warm or cool the colors look) because auto white balance is on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -172,7 +172,7 @@
     "elgato.cameraHub.webcam.shutterSpeedChanged": {
       "description": "Runs when you change a webcam's shutter speed (how long each picture is exposed) by hand. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -187,7 +187,7 @@
     "elgato.cameraHub.webcam.liveShutterSpeedChanged": {
       "description": "Runs when the webcam changes its own shutter speed because auto exposure is on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -202,7 +202,7 @@
     "elgato.cameraHub.webcam.autoFocusEnabled": {
       "description": "Runs when a webcam's auto focus is turned on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -214,7 +214,7 @@
     "elgato.cameraHub.webcam.autoFocusDisabled": {
       "description": "Runs when a webcam's auto focus is turned off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -226,7 +226,7 @@
     "elgato.cameraHub.webcam.autoWhiteBalanceEnabled": {
       "description": "Runs when a webcam's auto white balance is turned on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -238,7 +238,7 @@
     "elgato.cameraHub.webcam.autoWhiteBalanceDisabled": {
       "description": "Runs when a webcam's auto white balance is turned off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -250,7 +250,7 @@
     "elgato.cameraHub.webcam.autoExposureEnabled": {
       "description": "Runs when a webcam's auto exposure (it picks the brightness by itself) is turned on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -262,7 +262,7 @@
     "elgato.cameraHub.webcam.autoExposureDisabled": {
       "description": "Runs when a webcam's auto exposure is turned off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -274,7 +274,7 @@
     "elgato.cameraHub.webcam.antiFlickerChanged": {
       "description": "Runs when a webcam's anti-flicker setting changes (it stops lamps from flickering on camera). Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -287,7 +287,7 @@
     "elgato.cameraHub.webcam.mirrored": {
       "description": "Runs when a webcam's mirror setting is switched on or off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -300,7 +300,7 @@
     "elgato.cameraHub.webcam.flipped": {
       "description": "Runs when a webcam's flip (upside down) setting is switched on or off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",
@@ -313,7 +313,7 @@
     "elgato.cameraHub.webcam.deviceOrientationChanged": {
       "description": "Runs when a webcam's mirror or flip setting changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
       "fields": {
-        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam."
       },
       "variables": {
         "deviceName": "The name of the webcam",

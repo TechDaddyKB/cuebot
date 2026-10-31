@@ -86,6 +86,7 @@ public sealed class OutgoingWebhookTests : IAsyncDisposable
 
         Assert.True(ok, error);
         Assert.Equal("1337117683476336731", args!["messageId"]);
+        Assert.Equal("1337117683476336731", args["discordMessageId"]);
         var request = Assert.Single(_http.Requests);
         Assert.Equal(HttpMethod.Post, request.Method);
         Assert.Equal(DiscordUrl + "?wait=true", request.Url.ToString());

@@ -30,7 +30,7 @@ Runs each time one of your timers goes off. You make timers on the Timers page. 
 
 | Setting | What to put in |
 | --- | --- |
-| **Timer** | The name of the timer, exactly as it is on the Timers page, like "Social links". If you leave this empty the action never runs. |
+| **Timer** | The name of the timer, exactly as it is on the Timers page, like "Social links". Leave it empty to run for every timer. |
 
 **Variables you get**
 

@@ -55,6 +55,19 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
     }
 
     [Fact]
+    public void Webcam_filters_match_names_ids_and_device_paths_like_the_sub_actions()
+    {
+        var trigger = _services.GetServices<ITriggerProvider>().SelectMany(p => p.GetTriggers()).Single(t => t.TypeId == CameraHubEvents.WebcamConnected);
+        var args = new Dictionary<string, object?> { ["deviceId"] = "facecam-1", ["deviceName"] = "Elgato Facecam", ["devicePath"] = "/dev/video2" };
+        bool Matches(string filter) => trigger.Matches(new BotEvent(CameraHubEvents.WebcamConnected, args), new TriggerDefinition(),
+            ParameterValues.From(trigger.Parameters, new Dictionary<string, string> { ["device"] = filter }), new Dictionary<string, object?>());
+        Assert.True(Matches(""));
+        Assert.True(Matches("elgato facecam"));
+        Assert.True(Matches("/dev/video2"));
+        Assert.False(Matches("/dev/video0"));
+    }
+
+    [Fact]
     public async Task Sub_actions_run_against_a_fake_light()
     {
         await using var server = new FakeLightServer();

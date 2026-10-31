@@ -18,7 +18,7 @@ internal sealed class MtionTriggers : ITriggerProvider
         Trigger(Category, MtionService.ClubhouseChangedEvent, "Clubhouse changed",
             [new("clubhouse", "Clubhouses") { Help = "Comma-separated names or ids; empty for any" }],
             (e, s) => MatchesList(s["clubhouse"], e.Text("mtion.clubhouse.name"), e.Text("mtion.clubhouse.id"))),
-        Trigger(Category, MtionService.TriggerSentEvent, "External trigger fired",
+        Trigger(Category, MtionService.TriggerSentEvent, "Trigger sent to mtion",
             [new("trigger", "Triggers") { Help = "Comma-separated names or ids; empty for any" }],
             (e, s) => MatchesList(s["trigger"], e.Text("mtion.trigger.name"), e.Text("mtion.trigger.id"))),
     ];

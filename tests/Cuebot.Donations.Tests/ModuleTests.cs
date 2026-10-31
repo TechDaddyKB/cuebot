@@ -50,6 +50,7 @@ public sealed class TriggerTests
         Assert.False(Matches(trigger, Donation(101, "USD"), new() { ["maxAmount"] = "100" }));
         Assert.True(Matches(trigger, Donation(5, "eur"), new() { ["currency"] = "USD, EUR" }));
         Assert.False(Matches(trigger, Donation(5, "GBP"), new() { ["currency"] = "USD, EUR" }));
+        Assert.True(Matches(trigger, Donation(5, ""), new() { ["currency"] = "USD, EUR" })); // no currency given (Patreon): cannot filter
         Assert.True(Matches(trigger, Donation(5, "USD", isTest: true)));
         Assert.False(Matches(trigger, Donation(5, "USD", isTest: true), new() { ["includeTests"] = "false" }));
     }

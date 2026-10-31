@@ -31,7 +31,7 @@ Runs when a webcam's anti-flicker setting changes (it stops lamps from flickerin
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -51,7 +51,7 @@ Runs when a webcam's auto exposure is turned off. Cuebot checks about every 2 se
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -70,7 +70,7 @@ Runs when a webcam's auto exposure (it picks the brightness by itself) is turned
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -89,7 +89,7 @@ Runs when a webcam's auto focus is turned off. Cuebot checks about every 2 secon
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -108,7 +108,7 @@ Runs when a webcam's auto focus is turned on. Cuebot checks about every 2 second
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -127,7 +127,7 @@ Runs when a webcam's auto white balance is turned off. Cuebot checks about every
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -146,7 +146,7 @@ Runs when a webcam's auto white balance is turned on. Cuebot checks about every 
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -165,7 +165,7 @@ Runs when a webcam's brightness changes. Cuebot checks about every 2 seconds, so
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -185,7 +185,7 @@ Runs when Cuebot finds a webcam that was not there before, for example when you 
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -203,7 +203,7 @@ Runs when a webcam's contrast changes. Cuebot checks about every 2 seconds, so c
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -223,7 +223,7 @@ Runs when a webcam's mirror or flip setting changes. Cuebot checks about every 2
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -243,7 +243,7 @@ Runs when a webcam goes away, for example when you unplug it.
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -261,7 +261,7 @@ Runs when a webcam's flip (upside down) setting is switched on or off. Cuebot ch
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -281,7 +281,7 @@ Runs when a webcam's focus changes. Cuebot checks about every 2 seconds, so chan
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -301,7 +301,7 @@ Runs when the webcam changes its own shutter speed because auto exposure is on. 
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -323,7 +323,7 @@ Runs when the webcam changes its own white balance (how warm or cool the colors 
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -343,7 +343,7 @@ Runs when a webcam's mirror setting is switched on or off. Cuebot checks about e
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -363,7 +363,7 @@ Runs when a webcam's picture is moved left or right (pan). Cuebot checks about e
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -383,7 +383,7 @@ Runs when a webcam's color strength (saturation) changes. Cuebot checks about ev
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -403,7 +403,7 @@ Runs when a webcam's sharpness changes. Cuebot checks about every 2 seconds, so 
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -423,7 +423,7 @@ Runs when you change a webcam's shutter speed (how long each picture is exposed)
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -445,7 +445,7 @@ Runs when a webcam's picture is moved up or down (tilt). Cuebot checks about eve
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -465,7 +465,7 @@ Runs when you change a webcam's white balance (how warm or cool the colors look)
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 
@@ -485,7 +485,7 @@ Runs when a webcam's zoom changes. Cuebot checks about every 2 seconds, so chang
 
 | Setting | What to put in |
 | --- | --- |
-| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam". Separate several with commas. Leave empty to react to every webcam. |
+| **Webcams** | Which webcam to watch, by the name Cuebot shows, like "Elgato Facecam" (its device path, like /dev/video0, works too). Separate several with commas. Leave empty for every webcam. |
 
 **Variables you get**
 

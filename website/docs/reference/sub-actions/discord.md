@@ -18,6 +18,7 @@ Posts a message in a Discord channel through a webhook (a private address Discor
 
 | Variable | What it holds |
 | --- | --- |
-| `%messageId%` | ID of the Discord message that was posted |
+| `%discordMessageId%` | ID of the Discord message that was posted |
+| `%messageId%` | The same ID. This replaces the chat message ID from the trigger, so use %discordMessageId% when you need both |
 
 <small>Type id: `discord.basicWebhook`</small>

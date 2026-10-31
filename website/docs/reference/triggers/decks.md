@@ -18,6 +18,7 @@ Runs when someone presses a button on one of your decks, which are web pages of 
 | `%deckItemName%` | The name of the button that was pressed |
 | `%deckItemState%` | The button's look now: 0 normal, 1 active |
 | `%deckPage%` | Which page of the deck it was on, counting from 0 |
+| `%deckPageNumber%` | Which page it was on, counting from 1 (like the page steps) |
 | `%deckClient%` | Which device pressed it |
 | `%deckId%` | The deck's ID |
 | `%deckItemId%` | The button's ID |

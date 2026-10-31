@@ -76,7 +76,7 @@ Runs when someone becomes a paying Patreon patron. Great for a thank-you. Needs 
 | **Tier name** | Only run for this tier, like "Gold". Type it as it appears on Patreon. Leave empty for any tier. |
 | **Minimum amount** | The smallest monthly pledge that runs this. Example: 5 ignores pledges under 5. Leave 0 for any amount. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
-| **Currencies** | Patreon does not tell Cuebot the currency, so leave this empty. Typing a currency here would stop every Patreon event from running. |
+| **Currencies** | Patreon does not say which currency a pledge is in, so this filter lets every Patreon pledge through. Most people leave it empty. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
 
 **Variables you get**
@@ -124,7 +124,7 @@ Runs when a patron changes their Patreon pledge, such as moving to another tier.
 | **Tier name** | Only run for this tier, like "Gold". Type it as it appears on Patreon. Leave empty for any tier. |
 | **Minimum amount** | The smallest monthly pledge that runs this. Example: 5 ignores pledges under 5. Leave 0 for any amount. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
-| **Currencies** | Patreon does not tell Cuebot the currency, so leave this empty. Typing a currency here would stop every Patreon event from running. |
+| **Currencies** | Patreon does not say which currency a pledge is in, so this filter lets every Patreon pledge through. Most people leave it empty. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
 
 **Variables you get**

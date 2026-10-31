@@ -234,7 +234,7 @@ Starts a poll in your Twitch chat for viewers to vote on.
 | Setting | What to put in |
 | --- | --- |
 | **Question** | The question, like "What game next?". |
-| **Choices** | One per line. The answers viewers can pick, 2 to 5 of them. |
+| **Choices** | One per line (or separated by \|). The answers viewers can pick, 2 to 5 of them. |
 | **Duration (seconds)** | How long the poll runs, in seconds (15 to 1800). Starts as: `60`. |
 | **Channel points per extra vote** | How many channel points an extra vote costs. 0 means viewers cannot buy extra votes. Starts as: `0`. |
 
@@ -254,7 +254,7 @@ Starts a prediction where viewers bet channel points on what will happen.
 | Setting | What to put in |
 | --- | --- |
 | **Question** | The question, like "Will I win?". |
-| **Outcomes** | One per line. The possible results viewers can bet on, 2 to 10 of them. |
+| **Outcomes** | One per line (or separated by \|). The possible results viewers can bet on, 2 to 10 of them. |
 | **Submission window (seconds)** | How long viewers can place bets, in seconds (30 to 1800). Starts as: `120`. |
 
 **Variables it adds**

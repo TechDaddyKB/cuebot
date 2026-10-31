@@ -64,7 +64,9 @@ public static class OutgoingWebhookSubActions
                 {
                     var id = await discord.PostAsync(v["webhookUrl"], v["content"], v["username"], v["avatarUrl"],
                         IsTrue(v["textToSpeech"]), ct).ConfigureAwait(false);
+                    // %messageId% for Streamer.bot actions (it replaces the trigger's chat message id), and a name of its own.
                     ctx.Args["messageId"] = id;
+                    ctx.Args["discordMessageId"] = id;
                 }),
             new OutgoingWebhookSubAction(IftttNotificationBasic, "IFTTT", "Notification (basic)",
                 [

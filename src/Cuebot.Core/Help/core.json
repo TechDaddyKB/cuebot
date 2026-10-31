@@ -18,7 +18,7 @@
     "core.timer": {
       "description": "Runs each time one of your timers goes off. You make timers on the Timers page. Good for a repeating reminder like \"follow the channel\" every 20 minutes.",
       "fields": {
-        "timer": "The name of the timer, exactly as it is on the Timers page, like \"Social links\". If you leave this empty the action never runs."
+        "timer": "The name of the timer, exactly as it is on the Timers page, like \"Social links\". Leave it empty to run for every timer."
       },
       "variables": {
         "timerName": "The name of the timer that went off",

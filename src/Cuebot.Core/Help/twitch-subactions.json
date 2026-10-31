@@ -474,7 +474,7 @@
       "description": "Starts a poll in your Twitch chat for viewers to vote on.",
       "fields": {
         "title": "The question, like \"What game next?\".",
-        "choices": "One per line. The answers viewers can pick, 2 to 5 of them.",
+        "choices": "One per line (or separated by |). The answers viewers can pick, 2 to 5 of them.",
         "duration": "How long the poll runs, in seconds (15 to 1800).",
         "pointsPerVote": "How many channel points an extra vote costs. 0 means viewers cannot buy extra votes."
       },
@@ -509,7 +509,7 @@
       "description": "Starts a prediction where viewers bet channel points on what will happen.",
       "fields": {
         "title": "The question, like \"Will I win?\".",
-        "outcomes": "One per line. The possible results viewers can bet on, 2 to 10 of them.",
+        "outcomes": "One per line (or separated by |). The possible results viewers can bet on, 2 to 10 of them.",
         "window": "How long viewers can place bets, in seconds (30 to 1800)."
       },
       "variables": {

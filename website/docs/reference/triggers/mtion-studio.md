@@ -21,24 +21,6 @@ Runs when you open a different clubhouse (a project) in mtion studio.
 
 <small>Type id: `mtion.clubhouseChanged`</small>
 
-## External trigger fired
-
-Runs right after Cuebot successfully sends an external trigger to mtion studio with a "Send trigger" step. It does not hear triggers that mtion sends by itself.
-
-| Setting | What to put in |
-| --- | --- |
-| **Triggers** | Only react to these triggers, typed by name or id. Separate several with commas. Leave empty for any trigger. |
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%mtion.trigger.name%` | The name of the trigger that was sent |
-| `%mtion.trigger.id%` | The id of the trigger |
-| `%mtion.trigger.parameters%` | The values that were sent with it, as raw text |
-
-<small>Type id: `mtion.triggerSent`</small>
-
 ## mtion studio closed
 
 Runs when mtion studio stops answering, for example when you close it.
@@ -56,3 +38,21 @@ Runs when mtion studio stops answering, for example when you close it.
 Runs when Cuebot notices that mtion studio is open and answering. Cuebot checks by asking it every few seconds.
 
 <small>Type id: `mtion.connected`</small>
+
+## Trigger sent to mtion
+
+Runs right after Cuebot successfully sends an external trigger to mtion studio with a "Send trigger" step. It does not hear triggers that mtion sends by itself.
+
+| Setting | What to put in |
+| --- | --- |
+| **Triggers** | Only react to these triggers, typed by name or id. Separate several with commas. Leave empty for any trigger. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%mtion.trigger.name%` | The name of the trigger that was sent |
+| `%mtion.trigger.id%` | The id of the trigger |
+| `%mtion.trigger.parameters%` | The values that were sent with it, as raw text |
+
+<small>Type id: `mtion.triggerSent`</small>

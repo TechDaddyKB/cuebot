@@ -21,7 +21,7 @@ internal sealed class CameraHubTriggers(CameraHubService cameraHub) : ITriggerPr
                 Suggestions = () => cameraHub.Webcams.Select(w => w.Name).Distinct(),
             },
         ];
-        bool Device(BotEvent e, ParameterValues s) => MatchesList(s["device"], e.Text("deviceId"), e.Text("deviceName"));
+        bool Device(BotEvent e, ParameterValues s) => MatchesList(s["device"], e.Text("deviceId"), e.Text("deviceName"), e.Text("devicePath"));
         EventTriggerType W(string type, string name) => Trigger(Category, type, "Webcam " + name, WebcamFilter(), Device);
 
         return

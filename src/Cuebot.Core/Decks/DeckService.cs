@@ -202,7 +202,8 @@ public sealed class DeckService : IDisposable
             args["deckItemId"] = item.Id.ToString();
             args["deckItemName"] = item.Name;
             args["deckItemState"] = _items.GetValueOrDefault((deck.Id, item.Id))?.State ?? 0;
-            args["deckPage"] = found.Page;
+            args["deckPage"] = found.Page; // from 0, as Streamer.bot sends it
+            args["deckPageNumber"] = found.Page + 1; // from 1, like the page sub-actions
             args["deckClient"] = client;
             action = item.Action.Trim();
         }

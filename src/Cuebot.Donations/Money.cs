@@ -22,10 +22,14 @@ internal static class Money
         return Symbols.TryGetValue(code, out var symbol) ? symbol + number : $"{number} {code}";
     }
 
-    /// <summary>True when <paramref name="currency"/> is in the comma/space separated <paramref name="allowed"/> list (empty allows all).</summary>
+    /// <summary>
+    /// True when <paramref name="currency"/> is in the comma/space separated <paramref name="allowed"/> list (empty allows
+    /// all). An event without a currency (Patreon never names one) passes: the filter cannot tell, and blocking every
+    /// such event would silently break the trigger.
+    /// </summary>
     public static bool CurrencyAllowed(string allowed, string currency)
     {
         var list = allowed.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return list.Length == 0 || list.Any(c => string.Equals(c, currency, StringComparison.OrdinalIgnoreCase));
+        return list.Length == 0 || currency.Trim().Length == 0 || list.Any(c => string.Equals(c, currency, StringComparison.OrdinalIgnoreCase));
     }
 }
