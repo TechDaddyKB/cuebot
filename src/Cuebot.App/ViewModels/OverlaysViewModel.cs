@@ -120,6 +120,32 @@ public sealed partial class StreamElementsOverlayRowViewModel(StreamElementsOver
     private Task Import() => owner.ImportFromStreamElementsAsync(overlay);
 }
 
+/// <summary>An item in the community gallery: what it is, its preview, and import / report / view.</summary>
+public sealed partial class GalleryItemViewModel(GalleryItem item, OverlaysViewModel owner) : ObservableObject
+{
+    public GalleryItem Item => item;
+    public string Name => item.Name;
+    public string Byline => item.Author.Length > 0 ? $"by {item.Author}" : "";
+    public string Description => item.Description;
+    public string Details => string.Join(" · ", new[]
+    {
+        item.Kind == "widget" ? "Widget" : "Overlay", item.License, item.Size >= 1024 * 1024 ? $"{item.Size / (1024.0 * 1024):0.#} MB" : $"{Math.Max(1, item.Size / 1024)} KB",
+        item.OriginalCode ? "includes the author's own code" : "",
+    }.Concat(item.Tags.Select(t => "#" + t)).Where(s => s.Length > 0));
+
+    [ObservableProperty]
+    private Avalonia.Media.Imaging.Bitmap? _preview;
+
+    [RelayCommand]
+    private Task Import() => owner.ImportFromGalleryAsync(this);
+
+    [RelayCommand]
+    private void Report() => owner.OpenUrl(OverlayGallery.ReportUrl(item));
+
+    [RelayCommand]
+    private void View() => owner.OpenUrl(OverlayGallery.PageUrl(item));
+}
+
 /// <summary>
 /// The Overlays &amp; Widgets page. For now it manages the overlays themselves (create, rename, copy the OBS link,
 /// replace the link, delete); the designer comes in a later phase.
@@ -134,6 +160,7 @@ public sealed partial class OverlaysViewModel : PageViewModel
     private readonly OverlayAlertQueue? _alerts;
     private readonly IStreamElementsOverlaySource? _streamElements;
     private readonly OverlayPackages? _packages;
+    private readonly OverlayGallery? _gallery;
 
     /// <summary>Opens a link in the browser (tests replace it).</summary>
     public Action<string> OpenUrl { get; init; } = Cuebot.App.Shell.UrlLauncher.Open;
@@ -158,10 +185,12 @@ public sealed partial class OverlaysViewModel : PageViewModel
     public OverlaysViewModel() : base(PageTitle) => _newCanvas = Presets[0];
 
     public OverlaysViewModel(OverlayStore store, ServerManager servers, WidgetLibrary? widgets = null, OverlayAlertQueue? alerts = null,
-        ChatPollPanelViewModel? polls = null, IStreamElementsOverlaySource? streamElements = null, OverlayPackages? packages = null)
+        ChatPollPanelViewModel? polls = null, IStreamElementsOverlaySource? streamElements = null, OverlayPackages? packages = null,
+        OverlayGallery? gallery = null)
         : base(PageTitle)
     {
         _packages = packages;
+        _gallery = gallery;
         Polls = polls;
         _streamElements = streamElements;
         _store = store;
@@ -269,6 +298,92 @@ public sealed partial class OverlaysViewModel : PageViewModel
         catch (Exception ex) when (ex is PackageFormatException or ArgumentException or IOException or InvalidDataException)
         {
             Status = "Could not import the package: " + ex.Message;
+        }
+    }
+
+    // ---- Community gallery ----
+
+    public bool CanBrowseGallery => _gallery is not null && _packages is not null;
+
+    public ObservableCollection<GalleryItemViewModel> GalleryItems { get; } = [];
+
+    [ObservableProperty]
+    private bool _galleryOpen;
+
+    [ObservableProperty]
+    private bool _galleryBusy;
+
+    /// <summary>The overlay widget items are added to.</summary>
+    [ObservableProperty]
+    private OverlayRowViewModel? _galleryTarget;
+
+    /// <summary>Lists the gallery's items and loads their previews.</summary>
+    [RelayCommand]
+    private async Task BrowseGallery()
+    {
+        if (_gallery is null) return;
+        GalleryBusy = true;
+        try
+        {
+            var items = await _gallery.ListAsync();
+            GalleryItems.Clear();
+            foreach (var item in items) GalleryItems.Add(new GalleryItemViewModel(item, this));
+            GalleryTarget ??= Overlays.FirstOrDefault();
+            GalleryOpen = true;
+            Status = items.Count == 0 ? "The gallery is empty so far." : $"{items.Count} item{(items.Count == 1 ? "" : "s")} in the community gallery. Every item was reviewed before it was listed.";
+        }
+        catch (GalleryException ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            GalleryBusy = false;
+        }
+        foreach (var row in GalleryItems.ToArray())
+        {
+            try
+            {
+                var bytes = await _gallery.PreviewAsync(row.Item);
+                using var stream = new MemoryStream(bytes);
+                row.Preview = new Avalonia.Media.Imaging.Bitmap(stream);
+            }
+            catch (Exception ex) when (ex is GalleryException or ArgumentException or InvalidOperationException or NotSupportedException)
+            {
+                // No preview; the item is still listed.
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void CloseGallery() => GalleryOpen = false;
+
+    /// <summary>Opens the wiki's guide to sharing an item.</summary>
+    [RelayCommand]
+    private void ShareToGallery() => OpenUrl(OverlayGallery.ContributeUrl);
+
+    /// <summary>Downloads an item (checked against the gallery's index) and imports it.</summary>
+    internal async Task ImportFromGalleryAsync(GalleryItemViewModel row)
+    {
+        if (_gallery is null) return;
+        if (row.Item.Kind == "widget" && GalleryTarget is null)
+        {
+            Status = "Pick the overlay to add this widget to (\"Add widgets to\" above the list), or create one first.";
+            return;
+        }
+        GalleryBusy = true;
+        try
+        {
+            using var package = await _gallery.DownloadAsync(row.Item);
+            await ImportPackageAsync(package, row.Item.Kind == "widget" ? GalleryTarget?.Id : null);
+        }
+        catch (GalleryException ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            GalleryBusy = false;
         }
     }
 
@@ -490,12 +605,15 @@ public sealed partial class OverlaysViewModel : PageViewModel
 
     private void Refresh()
     {
+        var target = GalleryTarget?.Id;
         Overlays.Clear();
         if (_store is null) return;
         foreach (var overlay in _store.All().OrderBy(o => o.Name, StringComparer.CurrentCultureIgnoreCase))
         {
             Overlays.Add(new OverlayRowViewModel(overlay, this));
         }
+        // The rows are new, so the gallery's "Add widgets to" picks the same overlay again (or the first, if it is gone).
+        GalleryTarget = Overlays.FirstOrDefault(o => o.Id == target) ?? (target is null ? null : Overlays.FirstOrDefault());
         OnPropertyChanged(nameof(HasOverlays));
     }
 }

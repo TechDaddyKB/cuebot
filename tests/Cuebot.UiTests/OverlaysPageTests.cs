@@ -244,6 +244,81 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task The_gallery_lists_items_with_previews_and_imports_them()
+    {
+        var library = _services.GetRequiredService<WidgetLibrary>();
+        var packages = _services.GetRequiredService<Cuebot.Core.Overlays.Sharing.OverlayPackages>();
+        // Two gallery packages made the way an author would: a whole overlay and a single alert box.
+        var source = Store.Create("Neon scene", 1280, 720);
+        var alert = library.AddAlertBox(source.Id)!;
+        library.AddChatBox(source.Id);
+        using var overlayPackage = new MemoryStream();
+        packages.ExportOverlay(source.Id, overlayPackage, includeCustomCode: false);
+        using var widgetPackage = new MemoryStream();
+        packages.ExportWidget(source.Id, alert.Id, widgetPackage, includeCustomCode: false);
+        Store.Delete(source.Id);
+
+        var png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+        string Entry(string id, string kind, byte[] package) => $$"""
+            {"id":"{{id}}","name":"{{id}}","author":"Someone","description":"Shared for the test.","kind":"{{kind}}","license":"CC-BY-4.0",
+             "tags":["neon"],"package":"items/{{id}}/package.cuebot-overlay","preview":"items/{{id}}/preview.png","size":{{package.Length}},
+             "sha256":"{{Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(package))}}"}
+            """;
+        var files = new Dictionary<string, byte[]>
+        {
+            ["index.json"] = System.Text.Encoding.UTF8.GetBytes($$"""{"format":"cuebot-gallery","version":1,"items":[{{Entry("neon-scene", "overlay", overlayPackage.ToArray())}},{{Entry("neon-alerts", "widget", widgetPackage.ToArray())}}]}"""),
+            ["items/neon-scene/package.cuebot-overlay"] = overlayPackage.ToArray(),
+            ["items/neon-alerts/package.cuebot-overlay"] = widgetPackage.ToArray(),
+            ["items/neon-scene/preview.png"] = png,
+        };
+        var gallery = new Cuebot.Core.Overlays.Sharing.OverlayGallery(new HttpClient(new GalleryHandler(files)), new Uri("https://gallery.test/"));
+        var opened = new List<string>();
+        var vm = new OverlaysViewModel(Store, Servers, library, packages: packages, gallery: gallery) { OpenUrl = opened.Add };
+        var window = Open(new OverlaysView(), vm);
+        Assert.True(vm.CanBrowseGallery);
+
+        await vm.BrowseGalleryCommand.ExecuteAsync(null);
+        Pump();
+        Assert.True(vm.GalleryOpen);
+        Assert.Equal("2 items in the community gallery. Every item was reviewed before it was listed.", vm.Status);
+        Assert.Equal(["neon-scene", "neon-alerts"], vm.GalleryItems.Select(i => i.Name));
+        Assert.Equal(("by Someone", "Overlay · CC-BY-4.0 · " + vm.GalleryItems[0].Details.Split(" · ")[2] + " · #neon"), (vm.GalleryItems[0].Byline, vm.GalleryItems[0].Details));
+        Assert.NotNull(vm.GalleryItems[0].Preview);
+        Assert.Null(vm.GalleryItems[1].Preview);   // no preview file: still listed
+        Assert.Null(vm.GalleryTarget);   // no overlays yet
+
+        await vm.GalleryItems[1].ImportCommand.ExecuteAsync(null);
+        Assert.StartsWith("Pick the overlay to add this widget to", vm.Status);
+
+        await vm.GalleryItems[0].ImportCommand.ExecuteAsync(null);
+        Pump();
+        var imported = Assert.Single(vm.Overlays);
+        Assert.Equal(("Neon scene", 2), (imported.Name, imported.Layers.Count));   // the index's name is not used; the package's is
+        vm.GalleryTarget = imported;
+        await vm.GalleryItems[1].ImportCommand.ExecuteAsync(null);
+        Pump();
+        Assert.Equal("Added the widget to \"Neon scene\".", vm.Status);
+        Assert.Equal(3, vm.Overlays.Single().Layers.Count);
+        Assert.Same(vm.Overlays.Single(), vm.GalleryTarget);   // still selected after the page refreshed
+
+        vm.GalleryItems[0].ReportCommand.Execute(null);
+        vm.ShareToGalleryCommand.Execute(null);
+        Assert.Equal(["https://github.com/TechDaddyKB/cuebot-gallery/issues/new?template=report.yml&item=neon-scene",
+            "https://github.com/TechDaddyKB/cuebot-gallery/wiki/Detailed-guide"], opened);
+        TestApp.SaveFrame(window, Path.Combine(ScreenshotDir, "overlays-gallery.png"));
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    private sealed class GalleryHandler(Dictionary<string, byte[]> files) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(files.TryGetValue(request.RequestUri!.AbsolutePath.TrimStart('/'), out var bytes)
+                ? new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
+                : new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
+    }
+
     private sealed class FakeStreamElements : IStreamElementsOverlaySource
     {
         public bool HasToken { get; set; }

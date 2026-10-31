@@ -26,7 +26,10 @@ showcase and Seasonal effects widgets; built 2026-10-30; SE's private merch cata
 built 2026-10-30); 6b importing StreamElements overlays through the connected account (custom widgets, text, images,
 video, labels and the alert box with its variations; built 2026-10-30). Phase 6 is done. 7a one-file overlay and
 widget packages (`.cuebot-overlay`; code that is not Cuebot's own only when the user confirms the rights; built
-2026-10-30); 7b (the community gallery, a public GitHub repo) is next. Details in docs/SERVERS.md.
+2026-10-30); 7b the community gallery (github.com/TechDaddyKB/cuebot-gallery: items arrive as pull requests checked by
+`tools/gallery.py` and go live when merged; its wiki has the creating, submitting, updating, reporting and reviewing
+guides; Cuebot's "Browse gallery…" lists and imports items; built 2026-10-30). Phase 7 and the plan are done.
+Details in docs/SERVERS.md.
 
 ## Goal
 
@@ -280,10 +283,59 @@ Delivery in three merges, each with tests:
 - One-file overlay and alert packages; purchased widget code left out unless the user confirms they own the rights.
 - Community gallery: hosting, accounts, uploads, moderation, reporting and takedowns.
 
+## Later: submitting to the gallery from Cuebot (not built)
+
+Asked for on 2026-10-30, to be built later. Today an author exports a package and opens a pull request on GitHub by
+hand (the wiki's "Detailed guide"). This feature would let **Share → Submit to gallery…** do the GitHub part from
+inside Cuebot. No server of our own is needed (decision 12 still holds); everything is the user's own GitHub
+account, acting on their own fork.
+
+**Sign-in.** Use GitHub's OAuth **device flow**, which suits a desktop app: no client secret ships in Cuebot and no
+local redirect server is needed. Cuebot shows a short code; the user enters it at github.com/login/device. This is
+the same pattern as YouTube's device-code sign-in (`Cuebot.YouTube/Auth/DeviceAuthorization.cs`).
+- Register a GitHub **OAuth App** owned by TechDaddyKB, with device flow enabled. Only its client ID goes in Cuebot.
+- Scope `public_repo`: the least an OAuth App needs to fork and push to public repositories. It does reach all of the
+  user's public repos, so say so on the sign-in screen.
+- The narrower alternative is a GitHub App with Contents and Pull requests permissions only. But it must be
+  installed on the user's fork before it can push, which is a confusing extra step. Revisit if `public_repo` worries
+  people.
+- Keep the token in Cuebot's encrypted settings, like other tokens. Add "Sign out of GitHub" (delete it locally and
+  link to the account's authorized-apps page to revoke it).
+
+**Submitting (all REST calls with the user's token):**
+1. Collect what `item.json` needs in a dialog: name, description, kind (from what is being shared), license
+   (MIT / CC-BY-4.0 / CC0-1.0, default CC-BY-4.0), tags, and the preview image (pick a file; later, Cuebot could
+   capture one). The item id is a slug of the name; check it is free against `index.json`.
+2. The rights step must be explicit: the same three statements as the pull request template, each a checkbox that
+   must be ticked. Export with `includeCustomCode` only if the user also ticks "I wrote this widget code", and set
+   `originalCode` to match. Refuse if anything would be left out, as the gallery check does.
+3. Run the same checks as `tools/gallery.py check` in C# before sending (one shared rule set, ported to C#), so
+   problems show in Cuebot rather than as a red CI run.
+4. Fork `TechDaddyKB/cuebot-gallery` (`POST /repos/{owner}/{repo}/forks`; reuse an existing fork, and sync it with
+   upstream first via `POST /repos/{fork}/merge-upstream`).
+5. Create a branch `add-{id}` (or `update-{id}`). Add the three files and the regenerated `index.json` in one commit
+   through the Git Data API: blobs, then a tree, then a commit, then update the ref. Packages are at most 25 MB, well
+   under the API's limits.
+6. Open the pull request (`POST /repos/TechDaddyKB/cuebot-gallery/pulls`) with the template's text and the ticked
+   boxes. Show its link and its "Check items" status in Cuebot.
+
+**Updating and removing.** Add `"github": "<login>"` to `item.json` on submit. Cuebot then offers "Update in
+gallery" and "Remove from gallery" only for the user's own items. These make the same kind of pull request,
+replacing or deleting the folder. Maintainers still review every change.
+
+**Also needed:**
+- Teach `tools/gallery.py` the optional `github` field, and have the review check that an update's pull request
+  author matches it.
+- Handle errors: rate limits, a fork still being created (GitHub does it asynchronously, so poll), and a branch name
+  that is taken.
+- Tests against a fake GitHub API.
+- Update the wiki: the Detailed guide gets an "Option C: from Cuebot", and the reviewing page covers app-made pull
+  requests.
+
 ## Open questions
 - SE overlay import: goal widgets (`*-goal`), Kappagen and other StreamElements-only widgets are not imported yet (they
   are listed as skipped); a later pass could map goals to Cuebot's goal widget.
 - Designer access: because the designer shares the overlay network switch, turning it on lets anyone on the LAN edit
   overlays. Decide in phase 0 whether that switch needs a password or a warning.
-- Gallery repo: name, contribution template, and the automated checks a pull request runs (package validity, no
-  purchased code, preview image).
+- Gallery repo settings: protecting `main` (pull requests only, "Check items" required) is left to the owner; the
+  wiki's "Reviewing submissions" page lists it.

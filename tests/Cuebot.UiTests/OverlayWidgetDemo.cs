@@ -152,6 +152,15 @@ public sealed class OverlayWidgetDemo
                 await using var file = File.OpenRead(zip!);
                 layer = host.Get<WidgetLibrary>().AddCustomWidget(overlay.Id, Path.GetFileNameWithoutExtension(zip!), WidgetImport.FromZip(file))!;
             }
+            // CUEBOT_DEMO_PACKAGE: also save the demo overlay as a package there (Cuebot's own widgets only), for example
+            // to make a gallery item.
+            if (Environment.GetEnvironmentVariable("CUEBOT_DEMO_PACKAGE") is { Length: > 0 } packagePath)
+            {
+                if (Environment.GetEnvironmentVariable("CUEBOT_DEMO_PACKAGE_NAME") is { Length: > 0 } packageName)
+                    host.Get<OverlayStore>().Update(overlay.Id, o => o.Name = packageName);
+                await using var packageFile = File.Create(packagePath);
+                host.Get<Cuebot.Core.Overlays.Sharing.OverlayPackages>().ExportOverlay(overlay.Id, packageFile, includeCustomCode: false);
+            }
             var url = servers.OverlayUrl(host.Get<OverlayStore>().Get(overlay.Id)!);
             await File.WriteAllTextAsync(Path.Combine(output, "editor-url.txt"), servers.EditorUrl(overlay.Id, layer.Id), TestContext.Current.CancellationToken);
             await File.WriteAllTextAsync(Path.Combine(output, "designer-url.txt"), servers.DesignerUrl(overlay.Id), TestContext.Current.CancellationToken);

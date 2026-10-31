@@ -191,6 +191,22 @@ page.
   Cuebot package, or one over 500 MB (or with a pane over 5 MB) is refused, and a failed overlay import leaves no
   overlay behind.
 
+### Community gallery (`Cuebot.Core/Overlays/Sharing/OverlayGallery`)
+- The gallery is the public repository github.com/TechDaddyKB/cuebot-gallery: `items/{id}/` holds `item.json`
+  (name, author, description, kind, license, tags, `originalCode`), `package.cuebot-overlay` and one preview;
+  `index.json` lists them (built by `python tools/gallery.py index`; the "Check items" workflow runs
+  `python tools/gallery.py check` on every pull request: folder and file rules, item fields, package format and paths,
+  nothing left out, only Cuebot's own widgets unless `originalCode`, asset hashes, sizes, an up-to-date index).
+  Items go live only when a maintainer merges them. The repository's wiki holds the guides (detailed walkthrough,
+  creating, submitting, updating or removing, format and checks, previews, licenses, reporting and takedowns,
+  reviewing, FAQ).
+- The Overlays page's "Browse gallery…" reads `index.json` from raw.githubusercontent.com (at most 4 MB) and keeps
+  only entries whose package is `items/{id}/package.cuebot-overlay`, whose preview is in the same folder, with a
+  size up to 25 MB and a SHA-256. It shows each item with its preview (at most 2 MB); Import downloads the package,
+  checks its size and SHA-256 against the index, and imports it like a package file (overlay items become a new
+  overlay; widget items go to the overlay picked in "Add widgets to"). Report opens the gallery's report form for the
+  item; "Share yours…" opens the wiki's guide.
+
 ### Importing StreamElements overlays (`StreamElementsOverlayImport`)
 - The Overlays page's "Import from StreamElements…" lists the overlays in the account whose JWT token is set on the
   Donations page (`GET kappa/v2/overlays/{channel}`) and copies one into a new Cuebot overlay

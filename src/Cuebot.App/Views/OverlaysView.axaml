@@ -15,7 +15,7 @@
 
     <!-- New overlay -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
-      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+      <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
         <TextBox Text="{Binding NewName}" PlaceholderText="New overlay name" />
         <ComboBox Grid.Column="2" ItemsSource="{x:Static vm:OverlaysViewModel.Presets}" SelectedItem="{Binding NewCanvas}" HorizontalAlignment="Stretch" />
         <NumericUpDown Grid.Column="4" Value="{Binding NewWidth}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
@@ -28,7 +28,60 @@
                 ToolTip.Tip="Copy an overlay from your StreamElements account (custom widgets, text, images, labels and the alert box). Your StreamElements overlays are not changed." />
         <Button Grid.Column="12" Content="Import package…" Click="OnImportPackage" IsVisible="{Binding CanShare}"
                 ToolTip.Tip="Open a Cuebot overlay package (.cuebot-overlay) someone shared; it becomes a new overlay with its own link" />
+        <Button Grid.Column="14" Content="Browse gallery…" Command="{Binding BrowseGalleryCommand}" IsVisible="{Binding CanBrowseGallery}"
+                IsEnabled="{Binding !GalleryBusy}"
+                ToolTip.Tip="Overlays and widgets shared by other streamers, each reviewed before it is listed" />
       </Grid>
+    </Border>
+
+    <!-- Community gallery -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8" IsVisible="{Binding GalleryOpen}">
+      <StackPanel Spacing="8">
+        <Grid ColumnDefinitions="*,Auto,8,200,8,Auto,8,Auto">
+          <TextBlock Text="Community gallery" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="Add widgets to" Classes="muted" VerticalAlignment="Center" />
+          <ComboBox Grid.Column="3" ItemsSource="{Binding Overlays}" SelectedItem="{Binding GalleryTarget}" HorizontalAlignment="Stretch"
+                    ToolTip.Tip="Widget items are added to this overlay; overlay items always become a new overlay">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:OverlayRowViewModel">
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="5" Content="Share yours…" Command="{Binding ShareToGalleryCommand}"
+                  ToolTip.Tip="Opens the gallery's guide: export with Share, add a preview, and send a pull request" />
+          <Button Grid.Column="7" Content="Close" Command="{Binding CloseGalleryCommand}" />
+        </Grid>
+        <ScrollViewer MaxHeight="420">
+          <ItemsControl ItemsSource="{Binding GalleryItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:GalleryItemViewModel">
+                <Grid ColumnDefinitions="192,12,*,Auto" Margin="0,4">
+                  <Border Width="192" Height="108" CornerRadius="6" ClipToBounds="True" Background="#22000000">
+                    <Image Source="{Binding Preview}" Stretch="UniformToFill" />
+                  </Border>
+                  <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Byline}" Classes="muted" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Details}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="6" VerticalAlignment="Center" Margin="8,0,0,0">
+                    <Button Content="Import" Classes="accent" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch"
+                            IsEnabled="{Binding !$parent[ItemsControl].((vm:OverlaysViewModel)DataContext).GalleryBusy}" />
+                    <Button Content="View" Command="{Binding ViewCommand}" HorizontalAlignment="Stretch"
+                            ToolTip.Tip="The item's page on GitHub" />
+                    <Button Content="Report" Command="{Binding ReportCommand}" HorizontalAlignment="Stretch"
+                            ToolTip.Tip="Report copyright, a broken item or something harmful" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </StackPanel>
     </Border>
 
     <!-- StreamElements overlays to import -->
