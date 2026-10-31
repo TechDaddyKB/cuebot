@@ -94,7 +94,7 @@ action:
 - **Name**: who it is about. It starts as `%user%`.
 - **Message**, **Amount**, **Currency**: what the alert says.
 
-Your alert waits its turn behind other alerts, just like a real one. The **Alert queue** sub-action can pause, skip or
+Your alert waits its turn behind other alerts, just like a real one. The **Pause, skip or mute overlay alerts** sub-action can pause, skip or
 mute alerts from an action, for example while you are on your "BRB" scene.
 
 ## Sharing overlays

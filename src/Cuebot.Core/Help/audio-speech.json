@@ -120,7 +120,7 @@
       "variables": {}
     },
     "speech.pause": {
-      "description": "Pauses or resumes reading out loud. Texts wait in line while paused. Handy for a quiet moment on stream.",
+      "description": "Pauses or resumes reading out loud. Texts wait in line while paused. Handy for a quiet moment on stream. This is the text-to-speech line, not the action queues on the Queues page.",
       "fields": {
         "mode": "Pause holds speech back. Resume lets it go on. Toggle switches to the opposite."
       },

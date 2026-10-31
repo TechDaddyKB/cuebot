@@ -50,6 +50,54 @@ public sealed class ActionsUxTests : IAsyncDisposable
 
     private static T Page<T>(MainWindowViewModel vm) where T : PageViewModel => vm.Pages.OfType<T>().Single();
 
+    /// <summary>
+    /// Issue #5: actions the assistant (MCP/API) created were saved but never appeared on the Actions page until a
+    /// restart, because the page only re-read the actions it already had. Same for timers.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task Actions_and_timers_changed_outside_the_page_show_up_at_once()
+    {
+        var (window, vm) = Open();
+        var actions = Page<ActionsViewModel>(vm);
+        var timers = Page<TimersViewModel>(vm);
+        var api = new Cuebot.Server.Api.ApiOperations(_host.Get<Cuebot.Server.ServerServices>());
+        var before = Profile.Snapshot.Actions.Count;
+
+        await api.CreateActionAsync(System.Text.Json.Nodes.JsonNode.Parse("""
+            { "name": "Pause alerts and TTS", "group": "Moderation",
+              "subActions": [ { "type": "speech.pause", "parameters": { "mode": "Pause" } } ] }
+            """));
+        Pump();
+        var created = Assert.Single(actions.Actions, a => a.Name == "Pause alerts and TTS");
+        Assert.Equal(before + 1, actions.Actions.Count);
+        Assert.Single(created.Definition.SubActions);
+
+        actions.SelectedAction = created;
+        await api.UpdateActionAsync("Pause alerts and TTS", System.Text.Json.Nodes.JsonNode.Parse("""{ "name": "Pause everything" }"""), merge: true);
+        Pump();
+        var updated = Assert.Single(actions.Actions, a => a.Name == "Pause everything");
+        Assert.Same(updated, actions.SelectedAction); // the replaced action keeps the selection
+        Assert.Same(Profile.Profile.Actions.Single(a => a.Name == "Pause everything"), updated.Definition); // edits reach the saved action
+        Assert.Equal(before + 1, actions.Actions.Count);
+
+        await api.DeleteActionAsync("Pause everything");
+        Pump();
+        Assert.DoesNotContain(actions.Actions, a => a.Name == "Pause everything");
+        Assert.Null(actions.SelectedAction);
+
+        actions.NewActionCommand.Execute(null); // the page's own add still makes exactly one
+        Pump();
+        Assert.Equal(before + 1, actions.Actions.Count);
+
+        await api.CreateTimerAsync(System.Text.Json.Nodes.JsonNode.Parse("""{ "name": "Socials", "intervalSeconds": 600 }"""));
+        Pump();
+        Assert.Single(timers.Timers, t => t.Definition.Name == "Socials");
+        timers.AddTimerCommand.Execute(null);
+        Pump();
+        Assert.Equal(Profile.Profile.Timers.Count, timers.Timers.Count);
+        window.Close();
+    }
+
     private static void Pump()
     {
         Dispatcher.UIThread.RunJobs();

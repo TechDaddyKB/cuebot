@@ -22,7 +22,7 @@ public sealed class AlertQueueSubAction(OverlayAlertQueue queue) : ISubActionHan
 
     public string TypeId => "overlays.alertQueue";
     public string Category => OverlayCategories.Overlays;
-    public string DisplayName => "Alert queue";
+    public string DisplayName => "Pause, skip or mute overlay alerts";
 
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [

@@ -135,7 +135,7 @@ internal sealed class PauseSpeechSubAction(SpeechService speech) : ISubActionHan
 
     public string TypeId => "speech.pause";
     public string Category => SpeechCategories.Speech;
-    public string DisplayName => "Pause speech queue";
+    public string DisplayName => "Pause or resume text-to-speech";
 
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
         [new("mode", "Mode", ParameterKind.Choice) { DefaultValue = Pause, Choices = [Pause, Resume, Toggle] }];

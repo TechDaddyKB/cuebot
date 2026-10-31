@@ -23,9 +23,9 @@ Throws away everything waiting to be read out loud. The text being read right no
 
 <small>Type id: `speech.clearQueue`</small>
 
-## Pause speech queue
+## Pause or resume text-to-speech
 
-Pauses or resumes reading out loud. Texts wait in line while paused. Handy for a quiet moment on stream.
+Pauses or resumes reading out loud. Texts wait in line while paused. Handy for a quiet moment on stream. This is the text-to-speech line, not the action queues on the Queues page.
 
 | Setting | What to put in |
 | --- | --- |

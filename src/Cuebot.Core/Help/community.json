@@ -383,7 +383,7 @@
       "variables": {}
     },
     "overlays.alertQueue": {
-      "description": "Controls the line of alerts on your stream overlay: pause or resume it, skip the alert playing now, or mute alert sounds and videos.",
+      "description": "Controls the line of alerts on your stream overlay: pause or resume it, skip the alert playing now, or mute alert sounds and videos. This is the line of on-screen alerts, not the action queues on the Queues page.",
       "fields": {
         "mode": "Pause = the alert playing finishes, new ones wait. Resume = go on. Skip = end the playing alert. Mute/Unmute = silence alert sounds and videos. Toggle = switch to the opposite."
       },

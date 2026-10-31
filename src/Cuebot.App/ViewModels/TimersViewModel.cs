@@ -203,6 +203,7 @@ public sealed partial class TimersViewModel : PageViewModel
         _service = service;
         Timers = new ObservableCollection<TimerItemViewModel>(profile.Profile.Timers.Select(Wrap));
         if (service is not null) service.StateChanged += _ => OnUi(RefreshStates);
+        profile.Changed += () => OnUi(SyncWithProfile);
         // Countdowns tick while the page is shown (the view starts and stops the clock).
         _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => RefreshStates());
         _clock.Stop();
@@ -226,6 +227,31 @@ public sealed partial class TimersViewModel : PageViewModel
         foreach (var timer in Timers) timer.UpdateState(states.FirstOrDefault(s => s.Id == timer.Definition.Id));
     }
 
+    /// <summary>
+    /// Timers can change outside this page (the assistant, the API, imports): add editors for new timers, drop deleted
+    /// ones, and give a timer the API replaced (same id, new object) a fresh editor in the same place.
+    /// </summary>
+    private void SyncWithProfile()
+    {
+        var live = _profile.Profile.Timers;
+        var present = new HashSet<TimerDefinition>(live, ReferenceEqualityComparer.Instance);
+        var changed = false;
+        for (var i = Timers.Count - 1; i >= 0; i--)
+        {
+            if (present.Contains(Timers[i].Definition)) continue;
+            changed = true;
+            if (live.FirstOrDefault(t => t.Id == Timers[i].Definition.Id) is { } replacement) Timers[i] = Wrap(replacement);
+            else Timers.RemoveAt(i);
+        }
+        var wrapped = new HashSet<TimerDefinition>(Timers.Select(t => t.Definition), ReferenceEqualityComparer.Instance);
+        foreach (var timer in live.Where(t => !wrapped.Contains(t)))
+        {
+            Timers.Add(Wrap(timer));
+            changed = true;
+        }
+        if (changed) RefreshStates();
+    }
+
     private TimerItemViewModel Wrap(TimerDefinition t) => new(t, () =>
     {
         _profile.NotifyChanged();
@@ -236,9 +262,9 @@ public sealed partial class TimersViewModel : PageViewModel
     private void AddTimer()
     {
         var timer = new TimerDefinition { Name = $"Timer {Timers.Count + 1}" };
+        Timers.Add(Wrap(timer)); // first, so the change notification finds it instead of adding a second editor
         _profile.Profile.Timers.Add(timer);
         _profile.NotifyChanged();
-        Timers.Add(Wrap(timer));
         RefreshStates();
     }
 

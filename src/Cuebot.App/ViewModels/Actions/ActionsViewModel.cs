@@ -58,11 +58,13 @@ public sealed partial class ActionsViewModel : PageViewModel
     public EditorClip? Clip => _clip;
 
     /// <summary>
-    /// The live profile can change outside this page: "Set action state" toggles Enabled, the Queues page adds or
-    /// renames queues. Re-read what each action shows.
+    /// The live profile can change outside this page: the assistant, the API and imports add, replace or delete actions,
+    /// "Set action state" toggles Enabled, the Queues page adds or renames queues. Re-sync the list, then re-read what
+    /// each action shows.
     /// </summary>
     private void OnProfileChanged()
     {
+        SyncWithProfile();
         foreach (var action in _all) action.RefreshFromProfile();
         // Outside changes to the edited action become the new baseline instead of an undo step.
         if (!_restoring && SelectedAction is { } selected && _histories.TryGetValue(selected.Definition.Id, out var history))
@@ -107,6 +109,43 @@ public sealed partial class ActionsViewModel : PageViewModel
         RaiseUndoState();
     }
 
+    /// <summary>
+    /// Makes the list match the profile's actions: new ones get an editor, deleted ones leave, and an action the API
+    /// replaced with a new object (same id) gets a fresh editor that keeps its place, selection and undo history.
+    /// </summary>
+    private void SyncWithProfile()
+    {
+        var live = _profile.Profile.Actions;
+        var present = new HashSet<ActionDefinition>(live, ReferenceEqualityComparer.Instance);
+        var changed = false;
+        ActionItemViewModel? reselect = null;
+        for (var i = _all.Count - 1; i >= 0; i--)
+        {
+            var item = _all[i];
+            if (present.Contains(item.Definition)) continue;
+            changed = true;
+            if (live.FirstOrDefault(a => a.Id == item.Definition.Id) is { } replacement)
+            {
+                _all[i] = Wrap(replacement);
+                if (ReferenceEquals(SelectedAction, item)) reselect = _all[i];
+            }
+            else
+            {
+                _all.RemoveAt(i);
+                _histories.Remove(item.Definition.Id);
+            }
+        }
+        var wrapped = new HashSet<ActionDefinition>(_all.Select(a => a.Definition), ReferenceEqualityComparer.Instance);
+        foreach (var definition in live.Where(d => !wrapped.Contains(d)))
+        {
+            _all.Add(Wrap(definition));
+            changed = true;
+        }
+        if (!changed) return;
+        ApplyFilter();
+        if (reselect is not null && Actions.Contains(reselect)) SelectedAction = reselect;
+    }
+
     private ActionItemViewModel Wrap(ActionDefinition definition)
     {
         var item = new ActionItemViewModel(definition, _registry, _profile);
@@ -145,10 +184,11 @@ public sealed partial class ActionsViewModel : PageViewModel
 
     private ActionItemViewModel Add(ActionDefinition definition)
     {
-        _profile.Profile.Actions.Add(definition);
-        _profile.NotifyChanged();
+        // The editor goes in the list first, so the change notification finds it there instead of adding a second one.
         var item = Wrap(definition);
         _all.Add(item);
+        _profile.Profile.Actions.Add(definition);
+        _profile.NotifyChanged();
         if (Filter.Length > 0) Filter = "";
         else ApplyFilter();
         SelectedAction = item;
