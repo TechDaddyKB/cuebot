@@ -154,8 +154,8 @@ public sealed class SendSignalSubAction(SignalService signals) : ISubActionHandl
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("name", "Signal name"),
-        new("includeArgs", "Include the action's arguments", ParameterKind.Boolean) { DefaultValue = "false" },
-        new("arguments", "Arguments", ParameterKind.Multiline) { Help = "One name=value per line; always sent" },
+        new("includeArgs", "Include the action's variables", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("arguments", "Values to send", ParameterKind.Multiline) { Help = "One name=value per line; always sent" },
         new("queue", "Queue signal", ParameterKind.Boolean) { DefaultValue = "false", Help = "Keep it for a wait that has not started yet" },
     ];
 
@@ -236,7 +236,7 @@ public sealed class SetActionStateSubAction(ProfileService profile) : ISubAction
 
     public string TypeId => "core.setActionState";
     public string Category => Categories.Core;
-    public string DisplayName => "Set action state";
+    public string DisplayName => "Turn action on/off";
 
     public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
@@ -271,7 +271,7 @@ public sealed class GetActionStateSubAction(ProfileService profile) : ISubAction
     public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
         new("action", "Action") { Suggestions = () => profile.Snapshot.Actions.Select(a => a.Name) },
-        new("name", "Store in argument") { DefaultValue = "actionEnabled" },
+        new("name", "Save in variable") { DefaultValue = "actionEnabled" },
     ];
     private IReadOnlyList<ParameterDescriptor>? _parameters;
 

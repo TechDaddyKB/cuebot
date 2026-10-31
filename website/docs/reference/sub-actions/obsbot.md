@@ -109,7 +109,7 @@ Picks which OBSBOT camera the next steps control. Only needed if you have more t
 
 <small>Type id: `obsbot.selectDevice`</small>
 
-## Send OSC message
+## Send OSC message (advanced)
 
 For experts: sends your own OSC message (a short control message that OBSBOT understands). Use it for camera features the other steps do not cover.
 

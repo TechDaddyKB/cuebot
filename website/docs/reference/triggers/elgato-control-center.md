@@ -46,6 +46,27 @@ Runs when the color of a color light, like the Light Strip, changes. Cuebot chec
 
 <small>Type id: `elgato.controlCenter.colorChanged`</small>
 
+## Colour Warmth Changed
+
+Runs when the color warmth of a light changes. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
+
+| Setting | What to put in |
+| --- | --- |
+| **Devices** | Which light to watch: its name, serial number or network address (IP), like "Key Light Left". Separate several with commas. Leave empty to react to every light. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%deviceName%` | The name of the light, as set in Control Center |
+| `%powerState%` | On or Off |
+| `%brightness%` | Brightness now (0-100) |
+| `%temperature%` | Color warmth now, in Kelvin (low is orange, high is blue) |
+| `%ipAddress%` | The light's address on your network |
+| `%oldTemperature%` | The warmth before the change, in Kelvin |
+
+<small>Type id: `elgato.controlCenter.temperatureChanged`</small>
+
 ## Device Added
 
 Runs when Cuebot finds a new light or you add one by hand. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
@@ -149,26 +170,6 @@ Runs when a light is turned on. Cuebot checks the lights about every 2 seconds, 
 
 <small>Type id: `elgato.controlCenter.devicePoweredOn`</small>
 
-## Device Reachable
-
-Runs when a light that was not answering starts answering again. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
-
-| Setting | What to put in |
-| --- | --- |
-| **Devices** | Which light to watch: its name, serial number or network address (IP), like "Key Light Left". Separate several with commas. Leave empty to react to every light. |
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%deviceName%` | The name of the light, as set in Control Center |
-| `%powerState%` | On or Off |
-| `%brightness%` | Brightness now (0-100) |
-| `%temperature%` | Color warmth now, in Kelvin (low is orange, high is blue) |
-| `%ipAddress%` | The light's address on your network |
-
-<small>Type id: `elgato.controlCenter.deviceOnline`</small>
-
 ## Device Removed
 
 Runs when a light is removed from Cuebot's list. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
@@ -210,7 +211,27 @@ Runs when you rename a light in Control Center. Cuebot checks the lights about e
 
 <small>Type id: `elgato.controlCenter.deviceRenamed`</small>
 
-## Device Unreachable
+## Light Back Online
+
+Runs when a light that was not answering starts answering again. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
+
+| Setting | What to put in |
+| --- | --- |
+| **Devices** | Which light to watch: its name, serial number or network address (IP), like "Key Light Left". Separate several with commas. Leave empty to react to every light. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%deviceName%` | The name of the light, as set in Control Center |
+| `%powerState%` | On or Off |
+| `%brightness%` | Brightness now (0-100) |
+| `%temperature%` | Color warmth now, in Kelvin (low is orange, high is blue) |
+| `%ipAddress%` | The light's address on your network |
+
+<small>Type id: `elgato.controlCenter.deviceOnline`</small>
+
+## Light Lost Connection
 
 Runs when a light stops answering, for example when it loses power or Wi-Fi. It waits for two missed checks in a row. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
 
@@ -229,24 +250,3 @@ Runs when a light stops answering, for example when it loses power or Wi-Fi. It 
 | `%ipAddress%` | The light's address on your network |
 
 <small>Type id: `elgato.controlCenter.deviceOffline`</small>
-
-## Temperature Changed
-
-Runs when the color warmth of a light changes. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.
-
-| Setting | What to put in |
-| --- | --- |
-| **Devices** | Which light to watch: its name, serial number or network address (IP), like "Key Light Left". Separate several with commas. Leave empty to react to every light. |
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%deviceName%` | The name of the light, as set in Control Center |
-| `%powerState%` | On or Off |
-| `%brightness%` | Brightness now (0-100) |
-| `%temperature%` | Color warmth now, in Kelvin (low is orange, high is blue) |
-| `%ipAddress%` | The light's address on your network |
-| `%oldTemperature%` | The warmth before the change, in Kelvin |
-
-<small>Type id: `elgato.controlCenter.temperatureChanged`</small>

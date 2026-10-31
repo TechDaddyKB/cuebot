@@ -42,7 +42,7 @@ public static class StreamlabsCatalog
         return
         [
             Make("slobs.setScene", "Set active scene", [Scene()], (_, v, ct) => slobs.SetSceneAsync(Require(v["scene"], "Scene"), ct)),
-            Make("slobs.getCurrentScene", "Get current scene", [new("resultArgument", "Store result in argument") { DefaultValue = "slobsScene" }],
+            Make("slobs.getCurrentScene", "Get current scene", [new("resultArgument", "Save the answer in variable") { DefaultValue = "slobsScene" }],
                 async (ctx, v, ct) =>
                 {
                     var scene = await slobs.GetCurrentSceneAsync(ct).ConfigureAwait(false);
@@ -61,7 +61,7 @@ public static class StreamlabsCatalog
                 (_, v, ct) => slobs.ControlReplayBufferAsync(ParseChoice<ReplayBufferCommand>(v["mode"], "Mode"), ct)),
             Make("slobs.setSourceMute", "Set source mute state", [Source(), Choice("state", "State", MuteMode.Toggle)],
                 (_, v, ct) => slobs.SetSourceMuteAsync(Require(v["source"], "Source"), ParseChoice<MuteMode>(v["state"], "State"), ct)),
-            Make("slobs.setText", "Set GDI text", [Source("Text source"), new("text", "Text", ParameterKind.Multiline)],
+            Make("slobs.setText", "Set text", [Source("Text source"), new("text", "Text", ParameterKind.Multiline)],
                 (_, v, ct) => slobs.UpdateSourceSettingsAsync(Require(v["source"], "Text source"), new { text = v["text"] }, ct)),
             Make("slobs.setBrowserUrl", "Set browser source URL", [Source("Browser source"), new("url", "URL")],
                 (_, v, ct) => slobs.UpdateSourceSettingsAsync(Require(v["source"], "Browser source"), new { url = v["url"] }, ct)),
@@ -76,7 +76,7 @@ public static class StreamlabsCatalog
                     ParseChoice<VisibilityMode>(v["state"], "State"), ct)),
             Make("slobs.setRandomFilterState", "Set state of a random filter",
                 [Scene(), Source("Source (empty for the scene's own filters)"), Choice("state", "State", VisibilityMode.Visible),
-                 new("resultArgument", "Store filter name in argument") { DefaultValue = "slobsFilterName" }],
+                 new("resultArgument", "Save the filter name in variable") { DefaultValue = "slobsFilterName" }],
                 async (ctx, v, ct) => Store(ctx, v["resultArgument"], await slobs.SetRandomFilterStateAsync(Require(v["scene"], "Scene"),
                     v["source"], ParseChoice<VisibilityMode>(v["state"], "State"), ct).ConfigureAwait(false))),
             Make("slobs.hideSourceFilters", "Hide source's filters", [Scene(), Source()],
@@ -84,7 +84,7 @@ public static class StreamlabsCatalog
             Make("slobs.hideGroupSources", "Hide group's sources", [Scene(), Group()],
                 (_, v, ct) => slobs.HideGroupSourcesAsync(Require(v["scene"], "Scene"), Require(v["group"], "Group"), ct)),
             Make("slobs.randomGroupSource", "Set random group source visible",
-                [Scene(), Group(), new("resultArgument", "Store source name in argument") { DefaultValue = "randomSource" }],
+                [Scene(), Group(), new("resultArgument", "Save the source name in variable") { DefaultValue = "randomSource" }],
                 async (ctx, v, ct) => Store(ctx, v["resultArgument"], await slobs.SetRandomGroupSourceVisibleAsync(
                     Require(v["scene"], "Scene"), Require(v["group"], "Group"), ct).ConfigureAwait(false))),
             Make("slobs.flipSource", "Flip source", [Scene(), Source(), Choice("axis", "Axis", FlipAxis.Horizontal)],
@@ -93,10 +93,10 @@ public static class StreamlabsCatalog
             Make("slobs.rotateSource", "Rotate source", [Scene(), Source(), new("degrees", "Degrees") { DefaultValue = "90" }],
                 (_, v, ct) => slobs.RotateSourceAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"),
                     RequireNumber(v["degrees"], "Degrees"), ct)),
-            Make("slobs.raw", "Raw API call",
+            Make("slobs.raw", "Send Streamlabs command (advanced)",
                 [new("resource", "Resource") { DefaultValue = "ScenesService" }, new("method", "Method") { DefaultValue = "getScenes" },
                  new("args", "Arguments (JSON array)", ParameterKind.Multiline) { Help = "Leave empty for none" },
-                 new("resultArgument", "Store result in argument") { DefaultValue = "slobsResult" }],
+                 new("resultArgument", "Save the answer in variable") { DefaultValue = "slobsResult" }],
                 async (ctx, v, ct) =>
                 {
                     var args = ParseJson(v["args"], "Arguments", JsonValueKind.Array) is { } array

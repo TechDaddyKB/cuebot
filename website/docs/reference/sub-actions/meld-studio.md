@@ -90,7 +90,7 @@ Shows or hides the instant replay in Meld Studio.
 
 <small>Type id: `meldstudio.replay`</small>
 
-## Send command
+## Send Meld command (advanced)
 
 Sends Meld Studio one of its own commands by name. For advanced users.
 

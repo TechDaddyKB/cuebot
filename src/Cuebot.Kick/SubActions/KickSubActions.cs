@@ -95,7 +95,7 @@ internal sealed class DeleteMessageSubAction(KickService kick) : KickSubAction(k
 internal sealed class SetTitleSubAction(KickService kick) : KickSubAction(kick)
 {
     public override string TypeId => "kick.setTitle";
-    public override string DisplayName => "Set channel title (titleSuccess)";
+    public override string DisplayName => "Set channel title";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } = [new("title", "Title")];
 
     public override async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
@@ -131,7 +131,7 @@ internal sealed class SetCategorySubAction(KickService kick) : KickSubAction(kic
 internal sealed class BanUserSubAction(KickService kick) : KickSubAction(kick)
 {
     public override string TypeId => "kick.banUser";
-    public override string DisplayName => "Ban user (bannedUser, bannedUserName, bannedUserId, banResult)";
+    public override string DisplayName => "Ban user";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } = [User(), new("reason", "Reason")];
 
     public override async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
@@ -145,7 +145,7 @@ internal sealed class BanUserSubAction(KickService kick) : KickSubAction(kick)
 internal sealed class TimeoutUserSubAction(KickService kick) : KickSubAction(kick)
 {
     public override string TypeId => "kick.timeoutUser";
-    public override string DisplayName => "Timeout user (timedOutUser, timedOutUserName, timedOutUserId, timeoutResult)";
+    public override string DisplayName => "Timeout user";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         User(),
@@ -208,9 +208,9 @@ internal sealed class AddBroadcasterInfoSubAction(KickService kick) : KickSubAct
 internal sealed class GetUserInfoSubAction(KickService kick) : KickSubAction(kick)
 {
     public override string TypeId => "kick.getUserInfo";
-    public override string DisplayName => "Get user info for target";
+    public override string DisplayName => "Look up a Kick user";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
-        [User("Target user"), new("prefix", "Argument prefix") { DefaultValue = "target" }];
+        [User("Target user"), new("prefix", "Variable name start") { DefaultValue = "target" }];
 
     public override async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {

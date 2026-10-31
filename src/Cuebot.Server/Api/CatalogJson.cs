@@ -20,6 +20,8 @@ public static class CatalogJson
             ["default"] = d.DefaultValue,
         };
         if (d.Choices.Count > 0) json["choices"] = Strings(d.Choices);
+        if (d.ChoiceLabels.Count > 0)
+            json["choiceLabels"] = new JsonObject(d.ChoiceLabels.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)JsonValue.Create(kv.Value))));
         if (d.Language is { } language) json["language"] = language;
         if (d.Help is { } help) json["help"] = help;
         if (withSuggestions && Suggestions(d) is { Count: > 0 } suggestions) json["suggestions"] = Strings(suggestions);

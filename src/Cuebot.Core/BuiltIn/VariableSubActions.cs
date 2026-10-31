@@ -7,10 +7,10 @@ public sealed class SetArgumentSubAction : ISubActionHandler
 {
     public string TypeId => "core.setArgument";
     public string Category => Categories.Variables;
-    public string DisplayName => "Set argument";
+    public string DisplayName => "Set variable";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
-        new("name", "Argument name") { Help = "Use it later as %name%" },
+        new("name", "Variable name") { Help = "Use it later as %name%" },
         new("value", "Value") { Help = "Supports %args%, ~globals~ and inline functions such as $math(%count% + 1)$" },
         new("autoType", "Auto type", ParameterKind.Boolean) { DefaultValue = "false", Help = "Store numbers and true/false as typed values" },
     ];
@@ -32,7 +32,7 @@ public sealed class GetGlobalSubAction : ISubActionHandler
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("name", "Variable name"),
-        new("destination", "Store in argument") { Help = "Defaults to the variable name; use it as %argument%" },
+        new("destination", "Save in variable") { Help = "Defaults to the variable name; use it as %argument%" },
         new("defaultValue", "Default value") { Help = "Used when the variable does not exist; empty leaves the argument unset" },
         new("autoType", "Auto type", ParameterKind.Boolean) { DefaultValue = "true", Help = "Numbers stay numbers" },
     ];
@@ -67,7 +67,7 @@ public sealed class SetGlobalSubAction : ISubActionHandler
         new("value", "Value") { Help = "For Increment/Decrement: the amount (empty = 1)" },
         new("persisted", "Keep after restart", ParameterKind.Boolean) { DefaultValue = "true" },
         new("autoType", "Auto type", ParameterKind.Boolean) { DefaultValue = "false", Help = "Store numbers and true/false as typed values" },
-        new("storeIn", "Also store in argument") { Help = "Optional argument that receives the new value" },
+        new("storeIn", "Also save in variable") { Help = "Optional argument that receives the new value" },
     ];
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
@@ -132,7 +132,7 @@ public sealed class RandomNumberSubAction : ISubActionHandler
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("type", "Type", ParameterKind.Choice) { DefaultValue = Between, Choices = [Between, NextFloat] },
-        new("name", "Store in argument") { DefaultValue = "random", Help = "Between only; Next Float sets %randomFloat% and %randomPercent%" },
+        new("name", "Save in variable") { DefaultValue = "random", Help = "Between only; Next Float sets %randomFloat% and %randomPercent%" },
         new("min", "Minimum", ParameterKind.Number) { DefaultValue = "1" },
         new("max", "Maximum (inclusive)", ParameterKind.Number) { DefaultValue = "100" },
     ];

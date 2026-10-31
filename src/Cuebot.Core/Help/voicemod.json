@@ -84,7 +84,7 @@
     "voicemod.selectRandomVoice": {
       "description": "Switches Voicemod to a random voice. Fun for a surprise reward.",
       "fields": {
-        "mode": "Which voices to pick from: AllVoices, FreeVoices (Voicemod's free voices), FavoriteVoices (the ones you starred in Voicemod) or CustomVoices (the ones you made)."
+        "mode": "Which voices to pick from: all voices, Voicemod's free voices, your favourites (the ones you starred in Voicemod) or your custom voices (the ones you made)."
       },
       "variables": {}
     },

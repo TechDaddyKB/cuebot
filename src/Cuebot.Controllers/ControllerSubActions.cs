@@ -22,7 +22,7 @@ public static class ControllerSubActions
 
         return
         [
-            new Step("controller.rumble", "Rumble (Cuebot extra)",
+            new Step("controller.rumble", "Rumble",
                 [
                     Controller(),
                     new("low", "Low-frequency motor (%)", ParameterKind.Number) { DefaultValue = "50", Help = "0-100; the big, heavy motor" },
@@ -35,7 +35,7 @@ public static class ControllerSubActions
                         p.GetInt("duration", 500), ct).ConfigureAwait(false);
                     ctx.Args["controllersAffected"] = done.Count;
                 }),
-            new Step("controller.setLed", "Set LED Colour (Cuebot extra)",
+            new Step("controller.setLed", "Set LED Colour",
                 [
                     Controller(),
                     new("color", "Colour") { DefaultValue = "#0080FF", Help = "#RRGGBB or r,g,b. Only controllers with an RGB light (PS4/PS5, some others)" },
@@ -46,7 +46,7 @@ public static class ControllerSubActions
                     var done = await controllers.SetLedAsync(p["controller"], r, g, b, ct).ConfigureAwait(false);
                     ctx.Args["controllersAffected"] = done.Count;
                 }),
-            new Step("controller.getState", "Get Controller State (Cuebot extra)",
+            new Step("controller.getState", "Get Controller State",
                 [Controller("#1")],
                 async (ctx, p, ct) =>
                 {
@@ -60,7 +60,7 @@ public static class ControllerSubActions
                     for (var i = 0; i < c.Hats.Count; i++)
                         ctx.Args["hat" + (i + 1).ToString(CultureInfo.InvariantCulture)] = ControllerNames.HatDirection(c.Hats[i]);
                 }),
-            new Step("controller.getList", "Get Controllers (Cuebot extra)",
+            new Step("controller.getList", "Get Controllers",
                 [],
                 async (ctx, _, ct) =>
                 {

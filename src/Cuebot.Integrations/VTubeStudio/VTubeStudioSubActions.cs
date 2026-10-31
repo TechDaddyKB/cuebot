@@ -50,7 +50,7 @@ internal static class VTubeStudioSubActions
             Make("vtubestudio.removeAllExpressions", "Remove all expressions",
                 [new("fadeTime", "Fade time (seconds)", ParameterKind.Number) { DefaultValue = "0.25" }],
                 (_, v, ct) => vts.RemoveAllExpressionsAsync(Number(v["fadeTime"], "Fade time", 0.25), ct)),
-            Make("vtubestudio.injectParameters", "Inject parameter values",
+            Make("vtubestudio.injectParameters", "Move model parts (advanced)",
                 [
                     new("parameters", "Parameters", ParameterKind.Multiline)
                     {
@@ -146,11 +146,11 @@ internal static class VTubeStudioSubActions
                 ctx.Args["vtsExpressionCount"] = expressions.Count;
                 ctx.Args["vtsExpressionsJson"] = JsonUtil.Serialize(expressions.Select(e => new { name = e.DisplayName, file = e.File, active = e.Active }));
             }),
-            Make("vtubestudio.rawRequest", "Send raw request",
+            Make("vtubestudio.rawRequest", "Send VTube Studio request (advanced)",
                 [
                     new("messageType", "Message type") { Help = "A VTube Studio API request, e.g. SceneColorOverlayInfoRequest" },
                     new("data", "Data (JSON)", ParameterKind.Multiline) { Help = "A JSON object; leave empty for none" },
-                    Result("vtsResult", "Store response in argument"),
+                    Result("vtsResult", "Save the reply in variable"),
                     new("variablePrefix", "Variable prefix")
                     {
                         DefaultValue = "vtsRaw",

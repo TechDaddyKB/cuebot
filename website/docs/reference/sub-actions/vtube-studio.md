@@ -81,19 +81,6 @@ Reads the hotkeys of the loaded model and keeps them for later steps.
 
 <small>Type id: `vtubestudio.getHotkeys`</small>
 
-## Inject parameter values
-
-Moves parts of your model yourself, like head angle or mouth opening, as if your face did it. Handy for scripted reactions.
-
-| Setting | What to put in |
-| --- | --- |
-| **Parameters** | What to move, as name=value, separated by commas or new lines, like "FaceAngleX=20, MouthOpen=1". Add @ and a number for how strongly, like "MouthOpen=1@0.5". |
-| **Mode** | set replaces the value, add adds to what your face tracking is doing. Options: set, add. Starts as: `set`. |
-| **Hold for (seconds)** | How long to keep the values applied, in seconds. Cuebot keeps re-sending them until the time is over. Starts as: `1`. |
-| **Report the face as found** | Tick to tell VTube Studio a face was found, so it does not show "tracking lost" while Cuebot controls the model. Starts as: `false`. |
-
-<small>Type id: `vtubestudio.injectParameters`</small>
-
 ## Load item
 
 Puts an item (a prop or picture) into your VTube Studio scene.
@@ -108,7 +95,7 @@ Puts an item (a prop or picture) into your VTube Studio scene.
 | **Fade time (seconds)** | How long it takes to fade in, in seconds. Starts as: `0.5`. |
 | **Order** | Which layer it sits on, from -30 to 30. Leave empty to let VTube Studio pick a free one. |
 | **Unload when Cuebot disconnects** | Tick to remove the item automatically if Cuebot disconnects from VTube Studio. Starts as: `false`. |
-| **Store result in argument** | The name of the variable that will hold the item's id, so you can move or remove it later. The default is vtsItemInstanceId. Starts as: `vtsItemInstanceId`. |
+| **Save the answer in variable** | The name of the variable that will hold the item's id, so you can move or remove it later. The default is vtsItemInstanceId. Starts as: `vtsItemInstanceId`. |
 
 **Variables it adds**
 
@@ -165,6 +152,19 @@ Moves, turns or resizes your model on screen, smoothly.
 
 <small>Type id: `vtubestudio.moveModel`</small>
 
+## Move model parts (advanced)
+
+Moves parts of your model yourself, like head angle or mouth opening, as if your face did it. Handy for scripted reactions.
+
+| Setting | What to put in |
+| --- | --- |
+| **Parameters** | What to move, as name=value, separated by commas or new lines, like "FaceAngleX=20, MouthOpen=1". Add @ and a number for how strongly, like "MouthOpen=1@0.5". |
+| **Mode** | set replaces the value, add adds to what your face tracking is doing. Options: set, add. Starts as: `set`. |
+| **Hold for (seconds)** | How long to keep the values applied, in seconds. Cuebot keeps re-sending them until the time is over. Starts as: `1`. |
+| **Report the face as found** | Tick to tell VTube Studio a face was found, so it does not show "tracking lost" while Cuebot controls the model. Starts as: `false`. |
+
+<small>Type id: `vtubestudio.injectParameters`</small>
+
 ## Remove all expressions
 
 Turns off every expression that is currently on.
@@ -181,7 +181,7 @@ Removes all color tints from your model.
 
 <small>Type id: `vtubestudio.resetColorTint`</small>
 
-## Send raw request
+## Send VTube Studio request (advanced)
 
 Sends VTube Studio one request of your own and keeps the answer. For advanced users who know the VTube Studio plugin commands.
 
@@ -189,7 +189,7 @@ Sends VTube Studio one request of your own and keeps the answer. For advanced us
 | --- | --- |
 | **Message type** | The VTube Studio request name, like "SceneColorOverlayInfoRequest". |
 | **Data (JSON)** | Extra details for the request, written as a JSON object. Leave empty if it needs none. |
-| **Store response in argument** | The name of the variable that will hold the answer as text. The default is vtsResult. Starts as: `vtsResult`. |
+| **Save the reply in variable** | The name of the variable that will hold the answer as text. The default is vtsResult. Starts as: `vtsResult`. |
 | **Variable prefix** | Also keeps each part of the answer as its own variable starting with this word, like %vtsRaw.data.modelName%. Leave empty to skip. Starts as: `vtsRaw`. |
 
 **Variables it adds**
@@ -207,7 +207,7 @@ Turns an expression (a face or pose preset) on or off.
 | Setting | What to put in |
 | --- | --- |
 | **Expression (name or file)** | The expression name or file as VTube Studio shows it. |
-| **State** | On turns it on, Off turns it off, Toggle flips it. Options: Toggle, On, Off. Starts as: `On`. |
+| **State** | On turns it on, Off turns it off, Toggle flips it. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Turn on`. |
 | **Fade time (seconds)** | How long the change takes, in seconds. Starts as: `0.25`. |
 
 **Variables it adds**

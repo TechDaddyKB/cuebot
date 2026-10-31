@@ -69,7 +69,7 @@ internal sealed class HeartRateThresholdTrigger(string category, string eventTyp
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("threshold", "Threshold (BPM)", ParameterKind.Number) { DefaultValue = above ? "120" : "60" },
-        new("hysteresis", "Hysteresis (BPM)", ParameterKind.Number)
+        new("hysteresis", "Reset distance (BPM)", ParameterKind.Number)
         {
             DefaultValue = "5",
             Help = above ? "Fires again only after the rate dropped this far below the threshold"
@@ -143,7 +143,7 @@ internal sealed class HeartRateTriggers(string category, HeartRateEventTypes eve
     [
         Steps.Trigger(category, events.Connected, "Connected"),
         Steps.Trigger(category, events.Disconnected, "Disconnected"),
-        Steps.Trigger(category, events.HeartRate, "Heart rate pulse"),
+        Steps.Trigger(category, events.HeartRate, "Every heart rate reading"),
         new HeartRateChangedTrigger(category, events.HeartRate, events.Prefix + ".heartRateChanged", clock),
         new HeartRateThresholdTrigger(category, events.HeartRate, events.Prefix + ".heartRateAbove", above: true),
         new HeartRateThresholdTrigger(category, events.HeartRate, events.Prefix + ".heartRateBelow", above: false),

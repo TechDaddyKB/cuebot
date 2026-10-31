@@ -33,7 +33,7 @@ internal static class Steps
         new(key, label, ParameterKind.Choice) { DefaultValue = defaultValue ?? "Toggle", Choices = [on, off, "Toggle"] };
 
     public static ParameterDescriptor Adjustment() =>
-        new("adjustment", "Adjustment", ParameterKind.Boolean) { DefaultValue = "false", Help = "Add the value to the current setting (use a negative value to lower it)" };
+        new("adjustment", "Add to current value", ParameterKind.Boolean) { DefaultValue = "false", Help = "Add the value to the current setting (use a negative value to lower it)" };
 
     public static SwitchMode ParseSwitch(string value) => value.Trim().ToLowerInvariant().Replace(" ", "") switch
     {

@@ -19,7 +19,7 @@ Finds out which scene Streamlabs Desktop is showing and keeps its name for later
 
 | Setting | What to put in |
 | --- | --- |
-| **Store result in argument** | The name of the variable that will hold the scene name, so later steps can use it as %name%. The default is slobsScene. Leave empty to not keep it. Starts as: `slobsScene`. |
+| **Save the answer in variable** | The name of the variable that will hold the scene name, so later steps can use it as %name%. The default is slobsScene. Leave empty to not keep it. Starts as: `slobsScene`. |
 
 **Variables it adds**
 
@@ -62,25 +62,6 @@ Turns off every filter on one source in a scene.
 
 <small>Type id: `slobs.hideSourceFilters`</small>
 
-## Raw API call
-
-Sends Streamlabs Desktop one command of your own and keeps the answer. For advanced users who know its remote control commands.
-
-| Setting | What to put in |
-| --- | --- |
-| **Resource** | The part of Streamlabs Desktop to talk to, like "ScenesService". Starts as: `ScenesService`. |
-| **Method** | The command to run on it, like "getScenes". Starts as: `getScenes`. |
-| **Arguments (JSON array)** | Extra details for the command, written as a JSON list like ["abc"]. Leave empty if it needs none. |
-| **Store result in argument** | The name of the variable that will hold the answer as text. The default is slobsResult. Leave empty to not keep it. Starts as: `slobsResult`. |
-
-**Variables it adds**
-
-| Variable | What it holds |
-| --- | --- |
-| `%slobsResult%` | The answer as JSON text (or the name you chose above) |
-
-<small>Type id: `slobs.raw`</small>
-
 ## Recording
 
 Starts or stops your recording in Streamlabs Desktop.
@@ -113,6 +94,25 @@ Turns a source to an angle. Fun for spinning an image.
 
 <small>Type id: `slobs.rotateSource`</small>
 
+## Send Streamlabs command (advanced)
+
+Sends Streamlabs Desktop one command of your own and keeps the answer. For advanced users who know its remote control commands.
+
+| Setting | What to put in |
+| --- | --- |
+| **Resource** | The part of Streamlabs Desktop to talk to, like "ScenesService". Starts as: `ScenesService`. |
+| **Method** | The command to run on it, like "getScenes". Starts as: `getScenes`. |
+| **Arguments (JSON array)** | Extra details for the command, written as a JSON list like ["abc"]. Leave empty if it needs none. |
+| **Save the answer in variable** | The name of the variable that will hold the answer as text. The default is slobsResult. Leave empty to not keep it. Starts as: `slobsResult`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%slobsResult%` | The answer as JSON text (or the name you chose above) |
+
+<small>Type id: `slobs.raw`</small>
+
 ## Set active scene
 
 Switches Streamlabs Desktop to another scene.
@@ -134,17 +134,6 @@ Makes a browser source open a different web page.
 
 <small>Type id: `slobs.setBrowserUrl`</small>
 
-## Set GDI text
-
-Changes the words shown by a text source. Handy for "latest follower" or a message on screen.
-
-| Setting | What to put in |
-| --- | --- |
-| **Text source** | The text source name (a GDI text source) exactly as Streamlabs Desktop shows it. |
-| **Text** | The words to show. You can use %variables% here. |
-
-<small>Type id: `slobs.setText`</small>
-
 ## Set random group source visible
 
 Shows one randomly picked source in a group and hides the others. Fun for random reactions or images.
@@ -153,7 +142,7 @@ Shows one randomly picked source in a group and hides the others. Fun for random
 | --- | --- |
 | **Scene** | The scene name exactly as Streamlabs Desktop shows it, like "Just Chatting". |
 | **Group** | The name of the group (a folder of sources) in that scene. |
-| **Store source name in argument** | The name of the variable that will hold the picked source's name. The default is randomSource. Leave empty to not keep it. Starts as: `randomSource`. |
+| **Save the source name in variable** | The name of the variable that will hold the picked source's name. The default is randomSource. Leave empty to not keep it. Starts as: `randomSource`. |
 
 **Variables it adds**
 
@@ -219,7 +208,7 @@ Picks one random filter on a source (or on the scene) and shows, hides or flips 
 | **Scene** | The scene name exactly as Streamlabs Desktop shows it, like "Just Chatting". |
 | **Source (empty for the scene's own filters)** | The source whose filters to pick from. Leave empty to pick from the scene's own filters. |
 | **State** | What to do with the picked filter: Visible, Hidden or Toggle. Options: Visible, Hidden, Toggle. Starts as: `Visible`. |
-| **Store filter name in argument** | The name of the variable that will hold the picked filter's name. The default is slobsFilterName. Leave empty to not keep it. Starts as: `slobsFilterName`. |
+| **Save the filter name in variable** | The name of the variable that will hold the picked filter's name. The default is slobsFilterName. Leave empty to not keep it. Starts as: `slobsFilterName`. |
 
 **Variables it adds**
 
@@ -228,6 +217,17 @@ Picks one random filter on a source (or on the scene) and shows, hides or flips 
 | `%slobsFilterName%` | The name of the filter that was picked (or the name you chose above) |
 
 <small>Type id: `slobs.setRandomFilterState`</small>
+
+## Set text
+
+Changes the words shown by a text source. Handy for "latest follower" or a message on screen.
+
+| Setting | What to put in |
+| --- | --- |
+| **Text source** | The text source name (a GDI text source) exactly as Streamlabs Desktop shows it. |
+| **Text** | The words to show. You can use %variables% here. |
+
+<small>Type id: `slobs.setText`</small>
 
 ## Streaming
 

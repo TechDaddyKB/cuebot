@@ -60,7 +60,7 @@ public sealed class ControllerTriggers(ControllerService controllers) : ITrigger
                     new("exact", "No other buttons held", ParameterKind.Boolean) { DefaultValue = "false" },
                 ],
                 (e, s, _) => Device(e, s) && ComboMatches(s["buttons"], s.GetBool("exact"), e.Args)),
-            new EventTriggerType(ControllerEvents.Axis, ControllerEvents.Category, "Controller Axis", ControllerEvents.Axis,
+            new EventTriggerType(ControllerEvents.Axis, ControllerEvents.Category, "Controller stick or trigger", ControllerEvents.Axis,
                 [
                     Controller(),
                     new("axis", "Axis")
@@ -83,7 +83,7 @@ public sealed class ControllerTriggers(ControllerService controllers) : ITrigger
                     },
                 ],
                 (e, s, _) => Device(e, s) && AxisMatches(s["axis"], s["direction"], s.GetDouble("threshold", 50) / 100, s["mode"], e.Args)),
-            new EventTriggerType(ControllerEvents.Hat, ControllerEvents.Category, "Controller Hat / D-Pad", ControllerEvents.Hat,
+            new EventTriggerType(ControllerEvents.Hat, ControllerEvents.Category, "Controller D-pad", ControllerEvents.Hat,
                 [
                     Controller(),
                     new("hat", "Hat")

@@ -147,11 +147,11 @@ public class EndToEndTests
         var handlers = provider.GetServices<ISubActionHandler>().ToArray();
         Assert.Equal(StreamDeckSubAction.TypeIds, handlers.Select(x => x.TypeId));
         Assert.All(handlers, x => Assert.Equal("Stream Deck", x.Category));
-        Assert.Equal(["Set Background", "Set State", "Set Title", "Set Value", "Show Alert", "Show Ok", "Toggle State"],
+        Assert.Equal(["Set key picture", "Set State", "Set Title", "Set key value", "Show Alert", "Show Ok", "Toggle State"],
             handlers.Select(x => x.DisplayName));
 
         var triggers = provider.GetServices<ITriggerProvider>().SelectMany(p => p.GetTriggers()).Select(t => t.DisplayName);
-        Assert.Equal(["Stream Deck Action", "Stream Deck Connected", "Stream Deck Disconnected", "Stream Deck Info"], triggers);
+        Assert.Equal(["Stream Deck key or dial used", "Stream Deck Connected", "Stream Deck Disconnected", "Stream Deck devices changed"], triggers);
 
         var functions = provider.GetServices<IScriptFunctionProvider>().SelectMany(p => p.GetFunctions()).Select(f => f.Name).ToArray();
         Assert.Contains("streamdeck.setTitle", functions);

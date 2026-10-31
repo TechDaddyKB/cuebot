@@ -15,21 +15,6 @@ Turns a knob or slider on a MIDI device by sending a control change message, for
 
 <small>Type id: `midi.controlChange`</small>
 
-## Generic Event
-
-For experts: sends any basic MIDI message you choose. Use it when Note On and Control Change do not fit.
-
-| Setting | What to put in |
-| --- | --- |
-| **Name** | A label for you, so you can tell this step apart. It is not sent to the device. |
-| **Device** | Which MIDI output device to send to, by its name in the MIDI page. Leave empty to use the first one. A closed device is opened for you. |
-| **Command** | The kind of message to send, like NoteOn, ControlChange or PitchWheelChange. Options: NoteOn, NoteOff, ControlChange, PatchChange, ChannelAfterTouch, PitchWheelChange. Starts as: `NoteOn`. |
-| **Channel** | The MIDI channel, from 1 to 16. Most gear listens on channel 1. Leave empty to send on all 16 channels. Starts as: `1`. |
-| **Data1** | The first number of the message, 0 to 127: the note, control number, program or pressure. For the pitch wheel, you can enter the whole 0 to 16383 value here and leave Data2 empty. Starts as: `0`. |
-| **Data2** | The second number of the message, 0 to 127: the velocity or value. Not used by PatchChange and ChannelAfterTouch. Starts as: `0`. |
-
-<small>Type id: `midi.genericEvent`</small>
-
 ## Note On
 
 Plays a note on a MIDI device, like pressing a key on a keyboard. Can also light up a pad on a controller.
@@ -46,7 +31,22 @@ Plays a note on a MIDI device, like pressing a key on a keyboard. Can also light
 
 <small>Type id: `midi.noteOn`</small>
 
-## Sysex Event
+## Send any MIDI message (advanced)
+
+For experts: sends any basic MIDI message you choose. Use it when Note On and Control Change do not fit.
+
+| Setting | What to put in |
+| --- | --- |
+| **Name** | A label for you, so you can tell this step apart. It is not sent to the device. |
+| **Device** | Which MIDI output device to send to, by its name in the MIDI page. Leave empty to use the first one. A closed device is opened for you. |
+| **Command** | The kind of message to send, like NoteOn, ControlChange or PitchWheelChange. Options: NoteOn, NoteOff, ControlChange, PatchChange, ChannelAfterTouch, PitchWheelChange. Starts as: `NoteOn`. |
+| **Channel** | The MIDI channel, from 1 to 16. Most gear listens on channel 1. Leave empty to send on all 16 channels. Starts as: `1`. |
+| **Data1** | The first number of the message, 0 to 127: the note, control number, program or pressure. For the pitch wheel, you can enter the whole 0 to 16383 value here and leave Data2 empty. Starts as: `0`. |
+| **Data2** | The second number of the message, 0 to 127: the velocity or value. Not used by PatchChange and ChannelAfterTouch. Starts as: `0`. |
+
+<small>Type id: `midi.genericEvent`</small>
+
+## Send SysEx message (advanced)
 
 For experts: sends a long special message (a SysEx message) to a MIDI device. Some gear uses these for settings that normal messages cannot change.
 

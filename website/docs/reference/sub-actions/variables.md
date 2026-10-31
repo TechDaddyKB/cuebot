@@ -48,7 +48,7 @@ Reads a global variable and puts its value in a normal variable you can use with
 | Setting | What to put in |
 | --- | --- |
 | **Variable name** | The global variable's name without the ~ signs, like "deaths". |
-| **Store in argument** | The variable that receives the value, without % signs. Empty = same name as the global variable. |
+| **Save in variable** | The variable that receives the value, without % signs. Empty = same name as the global variable. |
 | **Default value** | The value to use if the global variable does not exist yet. Empty = leave the variable unset. |
 | **Auto type** | Tick so numbers stay real numbers (needed for greater/less than checks). Normally leave it ticked. Starts as: `true`. |
 
@@ -64,7 +64,7 @@ Reads a variable that belongs to one viewer, like their score, and puts the valu
 | **Platform** | The site the viewer is on, like twitch. Empty = the site of whoever started the action. |
 | **User id** | The viewer's id on their site. Empty = the viewer who started the action, or the one found by user name. |
 | **User name** | The viewer's chat name, like "kris". Used to find the viewer when you give no id. |
-| **Store in argument** | The variable that receives the value, without % signs. Empty = same name as the viewer variable. |
+| **Save in variable** | The variable that receives the value, without % signs. Empty = same name as the viewer variable. |
 | **Default value** | The value to use if the viewer or variable does not exist. Empty = leave the variable unset. |
 | **Auto type** | Tick so numbers stay real numbers (needed for greater/less than checks). Normally leave it ticked. Starts as: `true`. |
 
@@ -97,7 +97,7 @@ Picks a random number, like rolling a dice, and saves it in a variable. Good for
 | Setting | What to put in |
 | --- | --- |
 | **Type** | Between = a whole number from Minimum to Maximum. Next Float = a number from 0 to 1, plus a percent from 0 to 100. Options: Between, Next Float. Starts as: `Between`. |
-| **Store in argument** | The variable that gets the number, without % signs. Default random means you use %random%. Only for Between. Starts as: `random`. |
+| **Save in variable** | The variable that gets the number, without % signs. Default random means you use %random%. Only for Between. Starts as: `random`. |
 | **Minimum** | The lowest number that can be picked, like 1. Starts as: `1`. |
 | **Maximum (inclusive)** | The highest number that can be picked, like 100. This number can be picked too. Starts as: `100`. |
 
@@ -111,18 +111,6 @@ Picks a random number, like rolling a dice, and saves it in a variable. Good for
 
 <small>Type id: `core.randomNumber`</small>
 
-## Set argument
-
-Creates a variable for this run only, or changes it. Use it afterwards as %name%. Good for building a message or counting inside one action.
-
-| Setting | What to put in |
-| --- | --- |
-| **Argument name** | The variable's name without % signs, like "greeting". Use it later as %greeting%. |
-| **Value** | What to store. You can mix %variables%, ~global variables~ and math like $math(%count% + 1)$. |
-| **Auto type** | Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text. Needed for greater/less than checks. Starts as: `false`. |
-
-<small>Type id: `core.setArgument`</small>
-
 ## Set global variable
 
 Saves a value that every action can read later as ~name~, like a death counter. It can set it or count up and down. Kept after a restart by default.
@@ -134,7 +122,7 @@ Saves a value that every action can read later as ~name~, like a death counter. 
 | **Value** | With Value: what to save. With Increment/Decrement: how much to add or subtract (empty = 1). |
 | **Keep after restart** | Tick to keep it after Cuebot restarts. Untick for a temporary value that vanishes when Cuebot closes. Starts as: `true`. |
 | **Auto type** | Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text. Starts as: `false`. |
-| **Also store in argument** | Optional. A variable to also receive the new value, without % signs, so you can use %name% in the next steps. |
+| **Also save in variable** | Optional. A variable to also receive the new value, without % signs, so you can use %name% in the next steps. |
 
 <small>Type id: `core.setGlobal`</small>
 
@@ -152,6 +140,18 @@ Saves a value that belongs to one viewer, like their score or favorite color. It
 | **Value** | With Value: what to save. With Increment/Decrement: how much to add or subtract (empty = 1). |
 | **Keep after restart** | Tick to keep it after Cuebot restarts. Untick for a temporary value that vanishes when Cuebot closes. Starts as: `true`. |
 | **Auto type** | Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text. Starts as: `true`. |
-| **Also store in argument** | Optional. A variable to also receive the new value, without % signs, so you can use %name% in the next steps. |
+| **Also save in variable** | Optional. A variable to also receive the new value, without % signs, so you can use %name% in the next steps. |
 
 <small>Type id: `core.setUserVariable`</small>
+
+## Set variable
+
+Creates a variable for this run only, or changes it. Use it afterwards as %name%. Good for building a message or counting inside one action.
+
+| Setting | What to put in |
+| --- | --- |
+| **Variable name** | The variable's name without % signs, like "greeting". Use it later as %greeting%. |
+| **Value** | What to store. You can mix %variables%, ~global variables~ and math like $math(%count% + 1)$. |
+| **Auto type** | Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text. Needed for greater/less than checks. Starts as: `false`. |
+
+<small>Type id: `core.setArgument`</small>

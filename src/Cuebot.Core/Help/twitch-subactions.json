@@ -486,7 +486,7 @@
     "twitch.endPoll": {
       "description": "Ends the poll that is running now.",
       "fields": {
-        "mode": "Terminate ends it and shows the results to viewers. Archive ends it and hides the results."
+        "mode": "End and show results: viewers see who won. End and hide results: the poll disappears without showing the results."
       },
       "variables": {}
     },

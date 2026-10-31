@@ -125,12 +125,12 @@ public sealed class SetActionQueueBlockingSubAction(ProfileService profile) : IS
 {
     public string TypeId => "core.setActionQueueBlocking";
     public string Category => Categories.Core;
-    public string DisplayName => "Set action queue blocking state";
+    public string DisplayName => "Set queue to one at a time";
 
     public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
         new("queue", "Queue") { Suggestions = () => profile.Snapshot.Queues.Select(q => q.Name) },
-        new("state", "Blocking", ParameterKind.Choice) { DefaultValue = StateChoices.Enable, Choices = StateChoices.All },
+        new("state", "Run one at a time", ParameterKind.Choice) { DefaultValue = StateChoices.Enable, Choices = StateChoices.All },
     ];
     private IReadOnlyList<ParameterDescriptor>? _parameters;
 
@@ -192,7 +192,7 @@ public sealed class SetTriggerStateSubAction(ProfileService profile, Lazy<Regist
 {
     public string TypeId => "core.setTriggerState";
     public string Category => Categories.Core;
-    public string DisplayName => "Set trigger state";
+    public string DisplayName => "Turn trigger on/off";
 
     public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
@@ -226,7 +226,7 @@ public sealed class SetSubActionStateSubAction(ProfileService profile, Lazy<Regi
 {
     public string TypeId => "core.setSubActionState";
     public string Category => Categories.Core;
-    public string DisplayName => "Set sub-action state";
+    public string DisplayName => "Turn sub-action on/off";
 
     public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
@@ -376,7 +376,7 @@ public sealed class TriggerCustomEventSubAction(EventBus bus) : ISubActionHandle
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("eventName", "Event name"),
-        new("useArgs", "Use arguments", ParameterKind.Boolean) { DefaultValue = "false", Help = "Pass this run's arguments to the actions it triggers" },
+        new("useArgs", "Use variables", ParameterKind.Boolean) { DefaultValue = "false", Help = "Pass this run's arguments to the actions it triggers" },
     ];
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

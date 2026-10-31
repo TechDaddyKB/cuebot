@@ -49,7 +49,7 @@ Cuebot lists connected Stream Deck apps under **Connected Stream Deck apps**.
 | **Run Cuebot action** | Runs the action you pick in **Action**. **Run on**: when you press (**Key down**) or let go (**Key up**). |
 | **Toggle action enabled** | Turns an action on or off. |
 | **Set global variable** | Sets a [global variable](variables.md#global-variables), adds to it, or flips it between true and false. On a dial, each turn adds **Step per tick**. |
-| **Cuebot trigger** | Starts the **Stream Deck Action** trigger, for actions that listen to it. |
+| **Cuebot trigger** | Starts the **Stream Deck key or dial used** trigger, for actions that listen to it. |
 
 Each key has a **Button ID**: a name you choose, like `brb`. Cuebot's actions use it to find the key.
 
@@ -64,7 +64,7 @@ On Linux there is no Stream Deck app, so Cuebot drives the Stream Deck itself.
 4. Open **Keys**. Each key has a row: **Key**, **Button ID**, **Title** and **Image**. Give each key you want to use a
    **Button ID**, like `brb`, and a **Title**.
 5. Click **Save keys**.
-6. In an action, add the **Stream Deck › Stream Deck Action** trigger, and type that **Button ID**.
+6. In an action, add the **Stream Deck › Stream Deck key or dial used** trigger, and type that **Button ID**.
 
 Works with Stream Deck XL, MK.2, the newer Stream Deck (V2), Neo, Stream Deck + (with dials and the touch strip)
 and the Pedal. The first Stream Deck (2017), the Mini, the Studio and the + XL are not supported in direct USB mode
@@ -92,12 +92,11 @@ Cuebot's rule file once:
 ## Changing keys from your actions
 
 Your actions can change Stream Deck keys while you stream. For example, turn the "Mute" key red when your mic is muted.
-The **Stream Deck** sub-actions are **Set Title**, **Set State**, **Toggle State**, **Set Background**, **Set
-Value**, **Show Alert** and **Show Ok**.
+The **Stream Deck** sub-actions are **Set Title**, **Set State**, **Toggle State**, **Set key picture**, **Set key value**, **Show Alert** and **Show Ok**.
 
-The **Stream Deck Action** trigger can react to **Key down**, **Key up**, and on a Stream Deck + also **Dial rotate**,
+The **Stream Deck key or dial used** trigger can react to **Key down**, **Key up**, and on a Stream Deck + also **Dial rotate**,
 **Dial press**, **Dial release** and **Touch tap**. Other triggers: **Stream Deck Connected**, **Stream Deck
-Disconnected** and **Stream Deck Info**.
+Disconnected** and **Stream Deck devices changed**.
 
 ## No Stream Deck?
 

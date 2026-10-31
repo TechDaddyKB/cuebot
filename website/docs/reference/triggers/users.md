@@ -22,7 +22,7 @@ Runs when a viewer writes in chat for the first time of the stream. Great for a 
 
 <small>Type id: `users.firstWords`</small>
 
-## Present viewers
+## People in chat (every few minutes)
 
 Runs every few minutes with the viewers who chatted recently. Good for giving points to everyone who is around. Set how often on the Users & Groups page.
 

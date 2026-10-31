@@ -202,7 +202,7 @@ internal sealed class PallyTriggers : ITriggerProvider
         Event(PallyEventTypes.Disconnected, "Disconnected"),
         Event(PallyEventTypes.CampaignTip, "Campaign tip",
             [
-                new("campaign", "Campaign (page slug)") { Help = "Leave empty for any of your pages" },
+                new("campaign", "Pally page name") { Help = "Leave empty for any of your pages" },
                 new("includeReplays", "Include replayed alerts", ParameterKind.Boolean)
                     { DefaultValue = "true", Help = "\"Replay Alert\" in Pally.gg's activity feed sends a tip again (isReplay = True)" },
                 .. DonationFilters.Amount,

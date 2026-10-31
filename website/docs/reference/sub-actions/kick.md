@@ -29,7 +29,7 @@ Picks random viewers from the people who chatted lately and saves them as variab
 | **How many** | How many people to pick. Example: 3. Starts as: `1`. |
 | **Leave out the broadcaster and the bot** | Tick to never pick you or your bot account. Starts as: `true`. |
 | **Leave out the triggering user** | Tick to never pick the person who started this action. Starts as: `false`. |
-| **Argument prefix** | A word put in front of the variable names. Empty uses "randomUser", which gives %randomUser0%, %randomUser1% and so on. Starts as: `randomUser`. |
+| **Variable name start** | A word put in front of the variable names. Empty uses "randomUser", which gives %randomUser0%, %randomUser1% and so on. Starts as: `randomUser`. |
 
 **Variables it adds**
 
@@ -61,7 +61,7 @@ Puts a Kick user into one of your groups (saved lists of people). Groups are sha
 
 <small>Type id: `kick.addUserToGroup`</small>
 
-## Ban user (bannedUser, bannedUserName, bannedUserId, banResult)
+## Ban user
 
 Bans someone from your Kick chat for good.
 
@@ -80,7 +80,7 @@ Bans someone from your Kick chat for good.
 
 <small>Type id: `kick.banUser`</small>
 
-## Configure rewards (rewardsChanged)
+## Configure rewards
 
 Turns many Kick rewards on, off, paused or resumed in one go. Great for "stream mode" and "BRB mode". Only works on rewards made by Cuebot.
 
@@ -111,14 +111,14 @@ Deletes one message from your Kick chat. Good for removing spam from a command o
 
 <small>Type id: `kick.deleteMessage`</small>
 
-## Get user info for target
+## Look up a Kick user
 
 Looks up another Kick user and saves their details as variables for the next steps. Handy for a shout-out command.
 
 | Setting | What to put in |
 | --- | --- |
 | **Target user** | The Kick user name, like "SomeViewer", or their Kick number ID. Leave the default to look up the person who started this action. Starts as: `%userName%`. |
-| **Argument prefix** | A word put in front of the variable names. With "target" you get %targetUserName% and %targetStreamTitle%. Empty uses "target". Starts as: `target`. |
+| **Variable name start** | A word put in front of the variable names. With "target" you get %targetUserName% and %targetStreamTitle%. Empty uses "target". Starts as: `target`. |
 
 **Variables it adds**
 
@@ -190,7 +190,7 @@ Writes a reply to one message in your Kick chat, shown under that message.
 
 <small>Type id: `kick.replyToMessage`</small>
 
-## Reward group: set enabled state (rewardsChanged)
+## Reward group: set enabled state
 
 Turns every reward in a reward group on or off. Only works on rewards made by Cuebot.
 
@@ -208,7 +208,7 @@ Turns every reward in a reward group on or off. Only works on rewards made by Cu
 
 <small>Type id: `kick.setRewardGroupEnabled`</small>
 
-## Reward group: set paused state (rewardsChanged)
+## Reward group: set paused state
 
 Pauses or resumes every reward in a reward group. Only works on rewards made by Cuebot.
 
@@ -481,7 +481,7 @@ Changes your Kick stream category (the game or topic).
 
 <small>Type id: `kick.setCategory`</small>
 
-## Set channel title (titleSuccess)
+## Set channel title
 
 Changes your Kick stream title.
 
@@ -497,7 +497,7 @@ Changes your Kick stream title.
 
 <small>Type id: `kick.setTitle`</small>
 
-## Timeout user (timedOutUser, timedOutUserName, timedOutUserId, timeoutResult)
+## Timeout user
 
 Gives someone a timeout in your Kick chat. They cannot write for a while.
 
@@ -544,7 +544,7 @@ Checks if a Kick user is in one of your groups. Cuebot then follows the True or 
 | **Group** | The name of the group (a saved list of people), like "VIPs". |
 | **User** | The Kick user name, like "SomeViewer", or their Kick number ID. Leave the default to use the person who started this action. Starts as: `%userName%`. |
 | **User id** | Kick number ID of the user. If it is filled in, Cuebot uses it first and only falls back to the name when it is empty. Starts as: `%userId%`. |
-| **Store result in argument** | The variable name to save the answer in. Example: "inGroup" lets you use %inGroup% later. Starts as: `inGroup`. |
+| **Save the answer in variable** | The variable name to save the answer in. Example: "inGroup" lets you use %inGroup% later. Starts as: `inGroup`. |
 
 Paths it can take: **True**, **False**.
 

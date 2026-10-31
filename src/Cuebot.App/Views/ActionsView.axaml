@@ -85,7 +85,8 @@
     <DataTemplate DataType="vm:ChoiceParameterViewModel">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Label}" />
-        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Help}" />
+        <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption}" DisplayMemberBinding="{Binding Label}"
+                  HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Help}" />
         <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
       </StackPanel>
     </DataTemplate>

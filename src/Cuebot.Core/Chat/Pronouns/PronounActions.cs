@@ -16,7 +16,7 @@ public sealed class AddPronounsSubAction(PronounService pronouns) : ISubActionHa
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("user", "User login") { DefaultValue = "%userName%", Help = "Twitch login; defaults to the trigger's user" },
-        new("prefix", "Argument prefix") { Help = "e.g. \"target\" gives targetPronoun, targetPronounSubject..." },
+        new("prefix", "Variable name start") { Help = "e.g. \"target\" gives targetPronoun, targetPronounSubject..." },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

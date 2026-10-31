@@ -86,7 +86,7 @@ public sealed class GetPointsDefinitionSubAction(PointsService points) : PointsS
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         PointsParameters.Currency(points),
-        new("variable", "Store in argument") { DefaultValue = "pointsDefinition" },
+        new("variable", "Save in variable") { DefaultValue = "pointsDefinition" },
     ];
 
     public override Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

@@ -72,7 +72,7 @@ internal static class LumiaSubActions
         {
             Help = "Optional name=value per line (or a JSON object); Lumia uses them as {{name}} variables, e.g. username=%user%",
         };
-        ParameterDescriptor Hold() => new("hold", "Make it the new default state", ParameterKind.Boolean) { DefaultValue = "false" };
+        ParameterDescriptor Hold() => new("hold", "Keep this look afterwards", ParameterKind.Boolean) { DefaultValue = "false" };
         ParameterDescriptor SkipQueue() => new("skipQueue", "Skip queue", ParameterKind.Boolean)
         {
             DefaultValue = "false", Help = "Run now instead of waiting behind queued commands and colours",
@@ -142,17 +142,17 @@ internal static class LumiaSubActions
             Make("lumia.getVariable", "Get variable",
                 [
                     new("name", "Variable") { Help = "A Lumia variable name, e.g. twitch_username" },
-                    new("argument", "Save as argument") { DefaultValue = "lumia.variableValue" },
+                    new("argument", "Save in variable") { DefaultValue = "lumia.variableValue" },
                 ],
                 async (ctx, v, ct) => Store(ctx, v["argument"], await lumia.GetVariableAsync(Require(v["name"], "Variable"), ct).ConfigureAwait(false))),
             Make("lumia.setVariable", "Set variable",
                 [new("name", "Variable"), new("value", "Value")],
                 (_, v, ct) => lumia.SetVariableAsync(Require(v["name"], "Variable"), v["value"], ct)),
-            Make("lumia.send", "Send API request",
+            Make("lumia.send", "Send a raw Lumia request (advanced)",
                 [
                     new("type", "Type") { Help = "Any Send API type, e.g. studio-scene, clear-queue, overlay-set-visibility" },
                     new("params", "Params (JSON)", ParameterKind.Multiline) { Help = "The params object, e.g. {\"value\":\"Sunset\"}; empty for none" },
-                    new("argument", "Save reply as argument") { DefaultValue = "lumia.response" },
+                    new("argument", "Save the reply in variable") { DefaultValue = "lumia.response" },
                 ],
                 async (ctx, v, ct) =>
                 {

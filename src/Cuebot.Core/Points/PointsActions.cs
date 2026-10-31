@@ -171,7 +171,7 @@ internal static class PointsParameters
 
     /// <summary>Streamer.bot's "Destination Variable": an extra argument that receives the balance (blank = none).</summary>
     public static ParameterDescriptor Destination(string defaultValue = "") =>
-        new("destination", "Also store balance in argument") { DefaultValue = defaultValue, Help = "e.g. userPoints; blank = only %points%" };
+        new("destination", "Also save the balance in variable") { DefaultValue = defaultValue, Help = "e.g. userPoints; blank = only %points%" };
 
     public static void StoreDestination(ActionRunContext context, ParameterValues p, long balance)
     {

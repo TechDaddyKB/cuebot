@@ -46,6 +46,22 @@ Gets the list of your Voicemod voices into variables for later steps.
 
 <small>Type id: `voicemod.getVoices`</small>
 
+## Hear myself on/off
+
+Turns 'hear my voice' on or off, so you can listen to yourself in your headphones.
+
+| Setting | What to put in |
+| --- | --- |
+| **State** | Toggle flips the current setting, On turns it on and Off turns it off. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Switch (on if off, off if on)`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%voicemodHearMyself%` | True when hearing yourself is on now |
+
+<small>Type id: `voicemod.setHearMyself`</small>
+
 ## Play sound
 
 Plays a sound from your Voicemod soundboard. Handy for a sound effect reward.
@@ -68,7 +84,7 @@ Switches Voicemod to a random voice. Fun for a surprise reward.
 
 | Setting | What to put in |
 | --- | --- |
-| **From** | Which voices to pick from: AllVoices, FreeVoices (Voicemod's free voices), FavoriteVoices (the ones you starred in Voicemod) or CustomVoices (the ones you made). Options: AllVoices, FreeVoices, FavoriteVoices, CustomVoices. Starts as: `AllVoices`. |
+| **From** | Which voices to pick from: all voices, Voicemod's free voices, your favourites (the ones you starred in Voicemod) or your custom voices (the ones you made). Options: All voices, Free voices, Favourite voices, My custom voices. Starts as: `All voices`. |
 
 <small>Type id: `voicemod.selectRandomVoice`</small>
 
@@ -95,7 +111,7 @@ Turns Voicemod's background sound effects on or off.
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | Toggle flips the current setting, On turns it on and Off turns it off. Options: Toggle, On, Off. Starts as: `Toggle`. |
+| **State** | Toggle flips the current setting, On turns it on and Off turns it off. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Switch (on if off, off if on)`. |
 
 **Variables it adds**
 
@@ -115,29 +131,13 @@ Turns Voicemod's censor beep, which bleeps out bad language, on or off.
 
 <small>Type id: `voicemod.setCensorBeep`</small>
 
-## Set hear my voice state
-
-Turns 'hear my voice' on or off, so you can listen to yourself in your headphones.
-
-| Setting | What to put in |
-| --- | --- |
-| **State** | Toggle flips the current setting, On turns it on and Off turns it off. Options: Toggle, On, Off. Starts as: `Toggle`. |
-
-**Variables it adds**
-
-| Variable | What it holds |
-| --- | --- |
-| `%voicemodHearMyself%` | True when hearing yourself is on now |
-
-<small>Type id: `voicemod.setHearMyself`</small>
-
 ## Set microphone mute state
 
 Mutes or unmutes your microphone in Voicemod.
 
 | Setting | What to put in |
 | --- | --- |
-| **Muted** | Toggle flips the current setting, On mutes the microphone and Off unmutes it. Options: Toggle, On, Off. Starts as: `Toggle`. |
+| **Microphone** | Toggle flips the current setting, On mutes the microphone and Off unmutes it. Options: Switch (on if off, off if on), Mute, Unmute. Starts as: `Switch (on if off, off if on)`. |
 
 **Variables it adds**
 
@@ -153,7 +153,7 @@ Turns the Voicemod voice changer on or off.
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | Toggle flips the current setting, On turns it on and Off turns it off. Options: Toggle, On, Off. Starts as: `Toggle`. |
+| **State** | Toggle flips the current setting, On turns it on and Off turns it off. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Switch (on if off, off if on)`. |
 
 **Variables it adds**
 

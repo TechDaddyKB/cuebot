@@ -31,7 +31,7 @@ public sealed class UserTriggers(ChatHub hub) : ITriggerProvider
     [
         new EventTriggerType("users.firstWords", UserParameters.Users, "First words", UserEvents.FirstWords,
             [UserParameters.Platform(hub)], (e, s, _) => UserParameters.PlatformMatches(e.Args, s["platform"])),
-        new EventTriggerType("users.presentViewers", UserParameters.Users, "Present viewers", UserEvents.PresentViewers,
+        new EventTriggerType("users.presentViewers", UserParameters.Users, "People in chat (every few minutes)", UserEvents.PresentViewers,
             [UserParameters.Platform(hub)], (e, s, _) => UserParameters.PlatformMatches(e.Args, s["platform"])),
     ];
 }
@@ -56,12 +56,12 @@ public sealed class AddRandomPresentUserSubAction(UserRegistry users, ChatHub hu
 {
     public string TypeId => "users.addRandomPresentUser";
     public string Category => UserParameters.Users;
-    public string DisplayName => "Add random present user to arguments";
+    public string DisplayName => "Pick a random recent chatter";
 
     public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
         UserParameters.Platform(hub),
-        new("argument", "Argument prefix") { DefaultValue = "randomUser" },
+        new("argument", "Variable name start") { DefaultValue = "randomUser" },
         new("excludeCaller", "Exclude the triggering user", ParameterKind.Boolean) { DefaultValue = "true" },
     ];
     private IReadOnlyList<ParameterDescriptor>? _parameters;

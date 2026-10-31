@@ -112,7 +112,7 @@ Changes how bright a webcam's picture is.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Brightness (0-100 %)** | How bright, from 0 (darkest) to 100 (brightest). With Adjustment ticked, how much to add or take away. Starts as: `50`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -130,7 +130,7 @@ Changes the contrast of a webcam's picture (the gap between dark and light parts
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Contrast (0-100 %)** | How much contrast, from 0 to 100. With Adjustment ticked, how much to add or take away. Starts as: `50`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -148,7 +148,7 @@ Moves a webcam's focus, which makes things nearer or farther look sharp.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Focus (0-100 %)** | Focus from 0 to 100. Turn auto focus off first, or the camera may refuse. With Adjustment ticked, how much to add or take away. Starts as: `50`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -166,7 +166,7 @@ Moves a webcam's picture left or right.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Pan (0-100 %)** | Position from 0 to 100, where 50 is the middle. It only moves while zoomed in. With Adjustment ticked, how much to add or take away. Starts as: `50`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -184,7 +184,7 @@ Changes how strong the colors are in a webcam's picture.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Saturation (0-100 %)** | How strong, from 0 (gray) to 100 (very colorful). With Adjustment ticked, how much to add or take away. Starts as: `50`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -202,7 +202,7 @@ Changes how sharp the edges look in a webcam's picture.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Sharpness** | Sharpness in the camera's own steps. The Elgato Facecam goes from 0 to 4. With Adjustment ticked, how many steps to add or take away. Starts as: `2`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -220,7 +220,7 @@ Moves a webcam's picture up or down.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Tilt (0-100 %)** | Position from 0 to 100, where 50 is the middle. It only moves while zoomed in. With Adjustment ticked, how much to add or take away. Starts as: `50`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -238,7 +238,7 @@ Changes how warm (orange) or cool (blue) a webcam's colors look.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **White balance (K)** | Number in Kelvin, like 5000. The Facecam goes from 2800 to 12500. Turn auto white balance off first. With Adjustment ticked, how much to add or take away. Starts as: `5000`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -256,7 +256,7 @@ Zooms a webcam in or out.
 | --- | --- |
 | **Webcam** | Which webcam to change, by name, like "Elgato Facecam". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found. |
 | **Zoom (100-400 %)** | Zoom from 100 (widest) to 400 (closest). With Adjustment ticked, how much to add or take away. Starts as: `100`. |
-| **Adjustment** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10. Starts as: `false`. |
 
 **Variables it adds**
 

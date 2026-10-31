@@ -20,7 +20,7 @@ Reads one of Lumia Stream's variables and saves its value in a variable of yours
 | Setting | What to put in |
 | --- | --- |
 | **Variable** | The Lumia variable to read, like "twitch_username". |
-| **Save as argument** | The name of your variable that will hold the answer. Use it later as %name%. Starts as: `lumia.variableValue`. |
+| **Save in variable** | The name of your variable that will hold the answer. Use it later as %name%. Starts as: `lumia.variableValue`. |
 
 **Variables it adds**
 
@@ -29,6 +29,24 @@ Reads one of Lumia Stream's variables and saves its value in a variable of yours
 | `%lumia.variableValue%` | The value read from Lumia (or whatever name you chose in the box above) |
 
 <small>Type id: `lumia.getVariable`</small>
+
+## Send a raw Lumia request (advanced)
+
+Sends a raw request to Lumia Stream for things the other steps cannot do. For advanced users who know Lumia's request types.
+
+| Setting | What to put in |
+| --- | --- |
+| **Type** | The kind of request, as Lumia names it, like "studio-scene" or "clear-queue". |
+| **Params (JSON)** | The details of the request, written like {"value":"Sunset"}. Leave empty if it needs none. |
+| **Save the reply in variable** | The name of your variable that will hold Lumia's reply. Starts as: `lumia.response`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%lumia.response%` | Lumia's reply (or whatever name you chose in the box above) |
+
+<small>Type id: `lumia.send`</small>
 
 ## Send alert
 
@@ -41,24 +59,6 @@ Makes Lumia Stream show one of its alerts, as if it had really happened. Good fo
 
 <small>Type id: `lumia.sendAlert`</small>
 
-## Send API request
-
-Sends a raw request to Lumia Stream for things the other steps cannot do. For advanced users who know Lumia's request types.
-
-| Setting | What to put in |
-| --- | --- |
-| **Type** | The kind of request, as Lumia names it, like "studio-scene" or "clear-queue". |
-| **Params (JSON)** | The details of the request, written like {"value":"Sunset"}. Leave empty if it needs none. |
-| **Save reply as argument** | The name of your variable that will hold Lumia's reply. Starts as: `lumia.response`. |
-
-**Variables it adds**
-
-| Variable | What it holds |
-| --- | --- |
-| `%lumia.response%` | Lumia's reply (or whatever name you chose in the box above) |
-
-<small>Type id: `lumia.send`</small>
-
 ## Send command
 
 Tells Lumia Stream to run one of your commands, such as a light show. Handy for stream events.
@@ -67,7 +67,7 @@ Tells Lumia Stream to run one of your commands, such as a light show. Handy for 
 | --- | --- |
 | **Command** | The command's name, as you set it up in Lumia Stream. |
 | **Command type** | Where the command comes from in Lumia, like a chat command or a channel point reward. Options: chat-command, chatbot-command, twitch-points, twitch-extension, kick-points. Starts as: `chat-command`. |
-| **Make it the new default state** | Tick to keep this look until you change it, instead of going back to normal afterwards. Starts as: `false`. |
+| **Keep this look afterwards** | Tick to keep this look until you change it, instead of going back to normal afterwards. Starts as: `false`. |
 | **Skip queue** | Tick to run right now instead of waiting behind other commands and colours. Starts as: `false`. |
 | **Extra settings** | Extra details for Lumia, one per line as name=value, like username=%user%. Lumia can use them in its own texts as {{name}}. |
 
@@ -85,7 +85,7 @@ Changes your Lumia Stream lights to a colour. Good for a quick flash when someth
 | **Transition (ms)** | How long the fade into the colour takes, in milliseconds. Leave empty to use Lumia's usual (0, instant). |
 | **Reset to default instead** | Tick to put the lights back to normal instead. All other colour settings are ignored. Starts as: `false`. |
 | **Lights** | Only change these lights: type their names separated by commas. Leave empty for all your lights. |
-| **Make it the new default state** | Tick to keep this look until you change it, instead of going back to normal afterwards. Starts as: `false`. |
+| **Keep this look afterwards** | Tick to keep this look until you change it, instead of going back to normal afterwards. Starts as: `false`. |
 | **Skip queue** | Tick to run right now instead of waiting behind other commands and colours. Starts as: `false`. |
 
 <small>Type id: `lumia.setColor`</small>

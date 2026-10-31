@@ -177,8 +177,8 @@ internal static class ReferencePages
                 {
                     var text = ActionHelp.Field(item.Help, d) ?? "";
                     if (d.Kind == ParameterKind.Choice && d.Choices.Count > 0)
-                        text += (text.Length > 0 ? " " : "") + "Options: " + string.Join(", ", d.Choices) + ".";
-                    if (d.DefaultValue.Length > 0 && d.Kind != ParameterKind.Code) text += $" Starts as: `{d.DefaultValue}`.";
+                        text += (text.Length > 0 ? " " : "") + "Options: " + string.Join(", ", d.Choices.Select(d.ChoiceLabel)) + ".";
+                    if (d.DefaultValue.Length > 0 && d.Kind != ParameterKind.Code) text += $" Starts as: `{d.ChoiceLabel(d.DefaultValue)}`.";
                     sb.Append($"| **{Cell(d.Label)}** | {Cell(text.Trim())} |\n");
                 }
                 sb.Append('\n');

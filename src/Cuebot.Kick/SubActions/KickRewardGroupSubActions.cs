@@ -72,7 +72,7 @@ internal sealed class ResetRewardCounterSubAction(KickService kick, bool users) 
 internal sealed class SetRewardGroupStateSubAction(KickService kick, bool paused) : KickSubAction(kick)
 {
     public override string TypeId => paused ? "kick.setRewardGroupPaused" : "kick.setRewardGroupEnabled";
-    public override string DisplayName => paused ? "Reward group: set paused state (rewardsChanged)" : "Reward group: set enabled state (rewardsChanged)";
+    public override string DisplayName => paused ? "Reward group: set paused state" : "Reward group: set enabled state";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
         [KickRewardGroups.Group(), paused ? KickRewardGroups.State("Paused", "Unpaused") : KickRewardGroups.State("Enabled", "Disabled")];
 
@@ -101,7 +101,7 @@ internal sealed class SetRewardGroupStateSubAction(KickService kick, bool paused
 internal sealed class ConfigureRewardsSubAction(KickService kick) : KickSubAction(kick)
 {
     public override string TypeId => "kick.configureRewards";
-    public override string DisplayName => "Configure rewards (rewardsChanged)";
+    public override string DisplayName => "Configure rewards";
     public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("enable", "Enable", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },

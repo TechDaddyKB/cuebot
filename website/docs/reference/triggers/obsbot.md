@@ -67,7 +67,7 @@ Runs when the camera turns or tilts to a new position.
 
 <small>Type id: `obsbot.gimbalMoved`</small>
 
-## OSC message
+## Other OBSBOT message (advanced)
 
 For experts: runs when OBSBOT sends a message that Cuebot does not turn into one of the other triggers. Useful for commands this app has no trigger for.
 

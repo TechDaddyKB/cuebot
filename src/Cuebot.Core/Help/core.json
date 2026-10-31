@@ -845,7 +845,7 @@
       "fields": {
         "code": "The C# program. It runs inside Cuebot with full access to your computer, so only use code you trust. Beginners: use the normal steps instead.",
         "timeoutSeconds": "Stop the code after this many seconds so it cannot get stuck. 0 = no limit.",
-        "name": "Optional. A name so other code or \"Execute C# method\" can call a method of this code. Most people leave it empty.",
+        "name": "Optional. A name so other code or \"Run C# method\" can call a method of this code. Most people leave it empty.",
         "description": "Optional note for yourself about what this code does.",
         "precompile": "Tick to prepare the code when Cuebot starts instead of the first time it runs. For advanced users only.",
         "delayedStart": "With \"Precompile\": wait until Cuebot has finished starting and is connected before preparing the code.",
@@ -875,10 +875,10 @@
       "variables": {}
     },
     "core.jsonCount": {
-      "description": "Counts the items in a list inside JSON, a common way web services send data. Mostly used after an HTTP request. Beginners rarely need it.",
+      "description": "Counts the items in a list inside JSON, a common way web services send data. Mostly used after a \"Call a web address\" step. Beginners rarely need it.",
       "fields": {
         "argument": "The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead.",
-        "json": "The JSON text itself, like [1,2,3]. Ignored when the first box (Read from argument) is filled in.",
+        "json": "The JSON text itself, like [1,2,3]. Ignored when the first box (Read from variable) is filled in.",
         "path": "Where the list is inside the data. $ = the whole thing. $.data = the list called data.",
         "variable": "The variable that receives the count, without % signs. The default jsonCount means you use %jsonCount%."
       },
@@ -888,10 +888,10 @@
       }
     },
     "core.jsonGetValue": {
-      "description": "Picks one value out of JSON, a common way web services send data, and saves it in a variable. Mostly used after an HTTP request. Beginners rarely need it.",
+      "description": "Picks one value out of JSON, a common way web services send data, and saves it in a variable. Mostly used after a \"Call a web address\" step. Beginners rarely need it.",
       "fields": {
         "argument": "The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead.",
-        "json": "The JSON text itself, like {\"name\":\"Kris\"}. Ignored when the first box (Read from argument) is filled in.",
+        "json": "The JSON text itself, like {\"name\":\"Kris\"}. Ignored when the first box (Read from variable) is filled in.",
         "path": "Where the value is inside the data. $.name = the item called name. $.data[0].name = the name of the first entry in data.",
         "variable": "The variable that receives the value, without % signs. The default jsonValue means you use %jsonValue%."
       },

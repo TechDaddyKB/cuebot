@@ -8,8 +8,8 @@ Tells IFTTT that something happened, with several named pieces of information. I
 | Setting | What to put in |
 | --- | --- |
 | **Event name** | The event name you chose in your IFTTT applet, like "stream_alert". |
-| **Arguments (one name=value per line)** | One per line, written as name=value, like score=10. IFTTT gets the first five as Argument1Name, Argument1Value and so on, and all of them together as ArgumentsJson. |
-| **Webhooks key** | Your IFTTT Webhooks key. Leave empty to use the key already saved in Cuebot. Find it on ifttt.com/maker_webhooks. |
+| **Values (one name=value per line)** | One per line, written as name=value, like score=10. IFTTT gets the first five as Argument1Name, Argument1Value and so on, and all of them together as ArgumentsJson. |
+| **IFTTT Webhooks key** | Your IFTTT Webhooks key. Leave empty to use the key already saved in Cuebot. Find it on ifttt.com/maker_webhooks. |
 
 <small>Type id: `ifttt.notificationAdvanced`</small>
 
@@ -21,6 +21,6 @@ Tells IFTTT that something happened, with one line of text. IFTTT can then do an
 | --- | --- |
 | **Event name** | The event name you chose in your IFTTT applet, like "stream_alert". |
 | **Text** | The text to send. Your IFTTT applet receives it as Value1. |
-| **Webhooks key** | Your IFTTT Webhooks key. Leave empty to use the key already saved in Cuebot. Find it on ifttt.com/maker_webhooks. |
+| **IFTTT Webhooks key** | Your IFTTT Webhooks key. Leave empty to use the key already saved in Cuebot. Find it on ifttt.com/maker_webhooks. |
 
 <small>Type id: `ifttt.notificationBasic`</small>

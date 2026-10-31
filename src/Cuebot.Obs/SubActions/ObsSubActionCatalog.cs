@@ -89,7 +89,7 @@ public static class ObsSubActionCatalog
             }),
 
             // ---- Media ----
-            Make("obs.mediaControl", "Set media state", [p.Input("Media source"), p.Choice<MediaCommand>("command", "Action", MediaCommand.Play)],
+            Make("obs.mediaControl", "Play / pause media", [p.Input("Media source"), p.Choice<MediaCommand>("command", "Action", MediaCommand.Play)],
                 (c, _, v, ct) => c.MediaControlAsync(Require(v["input"], "Media source"), ParseChoice<MediaCommand>(v["command"], "Action"), ct)),
             Make("obs.mediaSeek", "Seek media", [p.Input("Media source"), p.Choice<SeekMode>("mode", "Mode", SeekMode.Absolute),
                  new("milliseconds", "Milliseconds") { DefaultValue = "0", Help = "Position, or offset (may be negative)" }],
@@ -120,7 +120,7 @@ public static class ObsSubActionCatalog
                 (c, _, v, ct) => c.SetTransitionDurationAsync(v.GetInt("milliseconds", 300), ct)),
             Make("obs.studioMode", "Set studio mode", [p.Choice<EnableMode>("state", "State", EnableMode.Toggle)],
                 (c, _, v, ct) => c.SetStudioModeAsync(ParseChoice<EnableMode>(v["state"], "State"), ct)),
-            Make("obs.studioTransition", "Studio mode transition", [], (c, _, _, ct) => c.TriggerStudioTransitionAsync(ct)),
+            Make("obs.studioTransition", "Send preview scene live", [], (c, _, _, ct) => c.TriggerStudioTransitionAsync(ct)),
 
             // ---- Outputs ----
             Make("obs.streaming", "Streaming", [p.Choice<OutputCommand>("mode", "Mode", OutputCommand.Start)],
@@ -150,7 +150,7 @@ public static class ObsSubActionCatalog
                         ctx.Args["success"] = false;
                     }
                 }),
-            Make("obs.getOutputState", "Get output state",
+            Make("obs.getOutputState", "Check if stream/recording is running",
                 [p.Choice<ObsOutputKind>("output", "Output", ObsOutputKind.Stream), new("outputName", "Output name") { Help = "Only for Other" }],
                 async (c, ctx, v, ct) =>
                 {
@@ -174,7 +174,7 @@ public static class ObsSubActionCatalog
                 (c, _, v, ct) => c.SetSceneCollectionAsync(Require(v["sceneCollection"], "Scene collection"), ct)),
             Make("obs.triggerHotkey", "Trigger hotkey", [new("hotkey", "Hotkey name") { Help = "e.g. OBSBasic.StartStreaming (see GetHotkeyList)" }],
                 (c, _, v, ct) => c.TriggerHotkeyAsync(Require(v["hotkey"], "Hotkey name"), ct)),
-            Make("obs.getStats", "Get stats", [], async (c, ctx, _, ct) =>
+            Make("obs.getStats", "Get performance stats", [], async (c, ctx, _, ct) =>
             {
                 StoreObject(ctx, "obs", await c.GetStatsAsync(ct).ConfigureAwait(false));
                 try
@@ -191,20 +191,20 @@ public static class ObsSubActionCatalog
             {
                 foreach (var (key, value) in await c.GetStatusAsync(ct).ConfigureAwait(false)) ctx.Args[key] = value;
             }),
-            Make("obs.rawRequest", "Raw request",
+            Make("obs.rawRequest", "Send OBS command (advanced)",
                 [new("requestType", "Request type") { Help = "An obs-websocket 5 request type, e.g. GetStats" },
                  new("requestData", "Request data (JSON)", ParameterKind.Multiline) { Help = "A JSON object; leave empty for none" },
-                 p.Result("obsResult", "Store response in argument")],
+                 p.Result("obsResult", "Save the reply in variable")],
                 async (c, ctx, v, ct) =>
                 {
                     var response = await c.RequestAsync(Require(v["requestType"], "Request type"), RawRequestSubAction.ParseRequestData(v["requestData"]), ct)
                         .ConfigureAwait(false);
                     Store(ctx, v["resultArgument"], response.GetRawText());
                 }),
-            Make("obs.rawBatch", "Raw request batch",
+            Make("obs.rawBatch", "Send several OBS commands (advanced)",
                 [new("requests", "Requests (JSON array)", ParameterKind.Multiline) { Help = """[{"requestType":"GetVersion"},{"requestType":"SetCurrentProgramScene","requestData":{"sceneName":"Main"}}]""" },
                  new("haltOnFailure", "Stop at the first failure", ParameterKind.Boolean) { DefaultValue = "false" },
-                 p.Result("obsResult", "Store results in argument")],
+                 p.Result("obsResult", "Save the results in variable")],
                 async (c, ctx, v, ct) =>
                 {
                     var results = await c.RequestBatchAsync(RawRequestSubAction.ParseBatch(v["requests"]), v.GetBool("haltOnFailure"), ct)
@@ -278,7 +278,7 @@ public static class ObsSubActionCatalog
 
         public ParameterDescriptor Input(string label = "Input") => new("input", label) { Suggestions = () => obs.All(c => c.Inputs) };
 
-        public ParameterDescriptor Result(string defaultArgument, string label = "Store result in argument") =>
+        public ParameterDescriptor Result(string defaultArgument, string label = "Save the answer in variable") =>
             new("resultArgument", label) { DefaultValue = defaultArgument };
 
         public ParameterDescriptor Overlay() =>

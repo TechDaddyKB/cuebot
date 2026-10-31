@@ -101,7 +101,7 @@ public sealed class UserInGroupSubAction(GroupStore groups) : GroupUserSubAction
     public override IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
         .. CommonParameters(),
-        new("argument", "Store result in argument") { DefaultValue = "inGroup" },
+        new("argument", "Save the answer in variable") { DefaultValue = "inGroup" },
     ];
     private IReadOnlyList<ParameterDescriptor>? _parameters;
 

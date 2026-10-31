@@ -162,7 +162,7 @@ public sealed class GetCommandsSubAction(CommandStore store, CommandService? ser
     public override string DisplayName => "Get commands";
     public override IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
-        new("argument", "Store in argument") { DefaultValue = "commands", Help = "Also sets %<argument>List% and %<argument>Count%" },
+        new("argument", "Save in variable") { DefaultValue = "commands", Help = "Also sets %<argument>List% and %<argument>Count%" },
         new("group", "Only this group") { Suggestions = () => Store.Groups, Help = "Leave empty (or All) for every group" },
         new("show", "List", ParameterKind.Choice) { DefaultValue = "First alias", Choices = ["First alias", "All aliases", "Names"] },
         new("separator", "Separator") { DefaultValue = ", " },

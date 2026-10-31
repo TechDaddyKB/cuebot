@@ -36,6 +36,11 @@ internal static class TwitchSubActions
 {
     private static readonly IReadOnlyList<string> SenderChoices = ["Default", "Bot", "Broadcaster"];
 
+    private static readonly Dictionary<string, string> AdLengths = new()
+    {
+        ["30"] = "30 seconds", ["60"] = "1 minute", ["90"] = "1½ minutes", ["120"] = "2 minutes", ["150"] = "2½ minutes", ["180"] = "3 minutes",
+    };
+
     private static ParameterDescriptor UserParam(string label = "User") =>
         new("user", label) { Help = "Login name (a leading @ is fine) or id:12345. Leave empty for the user who triggered the action." };
 
@@ -73,12 +78,12 @@ internal static class TwitchSubActions
             (api, _, p, ct) => api.SendAnnouncementAsync(p["message"], p["color"], ct)),
         new("twitch.deleteMessage", "Delete chat message", [new("messageId", "Message id") { DefaultValue = "%messageId%" }],
             (api, _, p, ct) => api.DeleteMessageAsync(p["messageId"], ct)),
-        new("twitch.clearChat", "Clear chat (clearSuccess)", [], async (api, c, _, ct) =>
+        new("twitch.clearChat", "Clear chat", [], async (api, c, _, ct) =>
         {
             await api.ClearChatAsync(ct).ConfigureAwait(false);
             c.Args["clearSuccess"] = true;
         }),
-        new("twitch.getPresentViewers", "Get present viewers (presentViewerCount, presentViewers)", [],
+        new("twitch.getPresentViewers", "Get people in chat", [],
             async (api, c, _, ct) =>
             {
                 var chatters = await api.GetChattersAsync(ct).ConfigureAwait(false);
@@ -113,13 +118,13 @@ internal static class TwitchSubActions
             }),
 
         // ---------------------------------------------------------------- channel
-        new("twitch.setTitle", "Set channel title (titleSuccess)", [new("title", "Title")],
+        new("twitch.setTitle", "Set channel title", [new("title", "Title")],
             async (api, c, p, ct) =>
             {
                 await api.UpdateChannelAsync(new ChannelUpdate { Title = p["title"] }, ct).ConfigureAwait(false);
                 c.Args["titleSuccess"] = true;
             }),
-        new("twitch.setGame", "Set channel category (gameId, gameName, gameSuccess, gameBoxArt)", [new("game", "Category / game name")],
+        new("twitch.setGame", "Set channel category", [new("game", "Category / game name")],
             async (api, c, p, ct) =>
             {
                 var category = await api.FindCategoryAsync(p["game"], ct).ConfigureAwait(false)
@@ -150,6 +155,11 @@ internal static class TwitchSubActions
                 {
                     DefaultValue = "ProfanityVulgarity",
                     Choices = ["DrugsIntoxication", "SexualThemes", "ViolentGraphic", "Gambling", "ProfanityVulgarity"],
+                    ChoiceLabels = new Dictionary<string, string>
+                    {
+                        ["DrugsIntoxication"] = "Drugs, smoking or alcohol", ["SexualThemes"] = "Sexual themes",
+                        ["ViolentGraphic"] = "Violent and graphic content", ["Gambling"] = "Gambling", ["ProfanityVulgarity"] = "Strong language",
+                    },
                 },
                 Bool("enabled", "Enabled"),
             ],
@@ -206,7 +216,7 @@ internal static class TwitchSubActions
                 c.Args["streamStartedAt"] = stream?.StartedAt?.ToString("o", CultureInfo.InvariantCulture) ?? "";
                 c.Args["uptimeSeconds"] = stream?.StartedAt is { } started ? (long)(DateTimeOffset.UtcNow - started).TotalSeconds : 0L;
             }),
-        new("twitch.createMarker", "Create stream marker (markerId, markerPosition)", [new("description", "Description")],
+        new("twitch.createMarker", "Create stream marker", [new("description", "Description")],
             async (api, c, p, ct) =>
             {
                 var marker = await api.CreateStreamMarkerAsync(p["description"], ct).ConfigureAwait(false);
@@ -218,7 +228,7 @@ internal static class TwitchSubActions
                 c.Args["streamMarkerDescription"] = marker.Description.Length > 0 ? marker.Description : p["description"];
                 c.Args["streamMarkerPosition"] = marker.PositionSeconds;
             }),
-        new("twitch.createClip", "Create clip (clipId, clipUrl, clipEditUrl)", [Bool("hasDelay", "Account for stream delay", false)],
+        new("twitch.createClip", "Create clip", [Bool("hasDelay", "Account for stream delay", false)],
             async (api, c, p, ct) =>
             {
                 var clip = await api.CreateClipAsync(p.GetBool("hasDelay"), ct).ConfigureAwait(false);
@@ -252,7 +262,7 @@ internal static class TwitchSubActions
 
         // ---------------------------------------------------------------- ads
         new("twitch.runAd", "Run commercial",
-            [new("length", "Length (seconds)", ParameterKind.Choice) { DefaultValue = "30", Choices = ["30", "60", "90", "120", "150", "180"] }],
+            [new("length", "Length (seconds)", ParameterKind.Choice) { DefaultValue = "30", Choices = ["30", "60", "90", "120", "150", "180"], ChoiceLabels = AdLengths }],
             async (api, c, p, ct) =>
             {
                 var ad = await api.RunCommercialAsync(p.GetInt("length", 30), ct).ConfigureAwait(false);
@@ -269,14 +279,14 @@ internal static class TwitchSubActions
             async (api, c, _, ct) => WriteAdSchedule(c, await api.GetAdScheduleAsync(ct).ConfigureAwait(false))),
 
         // ---------------------------------------------------------------- raids and shoutouts
-        new("twitch.startRaid", "Start raid (startRaidSuccess)", [UserParam("Channel to raid")],
+        new("twitch.startRaid", "Start raid", [UserParam("Channel to raid")],
             async (api, c, p, ct) =>
             {
                 await api.StartRaidAsync(UserOrTrigger(c, p["user"]), ct).ConfigureAwait(false);
                 c.Args["startRaidSuccess"] = true;
             }),
         new("twitch.cancelRaid", "Cancel raid", [], (api, _, _, ct) => api.CancelRaidAsync(ct)),
-        new("twitch.sendShoutout", "Send shoutout (shoutoutSuccess)", [UserParam("Channel")],
+        new("twitch.sendShoutout", "Send shoutout", [UserParam("Channel")],
             async (api, c, p, ct) =>
             {
                 await api.SendShoutoutAsync(UserOrTrigger(c, p["user"]), ct).ConfigureAwait(false);
@@ -284,19 +294,19 @@ internal static class TwitchSubActions
             }),
 
         // ---------------------------------------------------------------- moderation
-        new("twitch.ban", "Ban user (bannedUser, bannedUserName, bannedUserId, banResult)", [UserParam(), new("reason", "Reason")],
+        new("twitch.ban", "Ban user", [UserParam(), new("reason", "Reason")],
             (api, c, p, ct) => ModerateAsync(api, c, p, "bannedUser", "banResult", (id, t) => api.BanAsync(id, p["reason"], t), ct)),
-        new("twitch.timeout", "Timeout user (timedOutUser, timedOutUserName, timedOutUserId, timeoutResult)",
+        new("twitch.timeout", "Timeout user",
             [UserParam(), Number("duration", "Duration (seconds)", "600", "1 second to 14 days"), new("reason", "Reason")],
             (api, c, p, ct) => ModerateAsync(api, c, p, "timedOutUser", "timeoutResult",
                 (id, t) => api.TimeoutAsync(id, p.GetInt("duration", 600), p["reason"], t), ct)),
-        new("twitch.unban", "Unban user (unbannedUser, unbannedUserName, unbannedUserId, unbanResult)", [UserParam()],
+        new("twitch.unban", "Unban user", [UserParam()],
             (api, c, p, ct) => ModerateAsync(api, c, p, "unbannedUser", "unbanResult", api.UnbanAsync, ct)),
-        new("twitch.untimeout", "Remove timeout (unTimedOutUser, unTimedOutUserName, unTimedOutUserId, unTimedOutResult)", [UserParam()],
+        new("twitch.untimeout", "Remove timeout", [UserParam()],
             (api, c, p, ct) => ModerateAsync(api, c, p, "unTimedOutUser", "unTimedOutResult", api.UnbanAsync, ct)),
-        new("twitch.warn", "Warn user (warnedUser, warnedUserName, warnedUserId, warnedResult)", [UserParam(), new("reason", "Reason")],
+        new("twitch.warn", "Warn user", [UserParam(), new("reason", "Reason")],
             (api, c, p, ct) => ModerateAsync(api, c, p, "warnedUser", "warnedResult", (id, t) => api.WarnAsync(id, p["reason"], t), ct)),
-        new("twitch.addSuspiciousStatus", "Add suspicious status (suspiciousUser, suspiciousUserId, suspiciousStatus, suspiciousStatusResult)",
+        new("twitch.addSuspiciousStatus", "Add suspicious status",
             [
                 UserParam(),
                 new("status", "Status", ParameterKind.Choice)
@@ -314,7 +324,7 @@ internal static class TwitchSubActions
                 c.Args["suspiciousStatus"] = status?.Status is { Length: > 0 } s ? s : restricted ? "RESTRICTED" : "ACTIVE_MONITORING";
                 c.Args["suspiciousTypes"] = string.Join(",", status?.Types ?? []);
             }),
-        new("twitch.removeSuspiciousStatus", "Remove suspicious status (suspiciousUser, suspiciousUserId, suspiciousStatusResult)", [UserParam()],
+        new("twitch.removeSuspiciousStatus", "Remove suspicious status", [UserParam()],
             async (api, c, p, ct) =>
             {
                 await ModerateAsync(api, c, p, "suspiciousUser", "suspiciousStatusResult",
@@ -332,7 +342,7 @@ internal static class TwitchSubActions
         new("twitch.emoteOnly", "Chat mode: emote-only", [Bool("enabled", "Enabled")],
             (api, _, p, ct) => api.UpdateChatSettingsAsync(new ChatSettingsUpdate { EmoteMode = p.GetBool("enabled") }, ct)),
         new("twitch.followerMode", "Chat mode: follower-only",
-            [Bool("enabled", "Enabled"), Number("minutes", "Must follow for (minutes)", "0", "0 to 129600 (3 months)")],
+            [Bool("enabled", "Enabled"), Number("minutes", "Followed for at least (minutes)", "0", "0 to 129600 (3 months)")],
             (api, _, p, ct) => api.UpdateChatSettingsAsync(new ChatSettingsUpdate
             {
                 FollowerMode = p.GetBool("enabled"),
@@ -350,14 +360,14 @@ internal static class TwitchSubActions
             (api, _, p, ct) => api.UpdateChatSettingsAsync(new ChatSettingsUpdate { UniqueChatMode = p.GetBool("enabled") }, ct)),
         new("twitch.setShieldMode", "Set shield mode", [Bool("enabled", "Active")],
             (api, _, p, ct) => api.SetShieldModeAsync(p.GetBool("enabled"), ct)),
-        new("twitch.getShieldMode", "Get shield mode status (shieldModeActive)", [],
+        new("twitch.getShieldMode", "Get shield mode status", [],
             async (api, c, _, ct) =>
             {
                 var shield = await api.GetShieldModeAsync(ct).ConfigureAwait(false);
                 c.Args["shieldModeActive"] = shield.IsActive;
                 c.Args["shieldModeModerator"] = shield.ModeratorName;
             }),
-        new("twitch.addBlockedTerm", "Add blocked term (blockedTermId)", [new("term", "Term")],
+        new("twitch.addBlockedTerm", "Add blocked term", [new("term", "Term")],
             async (api, c, p, ct) => c.Args["blockedTermId"] = await api.AddBlockedTermAsync(p["term"], ct).ConfigureAwait(false)),
         new("twitch.resolveAutomod", "Approve or deny AutoMod message",
             [
@@ -367,7 +377,7 @@ internal static class TwitchSubActions
             (api, _, p, ct) => api.ResolveAutomodMessageAsync(p["messageId"].Trim(), p["decision"] == "Allow", ct)),
 
         // ---------------------------------------------------------------- polls
-        new("twitch.createPoll", "Create poll (pollId, success)",
+        new("twitch.createPoll", "Create poll",
             [
                 new("title", "Question"),
                 new("choices", "Choices", ParameterKind.Multiline) { Help = "One per line (2 to 5)" },
@@ -381,7 +391,10 @@ internal static class TwitchSubActions
                 c.Args["success"] = true;
             }),
         new("twitch.endPoll", "End active poll",
-            [new("mode", "How", ParameterKind.Choice) { DefaultValue = "Terminate", Choices = ["Terminate", "Archive"], Help = "Archive hides the results" }],
+            [new("mode", "How", ParameterKind.Choice) {
+                DefaultValue = "Terminate", Choices = ["Terminate", "Archive"], Help = "Archive hides the results",
+                ChoiceLabels = new Dictionary<string, string> { ["Terminate"] = "End and show results", ["Archive"] = "End and hide results" },
+            }],
             (api, _, p, ct) => api.EndPollAsync(p["mode"] == "Archive", null, ct)),
         new("twitch.getPoll", "Get latest poll (pollId, pollTitle, pollStatus, pollChoice0.., active, poll.*)", [],
             async (api, c, _, ct) =>
@@ -454,7 +467,7 @@ internal static class TwitchSubActions
             }),
 
         // ---------------------------------------------------------------- channel point rewards
-        new("twitch.createReward", "Create reward (createdRewardId)",
+        new("twitch.createReward", "Create reward",
             [
                 new("title", "Title"), Number("cost", "Cost", "100"), new("prompt", "Prompt"),
                 Bool("inputRequired", "User input required", false), Bool("enabled", "Enabled"),
@@ -543,13 +556,13 @@ internal static class TwitchSubActions
             async (api, c, p, ct) => api.Counters.ResetRewardCounter((await RewardAsync(api, c, p, ct).ConfigureAwait(false)).Id)),
         new("twitch.resetRewardUserCounters", "Reward: reset user counters", [RewardParam()],
             async (api, c, p, ct) => api.Counters.ResetRewardUserCounters((await RewardAsync(api, c, p, ct).ConfigureAwait(false)).Id)),
-        new("twitch.setRewardGroupEnabled", "Reward group: set enabled state (rewardsChanged)",
+        new("twitch.setRewardGroupEnabled", "Reward group: set enabled state",
             [GroupParam(), StateParam("Enabled", "Disabled")],
             (api, c, p, ct) => SetGroupStateAsync(api, c, p["group"], p["state"], r => r.IsEnabled, on => new RewardUpdate { IsEnabled = on }, ct)),
-        new("twitch.setRewardGroupPaused", "Reward group: set paused state (rewardsChanged)",
+        new("twitch.setRewardGroupPaused", "Reward group: set paused state",
             [GroupParam(), StateParam("Paused", "Unpaused")],
             (api, c, p, ct) => SetGroupStateAsync(api, c, p["group"], p["state"], r => r.IsPaused, on => new RewardUpdate { IsPaused = on }, ct)),
-        new("twitch.configureRewards", "Configure rewards (rewardsChanged)",
+        new("twitch.configureRewards", "Configure rewards",
             [
                 new("enable", "Enable", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },
                 new("disable", "Disable", ParameterKind.Multiline) { Help = "Reward titles, ids or group names, one per line" },
@@ -591,7 +604,7 @@ internal static class TwitchSubActions
                 Cuebot.Core.Variables.StreamerBotArgs.Placeholder(c.Args, "targetLastActive", default(DateTime));
                 Cuebot.Core.Variables.StreamerBotArgs.Placeholder(c.Args, "targetPreviousActive", default(DateTime));
             }),
-        new("twitch.getFollowAge", "Get follow age (isFollowing, followedAt, followAgeDays, followAge)", [UserParam()],
+        new("twitch.getFollowAge", "Get follow age", [UserParam()],
             async (api, c, p, ct) =>
             {
                 var follow = await api.GetFollowAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
@@ -602,7 +615,7 @@ internal static class TwitchSubActions
                 c.Args["followAge"] = follow is null ? "" : HumanizeAge(age);
                 if (follow is not null) WriteFollowAge(c, follow, DateTimeOffset.Now);
             }),
-        new("twitch.getSubStatus", "Get subscription status (isSubscribed, subTier, subIsGift, subGifter)", [UserParam()],
+        new("twitch.getSubStatus", "Get subscription status", [UserParam()],
             async (api, c, p, ct) =>
             {
                 var sub = await api.GetSubscriptionAsync(await UserIdAsync(api, c, p, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
@@ -611,7 +624,7 @@ internal static class TwitchSubActions
                 c.Args["subIsGift"] = sub?.IsGift ?? false;
                 c.Args["subGifter"] = sub?.GifterName ?? "";
             }),
-        new("twitch.getFollowerCount", "Get follower count (followerCount, latestFollower)", [],
+        new("twitch.getFollowerCount", "Get follower count", [],
             async (api, c, _, ct) =>
             {
                 var count = await api.GetFollowerCountAsync(ct).ConfigureAwait(false);
@@ -620,7 +633,7 @@ internal static class TwitchSubActions
                 c.Args["latestFollowerUserName"] = count.LatestUserLogin;
                 c.Args["latestFollowerUserId"] = count.LatestUserId;
             }),
-        new("twitch.getSubscriberCount", "Get subscriber count (subscriberCount, subPoints)", [],
+        new("twitch.getSubscriberCount", "Get subscriber count", [],
             async (api, c, _, ct) =>
             {
                 var count = await api.GetSubscriberCountAsync(ct).ConfigureAwait(false);
@@ -645,7 +658,7 @@ internal static class TwitchSubActions
                 WriteSubCounter(c, api.Counters.SubCounter);
                 return Task.CompletedTask;
             }),
-        new("twitch.setSubCounter", "Set sub counter (setResult)",
+        new("twitch.setSubCounter", "Set sub counter",
             [Number("count", "Count", "0"), new("rolloverCount", "Rollover count") { Help = "Leave empty to keep" }],
             (api, c, p, _) =>
             {
@@ -655,7 +668,7 @@ internal static class TwitchSubActions
                 if (valid) WriteSubCounter(c, api.Counters.SetSubCount(count, rollovers));
                 return Task.CompletedTask;
             }),
-        new("twitch.getPresentUser", "Get present user by index (presentUser, presentUserId, presentUserName, presentUsersCount)",
+        new("twitch.getPresentUser", "Get person in chat by number",
             [new("index", "Index") { DefaultValue = "0", Help = "0 is the first present viewer; a variable such as %randomNumber% works" }],
             async (api, c, p, ct) =>
             {
@@ -676,7 +689,7 @@ internal static class TwitchSubActions
                 c.Args["teams"] = string.Join(", ", teams.Select(t => t.DisplayName));
                 c.Args["teamName"] = teams.FirstOrDefault()?.DisplayName ?? "";
             }),
-        new("twitch.getBroadcasterInfo", "Add broadcaster info (broadcasterUser, broadcasterUserId, broadcasterType, botUser...)", [],
+        new("twitch.getBroadcasterInfo", "Get broadcaster info", [],
             async (api, c, _, ct) =>
             {
                 var (id, login) = api.Broadcaster;
@@ -702,7 +715,7 @@ internal static class TwitchSubActions
                 if (user?.CreatedAt is { } createdAt) c.Args["broadcasterCreatedAt"] = createdAt.LocalDateTime;
                 c.Args["broadcasterDescription"] = user?.Description ?? "";
             }),
-        new("twitch.getRandomUsers", "Add random present users (randomUser0.., randomUserCount)",
+        new("twitch.getRandomUsers", "Pick random viewers from chat",
             [Number("count", "How many", "1"), Bool("excludeBroadcaster", "Leave out the broadcaster and the bot")],
             async (api, c, p, ct) =>
             {
@@ -718,7 +731,7 @@ internal static class TwitchSubActions
                     c.Args[$"randomUserType{i}"] = "twitch";
                 }
             }),
-        new("twitch.getCharityCampaign", "Get charity campaign (charityName, charityCurrent, charityTarget)", [],
+        new("twitch.getCharityCampaign", "Get charity campaign", [],
             async (api, c, _, ct) =>
             {
                 var charity = await api.GetCharityCampaignAsync(ct).ConfigureAwait(false);
@@ -746,6 +759,11 @@ internal static class TwitchSubActions
                 new("layout", "Layout", ParameterKind.Choice)
                 {
                     DefaultValue = "Keep", Choices = ["Keep", "TILED_LAYOUT", "SCREENSHARE_LAYOUT", "HORIZONTAL_LAYOUT", "VERTICAL_LAYOUT"],
+                    ChoiceLabels = new Dictionary<string, string>
+                    {
+                        ["Keep"] = "Keep as it is", ["TILED_LAYOUT"] = "Tiled", ["SCREENSHARE_LAYOUT"] = "Screen share",
+                        ["HORIZONTAL_LAYOUT"] = "Side by side", ["VERTICAL_LAYOUT"] = "Stacked",
+                    },
                 },
                 Keep("moderatorSendLive", "Moderators can send guests live"),
                 Keep("browserSourceAudio", "Browser source audio"),
@@ -761,7 +779,7 @@ internal static class TwitchSubActions
             }, ct)),
         new("twitch.getGuestStarSession", "Guest Star: get session (guestStarSessionId, guestStarGuestCount, guestStarGuest0..)", [],
             async (api, c, _, ct) => WriteGuestStarSession(c, await api.GetGuestStarSessionAsync(ct).ConfigureAwait(false))),
-        new("twitch.createGuestStarSession", "Guest Star: create session (guestStarSessionId)", [],
+        new("twitch.createGuestStarSession", "Guest Star: create session", [],
             async (api, c, _, ct) => WriteGuestStarSession(c, await api.CreateGuestStarSessionAsync(ct).ConfigureAwait(false))),
         new("twitch.endGuestStarSession", "Guest Star: end session", [SessionParam()],
             (api, _, p, ct) => api.EndGuestStarSessionAsync(p["sessionId"], ct)),

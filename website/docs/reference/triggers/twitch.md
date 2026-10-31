@@ -220,49 +220,6 @@ Runs when Cuebot can no longer read your Twitch chat with your main account.
 
 <small>Type id: `twitch.broadcasterChatDisconnected`</small>
 
-## Broadcaster EventSub connected
-
-Runs when Cuebot connects to Twitch's live event feed for your main account. After this, alerts like follows can arrive.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The account's login name |
-| `%userName%` | The account's login name |
-| `%userId%` | The account's Twitch user number |
-
-<small>Type id: `twitch.broadcasterConnected`</small>
-
-## Broadcaster EventSub disconnected
-
-Runs when the connection to Twitch's live event feed for your main account is lost or closed.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The account's login name |
-| `%userName%` | The account's login name |
-| `%userId%` | The account's Twitch user number |
-| `%reason%` | Why it disconnected |
-
-<small>Type id: `twitch.broadcasterDisconnected`</small>
-
-## Broadcaster signed in
-
-Runs when you finish signing in to Twitch with your main account in Cuebot.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The account's login name |
-| `%userName%` | The account's login name |
-| `%userId%` | The account's Twitch user number |
-
-<small>Type id: `twitch.broadcasterAuthenticated`</small>
-
 ## Channel point reward
 
 Runs when a viewer spends channel points on one of your rewards. This is the main trigger for channel point rewards.
@@ -724,6 +681,44 @@ Runs when a viewer redeems one of your own custom power-ups (the ones you made a
 
 <small>Type id: `twitch.customPowerUpRedemption`</small>
 
+## Emote pyramid broken
+
+Runs when someone breaks a pyramid that was being built, by posting something that does not fit it.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The display name of the person whose pyramid was being built |
+| `%userName%` | Their lowercase Twitch login name |
+| `%emote%` | The emote or word used |
+| `%width%` | How wide it got before it broke |
+| `%brokenBy%` | The display name of the person who broke it |
+| `%totalPyramidsBroken%` | How many pyramids have been broken so far |
+
+<small>Type id: `twitch.pyramidBroken`</small>
+
+## Emote pyramid completed
+
+Runs when one viewer builds a full emote pyramid in chat, like 1, 2, 3 emotes then back down to 1. Good for a cheer or a small reward.
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum width** | How many emotes wide the top row must be. Example: 3 means 1-2-3-2-1. Pyramids smaller than this are ignored. Starts as: `3`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The display name of the builder |
+| `%userName%` | Their lowercase Twitch login name |
+| `%userId%` | Their Twitch user number |
+| `%emote%` | The emote or word used |
+| `%width%` | How wide the pyramid got |
+| `%totalPyramids%` | How many pyramids have been completed so far |
+
+<small>Type id: `twitch.pyramid`</small>
+
 ## Follow
 
 Runs when someone follows your Twitch channel. Great for a thank-you message or an on-screen alert.
@@ -739,7 +734,7 @@ Runs when someone follows your Twitch channel. Great for a thank-you message or 
 
 <small>Type id: `twitch.follow`</small>
 
-## Gift bomb (community gift)
+## Gift bundle (community gift)
 
 Runs when someone gifts a bundle of subscriptions at once (a community gift). Good for a big thank-you.
 
@@ -774,7 +769,7 @@ Runs when a viewer who got a gifted sub chooses to keep paying for it themselves
 
 <small>Type id: `twitch.giftPaidUpgrade`</small>
 
-## Gift subscription (each recipient)
+## Gift subscription (each receiver)
 
 Runs once for each person who receives a gifted subscription. Use it to greet the lucky receiver.
 
@@ -795,7 +790,7 @@ Runs once for each person who receives a gifted subscription. Use it to greet th
 
 <small>Type id: `twitch.subGift`</small>
 
-## Gift subscriptions
+## Gift subscriptions (whole gift)
 
 Runs once when someone gifts one or more subscriptions to the community. Use it to thank the gifter, not each person who got one.
 
@@ -1011,6 +1006,49 @@ Runs each time the hype train gets new contributions. This can happen often.
 
 <small>Type id: `twitch.hypeTrainUpdate`</small>
 
+## Main account connected to Twitch events
+
+Runs when Cuebot connects to Twitch's live event feed for your main account. After this, alerts like follows can arrive.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The account's login name |
+| `%userName%` | The account's login name |
+| `%userId%` | The account's Twitch user number |
+
+<small>Type id: `twitch.broadcasterConnected`</small>
+
+## Main account lost Twitch events
+
+Runs when the connection to Twitch's live event feed for your main account is lost or closed.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The account's login name |
+| `%userName%` | The account's login name |
+| `%userId%` | The account's Twitch user number |
+| `%reason%` | Why it disconnected |
+
+<small>Type id: `twitch.broadcasterDisconnected`</small>
+
+## Main account signed in
+
+Runs when you finish signing in to Twitch with your main account in Cuebot.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The account's login name |
+| `%userName%` | The account's login name |
+| `%userId%` | The account's Twitch user number |
+
+<small>Type id: `twitch.broadcasterAuthenticated`</small>
+
 ## Moderator added
 
 Runs when someone becomes a moderator of your channel.
@@ -1057,6 +1095,20 @@ Runs when one of your moderators reaches a moderator anniversary, shown in chat 
 
 <small>Type id: `twitch.modiversary`</small>
 
+## One person's messages wiped
+
+Runs when all the messages of one person are wiped from your chat (a ban or timeout does this).
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The display name of the person whose messages were wiped |
+| `%userName%` | The lowercase Twitch login name of the person whose messages were wiped |
+| `%userId%` | The Twitch user number of the person whose messages were wiped |
+
+<small>Type id: `twitch.userMessagesCleared`</small>
+
 ## Pay it forward
 
 Runs when a viewer gifts a sub to pay forward a sub that someone gifted to them.
@@ -1070,6 +1122,23 @@ Runs when a viewer gifts a sub to pay forward a sub that someone gifted to them.
 | `%gifterIsAnonymous%` | True if that gifter was anonymous |
 
 <small>Type id: `twitch.payItForward`</small>
+
+## People in chat (every few minutes)
+
+Runs every few minutes with the list of people who are in your chat right now. Needs the permission to read the chat list.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%count%` | How many people are in chat |
+| `%userLogins%` | Their login names in one list, separated by commas |
+| `%userIds%` | Their user numbers in one list |
+| `%isLive%` | True if you are live |
+| `%viewerCount%` | How many are watching |
+| `%title%` | Your stream title |
+
+<small>Type id: `twitch.presentViewers`</small>
 
 ## Permitted terms added
 
@@ -1356,23 +1425,6 @@ Runs each time bets come in on a running prediction. This can happen very often.
 
 <small>Type id: `twitch.predictionUpdated`</small>
 
-## Present viewers
-
-Runs every few minutes with the list of people who are in your chat right now. Needs the permission to read the chat list.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%count%` | How many people are in chat |
-| `%userLogins%` | Their login names in one list, separated by commas |
-| `%userIds%` | Their user numbers in one list |
-| `%isLive%` | True if you are live |
-| `%viewerCount%` | How many are watching |
-| `%title%` | Your stream title |
-
-<small>Type id: `twitch.presentViewers`</small>
-
 ## Prime paid upgrade
 
 Runs when a viewer changes their free Prime sub into a paid subscription.
@@ -1386,44 +1438,6 @@ Runs when a viewer changes their free Prime sub into a paid subscription.
 | `%tier%` | The paid level they chose: 1, 2 or 3 |
 
 <small>Type id: `twitch.primePaidUpgrade`</small>
-
-## Pyramid broken
-
-Runs when someone breaks a pyramid that was being built, by posting something that does not fit it.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The display name of the person whose pyramid was being built |
-| `%userName%` | Their lowercase Twitch login name |
-| `%emote%` | The emote or word used |
-| `%width%` | How wide it got before it broke |
-| `%brokenBy%` | The display name of the person who broke it |
-| `%totalPyramidsBroken%` | How many pyramids have been broken so far |
-
-<small>Type id: `twitch.pyramidBroken`</small>
-
-## Pyramid completed
-
-Runs when one viewer builds a full emote pyramid in chat, like 1, 2, 3 emotes then back down to 1. Good for a cheer or a small reward.
-
-| Setting | What to put in |
-| --- | --- |
-| **Minimum width** | How many emotes wide the top row must be. Example: 3 means 1-2-3-2-1. Pyramids smaller than this are ignored. Starts as: `3`. |
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The display name of the builder |
-| `%userName%` | Their lowercase Twitch login name |
-| `%userId%` | Their Twitch user number |
-| `%emote%` | The emote or word used |
-| `%width%` | How wide the pyramid got |
-| `%totalPyramids%` | How many pyramids have been completed so far |
-
-<small>Type id: `twitch.pyramid`</small>
 
 ## Raid
 
@@ -1444,6 +1458,20 @@ Runs when another streamer raids your channel and sends their viewers to you. Pe
 
 <small>Type id: `twitch.raid`</small>
 
+## Raid about to start (you)
+
+Runs when you start a raid from Cuebot, before it happens. Handy for a goodbye message to your chat.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The display name of the channel you are raiding |
+| `%userName%` | Their lowercase Twitch login name |
+| `%viewers%` | Roughly how many viewers go along (your last viewer count) |
+
+<small>Type id: `twitch.raidStart`</small>
+
 ## Raid cancelled
 
 Runs when a raid you started is cancelled before it happens.
@@ -1457,7 +1485,7 @@ Runs when a raid you started is cancelled before it happens.
 
 <small>Type id: `twitch.raidCancelled`</small>
 
-## Raid sent (outgoing)
+## Raid went through (you)
 
 Runs when your raid actually goes through and your viewers move to the other channel.
 
@@ -1470,20 +1498,6 @@ Runs when your raid actually goes through and your viewers move to the other cha
 | `%viewers%` | How many viewers went along |
 
 <small>Type id: `twitch.raidSend`</small>
-
-## Raid started (outgoing)
-
-Runs when you start a raid from Cuebot, before it happens. Handy for a goodbye message to your chat.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The display name of the channel you are raiding |
-| `%userName%` | Their lowercase Twitch login name |
-| `%viewers%` | Roughly how many viewers go along (your last viewer count) |
-
-<small>Type id: `twitch.raidStart`</small>
 
 ## Resubscription
 
@@ -2215,20 +2229,6 @@ Runs when a moderator sends a warning to a chatter.
 | `%chatRulesCited%` | The chat rules mentioned, separated by commas |
 
 <small>Type id: `twitch.userWarned`</small>
-
-## User's messages cleared
-
-Runs when all the messages of one person are wiped from your chat (a ban or timeout does this).
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | The display name of the person whose messages were wiped |
-| `%userName%` | The lowercase Twitch login name of the person whose messages were wiped |
-| `%userId%` | The Twitch user number of the person whose messages were wiped |
-
-<small>Type id: `twitch.userMessagesCleared`</small>
 
 ## Viewer count update
 

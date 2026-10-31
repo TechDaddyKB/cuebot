@@ -13,7 +13,7 @@ Gives points to a viewer, like a reward for a trivia win. Points are your channe
 | **Amount** | How many points to give, a whole number like 100. Starts as: `10`. |
 | **Currency** | The name of the points, like "Coins". Empty = your normal points. |
 | **Apply user/group multipliers** | Tick to give more (or less) points if the viewer or their group has a points multiplier. Starts as: `false`. |
-| **Also store balance in argument** | Optional. A variable to also receive their new total, without % signs, like userPoints. Empty = only %points%. |
+| **Also save the balance in variable** | Optional. A variable to also receive their new total, without % signs, like userPoints. Empty = only %points%. |
 
 **Variables it adds**
 
@@ -95,7 +95,7 @@ Checks if a viewer has enough points, then runs the Enough steps if yes or the N
 | **User id** | Optional. The viewer's id on their site. If given, it is used instead of the name. |
 | **Amount** | How many points are needed, a whole number like 100. Starts as: `0`. |
 | **Stop the action when not enough** | Tick to stop the whole action when they do not have enough. Untick to run the Not enough steps instead. Starts as: `true`. |
-| **Also store balance in argument** | A variable to also receive their total, without % signs. The default userPoints means you can use %userPoints%. Starts as: `userPoints`. |
+| **Also save the balance in variable** | A variable to also receive their total, without % signs. The default userPoints means you can use %userPoints%. Starts as: `userPoints`. |
 | **Currency** | The name of the points, like "Coins". Empty = your normal points. |
 
 Paths it can take: **Enough**, **Not enough**.
@@ -159,7 +159,7 @@ Reads how a points currency is set up (its name, symbol and so on) and saves it 
 | Setting | What to put in |
 | --- | --- |
 | **Currency** | The name of the points, like "Coins". Empty = your normal points. |
-| **Store in argument** | The start of the variable names, without % signs. The default pointsDefinition gives %pointsDefinition.name% and more. Starts as: `pointsDefinition`. |
+| **Save in variable** | The start of the variable names, without % signs. The default pointsDefinition gives %pointsDefinition.name% and more. Starts as: `pointsDefinition`. |
 
 **Variables it adds**
 
@@ -260,7 +260,7 @@ Sets one viewer's points back to zero. The viewer stays in the list. Use "Delete
 | **Platform** | The site the viewer is on, like twitch. Empty = the site of whoever started the action. |
 | **User name** | The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before. |
 | **User id** | Optional. The viewer's id on their site. If given, it is used instead of the name. |
-| **Also store balance in argument** | A variable to also receive their new total, without % signs. The default userPoints means you can use %userPoints%. Starts as: `userPoints`. |
+| **Also save the balance in variable** | A variable to also receive their new total, without % signs. The default userPoints means you can use %userPoints%. Starts as: `userPoints`. |
 | **Currency** | The name of the points, like "Coins". Empty = your normal points. |
 
 **Variables it adds**

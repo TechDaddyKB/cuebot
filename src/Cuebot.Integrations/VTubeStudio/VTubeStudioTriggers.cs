@@ -71,7 +71,7 @@ internal sealed class VTubeStudioTriggers(VTubeStudioService vts) : ITriggerProv
                  Steps.StateFilter()],
                 (e, s) => Steps.MatchesList(s["expressionName"], e.Text("expressionName"), e.Text("expressionFile")) && Steps.MatchesState(e, s, "active")),
             Steps.Trigger(Category, E.PostProcessingChanged, "Post-processing changed"),
-            Steps.Trigger(Category, E.Any, "Any VTube Studio event",
+            Steps.Trigger(Category, E.Any, "Any VTube Studio message (advanced)",
                 [new("eventName", "API event names") { Help = "e.g. ModelMovedEvent; comma-separated, empty for any" }],
                 (e, s) => Steps.MatchesList(s["eventName"], e.Text("eventName"))),
         ];

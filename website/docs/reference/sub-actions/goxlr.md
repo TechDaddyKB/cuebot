@@ -281,7 +281,7 @@ Sets the volume of a GoXLR channel, or raises or lowers it a bit. Handy for a 't
 | --- | --- |
 | **Channel** | The channel to change, like "Music". Choose from Mic, Line In, Console, System, Game, Chat, Sample, Music, Headphones, Mic Monitor or Line Out. |
 | **Volume (0-100)** | The volume from 0 (silent) to 100 (full). With Relative change ticked, this is how much to add; use a minus number like -10 to lower it. Starts as: `100`. |
-| **Relative change** | Tick to add the number to the current volume instead of setting it exactly. Untick to set the volume to exactly this. Starts as: `false`. |
+| **Add to current value** | Tick to add the number to the current volume instead of setting it exactly. Untick to set the volume to exactly this. Starts as: `false`. |
 
 **Variables it adds**
 

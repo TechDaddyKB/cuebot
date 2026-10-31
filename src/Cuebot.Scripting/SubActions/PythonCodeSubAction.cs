@@ -17,7 +17,7 @@ public sealed class PythonCodeSubAction(PythonScriptHost host) : ISubActionHandl
 
     public string TypeId => "code.python";
     public string Category => ScriptSubActions.Category;
-    public string DisplayName => "Execute Python code";
+    public string DisplayName => "Run Python code";
 
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [

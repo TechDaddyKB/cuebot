@@ -30,7 +30,7 @@ public sealed class CSharpCodeSubAction(CSharpScriptEngine engine) : ISubActionH
 
     public string TypeId => Id;
     public string Category => ScriptSubActions.Category;
-    public string DisplayName => "Execute C# code";
+    public string DisplayName => "Run C# code";
 
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
@@ -89,7 +89,7 @@ public sealed class CSharpMethodSubAction(CSharpScriptEngine engine, Func<IEnume
 
     public string TypeId => Id;
     public string Category => ScriptSubActions.Category;
-    public string DisplayName => "Execute C# method";
+    public string DisplayName => "Run C# method";
 
     public IReadOnlyList<ParameterDescriptor> Parameters =>
     [

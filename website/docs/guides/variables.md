@@ -51,7 +51,7 @@ Capital letters do not matter: `%User%` and `%user%` are the same.
 | `%random:1-6%` | A random whole number from 1 to 6 (a dice roll) |
 | `%lf%` | A new line |
 
-**Make your own** with the **Set argument** sub-action: give it a name and a value, then use it as `%name%` in later
+**Make your own** with the **Set variable** sub-action: give it a name and a value, then use it as `%name%` in later
 steps of the same run.
 
 !!! tip "A word that is not a variable stays as it is"
@@ -91,7 +91,7 @@ Settings of **Set global variable**:
 - **Auto type**: store `5` as a number and `true` as a yes/no value, instead of as text.
 
 To use a global's value inside a calculation or an **If**, you can also copy it into a run variable with **Get global
-variable** (it goes into **Store in argument**, then you use it as `%deaths%`).
+variable** (it goes into **Save in variable**, then you use it as `%deaths%`).
 
 ### Seeing and changing them
 

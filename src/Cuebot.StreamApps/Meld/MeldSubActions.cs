@@ -134,7 +134,7 @@ internal static class MeldSubActions
                     new("value", "Value") { Help = "JSON (true, 10, \"text\") or plain text" },
                 ],
                 (_, v, ct) => meld.SetPropertyAsync(ResolveItem(meld, Require(v["item"], "Item")), Require(v["property"], "Property"), ParseValue(v["value"]), ct)),
-            Make("meldstudio.sendCommand", "Send command",
+            Make("meldstudio.sendCommand", "Send Meld command (advanced)",
                 [new("command", "Command") { Help = "e.g. meld.screenshot, meld.recordClip, meld.replay.show", Suggestions = () => Commands }],
                 (_, v, ct) => meld.SendCommandAsync(Require(v["command"], "Command"), ct)),
             Make("meldstudio.getScenes", "Get scenes", [],

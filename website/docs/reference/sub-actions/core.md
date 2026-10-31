@@ -71,7 +71,7 @@ Finds out whether an action is turned on or off and keeps the answer in a variab
 | Setting | What to put in |
 | --- | --- |
 | **Action** | The action's name, exactly as in your Actions list. |
-| **Store in argument** | The variable that receives the answer (true = on, false = off), without % signs. The default is actionEnabled. Starts as: `actionEnabled`. |
+| **Save in variable** | The variable that receives the answer (true = on, false = off), without % signs. The default is actionEnabled. Starts as: `actionEnabled`. |
 
 **Variables it adds**
 
@@ -102,8 +102,8 @@ Sends a secret message to other actions that are waiting with "Wait for local si
 | Setting | What to put in |
 | --- | --- |
 | **Signal name** | A name you make up, like "go". The waiting step must use exactly the same name. |
-| **Include the action's arguments** | Tick to also hand over this action's %variables% to the action that wakes up. Starts as: `false`. |
-| **Arguments** | Extra variables to hand over, one per line as name=value. Example: winner=%user% |
+| **Include the action's variables** | Tick to also hand over this action's %variables% to the action that wakes up. Starts as: `false`. |
+| **Values to send** | Extra variables to hand over, one per line as name=value. Example: winner=%user% |
 | **Queue signal** | Tick to keep the signal if nobody is waiting yet, so the next wait gets it. Unticked, it is lost if nobody is waiting. Starts as: `false`. |
 
 **Variables it adds**
@@ -125,17 +125,6 @@ Turns every action in an action group on or off, or flips each one. Handy to swi
 
 <small>Type id: `core.setActionGroupState`</small>
 
-## Set action queue blocking state
-
-Switches the "blocking" option of an action queue. A blocking queue runs one action at a time, so the others wait their turn. The change is saved.
-
-| Setting | What to put in |
-| --- | --- |
-| **Queue** | The name of a queue from the Queues page. The Default queue cannot be changed. |
-| **Blocking** | Enable = blocking on (one at a time). Disable = off (actions may overlap). Toggle = switch to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
-
-<small>Type id: `core.setActionQueueBlocking`</small>
-
 ## Set action queue pause state
 
 Pauses or resumes an action queue. While paused, actions wait in line instead of running. Good for holding alerts back during a serious moment.
@@ -148,28 +137,16 @@ Pauses or resumes an action queue. While paused, actions wait in line instead of
 
 <small>Type id: `core.setActionQueuePause`</small>
 
-## Set action state
+## Set queue to one at a time
 
-Turns another action on or off, or flips it. A turned-off action ignores its triggers. Good for "only allow this while a giveaway runs". The change is saved.
-
-| Setting | What to put in |
-| --- | --- |
-| **Action** | The action's name, exactly as in your Actions list. |
-| **State** | Enable turns it on. Disable turns it off. Toggle switches it to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
-
-<small>Type id: `core.setActionState`</small>
-
-## Set sub-action state
-
-Turns one single step of an action on or off, without opening the editor. A turned-off step is skipped when the action runs. The change is saved.
+Switches the "blocking" option of an action queue. A blocking queue runs one action at a time, so the others wait their turn. The change is saved.
 
 | Setting | What to put in |
 | --- | --- |
-| **Action** | The action's name, exactly as in your Actions list. |
-| **Sub-action** | Which step: its number in the action (1 = the first; steps inside groups and branches are counted too) or its id. |
-| **State** | Enable turns it on. Disable turns it off. Toggle switches it to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
+| **Queue** | The name of a queue from the Queues page. The Default queue cannot be changed. |
+| **Run one at a time** | Enable = blocking on (one at a time). Disable = off (actions may overlap). Toggle = switch to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
 
-<small>Type id: `core.setSubActionState`</small>
+<small>Type id: `core.setActionQueueBlocking`</small>
 
 ## Set sub-action weight
 
@@ -183,7 +160,41 @@ Changes how likely a step is to be picked when an action or group runs one rando
 
 <small>Type id: `core.setSubActionWeight`</small>
 
-## Set trigger state
+## Trigger custom event
+
+Sends out a custom event with a name you choose. Any action with a matching "Custom code event" trigger runs. A way to start several actions at once.
+
+| Setting | What to put in |
+| --- | --- |
+| **Event name** | A name you make up, like "party-time". The action that should run needs a Custom code event trigger with the same name. |
+| **Use variables** | Tick to hand over this action's %variables% to the actions that start. Starts as: `false`. |
+
+<small>Type id: `core.triggerCustomEvent`</small>
+
+## Turn action on/off
+
+Turns another action on or off, or flips it. A turned-off action ignores its triggers. Good for "only allow this while a giveaway runs". The change is saved.
+
+| Setting | What to put in |
+| --- | --- |
+| **Action** | The action's name, exactly as in your Actions list. |
+| **State** | Enable turns it on. Disable turns it off. Toggle switches it to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
+
+<small>Type id: `core.setActionState`</small>
+
+## Turn sub-action on/off
+
+Turns one single step of an action on or off, without opening the editor. A turned-off step is skipped when the action runs. The change is saved.
+
+| Setting | What to put in |
+| --- | --- |
+| **Action** | The action's name, exactly as in your Actions list. |
+| **Sub-action** | Which step: its number in the action (1 = the first; steps inside groups and branches are counted too) or its id. |
+| **State** | Enable turns it on. Disable turns it off. Toggle switches it to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
+
+<small>Type id: `core.setSubActionState`</small>
+
+## Turn trigger on/off
 
 Turns one trigger of an action on or off, without opening the editor. A turned-off trigger no longer starts the action. The change is saved.
 
@@ -194,17 +205,6 @@ Turns one trigger of an action on or off, without opening the editor. A turned-o
 | **State** | Enable turns it on. Disable turns it off. Toggle switches it to the opposite. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
 
 <small>Type id: `core.setTriggerState`</small>
-
-## Trigger custom event
-
-Sends out a custom event with a name you choose. Any action with a matching "Custom code event" trigger runs. A way to start several actions at once.
-
-| Setting | What to put in |
-| --- | --- |
-| **Event name** | A name you make up, like "party-time". The action that should run needs a Custom code event trigger with the same name. |
-| **Use arguments** | Tick to hand over this action's %variables% to the actions that start. Starts as: `false`. |
-
-<small>Type id: `core.triggerCustomEvent`</small>
 
 ## Wait for local signal
 

@@ -56,8 +56,8 @@ internal sealed class SendRemoteSignalSubAction(RemoteHub hub) : ISubActionHandl
     [
         new("instance", "Instance") { Help = "Name of a remote instance; empty for every connected instance", Suggestions = () => hub.KnownNames },
         new("name", "Signal name"),
-        new("includeArgs", "Include the action's arguments", ParameterKind.Boolean) { DefaultValue = "false" },
-        new("arguments", "Arguments", ParameterKind.Multiline) { Help = "One key=value per line (supports %variables%); always sent" },
+        new("includeArgs", "Include the action's variables", ParameterKind.Boolean) { DefaultValue = "false" },
+        new("arguments", "Values to send", ParameterKind.Multiline) { Help = "One key=value per line (supports %variables%); always sent" },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

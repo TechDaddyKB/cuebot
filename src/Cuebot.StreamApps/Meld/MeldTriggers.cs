@@ -45,7 +45,7 @@ internal sealed class MeldTriggers(MeldStudioService meld) : ITriggerProvider
             Steps.Trigger(Category, E.RecordingStopped, "Recording stopped"),
             Steps.Trigger(Category, E.StreamingStarted, "Streaming started"),
             Steps.Trigger(Category, E.StreamingStopped, "Streaming stopped"),
-            Steps.Trigger(Category, E.Event, "Event",
+            Steps.Trigger(Category, E.Event, "Any Meld change (advanced)",
                 [new("event", "Event", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", .. E.EventNames] }],
                 (e, s) => s["event"] is "Any" or "" || string.Equals(s["event"], Kind(e), StringComparison.OrdinalIgnoreCase)),
             Steps.Trigger(Category, E.Event, "Layer visibility changed", [LayerFilter(), StateFilter("Visible", "Hidden")],

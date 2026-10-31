@@ -60,7 +60,7 @@ internal static class GoXlrSubActions
         [
             Make("goxlr.setVolume", "Set volume",
                 [Channel(), new("volume", "Volume (0-100)", ParameterKind.Number) { DefaultValue = "100" },
-                    new("relative", "Relative change", ParameterKind.Boolean) { DefaultValue = "false", Help = "Add the value (negative lowers) to the current volume" }],
+                    new("relative", "Add to current value", ParameterKind.Boolean) { DefaultValue = "false", Help = "Add the value (negative lowers) to the current volume" }],
                 async (ctx, v, ct) =>
                 {
                     var channel = GoXlrNames.Channel(Require(v["channel"], "Channel"));

@@ -263,7 +263,7 @@ public sealed class GetInputDialogSubAction(UserPromptService prompts) : ISubAct
 {
     public string TypeId => "core.getInputDialog";
     public string Category => Categories.Logic;
-    public string DisplayName => "Get input";
+    public string DisplayName => "Ask me for input (popup)";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("title", "Title") { DefaultValue = "Cuebot" },

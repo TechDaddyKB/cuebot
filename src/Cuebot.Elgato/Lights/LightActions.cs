@@ -35,10 +35,10 @@ internal sealed class LightTriggers(ElgatoLightsService lights) : ITriggerProvid
             T(E.DevicePoweredOn, "Device Powered On"),
             T(E.DeviceRemoved, "Device Removed"),
             T(E.DeviceRenamed, "Device Renamed"),
-            T(E.TemperatureChanged, "Temperature Changed"),
+            T(E.TemperatureChanged, "Colour Warmth Changed"),
             T(E.ColorChanged, "Color Changed (Light Strip)"),
-            T(E.DeviceOnline, "Device Reachable"),
-            T(E.DeviceOffline, "Device Unreachable"),
+            T(E.DeviceOnline, "Light Back Online"),
+            T(E.DeviceOffline, "Light Lost Connection"),
         ];
     }
 }
@@ -72,7 +72,7 @@ internal static class LightSubActions
             Make("elgato.controlCenter.setPowerState", "Set Power State",
                 [Device(), new("state", "State", ParameterKind.Choice) { DefaultValue = "Toggle", Choices = ["Off", "On", "Toggle"] }],
                 async (ctx, v, ct) => Store(ctx, await lights.SetPowerAsync(v["device"], ParseSwitch(v["state"]), ct).ConfigureAwait(false))),
-            Make("elgato.controlCenter.setTemperature", "Set Temperature",
+            Make("elgato.controlCenter.setTemperature", "Set Colour Warmth",
                 [
                     Device(),
                     new("temperature", "Temperature (K)", ParameterKind.Number)
@@ -91,9 +91,9 @@ internal static class LightSubActions
                 ],
                 async (ctx, v, ct) => Store(ctx, await lights.SetColorAsync(v["device"], Number(v["hue"], "Hue"),
                     Number(v["saturation"], "Saturation"), ct).ConfigureAwait(false))),
-            Make("elgato.controlCenter.identify", "Identify (blink)", [Device()],
+            Make("elgato.controlCenter.identify", "Make Light Blink", [Device()],
                 (_, v, ct) => lights.IdentifyAsync(v["device"], ct)),
-            Make("elgato.controlCenter.getDevice", "Get Device Info", [Device()], (ctx, v, _) =>
+            Make("elgato.controlCenter.getDevice", "Get Light Info", [Device()], (ctx, v, _) =>
             {
                 Store(ctx, lights.Resolve(v["device"]));
                 return Task.CompletedTask;

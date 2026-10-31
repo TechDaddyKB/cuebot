@@ -223,7 +223,7 @@ public class StreamerBotLogicTests : IDisposable
     {
         Assert.Equal("core.getInput", new GetInputSubAction().TypeId);
         Assert.Equal("Split text into inputs", new GetInputSubAction().DisplayName);
-        Assert.Equal("Get input", new GetInputDialogSubAction(new UserPromptService()).DisplayName);
+        Assert.Equal("Ask me for input (popup)", new GetInputDialogSubAction(new UserPromptService()).DisplayName);
     }
 
     [Fact]

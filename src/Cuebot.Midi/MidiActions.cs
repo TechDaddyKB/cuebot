@@ -93,7 +93,7 @@ internal static class MidiSubActions
                 Byte("value", "Value", "0-127 (MIDI byte 3)"),
             ], (_, v, ct) => midi.SendChannelAsync(v["device"], v["channel"],
                 c => MidiMessage.Channel(MidiCommand.ControlChange, c, Data(v["controller"], "Controller"), Data(v["value"], "Value")), ct)),
-            new MidiSubAction(GenericEvent, "Generic Event",
+            new MidiSubAction(GenericEvent, "Send any MIDI message (advanced)",
             [
                 Name(), Device(),
                 new ParameterDescriptor("command", "Command", ParameterKind.Choice) { DefaultValue = GenericCommands[0], Choices = GenericCommands },
@@ -107,7 +107,7 @@ internal static class MidiSubActions
                     : throw new ArgumentException($"Unknown command '{v["command"]}'. Use one of {string.Join(", ", GenericCommands)}.");
                 return midi.SendChannelAsync(v["device"], v["channel"], ch => Generic(command, ch, v["data1"], v["data2"]), ct);
             }),
-            new MidiSubAction(SysexEvent, "Sysex Event",
+            new MidiSubAction(SysexEvent, "Send SysEx message (advanced)",
             [
                 Name(), Device(),
                 new ParameterDescriptor("data", "Data", ParameterKind.Multiline)

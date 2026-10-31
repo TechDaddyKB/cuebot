@@ -94,7 +94,7 @@ internal sealed class KickUserInGroupSubAction(KickService kick, GroupStore grou
     public override IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
     [
         .. Common(),
-        new("argument", "Store result in argument") { DefaultValue = "inGroup" },
+        new("argument", "Save the answer in variable") { DefaultValue = "inGroup" },
     ];
     private IReadOnlyList<ParameterDescriptor>? _parameters;
 
@@ -127,7 +127,7 @@ internal sealed class KickAddRandomUsersSubAction(KickService kick, UserRegistry
         new("count", "How many", ParameterKind.Number) { DefaultValue = "1" },
         new("excludeBroadcaster", "Leave out the broadcaster and the bot", ParameterKind.Boolean) { DefaultValue = "true" },
         new("excludeCaller", "Leave out the triggering user", ParameterKind.Boolean) { DefaultValue = "false" },
-        new("prefix", "Argument prefix") { DefaultValue = "randomUser" },
+        new("prefix", "Variable name start") { DefaultValue = "randomUser" },
     ];
 
     public override Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

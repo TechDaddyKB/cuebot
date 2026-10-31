@@ -785,7 +785,7 @@
       "description": "Presses an OBS hotkey for you, by its internal name.",
       "fields": {
         "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
-        "hotkey": "The hotkey's internal OBS name, like \"OBSBasic.StartStreaming\". Advanced: look it up with the Raw request step using GetHotkeyList."
+        "hotkey": "The hotkey's internal OBS name, like \"OBSBasic.StartStreaming\". Advanced: look it up with the Send OBS command (advanced) step using GetHotkeyList."
       },
       "variables": {}
     },

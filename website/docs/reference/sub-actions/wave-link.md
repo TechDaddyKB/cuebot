@@ -262,7 +262,7 @@ Sets how loud a Wave Link channel is.
 
 <small>Type id: `wavelink.setChannelVolume`</small>
 
-## Set input Clipguard state
+## Set input Clipguard (stops crackling)
 
 Turns Clipguard on or off. It stops your microphone from crackling when you shout.
 
@@ -287,7 +287,7 @@ Sets the gain of an input device, which is how loudly it picks you up.
 | --- | --- |
 | **Input device** | The input device (microphone), by name or ID. Leave empty if you only have one. |
 | **Gain (0-100)** | Gain from 0 to 100, as a percent of the device's range. On Wave Link 1.x/2.x it is the microphone's own gain number instead. With Relative change ticked, how much to add. Starts as: `50`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -355,7 +355,7 @@ Sets the balance between your microphone and your PC sound that you hear in your
 | --- | --- |
 | **Input device** | The input device (microphone), by name or ID. Leave empty if you only have one. |
 | **Balance (0-100)** | From 0 to 100: 0 is only the microphone, 100 is only the PC sound, 50 is in the middle. With Relative change ticked, how much to add. Starts as: `50`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -406,7 +406,7 @@ Sets the volume of an output device (speakers or headphones) in Wave Link 3.
 | --- | --- |
 | **Output device** | The output device (speakers or headphones), by name or ID. |
 | **Volume (0-100)** | Volume from 0 (silent) to 100 (loudest). With Relative change ticked, this is how much to add. Starts as: `100`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 

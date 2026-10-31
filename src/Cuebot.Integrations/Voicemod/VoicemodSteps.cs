@@ -20,7 +20,7 @@ internal sealed class VoicemodTriggers(VoicemodService voicemod) : ITriggerProvi
         Trigger(Category, E.VoiceChangerToggled, "Voice changer toggled", [StateFilter()], (e, s) => MatchesState(e, s)),
         Trigger(Category, E.HearMyselfToggled, "Hear myself toggled", [StateFilter()], (e, s) => MatchesState(e, s)),
         Trigger(Category, E.BackgroundEffectsToggled, "Background effects toggled", [StateFilter()], (e, s) => MatchesState(e, s)),
-        Trigger(Category, E.MuteToggled, "Microphone mute toggled", [StateFilter("Muted")], (e, s) => MatchesState(e, s, "muted")),
+        Trigger(Category, E.MuteToggled, "Microphone mute toggled", [StateFilter("Muted", "Muted", "Unmuted")], (e, s) => MatchesState(e, s, "muted")),
         Trigger(Category, E.SoundboardChanged, "Soundboard changed"),
     ];
 }
@@ -44,7 +44,13 @@ internal static class VoicemodSubActions
                 ctx.Args["voicemodVoiceName"] = voice.DisplayName;
             }),
             Make("voicemod.selectRandomVoice", "Select random voice",
-                [new("mode", "From", ParameterKind.Choice) { DefaultValue = "AllVoices", Choices = ["AllVoices", "FreeVoices", "FavoriteVoices", "CustomVoices"] }],
+                [new("mode", "From", ParameterKind.Choice) {
+                    DefaultValue = "AllVoices", Choices = ["AllVoices", "FreeVoices", "FavoriteVoices", "CustomVoices"],
+                    ChoiceLabels = new Dictionary<string, string>
+                    {
+                        ["AllVoices"] = "All voices", ["FreeVoices"] = "Free voices", ["FavoriteVoices"] = "Favourite voices", ["CustomVoices"] = "My custom voices",
+                    },
+                }],
                 (_, v, ct) => voicemod.SelectRandomVoiceAsync(v["mode"], ct)),
             Make("voicemod.getCurrentVoice", "Get current voice", [], async (ctx, _, ct) =>
             {
@@ -65,11 +71,11 @@ internal static class VoicemodSubActions
                 }),
             Make("voicemod.setVoiceChanger", "Set voice changer state", [Switch()], async (ctx, v, ct) =>
                 ctx.Args["voicemodVoiceChanger"] = await voicemod.SetSwitchAsync(VoicemodSwitch.VoiceChanger, ParseSwitch(v["state"]), ct).ConfigureAwait(false)),
-            Make("voicemod.setHearMyself", "Set hear my voice state", [Switch()], async (ctx, v, ct) =>
+            Make("voicemod.setHearMyself", "Hear myself on/off", [Switch()], async (ctx, v, ct) =>
                 ctx.Args["voicemodHearMyself"] = await voicemod.SetSwitchAsync(VoicemodSwitch.HearMyself, ParseSwitch(v["state"]), ct).ConfigureAwait(false)),
             Make("voicemod.setBackgroundEffects", "Set background effect state", [Switch()], async (ctx, v, ct) =>
                 ctx.Args["voicemodBackgroundEffects"] = await voicemod.SetSwitchAsync(VoicemodSwitch.BackgroundEffects, ParseSwitch(v["state"]), ct).ConfigureAwait(false)),
-            Make("voicemod.setMute", "Set microphone mute state", [Switch("state", "Muted")], async (ctx, v, ct) =>
+            Make("voicemod.setMute", "Set microphone mute state", [Switch("state", "Microphone", onLabel: "Mute", offLabel: "Unmute")], async (ctx, v, ct) =>
                 ctx.Args["voicemodMuted"] = await voicemod.SetSwitchAsync(VoicemodSwitch.MuteMic, ParseSwitch(v["state"]), ct).ConfigureAwait(false)),
             Make("voicemod.playSound", "Play sound", [Sound()], async (ctx, v, ct) =>
             {

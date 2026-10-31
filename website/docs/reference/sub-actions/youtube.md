@@ -28,7 +28,7 @@ Makes someone a moderator of your YouTube live chat. Needs a live stream.
 
 <small>Type id: `youtube.addModerator`</small>
 
-## Ban user (bannedUser, bannedUserName, bannedUserId, banResult)
+## Ban user
 
 Bans someone from your YouTube live chat for good. Needs a live stream.
 
@@ -177,7 +177,7 @@ Changes the category of your YouTube stream (the kind of video, like Gaming).
 
 | Setting | What to put in |
 | --- | --- |
-| **Category id** | YouTube's category number. Examples: 20 for Gaming, 22 for People & Blogs, 10 for Music. |
+| **Category number** | YouTube's category number. Examples: 20 for Gaming, 22 for People & Blogs, 10 for Music. |
 | **Broadcast id** | Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one. |
 
 <small>Type id: `youtube.setCategory`</small>
@@ -227,7 +227,7 @@ Changes the title and the description of your YouTube live stream in one step.
 
 <small>Type id: `youtube.setTitleAndDescription`</small>
 
-## Timeout user (bannedUser, bannedUserName, bannedUserId, timeoutResult)
+## Timeout user
 
 Gives someone a timeout in your YouTube live chat. They cannot write for a while. Needs a live stream.
 

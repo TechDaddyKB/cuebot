@@ -26,6 +26,20 @@ Runs when Cuebot loses or ends its connection to Pulsoid. Handy to warn yourself
 
 <small>Type id: `pulsoid.disconnected`</small>
 
+## Every heart rate reading
+
+Runs for every new heart rate reading from Pulsoid. It can run about once a second, so keep the action short.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%heartRate%` | Heart rate right now, in beats per minute |
+| `%previousHeartRate%` | The heart rate before this one |
+| `%source%` | Where it came from: Pulsoid or HypeRate |
+
+<small>Type id: `pulsoid.heartRate`</small>
+
 ## Heart rate above threshold
 
 Runs once when your Pulsoid heart rate reaches a number you pick or goes higher. Fun for a "calm down!" moment.
@@ -33,7 +47,7 @@ Runs once when your Pulsoid heart rate reaches a number you pick or goes higher.
 | Setting | What to put in |
 | --- | --- |
 | **Threshold (BPM)** | The heart rate to watch for, in beats per minute. It runs when you reach this number or higher. Starts as: `120`. |
-| **Hysteresis (BPM)** | How far your heart rate must fall below the threshold before this can run again. Stops it firing over and over when you hover near the number. Starts as: `5`. |
+| **Reset distance (BPM)** | How far your heart rate must fall below the threshold before this can run again. Stops it firing over and over when you hover near the number. Starts as: `5`. |
 
 **Variables you get**
 
@@ -53,7 +67,7 @@ Runs once when your Pulsoid heart rate drops to a number you pick or lower. Fun 
 | Setting | What to put in |
 | --- | --- |
 | **Threshold (BPM)** | The heart rate to watch for, in beats per minute. It runs when you reach this number or lower. Starts as: `60`. |
-| **Hysteresis (BPM)** | How far your heart rate must rise above the threshold before this can run again. Stops it firing over and over when you hover near the number. Starts as: `5`. |
+| **Reset distance (BPM)** | How far your heart rate must rise above the threshold before this can run again. Stops it firing over and over when you hover near the number. Starts as: `5`. |
 
 **Variables you get**
 
@@ -86,17 +100,3 @@ Runs when your Pulsoid heart rate changes enough. Good for updating a number on 
 | `%heartRateChange%` | How much it changed since then (minus means it fell) |
 
 <small>Type id: `pulsoid.heartRateChanged`</small>
-
-## Heart rate pulse
-
-Runs for every new heart rate reading from Pulsoid. It can run about once a second, so keep the action short.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%heartRate%` | Heart rate right now, in beats per minute |
-| `%previousHeartRate%` | The heart rate before this one |
-| `%source%` | Where it came from: Pulsoid or HypeRate |
-
-<small>Type id: `pulsoid.heartRate`</small>

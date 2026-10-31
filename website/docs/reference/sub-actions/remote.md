@@ -9,8 +9,8 @@ Sends a named message (a signal) to another Cuebot on your network, so it can re
 | --- | --- |
 | **Instance** | Which other Cuebot to send to, by the name in the Remote instances list on the Servers page. Leave empty to send to every connected Cuebot. |
 | **Signal name** | The signal's name, like "go-live". The other Cuebot listens for this name. Required. |
-| **Include the action's arguments** | Tick to also send all the variables this action has right now. Untick to send only the ones typed below. Starts as: `false`. |
-| **Arguments** | Extra information to send, one per line as name=value, like scene=Main. You can use %variables%. These are always sent. |
+| **Include the action's variables** | Tick to also send all the variables this action has right now. Untick to send only the ones typed below. Starts as: `false`. |
+| **Values to send** | Extra information to send, one per line as name=value, like scene=Main. You can use %variables%. These are always sent. |
 
 **Variables it adds**
 

@@ -190,7 +190,7 @@ For Wave Link 1.x/2.x, the older version. Sets how loud an input is in the Monit
 | **Input** | The input (channel), by name as Wave Link shows it, like "Music", or by ID. |
 | **Mixer** | Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear), Both changes both. Options: Both, Local, Stream. Starts as: `Both`. |
 | **Volume (0-100)** | Volume from 0 (silent) to 100 (loudest). With Relative change ticked, this is how much to add. Starts as: `100`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -208,7 +208,7 @@ For Wave Link 1.x/2.x, the older version. Sets the microphone balance. It also w
 | --- | --- |
 | **Microphone** | The microphone, by name or ID. Leave empty if you only have one. |
 | **Balance (0-100)** | From 0 to 100, where 50 is the middle. With Relative change ticked, how much to add. Starts as: `50`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -226,7 +226,7 @@ For Wave Link 1.x/2.x, the older version. Sets the microphone gain, which is how
 | --- | --- |
 | **Microphone** | The microphone, by name or ID. Leave empty if you only have one. |
 | **Gain** | The gain, using the microphone's own scale in Wave Link 1.x/2.x (on Wave Link 3 it is 0-100 percent). With Relative change ticked, how much to add. Starts as: `50`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -244,7 +244,7 @@ For Wave Link 1.x/2.x, the older version. Sets the microphone's output volume (w
 | --- | --- |
 | **Microphone** | The microphone, by name or ID. Leave empty if you only have one. |
 | **Output volume** | The volume, using the microphone's own scale. With Relative change ticked, how much to add. Starts as: `50`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -278,7 +278,7 @@ For Wave Link 1.x/2.x, the older version. Sets how loud the Monitor Mix or the S
 | --- | --- |
 | **Mixer** | Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear). Options: Local, Stream. Starts as: `Local`. |
 | **Volume (0-100)** | Volume from 0 (silent) to 100 (loudest). With Relative change ticked, this is how much to add. Starts as: `100`. |
-| **Relative change** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
+| **Add to current value** | Tick to add your number to the current value instead of replacing it. Use a negative number to go down. Starts as: `false`. |
 
 **Variables it adds**
 

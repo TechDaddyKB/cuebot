@@ -7,7 +7,7 @@ Runs when someone tips you on one of your Pally.gg pages. Great for a thank-you 
 
 | Setting | What to put in |
 | --- | --- |
-| **Campaign (page slug)** | Only run for one of your Pally pages: type the last part of its web address. Leave empty for all your pages. |
+| **Pally page name** | Only run for one of your Pally pages: type the last part of its web address. Leave empty for all your pages. |
 | **Include replayed alerts** | Tick to also run when you press "Replay Alert" in Pally.gg, which shows an old tip again. Untick to skip those. Starts as: `true`. |
 | **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |

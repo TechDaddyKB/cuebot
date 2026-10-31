@@ -15,6 +15,15 @@ public sealed record ParameterDescriptor(string Key, string Label, ParameterKind
     /// <summary>Fixed options for <see cref="ParameterKind.Choice"/>.</summary>
     public IReadOnlyList<string> Choices { get; init; } = [];
 
+    /// <summary>
+    /// Friendlier words shown for some <see cref="Choices"/> (value → label). The stored value never changes, so saved
+    /// actions, imports and the API keep working; options without a label show their value.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ChoiceLabels { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>The words shown for an option value.</summary>
+    public string ChoiceLabel(string value) => ChoiceLabels.TryGetValue(value, out var label) ? label : value;
+
     /// <summary>Live suggestions for text fields (e.g. OBS scene names, voice aliases).</summary>
     public Func<IEnumerable<string>>? Suggestions { get; init; }
 

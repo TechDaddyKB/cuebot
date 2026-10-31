@@ -43,32 +43,6 @@ Runs when your YouTube live stream ends. Handy for a goodbye message.
 
 <small>Type id: `youtube.broadcastEnded`</small>
 
-## Broadcast monitoring ended
-
-Runs when Cuebot stops watching a YouTube stream's chat, because it ended or you disconnected.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%broadcastTitle%` | The stream title |
-| `%broadcastId%` | ID of the stream |
-
-<small>Type id: `youtube.broadcastMonitoringEnded`</small>
-
-## Broadcast monitoring started
-
-Runs when Cuebot starts watching a YouTube stream's chat (it finds a live stream, or you connect during one). It is not the same as going live.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%broadcastTitle%` | The stream title |
-| `%broadcastId%` | ID of the stream |
-
-<small>Type id: `youtube.broadcastMonitoringStarted`</small>
-
 ## Broadcast removed
 
 Runs when a scheduled YouTube live stream is deleted or cancelled before it started.
@@ -274,7 +248,7 @@ Runs when a message is deleted from your YouTube live chat.
 
 <small>Type id: `youtube.messageDeleted`</small>
 
-## New member (sponsor)
+## New channel member
 
 Runs when someone becomes a new member of your YouTube channel (YouTube calls members "sponsors"). Good for a thank-you.
 
@@ -355,6 +329,32 @@ Runs when the votes in your YouTube chat poll change.
 | `%pollMessageId%` | ID of the poll |
 
 <small>Type id: `youtube.pollUpdated`</small>
+
+## Started watching a stream's chat
+
+Runs when Cuebot starts watching a YouTube stream's chat (it finds a live stream, or you connect during one). It is not the same as going live.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%broadcastTitle%` | The stream title |
+| `%broadcastId%` | ID of the stream |
+
+<small>Type id: `youtube.broadcastMonitoringStarted`</small>
+
+## Stopped watching a stream's chat
+
+Runs when Cuebot stops watching a YouTube stream's chat, because it ended or you disconnected.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%broadcastTitle%` | The stream title |
+| `%broadcastId%` | ID of the stream |
+
+<small>Type id: `youtube.broadcastMonitoringEnded`</small>
 
 ## Super Chat
 

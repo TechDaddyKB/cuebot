@@ -66,7 +66,7 @@ Checks if a viewer is in a group, then runs the True steps if yes or the False s
 | **Platform** | The site the viewer is on, like twitch. The default %platform% means whoever started the action. Starts as: `%platform%`. |
 | **User name** | The viewer's chat name. The default %user% means whoever started the action. Starts as: `%user%`. |
 | **User id** | The viewer's id on their site. If known it is used first, otherwise the name is used. The default is whoever started the action. Starts as: `%userId%`. |
-| **Store result in argument** | The variable that receives the answer (true or false), without % signs. The default inGroup means you use %inGroup%. Starts as: `inGroup`. |
+| **Save the answer in variable** | The variable that receives the answer (true or false), without % signs. The default inGroup means you use %inGroup%. Starts as: `inGroup`. |
 
 Paths it can take: **True**, **False**.
 

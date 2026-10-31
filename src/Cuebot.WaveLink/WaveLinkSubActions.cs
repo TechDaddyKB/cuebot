@@ -71,7 +71,7 @@ internal static class WaveLinkSubActions
         };
         ParameterDescriptor Volume(string label = "Volume (0-100)", string defaultValue = "100") => new("volume", label, ParameterKind.Number) { DefaultValue = defaultValue };
         ParameterDescriptor Amount() => new("amount", "Change (+/-)", ParameterKind.Number) { DefaultValue = "5", Help = "Percentage points to add (negative to lower)" };
-        ParameterDescriptor Relative() => new("relative", "Relative change", ParameterKind.Boolean) { DefaultValue = "false", Help = "Add the value to the current one" };
+        ParameterDescriptor Relative() => new("relative", "Add to current value", ParameterKind.Boolean) { DefaultValue = "false", Help = "Add the value to the current one" };
 
         static bool IsTrue(string v) => v.Trim().Equals("true", StringComparison.OrdinalIgnoreCase) || v.Trim() == "1";
 
@@ -138,7 +138,7 @@ internal static class WaveLinkSubActions
             }),
             Make("wavelink.muteInputDevice", "Mute input device", [Input(), Switch("Muted", "Not Muted")],
                 async (ctx, v, ct) => ctx.Args["waveLinkInputDeviceMuted"] = await wl.SetInputMuteAsync(v["inputDevice"], ParseSwitch(v["state"]), ct).ConfigureAwait(false)),
-            Make("wavelink.setInputClipGuard", "Set input Clipguard state", [Input(), Switch("Enabled", "Disabled")],
+            Make("wavelink.setInputClipGuard", "Set input Clipguard (stops crackling)", [Input(), Switch("Enabled", "Disabled")],
                 async (ctx, v, ct) => ctx.Args["waveLinkInputDeviceClipGuard"] = await wl.SetInputClipGuardAsync(v["inputDevice"], ParseSwitch(v["state"]), ct).ConfigureAwait(false)),
             Make("wavelink.setInputGain", "Set input gain",
                 [Input(), new("gain", "Gain (0-100)", ParameterKind.Number) { DefaultValue = "50", Help = "Percent of the device's gain range" }, Relative()],

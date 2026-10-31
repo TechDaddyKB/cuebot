@@ -29,8 +29,14 @@ public enum SwitchMode { Toggle, On, Off }
 
 internal static class Steps
 {
-    public static ParameterDescriptor Switch(string key = "state", string label = "State", SwitchMode defaultValue = SwitchMode.Toggle) =>
-        new(key, label, ParameterKind.Choice) { DefaultValue = defaultValue.ToString(), Choices = Enum.GetNames<SwitchMode>() };
+    /// <param name="onLabel">Words shown for On (e.g. "Mute"); <paramref name="offLabel"/> likewise for Off.</param>
+    public static ParameterDescriptor Switch(string key = "state", string label = "State", SwitchMode defaultValue = SwitchMode.Toggle,
+        string onLabel = "Turn on", string offLabel = "Turn off") =>
+        new(key, label, ParameterKind.Choice)
+        {
+            DefaultValue = defaultValue.ToString(), Choices = Enum.GetNames<SwitchMode>(),
+            ChoiceLabels = new Dictionary<string, string> { ["Toggle"] = "Switch (on if off, off if on)", ["On"] = onLabel, ["Off"] = offLabel },
+        };
 
     public static SwitchMode ParseSwitch(string value) =>
         Enum.TryParse<SwitchMode>(value.Trim(), ignoreCase: true, out var mode) ? mode
@@ -62,7 +68,7 @@ internal static class Steps
 
     public static double Number(string value, string label, double fallback) => OptionalNumber(value, label) ?? fallback;
 
-    public static ParameterDescriptor Result(string defaultArgument, string label = "Store result in argument") =>
+    public static ParameterDescriptor Result(string defaultArgument, string label = "Save the answer in variable") =>
         new("resultArgument", label) { DefaultValue = defaultArgument };
 
     public static void Store(ActionRunContext ctx, string argument, object? value)
@@ -89,8 +95,12 @@ internal static class Steps
     }
 
     /// <summary>"Any" / "On" / "Off" state filter for toggled-events.</summary>
-    public static ParameterDescriptor StateFilter(string label = "State") =>
-        new("stateFilter", label, ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "On", "Off"] };
+    public static ParameterDescriptor StateFilter(string label = "State", string onLabel = "Turned on", string offLabel = "Turned off") =>
+        new("stateFilter", label, ParameterKind.Choice)
+        {
+            DefaultValue = "Any", Choices = ["Any", "On", "Off"],
+            ChoiceLabels = new Dictionary<string, string> { ["Any"] = "Either way", ["On"] = onLabel, ["Off"] = offLabel },
+        };
 
     public static bool MatchesState(BotEvent e, ParameterValues s, string arg = "enabled") => s["stateFilter"] switch
     {

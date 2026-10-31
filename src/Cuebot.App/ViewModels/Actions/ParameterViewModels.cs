@@ -142,4 +142,18 @@ public sealed class ChoiceParameterViewModel(ParameterDescriptor d, Dictionary<s
         get => RawValue;
         set => RawValue = value ?? Descriptor.DefaultValue;
     }
+
+    /// <summary>The options as shown in the list: the stored value with its friendly label.</summary>
+    public IReadOnlyList<ChoiceOption> Options { get; } = d.Choices.Select(c => new ChoiceOption(c, d.ChoiceLabel(c))).ToArray();
+
+    public ChoiceOption? SelectedOption
+    {
+        get => Options.FirstOrDefault(o => string.Equals(o.Value, RawValue, StringComparison.OrdinalIgnoreCase));
+        set => Selected = value?.Value;
+    }
+}
+
+public sealed record ChoiceOption(string Value, string Label)
+{
+    public override string ToString() => Label;
 }

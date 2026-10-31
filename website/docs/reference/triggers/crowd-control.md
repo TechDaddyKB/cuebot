@@ -200,7 +200,7 @@ Runs when you pause or resume a Crowd Control play session.
 
 | Setting | What to put in |
 | --- | --- |
-| **Paused** | Choose Any to run for both. On runs only when the session gets paused. Off runs only when it resumes. Options: Any, On, Off. Starts as: `Any`. |
+| **Paused** | Choose Any to run for both. On runs only when the session gets paused. Off runs only when it resumes. Options: Either way, Turned on, Turned off. Starts as: `Either way`. |
 
 **Variables you get**
 

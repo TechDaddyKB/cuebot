@@ -50,14 +50,14 @@ internal static class YouTubeSubActions
             [new("messageId", "Message id") { DefaultValue = "%messageId%" }],
             (_, p, ct) => yt.DeleteMessageAsync(Clean(p["messageId"]), ct)),
 
-        new YouTubeSubAction("youtube.banUser", "Ban user (bannedUser, bannedUserName, bannedUserId, banResult)", [User, BroadcastId],
+        new YouTubeSubAction("youtube.banUser", "Ban user", [User, BroadcastId],
             async (c, p, ct) =>
             {
                 await yt.BanUserAsync(Clean(p["user"]), Optional(p["broadcastId"]), ct).ConfigureAwait(false);
                 await WriteBannedAsync(yt, c, Clean(p["user"]), "banResult", ct).ConfigureAwait(false);
             }),
 
-        new YouTubeSubAction("youtube.timeoutUser", "Timeout user (bannedUser, bannedUserName, bannedUserId, timeoutResult)",
+        new YouTubeSubAction("youtube.timeoutUser", "Timeout user",
             [User, new("duration", "Duration (seconds)", ParameterKind.Number) { DefaultValue = "300" }, BroadcastId],
             async (c, p, ct) =>
             {
@@ -92,7 +92,7 @@ internal static class YouTubeSubActions
             (_, p, ct) => yt.UpdateBroadcastAsync(new VideoChange(PrivacyStatus: p["privacy"].Trim().ToLowerInvariant()), Optional(p["broadcastId"]), ct)),
 
         new YouTubeSubAction("youtube.setCategory", "Set category",
-            [new("categoryId", "Category id") { Help = "YouTube video category id, e.g. 20 = Gaming, 22 = People & Blogs" }, BroadcastId],
+            [new("categoryId", "Category number") { Help = "YouTube video category id, e.g. 20 = Gaming, 22 = People & Blogs" }, BroadcastId],
             (_, p, ct) => yt.UpdateBroadcastAsync(new VideoChange(CategoryId: Required(p["categoryId"], "category id")), Optional(p["broadcastId"]), ct)),
 
         new YouTubeSubAction("youtube.getVideoInfo", "Get video info",

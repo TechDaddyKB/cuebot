@@ -35,7 +35,7 @@ public sealed class GetUserVariableSubAction(UserVariables users) : ISubActionHa
     [
         new("name", "Variable name"),
         .. UserParameters.For(users),
-        new("destination", "Store in argument") { Help = "Defaults to the variable name; use it as %argument%" },
+        new("destination", "Save in variable") { Help = "Defaults to the variable name; use it as %argument%" },
         new("defaultValue", "Default value") { Help = "Used when the user or variable does not exist; empty leaves the argument unset" },
         new("autoType", "Auto type", ParameterKind.Boolean) { DefaultValue = "true", Help = "Numbers stay numbers" },
     ];
@@ -72,7 +72,7 @@ public sealed class SetUserVariableSubAction(UserVariables users) : ISubActionHa
         new("value", "Value") { Help = "For Increment/Decrement: the amount (empty = 1)" },
         new("persisted", "Keep after restart", ParameterKind.Boolean) { DefaultValue = "true" },
         new("autoType", "Auto type", ParameterKind.Boolean) { DefaultValue = "true", Help = "Store numbers and true/false as typed values" },
-        new("storeIn", "Also store in argument") { Help = "Optional argument that receives the new value" },
+        new("storeIn", "Also save in variable") { Help = "Optional argument that receives the new value" },
     ];
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

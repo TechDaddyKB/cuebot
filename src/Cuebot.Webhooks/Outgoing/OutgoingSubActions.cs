@@ -43,7 +43,7 @@ public static class OutgoingWebhookSubActions
     public static IReadOnlyList<ISubActionHandler> Create(DiscordWebhookClient discord, IftttWebhookClient ifttt,
         JsonFile<WebhooksSettings> settings)
     {
-        ParameterDescriptor IftttKey() => new("key", "Webhooks key")
+        ParameterDescriptor IftttKey() => new("key", "IFTTT Webhooks key")
         {
             Help = "Leave empty to use the key saved in webhooks.json (IftttKey). From ifttt.com/maker_webhooks → Documentation",
         };
@@ -76,7 +76,7 @@ public static class OutgoingWebhookSubActions
             new OutgoingWebhookSubAction(IftttNotificationAdvanced, "IFTTT", "Notification (advanced)",
                 [
                     new("eventName", "Event name") { Help = "The event name of your applet's Webhooks (JSON) trigger" },
-                    new("arguments", "Arguments (one name=value per line)", ParameterKind.Multiline)
+                    new("arguments", "Values (one name=value per line)", ParameterKind.Multiline)
                     {
                         Help = "The first five become Argument1Name/Argument1Value...; all of them are in ArgumentsJson",
                     },

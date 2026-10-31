@@ -43,7 +43,7 @@ Makes a ready list of your chat commands as text, like "!hello, !discord, !uptim
 
 | Setting | What to put in |
 | --- | --- |
-| **Store in argument** | The start of the variable names, without % signs. The default commands gives %commands% (the text), %commandsList% and %commandsCount%. Starts as: `commands`. |
+| **Save in variable** | The start of the variable names, without % signs. The default commands gives %commands% (the text), %commandsList% and %commandsCount%. Starts as: `commands`. |
 | **Only this group** | Only list commands of this command group. Empty or All = every group. |
 | **List** | First alias = each command's first name. All aliases = every name a command answers to. Names = the name you gave it. Options: First alias, All aliases, Names. Starts as: `First alias`. |
 | **Separator** | What goes between the commands, like a comma and a space. Starts as: `, `. |

@@ -7,7 +7,7 @@ Runs when the background sound effects in Voicemod are turned on or off.
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | Choose On to react only when it is turned on, Off only when it is turned off, or Any for both. Options: Any, On, Off. Starts as: `Any`. |
+| **State** | Choose On to react only when it is turned on, Off only when it is turned off, or Any for both. Options: Either way, Turned on, Turned off. Starts as: `Either way`. |
 
 **Variables you get**
 
@@ -41,7 +41,7 @@ Runs when 'hear my voice' (listening to yourself through your headphones) is tur
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | Choose On to react only when it is turned on, Off only when it is turned off, or Any for both. Options: Any, On, Off. Starts as: `Any`. |
+| **State** | Choose On to react only when it is turned on, Off only when it is turned off, or Any for both. Options: Either way, Turned on, Turned off. Starts as: `Either way`. |
 
 **Variables you get**
 
@@ -57,7 +57,7 @@ Runs when your microphone is muted or unmuted in Voicemod.
 
 | Setting | What to put in |
 | --- | --- |
-| **Muted** | Choose On to react only when the mic gets muted, Off only when it gets unmuted, or Any for both. Options: Any, On, Off. Starts as: `Any`. |
+| **Muted** | Choose On to react only when the mic gets muted, Off only when it gets unmuted, or Any for both. Options: Either way, Muted, Unmuted. Starts as: `Either way`. |
 
 **Variables you get**
 
@@ -106,7 +106,7 @@ Runs when the voice changer is turned on or off in Voicemod.
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | Choose On to react only when it is turned on, Off only when it is turned off, or Any for both. Options: Any, On, Off. Starts as: `Any`. |
+| **State** | Choose On to react only when it is turned on, Off only when it is turned off, or Any for both. Options: Either way, Turned on, Turned off. Starts as: `Either way`. |
 
 **Variables you get**
 

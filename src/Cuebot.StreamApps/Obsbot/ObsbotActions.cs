@@ -36,7 +36,7 @@ internal sealed class ObsbotTriggers : ITriggerProvider
                 "Unlocked" => e.Flag("obsbot.aiLocked") == false,
                 _ => true,
             }),
-        Trigger(Category, ObsbotService.MessageEvent, "OSC message",
+        Trigger(Category, ObsbotService.MessageEvent, "Other OBSBOT message (advanced)",
             [new("address", "Addresses") { Help = "Comma-separated OSC addresses; empty for any message that is not a state reply" }],
             (e, s) => MatchesList(s["address"], e.Text("obsbot.address"))),
     ];
@@ -273,7 +273,7 @@ internal static class ObsbotSubActions
                 var state = obsbot.CanSend ? await obsbot.RefreshAsync(ct).ConfigureAwait(false) : ObsbotState.Empty;
                 foreach (var (key, value) in ObsbotService.StateArgs(state)) ctx.Args[key] = value;
             }),
-            Make("obsbot.sendOsc", "Send OSC message",
+            Make("obsbot.sendOsc", "Send OSC message (advanced)",
                 [
                     new("address", "Address") { Help = "e.g. /OBSBOT/WebCam/General/SetZoom" },
                     new("args", "Arguments") { Help = "Space- or comma-separated (12 → int, 1.5 → float, true/false, other text → string) or a JSON array" },

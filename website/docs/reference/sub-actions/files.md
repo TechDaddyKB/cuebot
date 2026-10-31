@@ -44,7 +44,7 @@ Reads a whole text file and saves everything in it in a variable. Good for showi
 | Setting | What to put in |
 | --- | --- |
 | **File** | The file's full location on your computer, like C:\Stream\song.txt. |
-| **Store in argument** | The variable that receives the text, without % signs. The default fileContent means you use %fileContent%. Starts as: `fileContent`. |
+| **Save in variable** | The variable that receives the text, without % signs. The default fileContent means you use %fileContent%. Starts as: `fileContent`. |
 
 **Variables it adds**
 
@@ -61,7 +61,7 @@ Reads a text file line by line. Every line gets its own variable: line0 is the f
 | Setting | What to put in |
 | --- | --- |
 | **File** | The file's full location on your computer, like C:\Stream\list.txt. |
-| **Store in argument** | The start of the variable names, without % signs. With the default line you get %line0%, %line1% and so on. Starts as: `line`. |
+| **Save in variable** | The start of the variable names, without % signs. With the default line you get %line0%, %line1% and so on. Starts as: `line`. |
 | **Parse variables** | Tick to replace any %variables% written inside the file with their values. Starts as: `false`. |
 | **Attempt auto-typing** | Tick so a line that holds a number is stored as a real number. Untick if unsure. Starts as: `false`. |
 
@@ -82,7 +82,7 @@ Picks a random line from a text file and saves it in a variable. Great for a lis
 | Setting | What to put in |
 | --- | --- |
 | **File** | The file's full location on your computer, like C:\Stream\jokes.txt. |
-| **Store in argument** | The variable that receives the line, without % signs. The default randomLine means you use %randomLine%. Starts as: `randomLine`. |
+| **Save in variable** | The variable that receives the line, without % signs. The default randomLine means you use %randomLine%. Starts as: `randomLine`. |
 | **Skip empty lines** | Tick to never pick an empty line. Starts as: `true`. |
 | **How many lines** | How many different lines to pick. With more than 1, the extra ones go in randomLine1, randomLine2, and so on. Starts as: `1`. |
 | **Parse variables** | Tick to replace any %variables% written inside the line with their values. Starts as: `false`. |
@@ -106,7 +106,7 @@ Reads one chosen line of a text file, for example line 3, and saves it in a vari
 | Setting | What to put in |
 | --- | --- |
 | **File** | The file's full location on your computer, like C:\Stream\list.txt. |
-| **Store in argument** | The variable that receives the line, without % signs. The default line means you use %line%. Starts as: `line`. |
+| **Save in variable** | The variable that receives the line, without % signs. The default line means you use %line%. Starts as: `line`. |
 | **Line number (from 1)** | Which line to read. 1 = the first line. If the file is shorter, you get an empty value. Starts as: `1`. |
 | **Parse variables** | Tick to replace any %variables% written inside the line with their values. Starts as: `false`. |
 | **Attempt auto-typing** | Tick so a line that holds a number is stored as a real number. Untick if unsure. Starts as: `false`. |

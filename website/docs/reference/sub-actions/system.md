@@ -7,7 +7,7 @@ Reads the text you last copied (Ctrl+C) and saves it in a variable. Handy for tu
 
 | Setting | What to put in |
 | --- | --- |
-| **Store in argument** | The variable that receives the copied text, without % signs. The default clipboardText means you use %clipboardText%. Starts as: `clipboardText`. |
+| **Save in variable** | The variable that receives the copied text, without % signs. The default clipboardText means you use %clipboardText%. Starts as: `clipboardText`. |
 
 **Variables it adds**
 
@@ -42,7 +42,7 @@ Starts a program or opens a file on your computer, like a script or another tool
 | Setting | What to put in |
 | --- | --- |
 | **Program or file** | The program or file to open, with its full location, like C:\Tools\clip.exe or /usr/bin/notify-send. |
-| **Arguments** | Extra words to give the program, like "--fast". Empty is fine for most programs. |
+| **Command-line options** | Extra words to give the program, like "--fast". Empty is fine for most programs. |
 | **Working directory** | The folder the program starts in. Empty = the default. Most people can leave this alone. |
 | **Wait for exit** | Tick to wait for the program to finish before the next step. Unticked, Cuebot goes on straight away. Starts as: `false`. |
 | **Wait at most (seconds, 0 = no limit)** | With "Wait for exit": give up waiting after this many seconds. 0 = wait as long as it takes. Starts as: `0`. |

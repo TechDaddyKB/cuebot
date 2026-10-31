@@ -154,7 +154,7 @@ variables. **Run again with these variables** repeats it. **Cancel run** stops o
 
 ## Scripts (for the curious)
 
-When no sub-action does what you want, **Execute C# code** and **Execute Python code** let you write a little program.
+When no sub-action does what you want, **Run C# code** and **Run Python code** let you write a little program.
 This is optional and needs some coding. **Automation > Scripting** sets up Python: Cuebot can download its own copy of
 Python for you the first time you need it.
 

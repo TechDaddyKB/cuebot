@@ -3,14 +3,14 @@
 
 ## JSON array count
 
-Counts the items in a list inside JSON, a common way web services send data. Mostly used after an HTTP request. Beginners rarely need it.
+Counts the items in a list inside JSON, a common way web services send data. Mostly used after a "Call a web address" step. Beginners rarely need it.
 
 | Setting | What to put in |
 | --- | --- |
-| **Read from argument** | The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead. Starts as: `httpResponse`. |
-| **JSON** | The JSON text itself, like [1,2,3]. Ignored when the first box (Read from argument) is filled in. |
+| **Read from variable** | The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead. Starts as: `httpResponse`. |
+| **JSON** | The JSON text itself, like [1,2,3]. Ignored when the first box (Read from variable) is filled in. |
 | **Path** | Where the list is inside the data. $ = the whole thing. $.data = the list called data. Starts as: `$`. |
-| **Store in argument** | The variable that receives the count, without % signs. The default jsonCount means you use %jsonCount%. Starts as: `jsonCount`. |
+| **Save in variable** | The variable that receives the count, without % signs. The default jsonCount means you use %jsonCount%. Starts as: `jsonCount`. |
 
 **Variables it adds**
 
@@ -23,14 +23,14 @@ Counts the items in a list inside JSON, a common way web services send data. Mos
 
 ## JSON get value
 
-Picks one value out of JSON, a common way web services send data, and saves it in a variable. Mostly used after an HTTP request. Beginners rarely need it.
+Picks one value out of JSON, a common way web services send data, and saves it in a variable. Mostly used after a "Call a web address" step. Beginners rarely need it.
 
 | Setting | What to put in |
 | --- | --- |
-| **Read from argument** | The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead. Starts as: `httpResponse`. |
-| **JSON** | The JSON text itself, like {"name":"Kris"}. Ignored when the first box (Read from argument) is filled in. |
+| **Read from variable** | The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead. Starts as: `httpResponse`. |
+| **JSON** | The JSON text itself, like {"name":"Kris"}. Ignored when the first box (Read from variable) is filled in. |
 | **Path** | Where the value is inside the data. $.name = the item called name. $.data[0].name = the name of the first entry in data. Starts as: `$`. |
-| **Store in argument** | The variable that receives the value, without % signs. The default jsonValue means you use %jsonValue%. Starts as: `jsonValue`. |
+| **Save in variable** | The variable that receives the value, without % signs. The default jsonValue means you use %jsonValue%. Starts as: `jsonValue`. |
 
 **Variables it adds**
 

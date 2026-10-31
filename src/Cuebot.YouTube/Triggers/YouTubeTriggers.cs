@@ -26,7 +26,7 @@ internal sealed class YouTubeTriggers : ITriggerProvider
         Event(YouTubeEventTypes.JewelsGifted, "Jewels gifted",
             [new("minJewels", "Minimum jewels", ParameterKind.Number) { DefaultValue = "0" }],
             (e, s) => e.Args.GetDouble("jewels") >= s.GetDouble("minJewels")),
-        Event(YouTubeEventTypes.NewSponsor, "New member (sponsor)", LevelParameters.Append(
+        Event(YouTubeEventTypes.NewSponsor, "New channel member", LevelParameters.Append(
                 new ParameterDescriptor("upgrades", "Upgrades", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "Only upgrades", "No upgrades"] }).ToArray(),
             (e, s) => LevelMatches(e, s) && s["upgrades"] switch
             {
@@ -54,8 +54,8 @@ internal sealed class YouTubeTriggers : ITriggerProvider
         Event(YouTubeEventTypes.PollClosed, "Poll closed"),
         Event(YouTubeEventTypes.BroadcastStarted, "Broadcast started"),
         Event(YouTubeEventTypes.BroadcastEnded, "Broadcast ended"),
-        Event(YouTubeEventTypes.BroadcastMonitoringStarted, "Broadcast monitoring started"),
-        Event(YouTubeEventTypes.BroadcastMonitoringEnded, "Broadcast monitoring ended"),
+        Event(YouTubeEventTypes.BroadcastMonitoringStarted, "Started watching a stream's chat"),
+        Event(YouTubeEventTypes.BroadcastMonitoringEnded, "Stopped watching a stream's chat"),
         Event(YouTubeEventTypes.BroadcastAdded, "Broadcast added (scheduled)"),
         Event(YouTubeEventTypes.BroadcastRemoved, "Broadcast removed"),
         Event(YouTubeEventTypes.BroadcastUpdated, "Broadcast updated"),

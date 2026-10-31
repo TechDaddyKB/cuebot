@@ -24,7 +24,7 @@ internal sealed class StreamDeckTriggers : ITriggerProvider
 
     public IEnumerable<ITriggerType> GetTriggers() =>
     [
-        new EventTriggerType(StreamDeckHub.ActionEvent, Category, "Stream Deck Action", StreamDeckHub.ActionEvent,
+        new EventTriggerType(StreamDeckHub.ActionEvent, Category, "Stream Deck key or dial used", StreamDeckHub.ActionEvent,
             [
                 new("buttonIds", "Button IDs") { Help = "Comma-separated button ids (set on each key in Stream Deck); empty for any Cuebot trigger key or dial" },
                 new("event", "Event", ParameterKind.Choice) { DefaultValue = "Key down", Choices = [.. EventChoices.Select(c => c.Label)] },
@@ -32,7 +32,7 @@ internal sealed class StreamDeckTriggers : ITriggerProvider
             (e, s, _) => MatchesAction(e, s["buttonIds"], s["event"])),
         new EventTriggerType(StreamDeckHub.ConnectedEvent, Category, "Stream Deck Connected", StreamDeckHub.ConnectedEvent),
         new EventTriggerType(StreamDeckHub.DisconnectedEvent, Category, "Stream Deck Disconnected", StreamDeckHub.DisconnectedEvent),
-        new EventTriggerType(StreamDeckHub.InfoEvent, Category, "Stream Deck Info", StreamDeckHub.InfoEvent),
+        new EventTriggerType(StreamDeckHub.InfoEvent, Category, "Stream Deck devices changed", StreamDeckHub.InfoEvent),
     ];
 
     internal static bool MatchesAction(BotEvent e, string buttonIds, string eventChoice)
@@ -91,7 +91,7 @@ internal sealed class StreamDeckSubAction(
 
     public static IReadOnlyList<ISubActionHandler> Create(StreamDeckHub hub) =>
     [
-        new StreamDeckSubAction(hub, "streamDeck.setBackground", "Set Background",
+        new StreamDeckSubAction(hub, "streamDeck.setBackground", "Set key picture",
             [
                 new("image", "Image") { Help = "A PNG/JPEG/GIF/SVG file, an http(s) URL or a data: URI; empty restores the key's own image" },
                 StateParameter(),
@@ -103,7 +103,7 @@ internal sealed class StreamDeckSubAction(
         new StreamDeckSubAction(hub, "streamDeck.setTitle", "Set Title",
             [new("title", "Title", ParameterKind.Multiline) { Help = "Empty restores the key's own title" }, StateParameter()],
             (id, p) => new StreamDeckCommand("setTitle", id, Title: p["title"], State: OptionalState(p["state"]))),
-        new StreamDeckSubAction(hub, "streamDeck.setValue", "Set Value",
+        new StreamDeckSubAction(hub, "streamDeck.setValue", "Set key value",
             [
                 new("value", "Value") { Help = "Shown as the key's title, or as the value on a dial's touch strip" },
                 new("indicator", "Indicator (dials)") { Help = "Optional 0-100 for a dial's indicator bar" },

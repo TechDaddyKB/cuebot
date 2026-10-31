@@ -143,7 +143,7 @@ public sealed class GetClipboardSubAction(IClipboardService clipboard) : ISubAct
     public string DisplayName => "Get clipboard text";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
-        new("destination", "Store in argument") { DefaultValue = "clipboardText", Suggestions = () => ["clipboardText"] },
+        new("destination", "Save in variable") { DefaultValue = "clipboardText", Suggestions = () => ["clipboardText"] },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)

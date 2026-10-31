@@ -36,7 +36,7 @@ After an import, the **Import report** has three lists:
 
 - The same variable signs: `%user%`, `%input0%`, `~myGlobal~` and functions like `$math()$`. See
   [Variables](variables.md).
-- **Execute C# code** runs your C# code, with Streamer.bot's `CPH` methods. Almost all of them work.
+- **Run C# code** (Streamer.bot's "Execute C# Code") runs your C# code, with Streamer.bot's `CPH` methods. Almost all of them work.
 - Cuebot's **WebSocket server (Streamer.bot API)** on **Apps > Servers** speaks Streamer.bot's language, so overlays
   and tools made for Streamer.bot keep working. Turn it on there first.
 - The start options `/headless` and `/resetwindow` work (see [Command-line options](command-line-options.md)).

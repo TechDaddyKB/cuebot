@@ -169,24 +169,6 @@ Runs once for every person who receives a gifted subscription. If someone gifts 
 
 <small>Type id: `kick.giftSubscription`</small>
 
-## Host (raid)
-
-Runs when another Kick channel sends its viewers to you (a host or raid). Good for a thank-you shout-out.
-
-| Setting | What to put in |
-| --- | --- |
-| **Minimum viewers** | Only run when at least this many viewers come along. 0 runs for every host. Example: 10. Starts as: `0`. |
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%user%` | Name of the channel that sent viewers |
-| `%viewers%` | How many viewers came |
-| `%message%` | The message that came with it |
-
-<small>Type id: `kick.host`</small>
-
 ## Kicks gifted
 
 Runs when a viewer sends Kicks (Kick's paid gifts) to your channel. Good for a thank-you or an alert.
@@ -238,7 +220,7 @@ Runs when a message is deleted from your Kick chat.
 
 <small>Type id: `kick.messageDeleted`</small>
 
-## Present viewers
+## People in chat (every few minutes)
 
 Runs now and then with the list of people who chatted lately, so you can reward everyone who is around. How often and how long "lately" is are set in the Users settings.
 
@@ -254,6 +236,24 @@ Runs now and then with the list of people who chatted lately, so you can reward 
 | `%viewerCount%` | How many people watch right now |
 
 <small>Type id: `kick.presentViewers`</small>
+
+## Raid / host
+
+Runs when another Kick channel sends its viewers to you (a host or raid). Good for a thank-you shout-out.
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum viewers** | Only run when at least this many viewers come along. 0 runs for every host. Example: 10. Starts as: `0`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Name of the channel that sent viewers |
+| `%viewers%` | How many viewers came |
+| `%message%` | The message that came with it |
+
+<small>Type id: `kick.host`</small>
 
 ## Resubscription
 

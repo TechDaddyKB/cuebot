@@ -8,7 +8,7 @@ Looks up a Twitch user's pronouns (from alejo.io) and saves them as variables, s
 | Setting | What to put in |
 | --- | --- |
 | **User login** | The Twitch login name to look up. The default is the person who started this action. Starts as: `%userName%`. |
-| **Argument prefix** | A word put in front of the variable names. With "target" you get %targetPronoun%. Empty gives %pronoun%. |
+| **Variable name start** | A word put in front of the variable names. With "target" you get %targetPronoun%. Empty gives %pronoun%. |
 
 **Variables it adds**
 

@@ -30,7 +30,7 @@ public sealed class RunProgramSubAction : ISubActionHandler
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("path", "Program or file"),
-        new("arguments", "Arguments"),
+        new("arguments", "Command-line options"),
         new("workingDirectory", "Working directory"),
         new("wait", "Wait for exit", ParameterKind.Boolean) { DefaultValue = "false" },
         new("waitSeconds", "Wait at most (seconds, 0 = no limit)", ParameterKind.Number) { DefaultValue = "0" },
@@ -131,7 +131,7 @@ internal static class FileSteps
     }
 
     public static ParameterDescriptor VariableParameter(string fallback) =>
-        new("variable", "Store in argument") { DefaultValue = fallback };
+        new("variable", "Save in variable") { DefaultValue = fallback };
 }
 
 /// <summary>Reads a whole text file into an argument.</summary>
@@ -327,11 +327,11 @@ public sealed class UdpBroadcastSubAction : ISubActionHandler
 
     public string TypeId => "core.udpBroadcast";
     public string Category => SystemCategories.Network;
-    public string DisplayName => "UDP broadcast";
+    public string DisplayName => "Send a message on your network";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("port", "UDP port", ParameterKind.Number) { DefaultValue = "6669" },
-        new("payload", "Payload", ParameterKind.Multiline) { Help = "Text or JSON to send" },
+        new("payload", "Message", ParameterKind.Multiline) { Help = "Text or JSON to send" },
         new("host", "Address") { DefaultValue = Broadcast, Help = "255.255.255.255 broadcasts on the local network; 127.0.0.1 is this computer" },
     ];
 
@@ -415,7 +415,7 @@ public sealed class HttpRequestSubAction(HttpClient http) : ISubActionHandler
 
     public string TypeId => "core.httpRequest";
     public string Category => SystemCategories.Network;
-    public string DisplayName => "HTTP request";
+    public string DisplayName => "Call a web address";
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("method", "Method", ParameterKind.Choice) { DefaultValue = "GET", Choices = Methods },
@@ -424,7 +424,7 @@ public sealed class HttpRequestSubAction(HttpClient http) : ISubActionHandler
         new("body", "Body", ParameterKind.Multiline),
         new("contentType", "Content type") { DefaultValue = "application/json" },
         new("timeout", "Timeout (seconds)", ParameterKind.Number) { DefaultValue = "30", Help = "At most 30 seconds (the shared client's limit)" },
-        new("variable", "Store response in argument") { DefaultValue = "httpResponse" },
+        new("variable", "Save the reply in variable") { DefaultValue = "httpResponse" },
         new("parseJson", "Parse result as JSON", ParameterKind.Boolean) { DefaultValue = "false", Help = "Also sets %<argument>.<key>% for every JSON value" },
     ];
 
@@ -504,7 +504,7 @@ internal static class JsonSteps
         Help = "JSON text; ignored when \"Read from argument\" is set",
     };
 
-    public static readonly ParameterDescriptor Argument = new("argument", "Read from argument")
+    public static readonly ParameterDescriptor Argument = new("argument", "Read from variable")
     {
         DefaultValue = "httpResponse",
         Help = "Name of an argument holding JSON (e.g. httpResponse); empty uses the JSON text",
