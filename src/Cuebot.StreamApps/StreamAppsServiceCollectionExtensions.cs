@@ -29,6 +29,10 @@ public static class StreamAppsServiceCollectionExtensions
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PolyPopService>());
         Tits.TitsRegistration.Add(services);
         Lumia.LumiaRegistration.Add(services);
+        Veadotube.VeadotubeRegistration.Add(services);
+        Vnyan.VnyanRegistration.Add(services);
+        Vrchat.VrchatRegistration.Add(services);
+        Warudo.WarudoRegistration.Add(services);
         services.AddSingleton(sp => new ObsbotService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<ObsbotService>());
         services.AddSingleton(sp => new MtionService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<HttpClient>()));
@@ -47,6 +51,10 @@ public static class StreamAppsServiceCollectionExtensions
             .. Lumia.LumiaSubActions.Create(sp.GetRequiredService<Lumia.LumiaService>()),
             .. ObsbotSubActions.Create(sp.GetRequiredService<ObsbotService>()),
             .. MtionSubActions.Create(sp.GetRequiredService<MtionService>()),
+            .. Veadotube.VeadotubeSubActions.Create(sp.GetRequiredService<Veadotube.VeadotubeService>()),
+            .. Vnyan.VnyanSubActions.Create(sp.GetRequiredService<Vnyan.VnyanService>()),
+            .. Vrchat.VrchatSubActions.Create(sp.GetRequiredService<Vrchat.VrchatService>()),
+            .. Warudo.WarudoSubActions.Create(sp.GetRequiredService<Warudo.WarudoService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -73,6 +81,8 @@ public static class StreamAppsServiceCollectionExtensions
             .. Tits.TitsSubActions.TypeIds,
             .. Lumia.LumiaSubActions.TypeIds,
             .. ObsbotSubActions.TypeIds, .. MtionSubActions.TypeIds,
+            .. Veadotube.VeadotubeSubActions.TypeIds, .. Vnyan.VnyanSubActions.TypeIds,
+            .. Vrchat.VrchatSubActions.TypeIds, .. Warudo.WarudoSubActions.TypeIds,
         ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;

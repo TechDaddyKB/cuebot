@@ -13,6 +13,9 @@ public sealed record StreamAppsTimings(TimeSpan ConnectTimeout, TimeSpan Request
 /// <summary>A command was sent while the app is not connected.</summary>
 public sealed class StreamAppNotConnectedException(string name) : InvalidOperationException($"{name} is not connected.");
 
+/// <summary>The app could not be found yet (e.g. not open); the connection keeps looking when reconnecting is on.</summary>
+public sealed class StreamAppUnavailableException(string message) : Exception(message);
+
 /// <summary>The app does not offer what was asked for (e.g. an API version too old, an unknown scene).</summary>
 public sealed class StreamAppRequestException(string message) : Exception(message);
 

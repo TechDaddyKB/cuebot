@@ -1,0 +1,163 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.StreamApps"
+             x:Class="Cuebot.App.Views.StreamApps.VtuberAppsView"
+             x:DataType="vm:VtuberAppsViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="VTuber apps" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Let chat change your avatar. Each app below can be controlled from an action (look for its name in the step list), and changes in the app can start actions. None of them needs a password. Settings are stored in streamapps.json." />
+
+      <!-- veadotube -->
+      <Border Classes="card" DataContext="{Binding Veadotube}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="veadotube (mini or full)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Nothing to switch on in veadotube: Cuebot finds it by itself while it is open (it picks a new &quot;door&quot; number every time it starts). Then actions can change your avatar state and push-to-talk, and state changes can start actions." />
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto">
+            <TextBlock Text="Which veadotube" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VeadoInstance" Text="{Binding Instance}" PlaceholderText="Leave empty for the first one that is open"
+                     ToolTip.Tip="Most people leave this empty. If you run more than one, type its name (for example veadotube mini). On another computer, type its address like 192.168.1.20:2424." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to veadotube as soon as Cuebot starts." />
+          <CheckBox Content="Keep looking when veadotube closes (or is not open yet)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries again by itself, so you can open veadotube before or after Cuebot." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to veadotube." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to veadotube." />
+            <Button Content="Which are open?" Command="{Binding FindOpenCommand}" ToolTip.Tip="Lists the veadotube programs open on this computer right now." />
+            <Button Content="Toggle push-to-talk" Command="{Binding TogglePushToTalkCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Turns veadotube's push-to-talk on or off, as a test." />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="{Binding PushToTalk}" />
+          <TextBlock Classes="muted" Text="Connect to list your avatar states." IsVisible="{Binding HasNoStates}" />
+          <ItemsControl Name="VeadoStates" ItemsSource="{Binding States}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtuberRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- VNyan -->
+      <Border Classes="card" DataContext="{Binding Vnyan}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="VNyan" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In VNyan's node graph, add an &quot;API Message&quot; node and type a name into it, for example Wave. Then use the &quot;Send to VNyan&quot; step with that same name, and whatever you connect after the node runs. VNyan's API is on by default on port 8069." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VnyanHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The address of the computer where VNyan runs. 127.0.0.1 means this same computer, so most people can leave it." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="VnyanPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The &quot;door&quot; number of VNyan's API. Only change it if you changed it in VNyan too." />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
+            <TextBlock Text="Test name" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VnyanTestAction" Text="{Binding TestAction}"
+                     ToolTip.Tip="The name of an API Message node in VNyan to run as a test." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Send test" Classes="accent" Command="{Binding SendTestCommand}"
+                    ToolTip.Tip="Sends this name to VNyan now. VNyan says it got it; your node then runs." />
+          </Grid>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- VRChat -->
+      <Border Classes="card" DataContext="{Binding Vrchat}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="VRChat (OSC)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In VRChat open the Action Menu, then Options, then OSC, and make sure it is Enabled. Cuebot can then set your avatar's parameters (like toggling a hat), write in your chatbox, and start actions when you change avatar or a parameter changes." />
+          <Grid ColumnDefinitions="Auto,*,Auto,110,Auto,110" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VrchatHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The computer where VRChat runs. 127.0.0.1 means this same computer." />
+            <TextBlock Grid.Column="2" Text="Send to" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="VrchatSendPort" Value="{Binding SendPort}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The &quot;door&quot; VRChat listens on (9000 unless you changed it)." />
+            <TextBlock Grid.Column="4" Text="Listen on" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="5" Name="VrchatListenPort" Value="{Binding ListenPort}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The &quot;door&quot; VRChat talks back on (9001). Only one app can listen there; if another OSC tool already does, Cuebot can still send but cannot hear VRChat." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Opens the OSC connection as soon as Cuebot starts." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Opens the OSC connection to VRChat." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the OSC connection." />
+          </StackPanel>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
+            <TextBlock Text="Chatbox test" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VrchatChatText" Text="{Binding ChatText}" MaxLength="144"
+                     ToolTip.Tip="Text to show above your avatar. Everyone in your world can see it." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Send" Command="{Binding SendChatCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Shows this text in your VRChat chatbox now. Everyone in your world can see it." />
+          </Grid>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Heard}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Warudo -->
+      <Border Classes="card" DataContext="{Binding Warudo}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Warudo" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Cuebot uses the same door as Warudo's built-in Stream Deck support, so no mod is needed. In a Warudo blueprint, add an &quot;On Stream Deck Trigger&quot;, &quot;On Stream Deck Toggle&quot; or &quot;On Stream Deck Message&quot; node and type a Receiver Name. Warudo only opens the door once your scene has one of these nodes." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="WarudoHost" Text="{Binding Host}" PlaceholderText="localhost"
+                     ToolTip.Tip="Warudo only listens on its own computer, so leave this as localhost." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="WarudoPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="Warudo's Stream Deck door number, 19069. You should not need to change it." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to Warudo as soon as Cuebot starts." />
+          <CheckBox Content="Keep trying when Warudo closes (or is not listening yet)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries again by itself, so you can open Warudo before or after Cuebot." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to Warudo." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to Warudo." />
+            <Button Content="Reload receivers" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Asks Warudo again for the Receiver Names in your scene. Use it after you add a node." />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="Connect to list the receivers in your Warudo scene." IsVisible="{Binding HasNoReceivers}" />
+          <ItemsControl Name="WarudoReceivers" ItemsSource="{Binding Receivers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtuberRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

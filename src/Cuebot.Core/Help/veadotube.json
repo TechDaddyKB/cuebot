@@ -1,0 +1,95 @@
+{
+  "triggers": {
+    "veadotube.connected": {
+      "description": "Runs when Cuebot connects to veadotube.",
+      "fields": {},
+      "variables": {
+        "veadotube.instance": "The name of the veadotube that is connected (for example veadotube mini)",
+        "veadotube.instanceId": "veadotube's own id for that window"
+      }
+    },
+    "veadotube.disconnected": {
+      "description": "Runs when the connection to veadotube drops, for example because you closed it.",
+      "fields": {},
+      "variables": {
+        "veadotube.instance": "The name of the veadotube that is connected (for example veadotube mini)",
+        "veadotube.instanceId": "veadotube's own id for that window",
+        "reason": "Why it dropped"
+      }
+    },
+    "veadotube.stateChanged": {
+      "description": "Runs when your avatar changes to another state in veadotube, whether you clicked it, used a hotkey, or an action changed it.",
+      "fields": {
+        "state": "Only react when the avatar changes to one of these states. Type their names as in veadotube, separated by commas. Leave empty for any state."
+      },
+      "variables": {
+        "veadotube.instance": "The name of the veadotube that is connected (for example veadotube mini)",
+        "veadotube.instanceId": "veadotube's own id for that window",
+        "state": "The state now showing",
+        "stateId": "That state's id (the same as its name in new versions)",
+        "previousState": "The state that was showing before",
+        "nodeName": "The node that changed (avatar state in veadotube mini)",
+        "nodeId": "That node's id"
+      }
+    },
+    "veadotube.switchChanged": {
+      "description": "Runs when push-to-talk (or another on/off node in full veadotube) turns on or off.",
+      "fields": {
+        "node": "Only react to these nodes, for example push-to-talk. Separate several with commas. Leave empty for any.",
+        "state": "Only react when it turns On, only when it turns Off, or Any."
+      },
+      "variables": {
+        "veadotube.instance": "The name of the veadotube that is connected (for example veadotube mini)",
+        "veadotube.instanceId": "veadotube's own id for that window",
+        "nodeName": "The node that changed, for example push-to-talk",
+        "nodeId": "That node's id",
+        "value": "True when it is now on, false when off",
+        "state": "On or Off"
+      }
+    }
+  },
+  "subActions": {
+    "veadotube.changeState": {
+      "description": "Changes which avatar state veadotube shows, for example a surprised face when someone raids.",
+      "fields": {
+        "mode": "How to change it. \"Switch to this state\" just shows it. \"Show on top\" shows it but remembers the one before, so \"Take this state off\" can go back. \"Back to the first state\" clears them all.",
+        "state": "The state's name exactly as in veadotube. Not needed for \"Back to the first state\".",
+        "node": "Leave empty. Only full veadotube users with several State Events nodes type a node name here."
+      },
+      "variables": {
+        "veadotube.state": "The state that was asked for"
+      }
+    },
+    "veadotube.setSwitch": {
+      "description": "Turns veadotube's push-to-talk on, off or the other way round. With push-to-talk on, your avatar talks even without the mic.",
+      "fields": {
+        "state": "On, Off, or Toggle (the opposite of now).",
+        "node": "Leave empty for push-to-talk. Full veadotube users can type the name of another on/off (Boolean) node."
+      },
+      "variables": {
+        "veadotube.value": "True when it was turned on, false when off (empty if unknown)"
+      }
+    },
+    "veadotube.setNumber": {
+      "description": "Sets a number in full veadotube, for nodes you exposed yourself (veadotube mini has none).",
+      "fields": {
+        "node": "The name of the Number node in veadotube.",
+        "value": "The number to set (or add).",
+        "add": "Tick to add the number to the current one instead of replacing it."
+      },
+      "variables": {}
+    },
+    "veadotube.getState": {
+      "description": "Finds out which avatar state is showing, so later steps can use it.",
+      "fields": {
+        "node": "Leave empty for veadotube mini's avatar state."
+      },
+      "variables": {
+        "veadotube.state": "The state showing now",
+        "veadotube.states": "All state names, separated by commas",
+        "veadotube.stateCount": "How many states there are",
+        "veadotube.pushToTalk": "True when push-to-talk is on"
+      }
+    }
+  }
+}

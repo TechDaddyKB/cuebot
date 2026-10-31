@@ -252,6 +252,32 @@ public sealed class StreamerBotWebSocketTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Warudo_streamerbot_plugin_messages_work_as_sent()
+    {
+        // The exact JSON the WarudoStreamerBot plugin (github.com/dbqt/WarudoStreamerBot, MIT) sends through Newtonsoft:
+        // fixed ids it matches answers by, a Twitch-keyed Subscribe, and null fields when a node has no arguments.
+        var action = _bot.AddAction("Wave");
+        await _client.SendRawAsync("""{"request":"GetEvents","id":"geteventsid"}""");
+        var events = await _client.NextAsync(m => S(m["id"]) == "geteventsid");
+        Assert.Contains("Follow", events["events"]!["Twitch"]!.AsArray().Select(S));
+
+        await _client.SendRawAsync("""{"request":"GetActions","id":"getactionsid"}""");
+        var actions = await _client.NextAsync(m => S(m["id"]) == "getactionsid");
+        Assert.Equal(action.Id.ToString(), S(actions["actions"]![0]!["id"]));
+
+        await _client.SendRawAsync($$"""{"action":{"id":"{{action.Id}}","name":null},"args":null,"request":"DoAction","id":"doaction1"}""");
+        Assert.Equal("ok", S((await _client.NextAsync(m => S(m["id"]) == "doaction1"))["status"]));
+        await _bot.WaitForRunAsync("Wave");
+
+        await _client.SendRawAsync("""{"events":{"Twitch":["Follow"]},"request":"Subscribe","id":"3f2b"}""");
+        await _client.NextAsync(m => S(m["id"]) == "3f2b");
+        _bot.Bus.Publish(new BotEvent("twitch.follow", new Dictionary<string, object?> { ["user"] = "Zed" }));
+        var e = await _client.NextAsync(m => m["event"] is not null);
+        Assert.Equal("Twitch", S(e["event"]!["source"]));
+        Assert.Equal("Follow", S(e["event"]!["type"]));
+    }
+
+    [Fact]
     public async Task Wildcard_subscription_receives_application_and_raw_events()
     {
         await _client.RequestAsync("Subscribe", new { events = new { Application = new[] { "*" }, Raw = new[] { "ActionCompleted" } } });

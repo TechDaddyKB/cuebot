@@ -2,7 +2,7 @@ namespace Cuebot.App.ViewModels.StreamApps;
 
 /// <summary>
 /// The Stream apps page: OBS Studio and Streamlabs Desktop, Meld Studio and PolyPop, T.I.T.S., Lumia Stream, OBSBOT,
-/// mtion and StreamFog, as sub-pages in the section list.
+/// mtion, the VTuber apps and StreamFog, as sub-pages in the section list.
 /// </summary>
 public sealed class StreamAppsPageViewModel(ObsViewModel obs, StreamAppsViewModel apps) : PageViewModel("Stream apps")
 {
@@ -18,6 +18,9 @@ public sealed class StreamAppsPageViewModel(ObsViewModel obs, StreamAppsViewMode
 
     /// <summary>mtion studio tab.</summary>
     public MtionViewModel? Mtion { get; init; }
+
+    /// <summary>VTuber apps tab (veadotube, VNyan, VRChat, Warudo).</summary>
+    public VtuberAppsViewModel? Vtuber { get; init; }
 
     private int _selectedTab;
 
@@ -40,6 +43,7 @@ public sealed class StreamAppsPageViewModel(ObsViewModel obs, StreamAppsViewMode
         .. Lumia is null ? [] : new[] { ("Lumia Stream", 3) },
         .. Obsbot is null ? [] : new[] { ("OBSBOT", 4) },
         .. Mtion is null ? [] : new[] { ("mtion", 5) },
+        .. Vtuber is null ? [] : new[] { ("VTuber apps", 7) },
         ("StreamFog", 6),
     ];
 

@@ -1,0 +1,69 @@
+{
+  "triggers": {
+    "vrchat.avatarChanged": {
+      "description": "Runs when you switch to another avatar in VRChat.",
+      "fields": {
+        "avatar": "Only react to these avatars, typed as their ids (they start with avtr_). Leave empty for any avatar."
+      },
+      "variables": {
+        "avatarId": "The id of the avatar you switched to",
+        "vrchat.avatarId": "The same avatar id"
+      }
+    },
+    "vrchat.parameterChanged": {
+      "description": "Runs when one of your avatar's parameters changes, for example when you turn on a hat from your Action Menu. Movement and voice values that change many times a second are left out.",
+      "fields": {
+        "parameter": "Only react to these parameters, typed exactly as in your avatar. Separate several with commas. Leave empty for any.",
+        "value": "Only react when it becomes this value, for example true or 3. Leave empty for any value."
+      },
+      "variables": {
+        "parameter": "The parameter that changed",
+        "value": "Its new value",
+        "previousValue": "Its value before (empty the first time)",
+        "type": "Bool, Int or Float",
+        "vrchat.avatarId": "The avatar you are wearing"
+      }
+    }
+  },
+  "subActions": {
+    "vrchat.setParameter": {
+      "description": "Changes one of your avatar's parameters, for example to turn on a hat or change your outfit when someone redeems a reward.",
+      "fields": {
+        "parameter": "The parameter's name exactly as in your avatar (capital letters matter).",
+        "type": "The kind of parameter: Bool is on/off, Int is a whole number, Float is a number from -1 to 1. It must match your avatar.",
+        "value": "The new value. For Bool you can also type toggle to flip it."
+      },
+      "variables": {
+        "vrchat.value": "The value that was sent"
+      }
+    },
+    "vrchat.chatbox": {
+      "description": "Shows text in the chatbox above your avatar in VRChat. Everyone in your world can see it.",
+      "fields": {
+        "text": "What to show. Longer than 144 characters is cut off.",
+        "immediately": "Shows it straight away. Untick to put it in your keyboard so you can send it yourself.",
+        "sound": "Plays VRChat's little notification sound."
+      },
+      "variables": {
+        "vrchat.chatbox": "The text that was shown"
+      }
+    },
+    "vrchat.typing": {
+      "description": "Shows or hides the \"typing...\" bubble above your avatar.",
+      "fields": {
+        "typing": "Tick to show it, untick to hide it."
+      },
+      "variables": {}
+    },
+    "vrchat.getParameter": {
+      "description": "Finds out a parameter's value that VRChat last reported, so later steps can use it.",
+      "fields": {
+        "parameter": "The parameter's name exactly as in your avatar."
+      },
+      "variables": {
+        "vrchat.value": "Its value",
+        "vrchat.avatarId": "The avatar you are wearing"
+      }
+    }
+  }
+}

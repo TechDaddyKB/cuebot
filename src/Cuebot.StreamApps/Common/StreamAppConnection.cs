@@ -140,18 +140,32 @@ public abstract class StreamAppConnection : IConnectable, IAsyncDisposable
         {
             while (!ct.IsCancellationRequested)
             {
-                var (url, display) = Endpoint();
+                var display = Name;
                 var transport = _transportFactory();
                 string reason;
                 var hadConnected = false;
                 try
                 {
+                    // Inside the try: an app found by discovery (a random port) may simply not be running yet. Other
+                    // errors from Endpoint (e.g. a missing token) still stop the loop.
+                    var endpoint = Endpoint();
+                    display = endpoint.Display;
                     using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
                     {
                         timeout.CancelAfter(Timings.ConnectTimeout);
-                        await transport.ConnectAsync(url, timeout.Token).ConfigureAwait(false);
+                        await transport.ConnectAsync(endpoint.Url, timeout.Token).ConfigureAwait(false);
                     }
                     (reason, hadConnected) = await RunOneSessionAsync(transport, ct).ConfigureAwait(false);
+                }
+                catch (StreamAppUnavailableException ex) when (!ct.IsCancellationRequested)
+                {
+                    await transport.DisposeAsync().ConfigureAwait(false);
+                    reason = ex.Message;
+                }
+                catch (StreamAppRequestException)
+                {
+                    await transport.DisposeAsync().ConfigureAwait(false);
+                    throw;
                 }
                 catch (Exception ex) when (!ct.IsCancellationRequested)
                 {

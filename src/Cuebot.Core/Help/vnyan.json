@@ -1,0 +1,13 @@
+{
+  "triggers": {},
+  "subActions": {
+    "vnyan.send": {
+      "description": "Sends a message to VNyan that runs your node graph: every \"API Message\" node with the same name starts, for example to throw something at your model or change an expression.",
+      "fields": {
+        "action": "The name you typed into the API Message node in VNyan, for example Wave. Capital letters matter.",
+        "payload": "Optional extra values the node can use, one name=value per line, for example user=%user%."
+      },
+      "variables": {}
+    }
+  }
+}

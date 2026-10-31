@@ -30,6 +30,9 @@
       <TabItem Header="StreamFog">
         <apps:StreamFogView />
       </TabItem>
+      <TabItem Header="VTuber apps" IsVisible="{Binding Vtuber, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <apps:VtuberAppsView DataContext="{Binding Vtuber}" />
+      </TabItem>
     </TabControl>
   </DockPanel>
 </UserControl>

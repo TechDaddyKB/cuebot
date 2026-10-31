@@ -1,0 +1,62 @@
+{
+  "triggers": {
+    "warudo.connected": {
+      "description": "Runs when Cuebot connects to Warudo.",
+      "fields": {},
+      "variables": {
+        "warudo.host": "The computer Warudo runs on",
+        "warudo.port": "The port number it uses"
+      }
+    },
+    "warudo.disconnected": {
+      "description": "Runs when the connection to Warudo drops, for example because you closed it.",
+      "fields": {},
+      "variables": {
+        "warudo.host": "The computer Warudo runs on",
+        "warudo.port": "The port number it uses",
+        "reason": "Why it dropped"
+      }
+    },
+    "warudo.toggleChanged": {
+      "description": "Runs when an \"On Stream Deck Toggle\" node in Warudo turns on or off, whoever flipped it (Cuebot, a Stream Deck or Warudo itself).",
+      "fields": {
+        "receiver": "Only react to these Receiver Names. Separate several with commas. Leave empty for any.",
+        "state": "Only react when it turns On, only when it turns Off, or Any."
+      },
+      "variables": {
+        "warudo.host": "The computer Warudo runs on",
+        "warudo.port": "The port number it uses",
+        "receiver": "The Receiver Name of the toggle",
+        "state": "On or Off",
+        "value": "True when it is now on"
+      }
+    }
+  },
+  "subActions": {
+    "warudo.trigger": {
+      "description": "Runs a Warudo blueprint: every \"On Stream Deck Trigger\" node with this Receiver Name starts, for example to throw props or play an animation.",
+      "fields": {
+        "receiver": "The Receiver Name typed into the node in Warudo. Capital letters matter."
+      },
+      "variables": {}
+    },
+    "warudo.toggle": {
+      "description": "Turns a Warudo toggle on or off: \"On Stream Deck Toggle\" nodes with this Receiver Name run their On or Off path, for example to show or hide an accessory.",
+      "fields": {
+        "receiver": "The Receiver Name typed into the node in Warudo.",
+        "state": "On, Off, or Toggle (the opposite of now). Cuebot skips On when it is already on."
+      },
+      "variables": {
+        "warudo.toggle": "True when it is now on, false when off (empty if unknown)"
+      }
+    },
+    "warudo.message": {
+      "description": "Sends text to Warudo: \"On Stream Deck Message\" nodes with this Receiver Name start and pass the text on, for example a viewer's name to show.",
+      "fields": {
+        "receiver": "The Receiver Name typed into the node in Warudo.",
+        "message": "The text to send. It can use %arguments% like %user%."
+      },
+      "variables": {}
+    }
+  }
+}

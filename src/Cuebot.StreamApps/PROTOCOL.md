@@ -1,4 +1,4 @@
-# Stream apps: Meld Studio, PolyPop, T.I.T.S., Lumia Stream, OBSBOT, mtion studio (and StreamFog)
+# Stream apps: Meld Studio, PolyPop, T.I.T.S., Lumia Stream, OBSBOT, mtion studio, VTuber apps (and StreamFog)
 
 `Cuebot.StreamApps` connects Cuebot to **Meld Studio**, **PolyPop**, **T.I.T.S.**, **Lumia Stream**, **OBSBOT** and **mtion studio** (StreamFog has no public API; see its section). Settings live in `streamapps.json`.
 Both services implement `IConnectionStatus`, start only when their auto-connect/auto-start box is ticked, and retry
@@ -609,3 +609,50 @@ Activate Outfit by Name, Deactivate Outfit / Reset Look, Play Video Background, 
 marked "wip") is a private partnership whose wire protocol is not public. Reverse-engineering it would break the
 clean-room rule, so Cuebot implements nothing and the StreamFog tab says why. Users can still show or hide StreamFog's
 OBS browser source with the OBS sub-actions.
+
+## VTuber apps: veadotube, VNyan, VRChat, Warudo
+
+All four were checked live on 2026-10-31 (veadotube mini 2.2 on Linux, VNyan under Wine, Warudo 0.15.1 under Proton);
+VRChat only through unit tests (it stopped at its terms page before OSC came up).
+
+### veadotube (`Veadotube/`)
+
+- Source: veado.tube/docs/tech/api (instances, nodes channel) and /docs/tech/data (data folder).
+- Discovery: each open program writes `~/.veadotube/instances/<type>-<hex launch>-<hex pid>` (`%USERPROFILE%\.veadotube`
+  on Windows) with JSON `{name,id,version,language,server,time}`. Files older than ~10 s or without `server` are skipped;
+  the first one opened is used unless the setting names one. The port changes every launch, so the address is looked up
+  on every (re)connect; "not open" is a retryable status (`StreamAppUnavailableException`).
+- WebSocket `ws://<server>/?n=Cuebot` (unnamed clients are rejected); messages are `<channel>:<json>`.
+- On connect: `nodes:{"event":"listen"}` and `nodes:{"event":"list"}` (listen alone does not answer). For each
+  `stateEvents` and `boolean` node: a payload `listen`, then `list`+`peek` (states) or `get` (boolean).
+- Commands: stateEvents payload `set|push|pop|toggle` with `state`, or `clear`; boolean `set` with `value` or `toggle`;
+  number `set|add` with `value`. veadotube does not acknowledge them; the listen updates confirm.
+- A boolean answering `{}` has no value yet and is treated as off, so the first push-to-talk press is a change.
+
+### VNyan (`Vnyan/`)
+
+- `POST http://<host>:8069/` with `{"action":"<name>","payload":{..}}`; VNyan answers `{"result":0}` when accepted.
+  It fires the API message node (`APIMessageNode`) whose action name matches; the payload goes to its outputs and, when the
+  node names one, a VNyan dictionary. VNyan cannot say whether a node used it. No persistent connection.
+
+### VRChat (`Vrchat/`)
+
+- OSC over UDP (docs.vrchat.com/docs/osc-overview): send to 9000, listen on 9001 (reuses `Obsbot/Osc.cs` and
+  `UdpOscTransport`). `/avatar/parameters/<name>` with bool/int(0-255)/float(-1..1), `/chatbox/input [s, T|F, T|F]`
+  (144 characters), `/chatbox/typing [T|F]`. Incoming `/avatar/change` and parameter changes become triggers;
+  fast-changing built-ins (Velocity*, AngularY, Upright, Voice, Viseme, gesture weights...) are remembered only.
+- If 9001 is taken, the transport binds another port: sending works, hearing does not, and the status says so.
+
+### Warudo (`Warudo/`)
+
+- Warudo's built-in Stream Deck plugin service, `ws://localhost:19069/` (websocket-sharp, localhost only; under Proton
+  it binds `::1`, hence the `localhost` default). Started only once the opened scene has an On Stream Deck node.
+- Envelope `{"action":..,"data":{..}}` both ways. Requests: `trigger` / `toggle` `{receiverName}`, `message`
+  `{receiverName,message}`, `getReceivers {type: trigger|toggle|message}` (answer `{"action":"getReceivers","data":[names]}`,
+  no type in the answer, so requests are answered in order), `getToggles` (answer `{name: bool}`). Warudo broadcasts
+  `toggle {receiverName,state,isResponse}` on every toggle change.
+- Learned from Warudo's own Stream Deck service (StreamDeckService.HandleAction / WebSocketService envelope) for
+  interoperability, and confirmed live.
+- Warudo -> Cuebot: the MIT WarudoStreamerBot plugin talks to Cuebot's Streamer.bot-compatible server (GetEvents,
+  GetActions, DoAction with `"args":null`, Subscribe `{"Twitch":[..]}`); covered by
+  `StreamerBotWebSocketTests.Warudo_streamerbot_plugin_messages_work_as_sent`.

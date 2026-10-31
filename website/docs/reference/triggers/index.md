@@ -55,9 +55,12 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Twitch](twitch.md) | 132 |
 | [Users](users.md) | 2 |
 | [Variables](variables.md) | 4 |
+| [veadotube](veadotube.md) | 4 |
 | [Voice Control](voice-control.md) | 2 |
 | [Voicemod](voicemod.md) | 8 |
+| [VRChat](vrchat.md) | 2 |
 | [VTube Studio](vtube-studio.md) | 19 |
+| [Warudo](warudo.md) | 3 |
 | [Wave Link](wave-link.md) | 19 |
 | [Wave Link (legacy)](wave-link-legacy.md) | 18 |
 | [WebSocket](websocket.md) | 6 |

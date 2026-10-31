@@ -54,9 +54,13 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Twitch](twitch.md) | 104 |
 | [Users](users.md) | 2 |
 | [Variables](variables.md) | 11 |
+| [veadotube](veadotube.md) | 4 |
+| [VNyan](vnyan.md) | 1 |
 | [Voice Control](voice-control.md) | 4 |
 | [Voicemod](voicemod.md) | 12 |
+| [VRChat](vrchat.md) | 4 |
 | [VTube Studio](vtube-studio.md) | 16 |
+| [Warudo](warudo.md) | 3 |
 | [Wave Link](wave-link.md) | 23 |
 | [Wave Link (legacy)](wave-link-legacy.md) | 16 |
 | [WebSocket](websocket.md) | 5 |

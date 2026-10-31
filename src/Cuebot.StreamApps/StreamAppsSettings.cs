@@ -9,6 +9,10 @@ public sealed class StreamAppsSettings
     public LumiaSettings Lumia { get; set; } = new();
     public ObsbotSettings Obsbot { get; set; } = new();
     public MtionSettings Mtion { get; set; } = new();
+    public VeadotubeSettings Veadotube { get; set; } = new();
+    public VnyanSettings Vnyan { get; set; } = new();
+    public VrchatSettings Vrchat { get; set; } = new();
+    public WarudoSettings Warudo { get; set; } = new();
 }
 
 public sealed class MeldStudioSettings
