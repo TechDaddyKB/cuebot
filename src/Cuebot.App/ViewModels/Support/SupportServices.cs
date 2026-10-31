@@ -25,6 +25,9 @@ public sealed class SupportServices
 
     public GhCli Gh { get; init; } = new();
 
+    /// <summary>Where Send report posts (tests point it elsewhere); null is Cuebot's report intake.</summary>
+    public Uri? ReportEndpoint { get; init; }
+
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.Now;
 
     public Func<EnvironmentSnapshot> Environment { get; init; } = () => EnvironmentInfo.Collect(Program.BackendName);

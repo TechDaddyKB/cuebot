@@ -8,8 +8,13 @@
   <Border Background="{DynamicResource CuebotCard}" BorderBrush="{DynamicResource CuebotBad}" BorderThickness="0,0,0,2" Padding="16,8">
     <DockPanel>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-        <Button x:Name="ReportCrashButton" Classes="accent" Content="Report it…" Command="{Binding ReportCommand}" />
-        <Button x:Name="DismissCrashButton" Content="Dismiss" Command="{Binding DismissCommand}" />
+        <CheckBox Content="Always send" IsChecked="{Binding SendAutomatically}" IsVisible="{Binding IsAsking}"
+                  ToolTip.Tip="Send crash reports automatically from now on (you can turn this off on the Support page)" />
+        <Button x:Name="SendCrashButton" Classes="accent" Content="Send report" Command="{Binding SendCommand}" IsVisible="{Binding IsAsking}"
+                ToolTip.Tip="Files the crash, the scrubbed log and your connections' states as a GitHub issue; no GitHub account needed" />
+        <Button x:Name="ReportCrashButton" Content="Review first…" Command="{Binding ReportCommand}" IsVisible="{Binding IsAsking}" />
+        <Button Content="Open issue" Command="{Binding OpenIssueCommand}" IsVisible="{Binding IsSent}" />
+        <Button x:Name="DismissCrashButton" Content="Dismiss" Command="{Binding DismissCommand}" IsEnabled="{Binding !IsSending}" />
       </StackPanel>
       <StackPanel VerticalAlignment="Center" Spacing="2">
         <TextBlock Text="{Binding Message}" FontWeight="SemiBold" TextWrapping="Wrap" />

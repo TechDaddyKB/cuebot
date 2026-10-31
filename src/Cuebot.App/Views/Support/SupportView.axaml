@@ -59,12 +59,19 @@
                   <TextBox x:Name="PreviewBox" Text="{Binding Preview}" AcceptsReturn="True" TextWrapping="Wrap" Height="420"
                            FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" />
                   <WrapPanel Orientation="Horizontal">
-                    <Button x:Name="OpenIssueButton" Classes="accent" Content="Open GitHub issue in browser" Command="{Binding OpenIssueCommand}" Margin="0,0,8,8" />
+                    <Button x:Name="SendReportButton" Classes="accent" Content="Send report" Command="{Binding SendCommand}" IsEnabled="{Binding !IsBusy}" Margin="0,0,8,8"
+                            ToolTip.Tip="Files exactly the text above as an issue on Cuebot's GitHub; no GitHub account needed. Issues are public." />
+                    <Button Content="Open the issue" Command="{Binding OpenSentIssueCommand}" IsVisible="{Binding HasIssue}" Margin="0,0,8,8" />
+                    <Button x:Name="OpenIssueButton" Content="Open GitHub issue in browser" Command="{Binding OpenIssueCommand}" Margin="0,0,8,8" />
                     <Button x:Name="GhButton" Content="Submit with gh…" Command="{Binding PrepareGhCommand}" IsVisible="{Binding GhAvailable}" Margin="0,0,8,8" />
                     <Button Content="Copy report" Command="{Binding CopyReportCommand}" Margin="0,0,8,8" />
                     <Button Content="Save report" Command="{Binding SaveReportCommand}" Margin="0,0,8,8" />
                     <Button Content="Open reports folder" Command="{Binding OpenReportsFolderCommand}" Margin="0,0,8,8" />
                   </WrapPanel>
+                  <CheckBox Content="Send crash reports automatically (Cuebot sends the crash and its scrubbed log when it starts after a crash)"
+                            IsChecked="{Binding SendCrashesAutomatically}" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12"
+                             Text="Sent reports become public issues on github.com/TechDaddyKB/cuebot. Secrets and e-mail addresses are removed first, and account names unless you include them." />
                   <Border x:Name="GhConfirm" IsVisible="{Binding IsGhConfirming}" BorderBrush="{DynamicResource CuebotAccent}" BorderThickness="1"
                           CornerRadius="4" Padding="10">
                     <StackPanel Spacing="8">

@@ -75,7 +75,30 @@ public sealed class SupportPageTests : IDisposable
         CurrentVersion = SemVersion.Parse("0.1.0"),
         CheckUpdatesOnStart = checkOnStart,
         HomeFolder = _dir,
+        ReportEndpoint = new Uri(IntakeUrl),
     };
+
+    private const string IntakeUrl = "https://intake.test/v1/reports";
+
+    /// <summary>What the report intake was sent (parsed JSON bodies).</summary>
+    private readonly List<System.Text.Json.Nodes.JsonObject> _sent = [];
+
+    /// <summary>Answers the intake like the real one: issue 7, or the same issue for a repeat crash signature.</summary>
+    private void FakeIntake(HttpStatusCode status = HttpStatusCode.Created, string? reply = null)
+    {
+        var seen = new HashSet<string>();
+        _github.Respond = request =>
+        {
+            if (request.RequestUri!.AbsoluteUri != IntakeUrl) return new HttpResponseMessage(HttpStatusCode.NotFound);
+            var body = System.Text.Json.Nodes.JsonNode.Parse(request.Content!.ReadAsStringAsync().Result)!.AsObject();
+            _sent.Add(body);
+            var duplicate = body["signature"] is { } sig && !seen.Add(sig.GetValue<string>());
+            return new HttpResponseMessage(status)
+            {
+                Content = new StringContent(reply ?? $$"""{"number": 7, "url": "https://github.com/TechDaddyKB/cuebot/issues/7", "duplicate": {{(duplicate ? "true" : "false")}}}"""),
+            };
+        };
+    }
 
     private void SeedData()
     {
@@ -292,5 +315,108 @@ public sealed class SupportPageTests : IDisposable
         await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.Equal(2, _github.Requests.Count);
         third.Dispose();
+    }
+
+    [AvaloniaFact]
+    public async Task Send_report_files_the_preview_through_the_intake()
+    {
+        SeedData();
+        FakeIntake();
+        var vm = new SupportViewModel(Services(ghInstalled: false));
+        await Task.Yield();
+        var report = vm.Report;
+        report.Title = "Chat freezes";
+        report.Summary = "Chat stops after a raid";
+        await report.SendCommand.ExecuteAsync(null);
+
+        var sent = Assert.Single(_sent);
+        Assert.Equal(("problem", "Chat freezes", report.Preview), (sent["kind"]!.GetValue<string>(), sent["title"]!.GetValue<string>(), sent["body"]!.GetValue<string>()));
+        Assert.Equal(ReportBuilderTests.Env.AppVersion.Split('+')[0], sent["version"]!.GetValue<string>());
+        Assert.Matches("^[0-9a-f]{32}$", sent["installId"]!.GetValue<string>());
+        Assert.Null(sent["signature"]);
+        Assert.Equal(("Thanks! Your report is issue #7.", "https://github.com/TechDaddyKB/cuebot/issues/7"), (report.Status, report.IssueUrl));
+        report.OpenSentIssueCommand.Execute(null);
+        Assert.Equal("https://github.com/TechDaddyKB/cuebot/issues/7", Assert.Single(_opened));
+        Assert.DoesNotContain("g5xk2m9q7w1r4t8y0u3i6o2p5a7s9d", sent["body"]!.GetValue<string>());
+
+        // The same install id next time; refusals and rate limits are explained.
+        var again = new SupportViewModel(Services(ghInstalled: false)).Report;
+        again.Title = "Another";
+        FakeIntake(HttpStatusCode.TooManyRequests, """{"error": "Too many", "retryAfter": 600}""");
+        await again.SendCommand.ExecuteAsync(null);
+        Assert.Equal(sent["installId"]!.GetValue<string>(), _sent[^1]["installId"]!.GetValue<string>());
+        Assert.Contains("Try again in about 10 minutes", again.Error);
+        Assert.False(again.HasIssue);
+        FakeIntake(HttpStatusCode.BadRequest, """{"error": "title must be 3 to 200 characters"}""");
+        await again.SendCommand.ExecuteAsync(null);
+        Assert.Equal("The report was not taken: title must be 3 to 200 characters", again.Error);
+    }
+
+    [AvaloniaFact]
+    public async Task The_crash_banner_sends_in_one_click_and_can_send_automatically()
+    {
+        TestApp.BindingErrors.Clear();
+        SeedData();
+        FakeIntake();
+        CrashCapture.WriteCrash(_paths, Boom(), "UI thread", true, [], new DateTimeOffset(2026, 10, 27, 11, 59, 0, TimeSpan.Zero), "Wayland");
+        var vm = new SupportViewModel(Services(ghInstalled: false));
+        var banner = Show(new CrashBannerView { DataContext = vm.CrashBanner }, 90);
+        Assert.True(vm.CrashBanner.IsAsking);
+        Assert.False(vm.CrashBanner.SendAutomatically);   // off by default
+        UiPump.Save(banner, "support-crash-banner-send");
+
+        await vm.CrashBanner.SendCommand.ExecuteAsync(null);
+        var sent = Assert.Single(_sent);
+        Assert.Equal("crash", sent["kind"]!.GetValue<string>());
+        Assert.Equal("Crash: InvalidOperationException: Overlay renderer died", sent["title"]!.GetValue<string>());
+        Assert.Matches("^[0-9a-f]{16}$", sent["signature"]!.GetValue<string>());
+        Assert.True(vm.CrashBanner.IsSent);
+        Assert.Contains("issue #7", vm.CrashBanner.Message);
+        Assert.Null(new CrashStore(_paths).LatestUnseen());
+        UiPump.Pump();
+        UiPump.Save(banner, "support-crash-banner-sent");
+        banner.Close();
+
+        // Turned on: the next crash is sent at start, and repeats join the same issue.
+        vm.CrashBanner.SendAutomatically = true;
+        Assert.True(new ReportSettingsStore(_paths).Settings.SendCrashesAutomatically);
+        CrashCapture.WriteCrash(_paths, Boom(), "UI thread", true, [], new DateTimeOffset(2026, 10, 27, 12, 30, 0, TimeSpan.Zero), "Wayland");
+        var next = new SupportViewModel(Services(ghInstalled: false));
+        await next.CrashBanner.Automatic!;
+        Assert.Equal(2, _sent.Count);
+        Assert.Equal(sent["signature"]!.GetValue<string>(), _sent[1]["signature"]!.GetValue<string>());
+        Assert.Contains("already reported", next.CrashBanner.Message);
+        Assert.Empty(TestApp.BindingErrors.Errors);
+    }
+
+    [AvaloniaFact]
+    public async Task A_crash_that_could_not_be_sent_can_still_be_reviewed()
+    {
+        SeedData();
+        FakeIntake(HttpStatusCode.BadGateway, """{"error": "GitHub did not take the report; try again later"}""");
+        CrashCapture.WriteCrash(_paths, Boom(), "UI thread", true, [], new DateTimeOffset(2026, 10, 27, 11, 59, 0, TimeSpan.Zero), "Wayland");
+        var vm = new SupportViewModel(Services(ghInstalled: false));
+        await vm.CrashBanner.SendCommand.ExecuteAsync(null);
+        Assert.False(vm.CrashBanner.IsSent);
+        Assert.True(vm.CrashBanner.IsAsking);
+        Assert.Contains("could not be sent", vm.CrashBanner.Message);
+        Assert.NotNull(new CrashStore(_paths).LatestUnseen());   // still there for Review first
+        vm.CrashBanner.ReportCommand.Execute(null);
+        Assert.True(vm.Report.IncludeCrash);
+    }
+
+    [Fact]
+    public void Crash_signatures_ignore_paths_line_numbers_and_messages()
+    {
+        static ExceptionInfo Crash(string message, string path, int line) => new()
+        {
+            Type = "System.InvalidOperationException",
+            Message = message,
+            StackTrace = $"   at Cuebot.Overlays.Renderer.Draw(Layer layer) in {path}/Renderer.cs:line {line}\n   at Cuebot.App.Main()",
+        };
+        var a = CrashSignature.Of(Crash("Overlay renderer died", "/home/a/src", 10));
+        Assert.Equal(a, CrashSignature.Of(Crash("Something else", @"C:\b\src", 99)));
+        Assert.NotEqual(a, CrashSignature.Of(new ExceptionInfo { Type = "System.NullReferenceException", StackTrace = "   at Cuebot.App.Main()" }));
+        Assert.Matches("^[0-9a-f]{16}$", a);
     }
 }

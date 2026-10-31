@@ -1,0 +1,22 @@
+// Cuebot report intake. Deployed by TechDaddyKB with scripts/setup.mjs (GitHub App + secret), then `npx wrangler deploy`.
+// The App's private key is NOT in this file: it is the GITHUB_PRIVATE_KEY secret.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cuebot-report-intake",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "INTAKE", "class_name": "Intake" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Intake"] }],
+  "vars": {
+    "GITHUB_APP_ID": "5550155",
+    "GITHUB_REPO": "TechDaddyKB/cuebot",
+    "PER_INSTALL_PER_HOUR": "5",
+    "PER_INSTALL_PER_DAY": "20",
+    "PER_IP_PER_HOUR": "10",
+    "PER_DAY": "300"
+  },
+  "observability": { "enabled": false }
+}

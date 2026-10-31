@@ -19,11 +19,16 @@ public sealed partial class ReportProblemViewModel : ObservableObject
     private bool _settingPreview;
     private string? _gh;
     private string? _ghBodyFile;
+    private readonly ReportSettingsStore _reportSettings;
+    private readonly ReportSender _sender;
 
     public ReportProblemViewModel(SupportServices services)
     {
         _services = services;
         _crashes = new CrashStore(services.Paths);
+        _reportSettings = new ReportSettingsStore(services.Paths);
+        _sender = new ReportSender(services.HttpHandler, services.ReportEndpoint);
+        _sendCrashesAutomatically = _reportSettings.Settings.SendCrashesAutomatically;
         ReportsFolder = Path.Combine(services.Paths.Root, "reports");
         _crashFile = _crashes.Latest();
         _includeCrash = false;   // an older crash is offered, not attached; the crash prompt attaches a new one
@@ -68,6 +73,24 @@ public sealed partial class ReportProblemViewModel : ObservableObject
 
     /// <summary>Set when the last action saved a report file (offers Open folder).</summary>
     [ObservableProperty] private string _savedPath = "";
+
+    // ---- Send (the report intake) ----
+
+    /// <summary>The issue the last Send filed (or added to).</summary>
+    [ObservableProperty] private string _issueUrl = "";
+
+    /// <summary>Send crash reports on the next start without asking (saved in reports.json; off by default).</summary>
+    [ObservableProperty] private bool _sendCrashesAutomatically;
+
+    partial void OnSendCrashesAutomaticallyChanged(bool value)
+    {
+        _reportSettings.Settings.SendCrashesAutomatically = value;
+        _reportSettings.Save();
+    }
+
+    public bool HasIssue => IssueUrl.Length > 0;
+
+    partial void OnIssueUrlChanged(string value) => OnPropertyChanged(nameof(HasIssue));
 
     // ---- gh ----
 
@@ -184,6 +207,67 @@ public sealed partial class ReportProblemViewModel : ObservableObject
         await clipboard.SetTextAsync(Preview);
         Status = "The report was copied to the clipboard.";
     }
+
+    /// <summary>
+    /// Sends the report as shown in the preview to Cuebot's report intake, which files it as a GitHub issue (no GitHub
+    /// account needed). A report with a crash attached goes as a crash, so repeats of the same crash join one issue.
+    /// </summary>
+    [RelayCommand]
+    public async Task Send()
+    {
+        if (!CheckTitle()) return;
+        if (Title.Trim().Length < 3)
+        {
+            Error = "Make the title a few words long.";
+            return;
+        }
+        IsBusy = true;
+        Status = "Sending…";
+        try
+        {
+            var crash = IncludeCrash ? _info.Crash : null;
+            var environment = _info.Environment;
+            var result = await _sender.SendAsync(crash is null ? "problem" : "crash", Title, Preview, VersionOf(environment), OsOf(environment),
+                _reportSettings.Settings.InstallId, crash is null ? null : CrashSignature.Of(crash.Exception));
+            if (!result.Sent)
+            {
+                Status = "";
+                Error = result.Error;
+                return;
+            }
+            IssueUrl = result.Url;
+            Status = result.Duplicate
+                ? $"Thanks! This crash was already reported, so your report was added to issue #{result.Number}."
+                : $"Thanks! Your report is issue #{result.Number}.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Attaches the crash and sends it with the default form (the crash prompt's one-click Send).</summary>
+    public async Task<bool> SendCrashAsync(string crashFile)
+    {
+        AttachCrash(crashFile);
+        await Send();
+        return HasIssue;
+    }
+
+    [RelayCommand]
+    private void OpenSentIssue()
+    {
+        if (HasIssue) _services.OpenUrl(IssueUrl);
+    }
+
+    private static string VersionOf(EnvironmentSnapshot environment)
+    {
+        var version = (environment.AppVersion.Length > 0 ? environment.AppVersion : "0.0.0").Split('+')[0].Trim();
+        return System.Text.RegularExpressions.Regex.IsMatch(version, "^[0-9A-Za-z.+-]{1,40}$") ? version : "0.0.0";
+    }
+
+    private static string OsOf(EnvironmentSnapshot environment) =>
+        ReportBuilder.Truncate((environment.Distro.Length > 0 ? environment.Distro : environment.Os).Trim(), 100);
 
     /// <summary>
     /// Opens GitHub's new-issue page prefilled. When the report is too long for a link, the link carries a short
