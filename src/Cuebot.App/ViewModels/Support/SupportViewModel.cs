@@ -27,5 +27,8 @@ public sealed partial class SupportViewModel : PageViewModel, IDisposable
 
     [ObservableProperty] private int _selectedTab;
 
+    /// <summary>The page lives for the whole session: collect the log and connection states again each time it opens.</summary>
+    public override void OnEntered() => Report.Refresh();
+
     public void Dispose() => Updates.Dispose();
 }

@@ -223,6 +223,17 @@ public sealed class SupportPageTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Opening_the_page_again_collects_the_newest_log_lines()
+    {
+        SeedData();
+        var vm = new SupportViewModel(Services(ghInstalled: false));   // made once, when the window opens
+        Assert.DoesNotContain("Later line", vm.Report.Preview);
+        File.AppendAllLines(Path.Combine(_paths.Logs, "cuebot-20261027.log"), ["12:30:00 [Info] Cuebot: Later line"]);
+        vm.OnEntered();
+        Assert.Contains("Later line", vm.Report.Preview);
+    }
+
+    [AvaloniaFact]
     public async Task Short_report_opens_the_full_link_and_title_is_required()
     {
         SeedData();

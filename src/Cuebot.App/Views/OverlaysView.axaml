@@ -136,6 +136,8 @@
               <Button Content="Start poll" Classes="accent" Command="{Binding StartPollCommand}" IsEnabled="{Binding !PollRunning}" />
               <Button Content="End poll" Command="{Binding EndPollCommand}" IsEnabled="{Binding PollRunning}" />
             </StackPanel>
+            <TextBlock Text="{Binding PollStatus}" TextWrapping="Wrap"
+                       IsVisible="{Binding PollStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
           <StackPanel Grid.Column="2" Spacing="6">
             <TextBlock Text="Prediction (Cuebot points)" FontWeight="SemiBold" />
@@ -153,6 +155,8 @@
               <Button Content="Cancel" Command="{Binding CancelPredictionCommand}" IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6"
                       ToolTip.Tip="Refund every bet" />
             </WrapPanel>
+            <TextBlock Text="{Binding PredictionStatus}" TextWrapping="Wrap"
+                       IsVisible="{Binding PredictionStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
         </Grid>
         <TextBlock Text="{Binding Message}" Classes="muted" TextWrapping="Wrap"

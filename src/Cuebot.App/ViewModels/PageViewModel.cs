@@ -35,6 +35,11 @@ public abstract class PageViewModel(string title) : ObservableObject
     {
     }
 
+    /// <summary>Called when the window moves to this page.</summary>
+    public virtual void OnEntered()
+    {
+    }
+
     /// <summary>Services raise events on background threads; view models update on the UI thread.</summary>
     protected static void OnUi(Action action)
     {

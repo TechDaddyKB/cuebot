@@ -298,6 +298,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         oldValue?.OnLeft();
         SyncGroupSelection(newValue);
+        newValue.OnEntered();
     }
 
     /// <summary>Shows a page (and its section).</summary>

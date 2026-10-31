@@ -12,6 +12,7 @@ namespace Cuebot.App.ViewModels;
 public sealed partial class ChatPollPanelViewModel : ObservableObject
 {
     private readonly ChatPolls _polls;
+    private readonly PollTracker _tracker;
 
     [ObservableProperty] private string _pollTitle = "";
     [ObservableProperty] private string _pollChoices = "";
@@ -25,6 +26,7 @@ public sealed partial class ChatPollPanelViewModel : ObservableObject
     public ChatPollPanelViewModel(ChatPolls polls, PollTracker tracker)
     {
         _polls = polls;
+        _tracker = tracker;
         tracker.Changed += state =>
         {
             if (state.Source == ChatPolls.Source) Dispatch(Refresh);
@@ -47,6 +49,20 @@ public sealed partial class ChatPollPanelViewModel : ObservableObject
     public bool CanStartPrediction => !PredictionOpen;
     public bool CanLock => PredictionOpen && !PredictionLocked;
 
+    /// <summary>The running poll with its votes so far, however it was started (here, an action, the API or MCP); "" when none.</summary>
+    public string PollStatus => Status(PollState.Poll);
+
+    /// <summary>The open prediction with its bets so far; "" when none.</summary>
+    public string PredictionStatus => Status(PollState.Prediction);
+
+    private string Status(string kind)
+    {
+        if (_tracker.Current.FirstOrDefault(p => p.Source == ChatPolls.Source && p.Kind == kind && p.IsOpen) is not { } state) return "";
+        var choices = string.Join(", ", state.Choices.Select((c, i) =>
+            $"{i + 1}. {c.Title} ({(kind == PollState.Prediction ? c.Points + " pts" : c.Votes.ToString(System.Globalization.CultureInfo.CurrentCulture))})"));
+        return $"{(state.Status == PollState.Locked ? "Locked" : "Running")}: {state.Title} · {choices}";
+    }
+
     /// <summary>The open prediction's outcomes, to pick the winner from.</summary>
     public ObservableCollection<string> Outcomes { get; } = [];
 
@@ -59,7 +75,8 @@ public sealed partial class ChatPollPanelViewModel : ObservableObject
             foreach (var o in outcomes) Outcomes.Add(o);
             Winner = null;
         }
-        foreach (var name in (string[])[nameof(PollRunning), nameof(PredictionOpen), nameof(PredictionLocked), nameof(CanStartPrediction), nameof(CanLock)])
+        foreach (var name in (string[])[nameof(PollRunning), nameof(PredictionOpen), nameof(PredictionLocked), nameof(CanStartPrediction), nameof(CanLock),
+                     nameof(PollStatus), nameof(PredictionStatus)])
             OnPropertyChanged(name);
     }
 

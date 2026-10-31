@@ -108,9 +108,19 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         Assert.Equal("Poll started; end it when you are ready.", panel.Message);
         panel.StartPollCommand.Execute(null);
         Assert.Contains("already running", panel.Message);
+        Assert.Equal("Running: Next game? · 1. Horror (0), 2. Racing (0)", panel.PollStatus);
         panel.EndPollCommand.Execute(null);
         Pump();
         Assert.False(panel.PollRunning);
+        Assert.Equal("", panel.PollStatus);
+
+        // A poll started elsewhere (an action, the API, MCP) shows up too, not the form's text.
+        polls.StartPoll("From MCP", ["Red", "Blue"], 0);
+        Pump();
+        Assert.True(panel.PollRunning);
+        Assert.Equal("Running: From MCP · 1. Red (0), 2. Blue (0)", panel.PollStatus);
+        polls.EndPoll();
+        Pump();
 
         points.Add("Twitch", "a1", "Ann", 100);
         panel.PredictionTitle = "Win?";
@@ -121,9 +131,11 @@ public sealed class OverlaysPageTests : IAsyncDisposable
         Assert.True(panel.CanLock);
         panel.ResolvePredictionCommand.Execute(null);
         Assert.Equal("Pick the winning outcome first.", panel.Message);
+        Assert.Equal("Running: Win? · 1. Yes (0 pts), 2. No (0 pts)", panel.PredictionStatus);
         panel.LockPredictionCommand.Execute(null);
         Pump();
         Assert.False(panel.CanLock);
+        Assert.StartsWith("Locked: Win?", panel.PredictionStatus);
         panel.Winner = "No";
         panel.ResolvePredictionCommand.Execute(null);
         Pump();
