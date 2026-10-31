@@ -156,7 +156,8 @@ public sealed class McpTests : IAsyncLifetime
             var annotations = tool["annotations"]!;
             var name = tool["name"]!.GetValue<string>();
             var destructive = annotations["destructiveHint"]!.GetValue<bool>();
-            Assert.Equal(name.StartsWith("delete_", StringComparison.Ordinal) || name is "apply_import" or "send_chat_message", destructive);
+            Assert.Equal(name.StartsWith("delete_", StringComparison.Ordinal) || name is "apply_import" or "send_chat_message" or "run_subactions" or "manage_group",
+                destructive);
             if (annotations["readOnlyHint"]!.GetValue<bool>()) Assert.False(destructive);
             if (destructive) Assert.True(tool["inputSchema"]!["properties"]!.AsObject().ContainsKey(McpConfirmations.ArgumentName));
             if (tool["inputSchema"]!["required"] is JsonArray required)
@@ -336,7 +337,7 @@ public sealed class McpTests : IAsyncLifetime
     {
         // Guards against adding a tool without a test: the names here must match tools/list exactly.
         var tested = RequiredTools.Concat(["describe_trigger_type", "list_script_functions", "get_command", "delete_command", "update_timer",
-            "set_timer_state", "delete_timer", "delete_global"]).Order().ToArray();
+            "set_timer_state", "delete_timer", "delete_global", .. McpCoverageTests.Tools]).Order().ToArray();
         var listed = (await _host.RequestAsync("tools/list"))["tools"]!.AsArray().Select(t => t!["name"]!.GetValue<string>()).Order().ToArray();
         Assert.Equal(tested, listed);
     }

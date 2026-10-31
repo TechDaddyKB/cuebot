@@ -189,6 +189,30 @@ public sealed class ServerServices
 
     private Cuebot.Core.Giveaways.Giveaways? _giveaways;
 
+    /// <summary>Quotes (!quote).</summary>
+    public Cuebot.Core.Quotes.QuoteStore? Quotes
+    {
+        get => _quotes ??= _provider?.GetService<Cuebot.Core.Quotes.QuoteStore>();
+        init => _quotes = value;
+    }
+    private Cuebot.Core.Quotes.QuoteStore? _quotes;
+
+    /// <summary>Cuebot points (currencies, balances, leaderboards).</summary>
+    public Cuebot.Core.Points.PointsService? Points
+    {
+        get => _points ??= _provider?.GetService<Cuebot.Core.Points.PointsService>();
+        init => _points = value;
+    }
+    private Cuebot.Core.Points.PointsService? _points;
+
+    /// <summary>User groups (used by command permissions, points multipliers and sub-actions).</summary>
+    public GroupStore? Groups
+    {
+        get => _groups ??= _provider?.GetService<GroupStore>();
+        init => _groups = value;
+    }
+    private GroupStore? _groups;
+
     /// <summary>The Cuebot points store.</summary>
     public Cuebot.Core.Store.PointsStore? Store
     {

@@ -19,7 +19,7 @@ namespace Cuebot.Server.Api;
 /// updates at once. Failures throw <see cref="ApiException"/>. Settings files (platform tokens, servers.json) are never
 /// read or returned here.
 /// </summary>
-public sealed class ApiOperations(ServerServices services, Func<IReadOnlyList<ServerStatus>>? statuses = null)
+public sealed partial class ApiOperations(ServerServices services, Func<IReadOnlyList<ServerStatus>>? statuses = null)
 {
     private const string LogSource = "API";
 

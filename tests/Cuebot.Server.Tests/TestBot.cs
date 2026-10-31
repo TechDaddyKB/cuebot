@@ -51,6 +51,7 @@ internal sealed class TestBot : IAsyncDisposable
             Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
+            Quotes = Quotes, Points = Points, Groups = Groups,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -87,6 +88,9 @@ internal sealed class TestBot : IAsyncDisposable
     /// <summary>Cuebot chat polls, without points (predictions answer that points are needed).</summary>
     public Cuebot.Core.Polls.ChatPolls ChatPolls => _chatPolls ??= new(null, Log, Bus, Polls);
     private Cuebot.Core.Polls.ChatPolls? _chatPolls;
+
+    public Cuebot.Core.Quotes.QuoteStore Quotes => _quotes ??= new(null, Log, Bus);
+    private Cuebot.Core.Quotes.QuoteStore? _quotes;
 
     public Cuebot.Core.Points.PointsService Points => _points ??= new(UserVariables, null, Bus, Log);
     private Cuebot.Core.Points.PointsService? _points;
@@ -194,6 +198,7 @@ internal sealed class TestBot : IAsyncDisposable
         WidgetCode.Dispose();
         WidgetStore.Dispose();
         _sessionData?.Dispose();
+        _quotes?.Dispose();
         _overlayBridge?.Dispose();
         Scripts.Dispose();
         Engine.Dispose();

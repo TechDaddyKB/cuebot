@@ -232,19 +232,18 @@ public sealed class McpServer
         _services.Log.Info(LogSource, $"Tool call: {name}");   // never the argument values
         try
         {
-            if (tool.Confirmation is { } describeForAssistant && _settings().RequireConfirmation && confirm is not null)
+            var needed = tool.Confirmation is { } describe && _settings().RequireConfirmation ? describe(args) : null;
+            if (needed is { } summaryForAssistant && confirm is not null)
             {
                 // Cuebot's own Assistant: the streamer answers on the Assistant page while the call waits.
-                var summary = describeForAssistant(args);
-                if (!await confirm(name, summary, ct).ConfigureAwait(false))
-                    return ToolResult(new JsonObject { ["declined"] = true, ["message"] = $"The streamer declined: {summary}. Nothing was done." }, isError: false);
+                if (!await confirm(name, summaryForAssistant, ct).ConfigureAwait(false))
+                    return ToolResult(new JsonObject { ["declined"] = true, ["message"] = $"The streamer declined: {summaryForAssistant}. Nothing was done." }, isError: false);
             }
-            else if (tool.Confirmation is { } describe && _settings().RequireConfirmation)
+            else if (needed is { } summary)
             {
                 var token = McpTools.OptStr(args, McpConfirmations.ArgumentName);
                 if (string.IsNullOrEmpty(token))
                 {
-                    var summary = describe(args);
                     var issued = Confirmations.Issue(name, args);
                     return ToolResult(new JsonObject
                     {

@@ -10,8 +10,11 @@ public sealed record McpToolHints(bool ReadOnly, bool Destructive = false, bool 
 public sealed record McpTool(string Name, string Title, string Description, JsonObject InputSchema, McpToolHints Hints,
     Func<JsonObject, CancellationToken, Task<JsonNode>> Invoke)
 {
-    /// <summary>Set on destructive tools: what the call will do, shown when a confirmation is required. May throw.</summary>
-    public Func<JsonObject, string>? Confirmation { get; init; }
+    /// <summary>
+    /// Set on destructive tools: what the call will do, shown when a confirmation is required; null when these arguments
+    /// need no confirmation (for example creating rather than deleting). May throw.
+    /// </summary>
+    public Func<JsonObject, string?>? Confirmation { get; init; }
 
     public JsonObject ToJson() => new()
     {
@@ -31,7 +34,7 @@ public sealed record McpTool(string Name, string Title, string Description, Json
 }
 
 /// <summary>The tools Cuebot offers over MCP, all backed by <see cref="ApiOperations"/>.</summary>
-public static class McpTools
+public static partial class McpTools
 {
     private const string ActionRef = "Action id or name";
 
@@ -212,6 +215,10 @@ public static class McpTools
                     ("includeDependencies", Bool("Include referenced actions, queues, commands... (default true)")), ("name", Str("Bundle name"))),
                 readOnly, (a, _) => Done(ops.Export(StrList(a, "actions"), StrList(a, "commands"), StrList(a, "timers"), StrList(a, "globals"),
                     OptBool(a, "includeDependencies") ?? true, OptStr(a, "name")))),
+
+            .. AutomationTools(ops),
+            .. EngagementTools(ops),
+            .. CommunityTools(ops),
         ];
     }
 
