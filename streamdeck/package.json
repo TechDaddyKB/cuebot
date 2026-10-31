@@ -29,6 +29,8 @@
     "vitest": "5.0.5"
   },
   "overrides": {
-    "zod": "4.6.6"
+    "zod": "4.6.6",
+    "filelist": "^2.0.2",
+    "minimatch": "^11.0.1"
   }
 }
