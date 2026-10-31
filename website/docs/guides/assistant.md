@@ -53,6 +53,14 @@ to:** and waits. Click **Approve** to let it, or **Deny** to stop it.
 
 Always check what it made. It can make mistakes, just like a person.
 
+### Undo what it did
+
+When an answer created, changed or deleted actions, commands or timers, Cuebot adds a card at the end of the answer:
+"The assistant created the action 'Lurk', created the command 'Lurk'." Click **Undo these changes** to put them all
+back the way they were. If you changed one of them yourself after the answer, Cuebot keeps your version and says so.
+The button works until you close Cuebot. Other things the assistant can change (overlays, points, quotes...) are not
+covered: check those yourself.
+
 ### What it can and cannot touch
 
 - **Can:** actions, triggers, sub-actions, commands, timers, variables, overlays, polls, quotes, points, giveaways,

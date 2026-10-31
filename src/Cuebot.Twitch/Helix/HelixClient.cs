@@ -29,6 +29,35 @@ internal sealed class HelixClient(HttpClient http, Uri helixBase, ITwitchTokenSo
         await EnsureSuccessAsync(response, $"Subscribing to {spec.Type}", ct).ConfigureAwait(false);
     }
 
+    /// <summary>One of this app's EventSub subscriptions, as Get EventSub Subscriptions lists it.</summary>
+    public sealed record EventSubSubscriptionInfo(string Id, string Type, string Status, string Method, string SessionId);
+
+    /// <summary>Every EventSub subscription this app (client id and token) created, all pages.</summary>
+    public async Task<IReadOnlyList<EventSubSubscriptionInfo>> ListEventSubSubscriptionsAsync(CancellationToken ct)
+    {
+        var list = new List<EventSubSubscriptionInfo>();
+        string? cursor = null;
+        do
+        {
+            var query = cursor is null ? null : new[] { KeyValuePair.Create("after", cursor) };
+            var json = await RequestAsync(HttpMethod.Get, "eventsub/subscriptions", query, null, "Listing EventSub subscriptions", ct).ConfigureAwait(false);
+            foreach (var item in json.Items("data"))
+            {
+                var transport = item.Child("transport");
+                list.Add(new EventSubSubscriptionInfo(item.Str("id"), item.Str("type"), item.Str("status"),
+                    transport?.Str("method") ?? "", transport?.Str("session_id") ?? ""));
+            }
+            cursor = json.Child("pagination") is { } page ? page.Str("cursor") : null;
+            if (cursor is { Length: 0 }) cursor = null;
+        }
+        while (cursor is not null && !ct.IsCancellationRequested);
+        return list;
+    }
+
+    public async Task DeleteEventSubSubscriptionAsync(string id, CancellationToken ct) =>
+        await RequestAsync(HttpMethod.Delete, "eventsub/subscriptions", [KeyValuePair.Create("id", id)], null, "Deleting an EventSub subscription", ct)
+            .ConfigureAwait(false);
+
     /// <summary>
     /// Sends a chat message and returns its id; throws when Twitch drops it (e.g. AutoMod, duplicate, rate limit).
     /// </summary>

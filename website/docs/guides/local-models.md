@@ -62,7 +62,7 @@ length to at least 16384, and type `http://127.0.0.1:1234` in **Server**.
 - **Let it think first**: off by default. Thinking made the models much slower (a simple build went from about half a
   minute to five minutes without a graphics card) and did not make them more accurate in Cuebot's tests.
 - **Give it every tool**: off by default. Small models get Cuebot's tools for actions, commands and timers, plus a way
-  to find the others (overlays, polls, points and so on) when they need them. With all 117 tools at once, small models
+  to find the others (overlays, polls, points and so on) when they need them. With all of Cuebot's tools (over a hundred) at once, small models
   got confused and failed about twice as often. Tick it only for big models (30B and up).
 
 Changes apply from the next **New chat**.
@@ -73,7 +73,7 @@ Changes apply from the next **New chat**.
 | --- | --- | --- |
 | It says "done" but the command does nothing | It made the command but did not connect an action to it, or used the wrong trigger | Check the action's **Triggers**; tell it what is missing ("the !lurk command has no action, add one") |
 | It asks you to type "yes" before deleting | Small models sometimes ask in words instead of using the **Approve** button | Answer "yes"; Cuebot still shows **Approve** before anything is deleted |
-| It changes something you did not ask for | It misread the request | Change it back on the Actions page (undo there does not cover the assistant's changes), and ask again more simply. Before a big job, a backup (**Settings > Backups**) is a good idea |
+| It changes something you did not ask for | It misread the request | Click **Undo these changes** under its answer, and ask again more simply. Before a big job, a backup (**Settings > Backups**) is a good idea |
 | An empty answer, or "the model server returned an error" | Small models sometimes stop or write a broken request. Cuebot already retries once and nudges once | Send the message again, or press **New chat** |
 | "The conversation has filled this model's memory" | Long conversations do not fit | Press **New chat**, or raise **Memory** if your graphics card has room |
 | Very slow answers | No graphics card, or the model does not fit in its memory | Use the 4B model, close games and other heavy programs, keep **Let it think first** off |

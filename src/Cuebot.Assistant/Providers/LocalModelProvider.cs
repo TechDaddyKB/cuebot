@@ -10,7 +10,7 @@ namespace Cuebot.Assistant.Providers;
 /// <summary>
 /// A model on the streamer's own computer: Ollama (its own <c>/api/chat</c>, so Cuebot can set the context size and switch
 /// thinking off) or any OpenAI-compatible server (LM Studio, llama.cpp's llama-server) through <c>/v1/chat/completions</c>.
-/// Small models cope badly with Cuebot's 117 tools (about 14K tokens), so sessions send <see cref="LocalToolSet"/>'s focused
+/// Small models cope badly with Cuebot's 118 tools (about 14K tokens), so sessions send <see cref="LocalToolSet"/>'s focused
 /// set plus a tool that finds the others, retry once when the server fails on a malformed tool call, and nudge the model
 /// once when it stops with an empty answer right after tool results. See docs/ASSISTANT.md, "Local models".
 /// </summary>

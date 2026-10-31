@@ -43,6 +43,9 @@ public sealed class ServerManager : IAsyncDisposable
     private IDisposable? _subscription;
     private bool _started;
 
+    /// <summary>The Cuebot services the servers work on (the Assistant's undo reads actions and commands through them).</summary>
+    public ServerServices Services => _services;
+
     public ServerManager(JsonFile<ServerSettings>? file, ServerServices services)
     {
         _file = file;

@@ -20,7 +20,7 @@ internal sealed class LocalToolSet(AssistantTools tools, bool all)
     public static readonly string[] Core =
     [
         "list_actions", "get_action", "create_action", "update_action", "delete_action", "test_action",
-        "list_commands", "get_command", "create_command", "update_command", "delete_command",
+        "list_commands", "get_command", "create_command_with_action", "create_command", "update_command", "delete_command",
         "list_timers", "create_timer", "delete_timer",
         "list_trigger_types", "describe_trigger_type", "list_subaction_types", "describe_subaction_type",
         AssistantTools.ReadDocTool,

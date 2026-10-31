@@ -12,6 +12,7 @@ public sealed class McpTests : IAsyncLifetime
     [
         "list_actions", "get_action", "create_action", "update_action", "delete_action", "run_action", "set_action_enabled",
         "list_trigger_types", "list_subaction_types", "describe_subaction_type", "list_commands", "create_command", "update_command",
+        "create_command_with_action",
         "list_timers", "create_timer", "get_globals", "set_global", "get_status", "get_recent_chat", "send_chat_message", "get_history",
         "preview_import", "apply_import", "export_bundle", "control_speech", "control_alerts",
     ];
@@ -250,6 +251,35 @@ public sealed class McpTests : IAsyncLifetime
 
         var (_, functions) = await _host.CallAsync("list_script_functions");
         Assert.True(functions["count"]!.GetValue<int>() > 0);
+    }
+
+    [Fact]
+    public async Task Command_with_action_creates_both_linked_or_neither()
+    {
+        var (error, made) = await _host.CallAsync("create_command_with_action", Args(
+            ("command", new JsonObject { ["name"] = "Lurk", ["commands"] = new JsonArray("!lurk") }),
+            ("action", new JsonObject
+            {
+                // a command.triggered trigger for another command is replaced by the right one
+                ["triggers"] = new JsonArray(new JsonObject { ["type"] = "command.triggered", ["settings"] = new JsonObject { ["command"] = "Other" } }),
+                ["subActions"] = new JsonArray(new JsonObject { ["type"] = "core.log", ["parameters"] = new JsonObject { ["message"] = "Thanks %user%" } }),
+            })));
+        Assert.False(error, made.ToJsonString());
+        Assert.NotNull(Bot.Commands.Find("Lurk"));
+        var action = Bot.Profile.Snapshot.FindAction("Lurk")!;   // named after the command
+        var trigger = Assert.Single(action.Triggers);
+        Assert.Equal("command.triggered", trigger.Type);
+        Assert.Equal("Lurk", trigger.Settings["command"]);
+        var (_, linked) = await _host.CallAsync("get_command", Args(("command", "Lurk")));
+        Assert.Equal("Lurk", linked["linkedActions"]![0]!["name"]!.GetValue<string>());
+
+        var (badError, bad) = await _host.CallAsync("create_command_with_action", Args(
+            ("command", new JsonObject { ["name"] = "Broken", ["commands"] = new JsonArray("!broken") }),
+            ("action", new JsonObject { ["subActions"] = new JsonArray(new JsonObject { ["type"] = "no.such.step" }) })));
+        Assert.True(badError);
+        Assert.Contains("no.such.step", bad.ToJsonString());
+        Assert.Null(Bot.Commands.Find("Broken"));   // nothing half-made
+        Assert.Null(Bot.Profile.Snapshot.FindAction("Broken"));
     }
 
     [Fact]

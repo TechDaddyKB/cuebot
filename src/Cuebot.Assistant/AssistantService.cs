@@ -117,6 +117,7 @@ public sealed class AssistantService : IAsyncDisposable
             }
 
             var session = await SessionForAsync(provider).ConfigureAwait(false);
+            var before = AssistantUndo.Capture(_servers.Services.Profile, _servers.Services.Commands);
             // One stream for the turn: the AI's updates, plus Approve/Deny cards Cuebot's MCP server asks for while an AI
             // app's tool call waits (see ConfirmAsync).
             var turn = Channel.CreateUnbounded<AssistantUpdate>(new UnboundedChannelOptions { SingleReader = true });
@@ -125,6 +126,9 @@ public sealed class AssistantService : IAsyncDisposable
             await foreach (var update in turn.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false)) yield return update;
             _turnUpdates = null;
             await pump.ConfigureAwait(false);
+            // Offer to undo what the turn changed (also after Stop: what was done is done).
+            if (AssistantUndo.Since(before, _servers.Services.Profile, _servers.Services.Commands) is { } undo)
+                yield return new AssistantChanges(undo);
             ct.ThrowIfCancellationRequested();
         }
         finally

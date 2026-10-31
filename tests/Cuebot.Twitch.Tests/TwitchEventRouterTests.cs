@@ -203,6 +203,111 @@ public sealed class TwitchEventSubListenerTests
         Assert.Equal([ConnectionState.Connected], states);
     }
 
+    private const string Refused = """{"error":"Too Many Requests","status":429,"message":"maximum subscriptions with type and condition exceeded"}""";
+
+    private static TwitchEventSubListener Listener(FakeHttpHandler http, AppLog log, List<(ConnectionState State, string Message)> states,
+        int retries = 3) =>
+        new(new HelixClient(new HttpClient(http), new Uri("https://api.test/helix/"), new StaticTokens()),
+            new EventSubAccount("Twitch", () => "1337", () => "streamer", () => [TwitchScopes.ReadChat, TwitchScopes.ReadFollowers],
+                [.. EventSubSubscriptions.All.Where(s => s.Type is "channel.chat.message" or "channel.follow" or "stream.online")]),
+            new TwitchEventRouter(TimeProvider.System, () => "1337", () => "", new SentMessageTracker()), new EventBus(log), log,
+            (state, message) => { lock (states) states.Add((state, message)); },
+            retryDelays: [.. Enumerable.Repeat(TimeSpan.FromMilliseconds(10), retries)]);
+
+    /// <summary>
+    /// The RC3 log: after a lost connection every resubscribe got 429 while Twitch still counted the dead session.
+    /// Cuebot removes its leftovers (only its own earlier session's and disabled ones), retries, and says "Connecting"
+    /// until all event types are back.
+    /// </summary>
+    [Fact]
+    public async Task Refused_subscriptions_after_a_lost_connection_are_cleaned_up_and_retried()
+    {
+        var refuseFirst = new HashSet<string>(StringComparer.Ordinal);
+        var http = new FakeHttpHandler(r =>
+        {
+            if (r.Method == HttpMethod.Get)
+                return FakeHttpHandler.Json(System.Net.HttpStatusCode.OK, """
+                    {"data":[
+                      {"id":"old-1","type":"channel.follow","status":"enabled","transport":{"method":"websocket","session_id":"s1"}},
+                      {"id":"dead-1","type":"stream.online","status":"websocket_disconnected","transport":{"method":"websocket","session_id":"zz"}},
+                      {"id":"other-1","type":"channel.follow","status":"enabled","transport":{"method":"websocket","session_id":"another-cuebot"}},
+                      {"id":"mine-now","type":"channel.chat.message","status":"enabled","transport":{"method":"websocket","session_id":"s2"}}],
+                     "pagination":{}}
+                    """);
+            if (r.Method == HttpMethod.Delete) return FakeHttpHandler.Json(System.Net.HttpStatusCode.NoContent, "");
+            var body = JsonSerializer.Deserialize<JsonElement>(r.Body);
+            var session = body.GetProperty("transport").GetProperty("session_id").GetString();
+            var type = body.GetProperty("type").GetString()!;
+            // The second session's first attempt at follow/online is refused; the retry works.
+            if (session == "s2" && type != "channel.chat.message" && refuseFirst.Add(type))
+                return FakeHttpHandler.Json((System.Net.HttpStatusCode)429, Refused);
+            return FakeHttpHandler.Json(System.Net.HttpStatusCode.Accepted, "{}");
+        });
+        var log = new AppLog();
+        var states = new List<(ConnectionState State, string Message)>();
+        var listener = Listener(http, log, states);
+
+        await listener.OnSessionStartedAsync("s1", default);
+        listener.OnConnectionLost("no message from Twitch for 15s", TimeSpan.FromSeconds(1));
+        await listener.OnSessionStartedAsync("s2", default);
+        Assert.Equal(ConnectionState.Connecting, states[^1].State);   // not "Connected" with alerts missing
+        Assert.Contains("2 event types still waiting", states[^1].Message);
+        await listener.Retrying.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(ConnectionState.Connected, states[^1].State);
+        Assert.Empty(listener.Unavailable);
+        var deleted = http.Requests.Where(r => r.Method == HttpMethod.Delete).Select(r => r.Query).ToList();
+        Assert.Equal(["id=old-1", "id=dead-1"], deleted);   // not another Cuebot's live one, not this session's own
+        Assert.Contains(log.Recent(), e => e.Message.Contains("removed 2 subscriptions left over"));
+    }
+
+    [Fact]
+    public async Task Subscriptions_Twitch_keeps_refusing_end_in_an_error_that_explains_why()
+    {
+        var http = new FakeHttpHandler(r => r.Method == HttpMethod.Get
+            ? FakeHttpHandler.Json(System.Net.HttpStatusCode.OK, """{"data":[],"pagination":{}}""")
+            : FakeHttpHandler.Json((System.Net.HttpStatusCode)429,
+                """{"error":"Too Many Requests","status":429,"message":"number of websocket transports limit exceeded"}"""));
+        var log = new AppLog();
+        var states = new List<(ConnectionState State, string Message)>();
+        var listener = Listener(http, log, states, retries: 2);
+
+        await listener.OnSessionStartedAsync("s1", default);
+        await listener.Retrying.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(ConnectionState.Error, states[^1].State);
+        Assert.Contains("3 event types are not working", states[^1].Message);
+        Assert.Equal(3, listener.Unavailable.Count);
+        Assert.Single(log.Recent(), e => e.Message.Contains("Twitch allows 3 event connections per account"));
+        Assert.Contains(log.Recent(), e => e.Level == LogLevel.Error && e.Message.Contains("Close other copies of Cuebot"));
+    }
+
+    [Fact]
+    public async Task A_new_session_stops_the_previous_sessions_retries()
+    {
+        var http = new FakeHttpHandler(r => r.Method == HttpMethod.Get
+            ? FakeHttpHandler.Json(System.Net.HttpStatusCode.OK, """{"data":[],"pagination":{}}""")
+            : JsonSerializer.Deserialize<JsonElement>(r.Body).GetProperty("transport").GetProperty("session_id").GetString() == "s1"
+                ? FakeHttpHandler.Json((System.Net.HttpStatusCode)429, Refused)
+                : FakeHttpHandler.Json(System.Net.HttpStatusCode.Accepted, "{}"));
+        var log = new AppLog();
+        var states = new List<(ConnectionState State, string Message)>();
+        var listener = new TwitchEventSubListener(new HelixClient(new HttpClient(http), new Uri("https://api.test/helix/"), new StaticTokens()),
+            new EventSubAccount("Twitch", () => "1337", () => "streamer", () => [TwitchScopes.ReadChat, TwitchScopes.ReadFollowers],
+                [.. EventSubSubscriptions.All.Where(s => s.Type == "channel.follow")]),
+            new TwitchEventRouter(TimeProvider.System, () => "1337", () => "", new SentMessageTracker()), new EventBus(log), log,
+            (state, message) => { lock (states) states.Add((state, message)); },
+            retryDelays: [TimeSpan.FromSeconds(30)]);
+
+        await listener.OnSessionStartedAsync("s1", default);
+        var first = listener.Retrying;
+        await listener.OnSessionStartedAsync("s2", default);
+
+        await first.WaitAsync(TimeSpan.FromSeconds(5));   // cancelled, not left running against the dead session
+        Assert.Equal(ConnectionState.Connected, states[^1].State);
+        Assert.DoesNotContain(http.Requests, r => r.Method == HttpMethod.Post && r.Body.Contains("\"s1\"") && r != http.Requests.First());
+    }
+
     [Fact]
     public async Task Channel_update_waits_for_the_box_art_lookup_and_keeps_the_order()
     {
