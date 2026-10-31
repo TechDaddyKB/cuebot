@@ -156,6 +156,31 @@ public sealed class ImportExportPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public async Task An_import_that_overwrites_makes_a_backup_first_and_one_that_adds_does_not()
+    {
+        Seed();
+        var backups = 0;
+        var vm = new ImportExportViewModel(Get<TransferService>(), Get<ProfileService>(), Get<CommandStore>(), Get<GlobalVariables>(),
+            backupBeforeReplace: () => { backups++; return "cuebot-backup-test.zip"; });
+        vm.ExportActions.Single(a => a.Name == "Celebrate").IsSelected = true;
+        vm.BuildExportCommand.Execute(null);
+        var exported = vm.ExportString;
+
+        vm.ImportText = exported;
+        vm.PreviewCommand.Execute(null);
+        foreach (var item in vm.PreviewGroups.Single(g => g.Title == "Actions").Items) item.Mode = "Add as new";
+        await vm.ImportAsync();
+        Assert.Equal(0, backups);
+        Assert.DoesNotContain("backup", vm.ImportStatus);
+
+        vm.ImportText = exported;
+        vm.PreviewCommand.Execute(null); // conflicts default to overwrite
+        await vm.ImportAsync();
+        Assert.Equal(1, backups);
+        Assert.Contains("cuebot-backup-test.zip", vm.ImportStatus);
+    }
+
+    [AvaloniaFact]
     public void Streamer_bot_string_shows_the_import_report()
     {
         var vm = NewViewModel();

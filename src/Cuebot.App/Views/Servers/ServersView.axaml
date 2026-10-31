@@ -35,7 +35,7 @@
         <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap"
                    IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12"
-                   Text="These are doors that let other programs (overlays, stream decks, scripts, AI helpers) talk to Cuebot. Tools made for Streamer.bot and Speaker.bot can connect to Cuebot instead. Every server is off until you turn it on, and only this computer can reach it unless you allow LAN access. Most streamers never need to change anything here." />
+                   Text="These are doors that let other programs (overlays, stream decks, scripts, AI helpers) talk to Cuebot. Tools made for Streamer.bot and Speaker.bot can connect to Cuebot instead. The overlay and AI helper (MCP) servers are on from the start so overlays and the Assistant just work; the others stay off until you turn them on. Only this computer can reach them unless you allow LAN access. Most streamers never need to change anything here." />
       </StackPanel>
     </ScrollViewer>
 

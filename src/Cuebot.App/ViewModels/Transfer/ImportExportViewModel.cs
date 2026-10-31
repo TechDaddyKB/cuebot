@@ -20,6 +20,7 @@ public sealed class ImportExportViewModel : PageViewModel
     private readonly CommandStore _commands;
     private readonly GlobalVariables _globals;
     private readonly IClipboardService? _clipboard;
+    private readonly Func<string?>? _backupBeforeReplace;
     private ImportPlan? _plan;
     private string _importText = "";
     private string _importStatus = "";
@@ -29,9 +30,12 @@ public sealed class ImportExportViewModel : PageViewModel
     private bool _includeDependencies = true;
     private bool _importing;
 
+    /// <param name="backupBeforeReplace">Called before an import that overwrites existing items; makes a backup when
+    /// the "Back up before an import replaces data" setting is on and returns its file name, else null.</param>
     public ImportExportViewModel(TransferService transfer, ProfileService profile, CommandStore commands, GlobalVariables globals,
-        IClipboardService? clipboard = null) : base("Import / Export")
+        IClipboardService? clipboard = null, Func<string?>? backupBeforeReplace = null) : base("Import / Export")
     {
+        _backupBeforeReplace = backupBeforeReplace;
         _transfer = transfer;
         _profile = profile;
         _commands = commands;
@@ -142,9 +146,12 @@ public sealed class ImportExportViewModel : PageViewModel
         ImportCommand.NotifyCanExecuteChanged();
         try
         {
+            var replaces = _plan.Items.Any(i => i.Include && i.HasConflict && i.Mode == ImportMode.Overwrite);
+            var backup = replaces ? await Task.Run(() => _backupBeforeReplace?.Invoke()) : null;
             var changes = await _transfer.ApplyAsync(_plan);
             ClearPreview();
-            ImportStatus = "Imported: " + changes.Summary + "." + (changes.Renamed.Count > 0 ? " Renamed: " + string.Join("; ", changes.Renamed) : "");
+            ImportStatus = "Imported: " + changes.Summary + "." + (changes.Renamed.Count > 0 ? " Renamed: " + string.Join("; ", changes.Renamed) : "")
+                           + (backup is null ? "" : $" A backup of what you had before is in Settings > Backups ({backup}).");
         }
         finally
         {
