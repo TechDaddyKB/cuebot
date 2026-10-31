@@ -8,7 +8,7 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left">
       <c:StatusHeader Title="Stream Deck plugin" Brand="Stream Deck" State="{Binding State}" Detail="{Binding StatusMessage}" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="The Cuebot plugin for Stream Deck runs actions, toggles them, sets global variables and fires the Stream Deck Action trigger. Cuebot's Stream Deck sub-actions change a key's title, state, image and value by its button id." />
+                 Text="The Cuebot plugin for Stream Deck lets your Stream Deck keys run Cuebot actions, switch them on and off, set global variables and set off the Stream Deck Action trigger. In return, Cuebot's Stream Deck sub-actions (steps inside an action) can change what a key shows, using the key's button ID (its name)." />
 
 
       <!-- Direct USB: decks driven without the Stream Deck app -->
@@ -19,17 +19,19 @@
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="h2" Text="Direct USB (no Stream Deck app)" />
-                  <Button Grid.Column="1" Content="Scan now" Command="{Binding RescanCommand}" />
+                  <Button Grid.Column="1" Content="Scan now" Command="{Binding RescanCommand}" ToolTip.Tip="Looks for Stream Decks plugged into this computer again." />
                 </Grid>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Cuebot can drive a Stream Deck plugged into this computer by itself (Linux). Key presses fire the Stream Deck Action trigger with the key's button id, and the Stream Deck sub-actions change its title, image and state. Close other Stream Deck programs (StreamController, OpenDeck) or turn this off so they can use the deck." />
+                           Text="Cuebot can run a Stream Deck plugged into this computer by itself, without the Stream Deck app (Linux). Pressing a key sets off the Stream Deck Action trigger with the key's button ID, and the Stream Deck sub-actions can change its title, image and state. Close other Stream Deck programs (StreamController, OpenDeck) or turn this off so they can use the deck." />
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Name="UsbStatus" Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
                 </TextBlock>
                 <StackPanel Orientation="Horizontal" Spacing="16" IsVisible="{Binding IsAvailable}">
-                  <CheckBox Content="Use Stream Decks on USB" IsChecked="{Binding Enabled}" />
+                  <CheckBox Content="Use Stream Decks on USB" IsChecked="{Binding Enabled}"
+                            ToolTip.Tip="Lets Cuebot take over Stream Decks plugged in by USB. Untick it if another program should control the deck instead." />
                   <TextBlock Text="Brightness %" VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding Brightness}" Minimum="0" Maximum="100" Increment="10" FormatString="0" Width="130" />
+                  <NumericUpDown Value="{Binding Brightness}" Minimum="0" Maximum="100" Increment="10" FormatString="0" Width="130"
+                                   ToolTip.Tip="How bright the key screens are, from 0 (dark) to 100 (brightest)." />
                 </StackPanel>
                 <TextBlock Classes="muted" Text="No Stream Deck found on USB." IsVisible="{Binding HasNoDevices}" />
                 <ItemsControl Name="UsbDevices" ItemsSource="{Binding Devices}">
@@ -40,11 +42,13 @@
                         <StackPanel Spacing="4" IsVisible="{Binding IsConnected}">
                           <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Name" VerticalAlignment="Center" Width="60" />
-                            <TextBox Text="{Binding Name}" PlaceholderText="(the model name)" Width="240" />
-                            <Button Content="Save keys" Classes="accent" Command="{Binding SaveCommand}" />
+                            <TextBox Text="{Binding Name}" PlaceholderText="(the model name)" Width="240"
+                                     ToolTip.Tip="A name for this deck so you can tell decks apart. Leave empty to use the model name." />
+                            <Button Content="Save keys" Classes="accent" Command="{Binding SaveCommand}"
+                                    ToolTip.Tip="Saves the name and every key setting below for this deck." />
                           </StackPanel>
                           <TextBlock Classes="muted" TextWrapping="Wrap"
-                                     Text="Leave Button ID empty to use the default shown. Title and image are what the key shows until a sub-action changes it (image: a file, an http(s) URL or a data: URI)." />
+                                     Text="Leave Button ID empty to use the grey default shown in it. Title and image are what the key shows until an action changes it. For the image, give a picture file on this computer, or a web link to a picture." />
                           <Expander Header="Keys" HorizontalAlignment="Stretch" IsExpanded="True">
                             <StackPanel>
                               <Grid ColumnDefinitions="200,220,160,*" Margin="0,4,0,0">
@@ -58,9 +62,12 @@
                                   <DataTemplate x:DataType="vm:StreamDeckUsbKeyViewModel">
                                     <Grid ColumnDefinitions="200,220,160,*" Margin="0,1">
                                       <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-                                      <TextBox Grid.Column="1" Text="{Binding ButtonId}" PlaceholderText="{Binding DefaultButtonId}" FontFamily="monospace" Margin="0,0,6,0" />
-                                      <TextBox Grid.Column="2" Text="{Binding Title}" IsEnabled="{Binding HasDisplay}" Margin="0,0,6,0" />
-                                      <TextBox Grid.Column="3" Text="{Binding Image}" IsEnabled="{Binding HasDisplay}" />
+                                      <TextBox Grid.Column="1" Text="{Binding ButtonId}" PlaceholderText="{Binding DefaultButtonId}" FontFamily="monospace" Margin="0,0,6,0"
+                                               ToolTip.Tip="The name of this key. Use it in the Stream Deck Action trigger and sub-actions to pick this key. Empty uses the default shown." />
+                                      <TextBox Grid.Column="2" Text="{Binding Title}" IsEnabled="{Binding HasDisplay}" Margin="0,0,6,0"
+                                               ToolTip.Tip="The text shown on this key. Only keys with a screen can show text." />
+                                      <TextBox Grid.Column="3" Text="{Binding Image}" IsEnabled="{Binding HasDisplay}"
+                                               ToolTip.Tip="A picture file on this computer or a web link to a picture, shown on this key. Only keys with a screen can show a picture." />
                                     </Grid>
                                   </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -87,10 +94,11 @@
           <StackPanel Spacing="4">
             <TextBlock FontWeight="SemiBold" Text="1. Turn on the REST API" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="The plugin talks to Cuebot through the local REST API (Servers page), using its token. It listens on 127.0.0.1 only unless LAN access is allowed there." />
+                       Text="The plugin talks to Cuebot through its REST API (a doorway that other programs use to give Cuebot orders; see the Servers page), using a secret token as the password. By default only this computer can use it, unless you allow other computers on your network on the Servers page." />
             <StackPanel Orientation="Horizontal" Spacing="8">
               <TextBlock Name="ApiState" Text="{Binding ApiState}" VerticalAlignment="Center" TextWrapping="Wrap" />
-              <Button Content="Turn on the REST API" Classes="accent" Command="{Binding EnableApiCommand}" IsVisible="{Binding !ApiRunning}" />
+              <Button Content="Turn on the REST API" Classes="accent" Command="{Binding EnableApiCommand}" IsVisible="{Binding !ApiRunning}"
+                        ToolTip.Tip="Switches on Cuebot's REST API and creates a token if there is none. The plugin needs it to talk to Cuebot." />
             </StackPanel>
           </StackPanel>
 
@@ -99,27 +107,27 @@
             <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding PluginHint}" />
             <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasPluginFile}">
               <TextBlock Text="{Binding PluginFile}" VerticalAlignment="Center" FontFamily="monospace" TextWrapping="Wrap" Margin="0,0,8,0" />
-              <Button Grid.Column="1" Content="Show file" Command="{Binding OpenPluginFolderCommand}" />
+              <Button Grid.Column="1" Content="Show file" Command="{Binding OpenPluginFolderCommand}" ToolTip.Tip="Opens the folder that holds the plugin file, so you can double-click it to install." />
             </Grid>
             <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding IsLinux}"
-                       Text="The Stream Deck app runs on Windows and macOS only. Plug the deck into this computer and use Direct USB above, or run the app on another computer and point the plugin at this one: allow LAN access on the Servers page, set the REST API address to 0.0.0.0 and enter this computer's IP address as the host." />
+                       Text="The Stream Deck app only runs on Windows and macOS. Plug the deck into this computer and use Direct USB above, or run the app on another computer and point the plugin at this one: allow other computers on your network on the Servers page, set the REST API address to 0.0.0.0 (meaning any computer) and type this computer's IP address as the host." />
           </StackPanel>
 
           <StackPanel Spacing="4">
             <TextBlock FontWeight="SemiBold" Text="3. Pair: enter these in any Cuebot key's settings (Connection)" />
             <Grid ColumnDefinitions="90,*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,2">
-              <TextBlock Text="Host" VerticalAlignment="Center" />
+              <TextBlock Text="Host" VerticalAlignment="Center" ToolTip.Tip="The address of this computer as the plugin should see it." />
               <TextBlock Grid.Column="1" Text="{Binding Host}" VerticalAlignment="Center" FontFamily="monospace" />
-              <Button Grid.Column="2" Content="Copy" Tag="host" Click="OnCopy" />
-              <TextBlock Grid.Row="1" Text="Port" VerticalAlignment="Center" />
+              <Button Grid.Column="2" Content="Copy" Tag="host" Click="OnCopy" ToolTip.Tip="Copies the host so you can paste it into the plugin." />
+              <TextBlock Grid.Row="1" Text="Port" VerticalAlignment="Center" ToolTip.Tip="The number of the &quot;door&quot; on this computer that the plugin connects to." />
               <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Port}" VerticalAlignment="Center" FontFamily="monospace" />
-              <Button Grid.Row="1" Grid.Column="2" Content="Copy" Tag="port" Click="OnCopy" Margin="0,4,0,0" />
-              <TextBlock Grid.Row="2" Text="API token" VerticalAlignment="Center" />
+              <Button Grid.Row="1" Grid.Column="2" Content="Copy" Tag="port" Click="OnCopy" Margin="0,4,0,0" ToolTip.Tip="Copies the port number so you can paste it into the plugin." />
+              <TextBlock Grid.Row="2" Text="API token" VerticalAlignment="Center" ToolTip.Tip="A secret code that proves to Cuebot that the plugin is allowed to give it orders." />
               <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                 <TextBlock Name="Token" Text="{Binding TokenDisplay}" VerticalAlignment="Center" FontFamily="monospace" />
-                <CheckBox Content="Show" IsChecked="{Binding ShowToken}" IsVisible="{Binding HasToken}" />
+                <CheckBox Content="Show" IsChecked="{Binding ShowToken}" IsVisible="{Binding HasToken}" ToolTip.Tip="Shows the secret token instead of dots. Do not show it on stream." />
               </StackPanel>
-              <Button Grid.Row="2" Grid.Column="2" Content="Copy" Tag="token" Click="OnCopy" Margin="0,4,0,0" />
+              <Button Grid.Row="2" Grid.Column="2" Content="Copy" Tag="token" Click="OnCopy" Margin="0,4,0,0" ToolTip.Tip="Copies the secret token so you can paste it into the plugin. Keep it private." />
             </Grid>
             <TextBlock Classes="muted" TextWrapping="Wrap"
                        Text="The settings are shared by every Cuebot key. The dot next to Connection turns green once the plugin is connected; the Stream Deck app then appears below." />
@@ -140,7 +148,7 @@
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="h2" Text="Connected Stream Deck apps" />
-            <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" />
+            <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Updates the list of connected Stream Deck apps and their keys." />
           </Grid>
           <TextBlock Classes="muted" Text="None yet. Install the plugin and enter the token." IsVisible="{Binding HasNoInstances}" TextWrapping="Wrap" />
           <ItemsControl Name="Instances" ItemsSource="{Binding Instances}">

@@ -7,7 +7,7 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left" Spacing="8">
       <TextBlock Classes="h1" Text="Elgato Wave Link" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Wave Link becomes triggers, sub-actions and script functions. Cuebot finds Wave Link 3 (ports 1884-1893) and Wave Link 1.x/2.x (ports 1824-1834) on this PC by itself; nothing to configure in Wave Link. Settings are stored in wavelink.json." />
+                 Text="Control Elgato Wave Link (your audio mixer) from Cuebot: it can start your actions (as triggers) and be changed by them (as sub-actions, the steps inside an action). Cuebot finds Wave Link 3 and Wave Link 1.x/2.x on this PC by itself, so there is nothing to set up in Wave Link. Settings are stored in wavelink.json." />
 
       <Border Classes="card" IsVisible="{Binding IsUnavailable}">
         <TextBlock Name="WaveLinkUnavailable" TextWrapping="Wrap" Text="{Binding UnavailableText}" />
@@ -18,16 +18,19 @@
           <TextBlock Classes="h2" Text="Connection" />
           <Grid ColumnDefinitions="Auto,240,Auto,140" RowDefinitions="Auto">
             <TextBlock Text="Version" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <ComboBox Grid.Column="1" ItemsSource="{Binding ApiChoices}" SelectedIndex="{Binding ApiIndex}" HorizontalAlignment="Stretch" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding ApiChoices}" SelectedIndex="{Binding ApiIndex}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Which Wave Link you use. Detect automatically works for most people." />
             <TextBlock Grid.Column="2" Text="Port (0 = detect)" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="0" Maximum="65535" FormatString="0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="0" Maximum="65535" FormatString="0"
+                             ToolTip.Tip="The &quot;door&quot; number Cuebot uses to reach Wave Link. Leave 0 to let Cuebot find it by itself." />
           </Grid>
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Keep looking while Wave Link is not running, and reconnect when it closes" IsChecked="{Binding AutoReconnect}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to Wave Link as soon as Cuebot starts." />
+          <CheckBox Content="Keep looking while Wave Link is not running, and reconnect when it closes" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Keeps trying if Wave Link is not open yet, and connects again by itself if you close and reopen it." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-            <Button Content="Test" Command="{Binding TestCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to Wave Link." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to Wave Link." />
+            <Button Content="Test" Command="{Binding TestCommand}" IsEnabled="{Binding IsConnected}" ToolTip.Tip="Checks that Wave Link answers Cuebot." />
           </StackPanel>
           <TextBlock Name="WaveLinkStatus" TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
@@ -51,24 +54,24 @@
                 <Grid ColumnDefinitions="160,*,200,44,Auto" Margin="0,2">
                   <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="SemiBold" />
                   <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Details}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
-                  <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" />
+                  <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" ToolTip.Tip="Changes the volume of this channel in Wave Link, from 0 (silent) to 100 (full)." />
                   <TextBlock Grid.Column="3" Text="{Binding Volume, StringFormat={}{0:0}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" />
-                  <Button Grid.Column="4" Content="{Binding MuteLabel}" Command="{Binding ToggleMuteCommand}" MinWidth="72" />
+                  <Button Grid.Column="4" Content="{Binding MuteLabel}" Command="{Binding ToggleMuteCommand}" MinWidth="72" ToolTip.Tip="Mutes or unmutes this channel in Wave Link." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <TextBlock Text="Mixes" FontWeight="SemiBold" Margin="0,8,0,0" />
+          <TextBlock Text="Mixes" FontWeight="SemiBold" Margin="0,8,0,0" ToolTip.Tip="A mix is a blend of your channels sent to one place, such as your stream or your headphones." />
           <ItemsControl Name="WaveLinkMixes" ItemsSource="{Binding Mixes}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:WaveLinkMixRowViewModel">
                 <Grid ColumnDefinitions="160,*,200,44,Auto,Auto" Margin="0,2">
                   <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="SemiBold" />
-                  <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" />
+                  <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" ToolTip.Tip="Changes the volume of this mix in Wave Link, from 0 (silent) to 100 (full)." />
                   <TextBlock Grid.Column="3" Text="{Binding Volume, StringFormat={}{0:0}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" />
-                  <Button Grid.Column="4" Content="{Binding MuteLabel}" Command="{Binding ToggleMuteCommand}" MinWidth="72" Margin="0,0,8,0" />
-                  <Button Grid.Column="5" Content="Monitor" Command="{Binding MonitorCommand}" />
+                  <Button Grid.Column="4" Content="{Binding MuteLabel}" Command="{Binding ToggleMuteCommand}" MinWidth="72" Margin="0,0,8,0" ToolTip.Tip="Mutes or unmutes this mix in Wave Link." />
+                  <Button Grid.Column="5" Content="Monitor" Command="{Binding MonitorCommand}" ToolTip.Tip="Makes this the mix you hear in your own headphones." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -80,11 +83,11 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Level meters" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Wave Link sends meter values many times a second. They only become &quot;Level meter updated&quot; events when switched on here, and then at most this many times per second (each event carries every meter that moved)." />
-          <CheckBox Content="Publish level meter events" IsChecked="{Binding LevelMeters}" />
+                     Text="Wave Link reports how loud each channel is many times a second. Cuebot only passes this on as &quot;Level meter updated&quot; events when you switch it on here, and then at most as often as the number below (each event includes every meter that moved)." />
+          <CheckBox Content="Publish level meter events" IsChecked="{Binding LevelMeters}" ToolTip.Tip="Lets the Level meter updated trigger run. Leave it off unless an action needs it, because it creates a lot of events." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Events per second" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding LevelMeterRate}" Minimum="1" Maximum="30" FormatString="0" Width="140" />
+            <NumericUpDown Value="{Binding LevelMeterRate}" Minimum="1" Maximum="30" FormatString="0" Width="140" ToolTip.Tip="The most level meter events Cuebot sends each second. Lower numbers keep Cuebot calmer." />
           </StackPanel>
         </StackPanel>
       </Border>

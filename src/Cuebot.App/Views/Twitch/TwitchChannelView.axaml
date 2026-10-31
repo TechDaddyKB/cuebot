@@ -17,26 +17,28 @@
               <TextBlock Classes="h2" Text="Stream info" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                 <TextBlock Classes="hint" Text="{Binding StreamStatus}" VerticalAlignment="Center" />
-                <Button Content="Load from Twitch" Command="{Binding LoadCommand}" IsEnabled="{Binding IsSignedIn}" />
+                <Button Content="Load from Twitch" Command="{Binding LoadCommand}" IsEnabled="{Binding IsSignedIn}"
+                        ToolTip.Tip="Fetches your current title, category and tags from Twitch. Anything you typed here and have not saved is replaced." />
               </StackPanel>
             </Grid>
             <StackPanel>
               <TextBlock Classes="label" Text="Title" />
-              <TextBox Text="{Binding Title}" MaxLength="140" />
+              <TextBox Text="{Binding Title}" MaxLength="140" ToolTip.Tip="The title viewers see on your stream. Press Save to Twitch to apply it." />
             </StackPanel>
             <Grid ColumnDefinitions="*,16,*">
               <StackPanel>
                 <TextBlock Classes="label" Text="Category" />
-                <TextBox Text="{Binding GameName}" IsReadOnly="True" />
+                <TextBox Text="{Binding GameName}" IsReadOnly="True" ToolTip.Tip="The category you are streaming in. You cannot type here; use Find a category on the right to pick another one." />
                 <TextBlock Classes="hint" Text="{Binding GameId, StringFormat='Category id: {0}'}" Margin="0,4,0,0" />
               </StackPanel>
               <StackPanel Grid.Column="2">
                 <TextBlock Classes="label" Text="Find a category" />
                 <Grid ColumnDefinitions="*,8,Auto">
-                  <TextBox Text="{Binding CategoryQuery}" PlaceholderText="e.g. Just Chatting" />
-                  <Button Grid.Column="2" Content="Search" Command="{Binding SearchCategoriesCommand}" IsEnabled="{Binding IsSignedIn}" />
+                  <TextBox Text="{Binding CategoryQuery}" PlaceholderText="e.g. Just Chatting" ToolTip.Tip="Type part of a game or category name, then press Search." />
+                  <Button Grid.Column="2" Content="Search" Command="{Binding SearchCategoriesCommand}" IsEnabled="{Binding IsSignedIn}" ToolTip.Tip="Looks for categories on Twitch that match what you typed." />
                 </Grid>
-                <ListBox Classes="list" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" MaxHeight="160" Margin="0,6,0,0">
+                <ListBox Classes="list" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" MaxHeight="160" Margin="0,6,0,0"
+                         ToolTip.Tip="Click a result to use it as your category. Press Save to Twitch to apply it.">
                   <ListBox.ItemTemplate>
                     <DataTemplate DataType="t:TwitchCategory">
                       <TextBlock Text="{Binding Name}" />
@@ -47,10 +49,13 @@
             </Grid>
             <StackPanel>
               <TextBlock Classes="label" Text="Tags" />
-              <TextBox Text="{Binding Tags}" PlaceholderText="Comma separated, at most 10 (letters and digits only)" />
+              <TextBox Text="{Binding Tags}" PlaceholderText="Comma separated, at most 10 (letters and digits only)"
+                       ToolTip.Tip="Short labels that help people find your stream, like English, Chill. Separate them with commas. Up to 10, letters and numbers only." />
             </StackPanel>
-            <CheckBox Content="Branded content (sponsored stream)" IsChecked="{Binding IsBrandedContent}" />
-            <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding IsSignedIn}" />
+            <CheckBox Content="Branded content (sponsored stream)" IsChecked="{Binding IsBrandedContent}"
+                      ToolTip.Tip="Tick this if a company is paying you or giving you a deal for this stream. Twitch requires you to tell viewers." />
+            <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" IsEnabled="{Binding IsSignedIn}"
+                    ToolTip.Tip="Updates your title, category, tags and branded-content setting on Twitch right now. Viewers see the change." />
           </StackPanel>
         </Border>
 
@@ -58,23 +63,23 @@
           <StackPanel Spacing="10">
             <TextBlock Classes="h2" Text="Quick actions" />
             <Grid ColumnDefinitions="*,8,Auto,8,Auto">
-              <TextBox Text="{Binding MarkerDescription}" PlaceholderText="Marker description (optional)" />
-              <Button Grid.Column="2" Content="Create marker" Command="{Binding CreateMarkerCommand}" />
-              <Button Grid.Column="4" Content="Create clip" Command="{Binding CreateClipCommand}" />
+              <TextBox Text="{Binding MarkerDescription}" PlaceholderText="Marker description (optional)" ToolTip.Tip="An optional note for the marker, to help you find this moment in your video later." />
+              <Button Grid.Column="2" Content="Create marker" Command="{Binding CreateMarkerCommand}" ToolTip.Tip="Puts a bookmark at this moment of your live stream, so you can jump back to it when editing." />
+              <Button Grid.Column="4" Content="Create clip" Command="{Binding CreateClipCommand}" ToolTip.Tip="Saves the last moments of your stream as a short clip on Twitch that you and your viewers can share." />
             </Grid>
             <Grid ColumnDefinitions="120,8,Auto,8,Auto">
-              <ComboBox ItemsSource="{x:Static tw:TwitchChannelViewModel.AdLengths}" SelectedItem="{Binding AdLength}" />
-              <Button Grid.Column="2" Content="Run ad" Command="{Binding RunAdCommand}" />
-              <Button Grid.Column="4" Content="Snooze next ad" Command="{Binding SnoozeAdCommand}" />
+              <ComboBox ItemsSource="{x:Static tw:TwitchChannelViewModel.AdLengths}" SelectedItem="{Binding AdLength}" ToolTip.Tip="How long the ad break lasts, in seconds." />
+              <Button Grid.Column="2" Content="Run ad" Command="{Binding RunAdCommand}" ToolTip.Tip="Starts an ad break on your stream right now. Your viewers will see ads." />
+              <Button Grid.Column="4" Content="Snooze next ad" Command="{Binding SnoozeAdCommand}" ToolTip.Tip="Pushes your next planned ad back a little. Twitch only allows this a few times, and the result shows how many are left." />
             </Grid>
             <Grid ColumnDefinitions="*,8,Auto,8,Auto">
-              <TextBox Text="{Binding RaidTarget}" PlaceholderText="Channel to raid" />
-              <Button Grid.Column="2" Content="Start raid" Command="{Binding StartRaidCommand}" />
-              <Button Grid.Column="4" Content="Cancel raid" Command="{Binding CancelRaidCommand}" />
+              <TextBox Text="{Binding RaidTarget}" PlaceholderText="Channel to raid" ToolTip.Tip="The name of the channel you want to send your viewers to." />
+              <Button Grid.Column="2" Content="Start raid" Command="{Binding StartRaidCommand}" ToolTip.Tip="Starts a raid: your viewers are sent to the channel you typed, usually after a short countdown. Use Cancel raid to stop it first." />
+              <Button Grid.Column="4" Content="Cancel raid" Command="{Binding CancelRaidCommand}" ToolTip.Tip="Stops a raid you started, before it happens." />
             </Grid>
             <Grid ColumnDefinitions="*,8,Auto">
-              <TextBox Text="{Binding ShoutoutTarget}" PlaceholderText="Channel to shout out" />
-              <Button Grid.Column="2" Content="Send shoutout" Command="{Binding ShoutoutCommand}" />
+              <TextBox Text="{Binding ShoutoutTarget}" PlaceholderText="Channel to shout out" ToolTip.Tip="The name of the channel you want to recommend to your viewers." />
+              <Button Grid.Column="2" Content="Send shoutout" Command="{Binding ShoutoutCommand}" ToolTip.Tip="Shows your viewers a shoutout card for that channel and announces it in chat. Twitch limits how often you can do this." />
             </Grid>
           </StackPanel>
         </Border>

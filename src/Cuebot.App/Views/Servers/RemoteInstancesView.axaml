@@ -6,16 +6,16 @@
   <Border Classes="card">
     <StackPanel Spacing="8">
       <DockPanel>
-        <Button DockPanel.Dock="Right" Content="+ Instance" Command="{Binding AddInstanceCommand}" />
+        <Button DockPanel.Dock="Right" Content="+ Instance" Command="{Binding AddInstanceCommand}" ToolTip.Tip="Adds another Cuebot to link with." />
         <TextBlock Classes="h2" Text="Remote instances" VerticalAlignment="Center" />
       </DockPanel>
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Link other Cuebot instances (another PC, a second streamer) to send signals between them. Sub-actions: Send remote signal, Wait for remote signal. Triggers: Remote signal received, Remote instance connected / disconnected. A link works both ways, so only one side has to add the other." />
+                 Text="Link Cuebot on another computer (or a friend's Cuebot) so they can send each other messages (signals) that start actions. Use the sub-actions Send remote signal and Wait for remote signal, and the triggers Remote signal received and Remote instance connected / disconnected. A link works both ways, so only one side has to add the other." />
       <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto">
         <TextBlock Text="This instance's name" />
-        <TextBox Grid.Row="1" Text="{Binding InstanceName}" PlaceholderText="{Binding SelfName}" />
+        <TextBox Grid.Row="1" Text="{Binding InstanceName}" PlaceholderText="{Binding SelfName}" ToolTip.Tip="The name other Cuebots see for this one. Leave empty to use the computer's name." />
         <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"
-                  Content="Remote signals also release 'Wait for local signal'" IsChecked="{Binding ReleaseLocalWaiters}" />
+                  Content="Remote signals also release 'Wait for local signal'" IsChecked="{Binding ReleaseLocalWaiters}" ToolTip.Tip="Ticked: a signal that arrives from another Cuebot also lets actions continue that are waiting at a 'Wait for local signal' step." />
       </Grid>
       <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding AcceptHint}" />
       <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />
@@ -30,16 +30,16 @@
                   <TextBlock Grid.Column="2" Text="Host or URL" />
                   <TextBlock Grid.Column="4" Text="API port" />
                   <TextBlock Grid.Column="6" Text="Its API token" />
-                  <TextBox Grid.Row="1" Text="{Binding Name}" PlaceholderText="Name" />
-                  <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Host}" PlaceholderText="192.168.1.20" />
-                  <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
-                  <TextBox Grid.Row="1" Grid.Column="6" Text="{Binding Token}" PasswordChar="•" PlaceholderText="cb_..." />
+                  <TextBox Grid.Row="1" Text="{Binding Name}" PlaceholderText="Name" ToolTip.Tip="A name for the other Cuebot. Actions use it to choose where to send a signal." />
+                  <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Host}" PlaceholderText="192.168.1.20" ToolTip.Tip="The address of the other computer on your network (like 192.168.1.20), or its web link." />
+                  <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number of the other Cuebot's REST API. You see it on its Servers page." />
+                  <TextBox Grid.Row="1" Grid.Column="6" Text="{Binding Token}" PasswordChar="•" PlaceholderText="cb_..." ToolTip.Tip="The secret code (token) of the other Cuebot. Copy it from the REST API card on that Cuebot's Servers page. It stays hidden." />
                 </Grid>
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <CheckBox Content="Connect with Cuebot" IsChecked="{Binding Enabled}" />
-                  <Button Content="Connect" Command="{Binding ConnectCommand}" />
-                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-                  <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                  <CheckBox Content="Connect with Cuebot" IsChecked="{Binding Enabled}" ToolTip.Tip="Ticked: Cuebot connects to this instance by itself every time it starts." />
+                  <Button Content="Connect" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this Cuebot now. Use it again after changing a setting." />
+                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Disconnects from this Cuebot." />
+                  <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Removes this link from your list." />
                   <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" VerticalAlignment="Center" />
                   <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap" />
                 </StackPanel>

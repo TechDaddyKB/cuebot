@@ -1,0 +1,241 @@
+{
+  "triggers": {
+    "speech.started": {
+      "description": "Runs when Cuebot starts reading a text out loud with its text-to-speech voice. Good for lighting up a talking avatar or showing who is being read.",
+      "fields": {
+        "alias": "The name of a voice (a \"voice alias\" from the Speech page). Empty means any voice."
+      },
+      "variables": {
+        "text": "The text being read",
+        "alias": "The voice name being used",
+        "user": "The viewer whose message is being read (empty for your own speech)",
+        "source": "Where the text came from, like chat or an action"
+      }
+    },
+    "speech.finished": {
+      "description": "Runs when Cuebot has finished reading a text out loud, or when it was skipped. Good for hiding a talking avatar again.",
+      "fields": {
+        "alias": "The name of a voice (a \"voice alias\" from the Speech page). Empty means any voice."
+      },
+      "variables": {
+        "text": "The text that was read",
+        "alias": "The voice name that was used",
+        "user": "The viewer whose message was read (empty for your own speech)",
+        "duration": "How long the speech took, in milliseconds",
+        "skipped": "True if it was skipped and not read"
+      }
+    },
+    "speech.stateChanged": {
+      "description": "Runs when speech is switched on or off, paused or resumed, or a VoiceGate profile changes. Good for showing a \"speech paused\" light on your stream.",
+      "fields": {},
+      "variables": {
+        "enabled": "True if speech is switched on",
+        "paused": "True if the speech queue is paused",
+        "eventsEnabled": "True if event speech (reading follows, subs and so on) is on"
+      }
+    },
+    "voiceControl.command": {
+      "description": "Runs when you say one of your Voice Control commands into the microphone, like \"scene gaming\". You set up the spoken phrases on the Voice Control page.",
+      "fields": {
+        "command": "The name of a voice command from the Voice Control page. Several names can be separated by commas. Any means every command."
+      },
+      "variables": {
+        "voiceCommandName": "The name of the command that was heard",
+        "spokenCommand": "The phrase of the command",
+        "spokenTextInput": "What you said after the command phrase (for commands that listen at the start)",
+        "spokenText": "Everything that was heard",
+        "voiceCommandConfidencePercent": "How sure Cuebot is that it heard right, 0 to 100"
+      }
+    },
+    "voiceControl.dictation": {
+      "description": "Runs for everything you say, once you finish a sentence, even when it is not a command. Good for turning speech into text on your stream.",
+      "fields": {
+        "command": "Only react when the sentence also contained this voice command (name from the Voice Control page, commas for several). Any means every sentence."
+      },
+      "variables": {
+        "spokenText": "Everything that was heard in the sentence",
+        "spokenTextConfidencePercent": "How sure Cuebot is that it heard right, 0 to 100",
+        "spokenLanguage": "The language that was heard",
+        "voiceCommandName": "The name of the first command in the sentence (empty if none)",
+        "voiceCommandCount": "How many commands were in the sentence"
+      }
+    }
+  },
+  "subActions": {
+    "audio.playSound": {
+      "description": "Plays one sound file on your computer, like an alert sound or a funny noise. It can wait until the sound is over or carry on straight away.",
+      "fields": {
+        "file": "The sound's full location on your computer, like C:\\Sounds\\airhorn.mp3. Works with .wav, .mp3, .ogg and .flac files.",
+        "device": "Which speakers or headphones to play on, picked from the list. Empty = your computer's normal sound output.",
+        "volume": "How loud, from 0 (silent) to 100 (full). The default is 100.",
+        "wait": "Tick to wait until the sound is over before the next step. Unticked, the next step starts right away.",
+        "tag": "Optional. A name you make up, so \"Stop sounds\" can stop all sounds with that name, like \"alerts\".",
+        "useFileName": "Tick to use the sound's file name (like \"airhorn\") as its tag, so \"Stop sounds\" can stop it by name."
+      },
+      "variables": {
+        "soundFile": "The location of the sound that was played",
+        "soundDuration": "How long the sound lasts, in seconds",
+        "soundDurationMs": "How long the sound lasts, in milliseconds"
+      }
+    },
+    "audio.playSoundFromFolder": {
+      "description": "Plays one random sound from a folder on your computer. Add new files to the folder and they join in automatically. Great for a pile of different alert sounds.",
+      "fields": {
+        "folder": "The folder's full location on your computer, like C:\\Sounds\\Alerts.",
+        "extensions": "Which kinds of files to use, separated by commas, like \"wav, mp3\". Empty = every kind Cuebot can play.",
+        "subfolders": "Tick to also pick sounds from folders inside this folder.",
+        "device": "Which speakers or headphones to play on, picked from the list. Empty = your computer's normal sound output.",
+        "volume": "How loud, from 0 (silent) to 100 (full). The default is 100.",
+        "wait": "Tick to wait until the sound is over before the next step. Unticked, the next step starts right away.",
+        "tag": "Optional. A name you make up, so \"Stop sounds\" can stop all sounds with that name, like \"alerts\".",
+        "useFileName": "Tick to use the picked sound's file name (like \"airhorn\") as its tag, so \"Stop sounds\" can stop it by name."
+      },
+      "variables": {
+        "randomSoundFile": "The location of the sound that was picked",
+        "randomSoundFileName": "The picked sound's file name, like airhorn.mp3",
+        "soundDuration": "How long the sound lasts, in seconds"
+      }
+    },
+    "audio.stopSounds": {
+      "description": "Stops sounds that Cuebot is playing right now. Good as a \"shut up\" button when an alert goes on too long.",
+      "fields": {
+        "tag": "Stop only sounds that have this tag. Empty = stop every sound."
+      },
+      "variables": {
+        "soundsStopped": "How many sounds were stopped"
+      }
+    },
+    "speech.activateVoiceGate": {
+      "description": "Switches to another VoiceGate profile, or turns VoiceGate off. VoiceGate holds back new speech while your microphone hears you talking, so Cuebot does not talk over you.",
+      "fields": {
+        "profile": "The name of a VoiceGate profile from the Speech page. Type none to turn VoiceGate off."
+      },
+      "variables": {
+        "success": "True if the profile was found and switched on"
+      }
+    },
+    "speech.clearQueue": {
+      "description": "Throws away everything waiting to be read out loud. The text being read right now finishes. Good when chat spams.",
+      "fields": {},
+      "variables": {}
+    },
+    "speech.pause": {
+      "description": "Pauses or resumes reading out loud. Texts wait in line while paused. Handy for a quiet moment on stream.",
+      "fields": {
+        "mode": "Pause holds speech back. Resume lets it go on. Toggle switches to the opposite."
+      },
+      "variables": {}
+    },
+    "speech.setEvents": {
+      "description": "Switches reading of events out loud (follows, subs, tips and so on) on or off. Chat reading is not changed.",
+      "fields": {
+        "mode": "Enable turns it on. Disable turns it off. Toggle switches to the opposite."
+      },
+      "variables": {}
+    },
+    "speech.setEnabled": {
+      "description": "Switches all speech on or off. While off, Cuebot reads nothing out loud. Good for a \"mute the bot\" hotkey.",
+      "fields": {
+        "mode": "Enable turns it on. Disable turns it off. Toggle switches to the opposite."
+      },
+      "variables": {}
+    },
+    "speech.setUserVoice": {
+      "description": "Gives one viewer their own voice, so their chat messages sound different when read out loud. Leave the voice empty to give them the normal one back.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. The default %platform% means whoever started the action.",
+        "user": "The viewer's chat name. The default %user% means whoever started the action.",
+        "userId": "Optional. The viewer's id on their site. If empty, the name is used.",
+        "alias": "The name of the voice to use (a \"voice alias\" from the Speech page). Empty = go back to the normal voice."
+      },
+      "variables": {}
+    },
+    "speech.setAlias": {
+      "description": "Changes which voice is used for chat, for events, as the default, or for highlighted messages. Handy to switch voice for a funny part of the stream.",
+      "fields": {
+        "target": "Where the voice is used. Chat = viewer messages. Events = follows, subs and so on. Default = anything else. Highlight = highlighted messages.",
+        "alias": "The name of the voice to use (a \"voice alias\" from the Speech page). Empty = go back to the normal setting."
+      },
+      "variables": {}
+    },
+    "speech.speak": {
+      "description": "Reads a text out loud with a text-to-speech voice. Good for reading a viewer's message or a tip message. It can also save the speech as a file without playing.",
+      "fields": {
+        "alias": "The name of the voice to use (a \"voice alias\" from the Speech page). Empty = the default voice.",
+        "text": "What to say. You can use %variables%, like \"%user% just followed\".",
+        "wait": "Tick to wait until the speech is finished before the next step. Unticked, the next step starts right away.",
+        "silent": "Tick to only create the speech as an audio file without playing it out loud.",
+        "badWordFilter": "Tick to clean the text first: bad words, links and very long text are handled by your Speech page filters.",
+        "filterProfile": "Which set of filters to use, from the Speech page. Empty = the normal filters. Only used when filters are ticked.",
+        "priority": "Higher numbers are read first when several texts wait in line. 0 is normal."
+      },
+      "variables": {
+        "success": "True if the text was read (false if it was skipped, for example by a filter)",
+        "speechFile": "Only after waiting or silent: the audio file that was made",
+        "duration": "Only after waiting or silent: how long the speech takes, in milliseconds"
+      }
+    },
+    "speech.next": {
+      "description": "Moves speech on by one text: stops the one being read, and if the queue is paused it lets exactly one waiting text start. Handy for stepping through a paused queue.",
+      "fields": {},
+      "variables": {
+        "success": "True if a text was stopped or started"
+      }
+    },
+    "speech.skip": {
+      "description": "Stops the text being read right now. The next text in line (if any) is read after it. Good as a \"skip\" button for long messages.",
+      "fields": {},
+      "variables": {}
+    },
+    "speech.stopUser": {
+      "description": "Removes one viewer's waiting messages from the speech line and stops theirs if it is being read right now. Good when someone spams.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. The default %platform% means whoever started the action.",
+        "user": "The viewer's chat name. The default %user% means whoever started the action.",
+        "userId": "The viewer's id on their site. The default %userId% means whoever started the action."
+      },
+      "variables": {
+        "stoppedCount": "How many of their messages were stopped"
+      }
+    },
+    "voiceControl.setCommand": {
+      "description": "Changes the phrase of a Voice Control command, or makes a new command. Handy to change what you must say, for example one phrase per game.",
+      "fields": {
+        "command": "The name of a voice command from the Voice Control page, like \"Switch scene\".",
+        "phrase": "The words to listen for, like \"scene gaming\". You can use %variables%.",
+        "location": "Where the phrase can be in your sentence. Exact = it must be everything you say. Start = at the beginning. Anywhere = anywhere. Unchanged = keep the current setting.",
+        "create": "Tick to make the command if it does not exist yet. Unticked, a missing command gives an error."
+      },
+      "variables": {
+        "voiceCommandName": "The name of the command",
+        "voiceCommandPhrase": "The phrase it now listens for"
+      }
+    },
+    "voiceControl.setCommandState": {
+      "description": "Turns a Voice Control command on or off, or flips it. A turned-off command is ignored when you say it.",
+      "fields": {
+        "command": "The name of a voice command from the Voice Control page.",
+        "state": "Enabled turns it on. Disabled turns it off. Toggle switches to the opposite."
+      },
+      "variables": {
+        "voiceCommandEnabled": "True if the command is on now"
+      }
+    },
+    "voiceControl.setInput": {
+      "description": "Chooses which microphone Voice Control listens to. Handy if you have several microphones. It works right away, also while listening.",
+      "fields": {
+        "device": "The microphone's name, picked from the list. Default = your computer's normal microphone."
+      },
+      "variables": {}
+    },
+    "voiceControl.setListening": {
+      "description": "Starts or stops Voice Control listening to your microphone. Good for a push-to-talk hotkey, so your commands are only heard when you want.",
+      "fields": {
+        "state": "Start begins listening. Stop ends it. Toggle switches to the opposite."
+      },
+      "variables": {
+        "voiceControlListening": "True if Voice Control is listening now"
+      }
+    }
+  }
+}

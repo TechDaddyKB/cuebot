@@ -7,7 +7,7 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4">
       <TextBlock Classes="h1" Text="Media Requests" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Viewers on every platform request YouTube videos in chat; the Media request player widget (Overlays &amp; Widgets) plays them on stream. Paid requests are refunded when removed before they play." />
+                 Text="Viewers on any platform can ask for YouTube videos in chat. The Media request player widget (Overlays &amp; Widgets) plays them on your stream. If a request costs points and is removed before it plays, the points are given back." />
     </StackPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,8,0,0" TextWrapping="Wrap"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -23,13 +23,13 @@
                 <TextBlock Text="{Binding NowPlaying}" FontWeight="SemiBold" TextWrapping="Wrap" />
               </StackPanel>
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <ToggleButton Content="Pause" IsChecked="{Binding Paused, Mode=OneWay}" Command="{Binding TogglePauseCommand}" />
-                <Button Content="Skip" Command="{Binding SkipCommand}" IsEnabled="{Binding Playing}" />
+                <ToggleButton Content="Pause" IsChecked="{Binding Paused, Mode=OneWay}" Command="{Binding TogglePauseCommand}" ToolTip.Tip="Pauses the video that is playing. Press again to carry on." />
+                <Button Content="Skip" Command="{Binding SkipCommand}" IsEnabled="{Binding Playing}" ToolTip.Tip="Stops this video and plays the next one in the queue." />
               </StackPanel>
             </Grid>
             <Grid ColumnDefinitions="Auto,8,*,8,40">
               <TextBlock Text="Volume" VerticalAlignment="Center" />
-              <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" />
+              <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" ToolTip.Tip="How loud the videos are on your stream, from 0 to 100." />
               <TextBlock Grid.Column="4" Text="{Binding Volume, StringFormat={}{0:0}}" VerticalAlignment="Center" />
             </Grid>
           </StackPanel>
@@ -42,12 +42,12 @@
               <TextBlock Text="Queue" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="{Binding QueueSummary}" Classes="muted" VerticalAlignment="Center" />
-                <Button Content="Clear" Command="{Binding ClearQueueCommand}" ToolTip.Tip="Remove every waiting request (refunded)" />
+                <Button Content="Clear" Command="{Binding ClearQueueCommand}" ToolTip.Tip="Removes every request that is waiting and gives viewers their points back." />
               </StackPanel>
             </Grid>
             <Grid ColumnDefinitions="*,8,Auto">
-              <TextBox Text="{Binding NewLink}" PlaceholderText="Add a YouTube link yourself (free)" />
-              <Button Grid.Column="2" Content="+ Add" Classes="accent" Command="{Binding AddCommand}" />
+              <TextBox Text="{Binding NewLink}" PlaceholderText="Add a YouTube link yourself (free)" ToolTip.Tip="Paste a YouTube web link here to add a video to the queue without paying points." />
+              <Button Grid.Column="2" Content="+ Add" Classes="accent" Command="{Binding AddCommand}" ToolTip.Tip="Adds the link to the end of the queue." />
             </Grid>
             <ItemsControl ItemsSource="{Binding Queue}">
               <ItemsControl.ItemTemplate>
@@ -57,9 +57,9 @@
                       <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Url}" />
                       <TextBlock Text="{Binding Detail}" Classes="muted" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
-                    <Button Grid.Column="1" Content="↑" Command="{Binding UpCommand}" AutomationProperties.Name="Move up" VerticalAlignment="Center" />
-                    <Button Grid.Column="3" Content="↓" Command="{Binding DownCommand}" AutomationProperties.Name="Move down" VerticalAlignment="Center" />
-                    <Button Grid.Column="5" Content="Remove" Command="{Binding RemoveCommand}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="↑" Command="{Binding UpCommand}" AutomationProperties.Name="Move up" VerticalAlignment="Center" ToolTip.Tip="Plays this video sooner." />
+                    <Button Grid.Column="3" Content="↓" Command="{Binding DownCommand}" AutomationProperties.Name="Move down" VerticalAlignment="Center" ToolTip.Tip="Plays this video later." />
+                    <Button Grid.Column="5" Content="Remove" Command="{Binding RemoveCommand}" VerticalAlignment="Center" ToolTip.Tip="Takes this video out of the queue. If the viewer paid points, they get them back." />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -80,37 +80,37 @@
           <StackPanel Spacing="8">
             <TextBlock Text="Settings" FontWeight="SemiBold" FontSize="16" />
             <WrapPanel>
-              <CheckBox Content="Taking requests" IsChecked="{Binding Open}" Margin="0,0,16,6" />
-              <CheckBox Content="Subscribers only" IsChecked="{Binding SubscribersOnly}" Margin="0,0,16,6" />
+              <CheckBox Content="Taking requests" IsChecked="{Binding Open}" Margin="0,0,16,6" ToolTip.Tip="Ticked: viewers can request videos. Unticked: new requests are turned down." />
+              <CheckBox Content="Subscribers only" IsChecked="{Binding SubscribersOnly}" Margin="0,0,16,6" ToolTip.Tip="Ticked: only your subscribers can request videos." />
               <CheckBox Content="Answer in chat" IsChecked="{Binding ReplyInChat}" Margin="0,0,16,6"
-                        ToolTip.Tip="Tell viewers their place in the queue, or why a request was refused" />
+                        ToolTip.Tip="Ticked: Cuebot writes in chat where a request is in the queue, or why it was turned down." />
             </WrapPanel>
             <WrapPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
                 <TextBlock Text="Request" VerticalAlignment="Center" />
-                <TextBox Text="{Binding Command, UpdateSourceTrigger=LostFocus}" Width="110" />
+                <TextBox Text="{Binding Command, UpdateSourceTrigger=LostFocus}" Width="110" ToolTip.Tip="What viewers type in chat to request a video, followed by a YouTube link or a search, like !request despacito." />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
                 <TextBlock Text="Take back" VerticalAlignment="Center" />
-                <TextBox Text="{Binding WrongCommand, UpdateSourceTrigger=LostFocus}" Width="130" />
+                <TextBox Text="{Binding WrongCommand, UpdateSourceTrigger=LostFocus}" Width="130" ToolTip.Tip="What a viewer types in chat to take back their latest request, in case they picked the wrong video." />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
                 <TextBlock Text="Skip (moderators)" VerticalAlignment="Center" />
-                <TextBox Text="{Binding ModSkipCommand, UpdateSourceTrigger=LostFocus}" Width="110" />
+                <TextBox Text="{Binding ModSkipCommand, UpdateSourceTrigger=LostFocus}" Width="110" ToolTip.Tip="What your moderators (and you) type in chat to skip the video that is playing." />
               </StackPanel>
             </WrapPanel>
             <WrapPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
                 <TextBlock Text="Cost (points)" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding Cost}" Minimum="0" Maximum="100000000" FormatString="0" Width="130" />
+                <NumericUpDown Value="{Binding Cost}" Minimum="0" Maximum="100000000" FormatString="0" Width="130" ToolTip.Tip="How many points a request costs. 0 means requests are free." />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
                 <TextBlock Text="Requests per viewer" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding MaxPerViewer}" Minimum="1" Maximum="50" FormatString="0" Width="100" />
+                <NumericUpDown Value="{Binding MaxPerViewer}" Minimum="1" Maximum="50" FormatString="0" Width="100" ToolTip.Tip="How many videos one viewer can have waiting in the queue at the same time." />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,6">
                 <TextBlock Text="Longest play (minutes, 0: whole video)" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding MaxMinutes}" Minimum="0" Maximum="180" Increment="0.5" FormatString="0.#" Width="100" />
+                <NumericUpDown Value="{Binding MaxMinutes}" Minimum="0" Maximum="180" Increment="0.5" FormatString="0.#" Width="100" ToolTip.Tip="Longer videos are cut off after this many minutes. 0 plays the whole video." />
               </StackPanel>
             </WrapPanel>
           </StackPanel>

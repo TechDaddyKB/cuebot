@@ -1,0 +1,225 @@
+{
+  "triggers": {
+    "controller.button": {
+      "description": "Runs when you press or release a button on a game controller. Great for using a gamepad as a set of extra hotkeys.",
+      "fields": {
+        "controller": "Which controller. Leave empty for any controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5 or Xbox One. Separate several with commas.",
+        "button": "Which button: Any, or names separated by commas. South, East, West and North mean the bottom, right, left and top buttons on every gamepad (South is Xbox A or PlayStation Cross).",
+        "state": "Pressed reacts when you push the button down. Released reacts when you let go. Both reacts to either."
+      },
+      "variables": {
+        "button": "The button's position name, like \"South\"",
+        "buttonLabel": "The name printed on that button for this kind of controller, like \"Cross\"",
+        "pressed": "True when pushed down, false when released",
+        "holdDurationMs": "How long it was held, in milliseconds; only when released",
+        "heldButtons": "All buttons held down right now, separated by commas",
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging"
+      }
+    },
+    "controller.buttonCombo": {
+      "description": "Runs when you hold several controller buttons at the same time, like both bumpers. Good for secret shortcuts that cannot be pressed by accident.",
+      "fields": {
+        "controller": "Which controller. Leave empty for any controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5 or Xbox One. Separate several with commas.",
+        "buttons": "The buttons to hold together, joined with a plus sign, like \"LeftShoulder+RightShoulder\". It runs once, when the last of them goes down.",
+        "exact": "Tick to run only when exactly these buttons are held and no others. Untick to also allow other buttons held at the same time."
+      },
+      "variables": {
+        "button": "The button that completed the combo",
+        "heldButtons": "All buttons held down right now, separated by commas",
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging"
+      }
+    },
+    "controller.axis": {
+      "description": "Runs when a stick or trigger on a game controller is pushed far enough, or moves at all. An axis is one direction of a stick, or one trigger.",
+      "fields": {
+        "controller": "Which controller. Leave empty for any controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5 or Xbox One. Separate several with commas.",
+        "axis": "Which stick direction or trigger. Type Any for all, or names separated by commas: LeftX, LeftY, RightX, RightY, LeftTrigger, RightTrigger. X is left-right, Y is up-down, and down counts as positive.",
+        "direction": "Positive is right, down, or a pulled trigger. Negative is left or up. Either accepts both.",
+        "threshold": "How far it must be pushed, in percent of the full way, from 0 to 100. A little wobble near the middle is ignored.",
+        "mode": "Enter runs once when the threshold is passed. Exit runs once when it comes back. While beyond keeps running as long as it stays past the threshold. Any movement runs on every move and ignores threshold and direction."
+      },
+      "variables": {
+        "axis": "The axis name, like \"LeftX\"",
+        "axisValue": "How far it is pushed, from -1 to 1 (triggers: 0 to 1)",
+        "axisPercent": "The same as a percent, from -100 to 100",
+        "axisPrevious": "The value before this move",
+        "axisDirection": "Which side it is on: Positive, Negative or Centered",
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging"
+      }
+    },
+    "controller.hat": {
+      "description": "Runs when you press the D-pad (the cross of four arrows) on a game controller. On a gamepad the D-pad is called Hat1.",
+      "fields": {
+        "controller": "Which controller. Leave empty for any controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5 or Xbox One. Separate several with commas.",
+        "hat": "Which D-pad: Hat1 is the normal D-pad on a gamepad. Type Any for all of them. Flight sticks may have Hat2 and more.",
+        "direction": "Which direction to react to: Up, Down, Left, Right, a diagonal like UpLeft, or Centered for when you let go. Any reacts whenever it leaves the middle."
+      },
+      "variables": {
+        "hat": "The D-pad name, like \"Hat1\"",
+        "hatDirection": "The direction now, like \"Up\" or \"Centered\"",
+        "hatPreviousDirection": "The direction before",
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging"
+      }
+    },
+    "controller.connected": {
+      "description": "Runs when a game controller is plugged in or switches on. Handy for a welcome sound or for setting its light colour.",
+      "fields": {
+        "controller": "Which controller. Leave empty for any controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5 or Xbox One. Separate several with commas."
+      },
+      "variables": {
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging",
+        "controllerCount": "How many controllers are connected now"
+      }
+    },
+    "controller.disconnected": {
+      "description": "Runs when a game controller is unplugged or switches off.",
+      "fields": {
+        "controller": "Which controller. Leave empty for any controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5 or Xbox One. Separate several with commas."
+      },
+      "variables": {
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging",
+        "controllerCount": "How many controllers are connected now"
+      }
+    },
+    "midi.message": {
+      "description": "Runs when a MIDI device (a music keyboard, pad controller or mixer) sends a message, such as a key press or a knob turn. Turns music gear into hotkeys.",
+      "fields": {
+        "device": "Which MIDI keyboard or device. Use the name you gave it in the MIDI page. Type Any to react to every device.",
+        "event": "The name of a listener you set up in the MIDI page, for example one for a pad or a knob. Type Any to react to every message from the device."
+      },
+      "variables": {
+        "eventName": "The name of the listener that matched",
+        "name": "The name you gave the device",
+        "commandCode": "The kind of message, like NoteOn or ControlChange",
+        "channel": "The MIDI channel, 1 to 16",
+        "noteNumber": "For notes: the note number, 0 to 127",
+        "noteName": "For notes: the note name, like \"C4\"",
+        "velocity": "For notes: how hard the key was hit, 0 to 127",
+        "controllerNumber": "For knobs and sliders: which control, 0 to 127",
+        "value": "The value: velocity, knob position, or pitch bend",
+        "valueNormal": "The same value as a number from 0 to 1"
+      }
+    }
+  },
+  "subActions": {
+    "controller.rumble": {
+      "description": "Makes a game controller vibrate for a moment. Fun as feedback when something happens, like a new follower.",
+      "fields": {
+        "controller": "Which controller to use. Any means every connected controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5. Separate several with commas.",
+        "low": "How strong the big, heavy motor is, from 0 (off) to 100 (full).",
+        "high": "How strong the small, buzzy motor is, from 0 (off) to 100 (full).",
+        "duration": "How long to vibrate, in milliseconds (1000 is one second). The most is 60000. Use 0 to stop vibrating."
+      },
+      "variables": {
+        "controllersAffected": "How many controllers vibrated"
+      }
+    },
+    "controller.setLed": {
+      "description": "Changes the colour of the light on a game controller, for controllers that have one such as the PS4 and PS5 pads.",
+      "fields": {
+        "controller": "Which controller to use. Any means every connected controller. Or type its number like #1, part of its name like \"DualSense\", or its kind like PS5. Separate several with commas.",
+        "color": "The colour as a hex code like #0080FF, or as three numbers like 0,128,255. Controllers without a colour light ignore it."
+      },
+      "variables": {
+        "controllersAffected": "How many controllers changed colour"
+      }
+    },
+    "controller.getState": {
+      "description": "Reads what a game controller is doing right now (held buttons, stick positions, battery) into variables for later steps.",
+      "fields": {
+        "controller": "Which controller to read. Type its number like #1 (the first one), part of its name, or its kind like PS5. Only the first match is read."
+      },
+      "variables": {
+        "controllerConnected": "True when that controller was found",
+        "controllerName": "The controller's name",
+        "controllerIndex": "The controller's number (#1 is the first one)",
+        "controllerType": "The kind of controller, like \"PS5\" or \"Xbox One\"",
+        "batteryPercent": "The battery level, in percent",
+        "batteryState": "Whether it is on battery or charging",
+        "heldButtons": "Buttons held down right now, separated by commas",
+        "axisLeftX": "How far the left stick is pushed left-right, -1 to 1 (also axisLeftY, axisRightX, axisRightY, axisLeftTrigger, axisRightTrigger)",
+        "hat1": "The D-pad direction, like \"Up\" or \"Centered\""
+      }
+    },
+    "controller.getList": {
+      "description": "Gets the list of connected game controllers into variables for later steps.",
+      "fields": {},
+      "variables": {
+        "controllerCount": "How many controllers are connected",
+        "controllerNames": "Their names, separated by commas",
+        "controller0Name": "The first controller's name (controller1Name is the second, and so on)",
+        "controller0Index": "The first controller's number",
+        "controller0Type": "The first controller's kind"
+      }
+    },
+    "midi.noteOn": {
+      "description": "Plays a note on a MIDI device, like pressing a key on a keyboard. Can also light up a pad on a controller.",
+      "fields": {
+        "name": "A label for you, so you can tell this step apart. It is not sent to the device.",
+        "device": "Which MIDI output device to send to, by its name in the MIDI page. Leave empty to use the first one. A closed device is opened for you.",
+        "channel": "The MIDI channel, from 1 to 16. Most gear listens on channel 1. Leave empty to send on all 16 channels.",
+        "note": "Which note: a number from 0 to 127, or a name like C4 (which is 60).",
+        "velocity": "How hard the key is hit, from 0 to 127. Higher is louder.",
+        "duration": "How long to hold the note, in milliseconds (1000 is one second).",
+        "sendNoteOff": "Tick to let go of the note when the time is up. Untick to leave it held."
+      },
+      "variables": {}
+    },
+    "midi.controlChange": {
+      "description": "Turns a knob or slider on a MIDI device by sending a control change message, for example to move a volume control.",
+      "fields": {
+        "name": "A label for you, so you can tell this step apart. It is not sent to the device.",
+        "device": "Which MIDI output device to send to, by its name in the MIDI page. Leave empty to use the first one. A closed device is opened for you.",
+        "channel": "The MIDI channel, from 1 to 16. Most gear listens on channel 1. Leave empty to send on all 16 channels.",
+        "controller": "Which control to move, from 0 to 127. For example 7 is volume and 10 is left-right pan.",
+        "value": "The new position of that control, from 0 to 127."
+      },
+      "variables": {}
+    },
+    "midi.genericEvent": {
+      "description": "For experts: sends any basic MIDI message you choose. Use it when Note On and Control Change do not fit.",
+      "fields": {
+        "name": "A label for you, so you can tell this step apart. It is not sent to the device.",
+        "device": "Which MIDI output device to send to, by its name in the MIDI page. Leave empty to use the first one. A closed device is opened for you.",
+        "command": "The kind of message to send, like NoteOn, ControlChange or PitchWheelChange.",
+        "channel": "The MIDI channel, from 1 to 16. Most gear listens on channel 1. Leave empty to send on all 16 channels.",
+        "data1": "The first number of the message, 0 to 127: the note, control number, program or pressure. For the pitch wheel, you can enter the whole 0 to 16383 value here and leave Data2 empty.",
+        "data2": "The second number of the message, 0 to 127: the velocity or value. Not used by PatchChange and ChannelAfterTouch."
+      },
+      "variables": {}
+    },
+    "midi.sysexEvent": {
+      "description": "For experts: sends a long special message (a SysEx message) to a MIDI device. Some gear uses these for settings that normal messages cannot change.",
+      "fields": {
+        "name": "A label for you, so you can tell this step apart. It is not sent to the device.",
+        "device": "Which MIDI output device to send to, by its name in the MIDI page. Leave empty to use the first one. A closed device is opened for you.",
+        "data": "The message bytes as hex numbers separated by spaces, like F0 7E 7F 06 01 F7. The starting F0 and ending F7 are added for you if missing. You can use %variables%."
+      },
+      "variables": {}
+    }
+  }
+}

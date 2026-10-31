@@ -551,11 +551,11 @@ public sealed partial class ActionsViewModel : PageViewModel
 
     private void PickTrigger(ActionItemViewModel action) =>
         Picker.Open("Add trigger",
-            _registry.Triggers.Select(t => new TypeOption(t.Category, t.DisplayName, t)),
+            _registry.Triggers.Select(t => new TypeOption(t.Category, t.DisplayName, t, ActionHelp.Describe(t) ?? "")),
             option => action.AddTrigger((ITriggerType)option.Payload));
 
     private void PickStep(ActionItemViewModel action, StepInsertTarget target) =>
         Picker.Open("Add sub-action",
-            _registry.SubActions.Select(h => new TypeOption(h.Category, h.DisplayName, h)),
+            _registry.SubActions.Select(h => new TypeOption(h.Category, h.DisplayName, h, ActionHelp.Describe(h) ?? "")),
             option => action.AddStep((ISubActionHandler)option.Payload, target));
 }

@@ -8,14 +8,14 @@
     <StackPanel MaxWidth="1000" HorizontalAlignment="Left" Spacing="4">
       <TextBlock Classes="h1" Text="Hotkeys" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Global hotkeys work while another app (a game, OBS) has focus. Each one fires the 'Hotkey pressed' trigger and can also run an action directly. Right-click a hotkey for Set Action, Group and Enabled." />
+                 Text="Global hotkeys are key combinations that work even when another app (a game, OBS) is in front. Each one starts anything that uses the 'Hotkey pressed' trigger, and can also run an action directly. Right-click a hotkey for Set Action, Group and Enabled." />
       <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,8">
         <Ellipse Classes="status" />
         <TextBlock Text="{Binding BackendStatus}" Classes="muted" TextWrapping="Wrap" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
-        <Button Content="+ Hotkey" Classes="accent" Command="{Binding AddHotkeyCommand}" />
-        <Button Content="+ Group" Command="{Binding AddGroupCommand}" ToolTip.Tip="Add a group to roll hotkeys up under (right-click a hotkey for its menu)" />
+        <Button Content="+ Hotkey" Classes="accent" Command="{Binding AddHotkeyCommand}" ToolTip.Tip="Adds a new hotkey to set up." />
+        <Button Content="+ Group" Command="{Binding AddGroupCommand}" ToolTip.Tip="Adds a group, like a folder, to keep similar hotkeys together. Then pick it in a hotkey's Group list." />
         <TextBlock Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" />
       </StackPanel>
 
@@ -26,13 +26,13 @@
               <!-- Group header (Streamer.bot's roll-up groups) -->
               <Grid ColumnDefinitions="Auto,12,Auto,*,Auto,8,Auto" Margin="0,8,0,4" IsVisible="{Binding ShowHeader}">
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding IsGroup}" Width="240"
-                         FontWeight="SemiBold" PlaceholderText="Group name" ToolTip.Tip="Rename the group" />
+                         FontWeight="SemiBold" PlaceholderText="Group name" ToolTip.Tip="The name of this group. Change it and click away to rename." />
                 <TextBlock Classes="h2" Text="No group" IsVisible="{Binding IsUngrouped}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="{Binding CountText}" Classes="muted" VerticalAlignment="Center" />
                 <CheckBox Grid.Column="4" Content="Enabled" IsChecked="{Binding Enabled}" IsVisible="{Binding IsGroup}"
-                          ToolTip.Tip="Turn every hotkey of the group on or off (their own Enabled boxes are kept)" />
+                          ToolTip.Tip="Turns every hotkey of this group on or off at once. Each hotkey keeps its own Enabled setting." />
                 <Button Grid.Column="6" Content="Delete group" Command="{Binding DeleteCommand}" IsVisible="{Binding IsGroup}"
-                        ToolTip.Tip="Delete the group; its hotkeys stay, without a group" />
+                        ToolTip.Tip="Deletes only the group. Its hotkeys stay, just without a group." />
               </Grid>
               <ItemsControl ItemsSource="{Binding Hotkeys}">
                 <ItemsControl.ItemTemplate>
@@ -71,18 +71,19 @@
                       </Border.ContextMenu>
                       <StackPanel Spacing="8">
                         <Grid ColumnDefinitions="160,12,160,8,Auto,12,*,8,140,12,Auto,8,Auto,8,Auto">
-                          <TextBox Text="{Binding Name}" PlaceholderText="Hotkey name" FontWeight="SemiBold" />
+                          <TextBox Text="{Binding Name}" PlaceholderText="Hotkey name" FontWeight="SemiBold" ToolTip.Tip="A name for you, to tell your hotkeys apart." />
                           <TextBox Grid.Column="2" Text="{Binding Gesture, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Ctrl+Shift+F1"
-                                   FontFamily="monospace" />
+                                   FontFamily="monospace"
+                                   ToolTip.Tip="The keys to press together, like Ctrl+Shift+F1. Or click Record keys and press them." />
                           <Button Grid.Column="4" Content="{Binding RecordLabel}" Command="{Binding RecordCommand}"
-                                  Classes.accent="{Binding IsRecording}" ToolTip.Tip="Press the combination on the keyboard" />
+                                  Classes.accent="{Binding IsRecording}" ToolTip.Tip="Click, then press the keys you want to use. Cuebot writes them in the box for you." />
                           <ComboBox Grid.Column="6" ItemsSource="{Binding ActionNames}" SelectedItem="{Binding Action}" HorizontalAlignment="Stretch"
-                                    PlaceholderText="Run action (optional)" ToolTip.Tip="Action run on press, besides the 'Hotkey pressed' trigger" />
+                                    PlaceholderText="Run action (optional)" ToolTip.Tip="An action to run when you press the keys. The 'Hotkey pressed' trigger starts anyway." />
                           <ComboBox Grid.Column="8" ItemsSource="{Binding GroupNames}" SelectedItem="{Binding Group}" HorizontalAlignment="Stretch"
-                                    PlaceholderText="Group" ToolTip.Tip="Group shown under (add groups with '+ Group')" />
-                          <CheckBox Grid.Column="10" Content="Enabled" IsChecked="{Binding Enabled}" />
-                          <Button Grid.Column="12" Content="Test" Command="{Binding TestCommand}" ToolTip.Tip="Fire it as if pressed" />
-                          <Button Grid.Column="14" Content="Remove" Command="{Binding RemoveCommand}" />
+                                    PlaceholderText="Group" ToolTip.Tip="The group this hotkey is listed under. Make groups with + Group." />
+                          <CheckBox Grid.Column="10" Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Unticked: pressing these keys does nothing." />
+                          <Button Grid.Column="12" Content="Test" Command="{Binding TestCommand}" ToolTip.Tip="Runs this hotkey now, as if you pressed the keys." />
+                          <Button Grid.Column="14" Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this hotkey." />
                         </Grid>
                         <TextBlock Classes="error" Text="{Binding GestureError}"
                                    IsVisible="{Binding GestureError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -107,9 +108,9 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Notifications appear" VerticalAlignment="Center" />
             <ComboBox ItemsSource="{x:Static vm:HotkeysViewModel.NotificationTargets}" SelectedItem="{Binding NotificationTarget}" Width="140"
-                      ToolTip.Tip="Auto: the system's notifications where available (Linux notify-send), else Cuebot's own toast in the corner" />
+                      ToolTip.Tip="Where pop-up messages from your actions appear. Auto uses your computer's own notifications if it has them, otherwise a small box from Cuebot in the corner." />
           </StackPanel>
-          <CheckBox Content="Watch the clipboard ('Clipboard changed' trigger)" IsChecked="{Binding WatchClipboard}" />
+          <CheckBox Content="Watch the clipboard ('Clipboard changed' trigger)" IsChecked="{Binding WatchClipboard}" ToolTip.Tip="Ticked: whenever you copy something, Cuebot notices and starts anything that uses the 'Clipboard changed' trigger. Leave it off if you do not need it." />
         </StackPanel>
       </Border>
     </StackPanel>

@@ -27,27 +27,28 @@
     <ScrollViewer Grid.Column="2" Padding="0,0,8,24">
     <StackPanel>
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Tips, donations, treats and store redemptions become triggers, activity feed items, credits and event speech. Keys and tokens are stored in donations.json, masked here and never written to the log." />
+                 Text="Pick a donation service on the left and connect it. Then tips, donations, treats and store redemptions can start your actions and show in the activity list, the credits and spoken alerts. Your keys and tokens (secret codes) are stored in donations.json, hidden here and never written to the log." />
 
       <Border Classes="card" DataContext="{Binding Streamlabs}" x:DataType="vm:StreamlabsCardViewModel" IsVisible="{Binding IsSelected}">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Streamlabs" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="On streamlabs.com open Settings → API Settings → API Tokens and copy the Socket API Token. Cuebot connects to the Streamlabs Socket API for donations, charity donations, merch, loyalty store redemptions and Prime gifts." />
-          <TextBox Name="StreamlabsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Socket API token" />
+                     Text="On streamlabs.com open Settings → API Settings → API Tokens and copy the Socket API Token. Cuebot connects to Streamlabs (using that token) for donations, charity donations, merch, loyalty store redemptions and Prime gifts." />
+          <TextBox Name="StreamlabsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Socket API token"
+                   ToolTip.Tip="A secret code from Streamlabs that lets Cuebot hear your donations. Paste it here. It stays hidden." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Also publish the Twitch/YouTube events Streamlabs relays (follows, subs, bits, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
+          <CheckBox Content="Also publish the Twitch/YouTube events Streamlabs relays (follows, subs, bits, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" ToolTip.Tip="Streamlabs also passes on follows, subs and so on. Tick only if you do not already get them from Twitch or YouTube directly, or they may run twice." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
-            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
@@ -59,22 +60,23 @@
           <TextBlock Classes="h2" Text="StreamElements" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="On streamelements.com open your account → Channels, choose Show secrets and copy the JWT Token. Cuebot subscribes to your channel's activities (tips, merch, store redemptions) and uses the REST API for points and tips sub-actions." />
-          <TextBox Name="StreamElementsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="JWT token" />
+          <TextBox Name="StreamElementsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="JWT token"
+                   ToolTip.Tip="A secret code from StreamElements that lets Cuebot hear your tips. Paste it here. It stays hidden." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
           <TextBlock Text="{Binding Channel, StringFormat='Channel: {0}'}" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Also publish relayed platform activities (follows, subs, cheers, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" />
-          <CheckBox Content="Use the legacy realtime socket instead of Astro (fallback)" IsChecked="{Binding UseLegacyRealtime}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
+          <CheckBox Content="Also publish relayed platform activities (follows, subs, cheers, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" ToolTip.Tip="StreamElements also passes on follows, subs and so on. Tick only if you do not already get them from Twitch or YouTube directly, or they may run twice." />
+          <CheckBox Content="Use the legacy realtime socket instead of Astro (fallback)" IsChecked="{Binding UseLegacyRealtime}" ToolTip.Tip="Only tick this if the normal connection does not work. It switches to StreamElements' older way of sending live events." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
-            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
@@ -87,21 +89,23 @@
           <TextBlock Classes="h2" Text="TipeeeStream" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="On tipeeestream.com open your account's API page and copy the API key. Cuebot looks up TipeeeStream's socket server, connects with the key and joins your room, so donations arrive as they happen." />
-          <TextBox Name="TipeeeStreamKey" Text="{Binding Token}" PasswordChar="•" PlaceholderText="API key" />
+          <TextBox Name="TipeeeStreamKey" Text="{Binding Token}" PasswordChar="•" PlaceholderText="API key"
+                   ToolTip.Tip="A secret code from TipeeeStream that lets Cuebot hear your donations. Paste it here. It stays hidden." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
-          <TextBox Text="{Binding Username}" PlaceholderText="TipeeeStream user name (optional)" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Also publish the follows, subs, cheers, raids and hosts TipeeeStream relays" IsChecked="{Binding RelayPlatformEvents}" />
+          <TextBox Text="{Binding Username}" PlaceholderText="TipeeeStream user name (optional)"
+                   ToolTip.Tip="Your TipeeeStream name. Optional: leave it empty if connecting works without it." />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
+          <CheckBox Content="Also publish the follows, subs, cheers, raids and hosts TipeeeStream relays" IsChecked="{Binding RelayPlatformEvents}" ToolTip.Tip="TipeeeStream also passes on follows, subs and so on. Tick only if you do not already get them from Twitch or YouTube directly, or they may run twice." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
-            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
@@ -114,29 +118,31 @@
           <TextBlock Classes="h2" Text="DonorDrive (Extra Life and other charities)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="No key needed: DonorDrive's public API is read with your participant (or team) id, the number in your fundraising page's address. Cuebot checks for changes at most every 15 seconds, as DonorDrive asks, and reports new donations, incentives and goal changes." />
-          <ComboBox ItemsSource="{Binding Programs}" SelectedIndex="{Binding ProgramIndex}" MinWidth="320" />
-          <TextBox Text="{Binding CustomBaseUrl}" PlaceholderText="Charity site, e.g. https://www.example-charity.org" IsVisible="{Binding IsCustom}" />
+          <ComboBox ItemsSource="{Binding Programs}" SelectedIndex="{Binding ProgramIndex}" MinWidth="320" ToolTip.Tip="Which charity fundraising site you use, like Extra Life. Pick Custom for another DonorDrive charity." />
+          <TextBox Text="{Binding CustomBaseUrl}" PlaceholderText="Charity site, e.g. https://www.example-charity.org" IsVisible="{Binding IsCustom}"
+                   ToolTip.Tip="The web address of your charity's website." />
           <TextBlock Classes="muted" Text="{Binding ApiBase}" />
-          <TextBox Name="DonorDriveId" Text="{Binding Token}" PlaceholderText="Participant or team id" />
-          <CheckBox Content="This is a team id" IsChecked="{Binding IsTeam}" />
+          <TextBox Name="DonorDriveId" Text="{Binding Token}" PlaceholderText="Participant or team id"
+                   ToolTip.Tip="The number at the end of your fundraising page address. It is not a password." />
+          <CheckBox Content="This is a team id" IsChecked="{Binding IsTeam}" ToolTip.Tip="Tick this if the number above is for a team, not for one person." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Check every (seconds)" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding PollSeconds}" Minimum="15" Increment="5" FormatString="0" Width="140" />
+            <NumericUpDown Value="{Binding PollSeconds}" Minimum="15" Increment="5" FormatString="0" Width="140" ToolTip.Tip="How often, in seconds, Cuebot looks for new donations. 15 is the fastest allowed." />
             <TextBlock Text="Currency" VerticalAlignment="Center" Margin="12,0,0,0" />
-            <TextBox Text="{Binding Currency}" Width="80" />
+            <TextBox Text="{Binding Currency}" Width="80" ToolTip.Tip="The money sign or code shown for amounts, like USD." />
           </StackPanel>
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding ProfileSummary}" />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
-            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
@@ -148,38 +154,38 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="TreatStream" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Sign in with TreatStream in your browser. Cuebot then gets a socket token and receives treats as they are sent." />
+                     Text="Sign in with TreatStream in your browser. Cuebot then gets a pass (a token) that lets it receive treats as they are sent." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Sign in with TreatStream" Classes="accent" Command="{Binding SignInCommand}" IsEnabled="{Binding !IsSigningIn}" />
-            <Button Content="Sign out" Command="{Binding SignOutCommand}" />
+            <Button Content="Sign in with TreatStream" Classes="accent" Command="{Binding SignInCommand}" IsEnabled="{Binding !IsSigningIn}" ToolTip.Tip="Opens TreatStream in your browser. Log in there and allow Cuebot." />
+            <Button Content="Sign out" Command="{Binding SignOutCommand}" ToolTip.Tip="Forgets your TreatStream sign-in on this computer. You will need to sign in again to get treats." />
             <TextBlock Classes="muted" Text="{Binding SignInState}" VerticalAlignment="Center" />
           </StackPanel>
           <Expander Header="Advanced: use my own TreatStream app" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
             <StackPanel Spacing="8">
               <TextBlock Classes="muted" TextWrapping="Wrap"
                          Text="Optional unless this build has no TreatStream app of its own. Create an API app in your TreatStream account settings, set its redirect URL to the address below, copy its Client ID and Client Secret here and sign in again. Leave them empty to use Cuebot's." />
-              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" />
-              <TextBox Name="TreatStreamSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" ToolTip.Tip="The public ID of your own TreatStream app. Leave empty to use Cuebot's." />
+              <TextBox Name="TreatStreamSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" ToolTip.Tip="The secret code of your own TreatStream app. Leave empty to use Cuebot's. It stays hidden." />
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="Redirect port" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="140" />
+                <NumericUpDown Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="140" ToolTip.Tip="The door number on this computer that TreatStream sends you back to after signing in. Change it only if another program already uses it." />
                 <SelectableTextBlock Text="{Binding RedirectUri}" VerticalAlignment="Center" />
               </StackPanel>
             </StackPanel>
           </Expander>
-          <TextBox Name="TreatStreamToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Access token (filled in by signing in)" />
+          <TextBox Name="TreatStreamToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Access token (filled in by signing in)" ToolTip.Tip="A pass that Cuebot gets when you sign in. You normally never type here." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
-            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
@@ -191,22 +197,24 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Pally.gg" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="On pally.gg open Dashboard → Settings → API Keys and create a key for Cuebot. Cuebot connects to Pally's event websocket for campaign tips on all your pages, or only on the page whose slug you enter (pally.gg/p/your-slug)." />
-          <TextBox Name="PallyKey" Text="{Binding Token}" PasswordChar="•" PlaceholderText="API key" />
+                     Text="On pally.gg open Dashboard → Settings → API Keys and create a key for Cuebot. Cuebot listens to Pally for campaign tips on all your pages, or only on the page whose slug you enter (pally.gg/p/your-slug)." />
+          <TextBox Name="PallyKey" Text="{Binding Token}" PasswordChar="•" PlaceholderText="API key"
+                   ToolTip.Tip="A secret code from Pally.gg that lets Cuebot hear your tips. Paste it here. It stays hidden." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
-          <TextBox Text="{Binding PageSlug}" PlaceholderText="Page slug (optional; empty = all your pages)" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <TextBox Text="{Binding PageSlug}" PlaceholderText="Page slug (optional; empty = all your pages)"
+                   ToolTip.Tip="The last part of your Pally page address (pally.gg/p/your-slug). Leave it empty to hear tips from all your pages." />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" />
-            <Button Content="Send test event" Command="{Binding SendTestCommand}" />
-            <Button Content="Test through Pally.gg" Command="{Binding EchoTestCommand}" ToolTip.Tip="Pally's server echoes a sample tip back on this connection (arrives marked as a test)" />
+            <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
+            <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
+            <Button Content="Test through Pally.gg" Command="{Binding EchoTestCommand}" ToolTip.Tip="Asks Pally.gg itself to send you a sample tip, so you can check the real connection works. It is marked as a test." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />

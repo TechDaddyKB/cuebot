@@ -1,0 +1,745 @@
+{
+  "triggers": {
+    "cuebot.pollStarted": {
+      "description": "Runs when a chat poll starts. Good for announcing the question and how to vote in chat.",
+      "fields": {},
+      "variables": {
+        "title": "The poll's question",
+        "choiceCount": "How many choices there are",
+        "choice0Title": "The first choice's text (choice1Title is the second, and so on)",
+        "duration": "How many seconds the poll lasts (0 = until you end it)",
+        "pollId": "The poll's internal id"
+      }
+    },
+    "cuebot.pollEnded": {
+      "description": "Runs when a chat poll ends. Good for announcing which choice won.",
+      "fields": {},
+      "variables": {
+        "title": "The poll's question",
+        "winningChoice": "The text of the winning choice (empty if nobody voted)",
+        "winningVotes": "How many votes the winner got",
+        "totalVotes": "How many votes there were in all",
+        "choice0Title": "The first choice's text (choice1Title is the second, and so on)",
+        "choice0Votes": "How many votes the first choice got (choice1Votes is the second, and so on)",
+        "canceled": "True if the poll was cancelled"
+      }
+    },
+    "cuebot.predictionStarted": {
+      "description": "Runs when a chat prediction opens for bets. Viewers bet their points on what will happen. Good for announcing the question.",
+      "fields": {},
+      "variables": {
+        "title": "The prediction's question",
+        "outcomeCount": "How many outcomes there are",
+        "outcome0Title": "The first outcome's text (outcome1Title is the second, and so on)",
+        "window": "How many seconds bets are taken (0 = until you lock it)",
+        "currency": "The name of the points that are bet"
+      }
+    },
+    "cuebot.predictionLocked": {
+      "description": "Runs when a chat prediction is locked, so no more bets are taken. Good for saying \"bets are closed\".",
+      "fields": {},
+      "variables": {
+        "title": "The prediction's question",
+        "totalUsers": "How many viewers bet",
+        "totalPoints": "How many points were bet in all",
+        "outcome0Points": "Points bet on the first outcome (outcome1Points is the second, and so on)",
+        "currency": "The name of the points that were bet"
+      }
+    },
+    "cuebot.predictionResolved": {
+      "description": "Runs when you pick the winning outcome of a prediction and the winners get paid. Good for announcing the result.",
+      "fields": {},
+      "variables": {
+        "title": "The prediction's question",
+        "winningOutcome": "The text of the winning outcome",
+        "winnerCount": "How many viewers won points",
+        "paidOut": "How many points were paid out in all",
+        "totalPoints": "How many points were bet in all"
+      }
+    },
+    "cuebot.predictionCanceled": {
+      "description": "Runs when a prediction is cancelled and every bet is given back. Good for telling chat that the points are back.",
+      "fields": {},
+      "variables": {
+        "title": "The prediction's question",
+        "totalUsers": "How many viewers had bet",
+        "totalPoints": "How many points are given back in all"
+      }
+    },
+    "cuebot.giveawayOpened": {
+      "description": "Runs when a giveaway opens for entries. Good for announcing the prize and how to join.",
+      "fields": {},
+      "variables": {
+        "title": "The prize",
+        "command": "The chat command to join, like !join",
+        "ticketCost": "How many points one ticket costs (0 = free)",
+        "maxTickets": "The most tickets one viewer may get",
+        "duration": "How many seconds entries are taken (0 = until you close it)"
+      }
+    },
+    "cuebot.giveawayEntered": {
+      "description": "Runs each time a viewer joins a giveaway. Good for a quick \"you're in!\" reply.",
+      "fields": {},
+      "variables": {
+        "user": "The viewer who joined",
+        "tickets": "How many tickets they hold now",
+        "added": "How many tickets they just got",
+        "title": "The prize",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    },
+    "cuebot.giveawayClosed": {
+      "description": "Runs when a giveaway stops taking entries, by hand or when the time is up. Good for saying \"no more entries\" before the draw.",
+      "fields": {},
+      "variables": {
+        "title": "The prize",
+        "entrants": "How many viewers joined",
+        "tickets": "How many tickets there are in all"
+      }
+    },
+    "cuebot.giveawayWinner": {
+      "description": "Runs once for each winner drawn in a giveaway. Good for a big congratulations alert.",
+      "fields": {},
+      "variables": {
+        "winner": "The winner's name",
+        "winnerPlatform": "The site the winner is on, like twitch",
+        "winnerTickets": "How many tickets the winner had",
+        "title": "The prize",
+        "entrants": "How many viewers joined"
+      }
+    },
+    "cuebot.giveawayCanceled": {
+      "description": "Runs when a giveaway is cancelled and the points for tickets are given back.",
+      "fields": {},
+      "variables": {
+        "title": "The prize",
+        "refunded": "How many points were given back in all",
+        "entrants": "How many viewers had joined"
+      }
+    },
+    "quotes.added": {
+      "description": "Runs when a new quote is saved. Good for a chat reply like \"Quote #12 added!\".",
+      "fields": {
+        "user": "Only react to quotes by this person, like \"kris\". Empty means every quote."
+      },
+      "variables": {
+        "quoteId": "The quote's number",
+        "quote": "The quote's text",
+        "quoteUser": "Who said it",
+        "quoteGame": "The game or category at the time",
+        "quoteDate": "The date it was saved"
+      }
+    },
+    "quotes.updated": {
+      "description": "Runs when a saved quote is edited, for example its text or who said it.",
+      "fields": {
+        "user": "Only react to quotes by this person, like \"kris\". Empty means every quote."
+      },
+      "variables": {
+        "quoteId": "The quote's number",
+        "quote": "The quote's new text",
+        "quoteUser": "Who said it",
+        "quoteGame": "The game or category"
+      }
+    },
+    "quotes.removed": {
+      "description": "Runs when a quote is deleted.",
+      "fields": {
+        "user": "Only react to quotes by this person, like \"kris\". Empty means every quote."
+      },
+      "variables": {
+        "quoteId": "The deleted quote's number",
+        "quote": "The deleted quote's text",
+        "quoteUser": "Who said it"
+      }
+    },
+    "quotes.shown": {
+      "description": "Runs when a quote is shown to chat, for example by a !quote command. Good for also showing the quote on screen.",
+      "fields": {
+        "user": "Only react to quotes by this person, like \"kris\". Empty means every quote."
+      },
+      "variables": {
+        "quoteId": "The quote's number",
+        "quote": "The quote's text",
+        "quoteUser": "Who said it",
+        "quoteGame": "The game or category at the time",
+        "quoteDate": "The date it was saved"
+      }
+    },
+    "cuebot.storeRedeemed": {
+      "description": "Runs when a viewer buys something from your points store, and it is approved. Good for doing what the item promises, like playing a sound.",
+      "fields": {
+        "item": "The store item's name, exactly as in your store. Empty means any item."
+      },
+      "variables": {
+        "item": "The name of the item",
+        "user": "The viewer who bought it",
+        "cost": "How many points it cost",
+        "input": "Extra text the viewer typed with the purchase",
+        "platform": "The site the viewer is on, like twitch",
+        "redemptionId": "The purchase's internal id"
+      }
+    },
+    "cuebot.storeRejected": {
+      "description": "Runs when a store purchase is turned down and the points are given back. Good for telling the viewer why.",
+      "fields": {
+        "item": "The store item's name, exactly as in your store. Empty means any item."
+      },
+      "variables": {
+        "item": "The name of the item",
+        "user": "The viewer who tried to buy it",
+        "cost": "How many points are given back",
+        "redemptionId": "The purchase's internal id"
+      }
+    },
+    "cuebot.storePending": {
+      "description": "Runs when a store purchase is waiting for you to approve it. Good for a popup or sound telling you to check it.",
+      "fields": {
+        "item": "The store item's name, exactly as in your store. Empty means any item."
+      },
+      "variables": {
+        "item": "The name of the item",
+        "user": "The viewer who bought it",
+        "cost": "How many points it cost",
+        "input": "Extra text the viewer typed with the purchase",
+        "redemptionId": "The purchase's internal id (use it with \"Approve or reject store redemption\")"
+      }
+    },
+    "points.thresholdCrossed": {
+      "description": "Runs when a viewer's points reach a goal number, like 1000. You set the goal numbers on the Points page. Good for a \"you reached 1000!\" cheer.",
+      "fields": {
+        "threshold": "Only react to this goal number, like 1000. Empty means any goal set on the Points page.",
+        "currency": "Only react to this kind of points, like \"Coins\". Empty means any."
+      },
+      "variables": {
+        "user": "The viewer who reached the goal",
+        "threshold": "The goal number that was reached",
+        "points": "How many points they have now",
+        "previousPoints": "How many they had before",
+        "currency": "The name of the points",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    },
+    "cuebot.mediaRequested": {
+      "description": "Runs when a song or video request is added to the queue. Good for thanking the viewer who requested it.",
+      "fields": {},
+      "variables": {
+        "title": "The video's title",
+        "user": "The viewer who requested it",
+        "author": "The channel that made the video",
+        "url": "The video's web link",
+        "position": "Its place in the queue (0 = playing right now)"
+      }
+    },
+    "cuebot.mediaStarted": {
+      "description": "Runs when a requested video starts playing. Good for announcing \"now playing\" in chat.",
+      "fields": {},
+      "variables": {
+        "title": "The video's title",
+        "user": "The viewer who requested it",
+        "author": "The channel that made the video",
+        "url": "The video's web link"
+      }
+    },
+    "cuebot.mediaSkipped": {
+      "description": "Runs when a requested video is skipped. Good for a short message in chat.",
+      "fields": {},
+      "variables": {
+        "title": "The video's title",
+        "user": "The viewer who requested it"
+      }
+    }
+  },
+  "subActions": {
+    "polls.end": {
+      "description": "Ends the running chat poll now and announces the result. Good if you want to close a poll early or the poll has no time limit.",
+      "fields": {},
+      "variables": {
+        "success": "True if a poll was running and was ended",
+        "winningChoice": "The text of the winning choice",
+        "totalVotes": "How many votes there were in all"
+      }
+    },
+    "polls.prediction": {
+      "description": "Locks a running prediction so no more bets come in, or picks the winner and pays out, or cancels it and gives all bets back.",
+      "fields": {
+        "mode": "Lock = stop taking bets. Resolve = pick the winner and pay out. Cancel = give every bet back.",
+        "winner": "Only for Resolve: the winning outcome's number (1, 2...) or its text."
+      },
+      "variables": {
+        "success": "True if it worked",
+        "pollId": "The prediction's internal id",
+        "winningChoice": "Only after Resolve: the text of the winning outcome"
+      }
+    },
+    "polls.start": {
+      "description": "Starts a poll in your chat. Viewers vote by typing the vote command, like !vote 1. Good for \"which game next?\" moments.",
+      "fields": {
+        "title": "The question, like \"Which game next?\".",
+        "choices": "The answers to choose from, one per line, 2 to 10 of them. Viewers vote by typing !vote 1, !vote 2 and so on.",
+        "duration": "How many seconds the poll runs. 0 = until you end it."
+      },
+      "variables": {
+        "success": "True if the poll started",
+        "pollId": "The poll's internal id"
+      }
+    },
+    "polls.startPrediction": {
+      "description": "Starts a prediction: viewers bet their points on what will happen, for example if you win the next round. Needs Cuebot points to be set up.",
+      "fields": {
+        "title": "The question, like \"Will I win this round?\".",
+        "outcomes": "The possible results, one per line, 2 to 10 of them. Viewers bet by typing !bet 1 500 or !bet 2 all (outcome number, then points).",
+        "window": "How many seconds viewers can bet. 0 = until you lock the prediction.",
+        "currency": "The name of the points to bet with, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "success": "True if the prediction started",
+        "pollId": "The prediction's internal id"
+      }
+    },
+    "giveaways.control": {
+      "description": "Controls the running giveaway: stop taking entries, draw winners, draw one more winner, or cancel it and give points back.",
+      "fields": {
+        "mode": "Close entries = nobody else can join. Draw winners = pick the winners. Draw one more = pick another winner. Cancel and refund = stop and give ticket points back."
+      },
+      "variables": {
+        "success": "True if there was a giveaway to act on",
+        "winner": "The latest winner's name",
+        "winners": "All winners so far, separated by commas",
+        "entrants": "How many viewers joined"
+      }
+    },
+    "giveaways.open": {
+      "description": "Opens a giveaway where viewers join by typing a chat command. Later, draw the winners with \"Close, draw or cancel giveaway\".",
+      "fields": {
+        "title": "The prize, like \"Steam game key\".",
+        "command": "The chat command viewers type to join, like !join.",
+        "ticketCost": "How many points one ticket costs. 0 = joining is free.",
+        "maxTickets": "The most tickets one viewer may have. Viewers buy more by typing !join 3.",
+        "currency": "The name of the points tickets cost, like \"Coins\". Empty = your normal points.",
+        "subscriberLuck": "How much better subscribers' tickets count. 2 = each subscriber ticket counts double. 1 = same as everyone.",
+        "subscribersOnly": "Tick so only subscribers can join.",
+        "seconds": "How many seconds entries are taken, then it closes by itself. 0 = until you close it.",
+        "winners": "How many winners to draw."
+      },
+      "variables": {
+        "giveawayId": "The giveaway's internal id"
+      }
+    },
+    "media.control": {
+      "description": "Controls the song and video request queue: skip the current one, pause, resume, clear the queue, open or close requests, or set the volume.",
+      "fields": {
+        "mode": "Skip = next video. Pause/Resume = stop or continue. Clear the queue = remove all waiting requests and give points back. Open/Close requests = allow or block new ones. Set volume = change loudness.",
+        "volume": "Only for Set volume: how loud, from 0 (silent) to 100 (full)."
+      },
+      "variables": {
+        "success": "True if it worked (for example, false if there was nothing to skip)",
+        "removed": "Only for Clear the queue: how many requests were removed"
+      }
+    },
+    "media.request": {
+      "description": "Adds a YouTube video to the request queue from an action, as if a viewer asked. Good for your own \"play this\" button or command.",
+      "fields": {
+        "link": "A YouTube link or the 11-letter video id. The default %rawInput% is what a viewer typed after the command.",
+        "user": "Who asked for it, shown with the video. The default %user% is whoever started the action.",
+        "platform": "The site that person is on, like twitch. The default %platform% is whoever started the action.",
+        "free": "Tick so it costs no points and skips the request rules (requests closed, per-viewer limit). Unticked, the normal rules apply. Leave it ticked for your own actions."
+      },
+      "variables": {
+        "success": "True if it was added",
+        "error": "If it was not added: the reason, like \"that is not a YouTube link\"",
+        "title": "The video's title",
+        "requestId": "The request's internal id"
+      }
+    },
+    "credits.addCustom": {
+      "description": "Adds a person to the end credits of your stream, like \"Special thanks\". Good for thanking someone who does not show up in follows or tips.",
+      "fields": {
+        "section": "Which part of the credits. Use a built-in one (follows, tips, raids...) or any title you make up, like \"Special thanks\".",
+        "user": "The person's name. The default %user% is whoever started the action.",
+        "platform": "The site the person is on, like twitch. The default %platform% is whoever started the action.",
+        "amount": "A number added to the person's total in this section, like a tip amount. 0 if it does not matter.",
+        "detail": "Optional extra text shown next to the name, like \"for the great clip\"."
+      },
+      "variables": {}
+    },
+    "credits.get": {
+      "description": "Reads the credits collected so far and saves them in variables, for example the names of all new followers. Handy for a \"thanks to everyone\" chat message.",
+      "fields": {
+        "test": "Tick to use made-up sample credits, for trying out an overlay design."
+      },
+      "variables": {
+        "creditsFollows": "The names of all new followers, separated by commas",
+        "creditsSubscriptions": "The names of everyone who subscribed",
+        "creditsTips": "The names of everyone who tipped",
+        "creditsRaids": "The names of everyone who raided",
+        "creditsChatters": "The names of everyone who chatted",
+        "creditsTotal": "How many names there are in all"
+      }
+    },
+    "credits.reset": {
+      "description": "Clears the collected credits so the next ones start fresh. Good at the start of a new stream.",
+      "fields": {},
+      "variables": {}
+    },
+    "overlays.alertQueue": {
+      "description": "Controls the line of alerts on your stream overlay: pause or resume it, skip the alert playing now, or mute alert sounds and videos.",
+      "fields": {
+        "mode": "Pause = the alert playing finishes, new ones wait. Resume = go on. Skip = end the playing alert. Mute/Unmute = silence alert sounds and videos. Toggle = switch to the opposite."
+      },
+      "variables": {
+        "alertsPaused": "True if the alerts are paused now",
+        "alertsMuted": "True if the alerts are muted now"
+      }
+    },
+    "overlays.showAlert": {
+      "description": "Shows an alert on your stream overlay yourself, as if someone followed or tipped. Good for testing an alert or making your own with a custom message.",
+      "fields": {
+        "alertType": "Which alert design to use: custom, follower, subscriber, tip, cheer, raid, and so on. Pick the one that fits your alert.",
+        "name": "The name shown in the alert. The default %user% is whoever started the action.",
+        "message": "The message shown in the alert, if the design has room for one.",
+        "amount": "A number for the alert, like 5 for a 5 dollar tip. Designs can show different alerts for different amounts.",
+        "currency": "For money amounts, the currency code, like USD. Empty is fine otherwise.",
+        "platform": "The site the alert is from: twitch, kick, rumble or youtube. Designs can differ by site."
+      },
+      "variables": {}
+    },
+    "quotes.add": {
+      "description": "Saves a new quote, with who said it and the game at the time. Good for a !addquote command that saves what a viewer typed.",
+      "fields": {
+        "text": "The quote itself. The default %input% is what a viewer typed after the command.",
+        "user": "Who said it. The default %user% is whoever started the action. Use %input0% to quote someone else.",
+        "userId": "The speaker's id on their site. Usually leave the default.",
+        "platform": "The site the speaker is on, like twitch. The default %platform% is whoever started the action.",
+        "game": "The game or category to save with the quote. Empty = whatever your streaming site last reported."
+      },
+      "variables": {
+        "success": "True if the quote was saved",
+        "quoteId": "The new quote's number",
+        "quote": "The quote's text",
+        "quoteUser": "Who said it",
+        "quoteGame": "The game or category",
+        "quoteCount": "How many quotes there are now"
+      }
+    },
+    "quotes.delete": {
+      "description": "Deletes a saved quote by its number. Good for a mod-only !delquote command.",
+      "fields": {
+        "id": "The quote's number, like 12 or #12. The default %input0% is the first word a viewer typed after the command."
+      },
+      "variables": {
+        "success": "True if the quote existed and was deleted",
+        "quote": "The deleted quote's text",
+        "quoteCount": "How many quotes are left"
+      }
+    },
+    "quotes.edit": {
+      "description": "Changes a saved quote: its text, who said it, or its game. Anything you leave empty stays as it was.",
+      "fields": {
+        "id": "The quote's number, like 12 or #12. The default %input0% is the first word a viewer typed after the command.",
+        "text": "The new text. Empty keeps the old text.",
+        "user": "The new speaker. Empty keeps the old one.",
+        "game": "The new game or category. Empty keeps the old one."
+      },
+      "variables": {
+        "quoteUpdated": "True if the quote was found and changed",
+        "quote": "The quote's text now",
+        "quoteUser": "Who said it"
+      }
+    },
+    "quotes.get": {
+      "description": "Looks up a saved quote and puts it in variables so you can say it in chat. Give a number for a certain quote, or leave it empty for a random one.",
+      "fields": {
+        "id": "The quote's number, like 12 or #12. Empty, or not a number, picks a random quote. The default %input0% is the first word after the command.",
+        "search": "Only for random: pick only from quotes that contain this text, user or game, like \"minecraft\". Empty = any quote.",
+        "fireShown": "Tick to also start actions with the \"Quote shown\" trigger. Untick to read the quote quietly."
+      },
+      "variables": {
+        "quoteFound": "True if a quote was found",
+        "quoteId": "The quote's number",
+        "quote": "The quote's text",
+        "quoteUser": "Who said it",
+        "quoteGame": "The game or category at the time",
+        "quoteDate": "The date it was saved",
+        "quoteCount": "How many quotes there are"
+      }
+    },
+    "quotes.count": {
+      "description": "Counts your saved quotes and puts the number in a variable.",
+      "fields": {},
+      "variables": {
+        "quoteCount": "How many quotes there are"
+      }
+    },
+    "store.review": {
+      "description": "Approves a points store purchase that waits for you, or rejects it and gives the points back. Good for a mod button or a chat command.",
+      "fields": {
+        "mode": "Approve = the viewer gets what they bought. Reject = turn it down and give the points back.",
+        "redemption": "Which purchase, by its id. Empty = the oldest purchase that is still waiting."
+      },
+      "variables": {
+        "success": "True if a waiting purchase was found and handled"
+      }
+    },
+    "store.setItem": {
+      "description": "Changes a points store item: switch it on or off, or change how many are left. Good for selling a limited item only at certain times.",
+      "fields": {
+        "item": "The item's name, exactly as in your store.",
+        "enabled": "Keep = leave as it is. Enable = viewers can buy it. Disable = hide it. Toggle = switch to the opposite.",
+        "stock": "How many are left. Empty keeps it. 10 sets it to 10. +5 adds five, -5 takes five away. -1 means unlimited."
+      },
+      "variables": {
+        "itemEnabled": "True if the item can be bought now",
+        "itemStock": "How many are left (-1 means unlimited)"
+      }
+    },
+    "points.add": {
+      "description": "Gives points to a viewer, like a reward for a trivia win. Points are your channel currency that viewers collect.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "amount": "How many points to give, a whole number like 100.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points.",
+        "applyMultipliers": "Tick to give more (or less) points if the viewer or their group has a points multiplier.",
+        "destination": "Optional. A variable to also receive their new total, without % signs, like userPoints. Empty = only %points%."
+      },
+      "variables": {
+        "points": "The viewer's total after the change",
+        "pointsAdded": "How many points were really given",
+        "pointsUser": "The viewer's name",
+        "pointsName": "The name of the points"
+      }
+    },
+    "points.awardAll": {
+      "description": "Gives points to every viewer Cuebot knows, or only to those who are around. Good for a \"free points for everyone\" moment.",
+      "fields": {
+        "platform": "Only give to viewers on this site. Empty = every site.",
+        "amount": "How many points each viewer gets, a whole number like 10.",
+        "onlyActive": "Tick to give only to viewers who chatted recently, not to everyone Cuebot has ever seen.",
+        "applyMultipliers": "Tick to give more (or less) points to viewers or groups with a points multiplier.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsAwarded": "How many viewers got points"
+      }
+    },
+    "points.awardGroup": {
+      "description": "Gives points to every viewer in a group, like \"VIPs\". Groups are made on the Users & Groups page.",
+      "fields": {
+        "group": "The group's name, like \"VIPs\".",
+        "amount": "How many points each member gets, a whole number like 10.",
+        "applyMultipliers": "Tick to give more (or less) points to viewers or groups with a points multiplier.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsAwarded": "How many viewers got points"
+      }
+    },
+    "points.awardPresent": {
+      "description": "Gives points to every viewer who chatted recently. Good for a \"thanks for being here\" bonus.",
+      "fields": {
+        "platform": "Only give to viewers on this site. Empty = every site.",
+        "amount": "How many points each viewer gets, a whole number like 10.",
+        "applyMultipliers": "Tick to give more (or less) points to viewers or groups with a points multiplier.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsAwarded": "How many viewers got points"
+      }
+    },
+    "points.check": {
+      "description": "Checks if a viewer has enough points, then runs the Enough steps if yes or the Not enough steps if no. It takes no points. Good before a paid action.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "amount": "How many points are needed, a whole number like 100.",
+        "breakOnFailure": "Tick to stop the whole action when they do not have enough. Untick to run the Not enough steps instead.",
+        "destination": "A variable to also receive their total, without % signs. The default userPoints means you can use %userPoints%.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The viewer's total points",
+        "pointsEnough": "True if they have enough",
+        "pointsMissing": "How many more points they need (0 if enough)"
+      }
+    },
+    "points.delete": {
+      "description": "Removes a viewer from the points list completely, as if they never had any. Use \"Reset user points\" if you only want zero.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsDeleted": "True if they had points that were deleted"
+      }
+    },
+    "points.get": {
+      "description": "Looks up how many points a viewer has and puts it in a variable. Good for a !points command that tells chat their total.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. The default %input0% is the first word after the command. Empty = whoever started the action.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The viewer's total points",
+        "pointsFormatted": "The total with the points name, like 500 Coins",
+        "pointsRank": "Their place in the points ranking (1 = first)",
+        "pointsUser": "The viewer's name",
+        "pointsName": "The name of the points"
+      }
+    },
+    "points.getDefinition": {
+      "description": "Reads how a points currency is set up (its name, symbol and so on) and saves it in variables. Mostly for advanced uses.",
+      "fields": {
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points.",
+        "variable": "The start of the variable names, without % signs. The default pointsDefinition gives %pointsDefinition.name% and more."
+      },
+      "variables": {
+        "pointsDefinition.name": "The name of the points (the start can be changed in the settings)",
+        "pointsDefinition.singularName": "The name for one point, like Coin",
+        "pointsDefinition.symbol": "The symbol, if any"
+      }
+    },
+    "points.leaderboard": {
+      "description": "Builds the top list of viewers with the most points, as text for chat and as variables. Good for a !top command.",
+      "fields": {
+        "count": "How many viewers to list, like 5.",
+        "offset": "How many places to skip. 0 starts at first place, 5 starts at sixth.",
+        "platform": "Only list viewers on this site. Empty = every site.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "leaderboard": "The list as one line, like \"1. Kris (500 Coins), 2. Sam (400 Coins)\"",
+        "leaderboardCount": "How many viewers are in the list",
+        "leaderboard1User": "The name of first place (leaderboard2User is second, and so on)",
+        "leaderboard1Points": "The points of first place (leaderboard2Points is second, and so on)"
+      }
+    },
+    "points.getMultiplier": {
+      "description": "Looks up how fast a viewer earns points. 1 is normal, 2 is double. Their group can change it too.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsMultiplier": "How fast they earn points in all (1 = normal)",
+        "pointsUserMultiplier": "The multiplier set just for them (1 if none)"
+      }
+    },
+    "points.remove": {
+      "description": "Takes points away from a viewer. Their total never goes below 0. Use \"all\" to empty their balance.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "amount": "How many points to take, a whole number like 50, or the word all. Their total never goes below 0.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The viewer's total after the change",
+        "pointsRemoved": "How many points were really taken"
+      }
+    },
+    "points.resetAll": {
+      "description": "Sets everyone's points back to zero. Be careful: this cannot be undone. Good for a fresh start each season.",
+      "fields": {
+        "platform": "Only reset viewers on this site. Empty = every site.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsReset": "How many viewers were reset"
+      }
+    },
+    "points.resetUser": {
+      "description": "Sets one viewer's points back to zero. The viewer stays in the list. Use \"Delete user points\" to remove them completely.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "destination": "A variable to also receive their new total, without % signs. The default userPoints means you can use %userPoints%.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The viewer's total after the reset (0)"
+      }
+    },
+    "points.setGroupMultiplier": {
+      "description": "Makes everyone in a group earn points faster or slower, like 2 for double. Good for rewarding \"Subscribers\" or \"VIPs\".",
+      "fields": {
+        "group": "The group's name, like \"VIPs\".",
+        "multiplier": "How much faster, like 2 for double or 1.5 for one and a half times. Empty removes the group's multiplier.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {}
+    },
+    "points.set": {
+      "description": "Sets a viewer's points to exactly a number, no matter how many they had before. Use \"Add points\" to give extra instead.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "amount": "The new total, a whole number like 500.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The viewer's total after the change"
+      }
+    },
+    "points.setUserMultiplier": {
+      "description": "Makes one viewer earn points faster or slower, like 2 for double. Good as a special thank-you for a supporter.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "multiplier": "How much faster, like 2 for double or 1.5 for one and a half times. Empty removes their multiplier.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "pointsMultiplier": "How fast they earn points in all now"
+      }
+    },
+    "points.spend": {
+      "description": "Charges a viewer points, if they have enough. It runs the Paid steps if it worked or the Not enough steps if they were too poor. Good for paid commands.",
+      "fields": {
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The viewer's chat name. Empty = whoever started the action. Viewers must have chatted before.",
+        "userId": "Optional. The viewer's id on their site. If given, it is used instead of the name.",
+        "amount": "How many points it costs, a whole number like 100, or the word all.",
+        "stopIfNotEnough": "Tick to stop the whole action when they cannot pay. Untick to run the Not enough steps instead.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The viewer's total after the payment",
+        "pointsSpent": "True if the payment worked",
+        "pointsCost": "How many points it cost",
+        "pointsMissing": "How many more points they would have needed (0 if paid)"
+      }
+    },
+    "points.transfer": {
+      "description": "Moves points from one viewer to another, like a !give command. It runs the Transferred steps if it worked or the Failed steps if not.",
+      "fields": {
+        "platform": "The site the giver is on, like twitch. Empty = the site of whoever started the action.",
+        "userName": "The giver's chat name. Empty = whoever started the action.",
+        "userId": "Optional. The giver's id on their site. If given, it is used instead of the name.",
+        "toUserName": "Who gets the points. The default %input0% is the first word after the command, like !give kris 50.",
+        "toUserId": "Optional. The receiver's id on their site. If given, it is used instead of the name.",
+        "toPlatform": "The site the receiver is on. Empty = the same site as the giver.",
+        "amount": "How many points to give. The default %input1% is the second word after the command. A whole number, or the word all.",
+        "currency": "The name of the points, like \"Coins\". Empty = your normal points."
+      },
+      "variables": {
+        "points": "The giver's total after the transfer",
+        "pointsTransferred": "How many points were moved",
+        "targetPoints": "The receiver's total after the transfer",
+        "pointsError": "If it failed: the reason, like \"not enough points\""
+      }
+    }
+  }
+}

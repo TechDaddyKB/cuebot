@@ -11,15 +11,15 @@
       <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="2,0,0,8">
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
-            <Button Classes="accent" Command="{Binding NewCommandCommand}" ToolTip.Tip="New command" Padding="6"
+            <Button Classes="accent" Command="{Binding NewCommandCommand}" ToolTip.Tip="Creates a new chat command, like !hello." Padding="6"
                     AutomationProperties.Name="New command">
               <c:Icon Kind="plus" Width="14" Height="14" />
             </Button>
-            <Button Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Duplicate" Padding="6"
+            <Button Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Makes a copy of the selected command." Padding="6"
                     AutomationProperties.Name="Duplicate command">
               <c:Icon Kind="copy" Width="14" Height="14" />
             </Button>
-            <Button Command="{Binding DeleteCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Delete (Delete)" Padding="6"
+            <Button Command="{Binding DeleteCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Deletes the selected command. You can also press the Delete key." Padding="6"
                     AutomationProperties.Name="Delete command">
               <c:Icon Kind="trash-2" Width="14" Height="14" />
             </Button>
@@ -29,7 +29,7 @@
             <TextBlock Classes="muted" Text="{Binding Summary}" FontSize="12" TextTrimming="CharacterEllipsis" />
           </StackPanel>
         </DockPanel>
-        <TextBox DockPanel.Dock="Top" PlaceholderText="Search commands" Text="{Binding Filter}" Margin="0,0,0,8" />
+        <TextBox DockPanel.Dock="Top" PlaceholderText="Search commands" Text="{Binding Filter}" Margin="0,0,0,8" ToolTip.Tip="Type to show only the commands that match." />
         <ScrollViewer>
           <ItemsControl ItemsSource="{Binding Groups}">
             <ItemsControl.ItemTemplate>
@@ -37,9 +37,9 @@
                 <StackPanel Margin="0,0,0,8">
                   <StackPanel Orientation="Horizontal">
                     <Button Classes="row" Content="{Binding Chevron}" Command="{Binding ToggleExpandedCommand}" Padding="4,0" MinWidth="0"
-                            ToolTip.Tip="Collapse or expand this group (Ctrl+- / Ctrl+* for all)" />
+                            ToolTip.Tip="Hides or shows the commands in this group. Ctrl+- and Ctrl+* do it for all groups." />
                     <CheckBox IsChecked="{Binding Enabled}" IsThreeState="False" Margin="4,0"
-                              ToolTip.Tip="Enable or disable every command in this group">
+                              ToolTip.Tip="Turns every command in this group on or off at once.">
                       <TextBlock Text="{Binding Header}" FontWeight="SemiBold" Classes="muted" FontSize="13" />
                     </CheckBox>
                   </StackPanel>
@@ -49,7 +49,7 @@
                         <Button Classes="row" Classes.selected="{Binding IsSelected}"
                                 Command="{Binding SelectCommand}">
                           <Grid ColumnDefinitions="Auto,*">
-                            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" ToolTip.Tip="Enabled" />
+                            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" Margin="0,0,8,0" ToolTip.Tip="Ticked: viewers can use this command. Unticked: it is switched off." />
                             <StackPanel Grid.Column="1">
                               <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                               <TextBlock Text="{Binding Aliases}" Classes="muted" TextTrimming="CharacterEllipsis" />
@@ -81,22 +81,23 @@
                   <Grid ColumnDefinitions="2*,12,*">
                     <StackPanel Spacing="4">
                       <TextBlock Text="Name" />
-                      <TextBox x:Name="CommandName" Text="{Binding Name}" />
+                      <TextBox x:Name="CommandName" Text="{Binding Name}" ToolTip.Tip="A name just for you, so you can find this command in the list. Viewers never see it." />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Spacing="4">
                       <TextBlock Text="Group" />
                       <AutoCompleteBox Text="{Binding Group}" ItemsSource="{Binding GroupSuggestions}" FilterMode="ContainsOrdinal"
-                                       MinimumPrefixLength="0" />
+                                       MinimumPrefixLength="0"
+                                       ToolTip.Tip="A folder name to keep similar commands together in the list. Leave empty for none." />
                     </StackPanel>
                   </Grid>
                   <WrapPanel ItemSpacing="16" LineSpacing="4">
-                    <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
-                    <CheckBox Content="Listed by 'Get commands'" IsChecked="{Binding Include}" />
+                    <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Ticked: viewers can use this command. Unticked: it is switched off." />
+                    <CheckBox Content="Listed by 'Get commands'" IsChecked="{Binding Include}" ToolTip.Tip="Ticked: this command shows up when an action builds a list of your commands for chat. It does not change whether the command works." />
                   </WrapPanel>
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Classes="muted" Text="Id" VerticalAlignment="Center" />
                     <SelectableTextBlock Text="{Binding IdText}" FontFamily="monospace" FontSize="12" VerticalAlignment="Center" />
-                    <Button Content="Copy id" Padding="8,2" Click="OnCopyId" />
+                    <Button Content="Copy id" Padding="8,2" Click="OnCopyId" ToolTip.Tip="Copies this command's unique id so you can paste it somewhere else." />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -107,28 +108,30 @@
                   <Grid ColumnDefinitions="*,12,*">
                     <StackPanel Spacing="4">
                       <TextBlock Text="Mode" />
-                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Modes}" SelectedItem="{Binding Mode}" HorizontalAlignment="Stretch" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Modes}" SelectedItem="{Binding Mode}" HorizontalAlignment="Stretch"
+                                ToolTip.Tip="Basic: the command is plain text like !hello. Regex: the command is a search pattern (for advanced users)." />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Spacing="4">
                       <TextBlock Text="Location" />
-                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Locations}" SelectedItem="{Binding Location}" HorizontalAlignment="Stretch" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Locations}" SelectedItem="{Binding Location}" HorizontalAlignment="Stretch"
+                                ToolTip.Tip="Where in the chat message the command has to be: at the start, the whole message, or anywhere." />
                     </StackPanel>
                   </Grid>
                   <StackPanel Spacing="4">
                     <TextBlock Text="Commands (one per line; aliases share the cooldown and counter)" />
-                    <TextBox Text="{Binding AliasesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="80" FontFamily="monospace" />
+                    <TextBox Text="{Binding AliasesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="80" FontFamily="monospace" ToolTip.Tip="What viewers type to use this command, like !hello. Put each word on its own line." />
                     <TextBlock Classes="error" Text="{Binding RegexErrors}" IsVisible="{Binding HasRegexErrors}" />
                     <TextBlock Classes="muted" TextWrapping="Wrap"
-                               Text="Start: the message begins with the command. Exact: the whole message is the command. Anywhere: the command appears as a separate word. Regex: each line is a .NET regular expression; named groups become arguments." />
+                               Text="Start: the message begins with the command. Exact: the whole message is the command. Anywhere: the command appears as a separate word. Regex: each line is a search pattern (an advanced way to match text); named parts of the pattern become variables." />
                   </StackPanel>
                   <WrapPanel ItemSpacing="16" LineSpacing="4">
-                    <CheckBox Content="Case sensitive" IsChecked="{Binding CaseSensitive}" />
-                    <CheckBox Content="Ignore the bot account" IsChecked="{Binding IgnoreBotAccount}" />
-                    <CheckBox Content="Ignore messages sent from Cuebot" IsChecked="{Binding IgnoreInternal}" />
+                    <CheckBox Content="Case sensitive" IsChecked="{Binding CaseSensitive}" ToolTip.Tip="Ticked: !Hello and !hello count as different. Unticked: capital letters do not matter." />
+                    <CheckBox Content="Ignore the bot account" IsChecked="{Binding IgnoreBotAccount}" ToolTip.Tip="Ticked: messages written by your bot account do not run this command." />
+                    <CheckBox Content="Ignore messages sent from Cuebot" IsChecked="{Binding IgnoreInternal}" ToolTip.Tip="Ticked: chat messages that Cuebot itself sends (from your actions) cannot run this command. This stops it from triggering itself." />
                   </WrapPanel>
                   <StackPanel Spacing="4">
                     <TextBlock Text="Sources (one per line, e.g. Twitch or Twitch:Whisper; empty = every chat)" />
-                    <TextBox Text="{Binding SourcesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="56" />
+                    <TextBox Text="{Binding SourcesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="56" ToolTip.Tip="Limit the command to some chats, one per line, like Twitch. Leave empty to allow every chat." />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -139,12 +142,12 @@
                   <WrapPanel ItemSpacing="24" LineSpacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="Global" VerticalAlignment="Center" />
-                      <NumericUpDown Value="{Binding GlobalCooldownSeconds}" Minimum="0" Increment="5" FormatString="0.##" Width="140" />
+                      <NumericUpDown Value="{Binding GlobalCooldownSeconds}" Minimum="0" Increment="5" FormatString="0.##" Width="140" ToolTip.Tip="After someone uses the command, nobody can use it again for this many seconds. 0 means no wait." />
                       <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="Per user" VerticalAlignment="Center" />
-                      <NumericUpDown Value="{Binding UserCooldownSeconds}" Minimum="0" Increment="5" FormatString="0.##" Width="140" />
+                      <NumericUpDown Value="{Binding UserCooldownSeconds}" Minimum="0" Increment="5" FormatString="0.##" Width="140" ToolTip.Tip="After a person uses the command, that same person must wait this many seconds. 0 means no wait." />
                       <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
                     </StackPanel>
                   </WrapPanel>
@@ -156,14 +159,15 @@
                   <TextBlock Classes="h2" Text="Permissions" />
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="Minimum role" VerticalAlignment="Center" />
-                    <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Roles}" SelectedItem="{Binding MinimumRole}" MinWidth="160" />
+                    <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.Roles}" SelectedItem="{Binding MinimumRole}" MinWidth="160"
+                              ToolTip.Tip="The lowest chat role allowed to use this command. Everyone means anyone; higher roles like Moderator or Broadcaster are more limited." />
                   </StackPanel>
                   <TextBlock Classes="muted" TextWrapping="Wrap"
                              Text="The broadcaster can always run a command. Deny lists win over everything else; allow lists let people below the minimum role in. To restrict a command to listed people only, set the minimum role to Broadcaster." />
                   <Grid ColumnDefinitions="*,12,*">
                     <StackPanel Spacing="4">
                       <TextBlock Text="Allowed users (name or id, one per line)" />
-                      <TextBox Text="{Binding AllowedUsersText}" AcceptsReturn="True" MinHeight="64" />
+                      <TextBox Text="{Binding AllowedUsersText}" AcceptsReturn="True" MinHeight="64" ToolTip.Tip="People who may use the command even if their role is too low. One name or id per line." />
                       <TextBlock Text="Allowed groups" Margin="0,6,0,0" />
                       <ItemsControl ItemsSource="{Binding AllowedGroups}">
                         <ItemsControl.ItemTemplate>
@@ -175,7 +179,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="2" Spacing="4">
                       <TextBlock Text="Denied users (name or id, one per line)" />
-                      <TextBox Text="{Binding DeniedUsersText}" AcceptsReturn="True" MinHeight="64" />
+                      <TextBox Text="{Binding DeniedUsersText}" AcceptsReturn="True" MinHeight="64" ToolTip.Tip="People who may never use the command. One name or id per line." />
                       <TextBlock Text="Denied groups" Margin="0,6,0,0" />
                       <ItemsControl ItemsSource="{Binding DeniedGroups}">
                         <ItemsControl.ItemTemplate>
@@ -198,13 +202,13 @@
                     <TextBlock Text="Used" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Counter}" FontWeight="SemiBold" VerticalAlignment="Center" />
                     <TextBlock Text="time(s)" Classes="muted" VerticalAlignment="Center" />
-                    <Button Content="Reset counter" Command="{Binding ResetCounterCommand}" Margin="12,0,0,0" />
-                    <Button Content="Reset user counters" Command="{Binding ResetUserCountersCommand}" />
+                    <Button Content="Reset counter" Command="{Binding ResetCounterCommand}" Margin="12,0,0,0" ToolTip.Tip="Sets the number of times this command was used back to 0." />
+                    <Button Content="Reset user counters" Command="{Binding ResetUserCountersCommand}" ToolTip.Tip="Sets every person's own count for this command back to 0." />
                     <TextBlock Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" />
                   </StackPanel>
                   <WrapPanel ItemSpacing="16" LineSpacing="4">
-                    <CheckBox Content="Keep the counter after a restart" IsChecked="{Binding PersistCounter}" />
-                    <CheckBox Content="Keep per-user counters after a restart" IsChecked="{Binding PersistUserCounter}" />
+                    <CheckBox Content="Keep the counter after a restart" IsChecked="{Binding PersistCounter}" ToolTip.Tip="Ticked: the count is saved and survives closing Cuebot. Unticked: it starts at 0 again." />
+                    <CheckBox Content="Keep per-user counters after a restart" IsChecked="{Binding PersistUserCounter}" ToolTip.Tip="Ticked: each person's own count is saved and survives closing Cuebot. Unticked: they start at 0 again." />
                   </WrapPanel>
                   <TextBlock Classes="muted" TextWrapping="Wrap"
                              Text="The trigger gets %counter% and %userCounter%: how many times the command, and this user, ran it." />

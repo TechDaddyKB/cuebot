@@ -1,0 +1,383 @@
+{
+  "triggers": {
+    "vtubestudio.connected": {
+      "description": "Runs when Cuebot connects to VTube Studio.",
+      "fields": {},
+      "variables": {}
+    },
+    "vtubestudio.disconnected": {
+      "description": "Runs when Cuebot loses its connection to VTube Studio, for example when you close it.",
+      "fields": {},
+      "variables": {
+        "reason": "Why the connection ended"
+      }
+    },
+    "vtubestudio.modelLoaded": {
+      "description": "Runs when a model (your avatar) is loaded in VTube Studio.",
+      "fields": {
+        "modelName": "Only react to these models, typed by name. Separate several with commas. Leave empty for any model."
+      },
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model"
+      }
+    },
+    "vtubestudio.modelUnloaded": {
+      "description": "Runs when the model (your avatar) is unloaded from VTube Studio.",
+      "fields": {},
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model"
+      }
+    },
+    "vtubestudio.hotkeyTriggered": {
+      "description": "Runs when a VTube Studio hotkey is used, for example to change an expression or play an animation.",
+      "fields": {
+        "hotkeyName": "Only react to these hotkeys, typed by name or id. Separate several with commas. Leave empty for any hotkey.",
+        "hotkeyAction": "Only react to this kind of hotkey, like \"ToggleExpression\" or \"TriggerAnimation\". Leave empty for any kind.",
+        "ignoreApi": "Tick to ignore hotkeys that other programs (including Cuebot) triggered, so only hotkeys you press yourself count."
+      },
+      "variables": {
+        "hotkeyName": "The name of the hotkey",
+        "hotkeyId": "The hotkey's id",
+        "hotkeyAction": "What the hotkey does",
+        "hotkeyFile": "The file the hotkey uses, if any",
+        "triggeredByApi": "True if another program triggered it",
+        "modelName": "The model it was used on"
+      }
+    },
+    "vtubestudio.trackingStatusChanged": {
+      "description": "Runs when VTube Studio's face or hand tracking changes (found or lost).",
+      "fields": {},
+      "variables": {
+        "faceFound": "True if a face is being tracked",
+        "leftHandFound": "True if the left hand is tracked",
+        "rightHandFound": "True if the right hand is tracked"
+      }
+    },
+    "vtubestudio.trackingLost": {
+      "description": "Runs when VTube Studio can no longer see your face. Good for a \"brb\" reaction.",
+      "fields": {},
+      "variables": {
+        "faceFound": "True if a face is being tracked",
+        "leftHandFound": "True if the left hand is tracked",
+        "rightHandFound": "True if the right hand is tracked"
+      }
+    },
+    "vtubestudio.trackingFound": {
+      "description": "Runs when VTube Studio sees your face again after losing it.",
+      "fields": {},
+      "variables": {
+        "faceFound": "True if a face is being tracked",
+        "leftHandFound": "True if the left hand is tracked",
+        "rightHandFound": "True if the right hand is tracked"
+      }
+    },
+    "vtubestudio.backgroundChanged": {
+      "description": "Runs when you switch the background in VTube Studio.",
+      "fields": {
+        "backgroundName": "Only react to these backgrounds, typed by name. Separate several with commas. Leave empty for any background."
+      },
+      "variables": {
+        "backgroundName": "The name of the new background"
+      }
+    },
+    "vtubestudio.modelConfigChanged": {
+      "description": "Runs when the settings of the loaded model change in VTube Studio, for example when you edit its hotkeys.",
+      "fields": {},
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model",
+        "hotkeyConfigChanged": "True if the hotkey list changed"
+      }
+    },
+    "vtubestudio.modelMoved": {
+      "description": "Runs when the model is moved, turned or resized in VTube Studio.",
+      "fields": {},
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model",
+        "positionX": "Left to right position (-1 is left edge, 1 is right edge)",
+        "positionY": "Bottom to top position (-1 is bottom, 1 is top)",
+        "rotation": "How far it is turned, in degrees",
+        "size": "How big it is"
+      }
+    },
+    "vtubestudio.modelAnimation": {
+      "description": "Runs when an animation on the model starts, ends or sends a custom signal.",
+      "fields": {
+        "animationEventType": "Start reacts when an animation begins, End when it finishes, Custom for special signals set inside the animation, Any for all.",
+        "animationName": "Only react to these animations, typed by name. Separate several with commas. Leave empty for any animation.",
+        "ignoreIdle": "Tick to ignore the animations the model plays by itself while doing nothing (idle animations)."
+      },
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model",
+        "animationEventType": "Start, End or Custom",
+        "animationName": "The name of the animation",
+        "animationLength": "How long the animation lasts, in seconds",
+        "animationEventData": "Extra text for custom signals",
+        "isIdleAnimation": "True if it is an idle animation"
+      }
+    },
+    "vtubestudio.itemEvent": {
+      "description": "Runs when something happens to an item (a prop or picture in your VTube Studio scene), like being added, removed or clicked.",
+      "fields": {
+        "itemEventType": "Which kind of thing to react to. Pick Any to react to all of them.",
+        "itemFileName": "Only react to these item files (the picture or prop file names, like \"star.png\"). Separate several with commas. Leave empty for any item."
+      },
+      "variables": {
+        "itemEventType": "What happened to the item: Added, Removed, Clicked and so on",
+        "itemInstanceId": "The id of this copy of the item",
+        "itemFileName": "The item's file name",
+        "itemX": "Where the item is, left to right",
+        "itemY": "Where the item is, bottom to top"
+      }
+    },
+    "vtubestudio.itemAdded": {
+      "description": "Runs when an item (a prop or picture) is added to your VTube Studio scene.",
+      "fields": {
+        "itemFileName": "Only react to these item files (the picture or prop file names, like \"star.png\"). Separate several with commas. Leave empty for any item."
+      },
+      "variables": {
+        "itemEventType": "What happened to the item: Added, Removed, Clicked and so on",
+        "itemInstanceId": "The id of this copy of the item",
+        "itemFileName": "The item's file name",
+        "itemX": "Where the item is, left to right",
+        "itemY": "Where the item is, bottom to top"
+      }
+    },
+    "vtubestudio.itemRemoved": {
+      "description": "Runs when an item (a prop or picture) is removed from your VTube Studio scene.",
+      "fields": {
+        "itemFileName": "Only react to these item files (the picture or prop file names, like \"star.png\"). Separate several with commas. Leave empty for any item."
+      },
+      "variables": {
+        "itemEventType": "What happened to the item: Added, Removed, Clicked and so on",
+        "itemInstanceId": "The id of this copy of the item",
+        "itemFileName": "The item's file name",
+        "itemX": "Where the item is, left to right",
+        "itemY": "Where the item is, bottom to top"
+      }
+    },
+    "vtubestudio.modelClicked": {
+      "description": "Runs when someone clicks in the VTube Studio window, for example on your model.",
+      "fields": {
+        "mouseButton": "Only react to this mouse button, or pick Any.",
+        "onlyOnModel": "Tick to only react when the click lands on the model. Untick to react to clicks anywhere."
+      },
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model",
+        "modelWasClicked": "True if the click hit the model",
+        "mouseButton": "Left, Right or Middle",
+        "clickX": "Where the click landed, sideways",
+        "clickY": "Where the click landed, up or down",
+        "clickedArtMeshCount": "How many parts of the model were hit"
+      }
+    },
+    "vtubestudio.expressionToggled": {
+      "description": "Runs when an expression (a face or pose preset) is switched on or off in VTube Studio.",
+      "fields": {
+        "expressionName": "Only react to these expressions, typed by name or file. Separate several with commas. Leave empty for any expression.",
+        "stateFilter": "Pick On to react when it turns on, Off when it turns off, or Any for both."
+      },
+      "variables": {
+        "modelName": "The name of the model",
+        "modelId": "VTube Studio's id for the model",
+        "expressionName": "The name of the expression",
+        "expressionFile": "The expression's file",
+        "active": "True when the expression is now on"
+      }
+    },
+    "vtubestudio.postProcessingChanged": {
+      "description": "Runs when VTube Studio's post-processing (extra visual effects) is turned on or off or its preset changes.",
+      "fields": {},
+      "variables": {
+        "postProcessingOn": "True when post-processing is on",
+        "postProcessingPreset": "The name of the preset in use"
+      }
+    },
+    "vtubestudio.event": {
+      "description": "Runs for any message VTube Studio sends, so you can react to things Cuebot has no special trigger for. For advanced users.",
+      "fields": {
+        "eventName": "Only react to these kinds of VTube Studio messages, like \"ModelMovedEvent\". Separate several with commas. Leave empty for all."
+      },
+      "variables": {
+        "eventName": "The kind of VTube Studio message",
+        "data": "All the details of the message, as raw text"
+      }
+    }
+  },
+  "subActions": {
+    "vtubestudio.triggerHotkey": {
+      "description": "Presses a VTube Studio hotkey for you, for example to play an animation or change an expression.",
+      "fields": {
+        "hotkey": "The hotkey name (or id) as VTube Studio shows it.",
+        "itemInstanceId": "Only for hotkeys that belong to a Live2D item you loaded: the id of that item. Most people can leave this empty."
+      },
+      "variables": {
+        "vtsHotkeyId": "The id of the hotkey that was triggered"
+      }
+    },
+    "vtubestudio.loadModel": {
+      "description": "Switches VTube Studio to another model (avatar).",
+      "fields": {
+        "model": "The model name (or id) as VTube Studio shows it."
+      },
+      "variables": {
+        "vtsModelId": "The id of the model that was loaded"
+      }
+    },
+    "vtubestudio.moveModel": {
+      "description": "Moves, turns or resizes your model on screen, smoothly.",
+      "fields": {
+        "time": "How long the move takes, in seconds (0 to 2).",
+        "relative": "Tick to move from where the model is now. Untick to put it at exactly the numbers below.",
+        "positionX": "Left to right: -1 is the left edge, 1 is the right edge. Leave empty to keep it.",
+        "positionY": "Bottom to top: -1 is the bottom, 1 is the top. Leave empty to keep it.",
+        "rotation": "How far to turn it, in degrees (-360 to 360). Leave empty to keep it.",
+        "size": "How big it is (-100 to 100). Leave empty to keep it."
+      },
+      "variables": {}
+    },
+    "vtubestudio.setExpression": {
+      "description": "Turns an expression (a face or pose preset) on or off.",
+      "fields": {
+        "expression": "The expression name or file as VTube Studio shows it.",
+        "state": "On turns it on, Off turns it off, Toggle flips it.",
+        "fadeTime": "How long the change takes, in seconds."
+      },
+      "variables": {
+        "vtsExpressionActive": "True if the expression is on afterwards"
+      }
+    },
+    "vtubestudio.removeAllExpressions": {
+      "description": "Turns off every expression that is currently on.",
+      "fields": {
+        "fadeTime": "How long the change takes, in seconds."
+      },
+      "variables": {}
+    },
+    "vtubestudio.injectParameters": {
+      "description": "Moves parts of your model yourself, like head angle or mouth opening, as if your face did it. Handy for scripted reactions.",
+      "fields": {
+        "parameters": "What to move, as name=value, separated by commas or new lines, like \"FaceAngleX=20, MouthOpen=1\". Add @ and a number for how strongly, like \"MouthOpen=1@0.5\".",
+        "mode": "set replaces the value, add adds to what your face tracking is doing.",
+        "holdSeconds": "How long to keep the values applied, in seconds. Cuebot keeps re-sending them until the time is over.",
+        "faceFound": "Tick to tell VTube Studio a face was found, so it does not show \"tracking lost\" while Cuebot controls the model."
+      },
+      "variables": {}
+    },
+    "vtubestudio.colorTint": {
+      "description": "Tints your model with a color, for example red when someone is angry. Can tint all of it or only some parts.",
+      "fields": {
+        "color": "The color as a hex code like #FF8080, or as numbers like \"255,128,128\" (red, green, blue, and optional see-through).",
+        "nameContains": "Only tint parts whose names contain these words. Separate several with commas. Leave both boxes empty to tint everything.",
+        "tagContains": "Only tint parts whose tags contain these words. Separate several with commas.",
+        "mix": "How much the tint mixes with the scene lighting, from 0 to 1."
+      },
+      "variables": {
+        "vtsMatchedArtMeshes": "How many parts of the model were tinted"
+      }
+    },
+    "vtubestudio.resetColorTint": {
+      "description": "Removes all color tints from your model.",
+      "fields": {},
+      "variables": {}
+    },
+    "vtubestudio.loadItem": {
+      "description": "Puts an item (a prop or picture) into your VTube Studio scene.",
+      "fields": {
+        "fileName": "The item's file name as VTube Studio shows it, like \"star.png\".",
+        "positionX": "Left to right position (-1 is the left edge, 1 is the right edge).",
+        "positionY": "Bottom to top position (-1 is the bottom, 1 is the top).",
+        "size": "How big it is, from 0 to 1.",
+        "rotation": "How far to turn it, in degrees.",
+        "fadeTime": "How long it takes to fade in, in seconds.",
+        "order": "Which layer it sits on, from -30 to 30. Leave empty to let VTube Studio pick a free one.",
+        "unloadOnDisconnect": "Tick to remove the item automatically if Cuebot disconnects from VTube Studio.",
+        "resultArgument": "The name of the variable that will hold the item's id, so you can move or remove it later. The default is vtsItemInstanceId."
+      },
+      "variables": {
+        "vtsItemInstanceId": "The id of the new item (or the name you chose above)"
+      }
+    },
+    "vtubestudio.unloadItem": {
+      "description": "Removes items (props or pictures) from your VTube Studio scene.",
+      "fields": {
+        "item": "The items to remove, by id or file name. Separate several with commas.",
+        "all": "Tick to remove every item in the scene."
+      },
+      "variables": {
+        "vtsUnloadedItems": "How many items were removed"
+      }
+    },
+    "vtubestudio.moveItem": {
+      "description": "Moves, turns or resizes an item in your scene, smoothly.",
+      "fields": {
+        "item": "The item to move: its id (from Load item) or its file name.",
+        "time": "How long the move takes, in seconds.",
+        "fadeMode": "How the motion feels: linear is steady, easeIn starts slow, easeOut ends slow, easeBoth does both, overshoot goes past and bounces back, zip is a quick snap.",
+        "positionX": "Left to right position (-1 is the left edge, 1 is the right edge). Leave empty to keep it.",
+        "positionY": "Bottom to top position (-1 is the bottom, 1 is the top). Leave empty to keep it.",
+        "size": "How big it is, from 0 to 1. Leave empty to keep it.",
+        "rotation": "How far to turn it, in degrees. Leave empty to keep it."
+      },
+      "variables": {}
+    },
+    "vtubestudio.getCurrentModel": {
+      "description": "Reads which model is loaded and where it is, and keeps the details for later steps.",
+      "fields": {},
+      "variables": {
+        "vtsModelLoaded": "True if a model is loaded",
+        "vtsModelName": "The model's name",
+        "vtsModelId": "The model's id",
+        "vtsPositionX": "Left to right position",
+        "vtsPositionY": "Bottom to top position",
+        "vtsRotation": "Rotation in degrees",
+        "vtsSize": "How big it is"
+      }
+    },
+    "vtubestudio.getModels": {
+      "description": "Reads the list of models you have in VTube Studio and keeps it for later steps.",
+      "fields": {},
+      "variables": {
+        "vtsModels": "All model names, separated by commas",
+        "vtsModelCount": "How many models there are",
+        "vtsModelsJson": "The full list as raw text"
+      }
+    },
+    "vtubestudio.getHotkeys": {
+      "description": "Reads the hotkeys of the loaded model and keeps them for later steps.",
+      "fields": {},
+      "variables": {
+        "vtsHotkeys": "All hotkey names, separated by commas",
+        "vtsHotkeyCount": "How many hotkeys there are",
+        "vtsHotkeysJson": "The full list as raw text"
+      }
+    },
+    "vtubestudio.getExpressions": {
+      "description": "Reads the expressions of the loaded model and which ones are on, and keeps them for later steps.",
+      "fields": {},
+      "variables": {
+        "vtsExpressions": "All expression names, separated by commas",
+        "vtsActiveExpressions": "The names of the expressions that are on now",
+        "vtsExpressionCount": "How many expressions there are",
+        "vtsExpressionsJson": "The full list as raw text"
+      }
+    },
+    "vtubestudio.rawRequest": {
+      "description": "Sends VTube Studio one request of your own and keeps the answer. For advanced users who know the VTube Studio plugin commands.",
+      "fields": {
+        "messageType": "The VTube Studio request name, like \"SceneColorOverlayInfoRequest\".",
+        "data": "Extra details for the request, written as a JSON object. Leave empty if it needs none.",
+        "resultArgument": "The name of the variable that will hold the answer as text. The default is vtsResult.",
+        "variablePrefix": "Also keeps each part of the answer as its own variable starting with this word, like %vtsRaw.data.modelName%. Leave empty to skip."
+      },
+      "variables": {
+        "vtsResult": "The whole answer as raw text (or the name you chose above)"
+      }
+    }
+  }
+}

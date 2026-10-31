@@ -1,0 +1,377 @@
+{
+  "triggers": {
+    "meldstudio.connected": {
+      "description": "Runs when Cuebot connects to Meld Studio.",
+      "fields": {},
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on"
+      }
+    },
+    "meldstudio.disconnected": {
+      "description": "Runs when Cuebot loses its connection to Meld Studio, for example when you close it.",
+      "fields": {},
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on"
+      }
+    },
+    "meldstudio.sceneChanged": {
+      "description": "Runs when Meld Studio switches to another scene on the live output.",
+      "fields": {
+        "scene": "Only react to these scenes, typed as Meld Studio shows them, like \"Just Chatting\". Separate several with commas. Leave empty for any scene."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudio.sceneName": "The scene Meld switched to",
+        "meldStudio.sceneId": "Meld's id for that scene",
+        "meldStudio.oldSceneName": "The scene before the switch",
+        "meldStudio.oldSceneId": "Meld's id for the old scene"
+      }
+    },
+    "meldstudio.recordingStarted": {
+      "description": "Runs when Meld Studio starts recording.",
+      "fields": {},
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on"
+      }
+    },
+    "meldstudio.recordingStopped": {
+      "description": "Runs when Meld Studio stops recording.",
+      "fields": {},
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on"
+      }
+    },
+    "meldstudio.streamingStarted": {
+      "description": "Runs when Meld Studio starts streaming. Good for a \"going live\" message.",
+      "fields": {},
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on"
+      }
+    },
+    "meldstudio.streamingStopped": {
+      "description": "Runs when Meld Studio stops streaming.",
+      "fields": {},
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on"
+      }
+    },
+    "meldstudio.event": {
+      "description": "Runs when anything in your Meld Studio session changes, like a layer, effect or audio track. For advanced users; the other Meld triggers are simpler.",
+      "fields": {
+        "event": "Which kind of change to react to. Pick Any to react to every change."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.event": "The kind of change, like LayerVisibilityChanged",
+        "meldStudioEvent._json": "All details of the change as raw text",
+        "meldStudioEvent.layerName": "The layer that changed (for layer changes)",
+        "meldStudioEvent.trackName": "The audio track that changed (for track changes)",
+        "meldStudioEvent.effectName": "The effect that changed (for effect changes)",
+        "meldStudioEvent.sceneName": "The scene involved, if any"
+      }
+    },
+    "meldstudio.layerVisibilityChanged": {
+      "description": "Runs when a layer (like a camera or image) is shown or hidden in a Meld scene.",
+      "fields": {
+        "layer": "Only react to these layers (the things inside a scene, like a camera or image), typed as Meld shows them. Separate several with commas. Leave empty for any layer.",
+        "stateFilter": "Pick Visible to react when a layer appears, Hidden when it disappears, or Any for both."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.layerName": "The name of the layer",
+        "meldStudioEvent.layerId": "Meld's id for the layer",
+        "meldStudioEvent.visible": "True when the layer is now shown",
+        "meldStudioEvent.sceneName": "The scene the layer is in"
+      }
+    },
+    "meldstudio.effectEnabledStateChanged": {
+      "description": "Runs when an effect on a layer is switched on or off in Meld.",
+      "fields": {
+        "effect": "Only react to these effects, typed as Meld shows them. Separate several with commas. Leave empty for any effect.",
+        "stateFilter": "Pick Enabled to react when it turns on, Disabled when it turns off, or Any for both."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.effectName": "The name of the effect",
+        "meldStudioEvent.enabled": "True when the effect is now on",
+        "meldStudioEvent.layerName": "The layer the effect is on"
+      }
+    },
+    "meldstudio.trackMutedStateChanged": {
+      "description": "Runs when an audio track is muted or unmuted in Meld.",
+      "fields": {
+        "track": "Only react to these audio tracks, typed as Meld shows them (a layer name works for that layer's sound). Separate several with commas. Leave empty for any track.",
+        "stateFilter": "Pick Muted to react when it is muted, Not muted when it is unmuted, or Any for both."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.trackName": "The name of the audio track",
+        "meldStudioEvent.muted": "True when the track is now muted"
+      }
+    },
+    "meldstudio.trackMonitoringStateChanged": {
+      "description": "Runs when you start or stop listening to an audio track through your headphones (monitoring) in Meld.",
+      "fields": {
+        "track": "Only react to these audio tracks, typed as Meld shows them (a layer name works for that layer's sound). Separate several with commas. Leave empty for any track.",
+        "stateFilter": "Pick Monitoring to react when listening starts, Not monitoring when it stops, or Any for both."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.trackName": "The name of the audio track",
+        "meldStudioEvent.monitoring": "True when you are now listening to it"
+      }
+    },
+    "meldstudio.trackGainChanged": {
+      "description": "Runs when the volume of an audio track changes in Meld.",
+      "fields": {
+        "track": "Only react to these audio tracks, typed as Meld shows them (a layer name works for that layer's sound). Separate several with commas. Leave empty for any track."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.trackName": "The name of the audio track",
+        "meldStudioEvent.gain": "The new volume, from 0 (silent) to 1 (full)",
+        "meldStudioEvent.muted": "True if the track is muted"
+      }
+    },
+    "meldstudio.sceneStaged": {
+      "description": "Runs when you stage a scene in Meld (put it in the \"up next\" spot before showing it).",
+      "fields": {
+        "scene": "Only react to these scenes, typed as Meld Studio shows them, like \"Just Chatting\". Separate several with commas. Leave empty for any scene."
+      },
+      "variables": {
+        "meldStudio.name": "The name of the Meld Studio connection",
+        "meldStudio.host": "The computer Meld Studio runs on",
+        "meldStudioEvent.sceneName": "The scene that was staged",
+        "meldStudioEvent.sceneId": "Meld's id for the scene"
+      }
+    }
+  },
+  "subActions": {
+    "meldstudio.showScene": {
+      "description": "Switches Meld Studio to another scene, live.",
+      "fields": {
+        "scene": "The scene name as Meld Studio shows it, like \"Just Chatting\". Its id also works."
+      },
+      "variables": {
+        "meldStudio.sceneName": "The scene that was shown"
+      }
+    },
+    "meldstudio.getCurrentScene": {
+      "description": "Finds out which scene Meld Studio is showing and keeps it for later steps.",
+      "fields": {},
+      "variables": {
+        "currentScene": "The name of the live scene",
+        "currentSceneId": "Meld's id for the live scene"
+      }
+    },
+    "meldstudio.getStatus": {
+      "description": "Checks whether Meld Studio is connected, recording or streaming and keeps the answers for later steps.",
+      "fields": {},
+      "variables": {
+        "meldStudio.isConnected": "True if Cuebot is connected to Meld",
+        "meldStudio.isRecording": "True if Meld is recording",
+        "meldStudio.isStreaming": "True if Meld is streaming"
+      }
+    },
+    "meldstudio.recording": {
+      "description": "Starts or stops recording in Meld Studio.",
+      "fields": {
+        "state": "Start begins recording, Stop ends it, Toggle does the opposite of what it is doing now."
+      },
+      "variables": {
+        "meldStudio.isRecording": "True if Meld is recording afterwards"
+      }
+    },
+    "meldstudio.streaming": {
+      "description": "Starts or stops your stream in Meld Studio.",
+      "fields": {
+        "state": "Start begins streaming, Stop ends it, Toggle does the opposite of what it is doing now."
+      },
+      "variables": {
+        "meldStudio.isStreaming": "True if Meld is streaming afterwards"
+      }
+    },
+    "meldstudio.takeScreenshot": {
+      "description": "Takes a screenshot in Meld Studio. Meld saves the picture itself.",
+      "fields": {
+        "orientation": "Horizontal is the normal wide picture, Vertical is the tall (phone) one."
+      },
+      "variables": {
+        "screenshotSuccess": "True if Meld took the screenshot"
+      }
+    },
+    "meldstudio.takeVerticalScreenshot": {
+      "description": "Takes a tall (phone-shaped) screenshot in Meld Studio.",
+      "fields": {},
+      "variables": {
+        "screenshotSuccess": "True if Meld took the screenshot"
+      }
+    },
+    "meldstudio.setLayerVisibility": {
+      "description": "Shows or hides a layer (like a camera or image) in a Meld scene.",
+      "fields": {
+        "scene": "The scene the layer is in, as Meld shows it. Leave empty to look in the live scene first, then in all scenes.",
+        "layer": "The layer name as Meld shows it, like \"Webcam\" (a layer is one item inside a scene). Its id also works.",
+        "state": "Visible shows it, Hidden hides it, Toggle flips it."
+      },
+      "variables": {
+        "meldStudio.layerVisible": "True if the layer is shown afterwards"
+      }
+    },
+    "meldstudio.setEffectState": {
+      "description": "Turns an effect on a Meld layer on or off.",
+      "fields": {
+        "scene": "The scene the layer is in, as Meld shows it. Leave empty to look in the live scene first, then in all scenes.",
+        "layer": "The layer name as Meld shows it, like \"Webcam\" (a layer is one item inside a scene). Its id also works.",
+        "effect": "The effect name as Meld shows it. Its id also works.",
+        "state": "Enabled turns it on, Disabled turns it off, Toggle flips it."
+      },
+      "variables": {
+        "meldStudio.effectEnabled": "True if the effect is on afterwards"
+      }
+    },
+    "meldstudio.setLayerTrackMuted": {
+      "description": "Mutes or unmutes the sound of one layer, like a game capture.",
+      "fields": {
+        "scene": "The scene the layer is in, as Meld shows it. Leave empty to look in the live scene first, then in all scenes.",
+        "layer": "The layer name as Meld shows it, like \"Webcam\" (a layer is one item inside a scene). Its id also works.",
+        "state": "Muted silences it, Not Muted turns it back on, Toggle flips it."
+      },
+      "variables": {
+        "meldStudio.trackMuted": "True if the sound is muted afterwards"
+      }
+    },
+    "meldstudio.setTrackMuted": {
+      "description": "Mutes or unmutes an audio track, like your microphone.",
+      "fields": {
+        "track": "The audio track: a global track name like \"Microphone\", or a layer name for that layer's sound. Its id also works.",
+        "state": "Muted silences it, Not Muted turns it back on, Toggle flips it."
+      },
+      "variables": {
+        "meldStudio.trackMuted": "True if the track is muted afterwards"
+      }
+    },
+    "meldstudio.setBrowserLayerUrl": {
+      "description": "Makes a browser layer in Meld open a different web page.",
+      "fields": {
+        "scene": "The scene the layer is in, as Meld shows it. Leave empty to look in the live scene first, then in all scenes.",
+        "layer": "The browser layer name as Meld shows it. Its id also works.",
+        "url": "The web address to open, like \"https://example.com/alert\"."
+      },
+      "variables": {}
+    },
+    "meldstudio.setLayerSource": {
+      "description": "Swaps the picture or video shown by an image or media layer.",
+      "fields": {
+        "scene": "The scene the layer is in, as Meld shows it. Leave empty to look in the live scene first, then in all scenes.",
+        "layer": "The image or media layer name as Meld shows it.",
+        "source": "The file on your computer, like \"C:\\Pictures\\happy.png\", or a web link starting with file://."
+      },
+      "variables": {}
+    },
+    "meldstudio.setTrackMonitoring": {
+      "description": "Turns on or off listening to an audio track through your headphones (monitoring).",
+      "fields": {
+        "track": "The audio track: a global track name like \"Microphone\", or a layer name for that layer's sound. Its id also works.",
+        "state": "Monitoring starts listening, Not Monitoring stops, Toggle flips it."
+      },
+      "variables": {
+        "meldStudio.trackMonitoring": "True if monitoring is on afterwards"
+      }
+    },
+    "meldstudio.setTrackGain": {
+      "description": "Sets the volume of an audio track.",
+      "fields": {
+        "track": "The audio track: a global track name like \"Microphone\", or a layer name for that layer's sound. Its id also works.",
+        "gain": "The volume from 0 (silent) to 1 (full), like 0.5 for half."
+      },
+      "variables": {}
+    },
+    "meldstudio.stageScene": {
+      "description": "Puts a scene in the \"up next\" spot in Meld, so you can show it later with \"Show staged scene\". Vertical scenes cannot be staged.",
+      "fields": {
+        "scene": "The scene name as Meld Studio shows it, like \"Just Chatting\". Its id also works."
+      },
+      "variables": {}
+    },
+    "meldstudio.showStagedScene": {
+      "description": "Shows the scene you staged earlier in Meld Studio.",
+      "fields": {},
+      "variables": {}
+    },
+    "meldstudio.recordClip": {
+      "description": "Saves a short clip of the last moments in Meld Studio.",
+      "fields": {
+        "seconds": "How many seconds to save, 1 to 90. Leave empty or 0 for the longest Meld can do."
+      },
+      "variables": {}
+    },
+    "meldstudio.replay": {
+      "description": "Shows or hides the instant replay in Meld Studio.",
+      "fields": {
+        "mode": "Show plays the replay, Dismiss closes it."
+      },
+      "variables": {}
+    },
+    "meldstudio.toggleVirtualCamera": {
+      "description": "Turns the Meld Studio virtual camera on if it is off, and off if it is on.",
+      "fields": {},
+      "variables": {}
+    },
+    "meldstudio.mediaControl": {
+      "description": "Plays, pauses or jumps within a video or sound layer in Meld Studio.",
+      "fields": {
+        "scene": "The scene the layer is in, as Meld shows it. Leave empty to look in the live scene first, then in all scenes.",
+        "layer": "The media layer name as Meld shows it.",
+        "mediaAction": "Play, Pause, or Seek to jump to a time.",
+        "seconds": "Only for Seek: the time to jump to, in seconds from the start."
+      },
+      "variables": {}
+    },
+    "meldstudio.widgetEvent": {
+      "description": "Presses a button on a Meld widget, like firing confetti, resetting a countdown or adding time to a subathon timer.",
+      "fields": {
+        "eventType": "The widget event name, like \"CONFETTIPOP_TRIGGER\" or \"COUNTDOWN_RESET\". Pick one from the suggestions.",
+        "amount": "Only for SUBATHONTIMER_ADDTIME: how many seconds to add."
+      },
+      "variables": {}
+    },
+    "meldstudio.setProperty": {
+      "description": "Changes one setting of a Meld scene, layer, effect or track. For advanced users who know the setting names.",
+      "fields": {
+        "item": "The scene, layer, effect or track name as Meld shows it. Its id also works.",
+        "property": "Which setting to change, like visible, x, y, width, height, url or name.",
+        "value": "The new value, like true, 10 or some text."
+      },
+      "variables": {}
+    },
+    "meldstudio.sendCommand": {
+      "description": "Sends Meld Studio one of its own commands by name. For advanced users.",
+      "fields": {
+        "command": "The command name, like \"meld.screenshot\" or \"meld.recordClip\". Pick one from the suggestions."
+      },
+      "variables": {}
+    },
+    "meldstudio.getScenes": {
+      "description": "Reads the names of all your Meld scenes and keeps them for later steps.",
+      "fields": {},
+      "variables": {
+        "meldStudio.scenes": "The list of scene names, as text",
+        "meldStudio.sceneCount": "How many scenes there are"
+      }
+    }
+  }
+}

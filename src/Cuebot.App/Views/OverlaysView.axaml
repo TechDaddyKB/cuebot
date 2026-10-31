@@ -7,7 +7,7 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4">
       <TextBlock Classes="h1" Text="Overlays &amp; Widgets" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Each overlay is a page Cuebot hosts on this computer. Add it to OBS as a browser source with the overlay's link and canvas size. Design… opens the overlay in your browser to arrange widgets, text, images and video; StreamElements custom widgets (.zip) get chat and alerts from every platform Cuebot is connected to." />
+                 Text="An overlay is a picture that sits on top of your stream, like a chat box, alerts or a goal bar. Cuebot hosts each one on this computer. To show it, add it to OBS as a Browser Source with the overlay's link and the canvas size. Design… opens the overlay in your web browser so you can arrange widgets, text, images and video. StreamElements custom widgets (.zip) also work and get chat and alerts from every platform Cuebot is connected to." />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding ServerHint}" TextWrapping="Wrap" Margin="0,8,0,0"
@@ -16,21 +16,21 @@
     <!-- New overlay -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
       <Grid ColumnDefinitions="*,8,210,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
-        <TextBox Text="{Binding NewName}" PlaceholderText="New overlay name" />
-        <ComboBox Grid.Column="2" ItemsSource="{x:Static vm:OverlaysViewModel.Presets}" SelectedItem="{Binding NewCanvas}" HorizontalAlignment="Stretch" />
+        <TextBox Text="{Binding NewName}" PlaceholderText="New overlay name" ToolTip.Tip="A name for the new overlay, like Main scene." />
+        <ComboBox Grid.Column="2" ItemsSource="{x:Static vm:OverlaysViewModel.Presets}" SelectedItem="{Binding NewCanvas}" HorizontalAlignment="Stretch" ToolTip.Tip="How big the overlay is. Pick the same size as your OBS canvas, usually 1920x1080." />
         <NumericUpDown Grid.Column="4" Value="{Binding NewWidth}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
-                       IsVisible="{Binding IsCustomSize}" ToolTip.Tip="Width in pixels" />
+                       IsVisible="{Binding IsCustomSize}" ToolTip.Tip="How wide the overlay is, in pixels (the tiny dots of the screen)." />
         <NumericUpDown Grid.Column="6" Value="{Binding NewHeight}" Minimum="16" Maximum="7680" FormatString="0" Width="110"
-                       IsVisible="{Binding IsCustomSize}" ToolTip.Tip="Height in pixels" />
-        <Button Grid.Column="8" Content="+ Overlay" Classes="accent" Command="{Binding CreateCommand}" />
+                       IsVisible="{Binding IsCustomSize}" ToolTip.Tip="How tall the overlay is, in pixels (the tiny dots of the screen)." />
+        <Button Grid.Column="8" Content="+ Overlay" Classes="accent" Command="{Binding CreateCommand}" ToolTip.Tip="Creates a new empty overlay with the name and size you chose." />
         <Button Grid.Column="10" Content="Import from StreamElements…" Command="{Binding ShowStreamElementsOverlaysCommand}"
                 IsVisible="{Binding CanImportFromStreamElements}" IsEnabled="{Binding !StreamElementsBusy}"
                 ToolTip.Tip="Copy an overlay from your StreamElements account (custom widgets, text, images, labels and the alert box). Your StreamElements overlays are not changed." />
         <Button Grid.Column="12" Content="Import package…" Click="OnImportPackage" IsVisible="{Binding CanShare}"
-                ToolTip.Tip="Open a Cuebot overlay package (.cuebot-overlay) someone shared; it becomes a new overlay with its own link" />
+                ToolTip.Tip="Opens an overlay file (.cuebot-overlay) that someone shared with you. It becomes a new overlay with its own link." />
         <Button Grid.Column="14" Content="Browse gallery…" Command="{Binding BrowseGalleryCommand}" IsVisible="{Binding CanBrowseGallery}"
                 IsEnabled="{Binding !GalleryBusy}"
-                ToolTip.Tip="Overlays and widgets shared by other streamers, each reviewed before it is listed" />
+                ToolTip.Tip="Shows overlays and widgets that other streamers shared. Each one was checked before it was listed." />
       </Grid>
     </Border>
 
@@ -41,7 +41,7 @@
           <TextBlock Text="Community gallery" FontWeight="SemiBold" VerticalAlignment="Center" />
           <TextBlock Grid.Column="1" Text="Add widgets to" Classes="muted" VerticalAlignment="Center" />
           <ComboBox Grid.Column="3" ItemsSource="{Binding Overlays}" SelectedItem="{Binding GalleryTarget}" HorizontalAlignment="Stretch"
-                    ToolTip.Tip="Widget items are added to this overlay; overlay items always become a new overlay">
+                    ToolTip.Tip="Widgets you import from the gallery are added to this overlay. A whole overlay always becomes a new overlay.">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="vm:OverlayRowViewModel">
                 <TextBlock Text="{Binding Name}" />
@@ -49,8 +49,8 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
           <Button Grid.Column="5" Content="Share yours…" Command="{Binding ShareToGalleryCommand}"
-                  ToolTip.Tip="Opens the gallery's guide: export with Share, add a preview, and send a pull request" />
-          <Button Grid.Column="7" Content="Close" Command="{Binding CloseGalleryCommand}" />
+                  ToolTip.Tip="Opens the instructions for sharing your own overlay in the gallery (export it with Share, add a preview picture, and send it in on GitHub)." />
+          <Button Grid.Column="7" Content="Close" Command="{Binding CloseGalleryCommand}" ToolTip.Tip="Hides the gallery." />
         </Grid>
         <ScrollViewer MaxHeight="420">
           <ItemsControl ItemsSource="{Binding GalleryItems}">
@@ -69,12 +69,12 @@
                     <TextBlock Text="{Binding Details}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
                   </StackPanel>
                   <StackPanel Grid.Column="3" Spacing="6" VerticalAlignment="Center" Margin="8,0,0,0">
-                    <Button Content="Import" Classes="accent" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch"
+                    <Button Content="Import" Classes="accent" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch" ToolTip.Tip="Downloads this item and adds it to your overlays."
                             IsEnabled="{Binding !$parent[ItemsControl].((vm:OverlaysViewModel)DataContext).GalleryBusy}" />
                     <Button Content="View" Command="{Binding ViewCommand}" HorizontalAlignment="Stretch"
-                            ToolTip.Tip="The item's page on GitHub" />
+                            ToolTip.Tip="Opens this item's page on the GitHub website in your browser." />
                     <Button Content="Report" Command="{Binding ReportCommand}" HorizontalAlignment="Stretch"
-                            ToolTip.Tip="Report copyright, a broken item or something harmful" />
+                            ToolTip.Tip="Tell the gallery team if this item copies someone's work, is broken or is harmful." />
                   </StackPanel>
                 </Grid>
               </DataTemplate>
@@ -89,7 +89,7 @@
       <StackPanel Spacing="6">
         <Grid ColumnDefinitions="*,Auto">
           <TextBlock Text="Your StreamElements overlays" FontWeight="SemiBold" VerticalAlignment="Center" />
-          <Button Grid.Column="1" Content="Close" Command="{Binding CloseStreamElementsOverlaysCommand}" />
+          <Button Grid.Column="1" Content="Close" Command="{Binding CloseStreamElementsOverlaysCommand}" ToolTip.Tip="Hides this list." />
         </Grid>
         <ItemsControl ItemsSource="{Binding StreamElementsOverlays}">
           <ItemsControl.ItemTemplate>
@@ -97,7 +97,7 @@
               <Grid ColumnDefinitions="*,120,Auto" Margin="0,2">
                 <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="1" Text="{Binding Canvas}" Classes="muted" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Content="Import" Command="{Binding ImportCommand}"
+                <Button Grid.Column="2" Content="Import" Command="{Binding ImportCommand}" ToolTip.Tip="Copies this overlay into Cuebot. The original on StreamElements stays as it is."
                         IsEnabled="{Binding !$parent[ItemsControl].((vm:OverlaysViewModel)DataContext).StreamElementsBusy}" />
               </Grid>
             </DataTemplate>
@@ -111,11 +111,11 @@
       <Grid ColumnDefinitions="Auto,12,*,Auto">
         <TextBlock Text="Alerts" FontWeight="SemiBold" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
-                   Text="For every overlay: pause holds new alerts until resumed, skip ends the one playing, mute silences alert sound and alert TTS." />
+                   Text="These work for every overlay: Pause holds new alerts until you resume, Skip ends the alert that is playing, and Mute silences alert sounds and spoken alerts (text-to-speech)." />
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
-          <ToggleButton Content="Pause alerts" IsChecked="{Binding AlertsPaused}" ToolTip.Tip="The alert playing finishes; new ones wait" />
-          <Button Content="Skip alert" Command="{Binding SkipAlertCommand}" ToolTip.Tip="End the alert playing now" />
-          <ToggleButton Content="Mute alerts" IsChecked="{Binding AlertsMuted}" ToolTip.Tip="Silence alert sounds, videos and alert TTS" />
+          <ToggleButton Content="Pause alerts" IsChecked="{Binding AlertsPaused}" ToolTip.Tip="Pressed: new alerts wait in line. The alert on screen right now finishes. Press again to let them play." />
+          <Button Content="Skip alert" Command="{Binding SkipAlertCommand}" ToolTip.Tip="Ends the alert on screen right now and moves on to the next one." />
+          <ToggleButton Content="Mute alerts" IsChecked="{Binding AlertsMuted}" ToolTip.Tip="Pressed: alert sounds, videos and spoken alerts (text-to-speech) are silent. Press again to hear them." />
         </StackPanel>
       </Grid>
     </Border>
@@ -128,32 +128,32 @@
         <Grid ColumnDefinitions="*,16,*">
           <StackPanel Spacing="6">
             <TextBlock Text="Poll" FontWeight="SemiBold" />
-            <TextBox Text="{Binding PollTitle}" PlaceholderText="Question" />
-            <TextBox Text="{Binding PollChoices}" PlaceholderText="Choices, one per line" AcceptsReturn="True" MinHeight="72" />
+            <TextBox Text="{Binding PollTitle}" PlaceholderText="Question" ToolTip.Tip="The question viewers vote on, like Which game next?" />
+            <TextBox Text="{Binding PollChoices}" PlaceholderText="Choices, one per line" AcceptsReturn="True" MinHeight="72" ToolTip.Tip="The answers viewers can pick. Write each one on its own line." />
             <StackPanel Orientation="Horizontal" Spacing="6">
               <NumericUpDown Value="{Binding PollSeconds}" Minimum="0" Maximum="3600" FormatString="0" Width="120"
-                             ToolTip.Tip="Seconds it runs (0: until you end it)" />
-              <Button Content="Start poll" Classes="accent" Command="{Binding StartPollCommand}" IsEnabled="{Binding !PollRunning}" />
-              <Button Content="End poll" Command="{Binding EndPollCommand}" IsEnabled="{Binding PollRunning}" />
+                             ToolTip.Tip="How many seconds voting stays open. 0 keeps it open until you press End poll." />
+              <Button Content="Start poll" Classes="accent" Command="{Binding StartPollCommand}" IsEnabled="{Binding !PollRunning}" ToolTip.Tip="Opens the vote. Viewers on every platform vote in chat." />
+              <Button Content="End poll" Command="{Binding EndPollCommand}" IsEnabled="{Binding PollRunning}" ToolTip.Tip="Closes the vote now and shows the result." />
             </StackPanel>
             <TextBlock Text="{Binding PollStatus}" TextWrapping="Wrap"
                        IsVisible="{Binding PollStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
           <StackPanel Grid.Column="2" Spacing="6">
             <TextBlock Text="Prediction (Cuebot points)" FontWeight="SemiBold" />
-            <TextBox Text="{Binding PredictionTitle}" PlaceholderText="Question" />
-            <TextBox Text="{Binding PredictionOutcomes}" PlaceholderText="Outcomes, one per line" AcceptsReturn="True" MinHeight="72" />
+            <TextBox Text="{Binding PredictionTitle}" PlaceholderText="Question" ToolTip.Tip="What viewers bet on, like Will I beat the boss?" />
+            <TextBox Text="{Binding PredictionOutcomes}" PlaceholderText="Outcomes, one per line" AcceptsReturn="True" MinHeight="72" ToolTip.Tip="The possible results viewers can bet on. Write each one on its own line." />
             <WrapPanel>
               <NumericUpDown Value="{Binding PredictionSeconds}" Minimum="0" Maximum="3600" FormatString="0" Width="120" Margin="0,0,6,6"
-                             ToolTip.Tip="Seconds taking bets (0: until you lock it)" />
-              <Button Content="Start" Classes="accent" Command="{Binding StartPredictionCommand}" IsEnabled="{Binding CanStartPrediction}" Margin="0,0,6,6" />
-              <Button Content="Lock bets" Command="{Binding LockPredictionCommand}" IsEnabled="{Binding CanLock}" Margin="0,0,6,6" />
-              <ComboBox ItemsSource="{Binding Outcomes}" SelectedItem="{Binding Winner}" PlaceholderText="Winner" MinWidth="120"
+                             ToolTip.Tip="How many seconds viewers can place bets. 0 keeps betting open until you press Lock bets." />
+              <Button Content="Start" Classes="accent" Command="{Binding StartPredictionCommand}" IsEnabled="{Binding CanStartPrediction}" Margin="0,0,6,6" ToolTip.Tip="Opens betting. Viewers bet Cuebot points in chat." />
+              <Button Content="Lock bets" Command="{Binding LockPredictionCommand}" IsEnabled="{Binding CanLock}" Margin="0,0,6,6" ToolTip.Tip="Stops new bets. Do this before you find out the result." />
+              <ComboBox ItemsSource="{Binding Outcomes}" SelectedItem="{Binding Winner}" PlaceholderText="Winner" ToolTip.Tip="Pick which outcome actually happened." MinWidth="120"
                         IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6" />
               <Button Content="Pay out" Command="{Binding ResolvePredictionCommand}" IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6"
-                      ToolTip.Tip="Winners share the whole pot in proportion to their bets" />
+                      ToolTip.Tip="Ends the prediction. People who bet on the winner share all the points in the pot, in proportion to how much each of them bet." />
               <Button Content="Cancel" Command="{Binding CancelPredictionCommand}" IsEnabled="{Binding PredictionOpen}" Margin="0,0,6,6"
-                      ToolTip.Tip="Refund every bet" />
+                      ToolTip.Tip="Cancels the prediction and gives everyone their points back." />
             </WrapPanel>
             <TextBlock Text="{Binding PredictionStatus}" TextWrapping="Wrap"
                        IsVisible="{Binding PredictionStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -183,12 +183,12 @@
               <TextBlock Grid.Column="2" Text="{Binding DisplayUrl}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                    FontFamily="monospace" FontSize="12" Margin="0,0,8,0" />
               <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
-                <Button Content="Copy link" Click="OnCopyLink" />
+                <Button Content="Copy link" Click="OnCopyLink" ToolTip.Tip="Copies this overlay's link so you can paste it into an OBS Browser Source." />
                 <Button Content="New link" Command="{Binding NewLinkCommand}"
-                        ToolTip.Tip="Replace the link (for example if someone else saw it); OBS needs the new one" />
+                        ToolTip.Tip="Makes a new link and stops the old one working, for example if someone else saw it. You must paste the new link into OBS." />
                 <Button Content="Design…" Classes="accent" Command="{Binding DesignCommand}"
-                        ToolTip.Tip="Arrange this overlay's widgets, text, images and video in your browser" />
-                <DropDownButton Content="Add Cuebot widget" ToolTip.Tip="Widgets Cuebot ships: chat, alerts, labels, goals, lists and timers">
+                        ToolTip.Tip="Opens this overlay in your web browser so you can arrange its widgets, text, images and video." />
+                <DropDownButton Content="Add Cuebot widget" ToolTip.Tip="Adds one of the ready-made widgets that come with Cuebot, like chat, alerts, goals or a timer.">
                   <DropDownButton.Flyout>
                     <MenuFlyout Placement="BottomEdgeAlignedLeft">
                       <MenuItem Header="Chat box" Command="{Binding AddChatBoxCommand}"
@@ -230,19 +230,19 @@
                   </DropDownButton.Flyout>
                 </DropDownButton>
                 <Button Content="Add widget…" Click="OnAddWidget"
-                        ToolTip.Tip="Import a StreamElements or Streamlabs custom widget (.zip, for example one bought on Etsy), or a Cuebot widget package (.cuebot-overlay)" />
+                        ToolTip.Tip="Adds a custom widget file to this overlay: a StreamElements or Streamlabs widget (.zip, for example one bought on Etsy) or a Cuebot widget file (.cuebot-overlay)." />
                 <DropDownButton Content="Share" IsVisible="{Binding CanShare}" ToolTip.Tip="Save this overlay as one file to share or back up">
                   <DropDownButton.Flyout>
                     <MenuFlyout Placement="BottomEdgeAlignedLeft">
                       <MenuItem Header="Export package…" Click="OnExport" Tag="own"
-                                ToolTip.Tip="Layers, settings and files; widgets whose code is not Cuebot's own are left out" />
+                                ToolTip.Tip="Saves the overlay with its layers, settings and files. Custom widgets with code that is not Cuebot's own are left out." />
                       <MenuItem Header="Export with custom widget code (I own the rights to share it)…" Click="OnExport" Tag="custom"
                                 IsVisible="{Binding HasCustomCode}"
                                 ToolTip.Tip="Only for code you wrote or may share: widgets bought from a creator usually may not be passed on" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>
-                <Button Content="Delete" Command="{Binding DeleteCommand}" />
+                <Button Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Deletes this overlay. Its link stops working, so remove it from OBS too." />
               </StackPanel>
             </Grid>
             <ItemsControl ItemsSource="{Binding Layers}" IsVisible="{Binding HasLayers}" Margin="16,0,0,0">
@@ -252,19 +252,19 @@
                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                     <TextBlock Grid.Column="1" Classes="muted" Text="X" VerticalAlignment="Center" />
                     <NumericUpDown Grid.Column="3" Value="{Binding X}" Minimum="-7680" Maximum="7680" FormatString="0" Width="110"
-                                   ToolTip.Tip="Left edge (pixels)" />
+                                   ToolTip.Tip="How far from the left edge of the overlay, in pixels." />
                     <TextBlock Grid.Column="5" Classes="muted" Text="Y" VerticalAlignment="Center" />
                     <NumericUpDown Grid.Column="7" Value="{Binding Y}" Minimum="-7680" Maximum="7680" FormatString="0" Width="110"
-                                   ToolTip.Tip="Top edge (pixels)" />
+                                   ToolTip.Tip="How far from the top edge of the overlay, in pixels." />
                     <TextBlock Grid.Column="9" Classes="muted" Text="W" VerticalAlignment="Center" />
                     <NumericUpDown Grid.Column="11" Value="{Binding Width}" Minimum="1" Maximum="7680" FormatString="0" Width="110"
-                                   ToolTip.Tip="Width (pixels)" />
+                                   ToolTip.Tip="How wide this widget is, in pixels." />
                     <TextBlock Grid.Column="13" Classes="muted" Text="H" VerticalAlignment="Center" />
                     <NumericUpDown Grid.Column="15" Value="{Binding Height}" Minimum="1" Maximum="7680" FormatString="0" Width="110"
-                                   ToolTip.Tip="Height (pixels)" />
+                                   ToolTip.Tip="How tall this widget is, in pixels." />
                     <StackPanel Grid.Column="17" Orientation="Horizontal" Spacing="6">
                       <Button Content="Edit…" Command="{Binding EditCommand}"
-                              ToolTip.Tip="Change the widget's settings and code, and try it with sample events, in your browser" />
+                              ToolTip.Tip="Opens this widget in your web browser so you can change its settings and try it with pretend events." />
                       <DropDownButton Content="Share" IsVisible="{Binding CanShare}" ToolTip.Tip="Save this widget (for example an alert box with its designs) as one file">
                         <DropDownButton.Flyout>
                           <MenuFlyout Placement="BottomEdgeAlignedLeft">
@@ -275,7 +275,7 @@
                           </MenuFlyout>
                         </DropDownButton.Flyout>
                       </DropDownButton>
-                      <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                      <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Takes this widget off the overlay. It stays in your widget library." />
                     </StackPanel>
                   </Grid>
                 </DataTemplate>

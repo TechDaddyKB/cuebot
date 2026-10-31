@@ -7,25 +7,25 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
       <TextBlock Classes="h1" Text="Credits" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Everyone who followed, subscribed, gifted, cheered, tipped, raided, redeemed or chatted this stream, from every connected platform. Overlays read the same data (JSON below) through the 'Get credits' sub-action or the server API." />
+                 Text="Everyone who followed, subscribed, gifted, cheered, tipped, raided, redeemed or chatted this stream, from every connected platform. Overlays can use the same list (the text under Overlay JSON below) through the 'Get credits' sub-action, so you can roll end credits on screen." />
     </StackPanel>
 
     <!-- Settings -->
     <Border DockPanel.Dock="Right" Classes="card" Width="320" Margin="12,0,0,0" VerticalAlignment="Top">
       <StackPanel Spacing="10">
         <TextBlock Classes="h2" Text="Collecting" />
-        <CheckBox Content="Start fresh when a stream goes live" IsChecked="{Binding ResetOnStreamOnline}" />
+        <CheckBox Content="Start fresh when a stream goes live" IsChecked="{Binding ResetOnStreamOnline}" ToolTip.Tip="Ticked: the credits list is emptied each time your stream goes live." />
         <StackPanel Orientation="Horizontal" Spacing="8">
           <TextBlock Text="Reset after" VerticalAlignment="Center" />
-          <NumericUpDown Value="{Binding AutoResetHours}" Minimum="0" Increment="1" FormatString="0" Width="110" />
+          <NumericUpDown Value="{Binding AutoResetHours}" Minimum="0" Increment="1" FormatString="0" Width="110" ToolTip.Tip="Empties the credits after this many hours with no new events. 0 means never." />
           <TextBlock Text="idle hours" Classes="muted" VerticalAlignment="Center" />
         </StackPanel>
         <TextBlock Classes="muted" TextWrapping="Wrap" Text="0 = never reset automatically." />
-        <CheckBox Content="Credit everyone who chatted" IsChecked="{Binding RecordChatters}" />
+        <CheckBox Content="Credit everyone who chatted" IsChecked="{Binding RecordChatters}" ToolTip.Tip="Ticked: people who only wrote in chat are added to the credits too." />
         <TextBlock Text="Never credit (bots)" />
-        <TextBox Text="{Binding IgnoredUsers}" PlaceholderText="e.g. Nightbot, StreamElements" />
+        <TextBox Text="{Binding IgnoredUsers}" PlaceholderText="e.g. Nightbot, StreamElements" ToolTip.Tip="Names that never appear in the credits, like chat bots. Separate them with commas." />
         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
-          <Button Content="Reset credits" Command="{Binding ResetCommand}" />
+          <Button Content="Reset credits" Command="{Binding ResetCommand}" ToolTip.Tip="Empties the credits list now, so a new stream starts clean." />
           <ToggleButton Content="Show test data" IsChecked="{Binding ShowTestData}"
                         ToolTip.Tip="Preview sample credits (for designing an overlay) without changing the real ones" />
         </StackPanel>

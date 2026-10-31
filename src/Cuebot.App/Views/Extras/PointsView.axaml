@@ -7,7 +7,7 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
       <TextBlock Classes="h1" Text="Points" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Loyalty currencies viewers earn by watching and chatting. Each balance is the user variable named below, so the points sub-actions (add, spend, transfer, leaderboard…) and the variable sub-actions share them. Sub-actions use the default currency unless they name another." />
+                 Text="Points are a reward viewers earn by watching and chatting. You can make more than one kind (for example gems). Each viewer's balance is saved in the variable named below, so the points sub-actions (add, spend, transfer, leaderboard…) and the variable sub-actions use the same numbers. Actions use the default currency unless they name another." />
     </StackPanel>
 
     <!-- Currency picker -->
@@ -15,7 +15,7 @@
       <Grid ColumnDefinitions="Auto,8,200,8,Auto,16,*,8,Auto">
         <TextBlock Text="Currency" VerticalAlignment="Center" FontWeight="SemiBold" />
         <ComboBox x:Name="CurrencyPicker" Grid.Column="2" ItemsSource="{Binding Currencies}" SelectedItem="{Binding SelectedCurrency}"
-                  HorizontalAlignment="Stretch">
+                  HorizontalAlignment="Stretch" ToolTip.Tip="Choose which kind of points you are looking at and changing.">
           <ComboBox.ItemTemplate>
             <DataTemplate DataType="vm:CurrencyOptionViewModel">
               <TextBlock Text="{Binding Display}" />
@@ -23,9 +23,9 @@
           </ComboBox.ItemTemplate>
         </ComboBox>
         <Button Grid.Column="4" Content="Remove" Command="{Binding RemoveCurrencyCommand}" IsEnabled="{Binding CanRemoveCurrency}"
-                ToolTip.Tip="Remove this currency (its balances stay as user variables)" />
-        <TextBox Grid.Column="6" Text="{Binding NewCurrencyName}" PlaceholderText="New currency name, e.g. gems" />
-        <Button Grid.Column="8" Content="Add currency" Command="{Binding AddCurrencyCommand}" />
+                ToolTip.Tip="Removes this kind of points. Viewers' balances are not deleted; they stay saved as user variables." />
+        <TextBox Grid.Column="6" Text="{Binding NewCurrencyName}" PlaceholderText="New currency name, e.g. gems" ToolTip.Tip="The name of a second kind of points you want to add." />
+        <Button Grid.Column="8" Content="Add currency" Command="{Binding AddCurrencyCommand}" ToolTip.Tip="Adds the new kind of points with the name you typed." />
       </Grid>
     </Border>
 
@@ -37,14 +37,14 @@
             <TextBlock Classes="h2" Text="Currency" />
             <Grid ColumnDefinitions="Auto,8,*" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto">
               <TextBlock Text="Name" VerticalAlignment="Center" />
-              <TextBox Grid.Column="2" Text="{Binding CurrencyName}" PlaceholderText="points" />
+              <TextBox Grid.Column="2" Text="{Binding CurrencyName}" PlaceholderText="points" ToolTip.Tip="What you call these points when there are many, like points or gems." />
               <TextBlock Grid.Row="2" Text="One" VerticalAlignment="Center" />
-              <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding SingularName}" PlaceholderText="point" />
+              <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding SingularName}" PlaceholderText="point" ToolTip.Tip="What you call exactly one, like point or gem." />
               <TextBlock Grid.Row="4" Text="Symbol" VerticalAlignment="Center" />
-              <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Symbol}" PlaceholderText="optional, replaces the name" />
+              <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding Symbol}" PlaceholderText="optional, replaces the name" ToolTip.Tip="Optional. A small sign shown instead of the name, like a star." />
               <TextBlock Grid.Row="6" Text="Variable" VerticalAlignment="Center" />
               <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding VariableName, UpdateSourceTrigger=LostFocus}" FontFamily="monospace"
-                       ToolTip.Tip="User variable that stores each balance (no spaces)" />
+                       ToolTip.Tip="The name of the saved variable that holds each viewer's balance. Use letters and numbers, no spaces. Change it only if you know why." />
             </Grid>
             <TextBlock Text="{Binding Preview}" Classes="muted" />
           </StackPanel>
@@ -52,61 +52,61 @@
         <Border Classes="card">
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Earning" />
-            <CheckBox Content="Earning on" IsChecked="{Binding Enabled}" />
+            <CheckBox Content="Earning on" IsChecked="{Binding Enabled}" ToolTip.Tip="Unticked: viewers stop earning points by themselves. Actions can still give points." />
             <CheckBox Content="Only while live" IsChecked="{Binding OnlyWhileLive}"
-                      ToolTip.Tip="Presence and chat pay only while a platform reports the stream online" />
+                      ToolTip.Tip="Ticked: viewers earn points only while your stream is live." />
             <TextBlock Text="{Binding LiveStatus}" Classes="muted" TextWrapping="Wrap" />
             <Grid ColumnDefinitions="*,8,110,8,Auto" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto,6,Auto,6,Auto,6,Auto,6,Auto">
               <TextBlock Text="Watching: amount" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Column="2" Value="{Binding PresentAmount}" Minimum="0" FormatString="0" />
+              <NumericUpDown Grid.Column="2" Value="{Binding PresentAmount}" Minimum="0" FormatString="0" ToolTip.Tip="How many points every viewer who is currently here earns each time the wait below is over. 0 means none." />
               <TextBlock Grid.Row="2" Text="… every" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding PresentIntervalMinutes}" Minimum="1" FormatString="0" />
+              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding PresentIntervalMinutes}" Minimum="1" FormatString="0" ToolTip.Tip="How many minutes between each payout for watching." />
               <TextBlock Grid.Row="2" Grid.Column="4" Text="min" Classes="muted" VerticalAlignment="Center" />
               <TextBlock Grid.Row="4" Text="Chat message" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding MessageAmount}" Minimum="0" FormatString="0" />
+              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding MessageAmount}" Minimum="0" FormatString="0" ToolTip.Tip="Points a viewer earns for writing a chat message. 0 means none." />
               <TextBlock Grid.Row="6" Text="… at most every" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="6" Grid.Column="2" Value="{Binding MessageCooldownSeconds}" Minimum="0" Increment="10" FormatString="0" />
+              <NumericUpDown Grid.Row="6" Grid.Column="2" Value="{Binding MessageCooldownSeconds}" Minimum="0" Increment="10" FormatString="0" ToolTip.Tip="A viewer earns for chatting at most once in this many seconds, so spamming does not help." />
               <TextBlock Grid.Row="6" Grid.Column="4" Text="s" Classes="muted" VerticalAlignment="Center" />
               <TextBlock Grid.Row="8" Text="Follow bonus" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="8" Grid.Column="2" Value="{Binding FollowBonus}" Minimum="0" FormatString="0" />
+              <NumericUpDown Grid.Row="8" Grid.Column="2" Value="{Binding FollowBonus}" Minimum="0" FormatString="0" ToolTip.Tip="Points given to someone who follows you." />
               <TextBlock Grid.Row="10" Text="Subscription bonus" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="10" Grid.Column="2" Value="{Binding SubscriptionBonus}" Minimum="0" FormatString="0" />
+              <NumericUpDown Grid.Row="10" Grid.Column="2" Value="{Binding SubscriptionBonus}" Minimum="0" FormatString="0" ToolTip.Tip="Points given to someone who subscribes." />
               <TextBlock Grid.Row="12" Text="Per gifted sub" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="12" Grid.Column="2" Value="{Binding GiftBonusPerSub}" Minimum="0" FormatString="0" />
+              <NumericUpDown Grid.Row="12" Grid.Column="2" Value="{Binding GiftBonusPerSub}" Minimum="0" FormatString="0" ToolTip.Tip="Points given to a viewer for every subscription they gift to others." />
               <TextBlock Grid.Row="14" Text="Raid bonus" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="14" Grid.Column="2" Value="{Binding RaidBonus}" Minimum="0" FormatString="0" />
+              <NumericUpDown Grid.Row="14" Grid.Column="2" Value="{Binding RaidBonus}" Minimum="0" FormatString="0" ToolTip.Tip="Points given to the person who raids you." />
             </Grid>
             <Grid ColumnDefinitions="*,8,110">
               <TextBlock Text="Maximum balance (0 = none)" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Column="2" Value="{Binding MaxBalance}" Minimum="0" Increment="100" FormatString="0" />
+              <NumericUpDown Grid.Column="2" Value="{Binding MaxBalance}" Minimum="0" Increment="100" FormatString="0" ToolTip.Tip="The most points one viewer can hold. 0 means no limit." />
             </Grid>
             <TextBlock Text="Thresholds ('Points threshold reached' trigger)" />
-            <TextBox Text="{Binding Thresholds, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. 100, 1000, 10000" />
+            <TextBox Text="{Binding Thresholds, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. 100, 1000, 10000" ToolTip.Tip="Point totals that count as a milestone. When a viewer reaches one, the 'Points threshold reached' trigger starts. Separate them with commas." />
             <TextBlock Classes="error" Text="{Binding ThresholdsError}"
                        IsVisible="{Binding ThresholdsError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <TextBlock Text="Never earn automatically (bots)" />
-            <TextBox Text="{Binding IgnoredUsers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Nightbot, StreamElements" />
+            <TextBox Text="{Binding IgnoredUsers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Nightbot, StreamElements" ToolTip.Tip="Names that never earn points by themselves, like chat bots. Separate them with commas." />
           </StackPanel>
         </Border>
         <Border Classes="card">
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Multipliers" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Multiply automatic earnings (watching, chat, bonuses). The highest multiplier that applies wins (1 = none), then a user's own multiplier is applied on top." />
+                       Text="Let some people earn more. A multiplier makes automatic earnings (watching, chat, bonuses) bigger: 2 means double, 1 means no change. If several apply to one person, the highest wins, and then that person's own multiplier is applied on top." />
             <Grid ColumnDefinitions="*,8,110" RowDefinitions="Auto,6,Auto,6,Auto,6,Auto,6,Auto">
               <TextBlock Text="Subscribers (tier 1)" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Column="2" Value="{Binding SubscriberMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <NumericUpDown Grid.Column="2" Value="{Binding SubscriberMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" ToolTip.Tip="How much faster tier 1 subscribers earn. 2 means double, 1 means the same as everyone." />
               <TextBlock Grid.Row="2" Text="Tier 2 subscribers" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding Tier2Multiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding Tier2Multiplier}" Minimum="0" Increment="0.25" FormatString="0.##" ToolTip.Tip="How much faster tier 2 subscribers earn. 1 means the same as everyone." />
               <TextBlock Grid.Row="4" Text="Tier 3 subscribers" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding Tier3Multiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding Tier3Multiplier}" Minimum="0" Increment="0.25" FormatString="0.##" ToolTip.Tip="How much faster tier 3 subscribers earn. 1 means the same as everyone." />
               <TextBlock Grid.Row="6" Text="VIPs" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="6" Grid.Column="2" Value="{Binding VipMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <NumericUpDown Grid.Row="6" Grid.Column="2" Value="{Binding VipMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" ToolTip.Tip="How much faster VIPs earn. 1 means the same as everyone." />
               <TextBlock Grid.Row="8" Text="Moderators" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="8" Grid.Column="2" Value="{Binding ModeratorMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" />
+              <NumericUpDown Grid.Row="8" Grid.Column="2" Value="{Binding ModeratorMultiplier}" Minimum="0" Increment="0.25" FormatString="0.##" ToolTip.Tip="How much faster moderators earn. 1 means the same as everyone." />
             </Grid>
             <TextBlock Text="User groups (group=multiplier)" />
-            <TextBox Text="{Binding GroupMultipliers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Regulars=1.5, Supporters=2" />
+            <TextBox Text="{Binding GroupMultipliers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Regulars=1.5, Supporters=2" ToolTip.Tip="Give a whole user group a multiplier. Write the group name, an equals sign and the number, with commas between groups." />
             <TextBlock Classes="error" Text="{Binding GroupMultipliersError}"
                        IsVisible="{Binding GroupMultipliersError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding UserMultipliersSummary}" />
@@ -120,18 +120,18 @@
     <!-- Adjust -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8">
       <Grid ColumnDefinitions="110,8,*,8,120,8,Auto,8,Auto">
-        <ComboBox ItemsSource="{Binding AdjustPlatforms}" SelectedItem="{Binding AdjustPlatform}" HorizontalAlignment="Stretch" />
-        <TextBox Grid.Column="2" Text="{Binding AdjustUser}" PlaceholderText="User name" />
-        <NumericUpDown Grid.Column="4" Value="{Binding AdjustAmount}" Minimum="0" Increment="10" FormatString="0" />
-        <Button Grid.Column="6" Content="Give" Classes="accent" Command="{Binding GiveCommand}" />
-        <Button Grid.Column="8" Content="Take" Command="{Binding TakeCommand}" />
+        <ComboBox ItemsSource="{Binding AdjustPlatforms}" SelectedItem="{Binding AdjustPlatform}" HorizontalAlignment="Stretch" ToolTip.Tip="The platform the person is on." />
+        <TextBox Grid.Column="2" Text="{Binding AdjustUser}" PlaceholderText="User name" ToolTip.Tip="The viewer who should get or lose points." />
+        <NumericUpDown Grid.Column="4" Value="{Binding AdjustAmount}" Minimum="0" Increment="10" FormatString="0" ToolTip.Tip="How many points to give or take." />
+        <Button Grid.Column="6" Content="Give" Classes="accent" Command="{Binding GiveCommand}" ToolTip.Tip="Adds this many points to that viewer." />
+        <Button Grid.Column="8" Content="Take" Command="{Binding TakeCommand}" ToolTip.Tip="Removes this many points from that viewer." />
       </Grid>
     </Border>
     <Grid DockPanel.Dock="Top" ColumnDefinitions="140,8,Auto,8,Auto,12,*" Margin="0,0,0,6">
-      <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" HorizontalAlignment="Stretch" ToolTip.Tip="Platform" />
-      <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshLeaderboardCommand}" />
+      <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" HorizontalAlignment="Stretch" ToolTip.Tip="Show the list for one platform only, or for all of them." />
+      <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshLeaderboardCommand}" ToolTip.Tip="Loads the list of top viewers again." />
       <Button Grid.Column="4" Content="Reset balances" Command="{Binding ResetAllCommand}"
-              ToolTip.Tip="Delete every balance of the selected platform (asks for a second click)" />
+              ToolTip.Tip="Sets everyone's points on the chosen platform back to zero. This cannot be undone. Click a second time to confirm." />
       <TextBlock Grid.Column="6" Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
     </Grid>
     <Grid DockPanel.Dock="Top" ColumnDefinitions="60,*,100,160" Margin="12,4,12,4">

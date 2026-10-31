@@ -14,19 +14,19 @@
             <StackPanel Spacing="10">
               <TextBlock Classes="h2" Text="First words" />
               <TextBlock Classes="muted" TextWrapping="Wrap"
-                         Text="'First words' fires for a user's first message since Cuebot started, the stream went live, or the list was reset." />
-              <CheckBox Content="Reset when a stream goes live" IsChecked="{Binding ResetFirstWordsOnStreamOnline}" />
+                         Text="The 'First words' trigger runs for a viewer's first chat message since Cuebot started, since the stream went live, or since you reset the list. Handy for a welcome message." />
+              <CheckBox Content="Reset when a stream goes live" IsChecked="{Binding ResetFirstWordsOnStreamOnline}" ToolTip.Tip="Everyone counts as new again each time you go live, so each viewer can be welcomed once per stream." />
               <Button Content="Reset first words now" Command="{Binding ResetFirstWordsCommand}"
-                      ToolTip.Tip="Forget who has spoken on the platform chosen in the filter (All = everywhere)" />
+                      ToolTip.Tip="Forgets who has already chatted, so their next message runs the First words trigger again. It applies to the platform picked in the box on the left of the list (All = every platform)." />
               <TextBlock Classes="h2" Text="Present viewers" Margin="0,8,0,0" />
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="Present if they chatted in the last" VerticalAlignment="Center" TextWrapping="Wrap" Width="130" />
-                <NumericUpDown Value="{Binding PresentMinutes}" Minimum="0" Increment="1" FormatString="0" Width="110" />
+                <NumericUpDown Value="{Binding PresentMinutes}" Minimum="0" Increment="1" FormatString="0" Width="110" ToolTip.Tip="A viewer counts as here as long as they chatted within this many minutes." />
                 <TextBlock Text="min" Classes="muted" VerticalAlignment="Center" />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="Fire 'Present viewers' every" VerticalAlignment="Center" TextWrapping="Wrap" Width="130" />
-                <NumericUpDown Value="{Binding PresentIntervalMinutes}" Minimum="0" Increment="1" FormatString="0" Width="110" />
+                <NumericUpDown Value="{Binding PresentIntervalMinutes}" Minimum="0" Increment="1" FormatString="0" Width="110" ToolTip.Tip="How often, in minutes, the Present viewers trigger runs with the list of people who chatted recently. 0 turns it off." />
                 <TextBlock Text="min" Classes="muted" VerticalAlignment="Center" />
               </StackPanel>
               <TextBlock Classes="muted" TextWrapping="Wrap" Text="0 turns the Present viewers trigger off." />
@@ -35,11 +35,11 @@
 
           <Grid DockPanel.Dock="Top" ColumnDefinitions="160,8,*,8,Auto,8,160,8,Auto" Margin="0,0,0,8">
             <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" HorizontalAlignment="Stretch"
-                      ToolTip.Tip="Platform" />
-            <TextBox Grid.Column="2" Text="{Binding Search}" PlaceholderText="Search name or id" />
+                      ToolTip.Tip="Only show viewers from this platform (for example Twitch or YouTube)." />
+            <TextBox Grid.Column="2" Text="{Binding Search}" PlaceholderText="Search name or id" ToolTip.Tip="Type part of a viewer's name or id to narrow the list." />
             <TextBlock Grid.Column="4" Text="Add to" VerticalAlignment="Center" />
             <ComboBox Grid.Column="6" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" HorizontalAlignment="Stretch"
-                      PlaceholderText="Group">
+                      PlaceholderText="Group" ToolTip.Tip="The group that Add user puts the selected viewer into. Create groups on the Groups tab.">
               <ComboBox.ItemTemplate>
                 <DataTemplate DataType="vm:GroupRowViewModel">
                   <TextBlock Text="{Binding Name}" />
@@ -47,20 +47,20 @@
               </ComboBox.ItemTemplate>
             </ComboBox>
             <Button Grid.Column="8" Content="Add user" Command="{Binding AddSelectedUserToGroupCommand}"
-                    ToolTip.Tip="Add the selected user to the chosen group" />
+                    ToolTip.Tip="Puts the viewer you selected in the list into the group chosen on the left." />
           </Grid>
           <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8" IsVisible="{Binding IsConfirmingForget}">
             <StackPanel Spacing="8">
               <TextBlock Text="{Binding ForgetPrompt}" TextWrapping="Wrap" />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Forget viewer" Classes="accent" Command="{Binding ConfirmForgetCommand}" />
-                <Button Content="Cancel" Command="{Binding CancelForgetCommand}" />
+                <Button Content="Forget viewer" Classes="accent" Command="{Binding ConfirmForgetCommand}" ToolTip.Tip="Deletes everything Cuebot saved about this viewer. This cannot be undone." />
+                <Button Content="Cancel" Command="{Binding CancelForgetCommand}" ToolTip.Tip="Keeps the viewer. Nothing is deleted." />
               </StackPanel>
             </StackPanel>
           </Border>
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
             <Button DockPanel.Dock="Right" Content="Forget viewer…" Command="{Binding ForgetSelectedUserCommand}" Margin="8,0,0,0"
-                    ToolTip.Tip="Remove everything Cuebot keeps about the selected viewer (for example when they ask to be deleted)" />
+                    ToolTip.Tip="Deletes everything Cuebot saved about the selected viewer, for example when they ask you to delete their data. You are asked to confirm first." />
             <TextBlock DockPanel.Dock="Right" Text="{Binding UsersStatus}" Classes="muted" VerticalAlignment="Center" />
             <TextBlock Text="{Binding UsersSummary}" Classes="muted" />
           </DockPanel>
@@ -97,8 +97,8 @@
         <Grid ColumnDefinitions="340,16,*" Margin="0,8,0,0">
           <DockPanel>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto" Margin="0,0,0,8">
-              <TextBox Text="{Binding NewGroupName}" PlaceholderText="New group name" />
-              <Button Grid.Column="2" Content="Create" Classes="accent" Command="{Binding AddGroupCommand}" />
+              <TextBox Text="{Binding NewGroupName}" PlaceholderText="New group name" ToolTip.Tip="A name for a new group of viewers, like Friends or Mods. Commands can then allow only that group." />
+              <Button Grid.Column="2" Content="Create" Classes="accent" Command="{Binding AddGroupCommand}" ToolTip.Tip="Creates the group with the name you typed." />
             </Grid>
             <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding GroupsSummary}" TextWrapping="Wrap" Margin="0,0,0,6" />
             <ListBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
@@ -124,25 +124,25 @@
                     <ContentControl.ContentTemplate>
                       <DataTemplate DataType="vm:GroupRowViewModel">
                         <StackPanel>
-                          <TextBox x:Name="GroupName" Text="{Binding NameText}" />
+                          <TextBox x:Name="GroupName" Text="{Binding NameText}" ToolTip.Tip="The name of the group. You can change it here." />
                           <TextBlock Classes="error" Text="{Binding NameError}"
                                      IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         </StackPanel>
                       </DataTemplate>
                     </ContentControl.ContentTemplate>
                   </ContentControl>
-                  <Button Grid.Column="4" Content="Clear members" Command="{Binding ClearGroupCommand}" />
-                  <Button Grid.Column="6" Content="Delete group" Command="{Binding DeleteGroupCommand}" />
+                  <Button Grid.Column="4" Content="Clear members" Command="{Binding ClearGroupCommand}" ToolTip.Tip="Takes everyone out of this group but keeps the group itself." />
+                  <Button Grid.Column="6" Content="Delete group" Command="{Binding DeleteGroupCommand}" ToolTip.Tip="Deletes this group and its list of members." />
                 </Grid>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Renaming a group does not update commands that allow or deny it by name; check those on the Commands page." />
+                           Text="If you rename a group, commands that allow or block it by name are not updated. Check them on the Commands page." />
                 <TextBlock Classes="h2" Text="Add a member" Margin="0,6,0,0" />
                 <Grid ColumnDefinitions="120,8,*,8,160,8,Auto">
                   <AutoCompleteBox Text="{Binding MemberPlatform}" ItemsSource="{Binding Platforms}" MinimumPrefixLength="0"
-                                   FilterMode="ContainsOrdinal" PlaceholderText="Platform" />
-                  <TextBox Grid.Column="2" Text="{Binding MemberName}" PlaceholderText="User name" />
-                  <TextBox Grid.Column="4" Text="{Binding MemberId}" PlaceholderText="User id (optional)" />
-                  <Button Grid.Column="6" Content="Add" Classes="accent" Command="{Binding AddMemberCommand}" />
+                                   FilterMode="ContainsOrdinal" PlaceholderText="Platform" ToolTip.Tip="Where this person chats, like Twitch or YouTube." />
+                  <TextBox Grid.Column="2" Text="{Binding MemberName}" PlaceholderText="User name" ToolTip.Tip="The person's name on that platform." />
+                  <TextBox Grid.Column="4" Text="{Binding MemberId}" PlaceholderText="User id (optional)" ToolTip.Tip="Optional. The platform's number for this person. It stays the same even if they change their name. Leave empty if you do not know it." />
+                  <Button Grid.Column="6" Content="Add" Classes="accent" Command="{Binding AddMemberCommand}" ToolTip.Tip="Adds this person to the group." />
                 </Grid>
                 <TextBlock Classes="muted" Text="{Binding GroupsStatus}" />
               </StackPanel>
@@ -160,7 +160,7 @@
                     <TextBlock Grid.Column="1" Text="{Binding UserName}" FontWeight="SemiBold" VerticalAlignment="Center" />
                     <TextBlock Grid.Column="2" Text="{Binding UserId}" Classes="muted" VerticalAlignment="Center" />
                     <Button Grid.Column="3" Content="Remove" Padding="8,2"
-                            Command="{Binding RemoveCommand}" CommandParameter="{Binding}" />
+                            Command="{Binding RemoveCommand}" CommandParameter="{Binding}" ToolTip.Tip="Takes this person out of the group." />
                   </Grid>
                 </DataTemplate>
               </ListBox.ItemTemplate>

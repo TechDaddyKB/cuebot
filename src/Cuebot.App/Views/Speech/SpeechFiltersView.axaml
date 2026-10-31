@@ -14,11 +14,13 @@
           <TextBlock Classes="h2" Text="Which profile applies" />
           <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
             <TextBlock Classes="label" Text="Chat messages" />
-            <ComboBox Grid.Row="1" ItemsSource="{Binding FilterProfileChoices}" SelectedItem="{Binding ChatProfile}" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding FilterProfileChoices}" SelectedItem="{Binding ChatProfile}"
+                      ToolTip.Tip="The set of cleaning rules applied to what your viewers type in chat before it is read aloud." />
             <TextBlock Grid.Column="2" Classes="label" Text="Events (viewer-written parts)" />
-            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding FilterProfileChoices}" SelectedItem="{Binding EventsProfile}" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding FilterProfileChoices}" SelectedItem="{Binding EventsProfile}"
+                      ToolTip.Tip="The set of cleaning rules applied to the parts of an event that a viewer wrote, like a cheer message." />
           </Grid>
-          <TextBlock Classes="hint" Text="Speak sub-actions choose a profile per action. Sources without one use the Default profile." />
+          <TextBlock Classes="hint" Text="A profile is a set of cleaning rules. The Speak action in your own actions can choose its own profile; anything that does not choose one uses the Default profile." />
         </StackPanel>
       </Border>
 
@@ -27,10 +29,11 @@
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Filter profiles" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
-              <Button Content="+ Profile" Classes="accent" Command="{Binding AddProfileCommand}" />
-              <Button Content="Remove" Command="{Binding RemoveProfileCommand}" />
+              <Button Content="+ Profile" Classes="accent" Command="{Binding AddProfileCommand}" ToolTip.Tip="Creates a new profile (a set of cleaning rules) that you can fill in." />
+              <Button Content="Remove" Command="{Binding RemoveProfileCommand}" ToolTip.Tip="Deletes the selected profile." />
             </StackPanel>
-            <ListBox Classes="list" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" MinHeight="200">
+            <ListBox Classes="list" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" MinHeight="200"
+                     ToolTip.Tip="Pick a profile to edit its rules on the right.">
               <ListBox.ItemTemplate>
                 <DataTemplate DataType="sp:FilterProfileViewModel">
                   <TextBlock Text="{Binding Name}" />
@@ -47,65 +50,84 @@
                 <StackPanel Spacing="10">
                   <StackPanel Spacing="3">
                     <TextBlock Classes="label" Text="Name" />
-                    <TextBox Text="{Binding Name}" IsEnabled="{Binding CanRename}" MaxWidth="320" HorizontalAlignment="Left" MinWidth="240" />
+                    <TextBox Text="{Binding Name}" IsEnabled="{Binding CanRename}" MaxWidth="320" HorizontalAlignment="Left" MinWidth="240"
+                             ToolTip.Tip="The name you see in the lists. The Default profile cannot be renamed." />
                   </StackPanel>
 
                   <TextBlock Classes="h2" Text="Bad words" Margin="0,4,0,0" />
                   <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
                     <TextBlock Classes="label" Text="Words (one per line or comma separated)" />
-                    <TextBox Grid.Row="1" Text="{Binding BadWords}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" MaxHeight="160" />
+                    <TextBox Grid.Row="1" Text="{Binding BadWords}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" MaxHeight="160"
+                             ToolTip.Tip="Words you never want read aloud. Put each word on its own line, or separate them with commas." />
                     <TextBlock Grid.Column="2" Classes="label" Text="When a message contains one" />
                     <StackPanel Grid.Column="2" Grid.Row="1" Spacing="6">
-                      <ComboBox ItemsSource="{Binding BadWordActions}" SelectedItem="{Binding BadWordAction}" />
-                      <TextBox Text="{Binding BadWordReplacement}" PlaceholderText="Spoken instead (e.g. beep)" IsVisible="{Binding IsReplacingBadWords}" />
-                      <TextBlock Classes="hint" Text="Strip removes the word, Skip drops the message, Replace speaks the replacement." />
+                      <ComboBox ItemsSource="{Binding BadWordActions}" SelectedItem="{Binding BadWordAction}"
+                                ToolTip.Tip="What to do with a message that has one of your bad words. See the line below for what each option does." />
+                      <TextBox Text="{Binding BadWordReplacement}" PlaceholderText="Spoken instead (e.g. beep)" IsVisible="{Binding IsReplacingBadWords}"
+                               ToolTip.Tip="The word that is said in place of a bad word." />
+                      <TextBlock Classes="hint" Text="Strip removes just the word, Skip does not read the whole message, Replace says the replacement word instead." />
                     </StackPanel>
                   </Grid>
 
                   <TextBlock Classes="h2" Text="Links and length" Margin="0,4,0,0" />
                   <Grid ColumnDefinitions="*,16,*,16,*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto,Auto">
                     <TextBlock Classes="label" Text="Links" />
-                    <ComboBox Grid.Row="1" ItemsSource="{Binding UrlModes}" SelectedItem="{Binding UrlMode}" />
+                    <ComboBox Grid.Row="1" ItemsSource="{Binding UrlModes}" SelectedItem="{Binding UrlMode}"
+                              ToolTip.Tip="What to do with web links in a message. Keep reads them out, Replace says the link word instead, Strip removes them, Skip does not read the whole message." />
                     <TextBlock Grid.Column="2" Classes="label" Text="Link word" IsVisible="{Binding IsReplacingUrls}" />
-                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding UrlWord}" IsVisible="{Binding IsReplacingUrls}" />
+                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding UrlWord}" IsVisible="{Binding IsReplacingUrls}"
+                             ToolTip.Tip="The word said in place of a web link, like &quot;link&quot;." />
                     <TextBlock Grid.Column="4" Classes="label" Text="Max words (0: off)" />
-                    <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MaxWords}" Minimum="0" Maximum="10000" />
+                    <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MaxWords}" Minimum="0" Maximum="10000"
+                                   ToolTip.Tip="Longest message to read, counted in words. Longer messages are cut off. 0 means no word limit." />
                     <TextBlock Grid.Column="6" Classes="label" Text="Max characters" />
-                    <NumericUpDown Grid.Column="6" Grid.Row="1" Value="{Binding MaxCharacters}" Minimum="0" Maximum="100000" Increment="10" />
+                    <NumericUpDown Grid.Column="6" Grid.Row="1" Value="{Binding MaxCharacters}" Minimum="0" Maximum="100000" Increment="10"
+                                   ToolTip.Tip="Longest message to read, counted in letters and symbols. Longer messages are cut off. The small note under the box says what 0 does." />
                     <TextBlock Grid.Row="3" Grid.ColumnSpan="3" Classes="label" Text="Shorten repeated characters to (0: off)" />
-                    <NumericUpDown Grid.Row="4" Value="{Binding MaxRepeatedCharacters}" Minimum="0" Maximum="100" />
+                    <NumericUpDown Grid.Row="4" Value="{Binding MaxRepeatedCharacters}" Minimum="0" Maximum="100"
+                                   ToolTip.Tip="Turns a stretched word like &quot;heeeeeello&quot; into a shorter one. This is the most times in a row the same letter may repeat. 0 leaves it alone." />
                     <TextBlock Grid.Column="4" Grid.Row="3" Grid.ColumnSpan="3" Classes="label" Text="Shorten repeated words to (0: off)" />
-                    <NumericUpDown Grid.Column="4" Grid.Row="4" Value="{Binding MaxRepeatedWords}" Minimum="0" Maximum="100" />
+                    <NumericUpDown Grid.Column="4" Grid.Row="4" Value="{Binding MaxRepeatedWords}" Minimum="0" Maximum="100"
+                                   ToolTip.Tip="Cuts spam like &quot;go go go go go&quot; short. This is the most times in a row the same word may repeat. 0 leaves it alone." />
                     <TextBlock Grid.Column="6" Grid.Row="5" Classes="hint" Text="{Binding MaxCharactersHint}" Margin="0,4,0,0" />
                   </Grid>
 
                   <TextBlock Classes="h2" Text="Emotes and emoji" Margin="0,4,0,0" />
                   <WrapPanel>
-                    <CheckBox Content="Strip emotes" IsChecked="{Binding StripEmotes}" Margin="0,0,16,0" />
-                    <CheckBox Content="Keep the first of each emote" IsChecked="{Binding AllowFirstEmote}" IsEnabled="{Binding StripEmotes}" Margin="0,0,16,0" />
-                    <CheckBox Content="Strip emoji" IsChecked="{Binding StripEmoji}" />
+                    <CheckBox Content="Strip emotes" IsChecked="{Binding StripEmotes}" Margin="0,0,16,0"
+                              ToolTip.Tip="Removes emotes (like Kappa) from messages so they are not spelled out loud." />
+                    <CheckBox Content="Keep the first of each emote" IsChecked="{Binding AllowFirstEmote}" IsEnabled="{Binding StripEmotes}" Margin="0,0,16,0"
+                              ToolTip.Tip="Lets the first copy of each emote in a message be read and removes the repeats. Only works when Strip emotes is ticked." />
+                    <CheckBox Content="Strip emoji" IsChecked="{Binding StripEmoji}"
+                              ToolTip.Tip="Removes emoji (the little pictures like smiley faces) from messages." />
                   </WrapPanel>
                   <StackPanel Spacing="3">
                     <TextBlock Classes="label" Text="Emotes never stripped" />
-                    <TextBox Text="{Binding AllowedEmotes}" PlaceholderText="Kappa, LUL" />
+                    <TextBox Text="{Binding AllowedEmotes}" PlaceholderText="Kappa, LUL"
+                             ToolTip.Tip="Emotes that are always kept, even when Strip emotes is on. Separate them with commas." />
                   </StackPanel>
 
                   <TextBlock Classes="h2" Text="Ignore" Margin="0,4,0,0" />
                   <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto">
                     <TextBlock Classes="label" Text="Messages starting with" />
-                    <TextBox Grid.Row="1" Text="{Binding IgnoredPrefixes}" PlaceholderText="!, #" />
+                    <TextBox Grid.Row="1" Text="{Binding IgnoredPrefixes}" PlaceholderText="!, #"
+                             ToolTip.Tip="Messages that begin with any of these are not read aloud. Handy for chat commands that start with !. Separate them with commas." />
                     <TextBlock Grid.Column="2" Classes="label" Text="Users" />
-                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding IgnoredUsers}" PlaceholderText="Comma separated" />
+                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding IgnoredUsers}" PlaceholderText="Comma separated"
+                             ToolTip.Tip="Chat names whose messages are never read aloud. Separate names with commas." />
                     <StackPanel Grid.Row="3" Spacing="3">
-                      <CheckBox Content="Ignore chat bots" IsChecked="{Binding IgnoreBots}" />
+                      <CheckBox Content="Ignore chat bots" IsChecked="{Binding IgnoreBots}"
+                                ToolTip.Tip="Does not read messages from well-known chat bots, so you do not hear them chatter." />
                       <TextBlock Classes="hint" Text="{Binding KnownBots, StringFormat='Known bots: {0}'}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Grid.Row="3" Spacing="3">
                       <TextBlock Classes="label" Text="More bot names" />
-                      <TextBox Text="{Binding BotNames}" IsEnabled="{Binding IgnoreBots}" PlaceholderText="mybot" />
+                      <TextBox Text="{Binding BotNames}" IsEnabled="{Binding IgnoreBots}" PlaceholderText="mybot"
+                               ToolTip.Tip="Names of your own bots to ignore as well as the known ones. Separate them with commas." />
                     </StackPanel>
                     <CheckBox Grid.Row="4" Grid.ColumnSpan="3" Content="Ignore Twitch shared-chat messages from other channels"
-                              IsChecked="{Binding IgnoreSharedChat}" Margin="0,6,0,0" />
+                              IsChecked="{Binding IgnoreSharedChat}" Margin="0,6,0,0"
+                              ToolTip.Tip="During a Twitch shared chat, other channels' messages show up in your chat. Tick this to not read them aloud." />
                   </Grid>
                 </StackPanel>
               </Border>
@@ -119,20 +141,24 @@
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel>
               <TextBlock Classes="h2" Text="Replacements" Margin="0" />
-              <TextBlock Classes="hint" Text="Applied to every spoken text, after the profile filters. Literal matches ignore case." />
+              <TextBlock Classes="hint" Text="Swaps a piece of text for another in everything that is spoken, after the profile rules. Plain text matches ignore capital letters." />
             </StackPanel>
-            <Button Grid.Column="1" Content="+ Replacement" Command="{Binding AddReplacementCommand}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="+ Replacement" Command="{Binding AddReplacementCommand}" VerticalAlignment="Center"
+                    ToolTip.Tip="Adds a rule that swaps one piece of text for another before it is spoken." />
           </Grid>
           <ItemsControl ItemsSource="{Binding Replacements}">
             <ItemsControl.ItemTemplate>
               <DataTemplate DataType="sp:ReplacementViewModel">
                 <StackPanel Margin="0,0,0,6">
                   <Grid ColumnDefinitions="*,8,Auto,8,*,8,Auto,8,Auto">
-                    <TextBox Text="{Binding Find}" PlaceholderText="Find" />
+                    <TextBox Text="{Binding Find}" PlaceholderText="Find"
+                             ToolTip.Tip="The text to look for, like &quot;lol&quot;." />
                     <TextBlock Grid.Column="2" Text="→" VerticalAlignment="Center" />
-                    <TextBox Grid.Column="4" Text="{Binding Replace}" PlaceholderText="Replace with" />
-                    <CheckBox Grid.Column="6" Content="Regex" IsChecked="{Binding IsRegex}" />
-                    <Button Grid.Column="8" Content="Remove"
+                    <TextBox Grid.Column="4" Text="{Binding Replace}" PlaceholderText="Replace with"
+                             ToolTip.Tip="What to say instead, like &quot;laughing out loud&quot;. Leave empty to say nothing." />
+                    <CheckBox Grid.Column="6" Content="Regex" IsChecked="{Binding IsRegex}"
+                              ToolTip.Tip="Advanced. Tick to treat the Find box as a search pattern (a regular expression) that can match many different texts. Most people leave this off." />
+                    <Button Grid.Column="8" Content="Remove" ToolTip.Tip="Deletes this replacement rule."
                             Command="{Binding $parent[ItemsControl].((sp:SpeechFiltersViewModel)DataContext).RemoveReplacementCommand}"
                             CommandParameter="{Binding}" />
                   </Grid>
@@ -147,16 +173,17 @@
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Voice ignore profiles" />
-          <TextBlock Classes="hint" Text="Voices and locales left out when a user gets a random voice." />
+          <TextBlock Classes="hint" Text="Voices and languages that are never picked when a viewer is given a random voice." />
           <Grid ColumnDefinitions="220,12,*">
             <DockPanel>
               <StackPanel DockPanel.Dock="Top" Spacing="3" Margin="0,0,0,8">
                 <TextBlock Classes="label" Text="Active profile" />
-                <ComboBox ItemsSource="{Binding IgnoreChoices}" SelectedItem="{Binding ActiveIgnoreProfile}" />
+                <ComboBox ItemsSource="{Binding IgnoreChoices}" SelectedItem="{Binding ActiveIgnoreProfile}"
+                          ToolTip.Tip="The list that is used right now when random voices are handed out." />
               </StackPanel>
               <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
-                <Button Content="+ Profile" Command="{Binding AddIgnoreProfileCommand}" />
-                <Button Content="Remove" Command="{Binding RemoveIgnoreProfileCommand}" />
+                <Button Content="+ Profile" Command="{Binding AddIgnoreProfileCommand}" ToolTip.Tip="Creates a new list of voices and languages to leave out." />
+                <Button Content="Remove" Command="{Binding RemoveIgnoreProfileCommand}" ToolTip.Tip="Deletes the selected list." />
               </StackPanel>
               <ListBox Classes="list" ItemsSource="{Binding IgnoreProfiles}" SelectedItem="{Binding SelectedIgnoreProfile}" MinHeight="100">
                 <ListBox.ItemTemplate>
@@ -175,12 +202,14 @@
                       <TextBox Text="{Binding Name}" />
                     </StackPanel>
                     <StackPanel Spacing="3">
-                      <TextBlock Classes="label" Text="Voices (one per line: engine|voice id, or a voice id)" />
-                      <TextBox Text="{Binding Voices}" AcceptsReturn="True" MinHeight="70" MaxHeight="160" PlaceholderText="windows|Microsoft David" />
+                      <TextBlock Classes="label" Text="Voices (one per line: engine|voice id, or a voice id)" ToolTip.Tip="Voices to leave out. Write the engine, a | sign and the voice name, like windows|Microsoft David. A voice name alone works too." />
+                      <TextBox Text="{Binding Voices}" AcceptsReturn="True" MinHeight="70" MaxHeight="160" PlaceholderText="windows|Microsoft David"
+                               ToolTip.Tip="Voices to leave out, one per line." />
                     </StackPanel>
                     <StackPanel Spacing="3">
                       <TextBlock Classes="label" Text="Locales (comma separated prefixes)" />
-                      <TextBox Text="{Binding Locales}" PlaceholderText="de, en-GB" />
+                      <TextBox Text="{Binding Locales}" PlaceholderText="de, en-GB"
+                               ToolTip.Tip="Languages to leave out. Type the start of a language code, like de for every German voice or en-GB for British English. Separate with commas." />
                     </StackPanel>
                   </StackPanel>
                 </DataTemplate>

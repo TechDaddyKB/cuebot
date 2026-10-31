@@ -8,51 +8,59 @@
     <StackPanel MaxWidth="900" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Timers" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                 Text="A timer fires the 'Timer' trigger on every action that selects it: at a fixed interval, at a random interval between a minimum and maximum, or on a cron schedule. 'Set timer state' changes made by actions show here live but are not saved." />
-      <Button Content="+ Timer" Classes="accent" Command="{Binding AddTimerCommand}" Margin="0,0,0,12" />
+                 Text="A timer sets off the 'Timer' trigger of every action that uses it. It can go off every fixed number of seconds, after a random wait between a shortest and longest time, or on a schedule (cron). When an action uses 'Set timer state' to turn a timer on or off, you see it here straight away, but it is not saved." />
+      <Button Content="+ Timer" Classes="accent" Command="{Binding AddTimerCommand}" Margin="0,0,0,12"
+              ToolTip.Tip="Adds a new timer. Then pick it in an action's Timer trigger to run that action." />
       <ItemsControl ItemsSource="{Binding Timers}">
         <ItemsControl.ItemTemplate>
           <DataTemplate DataType="vm:TimerItemViewModel">
             <Border Classes="card">
               <StackPanel Spacing="10">
                 <Grid ColumnDefinitions="*,12,Auto,12,Auto,12,Auto">
-                  <TextBox Text="{Binding Name}" PlaceholderText="Timer name" FontWeight="SemiBold" />
-                  <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                  <TextBox Text="{Binding Name}" PlaceholderText="Timer name" FontWeight="SemiBold"
+                           ToolTip.Tip="The name you pick in an action's Timer trigger." />
+                  <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}"
+                            ToolTip.Tip="Tick to run the timer. Untick to pause it without deleting it." />
                   <CheckBox Grid.Column="4" Content="Repeat" IsChecked="{Binding Repeat}"
-                            ToolTip.Tip="Off: fires once after it is enabled (or Cuebot starts), then waits to be enabled again" />
+                            ToolTip.Tip="Ticked: the timer keeps going off again and again. Unticked: it goes off only once after it is enabled (or Cuebot starts), then waits until you enable it again." />
                   <Button Grid.Column="6" Content="Remove"
-                          Command="{Binding RemoveCommand}" />
+                          Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this timer. Actions that used it will no longer be started by it." />
                 </Grid>
                 <WrapPanel ItemSpacing="20" LineSpacing="8">
-                  <CheckBox Content="Random interval" IsChecked="{Binding RandomInterval}" IsEnabled="{Binding !HasCron}" />
+                  <CheckBox Content="Random interval" IsChecked="{Binding RandomInterval}" IsEnabled="{Binding !HasCron}"
+                            ToolTip.Tip="Tick to wait a different, random time (between your shortest and longest) each round, so it feels less predictable. Not available when a cron schedule is set." />
                   <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowsFixedInterval}">
                     <TextBlock Text="Every" VerticalAlignment="Center" />
-                    <NumericUpDown Value="{Binding IntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="140" />
+                    <NumericUpDown Value="{Binding IntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="140"
+                                   ToolTip.Tip="How many seconds pass between each time the timer goes off. 60 seconds is one minute." />
                     <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ShowsRandomInterval}">
                     <TextBlock Text="Between" VerticalAlignment="Center" />
-                    <NumericUpDown Value="{Binding MinIntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="130" />
+                    <NumericUpDown Value="{Binding MinIntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="130"
+                                   ToolTip.Tip="The shortest wait, in seconds, before the timer goes off." />
                     <TextBlock Text="and" VerticalAlignment="Center" />
-                    <NumericUpDown Value="{Binding MaxIntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="130" />
+                    <NumericUpDown Value="{Binding MaxIntervalSeconds}" Minimum="1" Increment="10" FormatString="0" Width="130"
+                                   ToolTip.Tip="The longest wait, in seconds, before the timer goes off." />
                     <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="Min chat lines" VerticalAlignment="Center" />
                     <NumericUpDown Value="{Binding MinChatLines}" Minimum="0" Increment="1" FormatString="0" Width="120"
-                                   ToolTip.Tip="Skip a cycle unless this many chat messages arrived since the timer last fired (0 = always fire)" />
+                                   ToolTip.Tip="Skips a round unless at least this many chat messages came in since the timer last went off. This stops reminders from repeating in a quiet chat. 0 means it always goes off." />
                   </StackPanel>
                 </WrapPanel>
                 <TextBlock Classes="error" Text="{Binding IntervalError}"
                            IsVisible="{Binding IntervalError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <Grid ColumnDefinitions="Auto,8,260,12,*">
                   <TextBlock Text="Cron" VerticalAlignment="Center" />
-                  <TextBox Grid.Column="2" Text="{Binding Cron}" PlaceholderText="e.g. */15 * * * * (optional)" FontFamily="monospace" />
+                  <TextBox Grid.Column="2" Text="{Binding Cron}" PlaceholderText="e.g. */15 * * * * (optional)" FontFamily="monospace"
+                           ToolTip.Tip="Optional. A schedule written as five parts (minute hour day month weekday). For example */15 * * * * means every 15 minutes. When filled in, it is used instead of the seconds above. Leave empty if you do not need it." />
                   <StackPanel Grid.Column="4" VerticalAlignment="Center">
                     <TextBlock Classes="error" Text="{Binding CronError}" IsVisible="{Binding HasCronError}" />
                     <TextBlock Classes="muted" Text="{Binding CronNext}" />
                     <TextBlock Classes="muted" IsVisible="{Binding !HasCron}"
-                               Text="minute hour day month weekday, local time. Overrides the interval when set." />
+                               Text="Five parts: minute hour day month weekday, in your computer's time. When filled in, it is used instead of the seconds." />
                   </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" Spacing="8">

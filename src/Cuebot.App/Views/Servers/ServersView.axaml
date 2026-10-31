@@ -28,13 +28,14 @@
           </StackPanel>
         </Border>
         <Button Content="Apply and restart servers" Classes="accent" Command="{Binding ApplyCommand}" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center" />
+                HorizontalContentAlignment="Center"
+                ToolTip.Tip="Saves your changes and restarts the servers that are turned on. Connected tools are disconnected for a moment." />
         <TextBlock Text="Settings changed: press Apply to restart the servers." Foreground="{DynamicResource CuebotAccent}"
                    TextWrapping="Wrap" IsVisible="{Binding HasPendingChanges}" />
         <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap"
                    IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12"
-                   Text="Local APIs for overlays, stream decks and other tools. Streamer.bot and Speaker.bot compatible: tools built for them connect to Cuebot instead. Every server is off until you enable it, and listens only on this computer unless you allow LAN access." />
+                   Text="These are doors that let other programs (overlays, stream decks, scripts, AI helpers) talk to Cuebot. Tools made for Streamer.bot and Speaker.bot can connect to Cuebot instead. Every server is off until you turn it on, and only this computer can reach it unless you allow LAN access. Most streamers never need to change anything here." />
       </StackPanel>
     </ScrollViewer>
 
@@ -45,10 +46,10 @@
         <Border Classes="card">
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Network and security" />
-            <CheckBox Content="Allow LAN connections (servers may listen on 0.0.0.0 or a LAN address)" IsChecked="{Binding AllowLan}" />
+            <CheckBox Content="Allow LAN connections (servers may listen on 0.0.0.0 or a LAN address)" IsChecked="{Binding AllowLan}" ToolTip.Tip="Ticked: other computers on your home network can reach your Cuebot servers. Leave it unticked unless you need that, because anyone on your network could try to use them." />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Web pages from other sites cannot use these APIs. Pages on this computer, OBS local files and apps (Stream Deck plugins, scripts) always can. Allow extra web origins here, one per line (e.g. https://my-overlays.example), or * for any." />
-            <TextBox Text="{Binding AllowedOrigins}" AcceptsReturn="True" MinHeight="60" PlaceholderText="https://my-overlays.example" />
+                       Text="Web pages from other websites are not allowed to use these servers. Pages on this computer, OBS local files and apps (Stream Deck plugins, scripts) always can. To allow another website, write its address here, one per line (for example https://my-overlays.example). A * allows every website, which is risky." />
+            <TextBox Text="{Binding AllowedOrigins}" AcceptsReturn="True" MinHeight="60" PlaceholderText="https://my-overlays.example" ToolTip.Tip="Websites that may talk to your Cuebot servers, one address per line. Leave empty if you do not know you need it." />
           </StackPanel>
         </Border>
 
@@ -57,21 +58,21 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="WebSocket server (Streamer.bot API)" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="For @streamerbot/client overlays, decks and tools: requests (DoAction, GetActions, GetGlobals...) and live events." />
-            <CheckBox Content="Enabled" IsChecked="{Binding WebSocketEnabled}" />
+                       Text="Lets overlays, decks and tools made for Streamer.bot connect to Cuebot. They can ask Cuebot to run actions or read data, and they get live events." />
+            <CheckBox Content="Enabled" IsChecked="{Binding WebSocketEnabled}" ToolTip.Tip="Ticked: this server is on after you press Apply. Unticked: it is off." />
             <Grid ColumnDefinitions="*,12,140,12,*" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
               <TextBlock Grid.Column="2" Text="Port" />
-              <TextBlock Grid.Column="4" Text="Endpoint" />
-              <TextBox Grid.Row="1" Text="{Binding WebSocketAddress}" />
-              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding WebSocketPort}" Minimum="1" Maximum="65535" FormatString="0" />
-              <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding WebSocketEndpoint}" />
+              <TextBlock Grid.Column="4" Text="Endpoint" ToolTip.Tip="The last part of the address that tools connect to, like / or /ws." />
+              <TextBox Grid.Row="1" Text="{Binding WebSocketAddress}" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding WebSocketPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number tools use to connect. Change it only if another program already uses this number." />
+              <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding WebSocketEndpoint}" ToolTip.Tip="The last part of the address that tools connect to. Leave it as it is unless your tool says otherwise." />
             </Grid>
-            <CheckBox Content="Require a password (Streamer.bot authentication)" IsChecked="{Binding WebSocketAuth}" />
+            <CheckBox Content="Require a password (Streamer.bot authentication)" IsChecked="{Binding WebSocketAuth}" ToolTip.Tip="Ticked: tools must give a password before they can use this server." />
             <StackPanel Spacing="8" IsVisible="{Binding WebSocketAuth}">
-              <TextBox Text="{Binding WebSocketPassword}" PasswordChar="•" PlaceholderText="Password" />
+              <TextBox Text="{Binding WebSocketPassword}" PasswordChar="•" PlaceholderText="Password" ToolTip.Tip="The password tools must use to connect. It stays hidden." />
               <CheckBox Content="Require it for every request (otherwise only for DoAction, SendMessage and other privileged requests)"
-                        IsChecked="{Binding WebSocketEnforce}" />
+                        IsChecked="{Binding WebSocketEnforce}" ToolTip.Tip="Ticked: tools need the password for everything they do. Unticked: only for the risky requests, like running actions or sending chat messages." />
             </StackPanel>
             <TextBlock Text="Connected clients" FontWeight="SemiBold" Margin="0,4,0,0" />
             <TextBlock Classes="muted" Text="None" IsVisible="{Binding !Clients.Count}" />
@@ -90,16 +91,16 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Overlay server" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Serves your Cuebot overlays to OBS browser sources. Each overlay has its own secret link on the Overlays &amp; Widgets page; with LAN access on, other computers on your network can load overlays too." />
-            <CheckBox Content="Enabled" IsChecked="{Binding OverlaysEnabled}" />
+                       Text="Shows your overlays in OBS Browser Sources. Each overlay has its own secret link on the Overlays &amp; Widgets page. With LAN access on, other computers on your network can load overlays too." />
+            <CheckBox Content="Enabled" IsChecked="{Binding OverlaysEnabled}" ToolTip.Tip="Ticked: overlays can be shown in OBS after you press Apply." />
             <Grid ColumnDefinitions="*,12,140,12,140" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
               <TextBlock Grid.Column="2" Text="Port" />
               <TextBlock Grid.Column="4" Text="Widget port" />
-              <TextBox Grid.Row="1" Text="{Binding OverlaysAddress}" />
-              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding OverlaysPort}" Minimum="1" Maximum="65535" FormatString="0" />
+              <TextBox Grid.Row="1" Text="{Binding OverlaysAddress}" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding OverlaysPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number the overlay pages use. Change it only if another program already uses this number." />
               <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding OverlaysWidgetPort}" Minimum="1" Maximum="65535" FormatString="0"
-                             ToolTip.Tip="Widgets load from this second port, so they cannot reach the overlay page or Cuebot" />
+                             ToolTip.Tip="A second door number just for widgets. Keeping widgets on their own door means a widget cannot reach the overlay page or Cuebot itself, which is safer." />
             </Grid>
           </StackPanel>
         </Border>
@@ -109,13 +110,13 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="HTTP server" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="POST /api/DoAction, GET /api/GetActions and friends, your overlay folders, and two OBS docks (combined chat and activity feed). The docks need the WebSocket server too." />
-            <CheckBox Content="Enabled" IsChecked="{Binding HttpEnabled}" />
+                       Text="A normal web server. Other programs can run actions through it, and it can show your own overlay folders and two OBS docks (small panels inside OBS): a combined chat and an activity feed. The docks also need the WebSocket server turned on." />
+            <CheckBox Content="Enabled" IsChecked="{Binding HttpEnabled}" ToolTip.Tip="Ticked: this web server is on after you press Apply." />
             <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
               <TextBlock Grid.Column="2" Text="Port" />
-              <TextBox Grid.Row="1" Text="{Binding HttpAddress}" />
-              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding HttpPort}" Minimum="1" Maximum="65535" FormatString="0" />
+              <TextBox Grid.Row="1" Text="{Binding HttpAddress}" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding HttpPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number of the web server. Change it only if another program already uses this number." />
             </Grid>
             <TextBlock Text="OBS docks" FontWeight="SemiBold" Margin="0,4,0,0" />
             <ItemsControl ItemsSource="{Binding DockUrls}">
@@ -124,24 +125,24 @@
                   <Grid ColumnDefinitions="140,*,8,Auto" Margin="0,2">
                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
                     <SelectableTextBlock Grid.Column="1" Text="{Binding Url}" VerticalAlignment="Center" />
-                    <Button Grid.Column="3" Content="Copy" Click="OnCopyUrl" />
+                    <Button Grid.Column="3" Content="Copy" Click="OnCopyUrl" ToolTip.Tip="Copies this web link so you can paste it into OBS." />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                       Text="In OBS: Docks → Custom Browser Docks, or add a Browser source. Add ?transparent=1 for a transparent background, ?password=... if the WebSocket server needs one." />
+                       Text="In OBS: Docks → Custom Browser Docks, or add a Browser source. Add ?transparent=1 to the end of the link for a see-through background, or ?password=... (with your password) if the WebSocket server asks for one." />
             <DockPanel Margin="0,4,0,0">
-              <Button DockPanel.Dock="Right" Content="+ Folder" Command="{Binding AddMappingCommand}" />
+              <Button DockPanel.Dock="Right" Content="+ Folder" Command="{Binding AddMappingCommand}" ToolTip.Tip="Adds a row to share a folder or file from your computer on the web server." />
               <TextBlock Text="Static files (URL path → folder or file)" FontWeight="SemiBold" VerticalAlignment="Center" />
             </DockPanel>
             <ItemsControl ItemsSource="{Binding Mappings}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="sv:HttpMappingViewModel">
                   <Grid ColumnDefinitions="180,8,*,8,Auto" Margin="0,2">
-                    <TextBox Text="{Binding Path}" PlaceholderText="/overlays" />
-                    <TextBox Grid.Column="2" Text="{Binding Folder}" PlaceholderText="Folder or file" />
-                    <Button Grid.Column="4" Content="Remove" Command="{Binding RemoveCommand}" />
+                    <TextBox Text="{Binding Path}" PlaceholderText="/overlays" ToolTip.Tip="The web address part people type, like /overlays." />
+                    <TextBox Grid.Column="2" Text="{Binding Folder}" PlaceholderText="Folder or file" ToolTip.Tip="The folder or file on your computer that is shown at that address." />
+                    <Button Grid.Column="4" Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Stops sharing this folder." />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -154,13 +155,13 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="UDP server" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Runs actions from datagrams like {&quot;action&quot;:{&quot;name&quot;:&quot;My action&quot;},&quot;args&quot;:{}} (VoiceAttack, AutoHotkey...)." />
-            <CheckBox Content="Enabled" IsChecked="{Binding UdpEnabled}" />
+                       Text="Lets simple tools such as VoiceAttack or AutoHotkey run one of your actions by sending a short message (a datagram) like {&quot;action&quot;:{&quot;name&quot;:&quot;My action&quot;},&quot;args&quot;:{}}." />
+            <CheckBox Content="Enabled" IsChecked="{Binding UdpEnabled}" ToolTip.Tip="Ticked: this server is on after you press Apply." />
             <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
               <TextBlock Grid.Column="2" Text="Port" />
-              <TextBox Grid.Row="1" Text="{Binding UdpAddress}" />
-              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding UdpPort}" Minimum="1" Maximum="65535" FormatString="0" />
+              <TextBox Grid.Row="1" Text="{Binding UdpAddress}" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding UdpPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number tools send their messages to. Change it only if another program already uses this number." />
             </Grid>
           </StackPanel>
         </Border>
@@ -170,18 +171,18 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Speaker.bot API" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Lets tools written for Speaker.bot (including Streamer.bot's Speaker.bot integration) drive Cuebot's text-to-speech: speak with a voice alias, stop, pause, enable..." />
+                       Text="Lets tools made for Speaker.bot (including Streamer.bot's Speaker.bot link) control Cuebot's spoken text (text-to-speech): speak with a voice alias, stop, pause, switch on and more." />
             <WrapPanel ItemSpacing="16">
-              <CheckBox Content="WebSocket API" IsChecked="{Binding SpeakerWebSocketEnabled}" />
-              <CheckBox Content="UDP API" IsChecked="{Binding SpeakerUdpEnabled}" />
+              <CheckBox Content="WebSocket API" IsChecked="{Binding SpeakerWebSocketEnabled}" ToolTip.Tip="Ticked: tools can connect with a live two-way connection (WebSocket). Applies after you press Apply." />
+              <CheckBox Content="UDP API" IsChecked="{Binding SpeakerUdpEnabled}" ToolTip.Tip="Ticked: tools can send short one-way messages (UDP). Applies after you press Apply." />
             </WrapPanel>
             <Grid ColumnDefinitions="*,12,140,12,140" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
               <TextBlock Grid.Column="2" Text="WebSocket port" />
               <TextBlock Grid.Column="4" Text="UDP port" />
-              <TextBox Grid.Row="1" Text="{Binding SpeakerAddress}" />
-              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding SpeakerWebSocketPort}" Minimum="1" Maximum="65535" FormatString="0" />
-              <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding SpeakerUdpPort}" Minimum="1" Maximum="65535" FormatString="0" />
+              <TextBox Grid.Row="1" Text="{Binding SpeakerAddress}" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding SpeakerWebSocketPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number for the WebSocket connection." />
+              <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding SpeakerUdpPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number for the UDP messages." />
             </Grid>
           </StackPanel>
         </Border>
@@ -191,28 +192,28 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="REST API" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Manage actions, commands, timers and variables from scripts and other apps: JSON over HTTP at /api/v1, described by /api/v1/openapi.json, with live events at /api/v1/events. Every request needs the token below (Authorization: Bearer ...)." />
-            <CheckBox Content="Enabled" IsChecked="{Binding ApiEnabled}" />
+                       Text="Lets scripts and other apps manage your actions, commands, timers and variables over the web (at /api/v1; the full description is at /api/v1/openapi.json, and live events are at /api/v1/events). Every request must include the token below (a secret code) as Authorization: Bearer followed by the token." />
+            <CheckBox Content="Enabled" IsChecked="{Binding ApiEnabled}" ToolTip.Tip="Ticked: the REST API is on after you press Apply. The MCP server shares the same door number but has its own Enabled box." />
             <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
               <TextBlock Text="Address" />
-              <TextBlock Grid.Column="2" Text="Port (shared with MCP)" />
-              <TextBox Grid.Row="1" Text="{Binding ApiAddress}" />
-              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding ApiPort}" Minimum="1" Maximum="65535" FormatString="0" />
+              <TextBlock Grid.Column="2" Text="Port (shared with MCP)" ToolTip.Tip="The door number. The MCP server for AI helpers uses the same one." />
+              <TextBox Grid.Row="1" Text="{Binding ApiAddress}" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding ApiPort}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number of the REST API and MCP server. Change it only if another program already uses this number." />
             </Grid>
             <Grid ColumnDefinitions="140,*,8,Auto">
               <TextBlock Text="API URL" VerticalAlignment="Center" />
               <SelectableTextBlock Grid.Column="1" Text="{Binding ApiUrl}" VerticalAlignment="Center" />
-              <Button Grid.Column="3" Content="Copy" Tag="apiUrl" Click="OnCopyText" />
+              <Button Grid.Column="3" Content="Copy" Tag="apiUrl" Click="OnCopyText" ToolTip.Tip="Copies the API web link." />
             </Grid>
             <Grid ColumnDefinitions="140,*,8,Auto,8,Auto,8,Auto">
               <TextBlock Text="Token" VerticalAlignment="Center" />
               <SelectableTextBlock Grid.Column="1" Text="{Binding TokenDisplay}" VerticalAlignment="Center" FontFamily="monospace" TextWrapping="Wrap" />
-              <ToggleButton Grid.Column="3" Content="Show" IsChecked="{Binding ShowToken}" />
-              <Button Grid.Column="5" Content="Copy" Tag="token" Click="OnCopyText" />
-              <Button Grid.Column="7" Content="Regenerate" Command="{Binding RegenerateTokenCommand}" />
+              <ToggleButton Grid.Column="3" Content="Show" IsChecked="{Binding ShowToken}" ToolTip.Tip="Shows or hides the token (a secret code) on screen. Hide it while streaming." />
+              <Button Grid.Column="5" Content="Copy" Tag="token" Click="OnCopyText" ToolTip.Tip="Copies the token. Anyone who has it can control your Cuebot." />
+              <Button Grid.Column="7" Content="Regenerate" Command="{Binding RegenerateTokenCommand}" ToolTip.Tip="Makes a new token and cancels the old one. Every script, AI helper or other Cuebot using the old token must be updated." />
             </Grid>
             <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                       Text="Treat the token like a password: anyone with it can change and run your actions. Regenerate it if it leaks. Platform logins (Twitch, YouTube...) are never available through the API." />
+                       Text="Treat the token like a password: anyone who has it can change and run your actions. Press Regenerate if it ever leaks. Your Twitch, YouTube and other platform logins are never available through the API." />
           </StackPanel>
         </Border>
 
@@ -221,32 +222,33 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="MCP server (AI assistants)" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Lets the AI of your choice manage Cuebot through the Model Context Protocol: list and build actions, look up triggers and sub-actions, create commands and timers, run and troubleshoot actions. Uses the API port and token." />
-            <CheckBox Content="Enabled" IsChecked="{Binding McpEnabled}" />
+                       Text="Lets an AI helper of your choice manage Cuebot. It uses a standard way for AI to use tools (the Model Context Protocol, MCP). The AI can list and build actions, look up triggers and sub-actions, create commands and timers, and run and fix actions. It uses the same door number and token as the REST API." />
+            <CheckBox Content="Enabled" IsChecked="{Binding McpEnabled}" ToolTip.Tip="Ticked: AI helpers can connect after you press Apply. You do not need to turn on the REST API for this." />
             <CheckBox Content="Confirm destructive tools (delete, import, send chat): the AI has to ask you and pass back a confirmation token"
-                      IsChecked="{Binding McpRequireConfirmation}" />
+                      IsChecked="{Binding McpRequireConfirmation}"
+                      ToolTip.Tip="Ticked: before the AI deletes, imports or sends a chat message, it has to ask you first. Recommended." />
             <Grid ColumnDefinitions="140,*,8,Auto">
               <TextBlock Text="MCP URL" VerticalAlignment="Center" />
               <SelectableTextBlock Grid.Column="1" Text="{Binding McpUrl}" VerticalAlignment="Center" />
-              <Button Grid.Column="3" Content="Copy" Tag="mcpUrl" Click="OnCopyText" />
+              <Button Grid.Column="3" Content="Copy" Tag="mcpUrl" Click="OnCopyText" ToolTip.Tip="Copies the web link of the MCP server." />
             </Grid>
 
             <DockPanel Margin="0,4,0,0">
-              <Button DockPanel.Dock="Right" Content="Copy" Tag="claude" Click="OnCopyText" />
+              <Button DockPanel.Dock="Right" Content="Copy" Tag="claude" Click="OnCopyText" ToolTip.Tip="Copies this command. Paste it into a terminal to connect Claude Code. It includes your token." />
               <TextBlock Text="Claude Code (terminal)" FontWeight="SemiBold" VerticalAlignment="Center" />
             </DockPanel>
             <SelectableTextBlock Text="{Binding ClaudeCodeCommand}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
 
             <DockPanel Margin="0,4,0,0">
-              <Button DockPanel.Dock="Right" Content="Copy" Tag="stdio" Click="OnCopyText" />
+              <Button DockPanel.Dock="Right" Content="Copy" Tag="stdio" Click="OnCopyText" ToolTip.Tip="Copies this setting text. Paste it into the AI app's settings file. It includes your token." />
               <TextBlock Text="Claude Desktop and other apps that start an MCP process (stdio)" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" />
             </DockPanel>
             <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                       Text="Add this to the app's MCP config (Claude Desktop: Settings → Developer → Edit Config). It starts 'Cuebot --mcp-stdio', which connects to this running Cuebot, so keep Cuebot open with MCP enabled." />
+                       Text="Add this to the AI app's MCP settings (in Claude Desktop: Settings → Developer → Edit Config). The AI app then starts a small helper, 'Cuebot --mcp-stdio', which connects to this running Cuebot. So keep Cuebot open with MCP turned on." />
             <SelectableTextBlock Text="{Binding StdioConfigJson}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
 
             <DockPanel Margin="0,4,0,0">
-              <Button DockPanel.Dock="Right" Content="Copy" Tag="http" Click="OnCopyText" />
+              <Button DockPanel.Dock="Right" Content="Copy" Tag="http" Click="OnCopyText" ToolTip.Tip="Copies this setting text. Paste it into the AI app's settings file. It includes your token." />
               <TextBlock Text="Other clients with HTTP support (.mcp.json and similar)" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" />
             </DockPanel>
             <SelectableTextBlock Text="{Binding HttpConfigJson}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
@@ -264,26 +266,26 @@
         <Border Classes="card">
           <StackPanel Spacing="8">
             <DockPanel>
-              <Button DockPanel.Dock="Right" Content="+ Server" Command="{Binding AddCustomServerCommand}" />
+              <Button DockPanel.Dock="Right" Content="+ Server" Command="{Binding AddCustomServerCommand}" ToolTip.Tip="Adds a WebSocket server of your own that other programs can connect to." />
               <TextBlock Classes="h2" Text="Custom WebSocket servers" VerticalAlignment="Center" />
             </DockPanel>
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Your own WebSocket endpoints. Triggers: Custom server connection opened / message / closed. Sub-action: Custom server: send message." />
+                       Text="Your own live connection points (WebSocket servers) that other programs can connect to. Use the triggers Custom server connection opened / message / closed to react, and the sub-action Custom server: send message to talk back." />
             <ItemsControl ItemsSource="{Binding CustomServers}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="sv:CustomServerViewModel">
                   <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,1,0,0" Padding="0,8">
                     <StackPanel Spacing="6">
                       <Grid ColumnDefinitions="*,8,*,8,110,8,*">
-                        <TextBox Text="{Binding Name}" PlaceholderText="Name" />
-                        <TextBox Grid.Column="2" Text="{Binding Address}" PlaceholderText="127.0.0.1" />
-                        <NumericUpDown Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
-                        <TextBox Grid.Column="6" Text="{Binding Endpoint}" PlaceholderText="/" />
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" ToolTip.Tip="A name for this server. Actions use it to pick the server." />
+                        <TextBox Grid.Column="2" Text="{Binding Address}" PlaceholderText="127.0.0.1" ToolTip.Tip="Where this server listens. 127.0.0.1 means only this computer can reach it. 0.0.0.0 lets every computer on your network reach it (needs Allow LAN connections)." />
+                        <NumericUpDown Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number programs use to connect." />
+                        <TextBox Grid.Column="6" Text="{Binding Endpoint}" PlaceholderText="/" ToolTip.Tip="The last part of the address programs connect to. / is fine for most." />
                       </Grid>
                       <StackPanel Orientation="Horizontal" Spacing="8">
-                        <CheckBox Content="Start with Cuebot" IsChecked="{Binding AutoStart}" />
-                        <Button Content="Start / stop" Command="{Binding ToggleCommand}" />
-                        <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                        <CheckBox Content="Start with Cuebot" IsChecked="{Binding AutoStart}" ToolTip.Tip="Ticked: this server starts by itself when Cuebot starts." />
+                        <Button Content="Start / stop" Command="{Binding ToggleCommand}" ToolTip.Tip="Starts this server if it is stopped, or stops it if it is running." />
+                        <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this server from your list." />
                         <Ellipse Classes="status" Classes.good="{Binding IsRunning}" VerticalAlignment="Center" />
                         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Classes="muted" />
                       </StackPanel>
@@ -299,25 +301,25 @@
         <Border Classes="card">
           <StackPanel Spacing="8">
             <DockPanel>
-              <Button DockPanel.Dock="Right" Content="+ Client" Command="{Binding AddCustomClientCommand}" />
+              <Button DockPanel.Dock="Right" Content="+ Client" Command="{Binding AddCustomClientCommand}" ToolTip.Tip="Adds a connection from Cuebot to another WebSocket server." />
               <TextBlock Classes="h2" Text="WebSocket clients" VerticalAlignment="Center" />
             </DockPanel>
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Connections from Cuebot to other WebSocket servers. Triggers: Client connected / message / disconnected. Sub-actions: Client: send message, Client: connect / disconnect." />
+                       Text="Live connections that Cuebot makes to other programs' WebSocket servers. Use the triggers Client connected / message / disconnected to react, and the sub-actions Client: send message and Client: connect / disconnect to control them." />
             <ItemsControl ItemsSource="{Binding CustomClients}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="sv:CustomClientViewModel">
                   <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,1,0,0" Padding="0,8">
                     <StackPanel Spacing="6">
                       <Grid ColumnDefinitions="200,8,*">
-                        <TextBox Text="{Binding Name}" PlaceholderText="Name" />
-                        <TextBox Grid.Column="2" Text="{Binding Url}" PlaceholderText="ws://127.0.0.1:9000/" />
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" ToolTip.Tip="A name for this connection. Actions use it to pick the connection." />
+                        <TextBox Grid.Column="2" Text="{Binding Url}" PlaceholderText="ws://127.0.0.1:9000/" ToolTip.Tip="The address of the server to connect to. It starts with ws:// or wss://." />
                       </Grid>
                       <StackPanel Orientation="Horizontal" Spacing="8">
-                        <CheckBox Content="Connect with Cuebot" IsChecked="{Binding AutoConnect}" />
-                        <CheckBox Content="Reconnect" IsChecked="{Binding AutoReconnect}" />
-                        <Button Content="Connect / disconnect" Command="{Binding ToggleCommand}" />
-                        <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                        <CheckBox Content="Connect with Cuebot" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects by itself when it starts." />
+                        <CheckBox Content="Reconnect" IsChecked="{Binding AutoReconnect}" ToolTip.Tip="Ticked: if the connection drops, Cuebot keeps trying to connect again." />
+                        <Button Content="Connect / disconnect" Command="{Binding ToggleCommand}" ToolTip.Tip="Connects if disconnected, or disconnects if connected." />
+                        <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this connection from your list." />
                         <Ellipse Classes="status" Classes.good="{Binding IsConnected}" VerticalAlignment="Center" />
                         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Classes="muted" />
                       </StackPanel>

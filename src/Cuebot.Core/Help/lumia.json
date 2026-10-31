@@ -1,0 +1,185 @@
+{
+  "triggers": {
+    "lumia.connected": {
+      "description": "Runs when Cuebot connects to Lumia Stream. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "lumia.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to Lumia Stream. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "lumia.chatMessage": {
+      "description": "Runs when Lumia Stream sees a chat message. Handy to react in your lights or overlays.",
+      "fields": {
+        "origin": "Only run for these chat sites, like \"twitch, youtube, kick\", separated by commas. Leave empty for all of them."
+      },
+      "variables": {
+        "user": "Who wrote it",
+        "message": "What they wrote",
+        "messageId": "The message's id",
+        "lumia.origin": "Which site it came from"
+      }
+    },
+    "lumia.chatMessageDeleted": {
+      "description": "Runs when Lumia Stream sees a chat message get deleted.",
+      "fields": {
+        "origin": "Only run for these chat sites, like \"twitch, youtube, kick\", separated by commas. Leave empty for all of them."
+      },
+      "variables": {
+        "messageId": "The deleted message's id",
+        "lumia.origin": "Which site it came from"
+      }
+    },
+    "lumia.command": {
+      "description": "Runs when a chat command is used that Lumia Stream knows about.",
+      "fields": {
+        "command": "Only run for these commands, typed without the ! and separated by commas. Leave empty for any command.",
+        "origin": "Only run for these chat sites, like \"twitch, youtube, kick\", separated by commas. Leave empty for all of them."
+      },
+      "variables": {
+        "command": "The command that was used",
+        "user": "Who used it",
+        "lumia.origin": "Which site it came from"
+      }
+    },
+    "lumia.alert": {
+      "description": "Runs when Lumia Stream shows an alert, like a new follower. Good for adding your own reaction.",
+      "fields": {
+        "alert": "Only run for these alerts, like \"twitch-follower\", separated by commas. Leave empty for any alert.",
+        "replays": "Include runs for every alert. Ignore skips alerts that are being shown again. Only runs just for alerts being shown again."
+      },
+      "variables": {
+        "lumia.alert": "The alert's name",
+        "lumia.replay": "True if this alert is shown again",
+        "user": "Who it was about, if known",
+        "lumia.origin": "Which site it came from"
+      }
+    },
+    "lumia.statesChanged": {
+      "description": "Runs when Lumia Stream turns on or off, or its stream mode switches.",
+      "fields": {},
+      "variables": {
+        "lumia.on": "True if Lumia is on",
+        "lumia.streamMode": "True if stream mode is on"
+      }
+    },
+    "lumia.event": {
+      "description": "Runs for other messages Lumia Stream sends that have no trigger of their own.",
+      "fields": {
+        "type": "Only run for these kinds of message, like \"premium\", separated by commas. Leave empty for any."
+      },
+      "variables": {
+        "lumia.type": "The kind of message",
+        "lumia.data": "The full message, as text"
+      }
+    }
+  },
+  "subActions": {
+    "lumia.sendCommand": {
+      "description": "Tells Lumia Stream to run one of your commands, such as a light show. Handy for stream events.",
+      "fields": {
+        "command": "The command's name, as you set it up in Lumia Stream.",
+        "commandType": "Where the command comes from in Lumia, like a chat command or a channel point reward.",
+        "hold": "Tick to keep this look until you change it, instead of going back to normal afterwards.",
+        "skipQueue": "Tick to run right now instead of waiting behind other commands and colours.",
+        "extraSettings": "Extra details for Lumia, one per line as name=value, like username=%user%. Lumia can use them in its own texts as {{name}}."
+      },
+      "variables": {}
+    },
+    "lumia.setColor": {
+      "description": "Changes your Lumia Stream lights to a colour. Good for a quick flash when something happens.",
+      "fields": {
+        "color": "The colour as #RRGGBB, like #FF0000 for red, or as three numbers like \"255,0,0\".",
+        "brightness": "How bright, from 0 to 100. Leave empty to use Lumia's usual setting (100).",
+        "duration": "How long the colour stays, in milliseconds (1000 is one second). Leave empty to use Lumia's usual (4000).",
+        "transition": "How long the fade into the colour takes, in milliseconds. Leave empty to use Lumia's usual (0, instant).",
+        "default": "Tick to put the lights back to normal instead. All other colour settings are ignored.",
+        "lights": "Only change these lights: type their names separated by commas. Leave empty for all your lights.",
+        "hold": "Tick to keep this look until you change it, instead of going back to normal afterwards.",
+        "skipQueue": "Tick to run right now instead of waiting behind other commands and colours."
+      },
+      "variables": {}
+    },
+    "lumia.setToDefault": {
+      "description": "Puts your Lumia Stream lights back to their normal look.",
+      "fields": {},
+      "variables": {}
+    },
+    "lumia.sendAlert": {
+      "description": "Makes Lumia Stream show one of its alerts, as if it had really happened. Good for a light show on your own events.",
+      "fields": {
+        "alert": "The alert's name, like \"twitch-follower\" or \"twitch-bits\".",
+        "extraSettings": "Extra details for Lumia, one per line as name=value, like username=%user%. Lumia can use them in its own texts as {{name}}."
+      },
+      "variables": {}
+    },
+    "lumia.chatbotMessage": {
+      "description": "Sends a message in chat through Lumia Stream's chat bot.",
+      "fields": {
+        "message": "The text to send.",
+        "platform": "Which chat to send it to, or all for every chat Lumia is connected to.",
+        "asSelf": "Tick to send it as you instead of as the bot."
+      },
+      "variables": {}
+    },
+    "lumia.tts": {
+      "description": "Makes Lumia Stream read a message out loud.",
+      "fields": {
+        "message": "The text to read out.",
+        "voice": "The voice to use. Leave empty for Lumia's normal voice.",
+        "volume": "How loud, from 0 to 100. Only works on Windows. Leave empty for the normal volume."
+      },
+      "variables": {}
+    },
+    "lumia.setLumiaState": {
+      "description": "Turns Lumia Stream on or off, or flips it to the other state.",
+      "fields": {
+        "state": "On turns it on, Off turns it off, Toggle flips whatever it is now."
+      },
+      "variables": {}
+    },
+    "lumia.setStreamMode": {
+      "description": "Turns Lumia Stream's stream mode on or off, or flips it.",
+      "fields": {
+        "state": "On turns it on, Off turns it off, Toggle flips whatever it is now."
+      },
+      "variables": {}
+    },
+    "lumia.getVariable": {
+      "description": "Reads one of Lumia Stream's variables and saves its value in a variable of yours.",
+      "fields": {
+        "name": "The Lumia variable to read, like \"twitch_username\".",
+        "argument": "The name of your variable that will hold the answer. Use it later as %name%."
+      },
+      "variables": {
+        "lumia.variableValue": "The value read from Lumia (or whatever name you chose in the box above)"
+      }
+    },
+    "lumia.setVariable": {
+      "description": "Sets one of Lumia Stream's variables to a value you choose.",
+      "fields": {
+        "name": "The name of the Lumia variable to set.",
+        "value": "The value to put in it."
+      },
+      "variables": {}
+    },
+    "lumia.send": {
+      "description": "Sends a raw request to Lumia Stream for things the other steps cannot do. For advanced users who know Lumia's request types.",
+      "fields": {
+        "type": "The kind of request, as Lumia names it, like \"studio-scene\" or \"clear-queue\".",
+        "params": "The details of the request, written like {\"value\":\"Sunset\"}. Leave empty if it needs none.",
+        "argument": "The name of your variable that will hold Lumia's reply."
+      },
+      "variables": {
+        "lumia.response": "Lumia's reply (or whatever name you chose in the box above)"
+      }
+    }
+  }
+}

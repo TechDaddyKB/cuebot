@@ -25,7 +25,7 @@
   <Grid RowDefinitions="Auto,*" Margin="24,16,24,24">
     <!-- ===== Status tiles ===== -->
     <UniformGrid x:Name="Tiles" Columns="4" Margin="0,0,0,12">
-      <Border Classes="card" Margin="0,0,12,0">
+      <Border Classes="card" Margin="0,0,12,0" ToolTip.Tip="How many of your services (Twitch, OBS and so on) are connected right now.">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Classes="label" TextTrimming="CharacterEllipsis" Text="CONNECTED" />
           <c:Icon Grid.Column="1" Classes="tileIcon" Classes.bad="{Binding ConnectionsBad}" Kind="plug" />
@@ -33,7 +33,7 @@
           <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="muted" Text="{Binding ConnectionsDetail}" TextTrimming="CharacterEllipsis" />
         </Grid>
       </Border>
-      <Border Classes="card" Margin="0,0,12,0">
+      <Border Classes="card" Margin="0,0,12,0" ToolTip.Tip="How many times your actions ran today, and how many of those failed.">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Classes="label" TextTrimming="CharacterEllipsis" Text="RUNS TODAY" />
           <c:Icon Grid.Column="1" Classes="tileIcon" Classes.bad="{Binding HasFailures}" Kind="zap" />
@@ -41,7 +41,7 @@
           <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="muted" Text="{Binding RunsDetail}" TextTrimming="CharacterEllipsis" />
         </Grid>
       </Border>
-      <Border Classes="card" Margin="0,0,12,0">
+      <Border Classes="card" Margin="0,0,12,0" ToolTip.Tip="How many things happened today that can start an action: chat messages, follows, hotkeys and so on.">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Classes="label" TextTrimming="CharacterEllipsis" Text="EVENTS TODAY" />
           <c:Icon Grid.Column="1" Classes="tileIcon" Kind="radio" />
@@ -49,7 +49,7 @@
           <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="muted" Text="{Binding EventsDetail}" TextTrimming="CharacterEllipsis" />
         </Grid>
       </Border>
-      <Border Classes="card" Margin="0">
+      <Border Classes="card" Margin="0" ToolTip.Tip="Warnings and errors Cuebot wrote to the Log tab. Open the Log tab to read what went wrong.">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Classes="label" TextTrimming="CharacterEllipsis" Text="PROBLEMS" />
           <c:Icon Grid.Column="1" Classes="tileIcon" Classes.bad="{Binding HasErrors}" Kind="triangle-alert" />
@@ -86,7 +86,7 @@
           </TabItem>
           <TabItem Header="Log">
             <DockPanel>
-              <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Content="Clear" Command="{Binding ClearLogCommand}" Margin="0,0,0,6" />
+              <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Content="Clear" Command="{Binding ClearLogCommand}" Margin="0,0,0,6" ToolTip.Tip="Empties the log list and sets the Problems count back to 0. Nothing else is deleted." />
               <ListBox ItemsSource="{Binding Log}" Background="Transparent" AutoScrollToSelectedItem="False">
                 <ListBox.ItemTemplate>
                   <DataTemplate DataType="log:LogEntry">
@@ -115,7 +115,7 @@
                       <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                       <TextBlock Classes="muted" Text="{Binding LastRun}" FontSize="11.5" />
                     </StackPanel>
-                    <Button Grid.Column="2" Command="{Binding RunCommand}" ToolTip.Tip="Run again" Padding="8,4"
+                    <Button Grid.Column="2" Command="{Binding RunCommand}" ToolTip.Tip="Runs this action again right now." Padding="8,4"
                             AutomationProperties.Name="{Binding Name, StringFormat='Run {0} again'}">
                       <StackPanel Orientation="Horizontal" Spacing="4">
                         <c:Icon Kind="play" Width="13" Height="13" />

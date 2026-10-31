@@ -13,11 +13,11 @@
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
               <TextBlock Text="Speech queue" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                <ToggleButton Content="Pause" IsChecked="{Binding Paused}" ToolTip.Tip="Hold the queue; the current text finishes" />
-                <Button Content="Skip" Command="{Binding SkipCommand}" ToolTip.Tip="Stop the current text" />
+                <ToggleButton Content="Pause" IsChecked="{Binding Paused}" ToolTip.Tip="Holds the waiting line so nothing new starts. The text being read right now finishes." />
+                <Button Content="Skip" Command="{Binding SkipCommand}" ToolTip.Tip="Stops the text being read right now and moves on to the next one." />
                 <Button Content="Speak next" Command="{Binding SpeakNextCommand}"
-                        ToolTip.Tip="Go to the next text: stops the current one and, while paused, plays exactly one waiting text. Pause, then press this to step through the queue." />
-                <Button Content="Clear" Command="{Binding ClearQueueCommand}" ToolTip.Tip="Drop everything waiting" />
+                        ToolTip.Tip="Moves on to the next text. It stops the one being read, and if the queue is paused it plays exactly one waiting text. Pause first, then press this to go through the queue one text at a time." />
+                <Button Content="Clear" Command="{Binding ClearQueueCommand}" ToolTip.Tip="Throws away every text that is waiting to be read. Nothing is read from them." />
               </StackPanel>
             </Grid>
 
@@ -46,11 +46,11 @@
                             <TextBlock Classes="hint" Text="{Binding Meta}" />
                           </StackPanel>
                           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <Button Content="Remove" ToolTip.Tip="Drop this text"
+                            <Button Content="Remove" ToolTip.Tip="Throws away just this waiting text so it is never read."
                                     Command="{Binding $parent[ItemsControl].((sp:SpeechOverviewViewModel)DataContext).RemoveQueuedCommand}"
                                     CommandParameter="{Binding}" />
                             <Button Content="Stop user" IsVisible="{Binding HasUser}"
-                                    ToolTip.Tip="Drop everything this user has waiting"
+                                    ToolTip.Tip="Throws away every waiting text from this viewer."
                                     Command="{Binding $parent[ItemsControl].((sp:SpeechOverviewViewModel)DataContext).StopUserCommand}"
                                     CommandParameter="{Binding}" />
                           </StackPanel>
@@ -87,11 +87,13 @@
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Text="Voices" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,4" />
             <TextBlock DockPanel.Dock="Top" Classes="hint" Margin="0,0,0,8"
-                       Text="Voice aliases chat and actions speak with. Add and tune them under Voice aliases." />
+                       Text="The voices that chat and your actions can speak with. A voice alias is a saved voice with its own name and settings. Add and change them under Voice aliases." />
             <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,10,0,0">
               <TextBlock Classes="label" Text="PREVIEW" />
-              <TextBox x:Name="PreviewText" Text="{Binding TestText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" />
-              <Button Classes="accent" Command="{Binding SpeakCommand}" HorizontalAlignment="Right">
+              <TextBox x:Name="PreviewText" Text="{Binding TestText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                       ToolTip.Tip="Type anything here, then press the button below to hear it in the voice you picked in the list." />
+              <Button Classes="accent" Command="{Binding SpeakCommand}" HorizontalAlignment="Right"
+                      ToolTip.Tip="Reads your text aloud now with the selected voice, so you can test how it sounds.">
                 <StackPanel Orientation="Horizontal" Spacing="5">
                   <c:Icon Kind="play" Width="13" Height="13" />
                   <TextBlock Text="{Binding TestAlias, StringFormat='Speak with {0}'}" />
@@ -120,8 +122,10 @@
           <StackPanel Spacing="10">
             <TextBlock Text="Behaviour" FontWeight="SemiBold" FontSize="15" />
             <ToggleSwitch x:Name="EnabledSwitch" Content="Speech enabled" IsChecked="{Binding Enabled}"
+                          ToolTip.Tip="The main on/off switch for all text-to-speech. Turning it off stops the current text and clears the waiting line."
                           OnContent="On — texts are spoken" OffContent="Off — new texts are ignored" />
-            <ToggleSwitch Content="Speak events (follows, subs, raids...)" IsChecked="{Binding EventsEnabled}" />
+            <ToggleSwitch Content="Speak events (follows, subs, raids...)" IsChecked="{Binding EventsEnabled}"
+                          ToolTip.Tip="When on, stream events like follows, subs and raids are read aloud. Choose what is said under Events." />
             <TextBlock Classes="hint" Text="Turning speech off stops the current text and clears the queue. Chat, commands and per-platform settings are under Chat &amp; commands." />
           </StackPanel>
         </Border>
@@ -129,13 +133,15 @@
           <StackPanel Spacing="8">
             <TextBlock Text="Output and routing" FontWeight="SemiBold" FontSize="15" />
             <TextBlock Classes="label" Text="{Binding MasterVolume, StringFormat='Master volume: {0:0}%'}" />
-            <Slider Minimum="0" Maximum="100" Value="{Binding MasterVolume}" />
+            <Slider Minimum="0" Maximum="100" Value="{Binding MasterVolume}"
+                    ToolTip.Tip="How loud all speech is, from 0 (silent) to 100 (full volume)." />
             <TextBlock Classes="label" Text="Output device" />
             <Grid ColumnDefinitions="*,8,Auto">
-              <ComboBox ItemsSource="{Binding OutputDevices}" SelectedItem="{Binding OutputDevice}" />
-              <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshDevicesCommand}" />
+              <ComboBox ItemsSource="{Binding OutputDevices}" SelectedItem="{Binding OutputDevice}"
+                        ToolTip.Tip="The speakers or headphones the voice plays through." />
+              <Button Grid.Column="2" Content="Refresh" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Looks for speakers again, for example after you plug in headphones." />
             </Grid>
-            <TextBlock Classes="hint" Text="Aliases can pick their own device; the rest play here." />
+            <TextBlock Classes="hint" Text="A voice alias can choose its own speakers. All the others play through the device above." />
           </StackPanel>
         </Border>
       </Grid>

@@ -47,16 +47,16 @@
     <DataTemplate DataType="vm:TextParameterViewModel">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Label}" />
-        <TextBox Text="{Binding Value}" PlaceholderText="{Binding Placeholder}" IsVisible="{Binding !HasSuggestions}" />
+        <TextBox Text="{Binding Value}" PlaceholderText="{Binding Placeholder}" IsVisible="{Binding !HasSuggestions}" ToolTip.Tip="{Binding Help}" />
         <AutoCompleteBox Text="{Binding Value}" ItemsSource="{Binding Suggestions}" FilterMode="ContainsOrdinal"
-                         MinimumPrefixLength="0" IsVisible="{Binding HasSuggestions}" />
+                         MinimumPrefixLength="0" IsVisible="{Binding HasSuggestions}" ToolTip.Tip="{Binding Help}" />
         <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
       </StackPanel>
     </DataTemplate>
     <DataTemplate DataType="vm:MultilineParameterViewModel">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Label}" />
-        <TextBox Text="{Binding Value}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" />
+        <TextBox Text="{Binding Value}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" ToolTip.Tip="{Binding Help}" />
         <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
       </StackPanel>
     </DataTemplate>
@@ -77,12 +77,16 @@
       </StackPanel>
     </DataTemplate>
     <DataTemplate DataType="vm:BoolParameterViewModel">
-      <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+      <StackPanel Spacing="4">
+        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" ToolTip.Tip="{Binding Help}" />
+        <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
+      </StackPanel>
     </DataTemplate>
     <DataTemplate DataType="vm:ChoiceParameterViewModel">
       <StackPanel Spacing="4">
         <TextBlock Text="{Binding Label}" />
-        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch" />
+        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Help}" />
+        <TextBlock Text="{Binding Help}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasHelp}" />
       </StackPanel>
     </DataTemplate>
   </UserControl.DataTemplates>
@@ -185,12 +189,21 @@
                       <TextBlock Classes="muted" Text="{Binding Category, StringFormat='TRIGGER · {0}'}" />
                       <TextBlock Classes="h2" Text="{Binding Title}" />
                     </StackPanel>
+                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
                     <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
                     <CheckBox Content="Always run" IsChecked="{Binding AlwaysRun}" IsVisible="{Binding IsRangeTrigger}"
                               ToolTip.Tip="Run even when a narrower range trigger of the same type also matches the event" />
                     <ItemsControl ItemsSource="{Binding Parameters}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     </ItemsControl>
+                    <Expander Header="Variables this gives your action" IsVisible="{Binding HasVariables}" HorizontalAlignment="Stretch"
+                              ToolTip.Tip="Type these into any sub-action text (with the % signs) and Cuebot swaps in the real value when the action runs">
+                      <ItemsControl ItemsSource="{Binding Variables}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate><SelectableTextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" /></DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Expander>
                   </StackPanel>
                 </DataTemplate>
             </ContentControl.DataTemplates>
@@ -379,6 +392,7 @@
                             <TextBlock Classes="muted" Text="{Binding Category, StringFormat='SUB-ACTION · {0}'}" />
                             <TextBlock Classes="h2" Text="{Binding Title}" />
                           </StackPanel>
+                          <TextBlock Text="{Binding Description}" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
                           <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
                           <StackPanel Spacing="4" IsVisible="{Binding ShowsWeight}">
                             <TextBlock Text="Weight" />
@@ -392,8 +406,16 @@
                           <ItemsControl ItemsSource="{Binding Parameters}">
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           </ItemsControl>
+                          <Expander Header="Variables this adds for the next steps" IsVisible="{Binding HasVariables}" HorizontalAlignment="Stretch"
+                                    ToolTip.Tip="Type these into any sub-action text (with the % signs) and Cuebot swaps in the real value when the action runs">
+                            <ItemsControl ItemsSource="{Binding Variables}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate><SelectableTextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" /></DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </Expander>
                           <TextBlock Classes="muted" TextWrapping="Wrap"
-                                     Text="Use %argument% for action arguments (e.g. %user%, %message%) and ~name~ for global variables." />
+                                     Text="Tip: words in % signs, like %user% or %message%, are swapped for real values when the action runs. Words in ~ signs, like ~deaths~, are saved values (global variables) that last between runs." />
                         </StackPanel>
                       </DataTemplate>
                       <DataTemplate DataType="vm:BranchViewModel">
@@ -480,7 +502,7 @@
 
     <!-- Type picker overlay -->
     <Border IsVisible="{Binding Picker.IsOpen}" Background="{DynamicResource CuebotOverlay}">
-      <Border Classes="card" Width="520" Height="520" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Classes="card" Width="560" Height="580" HorizontalAlignment="Center" VerticalAlignment="Center">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Classes="h2" Text="{Binding Picker.Title}" />
           <TextBox DockPanel.Dock="Top" x:Name="PickerSearch" PlaceholderText="Search (e.g. 'twitch chat', 'obs scene')"
@@ -489,10 +511,17 @@
             <Button Content="Cancel" Command="{Binding Picker.CancelCommand}" />
             <Button Content="Add" Classes="accent" Command="{Binding Picker.ConfirmCommand}" />
           </StackPanel>
+          <Border DockPanel.Dock="Bottom" Classes="card" Padding="10,8" Margin="0,8,0,0" MinHeight="64"
+                  IsVisible="{Binding Picker.Selected, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <StackPanel Spacing="2">
+              <TextBlock FontWeight="SemiBold" Text="{Binding Picker.SelectedName}" />
+              <TextBlock TextWrapping="Wrap" Text="{Binding Picker.SelectedDescription}" IsVisible="{Binding Picker.HasSelectedDescription}" />
+            </StackPanel>
+          </Border>
           <ListBox ItemsSource="{Binding Picker.Options}" SelectedItem="{Binding Picker.Selected}" DoubleTapped="OnPickerDoubleTapped">
             <ListBox.ItemTemplate>
               <DataTemplate DataType="vm:TypeOption">
-                <TextBlock>
+                <TextBlock ToolTip.Tip="{Binding Description}">
                   <Run Text="{Binding Category}" Foreground="{DynamicResource CuebotMuted}" /><Run Text="  " /><Run Text="{Binding Name}" />
                 </TextBlock>
               </DataTemplate>

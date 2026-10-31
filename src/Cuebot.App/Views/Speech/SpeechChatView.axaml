@@ -14,38 +14,38 @@
         <StackPanel Spacing="10">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="h2" Text="Read chat aloud" />
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding SpeakChatEnabled}" OnContent="On" OffContent="Off" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding SpeakChatEnabled}" OnContent="On" OffContent="Off" ToolTip.Tip="On: Cuebot reads your viewers' chat messages out loud with text-to-speech." />
           </Grid>
           <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
             <TextBlock Classes="label" Text="Mode" />
             <ComboBox Grid.Row="1" ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}"
-                      ToolTip.Tip="All: every message. Command: only speaking commands." />
+                      ToolTip.Tip="All: every chat message is read out loud. Command: only messages that start with one of the speaking commands below." />
             <TextBlock Grid.Column="2" Classes="label" Text="Voice alias" />
-            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" ToolTip.Tip="Which voice reads the chat messages." />
             <TextBlock Grid.Column="4" Classes="label" Text="Filter profile" />
-            <ComboBox Grid.Column="4" Grid.Row="1" ItemsSource="{Binding FilterProfiles}" SelectedItem="{Binding FilterProfile}" />
+            <ComboBox Grid.Column="4" Grid.Row="1" ItemsSource="{Binding FilterProfiles}" SelectedItem="{Binding FilterProfile}" ToolTip.Tip="A set of rules that decide what is not read, like bad words and links." />
           </Grid>
           <StackPanel Spacing="3">
             <TextBlock Classes="label" Text="Who is read aloud" />
             <sv:AudiencePicker DataContext="{Binding Permission}" />
-            <CheckBox Content="Always read users marked Forced" IsChecked="{Binding AllowForced}" />
+            <CheckBox Content="Always read users marked Forced" IsChecked="{Binding AllowForced}" ToolTip.Tip="Ticked: people you marked as Forced on the Users page are always read aloud, even if the choices above would leave them out." />
           </StackPanel>
           <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto">
             <TextBlock Classes="label" Text="Message template" />
-            <TextBox Grid.Row="1" Text="{Binding Template}" />
+            <TextBox Grid.Row="1" Text="{Binding Template}" ToolTip.Tip="What is said for each message. %user% is the name and %message% is what they wrote, so the default says: name says message." />
             <TextBlock Grid.Column="2" Classes="label" Text="Template when the same user speaks again soon" />
-            <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding RepeatTemplate}" />
+            <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding RepeatTemplate}" ToolTip.Tip="What is said when the same person writes again within the seconds set below. By default only the message, without the name again." />
             <TextBlock Grid.Row="3" Classes="label" Text="Platforms (comma separated, empty for all)" />
-            <TextBox Grid.Row="4" Text="{Binding Platforms}" PlaceholderText="All platforms (e.g. Twitch, Rumble)" />
+            <TextBox Grid.Row="4" Text="{Binding Platforms}" PlaceholderText="All platforms (e.g. Twitch, Rumble)" ToolTip.Tip="Only read chat from these platforms, separated by commas. Leave empty to read every platform." />
             <TextBlock Grid.Column="2" Grid.Row="3" Classes="label" Text="Seconds the repeat template applies (0 is off)" />
-            <NumericUpDown Grid.Column="2" Grid.Row="4" Value="{Binding NameGraceSeconds}" Minimum="0" Maximum="3600" />
+            <NumericUpDown Grid.Column="2" Grid.Row="4" Value="{Binding NameGraceSeconds}" Minimum="0" Maximum="3600" ToolTip.Tip="If the same person writes again within this many seconds, the second template is used. 0 turns this off." />
           </Grid>
-          <TextBlock Classes="hint" Text="{Binding TemplateVariables, StringFormat='Variables: {0} and every chat trigger argument.'}" />
+          <TextBlock Classes="hint" Text="{Binding TemplateVariables, StringFormat='Variables: {0} and every other variable the chat trigger gives.'}" />
           <WrapPanel>
-            <CheckBox Content="Speak nicknames instead of names" IsChecked="{Binding UseNicknames}" Margin="0,0,16,0" />
+            <CheckBox Content="Speak nicknames instead of names" IsChecked="{Binding UseNicknames}" Margin="0,0,16,0" ToolTip.Tip="Ticked: if a person has a nickname, that is said instead of their chat name." />
             <CheckBox Content="Random voice per user" IsChecked="{Binding RandomVoices}" Margin="0,0,16,0"
-                      ToolTip.Tip="Users without an alias get a random voice (minus the active voice ignore profile)" />
-            <CheckBox Content="Keep a user's random voice (sticky)" IsChecked="{Binding StickyRandom}" IsEnabled="{Binding RandomVoices}" />
+                      ToolTip.Tip="Ticked: each person gets a random voice, unless they already have a voice alias. Voices your filter profile ignores are skipped." />
+            <CheckBox Content="Keep a user's random voice (sticky)" IsChecked="{Binding StickyRandom}" IsEnabled="{Binding RandomVoices}" ToolTip.Tip="Ticked: a person keeps the same random voice every time. Unticked: they may get a different one for each message." />
           </WrapPanel>
         </StackPanel>
       </Border>
@@ -54,23 +54,23 @@
         <StackPanel Spacing="10">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="h2" Text="The !tts command" />
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CommandsEnabled}" OnContent="On" OffContent="Off" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CommandsEnabled}" OnContent="On" OffContent="Off" ToolTip.Tip="On: viewers can control speech from chat with the !tts command." />
           </Grid>
           <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
             <TextBlock Classes="label" Text="Command word" />
-            <TextBox Grid.Row="1" Text="{Binding Prefix}" PlaceholderText="!tts" />
+            <TextBox Grid.Row="1" Text="{Binding Prefix}" PlaceholderText="!tts" ToolTip.Tip="The word viewers type to use the speech commands. You can rename it." />
             <TextBlock Grid.Column="2" Classes="label" Text="Viewer cooldown (seconds)" />
-            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding ViewerCooldownSeconds}" Minimum="0" Maximum="3600" />
+            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding ViewerCooldownSeconds}" Minimum="0" Maximum="3600" ToolTip.Tip="How many seconds a viewer must wait before using a speech command again. 0 means no wait." />
             <TextBlock Grid.Column="4" Classes="label" Text="Aliases viewers may pick (empty: all)" />
-            <TextBox Grid.Column="4" Grid.Row="1" Text="{Binding ViewerAliases}" PlaceholderText="All aliases" />
+            <TextBox Grid.Column="4" Grid.Row="1" Text="{Binding ViewerAliases}" PlaceholderText="All aliases" ToolTip.Tip="The voice aliases viewers may choose for themselves, separated by commas. Leave empty to allow all of them." />
           </Grid>
           <StackPanel Spacing="3">
             <TextBlock Classes="label" Text="Reply when not allowed (empty for none)" />
-            <TextBox Text="{Binding NotAllowedText}" />
+            <TextBox Text="{Binding NotAllowedText}" ToolTip.Tip="What Cuebot says in chat to someone who is not allowed to use a command. %user% is their name. Leave empty to say nothing." />
           </StackPanel>
           <WrapPanel>
-            <CheckBox Content="Silence chat replies" IsChecked="{Binding SilenceOutput}" Margin="0,0,16,0" />
-            <CheckBox Content="Viewers may set their own nickname" IsChecked="{Binding AllowViewerNicknames}" Margin="0,0,16,0" />
+            <CheckBox Content="Silence chat replies" IsChecked="{Binding SilenceOutput}" Margin="0,0,16,0" ToolTip.Tip="Ticked: Cuebot does not write answers to speech commands in chat." />
+            <CheckBox Content="Viewers may set their own nickname" IsChecked="{Binding AllowViewerNicknames}" Margin="0,0,16,0" ToolTip.Tip="Ticked: viewers can choose the name that is said for them with a speech command." />
             <CheckBox Content="Allow moderator whispers" IsChecked="{Binding AllowModeratorWhispers}"
                       ToolTip.Tip="Moderators may whisper !tts and speaking commands to your Twitch account; they run as if typed in chat, without replies." />
           </WrapPanel>
@@ -89,7 +89,7 @@
                 <DataTemplate DataType="sp:SubCommandRowViewModel">
                   <Grid ColumnDefinitions="200,90,*,140,70" Margin="0,3">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                      <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" VerticalAlignment="Center" />
+                      <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" VerticalAlignment="Center" ToolTip.Tip="Ticked: viewers allowed below can use this sub-command. Unticked: only you can." />
                       <StackPanel VerticalAlignment="Center">
                         <TextBlock Classes="mono" Text="{Binding Name}" FontWeight="SemiBold" />
                         <TextBlock Classes="hint" Text="{Binding Usage}" TextTrimming="CharacterEllipsis" MaxWidth="160" />
@@ -100,9 +100,10 @@
                       <sv:AudiencePicker DataContext="{Binding Audience}" />
                     </Panel>
                     <NumericUpDown Grid.Column="3" Value="{Binding Cooldown}" Minimum="0" Maximum="3600" Margin="0,0,8,0"
-                                   IsVisible="{Binding IsViewerCommand}" VerticalAlignment="Center" />
+                                   IsVisible="{Binding IsViewerCommand}" VerticalAlignment="Center"
+                                   ToolTip.Tip="Seconds a person must wait before using this sub-command again. Empty or 0 uses the viewer cooldown above." />
                     <Button Grid.Column="4" Content="Reset" Command="{Binding ResetCommand}" IsEnabled="{Binding IsCustomized}"
-                            VerticalAlignment="Center" />
+                            VerticalAlignment="Center" ToolTip.Tip="Puts this sub-command back to its original settings." />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -116,25 +117,25 @@
           <TextBlock Classes="h2" Text="Speaking commands" />
           <Grid ColumnDefinitions="*,16,2*" RowDefinitions="Auto,Auto">
             <TextBlock Classes="label" Text="Prefixes whose text is spoken" />
-            <TextBox Grid.Row="1" Text="{Binding SpeakCommands}" PlaceholderText="!say, !&quot;" />
+            <TextBox Grid.Row="1" Text="{Binding SpeakCommands}" PlaceholderText="!say, !&quot;" ToolTip.Tip="Chat words that make Cuebot speak whatever comes after them, like !say hello. Separate them with commas." />
             <TextBlock Grid.Column="2" Classes="label" Text="Who may use them" />
             <sv:AudiencePicker Grid.Column="2" Grid.Row="1" DataContext="{Binding SpeakCommandPermission}" VerticalAlignment="Center" />
           </Grid>
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="label" Text="Custom commands with their own voice" VerticalAlignment="Center" />
-            <Button Grid.Column="1" Content="+ Command" Command="{Binding AddCustomCommandCommand}" />
+            <Button Grid.Column="1" Content="+ Command" Command="{Binding AddCustomCommandCommand}" ToolTip.Tip="Adds a chat command that speaks with a voice of your choice, like !pirate." />
           </Grid>
           <ItemsControl ItemsSource="{Binding CustomCommands}">
             <ItemsControl.ItemTemplate>
               <DataTemplate DataType="sp:CustomCommandViewModel">
                 <Border Classes="inset" Margin="0,0,0,6">
                   <Grid ColumnDefinitions="160,8,200,12,*,8,Auto">
-                    <TextBox Text="{Binding Text}" PlaceholderText="!pirate" />
-                    <ComboBox Grid.Column="2" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+                    <TextBox Text="{Binding Text}" PlaceholderText="!pirate" ToolTip.Tip="The chat word viewers type. Whatever follows it is spoken with the voice chosen next to it." />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" ToolTip.Tip="The voice alias this command speaks with." />
                     <sv:AudiencePicker Grid.Column="4" DataContext="{Binding Audience}" VerticalAlignment="Center" />
                     <Button Grid.Column="6" Content="Remove"
                             Command="{Binding $parent[ItemsControl].((sp:SpeechChatViewModel)DataContext).RemoveCustomCommandCommand}"
-                            CommandParameter="{Binding}" />
+                            CommandParameter="{Binding}" ToolTip.Tip="Deletes this custom command." />
                   </Grid>
                 </Border>
               </DataTemplate>
@@ -146,9 +147,9 @@
       <Border Classes="card">
         <StackPanel Spacing="6">
           <TextBlock Classes="h2" Text="Moderation" />
-          <CheckBox Content="Stop a message when a moderator deletes it" IsChecked="{Binding SkipOnMessageDeleted}" />
-          <CheckBox Content="Stop a user's messages when they are timed out" IsChecked="{Binding SkipOnTimeout}" />
-          <CheckBox Content="Stop a user's messages when they are banned" IsChecked="{Binding SkipOnBan}" />
+          <CheckBox Content="Stop a message when a moderator deletes it" IsChecked="{Binding SkipOnMessageDeleted}" ToolTip.Tip="Ticked: if a chat message is deleted while it is waiting to be read or being read, Cuebot stops reading it." />
+          <CheckBox Content="Stop a user's messages when they are timed out" IsChecked="{Binding SkipOnTimeout}" ToolTip.Tip="Ticked: when someone is timed out (muted for a while), their waiting messages are not read." />
+          <CheckBox Content="Stop a user's messages when they are banned" IsChecked="{Binding SkipOnBan}" ToolTip.Tip="Ticked: when someone is banned, their waiting messages are not read." />
         </StackPanel>
       </Border>
     </StackPanel>

@@ -1,0 +1,77 @@
+{
+  "triggers": {
+    "mtion.connected": {
+      "description": "Runs when Cuebot notices that mtion studio is open and answering. Cuebot checks by asking it every few seconds.",
+      "fields": {},
+      "variables": {}
+    },
+    "mtion.disconnected": {
+      "description": "Runs when mtion studio stops answering, for example when you close it.",
+      "fields": {},
+      "variables": {
+        "reason": "Why it was marked as closed"
+      }
+    },
+    "mtion.clubhouseChanged": {
+      "description": "Runs when you open a different clubhouse (a project) in mtion studio.",
+      "fields": {
+        "clubhouse": "Only react to these clubhouses, typed by name or id. Separate several with commas. Leave empty for any clubhouse."
+      },
+      "variables": {
+        "mtion.clubhouse.name": "The name of the clubhouse that is open now",
+        "mtion.clubhouse.id": "The id of the clubhouse that is open now",
+        "mtion.clubhouse.description": "Its description",
+        "mtion.oldClubhouse.name": "The name of the clubhouse that was open before",
+        "mtion.oldClubhouse.id": "The id of the clubhouse that was open before"
+      }
+    },
+    "mtion.triggerSent": {
+      "description": "Runs right after Cuebot successfully sends an external trigger to mtion studio with a \"Send trigger\" step. It does not hear triggers that mtion sends by itself.",
+      "fields": {
+        "trigger": "Only react to these triggers, typed by name or id. Separate several with commas. Leave empty for any trigger."
+      },
+      "variables": {
+        "mtion.trigger.name": "The name of the trigger that was sent",
+        "mtion.trigger.id": "The id of the trigger",
+        "mtion.trigger.parameters": "The values that were sent with it, as raw text"
+      }
+    }
+  },
+  "subActions": {
+    "mtion.sendTrigger": {
+      "description": "Fires an external trigger in mtion studio, for example to make your avatar celebrate. The trigger must exist in the clubhouse that is open.",
+      "fields": {
+        "trigger": "The external trigger's name (or id) from the open clubhouse, like \"Confetti\".",
+        "parameters": "Extra values the trigger takes, one per line as name=value, like \"Amount=5\". Use the parameter's name or its number (0, 1, ...). For a list-type value, give the option number, starting at 0. Leave empty for none."
+      },
+      "variables": {
+        "mtion.running": "True if mtion studio answered",
+        "mtion.trigger.found": "True if a trigger with that name exists in the open clubhouse",
+        "mtion.trigger.sent": "True if mtion accepted the trigger",
+        "mtion.trigger.name": "The trigger's name",
+        "mtion.trigger.id": "The trigger's id"
+      }
+    },
+    "mtion.getActiveClubhouse": {
+      "description": "Finds out which clubhouse (project) is open in mtion studio and keeps its details for later steps.",
+      "fields": {},
+      "variables": {
+        "mtion.running": "True if mtion studio answered",
+        "mtion.clubhouse.found": "True if a clubhouse is open",
+        "mtion.clubhouse.name": "The clubhouse's name",
+        "mtion.clubhouse.id": "The clubhouse's id",
+        "mtion.clubhouse.description": "The clubhouse's description"
+      }
+    },
+    "mtion.getTriggers": {
+      "description": "Reads the list of external triggers in the open mtion clubhouse and keeps it for later steps.",
+      "fields": {},
+      "variables": {
+        "mtion.running": "True if mtion studio answered",
+        "mtion.triggerCount": "How many triggers there are",
+        "mtion.triggerNames": "All trigger names, separated by commas",
+        "mtion.triggers": "The full list with parameters, as raw text"
+      }
+    }
+  }
+}

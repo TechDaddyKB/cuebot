@@ -1,0 +1,156 @@
+{
+  "triggers": {
+    "hyperate.connected": {
+      "description": "Runs when Cuebot connects to HypeRate. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "sessionId": "The HypeRate ID you are watching"
+      }
+    },
+    "hyperate.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to HypeRate. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "hyperate.heartRate": {
+      "description": "Runs for every new heart rate reading from HypeRate. It can run about once a second, so keep the action short.",
+      "fields": {},
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate"
+      }
+    },
+    "hyperate.heartRateChanged": {
+      "description": "Runs when your HypeRate heart rate changes enough. Good for updating a number on screen without running every second.",
+      "fields": {
+        "minInterval": "The least number of seconds to wait between runs. 5 means at most one run every five seconds.",
+        "minChange": "Only run when your heart rate moved at least this many beats per minute since the last run."
+      },
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate",
+        "lastTriggeredHeartRate": "The heart rate at the last run",
+        "heartRateChange": "How much it changed since then (minus means it fell)"
+      }
+    },
+    "hyperate.heartRateAbove": {
+      "description": "Runs once when your HypeRate heart rate reaches a number you pick or goes higher. Fun for a \"calm down!\" moment.",
+      "fields": {
+        "threshold": "The heart rate to watch for, in beats per minute. It runs when you reach this number or higher.",
+        "hysteresis": "How far your heart rate must fall below the threshold before this can run again. Stops it firing over and over when you hover near the number."
+      },
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate",
+        "heartRateThreshold": "The threshold you set"
+      }
+    },
+    "hyperate.heartRateBelow": {
+      "description": "Runs once when your HypeRate heart rate drops to a number you pick or lower. Fun for a \"are you still alive?\" moment.",
+      "fields": {
+        "threshold": "The heart rate to watch for, in beats per minute. It runs when you reach this number or lower.",
+        "hysteresis": "How far your heart rate must rise above the threshold before this can run again. Stops it firing over and over when you hover near the number."
+      },
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate",
+        "heartRateThreshold": "The threshold you set"
+      }
+    },
+    "hyperate.clipCreated": {
+      "description": "Runs when a Twitch clip is made through HypeRate. Handy to share the clip link in chat.",
+      "fields": {},
+      "variables": {
+        "clipUrl": "The web link to the clip",
+        "twitchSlug": "The clip's short name"
+      }
+    },
+    "pulsoid.connected": {
+      "description": "Runs when Cuebot connects to Pulsoid. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "pulsoid.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to Pulsoid. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "pulsoid.heartRate": {
+      "description": "Runs for every new heart rate reading from Pulsoid. It can run about once a second, so keep the action short.",
+      "fields": {},
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate"
+      }
+    },
+    "pulsoid.heartRateChanged": {
+      "description": "Runs when your Pulsoid heart rate changes enough. Good for updating a number on screen without running every second.",
+      "fields": {
+        "minInterval": "The least number of seconds to wait between runs. 5 means at most one run every five seconds.",
+        "minChange": "Only run when your heart rate moved at least this many beats per minute since the last run."
+      },
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate",
+        "lastTriggeredHeartRate": "The heart rate at the last run",
+        "heartRateChange": "How much it changed since then (minus means it fell)"
+      }
+    },
+    "pulsoid.heartRateAbove": {
+      "description": "Runs once when your Pulsoid heart rate reaches a number you pick or goes higher. Fun for a \"calm down!\" moment.",
+      "fields": {
+        "threshold": "The heart rate to watch for, in beats per minute. It runs when you reach this number or higher.",
+        "hysteresis": "How far your heart rate must fall below the threshold before this can run again. Stops it firing over and over when you hover near the number."
+      },
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate",
+        "heartRateThreshold": "The threshold you set"
+      }
+    },
+    "pulsoid.heartRateBelow": {
+      "description": "Runs once when your Pulsoid heart rate drops to a number you pick or lower. Fun for a \"are you still alive?\" moment.",
+      "fields": {
+        "threshold": "The heart rate to watch for, in beats per minute. It runs when you reach this number or lower.",
+        "hysteresis": "How far your heart rate must rise above the threshold before this can run again. Stops it firing over and over when you hover near the number."
+      },
+      "variables": {
+        "heartRate": "Heart rate right now, in beats per minute",
+        "previousHeartRate": "The heart rate before this one",
+        "source": "Where it came from: Pulsoid or HypeRate",
+        "heartRateThreshold": "The threshold you set"
+      }
+    }
+  },
+  "subActions": {
+    "heartrate.get": {
+      "description": "Looks up your latest heart rate and saves it in variables. Handy for a \"!heart\" chat command.",
+      "fields": {
+        "source": "Where to read it from. Latest uses whichever app reported most recently. Or choose Pulsoid or HypeRate."
+      },
+      "variables": {
+        "heartRateAvailable": "True if a reading was found",
+        "heartRate": "Beats per minute (0 if none)",
+        "heartRateSource": "Where it came from",
+        "heartRateTime": "When it was measured",
+        "heartRateAgeSeconds": "How many seconds old it is (-1 if none)"
+      }
+    }
+  }
+}

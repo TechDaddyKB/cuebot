@@ -24,14 +24,16 @@
         <c:StatusHeader.Actions>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <ProgressBar Minimum="-70" Maximum="0" Value="{Binding LevelDb}" Width="160" Height="10" MinHeight="10" VerticalAlignment="Center"
-                         ToolTip.Tip="Microphone level" />
-            <Button Content="Start Listening" Classes="accent" Command="{Binding StartCommand}" Name="VoiceStart" />
-            <Button Content="Stop Listening" Command="{Binding StopCommand}" Name="VoiceStop" />
+                         ToolTip.Tip="Shows how loud your microphone is right now. If it does not move when you talk, check the microphone in Settings." />
+            <Button Content="Start Listening" Classes="accent" Command="{Binding StartCommand}" Name="VoiceStart"
+                    ToolTip.Tip="Starts listening to your microphone for your voice commands." />
+            <Button Content="Stop Listening" Command="{Binding StopCommand}" Name="VoiceStop"
+                    ToolTip.Tip="Stops listening. Voice commands do nothing until you start again." />
           </StackPanel>
         </c:StatusHeader.Actions>
       </c:StatusHeader>
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Say a command phrase to fire the Voice Control Command trigger; everything recognised also fires Dictation. Recognition runs on this PC (Whisper on Windows and Linux, or Windows Speech Recognition). Settings are stored in voicecontrol.json." />
+                 Text="Control your actions with your voice. When you say a command phrase, the Voice Control Command trigger runs. Everything Cuebot understands also runs the Dictation trigger. Listening happens on this PC (with Whisper on Windows and Linux, or Windows Speech Recognition). Settings are stored in voicecontrol.json." />
       <TextBlock Classes="muted" FontStyle="Italic" Text="{Binding Hearing}" IsVisible="{Binding IsListening}" TextWrapping="Wrap" />
       <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}"
                  IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -43,11 +45,11 @@
         <Grid ColumnDefinitions="300,*" Margin="0,8,0,0">
           <DockPanel>
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
-              <Button Content="Add" Command="{Binding AddCommandCommand}" Name="VoiceAddCommand" />
-              <Button Content="Duplicate" Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" />
-              <Button Content="Delete" Command="{Binding RemoveCommandCommand}" IsEnabled="{Binding HasSelection}" />
-              <Button Content="↑" Command="{Binding MoveUpCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Move up (commands are checked in this order)" />
-              <Button Content="↓" Command="{Binding MoveDownCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Move down" />
+              <Button Content="Add" Command="{Binding AddCommandCommand}" Name="VoiceAddCommand" ToolTip.Tip="Adds a new voice command to fill in." />
+              <Button Content="Duplicate" Command="{Binding DuplicateCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Makes a copy of the selected command, handy as a starting point for a similar one." />
+              <Button Content="Delete" Command="{Binding RemoveCommandCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Deletes the selected voice command." />
+              <Button Content="↑" Command="{Binding MoveUpCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Moves the command up. Commands are checked from top to bottom." />
+              <Button Content="↓" Command="{Binding MoveDownCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Moves the command down. Commands are checked from top to bottom." />
             </StackPanel>
             <TextBlock DockPanel.Dock="Top" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoCommands}"
                        Text="No voice commands yet. Add one, then pick it in a Voice Control Command trigger." />
@@ -55,7 +57,7 @@
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:VoiceCommandRowViewModel">
                   <Grid ColumnDefinitions="Auto,*">
-                    <CheckBox IsChecked="{Binding Enabled}" VerticalAlignment="Center" />
+                    <CheckBox IsChecked="{Binding Enabled}" VerticalAlignment="Center" ToolTip.Tip="Untick to switch this command off without deleting it." />
                     <StackPanel Grid.Column="1">
                       <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                       <TextBlock Classes="muted" Text="{Binding Phrase}" TextTrimming="CharacterEllipsis" />
@@ -74,26 +76,29 @@
               <StackPanel Spacing="10">
                 <StackPanel>
                   <TextBlock Classes="label" Text="Name" />
-                  <TextBox Text="{Binding Name}" Name="VoiceCommandName" />
+                  <TextBox Text="{Binding Name}" Name="VoiceCommandName" ToolTip.Tip="A name for you to recognise this command. You pick it by this name in a Voice Control Command trigger." />
                 </StackPanel>
-                <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
+                <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Untick to switch this command off without deleting it." />
                 <StackPanel>
                   <TextBlock Classes="label" Text="Command" />
-                  <TextBox Text="{Binding Phrase}" PlaceholderText="What to say, e.g. start the countdown" Name="VoiceCommandPhrase" />
+                  <TextBox Text="{Binding Phrase}" PlaceholderText="What to say, e.g. start the countdown" Name="VoiceCommandPhrase"
+                           ToolTip.Tip="The words you say out loud to set this command off, like start the countdown." />
                 </StackPanel>
                 <StackPanel>
                   <TextBlock Classes="label" Text="Location" />
                   <ComboBox ItemsSource="{x:Static vm:VoiceControlViewModel.Locations}"
-                            SelectedItem="{Binding Location}" MinWidth="180" />
+                            SelectedItem="{Binding Location}" MinWidth="180"
+                            ToolTip.Tip="Where in your sentence the phrase must be said. See the explanation below the box." />
                   <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12" Margin="0,4,0,0"
                              Text="Exact: the whole phrase on its own, with a pause before and after. Start: the phrase begins what you say; the rest becomes %spokenTextInput%. Anywhere: the phrase anywhere in a sentence." />
                 </StackPanel>
                 <CheckBox Content="Stop After" IsChecked="{Binding StopAfter}"
-                          ToolTip.Tip="Fire as soon as the phrase is heard (Start/Anywhere, while you are still talking) and stop checking other commands for that sentence" />
-                <CheckBox Content="Override Global confidence" IsChecked="{Binding OverrideGlobal}" />
+                          ToolTip.Tip="Runs the command the moment the phrase is heard, even while you are still talking, and then ignores the other commands for that sentence. Works for Start and Anywhere." />
+                <CheckBox Content="Override Global confidence" IsChecked="{Binding OverrideGlobal}" ToolTip.Tip="Tick to give this command its own confidence setting instead of the one in Settings." />
                 <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding OverrideGlobal}">
                   <TextBlock Text="Confidence Threshold" VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding ConfidenceThreshold}" Minimum="0" Maximum="100" Increment="5" FormatString="0" Width="130" />
+                  <NumericUpDown Value="{Binding ConfidenceThreshold}" Minimum="0" Maximum="100" Increment="5" FormatString="0" Width="130"
+                                   ToolTip.Tip="How sure Cuebot must be that it heard this command correctly, in percent. Higher means fewer wrong triggers but it may miss some. Lower catches more but may trigger by mistake." />
                   <TextBlock Text="%" VerticalAlignment="Center" />
                 </StackPanel>
               </StackPanel>
@@ -110,12 +115,13 @@
             <Border Classes="card">
               <StackPanel Spacing="10">
                 <TextBlock Classes="h2" Text="Listening" />
-                <CheckBox Content="Auto Start Listen (when Cuebot starts)" IsChecked="{Binding AutoStart}" />
+                <CheckBox Content="Auto Start Listen (when Cuebot starts)" IsChecked="{Binding AutoStart}" ToolTip.Tip="Starts listening for voice commands as soon as Cuebot starts." />
                 <StackPanel>
                   <TextBlock Classes="label" Text="Audio Input Device" />
                   <Grid ColumnDefinitions="*,Auto">
-                    <ComboBox ItemsSource="{Binding InputDevices}" SelectedItem="{Binding InputDevice}" HorizontalAlignment="Stretch" Name="VoiceInputDevice" />
-                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshDevicesCommand}" Margin="8,0,0,0" />
+                    <ComboBox ItemsSource="{Binding InputDevices}" SelectedItem="{Binding InputDevice}" HorizontalAlignment="Stretch" Name="VoiceInputDevice"
+                              ToolTip.Tip="The microphone Cuebot listens to." />
+                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshDevicesCommand}" Margin="8,0,0,0" ToolTip.Tip="Looks for microphones again, for example after you plug one in." />
                   </Grid>
                   <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
                              Text="Can be changed while listening. The same microphone list is used by Speech → VoiceGate." />
@@ -124,22 +130,26 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Confidence Threshold" VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding ConfidenceThreshold}" Minimum="0" Maximum="100" Increment="5" FormatString="0" Width="130" />
+                  <NumericUpDown Value="{Binding ConfidenceThreshold}" Minimum="0" Maximum="100" Increment="5" FormatString="0" Width="130"
+                                 ToolTip.Tip="How sure Cuebot must be that it understood you, in percent. Anything it is less sure about is ignored. If commands are missed, try lowering it. If wrong things trigger, raise it." />
                   <TextBlock Text="% (phrases below this are ignored)" VerticalAlignment="Center" Classes="muted" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Match tolerance" VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding MatchTolerance}" Minimum="0" Maximum="50" Increment="5" FormatString="0" Width="130" />
+                  <NumericUpDown Value="{Binding MatchTolerance}" Minimum="0" Maximum="50" Increment="5" FormatString="0" Width="130"
+                                 ToolTip.Tip="Lets a command still work when a few letters are heard wrong, for example a name that is hard to recognise. 0 needs the exact words. Do not set it too high or other words may match by mistake." />
                   <TextBlock Text="% of letters that may differ (0 = exact words)" VerticalAlignment="Center" Classes="muted" />
                 </StackPanel>
-                <CheckBox Content="Log Speech to Text Dictation (write recognised phrases to the log file)" IsChecked="{Binding LogDictation}" />
+                <CheckBox Content="Log Speech to Text Dictation (write recognised phrases to the log file)" IsChecked="{Binding LogDictation}"
+                          ToolTip.Tip="Writes everything Cuebot hears into the log file (Cuebot's diary). Useful for finding out why a command did not work." />
               </StackPanel>
             </Border>
 
             <Border Classes="card">
               <StackPanel Spacing="10">
                 <TextBlock Classes="h2" Text="Recognition engine" />
-                <ComboBox ItemsSource="{Binding Engines}" SelectedItem="{Binding Engine}" MinWidth="360" Name="VoiceEngine">
+                <ComboBox ItemsSource="{Binding Engines}" SelectedItem="{Binding Engine}" MinWidth="360" Name="VoiceEngine"
+                          ToolTip.Tip="The program that turns your voice into words. Whisper is accurate and works offline. Windows Speech Recognition is built into Windows.">
                   <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:VoiceEngineOption">
                       <TextBlock Text="{Binding Name}" />
@@ -150,7 +160,8 @@
                 <StackPanel>
                   <TextBlock Classes="label" Text="Locale" />
                   <AutoCompleteBox ItemsSource="{Binding Locales}" Text="{Binding Locale}" FilterMode="StartsWith" MinimumPrefixLength="0" Width="200"
-                                   HorizontalAlignment="Left" />
+                                   HorizontalAlignment="Left"
+                                   ToolTip.Tip="The language and region you speak, like en-US for American English. Pick from the list or type it." />
                   <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding LocaleHint}" />
                 </StackPanel>
               </StackPanel>
@@ -160,8 +171,9 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h2" Text="Whisper model" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Models are downloaded once from the whisper.cpp model repository (Hugging Face) into the data folder and checked against a SHA-256 sum. Bigger models are more accurate but slower; English-only models are better for English." />
-                <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding Model}" MinWidth="360" Name="VoiceModel">
+                           Text="A model is the brain Whisper uses to understand speech. It is downloaded once from the whisper.cpp collection on Hugging Face into Cuebot's data folder, and checked to make sure the file is not damaged. Bigger models understand better but are slower. If you speak English, the English-only models are the better pick." />
+                <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding Model}" MinWidth="360" Name="VoiceModel"
+                          ToolTip.Tip="Pick which Whisper model to use. Start with a small one; pick a bigger one if it mishears you and your PC is fast.">
                   <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:WhisperModelRowViewModel">
                       <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding Notes}" />
@@ -172,18 +184,22 @@
                 <StackPanel DataContext="{Binding Model}" x:DataType="vm:WhisperModelRowViewModel" Spacing="6">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Download" Classes="accent" IsVisible="{Binding CanDownload}"
-                            Command="{Binding DownloadCommand}" Name="VoiceDownload" />
-                    <Button Content="Cancel download" IsVisible="{Binding IsDownloading}" Command="{Binding CancelCommand}" />
-                    <Button Content="Delete model" IsVisible="{Binding IsDownloaded}" Command="{Binding DeleteCommand}" />
+                            Command="{Binding DownloadCommand}" Name="VoiceDownload"
+                            ToolTip.Tip="Downloads this model from the internet. You need it before Whisper can listen." />
+                    <Button Content="Cancel download" IsVisible="{Binding IsDownloading}" Command="{Binding CancelCommand}" ToolTip.Tip="Stops the download." />
+                    <Button Content="Delete model" IsVisible="{Binding IsDownloaded}" Command="{Binding DeleteCommand}" ToolTip.Tip="Deletes the downloaded model file from your computer to free space. You can download it again later." />
                   </StackPanel>
                   <StackPanel IsVisible="{Binding IsDownloading}" Spacing="2">
                     <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="8" MinHeight="8" />
                     <TextBlock Classes="muted" FontSize="12" Text="{Binding ProgressText}" />
                   </StackPanel>
                 </StackPanel>
-                <CheckBox Content="Use a GPU runtime when one is installed (CUDA or Vulkan; otherwise the CPU is used)" IsChecked="{Binding UseGpu}" />
-                <CheckBox Content="Interim results (lets Stop After commands fire while you are still talking; uses more CPU)" IsChecked="{Binding InterimResults}" />
-                <CheckBox Content="Hint the command phrases to Whisper (spells them the way you wrote them)" IsChecked="{Binding PromptWithCommands}" />
+                <CheckBox Content="Use a GPU runtime when one is installed (CUDA or Vulkan; otherwise the CPU is used)" IsChecked="{Binding UseGpu}"
+                          ToolTip.Tip="Lets Whisper use your graphics card, which is much faster, if the right software is installed. If not, your normal processor (CPU) is used." />
+                <CheckBox Content="Interim results (lets Stop After commands fire while you are still talking; uses more CPU)" IsChecked="{Binding InterimResults}"
+                          ToolTip.Tip="Lets Cuebot understand you while you are still talking, so Stop After commands react sooner. It uses more of your processor." />
+                <CheckBox Content="Hint the command phrases to Whisper (spells them the way you wrote them)" IsChecked="{Binding PromptWithCommands}"
+                          ToolTip.Tip="Tells Whisper which words to expect, so it spells your command phrases the way you wrote them." />
               </StackPanel>
             </Border>
           </StackPanel>
@@ -196,7 +212,7 @@
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
             <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
                        Text="Live feed of what the engine recognised (kept in memory only; tick Log Speech to Text Dictation to also write it to the log file)." />
-            <Button Content="Clear" Command="{Binding ClearLogCommand}" />
+            <Button Content="Clear" Command="{Binding ClearLogCommand}" ToolTip.Tip="Empties this list. It does not change the log file." />
           </StackPanel>
           <ListBox ItemsSource="{Binding Log}" Name="VoiceLog">
             <ListBox.ItemTemplate>

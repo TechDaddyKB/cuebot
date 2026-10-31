@@ -1,0 +1,471 @@
+{
+  "triggers": {
+    "youtube.chatMessage": {
+      "description": "Runs when someone writes in your YouTube live chat. Handy for replies or word triggers.",
+      "fields": {
+        "contains": "Only run when the message has this text in it, like \"hello\". Capital letters do not matter. Leave empty to run for every message.",
+        "ignoreBot": "Tick to skip messages written by your own bot account, so it does not react to itself."
+      },
+      "variables": {
+        "user": "Name of the person who wrote",
+        "userId": "Their YouTube channel ID",
+        "message": "What they wrote",
+        "messageId": "ID of the message",
+        "isModerator": "True if they are a moderator",
+        "isMember": "True if they are a channel member",
+        "isBroadcaster": "True if it is you"
+      }
+    },
+    "youtube.superChat": {
+      "description": "Runs when a viewer pays for a Super Chat (a highlighted paid message). Good for a thank-you or an alert.",
+      "fields": {
+        "minAmount": "Only run for at least this much money, in the currency the viewer paid in. 0 means no minimum. Example: 5.",
+        "maxAmount": "Only run for at most this much money. 0 means no maximum.",
+        "currency": "Only run for this currency, as a 3-letter code like \"USD\" or \"EUR\". Empty runs for any currency.",
+        "minTier": "Only run for this level or higher. YouTube gives each Super Chat a color level from 1 (lowest) up. 0 runs for every level."
+      },
+      "variables": {
+        "user": "Name of the sender",
+        "amount": "How much was paid, as a number",
+        "currency": "Currency code, like USD",
+        "amountText": "The amount as YouTube shows it, like $5.00",
+        "tier": "The Super Chat color level",
+        "message": "The text that came with it"
+      }
+    },
+    "youtube.superSticker": {
+      "description": "Runs when a viewer pays for a Super Sticker (a paid picture in chat). Good for a thank-you or an alert.",
+      "fields": {
+        "minAmount": "Only run for at least this much money, in the currency the viewer paid in. 0 means no minimum. Example: 2.",
+        "maxAmount": "Only run for at most this much money. 0 means no maximum.",
+        "currency": "Only run for this currency, as a 3-letter code like \"USD\" or \"EUR\". Empty runs for any currency.",
+        "minTier": "Only run for this level or higher. YouTube gives each Super Sticker a color level from 1 (lowest) up. 0 runs for every level."
+      },
+      "variables": {
+        "user": "Name of the sender",
+        "amount": "How much was paid, as a number",
+        "currency": "Currency code, like USD",
+        "amountText": "The amount as YouTube shows it",
+        "tier": "The color level",
+        "stickerAltText": "A text describing the sticker"
+      }
+    },
+    "youtube.jewelsGifted": {
+      "description": "Runs when a viewer sends Jewels (YouTube's gifts for vertical live streams).",
+      "fields": {
+        "minJewels": "Only run when at least this many Jewels were sent. 0 runs for every gift. Example: 50."
+      },
+      "variables": {
+        "user": "Name of the sender",
+        "jewels": "How many Jewels",
+        "giftName": "Name of the gift",
+        "comboCount": "How many times in a row (a combo)",
+        "message": "The text that came with it"
+      }
+    },
+    "youtube.newSponsor": {
+      "description": "Runs when someone becomes a new member of your YouTube channel (YouTube calls members \"sponsors\"). Good for a thank-you.",
+      "fields": {
+        "level": "Only run for membership levels whose name has this text in it, like \"Gold\". Empty runs for every level.",
+        "upgrades": "\"Only upgrades\" runs only when a member moves up to a higher level. \"No upgrades\" runs only for brand-new members. \"Any\" runs for both."
+      },
+      "variables": {
+        "user": "Name of the new member",
+        "userId": "Their YouTube channel ID",
+        "levelName": "Name of the membership level",
+        "isUpgrade": "True if they upgraded from a lower level",
+        "message": "YouTube's message about it"
+      }
+    },
+    "youtube.memberMilestone": {
+      "description": "Runs when a member shares their milestone message, for example \"12 months\" of membership. Good for a thank-you.",
+      "fields": {
+        "level": "Only run for membership levels whose name has this text in it, like \"Gold\". Empty runs for every level.",
+        "minMonths": "Only run when the member has been with you at least this many months. 0 runs for every milestone. Example: 6."
+      },
+      "variables": {
+        "user": "Name of the member",
+        "months": "How many months they have been a member",
+        "levelName": "Name of the membership level",
+        "message": "The message they wrote with it"
+      }
+    },
+    "youtube.membershipGift": {
+      "description": "Runs when someone buys memberships as gifts for others. It runs once for the gifter. Use it to thank them for the whole gift.",
+      "fields": {
+        "level": "Only run for membership levels whose name has this text in it, like \"Gold\". Empty runs for every level.",
+        "minTotal": "Only run when at least this many memberships were gifted. Example: 5."
+      },
+      "variables": {
+        "user": "Name of the gifter",
+        "userId": "Their YouTube channel ID",
+        "total": "How many memberships were gifted",
+        "levelName": "Name of the membership level"
+      }
+    },
+    "youtube.giftMembershipReceived": {
+      "description": "Runs for each person who receives a gifted membership. Good for welcoming the new member.",
+      "fields": {
+        "level": "Only run for membership levels whose name has this text in it, like \"Gold\". Empty runs for every level."
+      },
+      "variables": {
+        "user": "Name of the person who received it",
+        "userId": "Their YouTube channel ID",
+        "gifterName": "Name of the person who gifted it",
+        "levelName": "Name of the membership level"
+      }
+    },
+    "youtube.newSubscriber": {
+      "description": "Runs when someone subscribes to your YouTube channel. Cuebot checks every few minutes and can only see people whose subscriptions are public.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the new subscriber",
+        "userId": "Their YouTube channel ID",
+        "channelUrl": "Web link to their channel",
+        "subscribedAt": "When they subscribed"
+      }
+    },
+    "youtube.messageDeleted": {
+      "description": "Runs when a message is deleted from your YouTube live chat.",
+      "fields": {},
+      "variables": {
+        "messageId": "ID of the deleted message",
+        "targetUser": "Name of the person who wrote it, if Cuebot saw it",
+        "targetMessage": "What it said, if Cuebot saw it",
+        "moderator": "Who deleted it"
+      }
+    },
+    "youtube.userBanned": {
+      "description": "Runs when someone is banned from your YouTube live chat.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the banned person",
+        "userId": "Their YouTube channel ID",
+        "moderator": "Who banned them",
+        "banType": "permanent or temporary"
+      }
+    },
+    "youtube.userTimedOut": {
+      "description": "Runs when someone gets a timeout (a short mute) in your YouTube live chat.",
+      "fields": {
+        "minDuration": "Only run when the timeout is at least this many seconds. 0 runs for every timeout. Example: 300."
+      },
+      "variables": {
+        "user": "Name of the person",
+        "userId": "Their YouTube channel ID",
+        "moderator": "Who gave the timeout",
+        "duration": "Length of the timeout in seconds"
+      }
+    },
+    "youtube.sponsorOnlyStarted": {
+      "description": "Runs when members-only chat is turned on, so only your channel members can write.",
+      "fields": {},
+      "variables": {
+        "moderator": "Who turned it on"
+      }
+    },
+    "youtube.sponsorOnlyEnded": {
+      "description": "Runs when members-only chat is turned off, so everyone can write again.",
+      "fields": {},
+      "variables": {
+        "moderator": "Who turned it off"
+      }
+    },
+    "youtube.pollStarted": {
+      "description": "Runs when a poll starts in your YouTube live chat.",
+      "fields": {},
+      "variables": {
+        "pollTitle": "The poll question",
+        "pollChoice0Title": "Text of the first option (then pollChoice1Title...)",
+        "pollChoiceCount": "How many options",
+        "pollMessageId": "ID of the poll"
+      }
+    },
+    "youtube.pollUpdated": {
+      "description": "Runs when the votes in your YouTube chat poll change.",
+      "fields": {},
+      "variables": {
+        "pollTitle": "The poll question",
+        "pollChoice0Votes": "Votes for the first option (then pollChoice1Votes...)",
+        "pollTotalVotes": "All votes so far",
+        "pollMessageId": "ID of the poll"
+      }
+    },
+    "youtube.pollClosed": {
+      "description": "Runs when a poll in your YouTube live chat ends. Use it to announce the winner.",
+      "fields": {},
+      "variables": {
+        "pollTitle": "The poll question",
+        "pollTotalVotes": "All votes",
+        "pollWinningChoice": "Text of the winning option",
+        "pollWinningVotes": "Votes of the winning option",
+        "pollChoice0Title": "Text of the first option (then pollChoice1Title...)"
+      }
+    },
+    "youtube.broadcastStarted": {
+      "description": "Runs when your YouTube live stream goes live. Use it to say hello, switch scenes or reset counters.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "Your stream title",
+        "broadcastId": "ID of the stream",
+        "broadcastUrl": "Web link to the stream",
+        "broadcastActualStart": "When it went live"
+      }
+    },
+    "youtube.broadcastEnded": {
+      "description": "Runs when your YouTube live stream ends. Handy for a goodbye message.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "Your stream title",
+        "broadcastId": "ID of the stream",
+        "broadcastActualEnd": "When it ended"
+      }
+    },
+    "youtube.broadcastMonitoringStarted": {
+      "description": "Runs when Cuebot starts watching a YouTube stream's chat (it finds a live stream, or you connect during one). It is not the same as going live.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "The stream title",
+        "broadcastId": "ID of the stream"
+      }
+    },
+    "youtube.broadcastMonitoringEnded": {
+      "description": "Runs when Cuebot stops watching a YouTube stream's chat, because it ended or you disconnected.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "The stream title",
+        "broadcastId": "ID of the stream"
+      }
+    },
+    "youtube.broadcastAdded": {
+      "description": "Runs when you schedule a new YouTube live stream. Cuebot notices it a few minutes later.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "The stream title",
+        "broadcastId": "ID of the stream",
+        "broadcastScheduledStart": "When it is planned to start",
+        "broadcastUrl": "Web link to the stream"
+      }
+    },
+    "youtube.broadcastRemoved": {
+      "description": "Runs when a scheduled YouTube live stream is deleted or cancelled before it started.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "The stream title",
+        "broadcastId": "ID of the stream"
+      }
+    },
+    "youtube.broadcastUpdated": {
+      "description": "Runs when the title, description or privacy of your YouTube stream changes.",
+      "fields": {},
+      "variables": {
+        "broadcastTitle": "The new title",
+        "previousTitle": "The title before",
+        "broadcastDescription": "The new description",
+        "broadcastPrivacy": "public, unlisted or private",
+        "previousPrivacy": "The privacy before"
+      }
+    },
+    "youtube.broadcastStatisticsUpdated": {
+      "description": "Runs each time Cuebot reads the numbers of your live YouTube stream (about once a minute). Use it to react to viewer counts.",
+      "fields": {
+        "minViewers": "Only run when at least this many people watch right now. 0 runs every time. Example: 100."
+      },
+      "variables": {
+        "concurrentViewers": "How many people watch right now",
+        "viewCount": "Total views",
+        "likeCount": "Likes",
+        "commentCount": "Comments",
+        "broadcastTitle": "The stream title"
+      }
+    },
+    "youtube.quotaExceeded": {
+      "description": "Runs when Cuebot has used up your daily YouTube limit (quota). YouTube then blocks most requests until the limit resets.",
+      "fields": {},
+      "variables": {
+        "resumesAt": "When YouTube lets Cuebot continue",
+        "quotaUsed": "How much of the limit was used today"
+      }
+    }
+  },
+  "subActions": {
+    "youtube.sendMessage": {
+      "description": "Writes a message in your YouTube live chat. You can use variables like %user% in the text.",
+      "fields": {
+        "message": "What to write, like \"Thanks for watching, %user%!\". Messages over 200 letters are cut into several messages.",
+        "useBot": "Tick to write as your bot account instead of your own account. The bot must be signed in.",
+        "fallback": "Tick to write as you if the bot account is not signed in or fails. Untick to get an error instead.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.deleteMessage": {
+      "description": "Deletes one message from your YouTube live chat.",
+      "fields": {
+        "messageId": "ID of the message to delete. The default is the message that started this action."
+      },
+      "variables": {}
+    },
+    "youtube.banUser": {
+      "description": "Bans someone from your YouTube live chat for good. Needs a live stream.",
+      "fields": {
+        "user": "Who to pick: their YouTube channel ID (starts with \"UC\"), their @handle, or the name of someone who chatted recently. The default is the person who started this action.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {
+        "bannedUser": "Name of the banned person",
+        "bannedUserId": "Their YouTube channel ID",
+        "banResult": "True when it worked"
+      }
+    },
+    "youtube.timeoutUser": {
+      "description": "Gives someone a timeout in your YouTube live chat. They cannot write for a while. Needs a live stream.",
+      "fields": {
+        "user": "Who to pick: their YouTube channel ID (starts with \"UC\"), their @handle, or the name of someone who chatted recently. The default is the person who started this action.",
+        "duration": "How long, in seconds. Example: 300 for 5 minutes.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {
+        "bannedUser": "Name of the person",
+        "bannedUserId": "Their YouTube channel ID",
+        "timeoutResult": "True when it worked"
+      }
+    },
+    "youtube.unbanUser": {
+      "description": "Lifts a ban or timeout. It only works for bans and timeouts Cuebot gave during this session. For others, use YouTube Studio.",
+      "fields": {
+        "user": "Who to pick: their YouTube channel ID (starts with \"UC\"), their @handle, or the name of someone who chatted recently. The default is the person who started this action."
+      },
+      "variables": {}
+    },
+    "youtube.addModerator": {
+      "description": "Makes someone a moderator of your YouTube live chat. Needs a live stream.",
+      "fields": {
+        "user": "Who to pick: their YouTube channel ID (starts with \"UC\"), their @handle, or the name of someone who chatted recently. The default is the person who started this action.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.removeModerator": {
+      "description": "Takes away someone's moderator role in your YouTube live chat. Needs a live stream.",
+      "fields": {
+        "user": "Who to pick: their YouTube channel ID (starts with \"UC\"), their @handle, or the name of someone who chatted recently. The default is the person who started this action.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.setTitle": {
+      "description": "Changes the title of your YouTube live stream.",
+      "fields": {
+        "title": "The new title, like \"Playing with viewers!\". It cannot be empty.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.setDescription": {
+      "description": "Changes the description text of your YouTube live stream.",
+      "fields": {
+        "description": "The new description text. It can have several lines.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.setTitleAndDescription": {
+      "description": "Changes the title and the description of your YouTube live stream in one step.",
+      "fields": {
+        "title": "The new title, like \"Playing with viewers!\". It cannot be empty.",
+        "description": "The new description text. It can have several lines.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.setPrivacy": {
+      "description": "Changes who can see your YouTube stream.",
+      "fields": {
+        "privacy": "\"public\" = everyone can find it. \"unlisted\" = only people with the link. \"private\" = only you.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.setCategory": {
+      "description": "Changes the category of your YouTube stream (the kind of video, like Gaming).",
+      "fields": {
+        "categoryId": "YouTube's category number. Examples: 20 for Gaming, 22 for People & Blogs, 10 for Music.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {}
+    },
+    "youtube.getVideoInfo": {
+      "description": "Looks up a YouTube video or stream and saves its details as variables for the next steps.",
+      "fields": {
+        "videoId": "The ID of the video (the part after v= in its web link). Leave empty to use your latest live stream."
+      },
+      "variables": {
+        "videoTitle": "Its title",
+        "videoDescription": "Its description",
+        "videoUrl": "Web link to it",
+        "videoViewCount": "Views",
+        "videoLikeCount": "Likes",
+        "videoConcurrentViewers": "People watching right now (live only)",
+        "videoPrivacy": "public, unlisted or private"
+      }
+    },
+    "youtube.getChannelInfo": {
+      "description": "Looks up a YouTube channel and saves its details as variables for the next steps. Handy for a shout-out command.",
+      "fields": {
+        "user": "Who to pick: their YouTube channel ID (starts with \"UC\"), their @handle, or the name of someone who chatted recently. The default is the person who started this action."
+      },
+      "variables": {
+        "channelTitle": "Channel name",
+        "channelUrl": "Web link to the channel",
+        "channelDescription": "Its description",
+        "channelSubscriberCount": "Subscribers",
+        "channelVideoCount": "Videos",
+        "channelViewCount": "Total views",
+        "channelProfileImageUrl": "Web link to its picture"
+      }
+    },
+    "youtube.addBroadcasterInfo": {
+      "description": "Saves details about your YouTube account and your bot account as variables for the next steps. It has no settings.",
+      "fields": {},
+      "variables": {
+        "broadcastUser": "Your channel name",
+        "broadcastUserId": "Your channel ID",
+        "broadcastCustomUrl": "Your channel's @handle",
+        "botUser": "Your bot account's channel name",
+        "botIsSignedIn": "True if the bot account is signed in"
+      }
+    },
+    "youtube.getBroadcast": {
+      "description": "Finds your latest YouTube live stream and saves its details as variables for the next steps. It has no settings.",
+      "fields": {},
+      "variables": {
+        "broadcastIsLive": "True if a live stream was found",
+        "broadcastTitle": "Its title",
+        "broadcastId": "Its ID",
+        "broadcastUrl": "Web link to it",
+        "concurrentViewers": "People watching right now",
+        "likeCount": "Likes",
+        "viewCount": "Views"
+      }
+    },
+    "youtube.createPoll": {
+      "description": "Starts a poll in your YouTube live chat. Viewers vote right in the chat. Needs a live stream.",
+      "fields": {
+        "question": "The poll question, like \"Which game next?\".",
+        "options": "The answers, one per line. You need 2 to 4.",
+        "broadcastId": "Leave empty to use your latest live (or about to be live) broadcast. Or type the broadcast's ID to pick another one."
+      },
+      "variables": {
+        "pollMessageId": "ID of the poll, to end it later"
+      }
+    },
+    "youtube.endPoll": {
+      "description": "Ends a poll in your YouTube live chat.",
+      "fields": {
+        "pollMessageId": "ID of the poll to end. Leave empty to end the poll Cuebot started most recently."
+      },
+      "variables": {}
+    }
+  }
+}

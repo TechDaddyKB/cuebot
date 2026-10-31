@@ -84,27 +84,39 @@ public static class CatalogJson
             ["name"] = h.DisplayName,
             ["category"] = h.Category,
         };
+        var help = ActionHelp.SubAction(h.TypeId);
+        if (help is { Description.Length: > 0 }) json["description"] = help.Description;
+        var parameters = ActionHelp.WithHelp(help, h.Parameters);
         if (h.Branches.Count > 0) json["branches"] = Strings(h.Branches);
         if (h is IDynamicBranchesProvider) json["dynamicBranches"] = true;
         if (h is IFlowContainerHandler) json["container"] = true;
-        json["parameters"] = new JsonArray([.. h.Parameters.Select(p => (JsonNode)Parameter(p, detailed))]);
-        if (detailed) json["parametersSchema"] = ParametersSchema(h.Parameters);
+        json["parameters"] = new JsonArray([.. parameters.Select(p => (JsonNode)Parameter(p, detailed))]);
+        if (detailed) json["parametersSchema"] = ParametersSchema(parameters);
+        if (help is { Variables.Count: > 0 }) json["variables"] = Variables(help.Variables);
         return json;
     }
 
     public static JsonObject Trigger(ITriggerType t, bool detailed)
     {
+        var help = ActionHelp.Trigger(t.TypeId);
+        var parameters = ActionHelp.WithHelp(help, t.Parameters);
         var json = new JsonObject
         {
             ["typeId"] = t.TypeId,
             ["name"] = t.DisplayName,
             ["category"] = t.Category,
-            ["eventTypes"] = Strings(t.EventTypes),
-            ["parameters"] = new JsonArray([.. t.Parameters.Select(p => (JsonNode)Parameter(p, detailed))]),
         };
-        if (detailed) json["settingsSchema"] = ParametersSchema(t.Parameters);
+        if (help is { Description.Length: > 0 }) json["description"] = help.Description;
+        json["eventTypes"] = Strings(t.EventTypes);
+        json["parameters"] = new JsonArray([.. parameters.Select(p => (JsonNode)Parameter(p, detailed))]);
+        if (detailed) json["settingsSchema"] = ParametersSchema(parameters);
+        if (help is { Variables.Count: > 0 }) json["variables"] = Variables(help.Variables);
         return json;
     }
+
+    /// <summary>The %variables% a trigger or sub-action provides, as name → meaning.</summary>
+    private static JsonObject Variables(IReadOnlyDictionary<string, string> variables) =>
+        new(variables.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)JsonValue.Create(kv.Value))));
 
     public static JsonObject ScriptFunction(ScriptFunction f) => new()
     {

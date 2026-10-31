@@ -148,7 +148,7 @@
             <TextBlock Text="Cuebot" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
             <TextBlock Text="{Binding Version}" Classes="muted" FontSize="11" VerticalAlignment="Center" />
             <Border Width="1" Height="18" Background="{DynamicResource CuebotLine}" Margin="2,0" />
-            <Button x:Name="TddMark" Classes="flat" Command="{Binding OpenAboutCommand}" ToolTip.Tip="About Cuebot"
+            <Button x:Name="TddMark" Classes="flat" Command="{Binding OpenAboutCommand}" ToolTip.Tip="Shows the About page: version, who made Cuebot and licence details."
                     AutomationProperties.Name="About Cuebot, made by Tech Daddy Digital">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Path Data="{StaticResource Brand.TddHead}" Fill="{DynamicResource CuebotText}" Stretch="Uniform" Height="18" />
@@ -182,7 +182,8 @@
           </ItemsControl>
           <AutoCompleteBox x:Name="Jump" Width="340" HorizontalAlignment="Center" VerticalAlignment="Center"
                            ItemsSource="{Binding JumpTargets}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
-                           PlaceholderText="Jump to a page…   Ctrl+K" AutomationProperties.Name="Jump to a page" />
+                           PlaceholderText="Jump to a page…   Ctrl+K" AutomationProperties.Name="Jump to a page"
+                           ToolTip.Tip="Type part of a page name and press Enter to go straight there. Ctrl+K puts the cursor here." />
         </DockPanel>
         <!-- Brand line under the bar -->
         <Border Height="2" VerticalAlignment="Bottom" Background="{StaticResource CuebotBrand}" />
@@ -207,7 +208,7 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <Button DockPanel.Dock="Top" Classes="rail" Command="{Binding ToggleSectionListCommand}" IsVisible="{Binding !IsSectionListOpen}"
-                  ToolTip.Tip="Show the page list" AutomationProperties.Name="Show the page list">
+                  ToolTip.Tip="Shows the list of pages in this section again." AutomationProperties.Name="Show the page list">
             <c:Icon Kind="panel-left-open" Width="18" Height="18" />
           </Button>
           <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
@@ -234,7 +235,7 @@
         <DockPanel Margin="10,14,10,10">
           <DockPanel DockPanel.Dock="Top" Margin="6,0,0,10">
             <Button DockPanel.Dock="Right" Classes="flat" Command="{Binding ToggleSectionListCommand}"
-                    ToolTip.Tip="Hide the page list" AutomationProperties.Name="Hide the page list">
+                    ToolTip.Tip="Hides the list of pages to give the page more room." AutomationProperties.Name="Hide the page list">
               <c:Icon Kind="panel-left-close" Width="16" Height="16" />
             </Button>
             <TextBlock Text="{Binding CurrentGroup.Name}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
@@ -283,7 +284,7 @@
     <Border x:Name="StatusBar" Grid.Row="2" Background="{DynamicResource CuebotRail}" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="0,1,0,0">
       <DockPanel Margin="14,0" DataContext="{Binding Status}">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="16">
-          <Button Classes="flat" Padding="2,0" Command="{Binding OpenProblemsCommand}" ToolTip.Tip="Open Support">
+          <Button Classes="flat" Padding="2,0" Command="{Binding OpenProblemsCommand}" ToolTip.Tip="Shows how many warnings and errors there are. Click to open the Support page and read them.">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <Ellipse Classes="status good" IsVisible="{Binding !HasWarnings}" />
               <Ellipse Classes="status warn" IsVisible="{Binding HasWarnings}" />
@@ -295,10 +296,10 @@
         <StackPanel Orientation="Horizontal" Spacing="18">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <Ellipse Classes="status" Classes.good="{Binding AllConnected}" />
-            <TextBlock Text="{Binding Connections}" />
+            <TextBlock Text="{Binding Connections}" ToolTip.Tip="How many of the services you use (Twitch, OBS and so on) are connected right now. Green means all of them." />
           </StackPanel>
-          <TextBlock Text="{Binding Counts}" />
-          <TextBlock Text="{Binding Uptime}" />
+          <TextBlock Text="{Binding Counts}" ToolTip.Tip="How many actions you have, and how many triggers (things that start them) those actions have in total." />
+          <TextBlock Text="{Binding Uptime}" ToolTip.Tip="How long Cuebot has been running, as hours:minutes:seconds." />
         </StackPanel>
       </DockPanel>
     </Border>

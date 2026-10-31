@@ -1,0 +1,164 @@
+{
+  "triggers": {
+    "tits.connected": {
+      "description": "Runs when Cuebot has both of its connections to T.I.T.S. working (one to send commands, one to hear hits).",
+      "fields": {},
+      "variables": {
+        "tits.host": "The computer T.I.T.S. runs on",
+        "tits.port": "The port number it uses"
+      }
+    },
+    "tits.disconnected": {
+      "description": "Runs when Cuebot was fully connected to T.I.T.S. and one of its two connections drops.",
+      "fields": {},
+      "variables": {
+        "tits.host": "The computer T.I.T.S. runs on",
+        "tits.port": "The port number it uses"
+      }
+    },
+    "tits.websocketConnected": {
+      "description": "Runs when the connection Cuebot uses to send commands to T.I.T.S. comes up.",
+      "fields": {},
+      "variables": {
+        "tits.host": "The computer T.I.T.S. runs on",
+        "tits.port": "The port number it uses"
+      }
+    },
+    "tits.websocketDisconnected": {
+      "description": "Runs when the connection Cuebot uses to send commands to T.I.T.S. drops.",
+      "fields": {},
+      "variables": {
+        "reason": "Why it dropped"
+      }
+    },
+    "tits.eventsConnected": {
+      "description": "Runs when the connection Cuebot uses to hear about hits and triggers from T.I.T.S. comes up.",
+      "fields": {},
+      "variables": {
+        "tits.host": "The computer T.I.T.S. runs on",
+        "tits.port": "The port number it uses"
+      }
+    },
+    "tits.eventsDisconnected": {
+      "description": "Runs when the connection Cuebot uses to hear about hits and triggers from T.I.T.S. drops.",
+      "fields": {},
+      "variables": {
+        "reason": "Why it dropped"
+      }
+    },
+    "tits.itemHit": {
+      "description": "Runs when a thrown item hits your avatar in T.I.T.S. Great for a reaction sound or a \"ouch!\" message.",
+      "fields": {
+        "item": "Only react to these items, typed by name or id. Separate several with commas. Leave empty for any item.",
+        "trigger": "Only react to hits caused by these T.I.T.S. triggers, typed by name or id. Separate several with commas. Leave empty for any.",
+        "minStrength": "Only react to hits at least this strong. Leave empty to react to every hit."
+      },
+      "variables": {
+        "itemName": "The name of the item that hit",
+        "itemId": "The item's id",
+        "triggerName": "The name of the trigger that threw it",
+        "triggerId": "The trigger's id",
+        "strength": "How hard the hit was",
+        "direction.x": "Hit direction, sideways",
+        "direction.y": "Hit direction, up or down",
+        "direction.z": "Hit direction, forwards or backwards"
+      }
+    },
+    "tits.triggerActivated": {
+      "description": "Runs when a T.I.T.S. trigger starts (the thing that decides when items get thrown).",
+      "fields": {
+        "trigger": "Only react to these T.I.T.S. triggers, typed by name or id. Separate several with commas. Leave empty for any."
+      },
+      "variables": {
+        "triggerName": "The name of the trigger",
+        "triggerId": "The trigger's id"
+      }
+    },
+    "tits.triggerEnded": {
+      "description": "Runs when a T.I.T.S. trigger finishes.",
+      "fields": {
+        "trigger": "Only react to these T.I.T.S. triggers, typed by name or id. Separate several with commas. Leave empty for any."
+      },
+      "variables": {
+        "triggerName": "The name of the trigger",
+        "triggerId": "The trigger's id"
+      }
+    }
+  },
+  "subActions": {
+    "tits.activateTrigger": {
+      "description": "Starts a T.I.T.S. trigger, which throws items at your avatar the way you set it up in T.I.T.S.",
+      "fields": {
+        "trigger": "The trigger's name or id from T.I.T.S."
+      },
+      "variables": {}
+    },
+    "tits.activateTriggerByName": {
+      "description": "Starts a T.I.T.S. trigger by its name, which throws items at your avatar the way you set it up in T.I.T.S.",
+      "fields": {
+        "trigger": "The trigger's name exactly as T.I.T.S. shows it."
+      },
+      "variables": {}
+    },
+    "tits.throwItem": {
+      "description": "Throws one kind of item at your avatar, one or more times.",
+      "fields": {
+        "delay": "How many seconds to wait between throws. T.I.T.S. normally uses 0.05.",
+        "amount": "How many items to throw in total.",
+        "item": "The item's name or id from T.I.T.S."
+      },
+      "variables": {
+        "tits.thrownItems": "How many items T.I.T.S. threw"
+      }
+    },
+    "tits.throwItemByName": {
+      "description": "Throws one kind of item, picked by its name, at your avatar, one or more times.",
+      "fields": {
+        "delay": "How many seconds to wait between throws. T.I.T.S. normally uses 0.05.",
+        "amount": "How many items to throw in total.",
+        "item": "The item's name exactly as T.I.T.S. shows it."
+      },
+      "variables": {
+        "tits.thrownItems": "How many items T.I.T.S. threw"
+      }
+    },
+    "tits.throwItems": {
+      "description": "Throws random items from a list at your avatar. Each throw picks one item from your list.",
+      "fields": {
+        "delay": "How many seconds to wait between throws. T.I.T.S. normally uses 0.05.",
+        "amount": "How many items to throw in total.",
+        "items": "The items to pick from (names or ids), one per line or separated by commas."
+      },
+      "variables": {
+        "tits.thrownItems": "How many items T.I.T.S. threw"
+      }
+    },
+    "tits.throwItemsByName": {
+      "description": "Throws random items, picked from a list of names, at your avatar. Each throw picks one item from your list.",
+      "fields": {
+        "delay": "How many seconds to wait between throws. T.I.T.S. normally uses 0.05.",
+        "amount": "How many items to throw in total.",
+        "items": "The item names to pick from, one per line or separated by commas."
+      },
+      "variables": {
+        "tits.thrownItems": "How many items T.I.T.S. threw"
+      }
+    },
+    "tits.getItems": {
+      "description": "Reads the list of items T.I.T.S. can throw and keeps it for later steps.",
+      "fields": {},
+      "variables": {
+        "tits.items": "The list of items (id and name) as raw text",
+        "tits.itemCount": "How many items there are"
+      }
+    },
+    "tits.getTriggers": {
+      "description": "Reads the list of T.I.T.S. triggers and keeps it for later steps.",
+      "fields": {},
+      "variables": {
+        "tits.triggers": "The list of triggers (id and name) as raw text",
+        "tits.triggerCount": "How many triggers there are"
+      }
+    }
+  }
+}

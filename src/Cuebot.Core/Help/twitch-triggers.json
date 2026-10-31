@@ -1,0 +1,1611 @@
+{
+  "triggers": {
+    "twitch.command": {
+      "description": "Runs when someone types a chat command such as !hello. You choose the command word, who may use it, and how often it can run.",
+      "fields": {
+        "command": "The word viewers type, with its ! in front. Example: \"!hello\". Capital letters do not matter unless you tick Case sensitive.",
+        "match": "Starts with: also runs when extra words follow, like \"!so bob\" (the extra words become %input%). Exact: only runs when the message is just the command.",
+        "permission": "Who may use it. Each choice also lets everyone above it in: Subscriber also allows VIPs, moderators and you. Everyone means anybody in chat.",
+        "globalCooldown": "Seconds to wait before anyone can run this command again. 0 means no waiting. Example: 30.",
+        "userCooldown": "Seconds each person must wait before they can run it again. 0 means no waiting. Other people can still use it.",
+        "caseSensitive": "Tick to make \"!Hello\" and \"!hello\" count as different commands. Leave unticked to ignore capital letters."
+      },
+      "variables": {
+        "command": "The command that was typed, like !hello",
+        "input": "Everything typed after the command, like \"bob hi\"",
+        "rawInput": "The whole chat message",
+        "input0": "The first word after the command (input1 is the second, and so on)",
+        "inputCount": "How many words were typed after the command",
+        "user": "The display name of the person who typed it",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "isModerator": "True if they are a moderator",
+        "isSubscriber": "True if they are a subscriber",
+        "isVip": "True if they are a VIP",
+        "messageId": "The message's id, useful to reply to it"
+      }
+    },
+    "twitch.chatMessage": {
+      "description": "Runs when someone writes a message in your Twitch chat. Use it to react to words, or to log or read out messages.",
+      "fields": {
+        "contains": "Only run when the message contains this text, in any capital or small letters. Example: \"hello\". Leave empty to run for every message.",
+        "ignoreBot": "Tick to skip messages written by your bot account, so your bot cannot trigger itself.",
+        "ignoreSharedChat": "Tick to skip messages that come from another channel during a shared chat. Leave unticked to run for those too."
+      },
+      "variables": {
+        "message": "The text of the chat message",
+        "user": "The display name of the person who wrote it",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "messageId": "The message's id",
+        "isModerator": "True if they are a moderator",
+        "isVip": "True if they are a VIP",
+        "isSubscriber": "True if they are a subscriber",
+        "isBroadcaster": "True if it is you",
+        "bits": "Bits cheered with the message (0 if none)",
+        "isReply": "True if the message replies to another one",
+        "emoteCount": "How many emotes are in the message",
+        "color": "Their chat name colour",
+        "isSharedChat": "True if it came from another channel in a shared chat"
+      }
+    },
+    "twitch.announcement": {
+      "description": "Runs when an announcement is posted in your chat (the highlighted kind a moderator makes with /announce).",
+      "fields": {
+        "contains": "Only run when the message contains this text, in any capital or small letters. Example: \"hello\". Leave empty to run for every message."
+      },
+      "variables": {
+        "message": "The text of the announcement",
+        "user": "The display name of who posted it",
+        "userName": "Their lowercase Twitch login name",
+        "announcementColor": "The colour of the announcement, such as blue or green"
+      }
+    },
+    "twitch.bitsBadgeTier": {
+      "description": "Runs when a viewer reaches a new bits badge level in your chat, for example after cheering enough bits in total.",
+      "fields": {
+        "minTier": "Only run for badge tiers at or above this number. Example: 1000. 0 runs for every tier."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "Their lowercase Twitch login name",
+        "tier": "The badge tier they reached, such as 1000",
+        "message": "The message they shared with it"
+      }
+    },
+    "twitch.whisper": {
+      "description": "Runs when someone sends a private whisper to your own Twitch account.",
+      "fields": {
+        "contains": "Only run when the message contains this text, in any capital or small letters. Example: \"hello\". Leave empty to run for every message."
+      },
+      "variables": {
+        "message": "The text of the whisper",
+        "user": "The display name of the person who sent it",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number"
+      }
+    },
+    "twitch.botWhisper": {
+      "description": "Runs when someone sends a private whisper to your bot account (the second account you connected for the bot).",
+      "fields": {
+        "contains": "Only run when the message contains this text, in any capital or small letters. Example: \"hello\". Leave empty to run for every message."
+      },
+      "variables": {
+        "message": "The text of the whisper",
+        "user": "The display name of the person who sent it",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number"
+      }
+    },
+    "twitch.chatMessageDeleted": {
+      "description": "Runs when a message is removed from your chat by a moderator or by Twitch.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person whose message was removed",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "messageId": "The id of the removed message",
+        "message": "The text of the removed message, if Cuebot saw it before it was removed"
+      }
+    },
+    "twitch.chatCleared": {
+      "description": "Runs when someone clears your whole chat window.",
+      "fields": {},
+      "variables": {
+        "user": "Your channel's display name"
+      }
+    },
+    "twitch.userMessagesCleared": {
+      "description": "Runs when all the messages of one person are wiped from your chat (a ban or timeout does this).",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person whose messages were wiped",
+        "userName": "The lowercase Twitch login name of the person whose messages were wiped",
+        "userId": "The Twitch user number of the person whose messages were wiped"
+      }
+    },
+    "twitch.chatSettingsUpdated": {
+      "description": "Runs whenever any chat mode changes (emote-only, slow mode, follower-only, subscriber-only or unique chat). It reports all the current modes.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on",
+        "followerMode": "True if follower-only is on",
+        "followerModeDuration": "Minutes a viewer must have followed for (0 means anyone who follows)",
+        "slowMode": "True if slow mode is on",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on",
+        "uniqueChatMode": "True if unique chat is on"
+      }
+    },
+    "twitch.emoteModeOn": {
+      "description": "Runs when emote-only mode is switched on, so viewers can only post emotes.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.emoteModeOff": {
+      "description": "Runs when emote-only mode is switched off.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.followerModeOn": {
+      "description": "Runs when follower-only mode is switched on, so only followers can chat.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.followerModeOff": {
+      "description": "Runs when follower-only mode is switched off.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.followerModeChanged": {
+      "description": "Runs when follower-only mode stays on but the required follow time changes.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.slowModeOn": {
+      "description": "Runs when slow mode is switched on, which makes viewers wait between messages.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.slowModeOff": {
+      "description": "Runs when slow mode is switched off.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.slowModeChanged": {
+      "description": "Runs when slow mode stays on but the waiting time between messages changes.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.subscriberModeOn": {
+      "description": "Runs when subscriber-only mode is switched on, so only subscribers can chat.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.subscriberModeOff": {
+      "description": "Runs when subscriber-only mode is switched off.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.uniqueModeOn": {
+      "description": "Runs when unique chat is switched on, which blocks repeated messages.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.uniqueModeOff": {
+      "description": "Runs when unique chat is switched off.",
+      "fields": {},
+      "variables": {
+        "emoteMode": "True if emote-only is on now",
+        "followerMode": "True if follower-only is on now",
+        "followerModeDuration": "Minutes a viewer must have followed for",
+        "slowMode": "True if slow mode is on now",
+        "slowModeWaitTime": "Seconds between messages in slow mode",
+        "subscriberMode": "True if subscriber-only is on now",
+        "uniqueChatMode": "True if unique chat is on now"
+      }
+    },
+    "twitch.pyramid": {
+      "description": "Runs when one viewer builds a full emote pyramid in chat, like 1, 2, 3 emotes then back down to 1. Good for a cheer or a small reward.",
+      "fields": {
+        "minWidth": "How many emotes wide the top row must be. Example: 3 means 1-2-3-2-1. Pyramids smaller than this are ignored."
+      },
+      "variables": {
+        "user": "The display name of the builder",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "emote": "The emote or word used",
+        "width": "How wide the pyramid got",
+        "totalPyramids": "How many pyramids have been completed so far"
+      }
+    },
+    "twitch.pyramidBroken": {
+      "description": "Runs when someone breaks a pyramid that was being built, by posting something that does not fit it.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person whose pyramid was being built",
+        "userName": "Their lowercase Twitch login name",
+        "emote": "The emote or word used",
+        "width": "How wide it got before it broke",
+        "brokenBy": "The display name of the person who broke it",
+        "totalPyramidsBroken": "How many pyramids have been broken so far"
+      }
+    },
+    "twitch.watchStreak": {
+      "description": "Runs when a viewer shares their watch streak in chat (how many streams in a row they came to).",
+      "fields": {
+        "minStreak": "Only run when the streak is at least this many streams. Example: 5. 0 runs for every streak."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "Their lowercase Twitch login name",
+        "streak": "How many streams in a row they have watched",
+        "channelPointsAwarded": "Channel points they got for sharing it",
+        "message": "Their message"
+      }
+    },
+    "twitch.modiversary": {
+      "description": "Runs when one of your moderators reaches a moderator anniversary, shown in chat by Twitch.",
+      "fields": {
+        "minMonths": "Only run when they have been a moderator at least this many months. Example: 12. 0 runs for every anniversary."
+      },
+      "variables": {
+        "user": "The display name of the moderator",
+        "userName": "Their lowercase Twitch login name",
+        "months": "How many months they have been a moderator"
+      }
+    },
+    "twitch.follow": {
+      "description": "Runs when someone follows your Twitch channel. Great for a thank-you message or an on-screen alert.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the new follower",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "followedAt": "When they followed"
+      }
+    },
+    "twitch.streamOnline": {
+      "description": "Runs when your stream goes live. Handy for a start-of-stream message, scene or lights.",
+      "fields": {},
+      "variables": {
+        "user": "Your channel's display name",
+        "streamType": "The kind of stream Twitch reports, such as live",
+        "startedAt": "When the stream started",
+        "game": "The category you are streaming, if known",
+        "tagsDelimited": "Your stream tags in one line"
+      }
+    },
+    "twitch.streamOffline": {
+      "description": "Runs when your stream ends. Handy for a goodbye message or to switch things off.",
+      "fields": {},
+      "variables": {
+        "user": "Your channel's display name",
+        "endedAt": "When the stream ended"
+      }
+    },
+    "twitch.streamUpdate": {
+      "description": "Runs when you change your stream title or category while connected.",
+      "fields": {
+        "categoryName": "Only run when the new category has exactly this name, like \"Just Chatting\". Capital letters do not matter. Leave empty to run for every update."
+      },
+      "variables": {
+        "title": "Your new stream title",
+        "categoryName": "Your new category",
+        "oldStatus": "The title you had before",
+        "oldGameName": "The category you had before",
+        "statusUpdate": "True if the title changed",
+        "gameUpdate": "True if the category changed",
+        "language": "The stream language"
+      }
+    },
+    "twitch.viewerCountUpdate": {
+      "description": "Runs every minute or so while you are live, with the current number of viewers. How often is set in the Twitch settings.",
+      "fields": {
+        "minViewers": "Only run when at least this many people are watching. Example: 100. 0 runs every time."
+      },
+      "variables": {
+        "viewers": "How many people are watching now",
+        "title": "Your stream title",
+        "gameName": "Your category",
+        "startedAt": "When the stream started"
+      }
+    },
+    "twitch.presentViewers": {
+      "description": "Runs every few minutes with the list of people who are in your chat right now. Needs the permission to read the chat list.",
+      "fields": {},
+      "variables": {
+        "count": "How many people are in chat",
+        "userLogins": "Their login names in one list, separated by commas",
+        "userIds": "Their user numbers in one list",
+        "isLive": "True if you are live",
+        "viewerCount": "How many are watching",
+        "title": "Your stream title"
+      }
+    },
+    "twitch.sub": {
+      "description": "Runs when someone subscribes to your channel for the first time. Great for a thank-you alert.",
+      "fields": {
+        "tier": "Only run for this subscription level (1, 2 or 3). Choose Any to run for every level."
+      },
+      "variables": {
+        "user": "The display name of the new subscriber",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "tier": "Subscription level: 1, 2 or 3",
+        "isGift": "True if someone gifted it to them"
+      }
+    },
+    "twitch.resub": {
+      "description": "Runs when someone renews their subscription and shares it in chat.",
+      "fields": {
+        "tier": "Only run for this subscription level (1, 2 or 3). Choose Any to run for every level.",
+        "minMonths": "Only run when they have subscribed at least this many months in total. Example: 12. 0 runs for every resub."
+      },
+      "variables": {
+        "user": "The display name of the subscriber",
+        "userName": "Their lowercase Twitch login name",
+        "tier": "Subscription level: 1, 2 or 3",
+        "message": "The message they wrote",
+        "cumulativeMonths": "How many months they have subscribed in total",
+        "streakMonths": "Months in a row without a break",
+        "durationMonths": "How many months they paid for this time"
+      }
+    },
+    "twitch.giftSub": {
+      "description": "Runs once when someone gifts one or more subscriptions to the community. Use it to thank the gifter, not each person who got one.",
+      "fields": {
+        "minTotal": "Only run when they gift at least this many subs at once. Example: 5. 1 runs for every gift."
+      },
+      "variables": {
+        "user": "The display name of the gifter (Anonymous if hidden)",
+        "isAnonymous": "True if they gave anonymously",
+        "total": "How many subs they gifted",
+        "tier": "Subscription level: 1, 2 or 3",
+        "cumulativeTotal": "How many subs they have gifted in total"
+      }
+    },
+    "twitch.subGift": {
+      "description": "Runs once for each person who receives a gifted subscription. Use it to greet the lucky receiver.",
+      "fields": {
+        "tier": "Only run for this subscription level (1, 2 or 3). Choose Any to run for every level."
+      },
+      "variables": {
+        "user": "The display name of the gifter",
+        "recipientUser": "The display name of the person who got the sub",
+        "recipientUserName": "Their lowercase Twitch login name",
+        "tier": "Subscription level: 1, 2 or 3",
+        "durationMonths": "How many months were gifted",
+        "subBombCount": "How many subs were in the same gift bundle (0 if it was a single gift)"
+      }
+    },
+    "twitch.giftBomb": {
+      "description": "Runs when someone gifts a bundle of subscriptions at once (a community gift). Good for a big thank-you.",
+      "fields": {
+        "tier": "Only run for this subscription level (1, 2 or 3). Choose Any to run for every level.",
+        "minTotal": "Only run when the bundle has at least this many subs. Example: 10. 1 runs for every bundle."
+      },
+      "variables": {
+        "user": "The display name of the gifter",
+        "total": "How many subs were in the bundle",
+        "tier": "Subscription level: 1, 2 or 3",
+        "cumulativeTotal": "How many subs they have gifted in total"
+      }
+    },
+    "twitch.giftPaidUpgrade": {
+      "description": "Runs when a viewer who got a gifted sub chooses to keep paying for it themselves.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the viewer",
+        "gifter": "The display name of whoever first gifted it",
+        "gifterUserName": "That gifter's lowercase login name",
+        "gifterIsAnonymous": "True if the gifter was anonymous"
+      }
+    },
+    "twitch.primePaidUpgrade": {
+      "description": "Runs when a viewer changes their free Prime sub into a paid subscription.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "Their lowercase Twitch login name",
+        "tier": "The paid level they chose: 1, 2 or 3"
+      }
+    },
+    "twitch.payItForward": {
+      "description": "Runs when a viewer gifts a sub to pay forward a sub that someone gifted to them.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the viewer",
+        "gifter": "The display name of whoever gifted to them first",
+        "gifterIsAnonymous": "True if that gifter was anonymous"
+      }
+    },
+    "twitch.cheer": {
+      "description": "Runs when someone cheers with Bits in your chat. Use the limits to give bigger cheers a bigger reaction.",
+      "fields": {
+        "minBits": "Only run when the cheer has at least this many bits. Example: 100.",
+        "maxBits": "Only run when the cheer has at most this many bits. 0 means no top limit."
+      },
+      "variables": {
+        "user": "The display name of the cheerer (Anonymous if hidden)",
+        "bits": "How many bits they cheered",
+        "message": "The message that came with it",
+        "isAnonymous": "True if they cheered anonymously"
+      }
+    },
+    "twitch.bitsUsed": {
+      "description": "Runs when a viewer spends Bits in your channel in any way, including cheers and power-ups.",
+      "fields": {
+        "minBits": "Only run when at least this many bits were spent. Example: 50."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "bits": "How many bits were spent",
+        "bitsType": "What the bits were used for, as Twitch names it",
+        "message": "The message that came with it"
+      }
+    },
+    "twitch.powerUp": {
+      "description": "Runs when a viewer uses Bits on a power-up, such as a giant emote, a celebration or a message effect.",
+      "fields": {
+        "powerUpType": "Pick one kind of power-up, or Any to run for all of them."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "bits": "How many bits it cost",
+        "powerUpType": "Which power-up it was",
+        "powerUpEmoteName": "The emote used, if any",
+        "message": "The message that came with it"
+      }
+    },
+    "twitch.customPowerUpRedemption": {
+      "description": "Runs when a viewer redeems one of your own custom power-ups (the ones you made and viewers pay for with Bits).",
+      "fields": {
+        "powerUp": "Only run for the power-up with this title or id. Capital letters do not matter. Leave empty to run for every custom power-up."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "rewardTitle": "The title of the power-up",
+        "rewardCost": "How many bits it cost",
+        "userInput": "The text the viewer typed, if it asks for any",
+        "rewardPrompt": "The description you gave it"
+      }
+    },
+    "twitch.subCounterRollover": {
+      "description": "Runs when Cuebot's sub counter reaches its goal number and starts over. Good for a milestone celebration.",
+      "fields": {},
+      "variables": {
+        "rollover": "The number the counter counts up to",
+        "rolloverCount": "How many times it has started over",
+        "subCounter": "What the counter shows after starting over"
+      }
+    },
+    "twitch.raid": {
+      "description": "Runs when another streamer raids your channel and sends their viewers to you. Perfect for a welcome or a shout-out.",
+      "fields": {
+        "minViewers": "Only run when the raid brings at least this many viewers. Example: 10. 0 runs for every raid."
+      },
+      "variables": {
+        "user": "The display name of the raiding streamer",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "viewers": "How many viewers came with the raid"
+      }
+    },
+    "twitch.raidStart": {
+      "description": "Runs when you start a raid from Cuebot, before it happens. Handy for a goodbye message to your chat.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the channel you are raiding",
+        "userName": "Their lowercase Twitch login name",
+        "viewers": "Roughly how many viewers go along (your last viewer count)"
+      }
+    },
+    "twitch.raidSend": {
+      "description": "Runs when your raid actually goes through and your viewers move to the other channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the channel you raided",
+        "userName": "Their lowercase Twitch login name",
+        "viewers": "How many viewers went along"
+      }
+    },
+    "twitch.raidCancelled": {
+      "description": "Runs when a raid you started is cancelled before it happens.",
+      "fields": {},
+      "variables": {
+        "raidUser": "The display name of the channel you were about to raid",
+        "raidUserName": "Their lowercase Twitch login name"
+      }
+    },
+    "twitch.rewardRedemption": {
+      "description": "Runs when a viewer spends channel points on one of your rewards. This is the main trigger for channel point rewards.",
+      "fields": {
+        "rewardTitle": "The reward's name exactly as viewers see it, like \"Hydrate!\". Capital letters do not matter. Leave empty to run for every reward."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "Their lowercase Twitch login name",
+        "userId": "Their Twitch user number",
+        "rewardTitle": "The reward's name",
+        "rewardId": "The reward's id",
+        "rewardCost": "How many channel points it cost",
+        "userInput": "The text the viewer typed, if the reward asks for any",
+        "redemptionId": "The id of this redemption",
+        "counter": "How many times this reward has been redeemed",
+        "userCounter": "How many times this viewer has redeemed it"
+      }
+    },
+    "twitch.rewardRedemptionUpdated": {
+      "description": "Runs when you accept or reject a viewer's reward after they redeemed it, for rewards that wait in your queue.",
+      "fields": {
+        "rewardTitle": "The reward's name exactly as viewers see it. Capital letters do not matter. Leave empty to run for every reward.",
+        "status": "Run only when the reward was fulfilled (accepted) or canceled (rejected). Choose Any to run for both."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "rewardTitle": "The reward's name",
+        "rewardCost": "How many channel points it cost",
+        "userInput": "The text the viewer typed",
+        "status": "fulfilled or canceled",
+        "redemptionId": "The id of this redemption"
+      }
+    },
+    "twitch.automaticRewardRedemption": {
+      "description": "Runs when a viewer uses one of Twitch's built-in channel point rewards, like highlighting a message or unlocking an emote.",
+      "fields": {
+        "rewardType": "Only run for this kind of built-in reward, as Twitch names it. Example: \"send_highlighted_message\". Leave empty to run for every kind."
+      },
+      "variables": {
+        "user": "The display name of the viewer",
+        "rewardType": "Which built-in reward it was",
+        "rewardCost": "How many channel points it cost",
+        "message": "The message that came with it",
+        "emoteName": "The emote involved, if any"
+      }
+    },
+    "twitch.rewardCreated": {
+      "description": "Runs when you create a new channel point reward on Twitch.",
+      "fields": {},
+      "variables": {
+        "rewardTitle": "The new reward's name",
+        "rewardId": "Its id",
+        "rewardCost": "Its cost in channel points",
+        "rewardPrompt": "Its description",
+        "isEnabled": "True if it is turned on"
+      }
+    },
+    "twitch.rewardUpdated": {
+      "description": "Runs when you change a channel point reward on Twitch, for example its cost or if it is paused.",
+      "fields": {
+        "rewardTitle": "Only run for the reward with this name. Capital letters do not matter. Leave empty to run for every reward."
+      },
+      "variables": {
+        "rewardTitle": "The reward's name",
+        "rewardId": "Its id",
+        "rewardCost": "Its cost in channel points",
+        "isEnabled": "True if it is turned on",
+        "isPaused": "True if it is paused"
+      }
+    },
+    "twitch.rewardDeleted": {
+      "description": "Runs when you delete a channel point reward on Twitch.",
+      "fields": {},
+      "variables": {
+        "rewardTitle": "The deleted reward's name",
+        "rewardId": "Its id",
+        "rewardCost": "Its cost in channel points"
+      }
+    },
+    "twitch.pollCreated": {
+      "description": "Runs when a poll starts in your channel. Handy to tell viewers to go vote.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The poll's question",
+        "pollId": "The poll's id",
+        "status": "The poll's state, as Twitch names it",
+        "choiceCount": "How many choices it has",
+        "choice0Title": "The first choice (choice1Title is the second, and so on)",
+        "choice0Votes": "Votes for the first choice (choice1Votes and so on)",
+        "totalVotes": "All votes together",
+        "winningChoice": "The choice with the most votes"
+      }
+    },
+    "twitch.pollUpdated": {
+      "description": "Runs each time votes come in on a running poll. This can happen very often.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The poll's question",
+        "pollId": "The poll's id",
+        "status": "The poll's state, as Twitch names it",
+        "choiceCount": "How many choices it has",
+        "choice0Title": "The first choice (choice1Title is the second, and so on)",
+        "choice0Votes": "Votes for the first choice (choice1Votes and so on)",
+        "totalVotes": "All votes together",
+        "winningChoice": "The choice with the most votes"
+      }
+    },
+    "twitch.pollCompleted": {
+      "description": "Runs when a poll ends normally and the result is final. Good for announcing the winner.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The poll's question",
+        "pollId": "The poll's id",
+        "status": "The poll's state, as Twitch names it",
+        "choiceCount": "How many choices it has",
+        "choice0Title": "The first choice (choice1Title is the second, and so on)",
+        "choice0Votes": "Votes for the first choice (choice1Votes and so on)",
+        "totalVotes": "All votes together",
+        "winningChoice": "The choice with the most votes"
+      }
+    },
+    "twitch.pollTerminated": {
+      "description": "Runs when a poll is ended early by you or a moderator.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The poll's question",
+        "pollId": "The poll's id",
+        "status": "The poll's state, as Twitch names it",
+        "choiceCount": "How many choices it has",
+        "choice0Title": "The first choice (choice1Title is the second, and so on)",
+        "choice0Votes": "Votes for the first choice (choice1Votes and so on)",
+        "totalVotes": "All votes together",
+        "winningChoice": "The choice with the most votes"
+      }
+    },
+    "twitch.pollArchived": {
+      "description": "Runs when a finished poll is moved to the archive by Twitch.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The poll's question",
+        "pollId": "The poll's id",
+        "status": "The poll's state, as Twitch names it",
+        "choiceCount": "How many choices it has",
+        "choice0Title": "The first choice (choice1Title is the second, and so on)",
+        "choice0Votes": "Votes for the first choice (choice1Votes and so on)",
+        "totalVotes": "All votes together",
+        "winningChoice": "The choice with the most votes"
+      }
+    },
+    "twitch.predictionCreated": {
+      "description": "Runs when a prediction starts and viewers can place their bets.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The prediction's question",
+        "predictionId": "The prediction's id",
+        "status": "The prediction's state, as Twitch names it",
+        "outcome0Title": "The first outcome (outcome1Title is the second, and so on)",
+        "outcome0Users": "People who bet on the first outcome (outcome1Users and so on)",
+        "outcome0ChannelPoints": "Points bet on the first outcome (outcome1ChannelPoints and so on)",
+        "totalUsers": "How many people bet",
+        "totalChannelPoints": "All points bet together",
+        "winningOutcome": "The winning outcome (only once it is decided)"
+      }
+    },
+    "twitch.predictionUpdated": {
+      "description": "Runs each time bets come in on a running prediction. This can happen very often.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The prediction's question",
+        "predictionId": "The prediction's id",
+        "status": "The prediction's state, as Twitch names it",
+        "outcome0Title": "The first outcome (outcome1Title is the second, and so on)",
+        "outcome0Users": "People who bet on the first outcome (outcome1Users and so on)",
+        "outcome0ChannelPoints": "Points bet on the first outcome (outcome1ChannelPoints and so on)",
+        "totalUsers": "How many people bet",
+        "totalChannelPoints": "All points bet together",
+        "winningOutcome": "The winning outcome (only once it is decided)"
+      }
+    },
+    "twitch.predictionLocked": {
+      "description": "Runs when betting on a prediction closes and no more bets can be placed.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The prediction's question",
+        "predictionId": "The prediction's id",
+        "status": "The prediction's state, as Twitch names it",
+        "outcome0Title": "The first outcome (outcome1Title is the second, and so on)",
+        "outcome0Users": "People who bet on the first outcome (outcome1Users and so on)",
+        "outcome0ChannelPoints": "Points bet on the first outcome (outcome1ChannelPoints and so on)",
+        "totalUsers": "How many people bet",
+        "totalChannelPoints": "All points bet together",
+        "winningOutcome": "The winning outcome (only once it is decided)"
+      }
+    },
+    "twitch.predictionCompleted": {
+      "description": "Runs when a prediction is decided and a winning outcome is picked.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The prediction's question",
+        "predictionId": "The prediction's id",
+        "status": "The prediction's state, as Twitch names it",
+        "outcome0Title": "The first outcome (outcome1Title is the second, and so on)",
+        "outcome0Users": "People who bet on the first outcome (outcome1Users and so on)",
+        "outcome0ChannelPoints": "Points bet on the first outcome (outcome1ChannelPoints and so on)",
+        "totalUsers": "How many people bet",
+        "totalChannelPoints": "All points bet together",
+        "winningOutcome": "The winning outcome (only once it is decided)"
+      }
+    },
+    "twitch.predictionCanceled": {
+      "description": "Runs when a prediction is canceled and the points are given back.",
+      "fields": {
+        "title": "Only run when the title contains this text, in any capital or small letters. Leave empty to run for every one."
+      },
+      "variables": {
+        "title": "The prediction's question",
+        "predictionId": "The prediction's id",
+        "status": "The prediction's state, as Twitch names it",
+        "outcome0Title": "The first outcome (outcome1Title is the second, and so on)",
+        "outcome0Users": "People who bet on the first outcome (outcome1Users and so on)",
+        "outcome0ChannelPoints": "Points bet on the first outcome (outcome1ChannelPoints and so on)",
+        "totalUsers": "How many people bet",
+        "totalChannelPoints": "All points bet together",
+        "winningOutcome": "The winning outcome (only once it is decided)"
+      }
+    },
+    "twitch.hypeTrainStart": {
+      "description": "Runs when a hype train starts in your channel.",
+      "fields": {},
+      "variables": {
+        "level": "The hype train's current level",
+        "total": "Total points collected so far",
+        "progress": "Points collected toward the next level",
+        "goal": "Points needed for the next level",
+        "percent": "How full the current level is, 0 to 100",
+        "topContributor": "The display name of the biggest contributor",
+        "topContributorTotal": "How much that person gave",
+        "isGoldenKappa": "True if it is a Golden Kappa train"
+      }
+    },
+    "twitch.hypeTrainUpdate": {
+      "description": "Runs each time the hype train gets new contributions. This can happen often.",
+      "fields": {},
+      "variables": {
+        "level": "The hype train's current level",
+        "total": "Total points collected so far",
+        "progress": "Points collected toward the next level",
+        "goal": "Points needed for the next level",
+        "percent": "How full the current level is, 0 to 100",
+        "topContributor": "The display name of the biggest contributor",
+        "topContributorTotal": "How much that person gave",
+        "isGoldenKappa": "True if it is a Golden Kappa train"
+      }
+    },
+    "twitch.hypeTrainLevelUp": {
+      "description": "Runs when a hype train reaches a new level.",
+      "fields": {
+        "minLevel": "Only run when the new level is at least this number. Example: 3."
+      },
+      "variables": {
+        "level": "The hype train's current level",
+        "total": "Total points collected so far",
+        "progress": "Points collected toward the next level",
+        "goal": "Points needed for the next level",
+        "percent": "How full the current level is, 0 to 100",
+        "topContributor": "The display name of the biggest contributor",
+        "topContributorTotal": "How much that person gave",
+        "isGoldenKappa": "True if it is a Golden Kappa train",
+        "prevLevel": "The level it was before"
+      }
+    },
+    "twitch.hypeTrainEnd": {
+      "description": "Runs when a hype train ends. Good for a thank-you to everyone who joined in.",
+      "fields": {
+        "minLevel": "Only run when the train ended at this level or higher. Example: 3."
+      },
+      "variables": {
+        "level": "The hype train's current level",
+        "total": "Total points collected so far",
+        "progress": "Points collected toward the next level",
+        "goal": "Points needed for the next level",
+        "percent": "How full the current level is, 0 to 100",
+        "topContributor": "The display name of the biggest contributor",
+        "topContributorTotal": "How much that person gave",
+        "isGoldenKappa": "True if it is a Golden Kappa train"
+      }
+    },
+    "twitch.goalBegin": {
+      "description": "Runs when you start a creator goal (like a follower goal) on Twitch.",
+      "fields": {},
+      "variables": {
+        "goalType": "What the goal counts, such as followers or subscriptions",
+        "description": "The goal's description",
+        "currentAmount": "How far along it is",
+        "targetAmount": "The number it is aiming for",
+        "isAchieved": "True if the goal is reached"
+      }
+    },
+    "twitch.goalProgress": {
+      "description": "Runs each time your creator goal moves closer. This can happen often.",
+      "fields": {},
+      "variables": {
+        "goalType": "What the goal counts, such as followers or subscriptions",
+        "description": "The goal's description",
+        "currentAmount": "How far along it is",
+        "targetAmount": "The number it is aiming for",
+        "isAchieved": "True if the goal is reached"
+      }
+    },
+    "twitch.goalEnd": {
+      "description": "Runs when a creator goal ends, whether it was reached or not.",
+      "fields": {},
+      "variables": {
+        "goalType": "What the goal counts, such as followers or subscriptions",
+        "description": "The goal's description",
+        "currentAmount": "How far along it is",
+        "targetAmount": "The number it is aiming for",
+        "isAchieved": "True if the goal is reached"
+      }
+    },
+    "twitch.charityStarted": {
+      "description": "Runs when you start a charity fundraiser on your channel.",
+      "fields": {},
+      "variables": {
+        "charityName": "The charity's name",
+        "charityDescription": "What the charity does",
+        "charityWebsite": "The charity's web link",
+        "currentAmount": "Money raised so far",
+        "targetAmount": "The money goal",
+        "currency": "The currency, such as USD"
+      }
+    },
+    "twitch.charityProgress": {
+      "description": "Runs when the charity fundraiser total changes.",
+      "fields": {},
+      "variables": {
+        "charityName": "The charity's name",
+        "charityDescription": "What the charity does",
+        "charityWebsite": "The charity's web link",
+        "currentAmount": "Money raised so far",
+        "targetAmount": "The money goal",
+        "currency": "The currency, such as USD"
+      }
+    },
+    "twitch.charityDonation": {
+      "description": "Runs when a viewer donates to your charity fundraiser. Great for a thank-you.",
+      "fields": {},
+      "variables": {
+        "charityName": "The charity's name",
+        "charityDescription": "What the charity does",
+        "charityWebsite": "The charity's web link",
+        "currentAmount": "Money raised so far",
+        "targetAmount": "The money goal",
+        "currency": "The currency, such as USD",
+        "user": "The display name of the donor",
+        "userName": "Their lowercase Twitch login name",
+        "amount": "How much they donated"
+      }
+    },
+    "twitch.charityCompleted": {
+      "description": "Runs when your charity fundraiser ends.",
+      "fields": {},
+      "variables": {
+        "charityName": "The charity's name",
+        "charityDescription": "What the charity does",
+        "charityWebsite": "The charity's web link",
+        "currentAmount": "Money raised so far",
+        "targetAmount": "The money goal",
+        "currency": "The currency, such as USD"
+      }
+    },
+    "twitch.adRun": {
+      "description": "Runs when an ad break starts on your channel. Handy to show a 'be right back' scene.",
+      "fields": {
+        "kind": "Automatic: only ads Twitch started by itself. Manual: only ads you or a moderator started. Any: both."
+      },
+      "variables": {
+        "duration": "How long the ad lasts, in seconds",
+        "startedAt": "When it started",
+        "isAutomatic": "True if Twitch started it",
+        "user": "The display name of whoever started it"
+      }
+    },
+    "twitch.upcomingAd": {
+      "description": "Runs once a minute in the last 5 minutes before your next ad. Cuebot has to look at your ad schedule, which you can turn off in the Twitch settings.",
+      "fields": {
+        "minutes": "Only run when this many minutes are left before the ad (5, 4, 3, 2 or 1). Choose Any to run for every warning."
+      },
+      "variables": {
+        "minutes": "How many minutes are left before the ad",
+        "adLength": "How long the ad will be, in seconds",
+        "nextAdAt": "When the ad is due",
+        "snoozeCount": "How many snoozes you have left"
+      }
+    },
+    "twitch.shoutoutCreated": {
+      "description": "Runs when you or a moderator give another channel a shoutout using Twitch's shoutout feature.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the channel that got the shoutout",
+        "userName": "Their lowercase Twitch login name",
+        "moderator": "The display name of who gave it",
+        "viewers": "How many viewers that channel has"
+      }
+    },
+    "twitch.shoutoutReceived": {
+      "description": "Runs when another channel gives your channel a shoutout.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the channel that gave it",
+        "userName": "Their lowercase Twitch login name",
+        "viewers": "How many viewers that channel has"
+      }
+    },
+    "twitch.shieldModeBegin": {
+      "description": "Runs when Shield Mode is switched on, Twitch's emergency protection against trolls and spam.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the moderator who turned it on",
+        "startedAt": "When it started"
+      }
+    },
+    "twitch.shieldModeEnd": {
+      "description": "Runs when Shield Mode is switched off.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the moderator who turned it off",
+        "endedAt": "When it ended"
+      }
+    },
+    "twitch.sharedChatBegin": {
+      "description": "Runs when a shared chat session starts, so your chat is joined with one or more other channels.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the host channel",
+        "sessionId": "The shared chat session's id",
+        "participants": "The login names of the channels taking part, separated by commas",
+        "participantCount": "How many channels take part",
+        "isHost": "True if your channel is the host"
+      }
+    },
+    "twitch.sharedChatUpdate": {
+      "description": "Runs when channels join or leave a shared chat session you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the host channel",
+        "sessionId": "The shared chat session's id",
+        "participants": "The login names of the channels taking part, separated by commas",
+        "participantCount": "How many channels take part",
+        "isHost": "True if your channel is the host"
+      }
+    },
+    "twitch.sharedChatEnd": {
+      "description": "Runs when a shared chat session ends.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the host channel",
+        "sessionId": "The shared chat session's id",
+        "participants": "The login names of the channels taking part, separated by commas",
+        "participantCount": "How many channels take part",
+        "isHost": "True if your channel is the host"
+      }
+    },
+    "twitch.sharedChatSub": {
+      "description": "Runs when someone subscribes in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "tier": "Subscription level: 1, 2 or 3",
+        "isPrime": "True if it is a free Prime sub",
+        "durationMonths": "Months paid for",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatResub": {
+      "description": "Runs when someone renews a subscription in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "tier": "Subscription level: 1, 2 or 3",
+        "cumulativeMonths": "Months subscribed in total",
+        "streakMonths": "Months in a row",
+        "message": "Their message",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatSubGift": {
+      "description": "Runs when someone receives a gifted sub in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "recipientUser": "The display name of who got the sub",
+        "tier": "Subscription level: 1, 2 or 3",
+        "durationMonths": "Months gifted",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatGiftBomb": {
+      "description": "Runs when someone gifts a bundle of subs in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "total": "How many subs were gifted",
+        "tier": "Subscription level: 1, 2 or 3",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatGiftPaidUpgrade": {
+      "description": "Runs when a viewer keeps a gifted sub by paying for it, in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "gifter": "The display name of whoever first gifted it",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatPrimePaidUpgrade": {
+      "description": "Runs when a viewer turns a Prime sub into a paid one, in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "tier": "The paid level: 1, 2 or 3",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatPayItForward": {
+      "description": "Runs when a viewer pays forward a gifted sub, in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "gifter": "The display name of whoever gifted to them first",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatRaid": {
+      "description": "Runs when a channel is raided in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "raider": "The display name of the raiding streamer",
+        "viewers": "How many viewers came",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatAnnouncement": {
+      "description": "Runs when an announcement is posted in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "message": "The text of the announcement",
+        "announcementColor": "The announcement's colour",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatModiversary": {
+      "description": "Runs when a moderator reaches an anniversary in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "months": "Months as a moderator",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatMessageDeleted": {
+      "description": "Runs when a message is deleted in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "messageId": "The id of the deleted message",
+        "message": "The text of the deleted message",
+        "moderator": "The display name of who deleted it",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatUserBanned": {
+      "description": "Runs when someone is banned in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "moderator": "The display name of who banned them",
+        "reason": "The reason given",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatUserTimedOut": {
+      "description": "Runs when someone gets a timeout in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "moderator": "The display name of who did it",
+        "reason": "The reason given",
+        "duration": "How many seconds the timeout has left",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatUserUnbanned": {
+      "description": "Runs when someone is unbanned in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "moderator": "The display name of who unbanned them",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.sharedChatUserUntimedOut": {
+      "description": "Runs when a timeout is lifted early in another channel of a shared chat you are in.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person involved",
+        "userName": "Their lowercase Twitch login name",
+        "moderator": "The display name of who lifted it",
+        "sourceBroadcaster": "The display name of the channel where it happened",
+        "sourceBroadcasterUserName": "That channel's lowercase login name"
+      }
+    },
+    "twitch.guestStarSessionBegin": {
+      "description": "Runs when a Guest Star session starts on your channel. Guest Star is a Twitch feature for having guests on stream.",
+      "fields": {},
+      "variables": {
+        "sessionId": "The session's id",
+        "startedAt": "When it started"
+      }
+    },
+    "twitch.guestStarSessionEnd": {
+      "description": "Runs when a Guest Star session ends.",
+      "fields": {},
+      "variables": {
+        "sessionId": "The session's id",
+        "startedAt": "When it started",
+        "endedAt": "When it ended"
+      }
+    },
+    "twitch.guestStarGuestUpdate": {
+      "description": "Runs when a guest in a Guest Star session changes state, for example they are invited, join the stream or are removed.",
+      "fields": {
+        "state": "Only run when the guest reaches this state (invited, accepted, ready, backstage, live or removed). Choose Any to run for every change."
+      },
+      "variables": {
+        "user": "The display name of the guest",
+        "userName": "Their lowercase Twitch login name",
+        "state": "The guest's new state",
+        "sessionId": "The session's id",
+        "slotId": "The guest's place in the session",
+        "host": "The display name of the host"
+      }
+    },
+    "twitch.guestStarSettingsUpdate": {
+      "description": "Runs when you change your Guest Star settings.",
+      "fields": {},
+      "variables": {
+        "slotCount": "How many guest places there are",
+        "groupLayout": "The layout chosen for the guests",
+        "isModeratorSendLiveEnabled": "True if moderators may send guests live",
+        "isBrowserSourceAudioEnabled": "True if guest sound reaches the browser source"
+      }
+    },
+    "twitch.userBanned": {
+      "description": "Runs when someone is banned from your channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the banned person",
+        "userName": "The lowercase Twitch login name of the banned person",
+        "userId": "The Twitch user number of the banned person",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "reason": "The reason given, if any"
+      }
+    },
+    "twitch.userTimedOut": {
+      "description": "Runs when someone gets a timeout in your channel.",
+      "fields": {
+        "minDuration": "Only run when the timeout lasts at least this many seconds. Example: 600. 0 runs for every timeout."
+      },
+      "variables": {
+        "user": "The display name of the person",
+        "userName": "The lowercase Twitch login name of the person",
+        "userId": "The Twitch user number of the person",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "reason": "The reason given, if any",
+        "duration": "How long the timeout lasts, in seconds"
+      }
+    },
+    "twitch.userUnbanned": {
+      "description": "Runs when someone is unbanned from your channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person",
+        "userName": "The lowercase Twitch login name of the person",
+        "userId": "The Twitch user number of the person",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator"
+      }
+    },
+    "twitch.userUntimedOut": {
+      "description": "Runs when a timeout is lifted early. Cuebot only knows about timeouts it saw happen while it was running.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person",
+        "userName": "The lowercase Twitch login name of the person",
+        "userId": "The Twitch user number of the person",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator"
+      }
+    },
+    "twitch.moderatorAdded": {
+      "description": "Runs when someone becomes a moderator of your channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the new moderator",
+        "userName": "The lowercase Twitch login name of the new moderator",
+        "userId": "The Twitch user number of the new moderator"
+      }
+    },
+    "twitch.moderatorRemoved": {
+      "description": "Runs when someone stops being a moderator of your channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person",
+        "userName": "The lowercase Twitch login name of the person",
+        "userId": "The Twitch user number of the person"
+      }
+    },
+    "twitch.vipAdded": {
+      "description": "Runs when someone becomes a VIP on your channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the new VIP",
+        "userName": "The lowercase Twitch login name of the new VIP",
+        "userId": "The Twitch user number of the new VIP"
+      }
+    },
+    "twitch.vipRemoved": {
+      "description": "Runs when someone stops being a VIP on your channel.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person",
+        "userName": "The lowercase Twitch login name of the person",
+        "userId": "The Twitch user number of the person"
+      }
+    },
+    "twitch.userWarned": {
+      "description": "Runs when a moderator sends a warning to a chatter.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the warned person",
+        "userName": "The lowercase Twitch login name of the warned person",
+        "userId": "The Twitch user number of the warned person",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "reason": "The reason given",
+        "chatRulesCited": "The chat rules mentioned, separated by commas"
+      }
+    },
+    "twitch.warningAcknowledged": {
+      "description": "Runs when a warned chatter confirms they read the warning, so they can chat again.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person",
+        "userName": "The lowercase Twitch login name of the person",
+        "userId": "The Twitch user number of the person"
+      }
+    },
+    "twitch.unbanRequestCreated": {
+      "description": "Runs when a banned viewer asks to be unbanned.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "The lowercase Twitch login name of the viewer",
+        "userId": "The Twitch user number of the viewer",
+        "message": "What they wrote",
+        "requestId": "The request's id"
+      }
+    },
+    "twitch.unbanRequestApproved": {
+      "description": "Runs when a moderator approves an unban request.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "The lowercase Twitch login name of the viewer",
+        "userId": "The Twitch user number of the viewer",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "resolutionText": "The moderator's note, if any"
+      }
+    },
+    "twitch.unbanRequestDenied": {
+      "description": "Runs when a moderator denies an unban request.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the viewer",
+        "userName": "The lowercase Twitch login name of the viewer",
+        "userId": "The Twitch user number of the viewer",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "resolutionText": "The moderator's note, if any"
+      }
+    },
+    "twitch.suspiciousUserUpdate": {
+      "description": "Runs when a moderator changes how a suspicious chatter is treated (for example monitored or restricted).",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the chatter",
+        "userName": "The lowercase Twitch login name of the chatter",
+        "userId": "The Twitch user number of the chatter",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "lowTrustStatus": "How they are now treated, as Twitch names it"
+      }
+    },
+    "twitch.suspiciousUserMessage": {
+      "description": "Runs when someone Twitch marks as suspicious writes a message in your chat.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the chatter",
+        "userName": "The lowercase Twitch login name of the chatter",
+        "userId": "The Twitch user number of the chatter",
+        "message": "What they wrote",
+        "lowTrustStatus": "How they are treated, as Twitch names it",
+        "types": "Why they are flagged, separated by commas",
+        "banEvasionEvaluation": "Twitch's guess whether they dodge a ban"
+      }
+    },
+    "twitch.automodMessageHeld": {
+      "description": "Runs when AutoMod holds back a message for a moderator to review.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person who wrote it",
+        "userName": "The lowercase Twitch login name of the person who wrote it",
+        "userId": "The Twitch user number of the person who wrote it",
+        "message": "The held message",
+        "category": "Why AutoMod held it, such as swearing",
+        "level": "How strong the match was"
+      }
+    },
+    "twitch.automodMessageUpdated": {
+      "description": "Runs when a moderator approves or denies a message AutoMod was holding.",
+      "fields": {},
+      "variables": {
+        "user": "The display name of the person who wrote it",
+        "userName": "The lowercase Twitch login name of the person who wrote it",
+        "userId": "The Twitch user number of the person who wrote it",
+        "moderator": "The display name of the moderator who did it",
+        "moderatorUserName": "The lowercase login name of that moderator",
+        "message": "The held message",
+        "status": "What happened to it, such as approved or denied"
+      }
+    },
+    "twitch.blockedTermsAdded": {
+      "description": "Runs when words are added to your blocked words list.",
+      "fields": {},
+      "variables": {
+        "terms": "The words, separated by commas",
+        "termCount": "How many words",
+        "user": "The display name of whoever changed the list",
+        "fromAutomod": "True if AutoMod added them itself"
+      }
+    },
+    "twitch.blockedTermsDeleted": {
+      "description": "Runs when words are removed from your blocked words list.",
+      "fields": {},
+      "variables": {
+        "terms": "The words, separated by commas",
+        "termCount": "How many words",
+        "user": "The display name of whoever changed the list",
+        "fromAutomod": "True if AutoMod added them itself"
+      }
+    },
+    "twitch.permittedTermsAdded": {
+      "description": "Runs when words are added to your permitted words list.",
+      "fields": {},
+      "variables": {
+        "terms": "The words, separated by commas",
+        "termCount": "How many words",
+        "user": "The display name of whoever changed the list",
+        "fromAutomod": "True if AutoMod added them itself"
+      }
+    },
+    "twitch.permittedTermsDeleted": {
+      "description": "Runs when words are removed from your permitted words list.",
+      "fields": {},
+      "variables": {
+        "terms": "The words, separated by commas",
+        "termCount": "How many words",
+        "user": "The display name of whoever changed the list",
+        "fromAutomod": "True if AutoMod added them itself"
+      }
+    },
+    "twitch.broadcasterAuthenticated": {
+      "description": "Runs when you finish signing in to Twitch with your main account in Cuebot.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number"
+      }
+    },
+    "twitch.broadcasterConnected": {
+      "description": "Runs when Cuebot connects to Twitch's live event feed for your main account. After this, alerts like follows can arrive.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number"
+      }
+    },
+    "twitch.broadcasterDisconnected": {
+      "description": "Runs when the connection to Twitch's live event feed for your main account is lost or closed.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number",
+        "reason": "Why it disconnected"
+      }
+    },
+    "twitch.broadcasterChatConnected": {
+      "description": "Runs when Cuebot can read your Twitch chat with your main account.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number"
+      }
+    },
+    "twitch.broadcasterChatDisconnected": {
+      "description": "Runs when Cuebot can no longer read your Twitch chat with your main account.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number",
+        "reason": "Why it disconnected"
+      }
+    },
+    "twitch.botConnected": {
+      "description": "Runs when your bot account connects to Twitch.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number"
+      }
+    },
+    "twitch.botDisconnected": {
+      "description": "Runs when your bot account loses its connection to Twitch.",
+      "fields": {},
+      "variables": {
+        "user": "The account's login name",
+        "userName": "The account's login name",
+        "userId": "The account's Twitch user number",
+        "reason": "Why it disconnected"
+      }
+    }
+  },
+  "subActions": {}
+}

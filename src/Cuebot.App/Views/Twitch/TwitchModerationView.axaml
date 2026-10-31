@@ -13,25 +13,26 @@
             <TextBlock Classes="h2" Text="User" />
             <Grid ColumnDefinitions="*,16,140" RowDefinitions="Auto,Auto">
               <TextBlock Classes="label" Text="User name" />
-              <TextBox Grid.Row="1" Text="{Binding User}" PlaceholderText="login or @name" />
+              <TextBox Grid.Row="1" Text="{Binding User}" PlaceholderText="login or @name" ToolTip.Tip="The Twitch name of the viewer the buttons below act on, like @somefan." />
               <TextBlock Grid.Column="2" Classes="label" Text="Timeout (s)" />
-              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding TimeoutSeconds}" Minimum="1" Maximum="1209600" />
+              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding TimeoutSeconds}" Minimum="1" Maximum="1209600"
+                           ToolTip.Tip="How long a timeout lasts, in seconds. 600 is 10 minutes. The longest is 14 days." />
             </Grid>
             <StackPanel>
               <TextBlock Classes="label" Text="Reason" />
-              <TextBox Text="{Binding Reason}" PlaceholderText="Shown to the user (required for warnings)" />
+              <TextBox Text="{Binding Reason}" PlaceholderText="Shown to the user (required for warnings)" ToolTip.Tip="Why you are doing this. The viewer sees it. You must fill it in to warn someone." />
             </StackPanel>
             <WrapPanel Classes="actions">
-              <Button Content="Timeout" Command="{Binding TimeoutCommand}" />
-              <Button Content="Ban" Command="{Binding BanCommand}" />
-              <Button Content="Unban / untimeout" Command="{Binding UnbanCommand}" />
-              <Button Content="Warn" Command="{Binding WarnCommand}" />
+              <Button Content="Timeout" Command="{Binding TimeoutCommand}" ToolTip.Tip="Stops this viewer from chatting for the number of seconds you chose. They can chat again afterwards." />
+              <Button Content="Ban" Command="{Binding BanCommand}" ToolTip.Tip="Bans this viewer from your chat until you unban them." />
+              <Button Content="Unban / untimeout" Command="{Binding UnbanCommand}" ToolTip.Tip="Lets this viewer chat again, whether they were banned or in a timeout." />
+              <Button Content="Warn" Command="{Binding WarnCommand}" ToolTip.Tip="Sends this viewer a warning with your reason. They must accept it before they can chat again." />
             </WrapPanel>
             <WrapPanel Classes="actions">
-              <Button Content="Add VIP" Command="{Binding AddVipCommand}" />
-              <Button Content="Remove VIP" Command="{Binding RemoveVipCommand}" />
-              <Button Content="Add moderator" Command="{Binding AddModeratorCommand}" />
-              <Button Content="Remove moderator" Command="{Binding RemoveModeratorCommand}" />
+              <Button Content="Add VIP" Command="{Binding AddVipCommand}" ToolTip.Tip="Gives this viewer the VIP badge on your channel." />
+              <Button Content="Remove VIP" Command="{Binding RemoveVipCommand}" ToolTip.Tip="Takes the VIP badge away from this viewer." />
+              <Button Content="Add moderator" Command="{Binding AddModeratorCommand}" ToolTip.Tip="Makes this viewer a moderator who can help keep your chat in order." />
+              <Button Content="Remove moderator" Command="{Binding RemoveModeratorCommand}" ToolTip.Tip="Takes the moderator role away from this viewer." />
             </WrapPanel>
           </StackPanel>
         </Border>
@@ -40,35 +41,35 @@
           <Border Classes="card">
             <StackPanel Spacing="8">
               <TextBlock Classes="h2" Text="Chat modes" />
-              <CheckBox Content="Emote-only" IsChecked="{Binding EmoteMode}" />
+              <CheckBox Content="Emote-only" IsChecked="{Binding EmoteMode}" ToolTip.Tip="Viewers can only chat with emotes, no words. Press Apply to turn it on." />
               <Grid ColumnDefinitions="*,8,140">
-                <CheckBox Content="Follower-only (minutes followed)" IsChecked="{Binding FollowerMode}" />
-                <NumericUpDown Grid.Column="2" Value="{Binding FollowerMinutes}" Minimum="0" Maximum="129600" />
+                <CheckBox Content="Follower-only (minutes followed)" IsChecked="{Binding FollowerMode}" ToolTip.Tip="Only people who have followed you for at least the number of minutes on the right can chat. 0 means any follower. Press Apply to turn it on." />
+                <NumericUpDown Grid.Column="2" Value="{Binding FollowerMinutes}" Minimum="0" Maximum="129600" ToolTip.Tip="How many minutes someone must have followed you before they can chat." />
               </Grid>
               <Grid ColumnDefinitions="*,8,140">
-                <CheckBox Content="Slow mode (seconds)" IsChecked="{Binding SlowMode}" />
-                <NumericUpDown Grid.Column="2" Value="{Binding SlowSeconds}" Minimum="3" Maximum="120" />
+                <CheckBox Content="Slow mode (seconds)" IsChecked="{Binding SlowMode}" ToolTip.Tip="Each viewer must wait the number of seconds on the right between messages. Press Apply to turn it on." />
+                <NumericUpDown Grid.Column="2" Value="{Binding SlowSeconds}" Minimum="3" Maximum="120" ToolTip.Tip="How many seconds a viewer must wait between two messages." />
               </Grid>
-              <CheckBox Content="Subscriber-only" IsChecked="{Binding SubscriberMode}" />
-              <CheckBox Content="Unique chat" IsChecked="{Binding UniqueChatMode}" />
+              <CheckBox Content="Subscriber-only" IsChecked="{Binding SubscriberMode}" ToolTip.Tip="Only your subscribers (and moderators) can chat. Press Apply to turn it on." />
+              <CheckBox Content="Unique chat" IsChecked="{Binding UniqueChatMode}" ToolTip.Tip="Blocks messages that are the same as one just sent, to stop copy-paste spam. Press Apply to turn it on." />
               <WrapPanel Classes="actions">
-                <Button Content="Apply" Classes="accent" Command="{Binding ApplyChatSettingsCommand}" />
-                <Button Content="Load current" Command="{Binding LoadChatSettingsCommand}" />
+                <Button Content="Apply" Classes="accent" Command="{Binding ApplyChatSettingsCommand}" ToolTip.Tip="Sends the chat modes above to Twitch now. The ticks do nothing until you press this." />
+                <Button Content="Load current" Command="{Binding LoadChatSettingsCommand}" ToolTip.Tip="Shows the chat modes that are on right now on Twitch, replacing what you changed here." />
               </WrapPanel>
               <Grid ColumnDefinitions="*,8,Auto">
-                <CheckBox Content="Shield mode" IsChecked="{Binding ShieldMode}" />
-                <Button Grid.Column="2" Content="Apply shield mode" Command="{Binding ApplyShieldModeCommand}" />
+                <CheckBox Content="Shield mode" IsChecked="{Binding ShieldMode}" ToolTip.Tip="Twitch's emergency protection against raids of trolls and hate. It uses the settings you made on Twitch. Press Apply shield mode to switch it." />
+                <Button Grid.Column="2" Content="Apply shield mode" Command="{Binding ApplyShieldModeCommand}" ToolTip.Tip="Turns Twitch shield mode on or off to match the tick box." />
               </Grid>
-              <Button Content="Clear chat" Command="{Binding ClearChatCommand}" />
+              <Button Content="Clear chat" Command="{Binding ClearChatCommand}" ToolTip.Tip="Wipes all messages from your chat right now for everyone." />
             </StackPanel>
           </Border>
           <Border Classes="card">
             <StackPanel Spacing="8">
               <TextBlock Classes="h2" Text="Announcement" />
-              <TextBox Text="{Binding Announcement}" AcceptsReturn="True" MaxLength="500" PlaceholderText="Message" />
+              <TextBox Text="{Binding Announcement}" AcceptsReturn="True" MaxLength="500" PlaceholderText="Message" ToolTip.Tip="A highlighted message shown to everyone in your chat. Up to 500 characters." />
               <Grid ColumnDefinitions="160,8,Auto">
-                <ComboBox ItemsSource="{x:Static tw:TwitchModerationViewModel.Colors}" SelectedItem="{Binding AnnouncementColor}" />
-                <Button Grid.Column="2" Content="Send announcement" Command="{Binding SendAnnouncementCommand}" />
+                <ComboBox ItemsSource="{x:Static tw:TwitchModerationViewModel.Colors}" SelectedItem="{Binding AnnouncementColor}" ToolTip.Tip="The colour of the announcement bar in chat." />
+                <Button Grid.Column="2" Content="Send announcement" Command="{Binding SendAnnouncementCommand}" ToolTip.Tip="Posts the announcement in your chat now." />
               </Grid>
             </StackPanel>
           </Border>

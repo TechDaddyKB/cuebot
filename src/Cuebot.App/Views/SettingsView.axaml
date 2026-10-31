@@ -15,10 +15,11 @@
               <Border Classes="card">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="h2" Text="Window and tray" />
-                  <CheckBox Content="Show an icon in the system tray" IsChecked="{Binding ShowTrayIcon}" />
+                  <CheckBox Content="Show an icon in the system tray" IsChecked="{Binding ShowTrayIcon}" ToolTip.Tip="Ticked: Cuebot shows a small icon next to your clock (the system tray), where you can open or close it." />
                   <CheckBox Content="Closing the window keeps Cuebot running in the tray" IsChecked="{Binding CloseToTray}"
-                            IsEnabled="{Binding ShowTrayIcon}" />
-                  <CheckBox Content="Start minimized (same as --minimized)" IsChecked="{Binding StartMinimized}" />
+                            IsEnabled="{Binding ShowTrayIcon}"
+                            ToolTip.Tip="Ticked: the X button hides the window and Cuebot keeps running (and keeps your actions working). Quit it from the tray icon." />
+                  <CheckBox Content="Start minimized (same as --minimized)" IsChecked="{Binding StartMinimized}" ToolTip.Tip="Ticked: Cuebot starts out of sight (hidden or minimized) so it does not cover your screen." />
                   <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding TrayStatus}" />
                 </StackPanel>
               </Border>
@@ -27,7 +28,7 @@
                   <TextBlock Classes="h2" Text="Appearance" />
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock Text="Theme" VerticalAlignment="Center" />
-                    <ComboBox x:Name="ThemePicker" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" />
+                    <ComboBox x:Name="ThemePicker" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" ToolTip.Tip="Choose a light or dark look for Cuebot." />
                   </StackPanel>
                   <TextBlock Classes="muted" TextWrapping="Wrap" Text="System follows the desktop's light or dark preference." />
                 </StackPanel>
@@ -42,7 +43,7 @@
               <Border Classes="card">
                 <StackPanel Spacing="10">
                   <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshAudioCommand}" />
+                    <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshAudioCommand}" ToolTip.Tip="Looks again for speakers and microphones, for example after you plugged one in." />
                     <TextBlock Classes="h2" Text="Audio" VerticalAlignment="Center" Margin="0" />
                   </DockPanel>
                   <StackPanel Orientation="Horizontal" Spacing="8">
@@ -76,7 +77,7 @@
                     </StackPanel>
                   </Grid>
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="Sound and speech sub-actions pick a device by name; blank uses the default device." />
+                             Text="Sound and speech sub-actions can pick a speaker by its name from this list. If you leave the name empty, your computer's normal speaker is used." />
                 </StackPanel>
               </Border>
               <Border Classes="card">
@@ -85,7 +86,8 @@
                   <StackPanel Orientation="Horizontal" Spacing="12">
                     <TextBlock Text="Culture" VerticalAlignment="Center" />
                     <ComboBox x:Name="CulturePicker" ItemsSource="{x:Static vm:SettingsViewModel.CultureOptions}"
-                              SelectedItem="{Binding TextCulture}" Width="420">
+                              SelectedItem="{Binding TextCulture}" Width="420"
+                              ToolTip.Tip="Your language and country. It decides how numbers, money and dates are written in messages, like 1,234.50 or 1.234,50.">
                       <ComboBox.ItemTemplate>
                         <DataTemplate DataType="vm:CultureOption">
                           <TextBlock Text="{Binding Display}" />
@@ -95,7 +97,7 @@
                   </StackPanel>
                   <SelectableTextBlock Text="{Binding CulturePreview}" FontFamily="monospace" FontSize="12" TextWrapping="Wrap" />
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="Used by format specifiers such as %amount:c2% and by %date% / %time%. Values without a format are always written culture-neutral (5.5, true)." />
+                             Text="Decides how amounts and dates look when you format them, like %amount:c2% for money, and how %date% and %time% are written. Plain numbers and yes/no values without a format are always written the same way everywhere (5.5, true)." />
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -107,27 +109,27 @@
             <Border DockPanel.Dock="Top" Classes="card">
               <StackPanel Spacing="10">
                 <TextBlock Classes="h2" Text="Automatic backups" />
-                <CheckBox Content="Back up the data folder every time Cuebot starts" IsChecked="{Binding BackupOnStart}" />
-                <CheckBox Content="Back up before an import replaces data" IsChecked="{Binding BackupBeforeImport}" />
+                <CheckBox Content="Back up the data folder every time Cuebot starts" IsChecked="{Binding BackupOnStart}" ToolTip.Tip="Ticked: Cuebot saves a copy of all your settings, actions and overlays each time it opens." />
+                <CheckBox Content="Back up before an import replaces data" IsChecked="{Binding BackupBeforeImport}" ToolTip.Tip="Ticked: Cuebot saves a copy first whenever an import is about to replace your data, so you can go back." />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                   <TextBlock Text="Keep the newest" VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding BackupKeep}" Minimum="1" Maximum="1000" Increment="1" FormatString="0" Width="140" />
+                  <NumericUpDown Value="{Binding BackupKeep}" Minimum="1" Maximum="1000" Increment="1" FormatString="0" Width="140" ToolTip.Tip="How many backups to keep on this computer. When there are more, the oldest ones are deleted." />
                   <TextBlock Text="backups" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Backups are zip files of the data folder. Logs and the downloaded Python runtime are not included." />
+                           Text="A backup is a zip file (a packed folder) with a copy of your data folder. Log files and the Python that Cuebot downloaded are not included." />
               </StackPanel>
             </Border>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-              <Button Content="Back up now" Classes="accent" Command="{Binding BackUpNowCommand}" />
+              <Button Content="Back up now" Classes="accent" Command="{Binding BackUpNowCommand}" ToolTip.Tip="Saves a backup of your data right now." />
               <Button Content="Open folder" Command="{Binding OpenBackupFolderCommand}" ToolTip.Tip="{Binding BackupFolder}" />
-              <Button Content="Restore..." Command="{Binding RestoreCommand}" />
+              <Button Content="Restore..." Command="{Binding RestoreCommand}" ToolTip.Tip="Goes back to the backup you selected in the list. You are asked to confirm first, and nothing changes until you do." />
               <TextBlock Text="{Binding BackupStatus}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" />
             </StackPanel>
             <Border DockPanel.Dock="Top" Classes="card" IsVisible="{Binding PendingRestore, Converter={x:Static ObjectConverters.IsNotNull}}">
               <StackPanel Orientation="Horizontal" Spacing="12">
                 <TextBlock Text="{Binding PendingRestore}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <Button Content="Cancel restore" Command="{Binding CancelPendingRestoreCommand}" />
+                <Button Content="Cancel restore" Command="{Binding CancelPendingRestoreCommand}" ToolTip.Tip="Cancels the planned restore, so your current data is kept." />
               </StackPanel>
             </Border>
             <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding BackupsSummary}" Margin="0,0,0,6" />
@@ -155,42 +157,42 @@
                            Text="Copies every backup to a &quot;Cuebot Backups&quot; folder in your Google Drive. Cuebot only sees the files it created there." />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Content="Sign in with Google" Classes="accent" Command="{Binding DriveSignInCommand}"
-                          IsVisible="{Binding !DriveSignedIn}" />
+                          IsVisible="{Binding !DriveSignedIn}" ToolTip.Tip="Opens Google in your browser so you can let Cuebot save backups to your Google Drive." />
                   <Button Content="Cancel sign-in" Command="{Binding DriveSignInCancelCommand}"
-                          IsVisible="{Binding DriveSignInCommand.IsRunning}" />
-                  <Button Content="Sign out" Command="{Binding DriveSignOutCommand}" IsVisible="{Binding DriveSignedIn}" />
+                          IsVisible="{Binding DriveSignInCommand.IsRunning}" ToolTip.Tip="Stops waiting for the Google sign-in." />
+                  <Button Content="Sign out" Command="{Binding DriveSignOutCommand}" IsVisible="{Binding DriveSignedIn}" ToolTip.Tip="Forgets your Google sign-in on this computer. Backups already on Google Drive stay there." />
                   <TextBlock Text="{Binding DriveAccount}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="8,0,0,0" />
                 </StackPanel>
                 <Expander Header="Advanced: use my own Google Cloud project" HorizontalAlignment="Stretch"
                           IsExpanded="{Binding DriveShowOwnApp, Mode=OneTime}">
                   <StackPanel Spacing="8">
                     <TextBlock Classes="muted" TextWrapping="Wrap"
-                               Text="Optional unless this build has no Google app of its own. In Google Cloud, enable the Drive API and create an OAuth client of type &quot;Desktop app&quot;, then paste its ID and secret here and sign in again (see the docs). Leave them empty to use Cuebot's." />
+                               Text="Optional unless this build has no Google app of its own. In Google Cloud, switch on the Drive API and create a login key (an OAuth client) of type &quot;Desktop app&quot;. Then paste its ID and its secret code here and sign in again (see the docs). Leave them empty to use Cuebot's." />
                     <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto" RowSpacing="8">
                       <TextBlock Text="Client ID" VerticalAlignment="Center" />
                       <TextBox x:Name="DriveClientId" Grid.Column="1" Text="{Binding DriveClientId}"
-                               PlaceholderText="1234567890-abc.apps.googleusercontent.com" />
+                               PlaceholderText="1234567890-abc.apps.googleusercontent.com" ToolTip.Tip="The public ID of your own Google login key. Leave empty to use Cuebot's." />
                       <TextBlock Grid.Row="1" Text="Client secret" VerticalAlignment="Center" />
                       <TextBox x:Name="DriveClientSecret" Grid.Row="1" Grid.Column="1" Text="{Binding DriveClientSecret}" PasswordChar="•"
-                               PlaceholderText="GOCSPX-..." />
+                               PlaceholderText="GOCSPX-..." ToolTip.Tip="The secret code of your own Google login key. Leave empty to use Cuebot's. It stays hidden." />
                     </Grid>
                   </StackPanel>
                 </Expander>
-                <CheckBox Content="Upload every new backup to Google Drive" IsChecked="{Binding DriveEnabled}" />
+                <CheckBox Content="Upload every new backup to Google Drive" IsChecked="{Binding DriveEnabled}" ToolTip.Tip="Ticked: each new backup is also copied to your Google Drive. You must be signed in." />
                 <StackPanel Orientation="Horizontal" Spacing="12">
                   <TextBlock Text="Keep the newest" VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding DriveKeep}" Minimum="1" Maximum="1000" Increment="1" FormatString="0" Width="140" />
+                  <NumericUpDown Value="{Binding DriveKeep}" Minimum="1" Maximum="1000" Increment="1" FormatString="0" Width="140" ToolTip.Tip="How many backups to keep on Google Drive. When there are more, the oldest ones are deleted there." />
                   <TextBlock Text="backups on Google Drive" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Backups contain your settings, actions and overlays, but no sign-ins, tokens or keys: those stay on this computer. Restoring on another computer means signing in to your accounts again there." />
+                           Text="Backups contain your settings, actions and overlays, but not your sign-ins, tokens or keys (secret codes): those stay on this computer. Restoring on another computer means signing in to your accounts again there." />
               </StackPanel>
             </Border>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
               <Button Content="Upload now" Command="{Binding DriveUploadCommand}"
-                      ToolTip.Tip="Uploads the backup selected on the Backups tab, or the newest one" />
-              <Button Content="Refresh" Command="{Binding DriveRefreshCommand}" />
-              <Button Content="Restore..." Command="{Binding DriveRestoreCommand}" />
+                      ToolTip.Tip="Copies the backup you selected on the Backups tab to Google Drive. If none is selected, the newest one is copied." />
+              <Button Content="Refresh" Command="{Binding DriveRefreshCommand}" ToolTip.Tip="Loads the list of backups on your Google Drive again." />
+              <Button Content="Restore..." Command="{Binding DriveRestoreCommand}" ToolTip.Tip="Downloads the backup you selected from Google Drive and goes back to it. You are asked to confirm first." />
               <TextBlock Text="{Binding DriveStatus}" Classes="muted" VerticalAlignment="Center" Margin="8,0,0,0" TextWrapping="Wrap" />
             </StackPanel>
             <TextBlock DockPanel.Dock="Top" Classes="error" Text="{Binding DriveError}" TextWrapping="Wrap" Margin="0,0,0,6"
@@ -221,9 +223,9 @@
                   <TextBlock Grid.Row="1" Classes="muted" Text="Data folder" Margin="0,4" VerticalAlignment="Center" />
                   <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,4">
                     <SelectableTextBlock Text="{Binding DataFolder}" VerticalAlignment="Center" />
-                    <Button Content="Open" Command="{Binding OpenDataFolderCommand}" Padding="8,2" />
+                    <Button Content="Open" Command="{Binding OpenDataFolderCommand}" Padding="8,2" ToolTip.Tip="Opens the folder where Cuebot keeps all your settings and data." />
                   </StackPanel>
-                  <TextBlock Grid.Row="2" Classes="muted" Text="Display backend" Margin="0,4" />
+                  <TextBlock Grid.Row="2" Classes="muted" Text="Display backend" Margin="0,4" ToolTip.Tip="The system Cuebot uses to draw its window. Only useful when asking for help." />
                   <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DisplayBackend}" Margin="0,4" />
                   <TextBlock Grid.Row="3" Classes="muted" Text="Runtime" Margin="0,4" />
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Runtime}" Margin="0,4" />
@@ -256,7 +258,7 @@
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="The Ctrl+Alt shortcuts are ignored while typing in a text field (AltGr types characters there). Page shortcuts work when the page's lists have focus." />
+                             Text="Ctrl+Alt shortcuts do nothing while you are typing in a text box (on some keyboards the AltGr key types letters there). Page shortcuts work when a list on that page is selected." />
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -274,10 +276,10 @@
           <TextBlock TextWrapping="Wrap"
                      Text="Your current data is replaced by the backup's. A safety backup of the current data is made first, so this can be undone by restoring that one. The restore is applied while Cuebot restarts." />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button Content="Cancel" Command="{Binding CancelRestoreCommand}" />
-            <Button Content="On next start" Command="{Binding ConfirmRestoreCommand}" CommandParameter="false" />
+            <Button Content="Cancel" Command="{Binding CancelRestoreCommand}" ToolTip.Tip="Does not restore anything." />
+            <Button Content="On next start" Command="{Binding ConfirmRestoreCommand}" CommandParameter="false" ToolTip.Tip="Keeps Cuebot running now and restores the backup the next time you start Cuebot." />
             <Button Content="Restore and restart" Classes="accent" Command="{Binding ConfirmRestoreCommand}" CommandParameter="true"
-                    IsVisible="{Binding CanRestart}" />
+                    IsVisible="{Binding CanRestart}" ToolTip.Tip="Restores the backup right now. Cuebot closes and opens again, and your streaming tools disconnect for a moment." />
           </StackPanel>
         </StackPanel>
       </Border>

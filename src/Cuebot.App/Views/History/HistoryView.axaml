@@ -30,8 +30,8 @@
         <TextBlock Grid.Column="1" Text="{Binding ActionName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding Source}" Classes="muted" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         <TextBlock Grid.Column="3" Text="{Binding Queue}" Classes="muted" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="4" Text="{Binding Queued}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Queued at" />
-        <TextBlock Grid.Column="5" Text="{Binding Duration}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Run time" />
+        <TextBlock Grid.Column="4" Text="{Binding Queued}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="The time this run was put in line to start." />
+        <TextBlock Grid.Column="5" Text="{Binding Duration}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="How long this run took." />
       </Grid>
     </DataTemplate>
     <DataTemplate DataType="hvm:RunArgRow">
@@ -68,17 +68,18 @@
             <Border DockPanel.Dock="Top" Classes="card" Padding="12,8" Margin="0,0,0,8">
               <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Open Queues" Command="{Binding OpenQueuesCommand}"
-                        ToolTip.Tip="Pause, resume, clear queues and cancel pending runs on the Queues page" />
+                        ToolTip.Tip="Goes to the Queues page, where you can pause or resume queues, empty them and cancel runs that are waiting." />
                 <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0">
                   <Run Text="Pending:" FontWeight="SemiBold" /><Run Text=" " /><Run Text="{Binding PendingSummary}" />
                 </TextBlock>
               </DockPanel>
             </Border>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,170,8,Auto" Margin="0,0,0,6">
-              <TextBox x:Name="SearchBox" Text="{Binding Search}" PlaceholderText="Search action, trigger, queue, error or argument" />
+              <TextBox x:Name="SearchBox" Text="{Binding Search}" PlaceholderText="Search action, trigger, queue, error or variable"
+                       ToolTip.Tip="Type to show only the runs that match. It looks at action names, triggers, queues, errors and variable values." />
               <ComboBox Grid.Column="2" ItemsSource="{Binding StateFilterOptions}" SelectedItem="{Binding StateFilter}"
-                        HorizontalAlignment="Stretch" />
-              <Button Grid.Column="4" Content="Clear history" Command="{Binding ClearHistoryCommand}" />
+                        HorizontalAlignment="Stretch" ToolTip.Tip="Show all runs, or only those that finished, failed or are still going." />
+              <Button Grid.Column="4" Content="Clear history" Command="{Binding ClearHistoryCommand}" ToolTip.Tip="Empties this list of past runs. Runs that are still waiting or running are kept." />
             </Grid>
             <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding Summary}" Margin="0,0,0,6" />
             <Grid DockPanel.Dock="Top" ColumnDefinitions="86,*,170,110,70,70" Margin="12,0,12,4">
@@ -95,26 +96,26 @@
           <Border Grid.Column="2" Classes="card" Margin="0">
             <Grid>
               <TextBlock Classes="muted" IsVisible="{Binding !HasSelectedRun}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         HorizontalAlignment="Center" TextAlignment="Center" Text="Select a run to inspect its arguments" />
+                         HorizontalAlignment="Center" TextAlignment="Center" Text="Select a run to see the variables it had" />
               <DockPanel IsVisible="{Binding HasSelectedRun}">
                 <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
                   <TextBlock Classes="h2" Text="{Binding SelectedTitle}" TextWrapping="Wrap" Margin="0" />
                   <TextBlock Classes="muted" Text="{Binding SelectedDetails}" TextWrapping="Wrap" />
                   <TextBlock Classes="error" Text="{Binding SelectedError}" TextWrapping="Wrap" IsVisible="{Binding HasSelectedError}" />
                   <WrapPanel ItemSpacing="8" LineSpacing="6">
-                    <Button Content="Run again with these args" Classes="accent" Command="{Binding RunAgainCommand}"
-                            ToolTip.Tip="Queue the action again with the arguments it had when this run was queued" />
-                    <Button Content="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding CanCancelSelected}" />
-                    <Button Content="Open action" Command="{Binding OpenActionCommand}" />
+                    <Button Content="Run again with these variables" Classes="accent" Command="{Binding RunAgainCommand}"
+                            ToolTip.Tip="Runs this action again, with the same variable values it had the first time." />
+                    <Button Content="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding CanCancelSelected}" ToolTip.Tip="Stops this run if it is still waiting or running." />
+                    <Button Content="Open action" Command="{Binding OpenActionCommand}" ToolTip.Tip="Opens this action on the Actions page so you can change it." />
                   </WrapPanel>
                   <TextBlock Classes="muted" Text="{Binding Status}" TextWrapping="Wrap"
                              IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
                 <ScrollViewer>
                   <StackPanel Spacing="6">
-                    <TextBlock Text="Arguments when queued" FontWeight="SemiBold" />
+                    <TextBlock Text="Variables when queued" FontWeight="SemiBold" ToolTip.Tip="The values the action received when it started waiting in line." />
                     <ItemsControl ItemsSource="{Binding ArgsWhenQueued}" />
-                    <TextBlock Text="Arguments and variables after the run (added or changed in accent)" FontWeight="SemiBold"
+                    <TextBlock Text="Variables after the run (added or changed ones are coloured)" FontWeight="SemiBold"
                                Margin="0,10,0,0" TextWrapping="Wrap" IsVisible="{Binding HasArgsAfterRun}" />
                     <ItemsControl ItemsSource="{Binding ArgsAfterRun}" IsVisible="{Binding HasArgsAfterRun}" />
                   </StackPanel>
@@ -130,10 +131,11 @@
         <Grid ColumnDefinitions="*,12,360">
           <DockPanel>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto,8,Auto" Margin="0,0,0,6">
-              <TextBox Text="{Binding Triggers.Search}" PlaceholderText="Search event type, trigger or argument" />
+              <TextBox Text="{Binding Triggers.Search}" PlaceholderText="Search event type, trigger or variable"
+                       ToolTip.Tip="Type to show only the events that match." />
               <ToggleButton Grid.Column="2" x:Name="PauseToggle" Content="Pause" IsChecked="{Binding Triggers.IsPaused}"
-                            ToolTip.Tip="Stop recording new events (events still trigger actions)" />
-              <Button Grid.Column="4" Content="Clear" Command="{Binding Triggers.ClearCommand}" />
+                            ToolTip.Tip="Stops adding new events to this list so you can read it. Your actions still run as normal." />
+              <Button Grid.Column="4" Content="Clear" Command="{Binding Triggers.ClearCommand}" ToolTip.Tip="Empties this list of events." />
             </Grid>
             <TextBlock DockPanel.Dock="Top" Classes="muted" Text="{Binding Triggers.Summary}" Margin="0,0,0,6" TextWrapping="Wrap" />
             <ListBox x:Name="EventList" ItemsSource="{Binding Triggers.Events}" SelectedItem="{Binding Triggers.SelectedEvent}" />
@@ -142,14 +144,14 @@
           <Border Grid.Column="2" Classes="card" Margin="0">
             <Grid>
               <TextBlock Classes="muted" IsVisible="{Binding !Triggers.HasSelection}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         HorizontalAlignment="Center" TextAlignment="Center" Text="Select an event to see its arguments" />
+                         HorizontalAlignment="Center" TextAlignment="Center" Text="Select an event to see its variables" />
               <DockPanel IsVisible="{Binding Triggers.HasSelection}">
                 <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
                   <TextBlock Classes="h2" Text="{Binding Triggers.SelectedTitle}" TextWrapping="Wrap" Margin="0" />
                   <TextBlock Classes="muted" Text="{Binding Triggers.SelectedSummary}" TextWrapping="Wrap" />
                   <StackPanel Spacing="6" IsVisible="{Binding Triggers.HasTriggerOptions}">
                     <ComboBox ItemsSource="{Binding Triggers.TriggerOptions}" SelectedItem="{Binding Triggers.SelectedTrigger}"
-                              HorizontalAlignment="Stretch">
+                              HorizontalAlignment="Stretch" ToolTip.Tip="If this event matches more than one trigger type, choose the one you want to build an action for.">
                       <ComboBox.ItemTemplate>
                         <DataTemplate DataType="hvm:TriggerTypeOption">
                           <TextBlock Text="{Binding Display}" />
@@ -157,12 +159,12 @@
                       </ComboBox.ItemTemplate>
                     </ComboBox>
                     <Button Content="Create action from this trigger" Classes="accent" Command="{Binding Triggers.CreateActionCommand}"
-                            ToolTip.Tip="New action with this trigger (default settings), opened on the Actions page" />
+                            ToolTip.Tip="Makes a new action that starts from this kind of event, with default settings, and opens it on the Actions page." />
                   </StackPanel>
                 </StackPanel>
                 <ScrollViewer>
                   <StackPanel Spacing="6">
-                    <TextBlock Text="Arguments" FontWeight="SemiBold" />
+                    <TextBlock Text="Variables" FontWeight="SemiBold" ToolTip.Tip="The details this event carries. An action can use each one as a %name% variable." />
                     <ItemsControl ItemsSource="{Binding Triggers.Args}" />
                   </StackPanel>
                 </ScrollViewer>

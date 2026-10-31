@@ -7,29 +7,29 @@
     <StackPanel MaxWidth="900" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Webhook relay" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Ko-fi, Patreon, Kick events and other services can only send events to a public web address. Cuebot uses a small relay you deploy once to your own free Cloudflare account: services post to the relay, and Cuebot picks the events up over an outgoing connection, so no port forwarding is needed. The relay keeps events for up to 24 hours while Cuebot is closed. Signatures are checked here in Cuebot; the relay never sees your service secrets." />
+                 Text="Ko-fi, Patreon, Kick and other services can only send messages to a public web address, and your computer does not have one. The relay is a small helper you set up once on your own free Cloudflare account. The services send their messages to the relay, and Cuebot collects them from there, so you do not need to change your router. The relay keeps messages for up to 24 hours while Cuebot is closed. Cuebot checks the signatures (proof of who sent a message); the relay never sees your service secrets." />
 
       <!-- Relay -->
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Relay" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Deploy it with relay/setup.ps1 (Windows) or relay/setup.sh (Linux) from the Cuebot source folder; it signs you in to Cloudflare in the browser and prints the three values below. See relay/README.md." />
+                     Text="Set it up by running relay/setup.ps1 (Windows) or relay/setup.sh (Linux) from the Cuebot source folder. It asks you to sign in to Cloudflare in your browser and then shows the three values to type below. Details are in relay/README.md." />
           <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock Text="Relay URL" VerticalAlignment="Center" />
-            <TextBox Grid.Column="1" Name="RelayUrl" Text="{Binding Url}" PlaceholderText="https://cuebot-relay.yourname.workers.dev" />
+            <TextBox Grid.Column="1" Name="RelayUrl" Text="{Binding Url}" PlaceholderText="https://cuebot-relay.yourname.workers.dev" ToolTip.Tip="The web address of your relay, shown by the setup script."  />
             <TextBlock Grid.Row="1" Text="Connect token" VerticalAlignment="Center" />
-            <TextBox Grid.Row="1" Grid.Column="1" Name="RelayToken" Text="{Binding ConnectToken}" PasswordChar="•" PlaceholderText="Connect token" />
+            <TextBox Grid.Row="1" Grid.Column="1" Name="RelayToken" Text="{Binding ConnectToken}" PasswordChar="•" PlaceholderText="Connect token" ToolTip.Tip="A secret code from the setup script that lets Cuebot collect messages from your relay. It is hidden as dots. Keep it private." />
             <TextBlock Grid.Row="2" Grid.Column="1" Classes="muted" Text="{Binding MaskedToken}" />
             <TextBlock Grid.Row="3" Text="Route secret" VerticalAlignment="Center" />
-            <TextBox Grid.Row="3" Grid.Column="1" Name="RelayRouteSecret" Text="{Binding RouteSecret}" PasswordChar="•" PlaceholderText="Route secret (part of every webhook URL)" />
+            <TextBox Grid.Row="3" Grid.Column="1" Name="RelayRouteSecret" Text="{Binding RouteSecret}" PasswordChar="•" PlaceholderText="Route secret (part of every webhook URL)" ToolTip.Tip="A secret code from the setup script that is built into every webhook web address below. It is hidden as dots. Keep it private." />
             <TextBlock Grid.Row="4" Grid.Column="1" Classes="muted" Text="{Binding MaskedRouteSecret}" />
           </Grid>
-          <CheckBox Content="Use the webhook relay" IsChecked="{Binding Enabled}" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Use the webhook relay" IsChecked="{Binding Enabled}" ToolTip.Tip="Tick to collect messages from your relay. Untick to stop using it." />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to your relay as soon as Cuebot starts." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to your relay to collect messages." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops collecting messages from your relay." />
           </StackPanel>
           <TextBlock Name="RelayStatus" TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
@@ -43,15 +43,15 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Webhook URLs" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Paste each URL into that service's webhook settings (for Kick: your developer app, &quot;Enable webhooks&quot;). Treat them like passwords: anyone with a URL can send fake events, which Cuebot then rejects because the signature does not match." />
+                     Text="Copy each web address into that service's webhook settings (for Kick: your developer app, &quot;Enable webhooks&quot;). Treat them like passwords: anyone who knows one can send fake messages. Cuebot throws those away because their signature does not match." />
           <TextBlock Classes="muted" Text="No services with webhooks are installed." IsVisible="{Binding HasNoRoutes}" />
           <ItemsControl Name="WebhookRoutes" ItemsSource="{Binding Routes}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:WebhookRouteViewModel">
                 <Grid ColumnDefinitions="130,*,Auto" Margin="0,3">
                   <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <TextBox Grid.Column="1" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" Margin="0,0,8,0" />
-                  <Button Grid.Column="2" Content="Copy" Command="{Binding CopyCommand}" />
+                  <TextBox Grid.Column="1" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" Margin="0,0,8,0" ToolTip.Tip="The web address to give to this service. It contains a secret, so do not show it on stream." />
+                  <Button Grid.Column="2" Content="Copy" Command="{Binding CopyCommand}" ToolTip.Tip="Copies this web address so you can paste it into the service's webhook settings." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

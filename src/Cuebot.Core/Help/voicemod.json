@@ -1,0 +1,177 @@
+{
+  "triggers": {
+    "voicemod.connected": {
+      "description": "Runs when Cuebot connects to the Voicemod app (the voice changer program on your computer).",
+      "fields": {},
+      "variables": {
+        "port": "The port Voicemod answered on (you can ignore this)"
+      }
+    },
+    "voicemod.disconnected": {
+      "description": "Runs when Cuebot loses the connection to Voicemod, for example when you close it.",
+      "fields": {},
+      "variables": {}
+    },
+    "voicemod.voiceChanged": {
+      "description": "Runs when you switch to a different Voicemod voice, whether in Voicemod itself or from Cuebot.",
+      "fields": {
+        "voice": "Only react when this voice was chosen, by its name as Voicemod shows it, like \"Robot\". Separate several with commas. Leave empty for any voice."
+      },
+      "variables": {
+        "voiceName": "The name of the new voice",
+        "voiceId": "The new voice's ID",
+        "previousVoiceName": "The name of the voice before",
+        "previousVoiceId": "The ID of the voice before"
+      }
+    },
+    "voicemod.voiceChangerToggled": {
+      "description": "Runs when the voice changer is turned on or off in Voicemod.",
+      "fields": {
+        "stateFilter": "Choose On to react only when it is turned on, Off only when it is turned off, or Any for both."
+      },
+      "variables": {
+        "enabled": "True when the voice changer is on now"
+      }
+    },
+    "voicemod.hearMyselfToggled": {
+      "description": "Runs when 'hear my voice' (listening to yourself through your headphones) is turned on or off in Voicemod.",
+      "fields": {
+        "stateFilter": "Choose On to react only when it is turned on, Off only when it is turned off, or Any for both."
+      },
+      "variables": {
+        "enabled": "True when hearing yourself is on now"
+      }
+    },
+    "voicemod.backgroundEffectsToggled": {
+      "description": "Runs when the background sound effects in Voicemod are turned on or off.",
+      "fields": {
+        "stateFilter": "Choose On to react only when it is turned on, Off only when it is turned off, or Any for both."
+      },
+      "variables": {
+        "enabled": "True when background effects are on now"
+      }
+    },
+    "voicemod.muteToggled": {
+      "description": "Runs when your microphone is muted or unmuted in Voicemod.",
+      "fields": {
+        "stateFilter": "Choose On to react only when the mic gets muted, Off only when it gets unmuted, or Any for both."
+      },
+      "variables": {
+        "muted": "True when the microphone is muted now"
+      }
+    },
+    "voicemod.soundboardChanged": {
+      "description": "Runs when Voicemod's soundboard changes, for example when you pick another soundboard or the list of sounds updates.",
+      "fields": {},
+      "variables": {
+        "soundboard.name": "The name of the active soundboard",
+        "soundboard.id": "The ID of the active soundboard",
+        "soundCount": "How many sounds were loaded (only sometimes given)"
+      }
+    }
+  },
+  "subActions": {
+    "voicemod.selectVoice": {
+      "description": "Switches Voicemod to a voice of your choice. Handy as a reward, like a robot voice for a few minutes.",
+      "fields": {
+        "voice": "The voice's name as Voicemod shows it, like \"Robot\", or its ID."
+      },
+      "variables": {
+        "voicemodVoiceName": "The name of the voice that was chosen",
+        "voicemodVoiceId": "That voice's ID"
+      }
+    },
+    "voicemod.selectRandomVoice": {
+      "description": "Switches Voicemod to a random voice. Fun for a surprise reward.",
+      "fields": {
+        "mode": "Which voices to pick from: AllVoices, FreeVoices (Voicemod's free voices), FavoriteVoices (the ones you starred in Voicemod) or CustomVoices (the ones you made)."
+      },
+      "variables": {}
+    },
+    "voicemod.getCurrentVoice": {
+      "description": "Finds out which voice Voicemod is using now and puts it into variables for later steps.",
+      "fields": {},
+      "variables": {
+        "voicemodVoiceName": "The name of the current voice",
+        "voicemodVoiceId": "The current voice's ID"
+      }
+    },
+    "voicemod.getVoices": {
+      "description": "Gets the list of your Voicemod voices into variables for later steps.",
+      "fields": {
+        "onlyFavorites": "Tick to list only the voices you starred as favorites in Voicemod. Untick to list them all."
+      },
+      "variables": {
+        "voicemodVoices": "The voice names, separated by commas",
+        "voicemodVoiceCount": "How many voices there are",
+        "voicemodVoicesJson": "The full list with details, for people who use scripts"
+      }
+    },
+    "voicemod.setVoiceChanger": {
+      "description": "Turns the Voicemod voice changer on or off.",
+      "fields": {
+        "state": "Toggle flips the current setting, On turns it on and Off turns it off."
+      },
+      "variables": {
+        "voicemodVoiceChanger": "True when the voice changer is on now"
+      }
+    },
+    "voicemod.setHearMyself": {
+      "description": "Turns 'hear my voice' on or off, so you can listen to yourself in your headphones.",
+      "fields": {
+        "state": "Toggle flips the current setting, On turns it on and Off turns it off."
+      },
+      "variables": {
+        "voicemodHearMyself": "True when hearing yourself is on now"
+      }
+    },
+    "voicemod.setBackgroundEffects": {
+      "description": "Turns Voicemod's background sound effects on or off.",
+      "fields": {
+        "state": "Toggle flips the current setting, On turns it on and Off turns it off."
+      },
+      "variables": {
+        "voicemodBackgroundEffects": "True when background effects are on now"
+      }
+    },
+    "voicemod.setMute": {
+      "description": "Mutes or unmutes your microphone in Voicemod.",
+      "fields": {
+        "state": "Toggle flips the current setting, On mutes the microphone and Off unmutes it."
+      },
+      "variables": {
+        "voicemodMuted": "True when the microphone is muted now"
+      }
+    },
+    "voicemod.playSound": {
+      "description": "Plays a sound from your Voicemod soundboard. Handy for a sound effect reward.",
+      "fields": {
+        "sound": "The sound's name as the Voicemod soundboard shows it."
+      },
+      "variables": {
+        "voicemodSoundName": "The name of the sound that was played"
+      }
+    },
+    "voicemod.stopAllSounds": {
+      "description": "Stops every Voicemod soundboard sound that is playing.",
+      "fields": {},
+      "variables": {}
+    },
+    "voicemod.getSounds": {
+      "description": "Gets the list of your Voicemod soundboard sounds into variables for later steps.",
+      "fields": {},
+      "variables": {
+        "voicemodSounds": "The sound names, separated by commas",
+        "voicemodSoundCount": "How many sounds there are",
+        "voicemodSoundsJson": "The full list with details, for people who use scripts"
+      }
+    },
+    "voicemod.setCensorBeep": {
+      "description": "Turns Voicemod's censor beep, which bleeps out bad language, on or off.",
+      "fields": {
+        "state": "On turns the censor beep on. Off turns it off."
+      },
+      "variables": {}
+    }
+  }
+}

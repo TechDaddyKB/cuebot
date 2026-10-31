@@ -13,26 +13,33 @@
         <StackPanel Spacing="10">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="h2" Text="Speak events" />
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="On" OffContent="Off" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="On" OffContent="Off"
+                          ToolTip.Tip="Master switch. When off, no stream events (follows, subs, raids...) are read aloud." />
           </Grid>
           <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
             <TextBlock Classes="label" Text="Voice alias" />
-            <ComboBox Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}"
+                      ToolTip.Tip="The voice used to read events aloud. Each event kind can pick its own voice below." />
             <TextBlock Grid.Column="2" Classes="label" Text="Filter profile for viewer-written text" />
-            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding FilterProfiles}" SelectedItem="{Binding FilterProfile}" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding FilterProfiles}" SelectedItem="{Binding FilterProfile}"
+                      ToolTip.Tip="Some events contain text your viewers wrote (a cheer message, a reward note). This picks which Filters profile cleans that text before it is read." />
           </Grid>
           <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
             <TextBlock Classes="label" Text="Minimum raid viewers" />
-            <NumericUpDown Grid.Row="1" Value="{Binding MinRaidViewers}" Minimum="0" Maximum="1000000" />
+            <NumericUpDown Grid.Row="1" Value="{Binding MinRaidViewers}" Minimum="0" Maximum="1000000"
+                           ToolTip.Tip="Smaller raids than this number of viewers are not read aloud. 0 reads every raid." />
             <TextBlock Grid.Column="2" Classes="label" Text="Minimum cheer bits" />
-            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding MinCheerBits}" Minimum="0" Maximum="10000000" Increment="100" />
+            <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding MinCheerBits}" Minimum="0" Maximum="10000000" Increment="100"
+                           ToolTip.Tip="Cheers with fewer bits than this are not read aloud. 0 reads every cheer." />
             <TextBlock Grid.Column="4" Classes="label" Text="Minimum tip amount" />
-            <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MinTipAmount}" Minimum="0" Maximum="1000000" FormatString="0.00" Increment="1" />
+            <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MinTipAmount}" Minimum="0" Maximum="1000000" FormatString="0.00" Increment="1"
+                           ToolTip.Tip="Tips or donations smaller than this amount are not read aloud. 0 reads every tip." />
           </Grid>
           <Grid ColumnDefinitions="*,Auto">
-            <CheckBox Content="Speak each follower only once per session" IsChecked="{Binding SuppressDuplicateFollows}" />
+            <CheckBox Content="Speak each follower only once per session" IsChecked="{Binding SuppressDuplicateFollows}"
+                      ToolTip.Tip="Stops the same person being thanked again if they unfollow and follow again during one stream." />
             <Button Grid.Column="1" Content="Reset session" Command="{Binding ResetSessionCommand}"
-                    ToolTip.Tip="Forget which users already followed this session" />
+                    ToolTip.Tip="Forgets who already followed this session, so their next follow is read aloud again." />
           </Grid>
         </StackPanel>
       </Border>
@@ -41,7 +48,8 @@
         <Border Classes="card" VerticalAlignment="Top">
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Event kinds" />
-            <ListBox Classes="list" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}">
+            <ListBox Classes="list" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}"
+                     ToolTip.Tip="Pick a kind of event to change what is said for it.">
               <ListBox.ItemTemplate>
                 <DataTemplate DataType="sp:EventKindViewModel">
                   <Grid ColumnDefinitions="*,Auto">
@@ -62,11 +70,13 @@
                   <StackPanel Spacing="10">
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Classes="h2" Text="{Binding Label}" />
-                      <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="Spoken" OffContent="Silent" />
+                      <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="Spoken" OffContent="Silent"
+                                    ToolTip.Tip="Spoken: this kind of event is read aloud. Silent: it is skipped." />
                     </Grid>
                     <StackPanel Spacing="3">
                       <TextBlock Classes="label" Text="Voice alias" />
-                      <ComboBox ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" MaxWidth="360" HorizontalAlignment="Left" MinWidth="240" />
+                      <ComboBox ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" MaxWidth="360" HorizontalAlignment="Left" MinWidth="240"
+                                ToolTip.Tip="The voice for this kind of event. Leave it on the default to use the voice chosen at the top." />
                     </StackPanel>
                     <Grid ColumnDefinitions="*,Auto">
                       <StackPanel>
@@ -74,19 +84,21 @@
                         <TextBlock Classes="hint" Text="One enabled message is picked at random, weighted." />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Button Content="+ Message" Command="{Binding AddMessageCommand}" />
-                        <Button Content="Reset to default" Command="{Binding ResetToDefaultCommand}" IsEnabled="{Binding IsCustomized}" />
+                        <Button Content="+ Message" Command="{Binding AddMessageCommand}" ToolTip.Tip="Adds another sentence that can be spoken for this event." />
+                        <Button Content="Reset to default" Command="{Binding ResetToDefaultCommand}" IsEnabled="{Binding IsCustomized}"
+                                ToolTip.Tip="Throws away your changes to these messages and brings back the original ones." />
                       </StackPanel>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding Messages}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="sp:EventMessageViewModel">
                           <Grid ColumnDefinitions="Auto,8,*,8,Auto,8,Auto" Margin="0,0,0,6">
-                            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" ToolTip.Tip="Enabled" />
-                            <TextBox Grid.Column="2" Text="{Binding Text}" />
+                            <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" ToolTip.Tip="Tick to allow this message to be picked. Untick to keep it saved but never use it." />
+                            <TextBox Grid.Column="2" Text="{Binding Text}"
+                                     ToolTip.Tip="What is said. Use the %variables% listed below, like %name%." />
                             <NumericUpDown Grid.Column="4" Value="{Binding Weight}" Minimum="1" Maximum="100" Width="110"
-                                           ToolTip.Tip="Weight" />
-                            <Button Grid.Column="6" Content="Remove"
+                                           ToolTip.Tip="How often this message is picked compared with the others. A message with weight 2 is picked twice as often as one with weight 1." />
+                            <Button Grid.Column="6" Content="Remove" ToolTip.Tip="Deletes this message."
                                     Command="{Binding $parent[ItemsControl].((sp:EventKindViewModel)DataContext).RemoveMessageCommand}"
                                     CommandParameter="{Binding}" />
                           </Grid>

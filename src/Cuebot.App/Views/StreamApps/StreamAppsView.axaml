@@ -7,7 +7,7 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Meld Studio &amp; PolyPop" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Both apps become triggers, sub-actions and script functions. Settings are stored in streamapps.json. Nothing connects automatically unless you tick the box." />
+                 Text="Meld Studio and PolyPop can both start your actions (as triggers) and be controlled by them (as sub-actions, the steps inside an action). Settings are stored in streamapps.json. Nothing connects automatically unless you tick the box." />
 
       <!-- Meld Studio -->
       <Border Classes="card" DataContext="{Binding Meld}" x:DataType="vm:MeldCardViewModel">
@@ -17,24 +17,30 @@
                      Text="In Meld Studio open File → Preferences → Advanced and switch on &quot;Allow remote connections&quot;. Meld listens on port 13376 and has no password, so only allow it on networks you trust." />
           <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" Name="MeldHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBox Grid.Column="1" Name="MeldHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The address of the computer where Meld Studio runs. 127.0.0.1 (or localhost) means this same computer, so most people can leave it." />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                             ToolTip.Tip="A number that says which &quot;door&quot; on that computer Cuebot connects to. Only change it if you changed it in Meld too." />
           </Grid>
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Reconnect when the connection drops (or Meld is not running yet)" IsChecked="{Binding AutoReconnect}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to Meld Studio as soon as Cuebot starts." />
+          <CheckBox Content="Reconnect when the connection drops (or Meld is not running yet)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries again by itself if the connection is lost, or if Meld Studio was not open yet when Cuebot started." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to Meld Studio." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to Meld Studio." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <TextBlock Name="MeldOutputs" Classes="muted" Text="{Binding Outputs}" TextWrapping="Wrap" />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Toggle stream" Command="{Binding ToggleStreamingCommand}" IsEnabled="{Binding IsConnected}" />
-            <Button Content="Toggle recording" Command="{Binding ToggleRecordingCommand}" IsEnabled="{Binding IsConnected}" />
-            <Button Content="Screenshot" Command="{Binding ScreenshotCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Content="Toggle stream" Command="{Binding ToggleStreamingCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Starts your stream in Meld Studio if it is off, or stops it if it is live. Careful: this really goes live or ends your stream." />
+            <Button Content="Toggle recording" Command="{Binding ToggleRecordingCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Starts recording in Meld Studio if it is off, or stops the recording if it is on." />
+            <Button Content="Screenshot" Command="{Binding ScreenshotCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Asks Meld Studio to take a picture of your stream." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
             <Run Text="Current scene: " FontWeight="SemiBold" /><Run Text="{Binding CurrentScene}" />
@@ -47,7 +53,7 @@
                 <Grid ColumnDefinitions="*,200,Auto" Margin="0,2">
                   <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Details}" VerticalAlignment="Center" />
-                  <Button Grid.Column="2" Content="Show" Command="{Binding ShowCommand}" />
+                  <Button Grid.Column="2" Content="Show" Command="{Binding ShowCommand}" ToolTip.Tip="Switches Meld Studio to this scene." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -62,20 +68,24 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="PolyPop" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Install the community WebSocket plugin in PolyPop, add a WebSocket source and set its Port to the port below (the plugin's default is 38031; Streamer.bot setups use 9652). Add a WebSocket Alert per alert name and wire its variables as &lt;name&gt;." />
-          <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding ModeIndex}" MinWidth="320" />
+                     Text="Install the community WebSocket plugin in PolyPop (a WebSocket is a live two-way link between two programs), add a WebSocket source and set its Port to the port below (the plugin's default is 38031; Streamer.bot setups use 9652). Add a WebSocket Alert for each alert name and connect its variables as &lt;name&gt;." />
+          <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding ModeIndex}" MinWidth="320"
+                    ToolTip.Tip="Who opens the link. &quot;Cuebot listens&quot; waits for the PolyPop plugin to connect to Cuebot. &quot;Cuebot connects&quot; reaches out to the plugin itself. Match what you set up in PolyPop." />
           <Grid ColumnDefinitions="Auto,*,Auto,140,Auto,120" RowDefinitions="Auto">
             <TextBlock Text="Address" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" Text="{Binding Address}" PlaceholderText="127.0.0.1" />
+            <TextBox Grid.Column="1" Text="{Binding Address}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The computer address to listen on or connect to. 127.0.0.1 means this same computer, so most people can leave it." />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="3" Name="PolyPopPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <NumericUpDown Grid.Column="3" Name="PolyPopPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                             ToolTip.Tip="The port number the link uses. It must be the same number you typed into the PolyPop WebSocket source." />
             <TextBlock Grid.Column="4" Text="Endpoint" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <TextBox Grid.Column="5" Text="{Binding Endpoint}" PlaceholderText="/" />
+            <TextBox Grid.Column="5" Text="{Binding Endpoint}" PlaceholderText="/"
+                     ToolTip.Tip="The path at the end of the web address, like /alerts. Most setups use just / so you can leave it." />
           </Grid>
-          <CheckBox Content="Start automatically on startup" IsChecked="{Binding AutoStart}" />
+          <CheckBox Content="Start automatically on startup" IsChecked="{Binding AutoStart}" ToolTip.Tip="Starts the PolyPop link as soon as Cuebot starts." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Start" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Stop" Command="{Binding DisconnectCommand}" />
+            <Button Content="Start" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Starts the link with PolyPop using the settings above." />
+            <Button Content="Stop" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the link with PolyPop." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
@@ -85,9 +95,12 @@
           </TextBlock>
           <TextBlock Text="Test alert" FontWeight="SemiBold" Margin="0,4,0,0" />
           <Grid ColumnDefinitions="200,*,Auto" RowDefinitions="Auto">
-            <TextBox Text="{Binding TestAlert}" PlaceholderText="Alert name" />
-            <TextBox Grid.Column="1" Margin="8,0" Text="{Binding TestVariables}" PlaceholderText="name=value" />
-            <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" IsEnabled="{Binding IsConnected}" />
+            <TextBox Text="{Binding TestAlert}" PlaceholderText="Alert name"
+                     ToolTip.Tip="The name of a PolyPop alert to set off as a test. It must match the alert name in PolyPop." />
+            <TextBox Grid.Column="1" Margin="8,0" Text="{Binding TestVariables}" PlaceholderText="name=value"
+                     ToolTip.Tip="Optional values sent with the alert, written as name=value, like user=Sam. Check the alert's variable names in PolyPop." />
+            <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Sends the test alert to PolyPop now." />
           </Grid>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />

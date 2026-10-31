@@ -1,0 +1,190 @@
+{
+  "triggers": {
+    "websocket.serverOpen": {
+      "description": "Runs when another program connects to one of your own WebSocket servers. A WebSocket is an open line two programs use to chat quickly.",
+      "fields": {
+        "server": "Only run for the WebSocket server with this name (a server you made in Cuebot that other programs can connect to). Leave empty for any server."
+      },
+      "variables": {
+        "serverName": "The server's name",
+        "sessionId": "Which connected program this is",
+        "remote": "Where the program connected from"
+      }
+    },
+    "websocket.serverMessage": {
+      "description": "Runs when a program connected to your own WebSocket server sends Cuebot a message.",
+      "fields": {
+        "server": "Only run for the WebSocket server with this name (a server you made in Cuebot that other programs can connect to). Leave empty for any server."
+      },
+      "variables": {
+        "serverName": "The server's name",
+        "sessionId": "Which connected program this is",
+        "remote": "Where the program connected from",
+        "message": "The text it sent"
+      }
+    },
+    "websocket.serverClose": {
+      "description": "Runs when a program disconnects from one of your own WebSocket servers.",
+      "fields": {
+        "server": "Only run for the WebSocket server with this name (a server you made in Cuebot that other programs can connect to). Leave empty for any server."
+      },
+      "variables": {
+        "serverName": "The server's name",
+        "sessionId": "Which connected program this is",
+        "remote": "Where the program connected from"
+      }
+    },
+    "websocket.clientOpen": {
+      "description": "Runs when Cuebot connects to another program over a WebSocket (an open line two programs use to chat quickly).",
+      "fields": {
+        "client": "Only run for the WebSocket client with this name (a connection Cuebot makes to another program). Leave empty for any client."
+      },
+      "variables": {
+        "clientName": "The client's name",
+        "url": "The address it connects to"
+      }
+    },
+    "websocket.clientMessage": {
+      "description": "Runs when the other program, which Cuebot is connected to over a WebSocket, sends Cuebot a message.",
+      "fields": {
+        "client": "Only run for the WebSocket client with this name (a connection Cuebot makes to another program). Leave empty for any client."
+      },
+      "variables": {
+        "clientName": "The client's name",
+        "url": "The address it connects to",
+        "message": "The text it sent"
+      }
+    },
+    "websocket.clientClose": {
+      "description": "Runs when Cuebot's WebSocket connection to another program ends.",
+      "fields": {
+        "client": "Only run for the WebSocket client with this name (a connection Cuebot makes to another program). Leave empty for any client."
+      },
+      "variables": {
+        "clientName": "The client's name",
+        "url": "The address it connects to",
+        "reason": "Why it ended: disconnected (on purpose) or closed (by the other side)"
+      }
+    },
+    "webhook.custom": {
+      "description": "Runs when another app or website visits a web link you made in Cuebot (a custom hook). Use it to start actions from your own tools.",
+      "fields": {
+        "hookName": "Only run for the hook with this name. Leave empty to run for every hook you made.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "hookName": "The hook's name",
+        "method": "How it was called, like GET or POST",
+        "query": "The extra bits added after the ? in the link",
+        "body": "The text that was sent along",
+        "contentType": "What kind of data was sent",
+        "isTest": "True when this is a test event, not a real one",
+        "query.NAME": "Each item in the link's ? part, by its name"
+      }
+    },
+    "custom.codeEvent": {
+      "description": "Runs when a script, another action or a connected program fires a custom event with a name you choose. A way to chain your own actions.",
+      "fields": {
+        "eventName": "Only run for the event with this name, like \"BossFight\". Leave empty to run for every custom event."
+      },
+      "variables": {
+        "eventName": "The name of the event that was fired"
+      }
+    }
+  },
+  "subActions": {
+    "ifttt.notificationBasic": {
+      "description": "Tells IFTTT that something happened, with one line of text. IFTTT can then do anything you set up, like flash a smart light.",
+      "fields": {
+        "eventName": "The event name you chose in your IFTTT applet, like \"stream_alert\".",
+        "text": "The text to send. Your IFTTT applet receives it as Value1.",
+        "key": "Your IFTTT Webhooks key. Leave empty to use the key already saved in Cuebot. Find it on ifttt.com/maker_webhooks."
+      },
+      "variables": {}
+    },
+    "ifttt.notificationAdvanced": {
+      "description": "Tells IFTTT that something happened, with several named pieces of information. IFTTT can then act on them.",
+      "fields": {
+        "eventName": "The event name you chose in your IFTTT applet, like \"stream_alert\".",
+        "arguments": "One per line, written as name=value, like score=10. IFTTT gets the first five as Argument1Name, Argument1Value and so on, and all of them together as ArgumentsJson.",
+        "key": "Your IFTTT Webhooks key. Leave empty to use the key already saved in Cuebot. Find it on ifttt.com/maker_webhooks."
+      },
+      "variables": {}
+    },
+    "websocket.serverSend": {
+      "description": "Sends a message to programs connected to one of your own WebSocket servers (an open line to another app). Use it to talk to your own tools.",
+      "fields": {
+        "server": "Which server: its name, or its number in your list (0 is the first).",
+        "message": "The text to send.",
+        "sessionId": "Send to just one connected program: type its session id. Leave empty to send to all. In a message trigger, %sessionId% answers whoever wrote."
+      },
+      "variables": {
+        "sentCount": "How many programs got the message"
+      }
+    },
+    "websocket.serverState": {
+      "description": "Starts or stops one of your own WebSocket servers (the open line other programs connect to).",
+      "fields": {
+        "server": "Which server: its name, or its number in your list (0 is the first).",
+        "state": "Start opens the server, Stop closes it."
+      },
+      "variables": {}
+    },
+    "websocket.clientSend": {
+      "description": "Sends a message to another program over a WebSocket connection Cuebot has made. Fails if the connection is not open.",
+      "fields": {
+        "client": "Which client: its name, or its number in your list (0 is the first).",
+        "message": "The text to send."
+      },
+      "variables": {}
+    },
+    "websocket.clientState": {
+      "description": "Connects Cuebot to another program over a WebSocket, or ends that connection.",
+      "fields": {
+        "client": "Which client: its name, or its number in your list (0 is the first).",
+        "state": "Connect opens the connection, Disconnect closes it."
+      },
+      "variables": {}
+    },
+    "websocket.broadcast": {
+      "description": "Sends a message to every program connected to Cuebot's built-in WebSocket address (the one other apps use to talk to Cuebot).",
+      "fields": {
+        "message": "The text to send. If it is written as JSON it is sent as data, otherwise as plain text."
+      },
+      "variables": {
+        "sentCount": "How many programs got the message"
+      }
+    },
+    "core.httpRequest": {
+      "description": "Visits a web address and saves the answer. Use it to call other websites or tools, like fetching a joke or poking a smart device.",
+      "fields": {
+        "method": "GET asks for information. POST sends information. PUT, PATCH and DELETE change or remove things on the other side. HEAD asks only for the headline details.",
+        "url": "The full web address, starting with http:// or https://, like \"https://example.com/api\".",
+        "headers": "Extra details sent along, one per line as \"Name: value\". Most people can leave this empty.",
+        "body": "The data to send with a POST, PUT or PATCH. Leave empty if you send nothing.",
+        "contentType": "What kind of data the body is. application/json is right for JSON. Only used when there is a body.",
+        "timeout": "How many seconds to wait for an answer before giving up. The most is 30.",
+        "variable": "The name of the variable that will hold the answer. Use it later as %httpResponse% (or the name you type).",
+        "parseJson": "Tick if the answer is JSON data. Each value in it also gets its own variable, like %httpResponse.name%."
+      },
+      "variables": {
+        "httpResponse": "The answer text (or the name you chose in the box above)",
+        "httpStatusCode": "The result number: 200 means it worked, 404 means not found",
+        "httpSuccess": "True if the request worked",
+        "httpHeaders": "The extra details that came back",
+        "httpError": "What went wrong, if the request failed or timed out"
+      }
+    },
+    "core.udpBroadcast": {
+      "description": "Sends a short text message to other devices on your network, or to this computer, with no reply expected. Handy for small gadgets or other apps that listen.",
+      "fields": {
+        "port": "The door number the other app listens on, from 1 to 65535. Check that app's settings.",
+        "payload": "The text to send.",
+        "host": "Who to send it to. 255.255.255.255 shouts to every device on your home network. 127.0.0.1 means this computer. You can also type one device's address."
+      },
+      "variables": {
+        "udpBytesSent": "How many bytes were sent"
+      }
+    }
+  }
+}

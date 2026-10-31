@@ -1,0 +1,465 @@
+{
+  "triggers": {
+    "goxlr.connected": {
+      "description": "Runs when Cuebot connects to the GoXLR Utility (the small helper program that talks to your GoXLR). Handy to show that your mixer is ready.",
+      "fields": {},
+      "variables": {
+        "goXlrDaemonVersion": "The version of the GoXLR Utility",
+        "goXlrDeviceCount": "How many GoXLRs the utility sees"
+      }
+    },
+    "goxlr.disconnected": {
+      "description": "Runs when Cuebot loses the connection to the GoXLR Utility, for example when you close it. Useful for a warning that your mixer is no longer controlled.",
+      "fields": {},
+      "variables": {
+        "reason": "A short text saying why the connection ended"
+      }
+    },
+    "goxlr.deviceConnected": {
+      "description": "Runs when a GoXLR shows up, for example when you plug it in or switch it on.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now"
+      }
+    },
+    "goxlr.deviceDisconnected": {
+      "description": "Runs when a GoXLR goes away, for example when you unplug it or switch it off.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now"
+      }
+    },
+    "goxlr.volumeChanged": {
+      "description": "Runs when the volume of a GoXLR channel changes, whether you moved a fader, used the GoXLR app or Cuebot did it.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "channel": "Which channel, like \"Music\" or \"Mic\". Separate several with commas. Leave empty for any channel. The channels are Mic, Line In, Console, System, Game, Chat, Sample, Music, Headphones, Mic Monitor and Line Out."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrChannel": "The channel that changed, like \"LineIn\"",
+        "goXlrChannelName": "The channel's name as shown to you, like \"Line In\"",
+        "goXlrFader": "The fader (A-D) that channel is on, empty if it is on none",
+        "goXlrVolume": "The new volume, 0 to 100",
+        "goXlrPreviousVolume": "The volume before, 0 to 100"
+      }
+    },
+    "goxlr.faderAssignmentChanged": {
+      "description": "Runs when you give a fader a different channel, for example when fader B changes from Music to Game.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "fader": "Which fader (A, B, C or D). Separate several with commas. Leave empty for any fader.",
+        "channel": "Only react when the fader now has this channel, like \"Music\". Separate several with commas. Leave empty for any channel."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrFader": "The fader letter, A to D",
+        "goXlrChannel": "The channel on that fader, like \"Music\"",
+        "goXlrChannelName": "The channel's name as shown to you",
+        "goXlrMuted": "True when the fader is muted now",
+        "goXlrMuteState": "Unmuted, MutedToX or MutedToAll",
+        "goXlrVolume": "The channel's volume, 0 to 100",
+        "goXlrPreviousChannel": "The channel the fader had before"
+      }
+    },
+    "goxlr.faderMuteChanged": {
+      "description": "Runs when a fader gets muted or unmuted. Handy for showing on stream that your music or game sound is off.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "fader": "Which fader (A, B, C or D). Separate several with commas. Leave empty for any fader.",
+        "channel": "Which channel, like \"Music\" or \"Mic\". Separate several with commas. Leave empty for any channel. The channels are Mic, Line In, Console, System, Game, Chat, Sample, Music, Headphones, Mic Monitor and Line Out.",
+        "stateFilter": "Choose Muted to react only when it gets muted, Unmuted only when it gets unmuted, or Any for both."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrFader": "The fader letter, A to D",
+        "goXlrChannel": "The channel on that fader, like \"Music\"",
+        "goXlrChannelName": "The channel's name as shown to you",
+        "goXlrMuted": "True when the fader is muted now",
+        "goXlrMuteState": "Unmuted, MutedToX or MutedToAll",
+        "goXlrVolume": "The channel's volume, 0 to 100",
+        "goXlrWasMuted": "True when it was muted before",
+        "goXlrPreviousMuteState": "The mute state before"
+      }
+    },
+    "goxlr.coughMuteChanged": {
+      "description": "Runs when the Cough button (the mic mute button on a GoXLR Mini) mutes or unmutes your microphone.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "stateFilter": "Choose Muted to react only when it gets muted, Unmuted only when it gets unmuted, or Any for both."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrMuted": "True when the mic is muted now",
+        "goXlrMuteState": "Unmuted, MutedToX or MutedToAll",
+        "goXlrPreviousMuteState": "The mute state before",
+        "goXlrMuteFunction": "Where the mute applies, like \"All\" or \"ToStream\""
+      }
+    },
+    "goxlr.profileChanged": {
+      "description": "Runs when a different GoXLR profile is loaded. A profile holds all your mixer settings, so this tells you that you switched setups.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "profile": "Only react when this profile was loaded, by name. Separate several with commas. Leave empty for any profile."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrPreviousProfile": "The name of the profile that was loaded before"
+      }
+    },
+    "goxlr.micProfileChanged": {
+      "description": "Runs when a different mic profile is loaded. A mic profile holds your microphone sound settings.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "profile": "Only react when this mic profile was loaded, by name. Separate several with commas. Leave empty for any mic profile."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrPreviousMicProfile": "The name of the mic profile that was loaded before"
+      }
+    },
+    "goxlr.effectStateChanged": {
+      "description": "Runs when one of the voice effects (FX, Megaphone, Robot or Hard Tune) is turned on or off.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "effect": "Which effect: FX, Megaphone, Robot or Hard Tune. Separate several with commas. Leave empty for any effect.",
+        "stateFilter": "Choose On to react only when an effect is turned on, Off only when it is turned off, or Any for both."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrEffect": "The effect, like \"HardTune\"",
+        "goXlrEffectName": "The effect's name as shown to you, like \"Hard Tune\"",
+        "goXlrEnabled": "True when the effect is on now"
+      }
+    },
+    "goxlr.effectPresetChanged": {
+      "description": "Runs when you pick a different effect preset (one of the six saved voice effect setups).",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "preset": "Only react to this preset, by number (1 to 6) or by its name. Separate several with commas. Leave empty for any preset."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrPreset": "The new preset slot, like \"Preset3\"",
+        "goXlrPresetNumber": "The new preset number, 1 to 6",
+        "goXlrPresetName": "The new preset's name",
+        "goXlrPreviousPreset": "The slot it was before",
+        "goXlrPreviousPresetName": "The name it had before"
+      }
+    },
+    "goxlr.samplerBankChanged": {
+      "description": "Runs when you switch to another sampler bank (A, B or C). Each bank holds its own set of sounds.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "bank": "Only react when this bank was chosen: A, B or C. Separate several with commas. Leave empty for any bank."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrBank": "The new bank (A, B or C)",
+        "goXlrPreviousBank": "The bank it was before"
+      }
+    },
+    "goxlr.samplePlaybackChanged": {
+      "description": "Runs when a sampler sound starts or stops playing. Good for showing a 'sound playing' light on screen.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "bank": "Only react for this bank: A, B or C. Separate several with commas. Leave empty for any bank.",
+        "button": "Only react for this sampler button: Top Left, Top Right, Bottom Left or Bottom Right. Separate several with commas. Leave empty for any.",
+        "stateFilter": "Choose Playing to react only when a sound starts, Stopped only when it stops, or Any for both."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrBank": "The bank (A, B or C)",
+        "goXlrSampleButton": "The sampler button, like \"TopLeft\"",
+        "goXlrPlaying": "True when the sound is playing now"
+      }
+    },
+    "goxlr.buttonPressed": {
+      "description": "Runs when you press a button on your GoXLR. Great for turning any GoXLR button into a Cuebot hotkey.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "button": "Which button, like \"Cough\", \"Bleep\", \"Fader 1 Mute\", \"Effect Select 1\", \"Effect Fx\" or \"Sampler Top Left\". Separate several with commas. Leave empty for any button."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrButton": "The button, like \"EffectSelect1\"",
+        "goXlrButtonName": "The button's name as shown to you, like \"Effect Select 1\"",
+        "goXlrPressed": "True when the button is down, false when it came back up"
+      }
+    },
+    "goxlr.buttonReleased": {
+      "description": "Runs when you let go of a button on your GoXLR.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "button": "Which button, like \"Cough\", \"Bleep\", \"Fader 1 Mute\", \"Effect Select 1\", \"Effect Fx\" or \"Sampler Top Left\". Separate several with commas. Leave empty for any button."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrButton": "The button, like \"EffectSelect1\"",
+        "goXlrButtonName": "The button's name as shown to you, like \"Effect Select 1\"",
+        "goXlrPressed": "True when the button is down, false when it came back up"
+      }
+    },
+    "goxlr.routingChanged": {
+      "description": "Runs when a sound source is connected to or cut off from an output, for example when Music is sent to or removed from the stream mix.",
+      "fields": {
+        "serial": "Which GoXLR to react to, by serial number (shown on the GoXLR page). Separate several with commas. Leave empty to react to any GoXLR.",
+        "input": "Which source: Microphone, Chat, Music, Game, Console, Line In, System or Samples. Separate several with commas. Leave empty for any.",
+        "output": "Which output: Headphones, Broadcast Mix, Chat Mic, Sampler, Line Out or Stream Mix 2. Separate several with commas. Leave empty for any.",
+        "stateFilter": "Choose Routed to react only when the connection is switched on, Not routed only when it is switched off, or Any for both."
+      },
+      "variables": {
+        "goXlrSerial": "The serial number of the GoXLR that did it",
+        "goXlrDeviceType": "The kind of GoXLR (\"Mini\" or the full-size one)",
+        "goXlrProfile": "The name of the profile loaded on that GoXLR right now",
+        "goXlrMicProfile": "The name of the mic profile loaded right now",
+        "goXlrInput": "The source, like \"LineIn\"",
+        "goXlrOutput": "The output, like \"BroadcastMix\"",
+        "goXlrEnabled": "True when the source now goes to that output"
+      }
+    }
+  },
+  "subActions": {
+    "goxlr.setVolume": {
+      "description": "Sets the volume of a GoXLR channel, or raises or lowers it a bit. Handy for a 'turn the music down' command.",
+      "fields": {
+        "channel": "The channel to change, like \"Music\". Choose from Mic, Line In, Console, System, Game, Chat, Sample, Music, Headphones, Mic Monitor or Line Out.",
+        "volume": "The volume from 0 (silent) to 100 (full). With Relative change ticked, this is how much to add; use a minus number like -10 to lower it.",
+        "relative": "Tick to add the number to the current volume instead of setting it exactly. Untick to set the volume to exactly this."
+      },
+      "variables": {
+        "goXlrChannel": "The channel that was changed",
+        "goXlrVolume": "The new volume, 0 to 100"
+      }
+    },
+    "goxlr.setFaderMute": {
+      "description": "Mutes, unmutes or toggles one of the four GoXLR faders. Handy for a hotkey that silences your music or game sound.",
+      "fields": {
+        "target": "The fader (A, B, C or D) or the channel on it, like \"Music\". The channel must be on a fader.",
+        "state": "Mute silences it, using the mute button's own setting (for example only to the stream). Mute to all silences it everywhere. Unmute turns the sound back on. Toggle flips the current state."
+      },
+      "variables": {
+        "goXlrFader": "The fader letter that was changed",
+        "goXlrChannel": "The channel on that fader",
+        "goXlrMuteState": "The new state: Unmuted, MutedToX or MutedToAll",
+        "goXlrMuted": "True when it is muted now"
+      }
+    },
+    "goxlr.setFaderChannel": {
+      "description": "Changes which channel a fader controls, for example to put Music on fader B.",
+      "fields": {
+        "fader": "Which fader: A, B, C or D.",
+        "channel": "The channel to put on the fader: Mic, Line In, Console, System, Game, Chat, Sample, Music, Headphones, Mic Monitor or Line Out."
+      },
+      "variables": {}
+    },
+    "goxlr.setFaderMuteFunction": {
+      "description": "Chooses where a fader's mute button silences the sound, for example only on the stream but not in your headphones.",
+      "fields": {
+        "fader": "Which fader: A, B, C or D.",
+        "function": "Where muting applies. All mutes everywhere. The To options mute only that output, such as To Stream or To Phones (your headphones)."
+      },
+      "variables": {}
+    },
+    "goxlr.setCoughMute": {
+      "description": "Mutes or unmutes your microphone with the Cough button (on a GoXLR Mini this is the mic mute button).",
+      "fields": {
+        "state": "Mute silences it, using the mute button's own setting (for example only to the stream). Mute to all silences it everywhere. Unmute turns the sound back on. Toggle flips the current state."
+      },
+      "variables": {
+        "goXlrMuteState": "The new state: Unmuted, MutedToX or MutedToAll",
+        "goXlrMuted": "True when the mic is muted now"
+      }
+    },
+    "goxlr.loadProfile": {
+      "description": "Loads a saved GoXLR profile, which holds all your mixer settings. Handy to switch between a streaming and a chatting setup.",
+      "fields": {
+        "profile": "The profile name as the GoXLR Utility shows it, like \"Streaming\".",
+        "remember": "Tick to make the GoXLR Utility load this one again the next time it starts, like choosing it there yourself. Untick to use it only for now."
+      },
+      "variables": {}
+    },
+    "goxlr.loadMicProfile": {
+      "description": "Loads a saved mic profile, which holds your microphone sound settings such as equalizer and compressor.",
+      "fields": {
+        "profile": "The mic profile name as the GoXLR Utility shows it, like \"Podcast\".",
+        "remember": "Tick to make the GoXLR Utility load this one again the next time it starts, like choosing it there yourself. Untick to use it only for now."
+      },
+      "variables": {}
+    },
+    "goxlr.setEffect": {
+      "description": "Turns a voice effect on or off. Handy for a robot voice reward.",
+      "fields": {
+        "effect": "Which effect: FX, Megaphone, Robot or Hard Tune. FX is the main effects switch. Needs a full-size GoXLR.",
+        "state": "On turns it on, Off turns it off, Toggle flips it."
+      },
+      "variables": {
+        "goXlrEffect": "The effect that was changed",
+        "goXlrEnabled": "True when the effect is on now"
+      }
+    },
+    "goxlr.setEffectPreset": {
+      "description": "Picks one of the six effect presets (saved voice effect setups). Needs a full-size GoXLR.",
+      "fields": {
+        "preset": "A number from 1 to 6, or the preset's name."
+      },
+      "variables": {
+        "goXlrPreset": "The chosen preset slot, like \"Preset2\""
+      }
+    },
+    "goxlr.loadEffectPreset": {
+      "description": "Loads a preset saved in the GoXLR Utility's library into the effect preset that is active now. Needs a full-size GoXLR.",
+      "fields": {
+        "preset": "The name of the saved preset, as the GoXLR Utility shows it."
+      },
+      "variables": {}
+    },
+    "goxlr.setSamplerBank": {
+      "description": "Switches the sampler to bank A, B or C. Each bank holds its own sounds. Needs a full-size GoXLR.",
+      "fields": {
+        "bank": "The bank to switch to: A, B or C."
+      },
+      "variables": {}
+    },
+    "goxlr.playSample": {
+      "description": "Plays or stops a sound on a GoXLR sampler button. Handy for a sound effect when someone redeems a reward. Needs a full-size GoXLR.",
+      "fields": {
+        "bank": "Which bank to use. Active means the bank selected now; or choose A, B or C.",
+        "button": "Which of the four sampler buttons to use.",
+        "mode": "Play next plays the button's next sound. Play by index plays the sound number you choose. Stop stops what that button is playing.",
+        "index": "Only for Play by index: which sound on the button, where 1 is the first. Ignored in the other modes."
+      },
+      "variables": {
+        "goXlrBank": "The bank that was used",
+        "goXlrSampleButton": "The sampler button that was used"
+      }
+    },
+    "goxlr.setRouting": {
+      "description": "Connects or disconnects a sound source from an output, for example to send Music to your stream or keep it out of it.",
+      "fields": {
+        "input": "The sound source: Microphone, Chat, Music, Game, Console, Line In, System or Samples.",
+        "output": "Where it goes: Headphones, Broadcast Mix (your stream), Chat Mic, Sampler, Line Out or Stream Mix 2.",
+        "state": "On connects the source to the output, Off disconnects it, Toggle flips the current state."
+      },
+      "variables": {
+        "goXlrEnabled": "True when the source goes to that output now"
+      }
+    },
+    "goxlr.setGlobalColour": {
+      "description": "Sets the main light colour of your GoXLR.",
+      "fields": {
+        "colour": "A colour as a hex code, like #FF8800 (orange). The # is optional."
+      },
+      "variables": {}
+    },
+    "goxlr.setFaderColours": {
+      "description": "Sets the two light colours of a fader, the top and the bottom.",
+      "fields": {
+        "fader": "Which fader: A, B, C or D.",
+        "top": "A colour as a hex code, like #FF8800 (orange). The # is optional.",
+        "bottom": "A colour as a hex code, like #FF8800 (orange). The # is optional."
+      },
+      "variables": {}
+    },
+    "goxlr.setButtonColours": {
+      "description": "Sets the light colour of a GoXLR button, for when it is on and (if you want) when it is off.",
+      "fields": {
+        "button": "Which button to colour.",
+        "on": "The colour when the button is on. A colour as a hex code, like #FF8800 (orange). The # is optional.",
+        "off": "The colour when the button is off, as a hex code like #000000. Leave empty to keep the current one."
+      },
+      "variables": {}
+    },
+    "goxlr.setAnimationMode": {
+      "description": "Chooses a moving light show for your GoXLR, such as a rainbow. Choose None to turn it off.",
+      "fields": {
+        "mode": "The animation to show. It only works if your GoXLR's firmware supports animations."
+      },
+      "variables": {}
+    },
+    "goxlr.setScribbleText": {
+      "description": "Writes a short text on a fader's little screen (the scribble strip). Not available on the GoXLR Mini.",
+      "fields": {
+        "fader": "Which fader: A, B, C or D.",
+        "text": "The words to show at the bottom of the fader's screen, like \"Music\"."
+      },
+      "variables": {}
+    },
+    "goxlr.getStatus": {
+      "description": "Reads the current state of your GoXLR (volumes, mutes, effects, sampler) into variables you can use in later steps.",
+      "fields": {
+        "serial": "Which GoXLR to control, by serial number. Leave empty to use the one chosen on the GoXLR page (or the first one found)."
+      },
+      "variables": {
+        "goXlrSerial": "The GoXLR's serial number",
+        "goXlrProfile": "The loaded profile",
+        "goXlrMicProfile": "The loaded mic profile",
+        "goXlrVolumeMusic": "The Music volume, 0 to 100 (the same for other channels, like goXlrVolumeGame)",
+        "goXlrFaderAChannel": "The channel on fader A (the same for B, C and D)",
+        "goXlrFaderAMuted": "True when fader A is muted (the same for B, C and D)",
+        "goXlrFaderAVolume": "The volume of fader A's channel, 0 to 100",
+        "goXlrCoughMuted": "True when the Cough button has the mic muted",
+        "goXlrFxEnabled": "True when FX is on (also goXlrMegaphoneEnabled, goXlrRobotEnabled, goXlrHardTuneEnabled)",
+        "goXlrPreset": "The active effect preset slot",
+        "goXlrBank": "The active sampler bank"
+      }
+    },
+    "goxlr.sendCommand": {
+      "description": "For experts: sends your own command to the GoXLR Utility. Most people never need this, because the other GoXLR steps cover everything common.",
+      "fields": {
+        "command": "The command written in the GoXLR Utility's data format, like {\"SetFXEnabled\": true}. See the GoXLR Utility's own documentation for the list.",
+        "serial": "Which GoXLR to control, by serial number. Leave empty to use the one chosen on the GoXLR page (or the first one found).",
+        "raw": "Tick only if your command is a complete request for the utility, not a command for one GoXLR. Leave unticked for normal commands."
+      },
+      "variables": {
+        "goXlrResponse": "The utility's answer as text"
+      }
+    }
+  }
+}

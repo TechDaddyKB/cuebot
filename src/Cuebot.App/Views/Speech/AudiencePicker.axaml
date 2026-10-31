@@ -11,10 +11,10 @@
         <Setter Property="MinHeight" Value="28" />
       </Style>
     </WrapPanel.Styles>
-    <CheckBox Content="Everyone" IsChecked="{Binding Everyone}" />
-    <CheckBox Content="Moderators" IsChecked="{Binding Moderators}" IsEnabled="{Binding IsRestricted}" />
-    <CheckBox Content="VIPs" IsChecked="{Binding Vips}" IsEnabled="{Binding IsRestricted}" />
-    <CheckBox Content="Subscribers" IsChecked="{Binding Subscribers}" IsEnabled="{Binding IsRestricted}" />
-    <CheckBox Content="Regulars" IsChecked="{Binding Regulars}" IsEnabled="{Binding IsRestricted}" />
+    <CheckBox Content="Everyone" IsChecked="{Binding Everyone}" ToolTip.Tip="Ticked: anyone in chat may. Untick it to pick only certain groups." />
+    <CheckBox Content="Moderators" IsChecked="{Binding Moderators}" IsEnabled="{Binding IsRestricted}" ToolTip.Tip="Ticked: your chat moderators may." />
+    <CheckBox Content="VIPs" IsChecked="{Binding Vips}" IsEnabled="{Binding IsRestricted}" ToolTip.Tip="Ticked: viewers with the VIP badge may." />
+    <CheckBox Content="Subscribers" IsChecked="{Binding Subscribers}" IsEnabled="{Binding IsRestricted}" ToolTip.Tip="Ticked: your subscribers may." />
+    <CheckBox Content="Regulars" IsChecked="{Binding Regulars}" IsEnabled="{Binding IsRestricted}" ToolTip.Tip="Ticked: viewers you marked as regulars (on the Users page) may." />
   </WrapPanel>
 </UserControl>

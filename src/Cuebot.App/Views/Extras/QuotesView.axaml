@@ -7,29 +7,29 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4">
       <TextBlock Classes="h1" Text="Quotes" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Quotes are added and shown by actions ('Add quote', 'Get quote' — e.g. from !addquote and !quote commands) or here. Each one remembers who added it and the game or category being streamed." />
+                 Text="Quotes are funny or memorable things said on stream. Your actions add and show them (with the 'Add quote' and 'Get quote' sub-actions, for example from !addquote and !quote commands), or you can add them here. Each quote remembers who added it and which game or category you were streaming." />
     </StackPanel>
 
     <!-- Add a quote -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,12,0,8">
       <Grid ColumnDefinitions="*,8,150,8,190,8,Auto">
-        <TextBox Text="{Binding NewText}" PlaceholderText="New quote text" />
-        <TextBox Grid.Column="2" Text="{Binding NewUser}" PlaceholderText="User (optional)" />
-        <TextBox Grid.Column="4" Text="{Binding NewGame}" PlaceholderText="{Binding CurrentGameHint}" />
-        <Button Grid.Column="6" Content="+ Quote" Classes="accent" Command="{Binding AddQuoteCommand}" />
+        <TextBox Text="{Binding NewText}" PlaceholderText="New quote text" ToolTip.Tip="What was said." />
+        <TextBox Grid.Column="2" Text="{Binding NewUser}" PlaceholderText="User (optional)" ToolTip.Tip="Who said it or who added it. Optional." />
+        <TextBox Grid.Column="4" Text="{Binding NewGame}" PlaceholderText="{Binding CurrentGameHint}" ToolTip.Tip="The game or category being streamed. Leave empty to use the current one." />
+        <Button Grid.Column="6" Content="+ Quote" Classes="accent" Command="{Binding AddQuoteCommand}" ToolTip.Tip="Saves the quote to your list." />
       </Grid>
     </Border>
 
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto" Margin="0,0,0,6">
-      <TextBox Text="{Binding Search}" PlaceholderText="Search text, user, game or #id" />
+      <TextBox Text="{Binding Search}" PlaceholderText="Search text, user, game or #id" ToolTip.Tip="Type to show only matching quotes. Use #5 to find quote number 5." />
       <Button Grid.Column="2" Content="Import…" Click="OnImport"
-              ToolTip.Tip="Add quotes from a JSON or CSV file (a CSV needs a header row with at least a 'text' column)" />
+              ToolTip.Tip="Adds quotes from a file (JSON or CSV). A CSV file needs a first row with column names, including one called text." />
       <CheckBox Grid.Column="4" Content="Replace all" IsChecked="{Binding ReplaceOnImport}"
-                ToolTip.Tip="Importing replaces every quote (keeping the file's ids) instead of adding to them" />
-      <Button Grid.Column="6" Content="Export JSON…" Click="OnExportJson" />
-      <Button Grid.Column="8" Content="Export CSV…" Click="OnExportCsv" />
+                ToolTip.Tip="Ticked: importing throws away all your current quotes and uses only the file's. Unticked: the file's quotes are added to yours." />
+      <Button Grid.Column="6" Content="Export JSON…" Click="OnExportJson" ToolTip.Tip="Saves all your quotes to a file, as a backup or to use elsewhere." />
+      <Button Grid.Column="8" Content="Export CSV…" Click="OnExportCsv" ToolTip.Tip="Saves all your quotes to a file you can open in a spreadsheet." />
       <Button Grid.Column="10" Content="Re-index" Command="{Binding ReindexCommand}"
-              ToolTip.Tip="Renumber the quotes 1, 2, 3… in order (closes gaps left by deleted quotes)" />
+              ToolTip.Tip="Renumbers the quotes 1, 2, 3… in order, closing the gaps left by deleted quotes. Quote numbers people remember will change." />
       <TextBlock Grid.Column="12" Text="{Binding Summary}" Classes="muted" VerticalAlignment="Center" />
     </Grid>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Classes="muted" Margin="0,0,0,6"
@@ -49,12 +49,12 @@
           <DataTemplate DataType="vm:QuoteRowViewModel">
             <Grid ColumnDefinitions="60,*,150,170,90,80,Auto">
               <TextBlock Text="{Binding IdText}" FontWeight="SemiBold" VerticalAlignment="Center" />
-              <TextBox Grid.Column="1" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" Margin="0,0,8,0" />
+              <TextBox Grid.Column="1" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" Margin="0,0,8,0" ToolTip.Tip="You can edit the quote here. It is saved when you click away." />
               <TextBox Grid.Column="2" Text="{Binding User, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
               <TextBox Grid.Column="3" Text="{Binding Game, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" />
               <TextBlock Grid.Column="4" Text="{Binding Date}" Classes="muted" VerticalAlignment="Center" />
               <TextBlock Grid.Column="5" Text="{Binding Platform}" Classes="muted" VerticalAlignment="Center" />
-              <Button Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" />
+              <Button Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Deletes this quote." />
             </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>

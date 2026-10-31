@@ -7,19 +7,20 @@
     <StackPanel>
       <TextBlock Classes="h1" Text="Import / Export" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Share actions with their steps, triggers and queues, plus commands, timers and global variables. Imports accept Cuebot strings (CUEBOT1:…), .cuebot files and Streamer.bot import strings. Nothing is run while importing." />
+                 Text="Share your actions (with their steps, triggers and queues), commands, timers and global variables with friends, or load theirs. You can import a Cuebot code (starts with CUEBOT1:), a .cuebot file or a Streamer.bot import code. Nothing is run while importing." />
     </StackPanel>
     <TabControl Grid.Row="1" x:Name="Tabs">
       <TabItem Header="Import">
         <Grid ColumnDefinitions="*,16,360" RowDefinitions="Auto,Auto,*" Margin="0,8,0,0">
           <TextBox x:Name="ImportBox" Text="{Binding ImportText}" AcceptsReturn="True" TextWrapping="Wrap" Height="90"
-                   FontFamily="monospace" PlaceholderText="Paste a Cuebot or Streamer.bot import string here, or open a file" />
+                   FontFamily="monospace" PlaceholderText="Paste a Cuebot or Streamer.bot import string here, or open a file"
+                   ToolTip.Tip="Paste the long import code you were given here. Then press Preview to see what is inside before anything is added." />
           <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8">
-            <Button Content="Preview" Classes="accent" Command="{Binding PreviewCommand}" />
-            <Button Content="Paste" Command="{Binding PasteCommand}" />
-            <Button Content="Open file…" Click="OnOpenFile" />
-            <Button Content="Clear" Command="{Binding ClearImportCommand}" />
-            <Button Content="Import selected" Classes="accent" Command="{Binding ImportCommand}" />
+            <Button Content="Preview" Classes="accent" Command="{Binding PreviewCommand}" ToolTip.Tip="Shows what is inside the code without changing anything. You can then tick what you want to import." />
+            <Button Content="Paste" Command="{Binding PasteCommand}" ToolTip.Tip="Pastes the text you last copied into the box." />
+            <Button Content="Open file…" Click="OnOpenFile" ToolTip.Tip="Loads an import code from a file on your computer, like a .cuebot file." />
+            <Button Content="Clear" Command="{Binding ClearImportCommand}" ToolTip.Tip="Empties the box and the preview." />
+            <Button Content="Import selected" Classes="accent" Command="{Binding ImportCommand}" ToolTip.Tip="Adds everything that is ticked in the preview to Cuebot. Imported items with the same name as yours follow the choice next to them (Overwrite, Add as new or Skip)." />
           </StackPanel>
           <Grid Grid.Row="2" RowDefinitions="Auto,Auto,*">
             <TextBlock Text="{Binding ImportStatus}" TextWrapping="Wrap" Margin="0,0,0,4" />
@@ -27,7 +28,8 @@
             <TreeView Grid.Row="2" x:Name="PreviewTree" ItemsSource="{Binding PreviewGroups}" Margin="0,8,0,0">
               <TreeView.DataTemplates>
                 <TreeDataTemplate DataType="vm:ImportGroupViewModel" ItemsSource="{Binding Items}">
-                  <CheckBox IsChecked="{Binding IncludeAll}" IsThreeState="False" Content="{Binding Header}" FontWeight="SemiBold" />
+                  <CheckBox IsChecked="{Binding IncludeAll}" IsThreeState="False" Content="{Binding Header}" FontWeight="SemiBold"
+                            ToolTip.Tip="Ticks or unticks everything in this group." />
                 </TreeDataTemplate>
                 <TreeDataTemplate DataType="vm:ImportItemViewModel" ItemsSource="{Binding Details}">
                   <StackPanel Orientation="Horizontal" Spacing="10">
@@ -38,9 +40,10 @@
                       <TextBlock Text="{Binding ConflictText}" FontSize="12" />
                     </Border>
                     <ComboBox ItemsSource="{x:Static vm:ImportItemViewModel.ModeChoices}" SelectedItem="{Binding Mode}"
-                              IsVisible="{Binding HasConflict}" MinWidth="120" />
+                              IsVisible="{Binding HasConflict}" MinWidth="120"
+                              ToolTip.Tip="You already have something with this name. Overwrite replaces yours with the imported one. Add as new keeps both. Skip keeps yours and does not import this one." />
                     <TextBlock Text="C#" FontWeight="Bold" Foreground="#D29922" VerticalAlignment="Center" IsVisible="{Binding ContainsCode}"
-                               ToolTip.Tip="Contains script code: read it before enabling the action" />
+                               ToolTip.Tip="This action contains C# code (a small program). Read it before you turn the action on, because it will run on your computer." />
                     <TextBlock Text="⚠" Foreground="#D29922" VerticalAlignment="Center" IsVisible="{Binding HasWarnings}"
                                ToolTip.Tip="{Binding WarningText}" />
                   </StackPanel>
@@ -95,8 +98,9 @@
             <StackPanel Spacing="12">
               <StackPanel Orientation="Horizontal" Spacing="12">
                 <CheckBox Content="Include what the selected actions use (run actions, queues, commands, timers)"
-                          IsChecked="{Binding IncludeDependencies}" />
-                <Button Content="Refresh" Command="{Binding RefreshExportCommand}" />
+                          IsChecked="{Binding IncludeDependencies}"
+                          ToolTip.Tip="Also adds the other actions, queues, commands and timers that your ticked actions need, so they still work for the person who imports them." />
+                <Button Content="Refresh" Command="{Binding RefreshExportCommand}" ToolTip.Tip="Reloads the lists below with your latest actions, commands, timers and variables." />
               </StackPanel>
               <TextBlock Classes="h2" Text="Actions" />
               <ItemsControl x:Name="ExportActionList" ItemsSource="{Binding ExportActions}">
@@ -143,14 +147,15 @@
           </ScrollViewer>
           <StackPanel Grid.Column="2" Spacing="8">
             <TextBlock Classes="h2" Text="Details" />
-            <TextBox Text="{Binding ExportName}" PlaceholderText="Name" />
-            <TextBox Text="{Binding ExportAuthor}" PlaceholderText="Author" />
-            <TextBox Text="{Binding ExportVersion}" PlaceholderText="Version (optional)" />
-            <TextBox Text="{Binding ExportDescription}" PlaceholderText="Description" AcceptsReturn="True" TextWrapping="Wrap" Height="70" />
+            <TextBox Text="{Binding ExportName}" PlaceholderText="Name" ToolTip.Tip="A name for this bundle, shown to whoever imports it." />
+            <TextBox Text="{Binding ExportAuthor}" PlaceholderText="Author" ToolTip.Tip="Your name, so people know who made it." />
+            <TextBox Text="{Binding ExportVersion}" PlaceholderText="Version (optional)" ToolTip.Tip="Optional. A version number such as 1.0, handy when you share updates." />
+            <TextBox Text="{Binding ExportDescription}" PlaceholderText="Description" AcceptsReturn="True" TextWrapping="Wrap" Height="70"
+                     ToolTip.Tip="Say what this bundle does, so people know what they are importing." />
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Build string" Classes="accent" Command="{Binding BuildExportCommand}" />
-              <Button Content="Copy" Command="{Binding CopyExportCommand}" />
-              <Button Content="Save file…" Click="OnSaveFile" />
+              <Button Content="Build string" Classes="accent" Command="{Binding BuildExportCommand}" ToolTip.Tip="Turns everything you ticked into one long code that you can copy and share." />
+              <Button Content="Copy" Command="{Binding CopyExportCommand}" ToolTip.Tip="Copies the code so you can paste it into a message." />
+              <Button Content="Save file…" Click="OnSaveFile" ToolTip.Tip="Saves the code as a .cuebot file you can send to someone." />
             </StackPanel>
             <TextBlock Text="{Binding ExportStatus}" TextWrapping="Wrap" Classes="muted" />
             <TextBox Text="{Binding ExportString, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Height="160" FontFamily="monospace"

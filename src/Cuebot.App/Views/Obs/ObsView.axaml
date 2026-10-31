@@ -9,7 +9,7 @@
     <StackPanel MaxWidth="1000" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="OBS Studio" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                 Text="In OBS open Tools → WebSocket Server Settings, enable the server and copy the port and password. Add a connection per OBS instance; sub-actions and triggers pick one by name (empty = the default connection)." />
+                 Text="In OBS open Tools → WebSocket Server Settings, turn the server on and copy the port (door number) and password. If you run more than one OBS, add a connection for each. Your actions and triggers choose a connection by its name; leave the name empty to use the default one." />
 
       <!-- Connection picker -->
       <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
@@ -25,7 +25,7 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-        <Button Content="+ Connection" Command="{Binding AddConnectionCommand}" VerticalAlignment="Center" />
+        <Button Content="+ Connection" Command="{Binding AddConnectionCommand}" VerticalAlignment="Center" ToolTip.Tip="Adds another OBS to connect to, for example one on a second computer." />
       </StackPanel>
       <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
@@ -40,18 +40,18 @@
                     <TextBlock Text="Name" />
                     <TextBlock Grid.Column="2" Text="Host" />
                     <TextBlock Grid.Column="4" Text="Port" />
-                    <TextBox Grid.Row="1" Text="{Binding Name}" />
-                    <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Host}" />
-                    <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+                    <TextBox Grid.Row="1" Text="{Binding Name}" ToolTip.Tip="A name to tell your OBS connections apart. Actions use it to pick this OBS." />
+                    <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Host}" ToolTip.Tip="The computer where OBS runs. Use localhost for this computer, or the other computer's address." />
+                    <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number from OBS (Tools → WebSocket Server Settings). It is usually 4455." />
                   </Grid>
                   <TextBlock Classes="error" Text="{Binding NameError}" IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                   <TextBlock Text="Password" />
-                  <TextBox Text="{Binding Password}" PasswordChar="•" />
-                  <CheckBox Content="Connect automatically and reconnect when OBS restarts" IsChecked="{Binding AutoConnect}" />
+                  <TextBox Text="{Binding Password}" PasswordChar="•" ToolTip.Tip="The password from OBS (Tools → WebSocket Server Settings). Leave empty if you did not set one." />
+                  <CheckBox Content="Connect automatically and reconnect when OBS restarts" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects when it starts and connects again by itself whenever OBS is closed and reopened." />
                   <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-                    <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-                    <Button Content="Remove connection" Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}" />
+                    <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to OBS now." />
+                    <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Disconnects from OBS." />
+                    <Button Content="Remove connection" Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}" ToolTip.Tip="Deletes this connection from Cuebot. OBS itself is not changed." />
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Ellipse Classes="status" Classes.good="{Binding IsGood}" Classes.bad="{Binding IsBad}" />
@@ -68,12 +68,12 @@
                 <StackPanel Spacing="8">
                   <TextBlock Classes="h2" Text="Controls" />
                   <WrapPanel ItemSpacing="8" LineSpacing="8">
-                    <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" />
-                    <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" />
-                    <Button Content="Save replay" Command="{Binding SaveReplayCommand}" />
-                    <Button Content="Studio mode on / off" Command="{Binding ToggleStudioModeCommand}" />
-                    <Button Content="Transition preview → program" Command="{Binding StudioTransitionCommand}" IsVisible="{Binding StudioModeEnabled}" />
-                    <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                    <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" ToolTip.Tip="Starts your live stream if it is off, or ends it if it is on. Your viewers see this right away." />
+                    <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" ToolTip.Tip="Starts saving a video file if OBS is not recording, or stops recording if it is." />
+                    <Button Content="Save replay" Command="{Binding SaveReplayCommand}" ToolTip.Tip="Saves the last moments from OBS's replay buffer as a video file. The replay buffer must be running in OBS." />
+                    <Button Content="Studio mode on / off" Command="{Binding ToggleStudioModeCommand}" ToolTip.Tip="Turns OBS Studio Mode on or off. In Studio Mode you prepare a scene in Preview before sending it live." />
+                    <Button Content="Transition preview → program" Command="{Binding StudioTransitionCommand}" IsVisible="{Binding StudioModeEnabled}" ToolTip.Tip="Sends the scene you prepared in Preview live (Program), using the current transition." />
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Asks OBS again for its scenes, sources and sound." />
                   </WrapPanel>
                   <TextBlock>
                     <Run Text="Program: " /><Run Text="{Binding CurrentScene}" FontWeight="SemiBold" /><Run Text="   Preview: " /><Run Text="{Binding PreviewScene}" FontWeight="SemiBold" />
@@ -85,7 +85,7 @@
               <Border Classes="card">
                 <StackPanel Spacing="8">
                   <TextBlock Classes="h2" Text="Scenes and sources" />
-                  <TextBlock Classes="muted" Text="Pick a scene to see its sources; tick a source to show it. The arrow button switches the program scene." />
+                  <TextBlock Classes="muted" Text="Click a scene to see what is in it. Tick a source to show it, untick to hide it. The ▶ button makes that scene live." />
                   <Grid ColumnDefinitions="280,16,*">
                     <ListBox x:Name="SceneList" ItemsSource="{Binding Scenes}" SelectedItem="{Binding SelectedScene}" MaxHeight="420">
                       <ListBox.ItemTemplate>
@@ -94,7 +94,7 @@
                             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                             <TextBlock Grid.Column="1" Classes="muted" Margin="6,0" VerticalAlignment="Center"
                                        Text="{Binding Badge}" />
-                            <Button Grid.Column="2" Content="▶" Padding="8,2" ToolTip.Tip="Switch to this scene"
+                            <Button Grid.Column="2" Content="▶" Padding="8,2" ToolTip.Tip="Makes this scene the live one (Program) in OBS."
                                     Command="{Binding #SceneList.((obs:ObsConnectionViewModel)DataContext).SwitchSceneCommand}"
                                     CommandParameter="{Binding}" />
                           </Grid>
@@ -105,7 +105,7 @@
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="obs:ObsSceneItemViewModel">
                           <StackPanel Orientation="Horizontal" Spacing="8" Margin="{Binding Indent}">
-                            <CheckBox IsChecked="{Binding Visible}" Content="{Binding Name}" />
+                            <CheckBox IsChecked="{Binding Visible}" Content="{Binding Name}" ToolTip.Tip="Ticked: this source is shown in the scene. Unticked: it is hidden." />
                             <TextBlock Classes="muted" Text="{Binding Kind}" VerticalAlignment="Center" />
                           </StackPanel>
                         </DataTemplate>
@@ -122,7 +122,7 @@
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel ItemSpacing="16" LineSpacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="obs:ObsAudioViewModel">
-                        <CheckBox IsChecked="{Binding Muted}" Content="{Binding Name, StringFormat='{}{0} muted'}" />
+                        <CheckBox IsChecked="{Binding Muted}" Content="{Binding Name, StringFormat='{}{0} muted'}" ToolTip.Tip="Ticked: this sound is muted in OBS." />
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
@@ -141,21 +141,21 @@
               <StackPanel Spacing="8">
                 <TextBlock Classes="h2" Text="Streamlabs Desktop" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="In Streamlabs Desktop open Settings → Remote Control, click the QR code to show details and copy the port and API token." />
+                           Text="In Streamlabs Desktop open Settings → Remote Control, click the QR code to show details and copy the port (door number) and the API token (a secret code)." />
                 <Grid ColumnDefinitions="*,12,140" RowDefinitions="Auto,Auto">
                   <TextBlock Text="Host" />
                   <TextBlock Grid.Column="2" Text="Port" />
-                  <TextBox Grid.Row="1" Text="{Binding Host}" />
-                  <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+                  <TextBox Grid.Row="1" Text="{Binding Host}" ToolTip.Tip="The computer where Streamlabs Desktop runs. Use localhost for this computer." />
+                  <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number shown in Streamlabs Desktop under Remote Control." />
                 </Grid>
                 <TextBlock Text="API token" />
-                <TextBox Text="{Binding Token}" PasswordChar="•" />
-                <CheckBox Content="Connect automatically and reconnect" IsChecked="{Binding AutoConnect}" />
+                <TextBox Text="{Binding Token}" PasswordChar="•" ToolTip.Tip="The secret code shown in Streamlabs Desktop under Remote Control. It stays hidden." />
+                <CheckBox Content="Connect automatically and reconnect" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects when it starts and connects again by itself if Streamlabs Desktop is restarted." />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-                  <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" IsVisible="{Binding IsGood}" />
-                  <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" IsVisible="{Binding IsGood}" />
+                  <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to Streamlabs Desktop now." />
+                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Disconnects from Streamlabs Desktop." />
+                  <Button Content="Start / stop stream" Command="{Binding ToggleStreamCommand}" IsVisible="{Binding IsGood}" ToolTip.Tip="Starts your live stream if it is off, or ends it if it is on. Your viewers see this right away." />
+                  <Button Content="Start / stop recording" Command="{Binding ToggleRecordCommand}" IsVisible="{Binding IsGood}" ToolTip.Tip="Starts saving a video file if it is not recording, or stops recording if it is." />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Ellipse Classes="status" Classes.good="{Binding IsGood}" Classes.bad="{Binding IsBad}" />
@@ -168,7 +168,7 @@
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
-                      <Button Content="{Binding}" Margin="0,0,6,6"
+                      <Button Content="{Binding}" Margin="0,0,6,6" ToolTip.Tip="Makes this scene the live one in Streamlabs Desktop."
                               Command="{Binding #SlobsCard.((obs:StreamlabsViewModel)DataContext).SwitchSceneCommand}" CommandParameter="{Binding}" />
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>

@@ -20,21 +20,22 @@
       <Border Classes="card">
         <StackPanel Spacing="10">
           <TextBlock Classes="h2" Text="VoiceGate" />
-          <TextBlock Classes="hint" Text="Holds the speech queue while your microphone is louder than the threshold, so TTS does not talk over you. The text that is already playing finishes." />
+          <TextBlock Classes="hint" Text="Pauses the spoken-text queue while you are talking into your microphone, so the computer voice does not talk over you. A text that is already playing finishes first." />
           <Grid ColumnDefinitions="Auto,10,*">
             <Ellipse Classes="status" Classes.good="{Binding IsListening}" Classes.bad="{Binding IsHolding}" />
             <TextBlock Grid.Column="2" Text="{Binding AvailabilityText}" TextWrapping="Wrap" />
           </Grid>
           <StackPanel Spacing="3">
             <TextBlock Classes="label" Text="Active profile" />
-            <ComboBox ItemsSource="{Binding ActiveChoices}" SelectedItem="{Binding ActiveProfile}" MaxWidth="360" MinWidth="240" HorizontalAlignment="Left" />
+            <ComboBox ItemsSource="{Binding ActiveChoices}" SelectedItem="{Binding ActiveProfile}" MaxWidth="360" MinWidth="240" HorizontalAlignment="Left"
+                      ToolTip.Tip="The microphone setup that is used right now. Pick Off to turn VoiceGate off." />
           </StackPanel>
 
           <Grid ColumnDefinitions="220,12,*">
             <DockPanel>
               <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
-                <Button Content="+ Profile" Classes="accent" Command="{Binding AddCommand}" />
-                <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                <Button Content="+ Profile" Classes="accent" Command="{Binding AddCommand}" ToolTip.Tip="Adds a new microphone setup you can fill in." />
+                <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes the selected microphone setup." />
               </StackPanel>
               <ListBox Classes="list" ItemsSource="{Binding Profiles}" SelectedItem="{Binding Selected}" MinHeight="140">
                 <ListBox.ItemTemplate>
@@ -53,20 +54,24 @@
                     <StackPanel Spacing="10">
                       <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
                         <TextBlock Classes="label" Text="Name" />
-                        <TextBox Grid.Row="1" Text="{Binding Name}" />
+                        <TextBox Grid.Row="1" Text="{Binding Name}" ToolTip.Tip="A name so you can tell your microphone setups apart." />
                         <TextBlock Grid.Column="2" Classes="label" Text="Microphone" />
                         <Grid Grid.Column="2" Grid.Row="1" ColumnDefinitions="*,6,Auto">
                           <ComboBox ItemsSource="{Binding InputDevices}"
-                                    SelectedItem="{Binding Device}" />
+                                    SelectedItem="{Binding Device}"
+                                    ToolTip.Tip="The microphone VoiceGate listens to." />
                           <Button Grid.Column="2" Content="Refresh"
-                                  Command="{Binding RefreshDevicesCommand}" />
+                                  Command="{Binding RefreshDevicesCommand}"
+                                  ToolTip.Tip="Looks for microphones again, for example after you plug one in." />
                         </Grid>
                       </Grid>
                       <Grid ColumnDefinitions="2*,16,*" RowDefinitions="Auto,Auto">
                         <TextBlock Classes="label" Text="{Binding ThresholdDb, StringFormat='Threshold: {0:0} dBFS'}" />
-                        <Slider Grid.Row="1" Minimum="-96" Maximum="0" Value="{Binding ThresholdDb}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                        <Slider Grid.Row="1" Minimum="-96" Maximum="0" Value="{Binding ThresholdDb}" TickFrequency="1" IsSnapToTickEnabled="True"
+                                ToolTip.Tip="How loud the microphone must be before the queue waits. Further right is louder, so only louder sounds count. Use the live level meter below to find a good spot." />
                         <TextBlock Grid.Column="2" Classes="label" Text="Release delay (ms)" />
-                        <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding ReleaseMilliseconds}" Minimum="0" Maximum="60000" Increment="100" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding ReleaseMilliseconds}" Minimum="0" Maximum="60000" Increment="100" VerticalAlignment="Center"
+                                         ToolTip.Tip="How long to keep waiting after you stop talking, in milliseconds (1000 = 1 second). Stops the voice cutting in during short pauses." />
                       </Grid>
                     </StackPanel>
                   </DataTemplate>
@@ -78,7 +83,8 @@
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Classes="label" Text="Live level" VerticalAlignment="Center" />
                     <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsMonitoring}" OnContent="Meter on" OffContent="Meter off"
-                                  IsEnabled="{Binding IsAvailable}" />
+                                  IsEnabled="{Binding IsAvailable}"
+                                  ToolTip.Tip="Shows how loud your microphone is right now, so you can set the threshold. Turn it off when you are done." />
                   </Grid>
                   <ProgressBar x:Name="LevelMeter" Minimum="-96" Maximum="0" Value="{Binding LevelDb}" Height="10" MinHeight="10"
                                Classes.hot="{Binding IsAboveThreshold}" />
@@ -96,19 +102,22 @@
           <TextBlock Classes="h2" Text="Queue" />
           <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,Auto">
             <TextBlock Classes="label" Text="Most texts waiting (0: unlimited)" />
-            <NumericUpDown Grid.Row="1" Value="{Binding MaxQueueLength}" Minimum="0" Maximum="10000" />
+            <NumericUpDown Grid.Row="1" Value="{Binding MaxQueueLength}" Minimum="0" Maximum="10000"
+                           ToolTip.Tip="How many texts may wait to be spoken at once. Handy in a busy chat so the voice does not fall far behind. 0 means no limit." />
             <TextBlock Grid.Column="2" Classes="label" Text="When the queue is full" />
-            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding DropPolicies}" SelectedItem="{Binding DropPolicy}" />
+            <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding DropPolicies}" SelectedItem="{Binding DropPolicy}"
+                      ToolTip.Tip="What happens when a new text arrives and the waiting line is already full." />
             <TextBlock Grid.Column="2" Grid.Row="2" Classes="hint" Margin="0,4,0,0"
-                       Text="DropNewest ignores the new text; DropOldest removes the longest-waiting one." />
+                       Text="DropNewest throws away the new text. DropOldest throws away the text that has waited longest." />
           </Grid>
           <StackPanel Spacing="3">
             <TextBlock Classes="label" Text="Save every spoken text to this folder (empty: off)" />
             <Grid ColumnDefinitions="*,8,Auto">
-              <TextBox Text="{Binding SaveFolder}" PlaceholderText="No folder" />
-              <Button Grid.Column="2" Content="Browse…" Click="OnBrowseSaveFolder" />
+              <TextBox Text="{Binding SaveFolder}" PlaceholderText="No folder"
+                       ToolTip.Tip="A folder on your computer. Every spoken text is also saved there as an audio file. Leave empty to save nothing." />
+              <Button Grid.Column="2" Content="Browse…" Click="OnBrowseSaveFolder" ToolTip.Tip="Opens a window where you pick the folder." />
             </Grid>
-            <TextBlock Classes="hint" Text="Files are WAV, or the engine's own format (MP3/OGG) for cloud voices." />
+            <TextBlock Classes="hint" Text="Files are WAV audio, or the voice service's own format (MP3 or OGG) for online voices." />
           </StackPanel>
         </StackPanel>
       </Border>

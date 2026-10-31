@@ -1,0 +1,630 @@
+{
+  "triggers": {
+    "kick.chatMessage": {
+      "description": "Runs when someone writes a message in your Kick chat. Handy for replies, word triggers or counting messages.",
+      "fields": {
+        "contains": "Only run when the message has this text in it, like \"hello\". Capital letters do not matter. Leave empty to run for every message."
+      },
+      "variables": {
+        "user": "Name of the person who wrote",
+        "userId": "Their Kick ID number",
+        "message": "What they wrote (emotes shown by name)",
+        "messageId": "ID of the message, to delete it or reply to it",
+        "isModerator": "True if they are a moderator",
+        "isSubscriber": "True if they are a subscriber",
+        "isVip": "True if they are a VIP",
+        "isReply": "True if the message replies to another message",
+        "replyToMessage": "The text of the message they replied to"
+      }
+    },
+    "kick.firstWords": {
+      "description": "Runs the first time someone chats in your channel during a stream. Great for a welcome message. It counts again after you go live.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the person",
+        "userId": "Their Kick ID number",
+        "message": "Their first message",
+        "messageId": "ID of that message",
+        "isNewUser": "True if Cuebot has never seen them before",
+        "messageCount": "How many messages Cuebot has seen from them so far"
+      }
+    },
+    "kick.presentViewers": {
+      "description": "Runs now and then with the list of people who chatted lately, so you can reward everyone who is around. How often and how long \"lately\" is are set in the Users settings.",
+      "fields": {},
+      "variables": {
+        "users": "The list of people who are around",
+        "userNames": "Their names, separated by commas",
+        "count": "How many people are around",
+        "isLive": "True if your Kick stream is live",
+        "title": "Your stream title",
+        "viewerCount": "How many people watch right now"
+      }
+    },
+    "kick.follow": {
+      "description": "Runs when someone follows your Kick channel. Good for a thank-you message or an alert.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the new follower",
+        "userId": "Their Kick ID number",
+        "followerCount": "How many followers you have now, when Kick says"
+      }
+    },
+    "kick.streamOnline": {
+      "description": "Runs when your Kick stream goes live. Use it to say hello, switch scenes or reset counters.",
+      "fields": {},
+      "variables": {
+        "title": "Your stream title",
+        "startedAt": "When the stream started",
+        "categoryName": "Your category (game)",
+        "livestreamId": "ID of this stream on Kick"
+      }
+    },
+    "kick.streamOffline": {
+      "description": "Runs when your Kick stream ends. Handy for a goodbye message or tidying up.",
+      "fields": {},
+      "variables": {
+        "title": "Your stream title",
+        "startedAt": "When the stream started",
+        "endedAt": "When the stream ended"
+      }
+    },
+    "kick.viewerCountUpdate": {
+      "description": "Runs each time Cuebot checks how many people are watching your Kick stream (about once a minute). Use it to react to viewer numbers.",
+      "fields": {},
+      "variables": {
+        "viewerCount": "How many people watch right now"
+      }
+    },
+    "kick.channelUpdate": {
+      "description": "Runs when you change your Kick stream title or category (game). Handy to announce a new game.",
+      "fields": {},
+      "variables": {
+        "title": "The new title",
+        "category": "The new category",
+        "oldStatus": "The title before",
+        "oldCategoryName": "The category before",
+        "statusUpdated": "True if the title changed",
+        "categoryUpdated": "True if the category changed",
+        "language": "Stream language"
+      }
+    },
+    "kick.rewardRedemption": {
+      "description": "Runs when a viewer uses one of your Kick channel rewards. The reward can be waiting, accepted or rejected.",
+      "fields": {
+        "reward": "The title of the reward to react to, like \"Hydrate!\". Capital letters do not matter. Leave empty to react to every reward.",
+        "status": "Pick when to run: \"pending\" = waiting for you to accept or reject, \"accepted\" = you accepted it, \"rejected\" = you rejected it. \"Any\" runs for all of them."
+      },
+      "variables": {
+        "user": "Name of the viewer",
+        "rewardTitle": "Title of the reward",
+        "rewardId": "ID of the reward",
+        "rewardCost": "What the reward costs",
+        "userInput": "The text the viewer typed, if the reward asks for text",
+        "status": "pending, accepted or rejected",
+        "redemptionId": "ID of this redemption, to accept or reject it",
+        "counter": "How many times this reward was redeemed",
+        "userCounter": "How many times this viewer redeemed it"
+      }
+    },
+    "kick.kicksGifted": {
+      "description": "Runs when a viewer sends Kicks (Kick's paid gifts) to your channel. Good for a thank-you or an alert.",
+      "fields": {
+        "minKicks": "Only run when at least this many Kicks were sent. 0 runs for every gift. Example: 100."
+      },
+      "variables": {
+        "user": "Name of the sender",
+        "kicks": "How many Kicks were sent",
+        "giftName": "Name of the gift",
+        "giftTier": "Tier of the gift",
+        "message": "The message that came with the gift"
+      }
+    },
+    "kick.userBanned": {
+      "description": "Runs when someone is banned from your Kick chat. Use it to log bans or say something.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the banned person",
+        "userId": "Their Kick ID number",
+        "moderator": "Who banned them",
+        "reason": "The reason, if one was given"
+      }
+    },
+    "kick.userTimedOut": {
+      "description": "Runs when someone gets a timeout (a short mute) in your Kick chat.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the person",
+        "userId": "Their Kick ID number",
+        "moderator": "Who gave the timeout",
+        "duration": "Length of the timeout in seconds",
+        "reason": "The reason, if one was given"
+      }
+    },
+    "kick.userUnbanned": {
+      "description": "Runs when someone is unbanned, or their timeout is lifted, in your Kick chat.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the person",
+        "userId": "Their Kick ID number",
+        "moderator": "Who lifted it"
+      }
+    },
+    "kick.messageDeleted": {
+      "description": "Runs when a message is deleted from your Kick chat.",
+      "fields": {},
+      "variables": {
+        "messageId": "ID of the deleted message"
+      }
+    },
+    "kick.subscription": {
+      "description": "Runs when someone subscribes to your Kick channel for the first time. Good for a thank-you message or alert.",
+      "fields": {},
+      "variables": {
+        "user": "Name of the new subscriber",
+        "userId": "Their Kick ID number",
+        "months": "How many months (1 for a new sub)"
+      }
+    },
+    "kick.resubscription": {
+      "description": "Runs when a subscriber renews and has been with you for more than one month.",
+      "fields": {
+        "minMonths": "Only run when they have subscribed at least this many months. 0 runs for every renewal. Example: 12."
+      },
+      "variables": {
+        "user": "Name of the subscriber",
+        "userId": "Their Kick ID number",
+        "months": "How many months in total"
+      }
+    },
+    "kick.giftSubscription": {
+      "description": "Runs once for every person who receives a gifted subscription. If someone gifts 5 subs, it runs 5 times, once per receiver.",
+      "fields": {
+        "ignoreMass": "Tick to skip gifts that came as part of a big gift to many people. Use the Mass gift trigger to thank those once."
+      },
+      "variables": {
+        "user": "Name of the person who gifted",
+        "recipient": "Name of the person who received it",
+        "gifts": "How many subs were gifted in total",
+        "fromMassGift": "True if it was part of a big gift",
+        "totalGifted": "How many the gifter has gifted overall, when known"
+      }
+    },
+    "kick.massGiftSubscription": {
+      "description": "Runs once when someone gifts several subscriptions at the same time. Use it to thank the gifter once instead of once per receiver.",
+      "fields": {
+        "minGifts": "Only run when at least this many subs were gifted at once. Example: 5."
+      },
+      "variables": {
+        "user": "Name of the gifter",
+        "gifts": "How many subs were gifted",
+        "recipients": "Names of the receivers, separated by commas",
+        "totalGifted": "How many the gifter has gifted overall, when known"
+      }
+    },
+    "kick.host": {
+      "description": "Runs when another Kick channel sends its viewers to you (a host or raid). Good for a thank-you shout-out.",
+      "fields": {
+        "minViewers": "Only run when at least this many viewers come along. 0 runs for every host. Example: 10."
+      },
+      "variables": {
+        "user": "Name of the channel that sent viewers",
+        "viewers": "How many viewers came",
+        "message": "The message that came with it"
+      }
+    },
+    "kick.sevenTvEmoteAdded": {
+      "description": "Runs when an emote is added to your channel's 7TV emote set (7TV is an add-on that gives chat extra emotes).",
+      "fields": {
+        "emote": "The emote name to react to, like \"KEKW\" (capitals must match). Leave empty to react to every new emote."
+      },
+      "variables": {
+        "emoteName": "Name of the emote",
+        "emoteId": "ID of the emote",
+        "imageUrl": "Web link to the emote picture",
+        "sevenTvUser": "Who added it on 7TV"
+      }
+    },
+    "kick.sevenTvEmoteRemoved": {
+      "description": "Runs when an emote is removed from your channel's 7TV emote set (7TV is an add-on that gives chat extra emotes).",
+      "fields": {
+        "emote": "The emote name to react to, like \"KEKW\" (capitals must match). Leave empty to react to every removed emote."
+      },
+      "variables": {
+        "emoteName": "Name of the emote",
+        "emoteId": "ID of the emote",
+        "sevenTvUser": "Who removed it on 7TV"
+      }
+    },
+    "kick.broadcasterAuthenticated": {
+      "description": "Runs when your Kick broadcaster account finishes connecting (Cuebot is allowed to use your channel). Handy to check that everything is ready.",
+      "fields": {},
+      "variables": {
+        "user": "Your Kick name",
+        "userId": "Your Kick ID number",
+        "channelSlug": "Your channel's web name"
+      }
+    },
+    "kick.chatConnected": {
+      "description": "Runs when Cuebot's live connection to your Kick chat starts working (also after a reconnect).",
+      "fields": {},
+      "variables": {
+        "reason": "A short note about why it changed"
+      }
+    },
+    "kick.chatDisconnected": {
+      "description": "Runs when Cuebot's live connection to your Kick chat drops. Cuebot tries to reconnect by itself.",
+      "fields": {},
+      "variables": {
+        "reason": "A short note about why it dropped"
+      }
+    }
+  },
+  "subActions": {
+    "kick.sendMessage": {
+      "description": "Writes a message in your Kick chat. You can use variables like %user% in the text.",
+      "fields": {
+        "message": "What to write, like \"Welcome in, %user%!\". Very long messages are cut into several messages.",
+        "useBot": "Tick to write as your bot account instead of your own account. The bot must be signed in on the Kick page.",
+        "fallback": "Tick to write as you if the bot account is not signed in. Untick to get an error instead."
+      },
+      "variables": {
+        "kickMessageId": "ID of the message Cuebot just sent"
+      }
+    },
+    "kick.replyToMessage": {
+      "description": "Writes a reply to one message in your Kick chat, shown under that message.",
+      "fields": {
+        "message": "What to write, like \"Thanks for asking!\".",
+        "replyTo": "ID of the message to reply to. The default is the message that started this action.",
+        "useBot": "Tick to write as your bot account instead of your own account. The bot must be signed in on the Kick page.",
+        "fallback": "Tick to write as you if the bot account is not signed in. Untick to get an error instead."
+      },
+      "variables": {
+        "kickMessageId": "ID of the reply Cuebot just sent"
+      }
+    },
+    "kick.deleteMessage": {
+      "description": "Deletes one message from your Kick chat. Good for removing spam from a command or trigger.",
+      "fields": {
+        "messageId": "ID of the message to delete. The default is the message that started this action."
+      },
+      "variables": {}
+    },
+    "kick.setTitle": {
+      "description": "Changes your Kick stream title.",
+      "fields": {
+        "title": "The new title, like \"Playing with viewers!\". It cannot be empty."
+      },
+      "variables": {
+        "titleSuccess": "True when the title was changed"
+      }
+    },
+    "kick.setCategory": {
+      "description": "Changes your Kick stream category (the game or topic).",
+      "fields": {
+        "category": "The category name, like \"Just Chatting\", or its Kick number ID. A name is searched on Kick and the best match is used."
+      },
+      "variables": {
+        "kickCategory": "Name of the category that was set",
+        "kickCategoryId": "Kick ID of that category",
+        "category.success": "True when the category was changed"
+      }
+    },
+    "kick.banUser": {
+      "description": "Bans someone from your Kick chat for good.",
+      "fields": {
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action.",
+        "reason": "Why they are banned (optional). It can be shown to moderators."
+      },
+      "variables": {
+        "bannedUser": "Name of the banned person",
+        "bannedUserId": "Their Kick ID number",
+        "banResult": "True when it worked"
+      }
+    },
+    "kick.timeoutUser": {
+      "description": "Gives someone a timeout in your Kick chat. They cannot write for a while.",
+      "fields": {
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action.",
+        "duration": "How long, in seconds. Kick uses whole minutes, so it is rounded up (30 becomes 1 minute). The most is 7 days. Example: 300 for 5 minutes.",
+        "reason": "Why they get a timeout (optional)."
+      },
+      "variables": {
+        "timedOutUser": "Name of the person",
+        "timedOutUserId": "Their Kick ID number",
+        "timeoutResult": "True when it worked"
+      }
+    },
+    "kick.unbanUser": {
+      "description": "Lifts a ban from someone in your Kick chat.",
+      "fields": {
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action."
+      },
+      "variables": {
+        "unbannedUser": "Name of the person",
+        "unbannedUserId": "Their Kick ID number",
+        "unbanResult": "True when it worked"
+      }
+    },
+    "kick.untimeoutUser": {
+      "description": "Ends someone's timeout in your Kick chat so they can write again.",
+      "fields": {
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action."
+      },
+      "variables": {
+        "unTimedOutUser": "Name of the person",
+        "unTimedOutUserId": "Their Kick ID number",
+        "unTimedOutResult": "True when it worked"
+      }
+    },
+    "kick.addBroadcasterInfo": {
+      "description": "Looks up your own Kick channel details and saves them as variables for the next steps. It has no settings.",
+      "fields": {},
+      "variables": {
+        "broadcastUser": "Your Kick name",
+        "broadcastUserId": "Your Kick ID number",
+        "broadcasterChannelSlug": "Your channel's web name",
+        "broadcasterIsLive": "True if you are live",
+        "broadcasterTitle": "Your stream title",
+        "broadcasterCategory": "Your category",
+        "broadcasterViewerCount": "How many people watch",
+        "botUser": "Your bot account's name"
+      }
+    },
+    "kick.getUserInfo": {
+      "description": "Looks up another Kick user and saves their details as variables for the next steps. Handy for a shout-out command.",
+      "fields": {
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to look up the person who started this action.",
+        "prefix": "A word put in front of the variable names. With \"target\" you get %targetUserName% and %targetStreamTitle%. Empty uses \"target\"."
+      },
+      "variables": {
+        "targetUserName": "Their name",
+        "targetUserId": "Their Kick ID number",
+        "targetProfilePicture": "Web link to their picture",
+        "targetChannelSlug": "Their channel's web name",
+        "targetIsLive": "True if they are live",
+        "targetStreamTitle": "Their stream title",
+        "targetCategory": "What they play",
+        "targetDescription": "Their channel description"
+      }
+    },
+    "kick.addRandomUsers": {
+      "description": "Picks random viewers from the people who chatted lately and saves them as variables. Great for \"pick a random viewer\" commands.",
+      "fields": {
+        "count": "How many people to pick. Example: 3.",
+        "excludeBroadcaster": "Tick to never pick you or your bot account.",
+        "excludeCaller": "Tick to never pick the person who started this action.",
+        "prefix": "A word put in front of the variable names. Empty uses \"randomUser\", which gives %randomUser0%, %randomUser1% and so on."
+      },
+      "variables": {
+        "randomUser0": "Name of the first person picked (then randomUser1, randomUser2...)",
+        "randomUserId0": "Their Kick ID number",
+        "randomUserCount": "How many people were found",
+        "randomUserFound": "True if at least one person was found"
+      }
+    },
+    "kick.addUserToGroup": {
+      "description": "Puts a Kick user into one of your groups (saved lists of people). Groups are shared with the rest of Cuebot.",
+      "fields": {
+        "group": "The name of the group (a saved list of people), like \"VIPs\".",
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action.",
+        "userId": "Kick number ID of the user. If it is filled in, Cuebot uses it first and only falls back to the name when it is empty.",
+        "create": "Tick to make the group if it does not exist yet. Untick to get an error instead."
+      },
+      "variables": {
+        "groupUserAdded": "True if the person was added (false if they were already in)"
+      }
+    },
+    "kick.removeUserFromGroup": {
+      "description": "Takes a Kick user out of one of your groups (saved lists of people).",
+      "fields": {
+        "group": "The name of the group (a saved list of people), like \"VIPs\".",
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action.",
+        "userId": "Kick number ID of the user. If it is filled in, Cuebot uses it first and only falls back to the name when it is empty."
+      },
+      "variables": {
+        "groupUserRemoved": "True if the person was in the group and is removed"
+      }
+    },
+    "kick.userInGroup": {
+      "description": "Checks if a Kick user is in one of your groups. Cuebot then follows the True or False path below this step.",
+      "fields": {
+        "group": "The name of the group (a saved list of people), like \"VIPs\".",
+        "user": "The Kick user name, like \"SomeViewer\", or their Kick number ID. Leave the default to use the person who started this action.",
+        "userId": "Kick number ID of the user. If it is filled in, Cuebot uses it first and only falls back to the name when it is empty.",
+        "argument": "The variable name to save the answer in. Example: \"inGroup\" lets you use %inGroup% later."
+      },
+      "variables": {
+        "inGroup": "True if the person is in the group (or the name you chose above)"
+      }
+    },
+    "kick.configureRewards": {
+      "description": "Turns many Kick rewards on, off, paused or resumed in one go. Great for \"stream mode\" and \"BRB mode\". Only works on rewards made by Cuebot.",
+      "fields": {
+        "enable": "Rewards to turn on. One per line: a reward title, ID or group name.",
+        "disable": "Rewards to turn off. One per line: a reward title, ID or group name.",
+        "pause": "Rewards to pause (viewers cannot use them for now). One per line: title, ID or group name.",
+        "unpause": "Rewards to resume after a pause. One per line: title, ID or group name.",
+        "disableNotConfigured": "Tick to also turn off every reward that is in no group and not named above."
+      },
+      "variables": {
+        "rewardsChanged": "How many rewards were changed",
+        "rewardsSkipped": "How many Kick refused to change"
+      }
+    },
+    "kick.setRewardGroupEnabled": {
+      "description": "Turns every reward in a reward group on or off. Only works on rewards made by Cuebot.",
+      "fields": {
+        "group": "The reward group's name. You set a reward's group on the Kick page, under Channel rewards.",
+        "state": "\"Enabled\" turns them on, \"Disabled\" turns them off, \"Toggle\" flips them (all on, unless one is already on)."
+      },
+      "variables": {
+        "rewardsChanged": "How many rewards were changed",
+        "rewardsSkipped": "How many Kick refused to change"
+      }
+    },
+    "kick.setRewardGroupPaused": {
+      "description": "Pauses or resumes every reward in a reward group. Only works on rewards made by Cuebot.",
+      "fields": {
+        "group": "The reward group's name. You set a reward's group on the Kick page, under Channel rewards.",
+        "state": "\"Paused\" pauses them, \"Unpaused\" resumes them, \"Toggle\" flips them (all paused, unless one is already paused)."
+      },
+      "variables": {
+        "rewardsChanged": "How many rewards were changed",
+        "rewardsSkipped": "How many Kick refused to change"
+      }
+    },
+    "kick.updatePendingRedemptions": {
+      "description": "Accepts or rejects all redemptions that are still waiting, for one reward or for all rewards Cuebot manages. Rejecting gives the points back.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty for every reward.",
+        "status": "\"Accept\" marks them done. \"Reject\" refuses them (the viewers get their points back)."
+      },
+      "variables": {
+        "redemptionsUpdated": "How many redemptions were handled",
+        "redemptionFailures": "Which ones failed and why"
+      }
+    },
+    "kick.updateRedemption": {
+      "description": "Accepts or rejects one reward redemption that is waiting. Handy to accept it after your action did its job.",
+      "fields": {
+        "redemptionId": "ID of the redemption. The default is the one that started this action. You can give several, separated by commas.",
+        "status": "\"Accept\" marks it done. \"Reject\" refuses it (the viewer gets their points back)."
+      },
+      "variables": {
+        "redemptionUpdated": "True if it worked for every redemption",
+        "redemptionFailures": "Which ones failed and why"
+      }
+    },
+    "kick.createReward": {
+      "description": "Makes a new channel reward on Kick. You can change or delete it later with Cuebot.",
+      "fields": {
+        "title": "The reward name viewers see, like \"Hydrate!\". Up to 50 letters.",
+        "cost": "How many channel points it costs. Example: 100.",
+        "description": "A short text under the name (optional). Up to 200 letters.",
+        "color": "The reward color as #RRGGBB, like \"#00E701\" (Kick green). Empty keeps the default.",
+        "enabled": "Tick to let viewers use it right away.",
+        "userInput": "Tick to make the viewer type a text when they redeem it.",
+        "skipQueue": "Tick to accept redemptions automatically, without waiting for you."
+      },
+      "variables": {
+        "createdRewardId": "ID of the new reward",
+        "createdRewardTitle": "Title of the new reward"
+      }
+    },
+    "kick.deleteReward": {
+      "description": "Deletes a Kick channel reward for good. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger)."
+      },
+      "variables": {}
+    },
+    "kick.getRewardCounter": {
+      "description": "Reads how many times a reward was redeemed (Cuebot keeps this count, Kick does not) and saves it as variables.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "user": "Whose personal count to read: a Kick user name or ID. The default is the person who started this action. Empty gives no personal count."
+      },
+      "variables": {
+        "counter": "How many times the reward was redeemed",
+        "userCounter": "How many times this person redeemed it"
+      }
+    },
+    "kick.getRewardInfo": {
+      "description": "Reads a reward's settings from Kick and saves them as variables for the next steps.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger)."
+      },
+      "variables": {
+        "rewardId": "ID of the reward",
+        "rewardTitle": "Its title",
+        "rewardDescription": "Its description",
+        "rewardCost": "Its cost",
+        "rewardBackgroundColor": "Its color",
+        "rewardEnabled": "True if it is turned on",
+        "rewardPaused": "True if it is paused",
+        "rewardUserInputRequired": "True if viewers must type a text",
+        "rewardSkipsQueue": "True if redemptions are accepted automatically"
+      }
+    },
+    "kick.resetRewardCounter": {
+      "description": "Sets the redemption count of one reward back to zero. Cuebot keeps this count, not Kick.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger)."
+      },
+      "variables": {}
+    },
+    "kick.resetRewardUserCounters": {
+      "description": "Sets every viewer's personal redemption count for one reward back to zero. Cuebot keeps these counts, not Kick.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger)."
+      },
+      "variables": {}
+    },
+    "kick.setRewardColor": {
+      "description": "Changes the background color of a Kick reward. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "color": "The new color as #RRGGBB, like \"#FF0000\" for red."
+      },
+      "variables": {}
+    },
+    "kick.setRewardCost": {
+      "description": "Changes how many channel points a Kick reward costs. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "cost": "The new cost in channel points. Example: 250."
+      },
+      "variables": {}
+    },
+    "kick.setRewardDescription": {
+      "description": "Changes the short text under a Kick reward's name. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "description": "The new description. Up to 200 letters."
+      },
+      "variables": {}
+    },
+    "kick.setRewardEnabled": {
+      "description": "Turns a Kick reward on or off. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "enabled": "Tick to turn the reward on. Untick to turn it off."
+      },
+      "variables": {}
+    },
+    "kick.setRewardPaused": {
+      "description": "Pauses or resumes a Kick reward. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "paused": "Tick to pause the reward (nobody can use it for now). Untick to resume it."
+      },
+      "variables": {}
+    },
+    "kick.setRewardSkipQueue": {
+      "description": "Chooses whether a Kick reward is accepted automatically. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "skip": "Tick to accept redemptions automatically. Untick to make them wait for you."
+      },
+      "variables": {}
+    },
+    "kick.setRewardTitle": {
+      "description": "Renames a Kick reward. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "title": "The new name viewers see. Up to 50 letters."
+      },
+      "variables": {}
+    },
+    "kick.setRewardUserInput": {
+      "description": "Chooses whether viewers must type a text when they redeem a Kick reward. Only works on rewards made by Cuebot.",
+      "fields": {
+        "reward": "The reward's title or ID. Leave empty to use the reward that was just redeemed (when this runs from a Kick reward trigger).",
+        "required": "Tick to make viewers type a text. Untick to not ask for one."
+      },
+      "variables": {}
+    }
+  }
+}

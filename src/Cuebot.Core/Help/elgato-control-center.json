@@ -1,0 +1,275 @@
+{
+  "triggers": {
+    "elgato.controlCenter.brightnessChanged": {
+      "description": "Runs when a light's brightness changes. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network",
+        "oldBrightness": "The brightness before the change"
+      }
+    },
+    "elgato.controlCenter.colorChanged": {
+      "description": "Runs when the color of a color light, like the Light Strip, changes. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network",
+        "hue": "The new color position on the color wheel (0-360)",
+        "saturation": "The new color strength (0-100)",
+        "oldHue": "The color position before the change",
+        "oldSaturation": "The color strength before the change"
+      }
+    },
+    "elgato.controlCenter.deviceAdded": {
+      "description": "Runs when Cuebot finds a new light or you add one by hand. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network"
+      }
+    },
+    "elgato.controlCenter.deviceConfigurationChanged": {
+      "description": "Runs when a light's own settings change, like what it does when it is plugged in. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network",
+        "settings": "The light's new settings as text",
+        "oldSettings": "The settings before the change"
+      }
+    },
+    "elgato.controlCenter.devicePowerStateChanged": {
+      "description": "Runs when a light is turned on or off. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network",
+        "oldPowerState": "On or Off, from before the change"
+      }
+    },
+    "elgato.controlCenter.devicePoweredOff": {
+      "description": "Runs when a light is turned off. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network"
+      }
+    },
+    "elgato.controlCenter.devicePoweredOn": {
+      "description": "Runs when a light is turned on. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network"
+      }
+    },
+    "elgato.controlCenter.deviceOnline": {
+      "description": "Runs when a light that was not answering starts answering again. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network"
+      }
+    },
+    "elgato.controlCenter.deviceRemoved": {
+      "description": "Runs when a light is removed from Cuebot's list. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network"
+      }
+    },
+    "elgato.controlCenter.deviceRenamed": {
+      "description": "Runs when you rename a light in Control Center. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network",
+        "oldDeviceName": "The name before the change"
+      }
+    },
+    "elgato.controlCenter.deviceOffline": {
+      "description": "Runs when a light stops answering, for example when it loses power or Wi-Fi. It waits for two missed checks in a row. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network"
+      }
+    },
+    "elgato.controlCenter.temperatureChanged": {
+      "description": "Runs when the color warmth of a light changes. Cuebot checks the lights about every 2 seconds, so it also notices changes made in other apps.",
+      "fields": {
+        "device": "Which light to watch: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. Leave empty to react to every light."
+      },
+      "variables": {
+        "deviceName": "The name of the light, as set in Control Center",
+        "powerState": "On or Off",
+        "brightness": "Brightness now (0-100)",
+        "temperature": "Color warmth now, in Kelvin (low is orange, high is blue)",
+        "ipAddress": "The light's address on your network",
+        "oldTemperature": "The warmth before the change, in Kelvin"
+      }
+    }
+  },
+  "subActions": {
+    "elgato.controlCenter.setBrightness": {
+      "description": "Changes how bright your Elgato light is.",
+      "fields": {
+        "device": "Which light to change: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. All (the default) means every light.",
+        "brightness": "How bright, from 0 to 100. With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "elgatoLightCount": "How many lights were changed",
+        "deviceName": "The name of the first light changed",
+        "deviceId": "Its serial number",
+        "powerState": "On or Off, after the change",
+        "brightness": "Its brightness after the change (0-100)",
+        "temperature": "Its color warmth after the change, in Kelvin",
+        "hue": "Its color position (0-360), if it is a color light",
+        "saturation": "Its color strength (0-100), if it is a color light",
+        "ipAddress": "Its address on your network"
+      }
+    },
+    "elgato.controlCenter.setPowerState": {
+      "description": "Turns your Elgato light on or off.",
+      "fields": {
+        "device": "Which light to change: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. All (the default) means every light.",
+        "state": "On turns the light on, Off turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "elgatoLightCount": "How many lights were changed",
+        "deviceName": "The name of the first light changed",
+        "deviceId": "Its serial number",
+        "powerState": "On or Off, after the change",
+        "brightness": "Its brightness after the change (0-100)",
+        "temperature": "Its color warmth after the change, in Kelvin",
+        "hue": "Its color position (0-360), if it is a color light",
+        "saturation": "Its color strength (0-100), if it is a color light",
+        "ipAddress": "Its address on your network"
+      }
+    },
+    "elgato.controlCenter.setTemperature": {
+      "description": "Changes how warm (orange) or cool (blue) the white light is.",
+      "fields": {
+        "device": "Which light to change: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. All (the default) means every light.",
+        "temperature": "Color warmth in Kelvin, from 2900 (warm, orange) to 7000 (cool, blue). With Adjustment ticked, how many Kelvin to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "elgatoLightCount": "How many lights were changed",
+        "deviceName": "The name of the first light changed",
+        "deviceId": "Its serial number",
+        "powerState": "On or Off, after the change",
+        "brightness": "Its brightness after the change (0-100)",
+        "temperature": "Its color warmth after the change, in Kelvin",
+        "hue": "Its color position (0-360), if it is a color light",
+        "saturation": "Its color strength (0-100), if it is a color light",
+        "ipAddress": "Its address on your network"
+      }
+    },
+    "elgato.controlCenter.setColor": {
+      "description": "Sets the color of a color light, like the Elgato Light Strip. Plain white lights such as the Key Light have no color.",
+      "fields": {
+        "device": "Which light to change: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. All (the default) means every light.",
+        "hue": "The color, from 0 to 360 around the color wheel: 0 is red, 120 is green, 240 is blue.",
+        "saturation": "How strong the color is, from 0 (white) to 100 (full color)."
+      },
+      "variables": {
+        "elgatoLightCount": "How many lights were changed",
+        "deviceName": "The name of the first light changed",
+        "deviceId": "Its serial number",
+        "powerState": "On or Off, after the change",
+        "brightness": "Its brightness after the change (0-100)",
+        "temperature": "Its color warmth after the change, in Kelvin",
+        "hue": "Its color position (0-360), if it is a color light",
+        "saturation": "Its color strength (0-100), if it is a color light",
+        "ipAddress": "Its address on your network"
+      }
+    },
+    "elgato.controlCenter.identify": {
+      "description": "Makes your Elgato light blink for a moment so you can see which one it is.",
+      "fields": {
+        "device": "Which light to change: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. All (the default) means every light."
+      },
+      "variables": {}
+    },
+    "elgato.controlCenter.getDevice": {
+      "description": "Reads a light's current settings into variables you can use in later steps.",
+      "fields": {
+        "device": "Which light to change: its name, serial number or network address (IP), like \"Key Light Left\". Separate several with commas. All (the default) means every light."
+      },
+      "variables": {
+        "elgatoLightCount": "How many lights were changed",
+        "deviceName": "The name of the first light changed",
+        "deviceId": "Its serial number",
+        "powerState": "On or Off, after the change",
+        "brightness": "Its brightness after the change (0-100)",
+        "temperature": "Its color warmth after the change, in Kelvin",
+        "hue": "Its color position (0-360), if it is a color light",
+        "saturation": "Its color strength (0-100), if it is a color light",
+        "ipAddress": "Its address on your network",
+        "productName": "The kind of light, like Key Light",
+        "serialNumber": "The light's serial number",
+        "firmwareVersion": "The light's software version",
+        "online": "true if the light is answering"
+      }
+    }
+  }
+}

@@ -22,7 +22,7 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Game controllers" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,8,8"
-                 Text="Xbox, PlayStation, Switch Pro and generic USB/Bluetooth joysticks become Controller Button, Button Combo, Axis, Hat / D-Pad, Connected and Disconnected triggers. Input is read in the background (Cuebot does not need focus) through SDL3. Settings are stored in controllers.json." />
+                 Text="Xbox, PlayStation, Switch Pro and generic USB/Bluetooth joysticks become triggers for your actions: Controller Button, Button Combo, Axis (a stick or trigger), Hat / D-Pad, Connected and Disconnected. Cuebot hears the controller even when another window is in front. Settings are stored in controllers.json." />
 
       <!-- Status and settings -->
       <Border Classes="card">
@@ -32,38 +32,43 @@
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <TextBlock Classes="muted" Text="{Binding Backend}" />
-          <Button Content="Retry" Command="{Binding RetryCommand}" IsVisible="{Binding HasError}" />
+          <Button Content="Retry" Command="{Binding RetryCommand}" IsVisible="{Binding HasError}" ToolTip.Tip="Tries to start listening to your controllers again." />
           <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
             <TextBlock Text="Watch controllers" VerticalAlignment="Center" Margin="0,0,12,0" />
             <StackPanel Grid.Column="1" Spacing="4">
-              <ComboBox ItemsSource="{x:Static vm:ControllersViewModel.Modes}" SelectedItem="{Binding Mode}" Width="160" />
+              <ComboBox ItemsSource="{x:Static vm:ControllersViewModel.Modes}" SelectedItem="{Binding Mode}" Width="160" ToolTip.Tip="Automatic: Cuebot only listens when something needs a controller. Always: it listens from startup. Off: it never listens." />
               <TextBlock Classes="muted" TextWrapping="Wrap" Text="Automatic: while an action uses a controller trigger, this page is open, or a sub-action/script used a controller recently." />
             </StackPanel>
             <TextBlock Grid.Row="1" Text="Stick deadzone (%)" VerticalAlignment="Center" Margin="0,8,12,0" />
             <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding StickDeadzone}" Minimum="0" Maximum="95" Increment="1" FormatString="0"
-                           Width="120" HorizontalAlignment="Left" Margin="0,8,0,0" />
+                           Width="120" HorizontalAlignment="Left" Margin="0,8,0,0"
+                           ToolTip.Tip="How far (in percent) you must push a stick before Cuebot notices. Raise it if a stick drifts on its own." />
             <TextBlock Grid.Row="2" Text="Trigger deadzone (%)" VerticalAlignment="Center" Margin="0,8,12,0" />
             <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding TriggerDeadzone}" Minimum="0" Maximum="95" Increment="1" FormatString="0"
-                           Width="120" HorizontalAlignment="Left" Margin="0,8,0,0" />
+                           Width="120" HorizontalAlignment="Left" Margin="0,8,0,0"
+                           ToolTip.Tip="How far (in percent) you must press a shoulder trigger before Cuebot notices it." />
             <TextBlock Grid.Row="3" Text="Axis events at most every (ms)" VerticalAlignment="Center" Margin="0,8,12,0" />
             <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-              <NumericUpDown Value="{Binding AxisThrottleMs}" Minimum="0" Maximum="5000" Increment="10" FormatString="0" Width="120" />
+              <NumericUpDown Value="{Binding AxisThrottleMs}" Minimum="0" Maximum="5000" Increment="10" FormatString="0" Width="120" ToolTip.Tip="Stick and trigger movement is reported at most this often, in milliseconds (1000 = one second). Higher means fewer actions run." />
               <TextBlock Text="ignoring changes under" VerticalAlignment="Center" />
-              <NumericUpDown Value="{Binding AxisMinChange}" Minimum="0.1" Maximum="50" Increment="0.5" FormatString="0.0" Width="110" />
+              <NumericUpDown Value="{Binding AxisMinChange}" Minimum="0.1" Maximum="50" Increment="0.5" FormatString="0.0" Width="110" ToolTip.Tip="Tiny movements smaller than this many percent are ignored." />
               <TextBlock Text="%" VerticalAlignment="Center" />
             </StackPanel>
             <TextBlock Grid.Row="4" Text="Mappings file" VerticalAlignment="Center" Margin="0,8,12,0" />
             <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
               <TextBox Name="ControllerMappingsFile" Text="{Binding MappingsFile}"
-                       PlaceholderText="gamecontrollerdb.txt (path, or a name in the data folder; empty = data folder file if present)" />
-              <Button Grid.Column="1" Content="Reload" Margin="8,0,0,0" Command="{Binding ReloadMappingsCommand}" />
+                       PlaceholderText="gamecontrollerdb.txt (path, or a name in the data folder; empty = data folder file if present)"
+                       ToolTip.Tip="Optional. A file that tells Cuebot the button names of unusual controllers. Most people can leave it empty." />
+              <Button Grid.Column="1" Content="Reload" Margin="8,0,0,0" Command="{Binding ReloadMappingsCommand}" ToolTip.Tip="Reads the file again after you changed it." />
             </Grid>
           </Grid>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding MappingsInUse}" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="The community mappings file from github.com/mdqinc/SDL_GameControllerDB only changes how unusual controllers' buttons and axes are mapped and named; most controllers do not need it." />
-          <CheckBox Content="Report the D-pad as Hat1 too (one Hat trigger for gamepads and joysticks)" IsChecked="{Binding DPadAsHat}" />
-          <CheckBox Content="Include joysticks without a gamepad mapping (flight sticks, wheels, button boxes)" IsChecked="{Binding IncludeJoysticks}" />
+          <CheckBox Content="Report the D-pad as Hat1 too (one Hat trigger for gamepads and joysticks)" IsChecked="{Binding DPadAsHat}"
+                    ToolTip.Tip="Ticked: the D-pad (the plus-shaped arrow buttons) is also reported as a hat, so one Hat trigger works for both gamepads and joysticks." />
+          <CheckBox Content="Include joysticks without a gamepad mapping (flight sticks, wheels, button boxes)" IsChecked="{Binding IncludeJoysticks}"
+                    ToolTip.Tip="Ticked: Cuebot also listens to devices that are not normal gamepads, like flight sticks and steering wheels." />
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
@@ -76,7 +81,7 @@
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Click Learn, then press the button (or move the stick, trigger or D-pad) you want to use. The trigger settings that match it are shown below. The trigger editor's Button and Axis lists also suggest what you pressed most recently." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Name="ControllerLearn" Content="{Binding LearnLabel}" Classes="accent" Command="{Binding LearnCommand}" />
+            <Button Name="ControllerLearn" Content="{Binding LearnLabel}" Classes="accent" Command="{Binding LearnCommand}" ToolTip.Tip="Click it, then press a button or move a stick on your controller. Cuebot shows which settings to use for it." />
           </StackPanel>
           <TextBlock Text="{Binding LearnText}" TextWrapping="Wrap" FontWeight="SemiBold" />
           <SelectableTextBlock Text="{Binding LearnSettings}" TextWrapping="Wrap" />

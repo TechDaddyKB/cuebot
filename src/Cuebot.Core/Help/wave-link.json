@@ -1,0 +1,913 @@
+{
+  "triggers": {
+    "wavelink.connected": {
+      "description": "Runs when Cuebot connects to Wave Link. It works with Wave Link 3 and the older 1.x/2.x. Wave Link only exists on Windows and macOS.",
+      "fields": {},
+      "variables": {
+        "waveLinkApi": "3 for Wave Link 3, legacy for Wave Link 1.x/2.x",
+        "waveLinkPort": "The port Cuebot connected on"
+      }
+    },
+    "wavelink.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to Wave Link, for example when you close Wave Link.",
+      "fields": {},
+      "variables": {
+        "reason": "Why the connection ended"
+      }
+    },
+    "wavelink.channelEffectsChanged": {
+      "description": "Runs when an effect on a Wave Link channel is switched on or off or added or removed. Also fires for Wave Link 1.x/2.x filters.",
+      "fields": {
+        "channel": "Which channel to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every channel."
+      },
+      "variables": {
+        "waveLinkChannelName": "The channel's name",
+        "waveLinkChannelId": "The channel's ID",
+        "waveLinkChannelMuted": "true if the whole channel is muted",
+        "waveLinkChannelVolume": "The channel's volume (0-100)",
+        "waveLinkEffectName": "The effect that changed",
+        "waveLinkEffectEnabled": "true if that effect is on now"
+      }
+    },
+    "wavelink.channelMuteChanged": {
+      "description": "Runs when a channel (or one of its mixes) is muted or unmuted in Wave Link. Handy for an on-screen 'music muted' sign.",
+      "fields": {
+        "channel": "Which channel to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every channel.",
+        "mix": "Only react to this mix, like \"Stream Mix\". Separate several with commas. Leave empty to react to any mix, and to changes of the whole channel.",
+        "stateFilter": "Muted: only when it became muted. Not muted: only when it became unmuted. Any: both."
+      },
+      "variables": {
+        "waveLinkChannelName": "The channel's name",
+        "waveLinkChannelId": "The channel's ID",
+        "waveLinkChannelMuted": "true if the whole channel is muted",
+        "waveLinkChannelVolume": "The channel's volume (0-100)",
+        "waveLinkScope": "channel if the whole channel changed, mix if only one of its mixes changed",
+        "waveLinkMixName": "The mix that changed (only when waveLinkScope is mix)",
+        "waveLinkMuted": "true if it is muted now, false if not"
+      }
+    },
+    "wavelink.channelUpdated": {
+      "description": "Runs when anything about a Wave Link channel changes, such as its volume, mute or effects. It runs alongside the more exact triggers.",
+      "fields": {
+        "channel": "Which channel to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every channel."
+      },
+      "variables": {
+        "waveLinkChannelName": "The channel's name",
+        "waveLinkChannelId": "The channel's ID",
+        "waveLinkChannelMuted": "true if the whole channel is muted",
+        "waveLinkChannelVolume": "The channel's volume (0-100)"
+      }
+    },
+    "wavelink.channelVolumeChanged": {
+      "description": "Runs when the volume of a channel (or of one of its mixes) changes in Wave Link.",
+      "fields": {
+        "channel": "Which channel to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every channel.",
+        "mix": "Only react to this mix, like \"Stream Mix\". Separate several with commas. Leave empty to react to any mix, and to changes of the whole channel."
+      },
+      "variables": {
+        "waveLinkChannelName": "The channel's name",
+        "waveLinkChannelId": "The channel's ID",
+        "waveLinkChannelMuted": "true if the whole channel is muted",
+        "waveLinkChannelVolume": "The channel's volume (0-100)",
+        "waveLinkScope": "channel if the whole channel changed, mix if only one of its mixes changed",
+        "waveLinkMixName": "The mix that changed (only when waveLinkScope is mix)",
+        "waveLinkVolume": "The new volume (0-100)",
+        "waveLinkPreviousVolume": "The volume before the change"
+      }
+    },
+    "wavelink.channelsChanged": {
+      "description": "Runs when channels are added or removed in Wave Link, so the list of channels is different.",
+      "fields": {},
+      "variables": {
+        "waveLinkChannelsCount": "How many channels there are now"
+      }
+    },
+    "wavelink.inputDspEffectsChanged": {
+      "description": "Runs when a built-in effect of a microphone or input device changes (like Clipguard or low cut).",
+      "fields": {
+        "inputDevice": "Which microphone or other input device to watch, by name or ID. Separate several with commas. Leave empty for every input device."
+      },
+      "variables": {
+        "waveLinkInputDeviceName": "The input device's name",
+        "waveLinkEffectName": "The effect that changed",
+        "waveLinkEffectEnabled": "true if that effect is on now"
+      }
+    },
+    "wavelink.inputDeviceUpdated": {
+      "description": "Runs when anything about an input device (like your microphone) changes, such as its mute, gain or balance.",
+      "fields": {
+        "inputDevice": "Which microphone or other input device to watch, by name or ID. Separate several with commas. Leave empty for every input device."
+      },
+      "variables": {
+        "waveLinkInputDeviceName": "The input device's name",
+        "waveLinkInputDeviceMuted": "true if it is muted",
+        "waveLinkInputDeviceGain": "Its gain (microphone loudness)",
+        "waveLinkInputDeviceMicPcMix": "Its mic/PC balance (0-100)",
+        "waveLinkInputDeviceOutputVolume": "Its output volume, if Wave Link has one"
+      }
+    },
+    "wavelink.inputDevicesChanged": {
+      "description": "Runs when input devices (like microphones) are added or removed in Wave Link.",
+      "fields": {},
+      "variables": {
+        "waveLinkInputDevicesCount": "How many input devices there are now"
+      }
+    },
+    "wavelink.inputGainChanged": {
+      "description": "Runs when the gain (how loud the microphone picks you up) of an input device changes.",
+      "fields": {
+        "inputDevice": "Which microphone or other input device to watch, by name or ID. Separate several with commas. Leave empty for every input device."
+      },
+      "variables": {
+        "waveLinkInputDeviceName": "The input device's name",
+        "waveLinkInputDeviceGain": "The new gain",
+        "waveLinkPreviousGain": "The gain before the change"
+      }
+    },
+    "wavelink.mixUpdated": {
+      "description": "Runs when a mix is muted, unmuted or has its volume changed in Wave Link.",
+      "fields": {
+        "mix": "Which mix to watch, by name or ID. Separate several with commas. Leave empty for every mix."
+      },
+      "variables": {
+        "waveLinkMixName": "The mix's name",
+        "waveLinkMixMuted": "true if it is muted",
+        "waveLinkMixVolume": "Its volume (0-100)",
+        "waveLinkPreviousVolume": "The volume before the change",
+        "waveLinkMuteChanged": "true if the mute changed",
+        "waveLinkVolumeChanged": "true if the volume changed"
+      }
+    },
+    "wavelink.mixesChanged": {
+      "description": "Runs when mixes are added or removed in Wave Link.",
+      "fields": {},
+      "variables": {
+        "waveLinkMixesCount": "How many mixes there are now"
+      }
+    },
+    "wavelink.mainOutputChanged": {
+      "description": "Runs when you pick a different main output device in Wave Link, the one you listen on.",
+      "fields": {
+        "outputDevice": "Which output device (speakers or headphones) to watch, by name or ID. Separate several with commas. Leave empty for every output device."
+      },
+      "variables": {
+        "waveLinkOutputDeviceName": "The new main output device",
+        "waveLinkOutputDeviceId": "Its ID",
+        "waveLinkPreviousOutputDeviceId": "The ID of the one before"
+      }
+    },
+    "wavelink.outputDeviceUpdated": {
+      "description": "Runs when an output device (speakers or headphones) changes in Wave Link, such as its volume, mute or mix.",
+      "fields": {
+        "outputDevice": "Which output device (speakers or headphones) to watch, by name or ID. Separate several with commas. Leave empty for every output device."
+      },
+      "variables": {
+        "waveLinkOutputDeviceName": "The output device's name",
+        "waveLinkOutputVolume": "Its volume (0-100)",
+        "waveLinkOutputMuted": "true if it is muted",
+        "waveLinkOutputMixName": "The mix it plays"
+      }
+    },
+    "wavelink.outputMixChanged": {
+      "description": "Runs when an output device is set to play a different mix in Wave Link (Wave Link 1.x/2.x: when you switch between Monitor Mix and Stream Mix).",
+      "fields": {
+        "outputDevice": "Which output device (speakers or headphones) to watch, by name or ID. Separate several with commas. Leave empty for every output device.",
+        "mix": "Only react when the output switched to this mix, by name or ID. Separate several with commas. Leave empty for any mix."
+      },
+      "variables": {
+        "waveLinkOutputDeviceName": "The output device",
+        "waveLinkOutputMixName": "The mix it plays now",
+        "waveLinkPreviousMixName": "The mix it played before (Wave Link 3)",
+        "waveLinkPreviousMixId": "The ID of the mix it played before"
+      }
+    },
+    "wavelink.createProfileRequested": {
+      "description": "Runs when Wave Link 3 asks to create a new profile. The variables say what kind of device it is for and which mixes it lists.",
+      "fields": {},
+      "variables": {
+        "waveLinkDeviceType": "The kind of device the profile is for",
+        "waveLinkProfileMixes": "The mixes listed, separated by commas",
+        "waveLinkProfileMixesCount": "How many mixes are listed"
+      }
+    },
+    "wavelink.focusedAppChanged": {
+      "description": "Runs when the program you are using (the one in front) changes, as Wave Link 3 sees it. Handy for routing that program's sound to a channel.",
+      "fields": {
+        "app": "Which program to react to, by name or ID, like \"Spotify\". Separate several with commas. Leave empty for any program."
+      },
+      "variables": {
+        "waveLinkAppName": "The program's name",
+        "waveLinkAppId": "The program's ID",
+        "waveLinkChannelName": "The channel the program plays on, if any"
+      }
+    },
+    "wavelink.levelMeter": {
+      "description": "Runs while Wave Link reports sound levels. Switch level meters on at the Wave Link page first; they are off by default. Cuebot limits how often this runs.",
+      "fields": {
+        "levelType": "Which kind of meter to watch: a channel, a mix, an input device or an output device. Any means all of them. Level meters must be switched on first (see below).",
+        "levelName": "Names or IDs of the meters to watch, separated by commas. Leave empty for every meter.",
+        "minLevel": "Only run when the meter is at least this loud, from 0 (silent) to 100 (loudest). Leave empty to ignore how loud it is."
+      },
+      "variables": {
+        "waveLinkLevelName": "The name of the loudest matching meter",
+        "waveLinkLevelType": "Its kind: channel, mix, input or output",
+        "waveLinkLevelLeft": "Left loudness (0-100)",
+        "waveLinkLevelRight": "Right loudness (0-100)",
+        "waveLinkLevelPeak": "The louder of left and right (0-100)",
+        "waveLinkLevelsCount": "How many meters moved"
+      }
+    },
+    "wavelink.legacy.filterAdded": {
+      "description": "Runs when a filter (effect) is added to an input in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input."
+      },
+      "variables": {
+        "filter.name": "The filter's name",
+        "filter.active": "true if the filter is on",
+        "filter.id": "The filter's ID",
+        "input.name": "The input it belongs to"
+      }
+    },
+    "wavelink.legacy.filterBypassStateChanged": {
+      "description": "Runs when a filter bypass (skipping all filters on an input) is switched on or off. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input."
+      },
+      "variables": {
+        "filter.name": "The filter's name",
+        "filter.active": "true if the filter is on",
+        "filter.id": "The filter's ID",
+        "input.name": "The input it belongs to",
+        "waveLinkFilterBypassed": "true if the filters are skipped now",
+        "mixer": "Local (Monitor Mix) or Stream"
+      }
+    },
+    "wavelink.legacy.filterChanged": {
+      "description": "Runs when a filter on an input is switched on or off. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input."
+      },
+      "variables": {
+        "filter.name": "The filter's name",
+        "filter.active": "true if the filter is on",
+        "filter.id": "The filter's ID",
+        "input.name": "The input it belongs to"
+      }
+    },
+    "wavelink.legacy.filterDeleted": {
+      "description": "Runs when a filter is removed from an input in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input."
+      },
+      "variables": {
+        "filter.name": "The filter's name",
+        "filter.active": "true if the filter is on",
+        "filter.id": "The filter's ID",
+        "input.name": "The input it belongs to"
+      }
+    },
+    "wavelink.legacy.inputLevelMeterChanged": {
+      "description": "Runs while Wave Link reports the sound level of its inputs. Switch level meters on at the Wave Link page first. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "levelName": "Names or IDs of the meters to watch, separated by commas. Leave empty for every meter.",
+        "minLevel": "Only run when the meter is at least this loud, from 0 (silent) to 100 (loudest). Leave empty to ignore how loud it is."
+      },
+      "variables": {
+        "waveLinkLevelName": "The name of the loudest matching meter",
+        "waveLinkLevelType": "Its kind: channel, mix, input or output",
+        "waveLinkLevelLeft": "Left loudness (0-100)",
+        "waveLinkLevelRight": "Right loudness (0-100)",
+        "waveLinkLevelPeak": "The louder of left and right (0-100)"
+      }
+    },
+    "wavelink.legacy.inputMuteChanged": {
+      "description": "Runs when an input is muted or unmuted in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input.",
+        "mix": "Only react to this mix: \"Monitor Mix\" or \"Stream Mix\". Leave empty for both.",
+        "stateFilter": "Muted: only when it became muted. Not muted: only when it became unmuted. Any: both."
+      },
+      "variables": {
+        "input.name": "The input's name",
+        "input.identifier": "The input's ID",
+        "mixer": "Local (Monitor Mix) or Stream",
+        "input.local.muted": "true if muted in the Monitor Mix",
+        "input.local.volume": "Volume in the Monitor Mix (0-100)",
+        "input.stream.muted": "true if muted in the Stream Mix",
+        "input.stream.volume": "Volume in the Stream Mix (0-100)",
+        "waveLinkMuted": "true if it is muted now",
+        "waveLinkMixName": "Monitor Mix or Stream Mix"
+      }
+    },
+    "wavelink.legacy.inputNameChanged": {
+      "description": "Runs when you rename an input in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input."
+      },
+      "variables": {
+        "input.name": "The new name",
+        "waveLinkPreviousName": "The old name",
+        "input.identifier": "The input's ID"
+      }
+    },
+    "wavelink.legacy.inputVolumeChanged": {
+      "description": "Runs when the volume of an input changes in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "channel": "Which input (channel) to watch: its name as Wave Link shows it, like \"Music\", or its ID. Separate several with commas. Leave empty for every input."
+      },
+      "variables": {
+        "input.name": "The input's name",
+        "input.identifier": "The input's ID",
+        "mixer": "Local (Monitor Mix) or Stream",
+        "input.local.muted": "true if muted in the Monitor Mix",
+        "input.local.volume": "Volume in the Monitor Mix (0-100)",
+        "input.stream.muted": "true if muted in the Stream Mix",
+        "input.stream.volume": "Volume in the Stream Mix (0-100)",
+        "waveLinkVolume": "The new volume (0-100)",
+        "waveLinkPreviousVolume": "The volume before",
+        "waveLinkMixName": "Monitor Mix or Stream Mix"
+      }
+    },
+    "wavelink.legacy.microphoneBalanceChanged": {
+      "description": "Runs when the microphone balance changes in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "inputDevice": "Which microphone to watch, by name or ID. Separate several with commas. Leave empty for every microphone."
+      },
+      "variables": {
+        "microphone.name": "The microphone's name",
+        "microphone.gain": "Its gain",
+        "microphone.outputVolume": "Its output volume",
+        "microphone.balance": "Its balance (0-100)",
+        "microphone.muted": "true if muted",
+        "microphone.lowCut": "true if low cut is on",
+        "microphone.clipGuard": "true if Clipguard is on",
+        "microphone.gainLocked": "true if the gain is locked"
+      }
+    },
+    "wavelink.legacy.microphoneGainChanged": {
+      "description": "Runs when the microphone gain (how loudly it picks you up) changes. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "inputDevice": "Which microphone to watch, by name or ID. Separate several with commas. Leave empty for every microphone."
+      },
+      "variables": {
+        "microphone.name": "The microphone's name",
+        "microphone.gain": "Its gain",
+        "microphone.outputVolume": "Its output volume",
+        "microphone.balance": "Its balance (0-100)",
+        "microphone.muted": "true if muted",
+        "microphone.lowCut": "true if low cut is on",
+        "microphone.clipGuard": "true if Clipguard is on",
+        "microphone.gainLocked": "true if the gain is locked"
+      }
+    },
+    "wavelink.legacy.microphoneMuteChanged": {
+      "description": "Runs when the microphone is muted or unmuted in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "inputDevice": "Which microphone to watch, by name or ID. Separate several with commas. Leave empty for every microphone."
+      },
+      "variables": {
+        "microphone.name": "The microphone's name",
+        "microphone.gain": "Its gain",
+        "microphone.outputVolume": "Its output volume",
+        "microphone.balance": "Its balance (0-100)",
+        "microphone.muted": "true if muted",
+        "microphone.lowCut": "true if low cut is on",
+        "microphone.clipGuard": "true if Clipguard is on",
+        "microphone.gainLocked": "true if the gain is locked"
+      }
+    },
+    "wavelink.legacy.microphoneOutputVolumeChanged": {
+      "description": "Runs when the microphone's output volume changes in Wave Link. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "inputDevice": "Which microphone to watch, by name or ID. Separate several with commas. Leave empty for every microphone."
+      },
+      "variables": {
+        "microphone.name": "The microphone's name",
+        "microphone.gain": "Its gain",
+        "microphone.outputVolume": "Its output volume",
+        "microphone.balance": "Its balance (0-100)",
+        "microphone.muted": "true if muted",
+        "microphone.lowCut": "true if low cut is on",
+        "microphone.clipGuard": "true if Clipguard is on",
+        "microphone.gainLocked": "true if the gain is locked"
+      }
+    },
+    "wavelink.legacy.microphoneSettingChanged": {
+      "description": "Runs when any microphone setting changes (this includes gain, mute, balance and output volume too). This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "inputDevice": "Which microphone to watch, by name or ID. Separate several with commas. Leave empty for every microphone."
+      },
+      "variables": {
+        "microphone.name": "The microphone's name",
+        "microphone.gain": "Its gain",
+        "microphone.outputVolume": "Its output volume",
+        "microphone.balance": "Its balance (0-100)",
+        "microphone.muted": "true if muted",
+        "microphone.lowCut": "true if low cut is on",
+        "microphone.clipGuard": "true if Clipguard is on",
+        "microphone.gainLocked": "true if the gain is locked",
+        "waveLinkMicrophoneProperty": "Which microphone setting changed"
+      }
+    },
+    "wavelink.legacy.outputLevelMeterChanged": {
+      "description": "Runs while Wave Link reports the sound level of its Monitor and Stream mixes. Switch level meters on at the Wave Link page first. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "levelName": "Names or IDs of the meters to watch, separated by commas. Leave empty for every meter.",
+        "minLevel": "Only run when the meter is at least this loud, from 0 (silent) to 100 (loudest). Leave empty to ignore how loud it is."
+      },
+      "variables": {
+        "waveLinkLevelName": "The name of the loudest matching meter",
+        "waveLinkLevelType": "Its kind: channel, mix, input or output",
+        "waveLinkLevelLeft": "Left loudness (0-100)",
+        "waveLinkLevelRight": "Right loudness (0-100)",
+        "waveLinkLevelPeak": "The louder of left and right (0-100)"
+      }
+    },
+    "wavelink.legacy.outputMuteChanged": {
+      "description": "Runs when the Monitor Mix or Stream Mix is muted or unmuted. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "mix": "Only react to this mix: \"Monitor Mix\" or \"Stream Mix\". Leave empty for both."
+      },
+      "variables": {
+        "mixer": "Local (Monitor Mix) or Stream",
+        "waveLinkMixName": "Monitor Mix or Stream Mix",
+        "waveLinkMixMuted": "true if that mix is muted",
+        "waveLinkMixVolume": "Its volume (0-100)",
+        "waveLinkPreviousVolume": "The volume before (volume changes only)",
+        "localVolume": "Monitor Mix volume",
+        "streamVolume": "Stream Mix volume"
+      }
+    },
+    "wavelink.legacy.outputSwitched": {
+      "description": "Runs when you switch which mix you listen to, Monitor Mix or Stream Mix. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {},
+      "variables": {
+        "waveLinkOutputMixName": "The mix you listen to now",
+        "waveLinkOutputDeviceName": "The output device",
+        "waveLinkPreviousMixId": "The ID of the mix before"
+      }
+    },
+    "wavelink.legacy.outputVolumeChanged": {
+      "description": "Runs when the volume of the Monitor Mix or Stream Mix changes. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {
+        "mix": "Only react to this mix: \"Monitor Mix\" or \"Stream Mix\". Leave empty for both."
+      },
+      "variables": {
+        "mixer": "Local (Monitor Mix) or Stream",
+        "waveLinkMixName": "Monitor Mix or Stream Mix",
+        "waveLinkMixMuted": "true if that mix is muted",
+        "waveLinkMixVolume": "Its volume (0-100)",
+        "waveLinkPreviousVolume": "The volume before (volume changes only)",
+        "localVolume": "Monitor Mix volume",
+        "streamVolume": "Stream Mix volume"
+      }
+    },
+    "wavelink.legacy.selectedOutputChanged": {
+      "description": "Runs when you pick a different output device (speakers or headphones) to listen on. This is for the older Wave Link 1.x/2.x and does not run with Wave Link 3.",
+      "fields": {},
+      "variables": {
+        "output.name": "The new output device",
+        "output.identifier": "Its ID",
+        "waveLinkPreviousOutputDeviceId": "The ID of the one before"
+      }
+    }
+  },
+  "subActions": {
+    "wavelink.addAppToChannel": {
+      "description": "Sends a program's sound to a Wave Link channel (Wave Link 3 only), for example putting your game on the 'Game' channel.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID.",
+        "app": "The program, by name or ID, like \"Spotify\". Leave empty to use the program you are using right now (the one in front)."
+      },
+      "variables": {
+        "waveLinkAppId": "The program's ID",
+        "waveLinkAppName": "The program's name"
+      }
+    },
+    "wavelink.adjustChannelVolume": {
+      "description": "Makes a Wave Link channel louder or quieter by an amount, for example 5 points up.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID.",
+        "mix": "Which mix to change, like \"Stream Mix\". Leave empty to change the channel as a whole (on Wave Link 1.x/2.x that means both mixes).",
+        "amount": "How much to change the volume, in points of 0-100. Use a negative number to go down, like -5."
+      },
+      "variables": {
+        "waveLinkChannelVolume": "The volume after the change (0-100)"
+      }
+    },
+    "wavelink.getChannelInfo": {
+      "description": "Reads a channel's mute, volume, mixes and effects into variables you can use in later steps.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID."
+      },
+      "variables": {
+        "waveLinkChannelName": "The channel's name",
+        "waveLinkChannelId": "The channel's ID",
+        "waveLinkChannelMuted": "true if the whole channel is muted",
+        "waveLinkChannelVolume": "The channel's volume (0-100)",
+        "waveLinkChannelMixesCount": "How many mixes the channel is in",
+        "waveLinkChannelEffectsCount": "How many effects it has",
+        "waveLinkChannelAppsCount": "How many programs play on it",
+        "waveLinkChannelMix.0.name": "The first mix's name (use .1, .2 and so on for more)",
+        "waveLinkChannelMix.0.muted": "true if muted in that mix",
+        "waveLinkChannelMix.0.level": "Volume in that mix",
+        "waveLinkChannelEffect.0.name": "The first effect's name (.1, .2 for more)",
+        "waveLinkChannelEffect.0.enabled": "true if that effect is on"
+      }
+    },
+    "wavelink.muteChannel": {
+      "description": "Mutes or unmutes a whole Wave Link channel.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID.",
+        "state": "Muted mutes it, Not Muted unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkChannelMuted": "true if the channel is muted after the change"
+      }
+    },
+    "wavelink.setChannelEffectState": {
+      "description": "Switches an effect on a channel (or a Wave Link 1.x/2.x filter) on or off.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID.",
+        "effect": "The effect, by name as Wave Link shows it on that channel, or by ID.",
+        "state": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkEffectEnabled": "true if the effect is on after the change"
+      }
+    },
+    "wavelink.setChannelMixMute": {
+      "description": "Mutes or unmutes a channel in just one mix, for example silencing music only in your stream.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID.",
+        "mix": "The mix to change, like \"Stream Mix\".",
+        "state": "Muted mutes it, Not Muted unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkMixMuted": "true if it is muted after the change"
+      }
+    },
+    "wavelink.setChannelVolume": {
+      "description": "Sets how loud a Wave Link channel is.",
+      "fields": {
+        "channel": "The channel, by name as Wave Link shows it, like \"Music\", or by ID.",
+        "mix": "Which mix to change, like \"Stream Mix\". Leave empty to change the channel as a whole (on Wave Link 1.x/2.x that means both mixes).",
+        "volume": "Volume from 0 (silent) to 100 (loudest)."
+      },
+      "variables": {
+        "waveLinkChannelVolume": "The volume after the change (0-100)"
+      }
+    },
+    "wavelink.getInputDeviceInfo": {
+      "description": "Reads an input device's (microphone's) settings into variables you can use in later steps.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one."
+      },
+      "variables": {
+        "waveLinkInputDeviceName": "The device's name",
+        "waveLinkInputDeviceId": "Its ID",
+        "waveLinkInputDeviceMuted": "true if muted",
+        "waveLinkInputDeviceGain": "Its gain",
+        "waveLinkInputDeviceGainLocked": "true if the gain is locked",
+        "waveLinkInputDeviceMicPcMix": "Its mic/PC balance (0-100)",
+        "waveLinkInputDeviceClipGuard": "true if Clipguard is on",
+        "waveLinkInputDeviceLowCutFilter": "true if low cut is on",
+        "waveLinkInputChannelName": "The channel it feeds, if any",
+        "waveLinkInputChannelVolume": "That channel's volume"
+      }
+    },
+    "wavelink.muteInputDevice": {
+      "description": "Mutes or unmutes an input device, usually your microphone.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one.",
+        "state": "Muted mutes it, Not Muted unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkInputDeviceMuted": "true if muted after the change"
+      }
+    },
+    "wavelink.setInputClipGuard": {
+      "description": "Turns Clipguard on or off. It stops your microphone from crackling when you shout.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one.",
+        "state": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkInputDeviceClipGuard": "true if Clipguard is on after the change"
+      }
+    },
+    "wavelink.setInputGain": {
+      "description": "Sets the gain of an input device, which is how loudly it picks you up.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one.",
+        "gain": "Gain from 0 to 100, as a percent of the device's range. On Wave Link 1.x/2.x it is the microphone's own gain number instead. With Relative change ticked, how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "waveLinkInputDeviceGain": "The gain after the change"
+      }
+    },
+    "wavelink.setInputGainLock": {
+      "description": "Locks or unlocks the gain of an input device so it cannot be turned by accident.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one.",
+        "state": "Locked locks it, Unlocked unlocks it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkInputDeviceGainLocked": "true if locked after the change"
+      }
+    },
+    "wavelink.setInputLowCut": {
+      "description": "Turns the low cut filter on or off. It removes deep rumble from your microphone.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one.",
+        "state": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkInputDeviceLowCutFilter": "true if low cut is on after the change"
+      }
+    },
+    "wavelink.setMicPcBalance": {
+      "description": "Sets the balance between your microphone and your PC sound that you hear in your headphones.",
+      "fields": {
+        "inputDevice": "The input device (microphone), by name or ID. Leave empty if you only have one.",
+        "balance": "From 0 to 100: 0 is only the microphone, 100 is only the PC sound, 50 is in the middle. With Relative change ticked, how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "waveLinkInputDeviceMicPcMix": "The balance after the change (0-100)"
+      }
+    },
+    "wavelink.adjustMixVolume": {
+      "description": "Makes a whole mix louder or quieter by an amount.",
+      "fields": {
+        "mix": "The mix, by name as Wave Link shows it, like \"Stream Mix\", or by ID.",
+        "amount": "How much to change the volume, in points of 0-100. Use a negative number to go down, like -5."
+      },
+      "variables": {
+        "waveLinkMixVolume": "The volume after the change (0-100)"
+      }
+    },
+    "wavelink.getMixInfo": {
+      "description": "Reads a mix's mute and volume into variables you can use in later steps.",
+      "fields": {
+        "mix": "The mix, by name as Wave Link shows it, like \"Stream Mix\", or by ID."
+      },
+      "variables": {
+        "waveLinkMixName": "The mix's name",
+        "waveLinkMixId": "Its ID",
+        "waveLinkMixMuted": "true if muted",
+        "waveLinkMixVolume": "Its volume (0-100)"
+      }
+    },
+    "wavelink.setMixVolume": {
+      "description": "Sets how loud a whole mix is.",
+      "fields": {
+        "mix": "The mix, by name as Wave Link shows it, like \"Stream Mix\", or by ID.",
+        "volume": "Volume from 0 (silent) to 100 (loudest)."
+      },
+      "variables": {
+        "waveLinkMixVolume": "The volume after the change (0-100)"
+      }
+    },
+    "wavelink.muteMix": {
+      "description": "Mutes or unmutes a whole mix, like your Stream Mix.",
+      "fields": {
+        "mix": "The mix, by name as Wave Link shows it, like \"Stream Mix\", or by ID.",
+        "state": "Muted mutes it, Not Muted unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "waveLinkMixMuted": "true if muted after the change"
+      }
+    },
+    "wavelink.addOutputToMix": {
+      "description": "Makes an output device (speakers or headphones) play a chosen mix (Wave Link 3 only).",
+      "fields": {
+        "outputDevice": "The output device (speakers or headphones), by name or ID.",
+        "mix": "The mix this output should play, by name or ID."
+      },
+      "variables": {
+        "waveLinkOutputMixName": "The mix the output plays now"
+      }
+    },
+    "wavelink.getSelectedOutput": {
+      "description": "Reads which output device and mix you are listening to into variables you can use in later steps.",
+      "fields": {},
+      "variables": {
+        "waveLinkOutputDeviceName": "The main output device",
+        "waveLinkOutputDeviceId": "Its ID",
+        "waveLinkOutputMixName": "The mix you listen to",
+        "waveLinkOutputMixId": "That mix's ID"
+      }
+    },
+    "wavelink.setMonitoredMix": {
+      "description": "Picks which mix you listen to on your main output device.",
+      "fields": {
+        "mix": "The mix to listen to, by name or ID. On Wave Link 1.x/2.x only Monitor Mix and Stream Mix exist."
+      },
+      "variables": {
+        "waveLinkMixName": "The mix you listen to now"
+      }
+    },
+    "wavelink.setOutputVolume": {
+      "description": "Sets the volume of an output device (speakers or headphones) in Wave Link 3.",
+      "fields": {
+        "outputDevice": "The output device (speakers or headphones), by name or ID.",
+        "volume": "Volume from 0 (silent) to 100 (loudest). With Relative change ticked, this is how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "waveLinkOutputVolume": "The volume after the change (0-100)"
+      }
+    },
+    "wavelink.setMainOutput": {
+      "description": "Picks which output device you listen on (your main output).",
+      "fields": {
+        "outputDevice": "The output device (speakers or headphones), by name or ID."
+      },
+      "variables": {
+        "waveLinkOutputDeviceName": "The new main output device"
+      }
+    },
+    "wavelink.legacy.getFilterState": {
+      "description": "For Wave Link 1.x/2.x, the older version. Reads whether a filter on an input is on into variables for later steps. It also works with Wave Link 3.",
+      "fields": {
+        "channel": "The input (channel), by name as Wave Link shows it, like \"Music\", or by ID.",
+        "effect": "The filter, by name as Wave Link shows it on that input, or by ID."
+      },
+      "variables": {
+        "filter.active": "true if the filter is on",
+        "filter.name": "The filter's name",
+        "filter.id": "The filter's ID",
+        "input.name": "The input's name"
+      }
+    },
+    "wavelink.legacy.getInputInfo": {
+      "description": "For Wave Link 1.x/2.x, the older version. Reads an input's mute, volume and filter bypass for both mixes into variables for later steps. It also works with Wave Link 3.",
+      "fields": {
+        "channel": "The input (channel), by name as Wave Link shows it, like \"Music\", or by ID."
+      },
+      "variables": {
+        "input.name": "The input's name",
+        "input.identifier": "Its ID",
+        "input.local.muted": "true if muted in the Monitor Mix",
+        "input.local.volume": "Volume in the Monitor Mix (0-100)",
+        "input.local.filterBypass": "true if filters are skipped in the Monitor Mix",
+        "input.stream.muted": "true if muted in the Stream Mix",
+        "input.stream.volume": "Volume in the Stream Mix (0-100)",
+        "input.stream.filterBypass": "true if filters are skipped in the Stream Mix"
+      }
+    },
+    "wavelink.legacy.getMicrophoneInfo": {
+      "description": "For Wave Link 1.x/2.x, the older version. Reads your microphone's settings into variables for later steps. It also works with Wave Link 3.",
+      "fields": {
+        "inputDevice": "The microphone, by name or ID. Leave empty if you only have one."
+      },
+      "variables": {
+        "microphone.name": "The microphone's name",
+        "microphone.gain": "Its gain",
+        "microphone.outputVolume": "Its output volume",
+        "microphone.balance": "Its balance (0-100)",
+        "microphone.muted": "true if muted",
+        "microphone.lowCut": "true if low cut is on",
+        "microphone.clipGuard": "true if Clipguard is on",
+        "microphone.gainLocked": "true if the gain is locked"
+      }
+    },
+    "wavelink.legacy.getOutputVolumes": {
+      "description": "For Wave Link 1.x/2.x, the older version. Reads the volume of the Monitor Mix and the Stream Mix into variables for later steps. It also works with Wave Link 3.",
+      "fields": {},
+      "variables": {
+        "localVolume": "Monitor Mix volume (0-100)",
+        "streamVolume": "Stream Mix volume (0-100)"
+      }
+    },
+    "wavelink.legacy.getSelectedOutput": {
+      "description": "For Wave Link 1.x/2.x, the older version. Reads which output device you listen on into variables for later steps. It also works with Wave Link 3.",
+      "fields": {},
+      "variables": {
+        "output.name": "The output device's name",
+        "output.identifier": "Its ID"
+      }
+    },
+    "wavelink.legacy.muteInput": {
+      "description": "For Wave Link 1.x/2.x, the older version. Mutes or unmutes an input in the Monitor Mix, the Stream Mix or both. It also works with Wave Link 3.",
+      "fields": {
+        "channel": "The input (channel), by name as Wave Link shows it, like \"Music\", or by ID.",
+        "mix": "Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear), Both changes both.",
+        "state": "Mute mutes it, Unmute unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "input.muted": "true if muted after the change"
+      }
+    },
+    "wavelink.legacy.muteMicrophone": {
+      "description": "For Wave Link 1.x/2.x, the older version. Mutes or unmutes your microphone. It also works with Wave Link 3.",
+      "fields": {
+        "inputDevice": "The microphone, by name or ID. Leave empty if you only have one.",
+        "state": "Mute mutes it, Unmute unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "microphone.muted": "true if muted after the change"
+      }
+    },
+    "wavelink.legacy.muteOutput": {
+      "description": "For Wave Link 1.x/2.x, the older version. Mutes or unmutes the whole Monitor Mix or Stream Mix. It also works with Wave Link 3.",
+      "fields": {
+        "mix": "Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear).",
+        "state": "Mute mutes it, Unmute unmutes it, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "output.muted": "true if muted after the change"
+      }
+    },
+    "wavelink.legacy.setFilterBypass": {
+      "description": "For Wave Link 1.x/2.x, the older version. Skips all filters on an input (bypass) or uses them again. Wave Link 3 does not have this.",
+      "fields": {
+        "channel": "The input (channel), by name as Wave Link shows it, like \"Music\", or by ID.",
+        "mix": "Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear), Both changes both.",
+        "state": "Bypassed skips the filters, Not Bypassed uses them, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "input.filterBypass": "true if filters are skipped after the change"
+      }
+    },
+    "wavelink.legacy.setFilterState": {
+      "description": "For Wave Link 1.x/2.x, the older version. Switches one filter on an input on or off. It also works with Wave Link 3.",
+      "fields": {
+        "channel": "The input (channel), by name as Wave Link shows it, like \"Music\", or by ID.",
+        "effect": "The filter, by name as Wave Link shows it on that input, or by ID.",
+        "state": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "filter.active": "true if the filter is on after the change"
+      }
+    },
+    "wavelink.legacy.setInputVolume": {
+      "description": "For Wave Link 1.x/2.x, the older version. Sets how loud an input is in the Monitor Mix, the Stream Mix or both. It also works with Wave Link 3.",
+      "fields": {
+        "channel": "The input (channel), by name as Wave Link shows it, like \"Music\", or by ID.",
+        "mix": "Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear), Both changes both.",
+        "volume": "Volume from 0 (silent) to 100 (loudest). With Relative change ticked, this is how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "input.volume": "The volume after the change (0-100)"
+      }
+    },
+    "wavelink.legacy.setMicrophoneBalance": {
+      "description": "For Wave Link 1.x/2.x, the older version. Sets the microphone balance. It also works with Wave Link 3.",
+      "fields": {
+        "inputDevice": "The microphone, by name or ID. Leave empty if you only have one.",
+        "balance": "From 0 to 100, where 50 is the middle. With Relative change ticked, how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "microphone.balance": "The balance after the change (0-100)"
+      }
+    },
+    "wavelink.legacy.setMicrophoneGain": {
+      "description": "For Wave Link 1.x/2.x, the older version. Sets the microphone gain, which is how loudly it picks you up. It also works with Wave Link 3.",
+      "fields": {
+        "inputDevice": "The microphone, by name or ID. Leave empty if you only have one.",
+        "gain": "The gain, using the microphone's own scale in Wave Link 1.x/2.x (on Wave Link 3 it is 0-100 percent). With Relative change ticked, how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "microphone.gain": "The gain after the change"
+      }
+    },
+    "wavelink.legacy.setMicrophoneOutputVolume": {
+      "description": "For Wave Link 1.x/2.x, the older version. Sets the microphone's output volume (what you hear of yourself). Wave Link 3 does not have this.",
+      "fields": {
+        "inputDevice": "The microphone, by name or ID. Leave empty if you only have one.",
+        "volume": "The volume, using the microphone's own scale. With Relative change ticked, how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "microphone.outputVolume": "The volume after the change"
+      }
+    },
+    "wavelink.legacy.setOutputMonitorDevice": {
+      "description": "For Wave Link 1.x/2.x, the older version. Picks which output device (speakers or headphones) you listen on. It also works with Wave Link 3.",
+      "fields": {
+        "outputDevice": "The output device (speakers or headphones), by name or ID."
+      },
+      "variables": {
+        "output.name": "The new output device's name"
+      }
+    },
+    "wavelink.legacy.setOutputVolume": {
+      "description": "For Wave Link 1.x/2.x, the older version. Sets how loud the Monitor Mix or the Stream Mix is. It also works with Wave Link 3.",
+      "fields": {
+        "mix": "Which mix to change: Local is the Monitor Mix (what you hear), Stream is the Stream Mix (what viewers hear).",
+        "volume": "Volume from 0 (silent) to 100 (loudest). With Relative change ticked, this is how much to add.",
+        "relative": "Tick to add your number to the current value instead of replacing it. Use a negative number to go down."
+      },
+      "variables": {
+        "output.volume": "The volume after the change (0-100)"
+      }
+    }
+  }
+}

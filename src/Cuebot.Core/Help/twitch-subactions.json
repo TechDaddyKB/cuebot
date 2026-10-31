@@ -1,0 +1,1034 @@
+{
+  "subActions": {
+    "twitch.sendMessage": {
+      "description": "Sends a message in your Twitch chat. Handy for replies, thank-yous and reminders.",
+      "fields": {
+        "message": "What to write in chat. You can use %variables%, like Thanks %user%! If it is empty nothing is sent.",
+        "sendAs": "Which account writes it. Default uses your bot account if it is signed in (see the Twitch page), otherwise your own account. Or pick Bot or Broadcaster."
+      },
+      "variables": {}
+    },
+    "twitch.replyToMessage": {
+      "description": "Answers a chat message so it shows as a reply to that message. Great for command answers.",
+      "fields": {
+        "message": "What to write back. You can use %variables%, like Hi %user%! If it is empty nothing is sent.",
+        "messageId": "The id of the message to reply to. The default %messageId% is the message that started the action.",
+        "sendAs": "Which account writes it. Default uses your bot account if it is signed in (see the Twitch page), otherwise your own account. Or pick Bot or Broadcaster."
+      },
+      "variables": {}
+    },
+    "twitch.sendWhisper": {
+      "description": "Sends a private message (whisper) to one viewer. The account that sends it needs a verified phone number on Twitch.",
+      "fields": {
+        "user": "Who gets the whisper: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "message": "What to whisper. You can use %variables%. If it is empty nothing is sent.",
+        "sendAs": "Which account writes it. Default uses your bot account if it is signed in (see the Twitch page), otherwise your own account. Or pick Bot or Broadcaster."
+      },
+      "variables": {}
+    },
+    "twitch.sendAnnouncement": {
+      "description": "Posts a highlighted announcement in your Twitch chat, which stands out from normal messages.",
+      "fields": {
+        "message": "The announcement text. You can use %variables%.",
+        "color": "The colour of the highlight bar. Primary uses your channel's own accent colour."
+      },
+      "variables": {}
+    },
+    "twitch.deleteMessage": {
+      "description": "Deletes one message from your Twitch chat, for example one that broke a rule.",
+      "fields": {
+        "messageId": "The id of the chat message. The default %messageId% is the message that started the action."
+      },
+      "variables": {}
+    },
+    "twitch.clearChat": {
+      "description": "Wipes all messages from your Twitch chat at once.",
+      "fields": {},
+      "variables": {
+        "clearSuccess": "True when the chat was cleared"
+      }
+    },
+    "twitch.getPresentViewers": {
+      "description": "Looks up who is in your chat right now and saves the count and the names for the next steps.",
+      "fields": {},
+      "variables": {
+        "presentViewerCount": "How many people are in chat",
+        "presentViewers": "Their login names, separated by commas"
+      }
+    },
+    "twitch.pinMessage": {
+      "description": "Pins a chat message to the top of your chat so everyone can see it.",
+      "fields": {
+        "messageId": "The id of the chat message. The default %messageId% is the message that started the action.",
+        "duration": "How long it stays pinned, in seconds (30 to 1800). 0 keeps it pinned until the stream ends."
+      },
+      "variables": {}
+    },
+    "twitch.unpinMessage": {
+      "description": "Removes the pin from a pinned chat message.",
+      "fields": {
+        "messageId": "The id of the pinned message. Leave empty to unpin the message that is pinned now."
+      },
+      "variables": {}
+    },
+    "twitch.updatePinnedDuration": {
+      "description": "Changes how much longer a pinned chat message stays pinned.",
+      "fields": {
+        "messageId": "The id of the pinned message. Leave empty to use the message that is pinned now.",
+        "duration": "How long it stays pinned from now, in seconds (30 to 1800). 0 keeps it pinned until the stream ends."
+      },
+      "variables": {}
+    },
+    "twitch.getPinnedMessage": {
+      "description": "Looks up the chat message that is pinned right now and saves its details for the next steps.",
+      "fields": {},
+      "variables": {
+        "isPinned": "True if a message is pinned",
+        "pinnedMessage": "The text of the pinned message",
+        "pinnedMessageId": "The id of the pinned message",
+        "pinnedUser": "Who wrote the pinned message",
+        "pinnedUserName": "Their login name",
+        "pinnedBy": "Who pinned it",
+        "pinnedUntil": "When the pin ends (empty if it stays until the stream ends)"
+      }
+    },
+    "twitch.setTitle": {
+      "description": "Changes your stream title on Twitch.",
+      "fields": {
+        "title": "The new title, like \"Chill games with chat\". You can use %variables%."
+      },
+      "variables": {
+        "titleSuccess": "True when the title was changed"
+      }
+    },
+    "twitch.setGame": {
+      "description": "Changes your stream category (the game) on Twitch. It fails if Twitch finds no matching category.",
+      "fields": {
+        "game": "The category name, like \"Just Chatting\". Twitch picks the closest match."
+      },
+      "variables": {
+        "gameName": "The category that was set",
+        "gameId": "Twitch's id for that category",
+        "gameBoxArt": "The web link of the category's cover picture",
+        "gameSuccess": "True when the category was changed"
+      }
+    },
+    "twitch.setTags": {
+      "description": "Replaces all of your stream tags with the ones you list.",
+      "fields": {
+        "tags": "The new tags, like \"English, Chill, Cozy\". Separate with commas or spaces, at most 10. All old tags are replaced."
+      },
+      "variables": {}
+    },
+    "twitch.addTag": {
+      "description": "Adds one tag to your stream tags and keeps the ones you already have.",
+      "fields": {
+        "tag": "The tag to add, like \"Cozy\"."
+      },
+      "variables": {}
+    },
+    "twitch.removeTag": {
+      "description": "Removes one tag from your stream tags and keeps the others.",
+      "fields": {
+        "tag": "The tag to remove, like \"Cozy\". Capital letters and a leading # do not matter."
+      },
+      "variables": {}
+    },
+    "twitch.clearTags": {
+      "description": "Removes all of your stream tags.",
+      "fields": {},
+      "variables": {}
+    },
+    "twitch.setBrandedContent": {
+      "description": "Turns the \"branded content\" label on your stream on or off. Use it when a sponsor is paying you.",
+      "fields": {
+        "enabled": "Tick to mark the stream as branded content, untick to remove the label."
+      },
+      "variables": {
+        "success": "True when the setting was changed"
+      }
+    },
+    "twitch.setContentLabel": {
+      "description": "Turns one content warning label (like gambling or violence) on or off for your channel.",
+      "fields": {
+        "label": "Which content warning to change.",
+        "enabled": "Tick to add the label to your channel, untick to remove it."
+      },
+      "variables": {}
+    },
+    "twitch.updateStreamInfo": {
+      "description": "Changes the title, the category and the tags in one go. Anything you leave empty stays as it is.",
+      "fields": {
+        "title": "The new title. Leave empty to keep the current one.",
+        "game": "The new category, like \"Just Chatting\". Leave empty to keep the current one.",
+        "tags": "New tags separated by commas, like \"English, Chill\". Leave empty to keep the current tags."
+      },
+      "variables": {}
+    },
+    "twitch.getChannelInfo": {
+      "description": "Looks up a channel's title, category and tags and saves them for the next steps. Good for shout-outs.",
+      "fields": {
+        "user": "The channel to look up: a login name like \"coolstreamer\" or id:12345. Leave empty for your own channel."
+      },
+      "variables": {
+        "channelUser": "The channel's display name",
+        "channelUserName": "The channel's login name",
+        "channelTitle": "The stream title",
+        "channelGame": "The category (game) name",
+        "channelTags": "The tags, separated by commas",
+        "channelLanguage": "The stream language",
+        "channelContentLabels": "The content warning labels",
+        "channelIsBrandedContent": "True if it is marked as branded content"
+      }
+    },
+    "twitch.getStreamInfo": {
+      "description": "Checks whether a channel is live and saves the viewer count, title and uptime for the next steps.",
+      "fields": {
+        "user": "The channel to check: a login name like \"coolstreamer\" or id:12345. Leave empty for your own channel."
+      },
+      "variables": {
+        "isLive": "True if the channel is live",
+        "viewerCount": "How many people are watching (0 when offline)",
+        "streamTitle": "The stream title",
+        "streamGame": "The category (game) name",
+        "streamStartedAt": "When the stream started",
+        "uptimeSeconds": "How many seconds the stream has been live"
+      }
+    },
+    "twitch.createMarker": {
+      "description": "Puts a marker into your stream at this moment, so you can find the spot later in your video.",
+      "fields": {
+        "description": "A short note for the marker, like \"Epic fail\". It can be empty."
+      },
+      "variables": {
+        "markerId": "Twitch's id for the marker",
+        "markerPosition": "How many seconds into the stream the marker is",
+        "streamMarkerDescription": "The note on the marker"
+      }
+    },
+    "twitch.createClip": {
+      "description": "Makes a clip of the last moments of your stream and saves its web links for the next steps.",
+      "fields": {
+        "hasDelay": "Tick if your stream has a delay set on Twitch, so the clip matches what your viewers saw."
+      },
+      "variables": {
+        "clipId": "Twitch's id for the new clip",
+        "clipUrl": "The web link to watch the clip",
+        "clipEditUrl": "The web link to edit the clip",
+        "createClipSuccess": "True when the clip was made"
+      }
+    },
+    "twitch.getClipDownloadUrls": {
+      "description": "Looks up download links for clips of your channel, so you can save or reuse them.",
+      "fields": {
+        "clipId": "The id of one of your clips. The default %clipId% is the clip you just made. For several clips, separate up to 10 ids with commas."
+      },
+      "variables": {
+        "clipDownloadUrl": "Download link of the first clip (wide video)",
+        "clipPortraitDownloadUrl": "Download link of the first clip (tall video)",
+        "clipDownloadCount": "How many clips were found",
+        "clipDownload0.landscapeUrl": "Wide download link of the first clip. Use 1, 2, ... for the next ones",
+        "clipDownload0.portraitUrl": "Tall download link of the first clip"
+      }
+    },
+    "twitch.runAd": {
+      "description": "Starts a commercial break on your channel. Only works while you are live and are an affiliate or partner.",
+      "fields": {
+        "length": "How long the ad break runs, in seconds."
+      },
+      "variables": {
+        "adLength": "How long the ad break is, in seconds",
+        "adRetryAfter": "How many seconds until you can run another ad"
+      }
+    },
+    "twitch.snoozeAd": {
+      "description": "Pushes your next automatic ad back a little. Twitch only allows a few snoozes.",
+      "fields": {},
+      "variables": {
+        "snoozeCount": "How many snoozes you have left",
+        "nextAdAt": "When the next ad starts",
+        "snooze.success": "True when the ad was snoozed"
+      }
+    },
+    "twitch.getAdSchedule": {
+      "description": "Looks up when your next ad is due and how many snoozes you have, and saves it for the next steps.",
+      "fields": {},
+      "variables": {
+        "nextAdAt": "When the next ad starts",
+        "lastAdAt": "When the last ad ran",
+        "adDuration": "How long the next ad is, in seconds",
+        "prerollFreeTime": "Seconds left without pre-roll ads for new viewers",
+        "snoozeCount": "How many snoozes you have left",
+        "snoozeRefreshAt": "When you get a snooze back"
+      }
+    },
+    "twitch.startRaid": {
+      "description": "Sends your viewers to another channel (a raid). Twitch starts it after a short countdown.",
+      "fields": {
+        "user": "The channel to raid: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "startRaidSuccess": "True when the raid was started"
+      }
+    },
+    "twitch.cancelRaid": {
+      "description": "Stops a raid that you started but that has not left yet.",
+      "fields": {},
+      "variables": {}
+    },
+    "twitch.sendShoutout": {
+      "description": "Gives another channel an official Twitch shoutout, which shows them off to your viewers.",
+      "fields": {
+        "user": "The channel to shout out: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "shoutoutSuccess": "True when the shoutout was sent"
+      }
+    },
+    "twitch.ban": {
+      "description": "Bans a viewer from your channel for good. They can no longer chat or watch in chat.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "reason": "Why they are banned, like \"Spam\". Moderators can see it. Can be empty."
+      },
+      "variables": {
+        "bannedUser": "The display name of the person who was banned",
+        "bannedUserName": "Their login name",
+        "bannedUserId": "Their Twitch id",
+        "banResult": "True when the ban worked"
+      }
+    },
+    "twitch.timeout": {
+      "description": "Stops a viewer from chatting for a while (a timeout).",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "duration": "How long the timeout lasts, in seconds. From 1 second up to 14 days (1209600). 600 is ten minutes.",
+        "reason": "Why they are timed out. Can be empty."
+      },
+      "variables": {
+        "timedOutUser": "The display name of the person who was timed out",
+        "timedOutUserName": "Their login name",
+        "timedOutUserId": "Their Twitch id",
+        "timeoutResult": "True when the timeout worked"
+      }
+    },
+    "twitch.unban": {
+      "description": "Lifts a ban so the viewer can chat again.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "unbannedUser": "The display name of the person who was unbanned",
+        "unbannedUserName": "Their login name",
+        "unbannedUserId": "Their Twitch id",
+        "unbanResult": "True when the unban worked"
+      }
+    },
+    "twitch.untimeout": {
+      "description": "Ends a timeout early so the viewer can chat again.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "unTimedOutUser": "The display name of the person whose timeout ended",
+        "unTimedOutUserName": "Their login name",
+        "unTimedOutUserId": "Their Twitch id",
+        "unTimedOutResult": "True when it worked"
+      }
+    },
+    "twitch.warn": {
+      "description": "Sends a warning to a viewer. They must accept it before they can chat again.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "reason": "What you warn them about, like \"Please be kind\". They see this text."
+      },
+      "variables": {
+        "warnedUser": "The display name of the person who was warned",
+        "warnedUserName": "Their login name",
+        "warnedUserId": "Their Twitch id",
+        "warnedResult": "True when the warning was sent"
+      }
+    },
+    "twitch.addSuspiciousStatus": {
+      "description": "Marks a viewer as suspicious, so their messages are flagged or limited. Good against ban evaders.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "status": "Active monitoring flags the viewer's messages for your moderators. Restricted keeps their messages away from everyone else."
+      },
+      "variables": {
+        "suspiciousUser": "The display name of the marked person",
+        "suspiciousUserId": "Their Twitch id",
+        "suspiciousStatus": "The status they now have",
+        "suspiciousStatusResult": "True when it worked"
+      }
+    },
+    "twitch.removeSuspiciousStatus": {
+      "description": "Removes the suspicious mark from a viewer.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "suspiciousUser": "The display name of the person",
+        "suspiciousUserId": "Their Twitch id",
+        "suspiciousStatusResult": "True when it worked"
+      }
+    },
+    "twitch.addVip": {
+      "description": "Makes a viewer a VIP on your channel.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {}
+    },
+    "twitch.removeVip": {
+      "description": "Takes the VIP badge away from a viewer.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {}
+    },
+    "twitch.addModerator": {
+      "description": "Makes a viewer a moderator of your channel.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {}
+    },
+    "twitch.removeModerator": {
+      "description": "Takes the moderator job away from a viewer.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {}
+    },
+    "twitch.emoteOnly": {
+      "description": "Turns emote-only chat on or off. In this mode viewers can only post emotes.",
+      "fields": {
+        "enabled": "Tick to turn it on, untick to turn it off."
+      },
+      "variables": {}
+    },
+    "twitch.followerMode": {
+      "description": "Turns followers-only chat on or off. In this mode only people who follow you can chat.",
+      "fields": {
+        "enabled": "Tick to turn it on, untick to turn it off.",
+        "minutes": "How long someone must have followed before chatting, in minutes. 0 means any follower. Up to 129600 (3 months). Only used when turning it on."
+      },
+      "variables": {}
+    },
+    "twitch.slowMode": {
+      "description": "Turns slow mode on or off. In this mode each viewer must wait between messages.",
+      "fields": {
+        "enabled": "Tick to turn it on, untick to turn it off.",
+        "seconds": "How long each viewer waits between messages, in seconds (3 to 120). Only used when turning it on."
+      },
+      "variables": {}
+    },
+    "twitch.subscriberMode": {
+      "description": "Turns subscribers-only chat on or off. In this mode only subscribers can chat.",
+      "fields": {
+        "enabled": "Tick to turn it on, untick to turn it off."
+      },
+      "variables": {}
+    },
+    "twitch.uniqueChat": {
+      "description": "Turns unique chat on or off. In this mode a viewer cannot post the same message twice in a row.",
+      "fields": {
+        "enabled": "Tick to turn it on, untick to turn it off."
+      },
+      "variables": {}
+    },
+    "twitch.setShieldMode": {
+      "description": "Turns Twitch's shield mode on or off. Shield mode applies your pre-set strict chat rules during a flood of trolls.",
+      "fields": {
+        "enabled": "Tick to turn shield mode on, untick to turn it off."
+      },
+      "variables": {}
+    },
+    "twitch.getShieldMode": {
+      "description": "Checks whether shield mode is on and saves the answer for the next steps.",
+      "fields": {},
+      "variables": {
+        "shieldModeActive": "True if shield mode is on",
+        "shieldModeModerator": "Who last changed it"
+      }
+    },
+    "twitch.addBlockedTerm": {
+      "description": "Adds a word or phrase to your channel's blocked list, so messages with it are held back.",
+      "fields": {
+        "term": "The word or phrase to block, like \"badword\"."
+      },
+      "variables": {
+        "blockedTermId": "Twitch's id for the blocked term"
+      }
+    },
+    "twitch.resolveAutomod": {
+      "description": "Allows or denies a chat message that AutoMod is holding back for review.",
+      "fields": {
+        "messageId": "The id of the held message. The default %messageId% is the message from the AutoMod trigger.",
+        "decision": "Allow lets the message appear in chat. Deny throws it away."
+      },
+      "variables": {}
+    },
+    "twitch.createPoll": {
+      "description": "Starts a poll in your Twitch chat for viewers to vote on.",
+      "fields": {
+        "title": "The question, like \"What game next?\".",
+        "choices": "One per line. The answers viewers can pick, 2 to 5 of them.",
+        "duration": "How long the poll runs, in seconds (15 to 1800).",
+        "pointsPerVote": "How many channel points an extra vote costs. 0 means viewers cannot buy extra votes."
+      },
+      "variables": {
+        "pollId": "Twitch's id for the poll",
+        "success": "True when the poll started"
+      }
+    },
+    "twitch.endPoll": {
+      "description": "Ends the poll that is running now.",
+      "fields": {
+        "mode": "Terminate ends it and shows the results to viewers. Archive ends it and hides the results."
+      },
+      "variables": {}
+    },
+    "twitch.getPoll": {
+      "description": "Looks up your latest poll and saves its question, answers and votes for the next steps.",
+      "fields": {},
+      "variables": {
+        "pollId": "Twitch's id for the poll",
+        "pollTitle": "The question",
+        "pollStatus": "The poll's state, like ACTIVE or COMPLETED",
+        "active": "True if the poll is still running",
+        "pollChoiceCount": "How many answers there are",
+        "pollChoice0": "The first answer. Use 1, 2, ... for the next ones",
+        "pollChoice0Votes": "Votes for the first answer",
+        "poll.totalVotes": "All votes together",
+        "poll.DurationRemaining": "Seconds left"
+      }
+    },
+    "twitch.createPrediction": {
+      "description": "Starts a prediction where viewers bet channel points on what will happen.",
+      "fields": {
+        "title": "The question, like \"Will I win?\".",
+        "outcomes": "One per line. The possible results viewers can bet on, 2 to 10 of them.",
+        "window": "How long viewers can place bets, in seconds (30 to 1800)."
+      },
+      "variables": {
+        "predictionId": "Twitch's id for the prediction",
+        "success": "True when the prediction started"
+      }
+    },
+    "twitch.lockPrediction": {
+      "description": "Closes the betting on the running prediction, so nobody can bet any more.",
+      "fields": {},
+      "variables": {
+        "locked": "True when betting was closed",
+        "prediction.Title": "The question"
+      }
+    },
+    "twitch.cancelPrediction": {
+      "description": "Cancels the running prediction and gives every viewer their channel points back.",
+      "fields": {},
+      "variables": {
+        "cancelled": "True when the prediction was cancelled",
+        "prediction.Title": "The question"
+      }
+    },
+    "twitch.resolvePrediction": {
+      "description": "Picks the winning result of a prediction and pays out the winners.",
+      "fields": {
+        "winner": "The winning result: its text like \"Yes\", or its number (1 for the first, 2 for the second, ...).",
+        "title": "Only act if the open prediction has exactly this question. Leave empty to use the latest open prediction."
+      },
+      "variables": {
+        "success": "True when it was resolved",
+        "prediction.Title": "The question",
+        "prediction.winningOutcome.title": "The text of the winning result"
+      }
+    },
+    "twitch.getPrediction": {
+      "description": "Looks up your latest prediction and saves its question, results and bets for the next steps.",
+      "fields": {},
+      "variables": {
+        "predictionId": "Twitch's id for the prediction",
+        "predictionTitle": "The question",
+        "predictionStatus": "The prediction's state, like ACTIVE, LOCKED or RESOLVED",
+        "active": "True if betting is still open",
+        "predictionOutcomeCount": "How many results there are",
+        "predictionOutcome0": "The first result. Use 1, 2, ... for the next ones",
+        "predictionOutcome0Users": "How many viewers bet on the first result",
+        "predictionOutcome0Points": "How many channel points were bet on the first result",
+        "prediction.winningOutcome.title": "The winning result, once there is one"
+      }
+    },
+    "twitch.createReward": {
+      "description": "Creates a new channel points reward on your channel.",
+      "fields": {
+        "title": "The name of the reward, like \"Hydrate\".",
+        "cost": "How many channel points it costs (at least 1).",
+        "prompt": "The text viewers see when they open the reward. Can be empty.",
+        "inputRequired": "Tick if the viewer must type a message when they redeem it.",
+        "enabled": "Tick to make the reward available right away."
+      },
+      "variables": {
+        "createdRewardId": "Twitch's id for the new reward"
+      }
+    },
+    "twitch.setRewardEnabled": {
+      "description": "Turns a channel points reward on or off. A reward that is off is hidden from viewers.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "enabled": "Tick to show the reward, untick to hide it."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardPaused": {
+      "description": "Pauses or resumes a channel points reward. A paused reward is still shown but cannot be redeemed.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "paused": "Tick to pause the reward, untick to let viewers redeem it again."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardCost": {
+      "description": "Changes how many channel points a reward costs.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "cost": "The new price in channel points."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardTitle": {
+      "description": "Changes the name of a channel points reward.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "title": "The new name of the reward."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardPrompt": {
+      "description": "Changes the description text viewers see on a channel points reward.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "prompt": "The new description text."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardColor": {
+      "description": "Changes the background colour of a channel points reward.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "color": "The colour as a code like #9147FF (purple). Search for a \"colour picker\" to find codes.",
+        "random": "Tick to pick a random colour each time. The colour code is then ignored."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardCooldown": {
+      "description": "Sets how long everyone must wait before the reward can be redeemed again.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "seconds": "The wait time in seconds. 0 turns the cooldown off."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardMaxPerStream": {
+      "description": "Limits how many times a reward can be redeemed in one stream, by everybody together.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "max": "The most redemptions per stream. 0 turns the limit off.",
+        "additive": "Tick to add this number to the current limit instead of replacing it. Use a negative number to lower it."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardMaxPerUser": {
+      "description": "Limits how many times each viewer can redeem a reward in one stream.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "max": "The most redemptions per viewer per stream. 0 turns the limit off.",
+        "additive": "Tick to add this number to the current limit instead of replacing it. Use a negative number to lower it."
+      },
+      "variables": {}
+    },
+    "twitch.deleteReward": {
+      "description": "Deletes a channel points reward for good.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed."
+      },
+      "variables": {}
+    },
+    "twitch.getRewardInfo": {
+      "description": "Looks up a channel points reward and saves its title, cost and settings for the next steps.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed."
+      },
+      "variables": {
+        "rewardId": "Twitch's id for the reward",
+        "rewardTitle": "The reward's name",
+        "rewardPrompt": "The description text",
+        "rewardCost": "The price in channel points",
+        "rewardEnabled": "True if the reward is on",
+        "rewardPaused": "True if the reward is paused",
+        "rewardCooldown": "The wait time in seconds (0 = none)",
+        "rewardMaxPerStream": "The limit per stream (0 = none)",
+        "rewardMaxPerUser": "The limit per viewer (0 = none)",
+        "rewardBackgroundColor": "The colour code"
+      }
+    },
+    "twitch.updateRedemption": {
+      "description": "Marks a redeemed reward as done (fulfil) or turns it down (cancel). Cancel gives the points back.",
+      "fields": {
+        "rewardId": "The id of the reward. The default %rewardId% is the reward that started the action.",
+        "redemptionId": "The id of this redemption. The default %redemptionId% is the one that started the action.",
+        "status": "Fulfil marks it as done. Cancel refunds the viewer's channel points."
+      },
+      "variables": {}
+    },
+    "twitch.updateReward": {
+      "description": "Changes the name, description and price of a reward in one go. Anything you leave empty stays as it is.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "title": "The new name. Leave empty to keep the current one.",
+        "prompt": "The new description text. Leave empty to keep the current one.",
+        "cost": "A number. Leave empty to keep the price. What it does depends on the operator below.",
+        "operator": "How to use the cost number. Set makes it the new price. Add, Subtract, Multiply and Divide change the current price. The price never goes below 1."
+      },
+      "variables": {
+        "rewardCost": "The reward's price after the change"
+      }
+    },
+    "twitch.getRewardCounter": {
+      "description": "Looks up how often a reward was redeemed, in total and by one viewer, and saves the numbers.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed.",
+        "user": "The viewer to count for: a login name like \"coolviewer\" or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "counter": "How many times the reward was redeemed",
+        "userCounter": "How many times that viewer redeemed it"
+      }
+    },
+    "twitch.resetRewardCounter": {
+      "description": "Sets a reward's redeem counter back to 0.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed."
+      },
+      "variables": {}
+    },
+    "twitch.resetRewardUserCounters": {
+      "description": "Sets every viewer's personal redeem counter for a reward back to 0.",
+      "fields": {
+        "reward": "The reward's name exactly as on Twitch, like \"Hydrate\", or its id. Leave empty to use the reward that was just redeemed."
+      },
+      "variables": {}
+    },
+    "twitch.setRewardGroupEnabled": {
+      "description": "Turns every reward in a group on or off at once. Only rewards that Cuebot created can be changed.",
+      "fields": {
+        "group": "The group name, like \"Sound alerts\". You give rewards a group on the Twitch page (Rewards tab).",
+        "state": "Enabled shows the rewards. Disabled hides them. Toggle turns them on, unless one is already on, then it turns them off."
+      },
+      "variables": {
+        "rewardsChanged": "How many rewards were changed",
+        "rewardsSkipped": "How many rewards could not be changed"
+      }
+    },
+    "twitch.setRewardGroupPaused": {
+      "description": "Pauses or resumes every reward in a group at once. Only rewards that Cuebot created can be changed.",
+      "fields": {
+        "group": "The group name, like \"Sound alerts\". You give rewards a group on the Twitch page (Rewards tab).",
+        "state": "Paused pauses the rewards. Unpaused lets viewers redeem them. Toggle pauses them, unless one is already paused, then it resumes them."
+      },
+      "variables": {
+        "rewardsChanged": "How many rewards were changed",
+        "rewardsSkipped": "How many rewards could not be changed"
+      }
+    },
+    "twitch.configureRewards": {
+      "description": "Turns, pauses and resumes many rewards at once, by name or by group. Only rewards that Cuebot created can be changed.",
+      "fields": {
+        "enable": "Rewards to turn on. Reward names, reward ids or group names, one per line. A group name changes every reward in that group.",
+        "disable": "Rewards to turn off. Reward names, reward ids or group names, one per line. A group name changes every reward in that group.",
+        "pause": "Rewards to pause. Reward names, reward ids or group names, one per line. A group name changes every reward in that group.",
+        "unpause": "Rewards to resume. Reward names, reward ids or group names, one per line. A group name changes every reward in that group.",
+        "disableNotConfigured": "Tick to also turn off every reward that is on and has no group and is not listed above."
+      },
+      "variables": {
+        "rewardsChanged": "How many rewards were changed",
+        "rewardsSkipped": "How many listed rewards could not be changed"
+      }
+    },
+    "twitch.getUserInfo": {
+      "description": "Looks up a Twitch user and saves their name, account age, subscriber status and more for the next steps.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "targetFound": "True if the user exists",
+        "targetUser": "Their display name",
+        "targetUserName": "Their login name",
+        "targetUserId": "Their Twitch id",
+        "targetDescription": "Their profile text",
+        "targetCreatedAt": "When their account was made",
+        "targetAccountAgeDays": "How many days old their account is",
+        "targetIsSubscribed": "True if they subscribe to you",
+        "targetIsModerator": "True if they moderate your channel",
+        "targetIsVip": "True if they are a VIP",
+        "targetGame": "The category they last streamed",
+        "targetProfileImageUrl": "The web link of their profile picture"
+      }
+    },
+    "twitch.getFollowAge": {
+      "description": "Checks if a viewer follows you and for how long, and saves it for the next steps.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "isFollowing": "True if they follow you",
+        "followedAt": "When they started following",
+        "followAgeDays": "How many days they have followed",
+        "followAge": "A short text, like 2 years, 3 months",
+        "followAgeLong": "A full text, like 1 year, 2 months, 5 days",
+        "followDate": "The day they followed, in words"
+      }
+    },
+    "twitch.getSubStatus": {
+      "description": "Checks if a viewer subscribes to you and saves the answer for the next steps.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "isSubscribed": "True if they subscribe",
+        "subTier": "Their tier (empty if not subscribed)",
+        "subIsGift": "True if their sub was a gift",
+        "subGifter": "Who gifted it"
+      }
+    },
+    "twitch.getFollowerCount": {
+      "description": "Looks up how many followers you have and who followed last, and saves it for the next steps.",
+      "fields": {},
+      "variables": {
+        "followerCount": "Your number of followers",
+        "latestFollower": "The display name of your newest follower",
+        "latestFollowerUserName": "Their login name"
+      }
+    },
+    "twitch.getSubscriberCount": {
+      "description": "Looks up how many subscribers you have and saves the numbers for the next steps.",
+      "fields": {},
+      "variables": {
+        "subscriberCount": "Your number of subscribers",
+        "subPoints": "Your sub points (higher tiers count for more)"
+      }
+    },
+    "twitch.getLatestSubscriber": {
+      "description": "Looks up who subscribed last, as seen by Cuebot, and saves it for the next steps.",
+      "fields": {},
+      "variables": {
+        "latestSubscriber.userName": "Their display name",
+        "latestSubscriber.userLogin": "Their login name",
+        "latestSubscriber.userId": "Their Twitch id",
+        "latestSubscriber.tier": "Their tier, like Tier1",
+        "latestSubscriber.isGift": "True if it was a gift",
+        "latestSubscriber.at": "When they subscribed"
+      }
+    },
+    "twitch.getSubCounter": {
+      "description": "Reads Cuebot's own sub counter (for a sub goal) and saves its numbers for the next steps.",
+      "fields": {},
+      "variables": {
+        "subCounter.count": "Subs counted so far in this round",
+        "subCounter.rollover": "The count at which the counter starts over (0 = never)",
+        "subCounter.rolloverCount": "How many times it already started over"
+      }
+    },
+    "twitch.setSubCounter": {
+      "description": "Sets Cuebot's own sub counter to a number you choose, for example to fix it or start a new goal.",
+      "fields": {
+        "count": "The new count. A whole number, 0 or more.",
+        "rolloverCount": "How many times the counter has started over. Leave empty to keep the current number."
+      },
+      "variables": {
+        "setResult": "True when the counter was changed",
+        "subCounter.count": "The new count"
+      }
+    },
+    "twitch.getPresentUser": {
+      "description": "Picks one person from the people in chat right now by their place in the list, and saves their name.",
+      "fields": {
+        "index": "Which person to pick. 0 is the first, 1 the second, and so on. A variable like %randomNumber% also works."
+      },
+      "variables": {
+        "presentUser": "Their display name (false if nobody is at that place)",
+        "presentUserName": "Their login name",
+        "presentUserId": "Their Twitch id",
+        "presentUsersCount": "How many people are in chat"
+      }
+    },
+    "twitch.getTeamInfo": {
+      "description": "Looks up which Twitch teams a user belongs to and saves them for the next steps.",
+      "fields": {
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+      },
+      "variables": {
+        "teams": "The team names, separated by commas",
+        "teamCount": "How many teams they are in",
+        "teamName": "The name of their first team"
+      }
+    },
+    "twitch.getBroadcasterInfo": {
+      "description": "Saves facts about your own channel and your bot account, like your name and whether you are an affiliate, for the next steps.",
+      "fields": {},
+      "variables": {
+        "broadcasterUser": "Your display name",
+        "broadcasterUserName": "Your login name",
+        "broadcasterUserId": "Your Twitch id",
+        "broadcasterType": "affiliate, partner or empty",
+        "broadcasterIsAffiliate": "True if you are an affiliate",
+        "broadcasterIsPartner": "True if you are a partner",
+        "broadcasterProfileImageUrl": "The web link of your profile picture",
+        "botUserName": "Your bot account's login name",
+        "botUserId": "Your bot account's Twitch id"
+      }
+    },
+    "twitch.getRandomUsers": {
+      "description": "Picks one or more random people from the people in chat right now and saves their names for the next steps.",
+      "fields": {
+        "count": "How many people to pick (at least 1).",
+        "excludeBroadcaster": "Tick to leave out you and your bot account when picking."
+      },
+      "variables": {
+        "randomUserCount": "How many people were picked",
+        "randomUser0": "The first person's display name. Use 1, 2, ... for the next ones",
+        "randomUserName0": "Their login name",
+        "randomUserId0": "Their Twitch id"
+      }
+    },
+    "twitch.getCharityCampaign": {
+      "description": "Looks up your running charity campaign and saves the amounts for the next steps.",
+      "fields": {},
+      "variables": {
+        "charityActive": "True if a campaign is running",
+        "charityName": "The charity's name",
+        "charityCurrent": "How much was raised so far",
+        "charityTarget": "The goal amount",
+        "charityCurrency": "The currency, like USD"
+      }
+    },
+    "twitch.getGuestStarSettings": {
+      "description": "Looks up your Guest Star settings and saves them for the next steps. Guest Star lets guests join your stream.",
+      "fields": {},
+      "variables": {
+        "guestStarSlotCount": "How many guest slots there are",
+        "guestStarLayout": "The layout in use",
+        "guestStarModeratorSendLive": "True if moderators may send guests live",
+        "guestStarBrowserSourceAudio": "True if browser source audio is on"
+      }
+    },
+    "twitch.updateGuestStarSettings": {
+      "description": "Changes your Guest Star settings, like the number of slots and the layout. Anything set to Keep stays as it is.",
+      "fields": {
+        "slotCount": "How many guest slots, from 1 to 6. 0 keeps the current number.",
+        "layout": "How guests are arranged on screen. Keep leaves it as it is.",
+        "moderatorSendLive": "Whether moderators may send guests live. Keep leaves it as it is. On or Off changes it.",
+        "browserSourceAudio": "Whether the browser source plays guest audio. Keep leaves it as it is. On or Off changes it.",
+        "regenerateBrowserSources": "Tick to make new browser source links. The old links stop working, so update them in your streaming software."
+      },
+      "variables": {}
+    },
+    "twitch.getGuestStarSession": {
+      "description": "Looks up the Guest Star session that is running and its guests, and saves them for the next steps.",
+      "fields": {},
+      "variables": {
+        "guestStarActive": "True if a session is running",
+        "guestStarSessionId": "The session's id",
+        "guestStarGuestCount": "How many guests are in it",
+        "guestStarGuest0": "The first guest's display name. Use 1, 2, ... for the next ones",
+        "guestStarGuest0UserName": "Their login name",
+        "guestStarGuest0Slot": "Their slot",
+        "guestStarGuest0IsLive": "True if they are live on stream"
+      }
+    },
+    "twitch.createGuestStarSession": {
+      "description": "Starts a new Guest Star session so guests can join.",
+      "fields": {},
+      "variables": {
+        "guestStarSessionId": "The new session's id",
+        "guestStarActive": "True when a session exists"
+      }
+    },
+    "twitch.endGuestStarSession": {
+      "description": "Ends the Guest Star session.",
+      "fields": {
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    },
+    "twitch.getGuestStarInvites": {
+      "description": "Looks up who you invited to Guest Star and saves it for the next steps.",
+      "fields": {
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {
+        "guestStarInviteCount": "How many invites there are",
+        "guestStarInvites": "The ids of the invited people, separated by commas",
+        "guestStarInvite0UserId": "The first invited person's id. Use 1, 2, ... for the next ones",
+        "guestStarInvite0Status": "Whether they accepted, like INVITED or ACCEPTED"
+      }
+    },
+    "twitch.sendGuestStarInvite": {
+      "description": "Invites a viewer to join your Guest Star session.",
+      "fields": {
+        "user": "Who to invite: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    },
+    "twitch.deleteGuestStarInvite": {
+      "description": "Takes back a Guest Star invite.",
+      "fields": {
+        "user": "Whose invite to take back: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    },
+    "twitch.assignGuestStarSlot": {
+      "description": "Puts a Guest Star guest into a slot so they appear on screen.",
+      "fields": {
+        "user": "Which guest: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "slot": "The slot number, starting at 1. A slot is one guest spot on screen.",
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    },
+    "twitch.updateGuestStarSlot": {
+      "description": "Moves a Guest Star guest from one slot to another.",
+      "fields": {
+        "slot": "The slot the guest is in now, starting at 1.",
+        "toSlot": "The slot to move them to, starting at 1.",
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    },
+    "twitch.deleteGuestStarSlot": {
+      "description": "Takes a guest out of their slot.",
+      "fields": {
+        "user": "Which guest: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "slot": "The slot number, starting at 1. A slot is one guest spot on screen.",
+        "reinvite": "Tick to put the guest back into the invite queue. Untick to just remove them.",
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    },
+    "twitch.updateGuestStarSlotSettings": {
+      "description": "Changes the sound, picture, live state or volume of one guest slot. Anything set to Keep stays as it is.",
+      "fields": {
+        "slot": "The slot number, starting at 1. A slot is one guest spot on screen.",
+        "audio": "The guest's microphone. Keep leaves it as it is. On or Off changes it.",
+        "video": "The guest's camera. Keep leaves it as it is. On or Off changes it.",
+        "live": "Whether the guest is shown on your stream. Keep leaves it as it is. On or Off changes it.",
+        "volume": "The guest's volume from 0 to 100. -1 keeps the current volume.",
+        "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
+      },
+      "variables": {}
+    }
+  }
+}

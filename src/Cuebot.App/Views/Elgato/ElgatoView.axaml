@@ -14,25 +14,26 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Lights (Control Center)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Cuebot talks to Key Light, Key Light Air/Mini, Ring Light and Light Strip directly on your network (port 9123), on Windows and Linux, with or without Control Center. Lights are found with mDNS; add one by IP address if your network blocks multicast. Lights have no push channel, so changes made elsewhere are picked up by polling." />
-          <CheckBox Content="Start on startup" IsChecked="{Binding AutoStart}" />
-          <CheckBox Content="Find lights automatically (mDNS)" IsChecked="{Binding Discovery}" />
+                     Text="Cuebot talks to Key Light, Key Light Air/Mini, Ring Light and Light Strip directly over your home network, on Windows and Linux, with or without the Control Center app. Cuebot finds lights by asking the network who is there; if your network blocks that, add the light by its IP address (its number on your network). Lights cannot tell Cuebot when something changes, so Cuebot checks them every few seconds." />
+          <CheckBox Content="Start on startup" IsChecked="{Binding AutoStart}" ToolTip.Tip="Ticked: Cuebot starts talking to your lights by itself when it opens." />
+          <CheckBox Content="Find lights automatically (mDNS)" IsChecked="{Binding Discovery}" ToolTip.Tip="Ticked: Cuebot looks for lights on your network by itself. Untick if you only add lights by hand." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Poll every" VerticalAlignment="Center" />
-            <NumericUpDown Value="{Binding PollSeconds}" Minimum="0.5" Maximum="60" Increment="0.5" FormatString="0.0" Width="120" />
+            <NumericUpDown Value="{Binding PollSeconds}" Minimum="0.5" Maximum="60" Increment="0.5" FormatString="0.0" Width="120" ToolTip.Tip="How often Cuebot asks the lights how they are set, so it notices changes you made elsewhere." />
             <TextBlock Text="seconds" VerticalAlignment="Center" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Start" Classes="accent" Command="{Binding StartCommand}" />
-            <Button Content="Stop" Command="{Binding StopCommand}" />
-            <Button Content="Search now" Command="{Binding DiscoverCommand}" />
+            <Button Content="Start" Classes="accent" Command="{Binding StartCommand}" ToolTip.Tip="Starts looking for and talking to your lights." />
+            <Button Content="Stop" Command="{Binding StopCommand}" ToolTip.Tip="Stops talking to your lights. They stay as they are." />
+            <Button Content="Search now" Command="{Binding DiscoverCommand}" ToolTip.Tip="Looks for new lights on your network right now." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
           <Grid ColumnDefinitions="*,Auto">
-            <TextBox Name="ElgatoNewAddress" Text="{Binding NewAddress}" PlaceholderText="IP address, e.g. 192.168.1.40 (or host:port)" />
-            <Button Grid.Column="1" Content="Add light" Margin="8,0,0,0" Command="{Binding AddCommand}" />
+            <TextBox Name="ElgatoNewAddress" Text="{Binding NewAddress}" PlaceholderText="IP address, e.g. 192.168.1.40 (or host:port)"
+                     ToolTip.Tip="The light's number on your network, like 192.168.1.40. You can find it in your router or the Elgato app." />
+            <Button Grid.Column="1" Content="Add light" Margin="8,0,0,0" Command="{Binding AddCommand}" ToolTip.Tip="Adds the light with the address you typed." />
           </Grid>
           <TextBlock Classes="muted" Text="No lights yet. Start or Search now, or add one by address." IsVisible="{Binding HasNoLights}" />
           <ItemsControl Name="ElgatoLights" ItemsSource="{Binding Rows}">
@@ -46,17 +47,18 @@
                       <TextBlock Classes="muted" Text="{Binding Reachability}" />
                     </StackPanel>
                     <ToggleSwitch Grid.Column="1" Grid.RowSpan="2" IsChecked="{Binding IsOn}" OnContent="On" OffContent="Off"
-                                  IsEnabled="{Binding IsOnline}" Margin="8,0" VerticalAlignment="Center" />
+                                  IsEnabled="{Binding IsOnline}" Margin="8,0" VerticalAlignment="Center" ToolTip.Tip="Switches this light on or off." />
                     <TextBlock Grid.Column="2" Classes="muted" Text="Brightness" Margin="8,0,0,0" />
                     <Slider Grid.Column="2" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding Brightness}" IsEnabled="{Binding IsOnline}"
-                            Margin="8,0" />
+                            Margin="8,0" ToolTip.Tip="How bright the light is, from 0 to 100 percent." />
                     <TextBlock Grid.Column="3" Classes="muted" Text="Temperature (K)" Margin="8,0,0,0" IsVisible="{Binding HasTemperature}" />
                     <Slider Grid.Column="3" Grid.Row="1" Minimum="2900" Maximum="7000" Value="{Binding Temperature}"
-                            IsEnabled="{Binding IsOnline}" IsVisible="{Binding HasTemperature}" Margin="8,0" />
+                            IsEnabled="{Binding IsOnline}" IsVisible="{Binding HasTemperature}" Margin="8,0"
+                            ToolTip.Tip="Left is cooler, bluish light. Right is warmer, yellowish light. The number is in Kelvin." />
                     <Button Grid.Column="4" Grid.RowSpan="2" Content="Identify" Command="{Binding IdentifyCommand}" IsEnabled="{Binding IsOnline}"
-                            VerticalAlignment="Center" />
+                            VerticalAlignment="Center" ToolTip.Tip="Makes this light blink for a moment so you can see which one it is." />
                     <Button Grid.Column="5" Grid.RowSpan="2" Content="Remove" Command="{Binding RemoveCommand}" Margin="8,0,0,0"
-                            VerticalAlignment="Center" />
+                            VerticalAlignment="Center" ToolTip.Tip="Takes this light off Cuebot's list. The light itself is not changed." />
                   </Grid>
                 </Border>
               </DataTemplate>
@@ -72,17 +74,17 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Camera Hub (webcams)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Camera Hub has no public control API. On Linux, Cuebot controls Facecam and other UVC webcams directly (V4L2): brightness, contrast, saturation, sharpness, focus, pan, tilt, zoom, white balance, anti-flicker and the automatic modes, and turns changes into Camera Hub triggers." />
+                     Text="Elgato's Camera Hub app cannot be controlled by other programs. So on Linux, Cuebot talks to Facecam and other standard USB webcams directly: brightness, contrast, saturation, sharpness, focus, pan, tilt, zoom, white balance, anti-flicker and the automatic modes, and turns changes into Camera Hub triggers." />
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding AppStatus}" />
           <StackPanel IsVisible="{Binding IsAvailable}" Spacing="8">
-            <CheckBox Content="Start on startup" IsChecked="{Binding AutoConnect}" />
+            <CheckBox Content="Start on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot starts watching your webcams by itself when it opens." />
             <Grid ColumnDefinitions="Auto,*">
               <TextBlock Text="Only webcams named" VerticalAlignment="Center" Margin="0,0,8,0" />
-              <TextBox Grid.Column="1" Text="{Binding NameFilter}" PlaceholderText="e.g. Elgato (empty = every webcam)" />
+              <TextBox Grid.Column="1" Text="{Binding NameFilter}" PlaceholderText="e.g. Elgato (empty = every webcam)" ToolTip.Tip="Only use webcams whose name contains this word. Leave empty to use all webcams." />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Content="Start" Classes="accent" Command="{Binding ConnectCommand}" />
-              <Button Content="Stop" Command="{Binding DisconnectCommand}" />
+              <Button Content="Start" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Starts watching your webcams." />
+              <Button Content="Stop" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops watching your webcams. Their settings stay as they are." />
             </StackPanel>
           </StackPanel>
           <TextBlock TextWrapping="Wrap">

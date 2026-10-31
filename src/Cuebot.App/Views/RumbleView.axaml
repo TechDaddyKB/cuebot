@@ -15,8 +15,8 @@
         </c:StatusHeader.Detail>
         <c:StatusHeader.Actions>
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.CanConnect}}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.IsActive}}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.CanConnect}}" ToolTip.Tip="Starts watching your Rumble channel and chat." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.IsActive}}" ToolTip.Tip="Stops watching Rumble." />
           </StackPanel>
         </c:StatusHeader.Actions>
       </c:StatusHeader>
@@ -26,12 +26,13 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Connection" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="On rumble.com open your account menu → Live Stream API, create a key and paste the full URL here. Cuebot polls it for followers, subscribers, rants and live status, and reads live chat while you stream." />
-            <TextBox Text="{Binding LiveStreamApiUrl}" PasswordChar="•" PlaceholderText="https://rumble.com/-livestream-api/get-data?key=..." />
+                       Text="On rumble.com open your account menu → Live Stream API, create a key and paste the full web link here. Cuebot checks it every few seconds for followers, subscribers, rants (paid chat messages) and whether you are live, and reads your live chat while you stream." />
+            <TextBox Text="{Binding LiveStreamApiUrl}" PasswordChar="•" PlaceholderText="https://rumble.com/-livestream-api/get-data?key=..."
+                     ToolTip.Tip="The private web link from Rumble's Live Stream API page. Treat it like a password. It stays hidden." />
             <StackPanel Orientation="Horizontal" Spacing="16">
               <TextBlock Text="Check every (seconds)" VerticalAlignment="Center" />
-              <NumericUpDown Value="{Binding PollSeconds}" Minimum="5" Maximum="300" Increment="5" FormatString="0" Width="140" />
-              <CheckBox Content="Connect automatically" IsChecked="{Binding AutoConnect}" />
+              <NumericUpDown Value="{Binding PollSeconds}" Minimum="5" Maximum="300" Increment="5" FormatString="0" Width="140" ToolTip.Tip="How often, in seconds, Cuebot asks Rumble for news. Lower is faster but asks Rumble more often." />
+              <CheckBox Content="Connect automatically" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to Rumble by itself every time it starts." />
             </StackPanel>
             <TextBlock Text="{Binding Channel, StringFormat='Channel: {0}'}" />
             <TextBlock Text="{Binding LiveStatus}" />
@@ -43,14 +44,14 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Send chat (optional)" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Reading chat needs no sign-in. To post messages, sign in with your Rumble account; Cuebot keeps only the session, never your password. Rumble has no official chat API, so this may break if Rumble changes its site." />
+                       Text="Reading chat needs no sign-in. To post messages, sign in with your Rumble account. Cuebot keeps only the login session, never your password. Rumble has no official way for programs to use its chat, so this may stop working if Rumble changes its website." />
             <TextBlock Text="{Binding ChatAccount}" />
             <StackPanel Spacing="8" IsVisible="{Binding !IsSignedIn}">
-              <TextBox Text="{Binding Username}" PlaceholderText="Rumble username" />
-              <TextBox Text="{Binding Password}" PasswordChar="•" PlaceholderText="Password" />
-              <Button Content="Sign in" Command="{Binding SignInCommand}" />
+              <TextBox Text="{Binding Username}" PlaceholderText="Rumble username" ToolTip.Tip="The name you log in to Rumble with." />
+              <TextBox Text="{Binding Password}" PasswordChar="•" PlaceholderText="Password" ToolTip.Tip="Your Rumble password. It is only used to sign in once and is not saved." />
+              <Button Content="Sign in" Command="{Binding SignInCommand}" ToolTip.Tip="Signs in to Rumble so Cuebot can post chat messages." />
             </StackPanel>
-            <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding IsSignedIn}" />
+            <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding IsSignedIn}" ToolTip.Tip="Forgets the Rumble login. Cuebot can still read chat but can no longer post." />
           </StackPanel>
         </Border>
       </c:CardColumns>

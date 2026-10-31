@@ -11,11 +11,12 @@
     <Border Classes="card">
       <DockPanel>
         <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Users" />
-        <TextBox DockPanel.Dock="Top" Text="{Binding Search}" PlaceholderText="Search name, nickname, platform, alias" Margin="0,0,0,8" />
+        <TextBox DockPanel.Dock="Top" Text="{Binding Search}" PlaceholderText="Search name, nickname, platform, alias" Margin="0,0,0,8"
+                 ToolTip.Tip="Type part of a name, nickname, platform or voice alias to narrow the list." />
         <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,6,Auto" Margin="0,8,0,0">
           <TextBlock Classes="hint" Text="{Binding CountText}" VerticalAlignment="Center" />
-          <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" />
-          <Button Grid.Column="3" Content="Remove" Command="{Binding RemoveCommand}" />
+          <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Reloads the list of viewers." />
+          <Button Grid.Column="3" Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes the selected viewer from this list, including their saved voice, nickname and flags." />
         </Grid>
         <ListBox Classes="list" ItemsSource="{Binding Users}" SelectedItem="{Binding Selected}">
           <ListBox.ItemTemplate>
@@ -34,7 +35,7 @@
       <StackPanel>
         <Border Classes="card" IsVisible="{Binding IsEmpty}">
           <TextBlock Classes="hint"
-                     Text="Chatters appear here once they have been read aloud or a moderator used !tts on them. Per-user voices, nicknames and flags are stored in speech-users.json." />
+                     Text="Viewers appear here once their chat has been read aloud or a moderator used the !tts command on them. Each viewer can have their own voice, nickname and flags. They are saved in the file speech-users.json." />
         </Border>
         <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
           <ContentControl.ContentTemplate>
@@ -47,24 +48,30 @@
                   </StackPanel>
                   <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,10,Auto,Auto">
                     <TextBlock Classes="label" Text="Voice alias" />
-                    <ComboBox Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}" />
+                    <ComboBox Grid.Row="1" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding Alias}"
+                              ToolTip.Tip="The voice this viewer is always read with. Leave it on the default to let the normal rules decide." />
                     <TextBlock Grid.Column="2" Classes="label" Text="Nickname (spoken instead of the name)" />
-                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding Nickname}" PlaceholderText="None" />
+                    <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding Nickname}" PlaceholderText="None"
+                             ToolTip.Tip="A name to say out loud for this viewer, for example if their username is hard to pronounce." />
                     <TextBlock Grid.Row="3" Classes="label" Text="Rate override (-10..10, empty keeps the alias rate)" />
-                    <NumericUpDown Grid.Row="4" Value="{Binding Rate}" Minimum="-10" Maximum="10" Increment="1" />
+                    <NumericUpDown Grid.Row="4" Value="{Binding Rate}" Minimum="-10" Maximum="10" Increment="1"
+                                   ToolTip.Tip="Makes this viewer talk faster (positive) or slower (negative) than their voice normally does. Clear the box to use the voice's own speed." />
                     <TextBlock Grid.Column="2" Grid.Row="3" Classes="label" Text="Pitch override (-10..10)" />
-                    <NumericUpDown Grid.Column="2" Grid.Row="4" Value="{Binding Pitch}" Minimum="-10" Maximum="10" Increment="1" />
+                    <NumericUpDown Grid.Column="2" Grid.Row="4" Value="{Binding Pitch}" Minimum="-10" Maximum="10" Increment="1"
+                                   ToolTip.Tip="Makes this viewer's voice higher (positive) or deeper (negative) than normal." />
                   </Grid>
                   <WrapPanel>
-                    <CheckBox Content="Ignored" IsChecked="{Binding Ignored}" Margin="0,0,16,0" ToolTip.Tip="Never read aloud" />
-                    <CheckBox Content="Forced" IsChecked="{Binding Forced}" Margin="0,0,16,0" ToolTip.Tip="Always read aloud, bypassing permissions" />
-                    <CheckBox Content="Regular" IsChecked="{Binding Regular}" Margin="0,0,16,0" ToolTip.Tip="Counts as a regular for permissions" />
-                    <CheckBox Content="Opted out" IsChecked="{Binding OptedOut}" ToolTip.Tip="The user turned speech off with !tts me off" />
+                    <CheckBox Content="Ignored" IsChecked="{Binding Ignored}" Margin="0,0,16,0" ToolTip.Tip="Tick to never read this viewer's messages aloud." />
+                    <CheckBox Content="Forced" IsChecked="{Binding Forced}" Margin="0,0,16,0" ToolTip.Tip="Tick to always read this viewer's messages aloud, even if the normal speech rules (like who is allowed) would skip them." />
+                    <CheckBox Content="Regular" IsChecked="{Binding Regular}" Margin="0,0,16,0" ToolTip.Tip="Tick to treat this viewer as a regular, so rules that allow regulars let them be read aloud." />
+                    <CheckBox Content="Opted out" IsChecked="{Binding OptedOut}" ToolTip.Tip="Ticked when the viewer asked not to be read aloud with the !tts me off command. Untick to read them again." />
                   </WrapPanel>
                   <Grid ColumnDefinitions="Auto,8,*,Auto">
-                    <TextBlock Classes="label" Text="Sticky random voice" VerticalAlignment="Center" Margin="0" />
+                    <TextBlock Classes="label" Text="Sticky random voice" VerticalAlignment="Center" Margin="0"
+                               ToolTip.Tip="When random voices are used, a viewer keeps the same one, so they always sound the same." />
                     <TextBlock Grid.Column="2" Classes="mono" Text="{Binding RandomVoice}" VerticalAlignment="Center" />
-                    <Button Grid.Column="3" Content="Reset" Command="{Binding ResetRandomVoiceCommand}" IsEnabled="{Binding HasRandomVoice}" />
+                    <Button Grid.Column="3" Content="Reset" Command="{Binding ResetRandomVoiceCommand}" IsEnabled="{Binding HasRandomVoice}"
+                          ToolTip.Tip="Forgets the random voice this viewer was given, so they get a new one next time they are read." />
                   </Grid>
                 </StackPanel>
               </Border>

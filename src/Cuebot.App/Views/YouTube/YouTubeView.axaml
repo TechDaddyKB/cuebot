@@ -15,7 +15,8 @@
         </c:StatusHeader.Detail>
         <c:StatusHeader.Actions>
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}"
+                  ToolTip.Tip="Connects Cuebot to YouTube so live chat and events work. You must be signed in first.">
             <Button.IsEnabled>
               <MultiBinding Converter="{x:Static BoolConverters.And}">
                 <Binding Path="CanConnect" />
@@ -23,7 +24,8 @@
               </MultiBinding>
             </Button.IsEnabled>
           </Button>
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.IsActive}}" />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsEnabled="{Binding State, Converter={x:Static c:ConnectionStates.IsActive}}"
+                    ToolTip.Tip="Stops Cuebot listening to YouTube. You stay signed in and can connect again." />
           </StackPanel>
         </c:StatusHeader.Actions>
       </c:StatusHeader>
@@ -33,8 +35,8 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Connection" />
             <TextBlock Text="{Binding CurrentBroadcast}" TextWrapping="Wrap" />
-            <Button Content="Open broadcast on YouTube" Command="{Binding OpenBroadcastCommand}" IsVisible="{Binding HasBroadcast}" />
-            <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+            <Button Content="Open broadcast on YouTube" Command="{Binding OpenBroadcastCommand}" IsVisible="{Binding HasBroadcast}" ToolTip.Tip="Opens your current live stream on YouTube in your web browser." />
+            <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to YouTube as soon as Cuebot starts." />
             <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
         </Border>
@@ -44,18 +46,19 @@
             <TextBlock Classes="h2" Text="Accounts" />
             <TextBlock Text="{Binding BroadcasterAccount, StringFormat='Broadcaster: {0}'}" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
-              <Button Content="Sign in with the browser" Classes="accent" Command="{Binding BrowserSignInBroadcasterCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
-              <Button Content="Sign in with a code" Command="{Binding SignInBroadcasterCommand}" IsVisible="{Binding ShowCodeSignIn}" />
-              <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsVisible="{Binding IsBroadcasterSignedIn}" />
+              <Button Content="Sign in with the browser" Classes="accent" Command="{Binding BrowserSignInBroadcasterCommand}" IsVisible="{Binding ShowBrowserSignIn}"
+                      ToolTip.Tip="Opens Google in your web browser so you can allow Cuebot to use your YouTube channel. Your Google password is never typed into Cuebot." />
+              <Button Content="Sign in with a code" Command="{Binding SignInBroadcasterCommand}" IsVisible="{Binding ShowCodeSignIn}" ToolTip.Tip="Shows a short code. You type it on a Google page, which can be on another device like your phone. Use this if the browser sign-in does not work." />
+              <Button Content="Sign out" Command="{Binding SignOutBroadcasterCommand}" IsVisible="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Signs your YouTube account out of Cuebot. You have to sign in again to use YouTube." />
             </StackPanel>
             <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" TextWrapping="Wrap" Margin="0,8,0,0" />
             <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding !IsSigningIn}">
-              <Button Content="Sign in bot with the browser" Command="{Binding BrowserSignInBotCommand}" IsVisible="{Binding ShowBrowserSignIn}" />
-              <Button Content="Sign in bot with a code" Command="{Binding SignInBotCommand}" IsVisible="{Binding ShowCodeSignIn}" />
-              <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsVisible="{Binding IsBotSignedIn}" />
+              <Button Content="Sign in bot with the browser" Command="{Binding BrowserSignInBotCommand}" IsVisible="{Binding ShowBrowserSignIn}" ToolTip.Tip="Opens Google in your web browser so the bot account can allow Cuebot. Log in as the bot account, not as yourself." />
+              <Button Content="Sign in bot with a code" Command="{Binding SignInBotCommand}" IsVisible="{Binding ShowCodeSignIn}" ToolTip.Tip="Shows a short code to type on a Google page while logged in as the bot account." />
+              <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsVisible="{Binding IsBotSignedIn}" ToolTip.Tip="Signs the bot account out of Cuebot." />
             </StackPanel>
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Pick the channel (brand account) you stream on when Google asks. The bot is a separate Google account that can post chat messages; moderation and title changes always use the broadcaster." />
+                       Text="When Google asks, pick the channel you stream on (a brand account if you have one). The bot is a second Google account that can write in your chat. Moderation and title changes always use your own (broadcaster) account." />
 
             <StackPanel Spacing="8" IsVisible="{Binding IsShowingCode}">
               <TextBlock TextWrapping="Wrap">
@@ -63,13 +66,13 @@
               </TextBlock>
               <SelectableTextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
-                <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
+                <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" ToolTip.Tip="Opens the Google page again in your browser, in case you closed it." />
+                <Button Content="Cancel" Command="{Binding CancelSignInCommand}" ToolTip.Tip="Stops signing in. Nothing is changed." />
               </StackPanel>
             </StackPanel>
             <StackPanel Spacing="8" IsVisible="{Binding IsWaitingForBrowser}">
               <TextBlock TextWrapping="Wrap" Text="Finish signing in in the browser window that opened; Cuebot receives the result automatically." />
-              <Button Content="Cancel" Command="{Binding CancelSignInCommand}" />
+              <Button Content="Cancel" Command="{Binding CancelSignInCommand}" ToolTip.Tip="Stops signing in. Nothing is changed." />
             </StackPanel>
           </StackPanel>
         </Border>
@@ -78,11 +81,11 @@
           <Expander Header="Advanced: use my own Google Cloud project" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
             <StackPanel Spacing="8">
               <TextBlock Classes="muted" TextWrapping="Wrap"
-                         Text="Optional unless this build has no Google app of its own. Your own project gives you your own YouTube API quota instead of sharing Cuebot's. In console.cloud.google.com create a project, enable the YouTube Data API v3, set up the OAuth consent screen (External; add yourself as a test user or publish it), then create an OAuth client ID of type 'TVs and Limited Input devices' (sign in with a code) or 'Desktop app' (sign in through the browser). Paste its client ID and secret here, then sign in again. Leave them empty to use Cuebot's." />
-              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID (....apps.googleusercontent.com)" />
-              <TextBox Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" />
+                         Text="Most people can skip this. You only need it if this version of Cuebot comes without a Google app of its own, or if you want your own daily allowance (quota) for YouTube instead of sharing Cuebot's. In console.cloud.google.com create a project, switch on the YouTube Data API v3, set up the consent screen (External; add yourself as a test user or publish it), then create a client ID of type 'TVs and Limited Input devices' (sign in with a code) or 'Desktop app' (sign in through the browser). Paste its client ID and secret here, then sign in again. Leave them empty to use Cuebot's." />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID (....apps.googleusercontent.com)" ToolTip.Tip="The Client ID (a long code ending in apps.googleusercontent.com) of your own Google project. Leave empty to use Cuebot's." />
+              <TextBox Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" ToolTip.Tip="The matching secret code of your own Google project. It is hidden as dots. Keep it private." />
               <TextBlock Classes="muted" TextWrapping="Wrap"
-                         Text="While the consent screen is in 'Testing', Google ends sign-ins after 7 days; publish it ('In production', no verification needed for your own use) to stay signed in." />
+                         Text="While the consent screen is in 'Testing', Google signs you out after 7 days. Set it to 'In production' (no review is needed for your own use) to stay signed in." />
             </StackPanel>
           </Expander>
         </Border>
@@ -91,22 +94,25 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Polling and quota" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Every call to the YouTube Data API costs quota from your project's daily allowance. Broadcasts, statistics and subscribers are polled: slower polling makes the quota last longer but delays events." />
-            <CheckBox Content="Stream live chat (messages arrive as they are posted, for a fraction of the quota)" IsChecked="{Binding StreamChat}" />
+                       Text="Every time Cuebot asks YouTube for something, it uses up part of a daily allowance (quota). Cuebot checks for broadcasts, viewer numbers and new subscribers again and again. Checking less often makes the allowance last longer, but events arrive later." />
+            <CheckBox Content="Stream live chat (messages arrive as they are posted, for a fraction of the quota)" IsChecked="{Binding StreamChat}"
+                      ToolTip.Tip="Gets chat messages as they are posted, which uses far less of your daily allowance than asking again and again. Leave it ticked unless chat stops working." />
             <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
               <TextBlock Text="Minimum seconds between chat polls" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Column="1" Value="{Binding MinimumChatPollSeconds}" Minimum="2" Maximum="120" Increment="1" FormatString="0" Width="140" />
+              <NumericUpDown Grid.Column="1" Value="{Binding MinimumChatPollSeconds}" Minimum="2" Maximum="120" Increment="1" FormatString="0" Width="140" ToolTip.Tip="The shortest wait, in seconds, before Cuebot asks YouTube for new chat messages again. Lower is quicker but uses more allowance." />
               <TextBlock Grid.Row="1" Text="Seconds between checks for a live broadcast" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BroadcastPollSeconds}" Minimum="30" Maximum="3600" Increment="30" FormatString="0" Width="140" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding BroadcastPollSeconds}" Minimum="30" Maximum="3600" Increment="30" FormatString="0" Width="140" ToolTip.Tip="How often, in seconds, Cuebot looks to see if you are live. Lower notices a new stream sooner but uses more allowance." />
               <TextBlock Grid.Row="2" Text="Seconds between viewer statistics updates" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding LivePollSeconds}" Minimum="15" Maximum="3600" Increment="15" FormatString="0" Width="140" />
+              <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding LivePollSeconds}" Minimum="15" Maximum="3600" Increment="15" FormatString="0" Width="140" ToolTip.Tip="How often, in seconds, Cuebot updates the viewer numbers while you are live. Lower is more up to date but uses more allowance." />
               <TextBlock Grid.Row="3" Text="Seconds between new subscriber checks" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SubscriberPollSeconds}" Minimum="60" Maximum="3600" Increment="60" FormatString="0" Width="140" />
+              <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SubscriberPollSeconds}" Minimum="60" Maximum="3600" Increment="60" FormatString="0" Width="140" ToolTip.Tip="How often, in seconds, Cuebot looks for new subscribers. Lower notices them sooner but uses more allowance." />
               <TextBlock Grid.Row="4" Text="Daily quota of your project (units)" VerticalAlignment="Center" />
-              <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding DailyQuota}" Minimum="1" Maximum="10000000" Increment="1000" FormatString="0" Width="140" />
+              <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding DailyQuota}" Minimum="1" Maximum="10000000" Increment="1000" FormatString="0" Width="140" ToolTip.Tip="How many units YouTube lets your project use each day (usually 10,000 unless you asked Google for more). Cuebot uses this number to estimate how much you have left." />
             </Grid>
-            <CheckBox Content="Check for new subscribers (only public subscriptions are visible)" IsChecked="{Binding PollNewSubscribers}" />
-            <CheckBox Content="Watch scheduled broadcasts (Broadcast added / removed triggers; doubles the broadcast check cost)" IsChecked="{Binding MonitorUpcoming}" />
+            <CheckBox Content="Check for new subscribers (only public subscriptions are visible)" IsChecked="{Binding PollNewSubscribers}"
+                      ToolTip.Tip="Lets Cuebot look for new subscribers so the New subscriber trigger can run. YouTube only shows subscribers who made their subscription public." />
+            <CheckBox Content="Watch scheduled broadcasts (Broadcast added / removed triggers; doubles the broadcast check cost)" IsChecked="{Binding MonitorUpcoming}"
+                      ToolTip.Tip="Also watches your planned (scheduled) streams, so the Broadcast added and removed triggers can run. It makes the broadcast check use twice as much allowance." />
             <TextBlock Text="{Binding QuotaEstimate}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding QuotaUsage}" TextWrapping="Wrap" Classes="muted" />
           </StackPanel>
@@ -116,8 +122,8 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Send a test message" />
             <Grid ColumnDefinitions="*,8,Auto">
-              <TextBox Text="{Binding TestMessage}" PlaceholderText="Message to the live chat" />
-              <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" />
+              <TextBox Text="{Binding TestMessage}" PlaceholderText="Message to the live chat" ToolTip.Tip="Type a message to post in your YouTube live chat as a test. Real viewers will see it." />
+              <Button Grid.Column="2" Content="Send" Command="{Binding SendTestCommand}" ToolTip.Tip="Posts the message in your YouTube live chat now." />
             </Grid>
           </StackPanel>
         </Border>

@@ -1,0 +1,130 @@
+{
+  "triggers": {
+    "streamDeck.action": {
+      "description": "Runs when you press a key, turn a dial or tap the touch strip on a Stream Deck that has a Cuebot trigger on it. Great for turning Stream Deck keys into Cuebot buttons.",
+      "fields": {
+        "buttonIds": "The button ID you typed on the key in Stream Deck, like \"ShoutOut\". Separate several with commas. Leave empty to react to every Cuebot key and dial.",
+        "event": "What the person did. Key down is pressing a key. Key up is letting go. Dial rotate is turning a dial. Any key or dial press covers a key press, a dial press and a touch tap."
+      },
+      "variables": {
+        "buttonId": "The button ID of the key or dial",
+        "buttonEvent": "What happened: keyDown, keyUp, dialRotate, dialDown, dialUp or touchTap",
+        "isDial": "True when it was a dial, false for a normal key",
+        "ticks": "How far the dial turned (minus means left); only for dial turns",
+        "pressed": "Whether the dial was pushed in; only for dial events",
+        "deviceName": "The name of the Stream Deck",
+        "row": "The key's row on the Stream Deck",
+        "column": "The key's column on the Stream Deck",
+        "state": "Which of its two states the key is in, 0 or 1"
+      }
+    },
+    "streamDeck.connected": {
+      "description": "Runs when the Cuebot plugin in your Stream Deck program connects to Cuebot. Handy to set key titles and pictures when the Stream Deck starts.",
+      "fields": {},
+      "variables": {
+        "instanceId": "Which Stream Deck program connected (useful if you use more than one computer)",
+        "pluginVersion": "The version of the Cuebot plugin in Stream Deck",
+        "streamDeckVersion": "The version of the Stream Deck program",
+        "platform": "The computer system it runs on, like \"windows\" or \"mac\"",
+        "deviceCount": "How many Stream Decks are connected"
+      }
+    },
+    "streamDeck.disconnected": {
+      "description": "Runs when the Stream Deck program stops talking to Cuebot, for example when you close it.",
+      "fields": {},
+      "variables": {
+        "instanceId": "Which Stream Deck program connected (useful if you use more than one computer)",
+        "pluginVersion": "The version of the Cuebot plugin in Stream Deck",
+        "streamDeckVersion": "The version of the Stream Deck program",
+        "platform": "The computer system it runs on, like \"windows\" or \"mac\"",
+        "deviceCount": "How many Stream Decks are connected"
+      }
+    },
+    "streamDeck.info": {
+      "description": "Runs when Cuebot learns about the Stream Decks that are plugged in, when the plugin connects and whenever a Stream Deck is added or removed.",
+      "fields": {},
+      "variables": {
+        "instanceId": "Which Stream Deck program connected (useful if you use more than one computer)",
+        "pluginVersion": "The version of the Cuebot plugin in Stream Deck",
+        "streamDeckVersion": "The version of the Stream Deck program",
+        "platform": "The computer system it runs on, like \"windows\" or \"mac\"",
+        "deviceCount": "How many Stream Decks are connected",
+        "deviceNames": "The names of the Stream Decks, separated by commas",
+        "device0.name": "The name of the first Stream Deck (device1.name is the second, and so on)",
+        "device0.type": "The model of the first Stream Deck"
+      }
+    }
+  },
+  "subActions": {
+    "streamDeck.setBackground": {
+      "description": "Changes the picture on a Stream Deck key. Handy to show an icon that tells whether something is on.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%.",
+        "image": "A picture file on your computer (PNG, JPEG, GIF, SVG, WebP or BMP, up to 2 MB), a web link starting with http, or a data: link. Leave empty to bring back the key's own picture.",
+        "state": "Which of the key's two looks to change. Current changes the one showing now; 0 is the first and 1 the second."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    },
+    "streamDeck.setState": {
+      "description": "Sets a two-state key to its first or second look, for example an 'on' and an 'off' picture.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%.",
+        "state": "0 is the first look and 1 is the second look."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    },
+    "streamDeck.setTitle": {
+      "description": "Changes the text written on a Stream Deck key.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%.",
+        "title": "The words to show on the key. You can use %variables%. Leave empty to bring back the key's own text.",
+        "state": "Which of the key's two looks to change. Current changes the one showing now; 0 is the first and 1 the second."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    },
+    "streamDeck.setValue": {
+      "description": "Shows a value, like a number or a name, on a key or on a dial's touch strip. Good for live counters.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%.",
+        "value": "The text to show: on a key it replaces the title, on a dial it shows on the touch strip. You can use %variables%.",
+        "indicator": "For dials only: how full the dial's bar is, from 0 to 100. Leave empty to leave the bar alone."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    },
+    "streamDeck.showAlert": {
+      "description": "Makes a key flash a warning sign for a moment, to show that something went wrong.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    },
+    "streamDeck.showOk": {
+      "description": "Makes a key flash a check mark for a moment, to show that something worked.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    },
+    "streamDeck.toggleState": {
+      "description": "Flips a two-state key to its other look: from the first to the second, or back.",
+      "fields": {
+        "buttonId": "The button ID of the key, as shown in the key's settings in Stream Deck and on the Stream Deck page, like \"ShoutOut\". Keys with the same ID change together. You can use %variables%, like %buttonId%."
+      },
+      "variables": {
+        "streamDeckButtons": "How many keys on screen were changed"
+      }
+    }
+  }
+}

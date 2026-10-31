@@ -1,0 +1,287 @@
+{
+  "triggers": {
+    "obsbot.connected": {
+      "description": "Runs when Cuebot starts talking to OBSBOT Center (the OBSBOT camera app) or to your OBSBOT camera.",
+      "fields": {},
+      "variables": {}
+    },
+    "obsbot.disconnected": {
+      "description": "Runs when Cuebot loses contact with OBSBOT Center or the camera.",
+      "fields": {},
+      "variables": {
+        "reason": "A short text saying why contact was lost"
+      }
+    },
+    "obsbot.deviceChanged": {
+      "description": "Runs when a different camera gets selected in OBSBOT Center. Only matters if you have more than one OBSBOT camera.",
+      "fields": {},
+      "variables": {
+        "obsbot.deviceIndex": "Which camera is selected, counting from 0 (0 is the first camera)",
+        "obsbot.deviceName": "The selected camera's name",
+        "obsbot.deviceCount": "How many cameras are connected"
+      }
+    },
+    "obsbot.sleepStateChanged": {
+      "description": "Runs when the camera goes to sleep or wakes up.",
+      "fields": {
+        "stateFilter": "Choose Awake to react only when the camera wakes up, Asleep only when it goes to sleep, or Any for both."
+      },
+      "variables": {
+        "obsbot.awake": "True when the camera is awake",
+        "obsbot.deviceName": "The selected camera's name"
+      }
+    },
+    "obsbot.zoomChanged": {
+      "description": "Runs when the camera's zoom or field of view changes, whether from Cuebot, OBSBOT Center or the camera itself.",
+      "fields": {},
+      "variables": {
+        "obsbot.zoom": "The zoom, 0 to 100 percent",
+        "obsbot.oldZoom": "The zoom before the change",
+        "obsbot.fovDegrees": "The field of view, like \"86°\"",
+        "obsbot.deviceName": "The selected camera's name"
+      }
+    },
+    "obsbot.gimbalMoved": {
+      "description": "Runs when the camera turns or tilts to a new position.",
+      "fields": {},
+      "variables": {
+        "obsbot.pitch": "How far the camera is tilted up or down, in degrees",
+        "obsbot.yaw": "How far the camera is turned left or right, in degrees",
+        "obsbot.deviceName": "The selected camera's name"
+      }
+    },
+    "obsbot.aiTrackingChanged": {
+      "description": "Runs when AI tracking locks onto a subject or lets go of it.",
+      "fields": {
+        "stateFilter": "Choose Locked to react only when it locks on, Unlocked only when it lets go, or Any for both."
+      },
+      "variables": {
+        "obsbot.aiLocked": "True when AI tracking is locked on a subject",
+        "obsbot.deviceName": "The selected camera's name"
+      }
+    },
+    "obsbot.message": {
+      "description": "For experts: runs when OBSBOT sends a message that Cuebot does not turn into one of the other triggers. Useful for commands this app has no trigger for.",
+      "fields": {
+        "address": "Only react to this message address, like \"/OBSBOT/WebCam/General/SetZoom\". Separate several with commas. Leave empty to react to every such message."
+      },
+      "variables": {
+        "obsbot.address": "The message's address",
+        "obsbot.arg0": "The first value in the message",
+        "obsbot.arg1": "The second value",
+        "obsbot.arg2": "The third value",
+        "obsbot.args": "All the values as one list"
+      }
+    }
+  },
+  "subActions": {
+    "obsbot.selectDevice": {
+      "description": "Picks which OBSBOT camera the next steps control. Only needed if you have more than one camera.",
+      "fields": {
+        "device": "The camera number, from 1 to 4, in the order OBSBOT Center lists them."
+      },
+      "variables": {}
+    },
+    "obsbot.wakeSleep": {
+      "description": "Wakes the camera up or puts it to sleep. Handy to switch the camera off when you end your stream.",
+      "fields": {
+        "state": "Wake wakes it, Sleep puts it to sleep, Toggle flips the current state.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {
+        "obsbot.awake": "True when the camera is awake now"
+      }
+    },
+    "obsbot.resetGimbal": {
+      "description": "Turns the camera back to its centre position.",
+      "fields": {
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setZoom": {
+      "description": "Zooms the camera to a set amount.",
+      "fields": {
+        "zoom": "How far to zoom, from 0 (widest) to 100 (closest).",
+        "speed": "How fast to zoom, 0 to 11 (higher is faster, 0 is the normal speed). Leave empty to jump straight there. Only newer cameras support it.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.zoomLimit": {
+      "description": "Zooms the camera all the way in or all the way out.",
+      "fields": {
+        "limit": "Max zooms all the way in. Min zooms all the way out.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.moveGimbal": {
+      "description": "Turns or tilts the camera in a direction, like moving it by hand. Choose Stop to stop it.",
+      "fields": {
+        "direction": "Which way to move. Choose Stop to stop all movement.",
+        "speed": "How fast to move, from 1 (slow) to 100 (fast).",
+        "duration": "How long to move, in milliseconds (1000 is one second). Leave empty to keep moving until you run a Stop step.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setGimbalPosition": {
+      "description": "Turns the camera to an exact left-right and up-down angle.",
+      "fields": {
+        "pan": "How far to turn left or right, in degrees. 0 is the middle, minus is left. About -129 to 129; a Tail 2 connected straight to Cuebot allows -159 to 159.",
+        "pitch": "How far to tilt up or down, in degrees. 0 is level. About -59 to 59; a Tail 2 connected straight to Cuebot allows -62 to 62.",
+        "speed": "How fast to turn, from 0 to 90.",
+        "precise": "Tick to send angles with decimals, like 12.5, instead of whole degrees. Works only through OBSBOT Center.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setView": {
+      "description": "Changes how wide the camera sees (its field of view). A bigger angle shows more of the room.",
+      "fields": {
+        "view": "The angle: 86° (widest), 78° or 65° (narrowest).",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setMirror": {
+      "description": "Flips the picture left to right, like a mirror.",
+      "fields": {
+        "state": "On flips the picture. Off shows it the normal way round.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.recording": {
+      "description": "Starts or stops a recording made by the camera or by OBSBOT Center.",
+      "fields": {
+        "target": "PC recording and High-fps recording are made on your computer. Camera recording is made by the camera itself and only works on a Tail camera.",
+        "state": "Start begins recording, Stop ends it.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.snapshot": {
+      "description": "Takes a still photo with the camera.",
+      "fields": {
+        "target": "PC snapshot is taken on your computer. Camera snapshot is taken by the camera itself and only works on a Tail camera.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setImage": {
+      "description": "Changes one picture setting of the camera, such as focus, exposure or white balance (the colour warmth).",
+      "fields": {
+        "setting": "Which picture setting to change.",
+        "value": "The new value. Auto settings: 1 is auto, 0 is manual. Manual focus: 0-100. Exposure compensation: -30 to 30. ISO: 100-6400. Color temperature: 2000-10000. Shutter speed: like 100 for 1/100.",
+        "value2": "Only for Tail focus mode, White balance shift and Red/blue gain, which need two numbers. Leave empty for the others.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.aiLock": {
+      "description": "Locks AI tracking onto the subject now in view, or lets go again. For Tiny cameras.",
+      "fields": {
+        "state": "Lock keeps following the current subject. Unlock lets the camera choose again. Toggle flips the current state.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {
+        "obsbot.aiLocked": "True when tracking is locked now"
+      }
+    },
+    "obsbot.triggerPreset": {
+      "description": "Moves the camera to one of its three saved positions (presets).",
+      "fields": {
+        "preset": "Which saved position to go to: 1, 2 or 3.",
+        "series": "Your camera model family: Tiny or Tail. Auto works it out from the camera's name or from the OBSBOT card's setting. Pick one yourself if Auto guesses wrong.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setAiMode": {
+      "description": "Chooses what the camera's AI follows, like the whole body or just the face.",
+      "fields": {
+        "mode": "A mode number. For Tiny 2: 0 off, 1 normal, 2 upper body, 3 close-up, 4 headless, 5 lower body, 6 desk, 7 whiteboard, 8 hand, 9 group. Other models use other numbers.",
+        "series": "Your camera model family: Tiny or Tail. Auto works it out from the camera's name or from the OBSBOT card's setting. Pick one yourself if Auto guesses wrong.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setTrackingMode": {
+      "description": "Chooses how a Tiny camera follows you: Headroom keeps space above your head, Standard follows you, Motion follows movement.",
+      "fields": {
+        "mode": "Headroom, Standard or Motion. Tiny 2, Tiny 2 Lite and Tiny SE only have Standard and Motion.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setTrackingSpeed": {
+      "description": "Sets how quickly the camera follows you.",
+      "fields": {
+        "speed": "A number. Tiny 3 and Tail Air: 0 slow, 1 standard, 2 fast. Tail 2: 0 to 5, from very lazy to automatic. For one axis on a Tail 2: 1 to 10.",
+        "axis": "Both changes everything at once. Pan is left-right and Tilt is up-down; picking one is only for the Tail 2.",
+        "series": "Your camera model family: Tiny or Tail. Auto works it out from the camera's name or from the OBSBOT card's setting. Pick one yourself if Auto guesses wrong.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setAxisLock": {
+      "description": "Locks the Tail 2 so it cannot turn left-right (Pan) or up-down (Tilt), or lets it move again.",
+      "fields": {
+        "axis": "Pan is left and right. Tilt is up and down.",
+        "state": "Lock stops it from moving that way. Unlock lets it move again.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setVirtualBackground": {
+      "description": "Changes the background behind you without a green screen. For OBSBOT Meet cameras.",
+      "fields": {
+        "mode": "Disable shows your real room. Blur blurs what is behind you. Green screen and Replacement are the camera's other background modes; set their look in OBSBOT Center.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.setAutoFraming": {
+      "description": "Makes the camera crop and follow people on its own. For OBSBOT Meet cameras.",
+      "fields": {
+        "mode": "Disable turns it off. Single follows one person. Group fits everyone in the picture.",
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.standardMode": {
+      "description": "Switches an OBSBOT Meet camera to its standard mode.",
+      "fields": {
+        "device": "Which camera, from 1 to 4, in the order OBSBOT Center lists them. Leave empty to use the camera that is selected in OBSBOT Center."
+      },
+      "variables": {}
+    },
+    "obsbot.getState": {
+      "description": "Reads the camera's current zoom, angle, AI lock and more into variables you can use in later steps.",
+      "fields": {},
+      "variables": {
+        "obsbot.deviceIndex": "Which camera is selected, counting from 0 (0 is the first camera)",
+        "obsbot.deviceName": "The selected camera's name",
+        "obsbot.awake": "True when the camera is awake",
+        "obsbot.zoom": "The zoom, 0 to 100 percent",
+        "obsbot.fovDegrees": "The field of view, like \"86°\"",
+        "obsbot.pitch": "How far the camera is tilted up or down, in degrees",
+        "obsbot.yaw": "How far the camera is turned left or right, in degrees",
+        "obsbot.aiLocked": "True when AI tracking is locked on a subject",
+        "obsbot.deviceCount": "How many cameras are connected",
+        "obsbot.fov": "The field of view as a number (0 is 86°, 1 is 78°, 2 is 65°)",
+        "obsbot.isConnected": "True when Cuebot is connected to OBSBOT Center"
+      }
+    },
+    "obsbot.sendOsc": {
+      "description": "For experts: sends your own OSC message (a short control message that OBSBOT understands). Use it for camera features the other steps do not cover.",
+      "fields": {
+        "address": "The message address, like /OBSBOT/WebCam/General/SetZoom. See OBSBOT's own OSC list for the addresses.",
+        "args": "The values for the message, separated by spaces or commas, like \"50\". Whole numbers, decimals, true/false and words are all fine. Leave empty if it needs none."
+      },
+      "variables": {}
+    }
+  }
+}

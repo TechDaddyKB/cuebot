@@ -9,6 +9,8 @@
   <ItemGroup>
     <!-- Widgets Cuebot ships (e.g. the chat box), as Cuebot.Core.Widgets.{Folder}.{file}. -->
     <EmbeddedResource Include="Overlays\Widgets\BuiltIn\**\*" LogicalName="Cuebot.Core.Widgets.%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Plain-language help for triggers and sub-actions (ActionHelp), as Cuebot.Core.Help.{file}.json. -->
+    <EmbeddedResource Include="Help\*.json" LogicalName="Cuebot.Core.Help.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!--

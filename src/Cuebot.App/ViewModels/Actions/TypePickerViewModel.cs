@@ -4,9 +4,10 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Cuebot.App.ViewModels.Actions;
 
-public sealed record TypeOption(string Category, string Name, object Payload)
+public sealed record TypeOption(string Category, string Name, object Payload, string Description = "")
 {
     public string Display => $"{Category} › {Name}";
+    public bool HasDescription => Description.Length > 0;
 }
 
 /// <summary>Searchable picker for trigger and sub-action types, shown as an overlay.</summary>
@@ -18,7 +19,14 @@ public sealed partial class TypePickerViewModel : ObservableObject
     [ObservableProperty] private bool _isOpen;
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private string _search = "";
-    [ObservableProperty] private TypeOption? _selected;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedName), nameof(SelectedDescription), nameof(HasSelectedDescription))]
+    private TypeOption? _selected;
+
+    /// <summary>The highlighted option's name and plain-language description, shown under the list.</summary>
+    public string SelectedName => Selected?.Name ?? "";
+    public string SelectedDescription => Selected?.Description ?? "";
+    public bool HasSelectedDescription => Selected?.HasDescription == true;
 
     public ObservableCollection<TypeOption> Options { get; } = [];
 
@@ -38,8 +46,11 @@ public sealed partial class TypePickerViewModel : ObservableObject
     {
         Options.Clear();
         var terms = Search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var option in _all.Where(o => terms.All(t => o.Display.Contains(t, StringComparison.OrdinalIgnoreCase))))
-            Options.Add(option);
+        // Names match first; options that only mention the words in their description follow.
+        var named = _all.Where(o => terms.All(t => o.Display.Contains(t, StringComparison.OrdinalIgnoreCase))).ToArray();
+        var described = terms.Length == 0 ? [] : _all.Except(named)
+            .Where(o => terms.All(t => o.Display.Contains(t, StringComparison.OrdinalIgnoreCase) || o.Description.Contains(t, StringComparison.OrdinalIgnoreCase)));
+        foreach (var option in named.Concat(described)) Options.Add(option);
         Selected = Options.FirstOrDefault();
     }
 

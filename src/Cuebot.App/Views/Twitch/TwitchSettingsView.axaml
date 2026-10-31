@@ -9,20 +9,20 @@
       <c:CardColumns>
         <Border Classes="card">
           <StackPanel Spacing="8">
-            <TextBlock Classes="h2" Text="Permissions (scopes)" />
+            <TextBlock Classes="h2" Text="Permissions (scopes)" ToolTip.Tip="Twitch only lets Cuebot do things you have allowed. Each tick below is one permission Cuebot asks you for when you sign in." />
             <TextBlock Classes="hint"
-                       Text="Choose what Cuebot asks Twitch for at the next broadcaster sign-in. Events and sub-actions whose scope is missing are skipped with a warning in the log." />
+                       Text="Choose which permissions Cuebot asks Twitch for the next time you sign in. If a permission is missing, the events and actions that need it are skipped, and a warning is written to the log (Cuebot's diary)." />
             <TextBlock Text="{Binding RequestedSummary}" />
             <TextBlock Classes="error" Text="Sign in again on the Accounts tab to apply the new permissions." IsVisible="{Binding NeedsSignIn}" />
             <WrapPanel Classes="actions">
-              <Button Content="Request everything" Command="{Binding RequestAllCommand}" />
-              <Button Content="Minimal (chat and alerts)" Command="{Binding RequestMinimalCommand}" />
+              <Button Content="Request everything" Command="{Binding RequestAllCommand}" ToolTip.Tip="Ticks every permission, so all of Cuebot's Twitch features can work. You must sign in again to apply it." />
+              <Button Content="Minimal (chat and alerts)" Command="{Binding RequestMinimalCommand}" ToolTip.Tip="Ticks only what is needed for reading chat and getting alerts. Other features, like moderation, will not work. You must sign in again to apply it." />
             </WrapPanel>
             <ItemsControl ItemsSource="{Binding Scopes}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="tw:TwitchScopeItem">
                   <Grid ColumnDefinitions="28,110,*,Auto" Margin="0,2">
-                    <CheckBox IsChecked="{Binding IsRequested}" IsEnabled="{Binding CanChange}" />
+                    <CheckBox IsChecked="{Binding IsRequested}" IsEnabled="{Binding CanChange}" ToolTip.Tip="Tick to ask Twitch for this permission at your next sign-in. Some permissions cannot be changed." />
                     <TextBlock Grid.Column="1" Classes="hint" Text="{Binding Group}" VerticalAlignment="Center" />
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
@@ -41,14 +41,15 @@
             <TextBlock Classes="h2" Text="Polling" />
             <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,Auto">
               <TextBlock Classes="label" Text="Viewer count every (seconds, 0 = off)" />
-              <NumericUpDown Grid.Row="1" Value="{Binding ViewerCountInterval}" Minimum="0" Maximum="3600" />
+              <NumericUpDown Grid.Row="1" Value="{Binding ViewerCountInterval}" Minimum="0" Maximum="3600" ToolTip.Tip="How often Cuebot checks how many people are watching. It feeds the Viewer count update trigger. 0 turns it off." />
               <TextBlock Grid.Column="2" Classes="label" Text="Present viewers every (seconds, 0 = off)" />
-              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding PresentViewersInterval}" Minimum="0" Maximum="3600" />
+              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding PresentViewersInterval}" Minimum="0" Maximum="3600" ToolTip.Tip="How often Cuebot checks who is in your chat right now. It feeds the Present viewers trigger. 0 turns it off." />
               <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Classes="hint" Margin="0,4,0,0"
-                         Text="Used by the Viewer count update and Present viewers triggers; changes apply at the next connect." />
+                         Text="These checks power the Viewer count update and Present viewers triggers. A change starts working the next time Cuebot connects to Twitch." />
             </Grid>
             <CheckBox Content="Upcoming ad warnings (each minute from 5 minutes before a scheduled ad, while live)"
-                      IsChecked="{Binding UpcomingAdWarnings}" />
+                      IsChecked="{Binding UpcomingAdWarnings}"
+                      ToolTip.Tip="Lets the Upcoming ad trigger run once a minute in the 5 minutes before an ad, while you are live, so an action can warn you or your viewers." />
           </StackPanel>
         </Border>
 
@@ -56,26 +57,26 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Sub counter" />
             <TextBlock Classes="hint" TextWrapping="Wrap"
-                       Text="Counts new subscriptions. Each time it reaches the rollover it starts over and the Sub counter rollover trigger runs. Read and set it with the sub counter sub-actions." />
+                       Text="Counts new subscriptions. When the count reaches the rollover number, it starts again from zero and the Sub counter rollover trigger runs, for example for a goal. Actions can read and change it with the sub counter sub-actions." />
             <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
               <TextBlock Classes="label" Text="Count" />
-              <NumericUpDown Grid.Row="1" Value="{Binding SubCount}" Minimum="0" Maximum="1000000" />
+              <NumericUpDown Grid.Row="1" Value="{Binding SubCount}" Minimum="0" Maximum="1000000" ToolTip.Tip="The current number of subs counted. You can correct it by hand." />
               <TextBlock Grid.Column="2" Classes="label" Text="Rollover (0 = never)" />
-              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding SubRollover}" Minimum="0" Maximum="100000" />
+              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding SubRollover}" Minimum="0" Maximum="100000" ToolTip.Tip="When the count reaches this number it resets to zero and the Sub counter rollover trigger runs. 0 means it never resets." />
               <TextBlock Grid.Column="4" Classes="label" Text="Rollovers so far" />
-              <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding SubRolloverCount}" Minimum="0" Maximum="1000000" />
+              <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding SubRolloverCount}" Minimum="0" Maximum="1000000" ToolTip.Tip="How many times the counter has already reached the rollover and started over." />
             </Grid>
             <WrapPanel>
-              <CheckBox Content="Count resubs" IsChecked="{Binding SubCountResubs}" Margin="0,0,16,0" />
-              <CheckBox Content="Count gifted subs" IsChecked="{Binding SubCountGifts}" Margin="0,0,16,0" />
-              <Button Content="Reset" Command="{Binding ResetSubCounterCommand}" />
+              <CheckBox Content="Count resubs" IsChecked="{Binding SubCountResubs}" Margin="0,0,16,0" ToolTip.Tip="Also counts people who renew an existing subscription, not just brand-new subs." />
+              <CheckBox Content="Count gifted subs" IsChecked="{Binding SubCountGifts}" Margin="0,0,16,0" ToolTip.Tip="Also counts subs that viewers give as gifts to others." />
+              <Button Content="Reset" Command="{Binding ResetSubCounterCommand}" ToolTip.Tip="Sets the sub count and the number of rollovers back to zero." />
             </WrapPanel>
           </StackPanel>
         </Border>
 
         <Border Classes="card">
           <StackPanel Spacing="8">
-            <TextBlock Classes="h2" Text="Event availability" />
+            <TextBlock Classes="h2" Text="Event availability" ToolTip.Tip="Lists the Twitch events that cannot work yet, usually because a permission is missing." />
             <TextBlock Classes="hint" Text="{Binding UnavailableEvents}" />
           </StackPanel>
         </Border>

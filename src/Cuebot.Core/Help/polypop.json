@@ -1,0 +1,45 @@
+{
+  "triggers": {
+    "polypop.connected": {
+      "description": "Runs when the PolyPop WebSocket plugin connects to Cuebot. Cuebot opens the door; PolyPop comes in.",
+      "fields": {},
+      "variables": {
+        "polypop.remote": "Where the PolyPop plugin connected from"
+      }
+    },
+    "polypop.disconnected": {
+      "description": "Runs when the last PolyPop plugin connection closes.",
+      "fields": {},
+      "variables": {
+        "polypop.remote": "Where the PolyPop plugin connected from",
+        "reason": "Why it closed"
+      }
+    },
+    "polypop.message": {
+      "description": "Runs when PolyPop sends Cuebot a message through its WebSocket plugin, for example when a button or trigger in PolyPop is pressed.",
+      "fields": {
+        "type": "Only react to this kind of message, like \"TRIGGER\". Separate several with commas. Leave empty for any kind.",
+        "name": "Only react to messages with this name (the name set on the PolyPop side). Separate several with commas. Leave empty for any name."
+      },
+      "variables": {
+        "polypop.type": "The kind of message, like TRIGGER",
+        "polypop.name": "The name PolyPop gave the message",
+        "polypop.data": "Extra information that came with it",
+        "polypop.sourceId": "Which PolyPop plugin sent it",
+        "polypop.raw": "The whole message exactly as received"
+      }
+    }
+  },
+  "subActions": {
+    "polypop.triggerAlert": {
+      "description": "Makes PolyPop play a WebSocket Alert, with values you choose. Handy for on-screen alerts and effects.",
+      "fields": {
+        "alertName": "The name of the alert you made in PolyPop's WebSocket source, exactly as you typed it there.",
+        "variables": "Values to pass into the alert, one per line as name=value, like \"user=%user%\". Each name appears in PolyPop as <name>. Leave empty for none."
+      },
+      "variables": {
+        "polypopClients": "How many PolyPop plugins received the alert"
+      }
+    }
+  }
+}

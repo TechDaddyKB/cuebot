@@ -14,7 +14,7 @@
         <TextBlock Grid.Column="2" Text="{Binding Type}" Classes="muted" VerticalAlignment="Center" />
         <TextBlock Grid.Column="3" Text="{Binding LastWrite}" Classes="muted" VerticalAlignment="Center" />
         <Button Grid.Column="4" Content="Delete" Padding="8,2"
-                Click="OnDeleteRow" />
+                Click="OnDeleteRow" ToolTip.Tip="Deletes this variable." />
       </Grid>
     </DataTemplate>
   </UserControl.DataTemplates>
@@ -24,25 +24,25 @@
       <StackPanel DockPanel.Dock="Top">
         <TextBlock Classes="h1" Text="Variables" />
         <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                   Text="Use ~name~ for global variables in any sub-action; user variables are read and written by the user variable sub-actions. Persisted variables are kept after a restart; temporary ones live until Cuebot exits." />
+                   Text="Variables are named notes Cuebot remembers for you. Write ~name~ in any sub-action (a step inside an action) to use a global variable. User variables belong to one viewer and are read and changed by the user variable sub-actions. Persisted variables are kept when Cuebot restarts; temporary ones are forgotten when Cuebot closes." />
 
         <!-- Editor -->
         <Border Classes="card">
           <StackPanel Spacing="8">
             <Grid ColumnDefinitions="200,12,*,12,Auto,12,Auto,12,Auto,8,Auto">
-              <TextBox Text="{Binding EditName}" PlaceholderText="Name" />
-              <TextBox Grid.Column="2" Text="{Binding EditValue}" PlaceholderText="Value" />
-              <CheckBox Grid.Column="4" Content="Persisted" IsChecked="{Binding EditPersisted}" />
+              <TextBox Text="{Binding EditName}" PlaceholderText="Name" ToolTip.Tip="The name of the variable. Use this name in your actions, like ~score~." />
+              <TextBox Grid.Column="2" Text="{Binding EditValue}" PlaceholderText="Value" ToolTip.Tip="What the variable holds, like a number or some text." />
+              <CheckBox Grid.Column="4" Content="Persisted" IsChecked="{Binding EditPersisted}" ToolTip.Tip="Tick to keep this variable when Cuebot restarts. Untick to forget it when Cuebot closes." />
               <CheckBox Grid.Column="6" Content="Auto type" IsChecked="{Binding AutoType}"
-                        ToolTip.Tip="Store '5' as a number and 'true' as a boolean; off keeps everything as text" />
-              <Button Grid.Column="8" Content="Set" Classes="accent" Command="{Binding SetCommand}" />
-              <Button Grid.Column="10" Content="New" Command="{Binding NewCommand}" ToolTip.Tip="Clear the editor" />
+                        ToolTip.Tip="Ticked: 5 is stored as a number and true as a yes/no value. Unticked: everything is kept as plain text." />
+              <Button Grid.Column="8" Content="Set" Classes="accent" Command="{Binding SetCommand}" ToolTip.Tip="Saves the variable with this name and value. If the name already exists, its value is replaced." />
+              <Button Grid.Column="10" Content="New" Command="{Binding NewCommand}" ToolTip.Tip="Empties the boxes so you can type a new variable. Nothing is deleted." />
             </Grid>
             <Grid ColumnDefinitions="120,12,*,12,*" IsVisible="{Binding IsUsersTab}">
               <AutoCompleteBox Text="{Binding EditPlatform}" ItemsSource="{Binding Platforms}" MinimumPrefixLength="0"
-                               FilterMode="ContainsOrdinal" PlaceholderText="Platform" />
-              <TextBox Grid.Column="2" Text="{Binding EditUserId}" PlaceholderText="User id" />
-              <TextBox Grid.Column="4" Text="{Binding EditUserName}" PlaceholderText="User name (optional)" />
+                               FilterMode="ContainsOrdinal" PlaceholderText="Platform" ToolTip.Tip="The platform the viewer chats on, like Twitch or YouTube." />
+              <TextBox Grid.Column="2" Text="{Binding EditUserId}" PlaceholderText="User id" ToolTip.Tip="The platform's number for this viewer (not their name)." />
+              <TextBox Grid.Column="4" Text="{Binding EditUserName}" PlaceholderText="User name (optional)" ToolTip.Tip="Optional. The viewer's name, only to make the list easier to read." />
             </Grid>
             <TextBlock Classes="muted" Text="{Binding Status}" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
@@ -58,7 +58,7 @@
         <TabItem Header="Persisted">
           <DockPanel Margin="0,8,0,0">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-              <Button DockPanel.Dock="Right" Content="Delete all…" Command="{Binding DeleteAllCommand}" />
+              <Button DockPanel.Dock="Right" Content="Delete all…" Command="{Binding DeleteAllCommand}" ToolTip.Tip="Deletes every persisted variable. You are asked to confirm first." />
               <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding Persisted.Count, StringFormat='{}{0} persisted variable(s)'}" />
             </DockPanel>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="200,*,80,150,Auto" Margin="12,0,12,4">
@@ -73,7 +73,7 @@
         <TabItem Header="Temporary">
           <DockPanel Margin="0,8,0,0">
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-              <Button DockPanel.Dock="Right" Content="Delete all…" Command="{Binding DeleteAllCommand}" />
+              <Button DockPanel.Dock="Right" Content="Delete all…" Command="{Binding DeleteAllCommand}" ToolTip.Tip="Deletes every temporary variable. You are asked to confirm first." />
               <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding Temporary.Count, StringFormat='{}{0} temporary variable(s)'}" />
             </DockPanel>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="200,*,80,150,Auto" Margin="12,0,12,4">
@@ -90,11 +90,11 @@
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
               <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
                 <Button Content="Delete for all users" Command="{Binding DeleteForAllUsersCommand}"
-                        ToolTip.Tip="Remove the selected variable's name from every user (of the chosen platform)" />
-                <Button Content="Delete all…" Command="{Binding DeleteAllCommand}" />
+                        ToolTip.Tip="Deletes the variable you selected from every viewer on the chosen platform, not only the selected one." />
+                <Button Content="Delete all…" Command="{Binding DeleteAllCommand}" ToolTip.Tip="Deletes every user variable. You are asked to confirm first." />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" MinWidth="140" ToolTip.Tip="Platform" />
+                <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding PlatformFilter}" MinWidth="140" ToolTip.Tip="Only show user variables from this platform." />
                 <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding UserVariables.Count, StringFormat='{}{0} user variable(s)'}" />
               </StackPanel>
             </DockPanel>
@@ -126,8 +126,8 @@
           <TextBlock Classes="h2" Text="{Binding DeleteAllText}" TextWrapping="Wrap" />
           <TextBlock TextWrapping="Wrap" Text="This cannot be undone (backups on the Settings page include persisted variables)." />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button Content="Cancel" Command="{Binding CancelDeleteAllCommand}" />
-            <Button Content="Delete all" Classes="accent" Command="{Binding ConfirmDeleteAllCommand}" />
+            <Button Content="Cancel" Command="{Binding CancelDeleteAllCommand}" ToolTip.Tip="Keeps your variables. Nothing is deleted." />
+            <Button Content="Delete all" Classes="accent" Command="{Binding ConfirmDeleteAllCommand}" ToolTip.Tip="Permanently deletes them now." />
           </StackPanel>
         </StackPanel>
       </Border>

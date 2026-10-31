@@ -1,0 +1,1066 @@
+{
+  "triggers": {
+    "core.appStarted": {
+      "description": "Runs once each time Cuebot finishes starting up. Good for setting your variables, switching a scene or saying hello every time you open Cuebot.",
+      "fields": {},
+      "variables": {}
+    },
+    "core.cron": {
+      "description": "Runs on a clock schedule that you write, like every 15 minutes or every day at 8 pm. It uses your computer's local time and is separate from the Timers page.",
+      "fields": {
+        "expression": "Five parts with spaces between: minute, hour, day of the month, month, day of the week. A * means every. \"*/15 * * * *\" is every 15 minutes, \"0 20 * * *\" is every day at 20:00."
+      },
+      "variables": {
+        "expression": "The schedule text that matched",
+        "triggeredAt": "The date and time (to the minute) when it ran"
+      }
+    },
+    "core.timer": {
+      "description": "Runs each time one of your timers goes off. You make timers on the Timers page. Good for a repeating reminder like \"follow the channel\" every 20 minutes.",
+      "fields": {
+        "timer": "The name of the timer, exactly as it is on the Timers page, like \"Social links\". If you leave this empty the action never runs."
+      },
+      "variables": {
+        "timerName": "The name of the timer that went off",
+        "interval": "How many seconds the timer waits between runs",
+        "chatLines": "How many chat messages came in since the timer last ran",
+        "timerId": "The timer's internal id (rarely needed)"
+      }
+    },
+    "variables.globalCreated": {
+      "description": "Runs when a global variable is saved for the very first time. Global variables are values Cuebot remembers for all actions, like a death counter.",
+      "fields": {
+        "variable": "The variable's name without the ~ signs, like \"deaths\". Empty means any variable.",
+        "persisted": "Either = both kinds. Yes = only variables that are kept after a restart. No = only temporary ones that vanish when Cuebot closes."
+      },
+      "variables": {
+        "variableName": "The name of the variable",
+        "newValue": "The value it was given",
+        "persisted": "Whether it is kept after a restart (true or false)"
+      }
+    },
+    "variables.globalUpdated": {
+      "description": "Runs when the value of an existing global variable changes. Handy to react to a counter, like a message when the death counter reaches a new number.",
+      "fields": {
+        "variable": "The variable's name without the ~ signs, like \"deaths\". Empty means any variable.",
+        "persisted": "Either = both kinds. Yes = only variables that are kept after a restart. No = only temporary ones that vanish when Cuebot closes."
+      },
+      "variables": {
+        "variableName": "The name of the variable",
+        "oldValue": "What it was before",
+        "newValue": "What it is now",
+        "persisted": "Whether it is kept after a restart (true or false)"
+      }
+    },
+    "variables.globalDeleted": {
+      "description": "Runs when a global variable is deleted. Be careful with actions that delete the same variable they are listening for.",
+      "fields": {
+        "variable": "The variable's name without the ~ signs, like \"deaths\". Empty means any variable.",
+        "persisted": "Either = both kinds. Yes = only variables that are kept after a restart. No = only temporary ones that vanish when Cuebot closes."
+      },
+      "variables": {
+        "variableName": "The name of the variable that was deleted",
+        "oldValue": "The value it had",
+        "persisted": "Whether it was a kept variable (true or false)"
+      }
+    },
+    "variables.userUpdated": {
+      "description": "Runs when a variable that belongs to one viewer changes, like their lucky number or their quiz score. Careful: an action that changes the same variable can run itself again.",
+      "fields": {
+        "variable": "The variable's name, like \"score\". Empty means any variable.",
+        "persisted": "Either = both kinds. Yes = only variables that are kept after a restart. No = only temporary ones.",
+        "userLogin": "Only react to this viewer, typed like their chat name, for example \"kris\". Empty means any viewer.",
+        "platform": "Only react to viewers on this site, like twitch, youtube, kick or rumble. Empty means any."
+      },
+      "variables": {
+        "variableName": "The name of the variable",
+        "oldValue": "What it was before",
+        "newValue": "What it is now",
+        "user": "The viewer's name",
+        "userId": "The viewer's id on their platform",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    },
+    "desktop.clipboardChanged": {
+      "description": "Runs when the text you copied (Ctrl+C) changes. You must switch on \"Watch clipboard\" on the Hotkeys page first, or it never runs.",
+      "fields": {
+        "contains": "Only run when the copied text has this in it, like \"https://\". Empty means any copied text."
+      },
+      "variables": {
+        "clipboardText": "The text that was just copied"
+      }
+    },
+    "core.fileChanged": {
+      "description": "Runs when a file in a folder you watch is changed. You set up what to watch on the Watchers page. Good for reacting to a text file another program writes.",
+      "fields": {
+        "watcher": "The name of a folder watcher from the Watchers page. Empty means every watcher."
+      },
+      "variables": {
+        "fileName": "The file's name, like \"score.txt\"",
+        "filePath": "The full location of the file on your computer",
+        "folder": "The folder the file is in",
+        "fileSize": "How big the file is, in bytes (small text files only)",
+        "lineCount": "How many lines the file has (small text files only)",
+        "line0": "The first line of the file (line1 is the second, and so on)",
+        "watcherName": "The name of the watcher that noticed"
+      }
+    },
+    "core.fileCreated": {
+      "description": "Runs when a new file appears in a folder you watch. You set up what to watch on the Watchers page. Good for reacting to a new screenshot or recording.",
+      "fields": {
+        "watcher": "The name of a folder watcher from the Watchers page. Empty means every watcher."
+      },
+      "variables": {
+        "fileName": "The new file's name, like \"clip.mp4\"",
+        "filePath": "The full location of the file on your computer",
+        "folder": "The folder the file is in",
+        "watcherName": "The name of the watcher that noticed"
+      }
+    },
+    "core.fileDeleted": {
+      "description": "Runs when a file is deleted from a folder you watch. You set up what to watch on the Watchers page.",
+      "fields": {
+        "watcher": "The name of a folder watcher from the Watchers page. Empty means every watcher."
+      },
+      "variables": {
+        "fileName": "The deleted file's name",
+        "filePath": "The full location the file had",
+        "folder": "The folder the file was in",
+        "watcherName": "The name of the watcher that noticed"
+      }
+    },
+    "core.fileRenamed": {
+      "description": "Runs when a file in a folder you watch gets a new name. You set up what to watch on the Watchers page.",
+      "fields": {
+        "watcher": "The name of a folder watcher from the Watchers page. Empty means every watcher."
+      },
+      "variables": {
+        "fileName": "The new name of the file",
+        "oldFileName": "The name it had before",
+        "filePath": "The full new location of the file",
+        "oldFilePath": "The full old location of the file",
+        "watcherName": "The name of the watcher that noticed"
+      }
+    },
+    "core.fileTailLine": {
+      "description": "Runs for each new line that a program adds to the end of a text file you follow, like a game's log. You choose the file on the Watchers page.",
+      "fields": {
+        "watcher": "The name of a file tail from the Watchers page. Empty means every file tail."
+      },
+      "variables": {
+        "line": "The new line of text",
+        "fileName": "The name of the file",
+        "filePath": "The full location of the file",
+        "watcherName": "The name of the file tail that noticed"
+      }
+    },
+    "hotkeys.pressed": {
+      "description": "Runs when you press a keyboard shortcut. You make shortcuts on the Hotkeys page, or you can type a combination like Ctrl+Shift+F1 here.",
+      "fields": {
+        "hotkey": "A hotkey name from the Hotkeys page, or keys like \"Ctrl+Shift+F1\". Empty means any hotkey."
+      },
+      "variables": {
+        "hotkeyName": "The name of the hotkey from the Hotkeys page",
+        "hotkey": "The keys that were pressed, like Ctrl+Shift+F1",
+        "key": "The main key, without Ctrl/Alt/Shift",
+        "hasCtrl": "True if Ctrl was held",
+        "hasAlt": "True if Alt was held",
+        "hasShift": "True if Shift was held"
+      }
+    },
+    "input.mouseClick": {
+      "description": "Runs when you click a mouse button anywhere on your computer. It does not work on Wayland (a Linux desktop type), because that blocks other programs from seeing clicks.",
+      "fields": {
+        "button": "Which mouse button counts. Any means all of them. X1 and X2 are the extra side buttons.",
+        "modifiers": "Keys that must be held while clicking, like \"Ctrl+Shift\". Empty = does not matter. \"None\" = no key held. Otherwise exactly the keys you list."
+      },
+      "variables": {
+        "mouseButton": "Which button was clicked, like Left",
+        "mouseX": "How far from the left of the screen the click was, in pixels",
+        "mouseY": "How far from the top of the screen the click was, in pixels",
+        "modifiers": "Which keys were held during the click, like Ctrl+Shift"
+      }
+    },
+    "core.processStarted": {
+      "description": "Runs when a program you watch starts on your computer, like your game. You choose which programs to watch on the Watchers page.",
+      "fields": {
+        "watcher": "The name of a process watcher from the Watchers page. Empty means every process watcher."
+      },
+      "variables": {
+        "processName": "The name of the program that started",
+        "processId": "The number the computer gave this running program",
+        "path": "The folder the program lives in (when Cuebot can find it)",
+        "watcherName": "The name of the watcher that noticed"
+      }
+    },
+    "core.processStopped": {
+      "description": "Runs when a program you watch closes, like your game. You choose which programs to watch on the Watchers page.",
+      "fields": {
+        "watcher": "The name of a process watcher from the Watchers page. Empty means every process watcher."
+      },
+      "variables": {
+        "processName": "The name of the program that closed",
+        "processId": "The number the computer had given this program",
+        "watcherName": "The name of the watcher that noticed"
+      }
+    },
+    "desktop.toastActivated": {
+      "description": "Runs when you click a pop-up notification that Cuebot showed with \"Show desktop notification\". Handy for a notification that acts like a button.",
+      "fields": {
+        "toastId": "The notification id you typed in \"Show desktop notification\", like \"raid-alert\". Empty means any notification."
+      },
+      "variables": {
+        "toastId": "The id of the notification you clicked",
+        "toastTitle": "The title shown on the notification",
+        "toastMessage": "The message shown on the notification"
+      }
+    },
+    "groups.added": {
+      "description": "Runs when a new, empty group of viewers is created. Groups are lists of viewers, like \"Trusted\", made on the Users & Groups page or with an action.",
+      "fields": {
+        "group": "The group's name. Empty means any group."
+      },
+      "variables": {
+        "groupName": "The name of the group"
+      }
+    },
+    "groups.removed": {
+      "description": "Runs when a group of viewers is deleted.",
+      "fields": {
+        "group": "The group's name. Empty means any group."
+      },
+      "variables": {
+        "groupName": "The name of the group"
+      }
+    },
+    "groups.cleared": {
+      "description": "Runs when every viewer is taken out of a group at once, but the group itself stays.",
+      "fields": {
+        "group": "The group's name. Empty means any group."
+      },
+      "variables": {
+        "groupName": "The name of the group",
+        "count": "How many viewers were taken out"
+      }
+    },
+    "groups.usersAdded": {
+      "description": "Runs when a viewer is put into a group. Good for welcoming someone to \"VIPs\" or \"Trusted\".",
+      "fields": {
+        "group": "The group's name. Empty means any group."
+      },
+      "variables": {
+        "groupName": "The name of the group",
+        "user": "The viewer who was added",
+        "userId": "The viewer's id on their platform",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    },
+    "groups.usersRemoved": {
+      "description": "Runs when a viewer is taken out of a group.",
+      "fields": {
+        "group": "The group's name. Empty means any group."
+      },
+      "variables": {
+        "groupName": "The name of the group",
+        "user": "The viewer who was removed",
+        "userId": "The viewer's id on their platform",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    },
+    "users.firstWords": {
+      "description": "Runs when a viewer writes in chat for the first time of the stream. Great for a welcome message. It starts over each time you go live, or when you reset it.",
+      "fields": {
+        "platform": "Only react to chat on this site. All means every site you are connected to."
+      },
+      "variables": {
+        "user": "The viewer's name",
+        "message": "What they wrote",
+        "platform": "The site they wrote on, like twitch",
+        "userId": "Their id on that site",
+        "isNewUser": "True if this is the first time Cuebot has ever seen them",
+        "messageCount": "How many messages Cuebot has seen from them in total"
+      }
+    },
+    "users.presentViewers": {
+      "description": "Runs every few minutes with the viewers who chatted recently. Good for giving points to everyone who is around. Set how often on the Users & Groups page.",
+      "fields": {
+        "platform": "Only react to viewers on this site. All means every site you are connected to."
+      },
+      "variables": {
+        "platform": "The site these viewers are on",
+        "count": "How many viewers are present",
+        "userNames": "Their names in one line, separated by commas",
+        "userIds": "Their ids in one line, separated by commas",
+        "isLive": "Whether the stream is live, when the site tells Cuebot"
+      }
+    },
+    "command.triggered": {
+      "description": "Runs when a viewer uses one of your chat commands, like !hello. You make commands on the Commands page. This trigger lets any action react to a command.",
+      "fields": {
+        "command": "The command's name from the Commands page. Empty means every command."
+      },
+      "variables": {
+        "user": "The viewer who used the command",
+        "message": "The whole chat message",
+        "rawInput": "Only the text after the command, like \"kris 50\" in \"!give kris 50\"",
+        "input0": "The first word after the command (input1 is the second, and so on)",
+        "inputCount": "How many words came after the command",
+        "commandName": "The command's name",
+        "counter": "How many times this command has been used",
+        "userCounter": "How many times this viewer has used it",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    },
+    "command.cooldown": {
+      "description": "Runs when a viewer tries a command that is still cooling down, so it did not run. Good for a friendly reply like \"wait 30 more seconds\". The broadcaster is never blocked.",
+      "fields": {
+        "command": "The command's name from the Commands page. Empty means every command."
+      },
+      "variables": {
+        "user": "The viewer who tried the command",
+        "commandName": "The command's name",
+        "remaining": "How many seconds are left before it works again",
+        "cooldownType": "Whether the wait is for everyone (Global) or just this viewer (User)",
+        "platform": "The site the viewer is on, like twitch"
+      }
+    }
+  },
+  "subActions": {
+    "core.clearActionQueue": {
+      "description": "Throws away the actions waiting in line in an action queue. Actions already running finish. Handy as an \"emergency stop\" button for a pile-up of alerts.",
+      "fields": {
+        "queue": "The name of a queue from the Queues page, or All for every queue."
+      },
+      "variables": {
+        "queueCleared": "How many waiting runs were thrown away"
+      }
+    },
+    "core.comment": {
+      "description": "A note to yourself in the list of steps. It does nothing when the action runs. Good for explaining what a part of a long action is for.",
+      "fields": {
+        "text": "Your note, like \"Greets new followers\".",
+        "color": "A color for the note in the editor, like #E0A030. Empty uses the normal color. It only changes how it looks."
+      },
+      "variables": {}
+    },
+    "core.delay": {
+      "description": "Waits before moving to the next step. 1000 milliseconds is 1 second. Good between a sound and a scene switch. It can also wait a random time.",
+      "fields": {
+        "milliseconds": "How long to wait, in milliseconds. 1000 = 1 second, 5000 = 5 seconds.",
+        "random": "Tick to wait a random time between the first number and the \"To\" number, instead of always the same time.",
+        "to": "The longest wait, in milliseconds, when \"Random delay\" is ticked. With 1000 and 3000 it waits 1 to 3 seconds. Not used if unticked."
+      },
+      "variables": {
+        "delayMs": "How many milliseconds it waited"
+      }
+    },
+    "core.getActionGroupState": {
+      "description": "Checks an action group and tells you if all, none or some of its actions are turned on. The group is the \"Group\" box in an action's settings.",
+      "fields": {
+        "group": "The group's name, as shown in your Actions list, like \"Alerts\"."
+      },
+      "variables": {
+        "actionGroupState": "0 = all are off, 1 = all are on, 2 = some on and some off",
+        "actionsEnabled": "A list with the ids of the actions that are on",
+        "actionsDisabled": "A list with the ids of the actions that are off"
+      }
+    },
+    "core.getActionState": {
+      "description": "Finds out whether an action is turned on or off and keeps the answer in a variable. Pair it with an If step to act on the answer.",
+      "fields": {
+        "action": "The action's name, exactly as in your Actions list.",
+        "name": "The variable that receives the answer (true = on, false = off), without % signs. The default is actionEnabled."
+      },
+      "variables": {
+        "actionState": "True if the action is on, false if it is off"
+      }
+    },
+    "core.group": {
+      "description": "A folder for steps. Keeps a long action tidy. It can also run just ONE random step from inside, like picking one of five different thank-you messages.",
+      "fields": {
+        "name": "A name for the group so you can see what is inside, like \"Greetings\". Only for you.",
+        "random": "Tick to run only ONE step inside, picked at random, instead of all of them. Each step's weight makes it more or less likely.",
+        "color": "A color for the group in the editor, like #3A7BD5. Empty uses the normal color. It only changes how it looks."
+      },
+      "variables": {}
+    },
+    "core.sendSignal": {
+      "description": "Sends a secret message to other actions that are waiting with \"Wait for local signal\", which wakes them up. Handy to make one action wait for another.",
+      "fields": {
+        "name": "A name you make up, like \"go\". The waiting step must use exactly the same name.",
+        "includeArgs": "Tick to also hand over this action's %variables% to the action that wakes up.",
+        "arguments": "Extra variables to hand over, one per line as name=value. Example: winner=%user%",
+        "queue": "Tick to keep the signal if nobody is waiting yet, so the next wait gets it. Unticked, it is lost if nobody is waiting."
+      },
+      "variables": {
+        "signalWaiters": "How many waiting actions were woken up"
+      }
+    },
+    "core.setActionGroupState": {
+      "description": "Turns every action in an action group on or off, or flips each one. Handy to switch a whole set on together, like all your giveaway actions.",
+      "fields": {
+        "group": "The group's name, as shown in your Actions list, like \"Alerts\".",
+        "state": "Enable turns them on. Disable turns them off. Toggle flips each action to its opposite."
+      },
+      "variables": {}
+    },
+    "core.setActionQueueBlocking": {
+      "description": "Switches the \"blocking\" option of an action queue. A blocking queue runs one action at a time, so the others wait their turn. The change is saved.",
+      "fields": {
+        "queue": "The name of a queue from the Queues page. The Default queue cannot be changed.",
+        "state": "Enable = blocking on (one at a time). Disable = off (actions may overlap). Toggle = switch to the opposite."
+      },
+      "variables": {}
+    },
+    "core.setActionQueuePause": {
+      "description": "Pauses or resumes an action queue. While paused, actions wait in line instead of running. Good for holding alerts back during a serious moment.",
+      "fields": {
+        "queue": "The name of a queue from the Queues page, or All for every queue.",
+        "state": "Pause holds actions back. Resume lets them run again. Toggle switches to the opposite.",
+        "clear": "Tick to also throw away the actions already waiting in line."
+      },
+      "variables": {}
+    },
+    "core.setActionState": {
+      "description": "Turns another action on or off, or flips it. A turned-off action ignores its triggers. Good for \"only allow this while a giveaway runs\". The change is saved.",
+      "fields": {
+        "action": "The action's name, exactly as in your Actions list.",
+        "state": "Enable turns it on. Disable turns it off. Toggle switches it to the opposite."
+      },
+      "variables": {}
+    },
+    "core.setSubActionState": {
+      "description": "Turns one single step of an action on or off, without opening the editor. A turned-off step is skipped when the action runs. The change is saved.",
+      "fields": {
+        "action": "The action's name, exactly as in your Actions list.",
+        "subAction": "Which step: its number in the action (1 = the first; steps inside groups and branches are counted too) or its id.",
+        "state": "Enable turns it on. Disable turns it off. Toggle switches it to the opposite."
+      },
+      "variables": {}
+    },
+    "core.setSubActionWeight": {
+      "description": "Changes how likely a step is to be picked when an action or group runs one random step. A bigger weight is picked more often. The change is saved.",
+      "fields": {
+        "action": "The action's name, exactly as in your Actions list.",
+        "subAction": "Which step: its number in the action (1 = the first; steps inside groups and branches are counted too) or its id.",
+        "weight": "How likely it is compared with the other steps. With weights 1 and 3, the second is picked three times as often. 0 = never."
+      },
+      "variables": {}
+    },
+    "core.setTriggerState": {
+      "description": "Turns one trigger of an action on or off, without opening the editor. A turned-off trigger no longer starts the action. The change is saved.",
+      "fields": {
+        "action": "The action's name, exactly as in your Actions list.",
+        "trigger": "Which trigger: its number in the action's trigger list (1 = the first), its id, or its type name.",
+        "state": "Enable turns it on. Disable turns it off. Toggle switches it to the opposite."
+      },
+      "variables": {}
+    },
+    "core.triggerCustomEvent": {
+      "description": "Sends out a custom event with a name you choose. Any action with a matching \"Custom code event\" trigger runs. A way to start several actions at once.",
+      "fields": {
+        "eventName": "A name you make up, like \"party-time\". The action that should run needs a Custom code event trigger with the same name.",
+        "useArgs": "Tick to hand over this action's %variables% to the actions that start."
+      },
+      "variables": {}
+    },
+    "core.waitForSignal": {
+      "description": "Pauses this action until another action sends the same signal. Good for waiting on a button press before going on. It can give up after a time limit.",
+      "fields": {
+        "name": "The signal's name, exactly as in \"Send local signal\", like \"go\".",
+        "timeoutMs": "How long to wait before giving up, in milliseconds. 1000 = 1 second. 0 = wait forever.",
+        "stopOnTimeout": "Tick to stop the whole action if the wait runs out. Unticked, the action carries on with the next step.",
+        "overwrite": "Tick so variables sent with the signal replace this action's variables with the same name. Unticked, yours are kept."
+      },
+      "variables": {
+        "signalReceived": "True if the signal arrived",
+        "signalTimeout": "True if the wait ran out first",
+        "signalName": "The name of the signal that arrived",
+        "hasResult": "True if the signal brought variables with it"
+      }
+    },
+    "core.log": {
+      "description": "Writes a line in Cuebot's log, which you can read to see what your actions do. Great for checking a %variable% while testing. Viewers never see it.",
+      "fields": {
+        "message": "The text to write. You can use %variables%, like \"Raid from %user%\".",
+        "level": "How important it is: Debug (tiny detail), Info (normal), Warning (something odd), Error (something broke)."
+      },
+      "variables": {}
+    },
+    "core.getInputDialog": {
+      "description": "Opens a small window on your computer asking you to type something, then saves your answer in a variable. Handy for actions you start yourself, like asking for a new title.",
+      "fields": {
+        "title": "The text at the top of the window. The default is Cuebot.",
+        "prompt": "The question shown in the window, like \"Which game next?\".",
+        "originalText": "Text already in the box when the window opens. Empty = an empty box.",
+        "variable": "The variable that receives your answer, without % signs. The default inputResult means you use %inputResult% later.",
+        "autoType": "Tick so a number you type is saved as a real number and not just text. Untick if unsure."
+      },
+      "variables": {
+        "success": "True if you pressed OK, false if you cancelled or no window could open",
+        "inputResult": "What you typed (the variable name can be changed in the settings)"
+      }
+    },
+    "core.if": {
+      "description": "Checks something, then runs different steps depending on the answer. Example: IF %message% contains \"hello\" THEN say hi back. Steps go under True (yes) or False (no).",
+      "fields": {
+        "left": "The thing to look at, usually a %variable% like %user% or %message%. For \"exists\" and \"does not exist\" type only the variable's name, like targetUser.",
+        "operator": "How to compare. \"equals\" = the same. \"contains\" = has it inside. \"greater than\" and \"less than\" compare numbers. \"is empty\" = nothing there. \"matches regex\" is an advanced search pattern.",
+        "right": "What to compare with, like hello or 100. Capital letters do not matter. Not used for \"is empty\", \"is not empty\", \"exists\" and \"does not exist\"."
+      },
+      "variables": {
+        "match.count": "Only with \"matches regex\": how many pieces matched",
+        "match[0]": "Only with \"matches regex\": the text that matched (match[1] is the first captured piece)"
+      }
+    },
+    "core.loopBreak": {
+      "description": "Stops the loop you are in right now and carries on with the step after the loop. Use it inside a While loop. Outside a loop it stops the whole action.",
+      "fields": {},
+      "variables": {}
+    },
+    "core.loopContinue": {
+      "description": "Skips the rest of this round of the loop and starts the next round straight away. Use it inside a While loop. Outside a loop it stops the whole action.",
+      "fields": {},
+      "variables": {}
+    },
+    "core.runAction": {
+      "description": "Runs another action from this one, like calling a helper. Good for reusing the same steps in many actions. The other action gets a copy of this action's variables.",
+      "fields": {
+        "action": "The other action's name, exactly as in your Actions list, like \"Play alert sound\". A wrong name gives an error.",
+        "wait": "Ticked: this action waits until the other one is done before the next step. Unticked: both run at the same time."
+      },
+      "variables": {}
+    },
+    "core.getInput": {
+      "description": "Cuts a text into pieces and gives each piece its own variable: %input0%, %input1% and so on. Handy for chat like \"!give kris 50\".",
+      "fields": {
+        "input": "The text to cut up. The default %rawInput% is what a viewer typed after a command.",
+        "separator": "What to cut at, like a comma. Empty cuts at spaces."
+      },
+      "variables": {
+        "input0": "The first piece (input1 is the second, and so on)",
+        "inputCount": "How many pieces there are"
+      }
+    },
+    "core.stop": {
+      "description": "Stops this action right here. The steps below it do not run. Usually put inside an If, like \"if the viewer has too few points, stop\".",
+      "fields": {},
+      "variables": {}
+    },
+    "core.switch": {
+      "description": "Like several Ifs in one. It looks at one value and runs the steps of the first case that matches. Example: !color red or blue or green. \"Default\" runs if nothing matches.",
+      "fields": {
+        "input": "The value to look at, usually a %variable% like %message% or %input0%.",
+        "cases": "One case per line, like red. Put several words on one line with | between them (red|crimson) for the same steps. The first match wins.",
+        "operator": "How each case is compared with the value: \"equals\" = the same, \"contains\" = has it inside, and so on. Capital letters do not matter."
+      },
+      "variables": {
+        "switchCase": "The case line that matched, or Default"
+      }
+    },
+    "core.while": {
+      "description": "Repeats the steps inside as long as a check is true, like \"while the count is below 5, do this\". Handy for doing something several times. It has a safety limit.",
+      "fields": {
+        "left": "The thing to look at each round, usually a %variable%. The default %loopIteration% counts rounds starting at 0.",
+        "operator": "How to compare, like \"less than\" or \"equals\". \"less than\" with 10 repeats while the value is below 10.",
+        "right": "What to compare with, like 10. The default repeats 10 times (rounds 0 to 9).",
+        "maxIterations": "The most rounds allowed, so a mistake can never loop forever. 0 = no limit (risky)."
+      },
+      "variables": {
+        "loopIteration": "Which round you are on, starting at 0"
+      }
+    },
+    "core.clearTemporaryGlobals": {
+      "description": "Deletes all global variables that are not kept after a restart. Variables you kept are not touched. Good for a fresh start at the beginning of a stream.",
+      "fields": {},
+      "variables": {}
+    },
+    "core.clearTemporaryUserVariables": {
+      "description": "Deletes the viewer variables that are not kept after a restart, for everyone. Kept ones stay. Good for a fresh start, like resetting a quiz.",
+      "fields": {
+        "platform": "Only clear for viewers on this site, like twitch. Empty = all sites."
+      },
+      "variables": {}
+    },
+    "core.deleteGlobal": {
+      "description": "Deletes a global variable, so it is gone. Good to reset something like a counter completely.",
+      "fields": {
+        "name": "The variable's name without the ~ signs, like \"deaths\"."
+      },
+      "variables": {}
+    },
+    "core.deleteUserVariable": {
+      "description": "Deletes a variable that belongs to one viewer, or to every viewer. Good to reset something like a quiz score.",
+      "fields": {
+        "name": "The variable's name, like \"score\".",
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userId": "The viewer's id on their site. Empty = the viewer who started the action, or the one found by user name.",
+        "userName": "The viewer's chat name, like \"kris\". Used to find the viewer when you give no id.",
+        "allUsers": "Tick to delete it from every viewer of that site (all sites if Platform is empty), not just one."
+      },
+      "variables": {}
+    },
+    "core.getGlobal": {
+      "description": "Reads a global variable and puts its value in a normal variable you can use with %name%. Needed when you want to check a remembered value, like a death count.",
+      "fields": {
+        "name": "The global variable's name without the ~ signs, like \"deaths\".",
+        "destination": "The variable that receives the value, without % signs. Empty = same name as the global variable.",
+        "defaultValue": "The value to use if the global variable does not exist yet. Empty = leave the variable unset.",
+        "autoType": "Tick so numbers stay real numbers (needed for greater/less than checks). Normally leave it ticked."
+      },
+      "variables": {}
+    },
+    "core.getUserVariable": {
+      "description": "Reads a variable that belongs to one viewer, like their score, and puts the value in a normal variable you can use with %name%.",
+      "fields": {
+        "name": "The viewer variable's name, like \"score\".",
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userId": "The viewer's id on their site. Empty = the viewer who started the action, or the one found by user name.",
+        "userName": "The viewer's chat name, like \"kris\". Used to find the viewer when you give no id.",
+        "destination": "The variable that receives the value, without % signs. Empty = same name as the viewer variable.",
+        "defaultValue": "The value to use if the viewer or variable does not exist. Empty = leave the variable unset.",
+        "autoType": "Tick so numbers stay real numbers (needed for greater/less than checks). Normally leave it ticked."
+      },
+      "variables": {}
+    },
+    "core.pickColor": {
+      "description": "Picks a color and saves it in several formats for other steps, like OBS or a light. Pick the color while editing, run it, then use %color.html% and friends.",
+      "fields": {
+        "color": "The color as hex digits: #RRGGBB, like #FF9146, or #AARRGGBB when you want see-through (alpha).",
+        "name": "A name for the result variables, without %. With \"color\" you get %color.html% and the others."
+      },
+      "variables": {
+        "color.html": "The color as #RRGGBB (name is the one you chose)",
+        "color.htmlalpha": "The color as #AARRGGBB, including see-through",
+        "color.obs": "The color as a number in the format OBS expects",
+        "color.color.r": "The red part, 0 to 255 (g = green, b = blue, a = see-through)"
+      }
+    },
+    "core.randomNumber": {
+      "description": "Picks a random number, like rolling a dice, and saves it in a variable. Good for \"roll 1 to 100\" commands or a chance for something to happen.",
+      "fields": {
+        "type": "Between = a whole number from Minimum to Maximum. Next Float = a number from 0 to 1, plus a percent from 0 to 100.",
+        "name": "The variable that gets the number, without % signs. Default random means you use %random%. Only for Between.",
+        "min": "The lowest number that can be picked, like 1.",
+        "max": "The highest number that can be picked, like 100. This number can be picked too."
+      },
+      "variables": {
+        "random": "The number that was picked (the variable name can be changed)",
+        "randomFloat": "Only with Next Float: a number from 0 up to just below 1",
+        "randomPercent": "Only with Next Float: the same as a whole percent, 0 to 100"
+      }
+    },
+    "core.setArgument": {
+      "description": "Creates a variable for this run only, or changes it. Use it afterwards as %name%. Good for building a message or counting inside one action.",
+      "fields": {
+        "name": "The variable's name without % signs, like \"greeting\". Use it later as %greeting%.",
+        "value": "What to store. You can mix %variables%, ~global variables~ and math like $math(%count% + 1)$.",
+        "autoType": "Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text. Needed for greater/less than checks."
+      },
+      "variables": {}
+    },
+    "core.setGlobal": {
+      "description": "Saves a value that every action can read later as ~name~, like a death counter. It can set it or count up and down. Kept after a restart by default.",
+      "fields": {
+        "name": "The variable's name, like \"deaths\". Use it anywhere as ~deaths~.",
+        "mode": "Value = save exactly what you type. Increment = add to the current number. Decrement = subtract from it.",
+        "value": "With Value: what to save. With Increment/Decrement: how much to add or subtract (empty = 1).",
+        "persisted": "Tick to keep it after Cuebot restarts. Untick for a temporary value that vanishes when Cuebot closes.",
+        "autoType": "Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text.",
+        "storeIn": "Optional. A variable to also receive the new value, without % signs, so you can use %name% in the next steps."
+      },
+      "variables": {}
+    },
+    "core.setUserVariable": {
+      "description": "Saves a value that belongs to one viewer, like their score or favorite color. It can set it or count up and down. Kept after a restart by default.",
+      "fields": {
+        "name": "The variable's name, like \"score\".",
+        "platform": "The site the viewer is on, like twitch. Empty = the site of whoever started the action.",
+        "userId": "The viewer's id on their site. Empty = the viewer who started the action, or the one found by user name.",
+        "userName": "The viewer's chat name, like \"kris\". Used to find the viewer when you give no id.",
+        "mode": "Value = save exactly what you type. Increment = add to the current number. Decrement = subtract from it.",
+        "value": "With Value: what to save. With Increment/Decrement: how much to add or subtract (empty = 1).",
+        "persisted": "Tick to keep it after Cuebot restarts. Untick for a temporary value that vanishes when Cuebot closes.",
+        "autoType": "Tick so numbers and true/false are stored as real numbers/yes-no values and not plain text.",
+        "storeIn": "Optional. A variable to also receive the new value, without % signs, so you can use %name% in the next steps."
+      },
+      "variables": {}
+    },
+    "desktop.getClipboard": {
+      "description": "Reads the text you last copied (Ctrl+C) and saves it in a variable. Handy for turning a copied link into a chat message.",
+      "fields": {
+        "destination": "The variable that receives the copied text, without % signs. The default clipboardText means you use %clipboardText%."
+      },
+      "variables": {
+        "clipboardText": "The copied text (the variable name can be changed in the settings)",
+        "clipboardTextFound": "True if there was text on the clipboard"
+      }
+    },
+    "input.keyboardPress": {
+      "description": "Presses keys on your keyboard for you, as if you typed them, in whatever program is in front. Good for triggering another program's shortcut.",
+      "fields": {
+        "keys": "A shortcut like \"Ctrl+Shift+F1\". For several in a row, separate them with commas, like \"Ctrl+C, Ctrl+V\". On Linux the desktop may ask for permission once.",
+        "delay": "How many milliseconds to wait between shortcuts when you list several. 1000 = 1 second."
+      },
+      "variables": {
+        "keysPressed": "The shortcuts that were pressed"
+      }
+    },
+    "core.runProgram": {
+      "description": "Starts a program or opens a file on your computer, like a script or another tool. It can wait until the program ends and even collect what it prints.",
+      "fields": {
+        "path": "The program or file to open, with its full location, like C:\\Tools\\clip.exe or /usr/bin/notify-send.",
+        "arguments": "Extra words to give the program, like \"--fast\". Empty is fine for most programs.",
+        "workingDirectory": "The folder the program starts in. Empty = the default. Most people can leave this alone.",
+        "wait": "Tick to wait for the program to finish before the next step. Unticked, Cuebot goes on straight away.",
+        "waitSeconds": "With \"Wait for exit\": give up waiting after this many seconds. 0 = wait as long as it takes.",
+        "captureOutput": "Tick to save the lines the program prints in %output1%, %output2% and so on. Only works together with \"Wait for exit\".",
+        "environment": "Extra settings for the program, one per line as NAME=value. Most people leave this empty."
+      },
+      "variables": {
+        "exitCode": "The number the program ended with (0 usually means it went fine). Only after waiting.",
+        "timedOut": "True if you stopped waiting because the time ran out. Only after waiting.",
+        "output1": "The first line the program printed (output2 is the second). Only with capture output.",
+        "outputCount": "How many lines the program printed. Only with capture output."
+      }
+    },
+    "desktop.setClipboard": {
+      "description": "Puts text on your clipboard, so you can paste it with Ctrl+V. Handy to copy a link or a viewer's message.",
+      "fields": {
+        "text": "The text to copy. You can use %variables%, like %message%."
+      },
+      "variables": {}
+    },
+    "core.setWatcherState": {
+      "description": "Turns a watcher or a followed file on, off or flips it. Watchers are made on the Watchers page. Turn one off if you do not need it right now.",
+      "fields": {
+        "watcher": "The name of the watcher or followed file, exactly as on the Watchers page.",
+        "state": "Enable turns it on. Disable turns it off. Toggle switches it to the opposite."
+      },
+      "variables": {}
+    },
+    "desktop.showNotification": {
+      "description": "Shows a small pop-up message on your computer screen, only for you, not your viewers. Good as a private reminder. Click it to start an action with the \"Toast notification clicked\" trigger.",
+      "fields": {
+        "title": "The bold line at the top of the pop-up. The default is Cuebot.",
+        "message": "The text of the pop-up. You can use %variables%.",
+        "icon": "Optional. The location of a small picture file to show next to the text.",
+        "id": "Optional. A name you make up so the \"Toast notification clicked\" trigger can tell which pop-up was clicked.",
+        "duration": "How many seconds the pop-up stays on screen. From 1 to 120.",
+        "target": "Auto = your system's notifications where possible, else Cuebot's own pop-up. In-app = always Cuebot's own. System = your system's."
+      },
+      "variables": {
+        "notificationShownWith": "Which way the pop-up was shown"
+      }
+    },
+    "core.deleteFile": {
+      "description": "Deletes a file from your computer. Be careful: it is removed for good, not sent to the recycle bin.",
+      "fields": {
+        "path": "The file's full location on your computer, like C:\\Stream\\old.txt.",
+        "failIfMissing": "Tick to get an error if the file is not there. Unticked, nothing happens when it is missing."
+      },
+      "variables": {
+        "fileDeleted": "True if the file existed and was deleted"
+      }
+    },
+    "core.fileExists": {
+      "description": "Checks if a file or folder exists on your computer, then runs the True steps if it does or the False steps if it does not.",
+      "fields": {
+        "path": "The full location to look for, like C:\\Stream\\score.txt.",
+        "kind": "File = only count files. Folder = only count folders. Either = count both."
+      },
+      "variables": {
+        "fileExists": "True if it was found"
+      }
+    },
+    "core.readFile": {
+      "description": "Reads a whole text file and saves everything in it in a variable. Good for showing text another program wrote, like a song title file.",
+      "fields": {
+        "path": "The file's full location on your computer, like C:\\Stream\\song.txt.",
+        "variable": "The variable that receives the text, without % signs. The default fileContent means you use %fileContent%."
+      },
+      "variables": {
+        "fileContent": "All the text in the file (the variable name can be changed in the settings)"
+      }
+    },
+    "core.readLines": {
+      "description": "Reads a text file line by line. Every line gets its own variable: line0 is the first line, line1 the second, and so on.",
+      "fields": {
+        "path": "The file's full location on your computer, like C:\\Stream\\list.txt.",
+        "variable": "The start of the variable names, without % signs. With the default line you get %line0%, %line1% and so on.",
+        "parseVariables": "Tick to replace any %variables% written inside the file with their values.",
+        "autoType": "Tick so a line that holds a number is stored as a real number. Untick if unsure."
+      },
+      "variables": {
+        "lineCount": "How many lines the file has",
+        "line0": "The first line (line1 is the second, and so on; the start of the name can be changed)",
+        "fileFound": "True if the file was found"
+      }
+    },
+    "core.readRandomLine": {
+      "description": "Picks a random line from a text file and saves it in a variable. Great for a list of jokes, quotes or ideas that you keep in a plain file.",
+      "fields": {
+        "path": "The file's full location on your computer, like C:\\Stream\\jokes.txt.",
+        "variable": "The variable that receives the line, without % signs. The default randomLine means you use %randomLine%.",
+        "skipEmpty": "Tick to never pick an empty line.",
+        "count": "How many different lines to pick. With more than 1, the extra ones go in randomLine1, randomLine2, and so on.",
+        "parseVariables": "Tick to replace any %variables% written inside the line with their values.",
+        "autoType": "Tick so a line that holds a number is stored as a real number. Untick if unsure."
+      },
+      "variables": {
+        "randomLine": "The picked line (the variable name can be changed in the settings)",
+        "lineNumber": "Which line of the file it was, starting at 1",
+        "lineCount": "How many lines the file could choose from",
+        "fileFound": "True if the file was found"
+      }
+    },
+    "core.readSpecificLine": {
+      "description": "Reads one chosen line of a text file, for example line 3, and saves it in a variable.",
+      "fields": {
+        "path": "The file's full location on your computer, like C:\\Stream\\list.txt.",
+        "variable": "The variable that receives the line, without % signs. The default line means you use %line%.",
+        "lineNumber": "Which line to read. 1 = the first line. If the file is shorter, you get an empty value.",
+        "parseVariables": "Tick to replace any %variables% written inside the line with their values.",
+        "autoType": "Tick so a line that holds a number is stored as a real number. Untick if unsure."
+      },
+      "variables": {
+        "line": "The line that was read (the variable name can be changed in the settings)",
+        "lineCount": "How many lines the file has",
+        "fileFound": "True if the file was found"
+      }
+    },
+    "core.writeFile": {
+      "description": "Writes text into a file on your computer, adding to the end or replacing everything. Good for feeding a text source in OBS, like a follower goal.",
+      "fields": {
+        "path": "The file's full location, like C:\\Stream\\goal.txt. Cuebot creates the file if it is missing.",
+        "content": "The text to write. You can use %variables%, like \"Latest follower: %user%\".",
+        "mode": "Append = add to the end of the file. Overwrite = erase the file and write only this text.",
+        "newLine": "Tick to finish the text with a line break, so the next write starts on a new line.",
+        "createFolders": "Tick to create the folders on the way if they do not exist yet."
+      },
+      "variables": {}
+    },
+    "code.csharp": {
+      "description": "For advanced users: runs a small program written in C# (a programming language). Beginners can skip it, because the other steps do the same things without code.",
+      "fields": {
+        "code": "The C# program. It runs inside Cuebot with full access to your computer, so only use code you trust. Beginners: use the normal steps instead.",
+        "timeoutSeconds": "Stop the code after this many seconds so it cannot get stuck. 0 = no limit.",
+        "name": "Optional. A name so other code or \"Execute C# method\" can call a method of this code. Most people leave it empty.",
+        "description": "Optional note for yourself about what this code does.",
+        "precompile": "Tick to prepare the code when Cuebot starts instead of the first time it runs. For advanced users only.",
+        "delayedStart": "With \"Precompile\": wait until Cuebot has finished starting and is connected before preparing the code.",
+        "saveResult": "Tick to save the code's yes/no answer in a variable and always carry on. Unticked, a \"no\" (false) stops the action.",
+        "resultVariable": "The variable that receives the answer when \"Save result\" is ticked, without % signs.",
+        "references": "Extra program files (.dll) the code needs, one full location per line. Most code needs none."
+      },
+      "variables": {}
+    },
+    "code.csharpMethod": {
+      "description": "For advanced users: calls a ready-made C# method that you wrote in a \"C# code\" step. Beginners can skip it; the normal steps do the same jobs without code.",
+      "fields": {
+        "codeName": "The \"Code name\" you gave a C# code step, or the name of its action.",
+        "method": "The name of the method to call. It needs no inputs and gives back yes/no or nothing. The default is Execute.",
+        "timeoutSeconds": "Stop the code after this many seconds so it cannot get stuck. 0 = no limit.",
+        "saveResult": "Tick to save the code's yes/no answer in a variable and always carry on. Unticked, a \"no\" (false) stops the action.",
+        "resultVariable": "The variable that receives the answer when \"Save result\" is ticked, without % signs."
+      },
+      "variables": {}
+    },
+    "code.python": {
+      "description": "For advanced users: runs a small program written in Python (a programming language). Beginners can skip it, because the other steps do the same things without code.",
+      "fields": {
+        "code": "The Python program. It runs with full access to your computer, so only use code you trust. Python is installed the first time one runs. Beginners: use the normal steps instead.",
+        "timeoutSeconds": "Stop the code after this many seconds so it cannot get stuck. 0 = no limit."
+      },
+      "variables": {}
+    },
+    "core.jsonCount": {
+      "description": "Counts the items in a list inside JSON, a common way web services send data. Mostly used after an HTTP request. Beginners rarely need it.",
+      "fields": {
+        "argument": "The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead.",
+        "json": "The JSON text itself, like [1,2,3]. Ignored when the first box (Read from argument) is filled in.",
+        "path": "Where the list is inside the data. $ = the whole thing. $.data = the list called data.",
+        "variable": "The variable that receives the count, without % signs. The default jsonCount means you use %jsonCount%."
+      },
+      "variables": {
+        "jsonCount": "How many items the list has (the variable name can be changed in the settings)",
+        "jsonFound": "True if the place in the data was found"
+      }
+    },
+    "core.jsonGetValue": {
+      "description": "Picks one value out of JSON, a common way web services send data, and saves it in a variable. Mostly used after an HTTP request. Beginners rarely need it.",
+      "fields": {
+        "argument": "The variable that holds the data, like httpResponse. Empty = use the text in the JSON box instead.",
+        "json": "The JSON text itself, like {\"name\":\"Kris\"}. Ignored when the first box (Read from argument) is filled in.",
+        "path": "Where the value is inside the data. $.name = the item called name. $.data[0].name = the name of the first entry in data.",
+        "variable": "The variable that receives the value, without % signs. The default jsonValue means you use %jsonValue%."
+      },
+      "variables": {
+        "jsonValue": "The value that was found (the variable name can be changed in the settings)",
+        "jsonFound": "True if the place in the data was found"
+      }
+    },
+    "timers.getState": {
+      "description": "Looks up a timer from the Timers page and tells you if it is on, how often it runs and how long until it goes off next.",
+      "fields": {
+        "timer": "The timer's name, exactly as on the Timers page. The default %timerName% is the timer that started this action."
+      },
+      "variables": {
+        "timerEnabled": "True if the timer is on",
+        "timerInterval": "How many seconds the timer waits between runs",
+        "timerSecondsRemaining": "Seconds until it goes off next (-1 if it is not counting down)",
+        "timerRepeat": "True if the timer repeats",
+        "timerChatLines": "How many chat messages came in since it last ran",
+        "timerStateName": "The timer's name"
+      }
+    },
+    "timers.setState": {
+      "description": "Turns a timer from the Timers page on, off or flips it, and can change how often it runs. Handy to speed up reminders when chat is busy. Not saved after a restart.",
+      "fields": {
+        "timer": "The timer's name, exactly as on the Timers page.",
+        "state": "Enable turns it on. Disable turns it off. Toggle switches it to the opposite. No change leaves it as it is.",
+        "interval": "A new wait between runs in whole seconds, like 600 for 10 minutes. Empty keeps the current time."
+      },
+      "variables": {}
+    },
+    "groups.addUser": {
+      "description": "Puts a viewer into a group of viewers, like \"VIPs\". Good for rewarding someone who did something special. Groups are lists you can use in commands and points.",
+      "fields": {
+        "group": "The group's name, like \"VIPs\".",
+        "platform": "The site the viewer is on, like twitch. The default %platform% means whoever started the action.",
+        "user": "The viewer's chat name. The default %user% means whoever started the action.",
+        "userId": "The viewer's id on their site. If known it is used first, otherwise the name is used. The default is whoever started the action.",
+        "create": "Tick to create the group if it does not exist yet. Unticked, a missing group gives an error."
+      },
+      "variables": {
+        "groupUserAdded": "True if they were added, false if they were already in the group"
+      }
+    },
+    "groups.clear": {
+      "description": "Takes every viewer out of a group but keeps the group itself. Good for starting over, like emptying a \"Giveaway winners\" list.",
+      "fields": {
+        "group": "The group's name, like \"Giveaway winners\". A wrong name gives an error."
+      },
+      "variables": {
+        "groupUsersRemoved": "How many viewers were taken out"
+      }
+    },
+    "groups.removeUser": {
+      "description": "Takes a viewer out of a group of viewers.",
+      "fields": {
+        "group": "The group's name, like \"VIPs\".",
+        "platform": "The site the viewer is on, like twitch. The default %platform% means whoever started the action.",
+        "user": "The viewer's chat name. The default %user% means whoever started the action.",
+        "userId": "The viewer's id on their site. If known it is used first, otherwise the name is used. The default is whoever started the action."
+      },
+      "variables": {
+        "groupUserRemoved": "True if they were removed, false if they were not in the group"
+      }
+    },
+    "groups.userInGroup": {
+      "description": "Checks if a viewer is in a group, then runs the True steps if yes or the False steps if no. Example: only VIPs may use a command.",
+      "fields": {
+        "group": "The group's name, like \"VIPs\".",
+        "platform": "The site the viewer is on, like twitch. The default %platform% means whoever started the action.",
+        "user": "The viewer's chat name. The default %user% means whoever started the action.",
+        "userId": "The viewer's id on their site. If known it is used first, otherwise the name is used. The default is whoever started the action.",
+        "argument": "The variable that receives the answer (true or false), without % signs. The default inGroup means you use %inGroup%."
+      },
+      "variables": {
+        "inGroup": "True if the viewer is in the group (the variable name can be changed in the settings)"
+      }
+    },
+    "users.addRandomPresentUser": {
+      "description": "Picks one random viewer who chatted recently and saves their name in variables. Great for \"a random viewer wins\" or \"shout-out someone\" actions.",
+      "fields": {
+        "platform": "Only pick viewers from this site. All means any site.",
+        "argument": "The start of the variable names, without % signs. The default randomUser gives %randomUser% (their name), %randomUserId% and more.",
+        "excludeCaller": "Tick so the viewer who started the action cannot be picked."
+      },
+      "variables": {
+        "randomUser": "The picked viewer's display name (the start of the name can be changed in the settings)",
+        "randomUserName": "Their chat name",
+        "randomUserId": "Their id on their site",
+        "randomUserPlatform": "The site they are on",
+        "randomUserFound": "True if someone could be picked"
+      }
+    },
+    "users.resetFirstWords": {
+      "description": "Forgets who has already chatted, so the \"First words\" trigger can welcome everyone again. It also resets by itself when you go live, unless switched off.",
+      "fields": {
+        "platform": "Only forget viewers on this site. All means every site."
+      },
+      "variables": {
+        "firstWordsReset": "How many viewers were forgotten"
+      }
+    },
+    "commands.getGroupState": {
+      "description": "Checks a group of chat commands and tells you if all, none or some are turned on. Command groups are made on the Commands page.",
+      "fields": {
+        "group": "The command group's name from the Commands page."
+      },
+      "variables": {
+        "commandGroupState": "0 = all are off, 1 = all are on, 2 = some on and some off",
+        "commandGroupEnabled": "True if the group has commands and all are on",
+        "commandGroupCount": "How many commands are in the group"
+      }
+    },
+    "commands.getState": {
+      "description": "Checks if one chat command is turned on, and how many times it has been used. Pair it with an If step to react.",
+      "fields": {
+        "command": "The command's name from the Commands page. The default %commandName% is the command that started this action."
+      },
+      "variables": {
+        "commandEnabled": "True if the command is on",
+        "commandStateName": "The command's name",
+        "commandCounter": "How many times the command has been used"
+      }
+    },
+    "commands.getCommands": {
+      "description": "Makes a ready list of your chat commands as text, like \"!hello, !discord, !uptime\". Good for a !commands reply.",
+      "fields": {
+        "argument": "The start of the variable names, without % signs. The default commands gives %commands% (the text), %commandsList% and %commandsCount%.",
+        "group": "Only list commands of this command group. Empty or All = every group.",
+        "show": "First alias = each command's first name. All aliases = every name a command answers to. Names = the name you gave it.",
+        "separator": "What goes between the commands, like a comma and a space.",
+        "includeDisabled": "Tick to also list commands that are turned off.",
+        "includeAll": "Tick to also list commands that are set to be left out of the list.",
+        "onlyPermitted": "Tick to list only the commands the viewer who started the action is allowed to use."
+      },
+      "variables": {
+        "commands": "The commands as one line of text (the variable name can be changed in the settings)",
+        "commandsCount": "How many commands were listed"
+      }
+    },
+    "commands.resetCounters": {
+      "description": "Sets a command's use counter back to zero, and/or the counters of single viewers. Useful for a \"counter\" command you want to restart.",
+      "fields": {
+        "command": "The command's name from the Commands page. The default %commandName% is the command that started this action.",
+        "reset": "Counter = the total count. User counters = the counts of single viewers. Both = both.",
+        "platform": "The site of the viewer, when you reset just one viewer. The default %platform% is whoever started the action.",
+        "user": "The id of the one viewer to reset. Empty = reset every viewer's counter."
+      },
+      "variables": {}
+    },
+    "commands.setGroupState": {
+      "description": "Turns all chat commands of a command group on or off, or flips them. Good for switching a whole set at once, like game commands.",
+      "fields": {
+        "group": "The command group's name from the Commands page.",
+        "state": "Enable turns them on. Disable turns them off. Toggle turns all on unless they already are, then turns them off."
+      },
+      "variables": {
+        "commandGroupCount": "How many commands were changed"
+      }
+    },
+    "commands.setState": {
+      "description": "Turns one chat command on or off, or flips it. Good for a command that should only work during part of the stream.",
+      "fields": {
+        "command": "The command's name from the Commands page. The default %commandName% is the command that started this action.",
+        "state": "Enable turns it on. Disable turns it off. Toggle switches it to the opposite."
+      },
+      "variables": {
+        "commandEnabled": "True if the command is on now"
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@
           <TextBox Text="{Binding Value}" PasswordChar="{Binding PasswordChar}" RevealPassword="{Binding Revealed}"
                    PlaceholderText="{Binding Placeholder}" />
           <ToggleButton Grid.Column="1" Content="Show" Margin="6,0,0,0" IsVisible="{Binding IsSecret}"
-                        IsChecked="{Binding Revealed}" />
+                        IsChecked="{Binding Revealed}" ToolTip.Tip="Shows or hides the secret code you typed." />
         </Grid>
         <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding SelectedChoice}" IsVisible="{Binding IsChoice}" />
       </StackPanel>
@@ -28,7 +28,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <TextBlock Classes="hint" Text="{Binding TestResult}" VerticalAlignment="Center" />
-              <Button Content="Test" Command="{Binding TestCommand}" ToolTip.Tip="List this engine's voices" />
+              <Button Content="Test" Command="{Binding TestCommand}" ToolTip.Tip="Checks that this speech engine works and lists the voices it offers." />
             </StackPanel>
           </Grid>
           <TextBlock Classes="hint" Text="{Binding Hint}" IsVisible="{Binding HasHint}" />
@@ -66,7 +66,7 @@
       <ItemsControl ItemsSource="{Binding LocalEngines}" />
       <TextBlock Classes="h2" Text="Cloud engines" Margin="0,8,0,4" />
       <TextBlock Classes="hint" Margin="0,0,0,10"
-                 Text="Credentials are stored in speech.json in your data folder. They are masked here and never written to the log." />
+                 Text="These engines run on the internet and need an account with the company. Your keys and passwords are stored in speech.json in your data folder, hidden here and never written to the log." />
       <ItemsControl ItemsSource="{Binding CloudEngines}" />
     </StackPanel>
   </Grid>

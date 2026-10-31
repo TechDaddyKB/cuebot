@@ -21,8 +21,9 @@
                 <StackPanel Spacing="8">
                   <TextBlock Classes="h2" Text="What went wrong?" />
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="Describe the problem; Cuebot adds versions, system details and recent log lines with secrets removed. Nothing is sent until you click a send button, and you can edit the preview first." />
-                  <TextBox x:Name="ReportTitle" Text="{Binding Title}" PlaceholderText="Title (a short summary)" />
+                             Text="Describe the problem. Cuebot adds its version, details about your computer and the latest log lines (the app's diary), with secrets removed. Nothing is sent until you click a send button, and you can edit the preview first." />
+                  <TextBox x:Name="ReportTitle" Text="{Binding Title}" PlaceholderText="Title (a short summary)"
+                           ToolTip.Tip="A short headline for your problem. It is required before you can send." />
                   <TextBox Text="{Binding Summary}" PlaceholderText="What happened?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
                   <TextBox Text="{Binding Steps}" PlaceholderText="Steps to reproduce (1. ... 2. ...)" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
                   <TextBox Text="{Binding Expected}" PlaceholderText="What did you expect?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
@@ -32,17 +33,24 @@
               <Border Classes="card">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="h2" Text="Include" />
-                  <CheckBox Content="Connection states (Twitch, OBS, ...)" IsChecked="{Binding IncludeConnections}" />
-                  <CheckBox Content="App settings (app.json)" IsChecked="{Binding IncludeAppSettings}" />
-                  <CheckBox Content="Module settings files (tokens, keys and passwords removed)" IsChecked="{Binding IncludeModuleSettings}" />
-                  <CheckBox Content="Recent log lines" IsChecked="{Binding IncludeLog}" />
-                  <CheckBox IsChecked="{Binding IncludeCrash}" IsVisible="{Binding HasCrash}">
+                  <CheckBox Content="Connection states (Twitch, OBS, ...)" IsChecked="{Binding IncludeConnections}"
+                            ToolTip.Tip="Adds whether each connection (Twitch, OBS and so on) was working. It helps the developers see what is broken." />
+                  <CheckBox Content="App settings (app.json)" IsChecked="{Binding IncludeAppSettings}"
+                            ToolTip.Tip="Adds Cuebot's general settings file to the report." />
+                  <CheckBox Content="Module settings files (tokens, keys and passwords removed)" IsChecked="{Binding IncludeModuleSettings}"
+                            ToolTip.Tip="Adds the settings of each part of Cuebot (Twitch, OBS and so on). Secret codes and passwords are removed first." />
+                  <CheckBox Content="Recent log lines" IsChecked="{Binding IncludeLog}"
+                            ToolTip.Tip="Adds the latest lines from Cuebot's log (its diary of what it did), with secrets removed." />
+                  <CheckBox IsChecked="{Binding IncludeCrash}" IsVisible="{Binding HasCrash}"
+                            ToolTip.Tip="Adds the details of the last crash to the report.">
                     <TextBlock Text="{Binding CrashLabel}" TextWrapping="Wrap" />
                   </CheckBox>
-                  <CheckBox Content="Include account names (logins, channel names, user ids)" IsChecked="{Binding IncludeAccountNames}" />
+                  <CheckBox Content="Include account names (logins, channel names, user ids)" IsChecked="{Binding IncludeAccountNames}"
+                            ToolTip.Tip="Leave this unticked to keep your channel and account names private. Reports are public, so tick it only if the developers need to see them." />
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="Tokens, passwords, stream keys, API keys, client secrets, JWTs, OAuth codes and webhook URLs are always removed. Account names are replaced unless you tick the last box." />
-                  <Button Content="Refresh collected info" Command="{Binding RefreshCommand}" />
+                             Text="Secret codes, passwords, stream keys and private web links are always removed from the report. Account names are replaced unless you tick the last box." />
+                  <Button Content="Refresh collected info" Command="{Binding RefreshCommand}"
+                          ToolTip.Tip="Collects the details again, for example after something changed, and rebuilds the preview." />
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -51,25 +59,34 @@
               <Border Classes="card">
                 <StackPanel Spacing="8">
                   <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="Rebuild preview" Command="{Binding RebuildPreviewCommand}" />
+                    <Button DockPanel.Dock="Right" Content="Rebuild preview" Command="{Binding RebuildPreviewCommand}"
+                            ToolTip.Tip="Creates the preview again from the form on the left. Any changes you typed into the preview are lost." />
                     <TextBlock Classes="h2" Text="Preview (exactly what will be sent)" VerticalAlignment="Center" Margin="0" />
                   </DockPanel>
                   <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding PreviewEdited}"
                              Text="You edited the preview; changing the form no longer updates it. Rebuild preview discards your edits." />
                   <TextBox x:Name="PreviewBox" Text="{Binding Preview}" AcceptsReturn="True" TextWrapping="Wrap" Height="420"
+                           ToolTip.Tip="This is exactly what will be sent. You can read it and change or delete anything before you send."
                            FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" />
                   <WrapPanel Orientation="Horizontal">
                     <Button x:Name="SendReportButton" Classes="accent" Content="Send report" Command="{Binding SendCommand}" IsEnabled="{Binding !IsBusy}" Margin="0,0,8,8"
                             ToolTip.Tip="Files exactly the text above as an issue on Cuebot's GitHub; no GitHub account needed. Issues are public." />
-                    <Button Content="Open the issue" Command="{Binding OpenSentIssueCommand}" IsVisible="{Binding HasIssue}" Margin="0,0,8,8" />
-                    <Button x:Name="OpenIssueButton" Content="Open GitHub issue in browser" Command="{Binding OpenIssueCommand}" Margin="0,0,8,8" />
-                    <Button x:Name="GhButton" Content="Submit with gh…" Command="{Binding PrepareGhCommand}" IsVisible="{Binding GhAvailable}" Margin="0,0,8,8" />
-                    <Button Content="Copy report" Command="{Binding CopyReportCommand}" Margin="0,0,8,8" />
-                    <Button Content="Save report" Command="{Binding SaveReportCommand}" Margin="0,0,8,8" />
-                    <Button Content="Open reports folder" Command="{Binding OpenReportsFolderCommand}" Margin="0,0,8,8" />
+                    <Button Content="Open the issue" Command="{Binding OpenSentIssueCommand}" IsVisible="{Binding HasIssue}" Margin="0,0,8,8"
+                            ToolTip.Tip="Opens the report you just sent in your web browser." />
+                    <Button x:Name="OpenIssueButton" Content="Open GitHub issue in browser" Command="{Binding OpenIssueCommand}" Margin="0,0,8,8"
+                            ToolTip.Tip="Opens GitHub in your web browser with the report filled in, so you can send it yourself from your own GitHub account. Reports there are public." />
+                    <Button x:Name="GhButton" Content="Submit with gh…" Command="{Binding PrepareGhCommand}" IsVisible="{Binding GhAvailable}" Margin="0,0,8,8"
+                            ToolTip.Tip="For people who use the GitHub command-line tool (gh). Shows the command first; nothing is sent until you press Run command." />
+                    <Button Content="Copy report" Command="{Binding CopyReportCommand}" Margin="0,0,8,8"
+                            ToolTip.Tip="Copies the report text so you can paste it somewhere, for example into a message." />
+                    <Button Content="Save report" Command="{Binding SaveReportCommand}" Margin="0,0,8,8"
+                            ToolTip.Tip="Saves the report as a file on this computer. Nothing is sent." />
+                    <Button Content="Open reports folder" Command="{Binding OpenReportsFolderCommand}" Margin="0,0,8,8"
+                            ToolTip.Tip="Opens the folder where saved reports are kept." />
                   </WrapPanel>
                   <CheckBox Content="Send crash reports automatically (Cuebot sends the crash and its scrubbed log when it starts after a crash)"
-                            IsChecked="{Binding SendCrashesAutomatically}" />
+                            IsChecked="{Binding SendCrashesAutomatically}"
+                            ToolTip.Tip="When ticked, Cuebot sends a public crash report by itself the next time it starts after a crash. Secrets are removed first." />
                   <TextBlock Classes="muted" TextWrapping="Wrap" FontSize="12"
                              Text="Sent reports become public issues on github.com/TechDaddyKB/cuebot. Secrets and e-mail addresses are removed first, and account names unless you include them." />
                   <Border x:Name="GhConfirm" IsVisible="{Binding IsGhConfirming}" BorderBrush="{DynamicResource CuebotAccent}" BorderThickness="1"
@@ -78,8 +95,9 @@
                       <TextBlock TextWrapping="Wrap" Text="This runs the GitHub CLI with your GitHub account and creates a public issue:" />
                       <SelectableTextBlock Text="{Binding GhCommand}" TextWrapping="Wrap" FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" FontSize="12" />
                       <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Classes="accent" Content="Run command" Command="{Binding RunGhCommand}" IsEnabled="{Binding !IsBusy}" />
-                        <Button Content="Cancel" Command="{Binding CancelGhCommand}" />
+                        <Button Classes="accent" Content="Run command" Command="{Binding RunGhCommand}" IsEnabled="{Binding !IsBusy}"
+                                ToolTip.Tip="Runs the command shown above. This sends your report as a public GitHub issue from your GitHub account." />
+                        <Button Content="Cancel" Command="{Binding CancelGhCommand}" ToolTip.Tip="Does not send anything and hides the command." />
                       </StackPanel>
                     </StackPanel>
                   </Border>
@@ -105,16 +123,19 @@
                   <TextBlock x:Name="CurrentVersion" Text="{Binding CurrentVersion}" FontWeight="SemiBold" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Classes="muted" Text="Package" Width="120" VerticalAlignment="Center" />
+                  <TextBlock Classes="muted" Text="Package" Width="120" VerticalAlignment="Center" ToolTip.Tip="How Cuebot was installed on this computer (for example installer or portable). It decides which download fits you." />
                   <TextBlock Text="{Binding Package}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Classes="muted" Text="Channel" Width="120" VerticalAlignment="Center" />
-                  <ComboBox ItemsSource="{x:Static vm:UpdatesViewModel.Channels}" SelectedItem="{Binding Channel}" MinWidth="160" />
+                  <ComboBox ItemsSource="{x:Static vm:UpdatesViewModel.Channels}" SelectedItem="{Binding Channel}" MinWidth="160"
+                            ToolTip.Tip="Stable only offers finished releases. Prerelease also offers early test versions that may still have bugs." />
                 </StackPanel>
-                <CheckBox Content="Check for updates when Cuebot starts (at most once a day)" IsChecked="{Binding CheckOnStart}" />
+                <CheckBox Content="Check for updates when Cuebot starts (at most once a day)" IsChecked="{Binding CheckOnStart}"
+                          ToolTip.Tip="Lets Cuebot look on GitHub for a newer version when it starts. It only tells you; it never installs anything." />
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                  <Button x:Name="CheckNowButton" Classes="accent" Content="Check now" Command="{Binding CheckNowCommand}" IsEnabled="{Binding !IsChecking}" />
+                  <Button x:Name="CheckNowButton" Classes="accent" Content="Check now" Command="{Binding CheckNowCommand}" IsEnabled="{Binding !IsChecking}"
+                            ToolTip.Tip="Looks on GitHub right now for a newer version of Cuebot." />
                   <TextBlock Classes="muted" Text="{Binding LastChecked}" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock x:Name="UpdateStatus" TextWrapping="Wrap" Text="{Binding Status}" />
@@ -128,8 +149,10 @@
                 <TextBox Text="{Binding ReleaseNotes}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="260" />
                 <TextBlock TextWrapping="Wrap" Text="{Binding Instructions}" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Button Classes="accent" Content="Open release page" Command="{Binding OpenReleasePageCommand}" />
-                  <Button Command="{Binding DownloadCommand}" IsVisible="{Binding HasDownload}">
+                  <Button Classes="accent" Content="Open release page" Command="{Binding OpenReleasePageCommand}"
+                          ToolTip.Tip="Opens the new version's page on GitHub in your web browser." />
+                  <Button Command="{Binding DownloadCommand}" IsVisible="{Binding HasDownload}"
+                          ToolTip.Tip="Opens the download link for your kind of install in your web browser. Cuebot does not install it for you.">
                     <TextBlock Text="{Binding DownloadLabel}" />
                   </Button>
                 </StackPanel>

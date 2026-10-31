@@ -12,10 +12,12 @@
       <Border Classes="card">
         <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Classes="label" Text="Default alias" />
-          <ComboBox Grid.Row="1" x:Name="DefaultAliasPicker" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding DefaultAlias}" />
+          <ComboBox Grid.Row="1" x:Name="DefaultAliasPicker" ItemsSource="{Binding AliasChoices}" SelectedItem="{Binding DefaultAlias}"
+                    ToolTip.Tip="The voice used when nothing else says which voice to use." />
           <TextBlock Grid.Row="2" Classes="hint" Text="Used whenever no alias is given or the given one does not exist." Margin="0,4,0,0" />
           <TextBlock Grid.Column="2" Classes="label" Text="Highlighted messages alias" />
-          <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding HighlightChoices}" SelectedItem="{Binding HighlightAlias}" />
+          <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding HighlightChoices}" SelectedItem="{Binding HighlightAlias}"
+                    ToolTip.Tip="The voice used for chat messages that viewers highlighted with channel points." />
           <TextBlock Grid.Column="2" Grid.Row="2" Classes="hint" Text="Channel-point highlighted chat messages speak with this voice." Margin="0,4,0,0" />
         </Grid>
       </Border>
@@ -25,9 +27,9 @@
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Voice aliases" />
             <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-              <Button Content="+ Alias" Classes="accent" Command="{Binding AddCommand}" Margin="0,0,6,6" />
-              <Button Content="Duplicate" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" />
-              <Button Content="Remove" Command="{Binding RemoveCommand}" Margin="0,0,6,6" />
+              <Button Content="+ Alias" Classes="accent" Command="{Binding AddCommand}" Margin="0,0,6,6" ToolTip.Tip="Creates a new voice alias." />
+              <Button Content="Duplicate" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" ToolTip.Tip="Makes a copy of the selected alias, to change a little." />
+              <Button Content="Remove" Command="{Binding RemoveCommand}" Margin="0,0,6,6" ToolTip.Tip="Deletes the selected alias." />
             </WrapPanel>
             <ListBox Classes="list" ItemsSource="{Binding Aliases}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="520">
               <ListBox.ItemTemplate>
@@ -44,7 +46,7 @@
 
         <StackPanel Grid.Column="2">
           <Border Classes="card" IsVisible="{Binding !HasSelection}">
-            <TextBlock Classes="hint" Text="Add an alias: a named voice used by Speak sub-actions, chat reading, events and scripts. Change the voice behind an alias without editing actions." />
+            <TextBlock Classes="hint" Text="A voice alias is a name for a voice, like Narrator. Your Speak sub-actions, chat reading, events and scripts use the name. Later you can change which voice is behind the name without editing any action. Press + Alias to make one." />
           </Border>
           <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
             <ContentControl.ContentTemplate>
@@ -53,9 +55,9 @@
                   <StackPanel Spacing="10">
                     <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
                       <TextBlock Classes="label" Text="Name" />
-                      <TextBox Grid.Row="1" Text="{Binding Name}" />
+                      <TextBox Grid.Row="1" Text="{Binding Name}" ToolTip.Tip="The name actions use to pick this voice, like Narrator." />
                       <TextBlock Grid.Column="2" Classes="label" Text="Output device" />
-                      <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding Devices}" SelectedItem="{Binding Device}" />
+                      <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding Devices}" SelectedItem="{Binding Device}" ToolTip.Tip="Which speaker plays this voice. Leave on the default to use your normal speaker." />
                     </Grid>
 
                     <Grid ColumnDefinitions="*,Auto">
@@ -63,8 +65,8 @@
                       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                         <TextBlock Classes="label" Text="Pick" VerticalAlignment="Center" IsVisible="{Binding IsMultiVoice}" />
                         <ComboBox ItemsSource="{Binding Selections}" SelectedItem="{Binding Selection}" MinWidth="140"
-                                  IsVisible="{Binding IsMultiVoice}" />
-                        <Button Content="+ Voice" Command="{Binding AddVoiceCommand}" />
+                                  IsVisible="{Binding IsMultiVoice}" ToolTip.Tip="How a voice is chosen each time: Random picks any, Round robin takes them one after another." />
+                        <Button Content="+ Voice" Command="{Binding AddVoiceCommand}" ToolTip.Tip="Adds another voice to this alias, so it can switch between several voices." />
                       </StackPanel>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding Voices}">
@@ -73,9 +75,9 @@
                           <Border Classes="inset" Margin="0,0,0,6">
                             <StackPanel Spacing="4">
                               <Grid ColumnDefinitions="240,8,*,8,Auto,8,Auto">
-                                <ComboBox ItemsSource="{Binding EngineChoices}" SelectedItem="{Binding Engine}" />
+                                <ComboBox ItemsSource="{Binding EngineChoices}" SelectedItem="{Binding Engine}" ToolTip.Tip="The speech engine (the program or service that makes the voice)." />
                                 <ComboBox Grid.Column="2" ItemsSource="{Binding VoiceOptions}" SelectedItem="{Binding SelectedVoice}"
-                                          PlaceholderText="Voice">
+                                          PlaceholderText="Voice" ToolTip.Tip="The voice from that engine.">
                                   <ComboBox.ItemTemplate>
                                     <DataTemplate DataType="sp:VoiceOption">
                                       <TextBlock>
@@ -87,9 +89,9 @@
                                 <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowWeight}">
                                   <TextBlock Classes="label" Text="Weight" VerticalAlignment="Center" Margin="0" />
                                   <NumericUpDown Value="{Binding Weight}" Minimum="1" Maximum="100" Width="110"
-                                                 ToolTip.Tip="Relative chance in random selection" />
+                                                 ToolTip.Tip="How likely this voice is picked compared with the other voices. A voice with weight 2 is picked twice as often as one with weight 1." />
                                 </StackPanel>
-                                <Button Grid.Column="6" Content="Remove" IsVisible="{Binding CanRemove}"
+                                <Button Grid.Column="6" Content="Remove" IsVisible="{Binding CanRemove}" ToolTip.Tip="Takes this voice out of the alias."
                                         Command="{Binding $parent[ItemsControl].((sp:VoiceAliasEditorViewModel)DataContext).RemoveVoiceCommand}"
                                         CommandParameter="{Binding}" />
                               </Grid>
@@ -102,15 +104,15 @@
 
                     <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
                       <TextBlock Classes="label" Text="{Binding Volume, StringFormat='Volume: {0:0}%'}" />
-                      <Slider Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding Volume}" />
+                      <Slider Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding Volume}" ToolTip.Tip="How loud the voice is, from 0 to 100 percent." />
                       <TextBlock Grid.Column="2" Classes="label" Text="{Binding Rate, StringFormat='Rate: {0:0}'}" />
-                      <Slider Grid.Column="2" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Rate}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                      <Slider Grid.Column="2" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Rate}" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="How fast the voice talks. 0 is normal, below 0 is slower, above 0 is faster." />
                       <TextBlock Grid.Column="4" Classes="label" Text="{Binding Pitch, StringFormat='Pitch: {0:0}'}" />
-                      <Slider Grid.Column="4" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Pitch}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                      <Slider Grid.Column="4" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Pitch}" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="How high or deep the voice sounds. 0 is normal, below 0 is deeper, above 0 is higher." />
                     </Grid>
                     <StackPanel Spacing="3" IsVisible="{Binding HasStyles}">
                       <TextBlock Classes="label" Text="Speaking style" />
-                      <ComboBox ItemsSource="{Binding Styles}" SelectedItem="{Binding Style}" MaxWidth="320" HorizontalAlignment="Left" />
+                      <ComboBox ItemsSource="{Binding Styles}" SelectedItem="{Binding Style}" MaxWidth="320" HorizontalAlignment="Left" ToolTip.Tip="The mood the voice speaks in, like cheerful or sad. Only some voices offer this." />
                     </StackPanel>
                   </StackPanel>
                 </Border>
@@ -122,8 +124,8 @@
             <StackPanel Spacing="8">
               <TextBlock Classes="h2" Text="Test this alias" />
               <Grid ColumnDefinitions="*,8,Auto">
-                <TextBox Text="{Binding TestText}" />
-                <Button Grid.Column="2" Content="Test voice" Classes="accent" Command="{Binding TestCommand}" />
+                <TextBox Text="{Binding TestText}" ToolTip.Tip="The words to speak for the test." />
+                <Button Grid.Column="2" Content="Test voice" Classes="accent" Command="{Binding TestCommand}" ToolTip.Tip="Speaks the test words out loud with this alias." />
               </Grid>
               <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             </StackPanel>

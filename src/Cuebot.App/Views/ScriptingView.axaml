@@ -9,7 +9,7 @@
     <StackPanel MaxWidth="980" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Scripting" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                 Text="Add 'Execute C# code' or 'Execute Python code' sub-actions to run your own code. Scripts are trusted code with full access to your computer — only run code you understand." />
+                 Text="This page is for people who write code. Add an 'Execute C# code' or 'Execute Python code' step to an action to run your own program. A script can do anything on your computer, so only run code you understand and trust." />
 
       <Grid ColumnDefinitions="*,12,*">
         <Border Classes="card">
@@ -20,10 +20,11 @@
             </TextBlock>
             <TextBlock Text="{Binding StatusMessage}" Classes="muted" TextWrapping="Wrap" />
             <Button Content="{Binding InstallButtonText}" Classes="accent" Command="{Binding InstallRuntimeCommand}"
-                    IsVisible="{Binding CanInstall}" IsEnabled="{Binding !IsBusy}" />
-            <CheckBox Content="Install Python automatically the first time a Python step runs" IsChecked="{Binding InstallPythonAutomatically}" />
+                    IsVisible="{Binding CanInstall}" IsEnabled="{Binding !IsBusy}"
+                    ToolTip.Tip="Downloads and sets up Python (a programming language) for Cuebot, so Python steps in your actions can run." />
+            <CheckBox Content="Install Python automatically the first time a Python step runs" IsChecked="{Binding InstallPythonAutomatically}" ToolTip.Tip="Ticked: Cuebot downloads Python by itself the first time an action needs it. Unticked: you install it here with the button." />
             <TextBlock Text="Advanced: use an existing Python interpreter instead" Classes="muted" />
-            <TextBox Text="{Binding CustomPythonPath}" PlaceholderText="/usr/bin/python3 or C:\Python313\python.exe" />
+            <TextBox Text="{Binding CustomPythonPath}" PlaceholderText="/usr/bin/python3 or C:\Python313\python.exe" ToolTip.Tip="Optional. The location of a Python program already on your computer, if you want Cuebot to use it instead of its own. Leave empty otherwise." />
           </StackPanel>
         </Border>
 
@@ -31,9 +32,9 @@
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Python packages" />
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto,8,Auto" Margin="0,0,0,8" IsEnabled="{Binding IsReady}">
-              <TextBox Text="{Binding PackageSpec}" PlaceholderText="requests or numpy==2.1.0" />
-              <Button Grid.Column="2" Content="Install" Command="{Binding InstallPackageCommand}" IsEnabled="{Binding !IsBusy}" />
-              <Button Grid.Column="4" Content="Refresh" Command="{Binding RefreshPackagesCommand}" />
+              <TextBox Text="{Binding PackageSpec}" PlaceholderText="requests or numpy==2.1.0" ToolTip.Tip="The name of an add-on library for Python scripts (a package), optionally with a version, like numpy==2.1.0." />
+              <Button Grid.Column="2" Content="Install" Command="{Binding InstallPackageCommand}" IsEnabled="{Binding !IsBusy}" ToolTip.Tip="Downloads and adds that package for your Python scripts." />
+              <Button Grid.Column="4" Content="Refresh" Command="{Binding RefreshPackagesCommand}" ToolTip.Tip="Reads the list of installed packages again." />
             </Grid>
             <ListBox ItemsSource="{Binding Packages}" MaxHeight="240" Background="Transparent">
               <ListBox.ItemTemplate>
@@ -42,7 +43,7 @@
                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
                     <TextBlock Grid.Column="1" Text="{Binding Version}" Classes="muted" VerticalAlignment="Center" Margin="8,0" />
                     <Button Grid.Column="2" Content="Remove" Command="{Binding #Root.((vm:ScriptingViewModel)DataContext).UninstallPackageCommand}"
-                            CommandParameter="{Binding}" />
+                            CommandParameter="{Binding}" ToolTip.Tip="Uninstalls this package. Scripts that use it will stop working." />
                   </Grid>
                 </DataTemplate>
               </ListBox.ItemTemplate>
@@ -63,7 +64,7 @@
         <StackPanel Spacing="6">
           <TextBlock Classes="h2" Text="Script API" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="C#: await Cb.Call(&quot;name&quot;, new { ... }), Args[&quot;user&quot;]. Python: cb.call(&quot;name&quot;, key=value), cb.get_arg(&quot;user&quot;). Return false to stop the action." />
+                     Text="For script writers. In C#, use await Cb.Call(&quot;name&quot;, new { ... }) to use a function and Args[&quot;user&quot;] to read a variable. In Python, use cb.call(&quot;name&quot;, key=value) and cb.get_arg(&quot;user&quot;). Return false to stop the rest of the action. The functions you can use are listed below." />
           <ItemsControl ItemsSource="{Binding Functions}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="x:String">

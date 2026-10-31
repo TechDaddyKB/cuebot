@@ -7,7 +7,7 @@
     <StackPanel MaxWidth="760" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Webhook services" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Ko-fi, Patreon, Fourthwall, Shopify, Throne and your own hooks reach Cuebot through your relay. Each delivery is verified here with the secret you enter, or for Throne with its published signing key (deliveries that do not match are dropped), then becomes triggers, activity feed items, event speech and credits. Secrets are stored in webhooks.json, masked here and never written to the log." />
+                 Text="Ko-fi, Patreon, Fourthwall, Shopify, Throne and your own hooks reach Cuebot through your relay (see the Relay tab). Cuebot checks each message with the secret you enter, or for Throne with its public key, so fakes are thrown away. A real message becomes triggers, items in the activity feed, spoken events and credits. Secrets are saved in webhooks.json, hidden here and never written to the log." />
 
       <ItemsControl ItemsSource="{Binding Services}">
         <ItemsControl.ItemTemplate>
@@ -16,19 +16,19 @@
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="h2" Text="{Binding Name}" />
-                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="Enabled" OffContent="Off" />
+                  <ToggleSwitch Grid.Column="1" IsChecked="{Binding Enabled}" OnContent="Enabled" OffContent="Off" ToolTip.Tip="Switches this service on or off. When off, its messages are ignored." />
                 </Grid>
                 <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Help}" />
-                <TextBox Name="Secret" Text="{Binding Secret}" PasswordChar="•" PlaceholderText="{Binding SecretLabel}" />
+                <TextBox Name="Secret" Text="{Binding Secret}" PasswordChar="•" PlaceholderText="{Binding SecretLabel}" ToolTip.Tip="The secret code you set up on the service's website. Cuebot uses it to check that messages really come from that service. It is hidden as dots. Keep it private." />
                 <TextBlock Classes="muted" Text="{Binding MaskedSecret}" />
                 <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding CanGenerate}">
-                  <Button Content="Generate token" Command="{Binding GenerateCommand}" />
+                  <Button Content="Generate token" Command="{Binding GenerateCommand}" ToolTip.Tip="Makes a random token (a secret code) and shows it. Add it to the end of the web address you give to the service (as /token or ?token=token). Once it is set, messages without it are refused." />
                   <SelectableTextBlock Text="{Binding GeneratedToken}" VerticalAlignment="Center" FontFamily="monospace" />
                 </StackPanel>
                 <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding LastDelivery}" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="180" />
-                  <Button Content="Send test event" Command="{Binding SendTestCommand}" />
+                  <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="180" ToolTip.Tip="The kind of pretend event to send." />
+                  <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to Cuebot, so you can try your triggers and actions. Nothing is sent to the real service." />
                 </StackPanel>
                 <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
               </StackPanel>
@@ -41,10 +41,10 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Custom webhooks" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Your own hooks for IFTTT, Zapier, scripts or other apps: call …/custom/&lt;name&gt;?token=&lt;token&gt; (or send the token in an X-Cuebot-Token header). The Custom Webhook trigger gets the hook name, method, headers, query, body and the body's top-level JSON keys as arguments." />
+                     Text="Your own hooks for IFTTT, Zapier, scripts or other apps. Another program calls a web address ending in /custom/&lt;name&gt;?token=&lt;token&gt; (or sends the token in an X-Cuebot-Token header). The Custom Webhook trigger then gets the hook name, method, headers, query, body and the body's top-level JSON keys as variables." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBox Text="{Binding NewName}" PlaceholderText="Hook name, e.g. doorbell" MinWidth="240" />
-            <Button Content="Add hook" Classes="accent" Command="{Binding AddCommand}" />
+            <TextBox Text="{Binding NewName}" PlaceholderText="Hook name, e.g. doorbell" MinWidth="240" ToolTip.Tip="A short name for your hook. It becomes part of the web address that the other program calls." />
+            <Button Content="Add hook" Classes="accent" Command="{Binding AddCommand}" ToolTip.Tip="Creates the hook and a secret token for it." />
           </StackPanel>
           <TextBlock Classes="muted" Text="No custom hooks yet." IsVisible="{Binding HasNoHooks}" />
           <ItemsControl ItemsSource="{Binding Hooks}">
@@ -55,13 +55,13 @@
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <TextBlock Classes="muted" Text="{Binding MaskedToken}" IsVisible="{Binding !ShowToken}" VerticalAlignment="Center" />
                     <SelectableTextBlock Text="{Binding Token}" IsVisible="{Binding ShowToken}" FontFamily="monospace" VerticalAlignment="Center" />
-                    <CheckBox Content="Show" IsChecked="{Binding ShowToken}" />
+                    <CheckBox Content="Show" IsChecked="{Binding ShowToken}" ToolTip.Tip="Shows the secret token instead of dots. Do not show it on stream." />
                   </StackPanel>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
-                    <ToggleSwitch IsChecked="{Binding Enabled}" OnContent="On" OffContent="Off" />
-                    <Button Content="Test" Command="{Binding TestCommand}" />
-                    <Button Content="New token" Command="{Binding RegenerateCommand}" />
-                    <Button Content="Remove" Command="{Binding RemoveCommand}" />
+                    <ToggleSwitch IsChecked="{Binding Enabled}" OnContent="On" OffContent="Off" ToolTip.Tip="Switches this hook on or off. When off, calls to it are ignored." />
+                    <Button Content="Test" Command="{Binding TestCommand}" ToolTip.Tip="Pretends this hook was called, so you can try your triggers. Nothing leaves your computer." />
+                    <Button Content="New token" Command="{Binding RegenerateCommand}" ToolTip.Tip="Makes a new secret token. The old one stops working, so update every program that calls this hook." />
+                    <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this hook. Programs that call it will stop working." />
                   </StackPanel>
                 </Grid>
               </DataTemplate>

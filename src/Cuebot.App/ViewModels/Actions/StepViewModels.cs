@@ -16,6 +16,16 @@ public abstract partial class EditorItemViewModel : ObservableObject
     public abstract string Title { get; }
     public virtual string Summary => "";
     public virtual IReadOnlyList<ParameterViewModel> Parameters => [];
+
+    /// <summary>Plain-language help from <see cref="ActionHelp"/>, shown above the settings.</summary>
+    protected virtual HelpEntry? Help => null;
+
+    public string Description => Help?.Description ?? "";
+    public bool HasDescription => Description.Length > 0;
+
+    /// <summary>The %variables% this item gives the action, as "%name% — meaning" lines.</summary>
+    public IReadOnlyList<string> Variables => Help?.Variables.Select(kv => $"%{kv.Key}% — {kv.Value}").ToArray() ?? [];
+    public bool HasVariables => Help is { Variables.Count: > 0 };
 }
 
 public sealed partial class TriggerItemViewModel : EditorItemViewModel
@@ -28,8 +38,12 @@ public sealed partial class TriggerItemViewModel : EditorItemViewModel
         Definition = definition;
         Type = type;
         _changed = changed;
-        Parameters = type?.Parameters.Select(d => ParameterViewModel.Create(d, definition.Settings, OnParameterChanged)).ToArray() ?? [];
+        Help = type is null ? null : ActionHelp.Trigger(type.TypeId);
+        Parameters = type is null ? [] : ActionHelp.WithHelp(Help, type.Parameters)
+            .Select(d => ParameterViewModel.Create(d, definition.Settings, OnParameterChanged)).ToArray();
     }
+
+    protected override HelpEntry? Help { get; }
 
     public TriggerDefinition Definition { get; }
     public ITriggerType? Type { get; }
@@ -86,7 +100,9 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
         _owner = owner;
         Parent = parent;
         Handler = owner.Registry.GetSubAction(definition.Type);
-        Parameters = Handler?.Parameters.Select(d => ParameterViewModel.Create(d, definition.Parameters, OnParameterChanged)).ToArray() ?? [];
+        Help = Handler is null ? null : ActionHelp.SubAction(Handler.TypeId);
+        Parameters = Handler is null ? [] : ActionHelp.WithHelp(Help, Handler.Parameters)
+            .Select(d => ParameterViewModel.Create(d, definition.Parameters, OnParameterChanged)).ToArray();
         Branches = new ObservableCollection<BranchViewModel>(
             CurrentBranchNames().Select(name => new BranchViewModel(this, name, new StepListViewModel(definition.Branch(name), owner, this))));
     }
@@ -112,6 +128,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
 
     public SubActionDefinition Definition { get; }
     public ISubActionHandler? Handler { get; }
+    protected override HelpEntry? Help { get; }
     public StepListViewModel Parent { get; internal set; }
     public override IReadOnlyList<ParameterViewModel> Parameters { get; }
     public ObservableCollection<BranchViewModel> Branches { get; }

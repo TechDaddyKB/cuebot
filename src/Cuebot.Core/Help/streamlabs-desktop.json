@@ -1,0 +1,225 @@
+{
+  "triggers": {
+    "slobs.connected": {
+      "description": "Runs when Cuebot connects to Streamlabs Desktop.",
+      "fields": {},
+      "variables": {
+        "sd.name": "The name of the connection",
+        "sd.host": "The computer Streamlabs Desktop runs on"
+      }
+    },
+    "slobs.disconnected": {
+      "description": "Runs when Cuebot loses its connection to Streamlabs Desktop, for example when you close it.",
+      "fields": {},
+      "variables": {
+        "reason": "Why the connection ended",
+        "sd.name": "The name of the connection"
+      }
+    },
+    "slobs.sceneChanged": {
+      "description": "Runs when Streamlabs Desktop switches to another scene.",
+      "fields": {
+        "scene": "Only react to this scene, typed exactly as Streamlabs Desktop shows it. Leave empty for any scene."
+      },
+      "variables": {
+        "sceneName": "The scene it switched to",
+        "previousScene": "The scene it was on before",
+        "sceneId": "Streamlabs's id for the new scene"
+      }
+    },
+    "slobs.streamStarted": {
+      "description": "Runs when Streamlabs Desktop starts streaming. Good for a \"going live\" message.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.streamStopped": {
+      "description": "Runs when Streamlabs Desktop stops streaming.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.recordStarted": {
+      "description": "Runs when Streamlabs Desktop starts recording.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.recordStopped": {
+      "description": "Runs when Streamlabs Desktop stops recording.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.replayBufferSaved": {
+      "description": "Runs when Streamlabs Desktop saves a replay clip (the last moments of your stream).",
+      "fields": {},
+      "variables": {
+        "savedReplayPath": "Where the replay file was saved"
+      }
+    }
+  },
+  "subActions": {
+    "slobs.setScene": {
+      "description": "Switches Streamlabs Desktop to another scene.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\"."
+      },
+      "variables": {}
+    },
+    "slobs.getCurrentScene": {
+      "description": "Finds out which scene Streamlabs Desktop is showing and keeps its name for later steps.",
+      "fields": {
+        "resultArgument": "The name of the variable that will hold the scene name, so later steps can use it as %name%. The default is slobsScene. Leave empty to not keep it."
+      },
+      "variables": {
+        "slobsScene": "The scene that is showing now (or the name you chose above)",
+        "currentScene": "The same scene name"
+      }
+    },
+    "slobs.setSourceVisibility": {
+      "description": "Shows or hides one source (like a camera or image) inside a scene.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "source": "The source name exactly as Streamlabs Desktop shows it, like \"Webcam\".",
+        "state": "Visible shows it, Hidden hides it, Toggle flips it."
+      },
+      "variables": {}
+    },
+    "slobs.hideSceneSources": {
+      "description": "Hides every source in a scene at once.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\"."
+      },
+      "variables": {}
+    },
+    "slobs.streaming": {
+      "description": "Starts or stops your stream in Streamlabs Desktop.",
+      "fields": {
+        "mode": "Start begins streaming, Stop ends it, Toggle does the opposite of what it is doing now. Start does nothing if you are already streaming."
+      },
+      "variables": {}
+    },
+    "slobs.recording": {
+      "description": "Starts or stops your recording in Streamlabs Desktop.",
+      "fields": {
+        "mode": "Start begins recording, Stop ends it, Toggle does the opposite of what it is doing now."
+      },
+      "variables": {}
+    },
+    "slobs.replayBuffer": {
+      "description": "Starts or stops the replay buffer, or saves the last moments as a clip.",
+      "fields": {
+        "mode": "Start and Stop turn the buffer on or off, Toggle flips it, Save keeps the last few moments as a file."
+      },
+      "variables": {}
+    },
+    "slobs.setSourceMute": {
+      "description": "Mutes or unmutes an audio source, like your microphone.",
+      "fields": {
+        "source": "The audio source name exactly as Streamlabs Desktop shows it, like \"Mic/Aux\".",
+        "state": "Mute silences it, Unmute turns the sound back on, Toggle flips it."
+      },
+      "variables": {}
+    },
+    "slobs.setText": {
+      "description": "Changes the words shown by a text source. Handy for \"latest follower\" or a message on screen.",
+      "fields": {
+        "source": "The text source name (a GDI text source) exactly as Streamlabs Desktop shows it.",
+        "text": "The words to show. You can use %variables% here."
+      },
+      "variables": {}
+    },
+    "slobs.setBrowserUrl": {
+      "description": "Makes a browser source open a different web page.",
+      "fields": {
+        "source": "The browser source name exactly as Streamlabs Desktop shows it.",
+        "url": "The web address to open, like \"https://example.com/alert\"."
+      },
+      "variables": {}
+    },
+    "slobs.setFilterState": {
+      "description": "Turns a filter (an effect on a source) on or off.",
+      "fields": {
+        "source": "The source or scene the filter is on, exactly as Streamlabs Desktop shows it.",
+        "filter": "The filter name exactly as shown, like \"Color Correction\".",
+        "state": "Enable turns it on, Disable turns it off."
+      },
+      "variables": {}
+    },
+    "slobs.setSceneFilterState": {
+      "description": "Shows, hides or flips a filter that sits on a whole scene.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "filter": "The filter name exactly as shown.",
+        "state": "Visible turns it on, Hidden turns it off, Toggle flips it."
+      },
+      "variables": {}
+    },
+    "slobs.setRandomFilterState": {
+      "description": "Picks one random filter on a source (or on the scene) and shows, hides or flips it. Fun for random effects.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "source": "The source whose filters to pick from. Leave empty to pick from the scene's own filters.",
+        "state": "What to do with the picked filter: Visible, Hidden or Toggle.",
+        "resultArgument": "The name of the variable that will hold the picked filter's name. The default is slobsFilterName. Leave empty to not keep it."
+      },
+      "variables": {
+        "slobsFilterName": "The name of the filter that was picked (or the name you chose above)"
+      }
+    },
+    "slobs.hideSourceFilters": {
+      "description": "Turns off every filter on one source in a scene.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "source": "The source name exactly as Streamlabs Desktop shows it, like \"Webcam\"."
+      },
+      "variables": {}
+    },
+    "slobs.hideGroupSources": {
+      "description": "Hides every source inside a group (a folder of sources) at once.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "group": "The name of the group (a folder of sources) in that scene."
+      },
+      "variables": {}
+    },
+    "slobs.randomGroupSource": {
+      "description": "Shows one randomly picked source in a group and hides the others. Fun for random reactions or images.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "group": "The name of the group (a folder of sources) in that scene.",
+        "resultArgument": "The name of the variable that will hold the picked source's name. The default is randomSource. Leave empty to not keep it."
+      },
+      "variables": {
+        "randomSource": "The name of the source that was picked (or the name you chose above)"
+      }
+    },
+    "slobs.flipSource": {
+      "description": "Mirrors a source sideways or upside down. Running it again flips it back.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "source": "The source name exactly as Streamlabs Desktop shows it, like \"Webcam\".",
+        "axis": "Horizontal mirrors left and right, Vertical turns it upside down."
+      },
+      "variables": {}
+    },
+    "slobs.rotateSource": {
+      "description": "Turns a source to an angle. Fun for spinning an image.",
+      "fields": {
+        "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
+        "source": "The source name exactly as Streamlabs Desktop shows it, like \"Webcam\".",
+        "degrees": "The angle to set, in degrees: 90 is a quarter turn, 180 is upside down. It sets the angle, it does not add to the current one."
+      },
+      "variables": {}
+    },
+    "slobs.raw": {
+      "description": "Sends Streamlabs Desktop one command of your own and keeps the answer. For advanced users who know its remote control commands.",
+      "fields": {
+        "resource": "The part of Streamlabs Desktop to talk to, like \"ScenesService\".",
+        "method": "The command to run on it, like \"getScenes\".",
+        "args": "Extra details for the command, written as a JSON list like [\"abc\"]. Leave empty if it needs none.",
+        "resultArgument": "The name of the variable that will hold the answer as text. The default is slobsResult. Leave empty to not keep it."
+      },
+      "variables": {
+        "slobsResult": "The answer as JSON text (or the name you chose above)"
+      }
+    }
+  }
+}

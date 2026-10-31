@@ -59,7 +59,8 @@
       </c:StatusHeader.Detail>
       <c:StatusHeader.Actions>
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <Button Content="Connect" Classes="accent" Command="{Binding Accounts.ConnectCommand}">
+          <Button Content="Connect" Classes="accent" Command="{Binding Accounts.ConnectCommand}"
+                  ToolTip.Tip="Connects Cuebot to Twitch so chat, events and actions work. You must be signed in first (Accounts tab).">
             <Button.IsEnabled>
               <MultiBinding Converter="{x:Static BoolConverters.And}">
                 <Binding Path="Accounts.IsAuthorized" />
@@ -67,7 +68,8 @@
               </MultiBinding>
             </Button.IsEnabled>
           </Button>
-          <Button Content="Disconnect" Command="{Binding Accounts.DisconnectCommand}" IsEnabled="{Binding Accounts.State, Converter={x:Static c:ConnectionStates.IsActive}}" />
+          <Button Content="Disconnect" Command="{Binding Accounts.DisconnectCommand}" IsEnabled="{Binding Accounts.State, Converter={x:Static c:ConnectionStates.IsActive}}"
+                  ToolTip.Tip="Stops Cuebot listening to Twitch. You stay signed in and can connect again." />
         </StackPanel>
       </c:StatusHeader.Actions>
     </c:StatusHeader>

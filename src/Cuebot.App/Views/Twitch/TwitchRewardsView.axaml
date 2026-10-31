@@ -12,8 +12,8 @@
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Channel point rewards" />
             <WrapPanel DockPanel.Dock="Bottom" Classes="actions" Margin="0,8,0,0">
-              <Button Content="Load from Twitch" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}" />
-              <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" />
+              <Button Content="Load from Twitch" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}" ToolTip.Tip="Fetches your channel point rewards from Twitch and refreshes this list." />
+              <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" ToolTip.Tip="Starts a new channel point reward. It is only created on Twitch when you press Save to Twitch." />
             </WrapPanel>
             <ListBox x:Name="RewardList" Classes="list" ItemsSource="{Binding Rewards}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="560">
               <ListBox.ItemTemplate>
@@ -31,7 +31,7 @@
         <StackPanel Grid.Column="2">
           <Border Classes="card" IsVisible="{Binding !HasSelection}">
             <TextBlock Classes="hint"
-                       Text="Load your rewards, or add one. Twitch only lets an app edit the rewards it created, so rewards made on the Twitch dashboard are listed read-only (they still trigger actions)." />
+                       Text="Channel point rewards are things your viewers can buy with the points they earn. Load your rewards, or add one. Twitch only lets Cuebot change rewards that Cuebot made itself, so rewards you made on the Twitch website are shown but cannot be edited here (they still start actions)." />
           </Border>
           <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
             <ContentControl.ContentTemplate>
@@ -41,41 +41,41 @@
                     <TextBlock Classes="hint" Text="Created outside Cuebot: read-only." IsVisible="{Binding IsReadOnly}" />
                     <Grid ColumnDefinitions="*,16,140,16,140" RowDefinitions="Auto,Auto">
                       <TextBlock Classes="label" Text="Title" />
-                      <TextBox Grid.Row="1" Text="{Binding Title}" MaxLength="45" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBox Grid.Row="1" Text="{Binding Title}" MaxLength="45" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="The name viewers see for this reward, up to 45 characters." />
                       <TextBlock Grid.Column="2" Classes="label" Text="Cost" />
-                      <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding Cost}" Minimum="1" Maximum="100000000" IsReadOnly="{Binding IsReadOnly}" />
+                      <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding Cost}" Minimum="1" Maximum="100000000" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="How many channel points a viewer pays for this reward." />
                       <TextBlock Grid.Column="4" Classes="label" Text="Colour" />
-                      <TextBox Grid.Column="4" Grid.Row="1" Text="{Binding BackgroundColor}" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBox Grid.Column="4" Grid.Row="1" Text="{Binding BackgroundColor}" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="The colour of the reward button on Twitch, written as # and six letters or numbers, like #9146FF." />
                     </Grid>
                     <StackPanel>
                       <TextBlock Classes="label" Text="Prompt" />
-                      <TextBox Text="{Binding Prompt}" MaxLength="200" IsReadOnly="{Binding IsReadOnly}" />
+                      <TextBox Text="{Binding Prompt}" MaxLength="200" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="A short explanation viewers see when they pick this reward, up to 200 characters. If viewers must type something, say what here." />
                     </StackPanel>
                     <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,Auto">
                       <TextBlock Classes="label" Text="Global cooldown (s, 0 = off)" />
-                      <NumericUpDown Grid.Row="1" Value="{Binding GlobalCooldownSeconds}" Minimum="0" Maximum="604800" IsReadOnly="{Binding IsReadOnly}" />
+                      <NumericUpDown Grid.Row="1" Value="{Binding GlobalCooldownSeconds}" Minimum="0" Maximum="604800" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="After anyone uses this reward, nobody can use it again for this many seconds. 0 means no wait." />
                       <TextBlock Grid.Column="2" Classes="label" Text="Max per stream (0 = off)" />
-                      <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding MaxPerStream}" Minimum="0" IsReadOnly="{Binding IsReadOnly}" />
+                      <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding MaxPerStream}" Minimum="0" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="The most times this reward can be used by everyone together in one stream. 0 means no limit." />
                       <TextBlock Grid.Column="4" Classes="label" Text="Max per user per stream (0 = off)" />
-                      <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MaxPerUserPerStream}" Minimum="0" IsReadOnly="{Binding IsReadOnly}" />
+                      <NumericUpDown Grid.Column="4" Grid.Row="1" Value="{Binding MaxPerUserPerStream}" Minimum="0" IsReadOnly="{Binding IsReadOnly}" ToolTip.Tip="The most times one viewer can use this reward in one stream. 0 means no limit." />
                     </Grid>
                     <WrapPanel IsEnabled="{Binding IsManageable}">
-                      <CheckBox Content="Enabled" IsChecked="{Binding IsEnabled}" Margin="0,0,16,0" />
-                      <CheckBox Content="Paused" IsChecked="{Binding IsPaused}" Margin="0,0,16,0" />
-                      <CheckBox Content="User input required" IsChecked="{Binding IsUserInputRequired}" Margin="0,0,16,0" />
-                      <CheckBox Content="Skip the request queue" IsChecked="{Binding SkipQueue}" />
+                      <CheckBox Content="Enabled" IsChecked="{Binding IsEnabled}" Margin="0,0,16,0" ToolTip.Tip="Untick to hide the reward from your viewers without deleting it." />
+                      <CheckBox Content="Paused" IsChecked="{Binding IsPaused}" Margin="0,0,16,0" ToolTip.Tip="Viewers still see the reward but cannot use it for now." />
+                      <CheckBox Content="User input required" IsChecked="{Binding IsUserInputRequired}" Margin="0,0,16,0" ToolTip.Tip="The viewer must type a message when they use this reward. Your action can read it as %input%." />
+                      <CheckBox Content="Skip the request queue" IsChecked="{Binding SkipQueue}" ToolTip.Tip="Twitch normally keeps redeemed rewards waiting for you to accept them. Tick this to mark them as done straight away." />
                     </WrapPanel>
                     <Separator />
                     <TextBlock Classes="hint" TextWrapping="Wrap"
-                               Text="Cuebot settings (for every reward, saved right away): the group used by the reward group and Configure rewards sub-actions, and whether the redemption counters survive going live." />
+                               Text="Cuebot's own settings for this reward. They are saved right away and are not sent to Twitch. The group lets actions switch several rewards together (with the reward group and Configure rewards sub-actions). The counters count how often the reward was used." />
                     <Grid ColumnDefinitions="*,16,Auto" RowDefinitions="Auto,Auto">
                       <TextBlock Classes="label" Text="Group" />
-                      <TextBox Grid.Row="1" Text="{Binding Group}" PlaceholderText="Not configured" />
-                      <Button Grid.Column="2" Grid.Row="1" Content="Reset counters" Command="{Binding ResetCountersCommand}" />
+                      <TextBox Grid.Row="1" Text="{Binding Group}" PlaceholderText="Not configured" ToolTip.Tip="A group name of your choice. Rewards with the same group name can be switched on or off together by an action." />
+                      <Button Grid.Column="2" Grid.Row="1" Content="Reset counters" Command="{Binding ResetCountersCommand}" ToolTip.Tip="Sets this reward's total counter and every viewer's own counter back to zero." />
                     </Grid>
                     <WrapPanel>
-                      <CheckBox Content="Persist counter" IsChecked="{Binding PersistCounter}" Margin="0,0,16,0" />
-                      <CheckBox Content="Persist per-user counters" IsChecked="{Binding PersistUserCounter}" />
+                      <CheckBox Content="Persist counter" IsChecked="{Binding PersistCounter}" Margin="0,0,16,0" ToolTip.Tip="Keeps the reward's total count between streams. Unticked, it starts again from zero each time you go live." />
+                      <CheckBox Content="Persist per-user counters" IsChecked="{Binding PersistUserCounter}" ToolTip.Tip="Keeps each viewer's own count between streams. Unticked, they start again from zero each time you go live." />
                     </WrapPanel>
                     <TextBlock Classes="hint" Text="{Binding CounterSummary}" />
                   </StackPanel>
@@ -84,8 +84,8 @@
             </ContentControl.ContentTemplate>
           </ContentControl>
           <WrapPanel Classes="actions" IsVisible="{Binding HasSelection}">
-            <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" />
-            <Button Content="Delete" Command="{Binding DeleteCommand}" />
+            <Button Content="Save to Twitch" Classes="accent" Command="{Binding SaveCommand}" ToolTip.Tip="Creates this reward on Twitch, or updates it if it already exists. Your viewers see the change." />
+            <Button Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Removes this reward from Twitch for good." />
           </WrapPanel>
         </StackPanel>
       </Grid>

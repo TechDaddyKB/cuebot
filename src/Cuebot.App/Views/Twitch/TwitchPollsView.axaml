@@ -13,23 +13,23 @@
             <TextBlock Classes="h2" Text="Poll" />
             <StackPanel>
               <TextBlock Classes="label" Text="Question" />
-              <TextBox Text="{Binding PollTitle}" MaxLength="60" />
+              <TextBox Text="{Binding PollTitle}" MaxLength="60" ToolTip.Tip="The question viewers vote on, up to 60 characters." />
             </StackPanel>
             <StackPanel>
               <TextBlock Classes="label" Text="Choices (one per line, 2 to 5)" />
-              <TextBox Text="{Binding PollChoices}" AcceptsReturn="True" MinHeight="90" />
+              <TextBox Text="{Binding PollChoices}" AcceptsReturn="True" MinHeight="90" ToolTip.Tip="The answers viewers can pick. Type each answer on its own line. You need at least 2 and at most 5." />
             </StackPanel>
             <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
               <TextBlock Classes="label" Text="Duration (seconds)" />
-              <NumericUpDown Grid.Row="1" Value="{Binding PollDuration}" Minimum="15" Maximum="1800" />
+              <NumericUpDown Grid.Row="1" Value="{Binding PollDuration}" Minimum="15" Maximum="1800" ToolTip.Tip="How long viewers can vote, in seconds. 60 is one minute." />
               <TextBlock Grid.Column="2" Classes="label" Text="Channel points per extra vote" />
-              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding PollPointsPerVote}" Minimum="0" Maximum="1000000" />
+              <NumericUpDown Grid.Column="2" Grid.Row="1" Value="{Binding PollPointsPerVote}" Minimum="0" Maximum="1000000" ToolTip.Tip="Viewers get one free vote. With a number here they can spend this many channel points for each extra vote. 0 means no extra votes." />
             </Grid>
             <WrapPanel Classes="actions">
-              <Button Content="Start poll" Classes="accent" Command="{Binding CreatePollCommand}" />
-              <Button Content="End" Command="{Binding EndPollCommand}" />
-              <Button Content="End and hide" Command="{Binding ArchivePollCommand}" />
-              <Button Content="Show latest" Command="{Binding LoadPollCommand}" />
+              <Button Content="Start poll" Classes="accent" Command="{Binding CreatePollCommand}" ToolTip.Tip="Starts the poll on Twitch now. Your viewers can vote straight away." />
+              <Button Content="End" Command="{Binding EndPollCommand}" ToolTip.Tip="Stops the poll now and shows the result to viewers." />
+              <Button Content="End and hide" Command="{Binding ArchivePollCommand}" ToolTip.Tip="Stops the poll now and removes it from view without showing the result." />
+              <Button Content="Show latest" Command="{Binding LoadPollCommand}" ToolTip.Tip="Looks up your most recent poll and shows how it is going below." />
             </WrapPanel>
             <TextBlock Classes="hint" Text="{Binding PollStatus}" />
           </StackPanel>
@@ -40,25 +40,25 @@
             <TextBlock Classes="h2" Text="Prediction" />
             <StackPanel>
               <TextBlock Classes="label" Text="Question" />
-              <TextBox Text="{Binding PredictionTitle}" MaxLength="45" />
+              <TextBox Text="{Binding PredictionTitle}" MaxLength="45" ToolTip.Tip="The question viewers bet their channel points on, up to 45 characters. Example: Will I win this round?" />
             </StackPanel>
             <StackPanel>
               <TextBlock Classes="label" Text="Outcomes (one per line, 2 to 10)" />
-              <TextBox Text="{Binding PredictionOutcomes}" AcceptsReturn="True" MinHeight="90" />
+              <TextBox Text="{Binding PredictionOutcomes}" AcceptsReturn="True" MinHeight="90" ToolTip.Tip="The possible results viewers can bet on. Type each on its own line. You need at least 2 and at most 10." />
             </StackPanel>
             <StackPanel>
               <TextBlock Classes="label" Text="Submission window (seconds)" />
-              <NumericUpDown Value="{Binding PredictionWindow}" Minimum="30" Maximum="1800" />
+              <NumericUpDown Value="{Binding PredictionWindow}" Minimum="30" Maximum="1800" ToolTip.Tip="How long viewers can place their bets, in seconds. After that, bets close by themselves." />
             </StackPanel>
             <WrapPanel Classes="actions">
-              <Button Content="Start prediction" Classes="accent" Command="{Binding CreatePredictionCommand}" />
-              <Button Content="Lock" Command="{Binding LockPredictionCommand}" />
-              <Button Content="Cancel (refund)" Command="{Binding CancelPredictionCommand}" />
-              <Button Content="Show latest" Command="{Binding LoadPredictionCommand}" />
+              <Button Content="Start prediction" Classes="accent" Command="{Binding CreatePredictionCommand}" ToolTip.Tip="Starts the prediction on Twitch now. Viewers can start betting channel points." />
+              <Button Content="Lock" Command="{Binding LockPredictionCommand}" ToolTip.Tip="Closes betting early. No more bets can be placed, and you pick the winner later." />
+              <Button Content="Cancel (refund)" Command="{Binding CancelPredictionCommand}" ToolTip.Tip="Calls the prediction off and gives all bet channel points back to the viewers." />
+              <Button Content="Show latest" Command="{Binding LoadPredictionCommand}" ToolTip.Tip="Looks up your most recent prediction and shows how it is going below." />
             </WrapPanel>
             <Grid ColumnDefinitions="*,8,Auto">
-              <ComboBox ItemsSource="{Binding Outcomes}" SelectedItem="{Binding WinningOutcome}" PlaceholderText="Winning outcome" />
-              <Button Grid.Column="2" Content="Resolve" Command="{Binding ResolvePredictionCommand}" />
+              <ComboBox ItemsSource="{Binding Outcomes}" SelectedItem="{Binding WinningOutcome}" PlaceholderText="Winning outcome" ToolTip.Tip="Pick the result that really happened." />
+              <Button Grid.Column="2" Content="Resolve" Command="{Binding ResolvePredictionCommand}" ToolTip.Tip="Declares the chosen outcome the winner and pays out channel points to the viewers who bet on it. This cannot be undone." />
             </Grid>
             <TextBlock Classes="hint" Text="{Binding PredictionStatus}" />
           </StackPanel>

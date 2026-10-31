@@ -7,27 +7,27 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left" Spacing="8">
       <TextBlock Classes="h1" Text="GoXLR" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="The GoXLR and GoXLR Mini become triggers, sub-actions and script functions through the open-source GoXLR Utility (Linux, Windows and macOS), which Cuebot reaches on its local WebSocket API (port 14564). TC-Helicon's own GoXLR App has no public API; use the GoXLR Utility in its place. Settings are stored in goxlr.json." />
+                 Text="The GoXLR and GoXLR Mini become triggers, sub-actions and script functions through the free GoXLR Utility program (Linux, Windows and macOS), which Cuebot talks to on your computer (door number 14564). TC-Helicon's own GoXLR app cannot be controlled by other programs, so install the GoXLR Utility instead. Settings are stored in goxlr.json." />
 
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Connection" />
           <Grid ColumnDefinitions="Auto,240,Auto,140" RowDefinitions="Auto,Auto" RowSpacing="8">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" Name="GoXlrHost" Text="{Binding Host}" PlaceholderText="localhost" />
+            <TextBox Grid.Column="1" Name="GoXlrHost" Text="{Binding Host}" PlaceholderText="localhost" ToolTip.Tip="The computer where the GoXLR Utility runs. Use localhost for this computer." />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" ToolTip.Tip="The door number the GoXLR Utility listens on. Leave it alone unless you changed it there." />
             <TextBlock Grid.Row="1" Text="Device serial" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Serial}" PlaceholderText="first GoXLR" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Serial}" PlaceholderText="first GoXLR" ToolTip.Tip="Only needed if you have more than one GoXLR. Leave empty to use the first one." />
           </Grid>
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Another PC: turn on &quot;Allow network access&quot; in the GoXLR Utility's settings and enter that PC's address." />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Keep trying while the GoXLR Utility is not running, and reconnect when it closes" IsChecked="{Binding AutoReconnect}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to the GoXLR Utility by itself when it starts." />
+          <CheckBox Content="Keep trying while the GoXLR Utility is not running, and reconnect when it closes" IsChecked="{Binding AutoReconnect}" ToolTip.Tip="Ticked: Cuebot keeps trying again until the GoXLR Utility is available, so you do not have to press Connect." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-            <Button Content="Test" Command="{Binding TestCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to the GoXLR Utility now." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops talking to the GoXLR Utility." />
+            <Button Content="Test" Command="{Binding TestCommand}" IsEnabled="{Binding IsConnected}" ToolTip.Tip="Checks that the GoXLR Utility answers and shows how quickly." />
           </StackPanel>
           <TextBlock Name="GoXlrStatus" TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
@@ -51,9 +51,9 @@
                 <Grid ColumnDefinitions="80,140,*,44,Auto" Margin="0,2">
                   <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" />
                   <TextBlock Grid.Column="1" Text="{Binding ChannelName}" VerticalAlignment="Center" />
-                  <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" />
+                  <Slider Grid.Column="2" Minimum="0" Maximum="100" Value="{Binding Volume}" ToolTip.Tip="The volume of this channel, from 0 to 100." />
                   <TextBlock Grid.Column="3" Text="{Binding Volume, StringFormat={}{0:0}}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" />
-                  <Button Grid.Column="4" Content="{Binding MuteLabel}" Command="{Binding ToggleMuteCommand}" MinWidth="72" />
+                  <Button Grid.Column="4" Content="{Binding MuteLabel}" Command="{Binding ToggleMuteCommand}" MinWidth="72" ToolTip.Tip="Mutes this channel, or turns the sound back on." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -61,15 +61,15 @@
 
           <Grid ColumnDefinitions="Auto,240,Auto" RowDefinitions="Auto,Auto" RowSpacing="8" IsVisible="{Binding HasDevice}" Margin="0,8,0,0">
             <TextBlock Text="Profile" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <ComboBox Grid.Column="1" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" HorizontalAlignment="Stretch" />
-            <Button Grid.Column="2" Content="Load" Command="{Binding LoadProfileCommand}" Margin="8,0,0,0" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" HorizontalAlignment="Stretch" ToolTip.Tip="A saved set of GoXLR settings (faders, colours, routing)." />
+            <Button Grid.Column="2" Content="Load" Command="{Binding LoadProfileCommand}" Margin="8,0,0,0" ToolTip.Tip="Switches your GoXLR to the chosen profile now." />
             <TextBlock Grid.Row="1" Text="Mic profile" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding MicProfiles}" SelectedItem="{Binding SelectedMicProfile}" HorizontalAlignment="Stretch" />
-            <Button Grid.Row="1" Grid.Column="2" Content="Load" Command="{Binding LoadMicProfileCommand}" Margin="8,0,0,0" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding MicProfiles}" SelectedItem="{Binding SelectedMicProfile}" HorizontalAlignment="Stretch" ToolTip.Tip="A saved set of microphone settings (equaliser, compressor and so on)." />
+            <Button Grid.Row="1" Grid.Column="2" Content="Load" Command="{Binding LoadMicProfileCommand}" Margin="8,0,0,0" ToolTip.Tip="Switches your GoXLR to the chosen mic profile now." />
           </Grid>
 
           <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasDevice}" Margin="0,8,0,0">
-            <Button Content="{Binding CoughLabel}" Command="{Binding ToggleCoughCommand}" />
+            <Button Content="{Binding CoughLabel}" Command="{Binding ToggleCoughCommand}" ToolTip.Tip="Turns the cough button on or off, like pressing it on the GoXLR." />
             <ItemsControl Name="GoXlrEffects" ItemsSource="{Binding Effects}" IsVisible="{Binding HasEffects}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -78,7 +78,7 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:GoXlrEffectRowViewModel">
-                  <Button Content="{Binding Label}" Command="{Binding ToggleCommand}" />
+                  <Button Content="{Binding Label}" Command="{Binding ToggleCommand}" ToolTip.Tip="Turns this voice effect on or off." />
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>

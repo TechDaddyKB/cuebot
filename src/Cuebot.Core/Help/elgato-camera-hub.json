@@ -1,0 +1,496 @@
+{
+  "triggers": {
+    "elgato.cameraHub.connected": {
+      "description": "Runs when Cuebot starts looking after your webcams (you press Connect, or it connects on start). Webcam control only works on Linux for now.",
+      "fields": {},
+      "variables": {
+        "backend": "The method Cuebot uses to talk to the webcams, like V4L2"
+      }
+    },
+    "elgato.cameraHub.disconnected": {
+      "description": "Runs when Cuebot stops looking after your webcams (you press Disconnect, or Cuebot closes the link).",
+      "fields": {},
+      "variables": {
+        "reason": "Why it stopped"
+      }
+    },
+    "elgato.cameraHub.webcam.connected": {
+      "description": "Runs when Cuebot finds a webcam that was not there before, for example when you plug one in. Webcam control only works on Linux for now.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0"
+      }
+    },
+    "elgato.cameraHub.webcam.disconnected": {
+      "description": "Runs when a webcam goes away, for example when you unplug it.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0"
+      }
+    },
+    "elgato.cameraHub.webcam.brightnessChanged": {
+      "description": "Runs when a webcam's brightness changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "brightness": "The new brightness (0-100)",
+        "oldBrightness": "The brightness before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.contrastChanged": {
+      "description": "Runs when a webcam's contrast changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "contrast": "The new contrast (0-100)",
+        "oldContrast": "The contrast before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.saturationChanged": {
+      "description": "Runs when a webcam's color strength (saturation) changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "saturation": "The new saturation (0-100)",
+        "oldSaturation": "The saturation before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.sharpnessChanged": {
+      "description": "Runs when a webcam's sharpness changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "sharpness": "The new sharpness in the camera's own steps",
+        "oldSharpness": "The sharpness before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.focusChanged": {
+      "description": "Runs when a webcam's focus changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "focus": "The new focus (0-100)",
+        "oldFocus": "The focus before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.panChanged": {
+      "description": "Runs when a webcam's picture is moved left or right (pan). Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "pan": "The new pan position (0-100)",
+        "oldPan": "The pan position before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.tiltChanged": {
+      "description": "Runs when a webcam's picture is moved up or down (tilt). Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "tilt": "The new tilt position (0-100)",
+        "oldTilt": "The tilt position before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.zoomChanged": {
+      "description": "Runs when a webcam's zoom changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "zoomValue": "The new zoom as a number (100 is the widest)",
+        "zoomPercent": "The new zoom with a percent sign, like 150%",
+        "oldZoomValue": "The zoom before the change, as a number",
+        "oldZoomPercent": "The zoom before the change, like 100%",
+        "maximumZoom": "The biggest zoom, 400"
+      }
+    },
+    "elgato.cameraHub.webcam.whiteBalanceChanged": {
+      "description": "Runs when you change a webcam's white balance (how warm or cool the colors look) by hand. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "whiteBalance": "The new white balance in Kelvin",
+        "oldWhiteBalance": "The white balance before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.liveWhiteBalanceChanged": {
+      "description": "Runs when the webcam changes its own white balance (how warm or cool the colors look) because auto white balance is on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "whiteBalance": "The new white balance in Kelvin",
+        "oldWhiteBalance": "The white balance before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.shutterSpeedChanged": {
+      "description": "Runs when you change a webcam's shutter speed (how long each picture is exposed) by hand. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "shutterSpeed": "The new shutter speed, like 1/60",
+        "oldShutterSpeed": "The shutter speed before the change",
+        "exposure": "The new exposure time as a plain number (tenths of a millisecond)",
+        "oldExposure": "The exposure time before the change, same units"
+      }
+    },
+    "elgato.cameraHub.webcam.liveShutterSpeedChanged": {
+      "description": "Runs when the webcam changes its own shutter speed because auto exposure is on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "shutterSpeed": "The new shutter speed, like 1/60",
+        "oldShutterSpeed": "The shutter speed before the change",
+        "exposure": "The new exposure time as a plain number (tenths of a millisecond)",
+        "oldExposure": "The exposure time before the change, same units"
+      }
+    },
+    "elgato.cameraHub.webcam.autoFocusEnabled": {
+      "description": "Runs when a webcam's auto focus is turned on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "autoFocus": "true (it is on now)"
+      }
+    },
+    "elgato.cameraHub.webcam.autoFocusDisabled": {
+      "description": "Runs when a webcam's auto focus is turned off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "autoFocus": "false (it is off now)"
+      }
+    },
+    "elgato.cameraHub.webcam.autoWhiteBalanceEnabled": {
+      "description": "Runs when a webcam's auto white balance is turned on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "autoWhiteBalance": "true (it is on now)"
+      }
+    },
+    "elgato.cameraHub.webcam.autoWhiteBalanceDisabled": {
+      "description": "Runs when a webcam's auto white balance is turned off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "autoWhiteBalance": "false (it is off now)"
+      }
+    },
+    "elgato.cameraHub.webcam.autoExposureEnabled": {
+      "description": "Runs when a webcam's auto exposure (it picks the brightness by itself) is turned on. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "autoExposure": "true (it is on now)"
+      }
+    },
+    "elgato.cameraHub.webcam.autoExposureDisabled": {
+      "description": "Runs when a webcam's auto exposure is turned off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "autoExposure": "false (it is off now)"
+      }
+    },
+    "elgato.cameraHub.webcam.antiFlickerChanged": {
+      "description": "Runs when a webcam's anti-flicker setting changes (it stops lamps from flickering on camera). Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "antiFlicker": "The new setting: Off, 50 Hz, 60 Hz or Auto",
+        "oldAntiFlicker": "The setting before the change"
+      }
+    },
+    "elgato.cameraHub.webcam.mirrored": {
+      "description": "Runs when a webcam's mirror setting is switched on or off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "mirrored": "true if the picture is mirrored now",
+        "flipped": "true if the picture is upside down now"
+      }
+    },
+    "elgato.cameraHub.webcam.flipped": {
+      "description": "Runs when a webcam's flip (upside down) setting is switched on or off. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "mirrored": "true if the picture is mirrored now",
+        "flipped": "true if the picture is upside down now"
+      }
+    },
+    "elgato.cameraHub.webcam.deviceOrientationChanged": {
+      "description": "Runs when a webcam's mirror or flip setting changes. Cuebot checks about every 2 seconds, so changes from other programs show up with a short delay.",
+      "fields": {
+        "device": "Which webcam to watch, by the name Cuebot shows, like \"Elgato Facecam\". Separate several with commas. Leave empty to react to every webcam."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "mirrored": "true if the picture is mirrored now",
+        "flipped": "true if the picture is upside down now"
+      }
+    }
+  },
+  "subActions": {
+    "elgato.cameraHub.webcam.setBrightness": {
+      "description": "Changes how bright a webcam's picture is.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "How bright, from 0 (darkest) to 100 (brightest). With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setContrast": {
+      "description": "Changes the contrast of a webcam's picture (the gap between dark and light parts).",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "How much contrast, from 0 to 100. With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setSaturation": {
+      "description": "Changes how strong the colors are in a webcam's picture.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "How strong, from 0 (gray) to 100 (very colorful). With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setSharpness": {
+      "description": "Changes how sharp the edges look in a webcam's picture.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "Sharpness in the camera's own steps. The Elgato Facecam goes from 0 to 4. With Adjustment ticked, how many steps to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setFocus": {
+      "description": "Moves a webcam's focus, which makes things nearer or farther look sharp.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "Focus from 0 to 100. Turn auto focus off first, or the camera may refuse. With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setPan": {
+      "description": "Moves a webcam's picture left or right.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "Position from 0 to 100, where 50 is the middle. It only moves while zoomed in. With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setTilt": {
+      "description": "Moves a webcam's picture up or down.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "Position from 0 to 100, where 50 is the middle. It only moves while zoomed in. With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setWhiteBalance": {
+      "description": "Changes how warm (orange) or cool (blue) a webcam's colors look.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "Number in Kelvin, like 5000. The Facecam goes from 2800 to 12500. Turn auto white balance off first. With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setZoom": {
+      "description": "Zooms a webcam in or out.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "value": "Zoom from 100 (widest) to 400 (closest). With Adjustment ticked, how much to add or take away.",
+        "adjustment": "Tick to add your number to the current setting instead of replacing it. Use a negative number to go down, like -10."
+      },
+      "variables": {
+        "webcamValue": "The new value of the first webcam that was changed"
+      }
+    },
+    "elgato.cameraHub.webcam.setAutoWhiteBalance": {
+      "description": "Turns a webcam's auto white balance on or off (the camera picks the color warmth itself).",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "mode": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "webcamValue": "true if auto white balance is on after the change, false if it is off (first webcam changed)"
+      }
+    },
+    "elgato.cameraHub.webcam.setAutoFocus": {
+      "description": "Turns a webcam's auto focus on or off (the camera keeps things sharp itself).",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "mode": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "webcamValue": "true if auto focus is on after the change, false if it is off (first webcam changed)"
+      }
+    },
+    "elgato.cameraHub.webcam.setAutoExposure": {
+      "description": "Turns a webcam's auto exposure on or off (the camera picks the brightness itself).",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "mode": "Enabled turns it on, Disabled turns it off, Toggle flips it to the opposite of what it is now."
+      },
+      "variables": {
+        "webcamValue": "true if auto exposure is on after the change, false if it is off (first webcam changed)"
+      }
+    },
+    "elgato.cameraHub.webcam.setAntiFlicker": {
+      "description": "Sets a webcam's anti-flicker, which stops lamps from flickering on camera.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found.",
+        "antiFlicker": "Pick 50 Hz or 60 Hz to match the electricity where you live (50 in most of Europe, 60 in the US). Auto lets the camera choose. Off turns it off."
+      },
+      "variables": {
+        "webcamValue": "The setting you chose"
+      }
+    },
+    "elgato.cameraHub.webcam.getSettings": {
+      "description": "Reads a webcam's current settings into variables you can use in later steps.",
+      "fields": {
+        "device": "Which webcam to change, by name, like \"Elgato Facecam\". Separate several with commas, or type All for every webcam. Empty means the first webcam Cuebot found."
+      },
+      "variables": {
+        "deviceName": "The name of the webcam",
+        "deviceId": "The webcam's own ID number",
+        "devicePath": "Where the webcam sits on your computer, like /dev/video0",
+        "brightness": "Brightness (0-100)",
+        "contrast": "Contrast (0-100)",
+        "saturation": "Color strength (0-100)",
+        "sharpness": "Sharpness, in the camera's own steps",
+        "focus": "Focus (0-100)",
+        "pan": "Pan position (0-100)",
+        "tilt": "Tilt position (0-100)",
+        "whiteBalance": "White balance in Kelvin",
+        "zoomValue": "Zoom as a number (100 is widest)",
+        "zoomPercent": "Zoom with a percent sign, like 150%",
+        "autoFocus": "true if auto focus is on",
+        "autoWhiteBalance": "true if auto white balance is on",
+        "autoExposure": "true if auto exposure is on",
+        "shutterSpeed": "Shutter speed, like 1/60",
+        "antiFlicker": "Anti-flicker setting: Off, 50 Hz, 60 Hz or Auto",
+        "mirrored": "true if the picture is mirrored",
+        "flipped": "true if the picture is upside down"
+      }
+    }
+  }
+}

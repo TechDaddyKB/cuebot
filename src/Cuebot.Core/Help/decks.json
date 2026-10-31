@@ -1,0 +1,194 @@
+{
+  "triggers": {
+    "decks.itemPressed": {
+      "description": "Runs when someone presses a button on one of your decks, which are web pages of buttons you open on a phone or tablet. Good when one button should do a few things.",
+      "fields": {
+        "deck": "Only react to buttons on this deck, by its name. Leave empty for any deck.",
+        "item": "Only react to this button, by its name. Leave empty for any button."
+      },
+      "variables": {
+        "deckName": "The name of the deck",
+        "deckItemName": "The name of the button that was pressed",
+        "deckItemState": "The button's look now: 0 normal, 1 active",
+        "deckPage": "Which page of the deck it was on, counting from 0",
+        "deckClient": "Which device pressed it",
+        "deckId": "The deck's ID",
+        "deckItemId": "The button's ID"
+      }
+    },
+    "remote.signal": {
+      "description": "Runs when another Cuebot sends you a signal, which is a named message. Lets a second computer start things on this one, like a studio PC and a gaming PC.",
+      "fields": {
+        "signalName": "Only react to a signal with this name, like \"go-live\". Leave empty to react to every signal.",
+        "instance": "Which other Cuebot, by the name you gave it in the Remote instances list on the Servers page. Leave empty to react to any."
+      },
+      "variables": {
+        "signalName": "The name of the signal",
+        "signalSender": "The name of the action that sent it",
+        "instanceName": "The name of the other Cuebot",
+        "instanceLabel": "The name you gave it in your settings",
+        "instanceId": "Its ID"
+      }
+    },
+    "remote.connected": {
+      "description": "Runs when another Cuebot connects to this one, or this one connects to it. Useful to know the other computer is ready.",
+      "fields": {
+        "instance": "Which other Cuebot, by the name you gave it in the Remote instances list on the Servers page. Leave empty to react to any."
+      },
+      "variables": {
+        "instanceName": "The name of the other Cuebot",
+        "instanceLabel": "The name you gave it in your settings",
+        "instanceId": "Its ID",
+        "instanceOs": "Its computer system, like Windows",
+        "instanceVersion": "Its Cuebot version",
+        "direction": "outgoing if this Cuebot connected to the other one, incoming if the other one connected here"
+      }
+    },
+    "remote.disconnected": {
+      "description": "Runs when the link to another Cuebot is lost, for example when its computer is switched off.",
+      "fields": {
+        "instance": "Which other Cuebot, by the name you gave it in the Remote instances list on the Servers page. Leave empty to react to any."
+      },
+      "variables": {
+        "instanceName": "The name of the other Cuebot",
+        "instanceLabel": "The name you gave it in your settings",
+        "instanceId": "Its ID",
+        "instanceOs": "Its computer system, like Windows",
+        "instanceVersion": "Its Cuebot version",
+        "direction": "outgoing if this Cuebot had connected to the other one, incoming if the other one had connected here"
+      }
+    }
+  },
+  "subActions": {
+    "decks.notify": {
+      "description": "Shows a small pop-up message on every screen where the deck is open. Handy to tell someone on your phone that something happened.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "title": "The bold first line of the message.",
+        "description": "The text under the title."
+      },
+      "variables": {}
+    },
+    "decks.itemSetBackground": {
+      "description": "Changes the background colour or picture of a deck button.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "item": "The button's name as you set it on the Decks page. The default %deckItemName% means the button that was just pressed, which works when this action was started by a deck button.",
+        "color": "A colour as a hex code like #FF0000 or a colour name like red. Leave empty to keep the current colour.",
+        "url": "A web link to a picture to use as the background. Leave empty to keep the current one.",
+        "state": "Which look of the button to change: 0 is its normal look, 1 is its second (active) look. A button can have more looks; use their numbers."
+      },
+      "variables": {}
+    },
+    "decks.itemSetIcon": {
+      "description": "Changes the little icon on a deck button, for example to show a check mark when something is on.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "item": "The button's name as you set it on the Decks page. The default %deckItemName% means the button that was just pressed, which works when this action was started by a deck button.",
+        "color": "The icon's colour, as a hex code like #FFFFFF or a colour name. Leave empty to keep the current one.",
+        "name": "The name of a free icon from the Iconify website, like mdi:home. Leave empty to keep the current icon.",
+        "url": "A web link to a picture to use as the icon. If you fill this in, it is used instead of the icon name. Leave empty to keep the current one.",
+        "state": "Which look of the button to change: 0 is its normal look, 1 is its second (active) look. A button can have more looks; use their numbers."
+      },
+      "variables": {}
+    },
+    "decks.itemSetState": {
+      "description": "Switches a deck button to one of its looks, like its normal look or its active look.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "item": "The button's name as you set it on the Decks page. The default %deckItemName% means the button that was just pressed, which works when this action was started by a deck button.",
+        "state": "The look to show: 0 is normal, 1 is the active look. A button can have more looks; use their numbers."
+      },
+      "variables": {}
+    },
+    "decks.itemSetTitle": {
+      "description": "Changes the text on a deck button.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "item": "The button's name as you set it on the Decks page. The default %deckItemName% means the button that was just pressed, which works when this action was started by a deck button.",
+        "title": "The words to show on the button. You can use %variables%. Leave empty to clear the text.",
+        "color": "The text colour, as a hex code like #FFFFFF or a colour name. Leave empty to keep the current one.",
+        "state": "Which look of the button to change: 0 is its normal look, 1 is its second (active) look. A button can have more looks; use their numbers."
+      },
+      "variables": {}
+    },
+    "decks.itemSetValue": {
+      "description": "Shows a small value in the corner of a deck button, like a counter or a score.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "item": "The button's name as you set it on the Decks page. The default %deckItemName% means the button that was just pressed, which works when this action was started by a deck button.",
+        "value": "The text or number to show in the corner. You can use %variables%. Leave empty to hide it.",
+        "state": "Which look of the button to change: 0 is its normal look, 1 is its second (active) look. A button can have more looks; use their numbers."
+      },
+      "variables": {}
+    },
+    "decks.itemToggleState": {
+      "description": "Flips a deck button between its normal look and its active look, like a light switch.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "item": "The button's name as you set it on the Decks page. The default %deckItemName% means the button that was just pressed, which works when this action was started by a deck button."
+      },
+      "variables": {
+        "deckItemState": "The button's look now: 0 normal, 1 active"
+      }
+    },
+    "decks.pageNext": {
+      "description": "Shows the next page of a deck. After the last page it goes back to the first.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required."
+      },
+      "variables": {
+        "deckPageNumber": "The page now showing, counting from 1"
+      }
+    },
+    "decks.pagePrevious": {
+      "description": "Shows the previous page of a deck. From the first page it goes to the last.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required."
+      },
+      "variables": {
+        "deckPageNumber": "The page now showing, counting from 1"
+      }
+    },
+    "decks.pageSet": {
+      "description": "Shows a chosen page of a deck.",
+      "fields": {
+        "deck": "The name of your deck (the panel of buttons), as you named it on the Decks page. Required.",
+        "page": "The page number, where 1 is the first page. A number that is too big shows the last page."
+      },
+      "variables": {
+        "deckPageNumber": "The page now showing, counting from 1"
+      }
+    },
+    "remote.sendSignal": {
+      "description": "Sends a named message (a signal) to another Cuebot on your network, so it can react. For example, tell your second PC to start a scene.",
+      "fields": {
+        "instance": "Which other Cuebot to send to, by the name in the Remote instances list on the Servers page. Leave empty to send to every connected Cuebot.",
+        "name": "The signal's name, like \"go-live\". The other Cuebot listens for this name. Required.",
+        "includeArgs": "Tick to also send all the variables this action has right now. Untick to send only the ones typed below.",
+        "arguments": "Extra information to send, one per line as name=value, like scene=Main. You can use %variables%. These are always sent."
+      },
+      "variables": {
+        "remoteSignalSent": "How many Cuebots received the signal"
+      }
+    },
+    "remote.waitForSignal": {
+      "description": "Pauses this action until another Cuebot sends a signal with a certain name. Only signals that arrive after the pause starts count.",
+      "fields": {
+        "instance": "Only accept the signal from this Cuebot, by the name in the Remote instances list on the Servers page. Leave empty to accept it from any.",
+        "name": "The signal's name to wait for, like \"go-live\". Required.",
+        "timeoutMs": "How long to wait, in milliseconds (30000 is 30 seconds). Use 0 to wait forever.",
+        "stopOnTimeout": "Tick to stop this action if no signal arrives in time. Untick to carry on with the next step anyway.",
+        "overwrite": "Tick to let the signal's information replace variables of the same name this action already has. Untick to keep your own."
+      },
+      "variables": {
+        "signalReceived": "True when the signal arrived",
+        "signalTimeout": "True when the wait ran out of time",
+        "signalName": "The name of the signal that arrived",
+        "signalSender": "The name of the action that sent it",
+        "instanceName": "The name of the other Cuebot",
+        "instanceLabel": "The name you gave it in your settings"
+      }
+    }
+  }
+}

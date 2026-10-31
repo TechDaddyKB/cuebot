@@ -9,12 +9,15 @@
     <DockPanel>
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
         <CheckBox Content="Always send" IsChecked="{Binding SendAutomatically}" IsVisible="{Binding IsAsking}"
-                  ToolTip.Tip="Send crash reports automatically from now on (you can turn this off on the Support page)" />
+                  ToolTip.Tip="Tick to send crash reports by themselves from now on, without asking. You can turn this off again on the Support page." />
         <Button x:Name="SendCrashButton" Classes="accent" Content="Send report" Command="{Binding SendCommand}" IsVisible="{Binding IsAsking}"
-                ToolTip.Tip="Files the crash, the scrubbed log and your connections' states as a GitHub issue; no GitHub account needed" />
-        <Button x:Name="ReportCrashButton" Content="Review first…" Command="{Binding ReportCommand}" IsVisible="{Binding IsAsking}" />
-        <Button Content="Open issue" Command="{Binding OpenIssueCommand}" IsVisible="{Binding IsSent}" />
-        <Button x:Name="DismissCrashButton" Content="Dismiss" Command="{Binding DismissCommand}" IsEnabled="{Binding !IsSending}" />
+                ToolTip.Tip="Sends the crash details, a cleaned-up log (passwords and keys removed) and whether your connections were working to the Cuebot developers as a public issue on GitHub. You do not need a GitHub account." />
+        <Button x:Name="ReportCrashButton" Content="Review first…" Command="{Binding ReportCommand}" IsVisible="{Binding IsAsking}"
+                ToolTip.Tip="Opens the Support page so you can read and change the report before anything is sent." />
+        <Button Content="Open issue" Command="{Binding OpenIssueCommand}" IsVisible="{Binding IsSent}"
+                ToolTip.Tip="Opens the report you just sent in your web browser." />
+        <Button x:Name="DismissCrashButton" Content="Dismiss" Command="{Binding DismissCommand}" IsEnabled="{Binding !IsSending}"
+                ToolTip.Tip="Hides this bar without sending anything." />
       </StackPanel>
       <StackPanel VerticalAlignment="Center" Spacing="2">
         <TextBlock Text="{Binding Message}" FontWeight="SemiBold" TextWrapping="Wrap" />

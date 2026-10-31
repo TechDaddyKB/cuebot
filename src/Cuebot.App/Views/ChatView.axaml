@@ -11,11 +11,12 @@
     <DataTemplate x:Key="ActivityPane" x:DataType="vm:ChatViewModel">
       <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-          <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearFeedCommand}" Padding="8,3" />
+          <Button DockPanel.Dock="Right" Content="Clear" Command="{Binding ClearFeedCommand}" Padding="8,3" ToolTip.Tip="Empties this list of recent events. It does not delete anything on your channel." />
           <TextBlock Text="Activity" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
         </DockPanel>
         <ListBox DockPanel.Dock="Top" Classes="chips" ItemContainerTheme="{StaticResource ChipItem}"
-                 ItemsSource="{Binding FeedFilters}" SelectedItem="{Binding FeedFilter}" Margin="0,0,0,4" />
+                 ItemsSource="{Binding FeedFilters}" SelectedItem="{Binding FeedFilter}" Margin="0,0,0,4"
+                 ToolTip.Tip="Show only one kind of event in this list." />
         <Panel>
           <ListBox ItemsSource="{Binding VisibleFeed}" Background="Transparent">
             <ListBox.ItemTemplate>
@@ -55,7 +56,8 @@
           <TextBlock Text="Chat" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
         </DockPanel>
         <ListBox x:Name="PlatformChips" DockPanel.Dock="Top" Classes="chips" ItemContainerTheme="{StaticResource ChipItem}"
-                 ItemsSource="{Binding PlatformChips}" SelectedItem="{Binding Filter}" Margin="0,0,0,4" />
+                 ItemsSource="{Binding PlatformChips}" SelectedItem="{Binding Filter}" Margin="0,0,0,4"
+                 ToolTip.Tip="Show the chat of one platform only, or everything together." />
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
           <!-- Quick actions (global ones work without a selection) -->
@@ -92,9 +94,10 @@
           </Border>
 
           <Grid ColumnDefinitions="Auto,8,*,8,Auto">
-            <ComboBox ItemsSource="{Binding SendTargets}" SelectedItem="{Binding SendTarget}" MinWidth="110" ToolTip.Tip="Send to" />
-            <TextBox x:Name="DraftBox" Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message (type : for emotes, /help for commands)" />
-            <Button Grid.Column="4" Content="Send" Classes="accent" Command="{Binding SendCommand}" />
+            <ComboBox ItemsSource="{Binding SendTargets}" SelectedItem="{Binding SendTarget}" MinWidth="110" ToolTip.Tip="Where your message goes: one platform or all connected ones." />
+            <TextBox x:Name="DraftBox" Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message (type : for emotes, /help for commands)"
+                     ToolTip.Tip="Write a message to post in your chat as yourself. Press Enter to send." />
+            <Button Grid.Column="4" Content="Send" Classes="accent" Command="{Binding SendCommand}" ToolTip.Tip="Posts your message to the chosen chat." />
           </Grid>
           <TextBlock x:Name="StatusText" Text="{Binding Status}" Classes="muted" TextWrapping="Wrap"
                      IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -170,10 +173,11 @@
                   <TextBlock Classes="label" Text="MODERATION" />
                   <WrapPanel ItemSpacing="6" LineSpacing="6">
                     <Button Content="Reply" Command="{Binding ReplyToSelectedCommand}" ToolTip.Tip="Start a reply in the send box" />
-                    <Button Content="Delete message" Command="{Binding DeleteSelectedCommand}" IsVisible="{Binding CanDeleteSelected}" />
-                    <Button Content="Timeout 1 min" Command="{Binding TimeoutSelectedCommand}" CommandParameter="1" IsVisible="{Binding CanTimeoutSelected}" />
-                    <Button Content="Timeout 10 min" Command="{Binding TimeoutSelectedCommand}" CommandParameter="10" IsVisible="{Binding CanTimeoutSelected}" />
+                    <Button Content="Delete message" Command="{Binding DeleteSelectedCommand}" IsVisible="{Binding CanDeleteSelected}" ToolTip.Tip="Removes this one message from the chat for everyone." />
+                    <Button Content="Timeout 1 min" Command="{Binding TimeoutSelectedCommand}" CommandParameter="1" IsVisible="{Binding CanTimeoutSelected}" ToolTip.Tip="Stops this person from writing in chat for 1 minute." />
+                    <Button Content="Timeout 10 min" Command="{Binding TimeoutSelectedCommand}" CommandParameter="10" IsVisible="{Binding CanTimeoutSelected}" ToolTip.Tip="Stops this person from writing in chat for 10 minutes." />
                     <Button Command="{Binding BanSelectedCommand}" IsVisible="{Binding CanBanSelected}"
+                            ToolTip.Tip="Bans this person from your channel. Click once, then click again to confirm."
                             Classes.danger="{Binding ConfirmingBan}">
                       <Panel>
                         <TextBlock Text="Ban…" IsVisible="{Binding !ConfirmingBan}" />
@@ -216,54 +220,55 @@
         <ScrollViewer DataContext="{Binding Options}" x:DataType="vmc:ChatOptionsViewModel">
           <StackPanel Spacing="6" Margin="0,0,8,0">
             <TextBlock Text="Display" FontWeight="SemiBold" />
-            <CheckBox x:Name="ShowEmotesBox" Content="Show emotes as images" IsChecked="{Binding ShowEmotes}" />
-            <CheckBox Content="Show pronouns (Twitch, alejo.io)" IsChecked="{Binding ShowPronouns}" />
+            <CheckBox x:Name="ShowEmotesBox" Content="Show emotes as images" IsChecked="{Binding ShowEmotes}" ToolTip.Tip="Ticked: emotes appear as little pictures. Unticked: you see just their names as text." />
+            <CheckBox Content="Show pronouns (Twitch, alejo.io)" IsChecked="{Binding ShowPronouns}" ToolTip.Tip="Shows he/she/they next to a chatter when they have set it on alejo.io (a pronoun website)." />
 
             <TextBlock Text="Highlights" FontWeight="SemiBold" Margin="0,8,0,0" />
-            <CheckBox Content="Mentions of these names" IsChecked="{Binding HighlightMentions}" />
-            <TextBox Text="{Binding MentionNames}" PlaceholderText="Your names, comma separated" />
+            <CheckBox Content="Mentions of these names" IsChecked="{Binding HighlightMentions}" ToolTip.Tip="Colours a message when someone writes one of your names, so you do not miss it." />
+            <TextBox Text="{Binding MentionNames}" PlaceholderText="Your names, comma separated" ToolTip.Tip="The names people call you, separated by commas, like: kris, krisbot" />
             <TextBlock Text="Keywords" Classes="muted" />
-            <TextBox Text="{Binding Keywords}" PlaceholderText="Words or phrases, comma separated" />
-            <CheckBox Content="First-time chatters (when the platform flags them)" IsChecked="{Binding HighlightFirstTime}" />
+            <TextBox Text="{Binding Keywords}" PlaceholderText="Words or phrases, comma separated" ToolTip.Tip="Messages containing any of these words get a colour too. Separate them with commas." />
+            <CheckBox Content="First-time chatters (when the platform flags them)" IsChecked="{Binding HighlightFirstTime}" ToolTip.Tip="Colours the first message a person ever writes in your chat, so you can say hello." />
 
             <DockPanel Margin="0,8,0,0">
-              <Button DockPanel.Dock="Right" Content="Add" Command="{Binding AddQuickActionCommand}" />
+              <Button DockPanel.Dock="Right" Content="Add" Command="{Binding AddQuickActionCommand}" ToolTip.Tip="Adds a new quick action button." />
               <TextBlock Text="Quick actions" FontWeight="SemiBold" VerticalAlignment="Center" />
             </DockPanel>
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Buttons under the chat that run an action with the selected message (platform, user, userName, userId, message, messageId, rawInput). Also in each message's right-click menu." />
+                       Text="Buttons under the chat that run one of your actions for the message you selected. The action can use the message and the person's details as variables. They are also in each message's right-click menu." />
             <ItemsControl ItemsSource="{Binding QuickActions}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="vmc:QuickActionEditViewModel">
                   <Grid ColumnDefinitions="*,6,*,6,Auto,6,Auto" Margin="0,0,0,4">
-                    <TextBox Text="{Binding Label}" PlaceholderText="Label" />
+                    <TextBox Text="{Binding Label}" PlaceholderText="Label" ToolTip.Tip="The words on the button." />
                     <ComboBox Grid.Column="2" ItemsSource="{Binding ActionNames}" SelectedItem="{Binding ActionName}"
-                              PlaceholderText="Action" HorizontalAlignment="Stretch" />
-                    <ComboBox Grid.Column="4" ItemsSource="{Binding Scopes}" SelectedItem="{Binding Scope}" MinWidth="96" />
-                    <Button Grid.Column="6" Content="Remove" Command="{Binding RemoveCommand}" />
+                              PlaceholderText="Action" HorizontalAlignment="Stretch" ToolTip.Tip="The action that runs when you press the button." />
+                    <ComboBox Grid.Column="4" ItemsSource="{Binding Scopes}" SelectedItem="{Binding Scope}" MinWidth="96"
+                              ToolTip.Tip="When the button can be used: needs a selected message, needs only a selected person, or always." />
+                    <Button Grid.Column="6" Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this quick action button." />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
             <DockPanel Margin="0,8,0,0">
-              <Button DockPanel.Dock="Right" Content="Refresh emotes" Command="{Binding RefreshEmotesCommand}" IsEnabled="{Binding HasEmoteService}" />
+              <Button DockPanel.Dock="Right" Content="Refresh emotes" Command="{Binding RefreshEmotesCommand}" IsEnabled="{Binding HasEmoteService}" ToolTip.Tip="Downloads the emote lists again, for example after you added new emotes." />
               <TextBlock Text="Emotes" FontWeight="SemiBold" VerticalAlignment="Center" />
             </DockPanel>
             <WrapPanel>
-              <CheckBox Content="7TV" IsChecked="{Binding SevenTv}" Margin="0,0,12,0" />
-              <CheckBox Content="BTTV" IsChecked="{Binding Bttv}" Margin="0,0,12,0" />
-              <CheckBox Content="FFZ" IsChecked="{Binding Ffz}" />
+              <CheckBox Content="7TV" IsChecked="{Binding SevenTv}" Margin="0,0,12,0" ToolTip.Tip="Also show emotes from 7TV, a website with extra emotes." />
+              <CheckBox Content="BTTV" IsChecked="{Binding Bttv}" Margin="0,0,12,0" ToolTip.Tip="Also show emotes from BetterTTV, a website with extra emotes." />
+              <CheckBox Content="FFZ" IsChecked="{Binding Ffz}" ToolTip.Tip="Also show emotes from FrankerFaceZ, a website with extra emotes." />
             </WrapPanel>
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Channel ids load channel emote sets. Leave empty when the platform reports its channel." />
+                       Text="A channel id lets Cuebot load the emotes made for your channel. Leave these empty when your platform already tells Cuebot your channel." />
             <Grid ColumnDefinitions="Auto,8,*" RowDefinitions="Auto,4,Auto,4,Auto">
               <TextBlock Text="Twitch user id" VerticalAlignment="Center" />
-              <TextBox Grid.Column="2" Text="{Binding TwitchChannelId}" />
+              <TextBox Grid.Column="2" Text="{Binding TwitchChannelId}" ToolTip.Tip="The number that identifies your Twitch channel. Leave it empty if Cuebot already knows it." />
               <TextBlock Grid.Row="2" Text="YouTube channel id" VerticalAlignment="Center" />
-              <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding YouTubeChannelId}" />
+              <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding YouTubeChannelId}" ToolTip.Tip="The code that identifies your YouTube channel. Leave it empty if Cuebot already knows it." />
               <TextBlock Grid.Row="4" Text="Kick user id" VerticalAlignment="Center" />
-              <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding KickChannelId}" />
+              <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding KickChannelId}" ToolTip.Tip="The number that identifies your Kick channel. Leave it empty if Cuebot already knows it." />
             </Grid>
             <TextBlock x:Name="EmoteStatusText" Text="{Binding EmoteStatus}" Classes="muted" TextWrapping="Wrap" />
           </StackPanel>

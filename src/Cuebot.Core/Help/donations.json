@@ -1,0 +1,1460 @@
+{
+  "triggers": {
+    "streamlabs.connected": {
+      "description": "Runs when Cuebot connects to Streamlabs. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "streamlabs.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to Streamlabs. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "streamlabs.donation": {
+      "description": "Runs when someone donates through Streamlabs. Great for a thank-you message or an alert.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who donated (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The message the donor wrote",
+        "donationId": "The number Streamlabs gave this donation",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamlabs.charityDonation": {
+      "description": "Runs when someone gives to a charity campaign you run on Streamlabs. Good for a special thank-you.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who gave",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The message they wrote",
+        "charityName": "The name of the charity",
+        "campaignId": "The campaign this gift belongs to",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamlabs.merch": {
+      "description": "Runs when someone buys something from your Streamlabs merch store. Handy to thank buyers on stream.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who bought it",
+        "product": "What they bought",
+        "message": "Their message",
+        "imageUrl": "A picture of the product (web link)",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamlabs.loyaltyStoreRedemption": {
+      "description": "Runs when a viewer spends points on an item in your Streamlabs Cloudbot loyalty store.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who bought it",
+        "product": "The item they picked",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamlabs.primeSubGift": {
+      "description": "Runs when someone gives away a Twitch Prime sub through Streamlabs. Nice for a shout-out.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who gave the gift",
+        "recipient": "Who got it",
+        "gift": "What kind of gift it was",
+        "streamer": "Which streamer it was for",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamlabs.follow": {
+      "description": "Runs when Streamlabs passes on a new follower. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "The new follower",
+        "platform": "Where they followed, like Twitch or YouTube"
+      }
+    },
+    "streamlabs.subscription": {
+      "description": "Runs when Streamlabs passes on a new or returning subscriber. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who subscribed",
+        "months": "How many months in a row",
+        "tier": "The sub level",
+        "message": "Their message",
+        "gifter": "Who paid for it, if it was a gift",
+        "platform": "Where they subscribed"
+      }
+    },
+    "streamlabs.bits": {
+      "description": "Runs when Streamlabs passes on someone cheering bits. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minBits": "Only run when at least this many bits were cheered. Leave 0 for any amount."
+      },
+      "variables": {
+        "user": "Who cheered",
+        "bits": "How many bits",
+        "message": "Their message"
+      }
+    },
+    "streamlabs.host": {
+      "description": "Runs when Streamlabs passes on another streamer hosting you. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who is hosting you",
+        "viewers": "How many viewers they brought"
+      }
+    },
+    "streamlabs.raid": {
+      "description": "Runs when Streamlabs passes on a raid. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minViewers": "Only run when at least this many viewers came along. Leave 0 for any number."
+      },
+      "variables": {
+        "user": "Who raided you",
+        "viewers": "How many viewers they brought"
+      }
+    },
+    "streamlabs.superchat": {
+      "description": "Runs when Streamlabs passes on a YouTube Super Chat. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who sent it",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their comment"
+      }
+    },
+    "streamelements.connected": {
+      "description": "Runs when Cuebot connects to StreamElements. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "streamelements.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to StreamElements. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "streamelements.tip": {
+      "description": "Runs when someone tips you through StreamElements. Great for a thank-you message or an alert.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who tipped",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The message they wrote",
+        "avatar": "Their picture (web link)",
+        "tipId": "The number StreamElements gave this tip",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamelements.merch": {
+      "description": "Runs when someone buys from your StreamElements merch store. Handy to thank buyers on stream.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who bought",
+        "product": "What they bought (several items are joined with commas)",
+        "amount": "The total price as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "merchQuantity": "How many things they bought in total",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamelements.redemption": {
+      "description": "Runs when a viewer spends loyalty points on an item in your StreamElements store.",
+      "fields": {
+        "item": "Only run for this store item, typed as it is named in your store, like \"Hydrate!\". Leave empty for any item.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who bought it",
+        "item": "The item they picked",
+        "cost": "How many points it cost",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamelements.follow": {
+      "description": "Runs when StreamElements passes on a new follower. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "The new follower",
+        "platform": "Where they followed"
+      }
+    },
+    "streamelements.subscriber": {
+      "description": "Runs when StreamElements passes on a new or returning subscriber. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who subscribed",
+        "months": "How many months",
+        "tier": "The sub level",
+        "isGift": "True if someone paid for it as a gift",
+        "gifter": "Who paid for it",
+        "message": "Their message"
+      }
+    },
+    "streamelements.cheer": {
+      "description": "Runs when StreamElements passes on someone cheering bits. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minBits": "Only run when at least this many bits were cheered. Leave 0 for any amount."
+      },
+      "variables": {
+        "user": "Who cheered",
+        "bits": "How many bits",
+        "message": "Their message"
+      }
+    },
+    "streamelements.raid": {
+      "description": "Runs when StreamElements passes on a raid. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minViewers": "Only run when at least this many viewers came along. Leave 0 for any number."
+      },
+      "variables": {
+        "user": "Who raided you",
+        "viewers": "How many viewers they brought"
+      }
+    },
+    "streamelements.host": {
+      "description": "Runs when StreamElements passes on another streamer hosting you. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who is hosting you",
+        "viewers": "How many viewers they brought"
+      }
+    },
+    "streamelements.superchat": {
+      "description": "Runs when StreamElements passes on a YouTube Super Chat. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who sent it",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their comment"
+      }
+    },
+    "streamelements.sponsor": {
+      "description": "Runs when StreamElements passes on a new YouTube channel member. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "The new member",
+        "months": "How many months",
+        "tier": "Their membership level"
+      }
+    },
+    "streamelements.communityGift": {
+      "description": "Runs when StreamElements passes on someone gifting subs to the community. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who gave the gifts",
+        "gift": "How many subs were gifted",
+        "tier": "The sub level"
+      }
+    },
+    "streamelements.charityDonation": {
+      "description": "Runs when StreamElements passes on a gift to a charity campaign. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who gave",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message"
+      }
+    },
+    "streamelements.activity": {
+      "description": "Runs for any other activity StreamElements passes on, such as a hype train start. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "activityType": "Only run for this kind of activity, like \"hypetrainStart\". Leave empty for every other kind."
+      },
+      "variables": {
+        "activityType": "The kind of activity",
+        "user": "Who it was about, if anyone",
+        "amount": "A number that came with it, if any",
+        "message": "A message that came with it, if any"
+      }
+    },
+    "tipeeestream.connected": {
+      "description": "Runs when Cuebot connects to TipeeeStream. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "tipeeestream.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to TipeeeStream. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "tipeeestream.donation": {
+      "description": "Runs when someone donates through TipeeeStream. Great for a thank-you message or an alert.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who donated",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The message they wrote",
+        "fees": "The fee TipeeeStream took",
+        "avatar": "Their picture (web link)",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "tipeeestream.follow": {
+      "description": "Runs when TipeeeStream passes on a new follower. Only runs if you tick the \"Also publish...\" box for TipeeeStream on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "The new follower",
+        "platform": "Where they followed"
+      }
+    },
+    "tipeeestream.subscription": {
+      "description": "Runs when TipeeeStream passes on a new or returning subscriber. Only runs if you tick the \"Also publish...\" box for TipeeeStream on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who subscribed",
+        "months": "How many months",
+        "message": "Their message"
+      }
+    },
+    "tipeeestream.cheer": {
+      "description": "Runs when TipeeeStream passes on someone cheering bits. Only runs if you tick the \"Also publish...\" box for TipeeeStream on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minBits": "Only run when at least this many bits were cheered. Leave 0 for any amount."
+      },
+      "variables": {
+        "user": "Who cheered",
+        "bits": "How many bits",
+        "message": "Their message"
+      }
+    },
+    "tipeeestream.host": {
+      "description": "Runs when TipeeeStream passes on another streamer hosting you. Only runs if you tick the \"Also publish...\" box for TipeeeStream on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {},
+      "variables": {
+        "user": "Who is hosting you",
+        "viewers": "How many viewers they brought"
+      }
+    },
+    "tipeeestream.raid": {
+      "description": "Runs when TipeeeStream passes on a raid. Only runs if you tick the \"Also publish...\" box for TipeeeStream on the Donations page (off by default, because your streaming site already reports it).",
+      "fields": {
+        "minViewers": "Only run when at least this many viewers came along. Leave 0 for any number."
+      },
+      "variables": {
+        "user": "Who raided you",
+        "viewers": "How many viewers they brought"
+      }
+    },
+    "donordrive.connected": {
+      "description": "Runs when Cuebot connects to your DonorDrive page (Extra Life and similar charity events). Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "donordrive.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to your DonorDrive page. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "donordrive.donation": {
+      "description": "Runs when someone donates on your DonorDrive fundraising page, such as Extra Life. Great for a thank-you.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The donor's name (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The message the donor wrote",
+        "recipientName": "Who the donation was for",
+        "profileName": "Your fundraising page name",
+        "raised": "Total raised so far",
+        "goal": "Your goal",
+        "formattedRaised": "Total raised, written nicely",
+        "formattedGoal": "Your goal, written nicely",
+        "numDonations": "How many donations you have so far",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "donordrive.incentive": {
+      "description": "Runs when a donation on your DonorDrive page picks an incentive (a goal reward donors can choose).",
+      "fields": {
+        "incentive": "Only run for this incentive, typed as written on your page. Leave empty for any incentive.",
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The donor's name (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The message the donor wrote",
+        "recipientName": "Who the donation was for",
+        "profileName": "Your fundraising page name",
+        "raised": "Total raised so far",
+        "goal": "Your goal",
+        "formattedRaised": "Total raised, written nicely",
+        "formattedGoal": "Your goal, written nicely",
+        "numDonations": "How many donations you have so far",
+        "isTest": "True when this is a test event, not a real one",
+        "incentive.description": "The name of the incentive they picked",
+        "incentive.amount": "What that incentive costs"
+      }
+    },
+    "donordrive.profileUpdated": {
+      "description": "Runs when your DonorDrive page numbers change, such as the total raised. Handy to refresh a goal display.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "profileName": "Your fundraising page name",
+        "raised": "Total raised now",
+        "previousRaised": "Total raised before",
+        "goal": "Your goal",
+        "formattedRaised": "Total raised, written nicely",
+        "numDonations": "How many donations you have",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "kofi.donation": {
+      "description": "Runs when someone sends you a one-off Ko-fi donation. Needs your Ko-fi webhook set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "url": "A web link to the Ko-fi page of this support",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "kofi.subscription": {
+      "description": "Runs when someone starts a new Ko-fi membership with you. Needs your Ko-fi webhook set up.",
+      "fields": {
+        "tier": "Only run for this membership level, like \"Gold\". Type it as it appears on your page. Leave empty for any level.",
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "url": "A web link to the Ko-fi page of this support",
+        "isTest": "True when this is a test event, not a real one",
+        "tier": "The membership level they joined"
+      }
+    },
+    "kofi.resubscription": {
+      "description": "Runs when a Ko-fi member pays again for their membership. Needs your Ko-fi webhook set up.",
+      "fields": {
+        "tier": "Only run for this membership level, like \"Gold\". Type it as it appears on your page. Leave empty for any level.",
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "url": "A web link to the Ko-fi page of this support",
+        "isTest": "True when this is a test event, not a real one",
+        "tier": "Their membership level"
+      }
+    },
+    "kofi.commission": {
+      "description": "Runs when someone pays for a Ko-fi commission (a custom piece of work). Needs your Ko-fi webhook set up.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "url": "A web link to the Ko-fi page of this support",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "kofi.shopOrder": {
+      "description": "Runs when someone buys from your Ko-fi shop. Handy to thank buyers on stream. Needs your Ko-fi webhook set up.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "url": "A web link to the Ko-fi page of this support",
+        "isTest": "True when this is a test event, not a real one",
+        "itemCount": "How many different items were ordered",
+        "item0": "The first item's name (use item1, item2... for the next ones)",
+        "item0.quantity": "How many of the first item"
+      }
+    },
+    "treatstream.authenticated": {
+      "description": "Runs when Cuebot has signed in to TreatStream successfully. Handy to confirm the sign-in worked.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "treatstream.connected": {
+      "description": "Runs when Cuebot connects to TreatStream. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "treatstream.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to TreatStream. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "treatstream.treat": {
+      "description": "Runs when a viewer sends you a treat on TreatStream, like a pizza. Great for a thank-you message.",
+      "fields": {
+        "treat": "Only run for one kind of treat, like \"Pizza\". Leave empty for any treat.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who sent the treat",
+        "treat": "What kind of treat it was",
+        "message": "Their message",
+        "receiver": "Who it was sent to",
+        "senderType": "Where the sender is from, like Twitch",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "pally.connected": {
+      "description": "Runs when Cuebot connects to Pally.gg. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "pally.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to Pally.gg. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "pally.campaignTip": {
+      "description": "Runs when someone tips you on one of your Pally.gg pages. Great for a thank-you message or an alert.",
+      "fields": {
+        "campaign": "Only run for one of your Pally pages: type the last part of its web address. Leave empty for all your pages.",
+        "includeReplays": "Tick to also run when you press \"Replay Alert\" in Pally.gg, which shows an old tip again. Untick to skip those.",
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who tipped",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "campaignTitle": "The name of your Pally page",
+        "campaignSlug": "The last part of that page's web address",
+        "campaignUrl": "The page's web link",
+        "tipNetAmount": "What you get after fees",
+        "isReplay": "True if this is an old tip shown again",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "throne.giftPurchased": {
+      "description": "Runs when someone buys a gift from your Throne wishlist. Great for a thank-you on stream. Needs Throne set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who gave the gift (\"Anonymous\" if hidden)",
+        "amount": "How much it cost, as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "item": "The wishlist item",
+        "throne.itemThumbnailUrl": "A picture of the item (web link)",
+        "isAnonymous": "True if the giver is hidden",
+        "isTest": "True when this is a test event, not a real one",
+        "throne.isSurpriseGift": "True if it is a surprise gift"
+      }
+    },
+    "throne.contributionPurchased": {
+      "description": "Runs when someone pays part of the price of one of your Throne wishlist items. Needs Throne set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who gave the gift (\"Anonymous\" if hidden)",
+        "amount": "How much it cost, as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "item": "The wishlist item",
+        "throne.itemThumbnailUrl": "A picture of the item (web link)",
+        "isAnonymous": "True if the giver is hidden",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "throne.giftCrowdfunded": {
+      "description": "Runs when a Throne wishlist item has been fully paid for by several people together. Needs Throne set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who gave the gift (\"Anonymous\" if hidden)",
+        "amount": "How much it cost, as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "item": "The wishlist item",
+        "throne.itemThumbnailUrl": "A picture of the item (web link)",
+        "isAnonymous": "True if the giver is hidden",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "patreon.followCreated": {
+      "description": "Runs when someone follows you on Patreon. Needs your Patreon webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The patron's name (\"A patron\" if unknown)",
+        "amount": "Their monthly pledge as a number",
+        "tier": "Their tier name (several are joined with commas)",
+        "patronStatus": "Their status, like active_patron",
+        "isFreeTrial": "True if it is a free trial",
+        "isGifted": "True if someone gifted it",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "patreon.followDeleted": {
+      "description": "Runs when someone stops following you on Patreon. Needs your Patreon webhook set up.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The patron's name (\"A patron\" if unknown)",
+        "amount": "Their monthly pledge as a number",
+        "tier": "Their tier name (several are joined with commas)",
+        "patronStatus": "Their status, like active_patron",
+        "isFreeTrial": "True if it is a free trial",
+        "isGifted": "True if someone gifted it",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "patreon.pledgeCreated": {
+      "description": "Runs when someone becomes a paying Patreon patron. Great for a thank-you. Needs your Patreon webhook set up.",
+      "fields": {
+        "tier": "Only run for this tier, like \"Gold\". Type it as it appears on Patreon. Leave empty for any tier.",
+        "minAmount": "The smallest monthly pledge that runs this. Example: 5 ignores pledges under 5. Leave 0 for any amount.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Patreon does not tell Cuebot the currency, so leave this empty. Typing a currency here would stop every Patreon event from running.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The patron's name (\"A patron\" if unknown)",
+        "amount": "Their monthly pledge as a number",
+        "tier": "Their tier name (several are joined with commas)",
+        "patronStatus": "Their status, like active_patron",
+        "isFreeTrial": "True if it is a free trial",
+        "isGifted": "True if someone gifted it",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "patreon.pledgeUpdated": {
+      "description": "Runs when a patron changes their Patreon pledge, such as moving to another tier. Needs your Patreon webhook set up.",
+      "fields": {
+        "tier": "Only run for this tier, like \"Gold\". Type it as it appears on Patreon. Leave empty for any tier.",
+        "minAmount": "The smallest monthly pledge that runs this. Example: 5 ignores pledges under 5. Leave 0 for any amount.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Patreon does not tell Cuebot the currency, so leave this empty. Typing a currency here would stop every Patreon event from running.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The patron's name (\"A patron\" if unknown)",
+        "amount": "Their monthly pledge as a number",
+        "tier": "Their tier name (several are joined with commas)",
+        "patronStatus": "Their status, like active_patron",
+        "isFreeTrial": "True if it is a free trial",
+        "isGifted": "True if someone gifted it",
+        "isTest": "True when this is a test event, not a real one",
+        "updatedToTier": "The tier they moved to"
+      }
+    },
+    "patreon.pledgeDeleted": {
+      "description": "Runs when a patron stops paying on Patreon. Needs your Patreon webhook set up.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The patron's name (\"A patron\" if unknown)",
+        "amount": "Their monthly pledge as a number",
+        "tier": "Their tier name (several are joined with commas)",
+        "patronStatus": "Their status, like active_patron",
+        "isFreeTrial": "True if it is a free trial",
+        "isGifted": "True if someone gifted it",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "patreon.memberUpdated": {
+      "description": "Runs when anything changes about one of your Patreon members. Needs your Patreon webhook set up.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The patron's name (\"A patron\" if unknown)",
+        "amount": "Their monthly pledge as a number",
+        "tier": "Their tier name (several are joined with commas)",
+        "patronStatus": "Their status, like active_patron",
+        "isFreeTrial": "True if it is a free trial",
+        "isGifted": "True if someone gifted it",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "patreon.postPublished": {
+      "description": "Runs when you publish a new post on Patreon. Handy to tell your chat. Needs your Patreon webhook set up.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "title": "The post's title",
+        "url": "A web link to the post",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.donation": {
+      "description": "Runs when someone donates to you on Fourthwall. Great for a thank-you. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.giftPurchase": {
+      "description": "Runs when someone buys gifts on Fourthwall for viewers to win. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one",
+        "fw.quantity": "How many gifts were bought",
+        "fw.offer.name": "The name of the gift item"
+      }
+    },
+    "fourthwall.giftDrawStarted": {
+      "description": "Runs when a Fourthwall gift draw starts, where winners get picked. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "fw.giftCount": "How many gifts are in the draw",
+        "fw.offer.name": "The name of the gift item",
+        "fw.durationSeconds": "How long the draw lasts, in seconds",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.giftDrawEnded": {
+      "description": "Runs when a Fourthwall gift draw ends and the winners are known. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "fw.giftCount": "How many gifts were drawn",
+        "fw.offer.name": "The name of the gift item",
+        "fw.gifts[0].winner": "The first winner (use 1, 2... for the next ones)",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.orderPlaced": {
+      "description": "Runs when someone orders from your Fourthwall shop. Good for thanking buyers. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one",
+        "fw.items": "What they ordered (names joined with commas)",
+        "fw.itemCount": "How many things they ordered",
+        "fw.friendly": "The short order number"
+      }
+    },
+    "fourthwall.orderUpdated": {
+      "description": "Runs when an order in your Fourthwall shop changes, such as being shipped. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one",
+        "fw.updateType": "What changed",
+        "fw.status": "The order's status",
+        "fw.friendly": "The short order number"
+      }
+    },
+    "fourthwall.productCreated": {
+      "description": "Runs when you add a new product to your Fourthwall shop. Handy to announce it. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "fw.name": "The product name",
+        "fw.description": "Its description",
+        "fw.imageUrl": "A picture of it (web link)",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.productUpdated": {
+      "description": "Runs when a product in your Fourthwall shop changes. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "fw.name": "The product name",
+        "fw.description": "Its description",
+        "fw.imageUrl": "A picture of it (web link)",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.subscriptionPurchased": {
+      "description": "Runs when someone starts a paid membership on Fourthwall. Great for a thank-you. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one",
+        "fw.interval": "How often they pay, like monthly",
+        "fw.tierId": "Which tier they joined"
+      }
+    },
+    "fourthwall.subscriptionChanged": {
+      "description": "Runs when a Fourthwall member changes their membership. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one",
+        "fw.interval": "How often they pay",
+        "fw.tierId": "Their tier"
+      }
+    },
+    "fourthwall.subscriptionExpired": {
+      "description": "Runs when a Fourthwall membership ends. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The person's name (\"Anonymous\" if unknown)",
+        "amount": "The amount as a number, like 5 or 12.5",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one",
+        "fw.interval": "How often they paid",
+        "fw.tierId": "Their tier"
+      }
+    },
+    "fourthwall.newsletterSubscribed": {
+      "description": "Runs when someone signs up for your Fourthwall newsletter. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "fw.email": "The email address they signed up with",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "fourthwall.thankYouSent": {
+      "description": "Runs when you send a thank-you to a Fourthwall supporter. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who got the thank-you",
+        "message": "Their original message",
+        "fw.mediaUrl": "The thank-you video or picture (web link)",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "shopify.orderCreated": {
+      "description": "Runs when someone places an order in your Shopify shop, even before it is paid. Needs your Shopify webhook set up.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The buyer's name (\"Someone\" if unknown)",
+        "amount": "The order total as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The note the buyer left",
+        "orderName": "The order number, like #1001",
+        "items": "What was ordered (names joined with commas)",
+        "itemCount": "How many things were ordered",
+        "isRepeatOrder": "True if you already saw this order",
+        "presentmentAmount": "The price in the buyer's own currency",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "shopify.orderPaid": {
+      "description": "Runs when an order in your Shopify shop has been paid. Best for thanking buyers. Needs your Shopify webhook set up.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The buyer's name (\"Someone\" if unknown)",
+        "amount": "The order total as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The note the buyer left",
+        "orderName": "The order number, like #1001",
+        "items": "What was ordered (names joined with commas)",
+        "itemCount": "How many things were ordered",
+        "isRepeatOrder": "True if you already saw this order",
+        "presentmentAmount": "The price in the buyer's own currency",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamloots.connected": {
+      "description": "Runs when Cuebot connects to StreamLoots. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "streamloots.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to StreamLoots. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "streamloots.packPurchased": {
+      "description": "Runs when a viewer buys chests (card packs) on StreamLoots. Great for a thank-you.",
+      "fields": {
+        "minQuantity": "Only run when at least this many chests were bought at once. 1 means any purchase."
+      },
+      "variables": {
+        "user": "Who did it",
+        "message": "Their message",
+        "quantity": "How many chests",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamloots.packGifted": {
+      "description": "Runs when someone gifts StreamLoots chests, to one viewer or to the whole community.",
+      "fields": {
+        "minQuantity": "Only run when at least this many chests were gifted at once. 1 means any gift.",
+        "includeCommunity": "Tick to also run when chests are gifted to random viewers. Untick to run only for gifts to one named person."
+      },
+      "variables": {
+        "user": "Who did it",
+        "message": "Their message",
+        "quantity": "How many chests",
+        "isTest": "True when this is a test event, not a real one",
+        "giftee": "Who got the gift (empty for a community gift)",
+        "communityGift": "True if it went to random viewers"
+      }
+    },
+    "streamloots.cardRedeemed": {
+      "description": "Runs when a viewer plays a StreamLoots card on your stream. This is where the card's fun effect happens.",
+      "fields": {
+        "cardName": "Only run for these cards. Type the card names, separated by commas. Leave empty for any card.",
+        "cardRarity": "Only run for cards of this rarity. Choose Any to run for every rarity."
+      },
+      "variables": {
+        "user": "Who played the card",
+        "message": "Their message",
+        "cardName": "The card's name",
+        "cardDescription": "What the card does",
+        "cardRarity": "common, rare, epic or legendary",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "streamloots.alert": {
+      "description": "Runs for other StreamLoots alerts that are not purchases, gifts or cards, such as reactions.",
+      "fields": {
+        "alertType": "Only run for these kinds of alert, named as StreamLoots names them, separated by commas. Leave empty for any."
+      },
+      "variables": {
+        "user": "Who did it",
+        "alertType": "The kind of alert",
+        "alertMessage": "The alert text",
+        "message": "Their message",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.connected": {
+      "description": "Runs when Cuebot connects to Crowd Control. Handy for a quick \"all good\" message or to switch something on.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service"
+      }
+    },
+    "crowdcontrol.disconnected": {
+      "description": "Runs when Cuebot loses or ends its connection to Crowd Control. Handy to warn yourself that alerts have stopped.",
+      "fields": {},
+      "variables": {
+        "service": "The name of the service",
+        "reason": "Why the connection ended"
+      }
+    },
+    "crowdcontrol.effectRequest": {
+      "description": "Runs when a viewer asks for a Crowd Control effect in your game, before it happens.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.effectSuccess": {
+      "description": "Runs when a Crowd Control effect worked in your game. Good for reacting to what the viewer did.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.effectFailure": {
+      "description": "Runs when a Crowd Control effect could not happen in your game.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one",
+        "temporary": "True if it failed only for now and may work later"
+      }
+    },
+    "crowdcontrol.effectRefund": {
+      "description": "Runs when a viewer's coins for a Crowd Control effect were given back to them.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.effectRetry": {
+      "description": "Runs when the game asked Crowd Control to try a viewer's effect again.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.timedEffectStarted": {
+      "description": "Runs when a Crowd Control effect that lasts for a while starts.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one",
+        "status": "What happened: Begin, Pause, Resume or End",
+        "timeRemainingSeconds": "Seconds the effect has left"
+      }
+    },
+    "crowdcontrol.timedEffectUpdated": {
+      "description": "Runs when a lasting Crowd Control effect is paused or resumed, for example when the game pauses.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one",
+        "status": "What happened: Begin, Pause, Resume or End",
+        "timeRemainingSeconds": "Seconds the effect has left"
+      }
+    },
+    "crowdcontrol.timedEffectEnded": {
+      "description": "Runs when a lasting Crowd Control effect runs out.",
+      "fields": {
+        "effectName": "Only run for these effects. Type effect names (or ids) separated by commas, like \"Spawn Creeper\". Leave empty for any effect.",
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game.",
+        "minPrice": "Only run when the effect cost at least this many Crowd Control coins. 0 means any price."
+      },
+      "variables": {
+        "user": "The viewer who asked (\"Anonymous\" if hidden)",
+        "effectName": "The effect's name",
+        "effectDescription": "What the effect does",
+        "price": "What it cost, in coins",
+        "quantity": "How many times they asked for it",
+        "gameName": "The game",
+        "message": "Their message",
+        "requestId": "The number of this request",
+        "isTest": "True when this is a test event, not a real one",
+        "status": "What happened: Begin, Pause, Resume or End",
+        "timeRemainingSeconds": "Seconds the effect has left"
+      }
+    },
+    "crowdcontrol.coinExchange": {
+      "description": "Runs when someone gets Crowd Control coins, bought or free. Handy to thank people who buy coins.",
+      "fields": {
+        "coinType": "Choose paid (coins bought with real money), free (earned for free) or Any.",
+        "minAmount": "Only run when at least this many coins were added. 0 means any amount."
+      },
+      "variables": {
+        "user": "Who got the coins",
+        "coinType": "paid or free",
+        "amount": "How many coins",
+        "bonus": "Extra bonus coins",
+        "source": "Where the coins came from",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.gameSessionStart": {
+      "description": "Runs when a Crowd Control play session starts, so viewers can begin to send effects.",
+      "fields": {
+        "gameName": "Only run for these games. Type game names (or ids) separated by commas. Leave empty for any game."
+      },
+      "variables": {
+        "gameName": "The game",
+        "gamePackName": "The Crowd Control game pack being used",
+        "gameSessionId": "The number of this play session",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.gameSessionEnd": {
+      "description": "Runs when a Crowd Control play session ends.",
+      "fields": {},
+      "variables": {
+        "gameName": "The game",
+        "gamePackName": "The Crowd Control game pack being used",
+        "gameSessionId": "The number of this play session",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "crowdcontrol.gameSessionPaused": {
+      "description": "Runs when you pause or resume a Crowd Control play session.",
+      "fields": {
+        "stateFilter": "Choose Any to run for both. On runs only when the session gets paused. Off runs only when it resumes."
+      },
+      "variables": {
+        "gameName": "The game",
+        "gamePackName": "The Crowd Control game pack being used",
+        "gameSessionId": "The number of this play session",
+        "isTest": "True when this is a test event, not a real one",
+        "paused": "True if it is now paused, false if it resumed"
+      }
+    }
+  },
+  "subActions": {
+    "streamelements.getUserPoints": {
+      "description": "Looks up how many StreamElements loyalty points a viewer has. Handy for a \"you have X points\" chat reply.",
+      "fields": {
+        "user": "The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site."
+      },
+      "variables": {
+        "sePointsUser": "The viewer's name",
+        "sePoints": "Their points right now",
+        "sePointsAllTime": "All the points they ever earned",
+        "sePointsRank": "Their place on your points list (1 is the top)"
+      }
+    },
+    "streamelements.addUserPoints": {
+      "description": "Gives a viewer StreamElements loyalty points, or takes some away with a negative number. Good for rewards.",
+      "fields": {
+        "user": "The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site.",
+        "amount": "How many points to give. Use a minus sign, like -50, to take points away."
+      },
+      "variables": {
+        "sePoints": "Their points after the change"
+      }
+    },
+    "streamelements.getPointsLeaderboard": {
+      "description": "Looks up your top viewers by StreamElements loyalty points. Handy to read out a top list in chat.",
+      "fields": {
+        "count": "How many people to fetch, starting from the top. 5 gets the top five."
+      },
+      "variables": {
+        "sePointsLeaderCount": "How many people were found",
+        "sePointsLeader0User": "The name of number 1 (use 1, 2, 3... for the next ones)",
+        "sePointsLeader0Total": "Their points (use 1, 2, 3... for the next ones)"
+      }
+    },
+    "streamelements.getTips": {
+      "description": "Looks up your most recent StreamElements tips. Handy to show or read out the latest supporters.",
+      "fields": {
+        "count": "How many of the latest tips to fetch. 5 gets the five newest."
+      },
+      "variables": {
+        "seTipCount": "How many tips were found",
+        "seTip0User": "Who sent the newest tip (use 1, 2, 3... for older ones)",
+        "seTip0Amount": "How much it was (use 1, 2, 3... for older ones)",
+        "seTip0Currency": "Its currency",
+        "seTip0FormattedAmount": "The amount written nicely",
+        "seTip0Message": "Their message",
+        "seTip0CreatedAt": "When it was sent"
+      }
+    },
+    "streamelements.getTipLeaderboard": {
+      "description": "Looks up the people who tipped you the most on StreamElements. Handy for a thank-you list.",
+      "fields": {
+        "count": "How many people to fetch, starting from the top. 5 gets the top five."
+      },
+      "variables": {
+        "seTipLeaderCount": "How many people were found",
+        "seTipLeader0User": "The name of number 1 (use 1, 2, 3... for the next ones)",
+        "seTipLeader0Total": "How much they tipped in total (use 1, 2, 3... for the next ones)"
+      }
+    },
+    "streamloots.sendTestEvent": {
+      "description": "Makes a pretend StreamLoots alert so you can try your actions without waiting for a real one.",
+      "fields": {
+        "kind": "Which pretend alert to make: a purchase, a gift to one person, a gift to the community, or a card played."
+      },
+      "variables": {}
+    },
+    "crowdcontrol.getSession": {
+      "description": "Checks the current Crowd Control play session and saves the answer in variables. Handy to show what game is running.",
+      "fields": {},
+      "variables": {
+        "ccConnected": "True if Cuebot is connected to Crowd Control",
+        "ccSessionActive": "True if a play session is running",
+        "ccSessionPaused": "True if it is paused",
+        "ccGameName": "The game being played",
+        "ccGamePackName": "The game pack being used",
+        "ccTimedEffectCount": "How many lasting effects are running",
+        "ccTimedEffects": "The names of those effects, joined with commas",
+        "ccGameSessionId": "The number of this session",
+        "ccSessionStarted": "When it started"
+      }
+    },
+    "crowdcontrol.sendTestEvent": {
+      "description": "Makes a pretend Crowd Control event so you can try your actions without a real viewer.",
+      "fields": {
+        "kind": "Which pretend event to make, like effectSuccess for a working effect or coinExchange for coins added."
+      },
+      "variables": {}
+    }
+  }
+}

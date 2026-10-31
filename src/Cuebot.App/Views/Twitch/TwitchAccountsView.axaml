@@ -15,9 +15,11 @@
             <TextBlock Classes="h2" Text="Broadcaster account" />
             <TextBlock Text="{Binding Account, StringFormat='Account: {0}'}" />
             <WrapPanel Classes="actions">
-              <Button Content="Sign out" Command="{Binding SignOutCommand}" IsEnabled="{Binding IsAuthorized}" />
+              <Button Content="Sign out" Command="{Binding SignOutCommand}" IsEnabled="{Binding IsAuthorized}"
+                      ToolTip.Tip="Signs your Twitch account out of Cuebot and disconnects. Cuebot forgets your login, so you have to sign in again to use Twitch." />
             </WrapPanel>
-            <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
+            <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}"
+                      ToolTip.Tip="Connects to Twitch as soon as Cuebot starts, so your events and chat work right away." />
           </StackPanel>
         </Border>
 
@@ -25,21 +27,23 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Sign in" />
             <TextBlock Classes="hint"
-                       Text="Twitch opens in your browser; confirm the code shown here. Choose which permissions to request on the Settings tab." />
-            <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}" />
+                       Text="Twitch opens in your web browser. Check that the code shown here matches the one on the Twitch page, then confirm. You can choose which permissions Cuebot asks for on the Settings tab." />
+            <Button Content="Sign in with Twitch" Classes="accent" Command="{Binding AuthorizeCommand}" IsVisible="{Binding !IsAuthorizing}"
+                    ToolTip.Tip="Opens Twitch in your browser so you can allow Cuebot to use your channel. Your Twitch password is never typed into Cuebot." />
             <StackPanel Spacing="8" IsVisible="{Binding IsAuthorizing}">
               <TextBlock TextWrapping="Wrap" Text="A browser window has opened. Confirm this code on Twitch:" />
               <TextBlock Text="{Binding UserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" />
-                <Button Content="Cancel" Command="{Binding CancelAuthorizeCommand}" />
+                <Button Content="Open page again" Command="{Binding OpenVerificationPageCommand}" ToolTip.Tip="Opens the Twitch confirmation page in your browser again, in case you closed it." />
+                <Button Content="Cancel" Command="{Binding CancelAuthorizeCommand}" ToolTip.Tip="Stops signing in. Nothing is changed." />
               </StackPanel>
             </StackPanel>
             <Expander Header="Advanced: use my own Twitch application" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
               <StackPanel Spacing="8">
                 <TextBlock Classes="hint" TextWrapping="Wrap"
-                           Text="Optional unless this build has no Twitch application of its own. Register one at dev.twitch.tv/console (category: Chat Bot, client type: Public, OAuth redirect: http://localhost) and paste its Client ID; no client secret is needed. Leave it empty to use Cuebot's. Sign in again after changing it." />
-                <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID" />
+                           Text="Most people can skip this. You only need it if this version of Cuebot comes without a Twitch app of its own. Create one at dev.twitch.tv/console (category: Chat Bot, client type: Public, redirect address: http://localhost) and paste its Client ID here. You do not need a client secret. Leave it empty to use Cuebot's app. Sign in again after changing it." />
+                <TextBox Text="{Binding ClientId}" PlaceholderText="Twitch application Client ID"
+                         ToolTip.Tip="The Client ID (a long code) of your own Twitch app from dev.twitch.tv/console. Leave empty to use Cuebot's own app." />
               </StackPanel>
             </Expander>
           </StackPanel>
@@ -49,26 +53,26 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Bot account (optional)" />
             <TextBlock Classes="hint"
-                       Text="A second Twitch account that sends chat messages and whispers. The broadcaster account still receives every event. Before signing in, log in to twitch.tv as the bot in your browser (or open the link in a private window)." />
+                       Text="A second Twitch account that sends your chat messages and whispers, so they do not come from you. Your own account still receives every event. Before signing in, log in to twitch.tv as the bot in your browser (or open the link in a private window)." />
             <TextBlock>
               <Run Text="{Binding BotState}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding BotStatusMessage}" Foreground="{DynamicResource CuebotMuted}" />
             </TextBlock>
             <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" />
             <WrapPanel Classes="actions" IsVisible="{Binding !IsBotAuthorizing}">
-              <Button Content="Sign in bot" Classes="accent" Command="{Binding AuthorizeBotCommand}" />
-              <Button Content="Reconnect bot" Command="{Binding ConnectBotCommand}" IsEnabled="{Binding IsBotAuthorized}" />
-              <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsEnabled="{Binding IsBotAuthorized}" />
+              <Button Content="Sign in bot" Classes="accent" Command="{Binding AuthorizeBotCommand}" ToolTip.Tip="Opens Twitch so the bot account can allow Cuebot. Be logged in to Twitch as the bot first, not as yourself." />
+              <Button Content="Reconnect bot" Command="{Binding ConnectBotCommand}" IsEnabled="{Binding IsBotAuthorized}" ToolTip.Tip="Connects the bot account to Twitch again, for example if it stopped working." />
+              <Button Content="Sign out bot" Command="{Binding SignOutBotCommand}" IsEnabled="{Binding IsBotAuthorized}" ToolTip.Tip="Signs the bot account out of Cuebot. Chat messages will then come from your own account." />
             </WrapPanel>
             <StackPanel Spacing="8" IsVisible="{Binding IsBotAuthorizing}">
               <TextBlock TextWrapping="Wrap" Text="Confirm this code on Twitch while logged in as the bot:" />
               <TextBlock Text="{Binding BotUserCode}" FontSize="28" FontWeight="Bold" LetterSpacing="4" />
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Open page again" Command="{Binding OpenBotVerificationPageCommand}" />
-                <Button Content="Cancel" Command="{Binding CancelAuthorizeBotCommand}" />
+                <Button Content="Open page again" Command="{Binding OpenBotVerificationPageCommand}" ToolTip.Tip="Opens the Twitch confirmation page in your browser again, in case you closed it." />
+                <Button Content="Cancel" Command="{Binding CancelAuthorizeBotCommand}" ToolTip.Tip="Stops signing in the bot. Nothing is changed." />
               </StackPanel>
             </StackPanel>
-            <CheckBox Content="Send chat messages as the bot" IsChecked="{Binding SendChatAsBot}" />
-            <CheckBox Content="Send whispers as the bot" IsChecked="{Binding SendWhispersAsBot}" />
+            <CheckBox Content="Send chat messages as the bot" IsChecked="{Binding SendChatAsBot}" ToolTip.Tip="Chat messages that Cuebot sends will show the bot's name instead of yours." />
+            <CheckBox Content="Send whispers as the bot" IsChecked="{Binding SendWhispersAsBot}" ToolTip.Tip="Private messages (whispers) that Cuebot sends will show the bot's name instead of yours." />
           </StackPanel>
         </Border>
 
@@ -76,9 +80,10 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Send a test message" />
             <Grid ColumnDefinitions="*,8,160,8,Auto">
-              <TextBox Text="{Binding TestMessage}" PlaceholderText="Message" />
-              <ComboBox Grid.Column="2" ItemsSource="{x:Static tw:TwitchAccountsViewModel.SenderChoices}" SelectedItem="{Binding TestSender}" />
-              <Button Grid.Column="4" Content="Send" Command="{Binding SendTestCommand}" />
+              <TextBox Text="{Binding TestMessage}" PlaceholderText="Message" ToolTip.Tip="Type a message to send to your Twitch chat as a test. Real viewers will see it." />
+              <ComboBox Grid.Column="2" ItemsSource="{x:Static tw:TwitchAccountsViewModel.SenderChoices}" SelectedItem="{Binding TestSender}"
+                        ToolTip.Tip="Who the test message comes from. Default uses the bot if it is signed in and chosen above, otherwise your own account." />
+              <Button Grid.Column="4" Content="Send" Command="{Binding SendTestCommand}" ToolTip.Tip="Posts the message in your Twitch chat now." />
             </Grid>
           </StackPanel>
         </Border>

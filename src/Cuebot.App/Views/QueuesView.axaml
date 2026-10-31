@@ -27,9 +27,9 @@
         <TextBlock Grid.Column="1" Text="{Binding ActionName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding Queue}" Classes="muted" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         <TextBlock Grid.Column="3" Text="{Binding Source}" Classes="muted" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="4" Text="{Binding Queued}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Queued at" />
-        <TextBlock Grid.Column="5" Text="{Binding Started}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Started at" />
-        <TextBlock Grid.Column="6" Text="{Binding Duration}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="Run time" />
+        <TextBlock Grid.Column="4" Text="{Binding Queued}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="The time this run was put in line to start." />
+        <TextBlock Grid.Column="5" Text="{Binding Started}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="The time this run began." />
+        <TextBlock Grid.Column="6" Text="{Binding Duration}" Classes="muted" VerticalAlignment="Center" ToolTip.Tip="How long this run took." />
       </Grid>
     </DataTemplate>
     <DataTemplate DataType="vm:NameValueRow">
@@ -45,14 +45,14 @@
     <StackPanel DockPanel.Dock="Top">
       <DockPanel Margin="0,0,0,8">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
-          <Button Content="+ Queue" Classes="accent" Command="{Binding AddQueueCommand}" />
-          <Button Content="Pause all" Command="{Binding PauseAllCommand}" />
-          <Button Content="Resume all" Command="{Binding ResumeAllCommand}" />
+          <Button Content="+ Queue" Classes="accent" Command="{Binding AddQueueCommand}" ToolTip.Tip="Adds a new queue (a waiting line for actions)." />
+          <Button Content="Pause all" Command="{Binding PauseAllCommand}" ToolTip.Tip="Holds back every queue. Actions wait and do not run until you press Resume all." />
+          <Button Content="Resume all" Command="{Binding ResumeAllCommand}" ToolTip.Tip="Lets all paused queues run their waiting actions again." />
         </StackPanel>
         <TextBlock Classes="h1" Text="Queues" Margin="0" VerticalAlignment="Center" />
       </DockPanel>
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Every action run waits in its queue until it may start. A paused queue holds its runs (except actions marked Always run); a blocking queue runs one action at a time, in arrival order. Pick an action's queue on the Actions page." />
+                 Text="Every time an action is started, it waits in a queue (a waiting line) until it may begin. A paused queue holds its actions back (except actions marked Always run). A blocking queue lets only one action run at a time, in the order they arrived. You choose an action's queue on the Actions page." />
       <Border Classes="card" Padding="8">
         <ScrollViewer MaxHeight="230">
           <ItemsControl ItemsSource="{Binding Queues}">
@@ -60,13 +60,13 @@
               <DataTemplate DataType="vm:QueueRowViewModel">
                 <Grid ColumnDefinitions="220,12,90,12,70,12,*,Auto" Margin="4,3">
                   <StackPanel VerticalAlignment="Center">
-                    <TextBox Text="{Binding NameText}" IsVisible="{Binding IsEditable}" PlaceholderText="Queue name" />
+                    <TextBox Text="{Binding NameText}" IsVisible="{Binding IsEditable}" PlaceholderText="Queue name" ToolTip.Tip="The name of this queue. Actions pick it by this name." />
                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" IsVisible="{Binding !IsEditable}" Margin="10,0,0,0" />
                     <TextBlock Classes="error" Text="{Binding NameError}"
                                IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                   </StackPanel>
                   <CheckBox Grid.Column="2" Content="Blocking" IsChecked="{Binding Blocking}" IsEnabled="{Binding IsEditable}"
-                            ToolTip.Tip="Run one action at a time, in arrival order" />
+                            ToolTip.Tip="Ticked: only one action from this queue runs at a time. The others wait their turn in the order they arrived." />
                   <TextBlock Grid.Column="4" Text="{Binding StatusText}" Classes="state" Classes.bad="{Binding Paused}" />
                   <StackPanel Grid.Column="6" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Counts}" />
@@ -74,12 +74,12 @@
                   </StackPanel>
                   <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                     <Button Content="Pause" IsVisible="{Binding !Paused}"
-                            Command="{Binding PauseCommand}" />
+                            Command="{Binding PauseCommand}" ToolTip.Tip="Holds back this queue. Its actions wait until you press Resume." />
                     <Button Content="Resume" IsVisible="{Binding Paused}" Classes="accent"
-                            Command="{Binding ResumeCommand}" />
-                    <Button Content="Clear" ToolTip.Tip="Cancel every pending run in this queue"
+                            Command="{Binding ResumeCommand}" ToolTip.Tip="Lets this queue run its waiting actions again." />
+                    <Button Content="Clear" ToolTip.Tip="Cancels every action that is waiting in this queue. They will not run."
                             Command="{Binding ClearCommand}" />
-                    <Button Content="Delete" IsEnabled="{Binding IsEditable}" ToolTip.Tip="Delete the queue; its actions move to Default"
+                    <Button Content="Delete" IsEnabled="{Binding IsEditable}" ToolTip.Tip="Deletes this queue. Its actions are moved to the Default queue."
                             Command="{Binding DeleteCommand}" />
                   </StackPanel>
                 </Grid>
@@ -112,7 +112,7 @@
         <TabItem Header="History">
           <DockPanel>
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-              <Button DockPanel.Dock="Right" Content="Clear history" Command="{Binding ClearHistoryCommand}" />
+              <Button DockPanel.Dock="Right" Content="Clear history" Command="{Binding ClearHistoryCommand}" ToolTip.Tip="Empties the list of past runs." />
               <TextBlock Classes="muted" Text="{Binding HistorySummary}" VerticalAlignment="Center" />
             </DockPanel>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="90,*,130,170,74,74,80" Margin="12,0,12,4">
@@ -132,21 +132,21 @@
       <Border Grid.Column="2" Classes="card" Margin="0">
         <Grid>
           <TextBlock Classes="muted" IsVisible="{Binding !HasSelectedRun}" TextWrapping="Wrap" VerticalAlignment="Center"
-                     HorizontalAlignment="Center" TextAlignment="Center" Text="Select a run to see its arguments" />
+                     HorizontalAlignment="Center" TextAlignment="Center" Text="Select a run to see the variables it had" />
           <DockPanel IsVisible="{Binding HasSelectedRun}">
             <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
               <TextBlock Classes="h2" Text="{Binding SelectedTitle}" TextWrapping="Wrap" Margin="0" />
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="Requeue" Command="{Binding RequeueCommand}"
-                        ToolTip.Tip="Run the action again with the arguments it had when it was queued" />
-                <Button Content="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding CanCancelSelected}" />
+                        ToolTip.Tip="Runs the action again with the same variable values it had the first time." />
+                <Button Content="Cancel run" Command="{Binding CancelRunCommand}" IsEnabled="{Binding CanCancelSelected}" ToolTip.Tip="Stops this run if it is still waiting or running." />
               </StackPanel>
             </StackPanel>
             <ScrollViewer>
               <StackPanel Spacing="6">
-                <TextBlock Text="Arguments when queued" FontWeight="SemiBold" />
+                <TextBlock Text="Variables when queued" FontWeight="SemiBold" ToolTip.Tip="The values the action received when it started waiting in line." />
                 <ItemsControl ItemsSource="{Binding ArgsWhenQueued}" />
-                <TextBlock Text="Arguments after the run" FontWeight="SemiBold" Margin="0,10,0,0" IsVisible="{Binding HasArgsAfterRun}" />
+                <TextBlock Text="Variables after the run" FontWeight="SemiBold" Margin="0,10,0,0" IsVisible="{Binding HasArgsAfterRun}" />
                 <ItemsControl ItemsSource="{Binding ArgsAfterRun}" IsVisible="{Binding HasArgsAfterRun}" />
               </StackPanel>
             </ScrollViewer>

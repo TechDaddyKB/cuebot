@@ -12,23 +12,28 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Connection" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="In Lumia Stream open Settings → API, switch on &quot;Enable Developers API&quot; and click &quot;Copy Token&quot;, then paste it below. Lumia's API listens on port 39231." />
+                     Text="In Lumia Stream open Settings → API, switch on &quot;Enable Developers API&quot; and click &quot;Copy Token&quot;, then paste the token below. A token is a long secret code that lets Cuebot control Lumia. Lumia listens on port 39231 (the &quot;door&quot; Cuebot connects to)." />
           <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto,Auto" >
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" Name="LumiaHost" Text="{Binding Host}" PlaceholderText="127.0.0.1" />
+            <TextBox Grid.Column="1" Name="LumiaHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The address of the computer where Lumia Stream runs. 127.0.0.1 (or localhost) means this same computer, so most people can leave it." />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="3" Name="LumiaPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <NumericUpDown Grid.Column="3" Name="LumiaPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                             ToolTip.Tip="A number that says which &quot;door&quot; on that computer Cuebot connects to. Only change it if you changed it in Lumia too." />
             <TextBlock Grid.Row="1" Text="Token" VerticalAlignment="Center" Margin="0,8,8,0" />
             <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,8,0,0" Name="LumiaToken" Text="{Binding Token}" PasswordChar="•"
-                     PlaceholderText="Token from Lumia's Settings → API" />
+                     PlaceholderText="Token from Lumia's Settings → API"
+                     ToolTip.Tip="The secret code you copied from Lumia (Settings → API → Copy Token). It is hidden as dots. Keep it private." />
           </Grid>
           <TextBlock Classes="muted" Text="A token is required before Cuebot can connect." IsVisible="{Binding HasNoToken}" />
-          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" />
-          <CheckBox Content="Reconnect when the connection drops (or Lumia is not running yet)" IsChecked="{Binding AutoReconnect}" />
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects as soon as Cuebot starts, so you do not have to press Connect." />
+          <CheckBox Content="Reconnect when the connection drops (or Lumia is not running yet)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries to connect again by itself if the connection is lost, or if Lumia was not open yet when Cuebot started." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-            <Button Content="Reload commands and lights" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}" />
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to Lumia Stream using the address and token above." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to Lumia Stream." />
+            <Button Content="Reload commands and lights" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Asks Lumia for its newest list of commands and lights. Use it after you add or rename something in Lumia." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
@@ -38,9 +43,12 @@
             <Run Text="Lights: " FontWeight="SemiBold" /><Run Text="{Binding Lights}" />
           </TextBlock>
           <Grid ColumnDefinitions="200,Auto,Auto" RowDefinitions="Auto">
-            <TextBox Text="{Binding TestColor}" PlaceholderText="#RRGGBB" />
-            <Button Grid.Column="1" Margin="8,0,0,0" Content="Set colour" Command="{Binding SetColorCommand}" IsEnabled="{Binding IsConnected}" />
-            <Button Grid.Column="2" Margin="8,0,0,0" Content="Back to default" Command="{Binding ToDefaultCommand}" IsEnabled="{Binding IsConnected}" />
+            <TextBox Text="{Binding TestColor}" PlaceholderText="#RRGGBB"
+                     ToolTip.Tip="A colour to try on your lights, written as # and six letters or numbers, like #FF0000 for red." />
+            <Button Grid.Column="1" Margin="8,0,0,0" Content="Set colour" Command="{Binding SetColorCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Changes your lights to the colour in the box, as a test." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Back to default" Command="{Binding ToDefaultCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Sends your lights back to their normal setting in Lumia." />
           </Grid>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
@@ -56,7 +64,7 @@
               <DataTemplate x:DataType="vm:LumiaCommandRowViewModel">
                 <Grid ColumnDefinitions="*,Auto" Margin="0,2">
                   <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                  <Button Grid.Column="1" Content="Run" Command="{Binding RunCommand}" />
+                  <Button Grid.Column="1" Content="Run" Command="{Binding RunCommand}" ToolTip.Tip="Runs this command in Lumia right now, as a test." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

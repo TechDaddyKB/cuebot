@@ -7,13 +7,13 @@
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
-          <Button x:Name="AddDeckButton" Content="+ Deck" Command="{Binding AddDeckCommand}" />
-          <Button Content="Remove deck" Command="{Binding RemoveDeckCommand}" IsEnabled="{Binding HasSelection}" />
+          <Button x:Name="AddDeckButton" Content="+ Deck" Command="{Binding AddDeckCommand}" ToolTip.Tip="Creates a new deck (a page of buttons)." />
+          <Button Content="Remove deck" Command="{Binding RemoveDeckCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Deletes the selected deck with all its pages and buttons." />
         </StackPanel>
         <TextBlock Classes="h1" Text="Decks" Margin="0" VerticalAlignment="Center" />
       </DockPanel>
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="A deck is a page of buttons for any browser: a phone, a tablet or an OBS dock. Pressing a button runs its action (and fires 'Deck item pressed'); the Decks sub-actions change titles, colours, icons, values, states and pages while Cuebot runs." />
+                 Text="A deck is a page of buttons for any browser: a phone, a tablet or an OBS dock. Pressing a button runs its action (and also starts anything that uses the 'Deck item pressed' trigger). While Cuebot runs, your actions can change a button's title, colours, icon and page with the Decks sub-actions." />
       <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding HttpHint}" />
     </StackPanel>
 
@@ -36,51 +36,52 @@
                 <Border Classes="card">
                   <StackPanel Spacing="8">
                     <Grid ColumnDefinitions="*,12,Auto">
-                      <TextBox x:Name="DeckName" Text="{Binding Name}" PlaceholderText="Deck name" FontWeight="SemiBold" />
-                      <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                      <TextBox x:Name="DeckName" Text="{Binding Name}" PlaceholderText="Deck name" FontWeight="SemiBold" ToolTip.Tip="A name for this deck. It is shown in the list on the left." />
+                      <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Unticked: the deck stops working in browsers and its buttons do nothing." />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,8,*,8,Auto">
                       <TextBlock Text="Address" VerticalAlignment="Center" />
-                      <TextBox x:Name="DeckUrl" Grid.Column="2" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" />
-                      <Button Grid.Column="4" Content="Open" Click="OnOpenDeck" />
+                      <TextBox x:Name="DeckUrl" Grid.Column="2" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" ToolTip.Tip="The web address of this deck. Type it into the browser on your phone or tablet. You cannot edit it here." />
+                      <Button Grid.Column="4" Content="Open" Click="OnOpenDeck" ToolTip.Tip="Opens this deck in your web browser." />
                     </Grid>
                     <WrapPanel ItemSpacing="16" LineSpacing="8">
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Rows" VerticalAlignment="Center" />
-                        <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" />
+                        <NumericUpDown Value="{Binding Rows}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" ToolTip.Tip="How many rows of buttons the deck has." />
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Columns" VerticalAlignment="Center" />
-                        <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" />
+                        <NumericUpDown Value="{Binding Columns}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" ToolTip.Tip="How many buttons fit side by side in each row." />
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Gap (px)" VerticalAlignment="Center" />
-                        <NumericUpDown Value="{Binding Gap}" Minimum="0" Maximum="64" Increment="1" FormatString="0" Width="110" />
+                        <NumericUpDown Value="{Binding Gap}" Minimum="0" Maximum="64" Increment="1" FormatString="0" Width="110" ToolTip.Tip="The empty space between buttons, in pixels (tiny dots on the screen)." />
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Background" VerticalAlignment="Center" />
-                        <TextBox Text="{Binding Background}" PlaceholderText="#16161c" Width="120" />
+                        <TextBox Text="{Binding Background}" PlaceholderText="#16161c" Width="120" ToolTip.Tip="The colour behind all buttons, as a colour code like #16161c or a colour name like black." />
                       </StackPanel>
                       <Button Content="Reset runtime changes" Command="{Binding ResetRuntimeCommand}"
-                              ToolTip.Tip="Forget titles, colours, states and the page that sub-actions changed" />
+                              ToolTip.Tip="Undoes the changes your actions made while Cuebot ran (titles, colours, button states, current page) and goes back to what you set up here." />
                     </WrapPanel>
                     <StackPanel Spacing="4">
-                      <TextBlock Text="Arguments for every button (name=value per line)" />
-                      <TextBox Text="{Binding Arguments}" AcceptsReturn="True" MinHeight="48" />
+                      <TextBlock Text="Variables for every button (name=value per line)" />
+                      <TextBox Text="{Binding Arguments}" AcceptsReturn="True" MinHeight="48"
+                               ToolTip.Tip="Extra variables given to the action of every button in this deck. Write one per line, like mood=happy. The action reads it as %mood%." />
                     </StackPanel>
                   </StackPanel>
                 </Border>
 
                 <DockPanel>
                   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
-                    <Button Content="+ Page" Command="{Binding AddPageCommand}" />
-                    <Button Content="Remove page" Command="{Binding RemovePageCommand}" />
-                    <Button x:Name="AddItemButton" Content="+ Button" Command="{Binding AddItemCommand}" />
+                    <Button Content="+ Page" Command="{Binding AddPageCommand}" ToolTip.Tip="Adds another page of buttons to this deck." />
+                    <Button Content="Remove page" Command="{Binding RemovePageCommand}" ToolTip.Tip="Deletes the shown page and its buttons." />
+                    <Button x:Name="AddItemButton" Content="+ Button" Command="{Binding AddItemCommand}" ToolTip.Tip="Adds a new button to the shown page." />
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="Page" VerticalAlignment="Center" />
-                    <ComboBox ItemsSource="{Binding Pages}" SelectedIndex="{Binding SelectedPageIndex}" MinWidth="160" />
-                    <TextBox Text="{Binding PageName}" PlaceholderText="Page name" Width="180" />
+                    <ComboBox ItemsSource="{Binding Pages}" SelectedIndex="{Binding SelectedPageIndex}" MinWidth="160" ToolTip.Tip="Choose which page of this deck you are editing." />
+                    <TextBox Text="{Binding PageName}" PlaceholderText="Page name" Width="180" ToolTip.Tip="A name for the shown page." />
                   </StackPanel>
                 </DockPanel>
 
@@ -91,33 +92,35 @@
                       <Border Classes="card">
                         <StackPanel Spacing="8">
                           <Grid ColumnDefinitions="*,12,Auto,8,Auto,8,Auto,8,Auto,12,Auto">
-                            <TextBox Text="{Binding Name}" PlaceholderText="Name (used by sub-actions)" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding Name}" PlaceholderText="Name (used by sub-actions)" FontWeight="SemiBold" ToolTip.Tip="A short name for this button. Your actions use it to find the button when they change it." />
                             <TextBlock Grid.Column="2" Text="Row" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="4" Value="{Binding Row}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
+                            <NumericUpDown Grid.Column="4" Value="{Binding Row}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" ToolTip.Tip="Which row the button sits in. 1 is the top row." />
                             <TextBlock Grid.Column="6" Text="Column" VerticalAlignment="Center" />
-                            <NumericUpDown Grid.Column="8" Value="{Binding Column}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
-                            <Button Grid.Column="10" Content="Remove" Command="{Binding RemoveCommand}" />
+                            <NumericUpDown Grid.Column="8" Value="{Binding Column}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" ToolTip.Tip="Which column the button sits in. 1 is the left column." />
+                            <Button Grid.Column="10" Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this button." />
                           </Grid>
                           <Grid ColumnDefinitions="Auto,8,*,12,Auto">
                             <TextBlock Text="Action" VerticalAlignment="Center" />
                             <AutoCompleteBox Grid.Column="2" Text="{Binding Action}" ItemsSource="{Binding ActionSuggestions}"
-                                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0" PlaceholderText="Action to run (optional)" />
-                            <CheckBox Grid.Column="4" Content="Toggle state on press" IsChecked="{Binding ToggleOnPress}" />
+                                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0" PlaceholderText="Action to run (optional)"
+                                             ToolTip.Tip="The action that runs when someone presses this button. Leave empty to only fire the Deck item pressed trigger." />
+                            <CheckBox Grid.Column="4" Content="Toggle state on press" IsChecked="{Binding ToggleOnPress}" ToolTip.Tip="Ticked: each press switches the button between its normal look and its active look, like a light switch." />
                           </Grid>
                           <WrapPanel ItemSpacing="12" LineSpacing="8">
-                            <TextBox Text="{Binding Title}" PlaceholderText="Title" Width="170" />
-                            <TextBox Text="{Binding TitleColor}" PlaceholderText="Title colour" Width="110" />
-                            <TextBox Text="{Binding Background}" PlaceholderText="Background colour" Width="140" />
-                            <TextBox Text="{Binding Icon}" PlaceholderText="Icon (mdi:home)" Width="140" />
-                            <TextBox Text="{Binding IconColor}" PlaceholderText="Icon colour" Width="110" />
-                            <TextBox Text="{Binding BackgroundImage}" PlaceholderText="Background image URL" Width="220" />
+                            <TextBox Text="{Binding Title}" PlaceholderText="Title" Width="170" ToolTip.Tip="The words shown on the button." />
+                            <TextBox Text="{Binding TitleColor}" PlaceholderText="Title colour" Width="110" ToolTip.Tip="Colour of the words, as a colour code like #ffffff or a name like white." />
+                            <TextBox Text="{Binding Background}" PlaceholderText="Background colour" Width="140" ToolTip.Tip="Colour of the button, as a colour code like #333333 or a name like gray." />
+                            <TextBox Text="{Binding Icon}" PlaceholderText="Icon (mdi:home)" Width="140" ToolTip.Tip="A small picture on the button. Write mdi: and an icon name from the Material Design Icons list, like mdi:home." />
+                            <TextBox Text="{Binding IconColor}" PlaceholderText="Icon colour" Width="110" ToolTip.Tip="Colour of the little picture." />
+                            <TextBox Text="{Binding BackgroundImage}" PlaceholderText="Background image URL" Width="220" ToolTip.Tip="A web link to a picture to show behind the button. Optional." />
                           </WrapPanel>
                           <WrapPanel ItemSpacing="12" LineSpacing="8">
-                            <TextBlock Classes="muted" Text="Active state (1):" VerticalAlignment="Center" />
-                            <TextBox Text="{Binding ActiveTitle}" PlaceholderText="Title" Width="170" />
-                            <TextBox Text="{Binding ActiveBackground}" PlaceholderText="Background colour" Width="140" />
+                            <TextBlock Classes="muted" Text="Active state (1):" VerticalAlignment="Center" ToolTip.Tip="How the button looks when it is switched on (by Toggle state on press or by an action). Empty fields keep the normal look." />
+                            <TextBox Text="{Binding ActiveTitle}" PlaceholderText="Title" Width="170" ToolTip.Tip="The words shown while the button is switched on." />
+                            <TextBox Text="{Binding ActiveBackground}" PlaceholderText="Background colour" Width="140" ToolTip.Tip="The button colour while it is switched on." />
                           </WrapPanel>
-                          <TextBox Text="{Binding Arguments}" AcceptsReturn="True" PlaceholderText="Arguments for the action, name=value per line" MinHeight="36" />
+                          <TextBox Text="{Binding Arguments}" AcceptsReturn="True" PlaceholderText="Variables for the action, name=value per line" MinHeight="36"
+                                   ToolTip.Tip="Extra variables for this button's action, one per line, like mood=happy. The action reads it as %mood%." />
                         </StackPanel>
                       </Border>
                     </DataTemplate>

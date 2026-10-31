@@ -8,14 +8,14 @@
     <StackPanel DockPanel.Dock="Top">
       <DockPanel Margin="0,0,0,8">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
-          <Button Content="+ Folder watcher" Command="{Binding AddFileWatcherCommand}" />
-          <Button Content="+ File tail" Command="{Binding AddFileTailCommand}" />
-          <Button Content="+ Process watcher" Command="{Binding AddProcessWatcherCommand}" />
+          <Button Content="+ Folder watcher" Command="{Binding AddFileWatcherCommand}" ToolTip.Tip="Adds a watcher that notices when files in a folder are created, changed, deleted or renamed." />
+          <Button Content="+ File tail" Command="{Binding AddFileTailCommand}" ToolTip.Tip="Adds a watcher that reads new lines as they are added to the end of a text file, like a game's log." />
+          <Button Content="+ Process watcher" Command="{Binding AddProcessWatcherCommand}" ToolTip.Tip="Adds a watcher that notices when a program on this computer starts or stops." />
         </StackPanel>
         <TextBlock Classes="h1" Text="Watchers" Margin="0" VerticalAlignment="Center" />
       </DockPanel>
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Watchers fire triggers when files change, when lines are appended to a file, or when a program starts or stops. Pick the watcher by name in the trigger's settings. New watchers start disabled: fill them in, then enable them." />
+                 Text="A watcher keeps an eye on your computer and starts your actions (through triggers) when a file changes, when a new line is added to a file, or when a program starts or stops. Choose the watcher by its name in the trigger's settings. New watchers start switched off: fill them in, then tick Enabled." />
     </StackPanel>
 
     <TabControl x:Name="Kinds" SelectedIndex="{Binding SelectedTabIndex}">
@@ -30,27 +30,27 @@
                   <Border Classes="card">
                     <StackPanel Spacing="8">
                       <Grid ColumnDefinitions="*,12,Auto,12,Auto,8,Auto">
-                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" />
-                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" ToolTip.Tip="The name you pick in the trigger's settings to use this watcher." />
+                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Tick to start watching. Untick to pause it without deleting it." />
                         <Button Grid.Column="4" Content="Duplicate"
-                                Command="{Binding DuplicateCommand}" />
+                                Command="{Binding DuplicateCommand}" ToolTip.Tip="Makes a copy of this watcher to change." />
                         <Button Grid.Column="6" Content="Remove"
-                                Command="{Binding RemoveCommand}" />
+                                Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this watcher." />
                       </Grid>
                       <Grid ColumnDefinitions="Auto,8,*,8,Auto,12,Auto,8,200">
                         <TextBlock Text="Folder" VerticalAlignment="Center" />
-                        <TextBox Grid.Column="2" Text="{Binding Folder}" PlaceholderText="Folder to watch" />
-                        <Button Grid.Column="4" Content="Browse…" Click="OnBrowseFolder" />
+                        <TextBox Grid.Column="2" Text="{Binding Folder}" PlaceholderText="Folder to watch" ToolTip.Tip="The folder on your computer to keep an eye on." />
+                        <Button Grid.Column="4" Content="Browse…" Click="OnBrowseFolder" ToolTip.Tip="Opens a window where you pick the folder." />
                         <TextBlock Grid.Column="6" Text="Files" VerticalAlignment="Center" />
-                        <TextBox Grid.Column="8" Text="{Binding Filter}" PlaceholderText="*.txt;*.log (empty = all)" />
+                        <TextBox Grid.Column="8" Text="{Binding Filter}" PlaceholderText="*.txt;*.log (empty = all)" ToolTip.Tip="Which files to watch. *.txt means every file ending in .txt. Separate several with a semicolon. Leave empty to watch every file." />
                       </Grid>
                       <WrapPanel ItemSpacing="16" LineSpacing="4">
-                        <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" />
+                        <CheckBox Content="Include subfolders" IsChecked="{Binding IncludeSubfolders}" ToolTip.Tip="Also watches the folders inside this folder." />
                         <TextBlock Text="Fire on:" Classes="muted" VerticalAlignment="Center" FontSize="13" />
-                        <CheckBox Content="Created" IsChecked="{Binding Created}" />
-                        <CheckBox Content="Changed" IsChecked="{Binding Changed}" />
-                        <CheckBox Content="Deleted" IsChecked="{Binding Deleted}" />
-                        <CheckBox Content="Renamed" IsChecked="{Binding Renamed}" />
+                        <CheckBox Content="Created" IsChecked="{Binding Created}" ToolTip.Tip="Run the trigger when a new file appears." />
+                        <CheckBox Content="Changed" IsChecked="{Binding Changed}" ToolTip.Tip="Run the trigger when a file is edited or saved." />
+                        <CheckBox Content="Deleted" IsChecked="{Binding Deleted}" ToolTip.Tip="Run the trigger when a file is removed." />
+                        <CheckBox Content="Renamed" IsChecked="{Binding Renamed}" ToolTip.Tip="Run the trigger when a file gets a new name." />
                       </WrapPanel>
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <Ellipse Classes="status" Classes.good="{Binding IsRunning}" Classes.bad="{Binding IsError}" />
@@ -76,19 +76,19 @@
                   <Border Classes="card">
                     <StackPanel Spacing="8">
                       <Grid ColumnDefinitions="*,12,Auto,12,Auto,8,Auto">
-                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" />
-                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" ToolTip.Tip="The name you pick in the trigger's settings to use this watcher." />
+                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Tick to start watching. Untick to pause it without deleting it." />
                         <Button Grid.Column="4" Content="Duplicate"
-                                Command="{Binding DuplicateCommand}" />
+                                Command="{Binding DuplicateCommand}" ToolTip.Tip="Makes a copy of this watcher to change." />
                         <Button Grid.Column="6" Content="Remove"
-                                Command="{Binding RemoveCommand}" />
+                                Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this watcher." />
                       </Grid>
                       <Grid ColumnDefinitions="Auto,8,*,8,Auto">
                         <TextBlock Text="File" VerticalAlignment="Center" />
-                        <TextBox Grid.Column="2" Text="{Binding FilePath}" PlaceholderText="Text file to follow" />
-                        <Button Grid.Column="4" Content="Browse…" Click="OnBrowseFile" />
+                        <TextBox Grid.Column="2" Text="{Binding FilePath}" PlaceholderText="Text file to follow" ToolTip.Tip="The text file to read new lines from, like a game's log file." />
+                        <Button Grid.Column="4" Content="Browse…" Click="OnBrowseFile" ToolTip.Tip="Opens a window where you pick the file." />
                       </Grid>
-                      <CheckBox Content="Skip empty lines" IsChecked="{Binding SkipEmptyLines}" />
+                      <CheckBox Content="Skip empty lines" IsChecked="{Binding SkipEmptyLines}" ToolTip.Tip="Ignores lines with nothing on them, so the trigger only runs for lines that have text." />
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <Ellipse Classes="status" Classes.good="{Binding IsRunning}" Classes.bad="{Binding IsError}" />
                         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -113,16 +113,16 @@
                   <Border Classes="card">
                     <StackPanel Spacing="8">
                       <Grid ColumnDefinitions="*,12,Auto,12,Auto,8,Auto">
-                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" />
-                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" />
+                        <TextBox Text="{Binding Name}" PlaceholderText="Name" FontWeight="SemiBold" ToolTip.Tip="The name you pick in the trigger's settings to use this watcher." />
+                        <CheckBox Grid.Column="2" Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Tick to start watching. Untick to pause it without deleting it." />
                         <Button Grid.Column="4" Content="Duplicate"
-                                Command="{Binding DuplicateCommand}" />
+                                Command="{Binding DuplicateCommand}" ToolTip.Tip="Makes a copy of this watcher to change." />
                         <Button Grid.Column="6" Content="Remove"
-                                Command="{Binding RemoveCommand}" />
+                                Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this watcher." />
                       </Grid>
                       <Grid ColumnDefinitions="Auto,8,320,12,*">
                         <TextBlock Text="Process" VerticalAlignment="Center" />
-                        <TextBox Grid.Column="2" Text="{Binding ProcessName}" PlaceholderText="e.g. obs64 (with or without .exe)" />
+                        <TextBox Grid.Column="2" Text="{Binding ProcessName}" PlaceholderText="e.g. obs64 (with or without .exe)" ToolTip.Tip="The program's file name, as shown in Task Manager, like obs64. You can leave off .exe." />
                         <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap"
                                    Text="Programs already running when Cuebot starts do not fire 'started'." />
                       </Grid>

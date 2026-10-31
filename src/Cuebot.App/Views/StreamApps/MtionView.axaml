@@ -12,20 +12,25 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Developer API" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="mtion studio answers on http://localhost:35393 while it runs; there is nothing to switch on and no key. Add external triggers to your clubhouse in mtion, then use them in the &quot;Send trigger&quot; sub-action." />
+                     Text="While mtion studio is open it can be reached at http://localhost:35393. There is nothing to switch on and no key or password. Add external triggers to your clubhouse in mtion, then use them in the &quot;Send trigger&quot; sub-action (an action step)." />
           <Grid ColumnDefinitions="Auto,*,Auto,150,Auto,110" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" Name="MtionHost" Text="{Binding Host}" PlaceholderText="localhost" />
+            <TextBox Grid.Column="1" Name="MtionHost" Text="{Binding Host}" PlaceholderText="localhost"
+                     ToolTip.Tip="The address of the computer where mtion studio runs. 127.0.0.1 (or localhost) means this same computer, so most people can leave it." />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0" />
+            <NumericUpDown Grid.Column="3" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                             ToolTip.Tip="A number that says which &quot;door&quot; on that computer Cuebot connects to. Only change it if you changed it in mtion studio too." />
             <TextBlock Grid.Column="4" Text="Check every (s)" VerticalAlignment="Center" Margin="12,0,8,0" />
-            <NumericUpDown Grid.Column="5" Value="{Binding PollSeconds}" Minimum="1" Maximum="3600" FormatString="0" />
+            <NumericUpDown Grid.Column="5" Value="{Binding PollSeconds}" Minimum="1" Maximum="3600" FormatString="0"
+                             ToolTip.Tip="How often, in seconds, Cuebot looks at mtion studio to see if it is running and what triggers it has." />
           </Grid>
-          <CheckBox Content="Watch for mtion studio on startup" IsChecked="{Binding AutoConnect}" />
+          <CheckBox Content="Watch for mtion studio on startup" IsChecked="{Binding AutoConnect}"
+                    ToolTip.Tip="Starts watching for mtion studio as soon as Cuebot starts." />
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Start watching" Classes="accent" Command="{Binding ConnectCommand}" />
-            <Button Content="Stop" Command="{Binding DisconnectCommand}" />
-            <Button Content="Check now" Command="{Binding CheckCommand}" />
+            <Button Content="Start watching" Classes="accent" Command="{Binding ConnectCommand}"
+                    ToolTip.Tip="Starts checking regularly for mtion studio and lists its triggers." />
+            <Button Content="Stop" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops checking for mtion studio." />
+            <Button Content="Check now" Command="{Binding CheckCommand}" ToolTip.Tip="Looks at mtion studio once, right now, without waiting for the next check." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
@@ -41,7 +46,7 @@
                 <Grid ColumnDefinitions="200,*,Auto" Margin="0,2">
                   <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Details}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                  <Button Grid.Column="2" Content="Fire" Command="{Binding FireCommand}" />
+                  <Button Grid.Column="2" Content="Fire" Command="{Binding FireCommand}" ToolTip.Tip="Sets off this trigger in mtion studio right now, as a test." />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
