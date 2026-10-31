@@ -219,6 +219,7 @@ public static partial class McpTools
             .. AutomationTools(ops),
             .. EngagementTools(ops),
             .. CommunityTools(ops),
+            .. OverlayTools(ops),
         ];
     }
 

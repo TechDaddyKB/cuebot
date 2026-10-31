@@ -23,6 +23,10 @@ public sealed class McpCoverageTests : IAsyncLifetime
         "list_points_currencies", "get_user_points", "change_user_points", "points_leaderboard",
         "list_groups", "manage_group", "set_group_member",
         "find_viewers", "get_viewer_variables", "set_viewer_variable", "delete_viewer_variable",
+        "list_overlays", "get_overlay", "get_overlay_link", "create_overlay", "update_overlay", "delete_overlay",
+        "list_widget_kinds", "add_widget", "add_custom_widget", "update_layer", "remove_layer",
+        "get_widget", "update_widget_settings", "update_widget_code", "get_alert_designs", "update_alert_designs",
+        "list_gallery", "import_gallery_item", "list_streamelements_overlays", "import_streamelements_overlay",
     ];
 
     private ApiHost _host = null!;
@@ -220,5 +224,106 @@ public sealed class McpCoverageTests : IAsyncLifetime
         Assert.Equal(3, vars["variables"]!["deaths"]!.GetValue<long>());
         await Confirmed("delete_viewer_variable", Args(("platform", "twitch"), ("user", "bob"), ("name", "deaths")));
         await Fails("delete_viewer_variable", Args(("platform", "twitch"), ("user", "bob"), ("name", "deaths"), (McpConfirmations.ArgumentName, "stale")));
+    }
+
+    [Fact]
+    public async Task Overlays_widgets_settings_and_alert_designs()
+    {
+        var created = await Ok("create_overlay", Args(("name", "Main scene"), ("width", 1280), ("height", 720)));
+        Assert.Equal(1280, created["width"]!.GetValue<int>());
+        await Fails("create_overlay", Args(("name", "Tiny"), ("width", 2)));
+        await Ok("update_overlay", Args(("overlay", "main scene"), ("name", "Gameplay")));
+        Assert.Contains("token=", S((await Ok("get_overlay_link", Args(("overlay", "Gameplay"))))["link"]));
+        Assert.Contains((await Ok("list_widget_kinds", []))["widgets"]!.AsArray(), k => S(k!["kind"]) == "hypecup");
+
+        // A label for the latest follower, placed and restyled.
+        var label = await Ok("add_widget", Args(("overlay", "Gameplay"), ("kind", "label"),
+            ("settings", new JsonObject { ["type"] = "follower", ["prefix"] = "New follower: " }),
+            ("place", new JsonObject { ["name"] = "Follower label", ["x"] = 20, ["y"] = 650, ["width"] = 500, ["height"] = 50 })));
+        Assert.Equal(("label", "Follower label", 20.0), (S(label["layer"]!["widget"]), S(label["layer"]!["name"]), label["layer"]!["x"]!.GetValue<double>()));
+        var widget = await Ok("get_widget", Args(("overlay", "Gameplay"), ("layer", "Follower label")));
+        Assert.Equal("New follower: ", S(widget["settings"]!["prefix"]!["value"]));
+        Assert.NotNull(widget["settings"]!["type"]!["options"]);
+        var changed = await Ok("update_widget_settings", Args(("overlay", "Gameplay"), ("layer", "Follower label"),
+            ("values", new JsonObject { ["fontSize"] = 48, ["madeUp"] = 1 })));
+        Assert.Equal(48, changed["settings"]!["fontSize"]!["value"]!.GetValue<int>());
+        Assert.Single(changed["warnings"]!.AsArray());
+        await Ok("update_layer", Args(("overlay", "Gameplay"), ("layer", "Follower label"),
+            ("changes", new JsonObject { ["opacity"] = 0.5, ["enter"] = "fadeInUp", ["visible"] = false })));
+        await Fails("update_layer", Args(("overlay", "Gameplay"), ("layer", "Follower label"), ("changes", new JsonObject { ["enter"] = "spin" })));
+
+        // A text layer and a custom widget.
+        await Ok("add_widget", Args(("overlay", "Gameplay"), ("kind", "text"), ("settings", new JsonObject { ["text"] = "Be nice", ["size"] = 30 })));
+        var custom = await Ok("add_custom_widget", Args(("overlay", "Gameplay"), ("name", "Clock"),
+            ("code", new JsonObject { ["html"] = "<div id=c>{label}</div>", ["js"] = "setInterval(() => {}, 1000);",
+                ["fields"] = "{\"label\": {\"type\": \"text\", \"value\": \"Time\"}}" })));
+        Assert.Equal("custom", S(custom["layer"]!["widget"]));
+        await Ok("update_widget_code", Args(("overlay", "Gameplay"), ("layer", "Clock"), ("code", new JsonObject { ["css"] = "#c { color: red; }" })));
+        var code = await Ok("get_widget", Args(("overlay", "Gameplay"), ("layer", "Clock"), ("includeCode", true)));
+        Assert.Equal(("#c { color: red; }", "<div id=c>{label}</div>"), (S(code["code"]!["css"]), S(code["code"]!["html"])));
+        await Fails("update_widget_settings", Args(("overlay", "Gameplay"), ("layer", "Text"), ("values", new JsonObject { ["x"] = 1 })));
+
+        // The alert box: raids on with a new template, follows off, a big-raid variation.
+        await Ok("add_widget", Args(("overlay", "Gameplay"), ("kind", "alertbox")));
+        var designs = await Ok("get_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Alert box")));
+        Assert.NotNull(designs["alerts"]!["types"]!["raid"]);
+        Assert.NotNull(designs["designFields"]!["template"]);
+        var updated = await Ok("update_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Alert box"), ("types", new JsonObject
+        {
+            ["raid"] = new JsonObject
+            {
+                ["enabled"] = true, ["design"] = new JsonObject { ["template"] = "{name} raided with {amount}!" },
+                ["variations"] = new JsonArray(new JsonObject { ["name"] = "Big raid", ["param"] = "amount", ["op"] = "atLeast", ["value"] = 50,
+                    ["design"] = new JsonObject { ["sound"] = "none" } }),
+            },
+            ["follower"] = new JsonObject { ["enabled"] = false },
+        })));
+        var raid = updated["alerts"]!["types"]!["raid"]!;
+        Assert.Equal("{name} raided with {amount}!", S(raid["design"]!["template"]));
+        Assert.NotNull(raid["design"]!["duration"]);   // other design fields kept
+        Assert.Equal("Big raid", S(raid["variations"]![0]!["name"]));
+        Assert.False(updated["alerts"]!["types"]!["follower"]!["enabled"]!.GetValue<bool>());
+        await Fails("update_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Alert box"), ("types", new JsonObject { ["dance"] = new JsonObject() })));
+        await Fails("get_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Clock")));
+        await Fails("update_widget_settings", Args(("overlay", "Gameplay"), ("layer", "Alert box"), ("values", new JsonObject { ["alerts"] = new JsonObject() })));
+
+        var overlay = await Ok("get_overlay", Args(("overlay", "Gameplay")));
+        Assert.Equal(["Follower label", "Text", "Clock", "Alert box"], overlay["layers"]!.AsArray().Select(l => S(l!["name"])));
+        await Ok("remove_layer", Args(("overlay", "Gameplay"), ("layer", "Clock")));
+        Assert.Equal(3, (await Ok("list_overlays", []))["overlays"]![0]!["layers"]!.AsArray().Count);
+        await Confirmed("delete_overlay", Args(("overlay", "Gameplay")));
+        Assert.Empty(Bot.Overlays.All());
+    }
+
+    [Fact]
+    public async Task Gallery_and_streamelements_imports()
+    {
+        // A gallery with one overlay item, packaged from a real overlay.
+        var source = Bot.Overlays.Create("Neon", 1920, 1080);
+        Bot.Widgets.AddAlertBox(source.Id);
+        using var package = new MemoryStream();
+        Bot.Packages.ExportOverlay(source.Id, package, includeCustomCode: false);
+        Bot.Overlays.Delete(source.Id);
+        var bytes = package.ToArray();
+        Bot.GalleryFiles["index.json"] = System.Text.Encoding.UTF8.GetBytes($$"""
+            {"format":"cuebot-gallery","version":1,"items":[{"id":"neon","name":"Neon","author":"Me","description":"d","kind":"overlay","license":"MIT",
+             "tags":[],"package":"items/neon/package.cuebot-overlay","preview":"items/neon/preview.png","size":{{bytes.Length}},
+             "sha256":"{{Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes))}}"}]}
+            """);
+        Bot.GalleryFiles["items/neon/package.cuebot-overlay"] = bytes;
+        Assert.Equal("neon", S((await Ok("list_gallery", []))["items"]![0]!["id"]));
+        var imported = await Ok("import_gallery_item", Args(("id", "neon")));
+        Assert.Equal(("Neon", 1), (S(imported["overlay"]!["name"]), imported["layers"]!.GetValue<int>()));
+        await Fails("import_gallery_item", Args(("id", "missing")));
+
+        Bot.StreamElements.Overlays["se1"] = JsonNode.Parse("""
+            {"name":"Old scene","settings":{"width":1920,"height":1080},"widgets":[
+              {"type":"text","css":{"top":"10px","left":"10px","width":"200px","height":"40px"},"text":{"value":"Hi"}}]}
+            """)!.AsObject();
+        Assert.Equal("Old scene", S((await Ok("list_streamelements_overlays", []))["overlays"]![0]!["name"]));
+        var se = await Ok("import_streamelements_overlay", Args(("id", "se1")));
+        Assert.Equal(("Old scene", 1), (S(se["overlay"]!["name"]), se["imported"]!.GetValue<int>()));
+        Bot.StreamElements.HasToken = false;
+        Assert.Contains("JWT", (await Fails("list_streamelements_overlays", [])).ToJsonString());
     }
 }

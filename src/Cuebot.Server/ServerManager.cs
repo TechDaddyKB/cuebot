@@ -54,7 +54,7 @@ public sealed class ServerManager : IAsyncDisposable
         CustomClients = new CustomWebSocketClients(() => Settings, services.Bus, services.Log);
         CustomServers.Changed += RaiseChanged;
         CustomClients.Changed += RaiseChanged;
-        ApiOperations = new Cuebot.Server.Api.ApiOperations(services, () => Statuses);
+        ApiOperations = new Cuebot.Server.Api.ApiOperations(services, () => Statuses) { OverlayLink = OverlayUrl };
         Mcp = new Cuebot.Server.Mcp.McpServer(ApiOperations, services, () => Settings.Mcp);
         Api = new Cuebot.Server.Api.ApiServer(() => Settings, services, ApiOperations, Mcp);
         Overlays = new OverlayServer(() => Settings, services);

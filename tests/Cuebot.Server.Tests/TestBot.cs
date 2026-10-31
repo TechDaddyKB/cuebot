@@ -51,7 +51,7 @@ internal sealed class TestBot : IAsyncDisposable
             Overlays = Overlays, OverlayAssets = OverlayAssets, OverlayFeed = OverlayFeed, SessionData = SessionData,
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
-            Quotes = Quotes, Points = Points, Groups = Groups,
+            Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -88,6 +88,18 @@ internal sealed class TestBot : IAsyncDisposable
     /// <summary>Cuebot chat polls, without points (predictions answer that points are needed).</summary>
     public Cuebot.Core.Polls.ChatPolls ChatPolls => _chatPolls ??= new(null, Log, Bus, Polls);
     private Cuebot.Core.Polls.ChatPolls? _chatPolls;
+
+    public Cuebot.Core.Overlays.Sharing.OverlayPackages Packages => _packages ??= new(Overlays, Elements, WidgetCode, OverlayAssets, Widgets);
+    private Cuebot.Core.Overlays.Sharing.OverlayPackages? _packages;
+
+    /// <summary>The community gallery, served from <see cref="GalleryFiles"/> (path → bytes) instead of GitHub.</summary>
+    public Dictionary<string, byte[]> GalleryFiles { get; } = new(StringComparer.Ordinal);
+    public Cuebot.Core.Overlays.Sharing.OverlayGallery Gallery =>
+        _gallery ??= new(new HttpClient(new GalleryHandler(GalleryFiles)), new Uri("https://gallery.test/"));
+    private Cuebot.Core.Overlays.Sharing.OverlayGallery? _gallery;
+
+    /// <summary>A StreamElements account with the overlays in <see cref="FakeStreamElements.Overlays"/>.</summary>
+    public FakeStreamElements StreamElements { get; } = new();
 
     public Cuebot.Core.Quotes.QuoteStore Quotes => _quotes ??= new(null, Log, Bus);
     private Cuebot.Core.Quotes.QuoteStore? _quotes;
@@ -364,4 +376,25 @@ internal sealed class FakeSpeaker : ISpeakerBackend
 
     public Task<IReadOnlyList<SpeakerVoice>> GetVoicesAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<SpeakerVoice>>([new SpeakerVoice("fake", "v1", "Voice One", "en-US")]);
+}
+
+internal sealed class GalleryHandler(Dictionary<string, byte[]> files) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+        Task.FromResult(files.TryGetValue(request.RequestUri!.AbsolutePath.TrimStart('/'), out var bytes)
+            ? new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
+            : new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
+}
+
+public sealed class FakeStreamElements : Cuebot.Core.Overlays.Widgets.IStreamElementsOverlaySource
+{
+    public bool HasToken { get; set; } = true;
+    public Dictionary<string, System.Text.Json.Nodes.JsonObject> Overlays { get; } = [];
+
+    public Task<IReadOnlyList<Cuebot.Core.Overlays.Widgets.StreamElementsOverlaySummary>> ListOverlaysAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Cuebot.Core.Overlays.Widgets.StreamElementsOverlaySummary>>(
+            [.. Overlays.Select(o => new Cuebot.Core.Overlays.Widgets.StreamElementsOverlaySummary(o.Key, o.Value["name"]!.GetValue<string>(), 1920, 1080))]);
+
+    public Task<System.Text.Json.Nodes.JsonObject> GetOverlayAsync(string id, CancellationToken ct) =>
+        Task.FromResult((System.Text.Json.Nodes.JsonObject)Overlays[id].DeepClone());
 }

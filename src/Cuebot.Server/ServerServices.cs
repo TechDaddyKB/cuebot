@@ -189,6 +189,30 @@ public sealed class ServerServices
 
     private Cuebot.Core.Giveaways.Giveaways? _giveaways;
 
+    /// <summary>One-file overlay and widget packages.</summary>
+    public Cuebot.Core.Overlays.Sharing.OverlayPackages? Packages
+    {
+        get => _packages ??= _provider?.GetService<Cuebot.Core.Overlays.Sharing.OverlayPackages>();
+        init => _packages = value;
+    }
+    private Cuebot.Core.Overlays.Sharing.OverlayPackages? _packages;
+
+    /// <summary>The community gallery (GitHub).</summary>
+    public Cuebot.Core.Overlays.Sharing.OverlayGallery? Gallery
+    {
+        get => _gallery ??= _provider?.GetService<Cuebot.Core.Overlays.Sharing.OverlayGallery>();
+        init => _gallery = value;
+    }
+    private Cuebot.Core.Overlays.Sharing.OverlayGallery? _gallery;
+
+    /// <summary>Overlays in the connected StreamElements account (registered by the Donations module).</summary>
+    public Cuebot.Core.Overlays.Widgets.IStreamElementsOverlaySource? StreamElementsOverlays
+    {
+        get => _seOverlays ??= _provider?.GetService<Cuebot.Core.Overlays.Widgets.IStreamElementsOverlaySource>();
+        init => _seOverlays = value;
+    }
+    private Cuebot.Core.Overlays.Widgets.IStreamElementsOverlaySource? _seOverlays;
+
     /// <summary>Quotes (!quote).</summary>
     public Cuebot.Core.Quotes.QuoteStore? Quotes
     {

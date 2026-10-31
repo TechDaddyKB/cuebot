@@ -43,7 +43,8 @@ public sealed record WidgetCode(string Html, string Css, string Js, string Field
             ? Math.Max(0, d)
             : 0;
 
-    internal static JsonObject ParseObject(string json)
+    /// <summary>A JSON object from text (trailing commas and comments allowed); anything unreadable is an empty object.</summary>
+    public static JsonObject ParseObject(string json)
     {
         if (string.IsNullOrWhiteSpace(json)) return [];
         try

@@ -58,6 +58,7 @@ public static class DonationsServiceCollectionExtensions
         services.AddSingleton<DonationServices>();
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<StreamlabsService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<StreamElementsService>());
+        services.AddSingleton<Cuebot.Core.Overlays.Widgets.IStreamElementsOverlaySource>(sp => sp.GetRequiredService<StreamElementsService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<TipeeeStreamService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<DonorDriveService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<TreatStreamService>());
