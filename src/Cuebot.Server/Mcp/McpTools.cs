@@ -110,6 +110,14 @@ public static partial class McpTools
                 "Create a chat command, e.g. {\"name\": \"Hello\", \"commands\": [\"!hello\"]}. To make it do something, add a trigger "
                 + "{\"type\": \"command.triggered\", \"settings\": {\"command\": \"Hello\"}} to an action.",
                 Schema(["command"], ("command", CommandSchema())), write, (a, _) => Done(ops.CreateCommand(a["command"] ?? a))),
+            new("create_command_with_action", "Create command with its action",
+                "Create a chat command and the action it runs in one step: the action automatically gets a command.triggered trigger "
+                + "for this command, so they are always linked. Prefer this to create_command plus create_action for a new command. "
+                + "Example: {\"command\": {\"name\": \"Lurk\", \"commands\": [\"!lurk\"]}, \"action\": {\"subActions\": "
+                + "[{\"type\": \"chat.send\", \"parameters\": {\"message\": \"Thanks for lurking, %user%!\"}}]}}. The action's name "
+                + "defaults to the command's; add other triggers if it should also run another way.",
+                CommandWithActionSchema(), write,
+                async (a, _) => await ops.CreateCommandWithActionAsync(a["command"], a["action"]).ConfigureAwait(false)),
             new("update_command", "Update command", "Change the given fields of a chat command.",
                 Schema(["command", "changes"], ("command", Str("Command id or name")), ("changes", new JsonObject { ["type"] = "object" })),
                 write, (a, _) => Done(ops.UpdateCommand(ReqStr(a, "command"), a["changes"], merge: true))),
@@ -324,6 +332,18 @@ public static partial class McpTools
                                 + "\"subActions\": [{\"type\": \"chat.send\", \"parameters\": {\"message\": \"Hi %user%!\"}}]}";
         var schema = Schema(["action"], ("action", action));
         schema["$defs"] = new JsonObject { ["subAction"] = subAction };
+        return schema;
+    }
+
+    /// <summary>create_command_with_action: a command and an action (name optional; its command trigger is added).</summary>
+    private static JsonObject CommandWithActionSchema()
+    {
+        var actionSchema = ActionSchema();
+        var action = (JsonObject)actionSchema["properties"]!["action"]!.DeepClone();
+        action.Remove("required");
+        action["description"] = "What the command does: at least subActions. The command.triggered trigger is added for you.";
+        var schema = Schema(["command", "action"], ("command", CommandSchema()), ("action", action));
+        schema["$defs"] = actionSchema["$defs"]!.DeepClone();
         return schema;
     }
 

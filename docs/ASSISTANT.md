@@ -28,6 +28,12 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   relay. Turning off "require confirmation" on the Servers page turns this off too.
 - **Instructions.** Every provider gets the same system prompt (`AssistantPrompt`): who the assistant is for, look things
   up before changing them, ask before destructive changes, no passwords or keys, plain short answers.
+- **Undo.** Before each turn `AssistantUndo` snapshots actions, timers and commands (JSON by id); a turn that changed any
+  ends with `AssistantChanges`, shown as a card ("The assistant created ..., deleted ...") with **Undo these changes**.
+  Undo restores each item the turn created, changed or deleted, but only if it still looks the way the turn left it;
+  anything changed since is kept and named. In memory only (gone after a restart); overlays, points and the other
+  stores are not covered. `create_command_with_action` makes a command and its action, linked, in one call: the
+  most common small-model mistake was a command with no action tied to it.
 - **Conversation.** One at a time; **New chat**, or changing the AI or model, starts a new one. The page keeps the last
   conversation in `assistant-history.json` (newest 200 lines) and shows it again after a restart, marked as one the AI
   does not remember. Answers render as Markdown (headings, lists, code, quotes, tables as monospace, bold, italic,
@@ -83,7 +89,8 @@ network). Settings: **Server** (`ServerUrl`, empty = Ollama on `http://127.0.0.1
 - **Other servers** (LM Studio, llama.cpp's `llama-server`) use the OpenAI-style `/v1/chat/completions` and
   `/v1/models`, with `reasoning_effort: "none"` unless thinking is on. Their context size is set in the server.
 - **Focused tools** (`LocalToolSet`): list/get/create/update/delete for actions, commands and timers, `test_action`, the
-  trigger and sub-action catalogue and `read_cuebot_doc` (19 tools, a few thousand tokens, instead of 117 and about 14K),
+  trigger and sub-action catalogue, `create_command_with_action` and `read_cuebot_doc` (20 tools, a few thousand tokens,
+  instead of 118 and about 14K),
   plus `find_cuebot_tools`, which matches its search words against the other tools and switches the best eight on for
   the rest of the conversation. The deletes are in the focused set because without them a small model asked to delete
   something switched it off instead.

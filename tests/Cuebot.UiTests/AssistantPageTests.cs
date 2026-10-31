@@ -57,6 +57,9 @@ public sealed class AssistantPageTests : IAsyncDisposable
                 yield return confirmation;
                 var approved = await confirmation.Answer;
                 owner.LastResult = approved ? "approved" : "declined";
+                if (approved)   // really delete the example action, so the page offers to undo it
+                    await context.Tools.CallAsync("delete_action", new System.Text.Json.Nodes.JsonObject { ["action"] = "!hello" },
+                        (_, _) => Task.FromResult(true), ct);
                 yield return new AssistantToolFinished("c1", "delete_action", Failed: !approved);
                 yield return new AssistantText(approved ? Done : "Left it.");
                 _ = context;
@@ -165,6 +168,17 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Assert.Equal("done", page.Items.Single(i => i.IsTool).State);
         Assert.Equal("Approved", page.Items.Single(i => i.IsConfirmation).State);
         Assert.Equal(Done, page.Items.Last(i => i.IsAssistant).Text);
+
+        // The turn deleted the example action: a card says so and Undo brings it back.
+        var changes = Assert.Single(page.Items, i => i.IsChanges);
+        Assert.Equal("The assistant deleted the action '!hello'.", changes.Text);
+        Assert.Null(_host.Get<Cuebot.Core.Actions.ProfileService>().Snapshot.FindAction("!hello"));
+        Assert.True(window.GetVisualDescendants().OfType<Button>().Any(b => b.Name == "AssistantUndo" && b.IsEffectivelyVisible));
+        changes.UndoChangesCommand.Execute(null);
+        PumpUntil(() => changes.State.Length > 0);
+        Assert.NotNull(_host.Get<Cuebot.Core.Actions.ProfileService>().Snapshot.FindAction("!hello"));
+        Assert.Contains("brought back the action '!hello'", changes.State);
+        Assert.False(changes.CanUndo);
         Screenshot(window, "assistant-done");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
 

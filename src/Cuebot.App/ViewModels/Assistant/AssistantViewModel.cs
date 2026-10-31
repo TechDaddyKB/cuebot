@@ -281,6 +281,10 @@ public sealed partial class AssistantViewModel : PageViewModel
                     case AssistantError e:
                         Add(new AssistantItem(AssistantItemKind.Error, e.Message));
                         break;
+                    case AssistantChanges changes:
+                        Add(new AssistantItem(AssistantItemKind.Changes, changes.Undo.Summary) { Undo = changes.Undo });
+                        answer = null;
+                        break;
                 }
             }
         }
@@ -337,7 +341,7 @@ public sealed record ProviderChoice(string Id, string Name, IAssistantProvider? 
     public override string ToString() => Name;
 }
 
-public enum AssistantItemKind { User, Assistant, Tool, Confirmation, Error, Notice }
+public enum AssistantItemKind { User, Assistant, Tool, Confirmation, Error, Notice, Changes }
 
 /// <summary>One entry in the conversation.</summary>
 public sealed partial class AssistantItem(AssistantItemKind kind, string text) : ObservableObject
@@ -353,6 +357,30 @@ public sealed partial class AssistantItem(AssistantItemKind kind, string text) :
     internal bool Saved { get; init; } = true;
 
     public AssistantConfirmation? Confirmation { get; init; }
+
+    /// <summary>Changes: puts back what that turn changed; null once used, or for a card from an earlier session.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanUndo))]
+    private AssistantUndo? _undo;
+
+    public bool CanUndo => Undo is not null;
+
+    [RelayCommand]
+    private async Task UndoChangesAsync()
+    {
+        if (Undo is not { } undo) return;
+        Undo = null;
+        try
+        {
+            State = await undo.UndoAsync();
+        }
+        catch (Exception ex)
+        {
+            State = "Could not undo: " + ex.Message;
+        }
+    }
+
+    public bool IsChanges => Kind == AssistantItemKind.Changes;
 
     public bool IsUser => Kind == AssistantItemKind.User;
     public bool IsAssistant => Kind == AssistantItemKind.Assistant;

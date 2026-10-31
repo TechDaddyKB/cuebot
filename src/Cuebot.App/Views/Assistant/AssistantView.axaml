@@ -129,6 +129,16 @@
                       <TextBlock Classes="muted" Text="{Binding State}" IsVisible="{Binding !AwaitingAnswer}" />
                     </StackPanel>
                   </Border>
+                  <Border Classes="bubble" IsVisible="{Binding IsChanges}" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="1"
+                          HorizontalAlignment="Left" MaxWidth="720">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                      <Button Name="AssistantUndo" Content="Undo these changes" Command="{Binding UndoChangesCommand}" IsVisible="{Binding CanUndo}"
+                              HorizontalAlignment="Left"
+                              ToolTip.Tip="Puts back the actions, commands and timers this answer created, changed or deleted. Anything you changed yourself since then is kept." />
+                      <TextBlock Classes="muted" Text="{Binding State}" TextWrapping="Wrap" IsVisible="{Binding State, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                  </Border>
                   <TextBlock IsVisible="{Binding IsError}" Classes="error" Text="{Binding Text}" TextWrapping="Wrap" Margin="12,4" />
                   <TextBlock IsVisible="{Binding IsNotice}" Classes="muted" Text="{Binding Text}" FontStyle="Italic" Margin="12,4" />
                 </Panel>

@@ -130,7 +130,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
                     How to build it:
                     1. Read the resources {{ActionsDocUri}} and {{VariablesUri}} (in short: %arg% = run arguments, ~name~ = global variables, $function()$ = inline functions).
                     2. Find the trigger with list_trigger_types (search words, e.g. "chat message", "command", "follow") and check its settings with describe_trigger_type.
-                       For chat commands, create the command with create_command and use the "command.triggered" trigger with settings {"command": "<command name>"}.
+                       For a new chat command, use create_command_with_action: it makes the command and the action, linked by a "command.triggered" trigger.
                     3. Find each step with list_subaction_types (search words) and read its parameters with describe_subaction_type.
                        Branching steps (core.if: True/False, core.switch: one branch per case + Default, core.group: Steps) hold child steps in "branches".
                     4. Call create_action with an "action" object holding name, group, triggers and subActions. All parameter values are strings.
@@ -238,7 +238,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
         | --- | --- |
         | Automations (when X happens, do Y) | list_trigger_types, describe_trigger_type, list_subaction_types, describe_subaction_type, create_action, update_action, test_action, run_action |
         | Do something once, right now (switch an OBS scene, set the title, time someone out, speak, change a light) | run_subactions with any sub-action type |
-        | Chat commands and timers | create_command / update_command, create_timer / update_timer / set_timer_state |
+        | Chat commands and timers | create_command_with_action, create_command / update_command, create_timer / update_timer / set_timer_state |
         | Variables | get_globals / set_global; get_viewer_variables / set_viewer_variable |
         | Action queues | list_queues, create_queue, update_queue, control_queue |
         | Polls and predictions | start_poll, end_poll, start_prediction, control_prediction, get_polls (native Twitch/YouTube polls: run_subactions) |
@@ -315,8 +315,9 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
           chosen branch runs, then execution continues after the step.
         - Queues: `"queue": "<name>"` makes runs wait in a named queue; empty uses the Default queue. `"concurrent": true`
           lets runs of the same action overlap.
-        - Chat commands are separate objects (create_command); an action runs for one with the trigger
-          `{"type": "command.triggered", "settings": {"command": "<command name>"}}`.
+        - Chat commands are separate objects; an action runs for one with the trigger
+          `{"type": "command.triggered", "settings": {"command": "<command name>"}}`. create_command_with_action makes a new
+          command and its action, linked, in one call (create_command makes only the command).
         - Timers are separate objects (create_timer); an action runs on one with
           `{"type": "core.timer", "settings": {"timer": "<timer name>"}}`.
         - Test with run_action and read the result with get_history (includeArgs=true shows the arguments).

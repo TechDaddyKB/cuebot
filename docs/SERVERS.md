@@ -759,7 +759,7 @@ helps: `describe_*`, `create_action` with a recursive `$defs/subAction`):
 | --- | --- |
 | list_actions, get_action, create_action, update_action (merge, or `replace`), delete_action (destructive), run_action (waits by default), set_action_enabled | |
 | list_trigger_types, describe_trigger_type, list_subaction_types (category / search), describe_subaction_type, list_script_functions | read-only |
-| list_commands, get_command, create_command, update_command, delete_command (destructive) | |
+| list_commands, get_command, create_command_with_action, create_command, update_command, delete_command (destructive) | create_command_with_action makes a command and its action (with the command.triggered trigger) in one call, checking both before saving either |
 | list_timers, create_timer, update_timer, set_timer_state, delete_timer (destructive) | |
 | get_globals (all or one), set_global, delete_global (destructive) | |
 | get_status, get_history, get_recent_chat, send_chat_message (destructive) | |

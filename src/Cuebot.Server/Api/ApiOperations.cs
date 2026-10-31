@@ -254,6 +254,39 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
         return Saved("command", Commands.Get(command.Id) ?? command, warnings);
     }
 
+    /// <summary>
+    /// A chat command and the action it runs, linked: the action gets a command.triggered trigger for the command. Both
+    /// are checked before either is saved, so a rejected action leaves no command behind. AI assistants often made the
+    /// command and forgot the link; this does it in one step.
+    /// </summary>
+    public async Task<JsonObject> CreateCommandWithActionAsync(JsonNode? commandBody, JsonNode? actionBody)
+    {
+        var command = FromNode<CommandDefinition>(commandBody, "command");
+        if (command.Id == Guid.Empty) command.Id = Guid.NewGuid();
+        if (Commands.Get(command.Id) is not null) throw ApiException.Conflict($"A command with id {command.Id} already exists");
+        var warnings = ValidateCommand(command);
+
+        var action = FromNode<ActionDefinition>(actionBody ?? new JsonObject(), "action");
+        if (action.Id == Guid.Empty) action.Id = Guid.NewGuid();
+        if (actionBody?["name"] is null || string.IsNullOrWhiteSpace(action.Name)) action.Name = command.Name;   // not "New action"
+        action.Triggers.RemoveAll(t => string.Equals(t.Type, "command.triggered", StringComparison.OrdinalIgnoreCase));
+        action.Triggers.Insert(0, new TriggerDefinition { Type = "command.triggered", Settings = { ["command"] = command.Name } });
+        if (Profile.Snapshot.FindAction(action.Id) is not null) throw ApiException.Conflict($"An action with id {action.Id} already exists");
+        var result = ValidateOrThrow(action);
+
+        Commands.Save(command);
+        await Profile.EditAsync(p => p.Actions.Add(action)).ConfigureAwait(false);
+        services.Log.Info(LogSource, $"Command '{command.Name}' and its action '{action.Name}' created");
+        var json = new JsonObject
+        {
+            ["command"] = ToObject(Commands.Get(command.Id) ?? command),
+            ["action"] = ToObject(Profile.Snapshot.FindAction(action.Id) ?? action),
+        };
+        var all = new JsonArray([.. warnings.Select(w => w?.DeepClone()), .. result.Warnings.Select(w => w?.DeepClone())]);
+        if (all.Count > 0) json["warnings"] = all;
+        return json;
+    }
+
     public JsonObject UpdateCommand(string idOrName, JsonNode? body, bool merge)
     {
         var existing = FindCommand(idOrName);
