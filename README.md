@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/TechDaddyKB/cuebot/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/TechDaddyKB/cuebot?include_prereleases&label=release"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/TechDaddyKB/cuebot"></a>
-  <a href="https://github.com/TechDaddyKB/cuebot/wiki"><img alt="Wiki" src="https://img.shields.io/badge/docs-wiki-blue"></a>
+  <a href="https://techdaddykb.github.io/cuebot/"><img alt="Docs" src="https://img.shields.io/badge/docs-techdaddykb.github.io-blue"></a>
 </p>
 
 <p align="center">
@@ -61,7 +61,7 @@ Get the latest build from the [releases page](https://github.com/TechDaddyKB/cue
 Nothing else needs to be installed: each download includes everything it needs. Arch Linux packages (`cuebot`,
 `cuebot-bin`) will be on the AUR with the first stable release.
 
-The [installation guide](https://github.com/TechDaddyKB/cuebot/wiki/Installation) covers Windows SmartScreen, Linux
+The [installation guide](https://techdaddykb.github.io/cuebot/guides/installation/) covers Windows SmartScreen, Linux
 desktop integration and updating.
 
 ## Getting started
@@ -70,7 +70,7 @@ desktop integration and updating.
 2. Open **Apps > Stream apps** and connect OBS (or your stream app).
 3. Open **Automation > Actions**, create an action, add a few steps and a trigger, and press **Run** to try it.
 
-The [wiki](https://github.com/TechDaddyKB/cuebot/wiki) walks through each part, from your first chat command to
+The [documentation site](https://techdaddykb.github.io/cuebot/) walks through each part, from your first chat command to
 backups and Linux setup.
 
 ## Your data

@@ -1,0 +1,78 @@
+# The Cuebot documentation site (GitHub Pages): https://techdaddykb.github.io/cuebot/
+# Build locally: pip install -r website/requirements.txt && mkdocs serve -f website/mkdocs.yml
+# The pages under docs/reference/triggers and docs/reference/sub-actions are generated from src/Cuebot.Core/Help
+# by tests/Cuebot.UiTests/ActionHelpTests.cs (CUEBOT_WRITE_REFERENCE=1); do not edit them by hand.
+site_name: Cuebot Docs
+site_description: Stream automation for Twitch, YouTube, Kick and Rumble, explained simply.
+site_url: https://techdaddykb.github.io/cuebot/
+repo_url: https://github.com/TechDaddyKB/cuebot
+repo_name: TechDaddyKB/cuebot
+edit_uri: edit/main/website/docs/
+copyright: Cuebot is free and open source (MIT licence).
+
+theme:
+  name: material
+  logo: assets/cuebot.png
+  favicon: assets/cuebot.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle: { icon: material/weather-sunny, name: Light mode }
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.action.edit
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed: { alternate_style: true }
+  - pymdownx.keys
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Start here:
+      - Installing Cuebot: guides/installation.md
+      - Your first five minutes: guides/getting-started.md
+      - Connecting your platforms: guides/connecting-platforms.md
+      - How actions work: guides/actions-and-triggers.md
+      - Variables, the %words%: guides/variables.md
+      - Words you will see: guides/glossary.md
+  - Guides:
+      - Chat commands: guides/commands.md
+      - Overlays and alerts: guides/overlays.md
+      - Text-to-speech: guides/text-to-speech.md
+      - Points, store and giveaways: guides/community.md
+      - Stream apps and devices: guides/stream-apps-and-devices.md
+      - Stream Deck: guides/stream-deck.md
+      - Donations and integrations: guides/donations-and-integrations.md
+      - The setup assistant and AI tools: guides/assistant.md
+      - Moving from Streamer.bot: guides/moving-from-streamer-bot.md
+      - Backups and your data: guides/backups-and-your-data.md
+      - Linux: guides/linux.md
+      - Command-line options: guides/command-line-options.md
+      - Troubleshooting: guides/troubleshooting.md
+  - Reference:
+      - reference/index.md
+      - Triggers: reference/triggers/index.md
+      - Sub-actions: reference/sub-actions/index.md

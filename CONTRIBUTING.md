@@ -5,7 +5,10 @@ Thanks for helping. Bug reports, feature ideas and pull requests are all welcome
 - **Bugs and ideas:** open an [issue](https://github.com/TechDaddyKB/cuebot/issues/new/choose). The templates ask for
   what we need to reproduce a problem.
 - **Security problems:** do not open a public issue. See [SECURITY.md](SECURITY.md).
-- **Questions about using Cuebot:** start with the [wiki](https://github.com/TechDaddyKB/cuebot/wiki).
+- **Questions about using Cuebot:** start with the [documentation site](https://techdaddykb.github.io/cuebot/).
+- **Help text and docs:** in-app help for triggers and sub-actions lives in `src/Cuebot.Core/Help`, the documentation
+  site in `website/`. Both are written for streamers who are not programmers: see
+  [docs/WRITING_HELP.md](docs/WRITING_HELP.md). A new trigger or sub-action needs its help, or the tests fail.
 
 ## Clean room
 
