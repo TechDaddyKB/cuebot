@@ -14,7 +14,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Credits](credits.md) | 3 |
 | [Crowd Control](crowd-control.md) | 2 |
 | [Decks](decks.md) | 10 |
-| [Discord](discord.md) | 1 |
+| [Discord](discord.md) | 9 |
 | [Elgato Camera Hub](elgato-camera-hub.md) | 14 |
 | [Elgato Control Center](elgato-control-center.md) | 6 |
 | [Files](files.md) | 7 |

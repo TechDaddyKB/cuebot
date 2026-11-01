@@ -1,0 +1,146 @@
+{
+  "triggers": {
+    "discord.slashCommand": {
+      "description": "Runs when someone uses one of your bot's slash commands in your Discord server, like /socials. Answer with the \"Reply to slash command\" step.",
+      "fields": {
+        "command": "The command name without the slash, like \"socials\". Several names separated by commas work too. Leave it empty to run for every command."
+      },
+      "variables": {
+        "command": "The command that was used, without the slash, like socials",
+        "option": "What the person typed in the command's text box (empty when there is none)",
+        "optionName": "The name of that text box",
+        "user": "The person's name as the server shows it (their nickname if they have one)",
+        "userName": "Their Discord user name",
+        "userId": "Their Discord user ID. Handy for the \"Give a role\" step",
+        "channelId": "The ID of the channel where they used it",
+        "channelName": "The name of that channel, without the #",
+        "serverName": "The name of your server",
+        "discordInteractionId": "Tells the \"Reply to slash command\" step which command use to answer. Leave it alone"
+      }
+    },
+    "discord.messagePosted": {
+      "description": "Runs when someone posts a message in a channel your bot can see. To read the text, tick \"Message Content Intent\" on the Discord bot page and in the Developer Portal.",
+      "fields": {
+        "channel": "Only messages in this channel. Pick it from the list or type its name, like #suggestions. Leave it empty for every channel.",
+        "contains": "Only messages with these words in them, like \"!clip\". Capital letters do not matter. Leave it empty for every message."
+      },
+      "variables": {
+        "message": "What they wrote (empty unless Message Content Intent is switched on)",
+        "user": "The person's name as the server shows it",
+        "userName": "Their Discord user name",
+        "userId": "Their Discord user ID",
+        "channelName": "The channel's name, without the #",
+        "channelId": "The channel's ID",
+        "serverName": "The name of your server",
+        "messageLink": "A link to the message",
+        "discordMessageId": "The message's ID"
+      }
+    },
+    "discord.memberJoined": {
+      "description": "Runs when someone joins your Discord server. Good for a welcome message or a starter role. Needs \"Server Members Intent\" switched on, on the Discord bot page and in the Developer Portal.",
+      "variables": {
+        "user": "The new member's name",
+        "userName": "Their Discord user name",
+        "userId": "Their Discord user ID",
+        "mention": "Pings them when put in a message, like \"Welcome %mention%!\"",
+        "serverName": "The name of the server they joined",
+        "isBot": "True when the new member is a bot"
+      }
+    },
+    "discord.connected": {
+      "description": "Runs when your Discord bot comes online in Cuebot.",
+      "variables": {
+        "botName": "Your bot's name"
+      }
+    },
+    "discord.disconnected": {
+      "description": "Runs when your Discord bot goes offline, for example when the internet drops. Cuebot tries to bring it back by itself.",
+      "variables": {
+        "reason": "Why it went offline, in plain words"
+      }
+    }
+  },
+  "subActions": {
+    "discord.sendMessage": {
+      "description": "Posts a message with your own Discord bot, like your \"I'm live!\" post. It can have an embed (a coloured box with a title, text and picture).",
+      "fields": {
+        "channel": "The channel to post in. Pick it from the list (it shows your bot's servers), or type its name like #announcements.",
+        "text": "The message, up to 2000 characters. %variables% work, like \"I'm live! Come say hi, %user%\". To ping a role, use <@&ROLE_ID>.",
+        "embedTitle": "The embed's title, like \"I'm live!\". Leave every embed box empty for a plain message.",
+        "embedDescription": "The text inside the embed. Can be long (up to 4096 characters).",
+        "embedUrl": "A web link: clicking the title opens it. Your stream link is a good choice.",
+        "embedColor": "The colour of the embed's edge, like #9146FF. Words work too: twitch, youtube, kick, red, green, blue, purple.",
+        "embedImage": "A web link to a picture shown big in the embed, like your stream thumbnail.",
+        "rememberAs": "A name like \"live post\". Cuebot saves where the message is under this name, so the edit or delete step can find it later, even after a restart."
+      },
+      "variables": {
+        "discordMessageLink": "A link to the message that was posted",
+        "discordMessageId": "The message's ID",
+        "discordChannelId": "The ID of the channel it was posted in"
+      }
+    },
+    "discord.editMessage": {
+      "description": "Changes a message your bot posted earlier. Handy to turn your \"I'm live!\" post into \"Stream ended, thanks for watching\".",
+      "fields": {
+        "message": "Which message: the name you typed in \"Remember it as\" when posting it, like \"live post\". A message link works too.",
+        "text": "The new text. Leave it empty to keep the old text and change only the embed.",
+        "embedTitle": "The new embed title. Fill in any embed box to replace the whole embed.",
+        "embedDescription": "The new text inside the embed.",
+        "embedUrl": "The new link for the embed's title.",
+        "embedColor": "The new colour, like #808080 for grey.",
+        "embedImage": "A web link to a new picture.",
+        "removeEmbed": "Tick to take the embed off the message (when you leave the embed boxes empty)."
+      }
+    },
+    "discord.deleteMessage": {
+      "description": "Deletes a message your bot posted earlier.",
+      "fields": {
+        "message": "Which message: the name you typed in \"Remember it as\" when posting it, like \"live post\". A message link works too."
+      }
+    },
+    "discord.addRole": {
+      "description": "Gives someone a role in your Discord server, like \"Live notifications\". The bot's own role must be above that role in Server Settings, Roles.",
+      "fields": {
+        "member": "Who gets the role: %userId% from a Discord trigger, a user ID, or their name in the server.",
+        "role": "The role to give. Pick it from the list or type its name exactly.",
+        "reason": "A note shown in your server's audit log, like \"Asked with /notify\". You can leave it empty."
+      }
+    },
+    "discord.removeRole": {
+      "description": "Takes a role away from someone in your Discord server. The bot's own role must be above that role in Server Settings, Roles.",
+      "fields": {
+        "member": "Who loses the role: %userId% from a Discord trigger, a user ID, or their name in the server.",
+        "role": "The role to take away. Pick it from the list or type its name exactly.",
+        "reason": "A note shown in your server's audit log. You can leave it empty."
+      }
+    },
+    "discord.replyToSlashCommand": {
+      "description": "Answers the slash command that started this action. Using it twice sends a second message. Without it the bot answers with the default reply.",
+      "fields": {
+        "text": "The answer, up to 2000 characters, like \"Find me on twitch.tv/yourname\".",
+        "embedTitle": "An embed title for the answer. Leave every embed box empty for plain text.",
+        "embedDescription": "The text inside the embed.",
+        "embedUrl": "A web link: clicking the title opens it.",
+        "embedColor": "The colour of the embed's edge, like #9146FF.",
+        "embedImage": "A web link to a picture shown in the embed.",
+        "interaction": "Which command use to answer. Leave it as %discordInteractionId%."
+      }
+    },
+    "discord.sendDirectMessage": {
+      "description": "Sends a private message from your bot to one person in your server. Some people block messages from servers, so it may not arrive.",
+      "fields": {
+        "member": "Who gets it: %userId% from a Discord trigger, a user ID, or their name in your server.",
+        "text": "The message, up to 2000 characters. %variables% work here."
+      }
+    },
+    "discord.setStatus": {
+      "description": "Changes what people see under your bot's name, like \"Watching my stream\". Needs the bot to be connected.",
+      "fields": {
+        "status": "The coloured dot: Online (green), Away (yellow), Do not disturb (red) or Invisible.",
+        "activity": "The word before your text: Playing, Streaming, Listening to, Watching or Competing in. \"Just the text\" shows only your text. \"No activity\" clears it.",
+        "text": "What it says after that word, like \"my stream\".",
+        "streamUrl": "Only for Streaming: your Twitch or YouTube channel link, so the status turns purple and links to it."
+      }
+    }
+  }
+}

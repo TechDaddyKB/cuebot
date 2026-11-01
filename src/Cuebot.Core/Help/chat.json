@@ -95,7 +95,7 @@
       }
     },
     "discord.basicWebhook": {
-      "description": "Posts a message in a Discord channel through a webhook (a private address Discord gives you for that channel).",
+      "description": "Posts a message in a Discord channel through a webhook (a private address Discord gives you for that channel). To edit posts, give roles or answer slash commands, use the Discord bot instead.",
       "fields": {
         "name": "A name for you to remember this webhook by. It is not sent to Discord.",
         "webhookUrl": "The webhook link. Copy it in Discord: Server Settings, Integrations, Webhooks, then Copy Webhook URL. Keep it private.",

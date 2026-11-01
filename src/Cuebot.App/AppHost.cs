@@ -6,6 +6,7 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.BuiltIn;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
+using Cuebot.Discord;
 using Cuebot.Obs;
 using Cuebot.Relay;
 using Cuebot.Remote;
@@ -67,6 +68,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddMidi()
             .AddGameControllers()
             .AddWebhooks()
+            .AddDiscordBot()
             .AddServers()
             .AddStreamDeck()
             .AddRemote()     // links to other Cuebot instances (served on the REST API listener)
@@ -164,6 +166,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Controllers", () => Get<Cuebot.Controllers.ControllerService>().StartAsync()),
             StartSafely(log, "Voice Control", () => Get<Cuebot.VoiceControl.VoiceControlService>().StartAsync()),
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
+            StartSafely(log, "Discord bot", () => Get<DiscordBotService>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
             StartSafely(log, "Remote instances", () => Get<RemoteHub>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),

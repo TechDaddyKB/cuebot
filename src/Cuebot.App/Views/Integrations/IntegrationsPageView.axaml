@@ -23,6 +23,9 @@
       <TabItem Header="GoXLR">
         <gxv:GoXlrView DataContext="{Binding GoXlr}" />
       </TabItem>
+      <TabItem Header="Discord bot">
+        <intv:DiscordBotView DataContext="{Binding DiscordBot}" />
+      </TabItem>
     </TabControl>
   </DockPanel>
 </UserControl>

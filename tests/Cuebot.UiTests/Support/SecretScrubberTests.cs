@@ -186,6 +186,8 @@ public sealed class SecretScrubberTests
         new("Polly AccessKeyId " + PollyId, PollyId),
         new("Google request ?key=" + GoogleKey + "&alt=json", GoogleKey),
         new("Discord webhook https://discord.com/api/webhooks/123456789012345678/AbCdEfGhIjKlMnOpQrStUvWxYz-0123456789", "AbCdEfGhIjKlMnOpQrStUvWxYz-0123456789"),
+        // Built from pieces so the source holds no token-shaped text.
+        new("Discord bot token " + "MTIzNDU2Nzg5MDEyMzQ1Njc4OQ" + ".GaBcDe." + "abcdefghijklmnopqrstuvwxyz0123456789AB" + " rejected", "abcdefghijklmnopqrstuvwxyz0123456789AB"),
         new("Slack https://hooks.slack.com/services/T000/B000/XXXXXXXXXXXXXXXX", "XXXXXXXXXXXXXXXX"),
         new("IFTTT https://maker.ifttt.com/trigger/live/json/with/key/dQw4w9-WgXcQ", "dQw4w9-WgXcQ"),
         new("gh token ghp_abcdefghijklmnopqrstuvwxyz0123456789", "ghp_abcdefghijklmnopqrstuvwxyz0123456789"),

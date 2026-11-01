@@ -41,6 +41,10 @@ public static partial class SecretScrubber
     [GeneratedRegex(@"https?://(?:(?:canary|ptb)\.)?discord(?:app)?\.com/api/webhooks/[^\s""'<>]+", RegexOptions.IgnoreCase)]
     private static partial Regex DiscordWebhook();
 
+    /// <summary>Discord bot tokens: base64 user id, a dot, a timestamp, a dot, an HMAC.</summary>
+    [GeneratedRegex(@"\b[MNO][A-Za-z\d_-]{23,27}\.[A-Za-z\d_-]{6}\.[A-Za-z\d_-]{27,40}\b")]
+    private static partial Regex DiscordBotToken();
+
     [GeneratedRegex(@"https://hooks\.slack\.com/[^\s""'<>]+", RegexOptions.IgnoreCase)]
     private static partial Regex SlackWebhook();
 
@@ -89,6 +93,7 @@ public static partial class SecretScrubber
         var s = text;
         foreach (var secret in Cuebot.Core.Auth.BuiltInApps.Secrets) s = s.Replace(secret, Redacted, StringComparison.Ordinal);
         s = DiscordWebhook().Replace(s, "https://discord.com/api/webhooks/" + Redacted);
+        s = DiscordBotToken().Replace(s, Redacted);
         s = SlackWebhook().Replace(s, "https://hooks.slack.com/" + Redacted);
         s = IftttKeyPath().Replace(s, m => m.Groups[1].Value + Redacted);
         s = Jwt().Replace(s, Redacted);
