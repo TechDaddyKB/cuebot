@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sp="using:Cuebot.App.ViewModels.Speech"
+             xmlns:sp_core="using:Cuebot.Speech"
              x:Class="Cuebot.App.Views.Speech.SpeechEnginesView"
              x:DataType="sp:SpeechEnginesViewModel">
   <UserControl.DataTemplates>
@@ -39,6 +40,46 @@
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
           </ItemsControl>
+          <StackPanel Spacing="8" IsVisible="{Binding HasPiper}">
+            <StackPanel DataContext="{Binding Piper}" Spacing="8" x:DataType="sp:PiperPanelViewModel">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding ProgramStatus}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <Button Grid.Column="1" Content="Get Piper" Classes="accent" Command="{Binding GetProgramCommand}"
+                        IsVisible="{Binding CanGetProgram}"
+                        ToolTip.Tip="Downloads Piper (about 25 MB) into your Cuebot data folder. You only need to do this once. Press it again to repair Piper." />
+              </Grid>
+              <TextBlock Classes="label" Text="Download a voice" />
+              <Grid ColumnDefinitions="Auto,160,*,Auto" RowDefinitions="Auto">
+                <Button Content="Show voices" Command="{Binding LoadCatalogCommand}" Margin="0,0,8,0"
+                        ToolTip.Tip="Loads the list of free Piper voices from the internet." />
+                <TextBox Grid.Column="1" Text="{Binding Filter}" PlaceholderText="Language, e.g. English" Margin="0,0,8,0"
+                         ToolTip.Tip="Type a language or a name to make the list shorter." />
+                <ComboBox Grid.Column="2" ItemsSource="{Binding Available}" SelectedItem="{Binding SelectedVoice}" HorizontalAlignment="Stretch"
+                          PlaceholderText="Pick a voice" ToolTip.Tip="Medium voices sound good and are quick. High sounds best but is bigger.">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="sp_core:PiperCatalogVoice">
+                      <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Grid.Column="3" Content="Download" Margin="8,0,0,0" Command="{Binding DownloadVoiceCommand}"
+                        ToolTip.Tip="Downloads this voice (most are 20-120 MB). Then it shows up in every voice picker." />
+              </Grid>
+              <TextBlock Classes="hint" Text="{Binding Progress}" IsVisible="{Binding Progress, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <TextBlock Classes="label" Text="Your Piper voices" IsVisible="{Binding HasInstalled}" />
+              <ItemsControl ItemsSource="{Binding Installed}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="sp:PiperVoiceRow">
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                      <TextBlock Text="{Binding Key}" VerticalAlignment="Center" />
+                      <Button Grid.Column="1" Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Removes this voice from your computer." />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </StackPanel>
           <TextBlock Classes="error" Text="{Binding TestError}" IsVisible="{Binding TestError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <ListBox Classes="list" ItemsSource="{Binding Voices}" IsVisible="{Binding HasVoices}" MaxHeight="220">
             <ListBox.ItemTemplate>

@@ -63,6 +63,13 @@ public static class SpeechServiceCollectionExtensions
     {
         services.AddSingleton<ITtsEngine, WindowsSpeechEngine>();
         services.AddSingleton<ITtsEngine, EspeakEngine>();
+        services.AddSingleton(sp => new PiperStore(sp.GetRequiredService<AppPaths>().GetDirectory("piper"),
+            sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<ITtsEngine>(sp =>
+        {
+            var settings = sp.GetRequiredService<JsonFile<SpeechSettings>>();
+            return new PiperEngine(sp.GetRequiredService<PiperStore>(), () => settings.Value.Engines.Piper);
+        });
         AddCloud(services, (http, s) => new ElevenLabsEngine(http, () => s().ElevenLabsApiKey));
         AddCloud(services, (http, s) => new AzureEngine(http, () => s().Engines.Azure));
         AddCloud(services, (http, s) => new PollyEngine(http, () => s().Engines.Polly));
@@ -72,6 +79,7 @@ public static class SpeechServiceCollectionExtensions
         AddCloud(services, (http, s) => new TtsMonsterEngine(http, () => s().Engines.TtsMonster));
         AddCloud(services, (http, s) => new AcapelaEngine(http, () => s().Engines.Acapela));
         AddCloud(services, (http, s) => new CereProcEngine(http, () => s().Engines.CereProc));
+        AddCloud(services, (http, s) => new OpenAiEngine(http, () => s().Engines.OpenAi));
     }
 
     private static void AddCloud(IServiceCollection services, Func<HttpClient, Func<SpeechSettings>, ITtsEngine> create) =>

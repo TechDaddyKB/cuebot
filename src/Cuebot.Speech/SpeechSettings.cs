@@ -129,6 +129,8 @@ public sealed class EngineSettings
     public TtsMonsterSettings TtsMonster { get; set; } = new();
     public AcapelaSettings Acapela { get; set; } = new();
     public CereProcSettings CereProc { get; set; } = new();
+    public OpenAiSpeechSettings OpenAi { get; set; } = new();
+    public PiperSettings Piper { get; set; } = new();
 }
 
 public sealed class AzureSettings
@@ -207,6 +209,26 @@ public sealed class CereProcSettings
     /// <summary>CereVoice Cloud account password.</summary>
     [Secret]
     public string Password { get; set; } = "";
+}
+
+public sealed class OpenAiSpeechSettings
+{
+    /// <summary>A key from platform.openai.com (paid per use).</summary>
+    [Secret]
+    public string ApiKey { get; set; } = "";
+
+    /// <summary>gpt-4o-mini-tts (default, follows instructions), tts-1 or tts-1-hd.</summary>
+    public string Model { get; set; } = "gpt-4o-mini-tts";
+
+    /// <summary>How every OpenAI voice should sound, e.g. "Cheerful and quick"; a voice alias's style overrides it.</summary>
+    public string Instructions { get; set; } = "";
+}
+
+/// <summary>Piper (offline voices). The program and voices download into the data folder's "piper" folder.</summary>
+public sealed class PiperSettings
+{
+    /// <summary>A piper program to use instead of the downloaded one (empty = the downloaded one, then PATH).</summary>
+    public string Executable { get; set; } = "";
 }
 
 /// <summary>Who may do something in chat. The broadcaster always may.</summary>

@@ -16,13 +16,51 @@ An **engine** is the thing that makes the voice. Open the **Engines** tab.
 | --- | --- | --- |
 | **Windows voices** | Windows | Nothing. These are the voices already in Windows. |
 | **eSpeak NG** | Windows and Linux | Free, works without internet. On Linux, install `espeak-ng` (the Flatpak has it). |
-| **ElevenLabs**, **Microsoft Azure**, **Google Cloud**, **Amazon Polly**, **IBM Watson** | The internet | Your own account and key with that company |
+| **Piper** | Windows, Mac and Linux | Free, works without internet, and sounds much more natural than eSpeak. Cuebot downloads it for you: see [Piper](#piper-free-voices-on-your-computer) below. |
+| **OpenAI**, **ElevenLabs**, **Microsoft Azure**, **Google Cloud**, **Amazon Polly**, **IBM Watson** | The internet | Your own account and key with that company |
 | **Acapela Cloud**, **CereProc (CereVoice Cloud)**, **TTS Monster**, **UberDuck** | The internet | Your own account and key |
 
 Internet ("cloud") engines often sound nicer, but the company may charge you for each letter spoken. Cuebot only sends
 them the text to say. Your keys are hidden on screen and never written to the log.
 
 Click **Test** next to an engine to hear it.
+
+### Piper: free voices on your computer
+
+Piper is a free voice engine that runs on your own computer. It needs no account, costs nothing, and keeps working
+without internet. Cuebot downloads it for you:
+
+1. On the **Engines** tab, find the **Piper (free, offline)** card and press **Get Piper**. It downloads about 25 MB,
+   once.
+2. Press **Show voices**. Type your language in the small box (for example `English` or `Spanish`) to make the list
+   shorter.
+3. Pick a voice and press **Download**. **Medium** voices sound good and are quick; **high** ones sound a little better
+   but are bigger. Most voices are 20 to 120 MB.
+4. Press **Test** on the Piper card. Your voice is now in every voice picker, so you can use it in a voice alias.
+
+Download as many voices as you like. To remove one, press **Delete** next to it under **Your Piper voices**. Some
+voices, like `en_GB-vctk-medium`, contain many speakers; each one shows up as its own voice.
+
+!!! note "Where Piper and its voices come from"
+    Piper comes from the Piper project on GitHub, and the voices from Piper's voice collection. Cuebot checks every file
+    after downloading it and throws away anything that doesn't match. Each voice has its own licence, listed in the
+    voice collection; most allow streaming.
+
+Piper's speed slider works, but its pitch slider does nothing.
+
+### OpenAI: voices you can describe
+
+OpenAI's voices are natural and you can tell them *how* to talk, like "cheerful and a bit fast" or "whisper like a
+secret". It costs a little money: reading a normal chat message out loud costs a fraction of a cent.
+
+1. Go to [platform.openai.com](https://platform.openai.com), sign in, open **API keys** and make a new key. You need
+   to add a little credit (billing) to your OpenAI account first.
+2. In Cuebot, on the **OpenAI** card, paste the key into **API key**.
+3. Optional: type how the voices should sound into **How the voices should sound**. In a voice alias, pick a
+   **Style** (Cheerful, Calm, Excited, Spooky, Like a pirate and more) to change it for just that alias.
+4. Press **Test** to see the 13 voices (Alloy, Coral, Marin and more).
+
+**Model:** leave it on `gpt-4o-mini-tts`. The older `tts-1` models ignore the "how it should sound" text.
 
 ## 2. Make a voice alias
 

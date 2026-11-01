@@ -194,7 +194,7 @@ what it found. Streamer.bot's names are **added** next to Cuebot's own, so exist
 
 | Area | Speaker.bot | Cuebot today | Status | Phase |
 | --- | --- | --- | --- | --- |
-| Engines: SAPI5, Google, Azure, Amazon Polly, IBM Watson, UberDuck, TTS Monster, Acapela, CereProc, ElevenLabs | 10 | All 10 + espeak-ng (➕ Linux); cloud engines not yet tested against the real services | ✅ | 2 |
+| Engines: SAPI5, Google, Azure, Amazon Polly, IBM Watson, UberDuck, TTS Monster, Acapela, CereProc, ElevenLabs | 10 | All 10 + espeak-ng (➕ Linux), Piper (➕ free offline, downloads in-app) and OpenAI (➕); cloud engines not yet tested against the real services except OpenAI | ✅ | 2 |
 | Voice aliases with several voices (random pick), per-alias volume/rate/pitch | ✓ | ✓ | ✅ | 2 |
 | Per-user voice/alias, nickname pronunciation | ✓ | ✓ | ✅ | 2 |
 | Viewer `!tts` commands (18: voice, speed, pitch, nick, on/off, skip, clear, ...) | ✓ | All 18 + aliases, including `set sticky` and `assign last` (pins the last heard voice, creating an alias for random picks) | ✅ | 2 |
