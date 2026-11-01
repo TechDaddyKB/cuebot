@@ -9,6 +9,8 @@ using Cuebot.Integrations.HeartRate;
 using Cuebot.Integrations.HeartRate.HypeRate;
 using Cuebot.Integrations.HeartRate.Pulsoid;
 using Cuebot.Integrations.CrowdControl;
+using Cuebot.Integrations.NowPlaying;
+using Cuebot.Integrations.Spotify;
 using Cuebot.Integrations.StreamLoots;
 using Cuebot.Integrations.VTubeStudio;
 using Cuebot.Integrations.Voicemod;
@@ -17,7 +19,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Cuebot.Integrations;
 
-/// <summary>Registers the stream-app integrations: VTube Studio, Voicemod, Pulsoid, HypeRate, StreamLoots and Crowd Control.</summary>
+/// <summary>
+/// Registers the stream-app integrations: VTube Studio, Voicemod, Pulsoid, HypeRate, StreamLoots, Crowd Control, and
+/// music (now playing from the computer's players, Spotify).
+/// </summary>
 public static class IntegrationsServiceCollectionExtensions
 {
     /// <summary>
@@ -45,6 +50,12 @@ public static class IntegrationsServiceCollectionExtensions
         services.AddSingleton(sp => new CrowdControlService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<StreamLootsService>());
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<CrowdControlService>());
+        services.AddSingleton(sp => new SpotifyService(Settings(sp), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton(sp => new NowPlayingService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
+            sp.GetRequiredService<SpotifyService>(), SystemMediaSources.ForThisSystem(sp.GetRequiredService<AppLog>()),
+            sp.GetRequiredService<AppPaths>().Root));
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<SpotifyService>());
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<NowPlayingService>());
         services.AddSingleton<IChatEventAdapter, StreamLootsFeedAdapter>();
         services.AddSingleton<IChatEventAdapter, CrowdControlFeedAdapter>();
 
@@ -56,6 +67,7 @@ public static class IntegrationsServiceCollectionExtensions
             sp.GetRequiredService<TimeProvider>(), clips: true));
         services.AddSingleton<ITriggerProvider, StreamLootsTriggers>();
         services.AddSingleton<ITriggerProvider, CrowdControlTriggers>();
+        services.AddSingleton<ITriggerProvider, NowPlayingTriggers>();
 
         services.AddSingleton<SubActionSet>(sp => new SubActionSet(
         [
@@ -64,6 +76,8 @@ public static class IntegrationsServiceCollectionExtensions
             .. HeartRateSubActions.Create(sp.GetRequiredService<HeartRateHub>(), sp.GetRequiredService<TimeProvider>()),
             .. StreamLootsSubActions.Create(sp.GetRequiredService<StreamLootsService>()),
             .. CrowdControlSubActions.Create(sp.GetRequiredService<CrowdControlService>()),
+            .. NowPlayingSubActions.Create(sp.GetRequiredService<NowPlayingService>()),
+            .. SpotifySubActions.Create(sp.GetRequiredService<SpotifyService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -73,6 +87,8 @@ public static class IntegrationsServiceCollectionExtensions
             sp.GetRequiredService<VTubeStudioService>(), sp.GetRequiredService<VoicemodService>(), sp.GetRequiredService<PulsoidService>(),
             sp.GetRequiredService<HypeRateService>(), sp.GetRequiredService<HeartRateHub>(),
             sp.GetRequiredService<StreamLootsService>(), sp.GetRequiredService<CrowdControlService>()));
+        services.AddSingleton<IScriptFunctionProvider>(sp => new NowPlayingScriptFunctions(
+            sp.GetRequiredService<NowPlayingService>(), sp.GetRequiredService<SpotifyService>()));
         return services;
     }
 
@@ -95,6 +111,7 @@ public static class IntegrationsServiceCollectionExtensions
             "voicemod.getSounds", "voicemod.setCensorBeep",
             "heartrate.get",
             "streamloots.sendTestEvent", "crowdcontrol.getSession", "crowdcontrol.sendTestEvent",
+            .. NowPlayingSubActions.TypeIds, .. SpotifySubActions.TypeIds,
         ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;

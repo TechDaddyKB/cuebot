@@ -28,14 +28,25 @@ public sealed class LoopbackReceiver : IDisposable
 {
     private readonly TcpListener _listener;
     private readonly string _service;
+    private readonly string _path;
 
     /// <param name="service">Named on the page the browser shows after the redirect, e.g. "YouTube".</param>
-    public LoopbackReceiver(string service)
+    public LoopbackReceiver(string service) : this(service, 0, "/")
+    {
+    }
+
+    /// <summary>
+    /// Listens on a fixed <paramref name="port"/> (0: a random one) and <paramref name="path"/>, for services that only
+    /// accept the exact redirect address registered in the user's app (e.g. Spotify: http://127.0.0.1:43117/callback).
+    /// </summary>
+    /// <exception cref="SocketException">The port is in use.</exception>
+    public LoopbackReceiver(string service, int port, string path)
     {
         _service = service;
-        _listener = new TcpListener(IPAddress.Loopback, 0);
+        _path = path.StartsWith('/') ? path : "/" + path;
+        _listener = new TcpListener(IPAddress.Loopback, port);
         _listener.Start();
-        RedirectUri = $"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}/";
+        RedirectUri = $"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}{_path}";
     }
 
     public string RedirectUri { get; }
@@ -51,13 +62,13 @@ public sealed class LoopbackReceiver : IDisposable
             using var client = await _listener.AcceptTcpClientAsync(ct).ConfigureAwait(false);
             await using var stream = client.GetStream();
             var target = await ReadRequestTargetAsync(stream, ct).ConfigureAwait(false);
-            if (target is null || !target.StartsWith("/?", StringComparison.Ordinal))
+            if (target is null || !target.StartsWith(_path + "?", StringComparison.Ordinal))
             {
                 await RespondAsync(stream, "404 Not Found", "", ct).ConfigureAwait(false);
                 continue;
             }
 
-            var query = ParseQuery(target[2..]);
+            var query = ParseQuery(target[(_path.Length + 1)..]);
             var ok = query.ContainsKey("code");
             await RespondAsync(stream, "200 OK",
                 ok ? $"Cuebot is signed in to {_service}. You can close this tab."

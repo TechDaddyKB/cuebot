@@ -10,6 +10,8 @@ public sealed class IntegrationsSettings
     public HypeRateSettings HypeRate { get; set; } = new();
     public StreamLootsSettings StreamLoots { get; set; } = new();
     public CrowdControlSettings CrowdControl { get; set; } = new();
+    public NowPlaying.NowPlayingSettings NowPlaying { get; set; } = new();
+    public Spotify.SpotifySettings Spotify { get; set; } = new();
 }
 
 public sealed class VTubeStudioSettings

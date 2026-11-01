@@ -1,0 +1,125 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.MusicView"
+             x:DataType="vm:MusicViewModel">
+  <ScrollViewer Padding="24">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left" Spacing="4">
+      <TextBlock Classes="h1" Text="Music" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                 Text="Show the song you are playing on stream, run actions when it changes, and let viewers request songs on Spotify. The guide &quot;Music and now playing&quot; on the Cuebot docs site walks through it step by step." />
+
+      <!-- Now playing -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Now playing" />
+          <Border Padding="12" CornerRadius="6" Background="{DynamicResource CuebotRaised}">
+            <StackPanel>
+              <TextBlock Name="NowTitle" Text="{Binding NowTitle}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Name="NowDetails" Classes="muted" Text="{Binding NowDetails}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Previous" Command="{Binding PreviousCommand}" ToolTip.Tip="Goes back one song in the player that plays now." />
+            <Button Content="Play / pause" Command="{Binding PlayPauseCommand}" ToolTip.Tip="Pauses the player that plays now, or plays it again." />
+            <Button Content="Next" Command="{Binding NextCommand}" ToolTip.Tip="Skips to the next song in the player that plays now." />
+            <Button Content="Check now" Command="{Binding RefreshCommand}" ToolTip.Tip="Looks right now at what plays." />
+          </StackPanel>
+          <CheckBox Name="WatchToggle" Content="Watch what plays" IsChecked="{Binding Watching}"
+                    ToolTip.Tip="Keeps an eye on your music all the time. Needed for the &quot;Song changed&quot; trigger and the text file. Stays on after a restart." />
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+            <TextBlock Text="Show songs from" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" Name="SourcePicker" ItemsSource="{Binding Sources}" SelectedIndex="{Binding SourceIndex}" MinWidth="300"
+                      ToolTip.Tip="Automatic shows whatever plays. Pick one player if several are open, or Spotify to use your Spotify account (also works on a Mac)." />
+            <TextBlock Grid.Row="1" Text="Player" VerticalAlignment="Center" IsVisible="{Binding PicksPlayer}" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Player}" IsVisible="{Binding PicksPlayer}" PlaceholderText="spotify"
+                     ToolTip.Tip="Part of the player's name, like spotify, vlc or firefox. The open players are listed below." />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap">
+            <Run Text="{Binding SystemName}" FontWeight="SemiBold" /><Run Text=": " /><Run Text="{Binding SystemStatus}" />
+          </TextBlock>
+          <TextBlock Name="PlayersLine" Classes="muted" TextWrapping="Wrap" Text="{Binding PlayersLine}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Text file for OBS -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Show it in OBS" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Cuebot can keep a small text file with the song in it. In OBS add a Text source, tick &quot;Read from file&quot; and pick this file: the text on stream changes with every song." />
+          <CheckBox Content="Write the song to a text file" IsChecked="{Binding WriteTextFile}"
+                    ToolTip.Tip="Keeps the file below up to date while a song plays. Ticking it also ticks &quot;Watch what plays&quot;." />
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+            <TextBlock Text="File" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding TextFilePath}" PlaceholderText="{Binding EffectiveTextFile}"
+                     ToolTip.Tip="Where the file goes. Leave it empty to keep it in Cuebot's data folder." />
+            <Button Grid.Column="2" Content="Copy file path" Command="{Binding CopyFilePathCommand}"
+                    ToolTip.Tip="Copies where the file is, so you can paste it into OBS." />
+            <TextBlock Grid.Row="1" Text="Text" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TextFormat}" PlaceholderText="%artist% - %title%"
+                     ToolTip.Tip="What the file says. %title%, %artist%, %album%, %player% and %duration% are filled in, like &quot;Now playing: %title% by %artist%&quot;." />
+            <TextBlock Grid.Row="2" Text="When nothing plays" VerticalAlignment="Center" />
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding IdleText}" PlaceholderText="(empty)"
+                     ToolTip.Tip="What the file says while the music is paused or stopped. Leave it empty to hide the text." />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding FileMessage}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Spotify -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Spotify song requests" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Viewers can add songs to your Spotify queue (for example with a !sr command), and Cuebot can skip, pause and change the volume. Spotify asks every streamer to make their own free Spotify app for this. It takes about two minutes:" />
+          <TextBlock TextWrapping="Wrap" Text="1. Click &quot;Open Spotify for Developers&quot;, log in and click Create app. Any name and description are fine." />
+          <TextBlock TextWrapping="Wrap" Text="2. Under Redirect URIs paste the address below (click &quot;Copy redirect address&quot;), click Add, tick Web API, accept the terms and click Save." />
+          <TextBlock TextWrapping="Wrap" Text="3. Open the app's Settings, copy the Client ID and paste it here. Then click Sign in." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Open Spotify for Developers" Command="{Binding OpenDashboardCommand}"
+                    ToolTip.Tip="Opens developer.spotify.com in your browser, where you create your Spotify app." />
+            <Button Name="CopyRedirect" Content="Copy redirect address" Command="{Binding CopyRedirectCommand}"
+                    ToolTip.Tip="Copies the address Spotify sends you back to after you sign in. Paste it under Redirect URIs in your Spotify app." />
+          </StackPanel>
+          <Grid ColumnDefinitions="Auto,*,Auto,110" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+            <TextBlock Text="Redirect address" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Name="RedirectUri" Text="{Binding RedirectUri, Mode=OneWay}" IsReadOnly="True"
+                     ToolTip.Tip="It must be exactly the same in your Spotify app, with 127.0.0.1 (Spotify does not accept &quot;localhost&quot;)." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="3" Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="Only change this if Cuebot says the port is in use. Then copy the new address into your Spotify app too." />
+            <TextBlock Grid.Row="1" Text="Client ID" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Name="ClientId" Text="{Binding ClientId}"
+                     PlaceholderText="32 letters and numbers from your Spotify app's settings"
+                     ToolTip.Tip="Find it on developer.spotify.com: open your app, then Settings. You do not need the client secret." />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Sign in" Classes="accent" Command="{Binding SignInCommand}" IsVisible="{Binding !SigningIn}"
+                    ToolTip.Tip="Opens Spotify in your browser so you can allow Cuebot to see and control your music." />
+            <Button Content="Cancel" Command="{Binding CancelSignInCommand}" IsVisible="{Binding SigningIn}"
+                    ToolTip.Tip="Stops waiting for the browser." />
+            <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding SignedIn}"
+                    ToolTip.Tip="Makes Cuebot forget your Spotify sign-in." />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding SpotifyState}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding SpotifyStatus}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Adding songs, skipping and pausing need Spotify Premium and Spotify open on a device. Showing the song works on free accounts too." />
+          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <TextBlock Text="Try it" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Name="TestSong" Text="{Binding TestSong}" PlaceholderText="A song name, or a Spotify song link"
+                     ToolTip.Tip="Type a song like a viewer would, for example &quot;never gonna give you up&quot;." />
+            <Button Grid.Column="2" Content="Add a song" Command="{Binding AddTestSongCommand}" IsEnabled="{Binding SignedIn}"
+                    ToolTip.Tip="Puts the song in your Spotify queue, just like the &quot;Add song to Spotify queue&quot; step does." />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SpotifyInfo}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding SpotifyError}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

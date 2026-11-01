@@ -34,6 +34,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [mtion studio](mtion-studio.md) | 3 |
 | [Network](network.md) | 2 |
 | [nizima LIVE](nizima-live.md) | 9 |
+| [Now playing](now-playing.md) | 2 |
 | [OBS](obs.md) | 47 |
 | [OBSBOT](obsbot.md) | 23 |
 | [Overlays](overlays.md) | 2 |
@@ -47,6 +48,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Remote](remote.md) | 2 |
 | [Rumble](rumble.md) | 1 |
 | [Speech](speech.md) | 11 |
+| [Spotify](spotify.md) | 5 |
 | [Store](store.md) | 2 |
 | [Stream Deck](stream-deck.md) | 7 |
 | [StreamElements](streamelements.md) | 5 |

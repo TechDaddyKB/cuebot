@@ -77,6 +77,9 @@ ending in `/custom/doorbell`, and the **Custom Webhook** trigger runs.
 VTube Studio, Voicemod, heart-rate monitors (Pulsoid, HypeRate), StreamLoots and Crowd Control are on
 **Apps > Apps & devices**, tab **Apps & services**. See [Stream apps and devices](stream-apps-and-devices.md).
 
+Now playing (the song you play) and Spotify song requests are on **Audio > Music**. See
+[Music and now playing](music-and-now-playing.md).
+
 ## Cuebot's own servers
 
 **Apps > Servers** lets other programs talk to Cuebot. Most people never need it. The main ones:

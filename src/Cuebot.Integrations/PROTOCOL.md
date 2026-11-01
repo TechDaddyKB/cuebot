@@ -1,7 +1,8 @@
 # Cuebot.Integrations: protocols
 
 This module talks to six stream apps and services. Five use websockets (`ClientWebSocket`); StreamLoots uses a
-server-sent-events stream (`HttpClient`, `Common/SseTransport.cs`). No SDKs are used. Everything here comes from the
+server-sent-events stream (`HttpClient`, `Common/SseTransport.cs`). Sections 7 and 8 cover music: the computer's
+players (D-Bus on Linux, a PowerShell helper on Windows) and the Spotify Web API (`HttpClient`). No SDKs are used. Everything here comes from the
 vendors' public documentation and, where noted, open-source clients (wire format only); no Streamer.bot code or
 binaries were used. "Verified" means checked against the public docs while writing this module. Every protocol is
 covered by in-memory fake-server tests in `tests/Cuebot.Integrations.Tests`. Sections 1 to 4 have not been tried
@@ -279,3 +280,94 @@ above. Cuebot does not offer them until Crowd Control issues it an application i
   - "Send test event" publishes a local sample.
 - The session state comes from the start/stop events seen since connecting. The public "active session" lookup needs a
   username or a scoped token.
+
+---
+
+## 7. Now playing: the computer's music players (`NowPlaying/`)
+
+Settings: `integrations.json` → `NowPlaying` (nothing secret). `NowPlayingService` picks the song from the chosen source
+(`Automatic`: a playing system player first, the system's own "current" session first; then Spotify if it plays; then a
+paused one. `Player`: sessions whose name or id contains the text. `Spotify`: the account only) and publishes
+`nowplaying.songChanged` once per new song (title + artist + album), 750 ms after it settled, because players often
+send a file name first and the tags a moment later. Pausing and resuming the same song announces nothing. The optional
+text file is written atomically (temp file + move) whenever its text changes. "Watch what plays" (`Enabled`, default
+off) keeps the sources running; the "Get now playing" and "Media control" steps start them on demand.
+
+### Linux: MPRIS over the session bus (`NowPlaying/Mpris/`)
+
+- Source: MPRIS D-Bus Interface Specification 2.2, https://specifications.freedesktop.org/mpris-spec/latest/. Verified
+  live on 2026-10-31 with mpv 0.41 + mpv-mpris 1.3 and VLC 3.0.24 on a private `dbus-run-session` bus (song, play/pause,
+  Next/Previous, players starting and quitting).
+- Transport: Cuebot's own session-bus client (`Cuebot.Core/Desktop/DBus`, SASL EXTERNAL, little-endian, no fd passing);
+  no D-Bus package.
+- Start: `AddMatch` for `NameOwnerChanged` (`arg0namespace='org.mpris.MediaPlayer2'`) and for `PropertiesChanged` on
+  path `/org/mpris/MediaPlayer2`; `ListNames` → every `org.mpris.MediaPlayer2.*` name; per player `GetNameOwner`,
+  `Properties.GetAll("org.mpris.MediaPlayer2.Player")` and `Properties.Get("org.mpris.MediaPlayer2", "Identity")`
+  (the friendly name; else the bus name without `.instanceNNN`).
+- Metadata (`a{sv}`): `xesam:title` (s), `xesam:artist` (as, joined with ", "; falls back to `xesam:albumArtist`),
+  `xesam:album` (s), `mpris:artUrl` (s, often `file://` for local players), `mpris:length` (x microseconds; t/i/u/d
+  accepted too). No title → the file name from `xesam:url`. `PlaybackStatus`: Playing / Paused / Stopped.
+- Signals: `PropertiesChanged(s iface, a{sv} changed, as invalidated)` is matched to players by the sender's unique
+  name; an invalidated `Metadata`/`PlaybackStatus` is read again with `GetAll`. `NameOwnerChanged(name, old, new)`: empty
+  `new` = the player quit. Signals are queued off the reader thread before any call is made.
+- Keys: `org.mpris.MediaPlayer2.Player.PlayPause` / `Play` / `Pause` / `Next` / `Previous`. Calls time out after 3 s;
+  a lost bus reconnects every 10 s.
+
+### Windows: System Media Transport Controls (`NowPlaying/Smtc/`)
+
+- API: `Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager` (Windows 10 1809+), the sessions behind
+  the volume flyout. Cuebot is one `net10.0` build without the Windows SDK projection, so a Windows PowerShell 5.1 helper
+  (`smtc-helper.ps1`, embedded, started as `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass
+  -EncodedCommand …`) uses the WinRT types through `System.Runtime.WindowsRuntime` (`AsTask` on `IAsyncOperation`).
+- Helper output (stdout, UTF-8, one JSON object per line): `{"type":"sessions","current":"<AUMID>","sessions":[{"id",
+  "status","title","artist","album","albumArtist","durationMs"}]}` when the list changed (checked once a second);
+  `{"type":"error","message"}`; `{"type":"unsupported","message"}` (no WinRT type / API → Cuebot stops for good).
+  `status` is `GlobalSystemMediaTransportControlsSessionPlaybackStatus`: 4 Playing, 5 Paused, else stopped.
+- Helper input (stdin): `playpause|play|pause|next|previous<TAB><AUMID>` → `TryTogglePlayPauseAsync` /
+  `TryPlayAsync` / `TryPauseAsync` / `TrySkipNextAsync` / `TrySkipPreviousAsync`.
+- Lifetime: restarted when it exits (2 s, doubling to 1 min; reset after a run longer than a minute); killed (whole
+  tree) when Cuebot stops; it also exits by itself when stdin closes, so it never outlives Cuebot.
+- Thumbnails are stream references, not links, so `artUrl` is empty for Windows players.
+- Not yet run on a real Windows machine; the parsing and the process handling are covered by tests with a fake helper.
+
+### macOS
+
+Not supported for the computer's players (status text says so). Spotify works.
+
+---
+
+## 8. Spotify Web API (`Spotify/`)
+
+- Sources: https://developer.spotify.com/documentation/web-api (Authorization Code with PKCE tutorial, Redirect URIs,
+  Player and Search references, rate limits). Not tried against the real service (it needs the streamer's account);
+  covered by fake-HTTP tests.
+- Each streamer uses their **own** Spotify app (developer.spotify.com → Create app → Web API). Since 2026, apps in
+  development mode allow 5 users and their owner needs Premium, so one shared Cuebot client ID cannot scale. Settings:
+  `integrations.json` → `Spotify`: `ClientId` (not secret), `RedirectPort` (default 43117), `[Secret]` `AccessToken` and
+  `RefreshToken` (secret store, never logged), `AccessTokenExpires`, `TokenClientId`, `PollSeconds` (5).
+- Sign-in: `GET https://accounts.spotify.com/authorize?client_id&response_type=code&redirect_uri&code_challenge_method=S256&code_challenge&state&scope`
+  with scopes `user-read-currently-playing user-read-playback-state user-modify-playback-state`. The redirect must be
+  a loopback IP literal (`http://127.0.0.1:PORT/callback`; "localhost" is rejected by Spotify) and must match the app
+  exactly, so the port is fixed (Core `LoopbackReceiver(service, port, "/callback")`). PKCE from `Core.Auth.Pkce`.
+  Waits 5 minutes.
+- Tokens: `POST https://accounts.spotify.com/api/token` form `grant_type=authorization_code&code&redirect_uri&client_id&code_verifier`;
+  refresh with `grant_type=refresh_token&refresh_token&client_id` (no secret). Refreshed 60 s before expiry and once on a
+  401. A new `refresh_token` replaces the old one; none → keep the old one. `invalid_grant` on refresh (Spotify now ends
+  refresh tokens after about six months, or the user removed the app) → tokens cleared, status Error "sign in again".
+- Endpoints (base `https://api.spotify.com/v1/`):
+  - `GET me/player/currently-playing?additional_types=episode` every `PollSeconds` (2–60) while signed in; 204 or
+    `item:null` (ads) = nothing. Track: `name`, `artists[].name`, `album.name`, `album.images[0].url`, `duration_ms`,
+    `external_urls.spotify`, `uri`; episodes use `show.name` as the artist. `is_playing`.
+  - `GET search?type=track&limit=1&q=…` (new apps get at most 10 results per page; Cuebot asks for 1).
+  - `GET tracks/{id}` for links (`spotify:track:ID`, `open.spotify.com/[intl-xx/][embed/]track/ID`). A 403/400 (e.g.
+    development-mode limits) still queues the bare URI; 404 → "no song with that link". Album/playlist/`spotify.link`
+    links are refused with a plain message.
+  - `POST me/player/queue?uri=…`, `POST me/player/next`, `POST me/player/previous`, `PUT me/player/pause`,
+    `PUT me/player/play`, `PUT me/player/volume?volume_percent=0..100`, `GET me/player` (for toggle). Bodies are empty
+    with `Content-Length: 0`. A player command wakes the poll early.
+- Errors (`SpotifyErrors`): 404 / `NO_ACTIVE_DEVICE` → "Open Spotify on a device first…"; 403 `PREMIUM_REQUIRED` →
+  "Spotify needs Premium to change songs"; 403 "user may not be registered" → add the account under User Management;
+  403 `VOLUME_CONTROL_DISALLOW`; 429 → `Retry-After` honoured (the poll waits at least that long; steps say "try again in
+  N seconds"); 5xx → "Spotify is having trouble".
+- "Add song to Spotify queue" never fails the action: it runs the **Added** or **Not added** branch and sets
+  `spotify.added`, `spotify.title`, `spotify.artist`, `spotify.album`, `spotify.uri`, `spotify.link`, `spotify.error`.

@@ -142,6 +142,8 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "HypeRate", () => Get<Cuebot.Integrations.HeartRate.HypeRate.HypeRateService>().StartAsync()),
             StartSafely(log, "StreamLoots", () => Get<Cuebot.Integrations.StreamLoots.StreamLootsService>().StartAsync()),
             StartSafely(log, "Crowd Control", () => Get<Cuebot.Integrations.CrowdControl.CrowdControlService>().StartAsync()),
+            StartSafely(log, "Spotify", () => Get<Cuebot.Integrations.Spotify.SpotifyService>().StartAsync()),
+            StartSafely(log, "Now playing", () => Get<Cuebot.Integrations.NowPlaying.NowPlayingService>().StartAsync()),
             StartSafely(log, "Meld Studio", () => Get<Cuebot.StreamApps.Meld.MeldStudioService>().StartAsync()),
             StartSafely(log, "PolyPop", () => Get<Cuebot.StreamApps.PolyPop.PolyPopService>().StartAsync()),
             StartSafely(log, "T.I.T.S.", () => Get<Cuebot.StreamApps.Tits.TitsService>().StartAsync()),

@@ -130,6 +130,7 @@
     <DataTemplate DataType="savm:StreamAppsPageViewModel"><sav:StreamAppsPageView /></DataTemplate>
     <DataTemplate DataType="vm:SpeechViewModel"><views:SpeechView /></DataTemplate>
     <DataTemplate DataType="vm:MediaRequestsViewModel"><views:MediaRequestsView /></DataTemplate>
+    <DataTemplate DataType="vm:MusicViewModel"><views:MusicView /></DataTemplate>
     <DataTemplate DataType="vm:ScriptingViewModel"><views:ScriptingView /></DataTemplate>
     <DataTemplate DataType="srvvm:ServersViewModel"><srvv:ServersView /></DataTemplate>
     <DataTemplate DataType="tvm:ImportExportViewModel"><tviews:ImportExportView /></DataTemplate>

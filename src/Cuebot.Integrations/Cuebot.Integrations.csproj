@@ -3,6 +3,10 @@
     <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The Windows now-playing helper, run by Windows PowerShell 5.1 (NowPlaying/Smtc/SmtcSource.cs). -->
+    <EmbeddedResource Include="NowPlaying\Smtc\smtc-helper.ps1" LogicalName="Cuebot.Integrations.NowPlaying.smtc-helper.ps1" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Integrations.Tests" />
     <InternalsVisibleTo Include="Cuebot.UiTests" />
   </ItemGroup>
