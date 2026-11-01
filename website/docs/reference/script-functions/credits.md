@@ -33,7 +33,7 @@ Adds a name to your end-of-stream credits, in any section. A name that is alread
 
 Gives you the credits collected so far this stream, for your own credits overlay or a chat message.
 
-**Gives back:** An object with StartedAt, UpdatedAt and Sections. Each section has Id, Title and Entries; each entry has User, Platform, Count, Amount and Detail.
+**Gives back:** An object with startedAt, updatedAt and sections. Each section has id, title and entries; each entry has user, platform, count, amount and detail.
 
 === "C#"
 
@@ -69,7 +69,7 @@ Clears the credits, so the next stream starts empty.
 
 Gives you made-up sample credits, so you can design a credits overlay without waiting for a real stream. Your real credits do not change.
 
-**Gives back:** Sample credits in the same shape as credits.get (with IsTest set to true).
+**Gives back:** Sample credits in the same shape as credits.get (with isTest set to true).
 
 === "C#"
 

@@ -263,7 +263,7 @@ public sealed partial class ApiOperations
         {
             if (field is not JsonObject f || key == "alerts") continue;
             var type = f["type"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : "text";
-            if (type == "hidden" || key.StartsWith("widget", StringComparison.Ordinal)) continue;
+            if (type == "hidden") continue;
             var entry = new JsonObject { ["type"] = type, ["label"] = f["label"]?.DeepClone(), ["group"] = f["group"]?.DeepClone(), ["value"] = values[key]?.DeepClone() };
             foreach (var extra in new[] { "options", "min", "max", "step" })
                 if (f[extra] is { } x) entry[extra] = x.DeepClone();

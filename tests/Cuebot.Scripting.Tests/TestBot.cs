@@ -93,5 +93,6 @@ internal sealed class FakeFunctions : IScriptFunctionProvider
         new("test.add", "Adds two numbers", ["a", "b"], (_, args, _) =>
             Task.FromResult<object?>(args.GetProperty("a").GetInt32() + args.GetProperty("b").GetInt32())),
         new("test.echo", "Returns its arguments", [], (_, args, _) => Task.FromResult<object?>(args.Clone())),
+        new("test.user", "Returns a C# object with PascalCase properties", [], (_, _, _) => Task.FromResult<object?>(new { UserName = "ann", UserId = 7 })),
     ];
 }

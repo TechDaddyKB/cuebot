@@ -171,8 +171,8 @@
       "example": "string answers = CPH.ObsSendBatchRaw(\"[{\\\"requestType\\\":\\\"GetVersion\\\"}]\");\nCPH.LogInfo(answers);"
     },
     "SlobsIsConnected": {
-      "description": "Checks whether Streamlabs Desktop is connected and answering. Cuebot has one Streamlabs Desktop connection, number 0.",
-      "returns": "true when it is connected, otherwise false.",
+      "description": "Checks whether Cuebot is connected to Streamlabs Desktop. Cuebot has one Streamlabs Desktop connection, number 0.",
+      "returns": "true when it is connected, otherwise false (also for any connection number other than 0).",
       "example": "bool ready = CPH.SlobsIsConnected();\nCPH.LogInfo($\"Streamlabs Desktop connected: {ready}\");"
     },
     "SlobsConnect": {
@@ -187,32 +187,32 @@
     },
     "SlobsSetScene": {
       "description": "Switches Streamlabs Desktop to another scene.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetScene(\"Gameplay\");"
     },
     "SlobsGetCurrentScene": {
       "description": "Finds out which scene Streamlabs Desktop is showing right now.",
-      "returns": "The scene's name, or empty text when a connection other than 0 is asked for.",
+      "returns": "The scene's name, or empty text when Streamlabs Desktop is not connected.",
       "example": "string scene = CPH.SlobsGetCurrentScene();\nCPH.LogInfo($\"Current scene: {scene}\");"
     },
     "SlobsStartStreaming": {
       "description": "Starts streaming in Streamlabs Desktop.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsStartStreaming();"
     },
     "SlobsStopStreaming": {
       "description": "Stops streaming in Streamlabs Desktop.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsStopStreaming();"
     },
     "SlobsStartRecording": {
       "description": "Starts recording in Streamlabs Desktop.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsStartRecording();"
     },
     "SlobsStopRecording": {
       "description": "Stops recording in Streamlabs Desktop.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsStopRecording();"
     },
     "SlobsPauseRecording": {
@@ -227,112 +227,112 @@
     },
     "SlobsIsStreaming": {
       "description": "Checks whether Streamlabs Desktop is live right now.",
-      "returns": "true while it is streaming, otherwise false.",
+      "returns": "true while it is streaming, otherwise false. Also false when Streamlabs Desktop is not connected.",
       "example": "bool live = CPH.SlobsIsStreaming();\nCPH.LogInfo($\"Streamlabs live: {live}\");"
     },
     "SlobsIsRecording": {
       "description": "Checks whether Streamlabs Desktop is recording right now.",
-      "returns": "true while it is recording, otherwise false.",
+      "returns": "true while it is recording, otherwise false. Also false when Streamlabs Desktop is not connected.",
       "example": "bool recording = CPH.SlobsIsRecording();\nCPH.LogInfo($\"Recording: {recording}\");"
     },
     "SlobsSetSourceVisibility": {
       "description": "Shows (true) or hides (false) a source in a Streamlabs Desktop scene. The form with an output (horizontal or vertical) works the same: Cuebot ignores the output.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetSourceVisibility(\"Gameplay\", \"Webcam\", true);"
     },
     "SlobsSetSourceVisibilityState": {
       "description": "Shows or hides a source in a Streamlabs Desktop scene with a number: 0 shows it, 1 hides it, 2 switches it. The output setting is ignored.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetSourceVisibilityState(\"Gameplay\", \"Webcam\", 2);"
     },
     "SlobsShowSource": {
       "description": "Shows a source in a Streamlabs Desktop scene. The form with an output (horizontal or vertical) works the same: Cuebot ignores the output.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsShowSource(\"Gameplay\", \"Webcam\");"
     },
     "SlobsHideSource": {
       "description": "Hides a source in a Streamlabs Desktop scene. The form with an output (horizontal or vertical) works the same: Cuebot ignores the output.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsHideSource(\"Gameplay\", \"Webcam\");"
     },
     "SlobsIsSourceVisible": {
       "description": "Checks whether a source in a Streamlabs Desktop scene is showing. The output setting is ignored.",
-      "returns": "true when the source is visible, false when it is hidden or not found.",
+      "returns": "true when the source is visible, false when it is hidden or not found. Also false when Streamlabs Desktop is not connected.",
       "example": "bool showing = CPH.SlobsIsSourceVisible(\"Gameplay\", \"Webcam\");\nCPH.LogInfo($\"Webcam visible: {showing}\");"
     },
     "SlobsGetGroupSources": {
       "description": "Lists the sources inside a Streamlabs Desktop folder (group) in a scene.",
-      "returns": "A list with the names of the sources, or an empty list when the folder is not found.",
+      "returns": "A list with the names of the sources, or an empty list when the folder is not found. Empty when Streamlabs Desktop is not connected.",
       "example": "List<string> hats = CPH.SlobsGetGroupSources(\"Gameplay\", \"Hats\");\nCPH.LogInfo($\"Hats: {string.Join(\", \", hats)}\");"
     },
     "SlobsHideGroupsSources": {
       "description": "Hides every source inside a Streamlabs Desktop folder (group). The output setting is ignored.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsHideGroupsSources(\"Gameplay\", \"Alerts\");"
     },
     "SlobsSetRandomGroupSourceVisible": {
       "description": "Shows one random source inside a Streamlabs Desktop folder (group) and hides the others. The output setting is ignored.",
-      "returns": "The name of the source it showed, or empty text when there is none.",
+      "returns": "The name of the source it showed, or empty text when there is none. Empty when Streamlabs Desktop is not connected.",
       "example": "string picked = CPH.SlobsSetRandomGroupSourceVisible(\"Gameplay\", \"Hats\");\nCPH.LogInfo($\"Showing {picked}\");"
     },
     "SlobsSetGdiText": {
       "description": "Changes the words in a Streamlabs Desktop text source. The scene is not needed.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetGdiText(\"Gameplay\", \"Last Follower\", \"Thanks, CoolViewer!\");"
     },
     "SlobsSetBrowserSource": {
       "description": "Changes the web address a Streamlabs Desktop browser source shows. The scene is not needed.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetBrowserSource(\"Gameplay\", \"Alert Box\", \"https://example.com/alerts\");"
     },
     "SlobsSourceMute": {
       "description": "Mutes an audio source in Streamlabs Desktop, like your microphone. The scene and the third text (filterName) are not used; you can leave the third one empty.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSourceMute(\"Gameplay\", \"Mic\", \"\");"
     },
     "SlobsSourceUnMute": {
       "description": "Unmutes an audio source in Streamlabs Desktop. The scene and the third text (filterName) are not used; you can leave the third one empty.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSourceUnMute(\"Gameplay\", \"Mic\", \"\");"
     },
     "SlobsSourceMuteToggle": {
       "description": "Mutes an audio source in Streamlabs Desktop when it is on, or unmutes it when it is muted. The scene and the third text are not used.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSourceMuteToggle(\"Gameplay\", \"Mic\", \"\");"
     },
     "SlobsSetSourceMuteState": {
       "description": "Mutes or unmutes an audio source in Streamlabs Desktop with a number: 0 mutes, 1 unmutes, 2 switches it. Any other number gives an error.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetSourceMuteState(\"Gameplay\", \"Mic\", 0);"
     },
     "SlobsShowFilter": {
       "description": "Turns on a filter in Streamlabs Desktop. With a scene and a filter it changes the scene's own filter; with a scene, a source and a filter it changes the source's filter.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsShowFilter(\"Gameplay\", \"Webcam\", \"Green Screen\");"
     },
     "SlobsHideFilter": {
       "description": "Turns off a filter in Streamlabs Desktop. With a scene and a filter it changes the scene's own filter; with a scene, a source and a filter it changes the source's filter.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsHideFilter(\"Gameplay\", \"Blur\");"
     },
     "SlobsToggleFilter": {
       "description": "Switches a filter in Streamlabs Desktop on or off. With a scene and a filter it changes the scene's own filter; with a scene, a source and a filter, the source's filter.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsToggleFilter(\"Gameplay\", \"Webcam\", \"Blur\");"
     },
     "SlobsSetFilterState": {
       "description": "Turns a Streamlabs Desktop filter on or off with a number: 0 on, 1 off, 2 switches it. Give a source too to change the source's filter instead of the scene's own.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetFilterState(\"Gameplay\", \"Webcam\", \"Blur\", 2);"
     },
     "SlobsSetRandomFilterState": {
       "description": "Picks one random filter and sets it with a number: 0 on, 1 off, 2 switches it. With only a scene it picks from the scene's own filters; with a source, from that source's.",
-      "returns": "Nothing.",
+      "returns": "Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.",
       "example": "CPH.SlobsSetRandomFilterState(\"Gameplay\", \"Webcam\", 0);"
     },
     "SlobsIsFilterEnabled": {
       "description": "Checks whether a Streamlabs Desktop filter is on. With a scene and a filter it checks the scene's own filter; with a scene, a source and a filter, the source's filter.",
-      "returns": "true when the filter is on, false when it is off or not found.",
+      "returns": "true when the filter is on, false when it is off or not found. Also false when Streamlabs Desktop is not connected.",
       "example": "bool blurred = CPH.SlobsIsFilterEnabled(\"Gameplay\", \"Webcam\", \"Blur\");\nCPH.LogInfo($\"Blur on: {blurred}\");"
     }
   }

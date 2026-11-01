@@ -35,6 +35,18 @@ public sealed class CSharpScriptTests : IDisposable
     }
 
     [Fact]
+    public async Task Cb_call_results_have_camel_case_field_names()
+    {
+        var run = await RunAsync("""
+            var user = await Cb.Call("test.user");
+            Args["name"] = user.GetProperty("userName").GetString();
+            """);
+
+        Assert.True(run.Success, run.Error);
+        Assert.Equal("ann", _bot.Capture.Args!["name"]);
+    }
+
+    [Fact]
     public async Task Returning_false_stops_the_action()
     {
         var run = await RunAsync("return false;");

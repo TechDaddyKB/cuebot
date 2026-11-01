@@ -1241,9 +1241,9 @@ internal static class TwitchSubActions
         {
             var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var parameter in spec.Parameters)
-                values[parameter.Key] = json.GetElement(parameter.Key) is not null
+                values[parameter.Key] = parameter.Canonical(json.GetElement(parameter.Key) is not null
                     ? json.GetString(parameter.Key)
-                    : context.Resolve(parameter.DefaultValue);
+                    : context.Resolve(parameter.DefaultValue));
             var before = new Dictionary<string, object?>(context.Args, StringComparer.OrdinalIgnoreCase);
             await spec.Run(api(), context, new ParameterValues(values), ct).ConfigureAwait(false);
             var written = context.Args.Where(a => !before.TryGetValue(a.Key, out var old) || !Equals(old, a.Value))

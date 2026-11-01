@@ -464,7 +464,7 @@ public sealed class ActionEngine : IDisposable
         foreach (var d in handler.Parameters)
         {
             var raw = step.Parameters.TryGetValue(d.Key, out var v) ? v : d.DefaultValue;
-            resolved[d.Key] = d.Kind == ParameterKind.Code ? raw : context.Resolve(raw);
+            resolved[d.Key] = d.Kind == ParameterKind.Code ? raw : d.Canonical(context.Resolve(raw));
         }
         return new ParameterValues(resolved);
     }

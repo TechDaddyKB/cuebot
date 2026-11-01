@@ -29,20 +29,25 @@ Each widget runs inside its own little web page. Cuebot puts that page inside yo
 
 ## Make a new widget
 
-Cuebot has no "blank widget" button yet. The easy way is to make the files yourself and add them as a `.zip` file.
+1. In Cuebot, go to **Overlays > Overlays & Widgets**.
+2. On your overlay's row, open **Add Cuebot widget** and pick **Blank custom widget (write your own code)**.
+3. A widget called **My widget** shows up under the overlay, in the top left. Click **Edit…** on its row.
 
-1. Make a new folder on your computer.
-2. Put these files in it (you can copy them from the [example](#a-complete-example-latest-follower) below):
-    - `widget.html`
-    - `widget.css`
-    - `widget.js`
-    - `fields.json`
-3. Put the four files in a `.zip` file. In Windows: select them, right-click, **Send to > Compressed (zipped) folder**.
-4. In Cuebot, go to **Overlays > Overlays & Widgets**.
-5. On your overlay's row, click **Add widget…** and pick your `.zip` file.
+The new widget is not empty: it starts as the [latest follower example](#a-complete-example-latest-follower), so you
+can see how the parts fit together. Change or delete anything you like, then click **Save**.
 
-Your widget now shows up under the overlay. It covers the whole canvas at first. Change its **X**, **Y**, **W** and
-**H** boxes to move and size it, or drag it in the [designer](overlays.md#the-designer).
+Move and size the widget with its **X**, **Y**, **W** and **H** boxes, or drag it in the
+[designer](overlays.md#the-designer).
+
+### Or add your files as a zip
+
+Already wrote the files somewhere else? Add them as a `.zip` file instead.
+
+1. Put these files in a folder: `widget.html`, `widget.css`, `widget.js` and `fields.json`.
+2. Put the four files in a `.zip` file. In Windows: select them, right-click, **Send to > Compressed (zipped) folder**.
+3. On your overlay's row, click **Add widget…** and pick your `.zip` file.
+
+A widget added from a zip covers the whole canvas at first. Change its **X**, **Y**, **W** and **H** boxes to fit it.
 
 !!! note "Other file names work too"
     Cuebot also reads `html.txt`, `css.txt`, `js.txt`, `fields.txt` and `data.txt` (the StreamElements "widget.io"
@@ -139,10 +144,6 @@ Any other type shows up as a plain text box.
   address per line). The value is then a list.
 - A `googleFont` field only stores the name. Your widget must load the font itself, for example with this line in the
   HTML: `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{font}}&display=swap">`
-
-!!! warning "Settings whose name starts with `widget`"
-    The Settings tab does not show fields whose key starts with `widget` (like `widgetDuration`). To change one, change
-    its `value` in Fields, or type it in the Data tab: `{ "widgetDuration": 8 }`.
 
 ### Using a setting in your code
 
@@ -369,6 +370,9 @@ other.
   "widgetDuration": { "type": "hidden", "value": 8 }
 }
 ```
+
+With `"type": "hidden"` you set the wait in Fields only. To let people change it on the Settings tab, make it a setting
+instead: `{ "type": "slider", "label": "Seconds between alerts", "value": 8, "min": 0, "max": 60, "step": 1 }`.
 
 ```js
 window.addEventListener("onEventReceived", function (obj) {
@@ -700,8 +704,8 @@ This widget shows "Latest follower: PixelPanda". It has settings for the title, 
 
 To try it:
 
-1. Save the four files, zip them, and add the zip with **Add widget…** (see [Make a new widget](#make-a-new-widget)).
-2. Set the widget's **W** to `700` and **H** to `80`.
-3. Click **Edit…**. Pick **Twitch** in **Emulate** and click **Follow**. The name changes in the preview.
-4. On the **Settings** tab, change **Name colour**. The preview changes too.
-5. Click **Save**. Your overlay in OBS now shows the latest follower.
+1. Add a **Blank custom widget** (see [Make a new widget](#make-a-new-widget)). It already has this code, and is
+   700 × 80 pixels.
+2. Click **Edit…**. Pick **Twitch** in **Emulate** and click **Follow**. The name changes in the preview.
+3. On the **Settings** tab, change **Name colour**. The preview changes too.
+4. Click **Save**. Your overlay in OBS now shows the latest follower.

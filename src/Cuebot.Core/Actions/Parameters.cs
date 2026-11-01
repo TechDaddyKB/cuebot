@@ -24,6 +24,18 @@ public sealed record ParameterDescriptor(string Key, string Label, ParameterKind
     /// <summary>The words shown for an option value.</summary>
     public string ChoiceLabel(string value) => ChoiceLabels.TryGetValue(value, out var label) ? label : value;
 
+    /// <summary>
+    /// For a <see cref="ParameterKind.Choice"/>, the option <paramref name="value"/> names in any letter case or with
+    /// spaces around it ("cancel" → "Cancel"), so code and the API need not match capitals; other values unchanged.
+    /// </summary>
+    public string Canonical(string value)
+    {
+        if (Kind != ParameterKind.Choice || Choices.Count == 0) return value;
+        var trimmed = value.Trim();
+        foreach (var c in Choices) if (string.Equals(c, trimmed, StringComparison.OrdinalIgnoreCase)) return c;
+        return value;
+    }
+
     /// <summary>Live suggestions for text fields (e.g. OBS scene names, voice aliases).</summary>
     public Func<IEnumerable<string>>? Suggestions { get; init; }
 
@@ -58,7 +70,7 @@ public sealed class ParameterValues
     public static ParameterValues From(IReadOnlyList<ParameterDescriptor> descriptors, IReadOnlyDictionary<string, string> raw)
     {
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var d in descriptors) values[d.Key] = raw.TryGetValue(d.Key, out var v) ? v : d.DefaultValue;
+        foreach (var d in descriptors) values[d.Key] = d.Canonical(raw.TryGetValue(d.Key, out var v) ? v : d.DefaultValue);
         return new ParameterValues(values);
     }
 

@@ -157,6 +157,8 @@ Here `return false;` stops the action too. Leaving out `return` carries on.
 
 ### More C# facts
 
+- Answers from `Cb.Call` (and `cb.call` in Python) name their fields with a small first letter, like `userName` and
+  `isLive`, the same as the [REST API](../reference/rest-api.md). Read one with `answer.GetProperty("userName")`.
 - C# code runs on .NET 10, the same as Cuebot. Old Windows-only parts (Windows Forms, `System.Web`) are not there.
 - `Newtonsoft.Json` is ready to use: add `using Newtonsoft.Json;` at the top.
 - Need another library? Put the full path of its `.dll` file in the step's **References** box, one per line.

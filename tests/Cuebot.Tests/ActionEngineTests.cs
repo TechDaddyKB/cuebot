@@ -5,6 +5,27 @@ using Cuebot.Core.Logging;
 
 namespace Cuebot.Tests;
 
+public class ParameterChoiceTests
+{
+    private static readonly ParameterDescriptor Status =
+        new("status", "Status", ParameterKind.Choice) { DefaultValue = "Fulfil", Choices = ["Fulfil", "Cancel"] };
+
+    [Theory]
+    [InlineData("cancel", "Cancel")]
+    [InlineData(" CANCEL ", "Cancel")]
+    [InlineData("Cancel", "Cancel")]
+    [InlineData("refund", "refund")]   // not an option: left as it is
+    public void Choice_values_match_their_option_in_any_letter_case(string value, string expected)
+    {
+        Assert.Equal(expected, Status.Canonical(value));
+        Assert.Equal(expected, ParameterValues.From([Status], new Dictionary<string, string> { ["status"] = value })["status"]);
+    }
+
+    [Fact]
+    public void Text_values_keep_their_letter_case() =>
+        Assert.Equal("cancel", new ParameterDescriptor("x", "X").Canonical("cancel"));
+}
+
 public class ActionEngineTests : IDisposable
 {
     private readonly AppLog _log = new();

@@ -20,6 +20,13 @@ public static class BuiltInWidgets
     public static WidgetCode AlertBox() =>
         new(Read("AlertBox", "widget.html"), Read("AlertBox", "widget.css"), Read("AlertBox", "widget.js"), Read("AlertBox", "fields.json"), "{}");
 
+    /// <summary>
+    /// The starting code of a new custom widget (the widget-code guide's latest-follower example), for people who
+    /// write their own. It is the user's own code from then on, not one of <see cref="Kinds"/>.
+    /// </summary>
+    public static WidgetCode Blank() =>
+        new(Read("Blank", "widget.html"), Read("Blank", "widget.css"), Read("Blank", "widget.js"), Read("Blank", "fields.json"), "{}");
+
     /// <summary>A built-in widget placed with <see cref="WidgetLibrary.AddBuiltIn"/>: its kind, name and resource folder.</summary>
     public sealed record Kind(string Id, string Name, string Folder);
 

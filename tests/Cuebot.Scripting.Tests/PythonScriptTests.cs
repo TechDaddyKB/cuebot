@@ -51,6 +51,7 @@ public sealed class PythonScriptTests : IAsyncLifetime
             cb.set_arg("sum", cb.call("test.add", a=2, b=3))
             echoed = cb.call("test.echo", items=[1, 2], name="x")
             cb.set_arg("echo", echoed["name"] + str(len(echoed["items"])))
+            cb.set_arg("user", cb.call("test.user")["userName"])
             cb.set_global("color", "blue", persisted=False)
             cb.set_arg("color", cb.get_global("color"))
             """);
@@ -58,6 +59,7 @@ public sealed class PythonScriptTests : IAsyncLifetime
         Assert.True(run.Success, run.Error);
         Assert.Equal(5L, Convert.ToInt64(_bot.Capture.Args!["sum"]));
         Assert.Equal("x2", _bot.Capture.Args["echo"]);
+        Assert.Equal("ann", _bot.Capture.Args["user"]);
         Assert.Equal("blue", _bot.Capture.Args["color"]);
     }
 

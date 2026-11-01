@@ -9,6 +9,12 @@
       },
       "returns": "Streamlabs Desktop's answer for that command.",
       "example": { "resource": "ScenesService", "method": "getScenes" }
+    },
+    "slobs.isConnected": {
+      "description": "Checks whether Cuebot is connected to Streamlabs Desktop right now. Use it before slobs.call to skip the call when Streamlabs Desktop is closed.",
+      "parameters": {},
+      "returns": "true when it is connected, otherwise false.",
+      "example": {}
     }
   }
 }

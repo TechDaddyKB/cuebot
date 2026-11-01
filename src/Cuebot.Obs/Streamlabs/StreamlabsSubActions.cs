@@ -137,6 +137,8 @@ public static class StreamlabsCatalog
                     : null;
                 return await slobs.CallAsync(resource, method, callArgs, ct).ConfigureAwait(false);
             }),
+        new("slobs.isConnected", "True while Cuebot is connected to Streamlabs Desktop", [],
+            (_, _, _) => Task.FromResult<object?>(slobs.IsConnected)),
     ];
 }
 

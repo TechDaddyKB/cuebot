@@ -1,0 +1,11 @@
+#box {
+  font-family: system-ui, sans-serif;
+  font-size: {{size}}px;
+  font-weight: 700;
+  color: {{textColor}};
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+#name {
+  color: {{nameColor}};
+}

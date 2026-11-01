@@ -538,7 +538,7 @@ Ends the running Twitch poll early. Fails when Twitch is not connected.
 
 | Value | What to put in |
 | --- | --- |
-| `mode` | Optional. "Terminate" (the default) ends it and shows the results; "Archive" (spelled exactly like that) ends it and hides them. |
+| `mode` | Optional. "Terminate" (the default) ends it and shows the results; "Archive" ends it and hides them. Capital letters do not matter. |
 
 **Gives back:** Nothing.
 
@@ -599,7 +599,7 @@ Gets your Twitch ad schedule: when the next ad comes and how many snoozes you ha
 
 Lists every blocked word or phrase of your Twitch channel. Fails when Twitch is not connected.
 
-**Gives back:** A list, each with Id and Text.
+**Gives back:** A list, each with id and text.
 
 === "C#"
 
@@ -760,7 +760,7 @@ Lists clips of a Twitch channel or of a category, most viewed first. Handy for a
 | `count` | Optional. How many clips at most. Leave it out (or 0) for up to 1000. |
 | `featured` | Optional. true gives only featured clips, false only the others. Leave it out for all. |
 
-**Gives back:** A list of clips, each with Id, Url, EmbedUrl, BroadcasterName, CreatorName, Title, ViewCount, CreatedAt, ThumbnailUrl, Duration, IsFeatured and more.
+**Gives back:** A list of clips, each with id, url, embedUrl, broadcasterName, creatorName, title, viewCount, createdAt, thumbnailUrl, duration, isFeatured and more.
 
 === "C#"
 
@@ -894,7 +894,7 @@ Tells you who subscribed last, as Cuebot saw it.
 
 Lists every moderator of your Twitch channel. Fails when Twitch is not connected.
 
-**Gives back:** A list, each with UserId, UserLogin and UserName.
+**Gives back:** A list, each with userId, userLogin and userName.
 
 === "C#"
 
@@ -1074,7 +1074,7 @@ Gets the settings of one channel point reward. Fails when no reward matches. Fai
 
 Lists every channel point reward of your Twitch channel. Fails when Twitch is not connected.
 
-**Gives back:** A list of rewards, each with Id, Title, Prompt, Cost, BackgroundColor, IsEnabled, IsPaused, IsInStock, MaxPerStream, GlobalCooldownSeconds, IsManageable (true when Cuebot can change it) and more.
+**Gives back:** A list of rewards, each with id, title, prompt, cost, backgroundColor, isEnabled, isPaused, isInStock, maxPerStream, globalCooldownSeconds, isManageable (true when Cuebot can change it) and more.
 
 === "C#"
 
@@ -1238,7 +1238,7 @@ Looks up a Twitch user. Fails when Twitch is not connected.
 | --- | --- |
 | `user` | A Twitch login name (a leading @ is fine) or "id:12345", like "coolviewer42". |
 
-**Gives back:** An object with Id, Login, DisplayName, Type, BroadcasterType, Description, ProfileImageUrl, OfflineImageUrl and CreatedAt. null when the user is not found.
+**Gives back:** An object with id, login, displayName, type, broadcasterType, description, profileImageUrl, offlineImageUrl and createdAt. null when the user is not found.
 
 === "C#"
 
@@ -1278,7 +1278,7 @@ Gets lots of details about a Twitch user: profile, account age, mod/VIP/sub stat
 
 Lists every VIP of your Twitch channel. Fails when Twitch is not connected.
 
-**Gives back:** A list, each with UserId, UserLogin and UserName.
+**Gives back:** A list, each with userId, userLogin and userName.
 
 === "C#"
 
@@ -1563,7 +1563,7 @@ Allows or denies a chat message that AutoMod held back. Fails when Twitch is not
 | Value | What to put in |
 | --- | --- |
 | `messageId` | Optional. The id of the held message. Leave it out for %messageId% of the AutoMod trigger. |
-| `decision` | Optional. "Allow" (the default, spelled exactly like that) shows the message; anything else, like "Deny", throws it away. |
+| `decision` | Optional. "Allow" (the default) shows the message; "Deny" throws it away. Capital letters do not matter. |
 
 **Gives back:** Nothing.
 
@@ -2479,7 +2479,7 @@ Marks a channel point redemption as done, or cancels it and gives the points bac
 | --- | --- |
 | `rewardId` | Optional. The reward id. Leave it out for %rewardId% of the redemption trigger. |
 | `redemptionId` | Optional. The redemption id. Leave it out for %redemptionId% of the redemption trigger. |
-| `status` | Optional. "Fulfil" (the default) marks it done; "Cancel" (spelled exactly like that) refunds the points. |
+| `status` | Optional. "Fulfil" (the default) marks it done; "Cancel" refunds the points. Capital letters do not matter. |
 
 **Gives back:** Nothing.
 

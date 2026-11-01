@@ -20,12 +20,18 @@ public sealed class CuebotHelpers
         _ct = ct;
     }
 
-    /// <summary>Calls a host function (e.g. "obs.request") with an object of named arguments.</summary>
+    /// <summary>
+    /// Calls a host function (e.g. "obs.request") with an object of named arguments. Field names of the result are
+    /// camelCase (<c>userName</c>), like the REST API's.
+    /// </summary>
     public async Task<JsonElement> Call(string name, object? args = null)
     {
         var result = await _api.CallAsync(_context, name, args, _ct).ConfigureAwait(false);
-        return JsonSerializer.SerializeToElement(result);
+        return JsonSerializer.SerializeToElement(result, ResultJson);
     }
+
+    /// <summary>How script function results reach C# and Python code: camelCase field names.</summary>
+    internal static readonly JsonSerializerOptions ResultJson = new(JsonSerializerDefaults.Web);
 
     public Task Log(string message, string level = "Info") => Call("log", new { message, level });
 

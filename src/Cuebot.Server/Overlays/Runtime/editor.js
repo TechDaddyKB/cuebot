@@ -199,7 +199,7 @@
     form.textContent = "";
     var keys = Object.keys(fields).filter(function (k) {
       var f = fields[k];
-      return f && typeof f === "object" && f.type !== "hidden" && k.indexOf("widget") !== 0;
+      return f && typeof f === "object" && f.type !== "hidden";
     });
     if (keys.length === 0) {
       form.appendChild(el("p", { class: "muted", text: "This widget has no settings. Its FIELDS pane is empty." }));

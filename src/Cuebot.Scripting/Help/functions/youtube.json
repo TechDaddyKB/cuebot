@@ -96,7 +96,7 @@
       "parameters": {
         "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently."
       },
-      "returns": "An object with Id, Title, Description, CustomUrl, Url, ProfileImageUrl, SubscriberCount, SubscriberCountHidden, VideoCount, ViewCount and CreatedAt.",
+      "returns": "An object with id, title, description, customUrl, url, profileImageUrl, subscriberCount, subscriberCountHidden, videoCount, viewCount and createdAt.",
       "example": {
         "user": "@CoolStreamer"
       }
@@ -124,7 +124,7 @@
       "parameters": {
         "videoId": "Optional. The video id, like \"dQw4w9WgXcQ\". Leave it out for your live broadcast (or the next upcoming one)."
       },
-      "returns": "An object with Id, Title, Description, Url, ChannelId, ChannelTitle, CategoryId, Tags, Privacy, LiveStatus, Thumbnail, ConcurrentViewers, ViewCount, LikeCount, CommentCount, ActualStart and ActualEnd.",
+      "returns": "An object with id, title, description, url, channelId, channelTitle, categoryId, tags, privacy, liveStatus, thumbnail, concurrentViewers, viewCount, likeCount, commentCount, actualStart and actualEnd.",
       "example": {}
     },
     "youtube.removeModerator": {

@@ -562,13 +562,13 @@ CPH.LogInfo(answers);
 
 ## SlobsIsConnected
 
-Checks whether Streamlabs Desktop is connected and answering. Cuebot has one Streamlabs Desktop connection, number 0.
+Checks whether Cuebot is connected to Streamlabs Desktop. Cuebot has one Streamlabs Desktop connection, number 0.
 
 ```csharp
 bool SlobsIsConnected(int connection = 0)
 ```
 
-**Gives back:** true when it is connected, otherwise false.
+**Gives back:** true when it is connected, otherwise false (also for any connection number other than 0).
 
 **Example**
 
@@ -618,7 +618,7 @@ Switches Streamlabs Desktop to another scene.
 void SlobsSetScene(string sceneName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -634,7 +634,7 @@ Finds out which scene Streamlabs Desktop is showing right now.
 string SlobsGetCurrentScene(int connection = 0)
 ```
 
-**Gives back:** The scene's name, or empty text when a connection other than 0 is asked for.
+**Gives back:** The scene's name, or empty text when Streamlabs Desktop is not connected.
 
 **Example**
 
@@ -651,7 +651,7 @@ Starts streaming in Streamlabs Desktop.
 void SlobsStartStreaming(int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -667,7 +667,7 @@ Stops streaming in Streamlabs Desktop.
 void SlobsStopStreaming(int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -683,7 +683,7 @@ Starts recording in Streamlabs Desktop.
 void SlobsStartRecording(int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -699,7 +699,7 @@ Stops recording in Streamlabs Desktop.
 void SlobsStopRecording(int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -747,7 +747,7 @@ Checks whether Streamlabs Desktop is live right now.
 bool SlobsIsStreaming(int connection = 0)
 ```
 
-**Gives back:** true while it is streaming, otherwise false.
+**Gives back:** true while it is streaming, otherwise false. Also false when Streamlabs Desktop is not connected.
 
 **Example**
 
@@ -764,7 +764,7 @@ Checks whether Streamlabs Desktop is recording right now.
 bool SlobsIsRecording(int connection = 0)
 ```
 
-**Gives back:** true while it is recording, otherwise false.
+**Gives back:** true while it is recording, otherwise false. Also false when Streamlabs Desktop is not connected.
 
 **Example**
 
@@ -782,7 +782,7 @@ void SlobsSetSourceVisibility(string scene, string source, bool visible, int con
 void SlobsSetSourceVisibility(string scene, string source, bool visible, StreamlabsDesktopOutputType output, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -798,7 +798,7 @@ Shows or hides a source in a Streamlabs Desktop scene with a number: 0 shows it,
 void SlobsSetSourceVisibilityState(string scene, string source, int state, StreamlabsDesktopOutputType output = StreamlabsDesktopOutputType.Both, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -815,7 +815,7 @@ void SlobsShowSource(string scene, string source, int connection = 0)
 void SlobsShowSource(string scene, string source, StreamlabsDesktopOutputType output, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -832,7 +832,7 @@ void SlobsHideSource(string scene, string source, int connection = 0)
 void SlobsHideSource(string scene, string source, StreamlabsDesktopOutputType output, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -849,7 +849,7 @@ bool SlobsIsSourceVisible(string scene, string source, int connection = 0)
 bool SlobsIsSourceVisible(string scene, string source, StreamlabsDesktopOutputType output, int connection = 0)
 ```
 
-**Gives back:** true when the source is visible, false when it is hidden or not found.
+**Gives back:** true when the source is visible, false when it is hidden or not found. Also false when Streamlabs Desktop is not connected.
 
 **Example**
 
@@ -866,7 +866,7 @@ Lists the sources inside a Streamlabs Desktop folder (group) in a scene.
 List<string> SlobsGetGroupSources(string scene, string groupName, int connection = 0)
 ```
 
-**Gives back:** A list with the names of the sources, or an empty list when the folder is not found.
+**Gives back:** A list with the names of the sources, or an empty list when the folder is not found. Empty when Streamlabs Desktop is not connected.
 
 **Example**
 
@@ -884,7 +884,7 @@ void SlobsHideGroupsSources(string scene, string groupName, int connection = 0)
 void SlobsHideGroupsSources(string scene, string groupName, StreamlabsDesktopOutputType output, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -901,7 +901,7 @@ string SlobsSetRandomGroupSourceVisible(string scene, string groupName, int conn
 string SlobsSetRandomGroupSourceVisible(string scene, string groupName, StreamlabsDesktopOutputType output, int connection = 0)
 ```
 
-**Gives back:** The name of the source it showed, or empty text when there is none.
+**Gives back:** The name of the source it showed, or empty text when there is none. Empty when Streamlabs Desktop is not connected.
 
 **Example**
 
@@ -918,7 +918,7 @@ Changes the words in a Streamlabs Desktop text source. The scene is not needed.
 void SlobsSetGdiText(string scene, string source, string text, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -934,7 +934,7 @@ Changes the web address a Streamlabs Desktop browser source shows. The scene is 
 void SlobsSetBrowserSource(string scene, string source, string url, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -950,7 +950,7 @@ Mutes an audio source in Streamlabs Desktop, like your microphone. The scene and
 void SlobsSourceMute(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -966,7 +966,7 @@ Unmutes an audio source in Streamlabs Desktop. The scene and the third text (fil
 void SlobsSourceUnMute(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -982,7 +982,7 @@ Mutes an audio source in Streamlabs Desktop when it is on, or unmutes it when it
 void SlobsSourceMuteToggle(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -998,7 +998,7 @@ Mutes or unmutes an audio source in Streamlabs Desktop with a number: 0 mutes, 1
 void SlobsSetSourceMuteState(string scene, string source, int state, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -1015,7 +1015,7 @@ void SlobsShowFilter(string scene, string filterName, int connection = 0)
 void SlobsShowFilter(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -1032,7 +1032,7 @@ void SlobsHideFilter(string scene, string filterName, int connection = 0)
 void SlobsHideFilter(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -1049,7 +1049,7 @@ void SlobsToggleFilter(string scene, string filterName, int connection = 0)
 void SlobsToggleFilter(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -1066,7 +1066,7 @@ void SlobsSetFilterState(string scene, string filterName, int state, int connect
 void SlobsSetFilterState(string scene, string source, string filterName, int state, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -1083,7 +1083,7 @@ void SlobsSetRandomFilterState(string scene, int state, int connection = 0)
 void SlobsSetRandomFilterState(string scene, string source, int state, int connection = 0)
 ```
 
-**Gives back:** Nothing.
+**Gives back:** Nothing. When Streamlabs Desktop is not connected, it does nothing and writes a warning in the log.
 
 **Example**
 
@@ -1100,7 +1100,7 @@ bool SlobsIsFilterEnabled(string scene, string filterName, int connection = 0)
 bool SlobsIsFilterEnabled(string scene, string source, string filterName, int connection = 0)
 ```
 
-**Gives back:** true when the filter is on, false when it is off or not found.
+**Gives back:** true when the filter is on, false when it is off or not found. Also false when Streamlabs Desktop is not connected.
 
 **Example**
 

@@ -389,4 +389,15 @@ public sealed class WidgetCodeTests : IDisposable
         Assert.NotNull(elements.Get(layer.ElementId!.Value));   // stays in the library
         Assert.Null(library.AddCustomWidget(Guid.NewGuid(), "x", WidgetCode.Empty));
     }
+
+    [Fact]
+    public void The_blank_widget_has_starter_code_with_settings()
+    {
+        var blank = BuiltInWidgets.Blank();
+
+        Assert.Contains("onWidgetLoad", blank.Js);
+        Assert.Contains("{{nameColor}}", blank.Css);
+        var fields = JsonNode.Parse(blank.Fields)!.AsObject();
+        Assert.Equal(["title", "textColor", "nameColor", "size"], fields.Select(f => f.Key));
+    }
 }

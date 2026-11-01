@@ -50,7 +50,7 @@ In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline`
 | [Quotes](quotes.md) | 8 |
 | [Remote instances](remote.md) | 3 |
 | [Rumble](rumble.md) | 1 |
-| [Streamlabs Desktop](slobs.md) | 1 |
+| [Streamlabs Desktop](slobs.md) | 2 |
 | [Speech](speech.md) | 10 |
 | [Spotify](spotify.md) | 2 |
 | [Stream Deck](streamdeck.md) | 9 |

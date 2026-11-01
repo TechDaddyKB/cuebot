@@ -28,7 +28,7 @@
       "parameters": {
         "user": "The Kick user name (a leading @ is fine) or their number id, like \"CoolViewer42\"."
       },
-      "returns": "An object with User, UserName, UserId, ProfilePicture, ChannelSlug, IsLive, StreamTitle, Category and Description.",
+      "returns": "An object with user, userName, userId, profilePicture, channelSlug, isLive, streamTitle, category and description.",
       "example": { "user": "CoolViewer42" }
     },
     "kick.reply": {

@@ -218,6 +218,27 @@ public sealed class CphStreamerBotGapTests : IDisposable
     }
 
     [Fact]
+    public async Task Slobs_methods_do_nothing_while_streamlabs_desktop_is_not_connected()
+    {
+        _fakes.SlobsConnected = false;
+        var run = await RunAsync("""
+            CPH.SlobsSetScene("Gaming");
+            CPH.SetArgument("scene", CPH.SlobsGetCurrentScene());
+            CPH.SetArgument("live", CPH.SlobsIsStreaming());
+            CPH.SetArgument("visible", CPH.SlobsIsSourceVisible("Gaming", "Cam"));
+            CPH.SetArgument("connected", CPH.SlobsIsConnected());
+            """);
+
+        Assert.True(run.Success, run.Error);
+        Assert.Empty(_fakes.AllSteps("slobs.setScene"));
+        Assert.Empty(_fakes.All("slobs.call"));
+        Assert.Equal("", Args["scene"]);
+        Assert.Equal(false, Args["live"]);
+        Assert.Equal(false, Args["visible"]);
+        Assert.Equal(false, Args["connected"]);
+    }
+
+    [Fact]
     public async Task Twitch_channel_methods_map_to_the_twitch_module()
     {
         var run = await RunAsync("""
@@ -330,6 +351,8 @@ public sealed class CphStreamerBotGapTests : IDisposable
         private readonly ConcurrentQueue<(string Name, JsonElement Args)> _calls = new();
         private readonly ConcurrentQueue<(string TypeId, Dictionary<string, string> Parameters)> _steps = new();
 
+        public bool SlobsConnected { get; set; } = true;
+
         public IEnumerable<JsonElement> All(string name) => _calls.Where(c => c.Name == name).Select(c => c.Args);
         public JsonElement Last(string name) => All(name).Last();
         public IEnumerable<Dictionary<string, string>> AllSteps(string typeId) => _steps.Where(s => s.TypeId == typeId).Select(s => s.Parameters);
@@ -362,6 +385,7 @@ public sealed class CphStreamerBotGapTests : IDisposable
             }),
             Fn("obs.connections", (_, _) => new[] { new { name = "OBS" }, new { name = "Studio B" } }),
             Fn("obs.requestBatch", (_, _) => new[] { new { requestStatus = new { result = true } } }),
+            Fn("slobs.isConnected", (_, _) => SlobsConnected),
             Fn("slobs.call", (_, a) => (a.GetString("resource"), a.GetString("method")) switch
             {
                 ("StreamingService", "getModel") => new { streamingStatus = "live", recordingStatus = "offline" },

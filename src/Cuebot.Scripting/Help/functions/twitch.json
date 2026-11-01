@@ -265,7 +265,7 @@
         "count": "Optional. How many clips at most. Leave it out (or 0) for up to 1000.",
         "featured": "Optional. true gives only featured clips, false only the others. Leave it out for all."
       },
-      "returns": "A list of clips, each with Id, Url, EmbedUrl, BroadcasterName, CreatorName, Title, ViewCount, CreatedAt, ThumbnailUrl, Duration, IsFeatured and more.",
+      "returns": "A list of clips, each with id, url, embedUrl, broadcasterName, creatorName, title, viewCount, createdAt, thumbnailUrl, duration, isFeatured and more.",
       "example": {
         "count": 10
       }
@@ -531,14 +531,14 @@
     "twitch.getBlockedTerms": {
       "description": "Lists every blocked word or phrase of your Twitch channel. Fails when Twitch is not connected.",
       "parameters": {},
-      "returns": "A list, each with Id and Text.",
+      "returns": "A list, each with id and text.",
       "example": {}
     },
     "twitch.resolveAutomod": {
       "description": "Allows or denies a chat message that AutoMod held back. Fails when Twitch is not connected.",
       "parameters": {
         "messageId": "Optional. The id of the held message. Leave it out for %messageId% of the AutoMod trigger.",
-        "decision": "Optional. \"Allow\" (the default, spelled exactly like that) shows the message; anything else, like \"Deny\", throws it away."
+        "decision": "Optional. \"Allow\" (the default) shows the message; \"Deny\" throws it away. Capital letters do not matter."
       },
       "returns": "Nothing.",
       "example": {
@@ -548,13 +548,13 @@
     "twitch.getModerators": {
       "description": "Lists every moderator of your Twitch channel. Fails when Twitch is not connected.",
       "parameters": {},
-      "returns": "A list, each with UserId, UserLogin and UserName.",
+      "returns": "A list, each with userId, userLogin and userName.",
       "example": {}
     },
     "twitch.getVips": {
       "description": "Lists every VIP of your Twitch channel. Fails when Twitch is not connected.",
       "parameters": {},
-      "returns": "A list, each with UserId, UserLogin and UserName.",
+      "returns": "A list, each with userId, userLogin and userName.",
       "example": {}
     },
     "twitch.createPoll": {
@@ -575,7 +575,7 @@
     "twitch.endPoll": {
       "description": "Ends the running Twitch poll early. Fails when Twitch is not connected.",
       "parameters": {
-        "mode": "Optional. \"Terminate\" (the default) ends it and shows the results; \"Archive\" (spelled exactly like that) ends it and hides them."
+        "mode": "Optional. \"Terminate\" (the default) ends it and shows the results; \"Archive\" ends it and hides them. Capital letters do not matter."
       },
       "returns": "Nothing.",
       "example": {}
@@ -632,7 +632,7 @@
     "twitch.getRewards": {
       "description": "Lists every channel point reward of your Twitch channel. Fails when Twitch is not connected.",
       "parameters": {},
-      "returns": "A list of rewards, each with Id, Title, Prompt, Cost, BackgroundColor, IsEnabled, IsPaused, IsInStock, MaxPerStream, GlobalCooldownSeconds, IsManageable (true when Cuebot can change it) and more.",
+      "returns": "A list of rewards, each with id, title, prompt, cost, backgroundColor, isEnabled, isPaused, isInStock, maxPerStream, globalCooldownSeconds, isManageable (true when Cuebot can change it) and more.",
       "example": {}
     },
     "twitch.createReward": {
@@ -787,7 +787,7 @@
       "parameters": {
         "rewardId": "Optional. The reward id. Leave it out for %rewardId% of the redemption trigger.",
         "redemptionId": "Optional. The redemption id. Leave it out for %redemptionId% of the redemption trigger.",
-        "status": "Optional. \"Fulfil\" (the default) marks it done; \"Cancel\" (spelled exactly like that) refunds the points."
+        "status": "Optional. \"Fulfil\" (the default) marks it done; \"Cancel\" refunds the points. Capital letters do not matter."
       },
       "returns": "Nothing.",
       "example": {
@@ -917,7 +917,7 @@
       "parameters": {
         "user": "A Twitch login name (a leading @ is fine) or \"id:12345\", like \"coolviewer42\"."
       },
-      "returns": "An object with Id, Login, DisplayName, Type, BroadcasterType, Description, ProfileImageUrl, OfflineImageUrl and CreatedAt. null when the user is not found.",
+      "returns": "An object with id, login, displayName, type, broadcasterType, description, profileImageUrl, offlineImageUrl and createdAt. null when the user is not found.",
       "example": {
         "user": "coolviewer42"
       }

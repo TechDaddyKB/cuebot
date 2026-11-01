@@ -9,7 +9,7 @@ internal static class PythonProtocol
         Serialize(new { type = "run", id, code, args = ToJsonSafe(args) });
 
     public static string CallResult(string callId, object? result) =>
-        Serialize(new { type = "callResult", callId, result });
+        Serialize(new { type = "callResult", callId, result = JsonSerializer.SerializeToElement(result, CuebotHelpers.ResultJson) });
 
     public static string CallError(string callId, string error) =>
         Serialize(new { type = "callError", callId, error });

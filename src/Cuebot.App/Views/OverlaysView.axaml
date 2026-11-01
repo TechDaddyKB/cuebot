@@ -226,6 +226,9 @@
                                 ToolTip.Tip="Rotates your products with where to buy them, and shows merch purchases" />
                       <MenuItem Header="Seasonal effects" Command="{Binding AddBuiltInCommand}" CommandParameter="seasonal"
                                 ToolTip.Tip="Snow, leaves, hearts, confetti, blossoms, bubbles or stars over the overlay" />
+                      <Separator />
+                      <MenuItem Header="Blank custom widget (write your own code)" Command="{Binding AddBlankWidgetCommand}"
+                                ToolTip.Tip="A new widget with a little starter code. Click Edit… on its row to write your own HTML, CSS and JavaScript." />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>

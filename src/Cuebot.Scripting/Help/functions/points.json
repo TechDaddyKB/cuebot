@@ -65,7 +65,7 @@
         "count": "Optional. How many to give back. Leave it out for 10; 0 gives everyone.",
         "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
       },
-      "returns": "A list. Each place has Rank, Platform, UserId, UserName and Points.",
+      "returns": "A list. Each place has rank, platform, userId, userName and points.",
       "example": {
         "count": 5
       }

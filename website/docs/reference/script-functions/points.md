@@ -130,7 +130,7 @@ Gives you the viewers with the most points, highest first. Handy for a !top comm
 | `count` | Optional. How many to give back. Leave it out for 10; 0 gives everyone. |
 | `currency` | Optional. Which currency, by name, like "coins". Leave it out for your default currency. |
 
-**Gives back:** A list. Each place has Rank, Platform, UserId, UserName and Points.
+**Gives back:** A list. Each place has rank, platform, userId, userName and points.
 
 === "C#"
 

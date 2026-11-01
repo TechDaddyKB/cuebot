@@ -206,7 +206,7 @@ Looks up a YouTube channel. Fails when you are not signed in or the channel cann
 | --- | --- |
 | `user` | The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently. |
 
-**Gives back:** An object with Id, Title, Description, CustomUrl, Url, ProfileImageUrl, SubscriberCount, SubscriberCountHidden, VideoCount, ViewCount and CreatedAt.
+**Gives back:** An object with id, title, description, customUrl, url, profileImageUrl, subscriberCount, subscriberCountHidden, videoCount, viewCount and createdAt.
 
 === "C#"
 
@@ -282,7 +282,7 @@ Looks up a YouTube video, with live numbers like viewers and likes. Fails when y
 | --- | --- |
 | `videoId` | Optional. The video id, like "dQw4w9WgXcQ". Leave it out for your live broadcast (or the next upcoming one). |
 
-**Gives back:** An object with Id, Title, Description, Url, ChannelId, ChannelTitle, CategoryId, Tags, Privacy, LiveStatus, Thumbnail, ConcurrentViewers, ViewCount, LikeCount, CommentCount, ActualStart and ActualEnd.
+**Gives back:** An object with id, title, description, url, channelId, channelTitle, categoryId, tags, privacy, liveStatus, thumbnail, concurrentViewers, viewCount, likeCount, commentCount, actualStart and actualEnd.
 
 === "C#"
 

@@ -74,7 +74,7 @@ Looks up a Kick viewer's profile and channel. Fails when the user cannot be foun
 | --- | --- |
 | `user` | The Kick user name (a leading @ is fine) or their number id, like "CoolViewer42". |
 
-**Gives back:** An object with User, UserName, UserId, ProfilePicture, ChannelSlug, IsLive, StreamTitle, Category and Description.
+**Gives back:** An object with user, userName, userId, profilePicture, channelSlug, isLive, streamTitle, category and description.
 
 === "C#"
 

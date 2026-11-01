@@ -26,3 +26,21 @@ Sends any Remote Control command to Streamlabs Desktop and gives back its answer
     ```python
     answer = cb.call("slobs.call", resource="ScenesService", method="getScenes")
     ```
+
+## slobs.isConnected
+
+Checks whether Cuebot is connected to Streamlabs Desktop right now. Use it before slobs.call to skip the call when Streamlabs Desktop is closed.
+
+**Gives back:** true when it is connected, otherwise false.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("slobs.isConnected");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.call("slobs.isConnected")
+    ```

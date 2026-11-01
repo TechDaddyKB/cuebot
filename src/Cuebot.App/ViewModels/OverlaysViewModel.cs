@@ -106,6 +106,10 @@ public sealed partial class OverlayRowViewModel : ObservableObject
     [RelayCommand]
     private void AddBuiltIn(string kind) => owner.AddBuiltIn(overlay.Id, kind);
 
+    /// <summary>Adds a new custom widget with starter code, to write your own in the widget editor.</summary>
+    [RelayCommand]
+    private void AddBlankWidget() => owner.AddBlankWidget(overlay.Id);
+
     [RelayCommand]
     private void Delete() => owner.Delete(overlay.Id);
 }
@@ -556,6 +560,18 @@ public sealed partial class OverlaysViewModel : PageViewModel
         Edit(() => _widgets.AddBuiltIn(overlayId, kind));
         Refresh();
         Status = $"Added a {found.Name.ToLowerInvariant()}. Use Edit… to choose what it shows and how it looks.";
+    }
+
+    internal void AddBlankWidget(Guid overlayId)
+    {
+        if (_widgets is null) return;
+        Edit(() =>
+        {
+            if (_widgets.AddCustomWidget(overlayId, "My widget", BuiltInWidgets.Blank()) is { } layer)
+                _widgets.MoveLayer(overlayId, layer.Id, 20, 20, 700, 80);
+        });
+        Refresh();
+        Status = "Added \"My widget\" in the top left. Click Edit… on its row to change its code.";
     }
 
     internal void MoveLayer(Guid overlayId, OverlayLayer layer) =>

@@ -19,7 +19,7 @@
     "credits.get": {
       "description": "Gives you the credits collected so far this stream, for your own credits overlay or a chat message.",
       "parameters": {},
-      "returns": "An object with StartedAt, UpdatedAt and Sections. Each section has Id, Title and Entries; each entry has User, Platform, Count, Amount and Detail.",
+      "returns": "An object with startedAt, updatedAt and sections. Each section has id, title and entries; each entry has user, platform, count, amount and detail.",
       "example": {}
     },
     "credits.reset": {
@@ -31,7 +31,7 @@
     "credits.test": {
       "description": "Gives you made-up sample credits, so you can design a credits overlay without waiting for a real stream. Your real credits do not change.",
       "parameters": {},
-      "returns": "Sample credits in the same shape as credits.get (with IsTest set to true).",
+      "returns": "Sample credits in the same shape as credits.get (with isTest set to true).",
       "example": {}
     }
   }

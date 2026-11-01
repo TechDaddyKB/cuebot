@@ -206,19 +206,7 @@ public sealed partial class CphProxy
     // ---- Streamlabs Desktop (one connection: index 0) -------------------------------------------------------------
     // Cuebot drives a single Streamlabs Desktop canvas, so the output (horizontal/vertical) arguments are ignored.
 
-    public bool SlobsIsConnected(int connection = 0)
-    {
-        if (!Slobs(connection)) return false;
-        try
-        {
-            Call("slobs.call", new { resource = "StreamingService", method = "getModel" });
-            return true;
-        }
-        catch (Exception ex) when (Recoverable(ex))
-        {
-            return false;
-        }
-    }
+    public bool SlobsIsConnected(int connection = 0) => connection == 0 && SlobsConnected();
 
     /// <summary>Cuebot connects (and reconnects) Streamlabs Desktop by itself; this only reports whether it is connected.</summary>
     public bool SlobsConnect(int connection = 0) => SlobsIsConnected(connection);
@@ -407,10 +395,22 @@ public sealed partial class CphProxy
     private static bool SameName(JsonElement element, string? name) =>
         string.Equals(Prop(element, "name"), name?.Trim(), StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// False (with a warning in the log) when <paramref name="connection"/> is not 0 or Streamlabs Desktop is not
+    /// connected, so the Slobs* methods do nothing and give back false, "" or an empty list instead of stopping the code.
+    /// </summary>
     private bool Slobs(int connection, [CallerMemberName] string method = "")
     {
-        if (connection == 0) return true;
-        LogWarn($"{method}: Cuebot has a single Streamlabs Desktop connection (use 0, not {connection})");
+        if (connection != 0)
+        {
+            LogWarn($"{method}: Cuebot has a single Streamlabs Desktop connection (use 0, not {connection})");
+            return false;
+        }
+        if (SlobsConnected(method)) return true;
+        LogWarn($"{method}: Streamlabs Desktop is not connected");
         return false;
     }
+
+    private bool SlobsConnected([CallerMemberName] string method = "") =>
+        Call("slobs.isConnected", null, method).ValueKind == JsonValueKind.True;
 }
