@@ -1,0 +1,24 @@
+{
+  "functions": {
+    "donordrive.isConnected": {
+      "description": "Checks whether Cuebot is watching your DonorDrive (charity) page right now.",
+      "parameters": {},
+      "returns": "true while Cuebot is checking your participant or team page, otherwise false.",
+      "example": {}
+    },
+    "donordrive.sendTestEvent": {
+      "description": "Fakes a DonorDrive event inside Cuebot, so you can test your triggers. Nothing is sent to DonorDrive and it works without a connection.",
+      "parameters": {
+        "kind": "Optional. Which event: \"donation\", \"incentive\" (a donation that picked a reward) or \"profile\" (your totals went up). Default \"donation\"."
+      },
+      "returns": "true when the test event was sent, false when the kind is unknown.",
+      "example": { "kind": "donation" }
+    },
+    "donordrive.getProfile": {
+      "description": "Gives you the last details Cuebot read from your DonorDrive page, like your goal and how much you raised.",
+      "parameters": {},
+      "returns": "id, name, teamName, eventName, goal, raised, donations (how many), isTeam (true/false) and url. null when nothing was read yet.",
+      "example": {}
+    }
+  }
+}

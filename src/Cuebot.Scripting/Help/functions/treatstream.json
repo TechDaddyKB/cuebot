@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "treatstream.isConnected": {
+      "description": "Checks whether Cuebot is connected to TreatStream right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "treatstream.sendTestEvent": {
+      "description": "Fakes a TreatStream treat inside Cuebot, so you can test your triggers. Nothing is sent to TreatStream and it works without a connection.",
+      "parameters": {
+        "kind": "Optional. Which event. Only \"treat\" exists, and it is the default."
+      },
+      "returns": "true when the test treat was sent, false when the kind is unknown.",
+      "example": {}
+    }
+  }
+}

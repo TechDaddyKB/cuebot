@@ -26,6 +26,12 @@ it.
 
 **Browser source**: A source in OBS that shows a web page. Cuebot's overlays are shown this way.
 
+**Code step**: A **Run C# code** or **Run Python code** sub-action: a small program inside an action. See [Writing
+code (C# and Python)](scripting.md).
+
+**CPH**: The toolbox C# code uses, like `CPH.SendMessage("Hi")`. The same names as in Streamer.bot. See [C#
+methods](../reference/csharp/index.md).
+
 **Command**: A word viewers type in chat, usually with a `!` in front, like `!hello`. See [Chat
 commands](commands.md).
 
@@ -81,16 +87,25 @@ giveaways](community.md).
 **Port**: A door number. Programs on one computer use different port numbers, so their messages do not get mixed up.
 Example: OBS listens on port 4455. See [Cuebot's servers](servers.md).
 
+**REST API**: Cuebot's main door for other programs: web addresses that run actions and change things, with a
+**token**. See [Controlling Cuebot from other programs](api.md).
+
 **Relay**: A small helper on your own free Cloudflare account that passes webhooks on to Cuebot. See [Donations and
 integrations](donations-and-integrations.md#webhooks-ko-fi-patreon-throne-and-more).
 
 **Run**: One time an action does its job. Every run is listed on **Chat > History**.
+
+**Script function**: One of Cuebot's tools for code, with a name like `speech.speak`. C# and Python can both use
+them. See [Script functions](../reference/script-functions/index.md).
 
 **Scope**, **permission**: What you allow Cuebot to do on a platform, like "read chat" or "change the title". You pick
 them when you sign in.
 
 **Server**: Here: a part of Cuebot that other programs can connect to, like the overlay server that OBS uses. See
 **Apps > Servers**.
+
+**Server-Sent Events**: A web address that stays open and sends a message every time something happens. Cuebot's
+REST API has one at `/events`.
 
 **Signal**: A short named message one Cuebot sends to another, like `go-live`. See [Linking two
 Cuebots](servers.md#linking-two-cuebots).
@@ -122,5 +137,8 @@ when the action runs. See [Variables](variables.md).
 **Voice alias**: A nickname for a voice and its settings, like "Narrator", used by text-to-speech.
 
 **Webhook**: A small message one web service sends to another when something happens, like a Ko-fi tip.
+
+**WebSocket**: A line between two programs that stays open, so both can send messages at any time. Streamer.bot
+tools use one to talk to Cuebot.
 
 **Widget**: One piece of an overlay, like the chat box, a goal bar or the alert box.

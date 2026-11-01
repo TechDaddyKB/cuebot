@@ -1,0 +1,154 @@
+{
+  "functions": {
+    "meldstudio.isConnected": {
+      "description": "Checks whether Cuebot is connected to Meld Studio right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "meldstudio.connect": {
+      "description": "Starts connecting to Meld Studio. It does not wait: Cuebot keeps trying in the background until it works.",
+      "parameters": {},
+      "returns": "true once connecting has started (not when it is connected).",
+      "example": {}
+    },
+    "meldstudio.disconnect": {
+      "description": "Disconnects Cuebot from Meld Studio.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "meldstudio.getStatus": {
+      "description": "Tells you whether Meld Studio is connected, recording or live, and which scene is showing.",
+      "parameters": {},
+      "returns": "isConnected, isRecording, isStreaming (true/false), currentScene (its name, or null) and apiVersion.",
+      "example": {}
+    },
+    "meldstudio.showScene": {
+      "description": "Switches Meld Studio to another scene. Fails with an error when no scene matches or Meld Studio is not connected.",
+      "parameters": {
+        "scene": "The scene's name as Meld Studio shows it, like \"Gameplay\", or its id."
+      },
+      "returns": "The name of the scene that is now showing.",
+      "example": { "scene": "Gameplay" }
+    },
+    "meldstudio.showSceneByName": {
+      "description": "Switches Meld Studio to another scene. Works just like meldstudio.showScene.",
+      "parameters": {
+        "sceneName": "The scene's name as Meld Studio shows it, like \"Gameplay\". An id works too."
+      },
+      "returns": "The name of the scene that is now showing.",
+      "example": { "sceneName": "Gameplay" }
+    },
+    "meldstudio.showLayer": {
+      "description": "Makes a layer in Meld Studio visible. Fails with an error when no layer matches.",
+      "parameters": {
+        "layer": "The layer's name, like \"Webcam\", or its id.",
+        "scene": "Optional. The scene the layer is in. Leave it out to search the current scene first, then all scenes."
+      },
+      "returns": "true (the layer is visible now).",
+      "example": { "layer": "Webcam" }
+    },
+    "meldstudio.hideLayer": {
+      "description": "Hides a layer in Meld Studio. Fails with an error when no layer matches.",
+      "parameters": {
+        "layer": "The layer's name, like \"Webcam\", or its id.",
+        "scene": "Optional. The scene the layer is in. Leave it out to search the current scene first, then all scenes."
+      },
+      "returns": "false (the layer is hidden now).",
+      "example": { "layer": "Webcam" }
+    },
+    "meldstudio.setLayerVisibility": {
+      "description": "Shows, hides or flips a layer in Meld Studio. Fails with an error when no layer matches.",
+      "parameters": {
+        "layer": "The layer's name, like \"Webcam\", or its id.",
+        "state": "Optional. \"Visible\", \"Hidden\" or \"Toggle\" (switch). Default \"Toggle\".",
+        "scene": "Optional. The scene the layer is in. Leave it out to search the current scene first, then all scenes."
+      },
+      "returns": "true when the layer is visible now, false when hidden.",
+      "example": { "layer": "Webcam", "state": "Hidden" }
+    },
+    "meldstudio.setEffectEnabled": {
+      "description": "Turns an effect on a Meld Studio layer on or off, like a blur or colour filter. Fails with an error when the layer or effect is not found.",
+      "parameters": {
+        "layer": "The layer's name, like \"Webcam\", or its id.",
+        "effect": "The effect's name, like \"Blur\", or its id.",
+        "state": "Optional. \"Enabled\", \"Disabled\" or \"Toggle\" (switch). Default \"Toggle\".",
+        "scene": "Optional. The scene the layer is in. Leave it out to search the current scene first."
+      },
+      "returns": "true when the effect is on now, false when off.",
+      "example": { "layer": "Webcam", "effect": "Blur", "state": "Enabled" }
+    },
+    "meldstudio.setTrackMuted": {
+      "description": "Mutes or unmutes an audio track in Meld Studio. Fails with an error when no track matches.",
+      "parameters": {
+        "track": "The audio track's name, like \"Microphone\", or its id.",
+        "state": "Optional. \"Muted\", \"NotMuted\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "true when the track is muted now, false when not.",
+      "example": { "track": "Microphone", "state": "Muted" }
+    },
+    "meldstudio.setTrackGain": {
+      "description": "Changes the volume (gain) of an audio track in Meld Studio. Fails with an error when no track matches.",
+      "parameters": {
+        "track": "The audio track's name, like \"Music\", or its id.",
+        "gain": "The volume as a number from 0 (silent) to 1 (full), like 0.5. It must be a number, not text."
+      },
+      "returns": "true when done.",
+      "example": { "track": "Music", "gain": 0.5 }
+    },
+    "meldstudio.recording": {
+      "description": "Starts or stops recording in Meld Studio. Fails with an error when Meld Studio is not connected.",
+      "parameters": {
+        "state": "Optional. \"Start\", \"Stop\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "true when recording now, false when not.",
+      "example": { "state": "Start" }
+    },
+    "meldstudio.streaming": {
+      "description": "Goes live or stops streaming in Meld Studio. Fails with an error when Meld Studio is not connected.",
+      "parameters": {
+        "state": "Optional. \"Start\", \"Stop\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "true when streaming now, false when not.",
+      "example": { "state": "Stop" }
+    },
+    "meldstudio.screenshot": {
+      "description": "Takes a screenshot in Meld Studio.",
+      "parameters": {
+        "vertical": "Optional. true takes it of the vertical (phone) canvas. Default false."
+      },
+      "returns": "true when done.",
+      "example": {}
+    },
+    "meldstudio.sendCommand": {
+      "description": "Runs one of Meld Studio's own commands, like saving a clip or showing the replay.",
+      "parameters": {
+        "command": "The Meld command name, like \"meld.recordClip\" or \"meld.replay.show\"."
+      },
+      "returns": "true when done.",
+      "example": { "command": "meld.recordClip" }
+    },
+    "meldstudio.getScenes": {
+      "description": "Lists your Meld Studio scenes in order.",
+      "parameters": {},
+      "returns": "A list of scenes. Each has id, name, current (true when showing) and staged (true when lined up next).",
+      "example": {}
+    },
+    "meldstudio.getSession": {
+      "description": "Gives you everything Meld Studio reports about your setup: scenes, layers, effects and audio tracks. For advanced scripts.",
+      "parameters": {},
+      "returns": "An object with one entry per item, named by its id. Each entry holds the item's details as Meld Studio sends them.",
+      "example": {}
+    },
+    "meldstudio.invoke": {
+      "description": "Calls any of Meld Studio's own functions by name. For advanced users. Fails with an error when this Meld Studio version does not have it.",
+      "parameters": {
+        "method": "The Meld function name, like \"setStagedScene\". Needed.",
+        "args": "Optional. A list of values to pass to it, like [\"<scene id>\"]."
+      },
+      "returns": "Meld Studio's answer, or null when it gives none.",
+      "example": { "method": "showStagedScene" }
+    }
+  }
+}

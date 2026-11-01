@@ -1,0 +1,244 @@
+{
+  "members": {
+    "YouTubeGetBroadcaster": {
+      "description": "Gets the YouTube account you signed in with as the broadcaster: its name, handle, id and picture.",
+      "returns": "The account (UserName, UserLogin, UserId, ProfileImageUrl, LastActive), or null when no broadcaster is signed in.",
+      "example": "var me = CPH.YouTubeGetBroadcaster();\nif (me != null) CPH.LogInfo($\"Broadcaster: {me.UserName}\");"
+    },
+    "YouTubeGetBot": {
+      "description": "Gets the YouTube bot account you signed in with: its name, handle, id and picture.",
+      "returns": "The account, or null when no bot account is signed in.",
+      "example": "var bot = CPH.YouTubeGetBot();\nCPH.LogInfo(bot != null ? $\"Bot: {bot.UserName}\" : \"No YouTube bot\");"
+    },
+    "SendYouTubeMessageToLatestMonitored": {
+      "description": "Sends a message in the chat of your newest YouTube stream that Cuebot watches. Uses the bot account, or the broadcaster as fallback. Empty text sends nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SendYouTubeMessageToLatestMonitored(\"Thanks for watching!\");"
+    },
+    "YouTubeSetTitle": {
+      "description": "Changes the title of your YouTube stream. Without a broadcast id it changes your newest watched stream.",
+      "returns": "true when it worked, false when it failed or the title was empty.",
+      "example": "bool ok = CPH.YouTubeSetTitle(\"Speedrun practice!\");\nCPH.LogInfo($\"Title changed: {ok}\");"
+    },
+    "YouTubeSetDescription": {
+      "description": "Changes the description of your YouTube stream. Without a broadcast id it changes your newest watched stream.",
+      "returns": "true when it worked, otherwise false.",
+      "example": "CPH.YouTubeSetDescription(\"Playing with viewers all night.\");"
+    },
+    "YouTubeSetCategory": {
+      "description": "Changes the category of your YouTube stream, by name like \"Gaming\" or \"Music\", or by YouTube's category number.",
+      "returns": "true when it worked, false when it failed or the name is not a YouTube category.",
+      "example": "bool ok = CPH.YouTubeSetCategory(\"Gaming\");\nCPH.LogInfo($\"Category changed: {ok}\");"
+    },
+    "YouTubeSetPrivacy": {
+      "description": "Changes who can see your YouTube stream: \"public\", \"unlisted\" or \"private\".",
+      "returns": "true when it worked, false when it failed or nothing was given.",
+      "example": "CPH.YouTubeSetPrivacy(\"unlisted\");"
+    },
+    "YouTubeSetMetaData": {
+      "description": "Changes title, description, privacy and category of your YouTube stream in one go. Leave a value empty (null) to keep it.",
+      "returns": "true when every change worked, otherwise false.",
+      "example": "bool ok = CPH.YouTubeSetMetaData(\"Late night chill\", null, \"public\", \"Gaming\");\nCPH.LogInfo($\"Updated: {ok}\");"
+    },
+    "YouTubeAddTags": {
+      "description": "Adds tags to your YouTube stream. Tags it already has are not added twice.",
+      "returns": "true when it worked, otherwise false.",
+      "example": "CPH.YouTubeAddTags(new List<string> { \"speedrun\", \"retro\" });"
+    },
+    "YouTubeRemoveTags": {
+      "description": "Removes the listed tags from your YouTube stream.",
+      "returns": "true when it worked, otherwise false.",
+      "example": "CPH.YouTubeRemoveTags(new List<string> { \"retro\" });"
+    },
+    "YouTubeClearTags": {
+      "description": "Removes all tags from your YouTube stream.",
+      "returns": "true when it worked, otherwise false.",
+      "example": "CPH.YouTubeClearTags();"
+    },
+    "YouTubeBanUserById": {
+      "description": "Bans someone from your YouTube chat by their channel id.",
+      "returns": "true when it worked, false when it failed or the id was empty.",
+      "example": "bool ok = CPH.YouTubeBanUserById(\"UCabc123XYZ\");\nCPH.LogInfo($\"Banned: {ok}\");"
+    },
+    "YouTubeBanUserByName": {
+      "description": "Bans someone from your YouTube chat by name: a recent chatter's name or an @handle.",
+      "returns": "true when it worked, false when it failed or the name was empty.",
+      "example": "CPH.YouTubeBanUserByName(\"@SpamBot123\");"
+    },
+    "YouTubeTimeoutUserById": {
+      "description": "Times someone out in your YouTube chat for some seconds, by their channel id.",
+      "returns": "true when it worked, false when it failed or the id was empty.",
+      "example": "CPH.YouTubeTimeoutUserById(\"UCabc123XYZ\", 300);"
+    },
+    "YouTubeTimeoutUserByName": {
+      "description": "Times someone out in your YouTube chat for some seconds, by name or @handle.",
+      "returns": "true when it worked, false when it failed or the name was empty.",
+      "example": "CPH.YouTubeTimeoutUserByName(\"@LoudViewer\", 60);"
+    },
+    "KickBanUser": {
+      "description": "Bans someone from your Kick chat by name. You can add a reason. The bot setting is ignored.",
+      "returns": "true when it worked, false when it failed or the name was empty.",
+      "example": "bool ok = CPH.KickBanUser(\"spambot123\", \"Spam links\");\nCPH.LogInfo($\"Banned: {ok}\");"
+    },
+    "KickTimeoutUser": {
+      "description": "Times someone out in your Kick chat for some seconds. Kick counts in minutes, so it is rounded up. The bot setting is ignored.",
+      "returns": "true when it worked, false when it failed or the name was empty.",
+      "example": "CPH.KickTimeoutUser(\"loudviewer\", 300, \"Calm down\");"
+    },
+    "KickUnbanUser": {
+      "description": "Lifts a ban or timeout on Kick, by name. The bot setting is ignored.",
+      "returns": "true when it worked, false when it failed or the name was empty.",
+      "example": "CPH.KickUnbanUser(\"loudviewer\");"
+    },
+    "KickDeleteChatMessage": {
+      "description": "Deletes one message in your Kick chat, by the message's id.",
+      "returns": "true when it worked, false when it failed or the id was empty.",
+      "example": "if (CPH.TryGetArg(\"msgId\", out string msgId)) CPH.KickDeleteChatMessage(msgId);"
+    },
+    "KickReplyToMessage": {
+      "description": "Replies to a message in your Kick chat. Uses the bot account, or the broadcaster as fallback.",
+      "returns": "true when it worked, false when it failed or the text was empty.",
+      "example": "if (CPH.TryGetArg(\"msgId\", out string msgId)) CPH.KickReplyToMessage(\"Good question!\", msgId);"
+    },
+    "KickSetTitle": {
+      "description": "Changes the title of your Kick stream.",
+      "returns": "true when it worked, false when it failed or the title was empty.",
+      "example": "CPH.KickSetTitle(\"Ranked grind!\");"
+    },
+    "KickSetCategory": {
+      "description": "Changes the category of your Kick stream, by name (or id).",
+      "returns": "The category (only its name, and its id when you gave a number), or null when Kick refused.",
+      "example": "var category = CPH.KickSetCategory(\"Just Chatting\");\nCPH.LogInfo(category != null ? $\"Now in {category.Name}\" : \"Kick refused\");"
+    },
+    "SetKickUsersVarById": {
+      "description": "Sets a user variable to the same value for every Kick user id in the list. Persisted true keeps it after Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetKickUsersVarById(new List<string> { \"1234\", \"5678\" }, \"team\", \"red\");"
+    },
+    "IncrementAllTwitchUsersVar": {
+      "description": "Adds a number to a user variable for every Twitch user who already has it. Persisted picks saved or temporary variables.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementAllTwitchUsersVar(\"points\", 10);"
+    },
+    "IncrementAllYouTubeUsersVar": {
+      "description": "Adds a number to a user variable for every YouTube user who already has it. Persisted picks saved or temporary variables.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementAllYouTubeUsersVar(\"points\", 10);"
+    },
+    "IncrementAllKickUsersVar": {
+      "description": "Adds a number to a user variable for every Kick user who already has it. Persisted picks saved or temporary variables.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementAllKickUsersVar(\"points\", 10);"
+    },
+    "IncrementTwitchUsersVarById": {
+      "description": "Adds a number to a user variable for each listed Twitch user id. Users who do not have the variable yet are skipped.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementTwitchUsersVarById(new List<string> { \"12345\", \"67890\" }, \"points\", 5);"
+    },
+    "IncrementYouTubeUsersVarById": {
+      "description": "Adds a number to a user variable for each listed YouTube user id. Users who do not have the variable yet are skipped.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementYouTubeUsersVarById(new List<string> { \"UCabc123XYZ\" }, \"points\", 5);"
+    },
+    "IncrementAllKickUsersVarById": {
+      "description": "Adds a number to a user variable for each listed Kick user id. Users who do not have the variable yet are skipped.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementAllKickUsersVarById(new List<string> { \"1234\", \"5678\" }, \"points\", 5);"
+    },
+    "IncrementOrCreateTwitchUsersVarById": {
+      "description": "Adds a number to a user variable for each listed Twitch user id. Users without it get it, starting from 0.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementOrCreateTwitchUsersVarById(new List<string> { \"12345\", \"67890\" }, \"points\", 5);"
+    },
+    "IncrementOrCreateYouTubeUsersVarById": {
+      "description": "Adds a number to a user variable for each listed YouTube user id. Users without it get it, starting from 0.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementOrCreateYouTubeUsersVarById(new List<string> { \"UCabc123XYZ\" }, \"points\", 5);"
+    },
+    "IncrementOrCreateKickUsersVarById": {
+      "description": "Adds a number to a user variable for each listed Kick user id. Users without it get it, starting from 0.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementOrCreateKickUsersVarById(new List<string> { \"1234\", \"5678\" }, \"points\", 5);"
+    },
+    "MeldStudioConnect": {
+      "description": "Starts connecting to Meld Studio. Cuebot keeps trying in the background. Cuebot has one Meld Studio connection, so use -1 or 0.",
+      "returns": "true when connecting started, otherwise false.",
+      "example": "CPH.MeldStudioConnect();"
+    },
+    "MeldStudioDisconnect": {
+      "description": "Disconnects from Meld Studio. Use -1 or 0 for the connection; other numbers only write a warning.",
+      "returns": "Nothing.",
+      "example": "CPH.MeldStudioDisconnect();"
+    },
+    "MeldStudioIsConnected": {
+      "description": "Checks whether Cuebot is connected to Meld Studio right now.",
+      "returns": "true when connected, otherwise false.",
+      "example": "bool connected = CPH.MeldStudioIsConnected();\nCPH.LogInfo($\"Meld connected: {connected}\");"
+    },
+    "MeldStudioGetConnectionByName": {
+      "description": "Gives the number of a Meld Studio connection. Cuebot has only one, so any name gives 0.",
+      "returns": "0 when Cuebot's Meld Studio part is loaded, otherwise -1.",
+      "example": "int idx = CPH.MeldStudioGetConnectionByName(\"Main\");\nCPH.LogInfo($\"Meld connection: {idx}\");"
+    },
+    "MeldStudioShowScene": {
+      "description": "Switches Meld Studio to a scene, by its Meld id. A scene name works too.",
+      "returns": "true when it worked, false when it failed or nothing was given.",
+      "example": "CPH.MeldStudioShowScene(\"Gameplay\");"
+    },
+    "MeldStudioShowSceneByName": {
+      "description": "Switches Meld Studio to a scene by its name, like \"Gameplay\".",
+      "returns": "true when it worked, false when it failed or the name was empty.",
+      "example": "bool ok = CPH.MeldStudioShowSceneByName(\"Gameplay\");\nCPH.LogInfo($\"Scene switched: {ok}\");"
+    },
+    "MeldStudioShowLayerByName": {
+      "description": "Shows a layer in Meld Studio, by the scene name and the layer name.",
+      "returns": "true when it worked, false when it failed or the layer name was empty.",
+      "example": "CPH.MeldStudioShowLayerByName(\"Gameplay\", \"Webcam\");"
+    },
+    "MeldStudioHideLayerByName": {
+      "description": "Hides a layer in Meld Studio, by the scene name and the layer name.",
+      "returns": "true when it worked, false when it failed or the layer name was empty.",
+      "example": "CPH.MeldStudioHideLayerByName(\"Gameplay\", \"Webcam\");"
+    },
+    "ObsCreateRecordChapter": {
+      "description": "Adds a chapter mark to your OBS recording, like \"Boss fight\". Needs OBS 30.2 or newer, recording as Hybrid MP4.",
+      "returns": "true when it worked, otherwise false.",
+      "example": "CPH.ObsCreateRecordChapter(\"Boss fight\");"
+    },
+    "ObsIsFilterEnabled": {
+      "description": "Checks whether a filter is turned on in OBS. Give a scene and filter name, or a scene, source and filter name for a source's filter.",
+      "returns": "true when the filter is on, otherwise false.",
+      "example": "bool on = CPH.ObsIsFilterEnabled(\"Gameplay\", \"Webcam\", \"Blur\");\nCPH.LogInfo($\"Blur on: {on}\");"
+    },
+    "ObsSetFilterState": {
+      "description": "Sets an OBS filter: 0 turns it on, 1 turns it off, 2 flips it. Give a scene's filter, or a scene, source and filter for a source's filter.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetFilterState(\"Gameplay\", \"Webcam\", \"Blur\", 0);"
+    },
+    "ObsToggleFilter": {
+      "description": "Flips an OBS filter on or off. Give a scene's filter, or a scene, source and filter for a source's filter.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsToggleFilter(\"Gameplay\", \"Webcam\", \"Blur\");"
+    },
+    "ObsSetRandomFilterState": {
+      "description": "Picks one random filter of a scene (or of a source) and sets it: 0 on, 1 off, 2 flip. Nothing happens when there are no filters.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetRandomFilterState(\"Gameplay\", \"Webcam\", 0);"
+    },
+    "ObsHideSourcesFilters": {
+      "description": "Turns off every filter of an OBS source. The source is found by its name; the scene is not used.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsHideSourcesFilters(\"Gameplay\", \"Webcam\");"
+    },
+    "ObsHideScenesFilters": {
+      "description": "Turns off every filter of an OBS scene.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsHideScenesFilters(\"Gameplay\");"
+    },
+    "Parse": {
+      "description": "Fills in the variables in a text: %arguments%, ~global variables~ and inline functions. Give your own values to use instead of this run's arguments.",
+      "returns": "The text with every variable filled in.",
+      "example": "string text = CPH.Parse(\"Thanks for the raid, %user%!\");\nCPH.SendMessage(text);"
+    }
+  }
+}

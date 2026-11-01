@@ -1,0 +1,47 @@
+{
+  "functions": {
+    "obs.request": {
+      "description": "Sends any obs-websocket command to OBS and gives back OBS's answer. Good for things Cuebot has no ready-made step for. Fails with an error when OBS is not connected.",
+      "parameters": {
+        "requestType": "The obs-websocket command name, like \"GetVersion\" or \"SetCurrentProgramScene\". Needed.",
+        "requestData": "Optional. The settings for the command, like {\"sceneName\": \"Gameplay\"}. Leave it out when the command needs none.",
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "OBS's answer data for that command (its responseData).",
+      "example": { "requestType": "SetCurrentProgramScene", "requestData": { "sceneName": "Gameplay" } }
+    },
+    "obs.requestBatch": {
+      "description": "Sends several obs-websocket commands to OBS in one go. One failed command does not stop the rest, unless you ask it to. Fails with an error when OBS is not connected.",
+      "parameters": {
+        "requests": "A list of commands. Each one has a requestType and, if needed, requestData, like {\"requestType\": \"GetVersion\"}. Needed.",
+        "haltOnFailure": "Optional. true stops at the first command that fails. Default false.",
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "A list with one result per command: its requestType, requestStatus (did it work) and responseData.",
+      "example": { "requests": [ { "requestType": "GetVersion" }, { "requestType": "SetCurrentProgramScene", "requestData": { "sceneName": "Gameplay" } } ] }
+    },
+    "obs.setScene": {
+      "description": "Switches OBS to another scene. Fails with an error when OBS is not connected.",
+      "parameters": {
+        "sceneName": "The scene name exactly as OBS shows it, like \"Gameplay\".",
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "Nothing.",
+      "example": { "sceneName": "Gameplay" }
+    },
+    "obs.getCurrentScene": {
+      "description": "Asks OBS which scene is live right now. Fails with an error when OBS is not connected.",
+      "parameters": {
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "The name of the live (program) scene, like \"Gameplay\".",
+      "example": {}
+    },
+    "obs.connections": {
+      "description": "Lists every OBS connection you set up in Cuebot.",
+      "parameters": {},
+      "returns": "A list with one entry per connection: name, state (Disconnected, Connecting, Connected or Error) and scene (its current scene).",
+      "example": {}
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "functions": {
+    "vtubestudio.isConnected": {
+      "description": "Checks whether Cuebot is connected to VTube Studio and allowed in as a plugin.",
+      "parameters": {},
+      "returns": "true while connected and allowed, otherwise false.",
+      "example": {}
+    },
+    "vtubestudio.triggerHotkey": {
+      "description": "Runs one of your VTube Studio hotkeys, like a wave or an outfit change. Fails with an error when VTube Studio is not connected.",
+      "parameters": {
+        "hotkey": "The hotkey's name as VTube Studio shows it, like \"Wave\", or its id.",
+        "itemInstanceId": "Optional. The id of a Live2D item, to press that item's hotkey instead of the model's. Most people leave it out."
+      },
+      "returns": "The id of the hotkey that ran.",
+      "example": {
+        "hotkey": "Wave"
+      }
+    },
+    "vtubestudio.loadModel": {
+      "description": "Switches VTube Studio to another model. Fails with an error when no model has that name or VTube Studio is not connected.",
+      "parameters": {
+        "model": "The model's name as VTube Studio shows it, like \"Akari\", or its id."
+      },
+      "returns": "The id of the model that was loaded.",
+      "example": {
+        "model": "Akari"
+      }
+    },
+    "vtubestudio.moveModel": {
+      "description": "Moves, turns or resizes your model on screen. Values you leave out stay as they are. Fails with an error when VTube Studio is not connected.",
+      "parameters": {
+        "time": "Optional. How long the move takes, 0 to 2 seconds. Default 0.5.",
+        "relative": "Optional. true moves the model by these amounts from where it is now. false (default) moves it to these exact values.",
+        "positionX": "Optional. Left/right position: -1 is the left edge, 1 is the right edge.",
+        "positionY": "Optional. Up/down position: -1 is the bottom edge, 1 is the top edge.",
+        "rotation": "Optional. How far to turn the model, in degrees, like 15.",
+        "size": "Optional. The model's size, from -100 (small) to 100 (big)."
+      },
+      "returns": "true when done.",
+      "example": {
+        "time": 1,
+        "positionX": 0.5,
+        "positionY": -0.2
+      }
+    },
+    "vtubestudio.setExpression": {
+      "description": "Turns a face expression on your model on or off, like blush or angry eyes. Fails with an error when VTube Studio is not connected.",
+      "parameters": {
+        "expression": "The expression's name or file, like \"Blush\" or \"Blush.exp3.json\".",
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch). Default \"On\".",
+        "fadeTime": "Optional. How many seconds the change takes to fade in or out. Leave it out for 0.25 seconds."
+      },
+      "returns": "The new state: true for on, false for off.",
+      "example": {
+        "expression": "Blush",
+        "state": "On"
+      }
+    },
+    "vtubestudio.injectParameters": {
+      "description": "Sets tracking values on your model for a while, like tilting the head or opening the mouth. Your script waits until the time is over.",
+      "parameters": {
+        "parameters": "The values as text, like \"FaceAngleX=20, MouthOpen=1\". You can also give an object, like {\"FaceAngleX\": 20}.",
+        "holdSeconds": "Optional. How many seconds to keep the values, 0 to 3600. Default 1.",
+        "mode": "Optional. \"add\" adds the values to the tracking. Anything else (the default) replaces the tracking values.",
+        "faceFound": "Optional. true tells VTube Studio to act as if it sees your face while the values are sent. Starts as false."
+      },
+      "returns": "true when done.",
+      "example": {
+        "parameters": "FaceAngleX=20, MouthOpen=1",
+        "holdSeconds": 3
+      }
+    },
+    "vtubestudio.getCurrentModel": {
+      "description": "Tells you which model VTube Studio has loaded and where it is on screen. Fails with an error when VTube Studio is not connected.",
+      "parameters": {},
+      "returns": "loaded (true/false), name, id, positionX, positionY, rotation and size.",
+      "example": {}
+    },
+    "vtubestudio.getHotkeys": {
+      "description": "Lists the hotkeys of the model that is loaded now. Fails with an error when VTube Studio is not connected.",
+      "parameters": {},
+      "returns": "A list of hotkeys. Each has id, name, type (what it does) and file.",
+      "example": {}
+    },
+    "vtubestudio.getExpressions": {
+      "description": "Lists the face expressions of the model that is loaded now, and which ones are on. Fails with an error when VTube Studio is not connected.",
+      "parameters": {},
+      "returns": "A list of expressions. Each has name, file and active (true when it is on).",
+      "example": {}
+    },
+    "vtubestudio.request": {
+      "description": "Sends any VTube Studio API request and gives back its answer. For advanced users who know VTube Studio's request names.",
+      "parameters": {
+        "messageType": "The request name, like \"StatisticsRequest\". Needed.",
+        "data": "Optional. The request's settings as an object, like {\"hotkeyID\": \"Wave\"}."
+      },
+      "returns": "VTube Studio's answer data, or null when it sent none.",
+      "example": {
+        "messageType": "StatisticsRequest"
+      }
+    }
+  }
+}

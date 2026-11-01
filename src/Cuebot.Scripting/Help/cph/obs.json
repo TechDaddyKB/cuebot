@@ -1,0 +1,339 @@
+{
+  "members": {
+    "ObsGetConnectionByName": {
+      "description": "Finds the number of an OBS connection by its name, as shown on the OBS page. The first connection is 0. Capital letters do not matter.",
+      "returns": "The connection number, or -1 when no connection has that name.",
+      "example": "int studio = CPH.ObsGetConnectionByName(\"Studio PC\");\nCPH.LogInfo($\"Studio PC is connection {studio}\");"
+    },
+    "ObsConnect": {
+      "description": "Checks whether OBS is connected. Cuebot connects (and reconnects) OBS by itself, so this does not start a connection.",
+      "returns": "true when OBS is connected, otherwise false.",
+      "example": "bool ready = CPH.ObsConnect();\nCPH.LogInfo($\"OBS connected: {ready}\");"
+    },
+    "ObsDisconnect": {
+      "description": "Not supported in Cuebot: Cuebot keeps its OBS connections open. It only writes a warning in the log. Disconnect OBS on the OBS page instead.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsDisconnect();"
+    },
+    "ObsPauseRecording": {
+      "description": "Pauses the OBS recording. Gives an error when OBS is not connected.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsPauseRecording();"
+    },
+    "ObsResumeRecording": {
+      "description": "Carries on with a paused OBS recording. Gives an error when OBS is not connected.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsResumeRecording();"
+    },
+    "ObsReplayBufferStart": {
+      "description": "Starts the OBS replay buffer, which keeps the last few seconds of your stream ready to save. Gives an error when OBS is not connected.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsReplayBufferStart();"
+    },
+    "ObsReplayBufferStop": {
+      "description": "Stops the OBS replay buffer. Gives an error when OBS is not connected.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsReplayBufferStop();"
+    },
+    "ObsReplayBufferSave": {
+      "description": "Saves the replay buffer to a file, so you keep the last few seconds of your stream. The replay buffer must be running in OBS.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsReplayBufferSave();"
+    },
+    "ObsSetReplayBufferState": {
+      "description": "Starts, stops or saves the OBS replay buffer with a number: 0 starts it, 1 stops it, 2 saves it. Any other number gives an error.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetReplayBufferState(2);"
+    },
+    "ObsMediaPlay": {
+      "description": "Plays a media source (a video or sound file in OBS). The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsMediaPlay(\"Gameplay\", \"Intro Video\");"
+    },
+    "ObsMediaPause": {
+      "description": "Pauses a media source (a video or sound file in OBS). The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsMediaPause(\"Gameplay\", \"Intro Video\");"
+    },
+    "ObsMediaRestart": {
+      "description": "Starts a media source again from the beginning. The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsMediaRestart(\"Gameplay\", \"Intro Video\");"
+    },
+    "ObsMediaStop": {
+      "description": "Stops a media source (a video or sound file in OBS). The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsMediaStop(\"Gameplay\", \"Intro Video\");"
+    },
+    "ObsMediaNext": {
+      "description": "Skips to the next file in a media source that plays a list (like a VLC playlist source).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsMediaNext(\"Just Chatting\", \"Music Playlist\");"
+    },
+    "ObsMediaPrevious": {
+      "description": "Goes back to the previous file in a media source that plays a list (like a VLC playlist source).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsMediaPrevious(\"Just Chatting\", \"Music Playlist\");"
+    },
+    "ObsSetMediaState": {
+      "description": "Controls a media source with a number: 0 play, 1 pause, 2 restart, 3 stop, 4 next, 5 previous. Any other number gives an error.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetMediaState(\"Gameplay\", \"Intro Video\", 0);"
+    },
+    "ObsSourceMute": {
+      "description": "Mutes an audio source in OBS, like your microphone. The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSourceMute(\"Gameplay\", \"Mic\");"
+    },
+    "ObsSourceUnMute": {
+      "description": "Unmutes an audio source in OBS, like your microphone. The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSourceUnMute(\"Gameplay\", \"Mic\");"
+    },
+    "ObsSourceMuteToggle": {
+      "description": "Mutes an audio source when it is on, or unmutes it when it is muted.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSourceMuteToggle(\"Gameplay\", \"Mic\");"
+    },
+    "ObsSetSourceMuteState": {
+      "description": "Mutes or unmutes an audio source with a number: 0 mutes, 1 unmutes, 2 switches it. Any other number gives an error.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetSourceMuteState(\"Gameplay\", \"Mic\", 0);"
+    },
+    "ObsSetSceneFilterState": {
+      "description": "Turns a filter on a scene itself on or off with a number: 0 on, 1 off, 2 switches it.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetSceneFilterState(\"Gameplay\", \"Blur\", 0);"
+    },
+    "ObsSetSourceFilterState": {
+      "description": "Turns a filter on a source on or off with a number: 0 on, 1 off, 2 switches it. The scene is not needed, because OBS finds the source by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetSourceFilterState(\"Gameplay\", \"Webcam\", \"Green Screen\", 1);"
+    },
+    "ObsHideGroupsSources": {
+      "description": "Hides every source inside an OBS group. The scene is not needed, because OBS finds the group by its name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsHideGroupsSources(\"Gameplay\", \"Alerts\");"
+    },
+    "ObsHideSceneSources": {
+      "description": "Hides every source in a scene.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsHideSceneSources(\"Gameplay\");"
+    },
+    "ObsSetRandomGroupSourceVisible": {
+      "description": "Shows one random source inside an OBS group and hides the others. Fun for a random hat or sticker. The scene is not needed.",
+      "returns": "The name of the source it showed, or empty text when the group has no sources.",
+      "example": "string picked = CPH.ObsSetRandomGroupSourceVisible(\"Gameplay\", \"Hats\");\nCPH.LogInfo($\"Showing {picked}\");"
+    },
+    "ObsSetRandomSceneSourceVisible": {
+      "description": "Shows one random source in a scene and hides the others.",
+      "returns": "The name of the source it showed, or empty text when the scene has no sources.",
+      "example": "string picked = CPH.ObsSetRandomSceneSourceVisible(\"Backgrounds\");\nCPH.LogInfo($\"Showing {picked}\");"
+    },
+    "ObsGetGroupSources": {
+      "description": "Lists the sources inside an OBS group, top first. The scene is not needed, because OBS finds the group by its name.",
+      "returns": "A list with the names of the group's sources.",
+      "example": "List<string> hats = CPH.ObsGetGroupSources(\"Gameplay\", \"Hats\");\nCPH.LogInfo($\"Hats: {string.Join(\", \", hats)}\");"
+    },
+    "ObsSetColorSourceColor": {
+      "description": "Changes the colour of a colour source. Give the colour as text like \"#FF0000\" (red) or \"#80FF0000\" (see-through red), or as four numbers 0-255: alpha (see-through), red, green, blue.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetColorSourceColor(\"Gameplay\", \"Background\", \"#9146FF\");\nCPH.ObsSetColorSourceColor(\"Gameplay\", \"Border\", 255, 255, 0, 0);"
+    },
+    "ObsSetColorSourceRandomColor": {
+      "description": "Gives a colour source a random colour. The colour is never see-through.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetColorSourceRandomColor(\"Gameplay\", \"Background\");"
+    },
+    "ObsConvertColorHex": {
+      "description": "Turns a colour like \"#FF0000\" or \"#80FF0000\" (the # is optional) into the colour number OBS uses. Text that is not a colour gives an error.",
+      "returns": "The colour as OBS's number.",
+      "example": "long red = CPH.ObsConvertColorHex(\"#FF0000\");\nCPH.LogInfo($\"OBS colour number: {red}\");"
+    },
+    "ObsConvertRgb": {
+      "description": "Turns alpha (see-through), red, green and blue (each 0-255) into the colour number OBS uses. Numbers outside 0-255 are cut to fit.",
+      "returns": "The colour as OBS's number.",
+      "example": "long purple = CPH.ObsConvertRgb(255, 145, 70, 255);\nCPH.LogInfo($\"OBS colour number: {purple}\");"
+    },
+    "ObsTakeScreenshot": {
+      "description": "Saves a picture of a source or scene to a file. Leave the source empty for what is on stream. The file ending (.png, .jpg) sets the format. Quality is 0-100, or -1 for OBS's default.",
+      "returns": "true when the picture was saved, false when it failed (a warning goes in the log).",
+      "example": "bool saved = CPH.ObsTakeScreenshot(\"Webcam\", \"C:/Stream/Screenshots/webcam.png\");\nCPH.LogInfo($\"Screenshot saved: {saved}\");"
+    },
+    "ObsGetSceneItemProperties": {
+      "description": "Reads the details of a source in a scene, like its position, size, whether it is visible or locked. Uses the same names as the \"Get Scene Item Properties\" sub-action.",
+      "returns": "The details as text in JSON format, or \"{}\" when there are none.",
+      "example": "string props = CPH.ObsGetSceneItemProperties(\"Gameplay\", \"Webcam\");\nCPH.LogInfo(props);"
+    },
+    "ObsSendBatchRaw": {
+      "description": "Sends several raw OBS requests at once, for advanced users. The data is a JSON list of {requestType, requestData}. Cuebot always runs them in order. haltOnFailure stops at the first one that fails.",
+      "returns": "The answers from OBS as text in JSON format.",
+      "example": "string answers = CPH.ObsSendBatchRaw(\"[{\\\"requestType\\\":\\\"GetVersion\\\"}]\");\nCPH.LogInfo(answers);"
+    },
+    "SlobsIsConnected": {
+      "description": "Checks whether Streamlabs Desktop is connected and answering. Cuebot has one Streamlabs Desktop connection, number 0.",
+      "returns": "true when it is connected, otherwise false.",
+      "example": "bool ready = CPH.SlobsIsConnected();\nCPH.LogInfo($\"Streamlabs Desktop connected: {ready}\");"
+    },
+    "SlobsConnect": {
+      "description": "Checks whether Streamlabs Desktop is connected. Cuebot connects (and reconnects) it by itself, so this does not start a connection.",
+      "returns": "true when it is connected, otherwise false.",
+      "example": "bool ready = CPH.SlobsConnect();\nCPH.LogInfo($\"Streamlabs Desktop connected: {ready}\");"
+    },
+    "SlobsDisconnect": {
+      "description": "Not supported in Cuebot: Cuebot keeps the Streamlabs Desktop connection open. It only writes a warning in the log. Disconnect it on its page instead.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsDisconnect();"
+    },
+    "SlobsSetScene": {
+      "description": "Switches Streamlabs Desktop to another scene.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetScene(\"Gameplay\");"
+    },
+    "SlobsGetCurrentScene": {
+      "description": "Finds out which scene Streamlabs Desktop is showing right now.",
+      "returns": "The scene's name, or empty text when a connection other than 0 is asked for.",
+      "example": "string scene = CPH.SlobsGetCurrentScene();\nCPH.LogInfo($\"Current scene: {scene}\");"
+    },
+    "SlobsStartStreaming": {
+      "description": "Starts streaming in Streamlabs Desktop.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsStartStreaming();"
+    },
+    "SlobsStopStreaming": {
+      "description": "Stops streaming in Streamlabs Desktop.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsStopStreaming();"
+    },
+    "SlobsStartRecording": {
+      "description": "Starts recording in Streamlabs Desktop.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsStartRecording();"
+    },
+    "SlobsStopRecording": {
+      "description": "Stops recording in Streamlabs Desktop.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsStopRecording();"
+    },
+    "SlobsPauseRecording": {
+      "description": "Not supported in Cuebot: Streamlabs Desktop cannot pause a recording from outside. It only writes a warning in the log.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsPauseRecording();"
+    },
+    "SlobsResumeRecording": {
+      "description": "Not supported in Cuebot: Streamlabs Desktop cannot pause or resume a recording from outside. It only writes a warning in the log.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsResumeRecording();"
+    },
+    "SlobsIsStreaming": {
+      "description": "Checks whether Streamlabs Desktop is live right now.",
+      "returns": "true while it is streaming, otherwise false.",
+      "example": "bool live = CPH.SlobsIsStreaming();\nCPH.LogInfo($\"Streamlabs live: {live}\");"
+    },
+    "SlobsIsRecording": {
+      "description": "Checks whether Streamlabs Desktop is recording right now.",
+      "returns": "true while it is recording, otherwise false.",
+      "example": "bool recording = CPH.SlobsIsRecording();\nCPH.LogInfo($\"Recording: {recording}\");"
+    },
+    "SlobsSetSourceVisibility": {
+      "description": "Shows (true) or hides (false) a source in a Streamlabs Desktop scene. The form with an output (horizontal or vertical) works the same: Cuebot ignores the output.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetSourceVisibility(\"Gameplay\", \"Webcam\", true);"
+    },
+    "SlobsSetSourceVisibilityState": {
+      "description": "Shows or hides a source in a Streamlabs Desktop scene with a number: 0 shows it, 1 hides it, 2 switches it. The output setting is ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetSourceVisibilityState(\"Gameplay\", \"Webcam\", 2);"
+    },
+    "SlobsShowSource": {
+      "description": "Shows a source in a Streamlabs Desktop scene. The form with an output (horizontal or vertical) works the same: Cuebot ignores the output.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsShowSource(\"Gameplay\", \"Webcam\");"
+    },
+    "SlobsHideSource": {
+      "description": "Hides a source in a Streamlabs Desktop scene. The form with an output (horizontal or vertical) works the same: Cuebot ignores the output.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsHideSource(\"Gameplay\", \"Webcam\");"
+    },
+    "SlobsIsSourceVisible": {
+      "description": "Checks whether a source in a Streamlabs Desktop scene is showing. The output setting is ignored.",
+      "returns": "true when the source is visible, false when it is hidden or not found.",
+      "example": "bool showing = CPH.SlobsIsSourceVisible(\"Gameplay\", \"Webcam\");\nCPH.LogInfo($\"Webcam visible: {showing}\");"
+    },
+    "SlobsGetGroupSources": {
+      "description": "Lists the sources inside a Streamlabs Desktop folder (group) in a scene.",
+      "returns": "A list with the names of the sources, or an empty list when the folder is not found.",
+      "example": "List<string> hats = CPH.SlobsGetGroupSources(\"Gameplay\", \"Hats\");\nCPH.LogInfo($\"Hats: {string.Join(\", \", hats)}\");"
+    },
+    "SlobsHideGroupsSources": {
+      "description": "Hides every source inside a Streamlabs Desktop folder (group). The output setting is ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsHideGroupsSources(\"Gameplay\", \"Alerts\");"
+    },
+    "SlobsSetRandomGroupSourceVisible": {
+      "description": "Shows one random source inside a Streamlabs Desktop folder (group) and hides the others. The output setting is ignored.",
+      "returns": "The name of the source it showed, or empty text when there is none.",
+      "example": "string picked = CPH.SlobsSetRandomGroupSourceVisible(\"Gameplay\", \"Hats\");\nCPH.LogInfo($\"Showing {picked}\");"
+    },
+    "SlobsSetGdiText": {
+      "description": "Changes the words in a Streamlabs Desktop text source. The scene is not needed.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetGdiText(\"Gameplay\", \"Last Follower\", \"Thanks, CoolViewer!\");"
+    },
+    "SlobsSetBrowserSource": {
+      "description": "Changes the web address a Streamlabs Desktop browser source shows. The scene is not needed.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetBrowserSource(\"Gameplay\", \"Alert Box\", \"https://example.com/alerts\");"
+    },
+    "SlobsSourceMute": {
+      "description": "Mutes an audio source in Streamlabs Desktop, like your microphone. The scene and the third text (filterName) are not used; you can leave the third one empty.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSourceMute(\"Gameplay\", \"Mic\", \"\");"
+    },
+    "SlobsSourceUnMute": {
+      "description": "Unmutes an audio source in Streamlabs Desktop. The scene and the third text (filterName) are not used; you can leave the third one empty.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSourceUnMute(\"Gameplay\", \"Mic\", \"\");"
+    },
+    "SlobsSourceMuteToggle": {
+      "description": "Mutes an audio source in Streamlabs Desktop when it is on, or unmutes it when it is muted. The scene and the third text are not used.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSourceMuteToggle(\"Gameplay\", \"Mic\", \"\");"
+    },
+    "SlobsSetSourceMuteState": {
+      "description": "Mutes or unmutes an audio source in Streamlabs Desktop with a number: 0 mutes, 1 unmutes, 2 switches it. Any other number gives an error.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetSourceMuteState(\"Gameplay\", \"Mic\", 0);"
+    },
+    "SlobsShowFilter": {
+      "description": "Turns on a filter in Streamlabs Desktop. With a scene and a filter it changes the scene's own filter; with a scene, a source and a filter it changes the source's filter.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsShowFilter(\"Gameplay\", \"Webcam\", \"Green Screen\");"
+    },
+    "SlobsHideFilter": {
+      "description": "Turns off a filter in Streamlabs Desktop. With a scene and a filter it changes the scene's own filter; with a scene, a source and a filter it changes the source's filter.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsHideFilter(\"Gameplay\", \"Blur\");"
+    },
+    "SlobsToggleFilter": {
+      "description": "Switches a filter in Streamlabs Desktop on or off. With a scene and a filter it changes the scene's own filter; with a scene, a source and a filter, the source's filter.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsToggleFilter(\"Gameplay\", \"Webcam\", \"Blur\");"
+    },
+    "SlobsSetFilterState": {
+      "description": "Turns a Streamlabs Desktop filter on or off with a number: 0 on, 1 off, 2 switches it. Give a source too to change the source's filter instead of the scene's own.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetFilterState(\"Gameplay\", \"Webcam\", \"Blur\", 2);"
+    },
+    "SlobsSetRandomFilterState": {
+      "description": "Picks one random filter and sets it with a number: 0 on, 1 off, 2 switches it. With only a scene it picks from the scene's own filters; with a source, from that source's.",
+      "returns": "Nothing.",
+      "example": "CPH.SlobsSetRandomFilterState(\"Gameplay\", \"Webcam\", 0);"
+    },
+    "SlobsIsFilterEnabled": {
+      "description": "Checks whether a Streamlabs Desktop filter is on. With a scene and a filter it checks the scene's own filter; with a scene, a source and a filter, the source's filter.",
+      "returns": "true when the filter is on, false when it is off or not found.",
+      "example": "bool blurred = CPH.SlobsIsFilterEnabled(\"Gameplay\", \"Webcam\", \"Blur\");\nCPH.LogInfo($\"Blur on: {blurred}\");"
+    }
+  }
+}

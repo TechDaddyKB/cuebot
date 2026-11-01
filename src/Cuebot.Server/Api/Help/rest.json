@@ -1,0 +1,536 @@
+{
+  "operations": {
+    "GET /status": {
+      "description": "Tells you Cuebot's version, which platforms are connected, which servers run, and how many actions, commands, timers and variables you have. A quick way to check your token works."
+    },
+    "GET /openapi.json": {
+      "description": "Gives you this whole list of addresses as one OpenAPI file. OpenAPI is a standard way to describe an API, so tools like Postman or Swagger can read it and build requests for you."
+    },
+    "GET /actions": {
+      "description": "Lists your actions in short form: id, name, group, whether they are on, their triggers and how many steps they have. Add ?group=Alerts or ?search=raid to show only some."
+    },
+    "POST /actions": {
+      "description": "Makes a new action from the JSON you send. Cuebot checks every trigger and sub-action type and setting first; mistakes come back as 400 with a list of problems. Find type ids with GET /triggers and GET /subactions.",
+      "example": {
+        "name": "Say hello",
+        "group": "Chat",
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "command.triggered",
+            "settings": {
+              "command": "Hello"
+            }
+          }
+        ],
+        "subActions": [
+          {
+            "type": "chat.send",
+            "parameters": {
+              "platform": "All",
+              "message": "Hi %user%, welcome in!"
+            }
+          }
+        ]
+      }
+    },
+    "GET /actions/{id}": {
+      "description": "Gives you one whole action: its settings, triggers and every sub-action, with the steps inside If and Group branches. Good to copy, change and send back with PUT."
+    },
+    "PUT /actions/{id}": {
+      "description": "Swaps the whole action for the one you send. The id in the address is kept. Fields you leave out go back to their defaults, so send the full action (get it with GET first). Use PATCH to change only a part.",
+      "example": {
+        "name": "Say hello",
+        "group": "Chat",
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "command.triggered",
+            "settings": {
+              "command": "Hello"
+            }
+          }
+        ],
+        "subActions": [
+          {
+            "type": "chat.send",
+            "parameters": {
+              "platform": "All",
+              "message": "Hi %user%, welcome in!"
+            }
+          }
+        ]
+      }
+    },
+    "PATCH /actions/{id}": {
+      "description": "Changes only the top-level fields you send and keeps the rest. Example: {\"enabled\": false} or {\"name\": \"New name\"}. A list like subActions is replaced as a whole, not added to.",
+      "example": {
+        "name": "Say hello (new)",
+        "group": "Chat"
+      }
+    },
+    "DELETE /actions/{id}": {
+      "description": "Deletes the action for good. Its triggers stop at once. There is no undo, so export it first (GET /export) if you may want it back."
+    },
+    "POST /actions/{id}/run": {
+      "description": "Runs an action, as if its trigger happened. Without wait, Cuebot starts it and answers at once (202). With \"wait\": true, Cuebot answers when the action has finished, with how it went. A turned-off action answers 409.",
+      "example": {
+        "args": {
+          "user": "Bob",
+          "message": "hello"
+        },
+        "wait": true,
+        "timeoutSeconds": 10
+      }
+    },
+    "POST /actions/{id}/enable": {
+      "description": "Turns the action on, so its triggers work again. The change is saved. You get the action's short form back."
+    },
+    "POST /actions/{id}/disable": {
+      "description": "Turns the action off. Its triggers are ignored and it cannot be run until you turn it on again. The change is saved."
+    },
+    "GET /triggers": {
+      "description": "Lists every kind of trigger Cuebot knows, like twitch.follow or command.triggered, with their settings. Add ?category=Twitch or ?search=raid to show only some. The answer also lists all categories."
+    },
+    "GET /triggers/{type}": {
+      "description": "Tells you everything about one trigger type, like twitch.follow: its settings with help, live suggestions (for example your command names) and a settingsSchema that tools can check against."
+    },
+    "GET /subactions": {
+      "description": "Lists every kind of sub-action (step) Cuebot knows, like chat.send or core.delay, with their settings and branches. Add ?category=OBS or ?search=scene to show only some."
+    },
+    "GET /subactions/{type}": {
+      "description": "Tells you everything about one sub-action type, like chat.send: its settings with help, its branches and a parametersSchema that tools can check against."
+    },
+    "GET /scriptfunctions": {
+      "description": "Lists the functions you can call from C# or Python code steps, with a short description and their inputs. Add ?search=chat to find some."
+    },
+    "GET /commands": {
+      "description": "Lists all your chat commands with their settings."
+    },
+    "POST /commands": {
+      "description": "Makes a new chat command, like !hello. A command does nothing alone: give an action a command.triggered trigger with the command's name so it runs when someone types it.",
+      "example": {
+        "name": "Hello",
+        "group": "Chat",
+        "enabled": true,
+        "mode": "Basic",
+        "location": "Start",
+        "commands": [
+          "!hello",
+          "!hi"
+        ],
+        "sources": [],
+        "minimumRole": "Everyone",
+        "userCooldownSeconds": 30
+      }
+    },
+    "GET /commands/{id}": {
+      "description": "Gives you one command and, in linkedActions, the actions it runs (the ones with a command.triggered trigger for it). Use the command's name, like Hello, not what viewers type."
+    },
+    "PUT /commands/{id}": {
+      "description": "Swaps the whole command for the one you send. The id in the address is kept. Fields you leave out go back to their defaults, so send the full command. Use PATCH to change only a part.",
+      "example": {
+        "name": "Hello",
+        "group": "Chat",
+        "enabled": true,
+        "mode": "Basic",
+        "location": "Start",
+        "commands": [
+          "!hello",
+          "!hi"
+        ],
+        "sources": [],
+        "minimumRole": "Everyone",
+        "userCooldownSeconds": 30
+      }
+    },
+    "PATCH /commands/{id}": {
+      "description": "Changes only the fields you send and keeps the rest. Example: {\"enabled\": false} or {\"userCooldownSeconds\": 60}. A list like commands is replaced as a whole.",
+      "example": {
+        "userCooldownSeconds": 60,
+        "commands": [
+          "!hello",
+          "!hi",
+          "!hey"
+        ]
+      }
+    },
+    "DELETE /commands/{id}": {
+      "description": "Deletes the command for good. Actions that used it stay, but nothing starts them from chat any more."
+    },
+    "GET /timers": {
+      "description": "Lists your timers. While timers run, each one also has a state: on or off right now, its interval and when it goes off next."
+    },
+    "POST /timers": {
+      "description": "Makes a new timer. A timer only goes off; to make it do something, give an action a core.timer trigger with the timer's name. The answer has a hint with that trigger.",
+      "example": {
+        "name": "Social links",
+        "enabled": true,
+        "intervalSeconds": 1200,
+        "repeat": true,
+        "minChatLines": 5
+      }
+    },
+    "GET /timers/{id}": {
+      "description": "Gives you one timer, with its state right now when timers run."
+    },
+    "PUT /timers/{id}": {
+      "description": "Swaps the whole timer for the one you send. The id in the address is kept. Fields you leave out go back to their defaults (300 seconds, repeat on). Use PATCH to change only a part.",
+      "example": {
+        "name": "Social links",
+        "enabled": true,
+        "intervalSeconds": 1200,
+        "repeat": true,
+        "minChatLines": 5
+      }
+    },
+    "PATCH /timers/{id}": {
+      "description": "Changes only the fields you send and keeps the rest, and saves it. Example: {\"intervalSeconds\": 600}. For a change that is not saved, use POST /timers/{id}/state.",
+      "example": {
+        "intervalSeconds": 600
+      }
+    },
+    "DELETE /timers/{id}": {
+      "description": "Deletes the timer for good. Actions with a core.timer trigger for it stay, but nothing starts them any more."
+    },
+    "POST /timers/{id}/state": {
+      "description": "Turns a timer on or off, or changes how often it goes off, only until Cuebot restarts. Nothing is saved, like the Set timer state sub-action. Turning it on or changing the time starts the wait again from now.",
+      "example": {
+        "enabled": true,
+        "intervalSeconds": 600
+      }
+    },
+    "GET /globals": {
+      "description": "Lists your global variables, the ~name~ words every action can use. Add ?persisted=true for only the saved ones, or ?persisted=false for only the temporary ones."
+    },
+    "GET /globals/{name}": {
+      "description": "Gives you one global variable: its value, what kind of value it is, whether it is saved, and when it last changed."
+    },
+    "PUT /globals/{name}": {
+      "description": "Sets a global variable, and makes it if it is new. Example: {\"value\": 3} for ~deaths~. It is saved unless you send \"persisted\": false.",
+      "example": {
+        "value": 3,
+        "persisted": true
+      }
+    },
+    "DELETE /globals/{name}": {
+      "description": "Deletes a global variable. Actions that use ~name~ then find it empty."
+    },
+    "GET /history": {
+      "description": "Lists recent action runs, newest first, with runs still waiting or running. You see what started each one, how long it took and any error. Add ?action=Say%20hello for one action or ?includeArgs=true for its variables."
+    },
+    "GET /media": {
+      "description": "Tells you about media requests: the video playing, the waiting queue, whether viewers may request now, whether the player is paused, and the volume."
+    },
+    "POST /media/requests": {
+      "description": "Adds a YouTube video to the media request queue. It is free and does not count toward a viewer's limit. If Cuebot refuses it (closed, queue full, private video...), you get 400 with the reason.",
+      "example": {
+        "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "user": "Bob"
+      }
+    },
+    "DELETE /media/requests/{id}": {
+      "description": "Takes a waiting video out of the queue and gives the viewer their points back. Find the id in GET /media. A video that is already playing cannot be removed here; use skip."
+    },
+    "POST /media/{command}": {
+      "description": "Controls media requests. skip: play the next video (404 if nothing plays). pause / resume: stop or go on with the player. clear: empty the waiting queue and refund it. open / close: let viewers request, or stop them."
+    },
+    "GET /giveaway": {
+      "description": "Tells you about the giveaway running now, or the last one: the prize, how to enter, how many people and tickets, and the winners. giveaway is empty if there has never been one."
+    },
+    "POST /giveaway": {
+      "description": "Opens a giveaway. Viewers on every platform enter with a chat command, like !join (or !join 3 for 3 tickets). Tickets can cost Cuebot points. Only one giveaway at a time: draw or cancel the last one first (else 409).",
+      "example": {
+        "title": "Steam game key",
+        "command": "!join",
+        "ticketCost": 100,
+        "maxTickets": 5,
+        "subscriberLuck": 2,
+        "subscribersOnly": false,
+        "seconds": 300,
+        "winners": 1
+      }
+    },
+    "POST /giveaway/{command}": {
+      "description": "Controls the giveaway. close: stop taking entries. draw: pick the winners at random. redraw: pick one more winner (for example if one did not answer). cancel: stop it and give every ticket's points back."
+    },
+    "GET /store": {
+      "description": "Tells you about the points store: the chat command to buy (like !redeem), the items, purchases waiting for your OK, and the latest 20 finished ones."
+    },
+    "POST /store/redemptions/{id}/{command}": {
+      "description": "Answers a store purchase that waits for your OK. approve: accept it. reject: say no; the viewer gets the points back and the item goes back in stock. Find the id in pending from GET /store."
+    },
+    "GET /polls": {
+      "description": "Tells you the latest poll and prediction from each place (Twitch, YouTube and Cuebot's own), with votes and points, plus the chat commands to vote and bet in Cuebot's own ones."
+    },
+    "POST /polls": {
+      "description": "Starts a Cuebot chat poll that works on every platform. Viewers vote with the vote command, like !vote 2. Give 2 to 10 choices. Only one poll at a time (else 409).",
+      "example": {
+        "title": "Which game next?",
+        "choices": [
+          "Minecraft",
+          "Elden Ring",
+          "Tetris"
+        ],
+        "duration": 120
+      }
+    },
+    "POST /polls/end": {
+      "description": "Ends the Cuebot chat poll that runs now and shows the result. 404 if no poll runs."
+    },
+    "POST /predictions": {
+      "description": "Starts a Cuebot prediction. Viewers bet Cuebot points on an outcome with the bet command, like !bet 1 500. Winners share all the points. Needs Cuebot points, and only one at a time (else 409).",
+      "example": {
+        "title": "Will I beat the boss?",
+        "outcomes": [
+          "Yes",
+          "No"
+        ],
+        "window": 120,
+        "currency": ""
+      }
+    },
+    "POST /predictions/{command}": {
+      "description": "Controls the Cuebot prediction. lock: stop taking bets. resolve: pick the winning outcome, with {\"winner\": 1} (count from 1) or its title, and pay the winners. cancel: stop it and give every bet back.",
+      "example": {
+        "winner": "1"
+      }
+    },
+    "GET /speech": {
+      "description": "Tells you about Cuebot's speech (text read out loud): whether it is on, paused, how many texts wait, and the text playing now."
+    },
+    "POST /speech/{command}": {
+      "description": "Controls the speech queue. pause / resume: hold or go on. skip: stop the text playing now. next: stop the text playing and, while paused, let one waiting text play, so you can go through them one by one."
+    },
+    "GET /alerts": {
+      "description": "Tells you whether the alerts on your stream overlay are paused (new ones wait) or muted (no sound)."
+    },
+    "POST /alerts/{command}": {
+      "description": "Controls the alerts on every overlay page. pause: the alert playing finishes, new ones wait. resume: go on. skip: end the alert playing now. mute / unmute: turn alert sounds and videos off or on."
+    },
+    "GET /chat": {
+      "description": "Gives you the latest chat messages from all platforms in one list, plus the activity feed (follows, subs, raids...). Add ?limit=20 for fewer. It also lists which platforms can send."
+    },
+    "POST /chat": {
+      "description": "Writes a chat message. Pick a platform, like \"Twitch\", or \"All\" (the default) for every connected one. 409 if no platform could send.",
+      "example": {
+        "message": "Thanks for watching! See you tomorrow.",
+        "platform": "All"
+      }
+    },
+    "POST /import/preview": {
+      "description": "Shows what an import would add or change, without changing anything. Send the import text in data: a Cuebot share text (starts with CUEBOT1:) or a Streamer.bot export.",
+      "example": {
+        "data": "CUEBOT1:PASTE_THE_WHOLE_IMPORT_TEXT_HERE"
+      }
+    },
+    "POST /import/apply": {
+      "description": "Imports a Cuebot share text (CUEBOT1:...) or a Streamer.bot export. Nothing in it runs. mode says what to do when something with the same id or name is already there. Check it with /import/preview first.",
+      "example": {
+        "data": "CUEBOT1:PASTE_THE_WHOLE_IMPORT_TEXT_HERE",
+        "mode": "addAsNew",
+        "items": [
+          {
+            "kind": "action",
+            "name": "Say hello",
+            "include": true,
+            "mode": "overwrite"
+          }
+        ]
+      }
+    },
+    "GET /export": {
+      "description": "Makes a share text (starts with CUEBOT1:) for the things you name, like ?actions=Say%20hello,Raid%20alert. Others can paste it into their import. Things they need, like queues and other actions, come along unless includeDependencies=false."
+    },
+    "GET /events": {
+      "description": "Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends. Add ?types=twitch.* for only some. At most 16 at once."
+    }
+  },
+  "fields": {
+    "Action.id": "The action's id, a long code like \"3f2b9c1e-...\". Leave it out for a new action and Cuebot makes one.",
+    "Action.name": "The action's name, like \"Thank followers\". It must not be empty.",
+    "Action.group": "A folder name to keep actions tidy, like \"Alerts\". Empty means no group.",
+    "Action.enabled": "true: the action is on. false: it is off and its triggers are ignored.",
+    "Action.queue": "The name of the action queue it waits in, from the Queues page. Empty means the Default queue.",
+    "Action.concurrent": "Only without a queue. false (default): runs of this action wait for each other. true: they can run at the same time.",
+    "Action.randomAction": "true: run only ONE of the top steps, picked at random (steps with a bigger weight are picked more often).",
+    "Action.concurrentSubActions": "true: start all top steps at the same time instead of one after another. Ignored when randomAction is true.",
+    "Action.alwaysRun": "true: the action still starts while its queue is paused.",
+    "Action.excludeFromHistory": "true: runs of this action are left out of the history and the pending list. Good for actions that run very often.",
+    "Action.triggers": "What starts the action, like a follow or a chat command. Each one has a type and its settings. With no triggers it only runs when you or another action start it.",
+    "Action.subActions": "The steps the action does, in order, like \"send a chat message\" then \"wait 2 seconds\". Steps can hold more steps in their branches.",
+    "Command.id": "The command's id, a long code. Leave it out for a new command and Cuebot makes one.",
+    "Command.name": "The command's name, like \"Hello\". Triggers find the command by this name. It must not be empty.",
+    "Command.group": "A folder name to keep commands tidy, like \"Fun\". Empty means no group.",
+    "Command.enabled": "true: the command works. false: chat typing it does nothing.",
+    "Command.mode": "Basic: the texts are typed as they are, like !hello. Regex: each text is a search pattern (for advanced users).",
+    "Command.location": "Where in the message the command must be. Start: at the start, like \"!so bob\". Exact: the whole message. Anywhere: anywhere, as its own word.",
+    "Command.commands": "What viewers type, like [\"!hello\", \"!hi\"]. They share one cooldown and one counter. With none, the command never works.",
+    "Command.sources": "Where it listens, like [\"Twitch\", \"YouTube\"] or \"Twitch:Whisper\" for whispers. Empty means every platform.",
+    "Command.caseSensitive": "true: capital letters must match, so !Hello is not !hello. false (default): they do not matter.",
+    "Command.globalCooldownSeconds": "Seconds to wait before anyone can use it again, like 10. 0 means no wait.",
+    "Command.userCooldownSeconds": "Seconds one viewer must wait before using it again, like 30. 0 means no wait.",
+    "Command.minimumRole": "Who may use it: Everyone, Subscriber, Vip, Moderator or Broadcaster (you). Higher roles can always use it too.",
+    "Command.linkedActions": "The actions this command runs (each with id and name): those with a command.triggered trigger for it. Cuebot fills this in; it is ignored when you send it.",
+    "Timer.id": "The timer's id, a long code. Leave it out for a new timer and Cuebot makes one.",
+    "Timer.name": "The timer's name, like \"Social links\". core.timer triggers find the timer by this name. It must not be empty.",
+    "Timer.enabled": "true: the timer runs. false: it is off.",
+    "Timer.intervalSeconds": "How many seconds between two goes, like 1200 for 20 minutes. At least 1 when there is no cron and no random interval.",
+    "Timer.repeat": "true (default): it goes off again and again. false: it goes off once, then waits until it is turned on again.",
+    "Timer.randomInterval": "true: wait a random time between minIntervalSeconds and maxIntervalSeconds each time, instead of intervalSeconds.",
+    "Timer.minIntervalSeconds": "With randomInterval: the shortest wait, in seconds, like 600. At least 1.",
+    "Timer.maxIntervalSeconds": "With randomInterval: the longest wait, in seconds, like 1800. Not smaller than minIntervalSeconds.",
+    "Timer.minChatLines": "Only go off if at least this many chat messages came in since last time, like 5. Else that turn is skipped. 0 means always.",
+    "Timer.cron": "A clock schedule instead of a wait, in your local time, like \"0 * * * *\" (every hour) or \"*/15 * * * *\" (every 15 minutes). Empty: use the interval.",
+    "Timer.state": "What the timer does right now (only while timers run): on or off, its interval, when it goes off next, and chat lines since last time. Cuebot fills this in; it is ignored when you send it.",
+    "POST /actions/{id}/run.args": "Variables for the action, like {\"user\": \"Bob\"}. Each one becomes a %name% word in its steps, so %user% turns into Bob.",
+    "POST /actions/{id}/run.wait": "true: answer only when the action has finished, with how it went. false or left out: answer at once (202) while it runs.",
+    "POST /actions/{id}/run.timeoutSeconds": "With wait: the most seconds to wait, from 1 to 300 (default 30). If it takes longer, you get 202 and the action keeps running.",
+    "POST /timers/{id}/state.enabled": "true: turn the timer on. false: turn it off. Leave it out to keep it as it is. Not saved.",
+    "POST /timers/{id}/state.intervalSeconds": "New seconds between goes, like 600. 0 stops it going off. Leave it out to keep it. Not saved; does nothing for cron or random timers.",
+    "PUT /globals/{name}.value": "The new value: text like \"Bob\", a number like 3, true/false, or null for empty.",
+    "PUT /globals/{name}.persisted": "true (default): the variable is saved and kept after a restart. false: it is temporary and gone when Cuebot closes.",
+    "POST /media/requests.link": "The YouTube video: a normal link, a youtu.be or shorts link, or just the video id, like \"dQw4w9WgXcQ\".",
+    "POST /media/requests.user": "The name shown as who asked for it, like \"Bob\". Empty means \"API\".",
+    "POST /giveaway.title": "The prize, like \"Steam game key\". It must not be empty.",
+    "POST /giveaway.command": "What viewers type to enter, like \"!join\" (the default). \"!join 3\" then buys 3 tickets.",
+    "POST /giveaway.ticketCost": "Cuebot points one ticket costs, like 100. 0 (default) means free.",
+    "POST /giveaway.maxTickets": "The most tickets one viewer can have, like 5. Default 1.",
+    "POST /giveaway.currency": "Which points currency pays for tickets, like \"Coins\". Empty means your main currency.",
+    "POST /giveaway.subscriberLuck": "How many times a subscriber's tickets count, like 2 for double chance. 1 (default) means the same as everyone. Not below 1.",
+    "POST /giveaway.subscribersOnly": "true: only subscribers can enter. false (default): everyone can.",
+    "POST /giveaway.seconds": "How many seconds it takes entries, like 300 for 5 minutes. 0 (default) means until you close it.",
+    "POST /giveaway.winners": "How many winners to draw, like 3. Default 1. The same viewer never wins twice.",
+    "POST /polls.title": "The question, like \"Which game next?\". It must not be empty.",
+    "POST /polls.choices": "The answers, 2 to 10 different ones, like [\"Minecraft\", \"Tetris\"]. Viewers vote by number (!vote 1) or by the answer.",
+    "POST /polls.duration": "How many seconds the poll runs, like 120. Default 60. 0 means until you end it.",
+    "POST /predictions.title": "The question, like \"Will I beat the boss?\". It must not be empty.",
+    "POST /predictions.outcomes": "The possible results, 2 to 10 different ones, like [\"Yes\", \"No\"].",
+    "POST /predictions.window": "How many seconds viewers can bet, like 120 (the default). 0 means until you lock it.",
+    "POST /predictions.currency": "Which points currency viewers bet, like \"Coins\". Empty means your main currency.",
+    "POST /predictions/{command}.winner": "Only for resolve: the winning outcome's number counting from 1, like \"1\", or its title, like \"Yes\". Leave it out for lock and cancel.",
+    "POST /chat.message": "What to write, like \"Thanks for watching!\". It must not be empty.",
+    "POST /chat.platform": "Where to write, like \"Twitch\" or \"YouTube\". \"All\" or empty writes on every connected platform. GET /chat lists the ones that can send.",
+    "POST /import/preview.data": "The import text: a Cuebot share text (starts with CUEBOT1:), Cuebot share JSON, or a Streamer.bot export string.",
+    "POST /import/apply.data": "The import text: a Cuebot share text (starts with CUEBOT1:), Cuebot share JSON, or a Streamer.bot export string.",
+    "POST /import/apply.mode": "What to do when something with the same id or name is already there. overwrite: replace it. addAsNew: add a copy with a new name. skip: keep yours.",
+    "POST /import/apply.items": "Choices for single things, like [{\"kind\": \"action\", \"name\": \"Say hello\", \"include\": false}]. kind is action, queue, command, timer or global. Leave it out to import everything.",
+    "Error.error": "What went wrong, in one sentence, like \"Action 'Say hi' not found\".",
+    "Error.details": "When there are several problems: one entry per problem, each with where it is and what is wrong.",
+    "Problem.path": "Where the problem is in the data you sent, like \"subActions[0].parameters.platform\" (the first step's platform setting).",
+    "Problem.message": "What is wrong there, like \"'Twich' is not one of: All, Twitch, YouTube\".",
+    "Deleted.deleted": "true when it was deleted.",
+    "Deleted.id": "The id of what was deleted. Global variables have none.",
+    "Deleted.name": "The name of what was deleted.",
+    "Status.app": "About Cuebot itself: name, version (like \"0.1.0\"), the .NET version, your system, this copy's id, and the API version (v1).",
+    "Status.connections": "One entry per platform or app, like Twitch or OBS: its name, its state (like Connected) and a status message.",
+    "Status.servers": "One entry per Cuebot server, like the overlay server: its kind, name, whether it is turned on and running, its port and a status message.",
+    "Status.counts": "How many you have of each thing: actions, enabledActions, timers, queues, commands, globals, triggerTypes and subActionTypes.",
+    "Status.chat": "Which platforms chat comes from (platforms), and which can send messages now (sendablePlatforms).",
+    "ActionSummary.id": "The action's id, a long code. You can use it, or the name, in addresses.",
+    "ActionSummary.name": "The action's name, like \"Thank followers\".",
+    "ActionSummary.group": "The action's folder, like \"Alerts\". Empty means no group.",
+    "ActionSummary.enabled": "true if the action is on.",
+    "ActionSummary.queue": "The action queue it waits in. Empty means the Default queue.",
+    "ActionSummary.triggers": "Its triggers in short: each one's type (like twitch.follow) and whether it is on.",
+    "ActionSummary.subActionCount": "How many steps it has, counting the steps inside branches.",
+    "Trigger.id": "The trigger's id, a long code. Leave it out and Cuebot makes one.",
+    "Trigger.type": "What kind of trigger it is, like \"twitch.follow\" or \"command.triggered\". GET /triggers lists them all.",
+    "Trigger.enabled": "true (default): the trigger works. false: it is ignored.",
+    "Trigger.settings": "The trigger's settings, each one as text, like {\"command\": \"Hello\"}. Numbers and true/false are written in quotes too. GET /triggers/{type} lists them.",
+    "SubAction.id": "The step's id, a long code. Leave it out and Cuebot makes one.",
+    "SubAction.type": "What the step does, like \"chat.send\" or \"core.delay\". GET /subactions lists them all.",
+    "SubAction.enabled": "true (default): the step runs. false: it is skipped.",
+    "SubAction.parameters": "The step's settings, each one as text, like {\"milliseconds\": \"2000\"}. They may use %variables% and ~globals~. GET /subactions/{type} lists them.",
+    "SubAction.branches": "Steps inside this step, by branch name: like {\"True\": [...], \"False\": [...]} for an If, or {\"Steps\": [...]} for a Group.",
+    "SubAction.weight": "How likely this step is to be picked when only one random step runs. Default 1; 2 is twice as likely; 0 means never.",
+    "Parameter.key": "The setting's name to use in settings or parameters, like \"message\".",
+    "Parameter.label": "The setting's name as the app shows it, like \"Message\".",
+    "Parameter.kind": "What to put in: text, multiline (several lines), number, boolean (\"true\" or \"false\"), choice (one from choices) or code.",
+    "Parameter.default": "The value used when you leave the setting out.",
+    "Parameter.choices": "For a choice setting: the values you may use, like [\"All\", \"Twitch\"].",
+    "Parameter.language": "For a code setting: the language, like \"csharp\" or \"python\".",
+    "Parameter.help": "A short help text that says what to put in.",
+    "Parameter.suggestions": "Values that fit right now, like your OBS scene or command names (only for one type). You may still type others.",
+    "TriggerType.typeId": "The id to put in a trigger's type, like \"twitch.follow\".",
+    "TriggerType.name": "The trigger's name as the app shows it, like \"Command triggered\".",
+    "TriggerType.category": "The group it is in, like \"Twitch\".",
+    "TriggerType.eventTypes": "The Cuebot events it listens to. They are the same names GET /events sends.",
+    "TriggerType.parameters": "Its settings, one entry per setting.",
+    "TriggerType.settingsSchema": "Only for one type: its settings as a JSON Schema, a standard way for tools to check the settings before you send them.",
+    "SubActionType.typeId": "The id to put in a step's type, like \"chat.send\".",
+    "SubActionType.name": "The step's name as the app shows it, like \"Send chat message (any platform)\".",
+    "SubActionType.category": "The group it is in, like \"Chat\" or \"OBS\".",
+    "SubActionType.branches": "The branch names its inner steps can go under, like True and False for an If.",
+    "SubActionType.dynamicBranches": "true: the branch names depend on the step's settings (for example the cases of a Switch).",
+    "SubActionType.container": "true: the step holds and runs other steps itself, like a Group or a loop.",
+    "SubActionType.parameters": "Its settings, one entry per setting.",
+    "SubActionType.parametersSchema": "Only for one type: its settings as a JSON Schema, a standard way for tools to check the settings before you send them.",
+    "GlobalVariable.name": "The variable's name without the ~ signs, like \"deaths\".",
+    "GlobalVariable.value": "What it holds now: text, a number, true/false, or null when empty.",
+    "GlobalVariable.type": "What kind of value it is: text, integer (whole number), decimal, boolean (true/false) or empty.",
+    "GlobalVariable.persisted": "true: saved and kept after a restart. false: temporary, gone when Cuebot closes.",
+    "GlobalVariable.lastWrite": "When it last changed, as date and time, like \"2026-11-01T20:15:00+01:00\".",
+    "Run.runId": "This run's own id, a long code.",
+    "Run.actionId": "The id of the action that ran.",
+    "Run.actionName": "The name of the action that ran.",
+    "Run.queue": "The action queue it waited in, like \"Default\".",
+    "Run.source": "What started it, like a trigger's name, \"API\" or \"Manual\".",
+    "Run.state": "Where it is: Pending (waiting in its queue), Running, Completed, Cancelled or Failed.",
+    "Run.queuedAt": "When it was started and put in its queue, as date and time.",
+    "Run.startedAt": "When it really began. Empty while it still waits.",
+    "Run.completedAt": "When it ended. Empty while it still waits or runs.",
+    "Run.durationMs": "How long it ran, in milliseconds (1000 = 1 second), not counting the wait in its queue.",
+    "Run.error": "What went wrong, if it failed. Empty when all went well.",
+    "Run.depth": "0 when a trigger, you or the API started it. 1 or more when another action or a code step started it.",
+    "Run.args": "Only with includeArgs: the %variables% it started with.",
+    "Run.argsAfterRun": "Only with includeArgs: the %variables% when it finished, with the ones its steps added.",
+    "RunResult.queued": "true when Cuebot accepted the run.",
+    "RunResult.completed": "Only with wait: true when it finished in time. false when it still runs after timeoutSeconds.",
+    "RunResult.success": "Only when completed: true when the action went well, false when it failed.",
+    "RunResult.action": "Which action it was: its id and name.",
+    "RunResult.run": "Only when completed: the run's details, like its state, duration, error and variables.",
+    "RunResult.message": "Only when it did not finish in time: tells you to look in GET /history later.",
+    "ImportPlan.source": "Where the import comes from: Cuebot (a Cuebot share text) or StreamerBot (a Streamer.bot export).",
+    "ImportPlan.header": "About the import: its name, author, description, version, when it was made and which program made it.",
+    "ImportPlan.items": "One entry per thing in the import: its kind, name, whether it clashes with one you have, what will happen, and things to check.",
+    "ImportPlan.warnings": "Things to check after the import, like steps that point to something you do not have.",
+    "ImportPlan.mapped": "For Streamer.bot imports: what was turned into what, like \"Send Message → twitch.sendMessage\".",
+    "ImportPlan.placeholders": "How many Streamer.bot steps Cuebot could not turn into its own. They come in as turned-off stand-in steps for you to redo.",
+    "ImportPlan.containsCode": "true when the import has C# or Python code steps. Read code before you run it.",
+    "Giveaway.id": "The giveaway's id.",
+    "Giveaway.title": "The prize, like \"Steam game key\".",
+    "Giveaway.status": "Where it is: open (taking entries), closed (no more entries), drawn (winners picked) or canceled.",
+    "Giveaway.command": "What viewers type to enter, like \"!join\".",
+    "Giveaway.ticketCost": "Cuebot points one ticket costs. 0 means free.",
+    "Giveaway.maxTickets": "The most tickets one viewer can have.",
+    "Giveaway.currency": "The name of the points currency that pays for tickets.",
+    "Giveaway.subscribersOnly": "true when only subscribers can enter.",
+    "Giveaway.endsAt": "When entries close, as date and time (UTC). Empty when it runs until you close it.",
+    "Giveaway.entrants": "How many viewers entered.",
+    "Giveaway.tickets": "How many tickets there are in all.",
+    "Giveaway.recent": "The names of the latest viewers who entered, newest first (up to 8).",
+    "Giveaway.winners": "The winners so far, each with name and platform.",
+    "Poll.source": "Where it runs: twitch, youtube or cuebot (Cuebot's own chat poll or prediction).",
+    "Poll.kind": "What it is: poll (viewers vote) or prediction (viewers bet points on the result).",
+    "Poll.id": "The poll's or prediction's id.",
+    "Poll.title": "The question, like \"Which game next?\".",
+    "Poll.status": "Where it is: active, locked (a prediction taking no more bets), ended or canceled.",
+    "Poll.choices": "The answers, each with its id, title, votes (people), points bet and percent.",
+    "Poll.winner": "The winning answer's place, counting from 0 (0 is the first answer). -1 while there is no winner.",
+    "Poll.endsAt": "When voting or betting closes, as date and time (UTC). Empty when it has no time limit.",
+    "Poll.totalVotes": "How many votes (or bettors) in all.",
+    "Poll.totalPoints": "For predictions: how many points were bet in all.",
+    "Poll.currency": "For Cuebot predictions: the name of the points currency bet.",
+    "Poll.command": "For Cuebot's own: the chat command to vote or bet, like \"!vote\" or \"!bet\".",
+    "Action.layout": "Where this box sits on the flowchart view, as x and y. Only for looks; leave it out and Cuebot places it.",
+    "Trigger.layout": "Where this box sits on the flowchart view, as x and y. Only for looks; leave it out and Cuebot places it.",
+    "SubAction.layout": "Where this box sits on the flowchart view, as x and y. Only for looks; leave it out and Cuebot places it.",
+    "NodeLayout.x": "How far from the left of the flowchart, in pixels.",
+    "NodeLayout.y": "How far from the top of the flowchart, in pixels.",
+    "Command.allowedUsers": "Viewer names or ids that may always use the command, even without the minimum role.",
+    "Command.allowedGroups": "Viewer groups whose members may always use the command, even without the minimum role.",
+    "Command.deniedUsers": "Viewer names or ids that may never use the command. You, the broadcaster, always can.",
+    "Command.deniedGroups": "Viewer groups whose members may never use the command."
+  }
+}

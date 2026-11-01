@@ -20,7 +20,7 @@ internal sealed class IntegrationsScriptFunctions(VTubeStudioService vts, Voicem
         // ---- VTube Studio ----
         new("vtubestudio.isConnected", "True while VTube Studio is connected and authenticated", [],
             (_, _, _) => Task.FromResult<object?>(vts.IsConnected)),
-        new("vtubestudio.triggerHotkey", "Trigger a VTube Studio hotkey by name or id; returns its id", ["hotkey"],
+        new("vtubestudio.triggerHotkey", "Trigger a VTube Studio hotkey by name or id; returns its id", ["hotkey", "itemInstanceId"],
             async (_, a, ct) => await vts.TriggerHotkeyAsync(a.GetString("hotkey"), a.GetString("itemInstanceId"), ct).ConfigureAwait(false)),
         new("vtubestudio.loadModel", "Load a VTube Studio model by name or id; returns its id", ["model"],
             async (_, a, ct) => await vts.LoadModelAsync(a.GetString("model"), ct).ConfigureAwait(false)),
@@ -31,11 +31,11 @@ internal sealed class IntegrationsScriptFunctions(VTubeStudioService vts, Voicem
                     Num(a, "rotation"), Num(a, "size"), ct).ConfigureAwait(false);
                 return true;
             }),
-        new("vtubestudio.setExpression", "Set an expression: state On, Off or Toggle; returns the new state", ["expression", "state"],
+        new("vtubestudio.setExpression", "Set an expression: state On, Off or Toggle; returns the new state", ["expression", "state", "fadeTime"],
             async (_, a, ct) => await vts.SetExpressionAsync(a.GetString("expression"), Steps.ParseSwitch(a.GetString("state", "On")),
                 Num(a, "fadeTime") ?? 0.25, ct).ConfigureAwait(false)),
         new("vtubestudio.injectParameters", "Inject parameter values, e.g. \"FaceAngleX=20, MouthOpen=1\", held for holdSeconds",
-            ["parameters", "holdSeconds", "mode"], async (_, a, ct) =>
+            ["parameters", "holdSeconds", "mode", "faceFound"], async (_, a, ct) =>
             {
                 var parameters = a.GetElement("parameters") is { ValueKind: JsonValueKind.Object or JsonValueKind.Array } json
                     ? json.GetRawText() : a.GetString("parameters");

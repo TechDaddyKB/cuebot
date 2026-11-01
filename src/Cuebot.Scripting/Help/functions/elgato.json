@@ -1,0 +1,121 @@
+{
+  "functions": {
+    "elgato.lights.list": {
+      "description": "Lists every Elgato light Cuebot knows, like a Key Light or Light Strip.",
+      "parameters": {},
+      "returns": "A list of lights. Each has deviceId, deviceName, productName, serialNumber, ipAddress, port and online. Lights that answered also have on, brightness, temperature (Kelvin), hue and saturation.",
+      "example": {}
+    },
+    "elgato.lights.isRunning": {
+      "description": "Checks whether Cuebot is watching your Elgato lights right now.",
+      "parameters": {},
+      "returns": "true while Cuebot checks your lights, otherwise false.",
+      "example": {}
+    },
+    "elgato.lights.start": {
+      "description": "Starts looking for Elgato lights on your network and watching them. It starts over if it was already running.",
+      "parameters": {},
+      "returns": "true once it has started.",
+      "example": {}
+    },
+    "elgato.lights.discover": {
+      "description": "Looks for Elgato lights on your network right now.",
+      "parameters": {},
+      "returns": "A list of the lights that were found (same details as elgato.lights.list).",
+      "example": {}
+    },
+    "elgato.lights.add": {
+      "description": "Adds an Elgato light by its network address. Handy when Cuebot does not find it on its own. Fails with an error when the light cannot be reached.",
+      "parameters": {
+        "address": "The light's IP address, like \"192.168.1.50\". You can add a port, like \"192.168.1.50:9123\". Find it in the Elgato Control Center app."
+      },
+      "returns": "The light that was added, with the same details as elgato.lights.list.",
+      "example": { "address": "192.168.1.50" }
+    },
+    "elgato.lights.setPower": {
+      "description": "Turns Elgato lights on or off. Fails with an error when no light matches.",
+      "parameters": {
+        "device": "Which light: its name, id or IP address. Split several with commas. \"All\" or empty means every light.",
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch to the other one). Default \"Toggle\"."
+      },
+      "returns": "A list of the lights that changed, with their new details.",
+      "example": { "device": "Key Light", "state": "On" }
+    },
+    "elgato.lights.setBrightness": {
+      "description": "Changes how bright Elgato lights are. Fails with an error when no light matches.",
+      "parameters": {
+        "device": "Which light: its name, id or IP address. Split several with commas. \"All\" or empty means every light.",
+        "brightness": "How bright, 0-100 percent, like 75.",
+        "adjust": "Optional. true adds the number to the current brightness instead (use a minus number to dim). Default false."
+      },
+      "returns": "A list of the lights that changed, with their new details.",
+      "example": { "device": "Key Light", "brightness": 75 }
+    },
+    "elgato.lights.setTemperature": {
+      "description": "Changes the colour warmth of Elgato lights, from warm yellow to cool white. Fails with an error when no light matches.",
+      "parameters": {
+        "device": "Which light: its name, id or IP address. Split several with commas. \"All\" or empty means every light.",
+        "temperature": "The warmth in Kelvin, 2900 (warm) to 7000 (cool), like 4500.",
+        "adjust": "Optional. true adds the Kelvin number to the current value instead. Default false."
+      },
+      "returns": "A list of the lights that changed, with their new details.",
+      "example": { "device": "Key Light", "temperature": 4500 }
+    },
+    "elgato.lights.setColor": {
+      "description": "Changes the colour of Elgato lights that can show colours, like the Light Strip. Fails with an error when no light matches.",
+      "parameters": {
+        "device": "Which light: its name, id or IP address. Split several with commas. \"All\" or empty means every light.",
+        "hue": "The colour, 0-360 around the colour wheel: 0 red, 120 green, 240 blue.",
+        "saturation": "How strong the colour is, 0-100. 0 is white, 100 is full colour."
+      },
+      "returns": "A list of the lights that changed, with their new details.",
+      "example": { "device": "Light Strip", "hue": 270, "saturation": 100 }
+    },
+    "elgato.lights.identify": {
+      "description": "Makes Elgato lights blink, so you can see which one is which. Fails with an error when no light matches.",
+      "parameters": {
+        "device": "Which light: its name, id or IP address. Split several with commas. \"All\" or empty means every light."
+      },
+      "returns": "true when done.",
+      "example": { "device": "Key Light" }
+    },
+    "elgato.lights.rename": {
+      "description": "Gives an Elgato light a new name. The name is saved on the light itself, so Control Center shows it too.",
+      "parameters": {
+        "device": "Which light: its name, id or IP address.",
+        "name": "The new name, like \"Desk Light\"."
+      },
+      "returns": "true when done.",
+      "example": { "device": "Key Light", "name": "Desk Light" }
+    },
+    "elgato.cameraHub.isAvailable": {
+      "description": "Checks whether Cuebot can control webcam settings on this computer. Right now this works on Linux.",
+      "parameters": {},
+      "returns": "true when webcam control works here, otherwise false.",
+      "example": {}
+    },
+    "elgato.cameraHub.webcams": {
+      "description": "Lists your webcams and their current picture settings.",
+      "parameters": {},
+      "returns": "A list of webcams. Each has deviceId, deviceName, devicePath and the settings it supports, like brightness, contrast, focus, zoomValue, autoFocus, antiFlicker, mirrored and flipped.",
+      "example": {}
+    },
+    "elgato.cameraHub.set": {
+      "description": "Changes one picture setting on your webcam, like brightness or zoom. Fails with an error when the webcam or setting is not found.",
+      "parameters": {
+        "device": "Which webcam: its name, id or device path. Empty means the first webcam. \"All\" means every webcam.",
+        "control": "The setting: brightness, contrast, saturation, sharpness, focus, pan, tilt, whiteBalance, zoom, autoFocus, autoWhiteBalance, autoExposure, antiFlicker, mirror or flip.",
+        "value": "The new value as a number, like 60. Zoom is 100-400 percent. On/off settings take 1 (on) or 0 (off). antiFlicker also takes \"Off\", \"50 Hz\", \"60 Hz\" or \"Auto\".",
+        "adjust": "Optional. true adds the value to the current one instead. Default false."
+      },
+      "returns": "The new value of the setting (from the first webcam).",
+      "example": { "control": "zoom", "value": 150 }
+    },
+    "elgato.studio.isRunning": {
+      "description": "Checks whether the Elgato Studio app is open on this computer. Cuebot can only see it; Elgato Studio has no way to be controlled.",
+      "parameters": {},
+      "returns": "true while Elgato Studio is running, otherwise false.",
+      "example": {}
+    }
+  }
+}

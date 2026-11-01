@@ -1,0 +1,80 @@
+{
+  "functions": {
+    "userVars.all": {
+      "description": "Gives you every variable saved for one viewer. Leave the user settings out for the person who triggered the action.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\", \"youtube\" or \"kick\". Leave it out for the platform of the trigger.",
+        "userId": "Optional. The viewer's id on that platform.",
+        "userName": "Optional. The viewer's name. Cuebot looks it up among viewers it has seen before."
+      },
+      "returns": "An object with every variable name and its value. Empty when no viewer was found.",
+      "example": { "platform": "twitch", "userName": "CoolViewer42" }
+    },
+    "userVars.clearTemporary": {
+      "description": "Deletes every temporary user variable (the ones that are not saved), for all viewers.",
+      "parameters": {
+        "platform": "Optional. Only clear viewers of this platform, like \"twitch\". Leave it out for every platform."
+      },
+      "returns": "How many variables were deleted.",
+      "example": {}
+    },
+    "userVars.delete": {
+      "description": "Deletes one variable of one viewer. Leave the user settings out for the person who triggered the action.",
+      "parameters": {
+        "name": "The variable name, like \"lastSeen\".",
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "userId": "Optional. The viewer's id on that platform.",
+        "userName": "Optional. The viewer's name. Cuebot looks it up among viewers it has seen before."
+      },
+      "returns": "true when the variable existed, otherwise false (also when no viewer was found).",
+      "example": { "name": "lastSeen" }
+    },
+    "userVars.deleteForAllUsers": {
+      "description": "Deletes one variable from every viewer at once. Handy to reset a weekly score.",
+      "parameters": {
+        "name": "The variable name, like \"weeklyScore\".",
+        "platform": "Optional. Only viewers of this platform, like \"twitch\". Leave it out for every platform."
+      },
+      "returns": "How many viewers lost the variable.",
+      "example": { "name": "weeklyScore" }
+    },
+    "userVars.get": {
+      "description": "Reads a variable saved for one viewer. Leave the user settings out for the person who triggered the action.",
+      "parameters": {
+        "name": "The variable name, like \"wins\".",
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "userId": "Optional. The viewer's id on that platform.",
+        "userName": "Optional. The viewer's name. Cuebot looks it up among viewers it has seen before.",
+        "default": "Optional. What to give back when the viewer has no such variable, like 0."
+      },
+      "returns": "The value, or your default (null if you gave none) when it is missing.",
+      "example": { "name": "wins", "default": 0 }
+    },
+    "userVars.increment": {
+      "description": "Adds to a number saved for one viewer, like their win count. A missing variable starts at 0. Fails when no viewer can be found.",
+      "parameters": {
+        "name": "The variable name, like \"wins\".",
+        "amount": "Optional. How much to add, like 1. Use a negative number to subtract. Leave it out to add 1.",
+        "persisted": "Optional. true (the default) saves it so it is still there after a restart; false keeps it only until Cuebot closes.",
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "userId": "Optional. The viewer's id on that platform.",
+        "userName": "Optional. The viewer's name. Cuebot looks it up among viewers it has seen before."
+      },
+      "returns": "The new value.",
+      "example": { "name": "wins", "amount": 1 }
+    },
+    "userVars.set": {
+      "description": "Saves a value for one viewer, like their favourite game. Leave the user settings out for the person who triggered the action. Fails when no viewer can be found.",
+      "parameters": {
+        "name": "The variable name, like \"favouriteGame\". No spaces.",
+        "value": "The value to store: text, a number or true/false.",
+        "persisted": "Optional. true (the default) saves it so it is still there after a restart; false keeps it only until Cuebot closes.",
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "userId": "Optional. The viewer's id on that platform.",
+        "userName": "Optional. The viewer's name. Cuebot looks it up among viewers it has seen before."
+      },
+      "returns": "Nothing.",
+      "example": { "name": "favouriteGame", "value": "Minecraft" }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "text.resolve": {
+      "description": "Fills in the variables in a text, just like a sub-action does: %variables%, ~globals~ and $functions()$.",
+      "parameters": {
+        "text": "The text with placeholders, like \"Thanks %user%, you are follower number ~followers~!\"."
+      },
+      "returns": "The text with every placeholder filled in.",
+      "example": { "text": "Thanks %user% for the follow!" }
+    }
+  }
+}

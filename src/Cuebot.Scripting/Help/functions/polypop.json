@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "polypop.isConnected": {
+      "description": "Checks whether PolyPop is connected to Cuebot right now (at least one Cuebot plugin in PolyPop).",
+      "parameters": {},
+      "returns": "true while at least one PolyPop plugin is connected, otherwise false.",
+      "example": {}
+    },
+    "polypop.triggerAlert": {
+      "description": "Sets off a WebSocket Alert in PolyPop and hands it some words to show. Fails with an error when PolyPop is not connected.",
+      "parameters": {
+        "alertName": "The alert's name as set in PolyPop, like \"Follow\". Needed.",
+        "variables": "Optional. Words for the alert to use, like {\"user\": \"CoolViewer\"}. Every value is sent as text."
+      },
+      "returns": "How many PolyPop plugins got the alert.",
+      "example": { "alertName": "Follow", "variables": { "user": "CoolViewer" } }
+    }
+  }
+}

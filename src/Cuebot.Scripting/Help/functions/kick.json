@@ -1,0 +1,90 @@
+{
+  "functions": {
+    "kick.ban": {
+      "description": "Bans a viewer from your Kick chat for good. Fails when you are not signed in to Kick or the user cannot be found.",
+      "parameters": {
+        "user": "The Kick user name (a leading @ is fine) or their number id, like \"CoolViewer42\".",
+        "reason": "Optional. Why they were banned, like \"Spam\"."
+      },
+      "returns": "Nothing.",
+      "example": { "user": "CoolViewer42", "reason": "Spam" }
+    },
+    "kick.deleteMessage": {
+      "description": "Deletes one message from your Kick chat. Fails when the message id is empty.",
+      "parameters": {
+        "messageId": "The id of the chat message, like the %messageId% of a chat trigger."
+      },
+      "returns": "Nothing.",
+      "example": { "messageId": "a1b2c3d4-5678-90ab-cdef-1234567890ab" }
+    },
+    "kick.getBroadcaster": {
+      "description": "Gives you the details of your Kick account and bot account as Cuebot knows them right now. Values are empty when you are not signed in.",
+      "parameters": {},
+      "returns": "An object with broadcastUser, broadcastUserId, broadcasterChannelSlug, broadcasterIsLive, broadcasterTitle, broadcasterCategory, broadcasterViewerCount, botUser and botUserId.",
+      "example": {}
+    },
+    "kick.getUserInfo": {
+      "description": "Looks up a Kick viewer's profile and channel. Fails when the user cannot be found.",
+      "parameters": {
+        "user": "The Kick user name (a leading @ is fine) or their number id, like \"CoolViewer42\"."
+      },
+      "returns": "An object with User, UserName, UserId, ProfilePicture, ChannelSlug, IsLive, StreamTitle, Category and Description.",
+      "example": { "user": "CoolViewer42" }
+    },
+    "kick.reply": {
+      "description": "Replies to a message in your Kick chat. Long text is split into several messages; only the first one is the reply.",
+      "parameters": {
+        "message": "What to say, like \"Thanks for asking!\"",
+        "replyTo": "The id of the message to answer, like the %messageId% of a chat trigger.",
+        "useBot": "Optional. true sends it with your bot account. Leave it out to send as yourself.",
+        "fallback": "Optional. With useBot, true (the default) sends as yourself when the bot is not signed in; false makes it fail instead."
+      },
+      "returns": "The id of the message that was sent last, or null when the message was empty.",
+      "example": { "message": "Thanks for asking!", "replyTo": "a1b2c3d4-5678-90ab-cdef-1234567890ab" }
+    },
+    "kick.sendMessage": {
+      "description": "Sends a message in your Kick chat. Long text is split into several messages. Fails when you are not signed in to Kick.",
+      "parameters": {
+        "message": "What to say, like \"Welcome to the stream!\"",
+        "useBot": "Optional. true sends it with your bot account. Leave it out to send as yourself.",
+        "fallback": "Optional. With useBot, true (the default) sends as yourself when the bot is not signed in; false makes it fail instead."
+      },
+      "returns": "The id of the message that was sent last, or null when the message was empty.",
+      "example": { "message": "Welcome to the stream!" }
+    },
+    "kick.setCategory": {
+      "description": "Changes the category of your Kick stream. A name picks the exact match, or else the first search result. Fails when nothing matches.",
+      "parameters": {
+        "category": "The category name, like \"Just Chatting\", or its number id."
+      },
+      "returns": "The name of the category that was set.",
+      "example": { "category": "Just Chatting" }
+    },
+    "kick.setTitle": {
+      "description": "Changes the title of your Kick stream. Fails when the title is empty.",
+      "parameters": {
+        "title": "The new title, like \"Chill games with chat\"."
+      },
+      "returns": "Nothing.",
+      "example": { "title": "Chill games with chat" }
+    },
+    "kick.timeout": {
+      "description": "Times out a viewer in your Kick chat. Kick counts in whole minutes, so seconds are rounded up (1 minute to 7 days).",
+      "parameters": {
+        "user": "The Kick user name (a leading @ is fine) or their number id, like \"CoolViewer42\".",
+        "seconds": "Optional. How long, in seconds, like 300. Leave it out for 300 (5 minutes).",
+        "reason": "Optional. Why they were timed out, like \"Calm down\"."
+      },
+      "returns": "Nothing.",
+      "example": { "user": "CoolViewer42", "seconds": 300, "reason": "Calm down" }
+    },
+    "kick.unban": {
+      "description": "Lets a banned or timed-out viewer chat on Kick again.",
+      "parameters": {
+        "user": "The Kick user name (a leading @ is fine) or their number id, like \"CoolViewer42\"."
+      },
+      "returns": "Nothing.",
+      "example": { "user": "CoolViewer42" }
+    }
+  }
+}

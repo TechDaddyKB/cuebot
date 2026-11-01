@@ -1,0 +1,1179 @@
+{
+  "functions": {
+    "twitch.sendMessage": {
+      "description": "Sends a message in your Twitch chat. Empty text is skipped. Fails when Twitch is not connected.",
+      "parameters": {
+        "message": "What to say, like \"Thanks for the follow!\"",
+        "sendAs": "Optional. Who sends it: \"Default\" (your bot account when it is signed in, otherwise you), \"Bot\" or \"Broadcaster\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "message": "Thanks for the follow!"
+      }
+    },
+    "twitch.replyToMessage": {
+      "description": "Replies to a message in your Twitch chat, so it shows as an answer to it. Fails when Twitch is not connected.",
+      "parameters": {
+        "message": "What to say, like \"Good question!\"",
+        "messageId": "Optional. The id of the message to answer. Leave it out for the chat message that triggered the action (%messageId%).",
+        "sendAs": "Optional. Who sends it: \"Default\" (your bot account when it is signed in, otherwise you), \"Bot\" or \"Broadcaster\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "message": "Good question!"
+      }
+    },
+    "twitch.sendWhisper": {
+      "description": "Sends a private whisper to a Twitch viewer. The sending account needs a verified phone number on Twitch. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "message": "What to whisper, like \"Your code is 1234\".",
+        "sendAs": "Optional. Who sends it: \"Default\" (your bot account when it is signed in, otherwise you), \"Bot\" or \"Broadcaster\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42",
+        "message": "Thanks for the raid!"
+      }
+    },
+    "twitch.sendAnnouncement": {
+      "description": "Posts an announcement in your Twitch chat: a highlighted message with a coloured bar. Fails when Twitch is not connected.",
+      "parameters": {
+        "message": "What to announce, like \"Giveaway starts in 5 minutes!\"",
+        "color": "Optional. \"primary\" (your channel colour, the default), \"blue\", \"green\", \"orange\" or \"purple\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "message": "Giveaway starts in 5 minutes!",
+        "color": "purple"
+      }
+    },
+    "twitch.deleteMessage": {
+      "description": "Deletes one message from your Twitch chat. Fails when Twitch is not connected.",
+      "parameters": {
+        "messageId": "Optional. The id of the message. Leave it out for the chat message that triggered the action (%messageId%)."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "messageId": "b1c2d3e4-1234-5678-9abc-def012345678"
+      }
+    },
+    "twitch.clearChat": {
+      "description": "Clears every message from your Twitch chat. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with clearSuccess (true).",
+      "example": {}
+    },
+    "twitch.getPresentViewers": {
+      "description": "Gets the people in your Twitch chat right now. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with presentViewerCount and presentViewers (their login names, separated by commas).",
+      "example": {}
+    },
+    "twitch.pinMessage": {
+      "description": "Pins a message at the top of your Twitch chat. Fails when Twitch is not connected.",
+      "parameters": {
+        "messageId": "Optional. The id of the message. Leave it out for the chat message that triggered the action (%messageId%).",
+        "duration": "Optional. How long to keep it pinned, in seconds (30 to 1800). Leave it out (or 0) to keep it until the stream ends."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "duration": 120
+      }
+    },
+    "twitch.unpinMessage": {
+      "description": "Unpins a message in your Twitch chat. Fails when nothing is pinned. Fails when Twitch is not connected.",
+      "parameters": {
+        "messageId": "Optional. The id of the pinned message. Leave it out for the message pinned now."
+      },
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "twitch.updatePinnedDuration": {
+      "description": "Changes how long the pinned message stays pinned, counting from now. Fails when Twitch is not connected.",
+      "parameters": {
+        "messageId": "Optional. The id of the pinned message. Leave it out for the message pinned now.",
+        "duration": "Optional. Seconds from now (30 to 1800). 0 keeps it until the stream ends. Leave it out for 60."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "duration": 300
+      }
+    },
+    "twitch.getPinnedMessage": {
+      "description": "Gets the message pinned in your Twitch chat right now. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with isPinned, pinnedMessage, pinnedMessageId, pinnedUser, pinnedUserName, pinnedUserId, pinnedBy, pinnedAt and pinnedUntil. Text values are empty when nothing is pinned.",
+      "example": {}
+    },
+    "twitch.sendAndPinMessage": {
+      "description": "Sends a message in your Twitch chat as yourself (not the bot) and pins it right away. Fails when the message is empty. Fails when Twitch is not connected.",
+      "parameters": {
+        "message": "What to say and pin, like \"Giveaway: type !join\"",
+        "duration": "Optional. How long to keep it pinned, in seconds. Leave it out (or 0) to keep it until the stream ends."
+      },
+      "returns": "The id of the new message.",
+      "example": {
+        "message": "Giveaway: type !join",
+        "duration": 300
+      }
+    },
+    "twitch.setTitle": {
+      "description": "Changes the title of your Twitch stream. Fails when Twitch is not connected.",
+      "parameters": {
+        "title": "The new title, like \"Chill games with chat\"."
+      },
+      "returns": "An object with titleSuccess (true).",
+      "example": {
+        "title": "Chill games with chat"
+      }
+    },
+    "twitch.setGame": {
+      "description": "Changes the category (game) of your Twitch stream. It picks the exact name, or else the best search match. Fails when nothing matches. Fails when Twitch is not connected.",
+      "parameters": {
+        "game": "The category or game name, like \"Just Chatting\"."
+      },
+      "returns": "An object with gameId, gameName, gameBoxArt and gameSuccess (true).",
+      "example": {
+        "game": "Just Chatting"
+      }
+    },
+    "twitch.setTags": {
+      "description": "Replaces all tags of your Twitch channel. Twitch allows at most 10. Fails when Twitch is not connected.",
+      "parameters": {
+        "tags": "The tags as text, separated by commas or spaces, like \"English, Chill, Cozy\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "tags": "English, Chill, Cozy"
+      }
+    },
+    "twitch.addTag": {
+      "description": "Adds one tag to your Twitch channel. Your other tags stay. Fails when Twitch is not connected.",
+      "parameters": {
+        "tag": "The tag, like \"Cozy\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "tag": "Cozy"
+      }
+    },
+    "twitch.removeTag": {
+      "description": "Removes one tag from your Twitch channel. Upper or lower case and a leading # do not matter. Fails when Twitch is not connected.",
+      "parameters": {
+        "tag": "The tag, like \"Cozy\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "tag": "Cozy"
+      }
+    },
+    "twitch.clearTags": {
+      "description": "Removes every tag from your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "twitch.setBrandedContent": {
+      "description": "Turns the branded content (sponsored stream) label on your Twitch channel on or off. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true."
+      },
+      "returns": "An object with success (true).",
+      "example": {
+        "enabled": true
+      }
+    },
+    "twitch.setContentLabel": {
+      "description": "Turns one content warning label on your Twitch channel on or off, like \"Strong language\". Fails when Twitch is not connected.",
+      "parameters": {
+        "label": "Optional. \"DrugsIntoxication\", \"SexualThemes\", \"ViolentGraphic\", \"Gambling\" or \"ProfanityVulgarity\" (strong language, the default).",
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "label": "ProfanityVulgarity",
+        "enabled": true
+      }
+    },
+    "twitch.updateStreamInfo": {
+      "description": "Changes the title, category and tags of your Twitch stream in one go. Anything you leave empty stays as it is. Fails when Twitch is not connected.",
+      "parameters": {
+        "title": "Optional. The new title. Leave it empty to keep it.",
+        "game": "Optional. The new category or game name, like \"Minecraft\". Leave it empty to keep it.",
+        "tags": "Optional. New tags as text, separated by commas, like \"English, Chill\". Leave it empty to keep them."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "title": "Building a castle",
+        "game": "Minecraft"
+      }
+    },
+    "twitch.getChannelInfo": {
+      "description": "Gets a Twitch channel's details: title, category, tags and more. Fails when the channel is not found. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A channel's login name or \"id:12345\". Leave it out for your own channel."
+      },
+      "returns": "An object with channelId, channelUser, channelUserName, channelTitle, channelGame, channelGameId, channelTags, channelLanguage, channelContentLabels and channelIsBrandedContent.",
+      "example": {
+        "user": "coolstreamer"
+      }
+    },
+    "twitch.getStreamInfo": {
+      "description": "Checks whether a Twitch channel is live, with its viewers, title and uptime. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A channel's login name or \"id:12345\". Leave it out for your own channel."
+      },
+      "returns": "An object with isLive, viewerCount, streamTitle, streamGame, streamStartedAt and uptimeSeconds. Values are empty or 0 when the channel is offline.",
+      "example": {}
+    },
+    "twitch.createMarker": {
+      "description": "Adds a stream marker at this moment, so you can find it again later in your video. Fails when Twitch is not connected.",
+      "parameters": {
+        "description": "Optional. A short note for the marker, like \"Epic win\"."
+      },
+      "returns": "An object with markerId, markerPosition (seconds into the stream), streamMarkerSuccess, streamMarkerId, streamMarkerCreatedAt, streamMarkerDescription and streamMarkerPosition.",
+      "example": {
+        "description": "Epic win"
+      }
+    },
+    "twitch.createClip": {
+      "description": "Makes a clip of your live Twitch stream. Fails when Twitch is not connected.",
+      "parameters": {
+        "hasDelay": "Optional. true makes the clip account for your stream delay. Leave it out for false."
+      },
+      "returns": "An object with clipId, clipEditUrl, clipUrl, createClipSuccess, createClipId, createClipCreatedAt and createClipUrl.",
+      "example": {}
+    },
+    "twitch.getClipDownloadUrls": {
+      "description": "Gets download links for clips of your channel. Twitch's links only work for a short time. Fails when Twitch is not connected.",
+      "parameters": {
+        "clipId": "Optional. The clip id, or up to 10 ids separated by commas. Leave it out for %clipId% (for example from twitch.createClip)."
+      },
+      "returns": "An object with clipDownloadCount, clipDownloadUrl, clipLandscapeDownloadUrl and clipPortraitDownloadUrl (of the first clip), plus clipDownload0.clipId, clipDownload0.landscapeUrl and so on.",
+      "example": {
+        "clipId": "AwkwardHelplessSalamanderSwiftRage"
+      }
+    },
+    "twitch.getClips": {
+      "description": "Lists clips of a Twitch channel or of a category, most viewed first. Handy for a clip player. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A channel's login name or \"id:12345\". Leave it (and gameId) out for your own channel.",
+        "gameId": "Optional. A category id, to get that category's clips instead of a channel's.",
+        "startedAt": "Optional. Only clips made after this date and time, like \"2026-10-01T00:00:00Z\".",
+        "endedAt": "Optional. Only clips made before this date and time.",
+        "count": "Optional. How many clips at most. Leave it out (or 0) for up to 1000.",
+        "featured": "Optional. true gives only featured clips, false only the others. Leave it out for all."
+      },
+      "returns": "A list of clips, each with Id, Url, EmbedUrl, BroadcasterName, CreatorName, Title, ViewCount, CreatedAt, ThumbnailUrl, Duration, IsFeatured and more.",
+      "example": {
+        "count": 10
+      }
+    },
+    "twitch.runAd": {
+      "description": "Starts an ad break on your Twitch stream right now. Fails when Twitch is not connected.",
+      "parameters": {
+        "length": "Optional. How long, in seconds: 30, 60, 90, 120, 150 or 180. Leave it out for 30."
+      },
+      "returns": "An object with adLength and adRetryAfter (seconds until you can run another one).",
+      "example": {
+        "length": 60
+      }
+    },
+    "twitch.snoozeAd": {
+      "description": "Pushes your next scheduled Twitch ad back, if you have snoozes left. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with snooze.success, nextAdAt, lastAdAt, adDuration, prerollFreeTime, snoozeCount, snoozeRefreshAt, prerollFree and prerollFreeSeconds.",
+      "example": {}
+    },
+    "twitch.getAdSchedule": {
+      "description": "Gets your Twitch ad schedule: when the next ad comes and how many snoozes you have. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with nextAdAt, lastAdAt, adDuration, prerollFreeTime, snoozeCount, snoozeRefreshAt, prerollFree and prerollFreeSeconds.",
+      "example": {}
+    },
+    "twitch.startRaid": {
+      "description": "Starts a raid to another Twitch channel. Fails when the channel is not found. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with startRaidSuccess (true).",
+      "example": {
+        "user": "coolstreamer"
+      }
+    },
+    "twitch.cancelRaid": {
+      "description": "Stops the raid you started, before it goes. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "twitch.sendShoutout": {
+      "description": "Sends an official Twitch shoutout to another channel, so your viewers can follow them with one click. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with shoutoutSuccess (true).",
+      "example": {
+        "user": "coolstreamer"
+      }
+    },
+    "twitch.ban": {
+      "description": "Bans a viewer from your Twitch chat for good. Fails when the user is not found. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "reason": "Optional. Why, like \"Spam\"."
+      },
+      "returns": "An object with bannedUser (display name), bannedUserName (login), bannedUserId, bannedUserType (\"twitch\") and banResult (true).",
+      "example": {
+        "user": "spambot123",
+        "reason": "Spam"
+      }
+    },
+    "twitch.timeout": {
+      "description": "Times out a viewer in your Twitch chat, so they cannot chat for a while. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "duration": "Optional. How long, in seconds (1 second to 14 days). Leave it out for 600 (10 minutes).",
+        "reason": "Optional. Why, like \"Calm down\"."
+      },
+      "returns": "An object with timedOutUser (display name), timedOutUserName (login), timedOutUserId, timedOutUserType (\"twitch\") and timeoutResult (true).",
+      "example": {
+        "user": "coolviewer42",
+        "duration": 300,
+        "reason": "Calm down"
+      }
+    },
+    "twitch.unban": {
+      "description": "Lets a banned viewer chat in your Twitch channel again. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with unbannedUser (display name), unbannedUserName (login), unbannedUserId, unbannedUserType (\"twitch\") and unbanResult (true).",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.untimeout": {
+      "description": "Ends a viewer's timeout early, so they can chat again. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with unTimedOutUser (display name), unTimedOutUserName (login), unTimedOutUserId, unTimedOutUserType (\"twitch\") and unTimedOutResult (true).",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.warn": {
+      "description": "Sends a viewer an official Twitch warning. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "reason": "The warning text they will see, like \"Please keep it friendly\"."
+      },
+      "returns": "An object with warnedUser (display name), warnedUserName (login), warnedUserId, warnedUserType (\"twitch\") and warnedResult (true).",
+      "example": {
+        "user": "coolviewer42",
+        "reason": "Please keep it friendly"
+      }
+    },
+    "twitch.addSuspiciousStatus": {
+      "description": "Marks a viewer as suspicious. \"Active Monitoring\" flags their messages for your mods; \"Restricted\" keeps their messages out of chat. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "status": "Optional. \"Active Monitoring\" (the default) or \"Restricted\"."
+      },
+      "returns": "An object with suspiciousUser, suspiciousUserName, suspiciousUserId, suspiciousUserType, suspiciousStatusResult, suspiciousStatus (like \"RESTRICTED\") and suspiciousTypes.",
+      "example": {
+        "user": "coolviewer42",
+        "status": "Restricted"
+      }
+    },
+    "twitch.removeSuspiciousStatus": {
+      "description": "Removes the suspicious mark from a viewer, so their messages show normally again. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with suspiciousUser, suspiciousUserName, suspiciousUserId, suspiciousUserType, suspiciousStatusResult and suspiciousStatus (\"NO_TREATMENT\").",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.addVip": {
+      "description": "Makes a viewer a VIP in your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.removeVip": {
+      "description": "Takes VIP away from a viewer in your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.addModerator": {
+      "description": "Makes a viewer a moderator in your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.removeModerator": {
+      "description": "Takes moderator away from a viewer in your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.emoteOnly": {
+      "description": "Turns emote-only chat on or off: viewers can only send emotes. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": true
+      }
+    },
+    "twitch.followerMode": {
+      "description": "Turns follower-only chat on or off: only followers can chat, optionally after following for some minutes. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true.",
+        "minutes": "Optional. How long someone must have followed, in minutes (0 to 129600, which is 3 months). Leave it out for 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": true,
+        "minutes": 10
+      }
+    },
+    "twitch.slowMode": {
+      "description": "Turns slow mode on or off: viewers must wait between messages. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true.",
+        "seconds": "Optional. The wait between messages, in seconds (3 to 120). Leave it out for 30."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": true,
+        "seconds": 10
+      }
+    },
+    "twitch.subscriberMode": {
+      "description": "Turns subscriber-only chat on or off. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": true
+      }
+    },
+    "twitch.uniqueChat": {
+      "description": "Turns unique chat on or off: viewers cannot post the same message twice in a row. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns it on, false turns it off. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": true
+      }
+    },
+    "twitch.setShieldMode": {
+      "description": "Turns Twitch Shield Mode on or off. It locks chat down quickly during a hate raid. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. true turns Shield Mode on, false turns it off. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": true
+      }
+    },
+    "twitch.getShieldMode": {
+      "description": "Checks whether Twitch Shield Mode is on. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with shieldModeActive and shieldModeModerator (who turned it on).",
+      "example": {}
+    },
+    "twitch.addBlockedTerm": {
+      "description": "Adds a word or phrase to your Twitch blocked terms, so messages with it are hidden. Fails when the term is empty. Fails when Twitch is not connected.",
+      "parameters": {
+        "term": "The word or phrase to block, like \"buy followers\"."
+      },
+      "returns": "An object with blockedTermId.",
+      "example": {
+        "term": "buy followers"
+      }
+    },
+    "twitch.removeBlockedTerm": {
+      "description": "Removes a word or phrase from your Twitch blocked terms. Fails when Twitch is not connected.",
+      "parameters": {
+        "term": "The blocked text (upper or lower case does not matter) or its id."
+      },
+      "returns": "true when it was removed, false when the channel has no such blocked term.",
+      "example": {
+        "term": "buy followers"
+      }
+    },
+    "twitch.getBlockedTerms": {
+      "description": "Lists every blocked word or phrase of your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "A list, each with Id and Text.",
+      "example": {}
+    },
+    "twitch.resolveAutomod": {
+      "description": "Allows or denies a chat message that AutoMod held back. Fails when Twitch is not connected.",
+      "parameters": {
+        "messageId": "Optional. The id of the held message. Leave it out for %messageId% of the AutoMod trigger.",
+        "decision": "Optional. \"Allow\" (the default, spelled exactly like that) shows the message; anything else, like \"Deny\", throws it away."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "decision": "Deny"
+      }
+    },
+    "twitch.getModerators": {
+      "description": "Lists every moderator of your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "A list, each with UserId, UserLogin and UserName.",
+      "example": {}
+    },
+    "twitch.getVips": {
+      "description": "Lists every VIP of your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "A list, each with UserId, UserLogin and UserName.",
+      "example": {}
+    },
+    "twitch.createPoll": {
+      "description": "Starts a Twitch poll in your chat with 2 to 5 choices. Fails when Twitch is not connected.",
+      "parameters": {
+        "title": "The question, like \"Which game next?\"",
+        "choices": "The answers as text, one per line or separated by |, like \"Minecraft|Fortnite|Tetris\".",
+        "duration": "Optional. How long the poll runs, in seconds (15 to 1800). Leave it out for 60.",
+        "pointsPerVote": "Optional. Channel points for each extra vote. Leave it out (or 0) to turn extra votes off."
+      },
+      "returns": "An object with pollId and success (true).",
+      "example": {
+        "title": "Which game next?",
+        "choices": "Minecraft|Fortnite|Tetris",
+        "duration": 120
+      }
+    },
+    "twitch.endPoll": {
+      "description": "Ends the running Twitch poll early. Fails when Twitch is not connected.",
+      "parameters": {
+        "mode": "Optional. \"Terminate\" (the default) ends it and shows the results; \"Archive\" (spelled exactly like that) ends it and hides them."
+      },
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "twitch.getPoll": {
+      "description": "Gets your latest Twitch poll and its votes. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with pollId, pollTitle, pollStatus, pollIsActive, pollChoiceCount, pollChoice0, pollChoice0Votes and so on, active, plus poll.Title, poll.votes and more.",
+      "example": {}
+    },
+    "twitch.createPrediction": {
+      "description": "Starts a Twitch prediction: viewers bet channel points on 2 to 10 outcomes. Fails when Twitch is not connected.",
+      "parameters": {
+        "title": "The question, like \"Will I beat the boss?\"",
+        "outcomes": "The outcomes as text, one per line or separated by |, like \"Yes|No\".",
+        "window": "Optional. How long viewers can bet, in seconds (30 to 1800). Leave it out for 120."
+      },
+      "returns": "An object with predictionId, prediction.Id and success (true).",
+      "example": {
+        "title": "Will I beat the boss?",
+        "outcomes": "Yes|No",
+        "window": 60
+      }
+    },
+    "twitch.lockPrediction": {
+      "description": "Stops new bets on the running Twitch prediction. The result is decided later. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with locked (true), active and the prediction's details: prediction.Id, prediction.Title, prediction.outcome0.title and so on.",
+      "example": {}
+    },
+    "twitch.cancelPrediction": {
+      "description": "Cancels the running Twitch prediction and gives everyone their points back. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with cancelled (true), active and the prediction's details: prediction.Id, prediction.Title, prediction.outcome0.title and so on.",
+      "example": {}
+    },
+    "twitch.resolvePrediction": {
+      "description": "Picks the winning outcome of your Twitch prediction and pays out the points. Fails when Twitch is not connected.",
+      "parameters": {
+        "winner": "The winning outcome: its title, like \"Yes\", or its number (1, 2, ...).",
+        "title": "Optional. Only resolve a prediction with this title. Leave it out for the latest prediction."
+      },
+      "returns": "An object with success (true), the prediction's details (prediction.Id, prediction.Title, prediction.outcome0.title and so on) and prediction.winningOutcome.title, .users and .points.",
+      "example": {
+        "winner": "Yes"
+      }
+    },
+    "twitch.getPrediction": {
+      "description": "Gets your latest Twitch prediction and its bets. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with predictionId, predictionTitle, predictionStatus, predictionOutcomeCount, predictionOutcome0, predictionOutcome0Users, predictionOutcome0Points and so on, active, plus prediction.* details.",
+      "example": {}
+    },
+    "twitch.getRewards": {
+      "description": "Lists every channel point reward of your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "A list of rewards, each with Id, Title, Prompt, Cost, BackgroundColor, IsEnabled, IsPaused, IsInStock, MaxPerStream, GlobalCooldownSeconds, IsManageable (true when Cuebot can change it) and more.",
+      "example": {}
+    },
+    "twitch.createReward": {
+      "description": "Makes a new channel point reward. Cuebot can change it later because it made it. Fails when Twitch is not connected.",
+      "parameters": {
+        "title": "The reward name, like \"Hydrate!\"",
+        "cost": "Optional. The price in channel points. Leave it out for 100.",
+        "prompt": "Optional. The text viewers see under the title.",
+        "inputRequired": "Optional. true makes viewers type a message when they redeem. Leave it out for false.",
+        "enabled": "Optional. false makes it hidden at first. Leave it out for true."
+      },
+      "returns": "An object with createdRewardId.",
+      "example": {
+        "title": "Hydrate!",
+        "cost": 500,
+        "prompt": "Make me drink some water"
+      }
+    },
+    "twitch.setRewardEnabled": {
+      "description": "Turns a channel point reward on or off. A turned-off reward is hidden from viewers. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "enabled": "Optional. true shows it, false hides it. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "enabled": true
+      }
+    },
+    "twitch.setRewardPaused": {
+      "description": "Pauses or unpauses a channel point reward. Viewers see a paused reward but cannot redeem it. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "paused": "Optional. true pauses it, false unpauses it. Leave it out for true."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "paused": true
+      }
+    },
+    "twitch.setRewardCost": {
+      "description": "Changes the price of a channel point reward. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "cost": "Optional. The new price in channel points. Leave it out for 100."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "cost": 1000
+      }
+    },
+    "twitch.setRewardTitle": {
+      "description": "Changes the name of a channel point reward. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "title": "The new name, like \"Drink water!\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "title": "Drink water!"
+      }
+    },
+    "twitch.setRewardPrompt": {
+      "description": "Changes the text viewers see under a channel point reward. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "prompt": "The new text, like \"Make me drink some water\"."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "prompt": "Make me drink some water"
+      }
+    },
+    "twitch.setRewardColor": {
+      "description": "Changes the background colour of a channel point reward. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "color": "Optional. The colour as #RRGGBB, like \"#FF6600\". Leave it out for Twitch purple (#9147FF).",
+        "random": "Optional. true picks a random colour instead. Leave it out for false."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "color": "#FF6600"
+      }
+    },
+    "twitch.setRewardCooldown": {
+      "description": "Sets how long everyone must wait between redeems of a channel point reward. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "seconds": "Optional. The wait in seconds, like 60. 0 (the default) turns the cooldown off."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "seconds": 300
+      }
+    },
+    "twitch.setRewardMaxPerStream": {
+      "description": "Sets how many times a channel point reward can be redeemed per stream, by everyone together. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "max": "Optional. The limit, like 10. 0 (the default) removes the limit.",
+        "additive": "Optional. true adds max to the current limit (a negative number lowers it) instead of replacing it. Leave it out for false."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "max": 10
+      }
+    },
+    "twitch.setRewardMaxPerUser": {
+      "description": "Sets how many times each viewer can redeem a channel point reward per stream. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "max": "Optional. The limit, like 1. 0 (the default) removes the limit.",
+        "additive": "Optional. true adds max to the current limit (a negative number lowers it) instead of replacing it. Leave it out for false."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!",
+        "max": 1
+      }
+    },
+    "twitch.deleteReward": {
+      "description": "Deletes a channel point reward for good. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!"
+      }
+    },
+    "twitch.getRewardInfo": {
+      "description": "Gets the settings of one channel point reward. Fails when no reward matches. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed."
+      },
+      "returns": "An object with rewardId, rewardTitle, rewardPrompt, rewardCost, rewardEnabled, rewardPaused, rewardInStock, rewardBackgroundColor, rewardCooldown, rewardMaxPerStream, rewardMaxPerUser, rewardIsManageable and more.",
+      "example": {
+        "reward": "Hydrate!"
+      }
+    },
+    "twitch.updateRedemption": {
+      "description": "Marks a channel point redemption as done, or cancels it and gives the points back. Only works for rewards Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "rewardId": "Optional. The reward id. Leave it out for %rewardId% of the redemption trigger.",
+        "redemptionId": "Optional. The redemption id. Leave it out for %redemptionId% of the redemption trigger.",
+        "status": "Optional. \"Fulfil\" (the default) marks it done; \"Cancel\" (spelled exactly like that) refunds the points."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "status": "Cancel"
+      }
+    },
+    "twitch.updateReward": {
+      "description": "Changes the name, text and price of a channel point reward in one go. Empty values stay as they are. Twitch only lets Cuebot change rewards that Cuebot made. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "title": "Optional. The new name. Leave it empty to keep it.",
+        "prompt": "Optional. The new text. Leave it empty to keep it.",
+        "cost": "Optional. A number. With \"Set\" it becomes the new price; with the other operators it changes the current price (never below 1).",
+        "operator": "Optional. \"Set\" (the default), \"Add\", \"Subtract\", \"Multiply\" or \"Divide\"."
+      },
+      "returns": "An object with rewardCost (the price now).",
+      "example": {
+        "reward": "Hydrate!",
+        "cost": 100,
+        "operator": "Add"
+      }
+    },
+    "twitch.getRewardCounter": {
+      "description": "Tells you how often a channel point reward was redeemed, in total and by one viewer. Cuebot counts these itself. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed.",
+        "user": "Optional. The viewer to count: a login name or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with counter (all redeems) and userCounter (that viewer's redeems).",
+      "example": {
+        "reward": "Hydrate!"
+      }
+    },
+    "twitch.getRewardUserCounters": {
+      "description": "Tells you how often each viewer redeemed a channel point reward, as Cuebot counted it. Fails when no reward matches. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "The reward's title or id, like \"Hydrate!\"."
+      },
+      "returns": "An object with each viewer's user id and their count, like { \"12345\": 3 }.",
+      "example": {
+        "reward": "Hydrate!"
+      }
+    },
+    "twitch.resetRewardCounter": {
+      "description": "Sets the total redeem count of a channel point reward back to 0. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!"
+      }
+    },
+    "twitch.resetRewardUserCounters": {
+      "description": "Sets every viewer's redeem count of a channel point reward back to 0. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "Optional. The reward's title or id, like \"Hydrate\". Leave it out for the reward that was just redeemed."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "reward": "Hydrate!"
+      }
+    },
+    "twitch.resetUserRewardCounter": {
+      "description": "Sets one viewer's redeem count of one channel point reward back to 0. Fails when the reward or the user is not found. Fails when Twitch is not connected.",
+      "parameters": {
+        "reward": "The reward's title or id, like \"Hydrate!\".",
+        "user": "A Twitch login name (a leading @ is fine) or \"id:12345\", like \"coolviewer42\"."
+      },
+      "returns": "true.",
+      "example": {
+        "reward": "Hydrate!",
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.resetUserRewardCounters": {
+      "description": "Sets one viewer's redeem counts of every channel point reward back to 0. Fails when the user is not found. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "A Twitch login name (a leading @ is fine) or \"id:12345\", like \"coolviewer42\"."
+      },
+      "returns": "How many counters were reset.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.setRewardGroupEnabled": {
+      "description": "Turns every reward in a reward group on or off at once. Rewards Cuebot did not make are skipped. Fails when the group has no rewards. Fails when Twitch is not connected.",
+      "parameters": {
+        "group": "The reward group name, as set on the Twitch page (Rewards tab), like \"Games\".",
+        "state": "Optional. \"Enabled\" (the default), \"Disabled\" or \"Toggle\" (on, unless one of them is already on)."
+      },
+      "returns": "An object with rewardsChanged and rewardsSkipped (rewards Cuebot could not change).",
+      "example": {
+        "group": "Games",
+        "state": "Disabled"
+      }
+    },
+    "twitch.setRewardGroupPaused": {
+      "description": "Pauses or unpauses every reward in a reward group at once. Rewards Cuebot did not make are skipped. Fails when the group has no rewards. Fails when Twitch is not connected.",
+      "parameters": {
+        "group": "The reward group name, as set on the Twitch page (Rewards tab), like \"Games\".",
+        "state": "Optional. \"Paused\" (the default), \"Unpaused\" or \"Toggle\" (paused, unless one of them is already paused)."
+      },
+      "returns": "An object with rewardsChanged and rewardsSkipped (rewards Cuebot could not change).",
+      "example": {
+        "group": "Games",
+        "state": "Paused"
+      }
+    },
+    "twitch.configureRewards": {
+      "description": "Turns many channel point rewards on, off, paused or unpaused in one go. Fails when a name matches no reward or group. Fails when Twitch is not connected.",
+      "parameters": {
+        "enable": "Optional. Reward titles, ids or reward group names, one per line or separated by |.",
+        "disable": "Optional. Reward titles, ids or reward group names, one per line or separated by |.",
+        "pause": "Optional. Reward titles, ids or reward group names, one per line or separated by |.",
+        "unpause": "Optional. Reward titles, ids or reward group names, one per line or separated by |.",
+        "disableNotConfigured": "Optional. true also turns off every reward that is in no reward group. Leave it out for false."
+      },
+      "returns": "An object with rewardsChanged and rewardsSkipped (rewards Cuebot could not change).",
+      "example": {
+        "enable": "Hydrate!|Stretch",
+        "disable": "Games"
+      }
+    },
+    "twitch.getUser": {
+      "description": "Looks up a Twitch user. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "A Twitch login name (a leading @ is fine) or \"id:12345\", like \"coolviewer42\"."
+      },
+      "returns": "An object with Id, Login, DisplayName, Type, BroadcasterType, Description, ProfileImageUrl, OfflineImageUrl and CreatedAt. null when the user is not found.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.getUserInfo": {
+      "description": "Gets lots of details about a Twitch user: profile, account age, mod/VIP/sub status and their channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with targetFound, targetUser, targetUserName, targetUserId, targetDescription, targetProfileImageUrl, targetCreatedAt, targetAccountAgeDays, targetIsModerator, targetIsVip, targetGame, targetTitle and more.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.getFollowAge": {
+      "description": "Tells you if and how long a viewer has followed your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with isFollowing, followedAt, followAgeDays, followAge (like \"2 years, 3 months\"), followDate, followAgeLong, followAgeShort, followAge.years and more.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.getSubStatus": {
+      "description": "Checks whether a viewer subscribes to your Twitch channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with isSubscribed, subTier, subIsGift and subGifter.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.getFollowerCount": {
+      "description": "Gets how many followers your Twitch channel has, and who followed last. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with followerCount, latestFollower, latestFollowerUserName and latestFollowerUserId.",
+      "example": {}
+    },
+    "twitch.getSubscriberCount": {
+      "description": "Gets how many subscribers your Twitch channel has. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with subscriberCount and subPoints.",
+      "example": {}
+    },
+    "twitch.getLatestSubscriber": {
+      "description": "Tells you who subscribed last, as Cuebot saw it.",
+      "parameters": {},
+      "returns": "An object with latestSubscriber.userName, latestSubscriber.userLogin, latestSubscriber.userId, latestSubscriber.tier (like \"Tier1\"), latestSubscriber.isGift and latestSubscriber.at.",
+      "example": {}
+    },
+    "twitch.getSubCounter": {
+      "description": "Reads Cuebot's sub counter, for a sub goal or sub train.",
+      "parameters": {},
+      "returns": "An object with subCounter.count, subCounter.rollover and subCounter.rolloverCount.",
+      "example": {}
+    },
+    "twitch.setSubCounter": {
+      "description": "Sets Cuebot's sub counter to a number, for example to start a new sub goal.",
+      "parameters": {
+        "count": "Optional. The new count, a whole number of 0 or more. Leave it out for 0.",
+        "rolloverCount": "Optional. The new rollover count. Leave it out to keep it."
+      },
+      "returns": "An object with setResult (false when count is not a valid number) and, when it worked, subCounter.count, subCounter.rollover and subCounter.rolloverCount.",
+      "example": {
+        "count": 0
+      }
+    },
+    "twitch.getPresentUser": {
+      "description": "Gets one person in your Twitch chat by their number in the list. Handy with a random number. Fails when Twitch is not connected.",
+      "parameters": {
+        "index": "Optional. The number, starting at 0 for the first person. Leave it out for 0."
+      },
+      "returns": "An object with presentUsersCount, presentUser (their name, or false when the number is too big), presentUserId, presentUserName and presentUserType.",
+      "example": {
+        "index": 3
+      }
+    },
+    "twitch.getRandomUsers": {
+      "description": "Picks random people from your Twitch chat. Handy for giveaways. Fails when Twitch is not connected.",
+      "parameters": {
+        "count": "Optional. How many to pick. Leave it out for 1.",
+        "excludeBroadcaster": "Optional. true (the default) leaves you and your bot out; false lets them be picked."
+      },
+      "returns": "An object with randomUserCount, and randomUser0, randomUserName0, randomUserId0, randomUserType0 for the first pick, and so on.",
+      "example": {
+        "count": 3
+      }
+    },
+    "twitch.getTeamInfo": {
+      "description": "Gets the Twitch teams a channel belongs to. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+      },
+      "returns": "An object with teamCount, teams (names, separated by commas) and teamName (the first team).",
+      "example": {
+        "user": "coolstreamer"
+      }
+    },
+    "twitch.getBroadcasterInfo": {
+      "description": "Gets details about your own Twitch account, like partner or affiliate status. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with broadcasterUserId, broadcasterUserName, broadcasterUser, broadcasterType, broadcasterIsAffiliate, broadcasterIsPartner, broadcasterProfileImageUrl, broadcasterDescription, botUserId, botUserName and more.",
+      "example": {}
+    },
+    "twitch.getBroadcaster": {
+      "description": "Gives you your signed-in Twitch account as Cuebot knows it. Works without asking Twitch.",
+      "parameters": {},
+      "returns": "An object with userId, userName, connected (true when Twitch is connected) and scopes (the permissions you gave).",
+      "example": {}
+    },
+    "twitch.getBot": {
+      "description": "Gives you your Twitch bot account, as set on the Twitch page. Works without asking Twitch.",
+      "parameters": {},
+      "returns": "An object with userId, userName and connected. null when no bot account is signed in.",
+      "example": {}
+    },
+    "twitch.getCharityCampaign": {
+      "description": "Gets your running Twitch charity campaign. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with charityActive, charityName, charityCurrent, charityTarget and charityCurrency. Values are empty when no campaign runs.",
+      "example": {}
+    },
+    "twitch.getCheermotes": {
+      "description": "Lists the Bits cheer emotes (cheermotes) that work in your channel, exactly as Twitch gives them. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "A list of cheermotes in Twitch's own format (each with prefix, tiers and image links).",
+      "example": {}
+    },
+    "twitch.getGuestStarSettings": {
+      "description": "Gets your Twitch Guest Star settings. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with guestStarSlotCount, guestStarLayout, guestStarModeratorSendLive, guestStarBrowserSourceAudio and guestStarBrowserSourceToken.",
+      "example": {}
+    },
+    "twitch.updateGuestStarSettings": {
+      "description": "Changes your Twitch Guest Star settings. Anything left at its default stays as it is. Fails when Twitch is not connected.",
+      "parameters": {
+        "slotCount": "Optional. How many guest slots, 1 to 6. Leave it out (or 0) to keep it.",
+        "layout": "Optional. \"TILED_LAYOUT\", \"SCREENSHARE_LAYOUT\", \"HORIZONTAL_LAYOUT\", \"VERTICAL_LAYOUT\" or \"Keep\" (the default).",
+        "moderatorSendLive": "Optional. Whether moderators can send guests live: \"On\", \"Off\" or \"Keep\" (the default).",
+        "browserSourceAudio": "Optional. Whether the browser sources play audio: \"On\", \"Off\" or \"Keep\" (the default).",
+        "regenerateBrowserSources": "Optional. true makes new browser source links; the old ones stop working. Leave it out for false."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "slotCount": 4,
+        "layout": "TILED_LAYOUT"
+      }
+    },
+    "twitch.getGuestStarSession": {
+      "description": "Gets your running Twitch Guest Star session and its guests. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with guestStarActive, guestStarSessionId, guestStarGuestCount, and guestStarGuest0, guestStarGuest0UserName, guestStarGuest0UserId, guestStarGuest0Slot, guestStarGuest0IsLive, guestStarGuest0Volume and so on.",
+      "example": {}
+    },
+    "twitch.createGuestStarSession": {
+      "description": "Starts a Twitch Guest Star session. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with guestStarActive, guestStarSessionId, guestStarGuestCount, and guestStarGuest0, guestStarGuest0UserName, guestStarGuest0UserId, guestStarGuest0Slot, guestStarGuest0IsLive, guestStarGuest0Volume and so on.",
+      "example": {}
+    },
+    "twitch.endGuestStarSession": {
+      "description": "Ends a Twitch Guest Star session. Fails when Twitch is not connected.",
+      "parameters": {
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "twitch.getGuestStarInvites": {
+      "description": "Lists the people invited to your Twitch Guest Star session. Fails when Twitch is not connected.",
+      "parameters": {
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "An object with guestStarInviteCount, guestStarInvites (user ids, separated by commas), and guestStarInvite0UserId, guestStarInvite0Status and so on.",
+      "example": {}
+    },
+    "twitch.sendGuestStarInvite": {
+      "description": "Invites a viewer to your Twitch Guest Star session. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.deleteGuestStarInvite": {
+      "description": "Takes back a viewer's Twitch Guest Star invite. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.assignGuestStarSlot": {
+      "description": "Puts an invited guest into a Twitch Guest Star slot. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "slot": "Optional. The slot number, from 1 up to the number of slots, like \"2\". Leave it out for 1.",
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42",
+        "slot": "2"
+      }
+    },
+    "twitch.updateGuestStarSlot": {
+      "description": "Moves a Twitch Guest Star guest from one slot to another. Fails when Twitch is not connected.",
+      "parameters": {
+        "slot": "Optional. The slot the guest is in now, like \"1\". Leave it out for 1.",
+        "toSlot": "Optional. The slot to move them to, like \"3\". Leave it out for 1.",
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "slot": "1",
+        "toSlot": "3"
+      }
+    },
+    "twitch.deleteGuestStarSlot": {
+      "description": "Removes a guest from their Twitch Guest Star slot. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "slot": "Optional. The slot number, from 1 up to the number of slots, like \"2\". Leave it out for 1.",
+        "reinvite": "Optional. true sends them back to the invite list. Leave it out for false.",
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "coolviewer42",
+        "slot": "2"
+      }
+    },
+    "twitch.updateGuestStarSlotSettings": {
+      "description": "Changes audio, video, live state or volume of one Twitch Guest Star slot. Fails when Twitch is not connected.",
+      "parameters": {
+        "slot": "Optional. The slot number, from 1 up to the number of slots, like \"2\". Leave it out for 1.",
+        "audio": "Optional. The guest's audio: \"On\", \"Off\" or \"Keep\" (the default, leaves it as it is).",
+        "video": "Optional. The guest's video: \"On\", \"Off\" or \"Keep\" (the default, leaves it as it is).",
+        "live": "Optional. Whether the guest is live on stream: \"On\", \"Off\" or \"Keep\" (the default, leaves it as it is).",
+        "volume": "Optional. Volume from 0 to 100. Leave it out (or -1) to keep it.",
+        "sessionId": "Optional. The Guest Star session id. Leave it out for the session running now."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "slot": "2",
+        "audio": "Off"
+      }
+    }
+  }
+}

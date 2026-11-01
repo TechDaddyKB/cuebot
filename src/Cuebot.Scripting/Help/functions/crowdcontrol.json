@@ -1,0 +1,26 @@
+{
+  "functions": {
+    "crowdcontrol.isConnected": {
+      "description": "Checks whether Cuebot is connected to Crowd Control right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "crowdcontrol.getSession": {
+      "description": "Tells you about the Crowd Control game session that is running, and the timed effects that are active.",
+      "parameters": {},
+      "returns": "active (true while a session runs), paused, gameSessionId, gameName, gamePackName and timedEffects (a list: requestId, effectName, user, status, timeRemaining in milliseconds).",
+      "example": {}
+    },
+    "crowdcontrol.sendTestEvent": {
+      "description": "Fakes a Crowd Control event inside Cuebot, so you can test your triggers. Nothing is sent to Crowd Control. Other kinds: effectFailure, effectRefund, timedEffectUpdated, timedEffectEnded, gameSessionEnd.",
+      "parameters": {
+        "kind": "Optional. Which event, like \"effectSuccess\" (default), \"effectRequest\", \"timedEffectStarted\", \"coinExchange\" or \"gameSessionStart\"."
+      },
+      "returns": "true when the test event was sent, false when the kind is unknown.",
+      "example": {
+        "kind": "effectSuccess"
+      }
+    }
+  }
+}

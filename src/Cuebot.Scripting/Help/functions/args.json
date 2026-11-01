@@ -1,0 +1,27 @@
+{
+  "functions": {
+    "args.all": {
+      "description": "Gives you every variable of the running action at once, like user, message and rewardTitle.",
+      "parameters": {},
+      "returns": "An object with every variable name and its value.",
+      "example": {}
+    },
+    "args.get": {
+      "description": "Reads one variable of the running action, like the user who triggered it.",
+      "parameters": {
+        "name": "The variable name without % signs, like \"user\"."
+      },
+      "returns": "The value, or null when the action has no variable with that name.",
+      "example": { "name": "user" }
+    },
+    "args.set": {
+      "description": "Sets a variable of the running action. Later sub-actions can use it as %name%.",
+      "parameters": {
+        "name": "The variable name without % signs, like \"winner\".",
+        "value": "The value to store: text, a number, true/false or a list. Leave it out to set it to empty (null)."
+      },
+      "returns": "Nothing.",
+      "example": { "name": "winner", "value": "CoolViewer42" }
+    }
+  }
+}

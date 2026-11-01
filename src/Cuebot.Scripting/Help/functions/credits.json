@@ -1,0 +1,38 @@
+{
+  "functions": {
+    "credits.add": {
+      "description": "Adds a name to your end-of-stream credits, in any section. A name that is already in the section gets its count and amount raised.",
+      "parameters": {
+        "section": "The section: a built-in one like \"follows\", \"raids\" or \"tips\", or your own name like \"Special thanks\".",
+        "user": "Optional. The name to show, like \"CoolViewer42\". Leave it out for the user of the trigger.",
+        "platform": "Optional. The platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "amount": "Optional. A number to add up, like 5 for a tip of 5. Leave it out for 0.",
+        "detail": "Optional. Extra text shown with the name, like \"Tier 1\"."
+      },
+      "returns": "true. Fails when the section or the user is empty.",
+      "example": {
+        "section": "Special thanks",
+        "user": "CoolViewer42",
+        "detail": "Made the overlay"
+      }
+    },
+    "credits.get": {
+      "description": "Gives you the credits collected so far this stream, for your own credits overlay or a chat message.",
+      "parameters": {},
+      "returns": "An object with StartedAt, UpdatedAt and Sections. Each section has Id, Title and Entries; each entry has User, Platform, Count, Amount and Detail.",
+      "example": {}
+    },
+    "credits.reset": {
+      "description": "Clears the credits, so the next stream starts empty.",
+      "parameters": {},
+      "returns": "true.",
+      "example": {}
+    },
+    "credits.test": {
+      "description": "Gives you made-up sample credits, so you can design a credits overlay without waiting for a real stream. Your real credits do not change.",
+      "parameters": {},
+      "returns": "Sample credits in the same shape as credits.get (with IsTest set to true).",
+      "example": {}
+    }
+  }
+}

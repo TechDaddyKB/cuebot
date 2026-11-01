@@ -1,0 +1,87 @@
+{
+  "functions": {
+    "speech.speak": {
+      "description": "Says text out loud with your text-to-speech voice. It joins the speech queue. Nothing is said when speech is turned off or the text is empty.",
+      "parameters": {
+        "text": "What to say, like \"Welcome to the stream!\"",
+        "alias": "Optional. The voice name (alias) to use, as set on the Speech page. Leave it out for your default voice.",
+        "wait": "Optional. true waits until the text has been spoken before your script goes on. Default false.",
+        "silent": "Optional. true only makes the sound file and does not play it. Default false.",
+        "badWordFilter": "Optional. true runs the text through your speech word filters first. Default false."
+      },
+      "returns": "Nothing, unless wait or silent is true. Then it gives back success (false when skipped or speech is off), duration in milliseconds, and speechFile (the saved sound file, or empty).",
+      "example": { "text": "Welcome to the stream!" }
+    },
+    "speech.stop": {
+      "description": "Stops the text that is being spoken right now. The queue goes on with the next one.",
+      "parameters": {},
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "speech.clear": {
+      "description": "Throws away every text that is waiting in the speech queue. The text being spoken right now keeps playing.",
+      "parameters": {},
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "speech.pause": {
+      "description": "Pauses the speech queue, or starts it again. Texts keep waiting while it is paused.",
+      "parameters": {
+        "paused": "Optional. true pauses, false starts it again. Default true."
+      },
+      "returns": "Nothing.",
+      "example": { "paused": true }
+    },
+    "speech.setEnabled": {
+      "description": "Turns all text-to-speech on or off. While it is off, new texts are not spoken.",
+      "parameters": {
+        "enabled": "Optional. true turns speech on, false turns it off. Default true."
+      },
+      "returns": "Nothing.",
+      "example": { "enabled": false }
+    },
+    "speech.setEvents": {
+      "description": "Turns spoken event alerts (like follows and raids) on or off.",
+      "parameters": {
+        "enabled": "Optional. true turns event speech on, false turns it off. Default true."
+      },
+      "returns": "Nothing.",
+      "example": { "enabled": true }
+    },
+    "speech.setUserVoice": {
+      "description": "Gives a viewer their own voice. Their chat messages are then read with it. An empty alias resets them to the normal voice.",
+      "parameters": {
+        "platform": "The platform of the viewer, like \"twitch\".",
+        "user": "The viewer's name, like \"CoolViewer\".",
+        "userId": "The viewer's user id. You can give this, the name, or both.",
+        "alias": "The voice name (alias) from the Speech page, like \"Robot\". Empty resets the voice."
+      },
+      "returns": "Nothing.",
+      "example": { "platform": "twitch", "user": "CoolViewer", "alias": "Robot" }
+    },
+    "speech.stopUser": {
+      "description": "Throws away a viewer's waiting texts and stops theirs if it is playing right now.",
+      "parameters": {
+        "platform": "The platform of the viewer, like \"twitch\".",
+        "user": "The viewer's name, like \"SpammyViewer\".",
+        "userId": "The viewer's user id. You can give this, the name, or both."
+      },
+      "returns": "How many texts were stopped or thrown away (0 when no name or id was given).",
+      "example": { "platform": "twitch", "user": "SpammyViewer" }
+    },
+    "speech.activateVoiceGate": {
+      "description": "Switches to a VoiceGate profile. VoiceGate holds speech back while you are talking. Use \"none\" (or empty) to switch VoiceGate off.",
+      "parameters": {
+        "profile": "The profile name as set on the Speech page, like \"Talking\". \"none\" switches it off."
+      },
+      "returns": "true when it worked, false when no profile has that name.",
+      "example": { "profile": "Talking" }
+    },
+    "speech.state": {
+      "description": "Tells you what text-to-speech is doing right now.",
+      "parameters": {},
+      "returns": "enabled, paused, eventsEnabled (true/false), queueLength (how many texts wait), current (the text being spoken, or empty) and voiceGate (true while VoiceGate holds speech back).",
+      "example": {}
+    }
+  }
+}

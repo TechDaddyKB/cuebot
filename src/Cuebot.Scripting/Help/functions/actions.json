@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "actions.run": {
+      "description": "Runs another action by its name and waits until it is done. It gets a copy of this action's variables. Fails when no action has that name.",
+      "parameters": {
+        "name": "The action's name as shown on the Actions page, like \"Shoutout\". Upper or lower case does not matter."
+      },
+      "returns": "true when the action finished without errors, otherwise false.",
+      "example": { "name": "Shoutout" }
+    }
+  }
+}

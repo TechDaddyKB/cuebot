@@ -1,0 +1,115 @@
+{
+  "functions": {
+    "lumia.isConnected": {
+      "description": "Checks whether Cuebot is connected to Lumia Stream right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "lumia.connect": {
+      "description": "Starts connecting to Lumia Stream. It does not wait: Cuebot keeps trying in the background until it works.",
+      "parameters": {},
+      "returns": "true once connecting has started (not when it is connected).",
+      "example": {}
+    },
+    "lumia.disconnect": {
+      "description": "Disconnects Cuebot from Lumia Stream.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "lumia.sendCommand": {
+      "description": "Runs one of your Lumia Stream commands, like a light scene. Fails with an error when Lumia Stream is not connected or says no.",
+      "parameters": {
+        "command": "The command's name as set in Lumia Stream, like \"party\". Needed.",
+        "type": "Optional. The kind of command: \"chat-command\", \"chatbot-command\", \"twitch-points\", \"twitch-extension\" or \"kick-points\". Default \"chat-command\".",
+        "hold": "Optional. true keeps the lights this way afterwards instead of going back. Default false.",
+        "skipQueue": "Optional. true runs it right away instead of waiting in Lumia's queue. Default false.",
+        "extraSettings": "Optional. Extra values for the command, like {\"username\": \"CoolViewer\"}."
+      },
+      "returns": "true when Lumia Stream accepted it.",
+      "example": { "command": "party" }
+    },
+    "lumia.setToDefault": {
+      "description": "Puts your Lumia Stream lights back to their default look.",
+      "parameters": {},
+      "returns": "true when Lumia Stream accepted it.",
+      "example": {}
+    },
+    "lumia.setColor": {
+      "description": "Changes the colour of your Lumia Stream lights. Fails with an error when Lumia Stream is not connected.",
+      "parameters": {
+        "color": "The colour as \"#RRGGBB\", like \"#FF4076\", or \"r,g,b\", like \"255,64,118\". Needed.",
+        "brightness": "Optional. How bright, 0-100.",
+        "transition": "Optional. How long the colour fades in, in milliseconds.",
+        "duration": "Optional. How long the colour stays, in milliseconds.",
+        "lights": "Optional. Which lights, by name or id, split with commas, like \"Hue go, hue:19\". Leave it out for all lights.",
+        "hold": "Optional. true keeps this colour afterwards instead of going back. Default false.",
+        "skipQueue": "Optional. true does it right away instead of waiting in Lumia's queue. Default false."
+      },
+      "returns": "true when Lumia Stream accepted it.",
+      "example": { "color": "#9146FF", "brightness": 80 }
+    },
+    "lumia.sendAlert": {
+      "description": "Fakes a Lumia Stream alert, like a follow, so its light show plays. Fails with an error when Lumia Stream is not connected.",
+      "parameters": {
+        "alert": "The alert's name in Lumia Stream, like \"twitch-follower\". Needed.",
+        "extraSettings": "Optional. Extra values for the alert, like {\"username\": \"CoolViewer\"}."
+      },
+      "returns": "true when Lumia Stream accepted it.",
+      "example": { "alert": "twitch-follower", "extraSettings": { "username": "CoolViewer" } }
+    },
+    "lumia.chatbotMessage": {
+      "description": "Sends a chat message through Lumia Stream's chat bot. Fails with an error when Lumia Stream is not connected.",
+      "parameters": {
+        "message": "What to say, like \"The lights are now purple!\" Needed.",
+        "platform": "Optional. Where to send it: \"twitch\", \"youtube\", \"facebook\", \"kick\", \"discord\" or \"all\". Default \"twitch\".",
+        "asSelf": "Optional. true sends it as your own account instead of the bot. Default false."
+      },
+      "returns": "true when Lumia Stream accepted it.",
+      "example": { "message": "The lights are now purple!" }
+    },
+    "lumia.tts": {
+      "description": "Says text out loud with Lumia Stream's text-to-speech. Fails with an error when Lumia Stream is not connected.",
+      "parameters": {
+        "message": "What to say, like \"Welcome to the stream!\" Needed.",
+        "voice": "Optional. The Lumia voice name. Leave it out for Lumia's default voice.",
+        "volume": "Optional. How loud, 0-100."
+      },
+      "returns": "true when Lumia Stream accepted it.",
+      "example": { "message": "Welcome to the stream!" }
+    },
+    "lumia.getVariable": {
+      "description": "Reads one of your Lumia Stream variables. Fails with an error when Lumia Stream is not connected.",
+      "parameters": {
+        "name": "The variable's name in Lumia Stream, like \"deaths\". Needed."
+      },
+      "returns": "The variable's value as text (empty when Lumia sends nothing).",
+      "example": { "name": "deaths" }
+    },
+    "lumia.setVariable": {
+      "description": "Changes one of your Lumia Stream variables. Fails with an error when Lumia Stream is not connected.",
+      "parameters": {
+        "name": "The variable's name in Lumia Stream, like \"deaths\". Needed.",
+        "value": "The new value: text, a number, true/false or an object. Counters also take \"+1\", \"-1\" or \"=5\"."
+      },
+      "returns": "true when Lumia Stream accepted it.",
+      "example": { "name": "deaths", "value": "+1" }
+    },
+    "lumia.send": {
+      "description": "Sends any request to Lumia Stream's Send API. For advanced users who know Lumia's request types.",
+      "parameters": {
+        "type": "The request type, like \"studio-scene\". Needed.",
+        "params": "Optional. The request's settings as an object, like {\"value\": \"Sunset\"}."
+      },
+      "returns": "Lumia Stream's reply message, or null when it sends none.",
+      "example": { "type": "studio-scene", "params": { "value": "Sunset" } }
+    },
+    "lumia.getInfo": {
+      "description": "Tells you what your Lumia Stream offers: its commands, alerts, lights and voices. Cuebot reads this when it connects.",
+      "parameters": {},
+      "returns": "commands (names by kind), alerts, lights (each with id, name, type), voices and states (on, streamMode, fuze; or null).",
+      "example": {}
+    }
+  }
+}

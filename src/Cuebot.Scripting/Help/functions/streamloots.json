@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "streamloots.isConnected": {
+      "description": "Checks whether Cuebot is connected to your StreamLoots alerts right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "streamloots.sendTestEvent": {
+      "description": "Fakes a StreamLoots alert inside Cuebot, so you can test your triggers. Nothing is sent to StreamLoots and it works without a connection.",
+      "parameters": {
+        "kind": "Optional. Which alert: \"purchase\", \"gift\", \"communityGift\" or \"redemption\" (a card was used). Default \"redemption\"."
+      },
+      "returns": "true when the test alert was sent, false when the kind is unknown.",
+      "example": { "kind": "purchase" }
+    }
+  }
+}

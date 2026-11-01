@@ -1,0 +1,109 @@
+{
+  "members": {
+    "SendWhisper": {
+      "description": "Sends a private Twitch whisper to someone. Your bot account sends it when one is signed in, otherwise your broadcaster account. Set bot to false to always use the broadcaster.",
+      "returns": "true when Twitch took the whisper (Twitch may still drop it quietly), false when the name or message is empty or it failed.",
+      "example": "bool sent = CPH.SendWhisper(\"CoolViewer\", \"Thanks for the raid!\");\nCPH.LogInfo($\"Whisper sent: {sent}\");"
+    },
+    "TwitchAnnounce": {
+      "description": "Posts a highlighted announcement in your Twitch chat. Colours: default, blue, green, orange or purple. Your broadcaster account always sends it; bot and fallback are ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.TwitchAnnounce(\"Giveaway starts in 5 minutes!\", false, \"purple\");"
+    },
+    "TwitchGetBroadcaster": {
+      "description": "Gets your own Twitch account (the broadcaster account you signed in with): its id, login and display name.",
+      "returns": "Your account details, or null (nothing) when Twitch is not signed in.",
+      "example": "var me = CPH.TwitchGetBroadcaster();\nif (me != null) CPH.LogInfo($\"Signed in as {me.UserName}\");"
+    },
+    "TwitchGetBot": {
+      "description": "Gets your Twitch bot account: its id, login and display name.",
+      "returns": "The bot account details, or null (nothing) when no bot account is signed in.",
+      "example": "var bot = CPH.TwitchGetBot();\nif (bot != null) CPH.LogInfo($\"Bot is {bot.UserName}\");"
+    },
+    "TwitchGetUserInfoByLogin": {
+      "description": "Looks up a Twitch user by their login name (an @ in front is fine). Also says whether Cuebot has seen them as a sub, mod or VIP in chat.",
+      "returns": "The user's details, or null (nothing) when there is no such user or Twitch did not answer.",
+      "example": "var user = CPH.TwitchGetUserInfoByLogin(\"CoolViewer\");\nif (user != null) CPH.LogInfo($\"{user.UserName} has id {user.UserId}\");"
+    },
+    "TwitchGetUserInfoById": {
+      "description": "Looks up a Twitch user by their user id (a number given as text). Also says whether Cuebot has seen them as a sub, mod or VIP in chat.",
+      "returns": "The user's details, or null (nothing) when there is no such user or Twitch did not answer.",
+      "example": "var user = CPH.TwitchGetUserInfoById(\"123456789\");\nif (user != null) CPH.LogInfo($\"Found {user.UserName}\");"
+    },
+    "TwitchGetExtendedUserInfoByLogin": {
+      "description": "Looks up lots about a Twitch user by login: bio, profile picture, game, stream title, account age, and whether they follow or subscribe (when Cuebot has permission to see that).",
+      "returns": "The user's details, or null (nothing) when there is no such user or Twitch did not answer.",
+      "example": "var user = CPH.TwitchGetExtendedUserInfoByLogin(\"CoolViewer\");\nif (user != null) CPH.LogInfo($\"{user.UserName} last played {user.Game}\");"
+    },
+    "TwitchGetExtendedUserInfoById": {
+      "description": "Looks up lots about a Twitch user by user id: bio, profile picture, game, stream title, account age, and whether they follow or subscribe (when Cuebot may see that).",
+      "returns": "The user's details, or null (nothing) when there is no such user or Twitch did not answer.",
+      "example": "var user = CPH.TwitchGetExtendedUserInfoById(\"123456789\");\nif (user != null) CPH.LogInfo($\"Follows you: {user.IsFollowing}\");"
+    },
+    "TwitchTimeoutUser": {
+      "description": "Times a Twitch user out of chat for a number of seconds, with an optional reason. Your broadcaster account does it; useBot is ignored.",
+      "returns": "true when it worked, false when Twitch refused or the name is empty (a warning goes in the log).",
+      "example": "bool done = CPH.TwitchTimeoutUser(\"SpamBot123\", 600, \"Spamming links\");\nCPH.LogInfo($\"Timed out: {done}\");"
+    },
+    "TwitchBanUser": {
+      "description": "Bans a Twitch user from your chat, with an optional reason. Your broadcaster account does it; useBot is ignored.",
+      "returns": "true when it worked, false when Twitch refused or the name is empty (a warning goes in the log).",
+      "example": "bool done = CPH.TwitchBanUser(\"SpamBot123\", \"Bot account\");\nCPH.LogInfo($\"Banned: {done}\");"
+    },
+    "TwitchUnbanUser": {
+      "description": "Lets a banned or timed-out Twitch user chat again. Your broadcaster account does it; useBot is ignored.",
+      "returns": "true when it worked, false when Twitch refused or the name is empty.",
+      "example": "bool done = CPH.TwitchUnbanUser(\"CoolViewer\");\nCPH.LogInfo($\"Unbanned: {done}\");"
+    },
+    "TwitchRunCommercial": {
+      "description": "Runs an ad break on your Twitch channel. The length is in seconds, from 30 to 180; other numbers are moved into that range.",
+      "returns": "true when the ad started, false when Twitch refused.",
+      "example": "bool started = CPH.TwitchRunCommercial(90);\nCPH.LogInfo($\"Ad started: {started}\");"
+    },
+    "CreateStreamMarker": {
+      "description": "Puts a marker at this moment of your Twitch stream, with a short note, so you can find it later when making highlights. Only works while you are live.",
+      "returns": "The marker (its id, note and how many seconds into the stream it is), or null (nothing) when Twitch refused.",
+      "example": "var marker = CPH.CreateStreamMarker(\"Epic boss fight\");\nif (marker != null) CPH.LogInfo($\"Marker at {marker.Position} seconds\");"
+    },
+    "CreateClip": {
+      "description": "Makes a Twitch clip of your live stream. Twitch picks the clip's length and title; a title you give is only copied into the result, and the duration is ignored.",
+      "returns": "The clip (with its link and edit link), or null (nothing) when Twitch refused, for example while you are offline.",
+      "example": "var clip = CPH.CreateClip();\nif (clip != null) CPH.SendMessage($\"Clip: {clip.Url}\");"
+    },
+    "SetChannelTitle": {
+      "description": "Changes the title of your Twitch stream.",
+      "returns": "true when it worked, false when the title is empty or Twitch refused.",
+      "example": "bool done = CPH.SetChannelTitle(\"Speedrun practice! !discord\");\nCPH.LogInfo($\"Title changed: {done}\");"
+    },
+    "SetChannelGame": {
+      "description": "Changes the category (game) of your Twitch stream, found by its name, like \"Just Chatting\".",
+      "returns": "The category it picked (its name and id), or null (nothing) when the name is empty or no category matches.",
+      "example": "var game = CPH.SetChannelGame(\"Minecraft\");\nif (game != null) CPH.LogInfo($\"Category is now {game.Name}\");"
+    },
+    "YouTubeGetLatestMonitoredBroadcast": {
+      "description": "Gets the newest YouTube broadcast (live stream) Cuebot is watching: its title, link, status and chat id.",
+      "returns": "The broadcast, or null (nothing) when Cuebot is not watching any.",
+      "example": "var stream = CPH.YouTubeGetLatestMonitoredBroadcast();\nif (stream != null) CPH.LogInfo($\"Live on YouTube: {stream.Title}\");"
+    },
+    "YouTubeGetLatestBroadcast": {
+      "description": "Gets the newest YouTube broadcast Cuebot is watching. Works the same as YouTubeGetLatestMonitoredBroadcast.",
+      "returns": "The broadcast, or null (nothing) when Cuebot is not watching any.",
+      "example": "var stream = CPH.YouTubeGetLatestBroadcast();\nif (stream != null) CPH.LogInfo(stream.Url);"
+    },
+    "YouTubeGetMonitoredBroadcasts": {
+      "description": "Lists every YouTube broadcast (live stream) Cuebot is watching right now.",
+      "returns": "A list of broadcasts, or an empty list when there are none.",
+      "example": "var streams = CPH.YouTubeGetMonitoredBroadcasts();\nCPH.LogInfo($\"Watching {streams.Count} YouTube broadcast(s)\");"
+    },
+    "KickGetBroadcaster": {
+      "description": "Gets your own Kick account (the broadcaster you signed in with): its name, login, id and channel name in the web link (slug).",
+      "returns": "Your account details, or null (nothing) when Kick is not signed in.",
+      "example": "var me = CPH.KickGetBroadcaster();\nif (me != null) CPH.LogInfo($\"Kick channel: {me.ChannelSlug}\");"
+    },
+    "KickGetBot": {
+      "description": "Gets your Kick bot account: its name and id.",
+      "returns": "The bot account details, or null (nothing) when no bot account is signed in.",
+      "example": "var bot = CPH.KickGetBot();\nif (bot != null) CPH.LogInfo($\"Kick bot: {bot.UserName}\");"
+    }
+  }
+}

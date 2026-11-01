@@ -1,0 +1,113 @@
+{
+  "functions": {
+    "midi.isAvailable": {
+      "description": "Checks whether MIDI works on this computer. Use midi.status to see why when it does not.",
+      "parameters": {},
+      "returns": "true when MIDI works here, otherwise false.",
+      "example": {}
+    },
+    "midi.status": {
+      "description": "Tells you how MIDI is working in Cuebot right now.",
+      "parameters": {},
+      "returns": "backend (the MIDI library in use), available (true/false), reason (why not, when unavailable), state and message (a status line).",
+      "example": {}
+    },
+    "midi.ports": {
+      "description": "Looks for MIDI ports on your computer right now, like a plugged-in keyboard or a virtual MIDI cable.",
+      "parameters": {
+        "direction": "Optional. \"in\" for inputs, \"out\" for outputs. Leave it empty for both."
+      },
+      "returns": "in and/or out: each a list of port names.",
+      "example": { "direction": "out" }
+    },
+    "midi.devices": {
+      "description": "Lists the MIDI In and MIDI Out connections you set up on the MIDI page.",
+      "parameters": {},
+      "returns": "in and out: each a list of connections with id, name, device, state, open, present (plugged in), message and settings. MIDI In ones also list their events.",
+      "example": {}
+    },
+    "midi.open": {
+      "description": "Opens one of your MIDI connections so it can send or receive. Fails with an error when no connection has that name.",
+      "parameters": {
+        "device": "The connection's name from the MIDI page, like \"Launchpad\". Empty means the first one.",
+        "direction": "Optional. \"in\" for a MIDI In connection, \"out\" for MIDI Out. Default \"out\"."
+      },
+      "returns": "true when the connection is open now, false when it could not be opened.",
+      "example": { "device": "Launchpad" }
+    },
+    "midi.close": {
+      "description": "Closes one of your MIDI connections. Fails with an error when no connection has that name.",
+      "parameters": {
+        "device": "The connection's name from the MIDI page, like \"Launchpad\". Empty means the first one.",
+        "direction": "Optional. \"in\" for a MIDI In connection, \"out\" for MIDI Out. Default \"out\"."
+      },
+      "returns": "true when done.",
+      "example": { "device": "Launchpad" }
+    },
+    "midi.sendNoteOn": {
+      "description": "Sends a note (like pressing a piano key) to a MIDI Out connection. It opens the connection if needed. Can also let go of the note after a while.",
+      "parameters": {
+        "device": "The MIDI Out connection's name from the MIDI page. Empty means the first one.",
+        "channel": "Optional. The MIDI channel, 1-16. Empty or \"all\" sends on all 16. Default 1.",
+        "note": "Optional. The note: a number 0-127 (60 is middle C) or a name like \"C4\". Default 60.",
+        "velocity": "Optional. How hard the key is pressed, 0-127. Default 127.",
+        "duration": "Optional. With noteOff: how long to hold the note, in milliseconds, before letting go. Default 0.",
+        "noteOff": "Optional. true also sends Note Off (lets go) after the duration. Your script waits for it. Default false."
+      },
+      "returns": "true when sent.",
+      "example": { "device": "Launchpad", "note": "C4", "velocity": 100, "duration": 500, "noteOff": true }
+    },
+    "midi.sendNoteOff": {
+      "description": "Sends Note Off (letting go of a key) to a MIDI Out connection.",
+      "parameters": {
+        "device": "The MIDI Out connection's name from the MIDI page. Empty means the first one.",
+        "channel": "Optional. The MIDI channel, 1-16. Empty or \"all\" sends on all 16. Default 1.",
+        "note": "Optional. The note: a number 0-127 or a name like \"C4\". Default 60.",
+        "velocity": "Optional. How fast the key is let go, 0-127. Default 0."
+      },
+      "returns": "true when sent.",
+      "example": { "device": "Launchpad", "note": "C4" }
+    },
+    "midi.sendControlChange": {
+      "description": "Sends a Control Change to a MIDI Out connection, like turning a knob or moving a slider.",
+      "parameters": {
+        "device": "The MIDI Out connection's name from the MIDI page. Empty means the first one.",
+        "channel": "Optional. The MIDI channel, 1-16. Empty or \"all\" sends on all 16. Default 1.",
+        "controller": "Optional. Which knob or slider (controller number), 0-127. Default 0.",
+        "value": "Optional. The new value, 0-127. Default 0."
+      },
+      "returns": "true when sent.",
+      "example": { "device": "Launchpad", "controller": 7, "value": 100 }
+    },
+    "midi.sendEvent": {
+      "description": "Sends any channel message to a MIDI Out connection. Pick the kind of message and its two numbers.",
+      "parameters": {
+        "device": "The MIDI Out connection's name from the MIDI page. Empty means the first one.",
+        "command": "The kind of message: NoteOn, NoteOff, ControlChange, PatchChange, ChannelAfterTouch, PitchWheelChange or KeyAfterTouch.",
+        "channel": "Optional. The MIDI channel, 1-16. Empty or \"all\" sends on all 16. Default 1.",
+        "data1": "Optional. The first number, 0-127 (like the note or controller). For PitchWheelChange without data2: the whole value 0-16383. Default 0.",
+        "data2": "Optional. The second number, 0-127 (like velocity or value). PatchChange and ChannelAfterTouch ignore it."
+      },
+      "returns": "true when sent.",
+      "example": { "device": "Launchpad", "command": "PatchChange", "data1": 5 }
+    },
+    "midi.sendSysex": {
+      "description": "Sends a SysEx message (a device-specific message) to a MIDI Out connection. F0 at the start and F7 at the end are added when missing.",
+      "parameters": {
+        "device": "The MIDI Out connection's name from the MIDI page. Empty means the first one.",
+        "data": "The message as hex bytes, like \"F0 7E 7F 06 01 F7\"."
+      },
+      "returns": "true when sent.",
+      "example": { "device": "Launchpad", "data": "F0 7E 7F 06 01 F7" }
+    },
+    "midi.sendRaw": {
+      "description": "Sends one complete MIDI message, written as hex bytes, to a MIDI Out connection. For advanced users.",
+      "parameters": {
+        "device": "The MIDI Out connection's name from the MIDI page. Empty means the first one.",
+        "data": "The message as hex bytes, like \"B0 07 64\" (Control Change 7 to 100 on channel 1)."
+      },
+      "returns": "true when sent.",
+      "example": { "device": "Launchpad", "data": "B0 07 64" }
+    }
+  }
+}

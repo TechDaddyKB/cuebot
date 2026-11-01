@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "hotkeys.list": {
+      "description": "Lists the hotkeys you made on the Hotkeys page.",
+      "parameters": {},
+      "returns": "A list of hotkeys. Each has id, name, gesture (the keys, like \"Ctrl+Shift+F1\"), enabled (true/false), action (the action it runs) and group.",
+      "example": {}
+    },
+    "hotkeys.press": {
+      "description": "Acts as if you pressed one of your Cuebot hotkeys. Its \"Hotkey pressed\" trigger and its action run. No real key is pressed.",
+      "parameters": {
+        "hotkey": "The hotkey's name as shown on the Hotkeys page, like \"Scene: BRB\", or its id."
+      },
+      "returns": "true when the hotkey was found and pressed, false when no hotkey has that name or id.",
+      "example": { "hotkey": "Scene: BRB" }
+    }
+  }
+}

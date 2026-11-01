@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "spotify.isSignedIn": {
+      "description": "Checks whether Cuebot is signed in to your Spotify account.",
+      "parameters": {},
+      "returns": "true when signed in, otherwise false.",
+      "example": {}
+    },
+    "spotify.addToQueue": {
+      "description": "Adds a song to your Spotify queue. Great for song requests. Fails with an error when no song is found or Spotify says no (for example, nothing is playing).",
+      "parameters": {
+        "song": "A song name to search for, like \"Never Gonna Give You Up\", or a Spotify song link (open.spotify.com/track/...)."
+      },
+      "returns": "The song that was added: title, artist, uri (Spotify's id for it) and link.",
+      "example": { "song": "Never Gonna Give You Up" }
+    }
+  }
+}

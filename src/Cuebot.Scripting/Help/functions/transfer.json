@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "transfer.export": {
+      "description": "Packs actions, commands and timers into one import text (starting with CUEBOT1:) that you can share. Fails when a name is not found.",
+      "parameters": {
+        "actions": "Optional. Action names, separated by commas, like \"Shoutout, Raid alert\".",
+        "commands": "Optional. Command names, separated by commas, like \"!so, !lurk\".",
+        "timers": "Optional. Timer names, separated by commas.",
+        "includeDependencies": "Optional. true (the default) also packs what they need, like actions they run. false packs only what you named.",
+        "name": "Optional. A name for the pack, shown when someone imports it.",
+        "author": "Optional. Your name, shown when someone imports it.",
+        "description": "Optional. A short note about the pack, shown when someone imports it."
+      },
+      "returns": "The import text, starting with CUEBOT1:.",
+      "example": {
+        "actions": "Shoutout, Raid alert",
+        "name": "My shoutout pack",
+        "author": "CoolStreamer"
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "functions": {
+    "voiceControl.isListening": {
+      "description": "Checks whether voice control is listening to your microphone right now.",
+      "parameters": {},
+      "returns": "true while listening, otherwise false.",
+      "example": {}
+    },
+    "voiceControl.status": {
+      "description": "Tells you how voice control is doing right now.",
+      "parameters": {},
+      "returns": "engine (the speech recognizer in use), state, message (a status line), listening (true/false) and inputDevice (the chosen microphone; empty means the default).",
+      "example": {}
+    },
+    "voiceControl.startListening": {
+      "description": "Starts listening to your microphone for voice commands. Fails with an error when no microphone or recognizer is available.",
+      "parameters": {},
+      "returns": "true when it is listening now.",
+      "example": {}
+    },
+    "voiceControl.stopListening": {
+      "description": "Stops listening for voice commands.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "voiceControl.commands": {
+      "description": "Lists all your voice commands from the Voice Control page.",
+      "parameters": {},
+      "returns": "A list of commands. Each has id, name, enabled, phrase (what to say), location (Exact, Start or Anywhere), stopAfter, overrideGlobal and confidenceThreshold (0-100).",
+      "example": {}
+    },
+    "voiceControl.setCommandState": {
+      "description": "Turns one voice command on or off. Fails with an error when no command has that name.",
+      "parameters": {
+        "command": "The voice command's name or id, like \"Switch to gameplay\".",
+        "state": "Optional. \"Enabled\", \"Disabled\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new state: true for on, false for off.",
+      "example": { "command": "Switch to gameplay", "state": "Disabled" }
+    },
+    "voiceControl.setCommand": {
+      "description": "Changes what you have to say for a voice command. Can also make a new command. Fails with an error when the command is not found (and create is off) or the phrase is empty.",
+      "parameters": {
+        "command": "The voice command's name or id, like \"Switch to gameplay\".",
+        "phrase": "What you have to say, like \"go to gameplay\". Needed.",
+        "location": "Optional. Where in what you say the phrase must be: \"Exact\" (all of it), \"Start\" or \"Anywhere\". Leave it out to keep it as it is.",
+        "create": "Optional. true makes a new command with this name when none exists. Default false."
+      },
+      "returns": "The command after the change, with the same details as voiceControl.commands.",
+      "example": { "command": "Switch to gameplay", "phrase": "go to gameplay", "location": "Anywhere" }
+    },
+    "voiceControl.setInputDevice": {
+      "description": "Picks which microphone voice control listens to. The choice is saved.",
+      "parameters": {
+        "device": "The microphone's name or id from voiceControl.inputDevices. Empty or \"Default\" uses your computer's default microphone."
+      },
+      "returns": "true when done.",
+      "example": { "device": "Default" }
+    },
+    "voiceControl.inputDevices": {
+      "description": "Lists the microphones voice control can listen to.",
+      "parameters": {},
+      "returns": "A list of microphones. Each has id, name and isDefault (true for your computer's default).",
+      "example": {}
+    },
+    "voiceControl.dictationLog": {
+      "description": "Shows what voice control heard recently. Handy to see why a command did not run.",
+      "parameters": {},
+      "returns": "A list of heard phrases. Each has time, text, confidencePercent (how sure it was, 0-100), commands (which ones ran) and ignored.",
+      "example": {}
+    }
+  }
+}

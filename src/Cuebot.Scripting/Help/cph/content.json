@@ -1,0 +1,209 @@
+{
+  "members": {
+    "AddQuoteForTwitch": {
+      "description": "Saves a new quote said by a Twitch user, given by their user id. Set captureGame to true to also save the game you are playing.",
+      "returns": "The new quote's number, or -1 when the quote is empty.",
+      "example": "int id = CPH.AddQuoteForTwitch(\"123456789\", \"I meant to do that!\", true);\nCPH.SendMessage($\"Saved quote #{id}\");"
+    },
+    "AddQuoteForYouTube": {
+      "description": "Saves a new quote said by a YouTube user, given by their user (channel) id. The game is not saved.",
+      "returns": "The new quote's number, or -1 when the quote is empty.",
+      "example": "int id = CPH.AddQuoteForYouTube(\"UCabc123\", \"Best stream ever!\");\nCPH.LogInfo($\"Saved quote #{id}\");"
+    },
+    "AddQuoteForKick": {
+      "description": "Saves a new quote said by a Kick user, given by their user id. Set captureGame to true to also save the game you are playing.",
+      "returns": "The new quote's number, or -1 when the quote is empty.",
+      "example": "int id = CPH.AddQuoteForKick(\"987654\", \"Never pet a creeper.\");\nCPH.LogInfo($\"Saved quote #{id}\");"
+    },
+    "GetQuote": {
+      "description": "Finds a saved quote by its number, with who said it, when and during which game.",
+      "returns": "The quote, or null (nothing) when there is no quote with that number.",
+      "example": "var quote = CPH.GetQuote(3);\nif (quote != null) CPH.SendMessage($\"#{quote.Id}: {quote.Quote} - {quote.User}\");"
+    },
+    "GetQuoteCount": {
+      "description": "Counts how many quotes you have saved.",
+      "returns": "The number of quotes.",
+      "example": "int count = CPH.GetQuoteCount();\nCPH.SendMessage($\"We have {count} quotes!\");"
+    },
+    "DeleteQuote": {
+      "description": "Deletes a saved quote by its number.",
+      "returns": "true when it was deleted, false when there is no quote with that number.",
+      "example": "bool gone = CPH.DeleteQuote(7);\nCPH.LogInfo($\"Quote 7 deleted: {gone}\");"
+    },
+    "GetPoints": {
+      "description": "Reads how many points a viewer has. Give the points type (empty for your main points), the viewer's name, and the platform like \"twitch\" (empty uses the platform of the event).",
+      "returns": "The viewer's points, or 0 when the viewer or points type is unknown.",
+      "example": "long points = CPH.GetPoints(\"\", \"CoolViewer\", \"twitch\");\nCPH.SendMessage($\"CoolViewer has {points} points\");"
+    },
+    "AddPoints": {
+      "description": "Gives a viewer points. Set applyMultipliers to true to multiply the amount by their bonus (multiplier). The viewer must have chatted or have points already.",
+      "returns": "The viewer's new total, or 0 when the viewer is unknown.",
+      "example": "long total = CPH.AddPoints(\"\", \"CoolViewer\", \"twitch\", 100);\nCPH.LogInfo($\"New total: {total}\");"
+    },
+    "UpdatePoints": {
+      "description": "Changes a viewer's points by an amount: a positive number adds, a negative number takes away. Works the same as AddPoints.",
+      "returns": "The viewer's new total, or 0 when the viewer is unknown.",
+      "example": "long total = CPH.UpdatePoints(\"\", \"CoolViewer\", \"twitch\", -50);\nCPH.LogInfo($\"New total: {total}\");"
+    },
+    "UpdateBulkPoints": {
+      "description": "Changes the points of every viewer in a list by the same amount: a positive number adds, a negative number takes away. Unknown viewers are skipped.",
+      "returns": "Nothing.",
+      "example": "CPH.UpdateBulkPoints(\"\", new List<string> { \"CoolViewer\", \"NightOwl\" }, \"twitch\", 25);"
+    },
+    "SetPoints": {
+      "description": "Sets a viewer's points to an exact number.",
+      "returns": "The viewer's new total, or 0 when the viewer is unknown.",
+      "example": "long total = CPH.SetPoints(\"\", \"CoolViewer\", \"twitch\", 1000);\nCPH.LogInfo($\"Points set to {total}\");"
+    },
+    "SpendPoints": {
+      "description": "Takes points from a viewer, but only when they have enough. Handy for a reward that costs points.",
+      "returns": "true when the points were taken, false when the viewer has too few or is unknown (nothing is taken).",
+      "example": "bool paid = CPH.SpendPoints(\"\", \"CoolViewer\", \"twitch\", 500);\nif (paid) CPH.SendMessage(\"Enjoy your reward!\");"
+    },
+    "RemovePoints": {
+      "description": "Deletes a viewer's points of one points type completely.",
+      "returns": "true when they were deleted, false when the viewer had none or is unknown.",
+      "example": "bool removed = CPH.RemovePoints(\"\", \"CoolViewer\", \"twitch\");\nCPH.LogInfo($\"Removed: {removed}\");"
+    },
+    "ResetUserPoints": {
+      "description": "Sets a viewer's points back to 0.",
+      "returns": "Nothing.",
+      "example": "CPH.ResetUserPoints(\"\", \"CoolViewer\", \"twitch\");"
+    },
+    "TransferPoints": {
+      "description": "Moves points from one viewer to another. Leave the second platform empty to use the first one.",
+      "returns": "true when the points were moved, false when the giver has too few or either viewer is unknown.",
+      "example": "bool moved = CPH.TransferPoints(\"\", \"CoolViewer\", \"twitch\", \"NightOwl\", \"twitch\", 200);\nCPH.LogInfo($\"Gift sent: {moved}\");"
+    },
+    "AwardPointsToAll": {
+      "description": "Gives points to every viewer Cuebot knows, or only those on one platform. Set onlyActive to true to give them only to viewers who are in chat right now.",
+      "returns": "How many viewers got points.",
+      "example": "int paid = CPH.AwardPointsToAll(\"\", 50, \"twitch\");\nCPH.SendMessage($\"{paid} viewers got 50 points!\");"
+    },
+    "AwardPointsToGroup": {
+      "description": "Gives points to every member of a user group.",
+      "returns": "How many viewers got points.",
+      "example": "int paid = CPH.AwardPointsToGroup(\"\", \"Raid Team\", 100);\nCPH.LogInfo($\"Paid {paid} members\");"
+    },
+    "GetGroupMultiplier": {
+      "description": "Reads a user group's points bonus (multiplier). 2 means members earn double.",
+      "returns": "The multiplier, or 1 when the group has none.",
+      "example": "double bonus = CPH.GetGroupMultiplier(\"\", \"Regulars\");\nCPH.LogInfo($\"Regulars earn x{bonus}\");"
+    },
+    "SetGroupMultiplier": {
+      "description": "Sets a user group's points bonus (multiplier). 2 means members earn double.",
+      "returns": "Nothing.",
+      "example": "CPH.SetGroupMultiplier(\"\", \"Regulars\", 1.5);"
+    },
+    "RemoveGroupMultiplier": {
+      "description": "Removes a user group's points bonus, so its members earn the normal amount.",
+      "returns": "Nothing.",
+      "example": "CPH.RemoveGroupMultiplier(\"\", \"Regulars\");"
+    },
+    "GetUserMultiplier": {
+      "description": "Reads a viewer's total points bonus (multiplier), from their own bonus, their groups and their roles (like sub or VIP).",
+      "returns": "The multiplier, or 1 when no bonus applies.",
+      "example": "double bonus = CPH.GetUserMultiplier(\"\", \"CoolViewer\", \"twitch\");\nCPH.LogInfo($\"CoolViewer earns x{bonus}\");"
+    },
+    "GetLeaderboard": {
+      "description": "Gets the viewers with the most points. count is how many (0 or less gives everyone); offset skips that many from the top first.",
+      "returns": "A list of places, each with rank, platform, user name, user id and points.",
+      "example": "var top = CPH.GetLeaderboard(\"\", 3);\nforeach (var entry in top) CPH.SendMessage($\"#{entry.Rank} {entry.UserName}: {entry.Points}\");"
+    },
+    "GetPointDefinition": {
+      "description": "Gets the settings of a points type by its name (empty for your main points): its names, symbol, highest allowed balance and whether it only counts while live.",
+      "returns": "The points type, or null (nothing) when there is none with that name.",
+      "example": "var coins = CPH.GetPointDefinition(\"Coins\");\nif (coins != null) CPH.LogInfo($\"{coins.Name} enabled: {coins.Enabled}\");"
+    },
+    "GetPointDefinitions": {
+      "description": "Lists all your points types, your main one first.",
+      "returns": "A list of points types.",
+      "example": "var types = CPH.GetPointDefinitions();\nCPH.LogInfo($\"You have {types.Count} points type(s)\");"
+    },
+    "ResetPointDefinition": {
+      "description": "Sets every viewer's points of one points type back to 0. Careful: this cannot be undone.",
+      "returns": "Nothing.",
+      "example": "CPH.ResetPointDefinition(\"Coins\");"
+    },
+    "ResetCredits": {
+      "description": "Clears the end-of-stream credits collected so far (followers, subs, raiders and so on).",
+      "returns": "Nothing.",
+      "example": "CPH.ResetCredits();"
+    },
+    "ResetFirstWords": {
+      "description": "Forgets who has chatted, on every platform, so everyone's next message runs the First Words trigger again.",
+      "returns": "Nothing.",
+      "example": "CPH.ResetFirstWords();"
+    },
+    "PronounLookup": {
+      "description": "Looks up a Twitch user's pronouns from alejo.io (pronouns.alejo.io), by their login name.",
+      "returns": "A list of named values (hasPronouns, pronoun, pronounSubject, pronounObject and more), or null (nothing) when the name is empty or the lookup failed.",
+      "example": "var p = CPH.PronounLookup(\"CoolViewer\");\nif (p != null) CPH.LogInfo(\"Pronouns: \" + p[\"pronoun\"]);"
+    },
+    "PronounClearForUserlogin": {
+      "description": "Forgets saved pronouns so the next lookup asks alejo.io again. Cuebot clears them for every user, not just the one you name.",
+      "returns": "Nothing.",
+      "example": "CPH.PronounClearForUserlogin(\"CoolViewer\");"
+    },
+    "ShowToastNotification": {
+      "description": "Shows a pop-up notification on your computer. An attribution text is added under the message. The form with an id first gives that id as the toastId variable when the pop-up is clicked.",
+      "returns": "Nothing.",
+      "example": "CPH.ShowToastNotification(\"New follower\", \"CoolViewer just followed!\");"
+    },
+    "PlaySoundFromFolder": {
+      "description": "Plays a random sound file (wav, mp3, ogg, flac) from a folder. Volume is 0.0 to 1.0. Set recursive to look in folders inside it too; set finishBeforeContinuing to wait until it ends.",
+      "returns": "How long the sound is, in seconds, or 0 when the folder has no sounds.",
+      "example": "double seconds = CPH.PlaySoundFromFolder(\"C:/Stream/Sounds/Hype\", 0.8f);\nCPH.LogInfo($\"Playing a {seconds} second sound\");"
+    },
+    "DeckItemSetBackground": {
+      "description": "Changes the background colour or picture of a button on one of your Decks. Decks and buttons are found by id or name. fileId works as a picture link or file path. state picks the button state (0 is normal).",
+      "returns": "Nothing.",
+      "example": "CPH.DeckItemSetBackground(\"Main\", \"Mute Mic\", color: \"#FF0000\");"
+    },
+    "DeckItemSetIcon": {
+      "description": "Changes the icon of a button on one of your Decks: its colour, icon name, or a picture link (fileId works as a picture link or path too). state picks the button state (0 is normal).",
+      "returns": "Nothing.",
+      "example": "CPH.DeckItemSetIcon(\"Main\", \"Mute Mic\", color: \"#FFFFFF\", url: \"https://example.com/mic-off.png\");"
+    },
+    "DeckItemSetState": {
+      "description": "Switches a button on one of your Decks to another state. States count from 0 (the normal state).",
+      "returns": "Nothing.",
+      "example": "CPH.DeckItemSetState(\"Main\", \"Mute Mic\", 1);"
+    },
+    "DeckItemSetTitle": {
+      "description": "Changes the words on a button on one of your Decks, and optionally their colour. state picks the button state (0 is normal).",
+      "returns": "Nothing.",
+      "example": "CPH.DeckItemSetTitle(\"Main\", \"Mute Mic\", \"MUTED\", \"#FF0000\");"
+    },
+    "DeckItemSetValue": {
+      "description": "Sets the number shown on a button on one of your Decks, like a death counter. state picks the button state (0 is normal).",
+      "returns": "Nothing.",
+      "example": "CPH.DeckItemSetValue(\"Main\", \"Deaths\", 12);"
+    },
+    "DeckItemToggleState": {
+      "description": "Switches a button on one of your Decks between state 0 and state 1, like an on/off switch.",
+      "returns": "Nothing.",
+      "example": "CPH.DeckItemToggleState(\"Main\", \"Mute Mic\");"
+    },
+    "DeckNotify": {
+      "description": "Shows a message with a title on one of your Decks. Cuebot's Deck messages have no colour or sound, so those are ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.DeckNotify(\"Main\", \"Raid!\", \"NightOwl is raiding with 50 viewers\");"
+    },
+    "DeckPageNext": {
+      "description": "Moves one of your Decks to its next page. After the last page it starts again at the first.",
+      "returns": "Nothing.",
+      "example": "CPH.DeckPageNext(\"Main\");"
+    },
+    "DeckPagePrev": {
+      "description": "Moves one of your Decks to its previous page. Before the first page it goes to the last.",
+      "returns": "Nothing.",
+      "example": "CPH.DeckPagePrev(\"Main\");"
+    },
+    "DeckPageSet": {
+      "description": "Shows a page of one of your Decks by number, counting from 1 like the Decks editor.",
+      "returns": "Nothing.",
+      "example": "CPH.DeckPageSet(\"Main\", 2);"
+    }
+  }
+}

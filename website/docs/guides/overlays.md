@@ -60,6 +60,8 @@ On your overlay's row, open **Add Cuebot widget** and pick one:
 Each widget appears under the overlay, with **X**, **Y**, **W** and **H** boxes (its position and size, in pixels),
 plus **Edit…** to change its settings and **Remove**.
 
+Want to write your own widget in HTML, CSS and JavaScript? See [Writing your own overlay widgets](widget-code.md).
+
 Already have widgets from StreamElements or Streamlabs? **Add widget…** imports their `.zip` files. **Import from
 StreamElements…** copies an overlay from your StreamElements account (your StreamElements overlays stay as they are).
 

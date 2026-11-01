@@ -1,0 +1,91 @@
+{
+  "functions": {
+    "quotes.add": {
+      "description": "Saves a new quote. It gets the next number. Leave the user out for the person who triggered the action. Fails when the text is empty.",
+      "parameters": {
+        "text": "The quote, like \"I never miss a jump.\"",
+        "user": "Optional. Who said it, like \"CoolStreamer\". Leave it out for the user of the trigger.",
+        "userId": "Optional. That person's user id. Leave it out for the id of the trigger's user.",
+        "platform": "Optional. The platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "game": "Optional. The game, like \"Celeste\". Leave it out for the game Cuebot last saw you stream."
+      },
+      "returns": "The new quote, with id, text, user, userId, platform, game and createdAt.",
+      "example": {
+        "text": "I never miss a jump.",
+        "user": "CoolStreamer"
+      }
+    },
+    "quotes.count": {
+      "description": "Counts your saved quotes.",
+      "parameters": {},
+      "returns": "The number of quotes.",
+      "example": {}
+    },
+    "quotes.delete": {
+      "description": "Deletes a quote.",
+      "parameters": {
+        "id": "The quote number, like 12 (\"#12\" works too)."
+      },
+      "returns": "true when it existed, otherwise false.",
+      "example": {
+        "id": 12
+      }
+    },
+    "quotes.edit": {
+      "description": "Changes a quote. Only what you pass is changed; the rest stays.",
+      "parameters": {
+        "id": "The quote number, like 12 (\"#12\" works too).",
+        "text": "Optional. The new quote text.",
+        "user": "Optional. The new name of who said it.",
+        "game": "Optional. The new game."
+      },
+      "returns": "The changed quote with id, text, user, userId, platform, game and createdAt, or null when there is no such quote.",
+      "example": {
+        "id": 12,
+        "game": "Celeste"
+      }
+    },
+    "quotes.get": {
+      "description": "Gets one quote by its number.",
+      "parameters": {
+        "id": "The quote number, like 12 (\"#12\" works too)."
+      },
+      "returns": "An object with id, text, user, userId, platform, game and createdAt. null when there is no such quote.",
+      "example": {
+        "id": 12
+      }
+    },
+    "quotes.random": {
+      "description": "Picks a random quote. Can pick only among quotes that contain a word, and can fire the Quote shown trigger.",
+      "parameters": {
+        "search": "Optional. Only quotes whose text, user or game contains this, like \"jump\". A number also matches that quote id.",
+        "show": "Optional. true also runs your Quote shown trigger with the picked quote. Leave it out for false."
+      },
+      "returns": "The quote with id, text, user, userId, platform, game and createdAt, or null when none match.",
+      "example": {
+        "search": "jump",
+        "show": true
+      }
+    },
+    "quotes.search": {
+      "description": "Finds quotes whose text, user or game contains a word. Upper or lower case does not matter.",
+      "parameters": {
+        "query": "What to look for, like \"jump\". Leave it empty for every quote."
+      },
+      "returns": "A list of quotes, each with id, text, user, userId, platform, game and createdAt.",
+      "example": {
+        "query": "jump"
+      }
+    },
+    "quotes.show": {
+      "description": "Runs your Quote shown trigger for a quote, so an overlay or action can display it.",
+      "parameters": {
+        "id": "The quote number, like 12 (\"#12\" works too)."
+      },
+      "returns": "The quote with id, text, user, userId, platform, game and createdAt, or null when there is no such quote.",
+      "example": {
+        "id": 12
+      }
+    }
+  }
+}

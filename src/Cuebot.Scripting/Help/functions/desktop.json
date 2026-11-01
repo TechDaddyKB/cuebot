@@ -1,0 +1,30 @@
+{
+  "functions": {
+    "desktop.notify": {
+      "description": "Shows a pop-up notification on your computer. Cuebot uses the system's notifications where it can (Linux), else its own pop-up in the app.",
+      "parameters": {
+        "title": "Optional. The top line, like \"New follower!\". Default \"Cuebot\".",
+        "message": "The text under the title, like \"CoolViewer just followed\".",
+        "icon": "Optional. The path to an image file to show with it.",
+        "id": "Optional. A name for this notification. The \"Toast notification clicked\" trigger tells you this name when it is clicked.",
+        "duration": "Optional. How many seconds it stays on screen, 1 to 120. Default 5."
+      },
+      "returns": "Where it was shown: \"system\" or \"in-app\". Fails with an error when no way to show it is available.",
+      "example": { "title": "New follower!", "message": "CoolViewer just followed" }
+    },
+    "desktop.setClipboard": {
+      "description": "Puts text on your clipboard, as if you copied it. Fails with an error when this computer has no clipboard Cuebot can use.",
+      "parameters": {
+        "text": "The text to copy, like \"Thanks for watching!\""
+      },
+      "returns": "true when it worked.",
+      "example": { "text": "Thanks for watching!" }
+    },
+    "desktop.getClipboard": {
+      "description": "Reads the text that is on your clipboard right now. Fails with an error when this computer has no clipboard Cuebot can use.",
+      "parameters": {},
+      "returns": "The clipboard text, or null when the clipboard holds no text.",
+      "example": {}
+    }
+  }
+}

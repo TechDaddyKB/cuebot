@@ -1,0 +1,260 @@
+{
+  "functions": {
+    "youtube.addModerator": {
+      "description": "Makes a viewer a moderator of your live YouTube chat. Fails when YouTube is not connected or you are not live.",
+      "parameters": {
+        "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently.",
+        "broadcastId": "Optional. The id of a monitored broadcast. Leave it out for your latest live broadcast."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "@CoolViewer42"
+      }
+    },
+    "youtube.addTags": {
+      "description": "Adds tags to your YouTube broadcast. Tags it already has are kept, and doubles are skipped.",
+      "parameters": {
+        "tags": "The tags to add, as a list like [\"gaming\", \"chill\"] or as text with commas, like \"gaming, chill\".",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "The full list of tags the video has now.",
+      "example": {
+        "tags": [
+          "gaming",
+          "chill"
+        ]
+      }
+    },
+    "youtube.banUser": {
+      "description": "Bans a viewer from your live YouTube chat for good. Fails when YouTube is not connected or you are not live.",
+      "parameters": {
+        "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently.",
+        "broadcastId": "Optional. The id of a monitored broadcast. Leave it out for your latest live broadcast."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "@CoolViewer42"
+      }
+    },
+    "youtube.clearTags": {
+      "description": "Removes every tag from your YouTube broadcast.",
+      "parameters": {
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "The list of tags the video has now (empty).",
+      "example": {}
+    },
+    "youtube.createPoll": {
+      "description": "Starts a poll in your live YouTube chat. It needs a question and 2 to 4 options.",
+      "parameters": {
+        "question": "The question, like \"Which game next?\"",
+        "options": "The answers, as a list like [\"Minecraft\", \"Fortnite\"] or as text with commas.",
+        "broadcastId": "Optional. The id of a monitored broadcast. Leave it out for your latest live broadcast."
+      },
+      "returns": "The id of the poll message. You can give it to youtube.endPoll.",
+      "example": {
+        "question": "Which game next?",
+        "options": [
+          "Minecraft",
+          "Fortnite",
+          "Tetris"
+        ]
+      }
+    },
+    "youtube.deleteMessage": {
+      "description": "Deletes one message from your YouTube chat. Fails when YouTube is not connected or the id is empty.",
+      "parameters": {
+        "messageId": "The id of the chat message, like the %messageId% of a chat trigger."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "messageId": "LCC.abc123"
+      }
+    },
+    "youtube.endPoll": {
+      "description": "Ends a YouTube chat poll. Fails when there is no active poll.",
+      "parameters": {
+        "pollMessageId": "Optional. The poll id from youtube.createPoll. Leave it out for the poll Cuebot started last."
+      },
+      "returns": "Nothing.",
+      "example": {}
+    },
+    "youtube.getBot": {
+      "description": "Gives you the details of your YouTube bot account, as set on the YouTube page.",
+      "parameters": {},
+      "returns": "An object with userName, userId, customUrl, profileImageUrl and isSignedIn.",
+      "example": {}
+    },
+    "youtube.getBroadcaster": {
+      "description": "Gives you the details of your own YouTube account, as set on the YouTube page.",
+      "parameters": {},
+      "returns": "An object with userName, userId, customUrl, profileImageUrl and isSignedIn.",
+      "example": {}
+    },
+    "youtube.getChannelInfo": {
+      "description": "Looks up a YouTube channel. Fails when you are not signed in or the channel cannot be found.",
+      "parameters": {
+        "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently."
+      },
+      "returns": "An object with Id, Title, Description, CustomUrl, Url, ProfileImageUrl, SubscriberCount, SubscriberCountHidden, VideoCount, ViewCount and CreatedAt.",
+      "example": {
+        "user": "@CoolStreamer"
+      }
+    },
+    "youtube.getLatestMonitoredBroadcast": {
+      "description": "Gives you the newest live broadcast Cuebot is watching.",
+      "parameters": {},
+      "returns": "The broadcast with id, title, description, privacy, status, liveChatId, url, actualStart, actualEnd, scheduledStart, channelId and thumbnailUrl. null when none is being watched.",
+      "example": {}
+    },
+    "youtube.getMonitoredBroadcasts": {
+      "description": "Lists every live broadcast Cuebot is watching right now.",
+      "parameters": {},
+      "returns": "A list of broadcasts, each with id, title, description, privacy, status, liveChatId, url, actualStart, actualEnd, scheduledStart, channelId and thumbnailUrl. Empty when there are none.",
+      "example": {}
+    },
+    "youtube.getQuota": {
+      "description": "Shows how much of your daily YouTube allowance (quota) Cuebot has used. YouTube limits how many requests you can make per day.",
+      "parameters": {},
+      "returns": "An object with used (units used today, an estimate), dailyQuota, exhausted (true when none is left) and resetsAt (when it starts over).",
+      "example": {}
+    },
+    "youtube.getVideoInfo": {
+      "description": "Looks up a YouTube video, with live numbers like viewers and likes. Fails when you are not signed in or the video cannot be found.",
+      "parameters": {
+        "videoId": "Optional. The video id, like \"dQw4w9WgXcQ\". Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "An object with Id, Title, Description, Url, ChannelId, ChannelTitle, CategoryId, Tags, Privacy, LiveStatus, Thumbnail, ConcurrentViewers, ViewCount, LikeCount, CommentCount, ActualStart and ActualEnd.",
+      "example": {}
+    },
+    "youtube.removeModerator": {
+      "description": "Takes moderator away from a viewer in your live YouTube chat. Fails when they are not a moderator.",
+      "parameters": {
+        "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently.",
+        "broadcastId": "Optional. The id of a monitored broadcast. Leave it out for your latest live broadcast."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "@CoolViewer42"
+      }
+    },
+    "youtube.removeTags": {
+      "description": "Removes some tags from your YouTube broadcast. Upper or lower case does not matter.",
+      "parameters": {
+        "tags": "The tags to remove, as a list like [\"chill\"] or as text with commas.",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "The full list of tags the video has now.",
+      "example": {
+        "tags": [
+          "chill"
+        ]
+      }
+    },
+    "youtube.sendMessage": {
+      "description": "Sends a message in your live YouTube chat. Text over 200 characters is split. Fails when YouTube is not connected or you are not live.",
+      "parameters": {
+        "message": "What to say, like \"Welcome to the stream!\"",
+        "useBot": "Optional. true sends it with your bot account. Leave it out to send as yourself.",
+        "fallback": "Optional. With useBot, true (the default) sends as yourself when the bot is not signed in or fails; false makes it fail instead.",
+        "broadcastId": "Optional. The id of a monitored broadcast. Leave it out for your latest live broadcast."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "message": "Welcome to the stream!"
+      }
+    },
+    "youtube.sendMessageToLatestMonitored": {
+      "description": "Sends a message in the chat of your newest live YouTube broadcast. Text over 200 characters is split. Fails when you are not live.",
+      "parameters": {
+        "message": "What to say, like \"Welcome to the stream!\"",
+        "useBot": "Optional. true sends it with your bot account. Leave it out to send as yourself.",
+        "fallback": "Optional. With useBot, true (the default) sends as yourself when the bot is not signed in or fails; false makes it fail instead."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "message": "Welcome to the stream!"
+      }
+    },
+    "youtube.setCategory": {
+      "description": "Changes the category of your YouTube broadcast. YouTube uses number ids for categories, like \"20\" for Gaming.",
+      "parameters": {
+        "categoryId": "The category id, like \"20\" (Gaming) or \"22\" (People & Blogs).",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "categoryId": "20"
+      }
+    },
+    "youtube.setDescription": {
+      "description": "Changes the description of your YouTube broadcast.",
+      "parameters": {
+        "description": "The new description, like \"Playing with chat tonight!\"",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "description": "Playing with chat tonight!"
+      }
+    },
+    "youtube.setMetadata": {
+      "description": "Changes the title, the description, or both, of your YouTube broadcast in one go. What you leave out stays as it is.",
+      "parameters": {
+        "title": "Optional. The new title. Leave it out (or empty) to keep it.",
+        "description": "Optional. The new description. Leave it out to keep it.",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "title": "Chill games with chat",
+        "description": "Playing with chat tonight!"
+      }
+    },
+    "youtube.setPrivacy": {
+      "description": "Changes who can see your YouTube broadcast.",
+      "parameters": {
+        "privacy": "\"public\" (everyone), \"unlisted\" (only people with the link) or \"private\" (only you).",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "privacy": "unlisted"
+      }
+    },
+    "youtube.setTitle": {
+      "description": "Changes the title of your YouTube broadcast. Fails when you are not signed in or there is no live or upcoming broadcast.",
+      "parameters": {
+        "title": "The new title, like \"Chill games with chat\".",
+        "broadcastId": "Optional. The video id of the broadcast to change. Leave it out for your live broadcast (or the next upcoming one)."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "title": "Chill games with chat"
+      }
+    },
+    "youtube.timeoutUser": {
+      "description": "Times out a viewer in your live YouTube chat for some seconds. Fails when YouTube is not connected or you are not live.",
+      "parameters": {
+        "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently.",
+        "duration": "Optional. How long, in seconds, like 300. Leave it out for 300 (5 minutes).",
+        "broadcastId": "Optional. The id of a monitored broadcast. Leave it out for your latest live broadcast."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "@CoolViewer42",
+        "duration": 300
+      }
+    },
+    "youtube.unbanUser": {
+      "description": "Lifts a ban or timeout. YouTube only lets Cuebot undo bans it placed itself since it started; use YouTube Studio for older ones.",
+      "parameters": {
+        "user": "The viewer: their channel id (starts with UC), their @handle, or the name of someone who chatted recently."
+      },
+      "returns": "Nothing. Fails when Cuebot did not ban this viewer in this session.",
+      "example": {
+        "user": "@CoolViewer42"
+      }
+    }
+  }
+}

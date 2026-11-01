@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "input.keyPress": {
+      "description": "Presses keys on your keyboard for you, in the app that is in front. On Linux your desktop asks once for permission. Fails with an error when the keys cannot be read or sent.",
+      "parameters": {
+        "keys": "The keys to press, like \"Ctrl+Shift+F1\". Split several with commas, like \"Ctrl+C, Ctrl+V\". SendKeys text like \"^c\" or \"{ENTER}\" works too."
+      },
+      "returns": "true when the keys were pressed.",
+      "example": { "keys": "Ctrl+Shift+F1" }
+    },
+    "input.status": {
+      "description": "Tells you how Cuebot presses keys and watches mouse clicks on this computer, and whether that works.",
+      "parameters": {},
+      "returns": "keyboard (the key pressing method), keyboardStatus, mouse (the mouse click method) and mouseStatus, all as text.",
+      "example": {}
+    }
+  }
+}

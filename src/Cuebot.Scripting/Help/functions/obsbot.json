@@ -1,0 +1,66 @@
+{
+  "functions": {
+    "obsbot.isConnected": {
+      "description": "Checks whether Cuebot can reach your OBSBOT camera (through OBSBOT Center) right now.",
+      "parameters": {},
+      "returns": "true while OBSBOT Center answers, otherwise false.",
+      "example": {}
+    },
+    "obsbot.connect": {
+      "description": "Starts connecting to OBSBOT Center. Cuebot keeps trying in the background until it works.",
+      "parameters": {},
+      "returns": "true once connecting has started.",
+      "example": {}
+    },
+    "obsbot.disconnect": {
+      "description": "Disconnects Cuebot from OBSBOT Center.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "obsbot.getState": {
+      "description": "Asks your OBSBOT camera for its current settings, like zoom and where it is pointing.",
+      "parameters": {},
+      "returns": "Values named obsbot.deviceIndex, obsbot.deviceName, obsbot.awake, obsbot.zoom, obsbot.fov, obsbot.pitch, obsbot.yaw, obsbot.aiLocked, obsbot.autoFraming, obsbot.deviceCount and obsbot.preset1.exists / .name (and 2, 3).",
+      "example": {}
+    },
+    "obsbot.send": {
+      "description": "Sends any raw OSC message to OBSBOT Center. For advanced users who know OBSBOT's OSC addresses.",
+      "parameters": {
+        "address": "The OSC address, like \"/OBSBOT/WebCam/General/SetZoom\". Needed.",
+        "args": "Optional. A list of values to send with it, like [50]."
+      },
+      "returns": "true when sent.",
+      "example": { "address": "/OBSBOT/WebCam/General/SetZoom", "args": [50] }
+    },
+    "obsbot.setZoom": {
+      "description": "Zooms your OBSBOT camera in or out.",
+      "parameters": {
+        "zoom": "How far to zoom, 0 (all the way out) to 100 (all the way in).",
+        "device": "Optional. Which camera in OBSBOT Center, 1 to 4. Leave it out for the selected one."
+      },
+      "returns": "true when sent.",
+      "example": { "zoom": 50 }
+    },
+    "obsbot.setGimbal": {
+      "description": "Points your OBSBOT camera in a direction. Numbers past the camera's limit are cut down to the limit.",
+      "parameters": {
+        "pan": "Optional. Left/right in degrees, -129 to 129 (a Tail 2 reached directly: -159 to 159). Default 0 (straight ahead).",
+        "pitch": "Optional. Up/down in degrees, -59 to 59 (a Tail 2 reached directly: -62 to 62). Default 0.",
+        "speed": "Optional. How fast it turns, 0 to 90. Default 50.",
+        "device": "Optional. Which camera in OBSBOT Center, 1 to 4. Leave it out for the selected one."
+      },
+      "returns": "true when sent.",
+      "example": { "pan": 30, "pitch": -10, "speed": 40 }
+    },
+    "obsbot.triggerPreset": {
+      "description": "Moves your OBSBOT camera to one of its saved positions (presets).",
+      "parameters": {
+        "preset": "Optional. Which preset, 1 to 3. Default 1.",
+        "device": "Optional. Which camera in OBSBOT Center, 1 to 4. Leave it out for the selected one."
+      },
+      "returns": "true when sent.",
+      "example": { "preset": 2 }
+    }
+  }
+}

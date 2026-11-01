@@ -1,0 +1,59 @@
+{
+  "functions": {
+    "streamelements.isConnected": {
+      "description": "Checks whether Cuebot is connected to StreamElements right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "streamelements.sendTestEvent": {
+      "description": "Fakes a StreamElements event inside Cuebot, so you can test your triggers. Nothing is sent to StreamElements and it works without a connection.",
+      "parameters": {
+        "kind": "Optional. Which event: \"tip\", \"merch\" or \"redemption\". Default \"tip\"."
+      },
+      "returns": "true when the test event was sent, false when the kind is unknown.",
+      "example": { "kind": "tip" }
+    },
+    "streamelements.getUserPoints": {
+      "description": "Looks up how many StreamElements loyalty points a viewer has. Needs your StreamElements token on the Donations page; fails with an error otherwise.",
+      "parameters": {
+        "user": "The viewer's name, like \"CoolViewer\". A leading @ is fine. Needed."
+      },
+      "returns": "user, points (now), pointsAllTime and rank.",
+      "example": { "user": "CoolViewer" }
+    },
+    "streamelements.addUserPoints": {
+      "description": "Gives a viewer StreamElements loyalty points. Use a minus number to take points away. Needs your StreamElements token; fails with an error otherwise.",
+      "parameters": {
+        "user": "The viewer's name, like \"CoolViewer\". Needed.",
+        "amount": "How many points to add, like 100. Use a minus number, like -50, to take points away."
+      },
+      "returns": "The viewer's new points total.",
+      "example": { "user": "CoolViewer", "amount": 100 }
+    },
+    "streamelements.getTips": {
+      "description": "Gets your latest StreamElements tips. Needs your StreamElements token; fails with an error otherwise.",
+      "parameters": {
+        "count": "Optional. How many tips to get. Default 5."
+      },
+      "returns": "A list of tips. Each has user, amount, currency, formattedAmount (like \"$5.00\"), message and createdAt.",
+      "example": { "count": 5 }
+    },
+    "streamelements.getTipLeaderboard": {
+      "description": "Gets the viewers who tipped you the most on StreamElements. Needs your StreamElements token; fails with an error otherwise.",
+      "parameters": {
+        "count": "Optional. How many people to get. Default 5."
+      },
+      "returns": "A list of the top tippers. Each has user and total (how much they tipped).",
+      "example": { "count": 3 }
+    },
+    "streamelements.getPointsLeaderboard": {
+      "description": "Gets the viewers with the most StreamElements loyalty points. Needs your StreamElements token; fails with an error otherwise.",
+      "parameters": {
+        "count": "Optional. How many people to get. Default 5."
+      },
+      "returns": "A list of the viewers with the most points. Each has user and points.",
+      "example": { "count": 10 }
+    }
+  }
+}

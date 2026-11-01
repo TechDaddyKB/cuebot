@@ -1,0 +1,34 @@
+{
+  "functions": {
+    "emotes.find": {
+      "description": "Finds the emotes in a chat message, from the platform itself and from 7TV, BTTV and FFZ. Handy for emote rain or counting emotes.",
+      "parameters": {
+        "platform": "Optional. Where the message is from: \"Twitch\", \"YouTube\", \"Kick\" or \"Rumble\". Leave it out for the platform of the trigger (or Twitch).",
+        "message": "Optional. The message text, like \"hello KEKW\". Leave it out for the message of the trigger."
+      },
+      "returns": "A list. Each emote has start and length (where it sits in the text), code (like \"KEKW\"), provider, imageUrl and zeroWidth.",
+      "example": {
+        "platform": "Twitch",
+        "message": "hello KEKW catJAM"
+      }
+    },
+    "emotes.list": {
+      "description": "Lists every emote code Cuebot knows for a platform: 7TV, BTTV and FFZ emotes, plus platform emotes it has seen in chat.",
+      "parameters": {
+        "platform": "Optional. \"Twitch\", \"YouTube\", \"Kick\" or \"Rumble\". Leave it out for Twitch."
+      },
+      "returns": "A list of emote codes as text, like [\"KEKW\", \"catJAM\"], sorted A to Z.",
+      "example": {
+        "platform": "Twitch"
+      }
+    },
+    "emotes.refresh": {
+      "description": "Downloads the 7TV, BTTV and FFZ emote sets again, so new emotes show up. Only providers that are turned on are loaded.",
+      "parameters": {
+        "force": "Optional. true (the default) always downloads fresh sets; false uses copies Cuebot saved recently."
+      },
+      "returns": "How many emotes Cuebot knows now.",
+      "example": {}
+    }
+  }
+}

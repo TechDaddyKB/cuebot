@@ -1,0 +1,101 @@
+{
+  "functions": {
+    "groups.add": {
+      "description": "Puts a viewer in a group, like \"Giveaway\". The group is made when it does not exist yet. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\".",
+        "platform": "Optional. The platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The user name, like \"CoolViewer42\" (a leading @ is fine). Leave it out for the user of the trigger.",
+        "userId": "Optional. The user's id on that platform. Leave it out for the id of the trigger's user."
+      },
+      "returns": "true when added, false when they were already in it.",
+      "example": {
+        "group": "Giveaway"
+      }
+    },
+    "groups.clear": {
+      "description": "Takes every viewer out of a group. The group itself stays.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\"."
+      },
+      "returns": "How many viewers were removed, or -1 when there is no such group.",
+      "example": {
+        "group": "Giveaway"
+      }
+    },
+    "groups.contains": {
+      "description": "Checks whether a viewer is in a group. Matches by user id when both have one, otherwise by name.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\".",
+        "platform": "Optional. The platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The user name, like \"CoolViewer42\" (a leading @ is fine). Leave it out for the user of the trigger.",
+        "userId": "Optional. The user's id on that platform. Leave it out for the id of the trigger's user."
+      },
+      "returns": "true when they are in the group, otherwise false.",
+      "example": {
+        "group": "Giveaway",
+        "user": "CoolViewer42"
+      }
+    },
+    "groups.create": {
+      "description": "Makes a new, empty group.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\"."
+      },
+      "returns": "true when it was made, false when a group with that name already exists.",
+      "example": {
+        "group": "Giveaway"
+      }
+    },
+    "groups.delete": {
+      "description": "Deletes a group and its member list.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\"."
+      },
+      "returns": "true when it was deleted, false when there was no such group.",
+      "example": {
+        "group": "Giveaway"
+      }
+    },
+    "groups.exists": {
+      "description": "Checks whether a group with this name exists.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\"."
+      },
+      "returns": "true when it exists, otherwise false.",
+      "example": {
+        "group": "Giveaway"
+      }
+    },
+    "groups.list": {
+      "description": "Lists the names of all your groups.",
+      "parameters": {},
+      "returns": "A list of group names, like [\"Giveaway\", \"Regulars\"].",
+      "example": {}
+    },
+    "groups.remove": {
+      "description": "Takes a viewer out of a group. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\".",
+        "platform": "Optional. The platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The user name, like \"CoolViewer42\" (a leading @ is fine). Leave it out for the user of the trigger.",
+        "userId": "Optional. The user's id on that platform. Leave it out for the id of the trigger's user."
+      },
+      "returns": "true when removed, false when they were not in it.",
+      "example": {
+        "group": "Giveaway",
+        "user": "CoolViewer42"
+      }
+    },
+    "groups.users": {
+      "description": "Lists the viewers in a group.",
+      "parameters": {
+        "group": "The group name, like \"Giveaway\"."
+      },
+      "returns": "A list of members, each with platform, userId and userName. Empty when the group does not exist.",
+      "example": {
+        "group": "Giveaway"
+      }
+    }
+  }
+}

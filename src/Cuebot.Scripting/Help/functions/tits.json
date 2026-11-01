@@ -1,0 +1,70 @@
+{
+  "functions": {
+    "tits.isConnected": {
+      "description": "Checks whether Cuebot is connected to T.I.T.S. (Twitch Integrated Throwing System) right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "tits.connect": {
+      "description": "Starts connecting to T.I.T.S. It does not wait: Cuebot keeps trying in the background until it works.",
+      "parameters": {},
+      "returns": "true once connecting has started (not when it is connected).",
+      "example": {}
+    },
+    "tits.disconnect": {
+      "description": "Disconnects Cuebot from T.I.T.S.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "tits.throwItemByName": {
+      "description": "Throws an item at your model in T.I.T.S. Fails with an error when T.I.T.S. has no item with that name or is not connected.",
+      "parameters": {
+        "itemName": "The item's name as T.I.T.S. shows it, like \"Tomato\". An id works too.",
+        "delay": "Optional. Seconds between throws when throwing more than one. Default 0.05.",
+        "amount": "Optional. How many to throw, 1 or more. Default 1."
+      },
+      "returns": "true when something was thrown.",
+      "example": { "itemName": "Tomato", "amount": 5 }
+    },
+    "tits.throwItems": {
+      "description": "Throws items at your model in T.I.T.S., picked at random from your list. Fails with an error when one of the items is unknown.",
+      "parameters": {
+        "items": "The items to pick from, by name or id: a list like [\"Tomato\", \"Pillow\"], or text split with commas.",
+        "delay": "Optional. Seconds between throws. Default 0.05.",
+        "amount": "Optional. How many to throw, 1 or more. Default 1."
+      },
+      "returns": "How many items were thrown.",
+      "example": { "items": [ "Tomato", "Pillow" ], "amount": 10 }
+    },
+    "tits.activateTriggerByName": {
+      "description": "Runs one of the triggers you set up in T.I.T.S., by its name. Fails with an error when T.I.T.S. is not connected.",
+      "parameters": {
+        "triggerName": "The trigger's name as T.I.T.S. shows it, like \"Rain\"."
+      },
+      "returns": "true when T.I.T.S. accepted it.",
+      "example": { "triggerName": "Rain" }
+    },
+    "tits.activateTrigger": {
+      "description": "Runs one of the triggers you set up in T.I.T.S., by its id or name. Fails with an error when T.I.T.S. is not connected.",
+      "parameters": {
+        "trigger": "The trigger's id or name, like \"Rain\"."
+      },
+      "returns": "true when T.I.T.S. accepted it.",
+      "example": { "trigger": "Rain" }
+    },
+    "tits.getItems": {
+      "description": "Lists the items you can throw in T.I.T.S.",
+      "parameters": {},
+      "returns": "A list of items. Each has id and name.",
+      "example": {}
+    },
+    "tits.getTriggers": {
+      "description": "Lists the triggers you set up in T.I.T.S.",
+      "parameters": {},
+      "returns": "A list of triggers. Each has id and name.",
+      "example": {}
+    }
+  }
+}

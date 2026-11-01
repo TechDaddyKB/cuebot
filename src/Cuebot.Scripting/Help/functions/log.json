@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "log": {
+      "description": "Writes a line to Cuebot's log, under the name of the running action. Handy to check what your script is doing.",
+      "parameters": {
+        "message": "The text to write, like \"Giveaway started\".",
+        "level": "Optional. How important it is: \"Debug\", \"Info\", \"Warning\" or \"Error\". Leave it out (or use an unknown word) for \"Info\"."
+      },
+      "returns": "Nothing.",
+      "example": { "message": "Giveaway started", "level": "Info" }
+    }
+  }
+}

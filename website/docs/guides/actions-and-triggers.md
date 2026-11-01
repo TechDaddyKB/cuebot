@@ -164,7 +164,7 @@ no action uses it. Select one to see its variables. Two handy buttons:
 When no sub-action does what you want, a code step lets you write a little program in C# or Python. This is optional
 and needs some coding. The steps are in the **Code** group of the sub-action list; see the
 [Code sub-actions](../reference/sub-actions/code.md). C# code written for Streamer.bot (the `CPH` methods) works in
-Cuebot too.
+Cuebot too. [Writing code (C# and Python)](scripting.md) walks you through it, with examples.
 
 **Automation > Scripting** sets up Python:
 

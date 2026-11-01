@@ -1,0 +1,179 @@
+{
+  "members": {
+    "GetGlobalVar": {
+      "description": "Reads a global variable (one shared by all actions). The type you ask for, like int, is what you get. Pass false to read a temporary (not saved) one.",
+      "returns": "The value, or the empty default (like 0) when it is missing or was stored the other way (saved vs temporary).",
+      "example": "int deaths = CPH.GetGlobalVar<int>(\"deaths\");\nCPH.LogInfo($\"Deaths so far: {deaths}\");"
+    },
+    "SetGlobalVar": {
+      "description": "Stores a global variable that every action can read. Saved means it is kept when Cuebot restarts. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetGlobalVar(\"deaths\", 5);"
+    },
+    "UnsetGlobalVar": {
+      "description": "Deletes a global variable. Pass false to delete a temporary (not saved) one; it only deletes the one stored that way.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetGlobalVar(\"deaths\");"
+    },
+    "GetGlobalVarValues": {
+      "description": "Gives you a list of all saved global variables, each with its name, value and last change. Pass false to list the temporary ones instead.",
+      "returns": "A list of global variables.",
+      "example": "var globals = CPH.GetGlobalVarValues();\nCPH.LogInfo($\"You have {globals.Count} saved globals.\");"
+    },
+    "ClearNonPersistedGlobals": {
+      "description": "Deletes every temporary (not saved) global variable at once. Saved ones stay.",
+      "returns": "Nothing.",
+      "example": "CPH.ClearNonPersistedGlobals();"
+    },
+    "GetTwitchUserVar": {
+      "description": "Reads a Twitch viewer's variable, by their login name. The type you ask for (like int) is what you get. Cuebot ignores the saved true/false here.",
+      "returns": "The value, or the empty default (like 0 or empty) when the viewer or variable is not found.",
+      "example": "int points = CPH.GetTwitchUserVar<int>(\"coolviewer\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetTwitchUserVarById": {
+      "description": "Reads a Twitch viewer's variable, by their user id. The type you ask for (like int) is what you get. Cuebot ignores the saved true/false here.",
+      "returns": "The value, or the empty default (like 0 or empty) when the viewer or variable is not found.",
+      "example": "int points = CPH.GetTwitchUserVarById<int>(\"12345678\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "SetTwitchUserVar": {
+      "description": "Stores a variable for one Twitch viewer, by their login name. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTwitchUserVar(\"coolviewer\", \"points\", 100);"
+    },
+    "SetTwitchUserVarById": {
+      "description": "Stores a variable for one Twitch viewer, by their user id. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTwitchUserVarById(\"12345678\", \"points\", 100);"
+    },
+    "UnsetTwitchUserVar": {
+      "description": "Deletes one variable of a Twitch viewer, by their login name. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTwitchUserVar(\"coolviewer\", \"points\");"
+    },
+    "UnsetTwitchUserVarById": {
+      "description": "Deletes one variable of a Twitch viewer, by their user id. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTwitchUserVarById(\"12345678\", \"points\");"
+    },
+    "UnsetAllTwitchUsersVar": {
+      "description": "Deletes one variable from every Twitch viewer at once. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetAllTwitchUsersVar(\"points\");"
+    },
+    "GetTwitchUsersVar": {
+      "description": "Gives you a list of every Twitch viewer who has this variable, with their id, name, value and last change. Pass false to list the ones not saved instead.",
+      "returns": "A list of viewers and their values (empty when nobody has it).",
+      "example": "var all = CPH.GetTwitchUsersVar<int>(\"points\");\nCPH.LogInfo($\"{all.Count} viewers have points.\");"
+    },
+    "GetYouTubeUserVar": {
+      "description": "Reads a YouTube viewer's variable, by their login name. The type you ask for (like int) is what you get. Cuebot ignores the saved true/false here.",
+      "returns": "The value, or the empty default (like 0 or empty) when the viewer or variable is not found.",
+      "example": "int points = CPH.GetYouTubeUserVar<int>(\"Cool Viewer\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetYouTubeUserVarById": {
+      "description": "Reads a YouTube viewer's variable, by their user id. The type you ask for (like int) is what you get. Cuebot ignores the saved true/false here.",
+      "returns": "The value, or the empty default (like 0 or empty) when the viewer or variable is not found.",
+      "example": "int points = CPH.GetYouTubeUserVarById<int>(\"UCabc123\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "SetYouTubeUserVar": {
+      "description": "Stores a variable for one YouTube viewer, by their login name. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetYouTubeUserVar(\"Cool Viewer\", \"points\", 100);"
+    },
+    "SetYouTubeUserVarById": {
+      "description": "Stores a variable for one YouTube viewer, by their user id. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetYouTubeUserVarById(\"UCabc123\", \"points\", 100);"
+    },
+    "UnsetYouTubeUserVar": {
+      "description": "Deletes one variable of a YouTube viewer, by their login name. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetYouTubeUserVar(\"Cool Viewer\", \"points\");"
+    },
+    "UnsetYouTubeUserVarById": {
+      "description": "Deletes one variable of a YouTube viewer, by their user id. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetYouTubeUserVarById(\"UCabc123\", \"points\");"
+    },
+    "UnsetAllYouTubeUsersVar": {
+      "description": "Deletes one variable from every YouTube viewer at once. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetAllYouTubeUsersVar(\"points\");"
+    },
+    "GetYouTubeUsersVar": {
+      "description": "Gives you a list of every YouTube viewer who has this variable, with their id, name, value and last change. Pass false to list the ones not saved instead.",
+      "returns": "A list of viewers and their values (empty when nobody has it).",
+      "example": "var all = CPH.GetYouTubeUsersVar<int>(\"points\");\nCPH.LogInfo($\"{all.Count} viewers have points.\");"
+    },
+    "GetKickUserVar": {
+      "description": "Reads a Kick viewer's variable, by their login name. The type you ask for (like int) is what you get. Cuebot ignores the saved true/false here.",
+      "returns": "The value, or the empty default (like 0 or empty) when the viewer or variable is not found.",
+      "example": "int points = CPH.GetKickUserVar<int>(\"coolviewer\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetKickUserVarById": {
+      "description": "Reads a Kick viewer's variable, by their user id. The type you ask for (like int) is what you get. Cuebot ignores the saved true/false here.",
+      "returns": "The value, or the empty default (like 0 or empty) when the viewer or variable is not found.",
+      "example": "int points = CPH.GetKickUserVarById<int>(\"987654\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "SetKickUserVar": {
+      "description": "Stores a variable for one Kick viewer, by their login name. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetKickUserVar(\"coolviewer\", \"points\", 100);"
+    },
+    "SetKickUserVarById": {
+      "description": "Stores a variable for one Kick viewer, by their user id. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetKickUserVarById(\"987654\", \"points\", 100);"
+    },
+    "UnsetKickUserVar": {
+      "description": "Deletes one variable of a Kick viewer, by their login name. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetKickUserVar(\"coolviewer\", \"points\");"
+    },
+    "UnsetKickUserVarById": {
+      "description": "Deletes one variable of a Kick viewer, by their user id. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetKickUserVarById(\"987654\", \"points\");"
+    },
+    "UnsetAllKickUsersVar": {
+      "description": "Deletes one variable from every Kick viewer at once. Cuebot ignores the saved true/false here.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetAllKickUsersVar(\"points\");"
+    },
+    "GetKickUsersVar": {
+      "description": "Gives you a list of every Kick viewer who has this variable, with their id, name, value and last change. Pass false to list the ones not saved instead.",
+      "returns": "A list of viewers and their values (empty when nobody has it).",
+      "example": "var all = CPH.GetKickUsersVar<int>(\"points\");\nCPH.LogInfo($\"{all.Count} viewers have points.\");"
+    },
+    "GetUserVar": {
+      "description": "Older name for GetTwitchUserVar: reads a Twitch viewer's variable by their login name. The type you ask for is what you get.",
+      "returns": "The value, or the empty default (like 0) when not found.",
+      "example": "int points = CPH.GetUserVar<int>(\"coolviewer\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "SetUserVar": {
+      "description": "Older name for SetTwitchUserVar: stores a variable for a Twitch viewer by their login name. Pass false at the end to keep it only until Cuebot restarts.",
+      "returns": "Nothing.",
+      "example": "CPH.SetUserVar(\"coolviewer\", \"points\", 100);"
+    },
+    "UnsetUserVar": {
+      "description": "Older name for UnsetTwitchUserVar: deletes one variable of a Twitch viewer by their login name.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetUserVar(\"coolviewer\", \"points\");"
+    },
+    "UnsetUser": {
+      "description": "Deletes all variables of one Twitch viewer, by their login name. Nothing happens when Cuebot does not know them.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetUser(\"coolviewer\");"
+    },
+    "UnsetAllUsersVar": {
+      "description": "Deletes one variable from every viewer on every platform (Twitch, YouTube and Kick) at once.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetAllUsersVar(\"points\");"
+    },
+    "ClearNonPersistedUserGlobals": {
+      "description": "Deletes every temporary (not saved) viewer variable on every platform at once. Saved ones stay.",
+      "returns": "Nothing.",
+      "example": "CPH.ClearNonPersistedUserGlobals();"
+    }
+  }
+}

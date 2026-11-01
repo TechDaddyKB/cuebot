@@ -1,0 +1,59 @@
+{
+  "functions": {
+    "controllers.status": {
+      "description": "Tells you whether game controller input is running and how.",
+      "parameters": {},
+      "returns": "running (true/false), backend (the controller library in use), version, state, message (a status line) and mode (the watch setting from the Controllers page).",
+      "example": {}
+    },
+    "controllers.list": {
+      "description": "Lists the game controllers that are plugged in right now. Starts watching controllers if it was not already. Fails with an error when controller input is turned off.",
+      "parameters": {},
+      "returns": "A list of controllers. Each has its name, slot number, type, battery, held buttons, axes (stick and trigger values) and hats (d-pad directions).",
+      "example": {}
+    },
+    "controllers.get": {
+      "description": "Finds one game controller and tells you about it. Starts watching controllers if needed.",
+      "parameters": {
+        "controller": "Optional. Which controller: a slot like \"#1\", part of its name, its type (like \"PS5\") or its GUID. Default \"#1\"."
+      },
+      "returns": "The controller's details (name, slot, type, battery, held buttons, axes, hats), or null when none matches.",
+      "example": { "controller": "#1" }
+    },
+    "controllers.rumble": {
+      "description": "Makes a game controller shake (rumble). Fails with an error when controller input is turned off.",
+      "parameters": {
+        "controller": "Optional. Which controller: a slot like \"#1\", part of its name, its type or GUID. Several can be split with commas. Default \"Any\" (all of them).",
+        "low": "Optional. Strength of the big, slow motor, 0-100 percent. Default 50.",
+        "high": "Optional. Strength of the small, fast motor, 0-100 percent. Default 50.",
+        "durationMs": "Optional. How long to shake, in milliseconds (1000 = 1 second, at most 60000). Default 500."
+      },
+      "returns": "How many controllers shook.",
+      "example": { "controller": "#1", "low": 80, "high": 80, "durationMs": 1000 }
+    },
+    "controllers.setLed": {
+      "description": "Changes the light colour on game controllers that have one, like a PlayStation controller. Fails with an error when the colour cannot be read.",
+      "parameters": {
+        "controller": "Optional. Which controller: a slot like \"#1\", part of its name, its type or GUID. Default \"Any\" (all of them).",
+        "color": "The colour as \"#RRGGBB\" (like \"#FF0000\" for red) or \"r,g,b\" (like \"255,0,0\")."
+      },
+      "returns": "How many controllers changed colour.",
+      "example": { "color": "#9146FF" }
+    },
+    "controllers.learn": {
+      "description": "Waits for you to press a button, move a stick or push the d-pad, then tells you what it was. Handy for finding a button's name.",
+      "parameters": {
+        "timeoutMs": "Optional. How long to wait, in milliseconds (100 to 300000). Default 10000 (10 seconds).",
+        "controller": "Optional. Only listen to this controller (slot like \"#1\", name, type or GUID). Leave it out to listen to all."
+      },
+      "returns": "What was pressed: kind, name, label, controller (its details), triggerType, settings and description. null when nothing was pressed in time.",
+      "example": { "timeoutMs": 15000 }
+    },
+    "controllers.reloadMappings": {
+      "description": "Reads the controller mappings file (gamecontrollerdb.txt) again, so new controller types are known. Fails with an error when there is no such file.",
+      "parameters": {},
+      "returns": "How many mappings were added. 0 when controller input is not running yet (the file is read when it starts).",
+      "example": {}
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "streamlabs.isConnected": {
+      "description": "Checks whether Cuebot is connected to Streamlabs right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "streamlabs.sendTestEvent": {
+      "description": "Fakes a Streamlabs event inside Cuebot, so you can test your triggers. Nothing is sent to Streamlabs and it works without a connection.",
+      "parameters": {
+        "kind": "Optional. Which event: \"donation\", \"charity\", \"merch\" or \"loyalty\". Default \"donation\"."
+      },
+      "returns": "true when the test event was sent, false when the kind is unknown.",
+      "example": { "kind": "donation" }
+    }
+  }
+}

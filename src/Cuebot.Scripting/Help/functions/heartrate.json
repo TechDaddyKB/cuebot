@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "heartrate.get": {
+      "description": "Gives you the newest heart rate reading from your heart rate monitor (through Pulsoid or HypeRate).",
+      "parameters": {
+        "source": "Optional. Where from: \"Pulsoid\", \"HypeRate\" or \"Latest\" (the newest from either). Default \"Latest\"."
+      },
+      "returns": "bpm (beats per minute), source and time of the reading. null when no reading has come in yet.",
+      "example": { "source": "Latest" }
+    }
+  }
+}

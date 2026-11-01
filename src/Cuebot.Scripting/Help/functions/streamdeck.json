@@ -1,0 +1,79 @@
+{
+  "functions": {
+    "streamdeck.isConnected": {
+      "description": "Checks whether the Cuebot plugin in the Stream Deck app is connected right now.",
+      "parameters": {},
+      "returns": "true while at least one Stream Deck plugin is connected, otherwise false.",
+      "example": {}
+    },
+    "streamdeck.getInstances": {
+      "description": "Lists the Stream Deck apps that are connected to Cuebot, with their devices and Cuebot keys.",
+      "parameters": {},
+      "returns": "A list of apps. Each has id, remote, pluginVersion, streamDeckVersion, platform, connectedAt, devices (name, type, size) and buttons (buttonId, row, column, state and more).",
+      "example": {}
+    },
+    "streamdeck.setTitle": {
+      "description": "Changes the text shown on a Stream Deck key.",
+      "parameters": {
+        "buttonId": "The button id you gave the key in the Cuebot Stream Deck plugin, like \"deaths\". Needed.",
+        "title": "The text to show, like \"Deaths: 3\".",
+        "state": "Optional. Which state of a two-state key to change: 0 or 1. Leave it out for the state it shows now."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "deaths", "title": "Deaths: 3" }
+    },
+    "streamdeck.setState": {
+      "description": "Switches a two-state Stream Deck key to state 0 or 1.",
+      "parameters": {
+        "buttonId": "The button id you gave the key in the Cuebot Stream Deck plugin. Needed.",
+        "state": "Optional. 0 or 1. Default 0."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "mic", "state": 1 }
+    },
+    "streamdeck.setBackground": {
+      "description": "Changes the picture on a Stream Deck key. Leave the image empty to put the normal picture back.",
+      "parameters": {
+        "buttonId": "The button id you gave the key in the Cuebot Stream Deck plugin. Needed.",
+        "image": "A picture file on your computer, a web link (http or https) or a data: link. Empty puts the normal picture back.",
+        "state": "Optional. Which state of a two-state key to change: 0 or 1. Leave it out for the state it shows now."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "scene", "image": "C:\\Stream\\live.png" }
+    },
+    "streamdeck.setValue": {
+      "description": "Changes the value shown on a Stream Deck key or dial (Stream Deck +).",
+      "parameters": {
+        "buttonId": "The button id you gave the key or dial in the Cuebot Stream Deck plugin. Needed.",
+        "value": "The value to show, like \"75%\".",
+        "indicator": "Optional. For dials: how full the bar is, 0-100."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "volume", "value": "75%", "indicator": 75 }
+    },
+    "streamdeck.showAlert": {
+      "description": "Flashes the warning sign on a Stream Deck key for a moment.",
+      "parameters": {
+        "buttonId": "The button id you gave the key in the Cuebot Stream Deck plugin. Needed."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "scene" }
+    },
+    "streamdeck.showOk": {
+      "description": "Flashes the check mark on a Stream Deck key for a moment.",
+      "parameters": {
+        "buttonId": "The button id you gave the key in the Cuebot Stream Deck plugin. Needed."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "scene" }
+    },
+    "streamdeck.toggleState": {
+      "description": "Flips a two-state Stream Deck key to its other state.",
+      "parameters": {
+        "buttonId": "The button id you gave the key in the Cuebot Stream Deck plugin. Needed."
+      },
+      "returns": "How many keys have this button id (0 when none was found).",
+      "example": { "buttonId": "mic" }
+    }
+  }
+}

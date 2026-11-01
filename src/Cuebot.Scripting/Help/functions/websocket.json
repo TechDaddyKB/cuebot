@@ -1,0 +1,143 @@
+{
+  "functions": {
+    "websocket.broadcast": {
+      "description": "Sends data to every app connected to Cuebot's WebSocket server, as a General.Custom event. Handy for your own overlays and tools.",
+      "parameters": {
+        "data": "What to send, like \"{\\\"alert\\\": \\\"raid\\\"}\" or plain text.",
+        "json": "Optional. true reads data as JSON and sends it as an object (plain text if it is not valid JSON). Leave it out for false (send as text)."
+      },
+      "returns": "How many apps got it.",
+      "example": {
+        "data": "{\"alert\": \"raid\"}",
+        "json": true
+      }
+    },
+    "websocket.clientConnect": {
+      "description": "Connects one of your WebSocket clients (set up on the Servers page). Does nothing when it is already connected. Fails when no client matches.",
+      "parameters": {
+        "connection": "Which WebSocket client from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "connection": "My overlay"
+      }
+    },
+    "websocket.clientDisconnect": {
+      "description": "Disconnects one of your WebSocket clients. Fails when no client matches.",
+      "parameters": {
+        "connection": "Which WebSocket client from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "connection": "My overlay"
+      }
+    },
+    "websocket.clientIndex": {
+      "description": "Finds the number of a WebSocket client in the list on the Servers page, by its name.",
+      "parameters": {
+        "name": "The client's name, like \"My overlay\"."
+      },
+      "returns": "Its number (0 is the first), or -1 when no client has that name.",
+      "example": {
+        "name": "My overlay"
+      }
+    },
+    "websocket.clientIsConnected": {
+      "description": "Checks whether one of your WebSocket clients is connected right now. Fails when no client matches.",
+      "parameters": {
+        "connection": "Which WebSocket client from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "true when it is connected, otherwise false.",
+      "example": {
+        "connection": "My overlay"
+      }
+    },
+    "websocket.clientSend": {
+      "description": "Sends a message through one of your WebSocket clients. Fails when no client matches.",
+      "parameters": {
+        "connection": "Which WebSocket client from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0.",
+        "data": "What to send, like \"hello\"."
+      },
+      "returns": "true when it was sent, false when the client is not connected.",
+      "example": {
+        "connection": "My overlay",
+        "data": "hello"
+      }
+    },
+    "websocket.serverBroadcast": {
+      "description": "Sends a message to the apps connected to one of your custom WebSocket servers. Fails when the server is not running.",
+      "parameters": {
+        "connection": "Which custom WebSocket server from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0.",
+        "data": "What to send, like \"hello\".",
+        "sessionId": "Optional. Send only to this one connection (its session id). Leave it out for everyone."
+      },
+      "returns": "How many connections got it.",
+      "example": {
+        "connection": "Game server",
+        "data": "hello"
+      }
+    },
+    "websocket.serverCloseAll": {
+      "description": "Disconnects every app connected to one of your custom WebSocket servers. The server keeps running.",
+      "parameters": {
+        "connection": "Which custom WebSocket server from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "How many connections were closed (0 when the server is not running).",
+      "example": {
+        "connection": "Game server"
+      }
+    },
+    "websocket.serverCloseSession": {
+      "description": "Disconnects one app from one of your custom WebSocket servers.",
+      "parameters": {
+        "connection": "Which custom WebSocket server from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0.",
+        "sessionId": "The session id of the connection to close, like the %sessionId% of a custom server trigger."
+      },
+      "returns": "true when it was closed, false when there is no such connection or the server is not running.",
+      "example": {
+        "connection": "Game server",
+        "sessionId": "3f2a9c"
+      }
+    },
+    "websocket.serverIndex": {
+      "description": "Finds the number of a custom WebSocket server in the list on the Servers page, by its name.",
+      "parameters": {
+        "name": "The server's name, like \"Game server\"."
+      },
+      "returns": "Its number (0 is the first), or -1 when no server has that name.",
+      "example": {
+        "name": "Game server"
+      }
+    },
+    "websocket.serverIsListening": {
+      "description": "Checks whether one of your custom WebSocket servers is running.",
+      "parameters": {
+        "connection": "Which custom WebSocket server from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "true when it is running, otherwise false.",
+      "example": {
+        "connection": "Game server"
+      }
+    },
+    "websocket.serverStart": {
+      "description": "Starts one of your custom WebSocket servers, so other apps can connect. Fails when no server matches.",
+      "parameters": {
+        "connection": "Which custom WebSocket server from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "connection": "Game server"
+      }
+    },
+    "websocket.serverStop": {
+      "description": "Stops one of your custom WebSocket servers. Connected apps are disconnected.",
+      "parameters": {
+        "connection": "Which custom WebSocket server from the Servers page: its number in the list (0 is the first), its name or its id. Leave it out for 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "connection": "Game server"
+      }
+    }
+  }
+}

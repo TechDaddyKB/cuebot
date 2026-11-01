@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "slobs.call": {
+      "description": "Sends any Remote Control command to Streamlabs Desktop and gives back its answer. For advanced users. Fails with an error when Streamlabs Desktop is not connected.",
+      "parameters": {
+        "resource": "The part of Streamlabs Desktop to talk to, like \"ScenesService\" or \"StreamingService\". Needed.",
+        "method": "The command name, like \"getScenes\" or \"toggleStreaming\". Needed.",
+        "args": "Optional. A list of values the command needs, like [\"Gameplay\"]."
+      },
+      "returns": "Streamlabs Desktop's answer for that command.",
+      "example": { "resource": "ScenesService", "method": "getScenes" }
+    }
+  }
+}

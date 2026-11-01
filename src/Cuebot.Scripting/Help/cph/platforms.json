@@ -1,0 +1,154 @@
+{
+  "members": {
+    "SendMessage": {
+      "description": "Sends a message in your Twitch chat. Cuebot sends it with its connected Twitch account; the bot and fallback settings are ignored. Empty text sends nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SendMessage(\"Thanks for the follow!\");"
+    },
+    "SendYouTubeMessage": {
+      "description": "Sends a message in your YouTube chat. Give a broadcast id to post in that stream's chat, with the bot account (or the broadcaster as fallback). Empty text sends nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SendYouTubeMessage(\"Welcome to the stream!\");"
+    },
+    "SendKickMessage": {
+      "description": "Sends a message in your Kick chat. The bot and fallback settings are ignored. Empty text sends nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SendKickMessage(\"Thanks for the follow!\");"
+    },
+    "SendMessageToAll": {
+      "description": "Sends the same message to every chat that is connected right now (Twitch, YouTube, Kick and others). A Cuebot extra. Fails when no chat is connected.",
+      "returns": "Nothing.",
+      "example": "CPH.SendMessageToAll(\"Going live in 5 minutes!\");"
+    },
+    "ObsIsConnected": {
+      "description": "Checks whether OBS answers right now. Give a connection number to check another OBS; 0 is the default one.",
+      "returns": "true when OBS answered, otherwise false.",
+      "example": "bool connected = CPH.ObsIsConnected();\nCPH.LogInfo($\"OBS connected: {connected}\");"
+    },
+    "ObsSetScene": {
+      "description": "Switches OBS to another scene, by its name exactly as OBS shows it. The connection number picks another OBS (0 is the default).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetScene(\"Gameplay\");"
+    },
+    "ObsGetCurrentScene": {
+      "description": "Asks OBS which scene is live right now.",
+      "returns": "The scene's name, or empty text when OBS did not say.",
+      "example": "string scene = CPH.ObsGetCurrentScene();\nCPH.LogInfo($\"Live scene: {scene}\");"
+    },
+    "ObsSetSourceVisibility": {
+      "description": "Shows (true) or hides (false) a source in an OBS scene. Fails when the scene has no source with that name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetSourceVisibility(\"Gameplay\", \"Webcam\", true);"
+    },
+    "ObsShowSource": {
+      "description": "Shows a source in an OBS scene, like your webcam. Fails when the scene has no source with that name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsShowSource(\"Gameplay\", \"Webcam\");"
+    },
+    "ObsHideSource": {
+      "description": "Hides a source in an OBS scene. Fails when the scene has no source with that name.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsHideSource(\"Gameplay\", \"Webcam\");"
+    },
+    "ObsIsSourceVisible": {
+      "description": "Checks whether a source in an OBS scene is showing.",
+      "returns": "true when the source is visible, otherwise false.",
+      "example": "bool visible = CPH.ObsIsSourceVisible(\"Gameplay\", \"Webcam\");\nCPH.LogInfo($\"Webcam visible: {visible}\");"
+    },
+    "ObsToggleSource": {
+      "description": "Flips a source in an OBS scene: hides it when it shows, shows it when it is hidden.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsToggleSource(\"Gameplay\", \"Webcam\");"
+    },
+    "ObsShowFilter": {
+      "description": "Turns on a filter in OBS. Give a scene or source name and the filter name. The version with scene and source turns on the source's filter (the scene is not used).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsShowFilter(\"Gameplay\", \"Webcam\", \"Blur\");"
+    },
+    "ObsHideFilter": {
+      "description": "Turns off a filter in OBS. Give a scene or source name and the filter name. The version with scene and source turns off the source's filter (the scene is not used).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsHideFilter(\"Gameplay\", \"Webcam\", \"Blur\");"
+    },
+    "ObsSetGdiText": {
+      "description": "Changes the words in an OBS text source. The source is found by its name; the scene is not used.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetGdiText(\"Gameplay\", \"Death Counter\", \"Deaths: 7\");"
+    },
+    "ObsSetBrowserSource": {
+      "description": "Points an OBS browser source at a new web link. The source is found by its name; the scene is not used.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetBrowserSource(\"Gameplay\", \"Alerts\", \"https://example.com/alerts\");"
+    },
+    "ObsSetImageSourceFile": {
+      "description": "Shows a different picture file in an OBS image source. The source is found by its name; the scene is not used.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetImageSourceFile(\"Gameplay\", \"Emote\", @\"C:\\Stream\\Images\\hype.png\");"
+    },
+    "ObsSetMediaSourceFile": {
+      "description": "Loads a different video or sound file in an OBS media source. The source is found by its name; the scene is not used.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsSetMediaSourceFile(\"Gameplay\", \"Clip Player\", @\"C:\\Stream\\Clips\\win.mp4\");"
+    },
+    "ObsStartStreaming": {
+      "description": "Tells OBS to start streaming (go live).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsStartStreaming();"
+    },
+    "ObsStopStreaming": {
+      "description": "Tells OBS to stop streaming (end the stream).",
+      "returns": "Nothing.",
+      "example": "CPH.ObsStopStreaming();"
+    },
+    "ObsStartRecording": {
+      "description": "Tells OBS to start recording.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsStartRecording();"
+    },
+    "ObsStopRecording": {
+      "description": "Tells OBS to stop recording.",
+      "returns": "Nothing.",
+      "example": "CPH.ObsStopRecording();"
+    },
+    "ObsIsStreaming": {
+      "description": "Checks whether OBS is live right now.",
+      "returns": "true while OBS is streaming, otherwise false.",
+      "example": "bool live = CPH.ObsIsStreaming();\nCPH.LogInfo($\"OBS live: {live}\");"
+    },
+    "ObsIsRecording": {
+      "description": "Checks whether OBS is recording right now.",
+      "returns": "true while OBS is recording, otherwise false.",
+      "example": "bool recording = CPH.ObsIsRecording();\nCPH.LogInfo($\"OBS recording: {recording}\");"
+    },
+    "ObsSendRaw": {
+      "description": "Sends any OBS request by its name, with its data written as JSON text. For advanced users who know the obs-websocket requests.",
+      "returns": "OBS's answer as JSON text.",
+      "example": "string answer = CPH.ObsSendRaw(\"GetSceneList\", \"{}\");\nCPH.LogInfo(answer);"
+    },
+    "TtsSpeak": {
+      "description": "Says a message out loud with one of your text-to-speech voices, picked by its alias from the Speech page. Tick the bad word filter to clean up the text first.",
+      "returns": "Always 0.",
+      "example": "CPH.TtsSpeak(\"Brian\", \"Welcome to the stream!\");"
+    },
+    "PlaySound": {
+      "description": "Plays a sound file. Volume goes from 0 to 1. With finishBeforeContinuing true, your code waits until the sound ends. The sound name (or file name) lets StopSoundPlayback stop it.",
+      "returns": "Always 0.",
+      "example": "CPH.PlaySound(@\"C:\\Stream\\Sounds\\airhorn.mp3\", 0.5f);"
+    },
+    "StopSoundPlayback": {
+      "description": "Stops the sounds playing with this name. The name is the sound name you gave PlaySound, or the file name without its ending.",
+      "returns": "Nothing.",
+      "example": "CPH.StopSoundPlayback(\"airhorn\");"
+    },
+    "StopAllSoundPlayback": {
+      "description": "Stops every sound that is playing right now.",
+      "returns": "Nothing.",
+      "example": "CPH.StopAllSoundPlayback();"
+    },
+    "DiscordPostTextToWebhook": {
+      "description": "Posts a message to a Discord channel through a webhook link. You can set the name and picture it posts with, and tick text-to-speech. Fails when Discord refuses.",
+      "returns": "The new message's id, or empty text when Discord did not say.",
+      "example": "string id = CPH.DiscordPostTextToWebhook(\"https://discord.com/api/webhooks/123/abc\", \"We are live!\", \"Stream Bot\");\nCPH.LogInfo($\"Posted message {id}\");"
+    }
+  }
+}

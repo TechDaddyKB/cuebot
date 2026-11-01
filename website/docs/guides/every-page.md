@@ -24,7 +24,7 @@ to the guide that explains it.
 | **Variables** | See and change remembered values. Tabs **Persisted**, **Temporary** and **Users**. | [Variables](variables.md#seeing-and-changing-them) |
 | **Watchers** | React to folders, files and programs. Tabs **Folders**, **File tails** and **Processes**. | [Watchers](actions-and-triggers.md#watchers) |
 | **Hotkeys** | Keyboard shortcuts that run actions. | [Hotkeys](actions-and-triggers.md#hotkeys) |
-| **Scripting** | Set up Python for code steps, and see the script functions. | [Scripts](actions-and-triggers.md#scripts-for-the-curious) |
+| **Scripting** | Set up Python for code steps, and see the script functions. | [Writing code](scripting.md) |
 
 ## Chat & Events
 

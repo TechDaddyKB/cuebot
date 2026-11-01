@@ -1,0 +1,106 @@
+{
+  "functions": {
+    "voicemod.isConnected": {
+      "description": "Checks whether Cuebot is connected to Voicemod right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "voicemod.selectVoice": {
+      "description": "Switches Voicemod to another voice. Fails with an error when no voice has that name or Voicemod is not connected.",
+      "parameters": {
+        "voice": "The voice's name as Voicemod shows it, like \"Robot\", or its id."
+      },
+      "returns": "The name of the voice that is now on.",
+      "example": { "voice": "Robot" }
+    },
+    "voicemod.randomVoice": {
+      "description": "Switches Voicemod to a random voice.",
+      "parameters": {
+        "mode": "Optional. Which voices to pick from: \"AllVoices\", \"FreeVoices\", \"FavoriteVoices\" or \"CustomVoices\". Default \"AllVoices\"."
+      },
+      "returns": "true when done.",
+      "example": { "mode": "FavoriteVoices" }
+    },
+    "voicemod.getCurrentVoice": {
+      "description": "Asks Voicemod which voice is on right now.",
+      "parameters": {},
+      "returns": "id and name of the current voice.",
+      "example": {}
+    },
+    "voicemod.getVoices": {
+      "description": "Lists all your Voicemod voices.",
+      "parameters": {},
+      "returns": "A list of voices. Each has id, name and favorite (true when you starred it).",
+      "example": {}
+    },
+    "voicemod.getSounds": {
+      "description": "Lists all the sounds on your Voicemod soundboard.",
+      "parameters": {},
+      "returns": "A list of sounds. Each has name and fileName.",
+      "example": {}
+    },
+    "voicemod.playSound": {
+      "description": "Plays a sound from your Voicemod soundboard. Fails with an error when no sound has that name.",
+      "parameters": {
+        "sound": "The sound's name as Voicemod shows it, like \"Air Horn\", or its file name."
+      },
+      "returns": "The name of the sound that played.",
+      "example": { "sound": "Air Horn" }
+    },
+    "voicemod.stopSounds": {
+      "description": "Stops every Voicemod soundboard sound that is playing.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "voicemod.setVoiceChanger": {
+      "description": "Turns the Voicemod voice changer on or off. When it is off, your normal voice is heard.",
+      "parameters": {
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new state: true for on, false for off.",
+      "example": { "state": "On" }
+    },
+    "voicemod.setHearMyself": {
+      "description": "Turns Voicemod's \"Hear myself\" on or off. When it is on, you hear your changed voice in your headphones.",
+      "parameters": {
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new state: true for on, false for off.",
+      "example": { "state": "Off" }
+    },
+    "voicemod.setBackgroundEffects": {
+      "description": "Turns Voicemod's background effects (the sounds behind some voices) on or off.",
+      "parameters": {
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new state: true for on, false for off.",
+      "example": { "state": "Off" }
+    },
+    "voicemod.setMute": {
+      "description": "Mutes or unmutes your microphone in Voicemod.",
+      "parameters": {
+        "state": "Optional. \"On\" mutes, \"Off\" unmutes, \"Toggle\" switches. Default \"Toggle\"."
+      },
+      "returns": "The new state: true when muted, false when not.",
+      "example": { "state": "On" }
+    },
+    "voicemod.getState": {
+      "description": "Tells you the last known state of one Voicemod switch. It does not ask Voicemod again.",
+      "parameters": {
+        "switch": "Which switch: \"VoiceChanger\", \"HearMyself\", \"BackgroundEffects\" or \"MuteMic\"."
+      },
+      "returns": "true for on, false for off, or null when Cuebot does not know yet. Fails with an error for any other switch name.",
+      "example": { "switch": "VoiceChanger" }
+    },
+    "voicemod.setCensorBeep": {
+      "description": "Starts or stops Voicemod's censor beep, the bleep that covers bad words.",
+      "parameters": {
+        "state": "Optional. \"On\" starts the beep, \"Off\" stops it. Default \"On\"."
+      },
+      "returns": "true when done.",
+      "example": { "state": "On" }
+    }
+  }
+}

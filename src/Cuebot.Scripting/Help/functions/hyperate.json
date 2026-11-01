@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "hyperate.isConnected": {
+      "description": "Checks whether Cuebot is connected to HypeRate (heart rate) right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    }
+  }
+}

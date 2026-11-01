@@ -1,0 +1,324 @@
+{
+  "members": {
+    "TwitchPollCreate": {
+      "description": "Starts a Twitch poll with 2 to 5 choices. The time is in seconds (15 to 1800). Channel points per vote lets viewers buy extra votes. Bits voting no longer exists, so bitsPerVote is ignored.",
+      "returns": "true when the poll started. False when the title is empty or Twitch said no (a warning goes to the log).",
+      "example": "bool started = CPH.TwitchPollCreate(\"Which game next?\", new List<string> { \"Minecraft\", \"Celeste\" }, 120);\nCPH.LogInfo($\"Poll started: {started}\");"
+    },
+    "TwitchPollTerminate": {
+      "description": "Ends the poll that is running now and keeps the results on screen. Twitch allows only one poll at a time, so the poll id you pass is not used.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchPollTerminate(\"\");"
+    },
+    "TwitchPollArchive": {
+      "description": "Ends the poll that is running now and hides its results. Twitch allows only one poll at a time, so the poll id you pass is not used.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchPollArchive(\"\");"
+    },
+    "TwitchPredictionCreate": {
+      "description": "Starts a Twitch prediction with 2 to 10 outcomes, open for the given seconds (30 to 1800). One version takes a list of outcomes; the other takes just two outcomes.",
+      "returns": "The new prediction's id as text, or null when the title is empty or Twitch said no.",
+      "example": "var id = CPH.TwitchPredictionCreate(\"Will I beat the boss?\", \"Yes\", \"No\", 120);\nCPH.LogInfo($\"Prediction id: {id}\");"
+    },
+    "TwitchPredictionLock": {
+      "description": "Locks the open prediction so nobody can vote any more. Twitch allows only one at a time, so the id you pass is not used.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchPredictionLock(\"\");"
+    },
+    "TwitchPredictionCancel": {
+      "description": "Cancels the open prediction and gives everyone their points back. The id you pass is not used; Cuebot cancels the open one.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchPredictionCancel(\"\");"
+    },
+    "TwitchPredictionResolve": {
+      "description": "Picks the winning outcome of the open prediction and pays out the points. winningId can be the outcome's id, its title (\"Yes\") or its number (1, 2, ...). The prediction id is not used.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchPredictionResolve(\"\", \"Yes\");"
+    },
+    "TwitchStartRaidByName": {
+      "description": "Starts a raid to another channel, using its login name (a leading @ is fine).",
+      "returns": "true when the raid started. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchStartRaidByName(\"coolstreamer\");\nCPH.LogInfo($\"Raid started: {ok}\");"
+    },
+    "TwitchStartRaidById": {
+      "description": "Starts a raid to another channel, using its Twitch user id.",
+      "returns": "true when the raid started. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchStartRaidById(\"12345678\");\nCPH.LogInfo($\"Raid started: {ok}\");"
+    },
+    "TwitchCancelRaid": {
+      "description": "Cancels the raid you started, before it goes out.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchCancelRaid();\nCPH.LogInfo($\"Raid cancelled: {ok}\");"
+    },
+    "TwitchSendShoutoutByLogin": {
+      "description": "Sends a Twitch shoutout to another channel, using its login name (a leading @ is fine).",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchSendShoutoutByLogin(\"coolstreamer\");\nCPH.LogInfo($\"Shoutout sent: {ok}\");"
+    },
+    "TwitchSendShoutoutById": {
+      "description": "Sends a Twitch shoutout to another channel, using its Twitch user id.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchSendShoutoutById(\"12345678\");\nCPH.LogInfo($\"Shoutout sent: {ok}\");"
+    },
+    "TwitchAddChannelTag": {
+      "description": "Adds one tag to your Twitch channel and keeps the tags you already have.",
+      "returns": "true when it worked. False when the tag is empty or Twitch said no.",
+      "example": "bool ok = CPH.TwitchAddChannelTag(\"Cozy\");\nCPH.LogInfo($\"Tag added: {ok}\");"
+    },
+    "TwitchRemoveChannelTag": {
+      "description": "Removes one tag from your Twitch channel. Upper and lower case do not matter.",
+      "returns": "true when it worked. False when the tag is empty or Twitch said no.",
+      "example": "bool ok = CPH.TwitchRemoveChannelTag(\"Cozy\");\nCPH.LogInfo($\"Tag removed: {ok}\");"
+    },
+    "TwitchClearChannelTags": {
+      "description": "Removes every tag from your Twitch channel.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchClearChannelTags();\nCPH.LogInfo($\"Tags cleared: {ok}\");"
+    },
+    "TwitchSetChannelTags": {
+      "description": "Replaces all your channel tags with the ones in the list. Twitch allows up to 10 tags.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchSetChannelTags(new List<string> { \"English\", \"Cozy\", \"Speedrun\" });\nCPH.LogInfo($\"Tags set: {ok}\");"
+    },
+    "TwitchAddModerator": {
+      "description": "Makes a viewer a moderator in your channel, using their login name.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchAddModerator(\"trustedfriend\");\nCPH.LogInfo($\"Mod added: {ok}\");"
+    },
+    "TwitchRemoveModerator": {
+      "description": "Takes away a viewer's moderator role, using their login name.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchRemoveModerator(\"trustedfriend\");\nCPH.LogInfo($\"Mod removed: {ok}\");"
+    },
+    "TwitchAddVip": {
+      "description": "Makes a viewer a VIP in your channel, using their login name.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchAddVip(\"loyalviewer\");\nCPH.LogInfo($\"VIP added: {ok}\");"
+    },
+    "TwitchRemoveVip": {
+      "description": "Takes away a viewer's VIP badge, using their login name.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchRemoveVip(\"loyalviewer\");\nCPH.LogInfo($\"VIP removed: {ok}\");"
+    },
+    "TwitchEmoteOnly": {
+      "description": "Turns emote-only chat on (true, the default) or off (false). In emote-only chat, viewers can only send emotes.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchEmoteOnly(true);"
+    },
+    "TwitchSubscriberOnly": {
+      "description": "Turns subscriber-only chat on (true, the default) or off (false). Then only subscribers can chat.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchSubscriberOnly(false);"
+    },
+    "TwitchFollowMode": {
+      "description": "Turns follower-only chat on or off. duration is how many minutes people must have followed before they can chat (0 to 129600; 0 means any follower).",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchFollowMode(true, 10);"
+    },
+    "TwitchSlowMode": {
+      "description": "Turns slow mode on or off. duration is how many seconds each viewer waits between messages (3 to 120). 0 uses 30 seconds.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchSlowMode(true, 15);"
+    },
+    "TwitchShieldModeOn": {
+      "description": "Turns on Shield Mode, Twitch's panic button against hate raids.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchShieldModeOn();\nCPH.LogInfo($\"Shield mode on: {ok}\");"
+    },
+    "TwitchShieldModeOff": {
+      "description": "Turns Shield Mode off again.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchShieldModeOff();\nCPH.LogInfo($\"Shield mode off: {ok}\");"
+    },
+    "UpdateReward": {
+      "description": "Changes a channel point reward's title, prompt, cost and colour in one go. Leave a value out to keep it. rewardId is the reward's id or title. Twitch only lets Cuebot change rewards Cuebot created.",
+      "returns": "true when Twitch accepted every change, otherwise false (with a warning in the log).",
+      "example": "bool ok = CPH.UpdateReward(\"Hydrate\", cost: 500, backgroundColor: \"#00AAFF\");\nCPH.LogInfo($\"Reward updated: {ok}\");"
+    },
+    "UpdateRewardTitle": {
+      "description": "Changes a channel point reward's title. rewardId is the reward's id or title. Only works for rewards Cuebot created.",
+      "returns": "true when it worked. False when the new title is empty or Twitch said no.",
+      "example": "bool ok = CPH.UpdateRewardTitle(\"Hydrate\", \"Drink some water!\");\nCPH.LogInfo($\"Title changed: {ok}\");"
+    },
+    "UpdateRewardPrompt": {
+      "description": "Changes the text viewers see under a channel point reward. rewardId is the reward's id or title. An empty prompt changes nothing. Only works for rewards Cuebot created.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.UpdateRewardPrompt(\"Hydrate\", \"Make me take a sip of water.\");\nCPH.LogInfo($\"Prompt changed: {ok}\");"
+    },
+    "UpdateRewardBackgroundColor": {
+      "description": "Changes a channel point reward's colour, written like \"#9147FF\". rewardId is the reward's id or title. Only works for rewards Cuebot created.",
+      "returns": "true when it worked. False when the colour is empty or Twitch said no.",
+      "example": "bool ok = CPH.UpdateRewardBackgroundColor(\"Hydrate\", \"#9147FF\");\nCPH.LogInfo($\"Colour changed: {ok}\");"
+    },
+    "UpdateRewardCost": {
+      "description": "Sets a channel point reward's cost. With additive true, it adds the number to the current cost instead. A cost you set is at least 1. Only works for rewards Cuebot created.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.UpdateRewardCost(\"Hydrate\", 100, true);"
+    },
+    "UpdateRewardCooldown": {
+      "description": "Sets how many seconds everyone must wait before a reward can be used again. 0 turns the cooldown off. With additive true, it adds to the current cooldown. Only works for rewards Cuebot created.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.UpdateRewardCooldown(\"Hydrate\", 300);"
+    },
+    "TwitchRewardGroupEnable": {
+      "description": "Turns on every reward in a reward group. You set up reward groups on Cuebot's Twitch page. Rewards Cuebot did not create are skipped.",
+      "returns": "Nothing. If it fails (for example the group has no rewards), a warning goes to the log.",
+      "example": "CPH.TwitchRewardGroupEnable(\"Games\");"
+    },
+    "TwitchRewardGroupDisable": {
+      "description": "Turns off every reward in a reward group, so viewers no longer see them. Rewards Cuebot did not create are skipped.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchRewardGroupDisable(\"Games\");"
+    },
+    "TwitchRewardGroupToggleEnable": {
+      "description": "Flips a reward group on or off. If any reward in it is on, all go off; otherwise all go on. Rewards Cuebot did not create are skipped.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchRewardGroupToggleEnable(\"Games\");"
+    },
+    "TwitchRewardGroupPause": {
+      "description": "Pauses every reward in a reward group. Viewers still see them but cannot redeem them. Rewards Cuebot did not create are skipped.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchRewardGroupPause(\"Games\");"
+    },
+    "TwitchRewardGroupUnPause": {
+      "description": "Unpauses every reward in a reward group, so viewers can redeem them again. Rewards Cuebot did not create are skipped.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchRewardGroupUnPause(\"Games\");"
+    },
+    "TwitchRewardGroupTogglePause": {
+      "description": "Flips a reward group between paused and not paused. If any reward in it is paused, all are unpaused; otherwise all are paused.",
+      "returns": "Nothing. If it fails, a warning goes to the log.",
+      "example": "CPH.TwitchRewardGroupTogglePause(\"Games\");"
+    },
+    "TwitchIsUserSubscribed": {
+      "description": "Checks whether a viewer (by Twitch user id) subscribes to your channel. It also gives you their tier: \"1000\", \"2000\" or \"3000\" for tier 1, 2 or 3.",
+      "returns": "true when they subscribe, otherwise false (also when the check failed). tier is empty when they do not subscribe.",
+      "example": "if (CPH.TwitchIsUserSubscribed(\"12345678\", out string tier))\n{\n    CPH.LogInfo($\"Subscribed at tier {tier}\");\n}"
+    },
+    "GetTeamInfoById": {
+      "description": "Lists the Twitch teams a channel belongs to, using its Twitch user id. Cuebot fills in only the team names.",
+      "returns": "A list of teams (each with its name). Empty when the channel has no team or the check failed.",
+      "example": "var teams = CPH.GetTeamInfoById(\"12345678\");\nCPH.LogInfo($\"Teams: {string.Join(\", \", teams.Select(t => t.TeamDisplayName))}\");"
+    },
+    "GetTeamInfoByLogin": {
+      "description": "Lists the Twitch teams a channel belongs to, using its login name. Cuebot fills in only the team names.",
+      "returns": "A list of teams (each with its name). Empty when the channel has no team or the check failed.",
+      "example": "var teams = CPH.GetTeamInfoByLogin(\"coolstreamer\");\nCPH.LogInfo($\"In {teams.Count} teams\");"
+    },
+    "TwitchGetChannelGuestStarSettings": {
+      "description": "Reads your channel's Guest Star settings: number of slots, layout, whether moderators can send guests live, and browser source audio.",
+      "returns": "The settings, or null when Twitch said no.",
+      "example": "var settings = CPH.TwitchGetChannelGuestStarSettings();\nCPH.LogInfo($\"Guest Star slots: {settings?.SlotCount}\");"
+    },
+    "TwitchUpdateChannelGuestStarSettings": {
+      "description": "Changes your Guest Star settings. Leave a value out to keep it. Layout is a Twitch name like \"TILED_LAYOUT\". regeneratgeBrowserSource true makes new browser source links (old ones stop working).",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchUpdateChannelGuestStarSettings(slotCount: 4, groupLayout: \"TILED_LAYOUT\");\nCPH.LogInfo($\"Settings changed: {ok}\");"
+    },
+    "TwitchGetGuestStarSession": {
+      "description": "Reads the Guest Star session that is running now, with its guests and their slots.",
+      "returns": "The session, or null when none is running (or the check failed).",
+      "example": "var session = CPH.TwitchGetGuestStarSession();\nCPH.LogInfo($\"Guests: {session?.Guests.Count ?? 0}\");"
+    },
+    "TwitchCreateGuestStarSession": {
+      "description": "Starts a Guest Star session. If one is already running, you get that one.",
+      "returns": "The session, or null when Twitch said no.",
+      "example": "var session = CPH.TwitchCreateGuestStarSession();\nCPH.LogInfo($\"Session id: {session?.Id}\");"
+    },
+    "TwitchEndGuestStarSession": {
+      "description": "Ends the Guest Star session that is running now.",
+      "returns": "The session as it was just before it ended, or null when none was running or ending failed.",
+      "example": "var ended = CPH.TwitchEndGuestStarSession();\nCPH.LogInfo($\"Ended session: {ended?.Id}\");"
+    },
+    "TwitchGetGuestStarInvites": {
+      "description": "Lists the people invited to your Guest Star session, with each one's status.",
+      "returns": "A list of invites (each with the user id and status). Empty when there are none or the check failed.",
+      "example": "var invites = CPH.TwitchGetGuestStarInvites();\nCPH.LogInfo($\"Invites: {invites.Count}\");"
+    },
+    "TwitchSendGuestStarInvite": {
+      "description": "Invites someone (by login name) to your Guest Star session.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchSendGuestStarInvite(\"coolguest\");\nCPH.LogInfo($\"Invite sent: {ok}\");"
+    },
+    "TwitchDeleteGuestStarInvite": {
+      "description": "Takes back a Guest Star invite (by login name).",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchDeleteGuestStarInvite(\"coolguest\");\nCPH.LogInfo($\"Invite removed: {ok}\");"
+    },
+    "TwitchAssignGuestStarSlot": {
+      "description": "Puts an invited guest (by login name) into a Guest Star slot, by slot number.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchAssignGuestStarSlot(\"coolguest\", 1);\nCPH.LogInfo($\"Guest placed: {ok}\");"
+    },
+    "TwitchUpdateGuestStarSlot": {
+      "description": "Moves the guest in one Guest Star slot to another slot.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchUpdateGuestStarSlot(1, 2);\nCPH.LogInfo($\"Guest moved: {ok}\");"
+    },
+    "TwitchDeleteGuestStarSlot": {
+      "description": "Takes a guest (by login name) out of their Guest Star slot.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchDeleteGuestStarSlot(\"coolguest\", 1);\nCPH.LogInfo($\"Guest removed: {ok}\");"
+    },
+    "TwitchUpdateGuestStarSlotSettings": {
+      "description": "Changes a Guest Star slot: audio on or off, video on or off, live or not, and volume (0 to 100). Leave a value out to keep it.",
+      "returns": "true when it worked. When Twitch refuses or is not signed in, it gives back false and writes a warning to the log.",
+      "example": "bool ok = CPH.TwitchUpdateGuestStarSlotSettings(1, isAudioEnabled: true, volume: 80);\nCPH.LogInfo($\"Slot changed: {ok}\");"
+    },
+    "SendYouTubeMessage": {
+      "description": "Sends a message in YouTube chat. This version takes a broadcast id to pick which live chat. useBot true sends with your bot account. With null, it sends to your YouTube chat the normal way.",
+      "returns": "Nothing.",
+      "example": "CPH.SendYouTubeMessage(\"Thanks for watching!\", true, \"dQw4w9WgXcQ\");"
+    },
+    "SendYouTubeMessageToAllMonitored": {
+      "description": "Sends the same message to the chat of every YouTube broadcast Cuebot is watching. bot (true by default) sends with your bot account; when the bot is not signed in, your main account sends it.",
+      "returns": "Nothing. An empty message sends nothing.",
+      "example": "CPH.SendYouTubeMessageToAllMonitored(\"Giveaway starts in 5 minutes!\");"
+    },
+    "SetTwitchUsersVarById": {
+      "description": "Saves the same user variable for every Twitch user id in the list. Handy for giving several viewers the same value at once.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTwitchUsersVarById(new List<string> { \"12345678\", \"87654321\" }, \"team\", \"red\");"
+    },
+    "SetYouTubeUsersVarById": {
+      "description": "Saves the same user variable for every YouTube user id (channel id) in the list.",
+      "returns": "Nothing.",
+      "example": "CPH.SetYouTubeUsersVarById(new List<string> { \"UCabc123\", \"UCdef456\" }, \"team\", \"blue\");"
+    },
+    "IncrementKickUsersVarById": {
+      "description": "Adds a number to a user variable for each Kick user id in the list. Users who do not have that variable yet are skipped. If the value is not a number, a warning goes to the log.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementKickUsersVarById(new List<string> { \"1234\", \"5678\" }, \"points\", 10);"
+    },
+    "UnsetTwitchUser": {
+      "description": "Deletes every user variable of one Twitch viewer, found by name. Cuebot keeps one set per viewer, so persisted is ignored.",
+      "returns": "Nothing. Nothing happens when the viewer is not known.",
+      "example": "CPH.UnsetTwitchUser(\"oldviewer\");"
+    },
+    "UnsetTwitchUserById": {
+      "description": "Deletes every user variable of one Twitch viewer, found by user id. persisted is ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTwitchUserById(\"12345678\");"
+    },
+    "UnsetYouTubeUser": {
+      "description": "Deletes every user variable of one YouTube viewer, found by name. persisted is ignored.",
+      "returns": "Nothing. Nothing happens when the viewer is not known.",
+      "example": "CPH.UnsetYouTubeUser(\"oldviewer\");"
+    },
+    "UnsetYouTubeUserById": {
+      "description": "Deletes every user variable of one YouTube viewer, found by user id. persisted is ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetYouTubeUserById(\"UCabc123\");"
+    },
+    "UnsetKickUser": {
+      "description": "Deletes every user variable of one Kick viewer, found by name. persisted is ignored.",
+      "returns": "Nothing. Nothing happens when the viewer is not known.",
+      "example": "CPH.UnsetKickUser(\"oldviewer\");"
+    },
+    "UnsetKickUserById": {
+      "description": "Deletes every user variable of one Kick viewer, found by user id. persisted is ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetKickUserById(\"1234\");"
+    }
+  }
+}

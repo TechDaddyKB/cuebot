@@ -1,0 +1,37 @@
+{
+  "functions": {
+    "mtion.isRunning": {
+      "description": "Checks whether mtion studio answered Cuebot the last time Cuebot asked it something.",
+      "parameters": {},
+      "returns": "true when mtion studio answered last time, otherwise false.",
+      "example": {}
+    },
+    "mtion.sendTrigger": {
+      "description": "Sets off an external trigger in your open mtion clubhouse, like confetti. It does not fail when mtion studio is closed; check the result instead.",
+      "parameters": {
+        "trigger": "The trigger's name in your clubhouse, like \"Confetti\", or its id.",
+        "parameters": "Optional. Values for the trigger, by parameter name, like {\"Amount\": 5}. Lists of options take the option number."
+      },
+      "returns": "running (mtion studio answered), found (the trigger exists) and sent (it was set off), each true or false.",
+      "example": { "trigger": "Confetti", "parameters": { "Amount": 5 } }
+    },
+    "mtion.getActiveClubhouse": {
+      "description": "Tells you which clubhouse is open in mtion studio right now.",
+      "parameters": {},
+      "returns": "id, name and description of the open clubhouse, or null when none is open (or mtion studio is closed).",
+      "example": {}
+    },
+    "mtion.getTriggers": {
+      "description": "Lists the external triggers in the clubhouse that is open in mtion studio.",
+      "parameters": {},
+      "returns": "A list of triggers. Each has id, name and parameters (each with index, name and type).",
+      "example": {}
+    },
+    "mtion.getClubhouses": {
+      "description": "Lists every clubhouse of the mtion account that is signed in.",
+      "parameters": {},
+      "returns": "A list of clubhouses. Each has id, name and description.",
+      "example": {}
+    }
+  }
+}

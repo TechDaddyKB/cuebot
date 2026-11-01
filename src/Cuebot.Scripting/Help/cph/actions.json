@@ -1,0 +1,64 @@
+{
+  "members": {
+    "ActionExists": {
+      "description": "Checks whether you have an action with this name. Big and small letters do not matter.",
+      "returns": "true when the action exists, otherwise false.",
+      "example": "bool exists = CPH.ActionExists(\"Raid Alert\");\nCPH.LogInfo($\"Raid Alert exists: {exists}\");"
+    },
+    "GetActions": {
+      "description": "Gives you a list of all your actions, each with its id, name, group, whether it is on, how many sub-actions it has, and its queue.",
+      "returns": "A list of your actions.",
+      "example": "var actions = CPH.GetActions();\nCPH.LogInfo($\"You have {actions.Count} actions.\");"
+    },
+    "EnableAction": {
+      "description": "Turns an action on, by its name. If no action has that name, Cuebot writes a warning in the log.",
+      "returns": "Nothing.",
+      "example": "CPH.EnableAction(\"Raid Alert\");"
+    },
+    "DisableAction": {
+      "description": "Turns an action off, by its name, so its triggers no longer run it. If no action has that name, Cuebot writes a warning in the log.",
+      "returns": "Nothing.",
+      "example": "CPH.DisableAction(\"Raid Alert\");"
+    },
+    "EnableActionById": {
+      "description": "Turns an action on, by its id. Stops your code with an error when no action has that id.",
+      "returns": "Nothing.",
+      "example": "CPH.EnableActionById(\"5f2c1a7e-3b4d-4e8f-9a10-2b3c4d5e6f70\");"
+    },
+    "DisableActionById": {
+      "description": "Turns an action off, by its id. Stops your code with an error when no action has that id.",
+      "returns": "Nothing.",
+      "example": "CPH.DisableActionById(\"5f2c1a7e-3b4d-4e8f-9a10-2b3c4d5e6f70\");"
+    },
+    "RunAction": {
+      "description": "Runs another action by its name, with this action's variables. By default it runs now and waits for it. Pass false to put it in its queue and go on at once.",
+      "returns": "true when it worked (or was queued). false when no action has that name.",
+      "example": "bool ok = CPH.RunAction(\"Shoutout\");\nCPH.LogInfo($\"Shoutout worked: {ok}\");"
+    },
+    "RunActionById": {
+      "description": "Runs another action by its id, with this action's variables. By default it runs now and waits. Pass false to queue it and go on at once.",
+      "returns": "true when it worked (or was queued). false when no action has that id.",
+      "example": "bool ok = CPH.RunActionById(\"5f2c1a7e-3b4d-4e8f-9a10-2b3c4d5e6f70\");\nCPH.LogInfo($\"Ran it: {ok}\");"
+    },
+    "PauseActionQueue": {
+      "description": "Pauses an action queue by its name. Actions waiting in it stay there until you resume it.",
+      "returns": "Nothing.",
+      "example": "CPH.PauseActionQueue(\"Alerts\");"
+    },
+    "ResumeActionQueue": {
+      "description": "Starts a paused action queue again. Pass true as the second value to throw away the actions still waiting in it first.",
+      "returns": "Nothing.",
+      "example": "CPH.ResumeActionQueue(\"Alerts\", true);"
+    },
+    "PauseAllActionQueues": {
+      "description": "Pauses every action queue at once. Handy for a \"be right back\" break.",
+      "returns": "Nothing.",
+      "example": "CPH.PauseAllActionQueues();"
+    },
+    "ResumeAllActionQueues": {
+      "description": "Starts every action queue again. Pass true to throw away all waiting actions first.",
+      "returns": "Nothing.",
+      "example": "CPH.ResumeAllActionQueues();"
+    }
+  }
+}

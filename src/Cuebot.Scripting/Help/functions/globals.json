@@ -1,0 +1,54 @@
+{
+  "functions": {
+    "globals.clearTemporary": {
+      "description": "Deletes every temporary global variable (the ones that are not saved). Saved ones stay.",
+      "parameters": {},
+      "returns": "How many variables were deleted.",
+      "example": {}
+    },
+    "globals.delete": {
+      "description": "Deletes a global variable.",
+      "parameters": {
+        "name": "The variable name, like \"deaths\"."
+      },
+      "returns": "true when the variable existed, false when there was nothing to delete.",
+      "example": { "name": "deaths" }
+    },
+    "globals.get": {
+      "description": "Reads a global variable as text, the same way ~name~ shows it in a message.",
+      "parameters": {
+        "name": "The variable name, like \"deaths\"."
+      },
+      "returns": "The value as text, or null when there is no such variable.",
+      "example": { "name": "deaths" }
+    },
+    "globals.getValue": {
+      "description": "Reads a global variable and keeps its type, so a number stays a number and true/false stays true/false.",
+      "parameters": {
+        "name": "The variable name, like \"deaths\"."
+      },
+      "returns": "The value as a number, true/false or text, or null when there is no such variable.",
+      "example": { "name": "deaths" }
+    },
+    "globals.increment": {
+      "description": "Adds to a number in a global variable, like a death counter. A missing variable starts at 0. Fails when the variable holds text that is not a number.",
+      "parameters": {
+        "name": "The variable name, like \"deaths\".",
+        "amount": "Optional. How much to add, like 1 or 0.5. Use a negative number to subtract. Leave it out to add 1.",
+        "persisted": "Optional. true (the default) saves it so it is still there after a restart; false keeps it only until Cuebot closes."
+      },
+      "returns": "The new value.",
+      "example": { "name": "deaths", "amount": 1 }
+    },
+    "globals.set": {
+      "description": "Saves a value in a global variable. Every action can read it, and messages can show it with ~name~. The value is stored as text.",
+      "parameters": {
+        "name": "The variable name, like \"lastRaider\".",
+        "value": "The value to store, like \"CoolStreamer\". Numbers and true/false are stored as text.",
+        "persisted": "Optional. true (the default) saves it so it is still there after a restart; false keeps it only until Cuebot closes."
+      },
+      "returns": "Nothing.",
+      "example": { "name": "lastRaider", "value": "CoolStreamer" }
+    }
+  }
+}

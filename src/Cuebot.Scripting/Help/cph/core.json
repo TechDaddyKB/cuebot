@@ -1,0 +1,69 @@
+{
+  "members": {
+    "TryGetArg": {
+      "description": "Reads one of the action's variables (the %name% words) by its name. The version with a type turns the value into that type for you, like text or a whole number.",
+      "returns": "true and the value when the variable exists (and fits the type), otherwise false. Always false while Init() runs outside an action.",
+      "example": "if (CPH.TryGetArg(\"user\", out string user))\n{\n    CPH.LogInfo($\"Hello {user}!\");\n}"
+    },
+    "SetArgument": {
+      "description": "Sets a variable (a %name% word) for the rest of this action, so later sub-actions can use it. Only works while an action runs, not from Init().",
+      "returns": "Nothing.",
+      "example": "CPH.SetArgument(\"prize\", \"a free song request\");"
+    },
+    "GetSource": {
+      "description": "Tells you which kind of event started this action, like Twitch or Command. Gives None when you ran the action by hand.",
+      "returns": "The event source, or None when it is unknown.",
+      "example": "var source = CPH.GetSource();\nCPH.LogInfo($\"Started by: {source}\");"
+    },
+    "GetEventType": {
+      "description": "Tells you exactly which event started this action, like TwitchFollow or TwitchCheer. Gives None when it is unknown or you ran the action by hand.",
+      "returns": "The event type, or None.",
+      "example": "var type = CPH.GetEventType();\nCPH.LogInfo($\"Event: {type}\");"
+    },
+    "LogInfo": {
+      "description": "Writes a normal line to Cuebot's log. Handy to see what your code is doing.",
+      "returns": "Nothing.",
+      "example": "CPH.LogInfo(\"The raid alert started.\");"
+    },
+    "LogWarn": {
+      "description": "Writes a warning line to Cuebot's log. Use it when something looks wrong but your code can go on.",
+      "returns": "Nothing.",
+      "example": "CPH.LogWarn(\"No game name was given, using Just Chatting.\");"
+    },
+    "LogError": {
+      "description": "Writes an error line to Cuebot's log. Use it when something failed.",
+      "returns": "Nothing.",
+      "example": "CPH.LogError(\"Could not reach the song list.\");"
+    },
+    "LogDebug": {
+      "description": "Writes a debug line to Cuebot's log, for extra details while you test your code.",
+      "returns": "Nothing.",
+      "example": "CPH.LogDebug(\"Checking the viewer list now.\");"
+    },
+    "LogVerbose": {
+      "description": "Writes a very detailed line to Cuebot's log. In Cuebot this is the same as LogDebug.",
+      "returns": "Nothing.",
+      "example": "CPH.LogVerbose(\"Loop step 3 done.\");"
+    },
+    "Wait": {
+      "description": "Pauses your code for a number of milliseconds (1000 = 1 second). It stops early when the action is cancelled or the script runs out of time.",
+      "returns": "Nothing.",
+      "example": "CPH.Wait(2000);\nCPH.LogInfo(\"Two seconds later.\");"
+    },
+    "Between": {
+      "description": "Picks a random whole number between two numbers. Both ends can be picked. If you swap them by mistake, it still works.",
+      "returns": "A random whole number from min to max.",
+      "example": "int roll = CPH.Between(1, 6);\nCPH.LogInfo($\"You rolled a {roll}!\");"
+    },
+    "NextDouble": {
+      "description": "Picks a random number from 0 up to (but not including) 1. Handy for chances, like a 25% win.",
+      "returns": "A random number from 0 to just under 1.",
+      "example": "double chance = CPH.NextDouble();\nCPH.LogInfo(chance < 0.25 ? \"You win!\" : \"Try again.\");"
+    },
+    "GetVersion": {
+      "description": "Gives you Cuebot's version number. (Streamer.bot gives its own version; Cuebot gives Cuebot's.)",
+      "returns": "Cuebot's version as text.",
+      "example": "string version = CPH.GetVersion();\nCPH.LogInfo($\"Cuebot version {version}\");"
+    }
+  }
+}

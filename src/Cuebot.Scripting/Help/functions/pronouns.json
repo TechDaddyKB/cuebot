@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "pronouns.get": {
+      "description": "Looks up the pronouns a Twitch viewer set on pronouns.alejo.io. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "user": "Optional. The viewer's Twitch login name, like \"coolviewer42\". Leave it out for the user of the trigger."
+      },
+      "returns": "An object with display (like \"She/Her\"), subject, object, singular, altSubject and altObject. null when they set none or the site cannot be reached.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    }
+  }
+}

@@ -1,7 +1,8 @@
 # The Cuebot documentation site (GitHub Pages): https://techdaddykb.github.io/cuebot/
 # Build locally: pip install -r website/requirements.txt && mkdocs serve -f website/mkdocs.yml
 # The pages under docs/reference/triggers and docs/reference/sub-actions are generated from src/Cuebot.Core/Help
-# by tests/Cuebot.UiTests/ActionHelpTests.cs (CUEBOT_WRITE_REFERENCE=1); do not edit them by hand.
+# by tests/Cuebot.UiTests/ActionHelpTests.cs (CUEBOT_WRITE_REFERENCE=1); docs/reference/csharp, script-functions,
+# rest-api.md and mcp-tools.md by DeveloperReferenceTests.cs (see docs/WRITING_HELP.md). Do not edit them by hand.
 site_name: Cuebot Docs
 site_description: Stream automation for Twitch, YouTube, Kick and Rumble, explained simply.
 site_url: https://techdaddykb.github.io/cuebot/
@@ -62,6 +63,7 @@ nav:
   - Guides:
       - Chat commands: guides/commands.md
       - Overlays and alerts: guides/overlays.md
+      - Writing your own overlay widgets: guides/widget-code.md
       - Text-to-speech: guides/text-to-speech.md
       - Music and now playing: guides/music-and-now-playing.md
       - Points, store and giveaways: guides/community.md
@@ -74,6 +76,8 @@ nav:
       - The assistant on your own computer: guides/local-models.md
       - Moving from Streamer.bot: guides/moving-from-streamer-bot.md
       - Cuebot's servers: guides/servers.md
+      - Writing code (C# and Python): guides/scripting.md
+      - Controlling Cuebot from other programs: guides/api.md
       - Backups and your data: guides/backups-and-your-data.md
       - Linux: guides/linux.md
       - Command-line options: guides/command-line-options.md
@@ -83,3 +87,7 @@ nav:
       - reference/index.md
       - Triggers: reference/triggers/index.md
       - Sub-actions: reference/sub-actions/index.md
+      - C# methods (CPH): reference/csharp/index.md
+      - Script functions (C# and Python): reference/script-functions/index.md
+      - REST API: reference/rest-api.md
+      - MCP tools: reference/mcp-tools.md

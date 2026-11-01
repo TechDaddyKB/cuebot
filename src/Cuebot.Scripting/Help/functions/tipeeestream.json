@@ -1,0 +1,18 @@
+{
+  "functions": {
+    "tipeeestream.isConnected": {
+      "description": "Checks whether Cuebot is connected to TipeeeStream right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "tipeeestream.sendTestEvent": {
+      "description": "Fakes a TipeeeStream event inside Cuebot, so you can test your triggers. Nothing is sent to TipeeeStream and it works without a connection.",
+      "parameters": {
+        "kind": "Optional. Which event: \"donation\", \"follow\" or \"subscription\". Default \"donation\"."
+      },
+      "returns": "true when the test event was sent, false when the kind is unknown.",
+      "example": { "kind": "donation" }
+    }
+  }
+}

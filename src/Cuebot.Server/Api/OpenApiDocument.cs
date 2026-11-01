@@ -312,9 +312,12 @@ public static class OpenApiDocument
             ("id", Str("uuid; generated when missing")), ("name", Str()), ("group", Str()), ("enabled", Bool()),
             ("queue", Str("Action queue name; empty = Default")), ("concurrent", Bool()), ("randomAction", Bool()),
             ("concurrentSubActions", Bool()), ("alwaysRun", Bool()), ("excludeFromHistory", Bool()),
-            ("triggers", Arr(Ref("Trigger"))), ("subActions", Arr(Ref("SubAction")))),
+            ("triggers", Arr(Ref("Trigger"))), ("subActions", Arr(Ref("SubAction"))), ("layout", Ref("NodeLayout"))),
         ["Trigger"] = Obj(("id", Str()), ("type", Str("A trigger type id from GET /triggers")), ("enabled", Bool()),
-            ("settings", new JsonObject { ["type"] = "object", ["additionalProperties"] = Str() })),
+            ("settings", new JsonObject { ["type"] = "object", ["additionalProperties"] = Str() }),
+            ("alwaysRun", Bool("Run even when a narrower trigger of the same type also matches (ranges such as cheer amounts)")),
+            ("layout", Ref("NodeLayout"))),
+        ["NodeLayout"] = Obj(("x", Num()), ("y", Num())),
         ["SubAction"] = Obj(("id", Str()), ("type", Str("A sub-action type id from GET /subactions")), ("enabled", Bool()),
             ("parameters", new JsonObject { ["type"] = "object", ["additionalProperties"] = Str() }),
             ("branches", new JsonObject
@@ -323,7 +326,7 @@ public static class OpenApiDocument
                 ["description"] = "Child steps per branch name (e.g. True/False for If, Steps for Group)",
                 ["additionalProperties"] = Arr(Ref("SubAction")),
             }),
-            ("weight", Num())),
+            ("weight", Num()), ("layout", Ref("NodeLayout"))),
         ["Parameter"] = Obj(("key", Str()), ("label", Str()), ("kind", Enum("text", "multiline", "number", "boolean", "choice", "code")),
             ("default", Str()), ("choices", Arr(Str())), ("language", Str()), ("help", Str()), ("suggestions", Arr(Str()))),
         ["TriggerType"] = Obj(("typeId", Str()), ("name", Str()), ("category", Str()), ("eventTypes", Arr(Str())), ("parameters", Arr(Ref("Parameter"))),
@@ -333,6 +336,11 @@ public static class OpenApiDocument
         ["Command"] = Obj(("id", Str()), ("name", Str()), ("group", Str()), ("enabled", Bool()), ("mode", Enum("Basic", "Regex")),
             ("location", Enum("Start", "Exact", "Anywhere")), ("commands", Arr(Str("e.g. !hello"))), ("sources", Arr(Str())), ("caseSensitive", Bool()),
             ("globalCooldownSeconds", Num()), ("userCooldownSeconds", Num()), ("minimumRole", Enum("Everyone", "Subscriber", "Vip", "Moderator", "Broadcaster")),
+            ("include", Bool("Listed by the \"Get commands\" sub-action")), ("ignoreBotAccount", Bool("Ignore the bot account's own messages")),
+            ("ignoreInternal", Bool("Ignore messages sent from Cuebot's own chat window")),
+            ("allowedUsers", Arr(Str("User name or id that may always run it"))), ("allowedGroups", Arr(Str("Viewer group whose members may always run it"))),
+            ("deniedUsers", Arr(Str("User name or id that may never run it"))), ("deniedGroups", Arr(Str("Viewer group whose members may never run it"))),
+            ("persistCounter", Bool("Keep the use counter after a restart")), ("persistUserCounter", Bool("Keep each viewer's use counter after a restart")),
             ("linkedActions", Arr(Obj(("id", Str()), ("name", Str()))))),
         ["Timer"] = Obj(("id", Str()), ("name", Str()), ("enabled", Bool()), ("intervalSeconds", Int()), ("repeat", Bool()),
             ("randomInterval", Bool()), ("minIntervalSeconds", Int()), ("maxIntervalSeconds", Int()), ("minChatLines", Int()),
@@ -369,6 +377,7 @@ public static class OpenApiDocument
         var r = responses ?? Ok(new JsonObject { ["type"] = "object" });
         r["401"] = ErrorResponse("Missing or wrong token");
         r["403"] = ErrorResponse("Origin not allowed");
+        if (id is not ("getStatus" or "getOpenApi")) r["503"] ??= ErrorResponse("That part of Cuebot is not available (its module is not loaded or not ready)");
         op["responses"] = r;
         return op;
     }
@@ -418,7 +427,7 @@ public static class OpenApiDocument
     private static JsonObject Str(string? description = null) => description is null ? new() { ["type"] = "string" } : new() { ["type"] = "string", ["description"] = description };
     private static JsonObject Int() => new() { ["type"] = "integer" };
     private static JsonObject Num() => new() { ["type"] = "number" };
-    private static JsonObject Bool() => new() { ["type"] = "boolean" };
+    private static JsonObject Bool(string? description = null) => description is null ? new() { ["type"] = "boolean" } : new() { ["type"] = "boolean", ["description"] = description };
     private static JsonObject Arr(JsonObject items) => new() { ["type"] = "array", ["items"] = items };
     private static JsonObject Enum(params string[] values) => new() { ["type"] = "string", ["enum"] = CatalogJson.Strings(values) };
 

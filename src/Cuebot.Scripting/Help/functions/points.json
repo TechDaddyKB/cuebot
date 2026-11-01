@@ -1,0 +1,176 @@
+{
+  "functions": {
+    "points.add": {
+      "description": "Gives a viewer points. A negative amount takes points away. The balance never goes below 0. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "amount": "How many points, a whole number like 100. Use a negative number to take points away.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "The viewer's new balance.",
+      "example": {
+        "amount": 100
+      }
+    },
+    "points.awardGroup": {
+      "description": "Gives points to every viewer in a user group (see the Groups page), like a bonus for regulars. Fails when the group does not exist.",
+      "parameters": {
+        "group": "The group name, like \"Regulars\".",
+        "amount": "How many points, a whole number like 100.",
+        "applyMultipliers": "Optional. true multiplies each viewer's amount by their multiplier. Leave it out for false.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "How many viewers got points.",
+      "example": {
+        "group": "Regulars",
+        "amount": 50
+      }
+    },
+    "points.currencies": {
+      "description": "Lists your points currencies, like \"points\" or \"coins\". The default currency comes first.",
+      "parameters": {},
+      "returns": "A list. Each currency has name, singularName, symbol, variableName and enabled.",
+      "example": {}
+    },
+    "points.format": {
+      "description": "Turns a number into nice points text, like \"1,250 points\", \"1 point\" or \"🍪1,250\" when the currency has a symbol.",
+      "parameters": {
+        "amount": "How many points, a whole number like 100.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "The text, like \"1,250 points\".",
+      "example": {
+        "amount": 1250
+      }
+    },
+    "points.get": {
+      "description": "Reads how many points a viewer has. Leave the user out for the person who triggered the action. Fails when the viewer cannot be found.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "The balance, a whole number.",
+      "example": {
+        "user": "CoolViewer42"
+      }
+    },
+    "points.leaderboard": {
+      "description": "Gives you the viewers with the most points, highest first. Handy for a !top command.",
+      "parameters": {
+        "platform": "Optional. Only viewers of this platform, like \"twitch\". Leave it out for every platform.",
+        "count": "Optional. How many to give back. Leave it out for 10; 0 gives everyone.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "A list. Each place has Rank, Platform, UserId, UserName and Points.",
+      "example": {
+        "count": 5
+      }
+    },
+    "points.multiplier": {
+      "description": "Tells you how much a viewer's automatic earnings are multiplied, from their role, their groups and their own multiplier.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "The multiplier, like 1.5 (1 means normal).",
+      "example": {
+        "user": "CoolViewer42"
+      }
+    },
+    "points.remove": {
+      "description": "Takes points from a viewer. The balance never goes below 0. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "amount": "How many points, a whole number like 100.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "The viewer's new balance.",
+      "example": {
+        "amount": 50
+      }
+    },
+    "points.set": {
+      "description": "Sets a viewer's points to an exact number. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "amount": "How many points, a whole number like 100.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "The new balance.",
+      "example": {
+        "user": "CoolViewer42",
+        "amount": 500
+      }
+    },
+    "points.setGroupMultiplier": {
+      "description": "Sets a multiplier for everyone in a user group, so they earn more (or less) points automatically.",
+      "parameters": {
+        "group": "The group name, like \"Regulars\".",
+        "multiplier": "A number like 1.5 or \"2x\". Leave it empty (or \"none\") to remove the multiplier.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "true. Fails when the group is empty or the multiplier is not a number.",
+      "example": {
+        "group": "Regulars",
+        "multiplier": 1.5
+      }
+    },
+    "points.setUserMultiplier": {
+      "description": "Sets one viewer's own multiplier, so they earn more (or less) points automatically. Leave the user out for the person who triggered the action.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "multiplier": "A number like 1.5 or \"2x\". Leave it empty (or \"none\") to remove the multiplier.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "true. Fails when the viewer cannot be found or the multiplier is not a number.",
+      "example": {
+        "user": "CoolViewer42",
+        "multiplier": 2
+      }
+    },
+    "points.spend": {
+      "description": "Takes points from a viewer only when they have enough, like paying for a reward. Nothing changes when they are short.",
+      "parameters": {
+        "platform": "Optional. The viewer's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The viewer's name, like \"CoolViewer42\" (a leading @ is fine). They must have chatted or have points before.",
+        "userId": "Optional. The viewer's id on that platform. Leave user and userId out for the person who triggered the action.",
+        "amount": "How many points, a whole number like 100.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "true when the points were paid, false when the viewer did not have enough.",
+      "example": {
+        "amount": 200
+      }
+    },
+    "points.transfer": {
+      "description": "Moves points from one viewer to another, like a !give command. Fails when the giver has too few points or gives to themselves.",
+      "parameters": {
+        "platform": "Optional. The giver's platform, like \"twitch\". Leave it out for the platform of the trigger.",
+        "user": "Optional. The giver's name. Leave user and userId out for the person who triggered the action.",
+        "userId": "Optional. The giver's id on that platform.",
+        "to": "The name of the viewer who gets the points, like \"CoolViewer42\". They must have chatted or have points before.",
+        "toUserId": "Optional. The receiver's id, instead of the name.",
+        "toPlatform": "Optional. The receiver's platform. Leave it out for the giver's platform.",
+        "amount": "How many points to give, a whole number above 0, like 100.",
+        "currency": "Optional. Which currency, by name, like \"coins\". Leave it out for your default currency."
+      },
+      "returns": "An object with from (the giver's new balance) and to (the receiver's new balance).",
+      "example": {
+        "to": "CoolViewer42",
+        "amount": 100
+      }
+    }
+  }
+}

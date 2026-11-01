@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "rumble.sendMessage": {
+      "description": "Sends a message in your Rumble chat. Only works while you are live on Rumble and signed in; otherwise it fails. Empty text is skipped.",
+      "parameters": {
+        "message": "What to say, like \"Welcome to the stream!\""
+      },
+      "returns": "Nothing.",
+      "example": { "message": "Welcome to the stream!" }
+    }
+  }
+}

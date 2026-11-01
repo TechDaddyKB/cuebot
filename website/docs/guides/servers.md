@@ -4,7 +4,8 @@ A **server** is a part of Cuebot that other programs can connect to. Your OBS ov
 plugin and AI apps use one. Tools made for Streamer.bot or Speaker.bot use one.
 
 Most people only need the **overlay server**, and it is on from the start. Turn the others on only when a guide or a
-tool asks for it.
+tool asks for it. Building your own tool? [Controlling Cuebot from other programs](api.md) shows what each server
+understands, with examples.
 
 Everything is on **Apps > Servers**.
 

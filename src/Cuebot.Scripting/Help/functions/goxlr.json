@@ -1,0 +1,167 @@
+{
+  "functions": {
+    "goxlr.isConnected": {
+      "description": "Checks whether Cuebot is connected to the GoXLR Utility right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "goxlr.connect": {
+      "description": "Starts connecting to the GoXLR Utility. It does not wait: Cuebot keeps trying in the background until it works.",
+      "parameters": {},
+      "returns": "true once connecting has started (not when it is connected).",
+      "example": {}
+    },
+    "goxlr.disconnect": {
+      "description": "Disconnects Cuebot from the GoXLR Utility.",
+      "parameters": {},
+      "returns": "true when done.",
+      "example": {}
+    },
+    "goxlr.getStatus": {
+      "description": "Tells you about the GoXLR Utility connection and your GoXLR: profiles, faders, volumes, mutes and effects.",
+      "parameters": {},
+      "returns": "isConnected, status (a status line), url, daemonVersion, devices (each GoXLR with its profile, faders, volumes in percent, cough button, effects and sampler bank), profiles, micProfiles and presets.",
+      "example": {}
+    },
+    "goxlr.getRawStatus": {
+      "description": "Gives you everything the GoXLR Utility reports, exactly as it sends it. For advanced scripts.",
+      "parameters": {},
+      "returns": "The utility's whole status as JSON text. Empty text when nothing was received yet.",
+      "example": {}
+    },
+    "goxlr.setVolume": {
+      "description": "Changes the volume of one GoXLR channel. Fails with an error when the GoXLR Utility is not connected.",
+      "parameters": {
+        "channel": "The channel: Mic, LineIn, Console, System, Game, Chat, Sample, Music, Headphones, MicMonitor or LineOut.",
+        "volume": "The volume in percent, 0-100, like 80.",
+        "relative": "Optional. true adds the number to the current volume instead (use a minus number to turn it down). Default false."
+      },
+      "returns": "The new volume in percent.",
+      "example": { "channel": "Music", "volume": 40 }
+    },
+    "goxlr.setFaderMute": {
+      "description": "Mutes or unmutes one GoXLR fader. Fails with an error when the GoXLR Utility is not connected or the channel is not on a fader.",
+      "parameters": {
+        "target": "The fader letter A, B, C or D, or the channel on it, like \"Music\".",
+        "state": "Optional. \"Mute\", \"Mute to all\", \"Unmute\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new mute state: \"Unmuted\", \"MutedToX\" or \"MutedToAll\".",
+      "example": { "target": "Music", "state": "Mute" }
+    },
+    "goxlr.setFaderChannel": {
+      "description": "Puts a different channel on one of the GoXLR faders. Fails with an error when the GoXLR Utility is not connected.",
+      "parameters": {
+        "fader": "The fader letter: A, B, C or D.",
+        "channel": "The channel to put on it, like \"Game\" or \"Music\"."
+      },
+      "returns": "true when done.",
+      "example": { "fader": "B", "channel": "Game" }
+    },
+    "goxlr.setCoughMute": {
+      "description": "Mutes or unmutes your mic with the cough button (on a GoXLR Mini: the mic mute button). Fails with an error when the GoXLR Utility is not connected.",
+      "parameters": {
+        "state": "Optional. \"Mute\", \"Mute to all\", \"Unmute\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new mute state: \"Unmuted\", \"MutedToX\" or \"MutedToAll\".",
+      "example": { "state": "Mute" }
+    },
+    "goxlr.loadProfile": {
+      "description": "Loads one of your GoXLR profiles. Fails with an error when the GoXLR Utility is not connected.",
+      "parameters": {
+        "name": "The profile name as the GoXLR Utility shows it, like \"Streaming\".",
+        "remember": "Optional. true makes the GoXLR Utility load this profile again next time it starts. Default true."
+      },
+      "returns": "true when done.",
+      "example": { "name": "Streaming" }
+    },
+    "goxlr.loadMicProfile": {
+      "description": "Loads one of your GoXLR mic profiles. Fails with an error when the GoXLR Utility is not connected.",
+      "parameters": {
+        "name": "The mic profile name as the GoXLR Utility shows it, like \"Dynamic Mic\".",
+        "remember": "Optional. true makes the GoXLR Utility load this mic profile again next time it starts. Default true."
+      },
+      "returns": "true when done.",
+      "example": { "name": "Dynamic Mic" }
+    },
+    "goxlr.setEffect": {
+      "description": "Turns a voice effect on or off. The GoXLR Mini has no effects, so it fails with an error there.",
+      "parameters": {
+        "effect": "The effect: \"FX\", \"Megaphone\", \"Robot\" or \"Hard Tune\".",
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new state: true for on, false for off.",
+      "example": { "effect": "Robot", "state": "On" }
+    },
+    "goxlr.setEffectPreset": {
+      "description": "Picks one of the six effect presets. The GoXLR Mini has no effects, so it fails with an error there.",
+      "parameters": {
+        "preset": "The preset number 1-6, like \"3\", or its name."
+      },
+      "returns": "The preset that is now active, like \"Preset3\".",
+      "example": { "preset": "3" }
+    },
+    "goxlr.setSamplerBank": {
+      "description": "Switches the sampler to bank A, B or C. The GoXLR Mini has no sampler, so it fails with an error there.",
+      "parameters": {
+        "bank": "The bank: \"A\", \"B\" or \"C\"."
+      },
+      "returns": "true when done.",
+      "example": { "bank": "B" }
+    },
+    "goxlr.playSample": {
+      "description": "Plays a sample from a sampler button, as if you pressed it. The GoXLR Mini has no sampler, so it fails with an error there.",
+      "parameters": {
+        "bank": "Optional. The bank: \"A\", \"B\" or \"C\". Leave it empty for the bank that is active now.",
+        "button": "The button: \"TopLeft\", \"TopRight\", \"BottomLeft\" or \"BottomRight\".",
+        "index": "Optional. Which sample on that button, counting from 1. Leave it out to play the button's next sample."
+      },
+      "returns": "bank and button that were played.",
+      "example": { "button": "TopLeft" }
+    },
+    "goxlr.stopSample": {
+      "description": "Stops the sample that a sampler button is playing.",
+      "parameters": {
+        "bank": "Optional. The bank: \"A\", \"B\" or \"C\". Leave it empty for the bank that is active now.",
+        "button": "The button: \"TopLeft\", \"TopRight\", \"BottomLeft\" or \"BottomRight\"."
+      },
+      "returns": "bank and button that were stopped.",
+      "example": { "button": "TopLeft" }
+    },
+    "goxlr.setRouting": {
+      "description": "Sends a GoXLR input to an output, or stops it, like the Routing table in the GoXLR Utility.",
+      "parameters": {
+        "input": "The input: Microphone, Chat, Music, Game, Console, LineIn, System or Samples.",
+        "output": "The output: Headphones, BroadcastMix, ChatMic, Sampler, LineOut or StreamMix2.",
+        "state": "Optional. \"On\", \"Off\" or \"Toggle\" (switch). Default \"Toggle\"."
+      },
+      "returns": "The new state: true when the input goes to the output, false when not.",
+      "example": { "input": "Music", "output": "BroadcastMix", "state": "Off" }
+    },
+    "goxlr.setGlobalColour": {
+      "description": "Changes the colour of all the lights on your GoXLR. Fails with an error when the colour is not a hex colour.",
+      "parameters": {
+        "colour": "The colour as a hex code, like \"#FF8800\"."
+      },
+      "returns": "true when done.",
+      "example": { "colour": "#9146FF" }
+    },
+    "goxlr.command": {
+      "description": "Sends a raw command to the GoXLR Utility. For advanced users who know the GoXLR Utility's command names.",
+      "parameters": {
+        "command": "The command, like {\"SetFXEnabled\": true}. You can also give it as JSON text.",
+        "serial": "Optional. The serial number of the GoXLR to send it to. Leave it out for your main GoXLR."
+      },
+      "returns": "true when done.",
+      "example": { "command": { "SetFXEnabled": true } }
+    },
+    "goxlr.request": {
+      "description": "Sends any raw request to the GoXLR Utility and gives back its answer. For advanced users.",
+      "parameters": {
+        "request": "The request, like \"GetStatus\" or {\"Command\": [...]}. You can also give it as JSON text."
+      },
+      "returns": "The GoXLR Utility's answer data, like \"Ok\" or the status object.",
+      "example": { "request": "GetStatus" }
+    }
+  }
+}

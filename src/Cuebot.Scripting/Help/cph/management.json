@@ -1,0 +1,279 @@
+{
+  "members": {
+    "EnableCommand": {
+      "description": "Turns a command on, by its id or name. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.EnableCommand(\"!hug\");"
+    },
+    "DisableCommand": {
+      "description": "Turns a command off, by its id or name, so chat can no longer use it. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.DisableCommand(\"!hug\");"
+    },
+    "GetCommands": {
+      "description": "Gives you a list of all your commands, each with its id, name, group, whether it is on, its chat words and its cooldowns in seconds.",
+      "returns": "A list of your commands.",
+      "example": "var commands = CPH.GetCommands();\nCPH.LogInfo($\"You have {commands.Count} commands.\");"
+    },
+    "CommandGetCounter": {
+      "description": "Tells you how many times a command was used in total, by its id or name. Stops your code with an error when no command has that id or name.",
+      "returns": "The number of uses.",
+      "example": "int uses = CPH.CommandGetCounter(\"!hug\");\nCPH.LogInfo($\"!hug was used {uses} times.\");"
+    },
+    "CommandResetCounter": {
+      "description": "Sets a command's total use counter back to 0. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetCounter(\"!hug\");"
+    },
+    "CommandResetAllUserCounters": {
+      "description": "Sets every viewer's use counter for a command back to 0, on all platforms. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetAllUserCounters(\"!hug\");"
+    },
+    "CommandResetGlobalCooldown": {
+      "description": "Starts a command's cooldown for everyone again, with its full length. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetGlobalCooldown(\"!hug\");"
+    },
+    "CommandResetAllUserCooldowns": {
+      "description": "Starts every running per-viewer cooldown of a command again, with its full length. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetAllUserCooldowns(\"!hug\");"
+    },
+    "CommandResetUserCooldown": {
+      "description": "Starts one viewer's cooldown for a command again, with its full length. Give their user id and platform; the shorter forms mean Twitch.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetUserCooldown(\"!hug\", \"12345678\", Platform.Twitch);"
+    },
+    "CommandRemoveGlobalCooldown": {
+      "description": "Ends a command's cooldown for everyone right now, so it can be used again. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandRemoveGlobalCooldown(\"!hug\");"
+    },
+    "CommandRemoveAllUserCooldowns": {
+      "description": "Ends every per-viewer cooldown of a command right now. The cooldown for everyone keeps running. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandRemoveAllUserCooldowns(\"!hug\");"
+    },
+    "CommandRemoveUserCooldown": {
+      "description": "Ends one viewer's cooldown for a command right now. Give their user id and platform; the shorter forms mean Twitch.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandRemoveUserCooldown(\"!hug\", \"12345678\", Platform.Twitch);"
+    },
+    "CommandAddToGlobalCooldown": {
+      "description": "Adds seconds to a command's cooldown for everyone. If it is not running, it starts now with that many seconds. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandAddToGlobalCooldown(\"!hug\", 30);"
+    },
+    "CommandAddToAllUserCooldowns": {
+      "description": "Adds seconds to every running per-viewer cooldown of a command. Viewers without a running cooldown are not changed. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandAddToAllUserCooldowns(\"!hug\", 30);"
+    },
+    "CommandAddToUserCooldown": {
+      "description": "Adds seconds to one viewer's cooldown for a command (starting it when it is not running). Give their user id and platform; the shorter forms mean Twitch.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandAddToUserCooldown(\"!hug\", \"12345678\", Platform.Twitch, 30);"
+    },
+    "CommandGetUserCounter": {
+      "description": "Tells you how many times one viewer used a command, by their login name, platform and the command's id or name.",
+      "returns": "The viewer's counter (with Count), or null (nothing) when the command does not exist.",
+      "example": "var counter = CPH.CommandGetUserCounter(\"coolviewer\", Platform.Twitch, \"!hug\");\nif (counter != null) CPH.LogInfo($\"{counter.UserName} used it {counter.Count} times.\");"
+    },
+    "CommandGetUserCounterById": {
+      "description": "Tells you how many times one viewer used a command, by their user id, platform and the command's id or name.",
+      "returns": "The viewer's counter (with Count), or null (nothing) when the command does not exist.",
+      "example": "var counter = CPH.CommandGetUserCounterById(\"12345678\", Platform.Twitch, \"!hug\");\nif (counter != null) CPH.LogInfo($\"Used {counter.Count} times.\");"
+    },
+    "CommandResetUserCounter": {
+      "description": "Sets one viewer's use counter for a command back to 0, by their user id and platform. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetUserCounter(\"!hug\", \"12345678\", Platform.Twitch);"
+    },
+    "CommandResetUsersCounters": {
+      "description": "Sets every viewer's use counter for a command back to 0, for one platform only. Cuebot always saves counters, so the true/false value is ignored.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandResetUsersCounters(\"!hug\", Platform.Twitch, true);"
+    },
+    "CommandSetGlobalCooldownDuration": {
+      "description": "Changes how long a command's cooldown for everyone lasts, in seconds, and saves it. Below 0 counts as 0. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandSetGlobalCooldownDuration(\"!hug\", 60);"
+    },
+    "CommandSetUserCooldownDuration": {
+      "description": "Changes how long a command's per-viewer cooldown lasts, in seconds, and saves it. Below 0 counts as 0. Stops your code with an error when no command has that id or name.",
+      "returns": "Nothing.",
+      "example": "CPH.CommandSetUserCooldownDuration(\"!hug\", 120);"
+    },
+    "AddGroup": {
+      "description": "Makes a new, empty group of viewers.",
+      "returns": "true when it was made. false when the name is empty or already used.",
+      "example": "bool made = CPH.AddGroup(\"Regulars\");\nCPH.LogInfo($\"Group made: {made}\");"
+    },
+    "DeleteGroup": {
+      "description": "Deletes a group of viewers.",
+      "returns": "true when it was deleted. false when there is no such group.",
+      "example": "bool deleted = CPH.DeleteGroup(\"Regulars\");\nCPH.LogInfo($\"Deleted: {deleted}\");"
+    },
+    "GetGroups": {
+      "description": "Gives you the names of all your viewer groups.",
+      "returns": "A list of group names.",
+      "example": "var groups = CPH.GetGroups();\nCPH.LogInfo(string.Join(\", \", groups));"
+    },
+    "GroupExists": {
+      "description": "Checks whether you have a viewer group with this name.",
+      "returns": "true when the group exists, otherwise false.",
+      "example": "bool exists = CPH.GroupExists(\"Regulars\");\nCPH.LogInfo($\"Regulars exists: {exists}\");"
+    },
+    "ClearUsersFromGroup": {
+      "description": "Takes every viewer out of a group. The group itself stays.",
+      "returns": "true when it worked. false when there is no such group.",
+      "example": "bool cleared = CPH.ClearUsersFromGroup(\"Regulars\");\nCPH.LogInfo($\"Cleared: {cleared}\");"
+    },
+    "UsersInGroup": {
+      "description": "Gives you a list of the viewers in a group, each with their id, login, name and platform.",
+      "returns": "A list of viewers (empty when the group does not exist).",
+      "example": "var users = CPH.UsersInGroup(\"Regulars\");\nCPH.LogInfo($\"{users.Count} people in Regulars.\");"
+    },
+    "AddUserToGroup": {
+      "description": "Adds a viewer to a group, by their name and platform. The form without a platform means Twitch. The group must already exist.",
+      "returns": "true when they were added. false when they were already in it or the group does not exist.",
+      "example": "bool added = CPH.AddUserToGroup(\"coolviewer\", Platform.Twitch, \"Regulars\");\nCPH.LogInfo($\"Added: {added}\");"
+    },
+    "AddUserIdToGroup": {
+      "description": "Adds a viewer to a group, by their user id and platform. The form without a platform means Twitch. The group must already exist.",
+      "returns": "true when they were added. false when they were already in it or the group does not exist.",
+      "example": "bool added = CPH.AddUserIdToGroup(\"12345678\", Platform.Twitch, \"Regulars\");\nCPH.LogInfo($\"Added: {added}\");"
+    },
+    "RemoveUserFromGroup": {
+      "description": "Takes a viewer out of a group, by their name and platform. The form without a platform means Twitch.",
+      "returns": "true when they were removed. false when they were not in it.",
+      "example": "bool removed = CPH.RemoveUserFromGroup(\"coolviewer\", Platform.Twitch, \"Regulars\");\nCPH.LogInfo($\"Removed: {removed}\");"
+    },
+    "RemoveUserIdFromGroup": {
+      "description": "Takes a viewer out of a group, by their user id and platform. The form without a platform means Twitch.",
+      "returns": "true when they were removed. false when they were not in it.",
+      "example": "bool removed = CPH.RemoveUserIdFromGroup(\"12345678\", Platform.Twitch, \"Regulars\");\nCPH.LogInfo($\"Removed: {removed}\");"
+    },
+    "UserInGroup": {
+      "description": "Checks whether a viewer is in a group, by their name and platform. The form without a platform means Twitch.",
+      "returns": "true when they are in the group, otherwise false.",
+      "example": "bool inGroup = CPH.UserInGroup(\"coolviewer\", Platform.Twitch, \"Regulars\");\nCPH.LogInfo($\"In group: {inGroup}\");"
+    },
+    "UserIdInGroup": {
+      "description": "Checks whether a viewer is in a group, by their user id and platform. The form without a platform means Twitch.",
+      "returns": "true when they are in the group, otherwise false.",
+      "example": "bool inGroup = CPH.UserIdInGroup(\"12345678\", Platform.Twitch, \"Regulars\");\nCPH.LogInfo($\"In group: {inGroup}\");"
+    },
+    "EnableTimer": {
+      "description": "Turns a timer on, by its name (an id works too), and starts its countdown from now. Lasts until the timer is edited or Cuebot restarts. Errors when there is no such timer.",
+      "returns": "Nothing.",
+      "example": "CPH.EnableTimer(\"Hydrate Reminder\");"
+    },
+    "DisableTimer": {
+      "description": "Turns a timer off, by its name (an id works too). Lasts until the timer is edited or Cuebot restarts. Stops your code with an error when there is no such timer.",
+      "returns": "Nothing.",
+      "example": "CPH.DisableTimer(\"Hydrate Reminder\");"
+    },
+    "EnableTimerById": {
+      "description": "Turns a timer on, by its id (a name works too), and starts its countdown from now. Lasts until the timer is edited or Cuebot restarts. Errors when there is no such timer.",
+      "returns": "Nothing.",
+      "example": "CPH.EnableTimerById(\"5f2c1a7e-3b4d-4e8f-9a10-2b3c4d5e6f70\");"
+    },
+    "DisableTimerById": {
+      "description": "Turns a timer off, by its id (a name works too). Lasts until the timer is edited or Cuebot restarts. Stops your code with an error when there is no such timer.",
+      "returns": "Nothing.",
+      "example": "CPH.DisableTimerById(\"5f2c1a7e-3b4d-4e8f-9a10-2b3c4d5e6f70\");"
+    },
+    "GetTimerState": {
+      "description": "Checks whether a timer is on right now, by its id or name. Stops your code with an error when there is no such timer.",
+      "returns": "true when the timer is on, otherwise false.",
+      "example": "bool on = CPH.GetTimerState(\"Hydrate Reminder\");\nCPH.LogInfo($\"Timer on: {on}\");"
+    },
+    "SetTimerInterval": {
+      "description": "Changes how often a timer fires, in seconds, and starts its countdown again. Lasts until the timer is edited or Cuebot restarts. Errors when there is no such timer.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTimerInterval(\"Hydrate Reminder\", 900);"
+    },
+    "RegisterCustomTrigger": {
+      "description": "Adds a choice to the \"Custom code event\" trigger, so you can pick the event name from a list. Usually called from Init(). Categories are optional.",
+      "returns": "true when it worked. false when the event name is empty.",
+      "example": "bool ok = CPH.RegisterCustomTrigger(\"Confetti blast\", \"confetti\", new[] { \"Fun\" });\nCPH.LogInfo($\"Registered: {ok}\");"
+    },
+    "TriggerCodeEvent": {
+      "description": "Fires a custom event by name. Actions with a \"Custom code event\" trigger for it run. They get this action's variables (pass false to skip), or the values you hand over.",
+      "returns": "Nothing.",
+      "example": "CPH.TriggerCodeEvent(\"confetti\");\nCPH.TriggerCodeEvent(\"confetti\", new Dictionary<string, object> { [\"amount\"] = 50 });"
+    },
+    "WebsocketBroadcastJson": {
+      "description": "Sends JSON data to every program connected to Cuebot's WebSocket server (Streamer.bot API), as a General.Custom event. Text that is not valid JSON is sent as plain text.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketBroadcastJson(\"{\\\"scene\\\": \\\"Gameplay\\\"}\");"
+    },
+    "WebsocketBroadcastString": {
+      "description": "Sends text to every program connected to Cuebot's WebSocket server (Streamer.bot API), as a General.Custom event.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketBroadcastString(\"Round over!\");"
+    },
+    "WebsocketConnect": {
+      "description": "Connects one of your WebSocket clients (set up on the Servers page). 0 is your first client. Errors when there is no such client.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketConnect(0);"
+    },
+    "WebsocketDisconnect": {
+      "description": "Disconnects one of your WebSocket clients (set up on the Servers page). 0 is your first client.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketDisconnect(0);"
+    },
+    "WebsocketIsConnected": {
+      "description": "Checks whether one of your WebSocket clients is connected. 0 is your first client.",
+      "returns": "true while it is connected, otherwise false.",
+      "example": "bool connected = CPH.WebsocketIsConnected(0);\nCPH.LogInfo($\"Client connected: {connected}\");"
+    },
+    "WebsocketSend": {
+      "description": "Sends text through one of your WebSocket clients (set up on the Servers page). 0 is your first client.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketSend(\"{\\\"cmd\\\": \\\"flash\\\"}\", 0);"
+    },
+    "WebsocketGetConnectionByName": {
+      "description": "Finds the number of one of your WebSocket clients by its name, to use with the other Websocket methods.",
+      "returns": "The client's number (0 is the first), or -1 when no client has that name.",
+      "example": "int client = CPH.WebsocketGetConnectionByName(\"Lights\");\nCPH.LogInfo($\"Lights is client {client}\");"
+    },
+    "WebsocketCustomServerStart": {
+      "description": "Starts one of your custom WebSocket servers (set up on the Servers page). 0 is your first server. Nothing changes if it is already running.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketCustomServerStart(0);"
+    },
+    "WebsocketCustomServerStop": {
+      "description": "Stops one of your custom WebSocket servers. 0 is your first server.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketCustomServerStop(0);"
+    },
+    "WebsocketCustomServerIsListening": {
+      "description": "Checks whether one of your custom WebSocket servers is running. 0 is your first server.",
+      "returns": "true while it is running, otherwise false.",
+      "example": "bool running = CPH.WebsocketCustomServerIsListening(0);\nCPH.LogInfo($\"Server running: {running}\");"
+    },
+    "WebsocketCustomServerBroadcast": {
+      "description": "Sends text to everyone connected to one of your custom WebSocket servers, or to only one connection when you give its session id. 0 is your first server.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketCustomServerBroadcast(\"Round over!\", null, 0);"
+    },
+    "WebsocketCustomServerCloseSession": {
+      "description": "Closes one connection (session) on one of your custom WebSocket servers, by its session id.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketCustomServerCloseSession(\"a1b2c3\", 0);"
+    },
+    "WebsocketCustomServerCloseAllSessions": {
+      "description": "Closes every connection on one of your custom WebSocket servers. The server keeps running.",
+      "returns": "Nothing.",
+      "example": "CPH.WebsocketCustomServerCloseAllSessions(0);"
+    },
+    "WebsocketCustomServerGetConnectionByName": {
+      "description": "Finds the number of one of your custom WebSocket servers by its name, to use with the other WebsocketCustomServer methods.",
+      "returns": "The server's number (0 is the first), or -1 when no server has that name.",
+      "example": "int server = CPH.WebsocketCustomServerGetConnectionByName(\"Overlay\");\nCPH.LogInfo($\"Overlay is server {server}\");"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "pulsoid.isConnected": {
+      "description": "Checks whether Cuebot is connected to Pulsoid (heart rate) right now.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    }
+  }
+}

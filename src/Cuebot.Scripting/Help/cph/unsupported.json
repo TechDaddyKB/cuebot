@@ -1,0 +1,192 @@
+{
+  "members": {
+    "TwitchClientId": {
+      "description": "Not supported in Cuebot: Cuebot never gives its Twitch login details to scripts. Reading it stops your code with a \"not supported\" error.",
+      "example": "string clientId = CPH.TwitchClientId;"
+    },
+    "TwitchOAuthToken": {
+      "description": "Not supported in Cuebot: Cuebot never gives its Twitch login token to scripts. Reading it stops your code with a \"not supported\" error.",
+      "example": "string token = CPH.TwitchOAuthToken;"
+    },
+    "TwitchGetChannelPointsUsedByUserId": {
+      "description": "Not supported in Cuebot: Cuebot counts reward redemptions, not how many channel points a viewer spent. It only writes a warning in the log.",
+      "returns": "Always 0.",
+      "example": "long used = CPH.TwitchGetChannelPointsUsedByUserId(\"12345678\");\nCPH.LogInfo($\"Points used: {used}\");"
+    },
+    "TwitchUnblockUser": {
+      "description": "Not supported in Cuebot: Cuebot does not ask Twitch for the permission to manage blocked users. It only writes a warning in the log.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.TwitchUnblockUser(\"coolviewer\");\nCPH.LogInfo($\"Unblocked: {ok}\");"
+    },
+    "TwitchUnblockUserById": {
+      "description": "Not supported in Cuebot: Cuebot does not ask Twitch for the permission to manage blocked users. It only writes a warning in the log.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.TwitchUnblockUserById(\"12345678\");\nCPH.LogInfo($\"Unblocked: {ok}\");"
+    },
+    "TwitchGetBitsDonatedByUserId": {
+      "description": "Not supported in Cuebot: Cuebot does not keep a total of the Bits each viewer cheered. It only writes a warning in the log.",
+      "returns": "Always 0.",
+      "example": "long bits = CPH.TwitchGetBitsDonatedByUserId(\"12345678\");\nCPH.LogInfo($\"Bits: {bits}\");"
+    },
+    "SetChannelGameById": {
+      "description": "Not supported in Cuebot: Cuebot sets the Twitch category by its name, not its id. It only writes a warning in the log. Use SetChannelGame with the category name instead.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.SetChannelGameById(\"509658\");\nCPH.LogInfo($\"Changed: {ok}\");"
+    },
+    "AddQuoteForTrovo": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always -1.",
+      "example": "int quote = CPH.AddQuoteForTrovo(\"12345\", \"Best stream ever!\");\nCPH.LogInfo($\"Quote number: {quote}\");"
+    },
+    "SendTrovoMessage": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and sends nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SendTrovoMessage(\"Hello Trovo!\");"
+    },
+    "TrovoGetBroadcaster": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always null (nothing).",
+      "example": "var info = CPH.TrovoGetBroadcaster();\nCPH.LogInfo($\"Found: {info != null}\");"
+    },
+    "TrovoGetBot": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always null (nothing).",
+      "example": "var info = CPH.TrovoGetBot();\nCPH.LogInfo($\"Found: {info != null}\");"
+    },
+    "TrovoSetTitle": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.TrovoSetTitle(\"Chill games tonight\");\nCPH.LogInfo($\"Changed: {ok}\");"
+    },
+    "TrovoBanUser": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.TrovoBanUser(\"spammer\");\nCPH.LogInfo($\"Banned: {ok}\");"
+    },
+    "TrovoUnbanUser": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.TrovoUnbanUser(\"spammer\");\nCPH.LogInfo($\"Unbanned: {ok}\");"
+    },
+    "TrovoTimeoutUser": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always false.",
+      "example": "bool ok = CPH.TrovoTimeoutUser(\"spammer\", 60);\nCPH.LogInfo($\"Timed out: {ok}\");"
+    },
+    "GetTrovoUserVar": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always the empty default (like 0).",
+      "example": "int points = CPH.GetTrovoUserVar<int>(\"coolviewer\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetTrovoUserVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always the empty default (like 0).",
+      "example": "int points = CPH.GetTrovoUserVarById<int>(\"12345\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetTrovoUsersVar": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log.",
+      "returns": "Always an empty list.",
+      "example": "var all = CPH.GetTrovoUsersVar<int>(\"points\");\nCPH.LogInfo($\"Viewers: {all.Count}\");"
+    },
+    "SetTrovoUserVar": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and stores nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTrovoUserVar(\"coolviewer\", \"points\", 100);"
+    },
+    "SetTrovoUserVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and stores nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTrovoUserVarById(\"12345\", \"points\", 100);"
+    },
+    "SetTrovoUsersVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and stores nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SetTrovoUsersVarById(new List<string> { \"12345\", \"67890\" }, \"points\", 100);"
+    },
+    "IncrementAllTrovoUsersVar": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and changes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementAllTrovoUsersVar(\"points\", 10);"
+    },
+    "IncrementTrovoUsersVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and changes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementTrovoUsersVarById(new List<string> { \"12345\" }, \"points\", 10);"
+    },
+    "IncrementOrCreateTrovoUsersVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and changes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.IncrementOrCreateTrovoUsersVarById(new List<string> { \"12345\" }, \"points\", 10);"
+    },
+    "UnsetTrovoUserVar": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTrovoUserVar(\"coolviewer\", \"points\");"
+    },
+    "UnsetTrovoUserVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTrovoUserVarById(\"12345\", \"points\");"
+    },
+    "UnsetTrovoUser": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTrovoUser(\"coolviewer\");"
+    },
+    "UnsetTrovoUserById": {
+      "description": "Not supported in Cuebot: Cuebot has no Trovo connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetTrovoUserById(\"12345\");"
+    },
+    "GetVStreamUserVar": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log.",
+      "returns": "Always the empty default (like 0).",
+      "example": "int points = CPH.GetVStreamUserVar<int>(\"coolviewer\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetVStreamUserVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log.",
+      "returns": "Always the empty default (like 0).",
+      "example": "int points = CPH.GetVStreamUserVarById<int>(\"12345\", \"points\");\nCPH.LogInfo($\"Points: {points}\");"
+    },
+    "GetVStreamUsersVar": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log.",
+      "returns": "Always an empty list.",
+      "example": "var all = CPH.GetVStreamUsersVar<int>(\"points\");\nCPH.LogInfo($\"Viewers: {all.Count}\");"
+    },
+    "SetVStreamUserVar": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and stores nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SetVStreamUserVar(\"coolviewer\", \"points\", 100);"
+    },
+    "SetVStreamUserVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and stores nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SetVStreamUserVarById(\"12345\", \"points\", 100);"
+    },
+    "SetVStreamUsersVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and stores nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.SetVStreamUsersVarById(new List<string> { \"12345\", \"67890\" }, \"points\", 100);"
+    },
+    "UnsetVStreamUserVar": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetVStreamUserVar(\"coolviewer\", \"points\");"
+    },
+    "UnsetVStreamUserVarById": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetVStreamUserVarById(\"12345\", \"points\");"
+    },
+    "UnsetVStreamUser": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetVStreamUser(\"coolviewer\");"
+    },
+    "UnsetVStreamUserById": {
+      "description": "Not supported in Cuebot: Cuebot has no VStream connection. It only writes a warning in the log and deletes nothing.",
+      "returns": "Nothing.",
+      "example": "CPH.UnsetVStreamUserById(\"12345\");"
+    }
+  }
+}

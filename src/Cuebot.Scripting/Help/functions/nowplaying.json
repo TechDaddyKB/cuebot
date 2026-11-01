@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "nowplaying.get": {
+      "description": "Tells you which song is playing on your computer right now, from any music player (or Spotify when you are signed in).",
+      "parameters": {},
+      "returns": "found (false when no player is open), title, artist, album, player (its name), artUrl (cover picture link), duration in seconds, link and playing (true/false).",
+      "example": {}
+    },
+    "nowplaying.control": {
+      "description": "Presses a media button for your music player, like play, pause or next song. Fails with an error when no music player is open.",
+      "parameters": {
+        "command": "Optional. Which button: \"PlayPause\", \"Play\", \"Pause\", \"Next\" or \"Previous\". Default \"PlayPause\".",
+        "player": "Optional. Part of the player's name, like \"vlc\". Leave it out for the player that is playing now."
+      },
+      "returns": "The name of the player that got the button press.",
+      "example": { "command": "Next" }
+    }
+  }
+}
