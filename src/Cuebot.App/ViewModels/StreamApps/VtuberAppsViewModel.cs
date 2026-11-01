@@ -3,7 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.StreamApps;
 using Cuebot.StreamApps.Animaze;
+using Cuebot.StreamApps.Nizima;
 using Cuebot.StreamApps.PngtuberRemix;
+using Cuebot.StreamApps.Rahituber;
 using Cuebot.StreamApps.Veadotube;
 using Cuebot.StreamApps.Vmc;
 using Cuebot.StreamApps.Vnyan;
@@ -12,9 +14,9 @@ using Cuebot.StreamApps.Warudo;
 
 namespace Cuebot.App.ViewModels.StreamApps;
 
-/// <summary>VTuber apps tab: veadotube, PNGTuber Remix, VNyan, VRChat, Warudo, Animaze and VMC, one card each.</summary>
+/// <summary>VTuber apps tab: one card per app (veadotube, PNGTuber Remix, RahiTuber, VNyan, VRChat, Warudo, nizima LIVE, Animaze, VMC).</summary>
 public sealed class VtuberAppsViewModel(VeadotubeService veadotube, VnyanService vnyan, VrchatService vrchat, WarudoService warudo,
-    PngtuberRemixService pngtuberRemix, AnimazeService animaze, VmcService vmc)
+    PngtuberRemixService pngtuberRemix, AnimazeService animaze, VmcService vmc, NizimaService nizima, RahituberService rahituber)
 {
     public VeadotubeCardViewModel Veadotube { get; } = new(veadotube);
     public VnyanCardViewModel Vnyan { get; } = new(vnyan);
@@ -23,6 +25,8 @@ public sealed class VtuberAppsViewModel(VeadotubeService veadotube, VnyanService
     public PngtuberRemixCardViewModel PngtuberRemix { get; } = new(pngtuberRemix);
     public AnimazeCardViewModel Animaze { get; } = new(animaze);
     public VmcCardViewModel Vmc { get; } = new(vmc);
+    public NizimaCardViewModel Nizima { get; } = new(nizima);
+    public RahituberCardViewModel Rahituber { get; } = new(rahituber);
 }
 
 /// <summary>A button row: a name and what pressing it does (a test from the Apps page).</summary>
@@ -430,5 +434,92 @@ public sealed partial class VmcCardViewModel(VmcService vmc) : StreamAppCardView
     {
         await vmc.SetExpressionAsync(TestExpression, 1, 3);
         return $"Showing {TestExpression.Trim()} for 3 seconds.";
+    });
+}
+
+public sealed partial class NizimaCardViewModel : StreamAppCardViewModel
+{
+    private readonly NizimaService _nizima;
+
+    public NizimaCardViewModel(NizimaService nizima) : base(nizima)
+    {
+        _nizima = nizima;
+        nizima.DataChanged += () => StreamAppsViewModel.OnUi(RefreshData);
+        RefreshData();
+    }
+
+    private NizimaSettings S => _nizima.Settings;
+
+    public decimal? Port
+    {
+        get => S.Port;
+        set { S.Port = (int)(value ?? 22022); _nizima.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; _nizima.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoReconnect
+    {
+        get => S.AutoReconnect;
+        set { S.AutoReconnect = value; _nizima.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public ObservableCollection<VtuberRowViewModel> Expressions { get; } = [];
+
+    public bool HasNoExpressions => Expressions.Count == 0;
+
+    protected override Task StartAsync() => _nizima.ConnectAsync();
+
+    protected override Task StopAsync() => _nizima.DisconnectAsync();
+
+    [RelayCommand]
+    private Task Reload() => RunAsync(async () =>
+    {
+        await _nizima.RefreshAsync();
+        return $"{_nizima.Models.Count} models on screen, {_nizima.Expressions.Count} expressions, {_nizima.Motions.Count} motions.";
+    });
+
+    private void RefreshData()
+    {
+        Expressions.Clear();
+        foreach (var expression in _nizima.Expressions)
+            Expressions.Add(new VtuberRowViewModel(expression.Name, "On/off", "Turns this expression on or off right now, as a test.",
+                () => RunAsync(async () =>
+                    $"{expression.Name} is now {(await _nizima.SetExpressionAsync("", expression.Name, SwitchMode.Toggle, only: false) ? "on" : "off")}.")));
+        Refresh();
+    }
+}
+
+public sealed partial class RahituberCardViewModel(RahituberService rahi) : StreamAppCardViewModel(rahi)
+{
+    private RahituberSettings S => rahi.Settings;
+
+    public string Host
+    {
+        get => S.Host;
+        set { S.Host = value.Trim(); rahi.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public decimal? Port
+    {
+        get => S.Port;
+        set { S.Port = (int)(value ?? 8000); rahi.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    [ObservableProperty] private string _testState = "0";
+
+    protected override Task StartAsync() => rahi.TestAsync();
+
+    protected override Task StopAsync() => Task.CompletedTask;
+
+    [RelayCommand]
+    private Task SendTest() => RunAsync(async () =>
+    {
+        await rahi.SetStateAsync(TestState, true);
+        return $"RahiTuber got '{TestState.Trim()}'. Watch your avatar: RahiTuber does not say whether that state exists.";
     });
 }

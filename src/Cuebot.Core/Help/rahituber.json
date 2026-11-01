@@ -1,0 +1,14 @@
+{
+  "triggers": {},
+  "subActions": {
+    "rahituber.state": {
+      "description": "Presses one of your RahiTuber states, just like its hotkey, for example to show a surprised face or put on a hat.",
+      "fields": {
+        "state": "The state's name, or its place in RahiTuber's list counted from 0 (0 is the top state, 1 the next one and so on).",
+        "how": "Press it (like tapping its hotkey), let go (only matters for states set to \"while held\"), or hold it for some seconds and then let go.",
+        "seconds": "For Hold: how many seconds to hold the state. Empty means 3."
+      },
+      "variables": {}
+    }
+  }
+}

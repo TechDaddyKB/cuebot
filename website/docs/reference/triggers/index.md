@@ -29,6 +29,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Meld Studio](meld-studio.md) | 14 |
 | [MIDI](midi.md) | 1 |
 | [mtion studio](mtion-studio.md) | 4 |
+| [nizima LIVE](nizima-live.md) | 3 |
 | [OBS](obs.md) | 33 |
 | [OBSBOT](obsbot.md) | 8 |
 | [Pally.gg](pally-gg.md) | 3 |

@@ -94,6 +94,37 @@
         </StackPanel>
       </Border>
 
+      <!-- RahiTuber -->
+      <Border Classes="card" DataContext="{Binding Rahituber}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="RahiTuber" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In RahiTuber open the menu (Esc), then Preferences, then Integration, and tick &quot;Control States via HTTP&quot;. Then actions can press your states like their hotkeys. Use a state's name, or its place in the list counted from 0 (0 is the top one)." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="RahituberHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The computer where RahiTuber runs. 127.0.0.1 means this same computer, so most people can leave it." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="RahituberPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The HTTP Port next to &quot;Control States via HTTP&quot; in RahiTuber (8000). Only change it if you changed it there too." />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto">
+            <TextBlock Text="Test state" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="RahituberTestState" Text="{Binding TestState}"
+                     ToolTip.Tip="A state's name, or its number counted from 0." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Press it" Classes="accent" Command="{Binding SendTestCommand}"
+                    ToolTip.Tip="Presses this state in RahiTuber now, as a test. Watch your avatar." />
+            <Button Grid.Column="3" Margin="8,0,0,0" Content="Check connection" Command="{Binding ConnectCommand}"
+                    ToolTip.Tip="Checks that RahiTuber answers, without changing your avatar." />
+          </Grid>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
       <!-- VNyan -->
       <Border Classes="card" DataContext="{Binding Vnyan}">
         <StackPanel Spacing="8">
@@ -189,6 +220,45 @@
           </TextBlock>
           <TextBlock Classes="muted" Text="Connect to list the receivers in your Warudo scene." IsVisible="{Binding HasNoReceivers}" />
           <ItemsControl Name="WarudoReceivers" ItemsSource="{Binding Receivers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtuberRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- nizima LIVE -->
+      <Border Classes="card" DataContext="{Binding Nizima}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="nizima LIVE" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In nizima LIVE open the Plugin Manager and switch the plug-in function on. Press Connect here: Cuebot appears in the Plugin Manager. Switch Cuebot on there (only the first time). Then actions can turn expressions on and off, play motions, press the model's hotkeys, show items and switch effects." />
+          <Grid ColumnDefinitions="Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Port" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <NumericUpDown Grid.Column="1" Name="NizimaPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The port shown in nizima LIVE's Plugin Manager (22022 unless nizima LIVE had to pick another)." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to nizima LIVE as soon as Cuebot starts." />
+          <CheckBox Content="Keep trying when nizima LIVE closes (or its plug-ins are off)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries again by itself, so you can open nizima LIVE before or after Cuebot." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to nizima LIVE." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to nizima LIVE." />
+            <Button Content="Reload" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Reads your models, expressions, motions, items and effects again." />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="Connect to list your model's expressions." IsVisible="{Binding HasNoExpressions}" />
+          <ItemsControl Name="NizimaExpressions" ItemsSource="{Binding Expressions}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:VtuberRowViewModel">
                 <Grid ColumnDefinitions="*,Auto" Margin="0,2">

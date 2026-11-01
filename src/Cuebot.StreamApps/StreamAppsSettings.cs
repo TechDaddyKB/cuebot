@@ -16,6 +16,8 @@ public sealed class StreamAppsSettings
     public PngtuberRemixSettings PngtuberRemix { get; set; } = new();
     public AnimazeSettings Animaze { get; set; } = new();
     public VmcSettings Vmc { get; set; } = new();
+    public NizimaSettings Nizima { get; set; } = new();
+    public RahituberSettings Rahituber { get; set; } = new();
 }
 
 public sealed class MeldStudioSettings

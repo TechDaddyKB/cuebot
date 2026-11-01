@@ -1,0 +1,117 @@
+{
+  "triggers": {
+    "nizima.connected": {
+      "description": "Runs when Cuebot connects to nizima LIVE.",
+      "fields": {},
+      "variables": {
+        "nizima.host": "The computer nizima LIVE runs on",
+        "nizima.port": "The port number it uses"
+      }
+    },
+    "nizima.disconnected": {
+      "description": "Runs when the connection to nizima LIVE drops, for example because you closed it.",
+      "fields": {},
+      "variables": {
+        "nizima.host": "The computer nizima LIVE runs on",
+        "nizima.port": "The port number it uses",
+        "reason": "Why it dropped"
+      }
+    },
+    "nizima.modelChanged": {
+      "description": "Runs when you select another model in nizima LIVE (the one Cuebot's steps act on when they name no model).",
+      "fields": {
+        "model": "Only react to these models. Separate several with commas. Leave empty for any."
+      },
+      "variables": {
+        "nizima.host": "The computer nizima LIVE runs on",
+        "nizima.port": "The port number it uses",
+        "model": "The model now selected",
+        "modelId": "nizima LIVE's number for that model",
+        "previousModel": "The model selected before"
+      }
+    }
+  },
+  "subActions": {
+    "nizima.expression": {
+      "description": "Turns one of your model's expressions on or off, like a smile, blush or angry face.",
+      "fields": {
+        "model": "Which model on screen. Leave empty for the selected one; most people have only one.",
+        "expression": "The expression's name, as nizima LIVE shows it. Connect first to pick from the list.",
+        "state": "On, Off, or Toggle (the opposite of now).",
+        "only": "Tick to turn every other expression off first, so only this one shows."
+      },
+      "variables": {
+        "nizima.expressionOn": "True when the expression is now on"
+      }
+    },
+    "nizima.clearExpressions": {
+      "description": "Turns all of the model's expressions off, back to its normal face.",
+      "fields": {
+        "model": "Which model on screen. Leave empty for the selected one."
+      },
+      "variables": {}
+    },
+    "nizima.motion": {
+      "description": "Plays one of your model's motions, like a wave or a bow.",
+      "fields": {
+        "model": "Which model on screen. Leave empty for the selected one.",
+        "motion": "The motion's name, as nizima LIVE shows it."
+      },
+      "variables": {
+        "nizima.motion": "The name of the motion that played"
+      }
+    },
+    "nizima.stopMotion": {
+      "description": "Stops the motion the model is playing.",
+      "fields": {
+        "model": "Which model on screen. Leave empty for the selected one."
+      },
+      "variables": {}
+    },
+    "nizima.hotkey": {
+      "description": "Presses one of the hotkeys you set up for your model in nizima LIVE, so anything a hotkey can do, an action can do too.",
+      "fields": {
+        "model": "Which model on screen. Leave empty for the selected one.",
+        "key": "The hotkey written the way nizima LIVE shows it, for example F1 or Ctrl+A."
+      },
+      "variables": {}
+    },
+    "nizima.addItem": {
+      "description": "Puts an item from your nizima LIVE item list on screen, like a hat, a sign or a pet.",
+      "fields": {
+        "item": "The item's name, as in nizima LIVE's item list.",
+        "model": "Which model's window to add it to. Leave empty for the selected model."
+      },
+      "variables": {
+        "nizima.itemId": "nizima LIVE's number for the new item"
+      }
+    },
+    "nizima.removeItem": {
+      "description": "Takes an item off the screen again. Every item with that name goes.",
+      "fields": {
+        "item": "The item's name."
+      },
+      "variables": {
+        "nizima.removed": "How many items were taken off"
+      }
+    },
+    "nizima.changeModel": {
+      "description": "Swaps your model for another one from nizima LIVE's model list, for example a different outfit.",
+      "fields": {
+        "newModel": "The model to change to, as in nizima LIVE's model list.",
+        "model": "Which model on screen to swap. Leave empty for the selected one."
+      },
+      "variables": {}
+    },
+    "nizima.effect": {
+      "description": "Turns one of your nizima LIVE effects on or off, like sparkles or a colour filter.",
+      "fields": {
+        "effect": "The effect's name, as in nizima LIVE's effect list.",
+        "state": "On, Off, or Toggle (the opposite of now)."
+      },
+      "variables": {
+        "nizima.effectOn": "True when the effect is now on"
+      }
+    }
+  }
+}

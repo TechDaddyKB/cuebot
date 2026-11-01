@@ -154,6 +154,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "PNGTuber Remix", () => Get<Cuebot.StreamApps.PngtuberRemix.PngtuberRemixService>().StartAsync()),
             StartSafely(log, "Animaze", () => Get<Cuebot.StreamApps.Animaze.AnimazeService>().StartAsync()),
             StartSafely(log, "VMC", () => Get<Cuebot.StreamApps.Vmc.VmcService>().StartAsync()),
+            StartSafely(log, "nizima LIVE", () => Get<Cuebot.StreamApps.Nizima.NizimaService>().StartAsync()),
             StartSafely(log, "Elgato Lights", () => Get<Cuebot.Elgato.Lights.ElgatoLightsService>().StartAsync()),
             StartSafely(log, "Camera Hub", () => Get<Cuebot.Elgato.CameraHub.CameraHubService>().StartAsync()),
             StartSafely(log, "Wave Link", () => Get<Cuebot.WaveLink.WaveLinkService>().StartAsync()),

@@ -33,6 +33,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [MIDI](midi.md) | 4 |
 | [mtion studio](mtion-studio.md) | 3 |
 | [Network](network.md) | 2 |
+| [nizima LIVE](nizima-live.md) | 9 |
 | [OBS](obs.md) | 47 |
 | [OBSBOT](obsbot.md) | 23 |
 | [Overlays](overlays.md) | 2 |
@@ -42,6 +43,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [PolyPop](polypop.md) | 1 |
 | [Pronouns](pronouns.md) | 1 |
 | [Quotes](quotes.md) | 5 |
+| [RahiTuber](rahituber.md) | 1 |
 | [Remote](remote.md) | 2 |
 | [Rumble](rumble.md) | 1 |
 | [Speech](speech.md) | 11 |

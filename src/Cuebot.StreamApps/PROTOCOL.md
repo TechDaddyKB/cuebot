@@ -702,3 +702,38 @@ Animaze is covered by unit tests only (it is Windows-only and installs through S
   (VSeeFace, VMagicMirror, VNyan, Warudo). Reuses `Obsbot/Osc.cs` and `UdpOscTransport` (bound to an ephemeral port).
 - A held expression is re-sent every 100 ms until it ends, then sent as 0, because receivers expect a stream.
 - No answers exist in VMC, so the UI and docs tell users to watch their avatar.
+
+## VTuber apps: nizima LIVE, RahiTuber
+
+Added 2026-11-01. RahiTuber (Linux build from itch.io, October 2026) was checked live: every request form Cuebot sends
+reached its state queue, including a name with an accent and quotes. nizima LIVE 2.7.0 is covered by unit tests only:
+under Wine it aborts at start (unimplemented `GDI32.D3DKMTSetProcessSchedulingPriorityClass`).
+
+### nizima LIVE (`Nizima/`)
+
+- Source: Live2D's official Plugin API docs, github.com/Live2D/nizimaLIVEPluginAPI (README.md, methods.md).
+- `ws://localhost:22022/` (localhost only; the port shows in the Plugin Manager and may change if taken). Every message
+  is `{"nLPlugin":"1.0.0","Timestamp":ms,"Id":..,"Type":"Request|Response|Event|Error","Method":..,"Data":{..}}`; a
+  Response or Error repeats the request's Id. Errors carry `Data.ErrorType` (InvalidToken, InvalidModelId, ...).
+- Handshake: first `RegisterPlugin {Name,Developer,Version}` -> `{Token}`, saved in streamapps.json (Nizima.Token);
+  later `EstablishConnection {Name,Token}` -> `{Enabled}`; `InvalidToken` (plug-in removed) means registering again. The
+  user switches the plug-in on in the Plugin Manager; nizima LIVE then sends Event `NotifyEnabledChanged {Enabled}`.
+  Other methods fail until then, so steps say how to switch it on.
+- Events must be asked for every connection: `NotifyCurrentModelChanged`, `NotifyModelsChanged`, `NotifyItemsChanged`
+  (`{Enabled:true}`).
+- Used: GetModels, GetCurrentModelId, GetRegisteredModels, GetRegisteredItems, GetItems, GetEffectGroups,
+  GetExpressions/GetMotions `{ModelId}`, Start/StopExpression `{ModelId,ExpressionPath}`, StopAllExpressions,
+  StartMotion `{ModelId,MotionPath}`, StopMotion, TriggerModelHotkey `{ModelId,Key}` (QKeySequence text, e.g. "Ctrl+A"),
+  AddItem `{SceneId,ItemPath}` -> `{ItemId}`, RemoveItem `{ItemId}`, ChangeModel `{ModelId,ModelPath}`,
+  Enable/DisableEffectGroup `{GroupId}`. Steps take names; Cuebot looks up the paths and ids.
+
+### RahiTuber (`Rahituber/`)
+
+- Source: RahiTuber's v12.0 devlog ("HTTP state triggers") and its BSD-licensed source (websocket.h, LayerManager.cpp),
+  read for the wire format only.
+- Preferences > Integration > "Control States via HTTP" (off by default; port 8000, listens on 0.0.0.0).
+  `GET /state?[<state>,<active>]` (URL-encoded JSON array): state is a JSON string (matched against state names) or a
+  number (position from 0); active 1 = like pressing the hotkey, 0 = letting go (matters for "while held" states).
+- RahiTuber replies 200 to every /state request before matching it (its JSON reply even prints the state id with %d),
+  so Cuebot only reports that the request arrived. Names are sent with only quotes and backslashes escaped, because its
+  JSON reader may not decode \u escapes.

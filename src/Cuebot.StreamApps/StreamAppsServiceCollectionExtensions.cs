@@ -36,6 +36,8 @@ public static class StreamAppsServiceCollectionExtensions
         PngtuberRemix.PngtuberRemixRegistration.Add(services);
         Animaze.AnimazeRegistration.Add(services);
         Vmc.VmcRegistration.Add(services);
+        Nizima.NizimaRegistration.Add(services);
+        Rahituber.RahituberRegistration.Add(services);
         services.AddSingleton(sp => new ObsbotService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<ObsbotService>());
         services.AddSingleton(sp => new MtionService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<HttpClient>()));
@@ -61,6 +63,8 @@ public static class StreamAppsServiceCollectionExtensions
             .. PngtuberRemix.PngtuberRemixSubActions.Create(sp.GetRequiredService<PngtuberRemix.PngtuberRemixService>()),
             .. Animaze.AnimazeSubActions.Create(sp.GetRequiredService<Animaze.AnimazeService>()),
             .. Vmc.VmcSubActions.Create(sp.GetRequiredService<Vmc.VmcService>()),
+            .. Nizima.NizimaSubActions.Create(sp.GetRequiredService<Nizima.NizimaService>()),
+            .. Rahituber.RahituberSubActions.Create(sp.GetRequiredService<Rahituber.RahituberService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -90,7 +94,7 @@ public static class StreamAppsServiceCollectionExtensions
             .. Veadotube.VeadotubeSubActions.TypeIds, .. Vnyan.VnyanSubActions.TypeIds,
             .. Vrchat.VrchatSubActions.TypeIds, .. Warudo.WarudoSubActions.TypeIds,
             .. PngtuberRemix.PngtuberRemixSubActions.TypeIds, .. Animaze.AnimazeSubActions.TypeIds,
-            .. Vmc.VmcSubActions.TypeIds,
+            .. Vmc.VmcSubActions.TypeIds, .. Nizima.NizimaSubActions.TypeIds, .. Rahituber.RahituberSubActions.TypeIds,
         ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;

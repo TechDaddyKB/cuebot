@@ -42,7 +42,7 @@ lets the port through.
 | **Lumia Stream** | Lumia Stream | In Lumia open **Settings > API**, switch on "Enable Developers API", click "Copy Token" and paste it into Cuebot. |
 | **OBSBOT cameras** | OBSBOT | In OBSBOT Center open **Settings > OSC** and switch OSC on, or talk straight to a Tail 2 / Tail Air. |
 | **mtion studio** | mtion | Nothing to switch on while mtion is open. Add external triggers in mtion and use them with the **Send trigger** sub-action. |
-| **veadotube, PNGTuber Remix, VNyan, VRChat, Warudo, Animaze, VSeeFace and other VMC apps** | VTuber apps | See [VTuber apps](vtuber-apps.md). |
+| **veadotube, PNGTuber Remix, RahiTuber, VNyan, VRChat, Warudo, nizima LIVE, Animaze, VSeeFace and other VMC apps** | VTuber apps | See [VTuber apps](vtuber-apps.md). |
 
 !!! note "StreamFog"
     The **StreamFog** tab explains that StreamFog has no public way for other apps to control it, so Cuebot cannot
