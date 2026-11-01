@@ -37,6 +37,8 @@ a Stream Deck button or a timer. Text-to-speech, chat moderation and your stream
   Polly, IBM Watson and others, with voice aliases, filters and a queue. Voice commands too.
 - **Donations and integrations.** Streamlabs, StreamElements, Ko-fi and other tips; VTube Studio, Voicemod, Crowd
   Control, heart-rate monitors and incoming webhooks.
+- **Music.** Show the song you play (any player on Windows and Linux, or Spotify), react when it changes, and take
+  Spotify song requests with a `!sr` command.
 - **Your gear.** Stream Deck (with or without the Elgato software), MIDI controllers, game controllers, Elgato lights,
   GoXLR and Wave Link can trigger actions or be controlled by them.
 - **Scripting.** C# and Python steps for anything custom, plus a WebSocket and HTTP API for other tools.

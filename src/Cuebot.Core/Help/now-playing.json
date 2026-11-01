@@ -1,0 +1,48 @@
+{
+  "triggers": {
+    "nowplaying.songChanged": {
+      "description": "Runs when a new song starts in your music player or on Spotify. Great for a \"Now playing: …\" message in chat. Tick \"Watch what plays\" on the Music page first.",
+      "fields": {
+        "player": "Only react to one player: type part of its name, like spotify or vlc. Leave it empty to react to every player."
+      },
+      "variables": {
+        "title": "The song's name, like \"Never Gonna Give You Up\"",
+        "artist": "Who sings or plays it, like \"Rick Astley\" (several artists are joined with commas)",
+        "album": "The album the song is on (empty when the player does not say)",
+        "player": "The player it plays in, like Spotify, VLC or Firefox",
+        "artUrl": "A link to the cover picture, when the player gives one",
+        "duration": "How long the song is, in seconds (0 when unknown)",
+        "durationText": "How long the song is, written like 3:45",
+        "link": "A web link to the song (Spotify songs only)",
+        "source": "\"system\" for a player on this computer, \"spotify\" for your Spotify account",
+        "nowPlaying.title": "The same values again with nowPlaying. in front, so the same message works with the \"Get now playing\" step"
+      }
+    }
+  },
+  "subActions": {
+    "nowplaying.get": {
+      "description": "Looks at what song plays right now and saves it in variables. Use it for a !song command: add this step, then send \"Now playing: %nowPlaying.title% by %nowPlaying.artist%\".",
+      "fields": {},
+      "variables": {
+        "nowPlaying.title": "The song's name (empty when nothing plays)",
+        "nowPlaying.artist": "Who sings or plays it",
+        "nowPlaying.album": "The album (empty when the player does not say)",
+        "nowPlaying.player": "The player it plays in, like Spotify or VLC",
+        "nowPlaying.durationText": "How long the song is, written like 3:45",
+        "nowPlaying.link": "A web link to the song (Spotify songs only)",
+        "nowPlaying.playing": "True while it plays, False when it is paused",
+        "nowPlaying.found": "True when a song was found, False when nothing plays (check it with an If step)"
+      }
+    },
+    "nowplaying.mediaControl": {
+      "description": "Presses a media button on your music player: play or pause, next song or previous song. Works with players on this computer and with Spotify.",
+      "fields": {
+        "command": "Which button to press. \"Play / pause\" pauses when music plays and plays when it is paused.",
+        "player": "Which player to press it on: part of its name, like vlc or spotify. Leave it empty for the one that plays now."
+      },
+      "variables": {
+        "nowPlaying.player": "The player that got the button press"
+      }
+    }
+  }
+}

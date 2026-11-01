@@ -5,6 +5,9 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Tests" />
+    <!-- The session-bus client (Desktop/DBus) for MPRIS now playing, and its tests. -->
+    <InternalsVisibleTo Include="Cuebot.Integrations" />
+    <InternalsVisibleTo Include="Cuebot.Integrations.Tests" />
   </ItemGroup>
   <ItemGroup>
     <!-- Widgets Cuebot ships (e.g. the chat box), as Cuebot.Core.Widgets.{Folder}.{file}. -->
