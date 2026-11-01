@@ -50,6 +50,50 @@
         </StackPanel>
       </Border>
 
+      <!-- PNGTuber Remix -->
+      <Border Classes="card" DataContext="{Binding PngtuberRemix}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="PNGTuber Remix" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In PNGTuber Remix, open the WebSocket tab on the right (use the arrows next to the tabs to find it), tick Auto-Start and press Start. Then actions can switch your avatar state, show or hide sprites (like a hat), shake or bounce them, and throw things at your avatar." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="RemixHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The computer where PNGTuber Remix runs. 127.0.0.1 means this same computer, so most people can leave it." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="RemixPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The &quot;door&quot; number in PNGTuber Remix's WebSocket tab (9321). Only change it if you changed it there too." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to PNGTuber Remix as soon as Cuebot starts." />
+          <CheckBox Content="Keep trying when PNGTuber Remix closes (or is not started yet)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries again by itself, so you can open PNGTuber Remix before or after Cuebot." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to PNGTuber Remix." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to PNGTuber Remix." />
+            <Button Content="Reload" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Reads your states and sprites again. Use it after you change your model." />
+            <Button Content="Throw test" Command="{Binding ThrowTestCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Throws some of your throwable images at your avatar now, as a test." />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="Connect to list your avatar states." IsVisible="{Binding HasNoStates}" />
+          <ItemsControl Name="RemixStates" ItemsSource="{Binding States}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtuberRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
       <!-- VNyan -->
       <Border Classes="card" DataContext="{Binding Vnyan}">
         <StackPanel Spacing="8">
@@ -154,6 +198,83 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Animaze -->
+      <Border Classes="card" DataContext="{Binding Animaze}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Animaze" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="In Animaze open Settings, then Animaze API, and switch it on (it is off at first). Then actions can change your avatar or background, play emotes, special actions and poses, and start actions when you change avatar." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="AnimazeHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The computer where Animaze runs. 127.0.0.1 means this same computer." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="AnimazePort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The &quot;door&quot; number in Animaze's API settings (9000). Only change it if you changed it there too." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to Animaze as soon as Cuebot starts." />
+          <CheckBox Content="Keep trying when Animaze closes (or its API is off)" IsChecked="{Binding AutoReconnect}"
+                    ToolTip.Tip="Tries again by itself, so you can open Animaze before or after Cuebot." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to Animaze." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to Animaze." />
+            <Button Content="Reload" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Reads your avatars, emotes and animations again." />
+          </StackPanel>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
+          <TextBlock Classes="muted" Text="{Binding Avatar}" />
+          <TextBlock Classes="muted" Text="Connect to list your avatar's emotes." IsVisible="{Binding HasNoEmotes}" />
+          <ItemsControl Name="AnimazeEmotes" ItemsSource="{Binding Emotes}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtuberRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
+        </StackPanel>
+      </Border>
+
+      <!-- VMC -->
+      <Border Classes="card" DataContext="{Binding Vmc}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="VMC (VSeeFace, VMagicMirror and other 3D apps)" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="VMC is a shared language many 3D VTuber apps understand. Cuebot uses it to make your avatar smile, look angry and so on. Switch on the app's VMC receiver (in VSeeFace: Settings, General settings, VMC receiver, and untick Apply expressions so Cuebot's win). Most apps listen on port 39539." />
+          <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VmcHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
+                     ToolTip.Tip="The computer where your 3D app runs. 127.0.0.1 means this same computer." />
+            <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="VmcPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The &quot;door&quot; number of your app's VMC receiver (39539 in most apps)." />
+          </Grid>
+          <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Gets VMC ready as soon as Cuebot starts." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Gets Cuebot ready to send VMC." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops sending VMC." />
+          </StackPanel>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
+            <TextBlock Text="Test expression" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VmcTestExpression" Text="{Binding TestExpression}"
+                     ToolTip.Tip="An expression your avatar has, like Joy, Angry, Sorrow, Fun or Surprised." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Show for 3 seconds" Classes="accent" Command="{Binding SendTestCommand}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Shows this expression on your avatar for 3 seconds, as a test. VMC never answers, so watch your avatar." />
+          </Grid>
+          <TextBlock TextWrapping="Wrap">
+            <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
+          </TextBlock>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
         </StackPanel>

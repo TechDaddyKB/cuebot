@@ -5,6 +5,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 
 | Area | How many |
 | --- | --- |
+| [Animaze](animaze.md) | 3 |
 | [Chat (all platforms)](chat-all-platforms.md) | 5 |
 | [Commands](commands.md) | 2 |
 | [Core](core.md) | 3 |
@@ -32,6 +33,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [OBSBOT](obsbot.md) | 8 |
 | [Pally.gg](pally-gg.md) | 3 |
 | [Patreon](patreon.md) | 7 |
+| [PNGTuber Remix](pngtuber-remix.md) | 2 |
 | [Points](points.md) | 1 |
 | [Polls](polls.md) | 6 |
 | [PolyPop](polypop.md) | 3 |

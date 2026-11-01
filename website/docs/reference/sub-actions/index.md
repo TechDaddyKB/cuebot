@@ -5,6 +5,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 
 | Area | How many |
 | --- | --- |
+| [Animaze](animaze.md) | 8 |
 | [Audio](audio.md) | 3 |
 | [Chat (all platforms)](chat-all-platforms.md) | 2 |
 | [Code](code.md) | 3 |
@@ -35,6 +36,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [OBS](obs.md) | 47 |
 | [OBSBOT](obsbot.md) | 23 |
 | [Overlays](overlays.md) | 2 |
+| [PNGTuber Remix](pngtuber-remix.md) | 9 |
 | [Points](points.md) | 18 |
 | [Polls](polls.md) | 4 |
 | [PolyPop](polypop.md) | 1 |
@@ -55,6 +57,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Users](users.md) | 2 |
 | [Variables](variables.md) | 11 |
 | [veadotube](veadotube.md) | 4 |
+| [VMC (3D avatars)](vmc-3d-avatars.md) | 2 |
 | [VNyan](vnyan.md) | 1 |
 | [Voice Control](voice-control.md) | 4 |
 | [Voicemod](voicemod.md) | 12 |

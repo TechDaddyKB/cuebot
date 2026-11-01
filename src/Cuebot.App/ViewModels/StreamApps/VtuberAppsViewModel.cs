@@ -2,20 +2,27 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.StreamApps;
+using Cuebot.StreamApps.Animaze;
+using Cuebot.StreamApps.PngtuberRemix;
 using Cuebot.StreamApps.Veadotube;
+using Cuebot.StreamApps.Vmc;
 using Cuebot.StreamApps.Vnyan;
 using Cuebot.StreamApps.Vrchat;
 using Cuebot.StreamApps.Warudo;
 
 namespace Cuebot.App.ViewModels.StreamApps;
 
-/// <summary>VTuber apps tab: veadotube, VNyan, VRChat and Warudo, one card each.</summary>
-public sealed class VtuberAppsViewModel(VeadotubeService veadotube, VnyanService vnyan, VrchatService vrchat, WarudoService warudo)
+/// <summary>VTuber apps tab: veadotube, PNGTuber Remix, VNyan, VRChat, Warudo, Animaze and VMC, one card each.</summary>
+public sealed class VtuberAppsViewModel(VeadotubeService veadotube, VnyanService vnyan, VrchatService vrchat, WarudoService warudo,
+    PngtuberRemixService pngtuberRemix, AnimazeService animaze, VmcService vmc)
 {
     public VeadotubeCardViewModel Veadotube { get; } = new(veadotube);
     public VnyanCardViewModel Vnyan { get; } = new(vnyan);
     public VrchatCardViewModel Vrchat { get; } = new(vrchat);
     public WarudoCardViewModel Warudo { get; } = new(warudo);
+    public PngtuberRemixCardViewModel PngtuberRemix { get; } = new(pngtuberRemix);
+    public AnimazeCardViewModel Animaze { get; } = new(animaze);
+    public VmcCardViewModel Vmc { get; } = new(vmc);
 }
 
 /// <summary>A button row: a name and what pressing it does (a test from the Apps page).</summary>
@@ -253,4 +260,175 @@ public sealed partial class WarudoCardViewModel : StreamAppCardViewModel
                 () => RunAsync(async () => { await _warudo.SendMessageAsync(name, "Hello from Cuebot"); return $"Sent a message to {name}."; })));
         Refresh();
     }
+}
+
+public sealed partial class PngtuberRemixCardViewModel : StreamAppCardViewModel
+{
+    private readonly PngtuberRemixService _remix;
+
+    public PngtuberRemixCardViewModel(PngtuberRemixService remix) : base(remix)
+    {
+        _remix = remix;
+        remix.DataChanged += () => StreamAppsViewModel.OnUi(RefreshData);
+        RefreshData();
+    }
+
+    private PngtuberRemixSettings S => _remix.Settings;
+
+    public string Host
+    {
+        get => S.Host;
+        set { S.Host = value.Trim(); _remix.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public decimal? Port
+    {
+        get => S.Port;
+        set { S.Port = (int)(value ?? 9321); _remix.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; _remix.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoReconnect
+    {
+        get => S.AutoReconnect;
+        set { S.AutoReconnect = value; _remix.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public ObservableCollection<VtuberRowViewModel> States { get; } = [];
+
+    public bool HasNoStates => States.Count == 0;
+
+    protected override Task StartAsync() => _remix.ConnectAsync();
+
+    protected override Task StopAsync() => _remix.DisconnectAsync();
+
+    [RelayCommand]
+    private Task Reload() => RunAsync(async () =>
+    {
+        await _remix.RefreshAsync();
+        return $"{_remix.States.Count} states and {_remix.Sprites.Count} sprites.";
+    });
+
+    [RelayCommand]
+    private Task ThrowTest() => RunAsync(async () =>
+    {
+        await _remix.ThrowAsync("", null);
+        return "Threw some things at your avatar.";
+    });
+
+    private void RefreshData()
+    {
+        States.Clear();
+        foreach (var state in _remix.States)
+            States.Add(new VtuberRowViewModel(state.IsCurrent ? $"{state.Name} (showing)" : state.Name, "Show",
+                "Switches your avatar to this state right now, as a test.",
+                () => RunAsync(async () => $"Showing {await _remix.SetStateAsync(state.Id.ToString(System.Globalization.CultureInfo.InvariantCulture))}.")));
+        Refresh();
+    }
+}
+
+public sealed partial class AnimazeCardViewModel : StreamAppCardViewModel
+{
+    private readonly AnimazeService _animaze;
+
+    public AnimazeCardViewModel(AnimazeService animaze) : base(animaze)
+    {
+        _animaze = animaze;
+        animaze.DataChanged += () => StreamAppsViewModel.OnUi(RefreshData);
+        RefreshData();
+    }
+
+    private AnimazeSettings S => _animaze.Settings;
+
+    public string Host
+    {
+        get => S.Host;
+        set { S.Host = value.Trim(); _animaze.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public decimal? Port
+    {
+        get => S.Port;
+        set { S.Port = (int)(value ?? 9000); _animaze.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; _animaze.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoReconnect
+    {
+        get => S.AutoReconnect;
+        set { S.AutoReconnect = value; _animaze.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public ObservableCollection<VtuberRowViewModel> Emotes { get; } = [];
+
+    public bool HasNoEmotes => Emotes.Count == 0;
+
+    public string Avatar => _animaze.CurrentAvatar.Length > 0 ? $"Avatar: {_animaze.CurrentAvatar}" : "";
+
+    protected override Task StartAsync() => _animaze.ConnectAsync();
+
+    protected override Task StopAsync() => _animaze.DisconnectAsync();
+
+    [RelayCommand]
+    private Task Reload() => RunAsync(async () =>
+    {
+        await _animaze.RefreshAsync();
+        return $"{_animaze.Avatars.Count} avatars and {_animaze.Emotes.Count} emotes.";
+    });
+
+    private void RefreshData()
+    {
+        Emotes.Clear();
+        foreach (var emote in _animaze.Emotes)
+            Emotes.Add(new VtuberRowViewModel(emote.FriendlyName.Length > 0 ? emote.FriendlyName : emote.ItemName, "Play",
+                "Plays this emote on your avatar now, as a test.",
+                () => RunAsync(async () => $"Played {await _animaze.TriggerEmoteAsync(emote.ItemName)}.")));
+        Refresh();
+    }
+}
+
+public sealed partial class VmcCardViewModel(VmcService vmc) : StreamAppCardViewModel(vmc)
+{
+    private VmcSettings S => vmc.Settings;
+
+    public string Host
+    {
+        get => S.Host;
+        set { S.Host = value.Trim(); vmc.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public decimal? Port
+    {
+        get => S.Port;
+        set { S.Port = (int)(value ?? 39539); vmc.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public bool AutoConnect
+    {
+        get => S.AutoConnect;
+        set { S.AutoConnect = value; vmc.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    [ObservableProperty] private string _testExpression = "Joy";
+
+    protected override Task StartAsync() => vmc.ConnectAsync();
+
+    protected override Task StopAsync() => vmc.DisconnectAsync();
+
+    [RelayCommand]
+    private Task SendTest() => RunAsync(async () =>
+    {
+        await vmc.SetExpressionAsync(TestExpression, 1, 3);
+        return $"Showing {TestExpression.Trim()} for 3 seconds.";
+    });
 }

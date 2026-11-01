@@ -1,0 +1,93 @@
+{
+  "triggers": {
+    "animaze.connected": {
+      "description": "Runs when Cuebot connects to Animaze.",
+      "fields": {},
+      "variables": {
+        "animaze.host": "The computer Animaze runs on",
+        "animaze.port": "The port number it uses"
+      }
+    },
+    "animaze.disconnected": {
+      "description": "Runs when the connection to Animaze drops, for example because you closed it.",
+      "fields": {},
+      "variables": {
+        "animaze.host": "The computer Animaze runs on",
+        "animaze.port": "The port number it uses",
+        "reason": "Why it dropped"
+      }
+    },
+    "animaze.avatarChanged": {
+      "description": "Runs when Animaze switches to another avatar, whoever switched it (you, Cuebot or another app).",
+      "fields": {
+        "avatar": "Only react to these avatars. Separate several with commas. Leave empty for any."
+      },
+      "variables": {
+        "animaze.host": "The computer Animaze runs on",
+        "animaze.port": "The port number it uses",
+        "avatar": "The avatar now showing",
+        "previousAvatar": "The avatar before (empty if Cuebot did not know it)"
+      }
+    }
+  },
+  "subActions": {
+    "animaze.loadAvatar": {
+      "description": "Switches Animaze to another avatar.",
+      "fields": {
+        "avatar": "The avatar's name, as Animaze lists it. Connect first to pick from the list."
+      },
+      "variables": {}
+    },
+    "animaze.loadScene": {
+      "description": "Switches the background scene behind your Animaze avatar.",
+      "fields": {
+        "scene": "The scene's name, as Animaze lists it."
+      },
+      "variables": {}
+    },
+    "animaze.emote": {
+      "description": "Plays an emote on your Animaze avatar, like Angry or Alarm.",
+      "fields": {
+        "emote": "The emote's name. Connect first to pick from your avatar's emotes."
+      },
+      "variables": {
+        "animaze.emote": "The emote's item name that Animaze played"
+      }
+    },
+    "animaze.specialAction": {
+      "description": "Plays one of the current avatar's special actions, like waving hello.",
+      "fields": {
+        "action": "The special action's name, or its number."
+      },
+      "variables": {}
+    },
+    "animaze.pose": {
+      "description": "Puts the current avatar into one of its poses.",
+      "fields": {
+        "pose": "The pose's name, or its number."
+      },
+      "variables": {}
+    },
+    "animaze.idle": {
+      "description": "Changes how the current avatar moves while idle.",
+      "fields": {
+        "idle": "The idle animation's name, or its number."
+      },
+      "variables": {}
+    },
+    "animaze.quickscene": {
+      "description": "Loads one of your saved Animaze quickscenes (avatar, background and settings together).",
+      "fields": {
+        "quickscene": "The quickscene's name, or its number."
+      },
+      "variables": {}
+    },
+    "animaze.virtualCamera": {
+      "description": "Turns Animaze's virtual camera on or off. That camera is how other apps, like OBS or Discord, see your avatar.",
+      "fields": {
+        "state": "On or Off."
+      },
+      "variables": {}
+    }
+  }
+}

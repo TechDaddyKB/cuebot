@@ -13,6 +13,9 @@ public sealed class StreamAppsSettings
     public VnyanSettings Vnyan { get; set; } = new();
     public VrchatSettings Vrchat { get; set; } = new();
     public WarudoSettings Warudo { get; set; } = new();
+    public PngtuberRemixSettings PngtuberRemix { get; set; } = new();
+    public AnimazeSettings Animaze { get; set; } = new();
+    public VmcSettings Vmc { get; set; } = new();
 }
 
 public sealed class MeldStudioSettings

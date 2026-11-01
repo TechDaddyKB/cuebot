@@ -33,6 +33,9 @@ public static class StreamAppsServiceCollectionExtensions
         Vnyan.VnyanRegistration.Add(services);
         Vrchat.VrchatRegistration.Add(services);
         Warudo.WarudoRegistration.Add(services);
+        PngtuberRemix.PngtuberRemixRegistration.Add(services);
+        Animaze.AnimazeRegistration.Add(services);
+        Vmc.VmcRegistration.Add(services);
         services.AddSingleton(sp => new ObsbotService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<ObsbotService>());
         services.AddSingleton(sp => new MtionService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<HttpClient>()));
@@ -55,6 +58,9 @@ public static class StreamAppsServiceCollectionExtensions
             .. Vnyan.VnyanSubActions.Create(sp.GetRequiredService<Vnyan.VnyanService>()),
             .. Vrchat.VrchatSubActions.Create(sp.GetRequiredService<Vrchat.VrchatService>()),
             .. Warudo.WarudoSubActions.Create(sp.GetRequiredService<Warudo.WarudoService>()),
+            .. PngtuberRemix.PngtuberRemixSubActions.Create(sp.GetRequiredService<PngtuberRemix.PngtuberRemixService>()),
+            .. Animaze.AnimazeSubActions.Create(sp.GetRequiredService<Animaze.AnimazeService>()),
+            .. Vmc.VmcSubActions.Create(sp.GetRequiredService<Vmc.VmcService>()),
         ]));
         // One registration per sub-action so the Registry sees each one.
         foreach (var typeId in SubActionSet.TypeIds)
@@ -83,6 +89,8 @@ public static class StreamAppsServiceCollectionExtensions
             .. ObsbotSubActions.TypeIds, .. MtionSubActions.TypeIds,
             .. Veadotube.VeadotubeSubActions.TypeIds, .. Vnyan.VnyanSubActions.TypeIds,
             .. Vrchat.VrchatSubActions.TypeIds, .. Warudo.WarudoSubActions.TypeIds,
+            .. PngtuberRemix.PngtuberRemixSubActions.TypeIds, .. Animaze.AnimazeSubActions.TypeIds,
+            .. Vmc.VmcSubActions.TypeIds,
         ];
 
         public IReadOnlyList<ISubActionHandler> All => handlers;

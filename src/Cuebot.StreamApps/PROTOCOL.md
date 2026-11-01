@@ -656,3 +656,49 @@ VRChat only through unit tests (it stopped at its terms page before OSC came up)
 - Warudo -> Cuebot: the MIT WarudoStreamerBot plugin talks to Cuebot's Streamer.bot-compatible server (GetEvents,
   GetActions, DoAction with `"args":null`, Subscribe `{"Twitch":[..]}`); covered by
   `StreamerBotWebSocketTests.Warudo_streamerbot_plugin_messages_work_as_sent`.
+
+## VTuber apps: PNGTuber Remix, Animaze, VMC
+
+Added 2026-10-31. PNGTuber Remix 1.4.7 was checked live on Linux (every step, against its demo model). VMC was checked
+live against VSeeFace 1.13.38c under Wine: VSeeFace received Cuebot's packets (a VMC head bone turned the avatar), but
+in that setup expressions did not visibly change, so blend shapes are covered by unit tests of the documented messages.
+Animaze is covered by unit tests only (it is Windows-only and installs through Steam).
+
+### PNGTuber Remix (`PngtuberRemix/`)
+
+- Source: the WebSocket documentation PNGTuber Remix ships in-app (its "WebSocket documentation" button, also written
+  next to the program as `WebsocketDocumentation.txt`), confirmed live.
+- `ws://127.0.0.1:9321` (port set in the app's WebSocket tab; the server starts on Start or Auto-Start). Requests are
+  `{"event":<name>,..}`; each gets one answer, in order, with the same `event` and `result` `success`/`failed`
+  (`error`, `identifier`). Unknown or malformed requests answer `{"event":"error","message":..}`. Nothing is pushed.
+- Used: `list_states` (`states:[{id (1-based), name, is_current}]`, fails with "no state buttons found" while a model
+  loads), `list_sprites` (`sprites:[{name,id,visible,is_group,children,parent_id}]`), `state` (`state_name` or
+  `state_id`), `show|hide|toggle_sprite` (`sprite_name`; toggle answers `visibility`), `show|hide|toggle_group`
+  (`group_name`), `shake_sprite` (`intensity`, `duration`), `bounce_sprite` (`height`, `duration`), `move_sprite`
+  (`x`,`y`,`duration`,`reset`,`reset_delay`), `animate_sprite` (`scale`,`rotation`,...), `throw_item` (`item_name`,
+  `amount`), `throw_random` (`amount` optional), `toggle_throwables_pause` (`pause` optional; answers `is_paused`),
+  `load_model` (`file_path`). After `load_model` the state buttons appear a moment later, so states are re-read for up
+  to 2 s.
+
+### Animaze (`Animaze/`)
+
+- Source: Holotech's "Animaze API" page (holotechconfluence.atlassian.net/wiki/spaces/HD/pages/157941761). The page
+  documents request/answer shapes up to GetPoses; action names and fields after that (`TriggerPose`/`TriggerIdle`/
+  `LoadQuickscene` with `index`, `Broadcast` with `toggle`) match the public AnimazePy client's usage.
+- `ws://127.0.0.1:9000`, off until Settings > Animaze API is on. Requests `{"action":..,"id":..}`; the answer repeats
+  both and adds `error` on failure. Cuebot sends a GUID id per request and matches on it.
+- Lists: `GetAvatars` (`avatars:[names]`), `GetScenes`, `GetQuickscenes`, `GetEmotes`
+  (`emotes:[{friendlyName,itemName}]`), `GetSpecialActions` (`specialActions:[{animName,index}]`), `GetPoses`,
+  `GetIdleAnims`. Undocumented list answers are read leniently: the first array, items as strings (numbered by
+  position) or objects (`index` plus a name field).
+- Actions: `LoadAvatar`/`LoadScene` `{name}`, `TriggerEmote {itemName}`, `TriggerSpecialAction|TriggerPose|TriggerIdle|
+  LoadQuickscene {index}`, `Broadcast {toggle}` (virtual camera).
+- Event: `{"event":"AvatarChanged","new_avatar":..}` to every client; Cuebot re-reads the avatar's animations then.
+
+### VMC (`Vmc/`)
+
+- Source: protocol.vmc.info (Virtual Motion Capture protocol, OSC over UDP). Cuebot is a send-only "performer":
+  `/VMC/Ext/Blend/Val [s name, f value]` per expression, then `/VMC/Ext/Blend/Apply`. Default receiver port 39539
+  (VSeeFace, VMagicMirror, VNyan, Warudo). Reuses `Obsbot/Osc.cs` and `UdpOscTransport` (bound to an ephemeral port).
+- A held expression is re-sent every 100 ms until it ends, then sent as 0, because receivers expect a stream.
+- No answers exist in VMC, so the UI and docs tell users to watch their avatar.
