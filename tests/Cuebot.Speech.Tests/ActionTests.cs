@@ -44,7 +44,7 @@ public class ActionTests
             var registry = provider.GetRequiredService<Registry>();
             var speech = provider.GetRequiredService<SpeechService>();
 
-            Assert.Equal(["windows", "espeak", "elevenlabs", "azure", "polly", "google", "watson", "uberduck", "ttsmonster", "acapela", "cereproc"],
+            Assert.Equal(["windows", "espeak", "piper", "elevenlabs", "azure", "polly", "google", "watson", "uberduck", "ttsmonster", "acapela", "cereproc", "openai"],
                 speech.Engines.Select(e => e.Id));
             foreach (var id in new[]
                      {
