@@ -36,6 +36,7 @@
     <ProjectReference Include="..\Cuebot.Kick\Cuebot.Kick.csproj" />
     <ProjectReference Include="..\Cuebot.Donations\Cuebot.Donations.csproj" />
     <ProjectReference Include="..\Cuebot.Integrations\Cuebot.Integrations.csproj" />
+    <ProjectReference Include="..\Cuebot.Discord\Cuebot.Discord.csproj" />
     <ProjectReference Include="..\Cuebot.StreamApps\Cuebot.StreamApps.csproj" />
     <ProjectReference Include="..\Cuebot.Elgato\Cuebot.Elgato.csproj" />
     <ProjectReference Include="..\Cuebot.StreamDeck\Cuebot.StreamDeck.csproj" />

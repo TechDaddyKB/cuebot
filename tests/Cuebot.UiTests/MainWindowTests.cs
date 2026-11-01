@@ -176,7 +176,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         Assert.Equal("StreamFog", apps.SubPageTitle);
 
         var devices = vm.Pages.OfType<Cuebot.App.ViewModels.Integrations.IntegrationsPageViewModel>().Single();
-        Assert.Equal(["Apps & services", "Lights & cameras", "Wave Link", "GoXLR"], devices.SubPages);
+        Assert.Equal(["Apps & services", "Lights & cameras", "Wave Link", "GoXLR", "Discord bot"], devices.SubPages);
         vm.SelectedPage = devices;
         devices.SubPageIndex = 2;
         Pump();

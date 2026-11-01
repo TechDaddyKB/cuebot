@@ -72,6 +72,15 @@ token** where there is one), and click **Send test event**.
 **Custom webhooks:** type a name, like `doorbell`, and click **Add hook**. Another program then calls the address
 ending in `/custom/doorbell`, and the **Custom Webhook** trigger runs.
 
+## Discord
+
+There are two ways to post in your Discord server:
+
+- **Basic webhook** (no bot): the **Discord > Basic webhook** step posts a message in one channel through a webhook
+  address. Good for a simple "I'm live" post. See the [Discord sub-actions](../reference/sub-actions/discord.md#basic-webhook).
+- **Your own Discord bot**: posts and edits messages, gives roles, answers slash commands like `/socials`, and starts
+  actions when someone joins or writes. See the [Discord bot guide](discord-bot.md).
+
 ## Other apps
 
 VTube Studio, Voicemod, heart-rate monitors (Pulsoid, HypeRate), StreamLoots and Crowd Control are on

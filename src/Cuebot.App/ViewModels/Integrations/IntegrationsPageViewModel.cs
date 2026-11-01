@@ -6,10 +6,10 @@ namespace Cuebot.App.ViewModels.Integrations;
 
 /// <summary>
 /// The Apps &amp; devices page: the app and service integrations, Elgato (lights and webcams), Wave Link and GoXLR,
-/// as sub-pages in the section list. (Stream Deck has its own page under Decks &amp; Input.)
+/// and the Discord bot, as sub-pages in the section list. (Stream Deck has its own page under Decks &amp; Input.)
 /// </summary>
 public sealed class IntegrationsPageViewModel(IntegrationsViewModel integrations, ElgatoViewModel elgato, WaveLinkViewModel waveLink,
-    GoXlrViewModel goXlr) : PageViewModel("Apps & devices")
+    GoXlrViewModel goXlr, DiscordBotViewModel discordBot) : PageViewModel("Apps & devices")
 {
     public IntegrationsViewModel Integrations { get; } = integrations;
 
@@ -18,6 +18,8 @@ public sealed class IntegrationsPageViewModel(IntegrationsViewModel integrations
     public WaveLinkViewModel WaveLink { get; } = waveLink;
 
     public GoXlrViewModel GoXlr { get; } = goXlr;
+
+    public DiscordBotViewModel DiscordBot { get; } = discordBot;
 
     private int _selectedTab;
 
@@ -32,7 +34,7 @@ public sealed class IntegrationsPageViewModel(IntegrationsViewModel integrations
         }
     }
 
-    public override IReadOnlyList<string> SubPages { get; } = ["Apps & services", "Lights & cameras", "Wave Link", "GoXLR"];
+    public override IReadOnlyList<string> SubPages { get; } = ["Apps & services", "Lights & cameras", "Wave Link", "GoXLR", "Discord bot"];
 
     public override int SubPageIndex
     {

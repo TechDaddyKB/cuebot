@@ -65,7 +65,7 @@ Google Cloud project and so on). See [docs/BUILT_IN_APPS.md](docs/BUILT_IN_APPS.
 | `src/Cuebot.Obs`, `Cuebot.StreamApps` | OBS Studio, Streamlabs Desktop and other stream apps. |
 | `src/Cuebot.Speech`, `Cuebot.VoiceControl` | Text-to-speech engines and the queue; speech recognition. |
 | `src/Cuebot.StreamDeck`, `Cuebot.Midi`, `Cuebot.Controllers`, `Cuebot.Elgato`, `Cuebot.GoXlr`, `Cuebot.WaveLink` | Devices. |
-| `src/Cuebot.Donations`, `Cuebot.Integrations`, `Cuebot.Webhooks`, `Cuebot.Relay` | Donation services, other integrations, incoming webhooks. |
+| `src/Cuebot.Donations`, `Cuebot.Integrations`, `Cuebot.Webhooks`, `Cuebot.Relay`, `Cuebot.Discord` | Donation services, other integrations, incoming webhooks, the streamer's own Discord bot. |
 | `src/Cuebot.Server`, `Cuebot.Remote` | Local WebSocket/HTTP/UDP servers and links between Cuebot instances. |
 | `src/Cuebot.Scripting` | C# and Python script runners. |
 | `src/Cuebot.Assistant` | The Assistant page: AI providers working through Cuebot's MCP tools ([docs/ASSISTANT.md](docs/ASSISTANT.md)). |

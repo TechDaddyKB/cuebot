@@ -13,6 +13,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Custom](custom.md) | 1 |
 | [Custom Webhooks](custom-webhooks.md) | 1 |
 | [Decks](decks.md) | 1 |
+| [Discord](discord.md) | 5 |
 | [DonorDrive](donordrive.md) | 5 |
 | [Elgato Camera Hub](elgato-camera-hub.md) | 26 |
 | [Elgato Control Center](elgato-control-center.md) | 12 |
