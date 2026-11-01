@@ -85,7 +85,8 @@ Rumble works a little differently. Reading works with a "key link" from Rumble. 
 
 !!! warning
     Rumble has no official way for apps to write in chat. Sending messages may stop working if Rumble changes its
-    website.
+    website. Reading followers, live state and chat was tried with a real Rumble channel; writing in chat is not
+    confirmed yet. See [What's experimental](experimental.md).
 
 ## Using your own app (advanced)
 

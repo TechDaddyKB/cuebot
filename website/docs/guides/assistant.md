@@ -23,6 +23,11 @@ The assistant does not have its own AI. It borrows one you already use. Pick **o
   leaves your computer, but these small models make many more mistakes and can be slow. See
   [Running the assistant on your own computer](local-models.md) before you choose it.
 
+!!! warning "Partly checked"
+    The AI apps (Codex, Claude Code, Grok CLI, Antigravity CLI) were tried for real on Linux, and so were an OpenAI key
+    and Ollama. Keys for **Claude (Anthropic)**, **Grok (xAI)** and **Gemini (Google)** were only checked with pretend
+    services, and **LM Studio** is not confirmed. See [What's experimental](experimental.md).
+
 !!! note "Flatpak on Linux"
     The Flatpak version of Cuebot cannot reach other apps on your computer, so it needs an API key.
 

@@ -33,18 +33,29 @@ a Stream Deck button or a timer. Text-to-speech, chat moderation and your stream
   and moderate (delete, time out, ban).
 - **OBS and stream apps.** Switch scenes, show sources, start the stream or a recording from an action. Works with
   OBS Studio, Streamlabs Desktop, Meld Studio, Lumia Stream, PolyPop and more.
-- **Text-to-speech.** Read chat and alerts aloud with Windows voices, espeak-ng, ElevenLabs, Azure, Google, Amazon
-  Polly, IBM Watson and others, with voice aliases, filters and a queue. Voice commands too.
+- **Overlays and alerts.** Overlays for OBS with an alert box, chat box, goal bars, credits, polls and more, a
+  designer, StreamElements and Streamlabs custom widgets, and a community gallery.
+- **Text-to-speech.** Read chat and alerts aloud with Windows voices, espeak-ng, Piper (free and offline), OpenAI,
+  ElevenLabs, Azure, Google, Amazon Polly, IBM Watson and others, with voice aliases, filters and a queue. Voice
+  commands too.
 - **Donations and integrations.** Streamlabs, StreamElements, Ko-fi and other tips; VTube Studio, Voicemod, Crowd
-  Control, heart-rate monitors and incoming webhooks.
-- **Music.** Show the song you play (any player on Windows and Linux, or Spotify), react when it changes, and take
-  Spotify song requests with a `!sr` command.
-- **Your gear.** Stream Deck (with or without the Elgato software), MIDI controllers, game controllers, Elgato lights,
-  GoXLR and Wave Link can trigger actions or be controlled by them.
-- **Scripting.** C# and Python steps for anything custom, plus a WebSocket and HTTP API for other tools.
+  Control, heart-rate monitors and incoming webhooks; your own Discord bot (posts, roles, slash commands).
+- **VTuber apps.** veadotube, PNGTuber Remix, RahiTuber, VNyan, Warudo, VRChat, nizima LIVE, Animaze and VMC apps
+  such as VSeeFace.
+- **Music and media requests.** Show the song you play (any player on Windows and Linux, or Spotify), react when it
+  changes, take Spotify song requests with a `!sr` command, or let viewers queue YouTube videos on your overlay.
+- **Community.** Points, a points store, giveaways, polls and predictions on every platform, quotes and credits.
+- **Your gear.** Stream Deck (with or without the Elgato software), browser button decks for your phone, MIDI
+  controllers, game controllers, Elgato lights, GoXLR and Wave Link can trigger actions or be controlled by them.
+- **Scripting.** C# and Python steps for anything custom, plus a Streamer.bot-compatible WebSocket API, an HTTP and
+  REST API, a Speaker.bot-compatible API and an MCP server for AI apps.
 - **Setup help.** A built-in assistant can set things up for you, using the AI service you choose, or a free model
   on your own computer through Ollama (smaller and less reliable; see the docs).
 - **Coming from Streamer.bot?** Paste a Streamer.bot import string into Cuebot to bring your actions across.
+
+Some integrations are built and unit-tested but not yet tried against the real app or service (for example the
+Discord bot, Spotify, VRChat and most cloud voices). The docs mark them; see
+[What's experimental](https://techdaddykb.github.io/cuebot/guides/experimental/).
 
 <p align="center">
   <img src="docs/images/speech.png" alt="Text-to-speech queue and voices" width="420">
@@ -59,9 +70,10 @@ Get the latest build from the [releases page](https://github.com/TechDaddyKB/cue
 | --- | --- | --- |
 | Windows 10/11 (64-bit) | `Cuebot-win-x64.zip` | Unzip to a folder you keep, then run `Cuebot.exe`. |
 | Linux (x86-64) | `Cuebot-x86_64.AppImage` | `chmod +x Cuebot-x86_64.AppImage`, then run it. |
+| Linux (x86-64), Flatpak | `Cuebot-x86_64.flatpak` | `flatpak install --user Cuebot-x86_64.flatpak` |
 | Linux (x86-64 or ARM64) | `Cuebot-<version>-linux-<arch>.tar.gz` | Extract and run `Cuebot`. |
 
-Nothing else needs to be installed: each download includes everything it needs. Arch Linux packages (`cuebot`,
+Nothing else needs to be installed: each download includes everything it needs. There is no macOS build yet. Arch Linux packages (`cuebot`,
 `cuebot-bin`) will be on the AUR with the first stable release.
 
 The [installation guide](https://techdaddykb.github.io/cuebot/guides/installation/) covers Windows SmartScreen, Linux

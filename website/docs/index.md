@@ -41,6 +41,9 @@ to pick.
 
 - **Guides**: one page per part of Cuebot, from [chat commands](guides/commands.md) to
   [overlays](guides/overlays.md), [text-to-speech](guides/text-to-speech.md) and the [Stream Deck](guides/stream-deck.md).
+- **[Every page in Cuebot](guides/every-page.md)**: a map of the whole app, with a link to the guide for each page.
+- **[What's experimental](guides/experimental.md)**: the features that have not been tried with the real app or
+  service yet.
 - **[Reference](reference/index.md)**: every trigger and sub-action, with what each setting does.
 
 ## Your data stays with you

@@ -17,6 +17,10 @@ Both are on **Input > Stream Deck**.
 
 You need the Elgato Stream Deck app, version 7.1 or newer.
 
+!!! warning "Partly checked"
+    The plugin has connected to Cuebot in the real Stream Deck app on Windows. Not every key, dial and touch action has
+    been tried with real hardware yet. See [What's experimental](experimental.md).
+
 ### Step 1: turn on the REST API
 
 The plugin talks to Cuebot through Cuebot's **REST API** (a door that other programs can knock on).
@@ -69,6 +73,10 @@ On Linux there is no Stream Deck app, so Cuebot drives the Stream Deck itself.
 Works with Stream Deck XL, MK.2, the newer Stream Deck (V2), Neo, Stream Deck + (with dials and the touch strip)
 and the Pedal. The first Stream Deck (2017), the Mini, the Studio and the + XL are not supported in direct USB mode
 yet.
+
+!!! warning "Experimental for most models"
+    Direct USB was tried with a real **Stream Deck XL**. The MK.2, the newer Stream Deck (V2), Neo, Stream Deck + and
+    the Pedal should work the same way, but nobody has tried them yet. See [What's experimental](experimental.md).
 
 !!! warning "Only one program at a time"
     A Stream Deck can only listen to one program. Close other Stream Deck programs, like StreamController or OpenDeck,

@@ -126,4 +126,12 @@ Check these, in order:
 - [How actions work](actions-and-triggers.md): add more steps, like switching a scene or playing a sound.
 - [Chat commands](commands.md): cooldowns, who may use a command, and `!so bob`-style commands.
 - [Overlays and alerts](overlays.md): show alerts on your stream.
+- [Music and now playing](music-and-now-playing.md): show your song on stream, and take song requests.
+- [VTuber apps](vtuber-apps.md), [Stream Deck](stream-deck.md) and [Discord bot](discord-bot.md): connect the rest of
+  your setup.
+- [Every page in Cuebot](every-page.md): a map of every page, with a link to its guide.
 - Stuck? The [setup assistant](assistant.md) can do the clicking for you.
+
+!!! note "Some parts are experimental"
+    A few features have not been tried with the real app or service yet. They have a yellow **Experimental** box in
+    these guides. See [What's experimental](experimental.md).

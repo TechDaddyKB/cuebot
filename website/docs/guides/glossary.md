@@ -44,6 +44,9 @@ Deck](stream-deck.md).
 
 **Encrypted**: Scrambled with a secret key, so that nobody else can read it. Cuebot stores your sign-ins this way.
 
+**Experimental**: Built and checked by Cuebot's own tests, but not yet tried with the real app or service, so it may
+not work. See [What's experimental](experimental.md).
+
 **Flowchart**: A drawing of an action, with boxes and lines, instead of a list.
 
 **Global variable**: A value Cuebot remembers between runs, like a death counter. Written with `~` signs: `~deaths~`.
@@ -58,6 +61,12 @@ those devices reach Cuebot.
 **MCP**: A common way for AI apps to use another program's tools. Lets an AI app work on Cuebot. See [AI
 tools](assistant.md).
 
+**Now playing**: The song your music player is playing right now. See [Music and now
+playing](music-and-now-playing.md).
+
+**OSC**: A simple language some apps use to send each other short messages, like VRChat and OBSBOT cameras. VMC, used
+by 3D VTuber apps, is built on it.
+
 **Overlay**: A see-through layer on top of your stream, like a chat box or alerts. See [Overlays and
 alerts](overlays.md).
 
@@ -68,6 +77,9 @@ giveaways](community.md).
 
 **Queue**: A waiting line for actions. A **blocking** queue runs one action at a time, so alerts do not overlap. See
 [Queues](actions-and-triggers.md#queues-one-at-a-time).
+
+**Port**: A door number. Programs on one computer use different port numbers, so their messages do not get mixed up.
+Example: OBS listens on port 4455. See [Cuebot's servers](servers.md).
 
 **Relay**: A small helper on your own free Cloudflare account that passes webhooks on to Cuebot. See [Donations and
 integrations](donations-and-integrations.md#webhooks-ko-fi-patreon-throne-and-more).
@@ -80,8 +92,17 @@ them when you sign in.
 **Server**: Here: a part of Cuebot that other programs can connect to, like the overlay server that OBS uses. See
 **Apps > Servers**.
 
+**Signal**: A short named message one Cuebot sends to another, like `go-live`. See [Linking two
+Cuebots](servers.md#linking-two-cuebots).
+
 **Sign-in**: Letting Cuebot use your account on a platform. You do it once in your browser, and Cuebot remembers it,
 locked (encrypted) on your computer.
+
+**Slash command**: A command people type in Discord that starts with `/`, like `/socials`. See [Discord
+bot](discord-bot.md#4-slash-commands).
+
+**Song request**: A viewer asks for a song in chat, like `!sr bohemian rhapsody`. See [Music and now
+playing](music-and-now-playing.md#a-sr-song-request-command).
 
 **Sub-action**: One step inside an action, like "send chat message" or "switch scene". Every sub-action is listed in
 the [sub-action reference](../reference/sub-actions/index.md).
@@ -95,6 +116,8 @@ the [trigger reference](../reference/triggers/index.md).
 
 **Variable**: A word with a value behind it, written in `%` signs, like `%user%`. Cuebot swaps it for the real value
 when the action runs. See [Variables](variables.md).
+
+**VTuber**: A streamer who shows an animated avatar instead of their face. See [VTuber apps](vtuber-apps.md).
 
 **Voice alias**: A nickname for a voice and its settings, like "Narrator", used by text-to-speech.
 

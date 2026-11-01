@@ -8,10 +8,18 @@ There are two ways Cuebot finds your music:
 | Way | Works with | Needs |
 | --- | --- | --- |
 | **Players on this computer** | Spotify, VLC, foobar2000, Firefox, Chrome, YouTube Music and most other players, on **Windows** and **Linux** | Nothing. No account, no password. |
-| **Your Spotify account** | Spotify on any device (PC, phone, speaker), also on **macOS** | A free "Spotify app" you make once (about two minutes, see below). Song requests and skipping need **Spotify Premium**. |
+| **Your Spotify account** | Spotify on any device: a PC, a Mac, a phone or a speaker | A free "Spotify app" you make once (about two minutes, see below). Song requests and skipping need **Spotify Premium**. |
 
-!!! note "macOS"
-    On a Mac, Cuebot cannot see music players yet. Sign in to Spotify (below) to show your Spotify songs.
+!!! note "Mac"
+    There is no Cuebot download for Macs yet. Cuebot runs on Windows and Linux.
+
+!!! warning "Experimental"
+    **Spotify** (showing the song and song requests) and **now playing on Windows** are built and tested by Cuebot's own
+    tests, but not yet with a real Spotify account or on a real Windows computer. Now playing on **Linux** was tried with
+    real players (mpv and VLC). See [What's experimental](experimental.md).
+
+Want viewers to request **YouTube videos** instead of songs? See
+[YouTube video requests](#youtube-video-requests-media-requests) below.
 
 ## Show the song you are playing
 
@@ -114,6 +122,11 @@ The Music page now says **Signed in**. To test: open Spotify, start any song, ty
 
 ## A !sr song request command
 
+!!! warning "Media Requests also listens for `!sr`"
+    Cuebot's **Media Requests** page (YouTube videos) answers `!sr` from the start. If you use `!sr` for Spotify, go
+    to **Audio > Media Requests** first and either untick **Taking requests**, or change its **Request** word to
+    something else, like `!video`. Otherwise one `!sr` does both.
+
 Viewers type `!sr never gonna give you up` (or paste a Spotify song link), and the song goes into your queue.
 
 1. Go to **Automation > Commands**, click **+**, name it `sr` and type `!sr` under **Commands**. Set a cooldown so one
@@ -153,6 +166,37 @@ Viewers can send:
 | **Spotify › Pause / resume** | Pause, play, or switch between the two. |
 | **Spotify › Set volume** | Volume from 0 to 100, like `!volume 30` with `%input0%`. Some devices (many phones) do not allow it. |
 | **Now playing › Media control** | Play/pause, next, previous on any player, including players on this computer. |
+
+## YouTube video requests (Media Requests)
+
+**Audio > Media Requests** lets viewers ask for YouTube videos in chat. The videos play on your stream, one after
+another, in an overlay.
+
+1. Go to **Overlays > Overlays & Widgets**, open your overlay (or make one) and add the **Media request player**
+   widget. See [Overlays and alerts](overlays.md). The overlay must be in OBS as a browser source.
+2. Go to **Audio > Media Requests**. Under **Settings**, make sure **Taking requests** is ticked.
+3. Viewers type `!sr` and a YouTube link or a search, like `!sr despacito`. The video goes into the **Queue**.
+
+The commands, which you can change under **Settings**:
+
+| Viewers type | What happens |
+| --- | --- |
+| `!sr` and a link or search (the **Request** word) | Adds a video to the queue. |
+| `!wrongsong` (the **Take back** word) | Takes back their latest request. |
+| `!skip` (the **Skip (moderators)** word) | Skips the video that plays. Only you and your moderators. |
+
+More settings:
+
+- **Cost (points)**: what a request costs in [points](community.md#points). `0` means free. Viewers get their points
+  back when a request is removed.
+- **Requests per viewer**: how many videos one viewer may have waiting.
+- **Longest play (minutes, 0: whole video)**: longer videos are cut off.
+- **Subscribers only** and **Answer in chat** (Cuebot says where the request is in the queue, or why it was turned
+  down).
+
+On the page you can also **Pause** and **Skip**, set the **Volume**, move videos up and down, **Remove** one, **Clear**
+the queue, and paste a YouTube link yourself (free) with **+ Add**. Actions can do the same with the
+[Media requests sub-actions](../reference/sub-actions/media-requests.md).
 
 ## Troubleshooting
 

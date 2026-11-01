@@ -48,6 +48,14 @@ Install `espeak-ng`, and one of `pw-play` (PipeWire), `paplay` or `aplay`. See [
 **The window does not show up on Linux.**
 Start Cuebot from a terminal to see what it says, or try `--backend=x11`. See [Linux](linux.md).
 
+**A feature does not work at all.**
+Check whether it is on the [What's experimental](experimental.md) list. Those features have not been tried with the
+real app or service yet, so a report helps a lot.
+
+**`!sr` adds a YouTube video and a Spotify song.**
+The **Media Requests** page answers `!sr` too. See
+[Media Requests also listens for !sr](music-and-now-playing.md#a-sr-song-request-command).
+
 **I lost the window.**
 Start Cuebot again: the running copy comes to the front. Still off-screen? Close Cuebot and start it with
 `--reset-window`.
@@ -57,12 +65,24 @@ Start Cuebot again: the running copy comes to the front. Still off-screen? Close
 **Settings > Support**, tab **Report a problem**, builds a report for you: your Cuebot version, your system and the
 recent log.
 
-- Tokens, passwords, stream keys and API keys are **always removed**. You see exactly what will be sent before
-  anything leaves your computer.
-- **Open GitHub issue in browser** opens a new issue with the report filled in. You can also **Copy report** or **Save
-  report**.
+1. Type a short **Title**, like "Follow alert does not show".
+2. Fill in **What happened?**, the steps, what you expected and what happened instead.
+3. Under **Include**, leave the boxes as they are, unless you have a reason to change them.
+4. Read the **Preview** on the right. That is exactly what will be sent. You can change or delete anything in it.
+5. Click **Send report**. You do not need a GitHub account. **Open the issue** then shows your report in the browser.
 
-If Cuebot closed unexpectedly, it says so the next time it starts and offers to send a report.
+Good to know:
+
+- Tokens, passwords, stream keys and private web links are **always removed**. Account names are replaced too, unless
+  you tick **Include account names**.
+- Reports become **public** issues on GitHub, so anyone can read them.
+- Prefer to send it yourself? **Open GitHub issue in browser** opens GitHub with the report filled in, for your own
+  GitHub account. You can also **Copy report** or **Save report**.
+
+If Cuebot closed unexpectedly, it says so the next time it starts and offers to send a report. Tick **Send crash
+reports automatically** to let Cuebot do that by itself.
+
+Trying an [experimental feature](experimental.md)? Please report how it went, even when it worked.
 
 !!! warning
     Never paste tokens, passwords or stream keys into an issue or a chat by hand.

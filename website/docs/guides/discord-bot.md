@@ -10,6 +10,11 @@ Cuebot can run **your own Discord bot** in your own Discord server. The bot can:
 You make the bot yourself. It is free and takes about five minutes. Cuebot runs the bot from your computer, so the bot is
 online while Cuebot is open. There is no website or server to rent.
 
+!!! warning "Experimental"
+    The Discord bot is built and checked by Cuebot's own tests, with a pretend Discord. It has not been tried with a
+    real bot token and a real Discord server yet, so parts of it may not work. If you try it, please tell us how it
+    went: **Settings > Support**, **Send report**. See [What's experimental](experimental.md).
+
 !!! tip "Only want to post a message?"
     For a simple post in one channel you do not need a bot: the **Discord > Basic webhook** step is enough (see the
     [Discord sub-actions](../reference/sub-actions/discord.md#basic-webhook)). Make a bot when you want to edit posts,

@@ -28,6 +28,11 @@ Then:
 Each tip then starts triggers (look in the [trigger reference](../reference/triggers/index.md) under the service's
 name), and shows up in your alerts, credits and spoken events.
 
+!!! warning "Partly checked"
+    Streamlabs and StreamElements connected for real, and DonorDrive read a real Extra Life team. But no real tip or
+    donation has come in through Cuebot yet. Use **Send test event** to check your actions, and please tell us if a
+    real tip does not show up. See [What's experimental](experimental.md).
+
 ## Webhooks: Ko-fi, Patreon, Throne and more
 
 Some services do not "call" Cuebot directly. Instead they send a **webhook**: a small message to a web address. Your
@@ -69,6 +74,11 @@ The full steps are in the
 On the **Services** tab, tick **Enabled** for the service, enter the secret or token it gives you (or use **Generate
 token** where there is one), and click **Send test event**.
 
+!!! warning "Partly checked"
+    The relay was tried for real: a message sent to it reached Cuebot. Each service's own example messages were
+    checked too. But no real message from Ko-fi, Patreon, Throne, Fourthwall or Shopify has come in yet. See
+    [What's experimental](experimental.md).
+
 **Custom webhooks:** type a name, like `doorbell`, and click **Add hook**. Another program then calls the address
 ending in `/custom/doorbell`, and the **Custom Webhook** trigger runs.
 
@@ -81,6 +91,13 @@ There are two ways to post in your Discord server:
 - **Your own Discord bot**: posts and edits messages, gives roles, answers slash commands like `/socials`, and starts
   actions when someone joins or writes. See the [Discord bot guide](discord-bot.md).
 
+The **IFTTT > Notification** steps send an event to IFTTT's "Webhooks" service, so IFTTT can do something else, like
+send a phone notification. See the [IFTTT sub-actions](../reference/sub-actions/ifttt.md).
+
+!!! warning "Experimental"
+    The Discord bot, the basic webhook and the IFTTT steps are checked by Cuebot's own tests, but not yet with the real
+    services. See [What's experimental](experimental.md).
+
 ## Other apps
 
 VTube Studio, Voicemod, heart-rate monitors (Pulsoid, HypeRate), StreamLoots and Crowd Control are on
@@ -91,7 +108,8 @@ Now playing (the song you play) and Spotify song requests are on **Audio > Music
 
 ## Cuebot's own servers
 
-**Apps > Servers** lets other programs talk to Cuebot. Most people never need it. The main ones:
+**Apps > Servers** lets other programs talk to Cuebot. Most people never need it. The full guide is
+[Cuebot's servers](servers.md). The main ones:
 
 | Server | Used for |
 | --- | --- |

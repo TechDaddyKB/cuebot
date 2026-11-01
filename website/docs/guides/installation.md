@@ -12,6 +12,9 @@ in testing, releases are marked **Pre-release**. Under **Assets**, pick the file
 | Linux, with Flatpak | `Cuebot-x86_64.flatpak` |
 | Linux, ARM computer or if you prefer a plain folder | `Cuebot-<version>-linux-arm64.tar.gz` or `...-linux-x64.tar.gz` |
 
+!!! note "Mac"
+    There is no Cuebot for Macs yet. Cuebot runs on Windows and Linux. See [What's experimental](experimental.md).
+
 ## Windows
 
 1. Download `Cuebot-win-x64.zip`.

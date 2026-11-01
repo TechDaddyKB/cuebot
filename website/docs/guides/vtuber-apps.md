@@ -4,6 +4,9 @@ Cuebot can talk to the apps that move your avatar. A viewer redeems a reward, an
 prop, or shows a new face. Each app has a card on the **Stream apps** page, under **VTuber apps**. None of these apps
 needs a password.
 
+veadotube mini, PNGTuber Remix, RahiTuber, VNyan and Warudo were tried with the real apps. VRChat, nizima LIVE, Animaze
+and VMC are [experimental](experimental.md): they may not work yet.
+
 | App | What Cuebot can do | What you switch on in the app |
 | --- | --- | --- |
 | **veadotube mini** and **veadotube** | Change your avatar state, turn push-to-talk on or off. Starts actions when the state or push-to-talk changes. | Nothing. Cuebot finds veadotube by itself while it is open. |
@@ -92,6 +95,10 @@ name matches exactly (capital letters matter).
 
 ## VRChat
 
+!!! warning "Experimental"
+    VRChat is only checked by Cuebot's own tests so far. The real test stopped at VRChat's terms page. See
+    [What's experimental](experimental.md).
+
 1. In VRChat open the **Action Menu**, then **Options > OSC**, and make sure OSC is **Enabled**.
 2. In Cuebot press **Connect** in the VRChat card.
 3. Use the steps **VRChat > Set avatar parameter**, **Send chatbox message** or **Show typing bubble**.
@@ -133,6 +140,10 @@ asset at it. Its node lists your Cuebot actions and runs them.
 [nizima LIVE](https://nizimalive.com/en/) is the Live2D app made by Live2D, the company behind Live2D models. It runs on
 Windows and Mac.
 
+!!! warning "Experimental"
+    nizima LIVE is only checked by Cuebot's own tests so far: nizima LIVE did not start on the test computer. See
+    [What's experimental](experimental.md).
+
 1. In nizima LIVE open the **Plugin Manager** and switch the plug-in function on. It shows a port number, usually 22022.
 2. In Cuebot press **Connect** in the nizima LIVE card. The first time, **Cuebot** now appears in nizima LIVE's
    Plugin Manager: switch it on there. Cuebot remembers this, so you only do it once.
@@ -157,6 +168,10 @@ more.
 
 ## Animaze
 
+!!! warning "Experimental"
+    Animaze is only checked by Cuebot's own tests so far, not with the real app. See
+    [What's experimental](experimental.md).
+
 1. In Animaze, open **Settings > Animaze API** and switch it on. It is off at first, and it uses port 9000.
 2. In Cuebot press **Connect** in the Animaze card. Your avatar's emotes appear with a **Play** button each.
 3. Use the steps under **Animaze**: **Load Animaze avatar**, **Play Animaze emote**, **Play Animaze special action**,
@@ -169,6 +184,10 @@ change avatar. Cuebot reads them again by itself. The trigger **Avatar changed**
 
 VMC is a shared language that many 3D VTuber apps understand. Cuebot uses it to change your avatar's **expression**:
 a smile, an angry face, a surprised face and so on.
+
+!!! warning "Experimental"
+    In a test, VSeeFace got Cuebot's messages and moved the avatar's head, but the expressions did not visibly change.
+    So this may not work yet. See [What's experimental](experimental.md).
 
 1. Switch on your app's **VMC receiver**:
     - **VSeeFace:** **Settings > General settings > VMC protocol > VMC receiver**. Then untick **Apply expressions**

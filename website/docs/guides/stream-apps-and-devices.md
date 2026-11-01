@@ -44,6 +44,11 @@ lets the port through.
 | **mtion studio** | mtion | Nothing to switch on while mtion is open. Add external triggers in mtion and use them with the **Send trigger** sub-action. |
 | **veadotube, PNGTuber Remix, RahiTuber, VNyan, VRChat, Warudo, nizima LIVE, Animaze, VSeeFace and other VMC apps** | VTuber apps | See [VTuber apps](vtuber-apps.md). |
 
+!!! warning "Experimental"
+    **Meld Studio**, **PolyPop**, **T.I.T.S.**, **Lumia Stream**, **mtion studio** and **OBSBOT** are built from each
+    app's own instructions and checked by Cuebot's tests, but not yet with the real apps. **OBS Studio** and
+    **Streamlabs Desktop** were tried for real. See [What's experimental](experimental.md).
+
 !!! note "StreamFog"
     The **StreamFog** tab explains that StreamFog has no public way for other apps to control it, so Cuebot cannot
     change its lenses or outfits. You can still show and hide its OBS source with Cuebot's OBS sub-actions.
@@ -60,6 +65,11 @@ lets the port through.
 | **Your voice** | Audio > Voice Control | See [Text-to-speech](text-to-speech.md#voice-control-talking-to-cuebot). |
 
 **MIDI tip:** add an event for each key or knob, then click **Learn** and press it. Cuebot fills in the details for you.
+
+!!! warning "Partly checked"
+    Sending MIDI was tried on Windows and Linux, but pressing keys on a real MIDI controller was not. Game controllers:
+    Cuebot's controller part starts on Windows and Linux, but nobody has pressed a real controller yet. See
+    [What's experimental](experimental.md).
 
 ### Decks: buttons on your phone
 
@@ -82,8 +92,8 @@ While you stream, your actions can change a button's title, colour, icon or page
 
 ## Lights, mixers and other apps
 
-Go to **Apps > Apps & devices**. It has the tabs **Apps & services**, **Elgato lights & webcams**, **Wave Link** and
-**GoXLR**.
+Go to **Apps > Apps & devices**. It has the tabs **Apps & services**, **Elgato lights & webcams**, **Wave Link**,
+**GoXLR** and **Discord bot**.
 
 | Thing | Tab | Notes |
 | --- | --- | --- |
@@ -95,6 +105,13 @@ Go to **Apps > Apps & devices**. It has the tabs **Apps & services**, **Elgato l
 | **Voicemod** | Apps & services | Needs the Voicemod app (Windows) and a key from Voicemod's developer program. |
 | **Pulsoid**, **HypeRate** | Apps & services | Your heart rate, as a value and a trigger. |
 | **StreamLoots**, **Crowd Control** | Apps & services | Cards, chests and viewer effects become triggers. |
+| **Your own Discord bot** | Discord bot | Posts, roles and slash commands. See the [Discord bot guide](discord-bot.md). |
+
+!!! warning "Experimental"
+    These were tried for real: **VTube Studio**, **Voicemod** and the **GoXLR**. **StreamLoots** and **Crowd Control**
+    connected for real, but no real card or effect has come in yet. **Elgato lights**, **webcam controls**, **Wave
+    Link**, **Pulsoid**, **HypeRate** and the **Discord bot** have only been checked by Cuebot's own tests. See
+    [What's experimental](experimental.md).
 
 Donations and web services are on their own page: [Donations and integrations](donations-and-integrations.md).
 

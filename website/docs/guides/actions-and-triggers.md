@@ -120,7 +120,14 @@ The Queues page also shows what is waiting (**Pending**) and what ran (**History
 ## History
 
 **Chat > History** lists every run: what ran, what started it and the values it had. Select a run to see its
-variables. **Run again with these variables** repeats it. **Cancel run** stops one that is still going.
+variables. **Run again with these variables** repeats it. **Cancel run** stops one that is still going. **Open action**
+jumps to the action.
+
+The **Trigger viewer** tab shows every event that comes in, like a follow, a chat message or a scene change, even when
+no action uses it. Select one to see its variables. Two handy buttons:
+
+- **Create action from this trigger** makes a new action that starts on this kind of event, and opens it.
+- **Pause** stops the list from moving, so you can read it. Your actions still run as normal.
 
 ## Timers
 
@@ -154,8 +161,17 @@ variables. **Run again with these variables** repeats it. **Cancel run** stops o
 
 ## Scripts (for the curious)
 
-When no sub-action does what you want, **Run C# code** and **Run Python code** let you write a little program.
-This is optional and needs some coding. **Automation > Scripting** sets up Python: Cuebot can download its own copy of
-Python for you the first time you need it.
+When no sub-action does what you want, a code step lets you write a little program in C# or Python. This is optional
+and needs some coding. The steps are in the **Code** group of the sub-action list; see the
+[Code sub-actions](../reference/sub-actions/code.md). C# code written for Streamer.bot (the `CPH` methods) works in
+Cuebot too.
+
+**Automation > Scripting** sets up Python:
+
+- **Install Python automatically the first time a Python step runs**: leave it ticked, and Cuebot downloads its own
+  copy of Python when it first needs it.
+- **Advanced: use an existing Python interpreter instead**: type where your own Python is, if you want to use it.
+- **Python packages**: type a package name, like `requests`, and click **Install**. **Remove** takes one away again.
+- **Script API** lists the functions your scripts can use to talk to Cuebot.
 
 Next: [Variables, the %words%](variables.md).

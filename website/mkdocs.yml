@@ -58,6 +58,7 @@ nav:
       - How actions work: guides/actions-and-triggers.md
       - Variables, the %words%: guides/variables.md
       - Words you will see: guides/glossary.md
+      - Every page in Cuebot: guides/every-page.md
   - Guides:
       - Chat commands: guides/commands.md
       - Overlays and alerts: guides/overlays.md
@@ -72,10 +73,12 @@ nav:
       - The setup assistant and AI tools: guides/assistant.md
       - The assistant on your own computer: guides/local-models.md
       - Moving from Streamer.bot: guides/moving-from-streamer-bot.md
+      - Cuebot's servers: guides/servers.md
       - Backups and your data: guides/backups-and-your-data.md
       - Linux: guides/linux.md
       - Command-line options: guides/command-line-options.md
       - Troubleshooting: guides/troubleshooting.md
+      - What's experimental: guides/experimental.md
   - Reference:
       - reference/index.md
       - Triggers: reference/triggers/index.md
