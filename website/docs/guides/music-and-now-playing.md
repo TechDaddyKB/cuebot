@@ -122,10 +122,10 @@ The Music page now says **Signed in**. To test: open Spotify, start any song, ty
 
 ## A !sr song request command
 
-!!! warning "Media Requests also listens for `!sr`"
-    Cuebot's **Media Requests** page (YouTube videos) answers `!sr` from the start. If you use `!sr` for Spotify, go
-    to **Audio > Media Requests** first and either untick **Taking requests**, or change its **Request** word to
-    something else, like `!video`. Otherwise one `!sr` does both.
+!!! warning "Media Requests can also listen for `!sr`"
+    Cuebot's **Media Requests** page (YouTube videos) also uses `!sr` once you tick **Taking requests** there. It starts
+    switched off. If you turn it on and also use `!sr` for Spotify, change one of the two words, for example Media
+    Requests' **Request** word to `!video`. Otherwise one `!sr` does both.
 
 Viewers type `!sr never gonna give you up` (or paste a Spotify song link), and the song goes into your queue.
 
@@ -174,7 +174,8 @@ another, in an overlay.
 
 1. Go to **Overlays > Overlays & Widgets**, open your overlay (or make one) and add the **Media request player**
    widget. See [Overlays and alerts](overlays.md). The overlay must be in OBS as a browser source.
-2. Go to **Audio > Media Requests**. Under **Settings**, make sure **Taking requests** is ticked.
+2. Go to **Audio > Media Requests**. Under **Settings**, tick **Taking requests**. It starts switched off, so chat
+   can't fill a queue before your player is set up.
 3. Viewers type `!sr` and a YouTube link or a search, like `!sr despacito`. The video goes into the **Queue**.
 
 The commands, which you can change under **Settings**:

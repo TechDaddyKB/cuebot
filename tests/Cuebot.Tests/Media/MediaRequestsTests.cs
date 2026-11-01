@@ -42,7 +42,22 @@ public sealed class MediaRequestsTests : IDisposable
         _dir.Dispose();
     }
 
-    private MediaRequests Create(AppPaths? paths = null) => new(paths, _log, _bus, _feed, _lookup, _points, time: _clock);
+    /// <summary>A media request service with requests opened, as a streamer does after adding the player.</summary>
+    private MediaRequests Create(AppPaths? paths = null)
+    {
+        var media = new MediaRequests(paths, _log, _bus, _feed, _lookup, _points, time: _clock);
+        if (paths is null) media.UpdateSettings(s => s.Open = true);
+        return media;
+    }
+
+    [Fact]
+    public async Task Requests_start_closed_so_a_new_install_does_not_answer_sr()
+    {
+        using var media = new MediaRequests(null, _log, _bus, _feed, _lookup, _points, time: _clock);
+        Assert.False(media.Settings.Open);
+        Assert.NotNull((await media.RequestAsync(A, "Twitch", "ann-id", "Ann")).Error);
+        Assert.Empty(media.Queue);
+    }
 
     private void Chat(string platform, string user, string text, bool moderator = false) =>
         _bus.Publish(new BotEvent(ChatHub.MessageEvent, new Dictionary<string, object?>

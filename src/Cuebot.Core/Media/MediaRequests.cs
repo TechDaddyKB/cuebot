@@ -34,8 +34,9 @@ public sealed class MediaItem
 /// <summary>How media requests work.</summary>
 public sealed class MediaSettings
 {
-    /// <summary>Viewers may request (the queue keeps playing either way).</summary>
-    public bool Open { get; set; } = true;
+    /// <summary>Viewers may request (the queue keeps playing either way). Off until the streamer opens requests, so a
+    /// new install does not answer !sr before a player overlay exists (and does not clash with a Spotify !sr).</summary>
+    public bool Open { get; set; }
     public string Command { get; set; } = "!sr";
 
     /// <summary>Removes the viewer's own latest request (refunded).</summary>
