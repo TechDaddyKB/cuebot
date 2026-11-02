@@ -109,7 +109,7 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
     }
 
     /// <summary>
-    /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, countdown, emote
+    /// Adds a built-in widget (<see cref="BuiltInWidgets.Kinds"/>: label, goal, event list, credits, top spenders, countdown, emote
     /// rain, hype cup, hype boss, poll, giveaway, media request player, charity campaign, product showcase, seasonal
     /// effects) in a sensible spot for its kind, scaled to the canvas, with <paramref name="data"/> as its saved settings
     /// when given. Returns the layer, or null for an unknown kind or overlay.
@@ -127,6 +127,7 @@ public sealed class WidgetLibrary(OverlayStore overlays, ElementStore elements, 
             "label" => (40 * s, 40 * s, 700 * s, 70 * s),
             "goal" => (40 * s, 130 * s, 700 * s, 110 * s),
             "eventlist" => (w - 420 * s, 40 * s, 380 * s, 420 * s),
+            "topspenders" => (40 * s, 260 * s, 520 * s, 260 * s),
             "countdown" => ((w - 640 * s) / 2, (h - 260 * s) / 2, 640 * s, 260 * s),
             "hypecup" => (w - 360 * s, h - 540 * s, 320 * s, 500 * s),
             "hypeboss" => ((w - 640 * s) / 2, 40 * s, 640 * s, 140 * s),

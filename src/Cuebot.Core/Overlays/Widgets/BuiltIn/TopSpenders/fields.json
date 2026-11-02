@@ -1,0 +1,25 @@
+{
+  "period": { "type": "dropdown", "label": "Period", "value": "stream", "group": "What it shows",
+    "options": { "stream": "This stream", "day": "Today", "week": "This week", "month": "This month", "year": "This year", "alltime": "All time" } },
+  "platform": { "type": "text", "label": "Platform (empty: every platform; or Twitch, YouTube, Kick, Rumble, Ko-fi...)", "value": "", "group": "What it shows" },
+  "count": { "type": "number", "label": "How many people", "value": 3, "min": 1, "max": 10, "group": "What it shows" },
+  "layout": { "type": "dropdown", "label": "Layout", "value": "list", "group": "What it shows",
+    "options": { "list": "A list, one person per line", "line": "Everyone on one line" } },
+  "title": { "type": "text", "label": "Title (empty: none)", "value": "Top spenders", "group": "Text" },
+  "showRank": { "type": "checkbox", "label": "Show the place (1., 2., 3.)", "value": true, "group": "Text" },
+  "showAmount": { "type": "checkbox", "label": "Show how much they spent", "value": true, "group": "Text" },
+  "showPlatform": { "type": "checkbox", "label": "Show the platform", "value": false, "group": "Text" },
+  "emptyText": { "type": "text", "label": "When nobody has spent anything yet", "value": "Be the first!", "group": "Text" },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 36, "min": 10, "max": 120, "step": 1, "group": "Look" },
+  "fontSize": { "type": "slider", "label": "Text size", "value": 28, "min": 10, "max": 120, "step": 1, "group": "Look" },
+  "rowGap": { "type": "slider", "label": "Space between people", "value": 6, "min": 0, "max": 60, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Name colour", "value": "#ffffff", "group": "Look" },
+  "amountColor": { "type": "colorpicker", "label": "Amount colour", "value": "#ffcc33", "group": "Look" },
+  "titleColor": { "type": "colorpicker", "label": "Title colour", "value": "#ffcc33", "group": "Look" },
+  "align": { "type": "dropdown", "label": "Align", "value": "left", "group": "Look",
+    "options": { "left": "Left", "center": "Centre", "right": "Right" } },
+  "shadow": { "type": "checkbox", "label": "Text shadow", "value": true, "group": "Look" },
+  "flash": { "type": "checkbox", "label": "Flash when the top spender changes", "value": true, "group": "Look" }
+}

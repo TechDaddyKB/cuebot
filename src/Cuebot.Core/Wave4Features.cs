@@ -3,6 +3,7 @@ using Cuebot.Core.Credits;
 using Cuebot.Core.Desktop;
 using Cuebot.Core.Points;
 using Cuebot.Core.Quotes;
+using Cuebot.Core.Spending;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Core;
@@ -13,6 +14,7 @@ public static class Wave4Features
     public static IServiceCollection AddWave4Features(this IServiceCollection services) => services
         .AddQuoteFeatures()
         .AddCreditsFeatures()
+        .AddSpendingFeatures()
         .AddPointsFeatures()
         .AddDesktopFeatures();
 }

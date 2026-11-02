@@ -1,0 +1,92 @@
+{
+  "triggers": {
+    "spending.recorded": {
+      "description": "Runs every time someone spends money on your stream: a tip, Super Chat, Super Sticker, rant, bits, Kicks, Jewels, a subscription, gift subs or a shop order. The amount is already changed into your chosen currency. Good for thanking big spenders or showing a running total.",
+      "fields": {
+        "platform": "Only for this platform, like Twitch or Ko-fi. Leave it empty for every platform.",
+        "minAmount": "Only when the purchase is worth at least this much, in your chosen currency. 0 = every purchase."
+      },
+      "variables": {
+        "user": "Who spent the money",
+        "platform": "Where they spent it, like Twitch, YouTube, Kick, Rumble, Streamlabs or Ko-fi",
+        "label": "What it was, like Cheer, Super Chat, Rant, Subscription or Gift subs",
+        "amount": "What it is worth, in your chosen currency, like 4.99",
+        "currency": "Your chosen currency, like USD",
+        "formattedAmount": "The amount with its currency sign, like $4.99",
+        "paidAmount": "What they actually paid: the money in their own currency, or the number of bits, Kicks, Jewels or subs",
+        "paidCurrency": "The currency they paid in, like EUR, or Bits, Kicks, Jewels, Subscription or GiftSubscription",
+        "streamTotal": "Everything this person has spent this stream on that platform, in your currency",
+        "rank": "Their place on this stream's top spenders list (1 = the top spender)",
+        "sessionId": "The stream's internal id"
+      }
+    },
+    "spending.topSpenderChanged": {
+      "description": "Runs when somebody new becomes the top spender of this stream. Good for a \"new top spender!\" alert or chat message.",
+      "fields": {
+        "scope": "Which list. All platforms = the top spender across every platform changed. A platform name like Twitch = the top spender on that platform changed. Any = either."
+      },
+      "variables": {
+        "user": "The new top spender",
+        "platform": "Their platform",
+        "total": "Everything they have spent this stream, in your chosen currency",
+        "currency": "Your chosen currency, like USD",
+        "formattedTotal": "The total with its currency sign, like $25.00",
+        "previousUser": "Who was the top spender before (empty when nobody was)",
+        "previousPlatform": "The platform of the previous top spender",
+        "previousTotal": "What the previous top spender had spent",
+        "scope": "Which list changed: All platforms, or the platform's name"
+      }
+    }
+  },
+  "subActions": {
+    "spending.getTop": {
+      "description": "Gets the top spenders of this stream, today, this week, this month, this year or all time, on one platform or all of them. Good for a !topspender command or an end-of-stream thank you.",
+      "fields": {
+        "period": "Which time: This stream, Today, This week, This month, This year or All time. Days, weeks, months and years follow your computer's calendar.",
+        "platform": "One platform, like Twitch. Leave it empty for every platform together.",
+        "count": "How many people to get, from 1 to 100."
+      },
+      "variables": {
+        "topSpender": "The name of the top spender (empty when nobody spent anything)",
+        "topSpenderPlatform": "The top spender's platform",
+        "topSpenderAmount": "What the top spender spent, in your chosen currency",
+        "topSpenderFormatted": "The same with its currency sign, like $25.00",
+        "topSpenders": "Everyone on the list with their amounts, like Alice ($25.00), Bob ($10.00)",
+        "topSpendersCount": "How many people are on the list",
+        "topSpendersTotal": "What everyone on the list spent together",
+        "topSpendersFormattedTotal": "The same with its currency sign",
+        "topSpendersJson": "The whole list as JSON, for code steps",
+        "topSpender1": "The first place's name (topSpender2 is second place, and so on; also topSpender1Platform, topSpender1Amount and topSpender1Formatted)",
+        "spendingCurrency": "Your chosen currency, like USD",
+        "spendingPeriod": "The period the list is for, like This week"
+      }
+    },
+    "spending.newStream": {
+      "description": "Starts a new stream for the top spenders right now: \"this stream\" lists start empty and the exchange rates are fetched again. Cuebot does this by itself when you go live, so you only need it if your platform does not tell Cuebot.",
+      "fields": {},
+      "variables": {}
+    },
+    "spending.add": {
+      "description": "Adds a purchase by hand, like a cash gift or a sale Cuebot cannot see. It counts toward the top spenders like any other purchase.",
+      "fields": {
+        "user": "Who spent the money.",
+        "platform": "The platform to list them under. Leave it empty for Manual.",
+        "amount": "How much, like 10.",
+        "currency": "The currency, like EUR. Leave it empty for your chosen currency.",
+        "label": "What it was, like Cash gift."
+      },
+      "variables": {}
+    },
+    "spending.remove": {
+      "description": "Removes what one person spent, for example after a refund or a test. Good with a mod-only command.",
+      "fields": {
+        "user": "Whose purchases to remove.",
+        "platform": "Only on this platform. Leave it empty for every platform.",
+        "period": "Only purchases in this time, like This stream. All time removes everything they ever spent."
+      },
+      "variables": {
+        "removed": "How many purchases were removed"
+      }
+    }
+  }
+}

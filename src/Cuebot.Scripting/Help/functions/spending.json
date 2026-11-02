@@ -1,0 +1,67 @@
+{
+  "functions": {
+    "spending.add": {
+      "description": "Adds a purchase by hand, like a cash gift. It counts toward the top spenders like any other purchase.",
+      "parameters": {
+        "user": "Optional. Who spent the money. Leave it out for the user of the trigger.",
+        "platform": "Optional. The platform to list them under. Leave it out for the platform of the trigger (or Manual).",
+        "amount": "How much, like 10.",
+        "currency": "Optional. The currency, like \"EUR\". Leave it out for your chosen currency.",
+        "label": "Optional. What it was, like \"Cash gift\"."
+      },
+      "returns": "true. Fails when the user is empty or the amount is not more than 0.",
+      "example": {
+        "user": "CoolViewer42",
+        "platform": "Manual",
+        "amount": 10,
+        "currency": "USD",
+        "label": "Cash gift"
+      }
+    },
+    "spending.newStream": {
+      "description": "Starts a new stream for the top spenders: \"stream\" lists start empty and exchange rates are fetched again. Cuebot does this by itself when you go live.",
+      "parameters": {},
+      "returns": "true.",
+      "example": {}
+    },
+    "spending.platforms": {
+      "description": "Lists the platforms anyone has spent money on, so you can ask for each platform's top spenders.",
+      "parameters": {},
+      "returns": "A list of platform names, like [\"Twitch\", \"YouTube\"].",
+      "example": {}
+    },
+    "spending.remove": {
+      "description": "Removes what one person spent, for example after a refund or a test.",
+      "parameters": {
+        "user": "Whose purchases to remove.",
+        "platform": "Optional. Only on this platform. Leave it out for every platform.",
+        "period": "Optional. stream, day, week, month, year or all. Leave it out for all."
+      },
+      "returns": "How many purchases were removed.",
+      "example": {
+        "user": "CoolViewer42",
+        "period": "stream"
+      }
+    },
+    "spending.stream": {
+      "description": "Tells you about the current stream: when it started and which exchange rates it locked in.",
+      "parameters": {},
+      "returns": "An object with id, startedAt, endedAt, currency, ratesSource and ratesDate, or null before anything was bought.",
+      "example": {}
+    },
+    "spending.top": {
+      "description": "Gives you the top spenders of a period, on one platform or all of them, highest first, in your chosen currency.",
+      "parameters": {
+        "period": "Optional. stream, day, week, month, year or all. Leave it out for stream.",
+        "platform": "Optional. One platform, like \"Twitch\". Leave it out for every platform together.",
+        "count": "Optional. How many people, like 5. Leave it out for 10."
+      },
+      "returns": "An object with period, platform, currency, total, pending (purchases still waiting for exchange rates) and spenders. Each spender has rank, user, platform, total, count and breakdown (what they spent on each kind of thing, like Cheer or Super Chat).",
+      "example": {
+        "period": "week",
+        "platform": "Twitch",
+        "count": 5
+      }
+    }
+  }
+}

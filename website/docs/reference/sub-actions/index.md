@@ -48,6 +48,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Remote](remote.md) | 2 |
 | [Rumble](rumble.md) | 1 |
 | [Speech](speech.md) | 11 |
+| [Spending](spending.md) | 4 |
 | [Spotify](spotify.md) | 5 |
 | [Store](store.md) | 2 |
 | [Stream Deck](stream-deck.md) | 7 |

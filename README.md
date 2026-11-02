@@ -45,6 +45,7 @@ a Stream Deck button or a timer. Text-to-speech, chat moderation and your stream
 - **Music and media requests.** Show the song you play (any player on Windows and Linux, or Spotify), react when it
   changes, take Spotify song requests with a `!sr` command, or let viewers queue YouTube videos on your overlay.
 - **Community.** Points, a points store, giveaways, polls and predictions on every platform, quotes and credits.
+  Top spenders per stream, day, week, month or year across every platform, in your own currency.
 - **Your gear.** Stream Deck (with or without the Elgato software), browser button decks for your phone, MIDI
   controllers, game controllers, Elgato lights, GoXLR and Wave Link can trigger actions or be controlled by them.
 - **Scripting.** C# and Python steps for anything custom, plus a Streamer.bot-compatible WebSocket API, an HTTP and

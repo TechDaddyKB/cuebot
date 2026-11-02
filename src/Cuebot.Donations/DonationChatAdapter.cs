@@ -25,20 +25,22 @@ internal abstract class DonationChatAdapter(string platform, string prefix) : IC
         var user = Get(a, "user");
         var message = Get(a, "message");
         var amount = Get(a, "formattedAmount");
-        FeedItem Item(FeedKind kind, string title, string? amountText = null) => new(service, kind, user, Test(a) + title, e.Time)
-        {
-            Detail = message.Length > 0 ? message : null,
-            Amount = amountText is { Length: > 0 } ? amountText : null,
-        };
+        FeedItem Item(FeedKind kind, string title, string? amountText = null, string? spend = null, bool charity = false) =>
+            new(service, kind, user, Test(a) + title, e.Time)
+            {
+                Detail = message.Length > 0 ? message : null,
+                Amount = amountText is { Length: > 0 } ? amountText : null,
+                Spend = spend is null ? null : FeedSpend.Money(Number(a, "amount"), Get(a, "currency"), spend, charity),
+            };
 
         return e.Type switch
         {
-            StreamlabsEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount}", amount),
-            StreamElementsEventTypes.Tip => Item(FeedKind.Tip, $"{user} tipped {amount}", amount),
+            StreamlabsEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount}", amount, "Donation"),
+            StreamElementsEventTypes.Tip => Item(FeedKind.Tip, $"{user} tipped {amount}", amount, "Tip"),
             StreamlabsEventTypes.CharityDonation or StreamElementsEventTypes.CharityDonation =>
-                Item(FeedKind.Tip, $"{user} donated {amount} to charity", amount),
+                Item(FeedKind.Tip, $"{user} donated {amount} to charity", amount, "Charity", charity: true),
             StreamlabsEventTypes.Merch or StreamElementsEventTypes.Merch =>
-                Item(FeedKind.Other, $"{user} bought {Get(a, "product")}", amount),
+                Item(FeedKind.Other, $"{user} bought {Get(a, "product")}", amount, "Merch"),
             StreamlabsEventTypes.LoyaltyStoreRedemption or StreamElementsEventTypes.Redemption =>
                 Item(FeedKind.Redemption, $"{user} redeemed {First(a, "product", "item")}"),
             StreamlabsEventTypes.PrimeSubGift => Item(FeedKind.GiftSubscription, $"{user} gifted a Prime subscription"),
@@ -51,18 +53,19 @@ internal abstract class DonationChatAdapter(string platform, string prefix) : IC
             StreamlabsEventTypes.Host or StreamElementsEventTypes.Host => Item(FeedKind.Raid, $"{user} hosted with {Get(a, "viewers")} viewers"),
             StreamlabsEventTypes.Superchat or StreamElementsEventTypes.Superchat => Item(FeedKind.Tip, $"{user} sent a {amount} Super Chat", amount),
             StreamElementsEventTypes.Activity => Item(FeedKind.Other, $"{user}: {Get(a, "activityType")}"),
-            TipeeeStreamEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount}", amount),
+            TipeeeStreamEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount}", amount, "Donation"),
             TipeeeStreamEventTypes.Follow => Item(FeedKind.Follow, $"{user} followed"),
             TipeeeStreamEventTypes.Subscription => Item(FeedKind.Subscription, $"{user} subscribed"),
             TipeeeStreamEventTypes.Cheer => Item(FeedKind.Tip, $"{user} cheered {Get(a, "bits")} bits", amount),
             TipeeeStreamEventTypes.Raid => Item(FeedKind.Raid, $"{user} raided with {Get(a, "viewers")} viewers"),
             TipeeeStreamEventTypes.Host => Item(FeedKind.Raid, $"{user} hosted with {Get(a, "viewers")} viewers"),
             DonorDriveEventTypes.Donation => Item(FeedKind.Tip,
-                amount.Length > 0 ? $"{user} donated {amount} to charity" : $"{user} donated to charity", amount),
+                amount.Length > 0 ? $"{user} donated {amount} to charity" : $"{user} donated to charity", amount, "Charity", charity: true),
             // Treats have no amount; the treat ("Pizza") is what the credits list.
             TreatStreamEventTypes.Treat => Item(FeedKind.Tip, $"{user} sent a {Get(a, "type")} treat", Get(a, "type")),
             PallyEventTypes.CampaignTip => Item(FeedKind.Tip,
-                Get(a, "campaignTitle") is { Length: > 0 } campaign ? $"{user} tipped {amount} to {campaign}" : $"{user} tipped {amount}", amount),
+                Get(a, "campaignTitle") is { Length: > 0 } campaign ? $"{user} tipped {amount} to {campaign}" : $"{user} tipped {amount}", amount,
+                "Charity", charity: true),
             _ => null,
         };
     }
@@ -84,6 +87,9 @@ internal abstract class DonationChatAdapter(string platform, string prefix) : IC
 
     private static string Get(IReadOnlyDictionary<string, object?> a, string key) =>
         a.TryGetValue(key, out var value) ? Convert.ToString(value, CultureInfo.InvariantCulture) ?? "" : "";
+
+    private static double Number(IReadOnlyDictionary<string, object?> a, string key) =>
+        double.TryParse(Get(a, key), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : 0;
 
     private static string First(IReadOnlyDictionary<string, object?> a, params string[] keys) =>
         keys.Select(k => Get(a, k)).FirstOrDefault(v => v.Length > 0) ?? "";

@@ -37,6 +37,10 @@ public sealed class AdapterAndTriggerTests
         Assert.Equal(FeedKind.Tip, _adapter.ToFeedItem(sticker)!.Kind);
 
         Assert.Equal(FeedKind.Tip, _adapter.ToFeedItem(E(YouTubeEventTypes.JewelsGifted, ("user", "C"), ("jewels", 50L)))!.Kind);
+
+        var paid = _adapter.ToFeedItem(E(YouTubeEventTypes.SuperSticker, ("user", "Bob"), ("amount", 2.0), ("currency", "EUR")))!.Spend!;
+        Assert.Equal((SpendUnit.Money, 2.0, "EUR", "Super Sticker"), (paid.Unit, paid.Quantity, paid.Currency, paid.Label));
+        Assert.Equal((SpendUnit.Jewels, 50.0), _adapter.ToFeedItem(E(YouTubeEventTypes.JewelsGifted, ("user", "C"), ("jewels", 50L)))!.Spend is { } j ? (j.Unit, j.Quantity) : default);
     }
 
     [Fact]
@@ -48,6 +52,8 @@ public sealed class AdapterAndTriggerTests
         Assert.Equal((FeedKind.Subscription, "A has been a member for 6 months"), (milestone.Kind, milestone.Title));
         var gift = _adapter.ToFeedItem(E(YouTubeEventTypes.MembershipGift, ("user", "A"), ("total", 5)))!;
         Assert.Equal((FeedKind.GiftSubscription, "A gifted 5 memberships"), (gift.Kind, gift.Title));
+        Assert.Equal((SpendUnit.GiftSubscription, 5.0), (gift.Spend!.Unit, gift.Spend.Quantity));
+        Assert.Equal((SpendUnit.Subscription, "Gold"), (sponsor.Spend!.Unit, sponsor.Spend.Tier));
         Assert.Equal("A gifted a membership", _adapter.ToFeedItem(E(YouTubeEventTypes.MembershipGift, ("user", "A"), ("total", 1)))!.Title);
         var received = _adapter.ToFeedItem(E(YouTubeEventTypes.GiftMembershipReceived, ("user", "B"), ("gifterName", "A")))!;
         Assert.Equal((FeedKind.Subscription, "B received a membership from A"), (received.Kind, received.Title));

@@ -50,6 +50,14 @@ public sealed class SessionTypeData
     public Dictionary<string, double> SessionUsers { get; set; } = [];
 }
 
+/// <summary>Adds its own keys to the overlay session data (e.g. the top spenders), and says when they change.</summary>
+public interface ISessionDataSource
+{
+    void AddTo(JsonObject data);
+
+    event Action? Changed;
+}
+
 /// <summary>session-data.json.</summary>
 public sealed class SessionDataDocument
 {
@@ -102,9 +110,13 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
     private readonly HashSet<string> _live = new(StringComparer.OrdinalIgnoreCase);
     private readonly IDisposable _subscription;
     private readonly OverlayEventBridge? _bridge;
+    private readonly ISessionDataSource[] _sources;
 
-    public SessionDataStore(AppPaths? paths, AppLog log, EventBus bus, OverlayFeed feed, OverlayEventBridge? bridge, TimeProvider? time = null)
+    public SessionDataStore(AppPaths? paths, AppLog log, EventBus bus, OverlayFeed feed, OverlayEventBridge? bridge, TimeProvider? time = null,
+        IEnumerable<ISessionDataSource>? sources = null)
     {
+        _sources = sources?.ToArray() ?? [];
+        foreach (var source in _sources) source.Changed += Notify;
         _feed = feed;
         _time = time ?? TimeProvider.System;
         if (paths is not null) _file = new JsonFile<SessionDataDocument>(paths.File("session-data.json"), log);
@@ -119,8 +131,15 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
 
     private SessionDataDocument Data => _file?.Value ?? _memory;
 
-    /// <summary>StreamElements' <c>session.data</c>.</summary>
+    /// <summary>StreamElements' <c>session.data</c>, with the keys of every <see cref="ISessionDataSource"/>.</summary>
     public JsonObject Snapshot()
+    {
+        var data = Own();
+        foreach (var source in _sources) source.AddTo(data);
+        return data;
+    }
+
+    private JsonObject Own()
     {
         lock (_gate)
         {
@@ -378,6 +397,7 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
     {
         _subscription.Dispose();
         if (_bridge is not null) _bridge.AlertSent -= Record;
+        foreach (var source in _sources) source.Changed -= Notify;
         _file?.Dispose();
     }
 }

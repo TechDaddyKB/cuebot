@@ -43,24 +43,25 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
             message = "";
         }
 
-        FeedItem Item(FeedKind kind, string title, string? amountText = null, bool withMessage = true) =>
+        FeedItem Item(FeedKind kind, string title, string? amountText = null, bool withMessage = true, string? spend = null) =>
             new(service, kind, user, Test(a) + title, e.Time)
             {
                 Detail = withMessage && message.Length > 0 ? message : null,
                 Amount = amountText is { Length: > 0 } ? amountText : null,
+                Spend = spend is null || !hasAmount ? null : FeedSpend.Money(Convert.ToDouble(raw, CultureInfo.InvariantCulture), Get(a, "currency"), spend),
             };
 
         var tier = Get(a, "tier");
         var tierText = tier.Length > 0 ? $" ({tier})" : "";
         return e.Type switch
         {
-            KofiEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount} on Ko-fi", amount),
-            KofiEventTypes.Subscription => Item(FeedKind.Subscription, $"{user} subscribed on Ko-fi{tierText}", amount),
-            KofiEventTypes.Resubscription => Item(FeedKind.Subscription, $"{user} renewed their Ko-fi membership{tierText}", amount),
-            KofiEventTypes.Commission => Item(FeedKind.Other, $"{user} ordered a commission ({amount})", amount),
-            KofiEventTypes.ShopOrder => Item(FeedKind.Other, $"{user} bought {Count(a, "itemCount")} on Ko-fi ({amount})", amount),
+            KofiEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount} on Ko-fi", amount, spend: "Donation"),
+            KofiEventTypes.Subscription => Item(FeedKind.Subscription, $"{user} subscribed on Ko-fi{tierText}", amount, spend: "Membership"),
+            KofiEventTypes.Resubscription => Item(FeedKind.Subscription, $"{user} renewed their Ko-fi membership{tierText}", amount, spend: "Membership"),
+            KofiEventTypes.Commission => Item(FeedKind.Other, $"{user} ordered a commission ({amount})", amount, spend: "Commission"),
+            KofiEventTypes.ShopOrder => Item(FeedKind.Other, $"{user} bought {Count(a, "itemCount")} on Ko-fi ({amount})", amount, spend: "Shop order"),
 
-            PatreonEventTypes.PledgeCreated => Item(FeedKind.Subscription, $"{user} became a patron{tierText}", paid, withMessage: false),
+            PatreonEventTypes.PledgeCreated => Item(FeedKind.Subscription, $"{user} became a patron{tierText}", paid, withMessage: false, spend: "Pledge"),
             PatreonEventTypes.PledgeUpdated => Item(FeedKind.Other, $"{user} changed their pledge{tierText}", paid, withMessage: false),
             PatreonEventTypes.FollowCreated when a.TryGetValue("isGifted", out var gifted) && gifted is true =>
                 Item(FeedKind.Subscription, $"{user} received a gifted Patreon membership{tierText}", withMessage: false),
@@ -70,16 +71,16 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
 
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid when a.TryGetValue("isRepeatOrder", out var rep) && rep is true => null,
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid =>
-                Item(FeedKind.Other, $"{user} placed order {Get(a, "orderName")} ({amount})", amount),
+                Item(FeedKind.Other, $"{user} placed order {Get(a, "orderName")} ({amount})", amount, spend: "Shop order"),
 
-            FourthwallEventTypes.OrderPlaced => Item(FeedKind.Other, $"{user} bought {Get(a, "fw.items")} ({amount})", amount),
-            FourthwallEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount} on Fourthwall", amount),
-            FourthwallEventTypes.SubscriptionPurchased => Item(FeedKind.Subscription, $"{user} became a member on Fourthwall", paid),
+            FourthwallEventTypes.OrderPlaced => Item(FeedKind.Other, $"{user} bought {Get(a, "fw.items")} ({amount})", amount, spend: "Shop order"),
+            FourthwallEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount} on Fourthwall", amount, spend: "Donation"),
+            FourthwallEventTypes.SubscriptionPurchased => Item(FeedKind.Subscription, $"{user} became a member on Fourthwall", paid, spend: "Membership"),
             FourthwallEventTypes.GiftPurchase =>
-                Item(FeedKind.Other, $"{user} gifted {Get(a, "fw.quantity")} x {Get(a, "fw.offer.name")} ({amount})", amount),
+                Item(FeedKind.Other, $"{user} gifted {Get(a, "fw.quantity")} x {Get(a, "fw.offer.name")} ({amount})", amount, spend: "Gift"),
 
-            ThroneEventTypes.GiftPurchased => Item(FeedKind.Tip, $"{user} bought {Get(a, "item")} from the Throne wishlist", paid),
-            ThroneEventTypes.ContributionPurchased => Item(FeedKind.Tip, $"{user} contributed {amount} to {Get(a, "item")}", paid),
+            ThroneEventTypes.GiftPurchased => Item(FeedKind.Tip, $"{user} bought {Get(a, "item")} from the Throne wishlist", paid, spend: "Wishlist gift"),
+            ThroneEventTypes.ContributionPurchased => Item(FeedKind.Tip, $"{user} contributed {amount} to {Get(a, "item")}", paid, spend: "Wishlist gift"),
             ThroneEventTypes.GiftCrowdfunded => new FeedItem(service, FeedKind.Other, "", $"{Test(a)}{Get(a, "item")} was fully crowdfunded on Throne", e.Time)
             {
                 Amount = paid.Length > 0 ? paid : null,

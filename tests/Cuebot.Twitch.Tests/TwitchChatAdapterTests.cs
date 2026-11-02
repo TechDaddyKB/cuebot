@@ -37,6 +37,29 @@ public class TwitchChatAdapterTests
         Assert.Equal(title, item.Title);
     }
 
+    [Theory]
+    [InlineData(TwitchEventTypes.Cheer, SpendUnit.Bits, 500, "", "Cheer")]
+    [InlineData(TwitchEventTypes.PowerUp, SpendUnit.Bits, 500, "", "Power-up")]
+    [InlineData(TwitchEventTypes.Sub, SpendUnit.Subscription, 1, "2", "Subscription")]
+    [InlineData(TwitchEventTypes.Resub, SpendUnit.Subscription, 1, "2", "Subscription")]
+    [InlineData(TwitchEventTypes.GiftSub, SpendUnit.GiftSubscription, 5, "2", "Gift subs")]
+    [InlineData(TwitchEventTypes.PayItForward, SpendUnit.GiftSubscription, 1, "2", "Gift subs")]
+    public void Paid_events_say_what_was_spent(string type, SpendUnit unit, double quantity, string tier, string label)
+    {
+        var spend = _adapter.ToFeedItem(Event(type, ("user", "Ann"), ("bits", 500), ("total", 5), ("tier", "2"), ("isGift", false)))!.Spend!;
+        Assert.Equal((unit, quantity, label), (spend.Unit, spend.Quantity, spend.Label));
+        if (tier.Length > 0) Assert.Equal(tier, spend.Tier);
+    }
+
+    [Fact]
+    public void Charity_donations_are_marked_and_free_events_spend_nothing()
+    {
+        var charity = _adapter.ToFeedItem(Event(TwitchEventTypes.CharityDonation, ("user", "Ann"), ("amount", 12.5), ("currency", "eur")))!.Spend!;
+        Assert.Equal((SpendUnit.Money, 12.5, "EUR", true), (charity.Unit, charity.Quantity, charity.Currency, charity.IsCharity));
+        Assert.Null(_adapter.ToFeedItem(Event(TwitchEventTypes.Follow, ("user", "Ann")))!.Spend);
+        Assert.Null(_adapter.ToFeedItem(Event(TwitchEventTypes.Cheer, ("user", "Ann"), ("bits", 0)))!.Spend);
+    }
+
     [Fact]
     public void Gifted_sub_recipients_are_not_listed_twice()
     {

@@ -36,7 +36,8 @@ public static class OverlayFeatures
             sp.GetServices<IOverlayEventAdapter>(), sp.GetRequiredService<AppLog>(), sp.GetService<EmoteService>(),
             sp.GetService<Chat.Pronouns.PronounService>()));
         services.AddSingleton(sp => new SessionDataStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>(),
-            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(), sp.GetRequiredService<OverlayEventBridge>()));
+            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(), sp.GetRequiredService<OverlayEventBridge>(),
+            sources: sp.GetServices<ISessionDataSource>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<SessionDataStore>());
         return services;
     }

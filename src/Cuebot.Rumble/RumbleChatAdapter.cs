@@ -35,13 +35,20 @@ internal sealed class RumbleChatAdapter : IChatEventAdapter
             {
                 Detail = a.GetString("message"),
                 Amount = a.GetString("amountText"),
+                Spend = FeedSpend.Money(a.GetDouble("amount"), Currency(a), "Rant"),
             },
             RumbleEventTypes.Follow => new FeedItem(Platform, FeedKind.Follow, user, $"{user} followed", e.Time),
             RumbleEventTypes.Subscribe => new FeedItem(Platform, FeedKind.Subscription, user, $"{user} subscribed", e.Time)
             {
                 Amount = a.GetString("amountText") is { Length: > 0 } amount ? amount : null,
+                Spend = FeedSpend.Money(a.GetDouble("amount"), Currency(a), "Subscription")
+                        ?? FeedSpend.Units(SpendUnit.Subscription, 1, "Subscription"),
             },
-            RumbleEventTypes.GiftSub => new FeedItem(Platform, FeedKind.GiftSubscription, user, $"{user} gifted {Gifts(a.GetDouble("total"))}", e.Time),
+            RumbleEventTypes.GiftSub => new FeedItem(Platform, FeedKind.GiftSubscription, user, $"{user} gifted {Gifts(a.GetDouble("total"))}", e.Time)
+            {
+                Spend = FeedSpend.Money(a.GetDouble("amount"), Currency(a), "Gift subs")
+                        ?? FeedSpend.Units(SpendUnit.GiftSubscription, a.GetDouble("total"), "Gift subs"),
+            },
             RumbleEventTypes.StreamOnline => new FeedItem(Platform, FeedKind.StreamOnline, user, "Stream went live", e.Time)
             {
                 Detail = a.GetString("title"),
@@ -50,6 +57,9 @@ internal sealed class RumbleChatAdapter : IChatEventAdapter
             _ => null,
         };
     }
+
+    private static string Currency(IReadOnlyDictionary<string, object?> a) =>
+        a.GetString("currency") is { Length: > 0 } currency ? currency : Money.Currency;
 
     private static string Gifts(double total) => total == 1 ? "a subscription" : $"{total:0} subscriptions";
 

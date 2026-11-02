@@ -40,6 +40,32 @@ public sealed record FeedItem(string Platform, FeedKind Kind, string User, strin
 {
     public string? Detail { get; init; }
     public string? Amount { get; init; }
+
+    /// <summary>What the viewer paid, for the spending ledger (top spenders); null when nothing was bought.</summary>
+    public FeedSpend? Spend { get; init; }
+
+    /// <summary>A test event (the platform's "isTest"): shown in the feed, never counted as spending.</summary>
+    public bool IsTest { get; init; }
+}
+
+/// <summary>What a paid event is counted in: money, or a platform unit the spending settings put a price on.</summary>
+public enum SpendUnit { Money, Bits, Kicks, Jewels, Subscription, GiftSubscription }
+
+/// <summary>
+/// What a viewer paid for: <see cref="Quantity"/> of <see cref="Unit"/> (an amount in <see cref="Currency"/> for
+/// money, otherwise bits, Kicks, Jewels or subscriptions, with the subscription <see cref="Tier"/> where known).
+/// <see cref="Label"/> names it for breakdowns ("Cheer", "Super Chat", "Rant"...).
+/// </summary>
+public sealed record FeedSpend(SpendUnit Unit, double Quantity, string Label, string Currency = "", string Tier = "")
+{
+    /// <summary>Money given to a charity: the streamer does not receive it, so it is only counted when the settings say so.</summary>
+    public bool IsCharity { get; init; }
+
+    public static FeedSpend? Money(double amount, string currency, string label, bool charity = false) =>
+        amount > 0 && double.IsFinite(amount) ? new(SpendUnit.Money, amount, label, currency.Trim().ToUpperInvariant()) { IsCharity = charity } : null;
+
+    public static FeedSpend? Units(SpendUnit unit, double quantity, string label, string tier = "") =>
+        quantity > 0 && double.IsFinite(quantity) ? new(unit, quantity, label, Tier: tier) : null;
 }
 
 /// <summary>

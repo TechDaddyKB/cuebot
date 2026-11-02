@@ -34,20 +34,24 @@ internal sealed class TwitchChatAdapter : IChatEventAdapter
             TwitchEventTypes.Follow => Item(e, FeedKind.Follow, user, $"{user} followed"),
             TwitchEventTypes.Sub => Bool(e, "isGift")
                 ? null // the gifter's channel.subscription.gift event already covers gifted subs
-                : Item(e, FeedKind.Subscription, user, $"{user} subscribed (tier {Str(e, "tier")})"),
+                : Item(e, FeedKind.Subscription, user, $"{user} subscribed (tier {Str(e, "tier")})") with { Spend = Sub(e) },
             TwitchEventTypes.Resub => Item(e, FeedKind.Subscription, user,
-                $"{user} resubscribed for {Int(e, "cumulativeMonths")} months", Str(e, "message")),
+                $"{user} resubscribed for {Int(e, "cumulativeMonths")} months", Str(e, "message")) with { Spend = Sub(e) },
             TwitchEventTypes.GiftSub => Item(e, FeedKind.GiftSubscription, user,
-                $"{(Bool(e, "isAnonymous") ? "An anonymous gifter" : user)} gifted {Int(e, "total")} tier {Str(e, "tier")} subs"),
-            TwitchEventTypes.GiftPaidUpgrade => Item(e, FeedKind.Subscription, user, $"{user} continued the sub gifted by {Str(e, "gifter")}"),
-            TwitchEventTypes.PrimePaidUpgrade => Item(e, FeedKind.Subscription, user, $"{user} upgraded from Prime to tier {Str(e, "tier")}"),
-            TwitchEventTypes.PayItForward => Item(e, FeedKind.GiftSubscription, user, $"{user} paid forward the sub gifted by {Str(e, "gifter")}"),
+                $"{(Bool(e, "isAnonymous") ? "An anonymous gifter" : user)} gifted {Int(e, "total")} tier {Str(e, "tier")} subs")
+                with { Spend = FeedSpend.Units(SpendUnit.GiftSubscription, Int(e, "total"), "Gift subs", TierOf(e)) },
+            TwitchEventTypes.GiftPaidUpgrade => Item(e, FeedKind.Subscription, user, $"{user} continued the sub gifted by {Str(e, "gifter")}")
+                with { Spend = Sub(e) },
+            TwitchEventTypes.PrimePaidUpgrade => Item(e, FeedKind.Subscription, user, $"{user} upgraded from Prime to tier {Str(e, "tier")}")
+                with { Spend = Sub(e) },
+            TwitchEventTypes.PayItForward => Item(e, FeedKind.GiftSubscription, user, $"{user} paid forward the sub gifted by {Str(e, "gifter")}")
+                with { Spend = FeedSpend.Units(SpendUnit.GiftSubscription, 1, "Gift subs", TierOf(e)) },
             TwitchEventTypes.Cheer => Item(e, FeedKind.Tip, user, $"{user} cheered {Int(e, "bits")} bits", Str(e, "message"))
-                with { Amount = $"{Int(e, "bits")} bits" },
+                with { Amount = $"{Int(e, "bits")} bits", Spend = Bits(e, "Cheer") },
             TwitchEventTypes.PowerUp => Item(e, FeedKind.Tip, user, $"{user} used a power-up ({PowerUpName(e)})", Str(e, "message"))
-                with { Amount = $"{Int(e, "bits")} bits" },
+                with { Amount = $"{Int(e, "bits")} bits", Spend = Bits(e, "Power-up") },
             TwitchEventTypes.CustomPowerUpRedemption => Item(e, FeedKind.Tip, user, $"{user} used {Str(e, "rewardTitle")}", Str(e, "userInput"))
-                with { Amount = $"{Int(e, "bits")} bits" },
+                with { Amount = $"{Int(e, "bits")} bits", Spend = Bits(e, "Power-up") },
             TwitchEventTypes.BitsBadgeTier => Item(e, FeedKind.Other, user, $"{user} reached the {Int(e, "tier")} bits badge"),
             TwitchEventTypes.Raid => Item(e, FeedKind.Raid, user, $"{user} raided with {Int(e, "viewers")} viewers"),
             TwitchEventTypes.RaidSend => Item(e, FeedKind.Raid, user, $"Raided {user} with {Int(e, "viewers")} viewers"),
@@ -72,7 +76,11 @@ internal sealed class TwitchChatAdapter : IChatEventAdapter
             TwitchEventTypes.ShoutoutReceived => Item(e, FeedKind.Other, user, $"{user} gave a shoutout"),
             TwitchEventTypes.AdRun => Item(e, FeedKind.Other, user, $"{Int(e, "duration")}s ad break started"),
             TwitchEventTypes.CharityDonation => Item(e, FeedKind.Tip, user, $"{user} donated to {Str(e, "charityName")}")
-                with { Amount = $"{Str(e, "amount")} {Str(e, "currency")}".Trim() },
+                with
+                {
+                    Amount = $"{Str(e, "amount")} {Str(e, "currency")}".Trim(),
+                    Spend = FeedSpend.Money(Dbl(e, "amount"), Str(e, "currency"), "Charity", charity: true),
+                },
             TwitchEventTypes.GoalEnd => Item(e, FeedKind.Other, user,
                 Bool(e, "isAchieved") ? $"Goal achieved: {Str(e, "description")}" : $"Goal ended: {Str(e, "description")}"),
             TwitchEventTypes.UserBanned => Item(e, FeedKind.Other, user, $"{user} was banned", Str(e, "reason")),
@@ -105,6 +113,16 @@ internal sealed class TwitchChatAdapter : IChatEventAdapter
         int.TryParse(Str(e, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : 0;
 
     private static bool Bool(BotEvent e, string key) => e.Args.GetValueOrDefault(key) is true;
+
+    private static double Dbl(BotEvent e, string key) =>
+        double.TryParse(Str(e, key), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : 0;
+
+    /// <summary>"1", "2" or "3"; events that do not say (upgrades, pay it forward) count as tier 1.</summary>
+    private static string TierOf(BotEvent e) => Str(e, "tier") switch { "2" => "2", "3" => "3", _ => "1" };
+
+    private static FeedSpend? Sub(BotEvent e) => FeedSpend.Units(SpendUnit.Subscription, 1, "Subscription", TierOf(e));
+
+    private static FeedSpend? Bits(BotEvent e, string label) => FeedSpend.Units(SpendUnit.Bits, Int(e, "bits"), label);
 }
 
 /// <summary>Lets the combined chat post to Twitch (from the bot account when configured).</summary>

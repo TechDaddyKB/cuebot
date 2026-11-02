@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             xmlns:views="using:Cuebot.App.Views.Extras"
+             x:Class="Cuebot.App.Views.Extras.TopSpendersView"
+             x:DataType="vm:TopSpendersViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+      <TextBlock Classes="h1" Text="Top Spenders" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Who spent the most on your stream: tips, Super Chats, rants, bits, Kicks, Jewels, subscriptions, gift subs and shop orders, from every connected platform, added up in your currency. Show it on stream with the Top spenders overlay widget, or in chat with the 'Get top spenders' sub-action." />
+    </StackPanel>
+
+    <!-- Settings -->
+    <Border DockPanel.Dock="Right" Classes="card" Width="340" Margin="12,0,0,0" VerticalAlignment="Top">
+      <ScrollViewer MaxHeight="760">
+        <StackPanel Spacing="8" Margin="0,0,16,0">
+          <TextBlock Classes="h2" Text="Currency" />
+          <TextBox Text="{Binding Currency}" Width="110" HorizontalAlignment="Left" MaxLength="3"
+                   ToolTip.Tip="Everything is changed into this currency, like USD, EUR, GBP or CAD." />
+          <TextBlock Classes="muted" Foreground="#e05050" Text="{Binding CurrencyError}" TextWrapping="Wrap"
+                     IsVisible="{Binding CurrencyError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Exchange rates come from free services (Frankfurter, which uses the European Central Bank's rates, and currency-api) when a stream starts, and stay the same for the whole stream. So every purchase keeps the value it had that day." />
+
+          <TextBlock Classes="h2" Text="What things are worth (US dollars)" Margin="0,8,0,0" />
+          <Grid ColumnDefinitions="*,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock Grid.Row="0" Text="1 bit" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding BitUsd}" Minimum="0" Increment="0.001" FormatString="0.000" />
+            <TextBlock Grid.Row="1" Text="1 Kick" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding KickUsd}" Minimum="0" Increment="0.001" FormatString="0.000" />
+            <TextBlock Grid.Row="2" Text="1 YouTube Jewel" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding JewelUsd}" Minimum="0" Increment="0.001" FormatString="0.000" />
+            <TextBlock Grid.Row="3" Text="Twitch sub, tier 1" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding TwitchTier1Usd}" Minimum="0" Increment="0.5" FormatString="0.00" />
+            <TextBlock Grid.Row="4" Text="Twitch sub, tier 2" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding TwitchTier2Usd}" Minimum="0" Increment="0.5" FormatString="0.00" />
+            <TextBlock Grid.Row="5" Text="Twitch sub, tier 3" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding TwitchTier3Usd}" Minimum="0" Increment="0.5" FormatString="0.00" />
+            <TextBlock Grid.Row="6" Text="Kick sub" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="6" Grid.Column="1" Value="{Binding KickSubscriptionUsd}" Minimum="0" Increment="0.5" FormatString="0.00" />
+            <TextBlock Grid.Row="7" Text="YouTube membership" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding YouTubeMembershipUsd}" Minimum="0" Increment="0.5" FormatString="0.00" />
+            <TextBlock Grid.Row="8" Text="Other subscriptions" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="8" Grid.Column="1" Value="{Binding OtherSubscriptionUsd}" Minimum="0" Increment="0.5" FormatString="0.00" />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Gift subs count once for every sub gifted. Changes count for new purchases; what was already bought keeps its value." />
+
+          <TextBlock Classes="h2" Text="Counting" Margin="0,8,0,0" />
+          <CheckBox Content="Count charity donations" IsChecked="{Binding IncludeCharity}"
+                    ToolTip.Tip="Charity money goes to the charity, not to you, so it is left out unless you tick this." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Weeks start on" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{x:Static vm:TopSpendersViewModel.WeekDays}" SelectedItem="{Binding WeekStart}" Width="140" />
+          </StackPanel>
+          <TextBlock Text="Never list" />
+          <TextBox Text="{Binding IgnoredUsers}" PlaceholderText="e.g. Anonymous, your test account"
+                   ToolTip.Tip="Names that never appear on the list. Separate them with commas." />
+
+          <StackPanel Spacing="8" Margin="0,8,0,0">
+            <Button Content="Start a new stream now" Command="{Binding NewStreamCommand}"
+                    ToolTip.Tip="Cuebot starts a new stream by itself when you go live. Use this if your platform does not tell it." />
+            <Button Content="{Binding ConfirmClear, Converter={x:Static views:TopSpendersView.ClearText}}" Command="{Binding ClearAllCommand}"
+                    ToolTip.Tip="Forgets every purchase and stream. Your settings stay." />
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+      <ComboBox ItemsSource="{x:Static vm:TopSpendersViewModel.Periods}" SelectedItem="{Binding Period}" Width="150" />
+      <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding Platform}" Width="170" />
+      <Button Content="Remove this person's purchases" Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasSelection}"
+              ToolTip.Tip="Removes what the selected person bought in the period you picked, for example after a refund or a test." />
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" Classes="muted" Margin="0,0,0,4" TextWrapping="Wrap" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding RatesText}" Classes="muted" Margin="0,0,0,8" TextWrapping="Wrap" />
+    <Grid>
+      <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:TopSpenderRowViewModel">
+            <Grid ColumnDefinitions="40,*,110,120" RowDefinitions="Auto,Auto">
+              <TextBlock Grid.RowSpan="2" Classes="h2" Text="{Binding Rank}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding User}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="1" Grid.Row="1" Classes="muted" Text="{Binding Breakdown}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="2" Grid.RowSpan="2" Classes="muted" Text="{Binding Platform}" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="3" Grid.RowSpan="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Total}" FontWeight="Bold" HorizontalAlignment="Right" />
+                <TextBlock Classes="muted" Text="{Binding Count}" HorizontalAlignment="Right" />
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Classes="muted" IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                 Text="Nothing yet. The list fills in as viewers tip, cheer, subscribe and gift on any connected platform." />
+    </Grid>
+  </DockPanel>
+</UserControl>

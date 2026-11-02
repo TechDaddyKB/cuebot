@@ -204,6 +204,8 @@
                                 ToolTip.Tip="The latest follows, subs, tips and more from every platform" />
                       <MenuItem Header="Credits roll" Command="{Binding AddBuiltInCommand}" CommandParameter="credits"
                                 ToolTip.Tip="An end-of-stream roll of this stream's subs, followers, tippers and raiders" />
+                      <MenuItem Header="Top spenders" Command="{Binding AddBuiltInCommand}" CommandParameter="topspenders"
+                                ToolTip.Tip="Who spent the most this stream, today, this week, month or year, on one platform or all" />
                       <MenuItem Header="Countdown" Command="{Binding AddBuiltInCommand}" CommandParameter="countdown"
                                 ToolTip.Tip="Counts down minutes or to a time; reloading does not restart it" />
                       <Separator />

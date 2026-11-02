@@ -92,6 +92,10 @@ public sealed class AdapterTests
         Assert.Equal(FeedKind.Other, D(FourthwallEventTypes.OrderPlaced).Kind);
         Assert.Equal(FeedKind.Other, D(ShopifyEventTypes.OrderPaid).Kind);
         Assert.Equal(FeedKind.Tip, D(ThroneEventTypes.ContributionPurchased).Kind);
+        Assert.Equal((SpendUnit.Money, 5.0, "Donation"), (D(KofiEventTypes.Donation).Spend!.Unit, D(KofiEventTypes.Donation).Spend!.Quantity,
+            D(KofiEventTypes.Donation).Spend!.Label));
+        Assert.Equal("Shop order", D(ShopifyEventTypes.OrderPaid).Spend!.Label);
+        Assert.Null(D(PatreonEventTypes.FollowCreated).Spend);
         Assert.Null(WebhookChatAdapter.Describe(E(PatreonEventTypes.PledgeDeleted, new(a))));
         Assert.Null(WebhookChatAdapter.Describe(E(FourthwallEventTypes.ProductUpdated, new(a))));
         Assert.Null(WebhookChatAdapter.Describe(E(CustomWebhookEventTypes.Received, new(a))));

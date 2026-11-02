@@ -16,6 +16,7 @@ using Cuebot.Core.Desktop.Notifications;
 using Cuebot.Core.Events;
 using Cuebot.Core.Points;
 using Cuebot.Core.Quotes;
+using Cuebot.Core.Spending;
 using Cuebot.Core.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -532,6 +533,70 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
             await Task.Delay(10);
             Dispatcher.UIThread.RunJobs();
         }
+    }
+
+    [AvaloniaFact]
+    public async Task Top_spenders_page_lists_spenders_per_period_and_platform_and_saves_settings()
+    {
+        var rates = new FixedRates();
+        using var ledger = new Cuebot.Core.Spending.SpendingLedger(new AppPaths(_dataDir), null, Bus, Get<Cuebot.Core.Logging.AppLog>(), rates);
+        var vm = new TopSpendersViewModel(ledger);
+        var window = Open(new TopSpendersView(), vm);
+        Assert.True(vm.IsEmpty);
+        Assert.Contains("No stream yet", vm.RatesText);
+
+        var now = DateTimeOffset.UtcNow;
+        ledger.Record(new FeedItem("Twitch", FeedKind.StreamOnline, "", "Stream went live", now));
+        await ledger.RatesTask;
+        ledger.Record(new FeedItem("Twitch", FeedKind.Tip, "Bitty", "", now) { Spend = FeedSpend.Units(SpendUnit.Bits, 2500, "Cheer") });
+        ledger.Record(new FeedItem("YouTube", FeedKind.Tip, "Euro", "", now) { Spend = FeedSpend.Money(18, "EUR", "Super Chat") });
+        ledger.Record(new FeedItem("Twitch", FeedKind.GiftSubscription, "Gifter", "", now) { Spend = FeedSpend.Units(SpendUnit.GiftSubscription, 2, "Gift subs", "1") });
+        Pump();
+        Assert.Equal(["Bitty", "Euro", "Gifter"], vm.Rows.Select(r => r.User));   // $25 of bits, €18 = $20, 2 × $4.99
+        Assert.Equal("$25.00", vm.Rows[0].Total);
+        Assert.Equal("$20.00", vm.Rows[1].Total);
+        Assert.Contains("locked", vm.RatesText);
+        Assert.Equal(["All platforms", "Twitch", "YouTube"], vm.Platforms);
+        SaveBothThemes(window, "top-spenders");
+
+        vm.Platform = "Twitch";
+        Assert.Equal(["Bitty", "Gifter"], vm.Rows.Select(r => r.User));
+        vm.Period = "This year";
+        Assert.Equal(2, vm.Rows.Count);
+        vm.Selected = vm.Rows[1];
+        vm.RemoveSelectedCommand.Execute(null);
+        Pump();
+        Assert.Equal(["Bitty"], vm.Rows.Select(r => r.User));
+
+        vm.Currency = "eu";
+        Assert.NotEmpty(vm.CurrencyError);
+        Assert.Equal("USD", ledger.Settings.Currency);
+        vm.Currency = "eur";
+        vm.TwitchTier1Usd = 5.99m;
+        vm.IncludeCharity = true;
+        vm.IgnoredUsers = "Anonymous, @TestAccount";
+        var saved = ledger.Settings;
+        Assert.Equal("EUR", saved.Currency);
+        Assert.Equal(5.99, saved.TwitchTier1Usd);
+        Assert.True(saved.IncludeCharity);
+        Assert.Equal(["Anonymous", "TestAccount"], saved.IgnoredUsers);
+        Pump();
+        Assert.Equal("€22.50", vm.Rows.Single().Total);   // $25 shown in euros with the stream's locked rate
+
+        vm.ClearAllCommand.Execute(null);
+        Assert.True(vm.ConfirmClear);
+        vm.ClearAllCommand.Execute(null);
+        Pump();
+        Assert.True(vm.IsEmpty);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    private sealed class FixedRates : Cuebot.Core.Spending.IExchangeRateSource
+    {
+        public Task<Cuebot.Core.Spending.ExchangeRateTable?> FetchAsync(string baseCurrency, CancellationToken ct) =>
+            Task.FromResult<Cuebot.Core.Spending.ExchangeRateTable?>(new("USD", "2026-11-01", "Test rates",
+                new Dictionary<string, double> { ["USD"] = 1, ["EUR"] = 0.9 }));
     }
 
     public async ValueTask DisposeAsync()

@@ -51,30 +51,36 @@ internal sealed class YouTubeChatAdapter : IChatEventAdapter
             {
                 Detail = a.GetString("message"),
                 Amount = a.GetString("amountText"),
+                Spend = FeedSpend.Money(a.GetDouble("amount"), a.GetString("currency"), "Super Chat"),
             },
             YouTubeEventTypes.SuperSticker => new FeedItem(Platform, FeedKind.Tip, user, $"{user} sent a {a.GetString("amountText")} Super Sticker", e.Time)
             {
                 Detail = a.GetString("stickerAltText"),
                 Amount = a.GetString("amountText"),
+                Spend = FeedSpend.Money(a.GetDouble("amount"), a.GetString("currency"), "Super Sticker"),
             },
             YouTubeEventTypes.JewelsGifted => new FeedItem(Platform, FeedKind.Tip, user, $"{user} sent {Jewels(a)}", e.Time)
             {
                 Detail = a.GetString("giftName"),
                 Amount = Jewels(a),
+                Spend = FeedSpend.Units(SpendUnit.Jewels, a.GetDouble("jewels"), "Jewels"),
             },
             YouTubeEventTypes.NewSponsor => new FeedItem(Platform, FeedKind.Subscription, user,
                 a.GetBool("isUpgrade") ? $"{user} upgraded their membership" : $"{user} became a member", e.Time)
             {
                 Detail = Level(a),
+                Spend = FeedSpend.Units(SpendUnit.Subscription, 1, "Membership", Level(a)),
             },
             YouTubeEventTypes.MemberMilestone => new FeedItem(Platform, FeedKind.Subscription, user,
                 $"{user} has been a member for {a.GetString("months")} months", e.Time)
             {
                 Detail = a.GetString("message") is { Length: > 0 } m ? m : Level(a),
+                Spend = FeedSpend.Units(SpendUnit.Subscription, 1, "Membership", Level(a)),
             },
             YouTubeEventTypes.MembershipGift => new FeedItem(Platform, FeedKind.GiftSubscription, user, $"{user} gifted {Gifts(a.GetDouble("total"))}", e.Time)
             {
                 Detail = Level(a),
+                Spend = FeedSpend.Units(SpendUnit.GiftSubscription, a.GetDouble("total"), "Gift memberships", Level(a)),
             },
             YouTubeEventTypes.GiftMembershipReceived => new FeedItem(Platform, FeedKind.Subscription, user,
                 a.GetString("gifterName") is { Length: > 0 } gifter ? $"{user} received a membership from {gifter}" : $"{user} received a gift membership", e.Time)

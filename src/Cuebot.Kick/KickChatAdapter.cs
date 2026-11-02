@@ -32,17 +32,31 @@ internal sealed class KickChatAdapter : IChatEventAdapter
         return e.Type switch
         {
             KickEventTypes.Follow => new FeedItem(Platform, FeedKind.Follow, user, $"{user} followed", e.Time),
-            KickEventTypes.Subscription => new FeedItem(Platform, FeedKind.Subscription, user, $"{user} subscribed", e.Time),
+            KickEventTypes.Subscription => new FeedItem(Platform, FeedKind.Subscription, user, $"{user} subscribed", e.Time)
+            {
+                Spend = FeedSpend.Units(SpendUnit.Subscription, 1, "Subscription"),
+            },
             KickEventTypes.Resubscription => new FeedItem(Platform, FeedKind.Subscription, user,
-                $"{user} resubscribed ({a.GetDouble("months"):0} months)", e.Time),
+                $"{user} resubscribed ({a.GetDouble("months"):0} months)", e.Time)
+            {
+                Spend = FeedSpend.Units(SpendUnit.Subscription, 1, "Subscription"),
+            },
             KickEventTypes.GiftSubscription when !a.GetBool("fromMassGift") => new FeedItem(Platform, FeedKind.GiftSubscription, user,
-                $"{user} gifted a subscription to {a.GetString("recipient")}", e.Time),
+                $"{user} gifted a subscription to {a.GetString("recipient")}", e.Time)
+            {
+                Spend = FeedSpend.Units(SpendUnit.GiftSubscription, 1, "Gift subs"),
+            },
             KickEventTypes.MassGiftSubscription => new FeedItem(Platform, FeedKind.GiftSubscription, user,
-                $"{user} gifted {a.GetDouble("gifts"):0} subscriptions", e.Time) { Detail = a.GetString("recipients") },
+                $"{user} gifted {a.GetDouble("gifts"):0} subscriptions", e.Time)
+            {
+                Detail = a.GetString("recipients"),
+                Spend = FeedSpend.Units(SpendUnit.GiftSubscription, a.GetDouble("gifts"), "Gift subs"),
+            },
             KickEventTypes.KicksGifted => new FeedItem(Platform, FeedKind.Tip, user, $"{user} sent {a.GetDouble("kicks"):0} Kicks", e.Time)
             {
                 Detail = a.GetString("message") is { Length: > 0 } m ? m : a.GetString("giftName"),
                 Amount = $"{a.GetDouble("kicks"):0} Kicks",
+                Spend = FeedSpend.Units(SpendUnit.Kicks, a.GetDouble("kicks"), "Kicks"),
             },
             KickEventTypes.Host => new FeedItem(Platform, FeedKind.Raid, user, $"{user} is hosting with {a.GetDouble("viewers"):0} viewers", e.Time)
             {

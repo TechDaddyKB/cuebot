@@ -46,6 +46,7 @@ On your overlay's row, open **Add Cuebot widget** and pick one:
 | **Goal bar** | A bar that fills up, like "50 / 100 followers" |
 | **Event list** | The latest follows, subs, tips and more |
 | **Credits roll** | End-of-stream credits that scroll |
+| **Top spenders** | Who spent the most this stream, today, this week, month, year or all time |
 | **Countdown** | Counts down minutes, or to a time of day |
 | **Emote rain** | Chat emotes fly across the screen |
 | **Hype cup** | Follows, subs, bits and tips fill a cup with balls |

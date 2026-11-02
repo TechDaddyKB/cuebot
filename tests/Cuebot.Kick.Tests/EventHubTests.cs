@@ -171,12 +171,15 @@ public sealed class ChatAdapterTests
         var kicks = _adapter.ToFeedItem(Bus(KickEventFactory.Kicks("webhook", fan, 500, "Rage Quit", "LEVEL_UP", "MID", "")))!;
         Assert.Equal(FeedKind.Tip, kicks.Kind);
         Assert.Equal("500 Kicks", kicks.Amount);
+        Assert.Equal((SpendUnit.Kicks, 500.0), (kicks.Spend!.Unit, kicks.Spend.Quantity));
+        Assert.Equal(SpendUnit.Subscription, _adapter.ToFeedItem(Bus(KickEventFactory.Subscription("realtime", fan, 4)))!.Spend!.Unit);
         Assert.Equal(FeedKind.Raid, _adapter.ToFeedItem(Bus(KickEventFactory.Host("realtime", "Big", 40, "")))!.Kind);
         Assert.Equal(FeedKind.Redemption, _adapter.ToFeedItem(Bus(KickEventFactory.Reward("realtime", fan, "", "Hydrate", 0, "", "pending", "")))!.Kind);
         Assert.Equal(FeedKind.StreamOnline, _adapter.ToFeedItem(Bus(KickEventFactory.StreamOnline("api", "t", null)))!.Kind);
 
         var gifts = KickEventFactory.Gifts("realtime", fan, [new KickActor(0, "A"), new KickActor(0, "B")]);
         Assert.Equal("Fan gifted 2 subscriptions", _adapter.ToFeedItem(Bus(gifts[0]))!.Title);
+        Assert.Equal(2.0, _adapter.ToFeedItem(Bus(gifts[0]))!.Spend!.Quantity);
         Assert.Null(_adapter.ToFeedItem(Bus(gifts[1]))); // recipients of a mass gift are not listed separately
         var single = KickEventFactory.Gifts("realtime", fan, [new KickActor(0, "A")]);
         Assert.Equal("Fan gifted a subscription to A", _adapter.ToFeedItem(Bus(single[0]))!.Title);

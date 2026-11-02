@@ -91,6 +91,7 @@ public sealed class EventMappingTests
         var item = _adapter.ToFeedItem(e)!;
         Assert.Equal((FeedKind.Tip, "Bob", "Bob sent a $10.50 rant", "Great stream", "$10.50"),
             (item.Kind, item.User, item.Title, item.Detail, item.Amount));
+        Assert.Equal((SpendUnit.Money, 10.5, "USD", "Rant"), (item.Spend!.Unit, item.Spend.Quantity, item.Spend.Currency, item.Spend.Label));
         Assert.Null(_adapter.ToChatMessage(e));
     }
 
@@ -109,6 +110,9 @@ public sealed class EventMappingTests
         Assert.Equal((FeedKind.Subscription, "Dave subscribed", "$5.00"), (sub.Kind, sub.Title, sub.Amount));
         Assert.Equal((FeedKind.GiftSubscription, "Frank gifted 5 subscriptions"), (gift.Kind, gift.Title));
         Assert.Equal("Frank gifted a subscription", oneGift.Title);
+        Assert.Equal((SpendUnit.Money, 5.0), (sub.Spend!.Unit, sub.Spend.Quantity));
+        Assert.Equal((SpendUnit.GiftSubscription, 5.0), (gift.Spend!.Unit, gift.Spend.Quantity));
+        Assert.Null(follow.Spend);
         Assert.Equal((FeedKind.StreamOnline, "Cuebot Dev", "Stream went live", "dev testing"), (online.Kind, online.User, online.Title, online.Detail));
         Assert.Equal((FeedKind.StreamOffline, "Stream ended"), (offline.Kind, offline.Title));
         Assert.All([follow, sub, gift, online, offline], i => Assert.Equal("Rumble", i.Platform));

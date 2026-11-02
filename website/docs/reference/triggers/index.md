@@ -46,6 +46,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Rumble](rumble.md) | 8 |
 | [Shopify](shopify.md) | 2 |
 | [Speech](speech.md) | 3 |
+| [Spending](spending.md) | 2 |
 | [Store](store.md) | 3 |
 | [Stream Deck](stream-deck.md) | 4 |
 | [StreamElements](streamelements.md) | 15 |

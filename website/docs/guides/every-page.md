@@ -37,6 +37,7 @@ to the guide that explains it.
 | **Giveaways & Store** | Giveaways, and a store where viewers spend points. | [Giveaways & Store](community.md#giveaways-store) |
 | **Quotes** | Quotes saved from your streams. | [Quotes](community.md#quotes) |
 | **Credits** | End-of-stream credits. | [Credits](community.md#credits) |
+| **Top Spenders** | Who spent the most money this stream, today, this week, month, year or all time. | [Top spenders](community.md#top-spenders) |
 
 ## Audio
 

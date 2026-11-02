@@ -92,6 +92,8 @@ public sealed class AdapterTests
         var se = new StreamElementsChatAdapter();
         var tip = se.ToFeedItem(Mapped(StreamElementsEventMapper.Map(StreamlabsMappingTests.Parse(StreamElementsMappingTests.Tip))!));
         Assert.Equal(("StreamElements", FeedKind.Tip, "Styler tipped $4.20", "$4.20"), (tip!.Platform, tip.Kind, tip.Title, tip.Amount));
+        Assert.Equal((SpendUnit.Money, 13.37, "USD", "Donation"), (item.Spend!.Unit, item.Spend.Quantity, item.Spend.Currency, item.Spend.Label));
+        Assert.Equal((4.2, "Tip"), (tip.Spend!.Quantity, tip.Spend.Label));
 
         Assert.Null(adapter.ToChatMessage(Mapped(StreamlabsMappingTests.One(StreamlabsMappingTests.Donation))));
     }
