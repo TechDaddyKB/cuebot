@@ -66,6 +66,24 @@ public sealed class OverlayEventWiringTests : IAsyncDisposable
     }
 
     [Fact]
+    public void An_emulated_Twitch_gift_bomb_also_sends_the_gift_total_like_Twitch()
+    {
+        var hub = _host.Get<Cuebot.Core.Chat.ChatHub>();
+        var bomb = OverlayEmulator.Create("twitch", "gift", new Random(1))!;
+        var bus = _host.Get<EventBus>();
+
+        bus.Publish(bomb);
+        Assert.Empty(hub.RecentFeed());   // the chat notice is for overlays; the feed counts the gift total
+        foreach (var companion in OverlayEmulator.Companions(bomb)) bus.Publish(companion);
+
+        var item = Assert.Single(hub.RecentFeed());
+        Assert.Equal(Cuebot.Core.Chat.SpendUnit.GiftSubscription, item.Spend!.Unit);
+        Assert.Equal(5, item.Spend.Quantity);
+        Assert.Equal(bomb.Args["user"], item.User);
+        Assert.Empty(OverlayEmulator.Companions(OverlayEmulator.Create("twitch", "cheer")!));
+    }
+
+    [Fact]
     public void Alerts_update_the_stream_totals()
     {
         _host.Get<OverlayEventBridge>();

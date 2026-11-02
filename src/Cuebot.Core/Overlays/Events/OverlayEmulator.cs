@@ -66,6 +66,19 @@ public static class OverlayEmulator
         return new BotEvent(type, args);
     }
 
+    /// <summary>
+    /// The other events the platform sends with <paramref name="e"/>, for emulating it as a real event: a Twitch gift bomb is
+    /// the chat notice (twitch.giftBomb, for overlays) plus the gift total (twitch.giftSub, for the feed, spending and credits).
+    /// </summary>
+    public static IReadOnlyList<BotEvent> Companions(BotEvent e) => e.Type switch
+    {
+        "twitch.giftBomb" => [new BotEvent("twitch.giftSub", new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase)
+        {
+            ["isAnonymous"] = e.Args.TryGetValue("isAnonymous", out var anonymous) && anonymous is true,
+        })],
+        _ => [],
+    };
+
     private static Dictionary<string, object?> Args(params (string Key, object? Value)[] pairs) =>
         pairs.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
 

@@ -116,6 +116,7 @@ public sealed partial class ApiOperations
         if (everything)
         {
             services.Bus.Publish(e);
+            foreach (var companion in OverlayEmulator.Companions(e)) services.Bus.Publish(companion);
         }
         else
         {
