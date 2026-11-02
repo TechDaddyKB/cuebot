@@ -20,6 +20,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Files](files.md) | 7 |
 | [Game Controller](game-controller.md) | 4 |
 | [Giveaways](giveaways.md) | 2 |
+| [Goals](goals.md) | 5 |
 | [GoXLR](goxlr.md) | 20 |
 | [Groups](groups.md) | 4 |
 | [Heart Rate](heart-rate.md) | 1 |
@@ -55,6 +56,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [StreamElements](streamelements.md) | 5 |
 | [Streamlabs Desktop](streamlabs-desktop.md) | 19 |
 | [StreamLoots](streamloots.md) | 1 |
+| [Subathon timer](subathon-timer.md) | 5 |
 | [System](system.md) | 6 |
 | [T.I.T.S.](t-i-t-s.md) | 8 |
 | [Timers](timers.md) | 2 |

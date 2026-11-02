@@ -1,0 +1,46 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --title-size: {{titleSize}}px;
+  --time-size: {{timeSize}}px;
+  --text: {{textColor}};
+  --time: {{timeColor}};
+  --added: {{addedColor}};
+}
+
+.subathon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: var(--font);
+  color: var(--text);
+  font-weight: 700;
+}
+.subathon.align-left { align-items: flex-start; }
+.subathon.align-center { align-items: center; }
+.subathon.align-right { align-items: flex-end; }
+.subathon.shadow { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7); }
+.subathon .title { font-size: var(--title-size); }
+.subathon .title:empty, .subathon .status:empty { display: none; }
+.subathon .time { font-size: var(--time-size); color: var(--time); font-variant-numeric: tabular-nums; line-height: 1.05; }
+.subathon .status { font-size: calc(var(--title-size) * 0.8); opacity: 0.85; }
+.subathon.paused .time { opacity: 0.6; }
+.subathon .popups { position: relative; height: 0; width: 100%; }
+.subathon .popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-size: calc(var(--time-size) * 0.45);
+  color: var(--added);
+  animation: subathon-rise 2.2s ease-out forwards;
+}
+.subathon.align-center .popup { text-align: center; }
+.subathon.align-right .popup { text-align: right; }
+
+@keyframes subathon-rise {
+  0% { transform: translateY(0) scale(1.3); opacity: 0; }
+  15% { opacity: 1; transform: translateY(-0.2em) scale(1); }
+  100% { transform: translateY(-1.8em); opacity: 0; }
+}

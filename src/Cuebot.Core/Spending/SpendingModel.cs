@@ -26,7 +26,7 @@ public sealed class SpendingSettings
     /// <summary>Charity donations go to the charity, not the streamer, so they are left out unless this is on.</summary>
     public bool IncludeCharity { get; set; }
 
-    /// <summary>Names never listed (anonymous gifters, private Ko-fi supporters, your own test account...).</summary>
+    /// <summary>Names never listed (anonymous gifters, private Ko-fi supporters...); their purchases still count elsewhere.</summary>
     public List<string> IgnoredUsers { get; set; } = ["Anonymous", "AnAnonymousGifter", "Someone"];
 
     /// <summary>The first day of a week for "this week" lists.</summary>

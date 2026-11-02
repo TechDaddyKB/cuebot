@@ -1,0 +1,114 @@
+{
+  "functions": {
+    "subathon.get": {
+      "description": "Gives you a subathon timer: its time left, state and settings.",
+      "parameters": { "timer": "Optional. The timer's name. Leave it out for the first timer." },
+      "returns": "An object with id, name, state (Stopped, Running, Paused or Ended), remainingSeconds, elapsedSeconds, addedSeconds, multiplier, initialSeconds, maxSeconds and values, or null when there is no such timer.",
+      "example": { "timer": "Subathon" }
+    },
+    "subathon.list": {
+      "description": "Gives you every subathon timer.",
+      "parameters": {},
+      "returns": "A list of timers, each like subathon.get gives.",
+      "example": {}
+    },
+    "subathon.start": {
+      "description": "Starts a subathon timer, or carries on after a pause.",
+      "parameters": { "timer": "Optional. The timer's name. Leave it out for the first timer." },
+      "returns": "true. Fails when there is no such timer.",
+      "example": { "timer": "Subathon" }
+    },
+    "subathon.pause": {
+      "description": "Pauses a running subathon timer.",
+      "parameters": { "timer": "Optional. The timer's name. Leave it out for the first timer." },
+      "returns": "true.",
+      "example": {}
+    },
+    "subathon.resume": {
+      "description": "Carries on with a paused subathon timer.",
+      "parameters": { "timer": "Optional. The timer's name. Leave it out for the first timer." },
+      "returns": "true.",
+      "example": {}
+    },
+    "subathon.reset": {
+      "description": "Stops a subathon timer and puts back its starting length.",
+      "parameters": { "timer": "Optional. The timer's name. Leave it out for the first timer." },
+      "returns": "true.",
+      "example": {}
+    },
+    "subathon.addTime": {
+      "description": "Adds seconds to a subathon timer, or takes them away with a negative number.",
+      "parameters": {
+        "timer": "Optional. The timer's name. Leave it out for the first timer.",
+        "seconds": "How many seconds, like 300.",
+        "useMultiplier": "Optional. true to use the timer's multiplier."
+      },
+      "returns": "The seconds really added (less when the longest length was reached).",
+      "example": { "timer": "Subathon", "seconds": 300 }
+    },
+    "subathon.setTime": {
+      "description": "Sets how many seconds a subathon timer has left.",
+      "parameters": {
+        "timer": "Optional. The timer's name. Leave it out for the first timer.",
+        "seconds": "The time left in seconds."
+      },
+      "returns": "true.",
+      "example": { "seconds": 3600 }
+    },
+    "subathon.setMultiplier": {
+      "description": "Changes how much event time counts, like 2 for happy hour. Time already added does not change.",
+      "parameters": {
+        "timer": "Optional. The timer's name. Leave it out for the first timer.",
+        "multiplier": "2 = double, 1 = normal, 0.5 = half."
+      },
+      "returns": "true.",
+      "example": { "multiplier": 2 }
+    },
+    "goals.get": {
+      "description": "Gives you a goal: its points, steps and settings.",
+      "parameters": { "goal": "Optional. The goal's name. Leave it out for the first goal." },
+      "returns": "An object with id, name, points, steps (each with name and points, lowest first), reachedThrough (the highest step already announced), multiplier, resetOnNewStream and values, or null when there is no such goal.",
+      "example": { "goal": "Emote ladder" }
+    },
+    "goals.list": {
+      "description": "Gives you every goal.",
+      "parameters": {},
+      "returns": "A list of goals, each like goals.get gives.",
+      "example": {}
+    },
+    "goals.addPoints": {
+      "description": "Adds points to a goal, or takes them away with a negative number.",
+      "parameters": {
+        "goal": "Optional. The goal's name. Leave it out for the first goal.",
+        "points": "How many points.",
+        "useMultiplier": "Optional. true to use the goal's multiplier."
+      },
+      "returns": "The points really added.",
+      "example": { "goal": "Emote ladder", "points": 5 }
+    },
+    "goals.setPoints": {
+      "description": "Sets a goal's points.",
+      "parameters": {
+        "goal": "Optional. The goal's name. Leave it out for the first goal.",
+        "points": "The new number of points."
+      },
+      "returns": "true.",
+      "example": { "points": 0 }
+    },
+    "goals.reset": {
+      "description": "Puts a goal back to 0 points, so every step can be reached again.",
+      "parameters": { "goal": "Optional. The goal's name. Leave it out for the first goal." },
+      "returns": "true.",
+      "example": {}
+    },
+    "goals.setMultiplier": {
+      "description": "Changes how much event points count. Points already added do not change.",
+      "parameters": {
+        "goal": "Optional. The goal's name. Leave it out for the first goal.",
+        "multiplier": "2 = double, 1 = normal, 0.5 = half."
+      },
+      "returns": "true.",
+      "example": { "multiplier": 0.5 }
+    }
+  }
+}

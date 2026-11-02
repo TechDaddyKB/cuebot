@@ -27,6 +27,7 @@ In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline`
 | [Elgato](elgato.md) | 15 |
 | [Emotes](emotes.md) | 3 |
 | [Global variables](globals.md) | 6 |
+| [Goals](goals.md) | 6 |
 | [GoXLR](goxlr.md) | 20 |
 | [Groups](groups.md) | 9 |
 | [Heart rate](heartrate.md) | 1 |
@@ -58,6 +59,7 @@ In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline`
 | [StreamElements](streamelements.md) | 7 |
 | [Streamlabs](streamlabs.md) | 2 |
 | [Streamloots](streamloots.md) | 2 |
+| [Subathon](subathon.md) | 9 |
 | [Text](text.md) | 1 |
 | [TipeeeStream](tipeeestream.md) | 2 |
 | [T.I.T.S.](tits.md) | 9 |

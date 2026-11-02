@@ -1,0 +1,22 @@
+{
+  "goal": { "type": "text", "label": "Goal name (empty: the first goal)", "value": "", "group": "What it shows" },
+  "title": { "type": "text", "label": "Title (empty: the goal's name)", "value": "", "group": "What it shows" },
+  "showSteps": { "type": "checkbox", "label": "List the steps", "value": true, "group": "What it shows" },
+  "stepsShown": { "type": "number", "label": "Steps listed (around the current one)", "value": 5, "min": 1, "max": 50, "group": "What it shows" },
+  "nextText": { "type": "text", "label": "Next step line ({name} and {points} are filled in)", "value": "Next: {name} at {points}", "group": "What it shows" },
+  "doneText": { "type": "text", "label": "When every step is reached", "value": "All goals reached!", "group": "What it shows" },
+  "barFrom": { "type": "dropdown", "label": "The bar fills", "value": "step", "group": "What it shows",
+    "options": { "step": "From the last step to the next one", "zero": "From 0 to the next step" } },
+
+  "fontFamily": { "type": "googleFont", "label": "Font", "value": "Inter", "group": "Look" },
+  "titleSize": { "type": "slider", "label": "Title size", "value": 30, "min": 10, "max": 120, "step": 1, "group": "Look" },
+  "textSize": { "type": "slider", "label": "Text size", "value": 22, "min": 10, "max": 100, "step": 1, "group": "Look" },
+  "barHeight": { "type": "slider", "label": "Bar height", "value": 26, "min": 4, "max": 120, "step": 1, "group": "Look" },
+  "textColor": { "type": "colorpicker", "label": "Text colour", "value": "#ffffff", "group": "Look" },
+  "barColor": { "type": "colorpicker", "label": "Bar colour", "value": "#7c5cff", "group": "Look" },
+  "barColor2": { "type": "colorpicker", "label": "Bar colour (end)", "value": "#ff5cc8", "group": "Look" },
+  "trackColor": { "type": "colorpicker", "label": "Empty bar colour", "value": "rgba(255,255,255,0.15)", "group": "Look" },
+  "doneColor": { "type": "colorpicker", "label": "Reached colour", "value": "#5cff8a", "group": "Look" },
+  "shadow": { "type": "checkbox", "label": "Text shadow", "value": true, "group": "Look" },
+  "flash": { "type": "checkbox", "label": "Flash when a step is reached", "value": true, "group": "Look" }
+}

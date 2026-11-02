@@ -1,0 +1,185 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.SubathonGoalsView"
+             x:DataType="vm:SubathonGoalsViewModel">
+  <UserControl.Resources>
+    <!-- The value list shared by timers (seconds) and goals (points). -->
+    <DataTemplate x:Key="ValuesTemplate" x:DataType="vm:EventValuesViewModel">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="muted" TextWrapping="Wrap"
+                   Text="How much each event adds. 0 = it does not count. Changes count from now on; what was already added stays." />
+        <WrapPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Twitch sub, tier 1" /><NumericUpDown Value="{Binding TwitchTier1}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Twitch sub, tier 2" /><NumericUpDown Value="{Binding TwitchTier2}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Twitch sub, tier 3" /><NumericUpDown Value="{Binding TwitchTier3}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Kick sub" /><NumericUpDown Value="{Binding KickSub}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="YouTube membership" /><NumericUpDown Value="{Binding YouTubeMembership}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Other subscriptions" /><NumericUpDown Value="{Binding OtherSub}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Each 100 bits" /><NumericUpDown Value="{Binding Per100Bits}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Each 100 Kicks" /><NumericUpDown Value="{Binding Per100Kicks}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Each 100 Jewels" /><NumericUpDown Value="{Binding Per100Jewels}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2" ToolTip.Tip="Tips, Super Chats, Super Stickers, rants, donations and shop orders, in your Top Spenders currency at the stream's locked exchange rate.">
+            <TextBlock Text="Each 1 of money" /><NumericUpDown Value="{Binding PerCurrencyUnit}" Minimum="0" Increment="1" FormatString="0.##" Width="130" />
+          </StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Follow" /><NumericUpDown Value="{Binding Follow}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Raid" /><NumericUpDown Value="{Binding RaidEach}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
+          <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Raid, per viewer" /><NumericUpDown Value="{Binding RaidPerViewer}" Minimum="0" Increment="0.1" FormatString="0.##" Width="130" /></StackPanel>
+        </WrapPanel>
+        <CheckBox Content="Gift subs count like subs (one for each sub gifted)" IsChecked="{Binding CountGiftSubs}" />
+        <TextBlock Text="Channel point rewards (one per line, like  Add a minute = 60)" />
+        <TextBox Text="{Binding Redemptions, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" MinHeight="60" MaxHeight="160" TextWrapping="NoWrap"
+                 PlaceholderText="Add a minute = 60" />
+        <TextBlock Classes="error" Text="{Binding RedemptionsError}" TextWrapping="Wrap"
+                   IsVisible="{Binding RedemptionsError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+      <TextBlock Classes="h1" Text="Subathon &amp; Goals" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="A subathon timer counts down while subs, bits, tips, Kicks and other events add time to it. A goal ladder collects points towards steps, like a new emote at 10 points and another at 20. Both remember where they are between streams. Show them on stream with the Subathon timer and Goal ladder overlay widgets." />
+    </StackPanel>
+
+    <TabControl SelectedIndex="{Binding SelectedTabIndex}">
+      <TabItem Header="Timers">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,8">
+            <Button Content="Add a timer" Classes="accent" Command="{Binding AddTimerCommand}" />
+            <TextBlock Classes="muted" VerticalAlignment="Center" IsVisible="{Binding HasNoTimers}"
+                       Text="No timers yet. Add one, set its starting length and what events add, then press Start." />
+          </StackPanel>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Timers}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:SubathonTimerCardViewModel">
+                  <Border Classes="card" Margin="0,0,16,12">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,12,Auto">
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontWeight="SemiBold" PlaceholderText="Name"
+                                 ToolTip.Tip="The name you pick in sub-actions, triggers and the overlay widget." />
+                        <Button Grid.Column="2" Content="{Binding RemoveConfirm.Text}" Command="{Binding RemoveCommand}" Classes.danger="{Binding RemoveConfirm.IsArmed}" />
+                      </Grid>
+                      <StackPanel Orientation="Horizontal" Spacing="16">
+                        <TextBlock Text="{Binding TimeText}" FontSize="44" FontWeight="Bold" FontFamily="monospace" />
+                        <StackPanel VerticalAlignment="Center">
+                          <TextBlock Text="{Binding StateText}" FontWeight="SemiBold" />
+                          <TextBlock Classes="muted" Text="{Binding DetailText}" />
+                        </StackPanel>
+                      </StackPanel>
+                      <WrapPanel>
+                        <Button Content="Start" Classes="accent" Command="{Binding StartCommand}" Margin="0,0,6,6" ToolTip.Tip="Starts the timer, or carries on after a pause." />
+                        <Button Content="Pause" Command="{Binding PauseCommand}" Margin="0,0,6,6" />
+                        <Button Content="{Binding ResetConfirm.Text}" Command="{Binding ResetCommand}" Classes.danger="{Binding ResetConfirm.IsArmed}" Margin="0,0,18,6"
+                                ToolTip.Tip="Stops the timer and puts back its starting length." />
+                        <NumericUpDown Value="{Binding AdjustMinutes}" Minimum="0" Increment="1" FormatString="0.##" Width="110" Margin="0,0,6,6" />
+                        <TextBlock Text="minutes" VerticalAlignment="Center" Margin="0,0,8,6" />
+                        <Button Content="Add" Command="{Binding AddTimeCommand}" Margin="0,0,6,6" />
+                        <Button Content="Take away" Command="{Binding RemoveTimeCommand}" Margin="0,0,6,6" />
+                        <Button Content="Set time left" Command="{Binding SetTimeCommand}" Margin="0,0,6,6" />
+                      </WrapPanel>
+                      <Expander Header="Settings" HorizontalAlignment="Stretch">
+                        <StackPanel Spacing="8">
+                          <WrapPanel>
+                            <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Starting length (minutes)" />
+                              <NumericUpDown Value="{Binding StartingMinutes}" Minimum="1" Increment="15" FormatString="0.##" Width="150" /></StackPanel>
+                            <StackPanel Margin="0,0,16,8" Spacing="2" ToolTip.Tip="The longest the subathon may ever run, counting time already run and time left. 0 = no limit.">
+                              <TextBlock Text="Longest in total (hours, 0 = no limit)" />
+                              <NumericUpDown Value="{Binding MaxHours}" Minimum="0" Increment="1" FormatString="0.##" Width="150" /></StackPanel>
+                            <StackPanel Margin="0,0,16,8" Spacing="2" ToolTip.Tip="Everything events add is multiplied by this. 2 = happy hour (double time), 0.5 = half when it is filling up too fast.">
+                              <TextBlock Text="Multiplier" />
+                              <NumericUpDown Value="{Binding Multiplier}" Minimum="0" Maximum="100" Increment="0.5" FormatString="0.##" Width="120" /></StackPanel>
+                          </WrapPanel>
+                          <CheckBox Content="Start or carry on when I go live" IsChecked="{Binding StartOnStreamOnline}" />
+                          <CheckBox Content="Pause when my stream ends" IsChecked="{Binding PauseOnStreamOffline}" />
+                          <CheckBox Content="Events add time while it is paused" IsChecked="{Binding AddWhilePaused}" />
+                        </StackPanel>
+                      </Expander>
+                      <Expander Header="What events add (seconds)" HorizontalAlignment="Stretch">
+                        <ContentControl Content="{Binding Values}" ContentTemplate="{StaticResource ValuesTemplate}" />
+                      </Expander>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Goals">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,8">
+            <Button Content="Add a goal" Classes="accent" Command="{Binding AddGoalCommand}" />
+            <TextBlock Classes="muted" VerticalAlignment="Center" IsVisible="{Binding HasNoGoals}"
+                       Text="No goals yet. Add one, give it steps and choose what events are worth." />
+          </StackPanel>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Goals}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:GoalLadderCardViewModel">
+                  <Border Classes="card" Margin="0,0,16,12">
+                    <StackPanel Spacing="10">
+                      <Grid ColumnDefinitions="*,12,Auto">
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontWeight="SemiBold" PlaceholderText="Name"
+                                 ToolTip.Tip="The name you pick in sub-actions, triggers and the overlay widget." />
+                        <Button Grid.Column="2" Content="{Binding RemoveConfirm.Text}" Command="{Binding RemoveCommand}" Classes.danger="{Binding RemoveConfirm.IsArmed}" />
+                      </Grid>
+                      <StackPanel Spacing="4">
+                        <DockPanel>
+                          <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding NextText}" VerticalAlignment="Bottom" />
+                          <TextBlock Text="{Binding PointsText}" FontSize="28" FontWeight="Bold" />
+                        </DockPanel>
+                        <ProgressBar Value="{Binding Progress}" Minimum="0" Maximum="100" Height="10" />
+                      </StackPanel>
+                      <WrapPanel>
+                        <NumericUpDown Value="{Binding AdjustPoints}" Minimum="0" Increment="1" FormatString="0.##" Width="110" Margin="0,0,6,6" />
+                        <TextBlock Text="points" VerticalAlignment="Center" Margin="0,0,8,6" />
+                        <Button Content="Add" Command="{Binding AddPointsCommand}" Margin="0,0,6,6" />
+                        <Button Content="Take away" Command="{Binding RemovePointsCommand}" Margin="0,0,6,6" />
+                        <Button Content="Set points" Command="{Binding SetPointsCommand}" Margin="0,0,18,6" />
+                        <Button Content="{Binding ResetConfirm.Text}" Command="{Binding ResetCommand}" Classes.danger="{Binding ResetConfirm.IsArmed}" Margin="0,0,6,6"
+                                ToolTip.Tip="Back to 0 points; every step can be reached again." />
+                      </WrapPanel>
+                      <TextBlock Text="Steps" FontWeight="SemiBold" />
+                      <TextBlock Classes="muted" TextWrapping="Wrap"
+                                 Text="Each step is reached when the points get to its number, like 10 for the first emote and 20 for the second. They are kept in order by points." />
+                      <ItemsControl ItemsSource="{Binding Steps}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="vm:GoalStepRowViewModel">
+                            <Grid ColumnDefinitions="24,120,8,*,8,Auto" Margin="0,0,0,4">
+                              <TextBlock Text="✔" Foreground="#5cbf7a" VerticalAlignment="Center" IsVisible="{Binding Reached}" />
+                              <NumericUpDown Grid.Column="1" Value="{Binding Points}" Minimum="0" Increment="1" FormatString="0.##" />
+                              <TextBox Grid.Column="3" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" PlaceholderText="What they get, like New emote" />
+                              <Button Grid.Column="5" Content="Remove" Command="{Binding RemoveCommand}" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <Button Content="Add a step" Command="{Binding AddStepCommand}" />
+                      <Expander Header="Settings" HorizontalAlignment="Stretch">
+                        <StackPanel Spacing="8">
+                          <StackPanel Orientation="Horizontal" Spacing="8"
+                                      ToolTip.Tip="Everything events add is multiplied by this. 2 = double points, 0.5 = half when it is filling up too fast.">
+                            <TextBlock Text="Multiplier" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding Multiplier}" Minimum="0" Maximum="100" Increment="0.5" FormatString="0.##" Width="120" />
+                          </StackPanel>
+                          <CheckBox Content="Start from 0 each new stream" IsChecked="{Binding ResetOnNewStream}" />
+                        </StackPanel>
+                      </Expander>
+                      <Expander Header="What events add (points)" HorizontalAlignment="Stretch">
+                        <ContentControl Content="{Binding Values}" ContentTemplate="{StaticResource ValuesTemplate}" />
+                      </Expander>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,199 @@
+{
+  "triggers": {
+    "subathon.started": {
+      "description": "Runs when a subathon timer starts (from its starting length). Good for announcing the subathon in chat.",
+      "fields": { "timer": "Only for this timer. Leave it empty for every timer." },
+      "variables": {
+        "timer": "The timer's name",
+        "timerId": "The timer's internal id",
+        "state": "Running",
+        "remaining": "Seconds left",
+        "formattedRemaining": "Time left, like 4:00:00",
+        "elapsed": "Seconds it has run so far",
+        "formattedElapsed": "Time it has run so far, like 1:30:00",
+        "multiplier": "The multiplier for event time (1 = normal)"
+      }
+    },
+    "subathon.paused": {
+      "description": "Runs when a subathon timer is paused, by hand, by a sub-action or because your stream ended.",
+      "fields": { "timer": "Only for this timer. Leave it empty for every timer." },
+      "variables": {
+        "timer": "The timer's name",
+        "remaining": "Seconds left",
+        "formattedRemaining": "Time left, like 2:15:30",
+        "elapsed": "Seconds it has run so far"
+      }
+    },
+    "subathon.resumed": {
+      "description": "Runs when a paused subathon timer carries on.",
+      "fields": { "timer": "Only for this timer. Leave it empty for every timer." },
+      "variables": {
+        "timer": "The timer's name",
+        "remaining": "Seconds left",
+        "formattedRemaining": "Time left, like 2:15:30"
+      }
+    },
+    "subathon.ended": {
+      "description": "Runs when a subathon timer reaches 0:00:00. Good for ending the stream (an OBS sub-action), a raid or a big thank you.",
+      "fields": { "timer": "Only for this timer. Leave it empty for every timer." },
+      "variables": {
+        "timer": "The timer's name",
+        "elapsed": "Seconds the subathon ran in all",
+        "formattedElapsed": "How long it ran, like 26:03:10"
+      }
+    },
+    "subathon.timeAdded": {
+      "description": "Runs every time time is added to (or taken from) a subathon timer: by a sub, bits, a tip, a follow, a raid, a reward or by hand. Good for a \"+5:00\" alert or a thank you.",
+      "fields": { "timer": "Only for this timer. Leave it empty for every timer." },
+      "variables": {
+        "timer": "The timer's name",
+        "seconds": "Seconds added (negative when time was taken away), after the multiplier",
+        "formattedSeconds": "The same as text, like +0:05:00",
+        "user": "Who added it (empty when it was added by hand)",
+        "platform": "Their platform",
+        "reason": "What added it, like Subscription, Cheer, Follow, the reward's name or Manual",
+        "remaining": "Seconds left now",
+        "formattedRemaining": "Time left now, like 4:05:00",
+        "multiplier": "The multiplier that was used"
+      }
+    },
+    "goals.pointsAdded": {
+      "description": "Runs every time points are added to (or taken from) a goal.",
+      "fields": { "goal": "Only for this goal. Leave it empty for every goal." },
+      "variables": {
+        "goal": "The goal's name",
+        "goalId": "The goal's internal id",
+        "points": "The goal's points now",
+        "added": "Points added (negative when taken away)",
+        "user": "Who added them (empty when added by hand)",
+        "platform": "Their platform",
+        "reason": "What added them, like Subscription, Cheer or Manual",
+        "nextStep": "The name of the next step (empty when every step is reached)",
+        "nextStepPoints": "The points the next step needs",
+        "pointsToNext": "How many more points the next step needs",
+        "stepsReached": "How many steps are reached",
+        "stepCount": "How many steps there are",
+        "multiplier": "The goal's multiplier"
+      }
+    },
+    "goals.stepReached": {
+      "description": "Runs once when a goal reaches one of its steps, like \"New emote\" at 10 points. Each step runs it only once, even if points go down and up again (until the goal is reset). Good for an alert or a chat message.",
+      "fields": { "goal": "Only for this goal. Leave it empty for every goal." },
+      "variables": {
+        "goal": "The goal's name",
+        "step": "The step's name, like New emote",
+        "stepPoints": "The points the step needed",
+        "stepNumber": "Which step it is (1 = the first)",
+        "stepCount": "How many steps there are",
+        "points": "The goal's points now",
+        "user": "Whose purchase reached it",
+        "platform": "Their platform",
+        "nextStep": "The name of the next step (empty when this was the last)",
+        "nextStepPoints": "The points the next step needs"
+      }
+    },
+    "goals.completed": {
+      "description": "Runs when a goal reaches its last step.",
+      "fields": { "goal": "Only for this goal. Leave it empty for every goal." },
+      "variables": {
+        "goal": "The goal's name",
+        "points": "The goal's points",
+        "stepCount": "How many steps there are"
+      }
+    }
+  },
+  "subActions": {
+    "subathon.control": {
+      "description": "Starts, pauses, carries on or resets a subathon timer. Good for a Stream Deck button or a mod-only !pause command.",
+      "fields": {
+        "timer": "The timer's name. Leave it empty for the first timer.",
+        "mode": "Start = start it (or carry on after a pause). Pause = stop the clock. Resume = carry on. Pause or resume = switch between them. Reset = stop it and put back its starting length."
+      },
+      "variables": {}
+    },
+    "subathon.addTime": {
+      "description": "Adds time to a subathon timer, or takes it away with a negative number. Good for your own events, like a donation goal or a game event. The timer's longest length still applies.",
+      "fields": {
+        "timer": "The timer's name. Leave it empty for the first timer.",
+        "seconds": "How many seconds, like 300 for 5 minutes. A negative number takes time away.",
+        "useMultiplier": "Ticked: the timer's multiplier is used (double time in happy hour)."
+      },
+      "variables": { "secondsAdded": "The seconds really added (less when the longest length was reached)" }
+    },
+    "subathon.setTime": {
+      "description": "Sets how much time a subathon timer has left.",
+      "fields": {
+        "timer": "The timer's name. Leave it empty for the first timer.",
+        "seconds": "The time left, in seconds, like 3600 for one hour."
+      },
+      "variables": {}
+    },
+    "subathon.multiplier": {
+      "description": "Changes how much event time counts, like 2 for a double-time happy hour, or 0.5 when the timer is filling up too fast. Time already added does not change.",
+      "fields": {
+        "timer": "The timer's name. Leave it empty for the first timer.",
+        "multiplier": "2 = double, 1 = normal, 0.5 = half, 0 = events add nothing."
+      },
+      "variables": {}
+    },
+    "subathon.get": {
+      "description": "Gets a subathon timer's time left and state, for a !timer command.",
+      "fields": { "timer": "The timer's name. Leave it empty for the first timer." },
+      "variables": {
+        "subathonTimer": "The timer's name",
+        "subathonState": "Stopped, Running, Paused or Ended",
+        "subathonRemaining": "Seconds left",
+        "subathonFormatted": "Time left, like 4:12:30",
+        "subathonElapsed": "Seconds it has run so far",
+        "subathonFormattedElapsed": "Time it has run so far",
+        "subathonAdded": "Seconds that have been added in all",
+        "subathonMultiplier": "The multiplier for event time"
+      }
+    },
+    "goals.addPoints": {
+      "description": "Adds points to a goal, or takes them away with a negative number. Steps reached on the way up run the Goal step reached trigger.",
+      "fields": {
+        "goal": "The goal's name. Leave it empty for the first goal.",
+        "points": "How many points. A negative number takes points away.",
+        "useMultiplier": "Ticked: the goal's multiplier is used."
+      },
+      "variables": { "pointsAdded": "The points really added" }
+    },
+    "goals.setPoints": {
+      "description": "Sets a goal's points. Steps reached on the way up run the Goal step reached trigger (once each).",
+      "fields": {
+        "goal": "The goal's name. Leave it empty for the first goal.",
+        "points": "The new number of points."
+      },
+      "variables": {}
+    },
+    "goals.reset": {
+      "description": "Puts a goal back to 0 points, so every step can be reached again.",
+      "fields": { "goal": "The goal's name. Leave it empty for the first goal." },
+      "variables": {}
+    },
+    "goals.multiplier": {
+      "description": "Changes how much event points count, like 2 for double points or 0.5 when the goal is filling up too fast. Points already added do not change.",
+      "fields": {
+        "goal": "The goal's name. Leave it empty for the first goal.",
+        "multiplier": "2 = double, 1 = normal, 0.5 = half, 0 = events add nothing."
+      },
+      "variables": {}
+    },
+    "goals.get": {
+      "description": "Gets a goal's points and its next step, for a !goal command.",
+      "fields": { "goal": "The goal's name. Leave it empty for the first goal." },
+      "variables": {
+        "goalName": "The goal's name",
+        "goalPoints": "Its points",
+        "goalNextStep": "The next step's name (empty when every step is reached)",
+        "goalNextStepPoints": "The points the next step needs",
+        "goalPointsToNext": "How many more points the next step needs",
+        "goalStepsReached": "How many steps are reached",
+        "goalStepCount": "How many steps there are",
+        "goalMultiplier": "The goal's multiplier",
+        "goalSteps": "Every step, like 10: New emote, 20: Second emote"
+      }
+    }
+  }
+}

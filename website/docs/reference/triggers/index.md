@@ -20,6 +20,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Fourthwall](fourthwall.md) | 13 |
 | [Game Controller](game-controller.md) | 6 |
 | [Giveaways](giveaways.md) | 5 |
+| [Goals](goals.md) | 3 |
 | [GoXLR](goxlr.md) | 17 |
 | [Groups](groups.md) | 5 |
 | [HypeRate](hyperate.md) | 7 |
@@ -53,6 +54,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Streamlabs](streamlabs.md) | 13 |
 | [Streamlabs Desktop](streamlabs-desktop.md) | 8 |
 | [StreamLoots](streamloots.md) | 6 |
+| [Subathon timer](subathon-timer.md) | 5 |
 | [System](system.md) | 11 |
 | [T.I.T.S.](t-i-t-s.md) | 9 |
 | [Throne](throne.md) | 3 |

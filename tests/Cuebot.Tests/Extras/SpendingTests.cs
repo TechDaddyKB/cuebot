@@ -149,6 +149,26 @@ public sealed class SpendingTests : IDisposable
     }
 
     [Fact]
+    public async Task Ignored_names_are_announced_but_never_listed()
+    {
+        var recorded = new List<BotEvent>();
+        using var sub = _bus.Subscribe(e => { if (e.Type == SpendingEvents.Recorded) lock (recorded) recorded.Add(e); });
+        using var ledger = Ledger();
+        Live(ledger);
+        await Settled(ledger);
+        ledger.Record(Item("Twitch", "Anonymous", FeedSpend.Units(SpendUnit.GiftSubscription, 10, "Gift subs", "2")));
+        Assert.Empty(ledger.Top(SpendingPeriod.Stream).Spenders);
+        lock (recorded)
+        {
+            var args = recorded.Single().Args;
+            Assert.Equal(("Anonymous", "GiftSubscription", 10.0, "2", 99.9), ((string)args["user"]!, (string)args["unit"]!, (double)args["quantity"]!,
+                (string)args["tier"]!, (double)args["amount"]!));
+        }
+        ledger.UpdateSettings(s => s.IgnoredUsers.Clear());
+        Assert.Equal(["Anonymous"], ledger.Top(SpendingPeriod.Stream).Spenders.Select(s => s.User));   // a name taken off the list shows again
+    }
+
+    [Fact]
     public async Task Purchases_wait_for_the_rates_and_trigger_once_they_are_valued()
     {
         var gate = new TaskCompletionSource();

@@ -164,7 +164,9 @@ of 5 subs counts as 5 subs. A new price only counts for new purchases.
 
 - **Charity donations** go to the charity, not to you. Tick **Count charity donations** to count them anyway.
 - **Test events**, like the test buttons on the **Donations** and **Webhooks** pages, are never counted.
-- Names in **Never list**, like `Anonymous`. Add your own test account here.
+- Names in **Never list**, like `Anonymous`. Add your own test account here. Their purchases still count for
+  [subathon timers and goals](subathon-and-goals.md) and still run the **Money spent** trigger. They are only left off
+  the list.
 - Bits, subs and Super Chats that tip services like Streamlabs pass on from Twitch or YouTube. Connect Twitch or YouTube
   in Cuebot to count those, so nothing is counted twice.
 

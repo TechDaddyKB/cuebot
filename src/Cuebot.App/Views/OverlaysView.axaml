@@ -206,6 +206,10 @@
                                 ToolTip.Tip="An end-of-stream roll of this stream's subs, followers, tippers and raiders" />
                       <MenuItem Header="Top spenders" Command="{Binding AddBuiltInCommand}" CommandParameter="topspenders"
                                 ToolTip.Tip="Who spent the most this stream, today, this week, month or year, on one platform or all" />
+                      <MenuItem Header="Subathon timer" Command="{Binding AddBuiltInCommand}" CommandParameter="subathon"
+                                ToolTip.Tip="A countdown that subs, bits, tips and other events add time to" />
+                      <MenuItem Header="Goal ladder" Command="{Binding AddBuiltInCommand}" CommandParameter="goalladder"
+                                ToolTip.Tip="A points goal with steps, like a new emote at 10 points and another at 20" />
                       <MenuItem Header="Countdown" Command="{Binding AddBuiltInCommand}" CommandParameter="countdown"
                                 ToolTip.Tip="Counts down minutes or to a time; reloading does not restart it" />
                       <Separator />

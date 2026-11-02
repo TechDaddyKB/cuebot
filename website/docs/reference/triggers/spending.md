@@ -3,7 +3,7 @@
 
 ## Money spent
 
-Runs every time someone spends money on your stream: a tip, Super Chat, Super Sticker, rant, bits, Kicks, Jewels, a subscription, gift subs or a shop order. The amount is already changed into your chosen currency. Good for thanking big spenders or showing a running total.
+Runs every time someone spends money on your stream: a tip, Super Chat, Super Sticker, rant, bits, Kicks, Jewels, a subscription, gift subs or a shop order. The amount is already changed into your chosen currency. Names on the Never list (like Anonymous) still run it. Good for thanking big spenders or showing a running total.
 
 | Setting | What to put in |
 | --- | --- |
@@ -22,6 +22,9 @@ Runs every time someone spends money on your stream: a tip, Super Chat, Super St
 | `%formattedAmount%` | The amount with its currency sign, like $4.99 |
 | `%paidAmount%` | What they actually paid: the money in their own currency, or the number of bits, Kicks, Jewels or subs |
 | `%paidCurrency%` | The currency they paid in, like EUR, or Bits, Kicks, Jewels, Subscription or GiftSubscription |
+| `%unit%` | What it was counted in: Money, Bits, Kicks, Jewels, Subscription or GiftSubscription |
+| `%quantity%` | How many: the money in their own currency, or the number of bits, Kicks, Jewels or subs |
+| `%tier%` | The sub tier (1, 2 or 3 on Twitch, the membership level on YouTube); empty for everything else |
 | `%streamTotal%` | Everything this person has spent this stream on that platform, in your currency |
 | `%rank%` | Their place on this stream's top spenders list (1 = the top spender) |
 | `%sessionId%` | The stream's internal id |

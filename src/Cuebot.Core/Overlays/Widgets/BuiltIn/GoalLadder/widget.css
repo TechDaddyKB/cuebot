@@ -1,0 +1,41 @@
+:root {
+  --font: '{{fontFamily}}', system-ui, sans-serif;
+  --title-size: {{titleSize}}px;
+  --text-size: {{textSize}}px;
+  --bar-height: {{barHeight}}px;
+  --text: {{textColor}};
+  --bar: {{barColor}};
+  --bar2: {{barColor2}};
+  --track: {{trackColor}};
+  --done: {{doneColor}};
+}
+
+.ladder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font);
+  color: var(--text);
+  font-size: var(--text-size);
+  font-weight: 700;
+}
+.ladder.shadow { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7); }
+.ladder .head { display: flex; justify-content: space-between; align-items: baseline; gap: 1em; }
+.ladder .title { font-size: var(--title-size); }
+.ladder .track { height: var(--bar-height); background: var(--track); border-radius: calc(var(--bar-height) / 2); overflow: hidden; }
+.ladder .fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--bar), var(--bar2)); transition: width 0.8s ease-out; }
+.ladder.complete .fill { background: var(--done); }
+.ladder .next:empty { display: none; }
+.ladder .steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ladder .steps:empty { display: none; }
+.ladder .step { opacity: 0.75; }
+.ladder .step.reached { color: var(--done); opacity: 1; }
+.ladder .step .mark { display: inline-block; width: 1.4em; }
+.ladder.flash .fill { animation: ladder-flash 1.4s ease-out; }
+
+@keyframes ladder-flash {
+  0% { filter: brightness(2.2); }
+  100% { filter: none; }
+}

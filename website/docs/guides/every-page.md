@@ -38,6 +38,7 @@ to the guide that explains it.
 | **Quotes** | Quotes saved from your streams. | [Quotes](community.md#quotes) |
 | **Credits** | End-of-stream credits. | [Credits](community.md#credits) |
 | **Top Spenders** | Who spent the most money this stream, today, this week, month, year or all time. | [Top spenders](community.md#top-spenders) |
+| **Subathon & Goals** | Subathon timers that events add time to, and points goals with steps. | [Subathons and goals](subathon-and-goals.md) |
 
 ## Audio
 

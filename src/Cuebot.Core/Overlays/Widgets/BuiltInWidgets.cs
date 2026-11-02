@@ -39,6 +39,8 @@ public static class BuiltInWidgets
         new("credits", "Credits", "Credits"),
         new("topspenders", "Top spenders", "TopSpenders"),
         new("countdown", "Countdown", "Countdown"),
+        new("subathon", "Subathon timer", "SubathonTimer"),
+        new("goalladder", "Goal ladder", "GoalLadder"),
         new("emoterain", "Emote rain", "EmoteRain"),
         new("hypecup", "Hype cup", "HypeCup"),
         new("hypeboss", "Hype boss", "HypeBoss"),

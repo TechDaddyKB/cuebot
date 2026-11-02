@@ -30,7 +30,8 @@ public static class SpendingEvents
 /// </para>
 /// A stream starts when a platform goes live (or with the first purchase when none reported it, or on request) and
 /// ends <see cref="RestartGap"/> after the last live platform goes offline. Test events are never counted. Persisted in
-/// spending.json; thread-safe.
+/// spending.json; thread-safe. Ignored names are still recorded (and announced, so anonymous gifts add subathon
+/// time); they are only left out of the lists.
 /// </summary>
 public sealed class SpendingLedger : IPeriodicService, IDisposable
 {
@@ -244,7 +245,6 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
         {
             var settings = Data.Settings;
             if (spend.IsCharity && !settings.IncludeCharity) return;
-            if (settings.IgnoredUsers.Any(u => Same(u.Trim().TrimStart('@'), user))) return;
             var session = SessionFor(time);
             var before = Leaders(platform);
             var record = new SpendRecord
@@ -346,6 +346,9 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
             ["formattedAmount"] = SpendingText.Money(amount, currency),
             ["paidAmount"] = record.Unit == SpendUnit.Money ? record.PaidAmount : record.Quantity,
             ["paidCurrency"] = record.Unit == SpendUnit.Money ? record.PaidCurrency : record.Unit.ToString(),
+            ["unit"] = record.Unit.ToString(),
+            ["quantity"] = record.Quantity,
+            ["tier"] = record.Tier,
             ["streamTotal"] = me?.Total ?? amount,
             ["rank"] = me?.Rank ?? 0,
             ["sessionId"] = session.Id,
@@ -387,7 +390,8 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
     {
         var currency = Data.Settings.Currency;
         var inPeriod = InPeriod(period);
-        var entries = Data.Entries.Where(e => inPeriod(e) && (platform.Length == 0 || Same(e.Platform, platform))).ToList();
+        var ignored = new HashSet<string>(Data.Settings.IgnoredUsers.Select(u => u.Trim().TrimStart('@')), StringComparer.OrdinalIgnoreCase);
+        var entries = Data.Entries.Where(e => inPeriod(e) && (platform.Length == 0 || Same(e.Platform, platform)) && !ignored.Contains(e.User)).ToList();
         var pending = entries.Count(e => e.Value is null);
         var groups = entries
             .Where(e => e.Value is not null)

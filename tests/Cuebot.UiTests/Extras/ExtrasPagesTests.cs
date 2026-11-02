@@ -592,6 +592,70 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void Subathon_and_goals_page_runs_timers_and_keeps_goal_steps_in_order()
+    {
+        using var service = new Cuebot.Core.Subathon.SubathonService(new AppPaths(_dataDir), null, Bus, Get<Cuebot.Core.Logging.AppLog>());
+        var vm = new SubathonGoalsViewModel(service);
+        var window = Open(new SubathonGoalsView(), vm);
+        Assert.True(vm.HasNoTimers);
+        Assert.True(vm.HasNoGoals);
+
+        vm.AddTimerCommand.Execute(null);
+        Pump();
+        var timer = Assert.Single(vm.Timers);
+        Assert.Equal(("4:00:00", "Not started"), (timer.TimeText, timer.StateText));
+        timer.StartingMinutes = 90;
+        timer.StartCommand.Execute(null);
+        timer.AdjustMinutes = 10;
+        timer.AddTimeCommand.Execute(null);
+        Pump();
+        Assert.Equal("Running", timer.StateText);
+        Assert.Matches(@"^1:(40:00|39:5\d)$", timer.TimeText);   // 90 + 10 minutes, rounded up, a moment later
+        timer.Values.TwitchTier1 = 120;
+        timer.Multiplier = 2;
+        var saved = service.Timer("")!;
+        Assert.Equal((5400.0, 120.0, 2.0), (saved.InitialSeconds, saved.Values.TwitchTier1, saved.Multiplier));
+        timer.Values.Redemptions = "Add a minute = 60\nbroken line";
+        Assert.NotEmpty(timer.Values.RedemptionsError);
+        timer.Values.Redemptions = "Add a minute = 60";
+        Assert.Equal(60, Cuebot.Core.Subathon.SubathonService.RewardValue(service.Timer("")!.Values, "add a minute"));
+        timer.PauseCommand.Execute(null);
+        Pump();
+        Assert.Equal("Paused", timer.StateText);
+        foreach (var expander in window.GetVisualDescendants().OfType<Expander>()) expander.IsExpanded = true;
+        Pump();
+        SaveBothThemes(window, "subathon-timers");
+
+        vm.AddGoalCommand.Execute(null);
+        Pump();
+        Assert.Equal(1, vm.SelectedTabIndex);
+        var goal = Assert.Single(vm.Goals);
+        Assert.Equal(["First goal", "Second goal"], goal.Steps.Select(r => r.Name));
+        goal.AddStepCommand.Execute(null);
+        goal.Steps[^1].Points = 5;
+        goal.Steps[^1].Name = "Hydrate";
+        Pump();
+        Assert.Equal(["Hydrate", "First goal", "Second goal"], goal.Steps.Select(r => r.Name));   // kept in order by points
+        goal.AdjustPoints = 12;
+        goal.AddPointsCommand.Execute(null);
+        Pump();
+        Assert.Equal("12 points", goal.PointsText);
+        Assert.Contains("Second goal at 20 (8 to go)", goal.NextText);
+        Assert.Equal([true, true, false], goal.Steps.Select(r => r.Reached));
+        foreach (var expander in window.GetVisualDescendants().OfType<Expander>()) expander.IsExpanded = true;
+        Pump();
+        SaveBothThemes(window, "subathon-goals");
+
+        goal.RemoveCommand.Execute(null);
+        goal.RemoveCommand.Execute(null);
+        Pump();
+        Assert.Empty(vm.Goals);
+        Assert.Empty(service.Goals());
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
     private sealed class FixedRates : Cuebot.Core.Spending.IExchangeRateSource
     {
         public Task<Cuebot.Core.Spending.ExchangeRateTable?> FetchAsync(string baseCurrency, CancellationToken ct) =>

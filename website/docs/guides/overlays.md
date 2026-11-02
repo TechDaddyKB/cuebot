@@ -48,6 +48,8 @@ On your overlay's row, open **Add Cuebot widget** and pick one:
 | **Credits roll** | End-of-stream credits that scroll |
 | **Top spenders** | Who spent the most this stream, today, this week, month, year or all time |
 | **Countdown** | Counts down minutes, or to a time of day |
+| **Subathon timer** | A subathon countdown that subs, bits and tips add time to |
+| **Goal ladder** | A points goal with steps, like a new emote at 10 points |
 | **Emote rain** | Chat emotes fly across the screen |
 | **Hype cup** | Follows, subs, bits and tips fill a cup with balls |
 | **Hype boss** | Support hits a "boss"; the final hit makes that viewer the next boss |

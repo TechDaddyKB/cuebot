@@ -123,6 +123,7 @@
     <DataTemplate DataType="xvm:QuotesViewModel"><xviews:QuotesView /></DataTemplate>
     <DataTemplate DataType="xvm:CreditsViewModel"><xviews:CreditsView /></DataTemplate>
     <DataTemplate DataType="xvm:TopSpendersViewModel"><xviews:TopSpendersView /></DataTemplate>
+    <DataTemplate DataType="xvm:SubathonGoalsViewModel"><xviews:SubathonGoalsView /></DataTemplate>
     <DataTemplate DataType="xvm:PointsViewModel"><xviews:PointsView /></DataTemplate>
     <DataTemplate DataType="xvm:GiveawaysStoreViewModel"><xviews:GiveawaysStoreView /></DataTemplate>
     <DataTemplate DataType="xvm:DecksViewModel"><xviews:DecksView /></DataTemplate>
