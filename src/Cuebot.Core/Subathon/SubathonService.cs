@@ -523,7 +523,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         t.State = TimerState.Ended;
         t.EndsAt = null;
         t.SavedAt = null;
-        _log.Info("Subathon", $"'{t.Name}' ended after {Format(t.ElapsedSeconds)}");
+        _log.Info("Subathon", $"'{t.Name}' ended after {Format(t.ElapsedSeconds, roundUp: false)}");
         Emit(SubathonEvents.Ended, TimerArgs(t));
     }
 
@@ -569,7 +569,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         ["remaining"] = Math.Round(t.RemainingSeconds),
         ["formattedRemaining"] = Format(t.RemainingSeconds),
         ["elapsed"] = Math.Round(t.ElapsedSeconds),
-        ["formattedElapsed"] = Format(t.ElapsedSeconds),
+        ["formattedElapsed"] = Format(t.ElapsedSeconds, roundUp: false),
         ["multiplier"] = t.Multiplier,
     };
 
@@ -591,10 +591,14 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         };
     }
 
-    /// <summary>Seconds as H:MM:SS (hours can pass 24, like 26:03:10).</summary>
-    public static string Format(double seconds)
+    /// <summary>
+    /// Seconds as H:MM:SS (hours can pass 24, like 26:03:10). Time left rounds up (a clock never shows 0:00:00 while
+    /// time is left); time already run rounds down (<paramref name="roundUp"/> false), so the two add up.
+    /// </summary>
+    public static string Format(double seconds, bool roundUp = true)
     {
-        var total = (long)Math.Ceiling(Math.Max(0, seconds) - 0.0005);
+        var value = Math.Max(0, seconds);
+        var total = roundUp ? (long)Math.Ceiling(value - 0.0005) : (long)Math.Floor(value + 0.0005);
         return string.Create(CultureInfo.InvariantCulture, $"{total / 3600}:{total / 60 % 60:00}:{total % 60:00}");
     }
 
@@ -688,6 +692,13 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     {
         if (_chat is not null) _chat.FeedItemAdded -= Record;
         _subscription.Dispose();
+        lock (_gate)
+        {
+            // A clean shutdown freezes running timers at this very second (a crash keeps the last save instead).
+            var now = _time.GetUtcNow();
+            foreach (var t in Data.Timers.Where(t => t.State == TimerState.Running)) Sync(t, now);
+            Save();
+        }
         _file?.Dispose();
     }
 }

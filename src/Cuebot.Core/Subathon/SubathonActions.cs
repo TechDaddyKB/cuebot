@@ -72,7 +72,7 @@ internal static class SubathonParams
         args["subathonRemaining"] = Math.Round(t.RemainingSeconds);
         args["subathonFormatted"] = SubathonService.Format(t.RemainingSeconds);
         args["subathonElapsed"] = Math.Round(t.ElapsedSeconds);
-        args["subathonFormattedElapsed"] = SubathonService.Format(t.ElapsedSeconds);
+        args["subathonFormattedElapsed"] = SubathonService.Format(t.ElapsedSeconds, roundUp: false);
         args["subathonAdded"] = Math.Round(t.AddedSeconds);
         args["subathonMultiplier"] = t.Multiplier;
     }

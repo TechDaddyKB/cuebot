@@ -164,8 +164,10 @@ public sealed class SubathonTests : IDisposable
     }
 
     [Fact]
-    public void A_running_timer_is_frozen_when_Cuebot_closes_and_resumes_on_go_live()
+    public void A_running_timer_is_frozen_at_its_last_save_after_a_crash_and_resumes_on_go_live()
     {
+        var file = Path.Combine(_dir, "subathon.json");
+        var crashCopy = file + ".crash";
         using (var s = Service())
         {
             var t = s.AddTimer();
@@ -177,9 +179,11 @@ public sealed class SubathonTests : IDisposable
             s.Start("");
             _clock.Advance(TimeSpan.FromSeconds(100));
             s.Tick(_clock.GetUtcNow());   // saves 3500 left
-            _clock.Advance(TimeSpan.FromSeconds(5));
             s.FlushFile();
+            File.Copy(file, crashCopy);   // what is on disk if Cuebot crashes now
+            _clock.Advance(TimeSpan.FromSeconds(5));
         }
+        File.Copy(crashCopy, file, overwrite: true);   // a crash never gets to the clean-shutdown save
         _clock.Advance(TimeSpan.FromHours(3));   // Cuebot was closed
         using var again = Service();
         var timer = again.Timer("")!;
@@ -294,6 +298,28 @@ public sealed class SubathonTests : IDisposable
         var goal = data["cuebot-subathon"]!["goals"]![0]!;
         Assert.Equal((12.0, "Second goal", 10.0), ((double)goal["points"]!, (string)goal["next"]!["name"]!, (double)goal["previous"]!));
         Assert.True((bool)goal["steps"]![0]!["reached"]!);
+    }
+
+    [Fact]
+    public void A_clean_shutdown_freezes_a_running_timer_at_that_second()
+    {
+        using (var s = Service())
+        {
+            s.AddTimer();
+            s.Start("");
+            s.Tick(_clock.GetUtcNow());   // the periodic save: 4:00:00 left
+            _clock.Advance(TimeSpan.FromSeconds(7));
+        }
+        using var again = Service();
+        var timer = again.Timer("")!;
+        Assert.Equal((TimerState.Paused, 4 * 3600 - 7.0, 7.0), (timer.State, timer.RemainingSeconds, timer.ElapsedSeconds));
+    }
+
+    [Fact]
+    public void Time_left_rounds_up_and_time_run_rounds_down_so_they_add_up()
+    {
+        Assert.Equal("3:59:58", SubathonService.Format(14397.4));
+        Assert.Equal("0:00:02", SubathonService.Format(2.6, roundUp: false));
     }
 
     [Theory]

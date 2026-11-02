@@ -167,7 +167,7 @@ public sealed partial class SubathonTimerCardViewModel : ObservableObject
             TimerState.Ended => "Time is up",
             _ => "Not started",
         };
-        DetailText = $"Ran {SubathonService.Format(t.ElapsedSeconds)}, events added {SubathonService.Format(t.AddedSeconds)}"
+        DetailText = $"Ran {SubathonService.Format(t.ElapsedSeconds, roundUp: false)}, events added {SubathonService.Format(t.AddedSeconds, roundUp: false)}"
                      + (t.Multiplier != 1 ? $", multiplier ×{t.Multiplier.ToString("0.##", CultureInfo.InvariantCulture)}" : "");
         _loading = true;
         Multiplier = (decimal)t.Multiplier;   // sub-actions can change it (happy hour)

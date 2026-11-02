@@ -65,8 +65,9 @@ twice), and **Add**, **Take away** or **Set time left** with the number of minut
 
 ### Closing Cuebot
 
-If Cuebot closes while a timer runs, the timer is frozen. When Cuebot opens again it is paused, with the time it had.
-No time is lost to a crash. If **Start or carry on when I go live** is ticked, it carries on when you go live.
+If Cuebot closes while a timer runs, the timer is frozen. When Cuebot opens again it is paused, with the time it had
+when Cuebot closed. After a crash it has the time from its last save, at most 10 seconds earlier, so a crash never
+takes time away. If **Start or carry on when I go live** is ticked, it carries on when you go live.
 
 ### When time is up
 
