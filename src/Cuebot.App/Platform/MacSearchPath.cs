@@ -8,7 +8,7 @@ namespace Cuebot.App.Platform;
 internal static class MacSearchPath
 {
     public static string[] CommonFolders(string home) =>
-        ["/opt/homebrew/bin", "/usr/local/bin", Path.Combine(home, ".local", "bin")];
+        ["/opt/homebrew/bin", "/usr/local/bin", home.TrimEnd('/') + "/.local/bin"];   // macOS paths, joined with "/" on any OS
 
     /// <summary>The PATH with each common folder appended unless it is already in it.</summary>
     public static string Extend(string? path, string home)
