@@ -205,3 +205,14 @@ public class AudioOutputTests
         Assert.Null(backend.StartCapture(null, _ => { }));
     }
 }
+
+public class CommandLineAudioPlayerTests
+{
+    [Fact]
+    public void Macos_falls_back_to_the_built_in_afplay()
+    {
+        Assert.Contains(CommandLineAudioPlayer.KnownPlayers, p => p.Name == "afplay");
+        if (!OperatingSystem.IsMacOS()) return;
+        Assert.Equal("afplay", Path.GetFileName(CommandLineAudioPlayer.FindInstalled()?.Executable));
+    }
+}

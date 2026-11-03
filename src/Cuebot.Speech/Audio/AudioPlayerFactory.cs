@@ -6,7 +6,7 @@ namespace Cuebot.Speech;
 internal static class AudioPlayerFactory
 {
     internal const string NoPlayerMessage =
-        "No audio player found. Install PipeWire (pw-play), PulseAudio (paplay) or ALSA utilities (aplay).";
+        "No audio player found. Install PipeWire (pw-play), PulseAudio (paplay) or ALSA utilities (aplay); on macOS, afplay is built in.";
 
     /// <summary>Set to "fallback" (or "legacy") to skip the native library, e.g. to work around a driver problem.</summary>
     internal const string BackendVariable = "CUEBOT_AUDIO_BACKEND";

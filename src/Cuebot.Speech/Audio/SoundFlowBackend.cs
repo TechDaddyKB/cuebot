@@ -58,8 +58,8 @@ internal sealed class SoundFlowBackend : IAudioBackend
     /// <summary>Loads the native library and initialises a context; throws when that isn't possible.</summary>
     public static SoundFlowBackend Create(AppLog? log)
     {
-        MaBackend[] priority = OperatingSystem.IsWindows()
-            ? [MaBackend.Wasapi, MaBackend.DirectSound, MaBackend.WinMm]
+        MaBackend[] priority = OperatingSystem.IsWindows() ? [MaBackend.Wasapi, MaBackend.DirectSound, MaBackend.WinMm]
+            : OperatingSystem.IsMacOS() ? [MaBackend.CoreAudio]
             : [MaBackend.PulseAudio, MaBackend.Alsa, MaBackend.Jack];
         var forwarder = log is null ? null : ForwardLog(log);
         if (forwarder is not null) SoundFlow.Utils.Log.OnLog += forwarder;
