@@ -46,8 +46,10 @@ final class PairedCuebots {
     /// Adds a Cuebot, or updates the one with the same instance id (or host and port), and makes it active.
     @discardableResult
     func pair(_ endpoint: CuebotEndpoint) -> PairedCuebot {
+        // The same Cuebot: its instance id, else the same address (a reinstalled Cuebot gets a new id but keeps its
+        // address, and pairing it again should update the entry, not add a second one).
         let index = all.firstIndex { existing in
-            if let id = endpoint.instanceId, let other = existing.instanceId { return id == other }
+            if let id = endpoint.instanceId, id == existing.instanceId { return true }
             return existing.host == endpoint.host && existing.apiPort == endpoint.apiPort
         }
         var entry = index.map { all[$0] } ?? PairedCuebot(name: endpoint.name, host: endpoint.host, apiPort: endpoint.apiPort, httpPort: endpoint.httpPort)
@@ -56,6 +58,8 @@ final class PairedCuebots {
         entry.apiPort = endpoint.apiPort
         entry.httpPort = endpoint.httpPort
         entry.instanceId = endpoint.instanceId ?? entry.instanceId
+        // Drop other entries for the same address left by earlier versions.
+        all.removeAll { $0.id != entry.id && $0.host == entry.host && $0.apiPort == entry.apiPort }
         if let index { all[index] = entry } else { all.append(entry) }
         Keychain.save(.init(token: endpoint.token, deckToken: endpoint.deckToken), for: entry.id)
         activeId = entry.id
