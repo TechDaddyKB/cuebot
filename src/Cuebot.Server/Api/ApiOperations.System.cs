@@ -267,7 +267,11 @@ public sealed partial class ApiOperations
 
     public JsonObject Decks() => new()
     {
-        ["decks"] = new JsonArray([.. DeckService.Decks.Select(d => (JsonNode)new JsonObject { ["id"] = d.Id.ToString(), ["name"] = d.Name, ["enabled"] = d.Enabled })]),
+        ["decks"] = new JsonArray([.. DeckService.Decks.Select(d => (JsonNode)new JsonObject
+        {
+            ["id"] = d.Id.ToString(), ["name"] = d.Name, ["enabled"] = d.Enabled,
+            ["rows"] = d.Rows, ["columns"] = d.Columns, ["pageCount"] = d.Pages.Count,
+        })]),
     };
 
     public JsonObject GetDeck(string deck) => ToObject(DeckService.Find(deck) ?? throw ApiException.NotFound($"No deck '{deck}'"));

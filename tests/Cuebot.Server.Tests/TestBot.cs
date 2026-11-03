@@ -52,7 +52,7 @@ internal sealed class TestBot : IAsyncDisposable
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
-            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks,
+            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -133,7 +133,10 @@ internal sealed class TestBot : IAsyncDisposable
     private Cuebot.Core.Overlays.OverlayAlertQueue? _alertQueue;
     public Cuebot.Core.Overlays.OverlayFeed OverlayFeed => _overlayFeed ??= new Cuebot.Core.Overlays.OverlayFeed(Log);
     private Cuebot.Core.Overlays.OverlayFeed? _overlayFeed;
-    public Cuebot.Core.Overlays.Session.SessionDataStore SessionData => _sessionData ??= new(null, Log, Bus, OverlayFeed, null);
+    public Cuebot.Core.Overlays.Session.SessionDataStore SessionData => _sessionData ??= new(null, Log, Bus, OverlayFeed, null,
+        sources: [new Cuebot.Core.Subathon.SubathonSessionData(Subathon, TimeProvider.System)]);
+    public Cuebot.Core.Subathon.SubathonService Subathon => _subathon ??= new(null, Chat, Bus, Log);
+    private Cuebot.Core.Subathon.SubathonService? _subathon;
     private Cuebot.Core.Overlays.Session.SessionDataStore? _sessionData;
     public Cuebot.Core.Chat.Emotes.EmoteService? Emotes { get; }
     public Cuebot.Core.Credits.CreditsCollector Credits => _credits ??= new Cuebot.Core.Credits.CreditsCollector(null, Bus, Log);
@@ -220,6 +223,7 @@ internal sealed class TestBot : IAsyncDisposable
     {
         await Manager.DisposeAsync();
         Emotes?.Dispose();
+        _subathon?.Dispose();
         Overlays.Dispose();
         OverlayAssets.Dispose();
         Elements.Dispose();

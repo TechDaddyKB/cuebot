@@ -110,6 +110,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Decks.DeckService? _decks;
 
+    /// <summary>Subathon timers and points goals (the companion app's dashboard and controls).</summary>
+    public Cuebot.Core.Subathon.SubathonService? Subathon
+    {
+        get => _subathon ??= _provider?.GetService<Cuebot.Core.Subathon.SubathonService>();
+        init => _subathon = value;
+    }
+
+    private Cuebot.Core.Subathon.SubathonService? _subathon;
+
     /// <summary>Pronouns (GetUserPronouns; cached pronouns in Streamer.bot user payloads).</summary>
     public Cuebot.Core.Chat.Pronouns.PronounService? Pronouns
     {

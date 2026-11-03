@@ -863,6 +863,76 @@ curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application
   "http://127.0.0.1:7475/api/v1/chat"
 ```
 
+## Companion
+
+### GET /dashboard
+
+Everything a companion app's dashboard shows, in one answer: which platforms are connected, this stream's totals, your subathon timers and points goals, your top spenders, and the latest 50 activity items (newest first). revision goes up whenever any of it changes; GET /events sends dashboard.changed with the new revision, so an app only fetches this again when it needs to.
+
+**Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://127.0.0.1:7475/api/v1/dashboard"
+```
+
+### GET /decks
+
+Lists your Cuebot Decks with their id, name, whether they are on, their grid size and how many pages they have. The decks themselves (their buttons, presses and live updates) are on the HTTP server at /deck/{id}.
+
+**Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://127.0.0.1:7475/api/v1/decks"
+```
+
+### POST /subathon/{timer}/{command}
+
+Controls one subathon timer, by id or name. start, pause, resume, toggle and reset need no body. time adds or takes away time with {"add": 300} (seconds, negative to take away) or sets the time left with {"set": 3600}. multiplier sets how much time events add, like {"value": 0.5} when too much is coming in. Answers with every timer and goal.
+
+| In the address | What it is |
+| --- | --- |
+| `timer` (required, in the path) | Timer id or name |
+| `command` (required, in the path) | start, pause, resume, toggle, reset, time ({"add": seconds} or {"set": seconds}) or multiplier ({"value": 2}) |
+
+| Body field | Type | What it is |
+| --- | --- | --- |
+| `add` | number | For time: seconds to add, like 300. Negative takes time away. |
+| `set` | number | For time: the time left to set, in seconds, like 3600. |
+| `value` | number | For multiplier: how much time events add, like 0.5 for half or 2 for double. |
+
+**Answers:** `200` OK; `400` Invalid request (details lists each problem); `404` Not found; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"add":300}' \
+  "http://127.0.0.1:7475/api/v1/subathon/{timer}/pause"
+```
+
+### POST /goals/{goal}/{command}
+
+Changes one points goal, by id or name. points adds points with {"add": 5} or sets them with {"set": 20}. multiplier sets how many points events give, like {"value": 2}. reset starts the goal again from 0. Answers with every timer and goal.
+
+| In the address | What it is |
+| --- | --- |
+| `goal` (required, in the path) | Goal id or name |
+| `command` (required, in the path) | points ({"add": n} or {"set": n}), multiplier ({"value": 2}) or reset |
+
+| Body field | Type | What it is |
+| --- | --- | --- |
+| `add` | number | For points: points to add, like 5. Negative takes points away. |
+| `set` | number | For points: the goal's points to set, like 20. |
+| `value` | number | For multiplier: how many points events give, like 2 for double. |
+
+**Answers:** `200` OK; `400` Invalid request (details lists each problem); `404` Not found; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"add":5}' \
+  "http://127.0.0.1:7475/api/v1/goals/{goal}/pause"
+```
+
 ## Import/export
 
 ### POST /import/preview
@@ -923,7 +993,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 ### GET /events
 
-Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends. Add ?types=twitch.* for only some. At most 16 at once.
+Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends and dashboard.changed (with the new revision) when something GET /dashboard shows has changed. Add ?types=twitch.* for only some. At most 16 at once.
 
 | In the address | What it is |
 | --- | --- |
