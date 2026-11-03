@@ -39,7 +39,7 @@ public sealed class HttpApiServer : IAsyncDisposable
     {
         _settings = settings;
         _requests = requests;
-        _decks = decks is null ? null : new DeckRoutes(decks);
+        _decks = decks is null ? null : new DeckRoutes(decks, () => settings().Http.DeckToken);
     }
 
     public int Port => _listener?.Port ?? 0;

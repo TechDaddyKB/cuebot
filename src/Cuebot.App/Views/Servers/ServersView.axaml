@@ -214,6 +214,30 @@
             </Grid>
             <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                        Text="Treat the token like a password: anyone who has it can change and run your actions. Press Regenerate if it ever leaks. Your Twitch, YouTube and other platform logins are never available through the API." />
+
+            <TextBlock Text="Pair a phone" FontWeight="SemiBold" Margin="0,8,0,0" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Scan this code with the Cuebot Companion app on your iPhone or iPad (or the phone's Camera) to use your decks and see the dashboard. The phone must be on the same network as this computer." />
+            <CheckBox Content="Show pairing code" IsChecked="{Binding ShowPairing}"
+                      ToolTip.Tip="The code holds your API token, like a password. Keep it hidden while you stream." />
+            <StackPanel Spacing="8" IsVisible="{Binding ShowPairing}">
+              <TextBlock Classes="warning" TextWrapping="Wrap" Text="{Binding PairingProblems}"
+                         IsVisible="{Binding PairingProblems, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <Grid ColumnDefinitions="140,*,8,Auto">
+                <TextBlock Text="Address" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding PairingHosts}" SelectedItem="{Binding SelectedPairingHost}" HorizontalAlignment="Stretch"
+                          ToolTip.Tip="The address the phone connects to. Pick the one of your home network (usually 192.168...)." />
+                <Button Grid.Column="3" Content="Refresh" Command="{Binding RefreshPairingCodeCommand}"
+                        ToolTip.Tip="Checks the settings and this computer's network addresses again." />
+              </Grid>
+              <Border Background="White" Padding="8" HorizontalAlignment="Left" CornerRadius="6" IsVisible="{Binding PairingQr, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Image Source="{Binding PairingQr}" Width="256" Height="256" RenderOptions.BitmapInterpolationMode="None" />
+              </Border>
+              <Button Content="New deck token" Command="{Binding RegenerateDeckTokenCommand}"
+                      ToolTip.Tip="Makes a new token for decks on other devices and cancels the old one. Paired phones and deck links on other devices must be set up again." />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Decks on this computer (OBS docks, your browser) never need a token. Other devices need the deck token, which the code and the deck links include." />
+            </StackPanel>
           </StackPanel>
         </Border>
 

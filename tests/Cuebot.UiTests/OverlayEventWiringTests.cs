@@ -66,8 +66,10 @@ public sealed class OverlayEventWiringTests : IAsyncDisposable
     }
 
     [Fact]
-    public void An_emulated_Twitch_gift_bomb_also_sends_the_gift_total_like_Twitch()
+    public void An_emulated_Twitch_gift_bomb_also_sends_the_gift_total_and_the_recipients_like_Twitch()
     {
+        _host.Get<OverlayEventBridge>();
+        var session = _host.Get<Cuebot.Core.Overlays.Session.SessionDataStore>();
         var hub = _host.Get<Cuebot.Core.Chat.ChatHub>();
         var bomb = OverlayEmulator.Create("twitch", "gift", new Random(1))!;
         var bus = _host.Get<EventBus>();
@@ -79,7 +81,10 @@ public sealed class OverlayEventWiringTests : IAsyncDisposable
         var item = Assert.Single(hub.RecentFeed());
         Assert.Equal(Cuebot.Core.Chat.SpendUnit.GiftSubscription, item.Spend!.Unit);
         Assert.Equal(5, item.Spend.Quantity);
-        Assert.Equal(bomb.Args["user"], item.User);
+        Assert.Equal(bomb.Args["user"], item.User);   // one feed item: the recipients' sub gifts are not repeated there
+        var data = session.Snapshot();
+        Assert.Equal(5, data["subscriber-session"]!["count"]!.GetValue<long>());
+        Assert.Equal(5, data["subscriber-gifted-session"]!["count"]!.GetValue<long>());
         Assert.Empty(OverlayEmulator.Companions(OverlayEmulator.Create("twitch", "cheer")!));
     }
 

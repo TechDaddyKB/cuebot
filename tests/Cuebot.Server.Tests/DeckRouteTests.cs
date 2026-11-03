@@ -52,6 +52,17 @@ public sealed class DeckRouteTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task With_a_deck_token_this_computer_still_needs_none_and_the_page_passes_it_on()
+    {
+        _settings.Http.DeckToken = "cb_test-deck-token";
+
+        Assert.Equal(HttpStatusCode.OK, (await _http.GetAsync($"/deck/{_deck.Id}/state")).StatusCode);
+        var page = await _http.GetStringAsync($"/deck/{_deck.Id}?token=cb_test-deck-token");
+        Assert.Contains("URLSearchParams(location.search).get(\"token\")", page);
+        Assert.Contains("base + \"/events\" + query", page);
+    }
+
+    [Fact]
     public async Task Index_and_page_are_served_with_the_deck_id()
     {
         var index = await _http.GetStringAsync("/deck");

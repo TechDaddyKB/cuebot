@@ -184,7 +184,8 @@ Each item comes with tests in Cuebot.Server.Tests, its entry in `OpenApiDocument
    - A new optional `DeckToken` setting. When it is set, `/deck/{id}/state|events|press|page` require either the header `X-Cuebot-Deck-Token` or the query parameter `?token=` (server-sent events can't send headers in browsers).
    - The deck page and the deck links Cuebot shows include the token automatically.
    - When the streamer turns on Allow LAN, Cuebot creates a deck token and turns this on by default.
-   - Existing loopback-only setups keep working as they are.
+   - Existing loopback-only setups keep working as they are, and requests from the same computer (OBS docks, a simulator on the PC) never need the token.
+   - Done 2026-11-03 together with item 5: the pairing link builder is `PairingLink`, and the Servers page shows the QR on request, lists what still blocks a phone (API/HTTP off, LAN off, 127.0.0.1 addresses), and has "New deck token".
 5. **Pairing.** Settings → API gets a "Pair a phone" section with the QR code from section 3 (rendered in-app by a small QR library or our own encoder), a host picker, and a "Rotate token" button.
 6. **Bonjour advertising.**
    - On Linux it uses Avahi through the existing DBus connection, on macOS `dns-sd` (or a managed mDNS responder), and on Windows the built-in DNS-SD APIs.

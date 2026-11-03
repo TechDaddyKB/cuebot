@@ -90,6 +90,14 @@ public sealed class HttpServerSettings
     public string Address { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 7474;
 
+    /// <summary>
+    /// When set, Cuebot Decks (<c>/deck</c>) answer other devices only with this token, sent as the
+    /// <c>X-Cuebot-Deck-Token</c> header or <c>?token=</c>. Pages on this computer (OBS docks) need none. Made when
+    /// "Allow LAN" is turned on, so anyone on the network cannot press deck buttons.
+    /// </summary>
+    [Secret]
+    public string DeckToken { get; set; } = "";
+
     /// <summary>Folders (or single files) served at URL paths, e.g. "/overlays" → "C:\Overlays".</summary>
     public List<HttpMapping> Mappings { get; set; } = [];
 }

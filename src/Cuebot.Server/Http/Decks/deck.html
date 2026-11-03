@@ -37,6 +37,9 @@
 (() => {
   const deckId = /*CUEBOT_DECK*/"";
   const base = "/deck/" + deckId;
+  // The deck token from the page's own address (?token=...), passed on to every request; empty on this computer.
+  const token = new URLSearchParams(location.search).get("token") || "";
+  const query = token ? "?token=" + encodeURIComponent(token) : "";
   const grid = document.getElementById("grid");
   const status = document.getElementById("status");
 
@@ -91,7 +94,7 @@
   }
 
   function post(path, body) {
-    return fetch(base + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    return fetch(base + path + query, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
 
   function press(id, el) {
@@ -114,13 +117,13 @@
   document.getElementById("next").addEventListener("click", () => post("/page", { delta: 1 }));
 
   function connect() {
-    const events = new EventSource(base + "/events");
+    const events = new EventSource(base + "/events" + query);
     events.addEventListener("open", () => status.textContent = "");
     events.addEventListener("state", e => render(JSON.parse(e.data)));
     events.addEventListener("notify", e => { const n = JSON.parse(e.data); toast(n.title, n.description); });
     events.addEventListener("error", () => status.textContent = "reconnecting...");
   }
-  fetch(base + "/state").then(r => r.ok ? r.json() : Promise.reject()).then(render).catch(() => status.textContent = "deck not found");
+  fetch(base + "/state" + query).then(r => r.ok ? r.json() : Promise.reject()).then(render).catch(() => status.textContent = "deck not found");
   connect();
 })();
 </script>
