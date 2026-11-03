@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "CuebotCompanion"
-include(":core")
+include(":core", ":app")

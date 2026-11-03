@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only the window before Compose draws: Cuebot's ground colour, so starting up doesn't flash white. -->
+    <style name="Theme.Cuebot" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/cuebot_ground</item>
+    </style>
+    <color name="cuebot_ground">#F2F2F7</color>
+</resources>

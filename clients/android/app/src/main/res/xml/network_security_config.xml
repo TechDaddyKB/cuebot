@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cuebot serves its REST API and deck over plain HTTP on the local network (it has no certificate a phone could
+    trust), so the app must be allowed cleartext traffic. Android cannot limit cleartext to private addresses
+    (domain-config takes host names, not IP ranges, and the computer's address is whatever the user's LAN hands out),
+    so it is allowed in base-config. The only other host the app talks to is api.iconify.design for deck icons,
+    which is HTTPS and keeps requiring it below.
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration" />
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">api.iconify.design</domain>
+    </domain-config>
+</network-security-config>
