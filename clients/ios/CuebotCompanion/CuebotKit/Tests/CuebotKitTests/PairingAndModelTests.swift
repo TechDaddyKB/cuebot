@@ -107,6 +107,22 @@ struct ModelTests {
         #expect(ServerEvent(type: "x.y", data: "not json").apiEvent.type == "x.y")
     }
 
+    @Test func streamTotalsComeFromTheSessionEntries() {
+        let totals: [String: JSONValue] = [
+            "cheer-session": ["count": .number(2), "amount": .number(600)],
+            "cheer-latest": ["name": .string("ann"), "amount": .number(500)],
+            "subscriber-session": ["count": .number(3), "amount": .number(0)],
+            "subscriber-new-session": ["count": .number(1)],
+            "follower-session": ["count": .number(7)],
+            "charityCampaignDonation-session": ["count": .number(1), "amount": .number(25)],
+        ]
+        let rows = StreamTotals.rows(totals)
+        #expect(rows.map(\.label) == ["Follows", "Subs", "Bits", "Charity campaign donation"])
+        #expect(rows.map(\.value) == ["7", "3", "600", "25"])
+        #expect(rows[2].detail == "2 cheers")
+        #expect(StreamTotals.rows([:]).isEmpty)
+    }
+
     @Test func timersFormatLikeCuebot() {
         #expect(SubathonTimer.format(3540.9) == "0:59:00")
         #expect(SubathonTimer.format(90_061) == "1:01:01:01")

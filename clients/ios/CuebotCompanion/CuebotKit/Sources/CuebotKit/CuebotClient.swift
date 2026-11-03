@@ -48,29 +48,37 @@ public actor CuebotClient {
 
     public enum SubathonCommand: String, Sendable { case start, pause, resume, toggle, reset }
 
-    public func subathon(_ timer: String, _ command: SubathonCommand) async throws(CuebotError) {
-        try await send(api("/api/v1/subathon/\(escaped(timer))/\(command.rawValue)"), method: "POST")
+    // The subathon and goal controls answer with the whole {timers, goals}, so the app can show the result at once.
+
+    @discardableResult
+    public func subathon(_ timer: String, _ command: SubathonCommand) async throws(CuebotError) -> SubathonState {
+        try await post(api("/api/v1/subathon/\(escaped(timer))/\(command.rawValue)"))
     }
 
     /// Adds `add` seconds (negative takes time off) or sets the time left to `set` seconds.
-    public func subathonTime(_ timer: String, add: Double? = nil, set: Double? = nil) async throws(CuebotError) {
-        try await send(api("/api/v1/subathon/\(escaped(timer))/time"), method: "POST", body: Self.addOrSet(add, set))
+    @discardableResult
+    public func subathonTime(_ timer: String, add: Double? = nil, set: Double? = nil) async throws(CuebotError) -> SubathonState {
+        try await post(api("/api/v1/subathon/\(escaped(timer))/time"), body: Self.addOrSet(add, set))
     }
 
-    public func subathonMultiplier(_ timer: String, _ value: Double) async throws(CuebotError) {
-        try await send(api("/api/v1/subathon/\(escaped(timer))/multiplier"), method: "POST", body: ["value": .number(value)])
+    @discardableResult
+    public func subathonMultiplier(_ timer: String, _ value: Double) async throws(CuebotError) -> SubathonState {
+        try await post(api("/api/v1/subathon/\(escaped(timer))/multiplier"), body: ["value": .number(value)])
     }
 
-    public func goalPoints(_ goal: String, add: Double? = nil, set: Double? = nil) async throws(CuebotError) {
-        try await send(api("/api/v1/goals/\(escaped(goal))/points"), method: "POST", body: Self.addOrSet(add, set))
+    @discardableResult
+    public func goalPoints(_ goal: String, add: Double? = nil, set: Double? = nil) async throws(CuebotError) -> SubathonState {
+        try await post(api("/api/v1/goals/\(escaped(goal))/points"), body: Self.addOrSet(add, set))
     }
 
-    public func goalMultiplier(_ goal: String, _ value: Double) async throws(CuebotError) {
-        try await send(api("/api/v1/goals/\(escaped(goal))/multiplier"), method: "POST", body: ["value": .number(value)])
+    @discardableResult
+    public func goalMultiplier(_ goal: String, _ value: Double) async throws(CuebotError) -> SubathonState {
+        try await post(api("/api/v1/goals/\(escaped(goal))/multiplier"), body: ["value": .number(value)])
     }
 
-    public func goalReset(_ goal: String) async throws(CuebotError) {
-        try await send(api("/api/v1/goals/\(escaped(goal))/reset"), method: "POST")
+    @discardableResult
+    public func goalReset(_ goal: String) async throws(CuebotError) -> SubathonState {
+        try await post(api("/api/v1/goals/\(escaped(goal))/reset"))
     }
 
     // MARK: Decks (HTTP server)
@@ -129,9 +137,12 @@ public actor CuebotClient {
         return request
     }
 
+    /// A deck route. With a deck token: the `X-Cuebot-Deck-Token` header on every request, and also `?token=` on the
+    /// events stream (Cuebot accepts either; the query form is what browsers use for server-sent events).
     static func deckRequest(_ endpoint: CuebotEndpoint, _ deck: String, _ route: String) -> URLRequest {
         var components = URLComponents(url: endpoint.httpBase, resolvingAgainstBaseURL: false)!
         components.percentEncodedPath = "/deck/\(escaped(deck))/\(route)"
+        if route == "events", let token = endpoint.deckToken, !token.isEmpty { components.queryItems = [URLQueryItem(name: "token", value: token)] }
         var request = URLRequest(url: components.url!, timeoutInterval: 10)
         if let token = endpoint.deckToken, !token.isEmpty { request.setValue(token, forHTTPHeaderField: "X-Cuebot-Deck-Token") }
         return request
@@ -161,14 +172,25 @@ public actor CuebotClient {
         catch { throw .invalidResponse(String(describing: error)) }
     }
 
-    private func send(_ request: URLRequest, method: String, body: [String: JSONValue]? = nil) async throws(CuebotError) {
+    /// A POST whose answer is decoded (an empty answer decodes from `{}`, so tolerant models still work).
+    private func post<T: Decodable>(_ request: URLRequest, body: [String: JSONValue]? = nil) async throws(CuebotError) -> T {
+        let data = try await perform(prepare(request, method: "POST", body: body))
+        do { return try decoder.decode(T.self, from: data.isEmpty ? Data("{}".utf8) : data) }
+        catch { throw .invalidResponse(String(describing: error)) }
+    }
+
+    private func prepare(_ request: URLRequest, method: String, body: [String: JSONValue]?) -> URLRequest {
         var request = request
         request.httpMethod = method
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try? JSONEncoder().encode(body)
         }
-        _ = try await perform(request)
+        return request
+    }
+
+    private func send(_ request: URLRequest, method: String, body: [String: JSONValue]? = nil) async throws(CuebotError) {
+        _ = try await perform(prepare(request, method: method, body: body))
     }
 
     private func perform(_ request: URLRequest) async throws(CuebotError) -> Data {

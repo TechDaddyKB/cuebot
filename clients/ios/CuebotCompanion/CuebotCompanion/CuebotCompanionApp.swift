@@ -6,6 +6,8 @@ struct CuebotCompanionApp: App {
     @State private var paired: PairedCuebots
     @State private var connection: ConnectionStore
     @State private var deck = DeckStore()
+    @State private var dashboard = DashboardStore()
+    @State private var quickActions = QuickActionsStore()
     @State private var pairingError: String?
 
     init() {
@@ -21,6 +23,8 @@ struct CuebotCompanionApp: App {
                 .environment(paired)
                 .environment(connection)
                 .environment(deck)
+                .environment(dashboard)
+                .environment(quickActions)
                 .onOpenURL { url in
                     do {
                         paired.pair(try PairingLink.parse(url.absoluteString))
@@ -37,8 +41,20 @@ struct CuebotCompanionApp: App {
     }
 }
 
-/// Launch arguments the UI tests use: `-resetPairing` starts with nothing paired; `-pair <link>` pairs first.
+/// Launch arguments the UI tests use: `-resetPairing` starts with nothing paired; `-pair <link>` pairs first;
+/// `-tab deck|dashboard|settings` opens that tab.
 enum UITestSupport {
+    static var initialTab: RootView.Tab? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let index = args.firstIndex(of: "-tab"), index + 1 < args.count else { return nil }
+        return switch args[index + 1] {
+        case "dashboard": .dashboard
+        case "settings": .settings
+        case "deck": .deck
+        default: nil
+        }
+    }
+
     @MainActor static func applyLaunchArguments(to paired: PairedCuebots) {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("-resetPairing") { for entry in paired.all { paired.remove(entry.id) } }

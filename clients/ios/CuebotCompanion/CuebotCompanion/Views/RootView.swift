@@ -5,8 +5,10 @@ struct RootView: View {
     @Environment(PairedCuebots.self) private var paired
     @Environment(ConnectionStore.self) private var connection
     @Environment(DeckStore.self) private var deck
+    @Environment(DashboardStore.self) private var dashboard
+    @Environment(QuickActionsStore.self) private var quickActions
     @Environment(\.scenePhase) private var scenePhase
-    @State private var tab = Tab.deck
+    @State private var tab = UITestSupport.initialTab ?? .deck
 
     enum Tab: Hashable { case deck, dashboard, settings }
 
@@ -24,15 +26,20 @@ struct RootView: View {
         }
         .task(id: paired.revision) {
             await connection.connect()
-            await deck.load(client: connection.client)
+            quickActions.load(cuebotId: paired.activeId, client: connection.client)
+            async let decks: Void = deck.load(client: connection.client)
+            async let board: Void = dashboard.load(client: connection.client)
+            _ = await (decks, board)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
                 deck.resume()
+                dashboard.resume()
                 Task { await connection.check() }
             case .background:
                 deck.stop()   // no background networking in v1
+                dashboard.stop()
             default:
                 break
             }

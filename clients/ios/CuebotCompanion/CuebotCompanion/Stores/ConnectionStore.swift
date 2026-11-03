@@ -49,6 +49,7 @@ final class ConnectionStore {
         } catch .unauthorized {
             state = .unauthorized
         } catch {
+            if Task.isCancelled { return }   // a newer check is on its way
             state = .unreachable(Self.describe(error))
         }
     }

@@ -48,6 +48,7 @@ final class DeckStore {
             decks = try await client.decks().filter(\.enabled)
             decksError = decks.isEmpty ? "Cuebot has no enabled decks. Make one in Cuebot under Input > Decks." : nil
         } catch {
+            if Task.isCancelled { return }   // a newer load is on its way
             decks = []
             decksError = ConnectionStore.describe(error)
         }

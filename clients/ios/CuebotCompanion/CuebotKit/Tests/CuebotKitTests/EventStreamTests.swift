@@ -105,7 +105,7 @@ struct EventStreamTests {
 
     @Test func deckEventsCarryStateAndNotify() async throws {
         let server = try StubEventServer { _, request in
-            request.head.hasPrefix("GET /deck/d1/events ")
+            request.head.hasPrefix("GET /deck/d1/events?token=dk ")
                 ? StubEventServer.sse("event: state\ndata: {\"id\":\"d1\",\"rows\":2,\"columns\":3,\"items\":[]}\n\n: keep-alive\n\nevent: notify\ndata: {\"title\":\"Hi\",\"description\":\"there\"}\n\n")
                 : StubEventServer.status(404)
         }

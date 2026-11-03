@@ -85,12 +85,16 @@ struct ClientTests {
 
     @Test func controlsPostTheDocumentedBodies() async throws {
         let host = "controls.test"
-        let client = client(host) { _ in .init(status: 204) }
+        let client = client(host) { request in
+            request.url?.path.hasPrefix("/api/v1/goals/") == true
+                ? .init(body: #"{"timers":[],"goals":[{"id":"g1","name":"Points","points":5,"steps":[]}]}"#)
+                : .init(status: 204)
+        }
         try await client.subathon("Main timer", .pause)
         try await client.subathonTime("t1", add: 60)
         try await client.subathonTime("t1", set: 3600)
         try await client.subathonMultiplier("t1", 2)
-        try await client.goalPoints("g1", add: 5)
+        #expect(try await client.goalPoints("g1", add: 5).goals.first?.points == 5)
         try await client.goalMultiplier("g1", 0.5)
         try await client.goalReset("g1")
         let requests = StubProtocol.requests(host: host)

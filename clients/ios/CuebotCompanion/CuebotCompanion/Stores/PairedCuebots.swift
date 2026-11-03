@@ -85,11 +85,11 @@ final class PairedCuebots {
     func learnInstanceId(_ instanceId: String, for id: String) {
         guard !instanceId.isEmpty, let index = all.firstIndex(where: { $0.id == id }), all[index].instanceId != instanceId else { return }
         all[index].instanceId = instanceId
-        save()
+        save(bumpRevision: false)   // the same Cuebot: nothing needs to reconnect
     }
 
-    private func save() {
-        revision += 1
+    private func save(bumpRevision: Bool = true) {
+        if bumpRevision { revision += 1 }
         defaults.set(try? JSONEncoder().encode(all), forKey: Self.listKey)
         defaults.set(activeId, forKey: Self.activeKey)
     }
