@@ -74,7 +74,7 @@ Get the latest build from the [releases page](https://github.com/TechDaddyKB/cue
 | Linux (x86-64) | `Cuebot-x86_64.AppImage` | `chmod +x Cuebot-x86_64.AppImage`, then run it. |
 | Linux (x86-64), Flatpak | `Cuebot-x86_64.flatpak` | `flatpak install --user Cuebot-x86_64.flatpak` |
 | Linux (x86-64 or ARM64) | `Cuebot-<version>-linux-<arch>.tar.gz` | Extract and run `Cuebot`. |
-| macOS 15+, Apple silicon or Intel (experimental) | `Cuebot-<version>-macos-<arm64\|x64>.dmg` | Drag Cuebot to Applications. |
+| macOS 15+, Apple silicon or Intel (experimental) | `Cuebot-macos-<arm64\|x64>.dmg` | Drag Cuebot to Applications. |
 
 Nothing else needs to be installed: each download includes everything it needs. The Mac build is new and not yet signed by Apple: macOS asks before the first start. Arch Linux packages (`cuebot`,
 `cuebot-bin`) will be on the AUR with the first stable release.

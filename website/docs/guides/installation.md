@@ -11,8 +11,8 @@ in testing, releases are marked **Pre-release**. Under **Assets**, pick the file
 | Linux (most people) | `Cuebot-x86_64.AppImage` |
 | Linux, with Flatpak | `Cuebot-x86_64.flatpak` |
 | Linux, ARM computer or if you prefer a plain folder | `Cuebot-<version>-linux-arm64.tar.gz` or `...-linux-x64.tar.gz` |
-| Mac with Apple silicon (M1 or newer) | `Cuebot-<version>-macos-arm64.dmg` |
-| Mac with an Intel chip | `Cuebot-<version>-macos-x64.dmg` |
+| Mac with Apple silicon (M1 or newer) | `Cuebot-macos-arm64.dmg` |
+| Mac with an Intel chip | `Cuebot-macos-x64.dmg` |
 
 !!! warning "Experimental"
     Cuebot for Mac is new. See [What's experimental](experimental.md).
@@ -40,7 +40,8 @@ You need macOS 15 (Sequoia) or newer. Not sure which chip your Mac has? Open the
 !!! note "\"Cuebot cannot be opened\" or \"Apple could not verify Cuebot\""
     macOS asks before the first start, because this Cuebot is not yet signed by Apple. Click **Done** (or
     **OK**), open **System Settings > Privacy & Security**, scroll down and click **Open Anyway** next to Cuebot. You
-    only do this once.
+    only do this once. (On older Macs, right-click **Cuebot** and choose **Open** instead; macOS 15 no longer offers
+    that shortcut.)
 
 When you turn on Voice Control, macOS asks whether Cuebot may use the microphone. Click **Allow**.
 

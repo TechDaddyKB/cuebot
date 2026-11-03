@@ -25,6 +25,9 @@ jobs:
       - name: Install Linux test dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y espeak-ng python3
+      - name: Install macOS test dependencies
+        if: runner.os == 'macOS'
+        run: brew install sdl3
       - run: dotnet build Cuebot.slnx -c Release
       # At most two test assemblies at once: running all of them in parallel starves the
       # runner's CPUs and makes the timing-based tests (sockets, reconnects, polling) flaky.
@@ -196,7 +199,7 @@ jobs:
           packaging/macos/build-app.sh "$version" osx-x64
       - name: Smoke test the Apple silicon app
         run: |
-          app=$(ls -d artifacts/Cuebot-*-macos-arm64/Cuebot.app)
+          app=artifacts/Cuebot-macos-arm64/Cuebot.app
           data="$RUNNER_TEMP/cuebot-data"
           "$app/Contents/MacOS/Cuebot" --headless --data "$data" > "$RUNNER_TEMP/cuebot.out" 2>&1 &
           pid=$!
@@ -212,7 +215,7 @@ jobs:
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-macos
-          path: artifacts/Cuebot-*-macos-*.dmg
+          path: artifacts/Cuebot-macos-*.dmg
 
   arch-package:
     needs: test

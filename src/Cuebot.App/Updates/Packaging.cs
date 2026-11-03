@@ -75,7 +75,7 @@ public static class PackagingDetector
         PackageKind.WindowsZip => "Cuebot-win-x64.zip",
         PackageKind.AppImage => "Cuebot-x86_64.AppImage",
         PackageKind.LinuxTarball => $"Cuebot-{version}-linux-{(arch == Architecture.Arm64 ? "arm64" : "x64")}.tar.gz",
-        PackageKind.MacApp => $"Cuebot-{version}-macos-{(arch == Architecture.Arm64 ? "arm64" : "x64")}.dmg",
+        PackageKind.MacApp => $"Cuebot-macos-{(arch == Architecture.Arm64 ? "arm64" : "x64")}.dmg",
         _ => null,
     };
 

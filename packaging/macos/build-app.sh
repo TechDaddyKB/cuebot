@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds artifacts/Cuebot-<version>-macos-<arch>.dmg holding a self-contained Cuebot.app.
+# Builds artifacts/Cuebot-macos-<arch>.dmg holding a self-contained Cuebot.app (named like Cuebot-win-x64.zip, without
+# the version, so the releases page always has the same file names).
 #   packaging/macos/build-app.sh <version> [osx-arm64|osx-x64]
 # Signs ad hoc by default (runs on the Mac that built it; elsewhere Gatekeeper asks first). With
 # CUEBOT_MACOS_SIGN_IDENTITY set to a "Developer ID Application: ..." identity it signs with the hardened runtime instead;
@@ -13,7 +14,7 @@ case "$rid" in
   osx-x64) arch=x64 ;;
   *) echo "Unknown runtime '$rid' (osx-arm64 or osx-x64)" >&2; exit 2 ;;
 esac
-name="Cuebot-$version-macos-$arch"
+name="Cuebot-macos-$arch"
 stage="$root/artifacts/$name"
 app="$stage/Cuebot.app"
 
