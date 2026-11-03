@@ -114,11 +114,14 @@ struct ModelTests {
             "subscriber-session": ["count": .number(3), "amount": .number(0)],
             "subscriber-new-session": ["count": .number(1)],
             "follower-session": ["count": .number(7)],
+            "raid-session": ["count": .number(2), "amount": .number(2)],
+            "raid-latest": ["name": .string("bob"), "amount": .number(75)],
             "charityCampaignDonation-session": ["count": .number(1), "amount": .number(25)],
         ]
         let rows = StreamTotals.rows(totals)
-        #expect(rows.map(\.label) == ["Follows", "Subs", "Bits", "Charity campaign donation"])
-        #expect(rows.map(\.value) == ["7", "3", "600", "25"])
+        #expect(rows.map(\.label) == ["Follows", "Subs", "Bits", "Raids", "Charity campaign donation"])
+        #expect(rows.map(\.value) == ["7", "3", "600", "2", "25"])
+        #expect(rows[3].detail == "last: 75 viewers")
         #expect(rows[2].detail == "2 cheers")
         #expect(StreamTotals.rows([:]).isEmpty)
     }

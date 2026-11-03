@@ -11,10 +11,13 @@ final class LaunchTests: XCTestCase {
         return inTabBar.exists ? inTabBar : app.buttons.matching(identifier: name).firstMatch
     }
 
+    /// CI simulators are slow: generous waits everywhere.
+    private let wait: TimeInterval = 30
+
     @MainActor
-    private func launchUnpaired() -> XCUIApplication {
+    private func launchUnpaired(tab: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-resetPairing"]
+        app.launchArguments = ["-resetPairing"] + (tab.map { ["-tab", $0] } ?? [])
         app.launch()
         return app
     }
@@ -22,22 +25,21 @@ final class LaunchTests: XCTestCase {
     @MainActor
     func testStartsUnpairedWithTheThreeTabs() {
         let app = launchUnpaired()
-        XCTAssertTrue(app.staticTexts["Pair with Cuebot"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Pair with Cuebot"].waitForExistence(timeout: wait))
         XCTAssertTrue(tab(app, "Deck").exists)
         XCTAssertTrue(tab(app, "Dashboard").exists)
         tab(app, "Settings").tap()
-        XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: wait))
     }
 
     @MainActor
     func testPairingByHandAddsTheCuebot() {
-        let app = launchUnpaired()
-        XCTAssertTrue(app.staticTexts["Pair with Cuebot"].waitForExistence(timeout: 10))
-        tab(app, "Settings").tap()
+        let app = launchUnpaired(tab: "settings")
+        XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: wait))
         app.buttons["pair-button"].tap()
-        if app.buttons["Enter the details instead"].waitForExistence(timeout: 2) { app.buttons["Enter the details instead"].tap() }
+        if app.buttons["Enter the details instead"].waitForExistence(timeout: 3) { app.buttons["Enter the details instead"].tap() }
         let host = app.textFields["pair-host"]
-        XCTAssertTrue(host.waitForExistence(timeout: 5))
+        XCTAssertTrue(host.waitForExistence(timeout: wait))
         host.tap()
         host.typeText("127.0.0.1")
         let token = app.secureTextFields["pair-token"]
@@ -45,6 +47,6 @@ final class LaunchTests: XCTestCase {
         token.typeText("test-token")
         app.buttons["pair-confirm"].tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "127.0.0.1:7475")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.waitForExistence(timeout: wait))
     }
 }

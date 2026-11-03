@@ -1,4 +1,5 @@
 import CuebotKit
+import PhotosUI
 import SwiftUI
 
 struct SettingsTab: View {
@@ -70,25 +71,19 @@ struct PairingView: View {
     @State private var name = ""
     @State private var error: String?
     @State private var scanning = QRScannerView.isAvailable
+    @State private var photo: PhotosPickerItem?
 
     var body: some View {
         NavigationStack {
             Form {
                 if scanning {
                     Section {
-                        QRScannerView { code in
-                            do {
-                                paired.pair(try PairingLink.parse(code))
-                                dismiss()
-                            } catch {
-                                self.error = Self.describe(error)
-                            }
-                        }
+                        QRScannerView { code in pair(code) }
                         .frame(height: 300)
                         .listRowInsets(EdgeInsets())
                         Button("Enter the details instead") { scanning = false }
                     } footer: {
-                        Text("In Cuebot on your computer: Settings → API → Pair a phone.")
+                        Text("In Cuebot on your computer: Servers page → REST API → Pair a phone.")
                     }
                 } else {
                     Section {
@@ -101,11 +96,36 @@ struct PairingView: View {
                         SecureField("Deck token (if Cuebot shows one)", text: $deckToken)
                         TextField("Name (optional)", text: $name)
                     } footer: {
-                        Text("Cuebot shows these under Settings → API. You can also paste a cuebot://pair link into the address field.")
+                        Text("Cuebot shows these on its Servers page, in the REST API card under \"Pair a phone\".")
                     }
                     if QRScannerView.isAvailable { Button("Scan the QR code instead") { scanning = true } }
                 }
-                if let error { Section { Text(error).foregroundStyle(.red) } }
+                Section {
+                    PhotosPicker(selection: $photo, matching: .images) {
+                        Label("Choose a photo of the code", systemImage: "photo")
+                    }
+                    .accessibilityIdentifier("pair-photo")
+                    Button { pasteLink() } label: { Label("Paste a pairing link", systemImage: "doc.on.clipboard") }
+                        .accessibilityIdentifier("pair-paste")
+                } footer: {
+                    Text("A screenshot of the code works too, for example one sent from the computer.")
+                }
+                if let error { Section { Text(error).foregroundStyle(.red).accessibilityIdentifier("pair-error") } }
+            }
+            .onChange(of: photo) { _, item in
+                guard let item else { return }
+                Task {
+                    defer { photo = nil }
+                    guard let data = try? await item.loadTransferable(type: Data.self) else {
+                        error = "That photo could not be opened."
+                        return
+                    }
+                    guard let code = QRImageReader.codes(in: data).first else {
+                        error = "No QR code was found in that photo."
+                        return
+                    }
+                    pair(code)
+                }
             }
             .navigationTitle("Pair a Cuebot")
             .navigationBarTitleDisplayMode(.inline)
@@ -122,15 +142,28 @@ struct PairingView: View {
         }
     }
 
+    private func pair(_ link: String) {
+        do {
+            paired.pair(try PairingLink.parse(link))
+            dismiss()
+        } catch {
+            self.error = Self.describe(error)
+        }
+    }
+
+    private func pasteLink() {
+        let board = UIPasteboard.general
+        guard let text = board.url?.absoluteString ?? board.string, !text.isEmpty else {
+            error = "There is no link on the clipboard. Copy the cuebot://pair link from Cuebot first."
+            return
+        }
+        pair(text.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
     private func pairManually() {
         let text = host.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.lowercased().hasPrefix("cuebot://") {
-            do {
-                paired.pair(try PairingLink.parse(text))
-                dismiss()
-            } catch {
-                self.error = Self.describe(error)
-            }
+            pair(text)
             return
         }
         guard let api = Int(apiPort), let http = Int(httpPort), (1...65535).contains(api), (1...65535).contains(http) else {
