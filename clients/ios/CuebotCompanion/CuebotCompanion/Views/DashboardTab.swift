@@ -208,6 +208,7 @@ extension SubathonTimer.State {
         case .running: "Running"
         case .paused: "Paused"
         case .stopped: "Stopped"
+        case .ended: "Ended"
         case .unknown: "Unknown"
         }
     }

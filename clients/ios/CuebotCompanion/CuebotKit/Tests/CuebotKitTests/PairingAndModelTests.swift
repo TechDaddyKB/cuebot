@@ -67,7 +67,8 @@ struct ModelTests {
           "subathon": {
             "timers": [ { "id": "t1", "name": "Main", "state": "running", "remaining": 3540.5, "endsAt": 1762130000000,
                           "elapsed": 60, "added": 3590.0, "multiplier": 2.0 },
-                        { "id": "t2", "name": "Side", "state": "paused", "remaining": 75.9, "endsAt": null } ],
+                        { "id": "t2", "name": "Side", "state": "paused", "remaining": 75.9, "endsAt": null },
+                        { "id": "t3", "name": "Done", "state": "ended", "remaining": 0 } ],
             "goals": [ { "id": "g1", "name": "Points", "points": 12, "multiplier": 1.0,
                          "steps": [ { "name": "Emote", "points": 10, "reached": true }, { "name": "Second", "points": 20 } ],
                          "next": { "name": "Second", "points": 20 }, "previous": { } } ] },
@@ -85,6 +86,7 @@ struct ModelTests {
         #expect(main.remaining(at: Date(timeIntervalSince1970: 1_762_130_000 - 90)) == 90)
         #expect(main.remaining(at: Date(timeIntervalSince1970: 1_762_130_100)) == 0)
         #expect(dashboard.subathon.timers[1].remaining(at: .now) == 75.9)
+        #expect(dashboard.subathon.timers[2].state == .ended)
         let goal = dashboard.subathon.goals[0]
         #expect(goal.next?.name == "Second" && goal.previous == nil)
         #expect(abs(goal.progressToNext - 0.2) < 1e-9)

@@ -47,7 +47,8 @@ public struct SubathonState: Codable, Hashable, Sendable {
 
 public struct SubathonTimer: Codable, Hashable, Sendable, Identifiable {
     public enum State: String, Codable, Hashable, Sendable {
-        case running, paused, stopped, unknown
+        /// Cuebot's TimerState: Stopped, Running, Paused, or Ended once it ran out (Start restarts it).
+        case running, paused, stopped, ended, unknown
 
         public init(from decoder: Decoder) throws {
             self = State(rawValue: ((try? decoder.singleValueContainer().decode(String.self)) ?? "").lowercased()) ?? .unknown
