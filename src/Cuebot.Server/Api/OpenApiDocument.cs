@@ -226,6 +226,34 @@ public static class OpenApiDocument
                 ["post"] = Op("sendChat", "Chat", "Send a chat message (platform: Twitch, YouTube, Kick... or All)", body: Obj(("message", Str()), ("platform", Str())),
                     responses: Responses(("200", "Sent", Obj(("sent", Bool()), ("platforms", Arr(Str())))), Bad(), Err("409", "No platform could send"))),
             },
+            ["/dashboard"] = new JsonObject
+            {
+                ["get"] = Op("getDashboard", "Companion", "One snapshot for companion apps: connections, stream totals, subathon timers and goals, top spenders and the latest activity",
+                    responses: Ok(Obj(("instanceId", Str()), ("version", Str()), ("revision", Int()), ("connections", Arr(new JsonObject { ["type"] = "object" })),
+                        ("totals", new JsonObject { ["type"] = "object" }), ("subathon", Obj(("timers", Arr(new JsonObject { ["type"] = "object" })), ("goals", Arr(new JsonObject { ["type"] = "object" })))),
+                        ("topSpenders", new JsonObject { ["type"] = "object" }), ("feed", Arr(new JsonObject { ["type"] = "object" }))))),
+            },
+            ["/decks"] = new JsonObject
+            {
+                ["get"] = Op("listDecks", "Companion", "Your Cuebot Decks with their grid size and page count (the decks themselves are on the HTTP server at /deck/{id})",
+                    responses: Ok(Obj(("decks", Arr(Obj(("id", Str()), ("name", Str()), ("enabled", Bool()), ("rows", Int()), ("columns", Int()), ("pageCount", Int()))))))),
+            },
+            ["/subathon/{timer}/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("timer", "Timer id or name"),
+                    PathParam("command", "start, pause, resume, toggle, reset, time ({\"add\": seconds} or {\"set\": seconds}) or multiplier ({\"value\": 2})")),
+                ["post"] = Op("controlSubathon", "Companion", "Control a subathon timer; answers with every timer and goal",
+                    body: Obj(("add", Num()), ("set", Num()), ("value", Num())),
+                    responses: Responses(("200", "OK", Obj(("timers", Arr(new JsonObject { ["type"] = "object" })), ("goals", Arr(new JsonObject { ["type"] = "object" })))), Bad(), NotFound())),
+            },
+            ["/goals/{goal}/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(PathParam("goal", "Goal id or name"),
+                    PathParam("command", "points ({\"add\": n} or {\"set\": n}), multiplier ({\"value\": 2}) or reset")),
+                ["post"] = Op("controlGoal", "Companion", "Change a points goal; answers with every timer and goal",
+                    body: Obj(("add", Num()), ("set", Num()), ("value", Num())),
+                    responses: Responses(("200", "OK", Obj(("timers", Arr(new JsonObject { ["type"] = "object" })), ("goals", Arr(new JsonObject { ["type"] = "object" })))), Bad(), NotFound())),
+            },
             ["/import/preview"] = new JsonObject
             {
                 ["post"] = Op("previewImport", "Import/export", "What an import would add or overwrite; changes nothing", body: Obj(("data", Str())),

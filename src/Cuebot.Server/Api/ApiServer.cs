@@ -299,6 +299,14 @@ public sealed class ApiServer : IAsyncDisposable
             case "alerts" when s.Length == 2 && method == "POST": result = ops.AlertControl(s[1]); break;
 
             case "chat" when s.Length == 1 && method == "GET": result = ops.Chat(QInt("limit", 50)); break;
+            case "dashboard" when s.Length == 1 && method == "GET": result = ops.Dashboard(); break;
+            case "decks" when s.Length == 1 && method == "GET": result = ops.Decks(); break;
+            case "subathon" when s.Length == 3 && method == "POST":
+                result = ops.SubathonCommand(s[1], s[2].ToLowerInvariant(), await BodyAsync(context).ConfigureAwait(false) as JsonObject);
+                break;
+            case "goals" when s.Length == 3 && method == "POST":
+                result = ops.GoalCommand(s[1], s[2].ToLowerInvariant(), await BodyAsync(context).ConfigureAwait(false) as JsonObject);
+                break;
             case "chat" when s.Length == 1 && method == "POST":
             {
                 var body = await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? [];
@@ -338,7 +346,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events", "dashboard", "decks", "subathon", "goals"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);
@@ -436,8 +444,11 @@ public sealed class ApiServer : IAsyncDisposable
             ["error"] = r.Error,
         });
 
+        void OnDashboard(long revision) => Push("dashboard.changed", DateTimeOffset.Now, new JsonObject { ["revision"] = revision });
+
         var subscription = _services.Bus.Subscribe(OnEvent);
         _services.Engine.RunCompleted += OnRun;
+        Operations.DashboardChanges.Changed += OnDashboard;
         try
         {
             context.Response.StatusCode = 200;
@@ -470,6 +481,7 @@ public sealed class ApiServer : IAsyncDisposable
         {
             subscription.Dispose();
             _services.Engine.RunCompleted -= OnRun;
+            Operations.DashboardChanges.Changed -= OnDashboard;
             Interlocked.Decrement(ref _eventStreams);
         }
     }

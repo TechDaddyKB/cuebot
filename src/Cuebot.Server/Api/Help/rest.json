@@ -318,6 +318,24 @@
         "platform": "All"
       }
     },
+    "GET /dashboard": {
+      "description": "Everything a companion app's dashboard shows, in one answer: which platforms are connected, this stream's totals, your subathon timers and points goals, your top spenders, and the latest 50 activity items (newest first). revision goes up whenever any of it changes; GET /events sends dashboard.changed with the new revision, so an app only fetches this again when it needs to."
+    },
+    "GET /decks": {
+      "description": "Lists your Cuebot Decks with their id, name, whether they are on, their grid size and how many pages they have. The decks themselves (their buttons, presses and live updates) are on the HTTP server at /deck/{id}."
+    },
+    "POST /subathon/{timer}/{command}": {
+      "description": "Controls one subathon timer, by id or name. start, pause, resume, toggle and reset need no body. time adds or takes away time with {\"add\": 300} (seconds, negative to take away) or sets the time left with {\"set\": 3600}. multiplier sets how much time events add, like {\"value\": 0.5} when too much is coming in. Answers with every timer and goal.",
+      "example": {
+        "add": 300
+      }
+    },
+    "POST /goals/{goal}/{command}": {
+      "description": "Changes one points goal, by id or name. points adds points with {\"add\": 5} or sets them with {\"set\": 20}. multiplier sets how many points events give, like {\"value\": 2}. reset starts the goal again from 0. Answers with every timer and goal.",
+      "example": {
+        "add": 5
+      }
+    },
     "POST /import/preview": {
       "description": "Shows what an import would add or change, without changing anything. Send the import text in data: a Cuebot share text (starts with CUEBOT1:) or a Streamer.bot export.",
       "example": {
@@ -343,7 +361,7 @@
       "description": "Makes a share text (starts with CUEBOT1:) for the things you name, like ?actions=Say%20hello,Raid%20alert. Others can paste it into their import. Things they need, like queues and other actions, come along unless includeDependencies=false."
     },
     "GET /events": {
-      "description": "Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends. Add ?types=twitch.* for only some. At most 16 at once."
+      "description": "Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends and dashboard.changed (with the new revision) when something GET /dashboard shows has changed. Add ?types=twitch.* for only some. At most 16 at once."
     }
   },
   "fields": {
@@ -531,6 +549,12 @@
     "Command.allowedUsers": "Viewer names or ids that may always use the command, even without the minimum role.",
     "Command.allowedGroups": "Viewer groups whose members may always use the command, even without the minimum role.",
     "Command.deniedUsers": "Viewer names or ids that may never use the command. You, the broadcaster, always can.",
-    "Command.deniedGroups": "Viewer groups whose members may never use the command."
+    "Command.deniedGroups": "Viewer groups whose members may never use the command.",
+    "POST /subathon/{timer}/{command}.add": "For time: seconds to add, like 300. Negative takes time away.",
+    "POST /subathon/{timer}/{command}.set": "For time: the time left to set, in seconds, like 3600.",
+    "POST /subathon/{timer}/{command}.value": "For multiplier: how much time events add, like 0.5 for half or 2 for double.",
+    "POST /goals/{goal}/{command}.add": "For points: points to add, like 5. Negative takes points away.",
+    "POST /goals/{goal}/{command}.set": "For points: the goal's points to set, like 20.",
+    "POST /goals/{goal}/{command}.value": "For multiplier: how many points events give, like 2 for double."
   }
 }

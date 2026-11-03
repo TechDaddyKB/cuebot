@@ -352,7 +352,7 @@ public sealed class SubathonScriptFunctions(SubathonService s) : IScriptFunction
 /// [{name, points, reached}], next: {name, points} | null, previous (the last reached step's points)}]}</c>.
 /// Pages count a running timer down themselves from <c>endsAt</c>.
 /// </summary>
-internal sealed class SubathonSessionData : ISessionDataSource
+public sealed class SubathonSessionData : ISessionDataSource
 {
     public const string Key = "cuebot-subathon";
     private readonly SubathonService _service;

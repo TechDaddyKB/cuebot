@@ -114,8 +114,9 @@ When Allow LAN is on, Cuebot advertises a Bonjour service `_cuebot._tcp` on the 
 ```
 id: <n>
 event: <event type, e.g. twitch.cheer>
-data: <JSON args>
+data: {"type": "<event type>", "time": "<ISO-8601>", "args": { … }}
 ```
+`dashboard.changed` arrives as `{"type": "dashboard.changed", "time": "…", "args": {"revision": 42}}`.
 A limit on the number of open streams answers HTTP 429. The app keeps a single stream open per paired Cuebot.
 
 **`GET /deck/{id}/state`** returns the deck view:
