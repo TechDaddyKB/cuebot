@@ -229,10 +229,22 @@ public struct TopSpenders: Codable, Hashable, Sendable {
 
 /// One line of the activity feed.
 public struct FeedItem: Codable, Hashable, Sendable {
-    public var platform = "", kind = "", user = "", title = "", message = "", amount = "", time = ""
+    public var platform = "", kind = "", user = "", title = "", detail = "", amount = "", time = ""
     public var isTest = false
 
-    private enum CodingKeys: String, CodingKey { case platform, kind, user, title, message, amount, time, isTest }
+    private enum CodingKeys: String, CodingKey { case platform, kind, user, title, detail, message, amount, time, isTest }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(platform, forKey: .platform)
+        try c.encode(kind, forKey: .kind)
+        try c.encode(user, forKey: .user)
+        try c.encode(title, forKey: .title)
+        try c.encode(detail, forKey: .detail)
+        try c.encode(amount, forKey: .amount)
+        try c.encode(time, forKey: .time)
+        try c.encode(isTest, forKey: .isTest)
+    }
 
     public init(platform: String, kind: String, user: String, title: String = "") {
         self.platform = platform
@@ -247,7 +259,7 @@ public struct FeedItem: Codable, Hashable, Sendable {
         kind = c.value(.kind, "")
         user = c.value(.user, "")
         title = c.value(.title, "")
-        message = c.value(.message, "")
+        detail = c.value(.detail, c.value(.message, ""))   // "message" in the first draft of the plan
         amount = c.value(.amount, "")
         time = c.value(.time, "")
         isTest = c.value(.isTest, false)

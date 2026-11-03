@@ -76,7 +76,7 @@ struct ModelTests {
             "stream": { "all": { "total": 22.34, "formattedTotal": "$22.34", "spenders": [
                 { "rank": 1, "name": "ann", "platform": "Twitch", "amount": 22.34, "formatted": "$22.34", "count": 2 } ] },
                         "twitch": { "total": 22.34, "spenders": [] } } } },
-          "feed": [ { "platform": "Twitch", "kind": "Cheer", "user": "ann", "amount": "500 bits", "isTest": true } ] }
+          "feed": [ { "platform": "Twitch", "kind": "Cheer", "user": "ann", "detail": "Cheer100 hype", "amount": "500 bits", "isTest": true } ] }
         """)
         #expect(dashboard.revision == 42)
         #expect(dashboard.totals["bits"]?.double == 500 && dashboard.totals["tips"]?.string == "$12.00")
@@ -92,12 +92,19 @@ struct ModelTests {
         #expect(dashboard.topSpenders.platformKeys(period: "stream") == ["all", "twitch"])
         #expect(dashboard.topSpenders.board(period: "stream").spenders.first?.formatted == "$22.34")
         #expect(dashboard.topSpenders.board(period: "day").spenders.isEmpty)
-        #expect(dashboard.feed.first?.isTest == true)
+        #expect(dashboard.feed.first?.isTest == true && dashboard.feed.first?.detail == "Cheer100 hype")
     }
 
     @Test func aBrokenPartFallsBackInsteadOfFailingTheSnapshot() throws {
-        let dashboard = try decode(Dashboard.self, #"{ "revision": 7, "subathon": "nope", "feed": { }, "topSpenders": [] }"#)
+        let dashboard = try decode(Dashboard.self, #"{ "revision": 7, "subathon": "nope", "feed": { }, "topSpenders": null }"#)
         #expect(dashboard.revision == 7 && dashboard.subathon.timers.isEmpty && dashboard.feed.isEmpty)
+        #expect(dashboard.topSpenders.periodKeys.isEmpty)
+    }
+
+    @Test func apiEventsUnwrapTypeTimeAndArgs() {
+        let event = ServerEvent(type: "dashboard.changed", data: #"{"type":"dashboard.changed","time":"2026-11-03T01:00:00Z","args":{"revision":42}}"#, id: "5")
+        #expect(event.apiEvent.type == "dashboard.changed" && event.apiEvent.args["revision"]?.double == 42)
+        #expect(ServerEvent(type: "x.y", data: "not json").apiEvent.type == "x.y")
     }
 
     @Test func timersFormatLikeCuebot() {

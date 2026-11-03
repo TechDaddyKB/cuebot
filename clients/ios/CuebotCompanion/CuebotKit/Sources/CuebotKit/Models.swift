@@ -99,12 +99,15 @@ public struct DeckSummary: Codable, Hashable, Sendable, Identifiable {
     public var rows: Int
     public var columns: Int
     public var pageCount: Int
+    /// Only enabled decks answer on /deck/{id}.
+    public var enabled: Bool
 
-    private enum CodingKeys: String, CodingKey { case id, name, rows, columns, pageCount }
+    private enum CodingKeys: String, CodingKey { case id, name, rows, columns, pageCount, enabled }
 
-    public init(id: String, name: String, rows: Int = 3, columns: Int = 5, pageCount: Int = 1) {
+    public init(id: String, name: String, rows: Int = 3, columns: Int = 5, pageCount: Int = 1, enabled: Bool = true) {
         self.id = id
         self.name = name
+        self.enabled = enabled
         self.rows = rows
         self.columns = columns
         self.pageCount = pageCount
@@ -117,6 +120,7 @@ public struct DeckSummary: Codable, Hashable, Sendable, Identifiable {
         rows = c.value(.rows, 3)
         columns = c.value(.columns, 5)
         pageCount = c.value(.pageCount, 1)
+        enabled = c.value(.enabled, true)
     }
 }
 

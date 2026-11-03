@@ -70,9 +70,9 @@ struct EventStreamTests {
     @Test func reconnectsAfterTheServerGoesAwayAndResumesFromTheLastId() async throws {
         let server = try StubEventServer { number, _ in
             switch number {
-            case 0: StubEventServer.sse(": connected\n\nid: 1\nevent: twitch.follow\ndata: {\"user\":\"ann\"}\n\n")
+            case 0: StubEventServer.sse(": connected\n\nid: 1\nevent: twitch.follow\ndata: {\"type\":\"twitch.follow\",\"args\":{\"user\":\"ann\"}}\n\n")
             case 1: StubEventServer.status(503)
-            default: StubEventServer.sse(": connected\n\nid: 2\nevent: twitch.cheer\ndata: {\"bits\":5}\n\n")
+            default: StubEventServer.sse(": connected\n\nid: 2\nevent: twitch.cheer\ndata: {\"type\":\"twitch.cheer\",\"args\":{\"bits\":5}}\n\n")
             }
         }
         let client = CuebotClient(endpoint: CuebotEndpoint(host: "127.0.0.1", apiPort: server.port, token: "tok"))
@@ -83,7 +83,7 @@ struct EventStreamTests {
             if events.count == 2 { break }
         }
         #expect(events.map(\.type) == ["twitch.follow", "twitch.cheer"])
-        #expect(events[1].json["bits"]?.double == 5)
+        #expect(events[1].apiEvent.args["bits"]?.double == 5)
         let requests = server.requests
         #expect(requests[0].head.hasPrefix("GET /api/v1/events?types=twitch.follow,twitch.cheer "))
         #expect(requests[0].header("Authorization") == "Bearer tok")

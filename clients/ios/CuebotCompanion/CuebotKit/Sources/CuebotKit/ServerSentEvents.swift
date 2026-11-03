@@ -18,6 +18,36 @@ public struct ServerEvent: Hashable, Sendable {
     public func decode<T: Decodable>(_ type: T.Type) throws -> T { try JSONDecoder().decode(type, from: Data(data.utf8)) }
 }
 
+/// The data of a `/api/v1/events` message: `{"type": "...", "time": "ISO-8601", "args": {...}}`.
+public struct ApiEvent: Codable, Hashable, Sendable {
+    public var type = ""
+    public var time = ""
+    public var args: JSONValue = .object([:])
+
+    private enum CodingKeys: String, CodingKey { case type, time, args }
+
+    public init(type: String, args: JSONValue = .object([:])) {
+        self.type = type
+        self.args = args
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        type = c.value(.type, "")
+        time = c.value(.time, "")
+        args = c.value(.args, .object([:]))
+    }
+}
+
+extension ServerEvent {
+    /// This event as a `/api/v1/events` message (the `event:` type is used when the data lacks one).
+    public var apiEvent: ApiEvent {
+        var event = (try? decode(ApiEvent.self)) ?? ApiEvent(type: type)
+        if event.type.isEmpty { event.type = type }
+        return event
+    }
+}
+
 /// The text/event-stream format (WHATWG HTML, "Server-sent events"), fed with raw bytes: lines end with CR, LF or
 /// CRLF; a blank line dispatches the event; lines starting with ":" are comments (Cuebot's ": connected" and
 /// ": keep-alive"); `retry:` is honoured by the stream. Not thread-safe: one parser per connection.
