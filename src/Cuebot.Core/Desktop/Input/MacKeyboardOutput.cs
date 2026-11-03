@@ -30,32 +30,49 @@ internal sealed class MacKeyboardOutput : KeyboardOutputBase
             _status = "No keyboard output: " + PermissionMessage;
             throw new InvalidOperationException(PermissionMessage);
         }
+        // Map every key first: a combo with a key a Mac cannot send must not press its modifiers at all.
+        var codes = events.Select(e => (e.Down, Code: KeyCodes.Mac(e.Key) ?? throw new InvalidOperationException($"Key '{e.Key}' cannot be sent on a Mac")))
+            .ToArray();
         var source = MacQuartz.CGEventSourceCreate(MacQuartz.HidSystemState);
+        var down = new List<(ushort Code, ulong Flag)>();   // pressed and not yet released, so a failure can let go
         try
         {
-            ulong held = 0;
-            foreach (var e in events)
+            foreach (var (isDown, code) in codes)
             {
-                var (code, flag) = KeyCodes.Mac(e.Key) ?? throw new InvalidOperationException($"Key '{e.Key}' cannot be sent on a Mac");
-                held = e.Down ? held | flag : held & ~flag;
-                var cgEvent = MacQuartz.CGEventCreateKeyboardEvent(source, code, e.Down);
-                if (cgEvent == IntPtr.Zero) throw new InvalidOperationException("macOS could not create the key press");
-                try
-                {
-                    MacQuartz.CGEventSetFlags(cgEvent, held);
-                    MacQuartz.CGEventPost(HidEventTap, cgEvent);
-                }
-                finally
-                {
-                    MacQuartz.CFRelease(cgEvent);
-                }
+                if (isDown) down.Add(code);
+                else down.Remove(code);
+                Post(source, code.Code, isDown, down);
                 await Task.Delay(2, ct);   // some apps drop events that arrive in the same instant
             }
         }
         finally
         {
+            // Cancelled or failed half way: release whatever is still held, last pressed first.
+            for (var i = down.Count - 1; i >= 0; i--)
+            {
+                var key = down[i];
+                down.RemoveAt(i);
+                try { Post(source, key.Code, false, down); }
+                catch (InvalidOperationException) { }
+            }
             if (source != IntPtr.Zero) MacQuartz.CFRelease(source);
         }
         _status = "Ready (Quartz events)";
+    }
+
+    /// <summary>Posts one key event whose flags are the modifiers held in <paramref name="held"/>.</summary>
+    private static void Post(IntPtr source, ushort code, bool keyDown, List<(ushort Code, ulong Flag)> held)
+    {
+        var cgEvent = MacQuartz.CGEventCreateKeyboardEvent(source, code, keyDown);
+        if (cgEvent == IntPtr.Zero) throw new InvalidOperationException("macOS could not create the key press");
+        try
+        {
+            MacQuartz.CGEventSetFlags(cgEvent, held.Aggregate(0UL, (flags, k) => flags | k.Flag));
+            MacQuartz.CGEventPost(HidEventTap, cgEvent);
+        }
+        finally
+        {
+            MacQuartz.CFRelease(cgEvent);
+        }
     }
 }
