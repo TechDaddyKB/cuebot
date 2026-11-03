@@ -164,6 +164,59 @@ public sealed class ServerManager : IAsyncDisposable
         }
     }
 
+    /// <summary>The deck token (<see cref="HttpServerSettings.DeckToken"/>), generated (and saved) when there is none yet.</summary>
+    public string EnsureDeckToken()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.Http.DeckToken))
+        {
+            Settings.Http.DeckToken = Cuebot.Server.Api.ApiToken.Generate();
+            SaveSettings();
+            _services.Log.Info(LogSource, "Decks now need a token from other devices; the deck links and the phone pairing code include it");
+        }
+        return Settings.Http.DeckToken;
+    }
+
+    /// <summary>Replaces the deck token; phones and deck links from other devices need the new one.</summary>
+    public string RegenerateDeckToken()
+    {
+        Settings.Http.DeckToken = Cuebot.Server.Api.ApiToken.Generate();
+        SaveSettings();
+        _services.Log.Info(LogSource, "Deck token regenerated");
+        return Settings.Http.DeckToken;
+    }
+
+    /// <summary>
+    /// The phone pairing link for <paramref name="host"/> (an address from <see cref="Api.PairingLink.LanAddresses"/>).
+    /// Makes the API and deck tokens when missing. It holds the API token: show it only when asked.
+    /// </summary>
+    public string PairingLink(string host) => Cuebot.Server.Api.PairingLink.Build(Environment.MachineName, host,
+        Settings.Api.Port, Settings.Http.Port, EnsureApiToken(), EnsureDeckToken(), StreamerBot.StreamerBotRequests.InstanceId);
+
+    /// <summary>What stops a phone on the network from using the companion app, in plain words; empty when it can.</summary>
+    public IReadOnlyList<string> PairingProblems()
+    {
+        var problems = new List<string>();
+        if (!Settings.Api.Enabled) problems.Add("Turn on the REST API (the app reads the dashboard and runs actions through it).");
+        if (!Settings.Http.Enabled) problems.Add("Turn on the HTTP server (decks are served by it).");
+        if (!Settings.AllowLan) problems.Add("Turn on \"Allow LAN connections\" so other devices can connect.");
+        LocalOnly("REST API", Settings.Api.Address);
+        LocalOnly("HTTP server", Settings.Http.Address);
+        return problems;
+
+        void LocalOnly(string server, string address)
+        {
+            try
+            {
+                if (IPAddress.IsLoopback(NetworkPolicy.BindAddress(address, true, out _)))
+                    problems.Add($"Set the {server} address to 0.0.0.0 (127.0.0.1 only answers this computer).");
+            }
+            catch (FormatException)
+            {
+                problems.Add($"The {server} address \"{address}\" is not an IP address; use 0.0.0.0.");
+            }
+        }
+    }
+
     /// <summary>The browser source URL for an overlay.</summary>
     public string OverlayUrl(Cuebot.Core.Overlays.Overlay overlay) => OverlayBaseUrl + OverlayServer.PathFor(overlay);
 
@@ -239,6 +292,7 @@ public sealed class ServerManager : IAsyncDisposable
             _actionSignatures = ActionSignatures();
             _commandSignatures = CommandSignatures();
         }
+        if (Settings.AllowLan) EnsureDeckToken();
         await ApplyAsync(ct).ConfigureAwait(false);
         await CustomServers.StartAutoAsync(ct).ConfigureAwait(false);
         await CustomClients.ConnectAutoAsync(ct).ConfigureAwait(false);

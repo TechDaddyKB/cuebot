@@ -89,7 +89,8 @@ While you stream, your actions can change a button's title, colour, icon or page
 !!! tip "Using it from your phone"
     At first, the deck only opens on this computer. Your phone is a different device, so Cuebot has to allow your home
     network first: tick **Allow LAN connections** on **Apps > Servers** and let the HTTP server listen on your network
-    address. Only do this on a home network you trust.
+    address. Only do this on a home network you trust. Cuebot then makes a deck token so nobody else on the network
+    can press your buttons: open the deck from the link on the **Decks** page, which includes it.
 
 ## Lights, mixers and other apps
 

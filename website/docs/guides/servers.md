@@ -49,6 +49,10 @@ change it in that other program too.
 - **Your own files:** click **+ Folder**. Type a web address part, like `/overlays`, and pick a folder on your computer.
   The files in that folder now open at `http://127.0.0.1:7474/overlays/...`. Handy for your own overlay pages.
 - [Decks](stream-apps-and-devices.md#decks-buttons-on-your-phone) need this server.
+- **Deck token:** when you tick **Allow LAN connections**, Cuebot makes a secret deck token. Other devices then need
+  it to open or press your decks; the deck links on the **Decks** page and the phone pairing code include it, so
+  you do not have to type it. Decks opened on this computer, like OBS docks, never need it. **New deck token** (in
+  **Pair a phone**) cancels the old one.
 
 ## WebSocket server (Streamer.bot API)
 
@@ -70,6 +74,12 @@ make Cuebot speak. See [Text-to-speech](text-to-speech.md).
 The **REST API** is for programs that run actions or read data, like the Stream Deck plugin. They need the **Token**:
 a long secret code. **Show** shows it, **Copy** copies it, **Regenerate** makes a new one and the old one stops
 working. Anyone who has the token can control your Cuebot, so keep it secret and hide it while you stream.
+
+**Pair a phone:** the Cuebot Companion app for iPhone and iPad connects by scanning a code. Tick **Show pairing code**,
+pick the **Address** of your home network (usually `192.168...`) and scan the code with the app or the phone's
+Camera. If something still stops the phone, the card lists what to change first: the REST API and HTTP server on,
+**Allow LAN connections** ticked, and both servers listening on `0.0.0.0`. The code holds your token, so keep it
+hidden while you stream.
 
 The **MCP server** is for AI apps. Keep **Confirm destructive tools** ticked: then the AI has to ask you before it
 deletes, imports or sends a chat message. The card has ready-made setting text for Claude Code, Claude Desktop and other

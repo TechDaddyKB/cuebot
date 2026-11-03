@@ -15,14 +15,18 @@ public sealed partial class DecksViewModel : PageViewModel
     private readonly DeckService _decks;
     private readonly Func<string> _baseUrl;
     private readonly Func<bool> _httpEnabled;
+    private readonly Func<string>? _deckToken;
 
     /// <param name="baseUrl">The HTTP server's base address, e.g. http://127.0.0.1:7474.</param>
     /// <param name="httpEnabled">Whether the HTTP server is on (decks need it).</param>
-    public DecksViewModel(DeckService decks, Func<string> baseUrl, Func<bool> httpEnabled, Func<IEnumerable<string>> actionNames)
+    /// <param name="deckToken">The deck token other devices need (empty = none); deck links include it.</param>
+    public DecksViewModel(DeckService decks, Func<string> baseUrl, Func<bool> httpEnabled, Func<IEnumerable<string>> actionNames,
+        Func<string>? deckToken = null)
         : base("Decks")
     {
         _decks = decks;
         _baseUrl = baseUrl;
+        _deckToken = deckToken;
         _httpEnabled = httpEnabled;
         ActionNames = actionNames;
         foreach (var d in decks.Decks) Decks.Add(new DeckEditorViewModel(this, d));
@@ -71,7 +75,11 @@ public sealed partial class DecksViewModel : PageViewModel
 
     internal void ResetRuntime(Guid id) => _decks.ResetRuntime(id);
 
-    internal string UrlOf(Guid id) => $"{_baseUrl().TrimEnd('/')}/deck/{id}";
+    internal string UrlOf(Guid id)
+    {
+        var url = $"{_baseUrl().TrimEnd('/')}/deck/{id}";
+        return _deckToken?.Invoke() is { Length: > 0 } token ? $"{url}?token={Uri.EscapeDataString(token)}" : url;
+    }
 }
 
 /// <summary>One deck's settings, pages and buttons.</summary>

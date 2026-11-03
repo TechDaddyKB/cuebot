@@ -39,7 +39,13 @@ public sealed partial class ServersViewModel : PageViewModel
     public bool AllowLan
     {
         get => Settings.AllowLan;
-        set { Settings.AllowLan = value; Save(); OnPropertyChanged(); }
+        set
+        {
+            Settings.AllowLan = value;
+            if (value) _servers.EnsureDeckToken();   // other devices on the network must not press deck buttons freely
+            Save();
+            OnPropertyChanged();
+        }
     }
 
     /// <summary>Allowed web origins, one per line.</summary>
@@ -182,6 +188,61 @@ public sealed partial class ServersViewModel : PageViewModel
         _servers.RegenerateApiToken();
         RaiseApiChanged();
         Message = "New API token created. AI clients and scripts using the old one must be updated.";
+    }
+
+    // ---- Phone pairing (companion app) -----------------------------------------------------------------------------
+
+    /// <summary>Shows the pairing QR code. Off by default: the code holds the API token (hide it while streaming).</summary>
+    [ObservableProperty] private bool _showPairing;
+
+    /// <summary>This computer's network addresses a phone can reach; the code uses the selected one.</summary>
+    public ObservableCollection<string> PairingHosts { get; } = [];
+
+    [ObservableProperty] private string? _selectedPairingHost;
+    [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _pairingQr;
+
+    /// <summary>What still stops a phone from connecting, one per line; empty when nothing does.</summary>
+    [ObservableProperty] private string _pairingProblems = "";
+
+    partial void OnShowPairingChanged(bool value)
+    {
+        if (value) RefreshPairing();
+        else PairingQr = null;
+    }
+
+    partial void OnSelectedPairingHostChanged(string? value) => UpdatePairingQr();
+
+    private void RefreshPairing()
+    {
+        var keep = SelectedPairingHost;
+        PairingHosts.Clear();
+        foreach (var host in Cuebot.Server.Api.PairingLink.LanAddresses()) PairingHosts.Add(host);
+        PairingProblems = string.Join(Environment.NewLine, _servers.PairingProblems());
+        if (PairingHosts.Count == 0) PairingProblems = string.Join(Environment.NewLine, [PairingProblems, "No network address found: connect this computer to your Wi-Fi or network."]).Trim();
+        SelectedPairingHost = keep is not null && PairingHosts.Contains(keep) ? keep : PairingHosts.FirstOrDefault();
+        UpdatePairingQr();
+    }
+
+    private void UpdatePairingQr()
+    {
+        if (!ShowPairing || SelectedPairingHost is not { } host)
+        {
+            PairingQr = null;
+            return;
+        }
+        PairingQr = PairingCode.Render(_servers.PairingLink(host));
+        RaiseApiChanged();   // the link makes the API token when there was none
+    }
+
+    [RelayCommand]
+    private void RefreshPairingCode() => RefreshPairing();
+
+    [RelayCommand]
+    private void RegenerateDeckToken()
+    {
+        _servers.RegenerateDeckToken();
+        UpdatePairingQr();
+        Message = "New deck token created. Pair your phone again, and update deck links opened on other devices.";
     }
 
     private void RaiseApiChanged()

@@ -20,8 +20,10 @@ namespace Cuebot.Server.Http;
 /// </list>
 /// POSTs follow the server's allowed origins, like the API. Decks are addressed by id, not name.
 /// </summary>
-internal sealed class DeckRoutes(DeckService decks)
+internal sealed class DeckRoutes(DeckService decks, Func<string>? token = null)
 {
+    public const string TokenHeader = "X-Cuebot-Deck-Token";
+
     private static readonly TimeSpan KeepAlive = TimeSpan.FromSeconds(15);
 
     public static bool Matches(string path)
@@ -32,6 +34,11 @@ internal sealed class DeckRoutes(DeckService decks)
 
     public async Task HandleAsync(HttpContext context, bool originAllowed)
     {
+        if (!Authorized(context))
+        {
+            await Status(context, 401, "Deck token required").ConfigureAwait(false);
+            return;
+        }
         var parts = NetworkPolicy.NormalizePath(context.Request.Path.Value).Trim('/').Split('/');
         var isGet = HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method);
         var isPost = HttpMethods.IsPost(context.Request.Method);
@@ -73,6 +80,18 @@ internal sealed class DeckRoutes(DeckService decks)
                 await Status(context, 404).ConfigureAwait(false);
                 return;
         }
+    }
+
+    /// <summary>No token set, a request from this computer, or the right token in the header or <c>?token=</c>.</summary>
+    private bool Authorized(HttpContext context) => IsAuthorized(token?.Invoke(), context.Connection.RemoteIpAddress,
+        context.Request.Headers[TokenHeader].ToString(), context.Request.Query["token"].ToString());
+
+    internal static bool IsAuthorized(string? expected, IPAddress? remote, string? header, string? query)
+    {
+        if (string.IsNullOrEmpty(expected)) return true;
+        if (remote is { IsIPv4MappedToIPv6: true }) remote = remote.MapToIPv4();
+        if (remote is not null && IPAddress.IsLoopback(remote)) return true;
+        return Cuebot.Server.Api.ApiToken.Matches(expected, string.IsNullOrEmpty(header) ? query : header);
     }
 
     private async Task PostAsync(HttpContext context, Guid id, string route)

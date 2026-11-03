@@ -35,6 +35,8 @@
          win-x64/x86/arm64 and linux-x64/arm/arm64; NVorbis (MIT) decodes Ogg Vorbis in managed code. -->
     <PackageVersion Include="SoundFlow" Version="1.4.1" />
     <PackageVersion Include="NVorbis" Version="0.10.5" />
+    <!-- Phone pairing QR code: QRCoder (MIT), managed code only; its PNG renderer needs no System.Drawing. -->
+    <PackageVersion Include="QRCoder" Version="1.6.0" />
     <!-- Webhooks: BouncyCastle (MIT) verifies Throne's Ed25519 signatures (the .NET 10 BCL has no Ed25519 API). -->
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.6.2" />
     <!-- Game controllers: SDL3 (zlib) native libraries for win-x64/x86/arm64 and linux-x64/x86/arm64/arm, built and
