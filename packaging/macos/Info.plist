@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Cuebot.app's Info.plist. build-app.sh replaces @VERSION@ and @SHORT_VERSION@. -->
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Cuebot</string>
+    <key>CFBundleDisplayName</key>
+    <string>Cuebot</string>
+    <key>CFBundleIdentifier</key>
+    <string>io.github.cuebot.Cuebot</string>
+    <key>CFBundleExecutable</key>
+    <string>Cuebot</string>
+    <key>CFBundleIconFile</key>
+    <string>Cuebot</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleVersion</key>
+    <string>@VERSION@</string>
+    <key>CFBundleShortVersionString</key>
+    <string>@SHORT_VERSION@</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.video</string>
+    <!-- The bundled whisper.cpp and miniaudio libraries are built for macOS 15. -->
+    <key>LSMinimumSystemVersion</key>
+    <string>15.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright (c) 2026 TechDaddyKB and Cuebot contributors. MIT license.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Cuebot listens for your voice commands and dictation when you turn on Voice Control.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Cuebot asks your music and stream apps what they are doing when an action needs it.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Cuebot talks to OBS, Stream Deck, lights and other stream gear on your network.</string>
+</dict>
+</plist>
