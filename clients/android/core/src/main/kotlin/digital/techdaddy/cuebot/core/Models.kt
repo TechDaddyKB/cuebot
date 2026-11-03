@@ -136,7 +136,7 @@ data class SubathonTimer(
     /** Unix time in milliseconds when a running timer reaches zero; null while paused or stopped. */
     val endsAt: Double? = null, val elapsed: Double = 0.0, val added: Double = 0.0, val multiplier: Double = 1.0,
 ) {
-    enum class State { Running, Paused, Stopped, Unknown }
+    enum class State { Running, Paused, Stopped, Ended, Unknown }
 
     /** Seconds left at [nowMillis]: counted down on the phone from `endsAt` while running, else the snapshot's value. */
     fun remainingAt(nowMillis: Long): Double =
@@ -145,7 +145,7 @@ data class SubathonTimer(
     companion object {
         fun from(o: JsonObject) = SubathonTimer(
             o.str("id"), o.str("name"),
-            when (o.str("state").lowercase()) { "running" -> State.Running; "paused" -> State.Paused; "stopped", "" -> State.Stopped; else -> State.Unknown },
+            when (o.str("state").lowercase()) { "running" -> State.Running; "paused" -> State.Paused; "stopped", "" -> State.Stopped; "ended" -> State.Ended; else -> State.Unknown },
             o.dbl("remaining"), o.num("endsAt"), o.dbl("elapsed"), o.dbl("added"), o.dbl("multiplier", 1.0),
         )
 

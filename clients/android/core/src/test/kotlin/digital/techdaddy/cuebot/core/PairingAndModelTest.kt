@@ -65,7 +65,8 @@ class ModelTest {
               "totals": { "cheer-session": { "count": 1, "amount": 500 } },
               "subathon": {
                 "timers": [ { "id": "t1", "name": "Main", "state": "running", "remaining": 3540.5, "endsAt": 1762130000000, "added": 3590.0, "multiplier": 2.0 },
-                            { "id": "t2", "name": "Side", "state": "paused", "remaining": 75.9, "endsAt": null } ],
+                            { "id": "t2", "name": "Side", "state": "paused", "remaining": 75.9, "endsAt": null },
+                            { "id": "t3", "name": "Done", "state": "ended", "remaining": 0 } ],
                 "goals": [ { "id": "g1", "name": "Points", "points": 12, "steps": [ { "name": "Emote", "points": 10, "reached": true }, { "name": "Second", "points": 20 } ],
                              "next": { "name": "Second", "points": 20 }, "previous": 10 } ] },
               "topSpenders": { "currency": "USD", "periods": {
@@ -80,6 +81,7 @@ class ModelTest {
         assertEquals(90.0, main.remainingAt(1_762_130_000_000L - 90_000), 1e-9)
         assertEquals(0.0, main.remainingAt(1_762_130_100_000L), 1e-9)
         assertEquals(75.9, d.subathon.timers[1].remainingAt(System.currentTimeMillis()), 1e-9)
+        assertEquals(SubathonTimer.State.Ended, d.subathon.timers[2].state)
         val goal = d.subathon.goals[0]
         assertEquals("Second", goal.next?.name)
         assertEquals(0.2, goal.progressToNext, 1e-9)
