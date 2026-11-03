@@ -163,7 +163,8 @@ of 5 subs counts as 5 subs. A new price only counts for new purchases.
 ### What is left out
 
 - **Charity donations** go to the charity, not to you. Tick **Count charity donations** to count them anyway.
-- **Test events**, like the test buttons on the **Donations** and **Webhooks** pages, are never counted.
+- **Test events**, like the test buttons on the **Donations** and **Webhooks** pages and sample events sent from
+  Cuebot (emulate event), are never counted.
 - Names in **Never list**, like `Anonymous`. Add your own test account here. Their purchases still count for
   [subathon timers and goals](subathon-and-goals.md) and still run the **Money spent** trigger. They are only left off
   the list.

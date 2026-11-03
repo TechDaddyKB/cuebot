@@ -115,6 +115,11 @@ public sealed class McpCoverageTests : IAsyncLifetime
 
         await Ok("emulate_event", Args(("platform", "twitch"), ("kind", "raid"), ("target", "everything"), ("args", new JsonObject { ["viewers"] = 75 })));
         Assert.Contains(published, e => e.Type == "twitch.raid" && Convert.ToInt32(e.Args["viewers"]) == 75);
+        published.Clear();
+        await Ok("emulate_event", Args(("platform", "twitch"), ("kind", "gift"), ("target", "everything")));
+        Assert.Equal(7, published.Count(e => e.Type.StartsWith("twitch.", StringComparison.Ordinal)));   // bomb, total, 5 recipients
+        Assert.All(published.Where(e => e.Type.StartsWith("twitch.", StringComparison.Ordinal)),
+            e => Assert.True(e.Args["isTest"] is true && e.Args["isEmulated"] is true, e.Type));   // feed shows tests; top spenders skip them
         await Fails("emulate_event", Args(("platform", "twitch"), ("kind", "superchat")));
     }
 

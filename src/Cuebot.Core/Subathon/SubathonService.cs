@@ -319,7 +319,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     /// <summary>Handles an activity item (subscribed to the chat hub; public for tests).</summary>
     public void Record(FeedItem item)
     {
-        if (item.IsTest) return;
+        if (item.IsTest && !item.IsEmulated) return;   // emulated events count, so timers and goals can be tried out
         switch (item.Kind)
         {
             case FeedKind.StreamOnline:

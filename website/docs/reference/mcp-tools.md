@@ -449,7 +449,7 @@ There are 118 tools.
 
 ## emulate_event
 
-**Send a sample event.** Send a sample platform event with a made-up viewer, e.g. a Twitch follow to test the alert box. target "overlays" (default) shows it on every overlay only; "everything" publishes it as a real event so matching actions run too (they may post to chat).
+**Send a sample event.** Send a sample platform event with a made-up viewer, e.g. a Twitch follow to test the alert box. target "overlays" (default) shows it on every overlay only; "everything" publishes it as a real event so matching actions run too (they may post to chat). Events sent to everything are marked isTest: shown as tests in the feed and never counted in top spenders, while subathon timers and goals still count them.
 
 | Input | Type | What it is |
 | --- | --- | --- |

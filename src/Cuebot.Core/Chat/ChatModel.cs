@@ -46,6 +46,12 @@ public sealed record FeedItem(string Platform, FeedKind Kind, string User, strin
 
     /// <summary>A test event (the platform's "isTest"): shown in the feed, never counted as spending.</summary>
     public bool IsTest { get; init; }
+
+    /// <summary>
+    /// Sent by Cuebot's own emulator ("emulate_event" to everything): a test event that the subathon timers and goals
+    /// still count, so they can be tried out. Platform test events (a "test" button on a donation site) are not.
+    /// </summary>
+    public bool IsEmulated { get; init; }
 }
 
 /// <summary>What a paid event is counted in: money, or a platform unit the spending settings put a price on.</summary>
