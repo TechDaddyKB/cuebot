@@ -373,6 +373,15 @@ public sealed class NotificationAndClipboardTests : IDisposable
     }
 
     [Fact]
+    public void Osascript_gets_the_text_as_arguments_not_as_script()
+    {
+        var args = OsascriptNotifier.Arguments(new DesktopNotification("\" & do shell script \"x", "$(boom)"));
+        Assert.Equal(["-e", OsascriptNotifier.Script, "\" & do shell script \"x", "$(boom)"], args);
+        Assert.Equal("Cuebot", OsascriptNotifier.Arguments(new DesktopNotification("", "hi"))[2]);
+        Assert.Equal(OperatingSystem.IsMacOS(), new OsascriptNotifier(_log).IsAvailable);
+    }
+
+    [Fact]
     public async Task Clipboard_sub_actions_use_the_service_and_explain_when_missing()
     {
         var clipboard = new FakeClipboard();
