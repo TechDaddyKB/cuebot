@@ -13,7 +13,9 @@ public enum PackageKind
     SystemPackage,
     /// <summary>The Linux tarball, or a build run from anywhere else.</summary>
     LinuxTarball,
-    /// <summary>Another OS (macOS builds are not published).</summary>
+    /// <summary>The macOS app bundle (Cuebot.app, from the .dmg).</summary>
+    MacApp,
+    /// <summary>Another OS, or a macOS build run outside an app bundle.</summary>
     Other,
 }
 
@@ -24,7 +26,8 @@ public sealed record PackagingEnvironment(
     Func<string, string?> GetEnvironmentVariable,
     Func<string, bool> FileExists,
     string BaseDirectory,
-    Architecture Architecture)
+    Architecture Architecture,
+    bool IsMacOS = false)
 {
     public static PackagingEnvironment Current { get; } = new(
         OperatingSystem.IsWindows(),
@@ -32,7 +35,8 @@ public sealed record PackagingEnvironment(
         Environment.GetEnvironmentVariable,
         File.Exists,
         AppContext.BaseDirectory,
-        RuntimeInformation.OSArchitecture);
+        RuntimeInformation.OSArchitecture,
+        OperatingSystem.IsMacOS());
 }
 
 public static class PackagingDetector
@@ -42,6 +46,8 @@ public static class PackagingDetector
     public static PackageKind Detect(PackagingEnvironment env)
     {
         if (env.IsWindows) return PackageKind.WindowsZip;
+        if (env.IsMacOS)
+            return env.BaseDirectory.Replace('\\', '/').Contains(".app/Contents/", StringComparison.Ordinal) ? PackageKind.MacApp : PackageKind.Other;
         if (!env.IsLinux) return PackageKind.Other;
         // Flatpak first (its files live under /app), then AppImage (whose mount also contains usr/lib/cuebot).
         if (!string.IsNullOrEmpty(env.GetEnvironmentVariable("FLATPAK_ID")) || env.FileExists("/.flatpak-info")) return PackageKind.Flatpak;
@@ -59,6 +65,7 @@ public static class PackagingDetector
         PackageKind.Flatpak => "Flatpak",
         PackageKind.SystemPackage => "System package (/usr/lib/cuebot)",
         PackageKind.LinuxTarball => "Linux tarball",
+        PackageKind.MacApp => "macOS app",
         _ => "Other",
     };
 
@@ -68,6 +75,7 @@ public static class PackagingDetector
         PackageKind.WindowsZip => "Cuebot-win-x64.zip",
         PackageKind.AppImage => "Cuebot-x86_64.AppImage",
         PackageKind.LinuxTarball => $"Cuebot-{version}-linux-{(arch == Architecture.Arm64 ? "arm64" : "x64")}.tar.gz",
+        PackageKind.MacApp => $"Cuebot-{version}-macos-{(arch == Architecture.Arm64 ? "arm64" : "x64")}.dmg",
         _ => null,
     };
 
@@ -84,6 +92,8 @@ public static class PackagingDetector
             "Cuebot was installed by your package manager: update it there (for example \"yay -Syu cuebot\" or \"paru -Syu\") instead of downloading.",
         PackageKind.LinuxTarball =>
             "Download the tarball for your architecture and unpack it over the old folder. Your data stays where it is.",
+        PackageKind.MacApp =>
+            "Download the .dmg for your Mac (Apple silicon or Intel), quit Cuebot and drag the new Cuebot into Applications, replacing the old one. Your data stays where it is.",
         _ => "Open the release page to download the new version.",
     };
 }
