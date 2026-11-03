@@ -201,7 +201,7 @@ internal sealed unsafe class CoreMidiBackend : IMidiBackend
         private readonly MidiByteStream _stream = new();
         private readonly Stopwatch _clock = Stopwatch.StartNew();
         private GCHandle _self;
-        private uint _port;
+        private volatile uint _port;
         private int _closedRaised;
 
         public Input(CoreMidiBackend backend, string name, uint source, Action<MidiPacket> received, Action<string> closed)
@@ -238,9 +238,9 @@ internal sealed unsafe class CoreMidiBackend : IMidiBackend
         [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
         private static void Read(nint packetList, nint refCon, nint connRefCon)
         {
-            if (GCHandle.FromIntPtr(refCon).Target is not Input input) return;
             try
             {
+                if (GCHandle.FromIntPtr(refCon).Target is not Input input || input._port == 0) return;
                 foreach (var bytes in PacketBytes(packetList)) input.Feed(bytes);
             }
             catch
@@ -266,7 +266,8 @@ internal sealed unsafe class CoreMidiBackend : IMidiBackend
             MIDIPortDisconnectSource(_port, Source);
             MIDIPortDispose(_port);
             _port = 0;
-            _self.Free();
+            // _self is never freed: CoreMIDI may still be inside Read with it, and the process's client lives until
+            // exit anyway. One small handle per opened port is the price.
         }
     }
 
