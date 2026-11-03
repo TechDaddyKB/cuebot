@@ -35,6 +35,10 @@ internal static class PinnedPython
             "df15fe60d3ff55bf9dcf25824b5572756bb8816ff93865a273d3301d7066a8b7", 35395906),
         new("aarch64-unknown-linux-gnu", "cpython-3.13.18+20261026-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
             "578d9da1983463ffb0c8c98ab0da2f18177f44069328eb0af847860c1eb05c3e", 29492455),
+        new("x86_64-apple-darwin", "cpython-3.13.18+20261026-x86_64-apple-darwin-install_only_stripped.tar.gz",
+            "7412c19d896c99431b74a18a5643e110449a7f9590fbab179c3e5ab27b9aa9e3", 25055263),
+        new("aarch64-apple-darwin", "cpython-3.13.18+20261026-aarch64-apple-darwin-install_only_stripped.tar.gz",
+            "8392b6ea51d94391befb2c31ebe75463f045d0b69dfcf5e1bb3234e1f5fa3405", 25265774),
     ];
 
     public static IReadOnlyList<PythonBuild> All => Builds;
@@ -46,6 +50,8 @@ internal static class PinnedPython
         Architecture.Arm64 when OperatingSystem.IsWindows() => "aarch64-pc-windows-msvc",
         Architecture.X64 when OperatingSystem.IsLinux() => "x86_64-unknown-linux-gnu",
         Architecture.Arm64 when OperatingSystem.IsLinux() => "aarch64-unknown-linux-gnu",
+        Architecture.X64 when OperatingSystem.IsMacOS() => "x86_64-apple-darwin",
+        Architecture.Arm64 when OperatingSystem.IsMacOS() => "aarch64-apple-darwin",
         _ => null,
     };
 
