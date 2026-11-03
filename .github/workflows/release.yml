@@ -50,8 +50,31 @@ jobs:
           name: linux-tarballs
           path: artifacts/Cuebot-*-linux-*.tar.gz
 
+  # Cuebot Companion for Android: the release APK (attached to the release) and AAB (kept as an artifact for later),
+  # signed with the release key when the secrets are set (clients/android/ci/release.sh). versionCode is this
+  # workflow's run number, which only goes up.
+  android:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      - run: clients/android/ci/release.sh "${GITHUB_REF_NAME#v}" "${{ github.run_number }}"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: android
+          path: clients/android/dist/*
+
   publish:
-    needs: [build, tarballs]
+    needs: [build, tarballs, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v5
@@ -68,7 +91,8 @@ jobs:
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Cuebot $GITHUB_REF_NAME" --generate-notes "${prerelease[@]}" \
             dist/Cuebot-win-x64.zip dist/Cuebot-x86_64.AppImage dist/Cuebot-x86_64.flatpak dist/Cuebot-*-linux-*.tar.gz \
             dist/Cuebot-macos-arm64.dmg dist/Cuebot-macos-x64.dmg \
-            dist/io.github.cuebot.streamdeck.streamDeckPlugin
+            dist/io.github.cuebot.streamdeck.streamDeckPlugin \
+            dist/Cuebot-Companion-*.apk
 
   aur:
     needs: publish
