@@ -8,8 +8,9 @@ using Whisper.net.LibraryLoader;
 namespace Cuebot.VoiceControl.Engines;
 
 /// <summary>
-/// Local speech-to-text with whisper.cpp through Whisper.net, on Windows and Linux. CPU by default (AVX2 build with
-/// the NoAvx build as fallback); a CUDA or Vulkan runtime placed next to Cuebot is used when "Use GPU" is on.
+/// Local speech-to-text with whisper.cpp through Whisper.net, on Windows, Linux and macOS. CPU by default (AVX2 build
+/// with the NoAvx build as fallback; on macOS the CPU build uses Accelerate); a CUDA or Vulkan runtime placed next to
+/// Cuebot is used when "Use GPU" is on.
 /// Utterances are cut at pauses (<see cref="UtteranceRecognitionSession"/>) because Whisper transcribes clips.
 /// </summary>
 internal sealed class WhisperEngine(Func<VoiceControlSettings> settings, ModelStore models) : ISpeechRecognizerEngine
@@ -17,7 +18,7 @@ internal sealed class WhisperEngine(Func<VoiceControlSettings> settings, ModelSt
     public const string EngineId = WhisperDefaults.EngineId;
 
     public string Id => EngineId;
-    public string DisplayName => "Whisper (local, Windows and Linux)";
+    public string DisplayName => "Whisper (local)";
     public bool IsAvailable => OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS();
     public string? UnavailableReason => IsAvailable ? null : "Whisper runtimes are only shipped for Windows, Linux and macOS.";
     public bool NeedsModel => true;
@@ -73,6 +74,7 @@ internal sealed class WhisperEngine(Func<VoiceControlSettings> settings, ModelSt
                 throw new InvalidOperationException(
                     "The whisper.cpp native library could not be loaded. " + (OperatingSystem.IsWindows()
                         ? "Install the Microsoft Visual C++ 2015-2022 Redistributable (x64)."
+                        : OperatingSystem.IsMacOS() ? "It needs macOS 15 or newer."
                         : "It needs glibc 2.34 or newer, libstdc++ and libgomp (GCC's OpenMP runtime, e.g. the libgomp1 or gcc-libs package).")
                     + $" ({ex.Message})", ex);
             }
