@@ -47,7 +47,6 @@ In the other guides, experimental features have a yellow **Experimental** box li
 | [Pulsoid and HypeRate](stream-apps-and-devices.md#lights-mixers-and-other-apps) (heart rate) | **Apps > Apps & devices**, tab **Apps & services** | Cuebot's tests only | A real heart-rate service | Connect and check your heart rate shows up |
 | [Basic Discord webhook and IFTTT](donations-and-integrations.md#discord) | Sub-actions **Discord > Basic webhook** and **IFTTT > Notification** | Cuebot's tests only | Posting to a real Discord webhook or IFTTT | Post a test message to a channel |
 | [Linking two Cuebots](servers.md#linking-two-cuebots) | **Apps > Servers**, **Remote instances** | Two copies of Cuebot inside Cuebot's tests | Two real computers on a home network | Link two Cuebots and send a signal from one to the other |
-| Cuebot on a Mac | (no download yet) | Some parts of the code know about Macs | Everything: there is no Mac download, and Cuebot has never run on a Mac | Nothing yet. Cuebot is for Windows and Linux for now. |
 
 ## Partly checked
 
