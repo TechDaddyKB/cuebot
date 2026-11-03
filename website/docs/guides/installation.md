@@ -45,6 +45,16 @@ You need macOS 15 (Sequoia) or newer. Not sure which chip your Mac has? Open the
 
 When you turn on Voice Control, macOS asks whether Cuebot may use the microphone. Click **Allow**.
 
+!!! note "After updating on a Mac"
+    This Cuebot is not signed by Apple yet, so macOS sees each update as a new app. If hotkeys or key presses stop
+    working after an update while **System Settings > Privacy & Security** still shows Cuebot turned on, select Cuebot
+    in **Input Monitoring** and **Accessibility**, remove it with **−**, and add it again with **+**.
+
+!!! note "Notifications on a Mac"
+    Cuebot's system notifications on a Mac come from **Script Editor** (a helper that is part of macOS). If none
+    show up, open **System Settings > Notifications > Script Editor** and allow them, or set Cuebot to use its own
+    in-app notifications instead.
+
 ## Linux
 
 ### AppImage
