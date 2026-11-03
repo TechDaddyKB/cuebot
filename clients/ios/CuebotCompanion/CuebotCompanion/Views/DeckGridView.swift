@@ -48,6 +48,7 @@ struct DeckLayout: Equatable {
 
 struct DeckButton: View {
     @Environment(DeckStore.self) private var deck
+    @Environment(ConnectionStore.self) private var connection
     let item: DeckItem
     let size: CGSize
     @State private var pressed = false
@@ -73,13 +74,21 @@ struct DeckButton: View {
                 RoundedRectangle(cornerRadius: min(size.width, size.height) * 0.14)
                     .fill(background)
                     .overlay {
+                        if !item.backgroundImage.isEmpty {
+                            DeckRemoteImage(link: item.backgroundImage, base: connection.endpoint?.httpBase, fill: true)
+                                .clipShape(RoundedRectangle(cornerRadius: min(size.width, size.height) * 0.14))
+                        }
+                    }
+                    .overlay {
                         if let flash { RoundedRectangle(cornerRadius: min(size.width, size.height) * 0.14).fill(flash.opacity(0.55)) }
                     }
                 VStack(spacing: 4) {
-                    if let symbol = DeckIcons.symbol(for: item.icon) {
-                        Image(systemName: symbol)
-                            .font(.system(size: min(size.width, size.height) * 0.3))
-                            .foregroundStyle(Color(cuebot: item.iconColor, fallback: titleColor))
+                    if !item.iconUrl.isEmpty {
+                        DeckRemoteImage(link: item.iconUrl, base: connection.endpoint?.httpBase)
+                            .frame(width: min(size.width, size.height) * 0.38, height: min(size.width, size.height) * 0.38)
+                    } else if !item.icon.isEmpty {
+                        DeckIconView(name: item.icon, color: Color(cuebot: item.iconColor, fallback: titleColor),
+                                     size: min(size.width, size.height) * (item.title.isEmpty ? 0.5 : 0.34))
                     }
                     if !item.title.isEmpty {
                         Text(item.title)
@@ -125,8 +134,8 @@ private struct PressRecorder: ButtonStyle {
     }
 }
 
-/// Until Iconify icons are drawn (milestone I4), common Material Design icon names map to SF Symbols; others show
-/// the title only.
+/// Stand-ins while an Iconify icon loads (or when it cannot be fetched or drawn): common Material Design names map
+/// to SF Symbols; others show the title only.
 enum DeckIcons {
     private static let map: [String: String] = [
         "microphone": "mic.fill", "microphone-off": "mic.slash.fill", "volume-high": "speaker.wave.3.fill",
