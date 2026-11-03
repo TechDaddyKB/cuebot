@@ -93,6 +93,8 @@ public sealed class PackagingTests
         Assert.Equal(PackageKind.LinuxTarball, PackagingDetector.Detect(Linux(dir: "/home/u/Cuebot-0.1.0/lib/")));
         Assert.Equal(PackageKind.LinuxTarball, PackagingDetector.Detect(Linux(dir: "/usr/lib/cuebotx/")));
         Assert.Equal(PackageKind.Other, PackagingDetector.Detect(new(false, false, _ => null, _ => false, "/Applications/", Architecture.Arm64)));
+        Assert.Equal(PackageKind.MacApp, PackagingDetector.Detect(new(false, false, _ => null, _ => false, "/Applications/Cuebot.app/Contents/MacOS/", Architecture.Arm64, IsMacOS: true)));
+        Assert.Equal(PackageKind.Other, PackagingDetector.Detect(new(false, false, _ => null, _ => false, "/Users/u/cuebot/src/Cuebot.App/bin/Release/net10.0/", Architecture.Arm64, IsMacOS: true)));
     }
 
     [Fact]
@@ -101,6 +103,8 @@ public sealed class PackagingTests
         Assert.Equal("Cuebot-win-x64.zip", PackagingDetector.AssetName(PackageKind.WindowsZip, "0.2.0", Architecture.X64));
         Assert.Equal("Cuebot-x86_64.AppImage", PackagingDetector.AssetName(PackageKind.AppImage, "0.2.0", Architecture.X64));
         Assert.Equal("Cuebot-0.2.0-linux-arm64.tar.gz", PackagingDetector.AssetName(PackageKind.LinuxTarball, "0.2.0", Architecture.Arm64));
+        Assert.Equal("Cuebot-macos-arm64.dmg", PackagingDetector.AssetName(PackageKind.MacApp, "0.2.0", Architecture.Arm64));
+        Assert.Equal("Cuebot-macos-x64.dmg", PackagingDetector.AssetName(PackageKind.MacApp, "0.2.0", Architecture.X64));
         Assert.Null(PackagingDetector.AssetName(PackageKind.Flatpak, "0.2.0", Architecture.X64));
         Assert.Null(PackagingDetector.AssetName(PackageKind.SystemPackage, "0.2.0", Architecture.X64));
         Assert.Contains("flatpak update", PackagingDetector.Instructions(PackageKind.Flatpak));

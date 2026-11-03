@@ -1,8 +1,8 @@
 namespace Cuebot.Speech;
 
 /// <summary>
-/// Fallback backend over the WAV-only players (winmm PlaySound on Windows; pw-play/paplay/aplay on Linux), used when
-/// the native library can't load. Default device only, no capture; winmm cannot mix.
+/// Fallback backend over the WAV-only players (winmm PlaySound on Windows; pw-play/paplay/aplay on Linux; afplay on
+/// macOS), used when the native library can't load. Default device only, no capture; winmm cannot mix.
 /// </summary>
 internal sealed class LegacyAudioBackend(IAudioPlayer player, string name, bool canMix) : IAudioBackend
 {

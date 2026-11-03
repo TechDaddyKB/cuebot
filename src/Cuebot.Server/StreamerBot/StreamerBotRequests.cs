@@ -91,7 +91,7 @@ public sealed class StreamerBotRequests(ServerServices services)
     {
         ["instanceId"] = InstanceId,
         ["name"] = "Cuebot",
-        ["os"] = OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsLinux() ? "linux" : "other",
+        ["os"] = OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsLinux() ? "linux" : OperatingSystem.IsMacOS() ? "macos" : "other",
         ["osVersion"] = RuntimeInformation.OSDescription,
         ["version"] = "1.0.0",
         ["cuebotVersion"] = Cuebot.Core.AppVersion.Current,

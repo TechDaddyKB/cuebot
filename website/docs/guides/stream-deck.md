@@ -8,8 +8,8 @@ There are two ways to connect one. Pick **one**.
 | | With the Stream Deck app | Direct USB |
 | --- | --- | --- |
 | **What it is** | Elgato's own Stream Deck app, plus Cuebot's plugin | Cuebot talks to the Stream Deck by itself |
-| **Works on** | Windows and macOS (where the Stream Deck app runs) | Linux |
-| **Good for** | Mixing Cuebot buttons with other plugins | Linux, where Elgato has no app |
+| **Works on** | Windows and macOS (where the Stream Deck app runs) | Linux and macOS |
+| **Good for** | Mixing Cuebot buttons with other plugins | Linux, where Elgato has no app, or a Mac without the app |
 
 Both are on **Input > Stream Deck**.
 
@@ -57,9 +57,10 @@ Cuebot lists connected Stream Deck apps under **Connected Stream Deck apps**.
 
 Each key has a **Button ID**: a name you choose, like `brb`. Cuebot's actions use it to find the key.
 
-## Way 2: direct USB (Linux)
+## Way 2: direct USB
 
-On Linux there is no Stream Deck app, so Cuebot drives the Stream Deck itself.
+On Linux there is no Stream Deck app, so Cuebot drives the Stream Deck itself. On a Mac you can do the same instead of
+using the Stream Deck app: quit the Stream Deck app first (it keeps the deck for itself).
 
 1. Plug in your Stream Deck.
 2. Go to **Input > Stream Deck**. On the **Direct USB (no Stream Deck app)** card, make sure **Use Stream Decks on
@@ -76,11 +77,12 @@ yet.
 
 !!! warning "Experimental for most models"
     Direct USB was tried with a real **Stream Deck XL**. The MK.2, the newer Stream Deck (V2), Neo, Stream Deck + and
-    the Pedal should work the same way, but nobody has tried them yet. See [What's experimental](experimental.md).
+    the Pedal should work the same way, but nobody has tried them yet. On a Mac, direct USB has not been tried with a
+    real Stream Deck yet. See [What's experimental](experimental.md).
 
 !!! warning "Only one program at a time"
-    A Stream Deck can only listen to one program. Close other Stream Deck programs, like StreamController or OpenDeck,
-    or untick **Use Stream Decks on USB**. Cuebot tells you which program is using the deck.
+    A Stream Deck can only listen to one program. Close other Stream Deck programs, like the Stream Deck app,
+    StreamController or OpenDeck, or untick **Use Stream Decks on USB**. Cuebot tells you which program is using the deck.
 
 ### Linux: the permission rule
 

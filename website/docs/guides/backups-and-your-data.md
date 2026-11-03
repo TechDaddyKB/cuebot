@@ -8,6 +8,7 @@ Everything Cuebot knows (settings, actions, sign-ins, logs and backups) is in on
 | --- | --- |
 | Windows | `%APPDATA%\Cuebot` (type this into the address bar of File Explorer) |
 | Linux | `~/.config/Cuebot` |
+| macOS | `~/Library/Application Support/Cuebot` |
 
 The program folder holds no settings. That is why you can replace it when you update.
 

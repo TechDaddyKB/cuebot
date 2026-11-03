@@ -11,9 +11,11 @@ in testing, releases are marked **Pre-release**. Under **Assets**, pick the file
 | Linux (most people) | `Cuebot-x86_64.AppImage` |
 | Linux, with Flatpak | `Cuebot-x86_64.flatpak` |
 | Linux, ARM computer or if you prefer a plain folder | `Cuebot-<version>-linux-arm64.tar.gz` or `...-linux-x64.tar.gz` |
+| Mac with Apple silicon (M1 or newer) | `Cuebot-macos-arm64.dmg` |
+| Mac with an Intel chip | `Cuebot-macos-x64.dmg` |
 
-!!! note "Mac"
-    There is no Cuebot for Macs yet. Cuebot runs on Windows and Linux. See [What's experimental](experimental.md).
+!!! warning "Experimental"
+    Cuebot for Mac is new. See [What's experimental](experimental.md).
 
 ## Windows
 
@@ -25,6 +27,33 @@ in testing, releases are marked **Pre-release**. Under **Assets**, pick the file
 !!! note "\"Windows protected your PC\""
     Windows may show this blue box the first few times, because Cuebot is new and Windows does not know it yet. Click
     **More info**, then **Run anyway**.
+
+## Mac
+
+You need macOS 15 (Sequoia) or newer. Not sure which chip your Mac has? Open the Apple menu and click
+**About This Mac**: "Apple M..." means Apple silicon, "Intel" means Intel.
+
+1. Download the `.dmg` for your Mac and open it.
+2. Drag **Cuebot** onto the **Applications** folder next to it.
+3. Open **Applications** and double-click **Cuebot**.
+
+!!! note "\"Cuebot cannot be opened\" or \"Apple could not verify Cuebot\""
+    macOS asks before the first start, because this Cuebot is not yet signed by Apple. Click **Done** (or
+    **OK**), open **System Settings > Privacy & Security**, scroll down and click **Open Anyway** next to Cuebot. You
+    only do this once. (On older Macs, right-click **Cuebot** and choose **Open** instead; macOS 15 no longer offers
+    that shortcut.)
+
+When you turn on Voice Control, macOS asks whether Cuebot may use the microphone. Click **Allow**.
+
+!!! note "After updating on a Mac"
+    This Cuebot is not signed by Apple yet, so macOS sees each update as a new app. If hotkeys or key presses stop
+    working after an update while **System Settings > Privacy & Security** still shows Cuebot turned on, select Cuebot
+    in **Input Monitoring** and **Accessibility**, remove it with **−**, and add it again with **+**.
+
+!!! note "Notifications on a Mac"
+    Cuebot's system notifications on a Mac come from **Script Editor** (a helper that is part of macOS). If none
+    show up, open **System Settings > Notifications > Script Editor** and allow them, or set Cuebot to use its own
+    in-app notifications instead.
 
 ## Linux
 
@@ -63,7 +92,8 @@ Linux has a few extras, like sound players and the Stream Deck. See the [Linux p
 
 1. Close Cuebot.
 2. Download the new version.
-3. Unzip it over the old folder, or into a new folder.
+3. Unzip it over the old folder, or into a new folder. On a Mac, drag the new Cuebot into **Applications** and
+   choose **Replace**.
 
 Your actions and settings are **not** in the program folder, so nothing is lost. They live in your
 [data folder](backups-and-your-data.md).

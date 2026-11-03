@@ -113,7 +113,7 @@ public sealed class AudioOutput : IAudioClipPlayer, IAudioInput, IDisposable
     {
         if (AudioDeviceSelector.IsDefault(requested)) return null;
         var device = AudioDeviceSelector.Resolve(GetOutputDevices(), requested);
-        if (device is not null) return device.Id;
+        if (device is not null) return Matched("Output", requested!, device);
         WarnMissing("Output", requested!);
         return null;
     }
@@ -122,9 +122,19 @@ public sealed class AudioOutput : IAudioClipPlayer, IAudioInput, IDisposable
     {
         if (AudioDeviceSelector.IsDefault(requested)) return null;
         var device = AudioDeviceSelector.Resolve(GetInputDevices(), requested);
-        if (device is not null) return device.Id;
+        if (device is not null) return Matched("Input", requested!, device);
         WarnMissing("Input", requested!);
         return null;
+    }
+
+    /// <summary>The device's id; says once when a stored choice only matched by name.</summary>
+    private string Matched(string kind, string requested, AudioDevice device)
+    {
+        if (string.Equals(device.Id, requested.Trim(), StringComparison.OrdinalIgnoreCase)) return device.Id;
+        bool first;
+        lock (_warnedDevices) first = _warnedDevices.Add(kind + "|" + requested + "|" + device.Id);
+        if (first) _log?.Info(LogSource, $"{kind} device \"{requested}\" is not listed under that name; using \"{device.Name}\".");
+        return device.Id;
     }
 
     private void WarnMissing(string kind, string requested)

@@ -31,7 +31,7 @@ public sealed class ModuleRegistrationTests : IAsyncDisposable
     {
         Assert.Contains(_services.GetServices<IConnectionStatus>(), s => s.Name == "Voice Control");
         Assert.Equal(["whisper", "windows", "fake"], Voice.Engines.Select(e => e.Id));
-        Assert.Equal(OperatingSystem.IsWindows() || OperatingSystem.IsLinux(), Voice.Engines[0].IsAvailable);
+        Assert.Equal(OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS(), Voice.Engines[0].IsAvailable);
         if (!OperatingSystem.IsWindows())
         {
             Assert.False(Voice.Engines[1].IsAvailable);

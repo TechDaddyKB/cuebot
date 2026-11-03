@@ -47,7 +47,6 @@ In the other guides, experimental features have a yellow **Experimental** box li
 | [Pulsoid and HypeRate](stream-apps-and-devices.md#lights-mixers-and-other-apps) (heart rate) | **Apps > Apps & devices**, tab **Apps & services** | Cuebot's tests only | A real heart-rate service | Connect and check your heart rate shows up |
 | [Basic Discord webhook and IFTTT](donations-and-integrations.md#discord) | Sub-actions **Discord > Basic webhook** and **IFTTT > Notification** | Cuebot's tests only | Posting to a real Discord webhook or IFTTT | Post a test message to a channel |
 | [Linking two Cuebots](servers.md#linking-two-cuebots) | **Apps > Servers**, **Remote instances** | Two copies of Cuebot inside Cuebot's tests | Two real computers on a home network | Link two Cuebots and send a signal from one to the other |
-| Cuebot on a Mac | (no download yet) | Some parts of the code know about Macs | Everything: there is no Mac download, and Cuebot has never run on a Mac | Nothing yet. Cuebot is for Windows and Linux for now. |
 
 ## Partly checked
 
@@ -60,10 +59,11 @@ These were tried with the real thing, but only some of it.
 | [StreamLoots](stream-apps-and-devices.md#lights-mixers-and-other-apps) | **Apps > Apps & devices**, tab **Apps & services** | Connecting to StreamLoots | A real card or chest |
 | [Crowd Control](stream-apps-and-devices.md#lights-mixers-and-other-apps) | **Apps > Apps & devices**, tab **Apps & services** | Crowd Control answering Cuebot | A real effect bought by a viewer |
 | [Stream Deck with the Stream Deck app](stream-deck.md#way-1-the-stream-deck-app-and-cuebots-plugin) | **Input > Stream Deck** | The plugin connected to Cuebot in the real Stream Deck app on Windows | Not every key, dial and touch action |
-| [Stream Deck over USB](stream-deck.md#way-2-direct-usb-linux) | **Input > Stream Deck** | A real Stream Deck XL on Linux | The MK.2, the newer Stream Deck (V2), Neo, Stream Deck + and the Pedal |
-| [MIDI](stream-apps-and-devices.md#your-buttons-and-controllers) | **Input > Input**, tab **MIDI** | Sending MIDI on Windows and Linux; a pretend loop on Linux | Pressing keys on a real MIDI controller |
+| [Stream Deck over USB](stream-deck.md#way-2-direct-usb) | **Input > Stream Deck** | A real Stream Deck XL on Linux | The MK.2, the newer Stream Deck (V2), Neo, Stream Deck + and the Pedal. Any real Stream Deck on a Mac. |
+| [MIDI](stream-apps-and-devices.md#your-buttons-and-controllers) | **Input > Input**, tab **MIDI** | Sending MIDI on Windows and Linux; a pretend loop on Linux and on a Mac | Pressing keys on a real MIDI controller |
 | [Game controllers](stream-apps-and-devices.md#your-buttons-and-controllers) | **Input > Input**, tab **Game controllers** | The controller part starts on Windows and Linux | A real game controller being pressed |
 | [Rumble](connecting-platforms.md#rumble) | **Platforms > Rumble** | Reading: followers, live state and chat | Not confirmed: writing in Rumble chat |
+| [Cuebot for Mac](installation.md#mac) | Everything | On a Mac with Apple silicon: Cuebot starts and shows its pages, opens the speakers, shows notifications and turns recorded speech into text | A Mac with an Intel chip. Voice Control with a live microphone. Hotkeys, Keyboard press and Mouse click triggers (they need permissions turned on by hand). Signing in to platforms, OBS and other apps from a Mac. |
 | [The assistant](assistant.md) | **Home > Assistant** | Codex, Claude Code, Grok CLI and Antigravity CLI on Linux; an OpenAI key; Ollama with Qwen3.5 | Keys for Claude (Anthropic), Grok (xAI) and Gemini (Google) were only checked with pretend services. LM Studio is not confirmed. |
 
 ## Tried with the real thing

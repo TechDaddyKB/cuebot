@@ -19,7 +19,7 @@ public sealed record DesktopNotification(string Title, string Message)
 
 public enum NotificationTarget
 {
-    /// <summary>The system's notifications where available (Linux notify-send), else the in-app toast.</summary>
+    /// <summary>The system's notifications where available (Linux notify-send, macOS Notification Center), else the in-app toast.</summary>
     Auto,
 
     /// <summary>Cuebot's own toast window in the screen corner (all platforms, needs the desktop app).</summary>
@@ -105,6 +105,39 @@ public sealed class NotifySendNotifier(AppLog log, string? executable = null) : 
     }
 }
 
+/// <summary>
+/// macOS: Notification Center through <c>osascript</c> ("display notification"). The text is passed as script
+/// arguments, never spliced into the script. macOS shows these under Script Editor and ignores icon and duration.
+/// </summary>
+public sealed class OsascriptNotifier(AppLog log, string? executable = null) : ISystemNotifier
+{
+    internal const string Script = "on run argv\ndisplay notification (item 2 of argv) with title (item 1 of argv)\nend run";
+
+    private readonly string? _path = executable ?? (OperatingSystem.IsMacOS() && File.Exists("/usr/bin/osascript") ? "/usr/bin/osascript" : null);
+
+    public bool IsAvailable => _path is not null;
+
+    public async Task ShowAsync(DesktopNotification notification, CancellationToken ct)
+    {
+        var path = _path ?? throw new InvalidOperationException("osascript is only available on macOS");
+        var start = new ProcessStartInfo(path) { UseShellExecute = false, RedirectStandardError = true, CreateNoWindow = true };
+        foreach (var arg in Arguments(notification)) start.ArgumentList.Add(arg);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start osascript");
+        var stderr = process.StandardError.ReadToEndAsync(ct);
+        await process.WaitForExitAsync(ct);
+        if (process.ExitCode != 0)
+        {
+            var error = (await stderr).Trim();
+            log.Warn("Notifications", $"osascript failed ({process.ExitCode}): {error}");
+            throw new InvalidOperationException("osascript failed: " + (error.Length > 0 ? error : $"exit code {process.ExitCode}"));
+        }
+    }
+
+    /// <summary>Command-line arguments: the fixed script, then title and message as its argv.</summary>
+    public static IReadOnlyList<string> Arguments(DesktopNotification n) =>
+        ["-e", Script, n.Title.Length > 0 ? n.Title : "Cuebot", n.Message];
+}
+
 /// <summary>desktop.json.</summary>
 public sealed class DesktopSettings
 {
@@ -128,7 +161,8 @@ public static class DesktopEvents
 }
 
 /// <summary>
-/// Routes notifications: Auto prefers the system service (Linux notify-send) and falls back to the in-app toast
+/// Routes notifications: Auto prefers the system service (Linux notify-send, macOS Notification Center) and falls back
+/// to the in-app toast
 /// (always on Windows). Clicking an in-app toast publishes "desktop.toastActivated" (toastId, title, message).
 /// </summary>
 public sealed class DesktopNotifier(ISystemNotifier system, IToastPresenter toast, EventBus bus, AppLog log,
@@ -141,7 +175,8 @@ public sealed class DesktopNotifier(ISystemNotifier system, IToastPresenter toas
         var useSystem = target == NotificationTarget.System || (target == NotificationTarget.Auto && system.IsAvailable);
         if (useSystem)
         {
-            if (!system.IsAvailable) throw new InvalidOperationException("No system notification service (install notify-send)");
+            if (!system.IsAvailable)
+                throw new InvalidOperationException("No system notification service" + (OperatingSystem.IsLinux() ? " (install notify-send)" : ""));
             await system.ShowAsync(notification, ct);
             return "system";
         }

@@ -303,7 +303,8 @@ public sealed class DesktopShell : IShellHost, IDisposable
         try
         {
             using var icon = AssetLoader.Open(new Uri("avares://Cuebot/Assets/cuebot.ico"));
-            _tray = new TrayIcon { Icon = new WindowIcon(icon), Menu = menu, IsVisible = true };
+            // A tooltip from the start: macOS's native tray cannot take a null one (UpdateTrayMenu fills in the status).
+            _tray = new TrayIcon { Icon = new WindowIcon(icon), Menu = menu, ToolTipText = "Cuebot", IsVisible = true };
             _tray.Clicked += (_, _) => ToggleWindow();
             TrayIcon.SetIcons(_app, [_tray]);
         }

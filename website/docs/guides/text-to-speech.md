@@ -16,7 +16,7 @@ An **engine** is the thing that makes the voice. Open the **Engines** tab.
 | --- | --- | --- |
 | **Windows voices** | Windows | Nothing. These are the voices already in Windows. |
 | **eSpeak NG** | Windows and Linux | Free, works without internet. On Linux, install `espeak-ng` (the Flatpak has it). |
-| **Piper** | Windows and Linux | Free, works without internet, and sounds much more natural than eSpeak. Cuebot downloads it for you: see [Piper](#piper-free-voices-on-your-computer) below. |
+| **Piper** | Windows and Linux (not on a Mac yet) | Free, works without internet, and sounds much more natural than eSpeak. Cuebot downloads it for you: see [Piper](#piper-free-voices-on-your-computer) below. |
 | **OpenAI**, **ElevenLabs**, **Microsoft Azure**, **Google Cloud**, **Amazon Polly**, **IBM Watson** | The internet | Your own account and key with that company |
 | **Acapela Cloud**, **CereProc (CereVoice Cloud)**, **TTS Monster**, **UberDuck** | The internet | Your own account and key |
 

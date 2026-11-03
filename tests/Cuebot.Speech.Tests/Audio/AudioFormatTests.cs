@@ -163,6 +163,30 @@ public class AudioFormatTests
     }
 
     [Fact]
+    public void Device_selector_falls_back_to_the_one_name_containing_the_stored_one()
+    {
+        // The same devices as another audio backend names them.
+        AudioDevice[] devices =
+        [
+            new("Speakers (Realtek(R) Audio)", "Speakers (Realtek(R) Audio)", true),
+            new("CABLE Input (VB-Audio Virtual Cable)", "CABLE Input (VB-Audio Virtual Cable)", false),
+            new("CABLE Input (VB-Audio Virtual Cable 16ch)", "CABLE Input (VB-Audio Virtual Cable 16ch)", false),
+            new("Out", "Out", false),
+        ];
+        Assert.Equal("CABLE Input (VB-Audio Virtual Cable 16ch)", AudioDeviceSelector.Resolve(devices, "virtual cable 16ch")?.Id);
+        Assert.Equal("Speakers (Realtek(R) Audio)", AudioDeviceSelector.Resolve(devices, "realtek(r)")?.Id);
+        Assert.Null(AudioDeviceSelector.Resolve(devices, "cable input"));   // two cables match: do not guess
+        Assert.Null(AudioDeviceSelector.Resolve(devices, "Ou"));   // too short to look for inside names
+        Assert.Null(AudioDeviceSelector.Resolve(devices, "Output to nowhere"));   // only device names containing the stored one
+
+        // The stored Realtek speakers are unplugged; a USB "Speakers" and another "Speakers (2)" remain: never guess.
+        AudioDevice[] usb = [new("Speakers", "Speakers", true), new("Speakers (2)", "Speakers", false)];
+        Assert.Null(AudioDeviceSelector.Resolve(usb, "Speakers (Realtek(R) Audio)"));
+        Assert.Null(AudioDeviceSelector.Resolve([new AudioDevice("Speakers", "Speakers", true)], "Speakers (Realtek(R) Audio)"));
+        Assert.Equal("Speakers (2)", AudioDeviceSelector.Resolve(usb, "Speakers (2)")?.Id);   // exact ids still win
+    }
+
+    [Fact]
     public void Native_library_failure_falls_back_and_logs_why()
     {
         var log = new AppLog();

@@ -66,6 +66,43 @@ public sealed class HotkeyTests : IDisposable
     }
 
     [Fact]
+    public void Mac_key_codes_follow_the_ansi_layout_and_skip_keys_a_mac_lacks()
+    {
+        Assert.Equal(0x00, HotkeyKeys.MacKeyCode("A"));
+        Assert.Equal(0x0B, HotkeyKeys.MacKeyCode("B"));
+        Assert.Equal(0x11, HotkeyKeys.MacKeyCode("T"));
+        Assert.Equal(0x1D, HotkeyKeys.MacKeyCode("0"));
+        Assert.Equal(0x7A, HotkeyKeys.MacKeyCode("F1"));
+        Assert.Equal(0x5C, HotkeyKeys.MacKeyCode("NumPad9"));
+        Assert.Null(HotkeyKeys.MacKeyCode("PrintScreen"));
+        Assert.Null(HotkeyKeys.MacKeyCode("MediaPlayPause"));
+        var codes = HotkeyKeys.Names.Select(HotkeyKeys.MacKeyCode).OfType<int>().ToArray();
+        Assert.Equal(codes.Length, codes.Distinct().Count());
+        Assert.All("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", c => Assert.NotNull(HotkeyKeys.MacKeyCode(c.ToString())));
+    }
+
+    [Fact]
+    public void Mac_hotkey_table_matches_exact_modifiers_and_rejects_duplicates()
+    {
+        var (table, results) = MacHotkeyTable.Build(
+        [
+            new("go", "Go", HotkeyGesture.Parse("Cmd+Shift+F1")),
+            new("again", "Again", HotkeyGesture.Parse("Meta+Shift+F1")),
+            new("print", "Print", HotkeyGesture.Parse("PrintScreen")),
+            new("plain", "Plain", HotkeyGesture.Parse("F1")),
+        ]);
+        Assert.Equal([true, false, false, true], results.Select(r => r.Ok));
+        Assert.Contains("already used", results[1].Error);
+        Assert.Contains("not on a Mac keyboard", results[2].Error);
+
+        const ulong capsLock = 0x10000, fn = 0x800000;
+        Assert.Equal("go", table.Match(0x7A, MacEventFlags.Command | MacEventFlags.Shift | capsLock));
+        Assert.Equal("plain", table.Match(0x7A, fn));
+        Assert.Null(table.Match(0x7A, MacEventFlags.Command));
+        Assert.Null(table.Match(0x78, 0));
+    }
+
+    [Fact]
     public async Task Service_registers_enabled_valid_hotkeys_and_publishes_presses()
     {
         var ran = new List<(string Action, string Hotkey)>();
@@ -370,6 +407,15 @@ public sealed class NotificationAndClipboardTests : IDisposable
         var args = NotifySendNotifier.Arguments(new DesktopNotification("-x; rm -rf ~", "$(boom)") { IconPath = "/tmp/i.png", DurationSeconds = 3 });
         Assert.Equal(["--app-name=Cuebot", "--expire-time=3000", "--icon=/tmp/i.png", "--", "-x; rm -rf ~", "$(boom)"], args);
         Assert.False(new NotifySendNotifier(_log, executable: null).IsAvailable && !OperatingSystem.IsLinux());
+    }
+
+    [Fact]
+    public void Osascript_gets_the_text_as_arguments_not_as_script()
+    {
+        var args = OsascriptNotifier.Arguments(new DesktopNotification("\" & do shell script \"x", "$(boom)"));
+        Assert.Equal(["-e", OsascriptNotifier.Script, "\" & do shell script \"x", "$(boom)"], args);
+        Assert.Equal("Cuebot", OsascriptNotifier.Arguments(new DesktopNotification("", "hi"))[2]);
+        Assert.Equal(OperatingSystem.IsMacOS(), new OsascriptNotifier(_log).IsAvailable);
     }
 
     [Fact]

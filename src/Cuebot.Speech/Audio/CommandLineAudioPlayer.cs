@@ -1,6 +1,6 @@
 namespace Cuebot.Speech;
 
-/// <summary>Plays WAV data by writing a temporary file and running a command-line player (pw-play, paplay, aplay).</summary>
+/// <summary>Plays WAV data by writing a temporary file and running a command-line player (pw-play, paplay, aplay, afplay).</summary>
 internal sealed class CommandLineAudioPlayer(string executable, IReadOnlyList<string> arguments) : IAudioPlayer
 {
     /// <summary>Supported players in order of preference, with the arguments placed before the file name.</summary>
@@ -9,6 +9,7 @@ internal sealed class CommandLineAudioPlayer(string executable, IReadOnlyList<st
         ("pw-play", []),
         ("paplay", []),
         ("aplay", ["-q"]),
+        ("afplay", []),   // macOS, always installed
     ];
 
     public string Executable => executable;

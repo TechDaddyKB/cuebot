@@ -274,6 +274,7 @@ public sealed class MidiEventMatcherTests
     }
 }
 
+[Collection("Platform MIDI")]
 public sealed class PlatformBackendTests
 {
     /// <summary>

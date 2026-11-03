@@ -22,7 +22,7 @@
                   <Button Grid.Column="1" Content="Scan now" Command="{Binding RescanCommand}" ToolTip.Tip="Looks for Stream Decks plugged into this computer again." />
                 </Grid>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Cuebot can run a Stream Deck plugged into this computer by itself, without the Stream Deck app (Linux). Pressing a key sets off the Stream Deck Action trigger with the key's button ID, and the Stream Deck sub-actions can change its title, image and state. Close other Stream Deck programs (StreamController, OpenDeck) or turn this off so they can use the deck." />
+                           Text="Cuebot can run a Stream Deck plugged into this computer by itself, without the Stream Deck app (Linux and macOS). Pressing a key sets off the Stream Deck Action trigger with the key's button ID, and the Stream Deck sub-actions can change its title, image and state. Close other Stream Deck programs (the Elgato Stream Deck app, StreamController, OpenDeck) or turn this off so they can use the deck." />
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Name="UsbStatus" Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
                 </TextBlock>

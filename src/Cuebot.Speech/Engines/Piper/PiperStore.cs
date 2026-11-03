@@ -14,15 +14,18 @@ public sealed record PiperRelease(string FileName, long SizeBytes, string Sha256
 
     public Uri Url => new($"https://github.com/rhasspy/piper/releases/download/{Tag}/{FileName}");
 
+    /// <summary>Why Piper cannot be downloaded on a Mac (see <see cref="ForThisComputer"/>).</summary>
+    public const string MacReason =
+        "Piper's download for Mac does not run (it is missing its libraries), so Cuebot cannot get it for you. If you "
+        + "have a working piper program, choose it under Program; otherwise use another voice.";
+
     /// <summary>The release for this computer, or null when Piper has no program for it.</summary>
     public static PiperRelease? ForThisComputer()
     {
-        var arm = RuntimeInformation.OSArchitecture == Architecture.Arm64;
         if (OperatingSystem.IsWindows()) return new("piper_windows_amd64.zip", 22477236, "f3c58906402b24f3a96d92145f58acba6d86c9b5db896d207f78dc80811efcea");
-        if (OperatingSystem.IsMacOS())
-            return arm
-                ? new("piper_macos_aarch64.tar.gz", 19146957, "6b1eb03b3735946cb35216e063e7eebcc33a6bbf5dd96ec0217959bf1cdcb0cc")
-                : new("piper_macos_x64.tar.gz", 19146927, "ced85c0a3df13945b1e623b878a48fdc2854d5c485b4b67f62857cf551deaf8b");
+        // The macOS archives of this release are broken: the "aarch64" one holds an x86_64 program, and both lack
+        // libespeak-ng, libpiper_phonemize and libonnxruntime (only their debug symbols are included).
+        if (OperatingSystem.IsMacOS()) return null;
         if (OperatingSystem.IsLinux())
             return RuntimeInformation.OSArchitecture switch
             {

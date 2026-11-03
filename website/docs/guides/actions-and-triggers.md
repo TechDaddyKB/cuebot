@@ -151,6 +151,12 @@ no action uses it. Select one to see its variables. Two handy buttons:
 3. Either type an action in **Run action (optional)**, or add the **Hotkey pressed** trigger to an action.
 4. **Test** tries it.
 
+!!! note "Mac"
+    On a Mac, `Meta` is the **Command** key and `Alt` is **Option**. The first time you turn on a hotkey, macOS asks
+    whether Cuebot may watch the keyboard: open **System Settings > Privacy & Security > Input Monitoring**, turn on
+    **Cuebot**, then quit and reopen Cuebot. The app in front still gets the keys, so pick combos it does not use.
+    The **Keyboard press** sub-action needs **Accessibility** in the same place, for the same reason.
+
 ## Watchers
 
 **Automation > Watchers** reacts to things on your computer:

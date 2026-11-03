@@ -11,7 +11,8 @@ There are two ways Cuebot finds your music:
 | **Your Spotify account** | Spotify on any device: a PC, a Mac, a phone or a speaker | A free "Spotify app" you make once (about two minutes, see below). Song requests and skipping need **Spotify Premium**. |
 
 !!! note "Mac"
-    There is no Cuebot download for Macs yet. Cuebot runs on Windows and Linux.
+    On a Mac, Cuebot cannot see the players on your computer yet. Sign in to your Spotify account to show the songs
+    you play in Spotify.
 
 !!! warning "Experimental"
     **Spotify** (showing the song and song requests) and **now playing on Windows** are built and tested by Cuebot's own
