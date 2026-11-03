@@ -10,11 +10,12 @@ public sealed record HotkeyBindingResult(string Id, bool Ok, string? Error = nul
 
 /// <summary>
 /// System-wide hotkeys (they work while another application has focus). Implementations: Windows RegisterHotKey,
-/// the XDG Desktop Portal GlobalShortcuts interface (Wayland and modern X11 desktops), X11 XGrabKey, and a no-op.
+/// the XDG Desktop Portal GlobalShortcuts interface (Wayland and modern X11 desktops), X11 XGrabKey, a macOS event
+/// tap, and a no-op.
 /// </summary>
 public interface IGlobalHotkeys : IDisposable
 {
-    /// <summary>"Windows", "XDG portal", "X11" or "Unavailable".</summary>
+    /// <summary>"Windows", "XDG portal", "X11", "macOS" or "Unavailable".</summary>
     string BackendName { get; }
 
     /// <summary>Human-readable state for the Hotkeys page ("3 hotkeys registered", "No global hotkey support: ...").</summary>
@@ -48,6 +49,7 @@ public static class GlobalHotkeys
     {
         if (OperatingSystem.IsWindows()) return new WindowsGlobalHotkeys(log);
         if (OperatingSystem.IsLinux()) return new LinuxGlobalHotkeys(log);
+        if (OperatingSystem.IsMacOS()) return new MacGlobalHotkeys(log);
         return new UnavailableGlobalHotkeys("this operating system is not supported");
     }
 }
