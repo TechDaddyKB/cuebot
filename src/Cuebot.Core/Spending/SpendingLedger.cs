@@ -53,6 +53,9 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
     private readonly TimeProvider _time;
     private readonly object _gate = new();
     private readonly HashSet<string> _live = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Emulated purchases (never saved) waiting for their stream's exchange rates.</summary>
+    private readonly List<SpendRecord> _emulatedPending = [];
     private readonly HashSet<string> _warned = new(StringComparer.OrdinalIgnoreCase);
     private Task _fetch = Task.CompletedTask;
     private DateTimeOffset _lastFetch = DateTimeOffset.MinValue;
@@ -120,7 +123,7 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
     /// <summary>Counts an activity item (subscribed to the chat hub; public for tests).</summary>
     public void Record(FeedItem item)
     {
-        if (item.IsTest) return;
+        if (item.IsTest && !item.IsEmulated) return;
         switch (item.Kind)
         {
             case FeedKind.StreamOnline:
@@ -131,7 +134,7 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
                 return;
         }
         if (item.Spend is not { } spend) return;
-        Add(item.Platform, item.User, spend, item.Time);
+        Add(item.Platform, item.User, spend, item.Time, emulated: item.IsTest);
     }
 
     /// <summary>Adds a purchase by hand (a cash gift, a sale outside a connected service...).</summary>
@@ -235,7 +238,11 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
         if (changed) Changed?.Invoke();
     }
 
-    private void Add(string platform, string user, FeedSpend spend, DateTimeOffset time)
+    /// <param name="emulated">
+    /// A sample from Cuebot's emulator: converted and announced (<see cref="SpendingEvents.Recorded"/>, so "Money spent"
+    /// actions and subathon timers and goals see it) but never saved, so top spenders stay real.
+    /// </param>
+    private void Add(string platform, string user, FeedSpend spend, DateTimeOffset time, bool emulated = false)
     {
         user = user.Trim().TrimStart('@');
         if (user.Length == 0) return;
@@ -270,12 +277,24 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
                 record.PaidAmount = Math.Round(spend.Quantity * UnitPriceUsd(settings, platform, spend), 4);
             }
             record.Value = Convert(record, session);
-            Data.Entries.Add(record);
-            Save();
-            recorded = Announce(record, session);
-            if (record.Value is not null) leaders = LeaderChanges(before, Leaders(platform));
+            if (emulated)
+            {
+                recorded = Announce(record, session, emulated: true);
+                if (recorded is null)
+                {
+                    if (_emulatedPending.Count >= 100) _emulatedPending.RemoveAt(0);
+                    _emulatedPending.Add(record);
+                }
+            }
+            else
+            {
+                Data.Entries.Add(record);
+                Save();
+                recorded = Announce(record, session);
+                if (record.Value is not null) leaders = LeaderChanges(before, Leaders(platform));
+            }
         }
-        Changed?.Invoke();
+        if (!emulated) Changed?.Invoke();
         if (recorded is not null) _bus.Publish(new BotEvent(SpendingEvents.Recorded, recorded));
         foreach (var args in leaders) _bus.Publish(new BotEvent(SpendingEvents.TopSpenderChanged, args));
     }
@@ -329,7 +348,7 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
         return Math.Round(record.PaidAmount, 2);
     }
 
-    private Dictionary<string, object?>? Announce(SpendRecord record, SpendingSession session)
+    private Dictionary<string, object?>? Announce(SpendRecord record, SpendingSession session, bool emulated = false)
     {
         if (record.Value is not { } value) return null;
         var currency = Data.Settings.Currency;
@@ -352,6 +371,8 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
             ["streamTotal"] = me?.Total ?? amount,
             ["rank"] = me?.Rank ?? 0,
             ["sessionId"] = session.Id,
+            ["isTest"] = emulated,
+            ["isEmulated"] = emulated,
         };
     }
 
@@ -510,6 +531,13 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
             {
                 record.Value = Convert(record, session);
                 if (Announce(record, session) is { } args) announcements.Add(args);
+            }
+            foreach (var record in _emulatedPending.Where(e => e.SessionId == sessionId).ToList())
+            {
+                record.Value = Convert(record, session);
+                if (Announce(record, session, emulated: true) is not { } args) continue;
+                announcements.Add(args);
+                _emulatedPending.Remove(record);
             }
             Save();
         }

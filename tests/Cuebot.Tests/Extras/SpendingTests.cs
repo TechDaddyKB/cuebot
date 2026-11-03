@@ -133,6 +133,52 @@ public sealed class SpendingTests : IDisposable
     }
 
     [Fact]
+    public async Task Emulated_purchases_are_announced_for_subathons_but_never_saved()
+    {
+        using var ledger = Ledger();
+        using var subathon = new Cuebot.Core.Subathon.SubathonService(null, null, _bus, _log, _clock);
+        var timer = subathon.AddTimer("Main");
+        subathon.UpdateTimer(timer.Id, t => { t.Values.PerCurrencyUnit = 60; t.Values.Per100Bits = 60; });
+        subathon.Start(timer.Id);
+        var recorded = new List<BotEvent>();
+        using var _ = _bus.Subscribe(e => { if (e.Type == SpendingEvents.Recorded) recorded.Add(e); });
+        Live(ledger);
+        await Settled(ledger);
+
+        ledger.Record(Item("YouTube", "Sample", Money(9, "EUR", "Super Chat")) with { IsTest = true, IsEmulated = true });
+        ledger.Record(Item("Twitch", "Sample", FeedSpend.Units(SpendUnit.Bits, 500, "Cheer")) with { IsTest = true, IsEmulated = true });
+
+        Assert.Empty(ledger.Top(SpendingPeriod.Stream).Spenders);   // top spenders stay real
+        Assert.Equal(2, recorded.Count);
+        Assert.Equal(10.0, Convert.ToDouble(recorded[0].Args["amount"]));   // still converted: 9 EUR at this stream's rate
+        Assert.True(recorded.All(e => e.Args["isTest"] is true && e.Args["isEmulated"] is true));
+        Assert.Equal(10 * 60 + 5 * 60, subathon.Timer(timer.Id)!.AddedSeconds);   // $10 and 500 bits moved the timer
+
+        using var reopened = Ledger();
+        Assert.Empty(reopened.Top(SpendingPeriod.AllTime).Spenders);   // nothing was saved
+    }
+
+    [Fact]
+    public async Task Emulated_purchases_wait_for_the_rates_like_real_ones()
+    {
+        var gate = new TaskCompletionSource();
+        _rates.Gate = gate.Task;
+        using var ledger = Ledger();
+        var recorded = new List<BotEvent>();
+        using var _ = _bus.Subscribe(e => { if (e.Type == SpendingEvents.Recorded) recorded.Add(e); });
+        Live(ledger);
+
+        ledger.Record(Item("YouTube", "Sample", Money(9, "EUR", "Super Chat")) with { IsTest = true, IsEmulated = true });
+        Assert.Empty(recorded);
+
+        gate.SetResult();
+        await Settled(ledger);
+        var e = Assert.Single(recorded);
+        Assert.Equal(10.0, Convert.ToDouble(e.Args["amount"]));
+        Assert.Empty(ledger.Top(SpendingPeriod.Stream).Spenders);
+    }
+
+    [Fact]
     public async Task Leaves_out_test_events_charity_and_ignored_names()
     {
         using var ledger = Ledger();
