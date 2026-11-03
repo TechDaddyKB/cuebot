@@ -100,6 +100,10 @@ internal static class MacQuartz
     [DllImport(CoreFoundation)]
     public static extern void CFRunLoopRun();
 
+    /// <summary>Runs the current thread's loop in <paramref name="mode"/> for at most <paramref name="seconds"/>.</summary>
+    [DllImport(CoreFoundation)]
+    public static extern int CFRunLoopRunInMode(IntPtr mode, double seconds, [MarshalAs(UnmanagedType.I1)] bool returnAfterSourceHandled);
+
     [DllImport(CoreFoundation)]
     public static extern void CFRunLoopStop(IntPtr runLoop);
 
@@ -109,8 +113,23 @@ internal static class MacQuartz
     /// <summary>kCFRunLoopCommonModes (an exported CFStringRef constant).</summary>
     public static IntPtr CommonModes => _commonModes.Value;
 
+    /// <summary>kCFRunLoopDefaultMode.</summary>
+    public static IntPtr DefaultMode => _defaultMode.Value;
+
     private static readonly Lazy<IntPtr> _commonModes = new(() =>
         Marshal.ReadIntPtr(NativeLibrary.GetExport(NativeLibrary.Load(CoreFoundation), "kCFRunLoopCommonModes")));
+
+    private static readonly Lazy<IntPtr> _defaultMode = new(() =>
+        Marshal.ReadIntPtr(NativeLibrary.GetExport(NativeLibrary.Load(CoreFoundation), "kCFRunLoopDefaultMode")));
+
+    /// <summary>
+    /// Runs the current thread's run loop until <paramref name="stop"/> says so. It wakes at least every 250 ms to
+    /// check, so a stop requested before the loop got going (when a CFRunLoopStop would be lost) still ends it.
+    /// </summary>
+    public static void RunUntil(Func<bool> stop)
+    {
+        while (!stop()) CFRunLoopRunInMode(DefaultMode, 0.25, false);
+    }
 
     /// <summary>
     /// Runs a listen-only event tap on its own thread with its own run loop until <see cref="Dispose"/>. The callback
@@ -122,6 +141,7 @@ internal static class MacQuartz
         private readonly Action<uint, IntPtr> _onEvent;
         private IntPtr _tap;
         private IntPtr _runLoop;
+        private volatile bool _stopping;
         private readonly Thread _thread;
 
         private ListenTap(ulong mask, Action<uint, IntPtr> onEvent, string threadName, out bool created)
@@ -144,7 +164,7 @@ internal static class MacQuartz
                 CFRunLoopAddSource(_runLoop, source, CommonModes);
                 CGEventTapEnable(_tap, true);
                 ready.Set();
-                CFRunLoopRun();
+                RunUntil(() => _stopping);
                 CFMachPortInvalidate(_tap);
                 CFRelease(source);
                 CFRelease(_tap);
@@ -175,7 +195,8 @@ internal static class MacQuartz
 
         public void Dispose()
         {
-            if (_runLoop != IntPtr.Zero) CFRunLoopStop(_runLoop);
+            _stopping = true;
+            if (_runLoop != IntPtr.Zero) CFRunLoopStop(_runLoop);   // wakes it now; the flag ends it either way
             _thread.Join(TimeSpan.FromSeconds(2));
         }
     }

@@ -113,6 +113,7 @@ public sealed class MacHidTransport : IHidTransport
         private nint _device;
         private nint _runLoop;
         private volatile bool _gone;
+        private volatile bool _stopping;
 
         public MacHidDevice(nint device, string name, long maxInputReport)
         {
@@ -136,7 +137,8 @@ public sealed class MacHidTransport : IHidTransport
                 Native.IOHIDDeviceRegisterRemovalCallback(_device, _onRemoved, 0);
                 Native.IOHIDDeviceScheduleWithRunLoop(_device, _runLoop, Native.DefaultMode);
                 ready.Set();
-                Native.CFRunLoopRun();
+                // Wakes every 250 ms to check: a stop before the loop got going would otherwise be lost.
+                while (!_stopping) Native.CFRunLoopRunInMode(Native.DefaultMode, 0.25, false);
             }) { IsBackground = true, Name = "Cuebot HID " + name };
             _thread.Start();
             ready.Wait();
@@ -201,9 +203,10 @@ public sealed class MacHidTransport : IHidTransport
         public void Dispose()
         {
             if (_device == 0) return;
-            Native.IOHIDDeviceUnscheduleFromRunLoop(_device, _runLoop, Native.DefaultMode);
+            _stopping = true;
             Native.CFRunLoopStop(_runLoop);
             _thread.Join(TimeSpan.FromSeconds(2));
+            Native.IOHIDDeviceUnscheduleFromRunLoop(_device, _runLoop, Native.DefaultMode);
             Native.IOHIDDeviceClose(_device, 0);
             Native.CFRelease(_device);
             _device = 0;
@@ -256,7 +259,7 @@ public sealed class MacHidTransport : IHidTransport
         [DllImport(CF)] public static extern nint CFSetGetCount(nint set);
         [DllImport(CF)] public static extern void CFSetGetValues(nint set, [Out] nint[] values);
         [DllImport(CF)] public static extern nint CFRunLoopGetCurrent();
-        [DllImport(CF)] public static extern void CFRunLoopRun();
+        [DllImport(CF)] public static extern int CFRunLoopRunInMode(nint mode, double seconds, [MarshalAs(UnmanagedType.I1)] bool returnAfterSourceHandled);
         [DllImport(CF)] public static extern void CFRunLoopStop(nint runLoop);
         [DllImport(CF)] private static extern nint CFStringCreateWithCString(nint allocator, byte[] text, uint encoding);
         [DllImport(CF)] [return: MarshalAs(UnmanagedType.I1)] private static extern bool CFStringGetCString(nint cf, byte[] buffer, nint size, uint encoding);
