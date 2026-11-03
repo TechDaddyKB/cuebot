@@ -59,9 +59,10 @@ public static class AudioDeviceSelector
 
     /// <summary>
     /// The matching device, or null for the default or an unknown device: by id, then by name ignoring case, then the
-    /// device whose name contains the stored one (or is contained in it) with the closest length. The last step keeps
-    /// a choice working when the audio system names the same device a little differently (another backend, a driver
-    /// update).
+    /// one device whose name contains the stored one. The last step keeps a choice working when the audio system adds
+    /// to a device's name (another backend, a driver update). It never goes the other way: a stored "Speakers (Realtek)"
+    /// must not land on a plain "Speakers" that is another device; and when several devices match, guessing could send
+    /// sound to the wrong one, so the default is used instead.
     /// </summary>
     public static AudioDevice? Resolve(IReadOnlyList<AudioDevice> devices, string? requested)
     {
@@ -70,14 +71,19 @@ public static class AudioDeviceSelector
         return devices.FirstOrDefault(d => string.Equals(d.Id, wanted, StringComparison.Ordinal))
             ?? devices.FirstOrDefault(d => string.Equals(d.Id, wanted, StringComparison.OrdinalIgnoreCase))
             ?? devices.FirstOrDefault(d => string.Equals(d.Name, wanted, StringComparison.OrdinalIgnoreCase))
-            ?? (wanted.Length < MinContainedLength ? null : devices
-                .Where(d => d.Name.Length >= MinContainedLength
-                            && (d.Name.Contains(wanted, StringComparison.OrdinalIgnoreCase) || wanted.Contains(d.Name, StringComparison.OrdinalIgnoreCase)))
-                .OrderBy(d => Math.Abs(d.Name.Length - wanted.Length))
-                .FirstOrDefault());
+            ?? (wanted.Length < MinContainedLength ? null : OnlyOne(devices
+                .Where(d => d.Name.Contains(wanted, StringComparison.OrdinalIgnoreCase))));
     }
 
-    /// <summary>Shorter names ("Out", "HD") match too much to be found inside another name.</summary>
+    private static AudioDevice? OnlyOne(IEnumerable<AudioDevice> matches)
+    {
+        using var e = matches.GetEnumerator();
+        if (!e.MoveNext()) return null;
+        var first = e.Current;
+        return e.MoveNext() ? null : first;
+    }
+
+    /// <summary>Shorter stored names ("Out", "HD") match too much to look for inside device names.</summary>
     private const int MinContainedLength = 4;
 
     /// <summary>

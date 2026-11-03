@@ -55,7 +55,7 @@ public class AudioOutputTests
     {
         for (var i = 0; i < 2; i++)
         {
-            var play = _output.PlayAsync(TestAudio.Wav16(10), new PlaybackOptions("USB Headset (hw:2,0)"), CancellationToken.None);
+            var play = _output.PlayAsync(TestAudio.Wav16(10), new PlaybackOptions("heads"), CancellationToken.None);
             var voice = (await TestAudio.VoicesAsync(_backend, i + 1))[i];
             Assert.Equal("Headset", voice.DeviceId);
             voice.Finish();
