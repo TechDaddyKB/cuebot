@@ -18,7 +18,8 @@ public sealed class PiperEngine(PiperStore store, Func<PiperSettings> settings) 
     public bool IsAvailable => store.FindProgram(settings().Executable) is not null && store.InstalledVoices().Count > 0;
 
     public string? UnavailableReason =>
-        store.FindProgram(settings().Executable) is null ? "Press \"Get Piper\" to download it (about 25 MB)."
+        store.FindProgram(settings().Executable) is null
+            ? PiperRelease.ForThisComputer() is null && OperatingSystem.IsMacOS() ? PiperRelease.MacReason : "Press \"Get Piper\" to download it (about 25 MB)."
         : store.InstalledVoices().Count == 0 ? "Download at least one voice below."
         : null;
 

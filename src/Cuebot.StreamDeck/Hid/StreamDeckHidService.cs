@@ -29,7 +29,8 @@ public sealed record StreamDeckHidDeviceInfo(
 }
 
 /// <summary>
-/// Direct USB mode: drives Stream Decks over HID with no Elgato software (the Stream Deck app does not exist on Linux).
+/// Direct USB mode: drives Stream Decks over HID with no Elgato software (the Stream Deck app does not exist on Linux;
+/// on macOS it is optional).
 /// Scans USB every few seconds (hot-plug without udev), opens supported decks, turns key presses, dial turns and touches
 /// into the Stream Deck Action trigger (with each key's button id from <c>streamdeck-usb.json</c>, or
 /// <c>hid-&lt;serial&gt;-&lt;index&gt;</c>), fires Stream Deck Connected / Info / Disconnected per deck, and applies the

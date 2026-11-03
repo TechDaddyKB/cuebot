@@ -67,7 +67,8 @@ lets the port through.
 **MIDI tip:** add an event for each key or knob, then click **Learn** and press it. Cuebot fills in the details for you.
 
 !!! warning "Partly checked"
-    Sending MIDI was tried on Windows and Linux, but pressing keys on a real MIDI controller was not. Game controllers:
+    Sending MIDI was tried on Windows and Linux, and on a Mac with Cuebot's own pretend MIDI ports, but pressing keys
+    on a real MIDI controller was not. Game controllers:
     Cuebot's controller part starts on Windows and Linux, but nobody has pressed a real controller yet. See
     [What's experimental](experimental.md).
 

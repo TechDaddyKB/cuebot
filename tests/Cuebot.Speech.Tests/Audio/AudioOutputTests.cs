@@ -51,6 +51,21 @@ public class AudioOutputTests
     }
 
     [Fact]
+    public async Task A_device_renamed_by_the_audio_system_is_found_by_name_and_logged_once()
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            var play = _output.PlayAsync(TestAudio.Wav16(10), new PlaybackOptions("heads"), CancellationToken.None);
+            var voice = (await TestAudio.VoicesAsync(_backend, i + 1))[i];
+            Assert.Equal("Headset", voice.DeviceId);
+            voice.Finish();
+            await TestAudio.Within(play);
+        }
+        Assert.Single(_log.Recent(), e => e.Level == LogLevel.Info && e.Message.Contains("using \"Headset\""));
+        Assert.DoesNotContain(_log.Recent(), e => e.Level == LogLevel.Warning);
+    }
+
+    [Fact]
     public async Task Sounds_play_concurrently_and_cancelling_one_leaves_the_other()
     {
         using var cancelFirst = new CancellationTokenSource();
@@ -203,5 +218,38 @@ public class AudioOutputTests
         await TestAudio.Within(voice.Completion);
         Assert.Empty(backend.GetInputDevices());
         Assert.Null(backend.StartCapture(null, _ => { }));
+    }
+}
+
+public class CommandLineAudioPlayerTests
+{
+    [Fact]
+    public void Macos_falls_back_to_the_built_in_afplay()
+    {
+        Assert.Contains(CommandLineAudioPlayer.KnownPlayers, p => p.Name == "afplay");
+        if (!OperatingSystem.IsMacOS()) return;
+        Assert.Equal("afplay", Path.GetFileName(CommandLineAudioPlayer.FindInstalled()?.Executable));
+    }
+}
+
+public class SoundFlowBackendTests
+{
+    [Theory]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.Wasapi, 0)]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.CoreAudio, 3)]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.PulseAudio, 7)]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.Alsa, 8)]
+    public void Backends_are_passed_with_miniaudio_numbering(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend wanted, int maBackend)
+    {
+        Assert.Equal(maBackend, (int)SoundFlowBackend.ToSoundFlow(wanted));
+        Assert.Equal(wanted, SoundFlowBackend.FromSoundFlow(SoundFlowBackend.ToSoundFlow(wanted)));
+    }
+
+    [Fact]
+    public void Macos_opens_core_audio()
+    {
+        if (!OperatingSystem.IsMacOS()) return;
+        using var backend = SoundFlowBackend.Create(log: null);
+        Assert.Equal("miniaudio (CoreAudio)", backend.Name);
     }
 }

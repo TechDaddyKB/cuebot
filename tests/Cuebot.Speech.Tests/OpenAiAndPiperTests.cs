@@ -116,7 +116,7 @@ public sealed class PiperTests : IDisposable
         var settings = new PiperSettings();
         var engine = new PiperEngine(store, () => settings);
         Assert.False(engine.IsAvailable);
-        Assert.Contains("Get Piper", engine.UnavailableReason);
+        Assert.Contains(OperatingSystem.IsMacOS() ? "does not run" : "Get Piper", engine.UnavailableReason);
 
         var voices = await engine.GetVoicesAsync(CancellationToken.None);
         Assert.Equal(["en_GB-vctk-medium#p225", "en_GB-vctk-medium#p239", "en_US-lessac-medium"], voices.Select(v => v.Id));
@@ -137,6 +137,11 @@ public sealed class PiperTests : IDisposable
     public void Every_desktop_platform_has_a_pinned_program()
     {
         var release = PiperRelease.ForThisComputer();
+        if (OperatingSystem.IsMacOS())
+        {
+            Assert.Null(release);   // the release's macOS archives do not run
+            return;
+        }
         Assert.NotNull(release);
         Assert.Equal(64, release!.Sha256.Length);
         Assert.StartsWith("https://github.com/rhasspy/piper/releases/download/2023.11.14-2/", release.Url.ToString());

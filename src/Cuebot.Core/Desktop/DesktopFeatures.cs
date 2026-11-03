@@ -33,7 +33,9 @@ public static class DesktopFeatures
 
         // Notifications and clipboard
         services.AddSingleton<IToastPresenter, NullToastPresenter>();
-        services.AddSingleton<ISystemNotifier>(sp => new NotifySendNotifier(sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<ISystemNotifier>(sp => OperatingSystem.IsMacOS()
+            ? new OsascriptNotifier(sp.GetRequiredService<AppLog>())
+            : new NotifySendNotifier(sp.GetRequiredService<AppLog>()));
         services.AddSingleton<INotifier>(sp => new DesktopNotifier(sp.GetRequiredService<ISystemNotifier>(), sp.GetRequiredService<IToastPresenter>(),
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<JsonFile<DesktopSettings>>()));
         services.AddSingleton<IClipboardService, NullClipboardService>();

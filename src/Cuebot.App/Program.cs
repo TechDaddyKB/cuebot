@@ -30,6 +30,7 @@ internal static class Program
             return options.Errors.Count > 0 ? 2 : 0;
         }
         if (options.Headless) ConsoleAttach.Attach();
+        MacSearchPath.Apply();
 
         // --data wins over CUEBOT_DATA; exporting it keeps child processes and relaunches on the same folder.
         if (options.DataFolder is not null) Environment.SetEnvironmentVariable("CUEBOT_DATA", options.DataFolder);

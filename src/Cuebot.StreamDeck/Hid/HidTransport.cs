@@ -63,12 +63,14 @@ public interface IHidTransport
     IHidDevice Open(HidDeviceInfo device);
 }
 
-/// <summary>The transport for this OS: hidraw on Linux; elsewhere one that explains it is not available yet.</summary>
+/// <summary>The transport for this OS: hidraw on Linux, IOKit on macOS; elsewhere one that explains it is not available yet.</summary>
 public static class HidTransports
 {
     public static IHidTransport CreateDefault() =>
-        OperatingSystem.IsLinux() ? new LinuxHidTransport() : new UnavailableHidTransport(
-            "Direct USB control of a Stream Deck is Linux-only for now; on Windows and macOS use the Stream Deck app with the Cuebot plugin");
+        OperatingSystem.IsLinux() ? new LinuxHidTransport()
+        : OperatingSystem.IsMacOS() ? new MacHidTransport()
+        : new UnavailableHidTransport(
+            "Direct USB control of a Stream Deck works on Linux and macOS; on Windows use the Stream Deck app with the Cuebot plugin");
 }
 
 /// <summary>A transport that finds nothing and says why (used on systems without a HID backend).</summary>

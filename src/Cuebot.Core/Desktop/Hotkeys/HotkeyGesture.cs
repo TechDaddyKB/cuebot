@@ -89,7 +89,7 @@ public readonly record struct HotkeyGesture(HotkeyModifiers Modifiers, string Ke
     }
 }
 
-/// <summary>Supported key names with their Windows virtual-key codes and X11 keysym names.</summary>
+/// <summary>Supported key names with their Windows virtual-key codes, X11 keysym names and macOS key codes.</summary>
 public static class HotkeyKeys
 {
     private static readonly Dictionary<string, (int Vk, string Keysym)> Table = Build();
@@ -132,6 +132,42 @@ public static class HotkeyKeys
     public static int? WindowsVirtualKey(string key) => Table.TryGetValue(key, out var e) ? e.Vk : null;
 
     public static string? XKeysym(string key) => Table.TryGetValue(key, out var e) ? e.Keysym : null;
+
+    /// <summary>
+    /// The macOS virtual key code (Carbon kVK_*, the key's position on an ANSI keyboard), or null for keys a Mac
+    /// keyboard does not send as key presses (Print Screen, Pause, Scroll Lock, media keys).
+    /// </summary>
+    public static int? MacKeyCode(string key) => MacTable.TryGetValue(key, out var code) ? code : null;
+
+    private static readonly Dictionary<string, int> MacTable = BuildMac();
+
+    private static Dictionary<string, int> BuildMac()
+    {
+        var t = new Dictionary<string, int>(StringComparer.Ordinal);
+        const string letters = "ASDFHGZXCV?BQWERYT";   // kVK_ANSI_A = 0x00 ... kVK_ANSI_T = 0x11 (0x0A is not a letter)
+        for (var i = 0; i < letters.Length; i++)
+        {
+            if (letters[i] != '?') t[letters[i].ToString()] = i;
+        }
+        (string Name, int Code)[] rest =
+        [
+            ("1", 0x12), ("2", 0x13), ("3", 0x14), ("4", 0x15), ("6", 0x16), ("5", 0x17), ("Equals", 0x18), ("9", 0x19),
+            ("7", 0x1A), ("Minus", 0x1B), ("8", 0x1C), ("0", 0x1D), ("BracketRight", 0x1E), ("O", 0x1F), ("U", 0x20),
+            ("BracketLeft", 0x21), ("I", 0x22), ("P", 0x23), ("Enter", 0x24), ("L", 0x25), ("J", 0x26), ("Quote", 0x27),
+            ("K", 0x28), ("Semicolon", 0x29), ("Backslash", 0x2A), ("Comma", 0x2B), ("Slash", 0x2C), ("N", 0x2D),
+            ("M", 0x2E), ("Period", 0x2F), ("Tab", 0x30), ("Space", 0x31), ("Backquote", 0x32), ("Backspace", 0x33),
+            ("Escape", 0x35), ("Decimal", 0x41), ("Multiply", 0x43), ("Add", 0x45), ("Divide", 0x4B), ("Subtract", 0x4E),
+            ("NumPad0", 0x52), ("NumPad1", 0x53), ("NumPad2", 0x54), ("NumPad3", 0x55), ("NumPad4", 0x56),
+            ("NumPad5", 0x57), ("NumPad6", 0x58), ("NumPad7", 0x59), ("NumPad8", 0x5B), ("NumPad9", 0x5C),
+            ("F1", 0x7A), ("F2", 0x78), ("F3", 0x63), ("F4", 0x76), ("F5", 0x60), ("F6", 0x61), ("F7", 0x62), ("F8", 0x64),
+            ("F9", 0x65), ("F10", 0x6D), ("F11", 0x67), ("F12", 0x6F), ("F13", 0x69), ("F14", 0x6B), ("F15", 0x71),
+            ("F16", 0x6A), ("F17", 0x40), ("F18", 0x4F), ("F19", 0x50), ("F20", 0x5A), ("Insert", 0x72), ("Home", 0x73),
+            ("PageUp", 0x74), ("Delete", 0x75), ("End", 0x77), ("PageDown", 0x79), ("Left", 0x7B), ("Right", 0x7C),
+            ("Down", 0x7D), ("Up", 0x7E),
+        ];
+        foreach (var (name, code) in rest) t[name] = code;
+        return t;
+    }
 
     private static Dictionary<string, (int, string)> Build()
     {

@@ -57,15 +57,34 @@ public static class AudioDeviceSelector
     public static bool IsDefault(string? requested) =>
         requested is null || DefaultNames.Contains(requested.Trim(), StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The matching device (by id, then by name), or null for the default or an unknown device.</summary>
+    /// <summary>
+    /// The matching device, or null for the default or an unknown device: by id, then by name ignoring case, then the
+    /// one device whose name contains the stored one. The last step keeps a choice working when the audio system adds
+    /// to a device's name (another backend, a driver update). It never goes the other way: a stored "Speakers (Realtek)"
+    /// must not land on a plain "Speakers" that is another device; and when several devices match, guessing could send
+    /// sound to the wrong one, so the default is used instead.
+    /// </summary>
     public static AudioDevice? Resolve(IReadOnlyList<AudioDevice> devices, string? requested)
     {
         if (IsDefault(requested)) return null;
         var wanted = requested!.Trim();
         return devices.FirstOrDefault(d => string.Equals(d.Id, wanted, StringComparison.Ordinal))
             ?? devices.FirstOrDefault(d => string.Equals(d.Id, wanted, StringComparison.OrdinalIgnoreCase))
-            ?? devices.FirstOrDefault(d => string.Equals(d.Name, wanted, StringComparison.OrdinalIgnoreCase));
+            ?? devices.FirstOrDefault(d => string.Equals(d.Name, wanted, StringComparison.OrdinalIgnoreCase))
+            ?? (wanted.Length < MinContainedLength ? null : OnlyOne(devices
+                .Where(d => d.Name.Contains(wanted, StringComparison.OrdinalIgnoreCase))));
     }
+
+    private static AudioDevice? OnlyOne(IEnumerable<AudioDevice> matches)
+    {
+        using var e = matches.GetEnumerator();
+        if (!e.MoveNext()) return null;
+        var first = e.Current;
+        return e.MoveNext() ? null : first;
+    }
+
+    /// <summary>Shorter stored names ("Out", "HD") match too much to look for inside device names.</summary>
+    private const int MinContainedLength = 4;
 
     /// <summary>
     /// Gives devices stable, unique ids from their names (native ids are pointers that change between runs):

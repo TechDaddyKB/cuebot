@@ -99,10 +99,29 @@ public sealed class HidPlatformTests : IDisposable
     {
         var transport = HidTransports.CreateDefault();
         if (OperatingSystem.IsLinux()) Assert.IsType<LinuxHidTransport>(transport);
-        else Assert.Contains("Linux-only", transport.UnavailableReason);
+        else if (OperatingSystem.IsMacOS()) Assert.IsType<MacHidTransport>(transport);
+        else Assert.Contains("Linux and macOS", transport.UnavailableReason);
         var unavailable = new UnavailableHidTransport("nope");
         Assert.Empty(unavailable.Enumerate(StreamDeckHidModels.ElgatoVendorId));
         Assert.Throws<HidOpenException>(() => unavailable.Open(FakeHidTransport.Xl()));
+    }
+
+    [Fact]
+    public void Mac_paths_carry_the_registry_entry_id_and_open_errors_say_what_to_do()
+    {
+        if (!OperatingSystem.IsMacOS()) return;
+        Assert.Equal("iokit:4294971234", MacHidTransport.PathFor(4294971234));
+        Assert.Equal(4294971234UL, MacHidTransport.EntryId("iokit:4294971234"));
+        Assert.Null(MacHidTransport.EntryId("/dev/hidraw0"));
+        Assert.Null(MacHidTransport.EntryId("iokit:x"));
+        var busy = MacHidTransport.OpenError(unchecked((int)0xE00002C5), "Stream Deck XL");
+        Assert.Equal(HidOpenError.Busy, busy.Error);
+        Assert.Contains("Stream Deck app", busy.Message);
+        Assert.Equal(HidOpenError.PermissionDenied, MacHidTransport.OpenError(unchecked((int)0xE00002E2), "x").Error);
+        Assert.Equal(HidOpenError.Gone, MacHidTransport.OpenError(unchecked((int)0xE00002C0), "x").Error);
+        Assert.Equal(HidOpenError.Other, MacHidTransport.OpenError(-1, "x").Error);
+        // Real IOKit: no Stream Deck is needed; a scan must just not throw.
+        Assert.All(new MacHidTransport().Enumerate(StreamDeckHidModels.ElgatoVendorId), d => Assert.StartsWith("iokit:", d.Path));
     }
 
     private static readonly StreamDeckHidModel Xl = StreamDeckHidModels.Find(0x0FD9, 0x006C)!;

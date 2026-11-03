@@ -15,7 +15,7 @@ public readonly record struct MidiPacket(byte[] Data, long TimestampMs);
 /// </summary>
 public interface IMidiBackend : IDisposable
 {
-    /// <summary>"WinMM", "ALSA sequencer", ...</summary>
+    /// <summary>"WinMM", "ALSA sequencer", "CoreMIDI", ...</summary>
     string Name { get; }
 
     /// <summary>Why MIDI cannot work here (no library, no sequencer device), or null when it can.</summary>
@@ -69,7 +69,8 @@ public static class MidiBackends
     {
         if (OperatingSystem.IsWindows()) return new WinMmBackend();
         if (OperatingSystem.IsLinux()) return new AlsaSeqBackend();
-        return new UnavailableBackend("MIDI is implemented for Windows (WinMM) and Linux (ALSA sequencer) only.");
+        if (OperatingSystem.IsMacOS()) return new CoreMidiBackend();
+        return new UnavailableBackend("MIDI is implemented for Windows (WinMM), Linux (ALSA sequencer) and macOS (CoreMIDI) only.");
     }
 }
 

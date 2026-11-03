@@ -98,6 +98,29 @@ public sealed class InputTests : IDisposable
     [InlineData("Meta", 0xffeb)]
     public void X11_keysyms(string key, int keysym) => Assert.Equal(keysym, KeyCodes.Keysym(key));
 
+    [Theory]
+    [InlineData("A", 0x00, 0UL)]
+    [InlineData("F1", 0x7A, 0UL)]
+    [InlineData("Enter", 0x24, 0UL)]
+    [InlineData("Ctrl", 0x3B, 0x40000UL)]
+    [InlineData("Alt", 0x3A, 0x80000UL)]
+    [InlineData("Shift", 0x38, 0x20000UL)]
+    [InlineData("Meta", 0x37, 0x100000UL)]
+    public void Mac_key_codes(string key, int code, ulong flag) => Assert.Equal(((ushort)code, flag), KeyCodes.Mac(key));
+
+    [Fact]
+    public void Mac_mouse_buttons()
+    {
+        if (!OperatingSystem.IsMacOS()) return;
+        Assert.Equal(MouseButton.Left, MacMouseClickSource.ButtonFor(1, 0));
+        Assert.Equal(MouseButton.Right, MacMouseClickSource.ButtonFor(3, 1));
+        Assert.Equal(MouseButton.Middle, MacMouseClickSource.ButtonFor(25, 2));
+        Assert.Equal(MouseButton.X1, MacMouseClickSource.ButtonFor(25, 3));
+        Assert.Equal(MouseButton.X2, MacMouseClickSource.ButtonFor(25, 4));
+        Assert.Null(MacMouseClickSource.ButtonFor(25, 7));
+        Assert.Null(MacMouseClickSource.ButtonFor(10, 0));
+    }
+
     [Fact]
     public void Every_hotkey_key_can_be_sent_on_both_platforms()
     {

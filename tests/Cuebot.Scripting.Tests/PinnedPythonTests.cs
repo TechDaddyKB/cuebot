@@ -10,7 +10,11 @@ public sealed class PinnedPythonTests : IDisposable
     [Fact]
     public void Every_supported_platform_has_one_pinned_build_of_the_pinned_version()
     {
-        string[] targets = ["x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"];
+        string[] targets =
+        [
+            "x86_64-pc-windows-msvc", "aarch64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu",
+            "x86_64-apple-darwin", "aarch64-apple-darwin",
+        ];
 
         Assert.Equal(targets.Order(), PinnedPython.All.Select(b => b.Target).Order());
         Assert.All(PinnedPython.All, b =>
@@ -35,7 +39,7 @@ public sealed class PinnedPythonTests : IDisposable
     [Fact]
     public void This_computer_has_a_managed_build()
     {
-        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux()) return;
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS()) return;
         Assert.NotNull(PinnedPython.ForThisComputer());
     }
 
