@@ -122,8 +122,10 @@ public sealed class SubathonTests : IDisposable
         s.Record(Item(FeedKind.Raid, "Viewer raided with 25 viewers"));
         s.Record(Item(FeedKind.Redemption, "Viewer redeemed add A Minute"));
         s.Record(Item(FeedKind.Redemption, "Viewer redeemed Hydrate"));
-        s.Record(Item(FeedKind.Follow, "Test followed") with { IsTest = true });
+        s.Record(Item(FeedKind.Follow, "Test followed") with { IsTest = true });   // a platform's test button: ignored
         Assert.Equal(start + 10 + 110 + 60, Left(s));
+        s.Record(Item(FeedKind.Follow, "Emulated followed") with { IsTest = true, IsEmulated = true });   // Cuebot's emulator: counts
+        Assert.Equal(start + 10 + 110 + 60 + 10, Left(s));
     }
 
     [Fact]

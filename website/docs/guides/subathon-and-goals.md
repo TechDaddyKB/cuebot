@@ -28,7 +28,9 @@ in points. 0 means the event does not count.
 
 Money is counted in your currency from the [Top spenders](community.md#top-spenders) settings. A €5 Super Chat counts
 as its value in your currency, with the exchange rate of that stream. Charity donations only count when **Count
-charity donations** is ticked there. Test events never count.
+charity donations** is ticked there. Test events from a platform or donation site (their test buttons) never count.
+Sample events you send from Cuebot itself (the AI assistant's **emulate event** with "everything") do count, so you can
+try your timers and goals before the stream; they are shown as tests in the activity feed.
 
 You can change any number at any time, even in the middle of a subathon. The new numbers count from then on. Time and
 points already added stay as they are.

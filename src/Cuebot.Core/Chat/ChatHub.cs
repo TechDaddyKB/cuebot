@@ -95,7 +95,8 @@ public sealed class ChatHub : IDisposable
         foreach (var adapter in _adapters)
         {
             if (adapter.ToChatMessage(e) is { } message) Add(message, e);
-            if (adapter.ToFeedItem(e) is { } item) Add(e.Args.GetBool("isTest") ? item with { IsTest = true } : item);
+            if (adapter.ToFeedItem(e) is { } item)
+                Add(e.Args.GetBool("isTest") ? item with { IsTest = true, IsEmulated = e.Args.GetBool("isEmulated") } : item);
         }
     }
 

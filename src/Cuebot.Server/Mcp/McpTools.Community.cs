@@ -48,7 +48,9 @@ public static partial class McpTools
             Schema([]), ReadOnlyHints, (_, _) => Done(ApiOperations.EmulatableEvents())),
         new("emulate_event", "Send a sample event",
             "Send a sample platform event with a made-up viewer, e.g. a Twitch follow to test the alert box. target \"overlays\" (default) shows "
-            + "it on every overlay only; \"everything\" publishes it as a real event so matching actions run too (they may post to chat).",
+            + "it on every overlay only; \"everything\" publishes it as a real event so matching actions run too (they may post to chat). "
+            + "Events sent to everything are marked isTest: shown as tests in the feed and never counted in top spenders, while subathon "
+            + "timers and goals still count them.",
             Schema(["platform", "kind"], ("platform", Str("twitch, kick, rumble, youtube or donations")), ("kind", Str("follow, sub, resub, gift, cheer, raid, tip, superchat, kicks or chat")),
                 ("target", Enum("overlays", "everything")),
                 ("args", new JsonObject { ["type"] = "object", ["description"] = "Override the sample's arguments (names from list_emulated_events), e.g. {\"viewers\": 75} for a raid or {\"user\": \"Alice\"}" })),

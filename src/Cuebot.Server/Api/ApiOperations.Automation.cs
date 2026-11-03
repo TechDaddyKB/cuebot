@@ -97,6 +97,8 @@ public sealed partial class ApiOperations
     /// Sends a sample platform event (a follow, sub, cheer, raid, tip, chat message...) with a made-up viewer.
     /// <paramref name="target"/> "overlays" (default) shows it on every overlay only, like the widget editor's Emulate;
     /// "everything" publishes it as a real event, so actions with matching triggers run too (they may post to chat).
+    /// Those are marked <c>isTest</c> and <c>isEmulated</c>: the activity feed shows them as tests and top spenders never
+    /// count them, while subathon timers and goals do (so they can be tried out).
     /// <paramref name="overrides"/> replace sample arguments (amount, user, message, tier...).
     /// </summary>
     public JsonObject Emulate(string platform, string kind, string? target, JsonObject? overrides = null)
@@ -115,8 +117,9 @@ public sealed partial class ApiOperations
         var everything = string.Equals(target, "everything", StringComparison.OrdinalIgnoreCase);
         if (everything)
         {
+            e = AsEmulated(e);
             services.Bus.Publish(e);
-            foreach (var companion in OverlayEmulator.Companions(e)) services.Bus.Publish(companion);
+            foreach (var companion in OverlayEmulator.Companions(e)) services.Bus.Publish(AsEmulated(companion));
         }
         else
         {
@@ -127,6 +130,9 @@ public sealed partial class ApiOperations
         services.Log.Info(LogSource, $"API emulated {platform} {kind} ({(everything ? "everything" : "overlays only")})");
         return new JsonObject { ["sent"] = true, ["event"] = e.Type, ["target"] = everything ? "everything" : "overlays", ["args"] = Args(e.Args) };
     }
+
+    private static Cuebot.Core.Events.BotEvent AsEmulated(Cuebot.Core.Events.BotEvent e) =>
+        new(e.Type, new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase) { ["isTest"] = true, ["isEmulated"] = true });
 
     // ---- Queues ----------------------------------------------------------------------------------------------------
 
