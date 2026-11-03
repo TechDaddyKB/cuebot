@@ -67,17 +67,36 @@ public static class OverlayEmulator
     }
 
     /// <summary>
-    /// The other events the platform sends with <paramref name="e"/>, for emulating it as a real event: a Twitch gift bomb is
-    /// the chat notice (twitch.giftBomb, for overlays) plus the gift total (twitch.giftSub, for the feed, spending and credits).
+    /// The other events the platform sends with <paramref name="e"/>, for emulating it as a real event. A Twitch gift bomb
+    /// is the chat notice (twitch.giftBomb, for overlays), the gift total (twitch.giftSub, for the feed, spending and
+    /// credits) and one twitch.subGift per recipient (the subscriber alerts and stream totals count those).
     /// </summary>
-    public static IReadOnlyList<BotEvent> Companions(BotEvent e) => e.Type switch
+    public static IReadOnlyList<BotEvent> Companions(BotEvent e)
     {
-        "twitch.giftBomb" => [new BotEvent("twitch.giftSub", new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase)
+        if (e.Type != "twitch.giftBomb") return [];
+        var anonymous = e.Args.TryGetValue("isAnonymous", out var a) && a is true;
+        var total = e.Args.TryGetValue("total", out var t) && int.TryParse(Convert.ToString(t, System.Globalization.CultureInfo.InvariantCulture), out var n)
+            ? Math.Clamp(n, 1, 100) : 1;
+        var events = new List<BotEvent>
         {
-            ["isAnonymous"] = e.Args.TryGetValue("isAnonymous", out var anonymous) && anonymous is true,
-        })],
-        _ => [],
-    };
+            new("twitch.giftSub", new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase) { ["isAnonymous"] = anonymous }),
+        };
+        var gift = "test-gift-" + Guid.NewGuid().ToString("N")[..8];
+        for (var i = 0; i < total; i++)
+        {
+            var recipient = Names[i % Names.Length] + (i < Names.Length ? "" : (i / Names.Length + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            events.Add(new BotEvent("twitch.subGift", new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase)
+            {
+                ["isAnonymous"] = anonymous,
+                ["recipientUser"] = recipient,
+                ["recipientUserName"] = recipient.ToLowerInvariant(),
+                ["recipientUserId"] = "test-" + recipient.ToLowerInvariant(),
+                ["communityGiftId"] = gift,
+                ["subBombCount"] = total,
+            }));
+        }
+        return events;
+    }
 
     private static Dictionary<string, object?> Args(params (string Key, object? Value)[] pairs) =>
         pairs.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
