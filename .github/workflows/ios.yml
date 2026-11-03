@@ -11,6 +11,11 @@ on:
     paths: ['clients/ios/**', '.github/workflows/ios.yml']
   workflow_dispatch:
 
+# macOS runners are slow: a new push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: macos-latest
