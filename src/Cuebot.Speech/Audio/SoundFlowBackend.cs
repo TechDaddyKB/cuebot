@@ -49,7 +49,7 @@ internal sealed class SoundFlowBackend : IAudioBackend
         _engine = engine;
         _log = log;
         _logForwarder = logForwarder;
-        Name = $"miniaudio ({engine.ActiveBackend})";
+        Name = $"miniaudio ({FromSoundFlow(engine.ActiveBackend)})";
     }
 
     public string Name { get; }
@@ -61,6 +61,7 @@ internal sealed class SoundFlowBackend : IAudioBackend
         MaBackend[] priority = OperatingSystem.IsWindows() ? [MaBackend.Wasapi, MaBackend.DirectSound, MaBackend.WinMm]
             : OperatingSystem.IsMacOS() ? [MaBackend.CoreAudio]
             : [MaBackend.PulseAudio, MaBackend.Alsa, MaBackend.Jack];
+        priority = priority.Select(ToSoundFlow).ToArray();
         var forwarder = log is null ? null : ForwardLog(log);
         if (forwarder is not null) SoundFlow.Utils.Log.OnLog += forwarder;
         MiniAudioEngine? engine = null;
@@ -77,6 +78,12 @@ internal sealed class SoundFlowBackend : IAudioBackend
             throw;
         }
     }
+
+    // SoundFlow 1.4.1's MiniAudioBackend enum starts with Null = 0 where miniaudio's ma_backend starts with wasapi = 0,
+    // and the value crosses to the native library unchanged: every backend is off by one (asking for WinMm opens
+    // CoreAudio, PulseAudio opens ALSA). These translate the backend Cuebot means to the value that selects it, and back.
+    internal static MaBackend ToSoundFlow(MaBackend wanted) => (MaBackend)((int)wanted - 1);
+    internal static MaBackend FromSoundFlow(MaBackend reported) => (MaBackend)((int)reported + 1);
 
     private static Action<SoundFlow.Utils.LogEntry> ForwardLog(AppLog log) => entry =>
     {

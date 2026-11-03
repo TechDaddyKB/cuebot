@@ -216,3 +216,25 @@ public class CommandLineAudioPlayerTests
         Assert.Equal("afplay", Path.GetFileName(CommandLineAudioPlayer.FindInstalled()?.Executable));
     }
 }
+
+public class SoundFlowBackendTests
+{
+    [Theory]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.Wasapi, 0)]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.CoreAudio, 3)]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.PulseAudio, 7)]
+    [InlineData(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend.Alsa, 8)]
+    public void Backends_are_passed_with_miniaudio_numbering(SoundFlow.Backends.MiniAudio.Enums.MiniAudioBackend wanted, int maBackend)
+    {
+        Assert.Equal(maBackend, (int)SoundFlowBackend.ToSoundFlow(wanted));
+        Assert.Equal(wanted, SoundFlowBackend.FromSoundFlow(SoundFlowBackend.ToSoundFlow(wanted)));
+    }
+
+    [Fact]
+    public void Macos_opens_core_audio()
+    {
+        if (!OperatingSystem.IsMacOS()) return;
+        using var backend = SoundFlowBackend.Create(log: null);
+        Assert.Equal("miniaudio (CoreAudio)", backend.Name);
+    }
+}
