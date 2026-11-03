@@ -320,7 +320,9 @@ public sealed partial class PiperPanelViewModel : ObservableObject
 
     public string ProgramStatus => HasProgram
         ? $"Piper is installed ({PiperRelease.Tag})."
-        : CanGetProgram ? "Piper is not installed yet." : "Piper has no ready-made program for this computer.";
+        : CanGetProgram ? "Piper is not installed yet."
+        : OperatingSystem.IsMacOS() ? PiperRelease.MacReason
+        : "Piper has no ready-made program for this computer.";
 
     public IReadOnlyList<PiperVoiceRow> Installed { get; private set; } = [];
 

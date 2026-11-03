@@ -14,7 +14,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Lights (Control Center)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Cuebot talks to Key Light, Key Light Air/Mini, Ring Light and Light Strip directly over your home network, on Windows and Linux, with or without the Control Center app. Cuebot finds lights by asking the network who is there; if your network blocks that, add the light by its IP address (its number on your network). Lights cannot tell Cuebot when something changes, so Cuebot checks them every few seconds." />
+                     Text="Cuebot talks to Key Light, Key Light Air/Mini, Ring Light and Light Strip directly over your home network, on Windows, Linux and macOS, with or without the Control Center app. Cuebot finds lights by asking the network who is there; if your network blocks that, add the light by its IP address (its number on your network). Lights cannot tell Cuebot when something changes, so Cuebot checks them every few seconds." />
           <CheckBox Content="Start on startup" IsChecked="{Binding AutoStart}" ToolTip.Tip="Ticked: Cuebot starts talking to your lights by itself when it opens." />
           <CheckBox Content="Find lights automatically (mDNS)" IsChecked="{Binding Discovery}" ToolTip.Tip="Ticked: Cuebot looks for lights on your network by itself. Untick if you only add lights by hand." />
           <StackPanel Orientation="Horizontal" Spacing="8">
