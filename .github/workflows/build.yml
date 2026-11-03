@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -25,9 +25,6 @@ jobs:
       - name: Install Linux test dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y espeak-ng python3
-      - name: Install macOS test dependencies
-        if: runner.os == 'macOS'
-        run: brew install sdl3
       - run: dotnet build Cuebot.slnx -c Release
       # At most two test assemblies at once: running all of them in parallel starves the
       # runner's CPUs and makes the timing-based tests (sockets, reconnects, polling) flaky.
@@ -168,8 +165,22 @@ jobs:
           name: linux-smoke-test
           path: artifacts/smoke-*
 
+  # The Mac tests run on their own so a flaky Mac test cannot hold back the Windows and Linux packages; only the Mac
+  # package waits for them.
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install macOS test dependencies
+        run: brew install sdl3
+      - run: dotnet build Cuebot.slnx -c Release
+      - run: dotnet test Cuebot.slnx -c Release --no-build -m:2
+
   macos-package:
-    needs: test
+    needs: test-macos
     runs-on: macos-latest
     # The OAuth apps registered for Cuebot (docs/BUILT_IN_APPS.md), compiled into the packages. Empty in builds without
     # the secrets (forks, pull requests): those packages ask users for their own apps instead.
