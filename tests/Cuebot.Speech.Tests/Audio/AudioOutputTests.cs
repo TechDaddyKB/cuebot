@@ -51,6 +51,21 @@ public class AudioOutputTests
     }
 
     [Fact]
+    public async Task A_device_renamed_by_the_audio_system_is_found_by_name_and_logged_once()
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            var play = _output.PlayAsync(TestAudio.Wav16(10), new PlaybackOptions("USB Headset (hw:2,0)"), CancellationToken.None);
+            var voice = (await TestAudio.VoicesAsync(_backend, i + 1))[i];
+            Assert.Equal("Headset", voice.DeviceId);
+            voice.Finish();
+            await TestAudio.Within(play);
+        }
+        Assert.Single(_log.Recent(), e => e.Level == LogLevel.Info && e.Message.Contains("using \"Headset\""));
+        Assert.DoesNotContain(_log.Recent(), e => e.Level == LogLevel.Warning);
+    }
+
+    [Fact]
     public async Task Sounds_play_concurrently_and_cancelling_one_leaves_the_other()
     {
         using var cancelFirst = new CancellationTokenSource();

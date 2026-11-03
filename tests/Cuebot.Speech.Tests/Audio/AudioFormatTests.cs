@@ -163,6 +163,23 @@ public class AudioFormatTests
     }
 
     [Fact]
+    public void Device_selector_falls_back_to_the_closest_name_containing_the_stored_one()
+    {
+        // The same devices as another audio backend names them.
+        AudioDevice[] devices =
+        [
+            new("Speakers (Realtek(R) Audio)", "Speakers (Realtek(R) Audio)", true),
+            new("CABLE Input (VB-Audio Virtual Cable)", "CABLE Input (VB-Audio Virtual Cable)", false),
+            new("CABLE Input (VB-Audio Virtual Cable 16ch)", "CABLE Input (VB-Audio Virtual Cable 16ch)", false),
+            new("Out", "Out", false),
+        ];
+        Assert.Equal("CABLE Input (VB-Audio Virtual Cable)", AudioDeviceSelector.Resolve(devices, "cable input")?.Id);
+        Assert.Equal("Speakers (Realtek(R) Audio)", AudioDeviceSelector.Resolve(devices, "Speakers (Realtek(R) Audio) [WASAPI]")?.Id);
+        Assert.Null(AudioDeviceSelector.Resolve(devices, "Ou"));   // too short to look for inside names
+        Assert.Null(AudioDeviceSelector.Resolve(devices, "Output to nowhere"));   // "Out" is too short to be found inside it
+    }
+
+    [Fact]
     public void Native_library_failure_falls_back_and_logs_why()
     {
         var log = new AppLog();

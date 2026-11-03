@@ -57,15 +57,28 @@ public static class AudioDeviceSelector
     public static bool IsDefault(string? requested) =>
         requested is null || DefaultNames.Contains(requested.Trim(), StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The matching device (by id, then by name), or null for the default or an unknown device.</summary>
+    /// <summary>
+    /// The matching device, or null for the default or an unknown device: by id, then by name ignoring case, then the
+    /// device whose name contains the stored one (or is contained in it) with the closest length. The last step keeps
+    /// a choice working when the audio system names the same device a little differently (another backend, a driver
+    /// update).
+    /// </summary>
     public static AudioDevice? Resolve(IReadOnlyList<AudioDevice> devices, string? requested)
     {
         if (IsDefault(requested)) return null;
         var wanted = requested!.Trim();
         return devices.FirstOrDefault(d => string.Equals(d.Id, wanted, StringComparison.Ordinal))
             ?? devices.FirstOrDefault(d => string.Equals(d.Id, wanted, StringComparison.OrdinalIgnoreCase))
-            ?? devices.FirstOrDefault(d => string.Equals(d.Name, wanted, StringComparison.OrdinalIgnoreCase));
+            ?? devices.FirstOrDefault(d => string.Equals(d.Name, wanted, StringComparison.OrdinalIgnoreCase))
+            ?? (wanted.Length < MinContainedLength ? null : devices
+                .Where(d => d.Name.Length >= MinContainedLength
+                            && (d.Name.Contains(wanted, StringComparison.OrdinalIgnoreCase) || wanted.Contains(d.Name, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(d => Math.Abs(d.Name.Length - wanted.Length))
+                .FirstOrDefault());
     }
+
+    /// <summary>Shorter names ("Out", "HD") match too much to be found inside another name.</summary>
+    private const int MinContainedLength = 4;
 
     /// <summary>
     /// Gives devices stable, unique ids from their names (native ids are pointers that change between runs):
