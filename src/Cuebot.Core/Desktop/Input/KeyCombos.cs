@@ -276,9 +276,25 @@ public readonly record struct KeyEvent(string Key, bool Down)
     }
 }
 
-/// <summary>Key codes for the output backends: Windows virtual keys (SendInput) and X11 keysyms (XTest, the RemoteDesktop portal).</summary>
+/// <summary>
+/// Key codes for the output backends: Windows virtual keys (SendInput), X11 keysyms (XTest, the RemoteDesktop portal)
+/// and macOS key codes (Quartz events).
+/// </summary>
 public static class KeyCodes
 {
+    /// <summary>macOS key code (kVK_*; Meta is Command, Alt is Option) and the event flag a held modifier sets. Null when unknown.</summary>
+    public static (ushort Code, ulong Flag)? Mac(string key)
+    {
+        switch (key)
+        {
+            case "Ctrl": return (0x3B, 0x40000);
+            case "Alt": return (0x3A, 0x80000);
+            case "Shift": return (0x38, 0x20000);
+            case "Meta": return (0x37, 0x100000);
+        }
+        return HotkeyKeys.MacKeyCode(key) is { } code ? ((ushort)code, 0UL) : null;
+    }
+
     /// <summary>Windows SendInput: virtual-key code and whether KEYEVENTF_EXTENDEDKEY is needed. Null when unknown.</summary>
     public static (ushort Vk, bool Extended)? Windows(string key)
     {

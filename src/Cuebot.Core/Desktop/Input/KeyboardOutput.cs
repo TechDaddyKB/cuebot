@@ -6,12 +6,13 @@ namespace Cuebot.Core.Desktop.Input;
 /// <summary>
 /// Sends key presses to whichever application has focus (the "Keyboard Press" sub-action, CPH KeyboardPress).
 /// Implementations: Windows SendInput; on Linux the XDG Desktop Portal RemoteDesktop interface (Wayland and modern X11
-/// desktops; the desktop asks the user once) with X11 XTest as the fallback; and a no-op that reports why.
+/// desktops; the desktop asks the user once) with X11 XTest as the fallback; macOS Quartz events; and a no-op that
+/// reports why.
 /// Registered in DI as a singleton (<see cref="InputFeatures.AddInputFeatures"/>).
 /// </summary>
 public interface IKeyboardOutput
 {
-    /// <summary>"Windows", "XDG portal", "X11", "Unavailable", or "Not chosen yet" before the first press on Linux.</summary>
+    /// <summary>"Windows", "XDG portal", "X11", "macOS", "Unavailable", or "Not chosen yet" before the first press on Linux.</summary>
     string BackendName { get; }
 
     /// <summary>Human-readable state ("Ready", "No keyboard output: ...").</summary>
@@ -88,6 +89,7 @@ public static class KeyboardOutputs
     {
         if (OperatingSystem.IsWindows()) return new WindowsKeyboardOutput();
         if (OperatingSystem.IsLinux()) return new LinuxKeyboardOutput(log, loadPortalToken, savePortalToken);
+        if (OperatingSystem.IsMacOS()) return new MacKeyboardOutput();
         return new UnavailableKeyboardOutput("this operating system is not supported");
     }
 }

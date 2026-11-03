@@ -12,12 +12,12 @@ public sealed record MouseClick(MouseButton Button, int X, int Y, HotkeyModifier
 
 /// <summary>
 /// Global mouse button presses (seen while another application has focus, without taking the click from it).
-/// Implementations: a Windows low-level mouse hook, X11 XInput2 raw button events, and a no-op. Wayland has no
+/// Implementations: a Windows low-level mouse hook, X11 XInput2 raw button events, a macOS event tap, and a no-op. Wayland has no
 /// equivalent: a Wayland client only sees the pointer over its own windows, and no portal reports clicks elsewhere.
 /// </summary>
 public interface IMouseClickSource : IDisposable
 {
-    /// <summary>"Windows", "X11" or "Unavailable".</summary>
+    /// <summary>"Windows", "X11", "macOS" or "Unavailable".</summary>
     string BackendName { get; }
 
     string Status { get; }
@@ -61,6 +61,7 @@ public static class MouseClickSources
                 ? WaylandReason + " (X11: " + reason + ")"
                 : reason);
         }
+        if (OperatingSystem.IsMacOS()) return new MacMouseClickSource(log);
         return new UnavailableMouseClickSource("this operating system is not supported");
     }
 }

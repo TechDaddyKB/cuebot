@@ -46,6 +46,13 @@ internal static class MacQuartz
     [DllImport(CoreGraphics)]
     public static extern ulong CGEventGetFlags(IntPtr cgEvent);
 
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly record struct CGPoint(double X, double Y);
+
+    /// <summary>Where a mouse event happened, in global display points (origin at the top left of the main display).</summary>
+    [DllImport(CoreGraphics)]
+    public static extern CGPoint CGEventGetLocation(IntPtr cgEvent);
+
     [DllImport(CoreGraphics)]
     public static extern IntPtr CGEventSourceCreate(int stateId);
 
