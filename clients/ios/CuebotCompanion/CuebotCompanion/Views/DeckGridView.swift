@@ -57,7 +57,7 @@ struct DeckButton: View {
     @State private var feedbackTrigger = 0
 
     var body: some View {
-        let background = Color(cuebot: item.background, fallback: Color(.secondarySystemBackground))
+        let background = Color(cuebot: item.background, fallback: .cuebotRaised)
         let titleColor = Color(cuebot: item.titleColor, fallback: .primary)
         Button {
             Task {
@@ -65,7 +65,7 @@ struct DeckButton: View {
                 feedback = result == .ok ? .impact(weight: .light) : .impact(weight: .heavy)
                 feedbackTrigger += 1
                 if result == .failed {
-                    withAnimation(.easeOut(duration: 0.15)) { flash = .red }
+                    withAnimation(.easeOut(duration: 0.15)) { flash = .cuebotBad }
                     withAnimation(.easeIn(duration: 0.5).delay(0.3)) { flash = nil }
                 }
             }

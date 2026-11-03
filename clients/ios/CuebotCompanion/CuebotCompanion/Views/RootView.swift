@@ -18,9 +18,11 @@ struct RootView: View {
                 .tabItem { Label("Deck", systemImage: "square.grid.3x3.fill") }
                 .tag(Tab.deck)
             DashboardTab()
+                .toolbarBackground(Color.cuebotGround, for: .tabBar)
                 .tabItem { Label("Dashboard", systemImage: "gauge.with.dots.needle.50percent") }
                 .tag(Tab.dashboard)
             SettingsTab()
+                .toolbarBackground(Color.cuebotGround, for: .tabBar)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
@@ -53,6 +55,12 @@ struct ConnectionGate<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
+        Group { gate }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.cuebotGround.ignoresSafeArea())
+    }
+
+    @ViewBuilder private var gate: some View {
         switch connection.state {
         case .unpaired:
             ContentUnavailableView {
@@ -83,9 +91,9 @@ struct UnreachableCard: View {
             VStack(alignment: .leading, spacing: 16) {
                 Label("Can't reach Cuebot", systemImage: "wifi.exclamationmark").font(.title2.bold())
                 if let endpoint = connection.endpoint {
-                    Text(verbatim: "Tried \(endpoint.apiBase.absoluteString)").font(.callout.monospaced()).foregroundStyle(.secondary)
+                    Text(verbatim: "Tried \(endpoint.apiBase.absoluteString)").font(.callout.monospaced()).foregroundStyle(Color.cuebotMuted)
                 }
-                Text(message).font(.callout).foregroundStyle(.secondary)
+                Text(message).font(.callout).foregroundStyle(Color.cuebotMuted)
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Is Cuebot running on your computer?", systemImage: "desktopcomputer")
                     Label("Is \"Allow LAN\" on in Cuebot (Servers page)?", systemImage: "network")
@@ -103,6 +111,8 @@ struct UnreachableCard: View {
             .padding(24)
             .frame(maxWidth: 560, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.cuebotGround.ignoresSafeArea())
     }
 }
 
@@ -115,8 +125,8 @@ struct ReconnectingBar: View {
         }
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity)
-        .background(.yellow.opacity(0.85))
-        .foregroundStyle(.black)
+        .background(Color.cuebotWarn)
+        .foregroundStyle(.black)   // black on Cuebot's amber reads in light and dark
     }
 }
 

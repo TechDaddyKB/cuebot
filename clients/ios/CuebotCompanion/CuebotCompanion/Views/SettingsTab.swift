@@ -8,17 +8,19 @@ struct SettingsTab: View {
     @State private var pairing = false
     @State private var renaming: PairedCuebot?
     @State private var newName = ""
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
 
     var body: some View {
         NavigationStack {
             List {
+                Group {
                 Section {
                     ForEach(paired.all) { entry in
                         Button { paired.activate(entry.id) } label: {
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(entry.name).foregroundStyle(.primary)
-                                    Text(verbatim: "\(entry.host):\(entry.apiPort)").font(.footnote.monospaced()).foregroundStyle(.secondary)
+                                    Text(verbatim: "\(entry.host):\(entry.apiPort)").font(.footnote.monospaced()).foregroundStyle(Color.cuebotMuted)
                                 }
                                 Spacer()
                                 if entry.id == paired.activeId { Image(systemName: "checkmark").foregroundStyle(.tint) }
@@ -39,6 +41,13 @@ struct SettingsTab: View {
                 } footer: {
                     Text("Swipe a Cuebot to rename or remove it. Tap one to use it.")
                 }
+                Section("Appearance") {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(AppAppearance.allCases) { Text($0.label).tag($0.rawValue) }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("appearance-picker")
+                }
                 Section("About") {
                     LabeledContent("App", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                     if let status = connection.status {
@@ -47,7 +56,12 @@ struct SettingsTab: View {
                     }
                     Link("Troubleshooting", destination: URL(string: "https://techdaddykb.github.io/cuebot/guides/troubleshooting/")!)
                 }
+                }
+                .listRowBackground(Color.cuebotCard)
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.cuebotGround)
+            .toolbarBackground(Color.cuebotGround, for: .navigationBar)
             .navigationTitle("Settings")
             .sheet(isPresented: $pairing) { PairingView() }
             .alert("Rename", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
@@ -76,6 +90,7 @@ struct PairingView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Group {
                 if scanning {
                     Section {
                         QRScannerView { code in pair(code) }
@@ -110,7 +125,9 @@ struct PairingView: View {
                 } footer: {
                     Text("A screenshot of the code works too, for example one sent from the computer.")
                 }
-                if let error { Section { Text(error).foregroundStyle(.red).accessibilityIdentifier("pair-error") } }
+                if let error { Section { Text(error).foregroundStyle(Color.cuebotBad).accessibilityIdentifier("pair-error") } }
+                }
+                .listRowBackground(Color.cuebotCard)
             }
             .onChange(of: photo) { _, item in
                 guard let item else { return }
@@ -127,6 +144,8 @@ struct PairingView: View {
                     pair(code)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.cuebotGround)
             .navigationTitle("Pair a Cuebot")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

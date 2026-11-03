@@ -41,7 +41,7 @@ struct DeckTab: View {
                     })
                 if !streamMode && view.pageCount > 1 { PageBar(view: view) }
             }
-            .background(Color(cuebot: view.background, fallback: Color(.systemBackground)).ignoresSafeArea())
+            .background(Color(cuebot: view.background, fallback: .cuebotGround).ignoresSafeArea())
             .overlay(alignment: .top) { NotificationBanner() }
             .overlay(alignment: .topTrailing) { if streamMode { StreamModeExit(streamMode: $streamMode) } }
         } else if let error = deck.decksError {
@@ -84,7 +84,7 @@ struct DeckChooser: View {
                 VStack(alignment: .leading) {
                     Text(summary.name).font(.headline)
                     Text("\(summary.columns) × \(summary.rows)" + (summary.pageCount > 1 ? ", \(summary.pageCount) pages" : ""))
-                        .font(.subheadline).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(Color.cuebotMuted)
                 }
             }
         }

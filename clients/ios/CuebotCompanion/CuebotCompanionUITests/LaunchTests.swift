@@ -49,4 +49,22 @@ final class LaunchTests: XCTestCase {
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "127.0.0.1:7475")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: wait))
     }
+
+    @MainActor
+    func testAppearanceSwitchesToDarkAndBack() {
+        let app = launchUnpaired(tab: "settings")
+        let dark = app.buttons["Dark"]
+        XCTAssertTrue(dark.waitForExistence(timeout: wait))
+        dark.tap()
+        XCTAssertTrue(dark.isSelected)
+        // The choice is kept: it survives a relaunch.
+        app.terminate()
+        app.launchArguments = ["-tab", "settings"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Dark"].waitForExistence(timeout: wait))
+        XCTAssertTrue(app.buttons["Dark"].isSelected)
+        app.buttons["System"].tap()
+        XCTAssertTrue(app.buttons["System"].isSelected)
+        XCTAssertFalse(app.buttons["Dark"].isSelected)
+    }
 }

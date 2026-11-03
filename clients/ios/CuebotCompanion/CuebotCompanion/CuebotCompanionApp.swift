@@ -9,6 +9,8 @@ struct CuebotCompanionApp: App {
     @State private var dashboard = DashboardStore()
     @State private var quickActions = QuickActionsStore()
     @State private var pairingError: String?
+    /// The Appearance setting; `-appearance dark` on the command line sets it too (UI tests, screenshots).
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
 
     init() {
         let paired = PairedCuebots()
@@ -20,6 +22,7 @@ struct CuebotCompanionApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
                 .environment(paired)
                 .environment(connection)
                 .environment(deck)
