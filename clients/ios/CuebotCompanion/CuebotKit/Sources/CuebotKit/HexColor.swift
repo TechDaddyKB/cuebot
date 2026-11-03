@@ -8,6 +8,12 @@ public struct HexColor: Hashable, Sendable {
         (self.red, self.green, self.blue, self.alpha) = (red, green, blue, alpha)
     }
 
+    /// True for colors where white text reads better than black (relative luminance below 0.4).
+    public var isDark: Bool {
+        func linear(_ c: Double) -> Double { c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
+        return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue) < 0.4
+    }
+
     public init?(_ text: String) {
         let s = text.trimmingCharacters(in: .whitespaces).lowercased()
         if s.hasPrefix("rgb") {

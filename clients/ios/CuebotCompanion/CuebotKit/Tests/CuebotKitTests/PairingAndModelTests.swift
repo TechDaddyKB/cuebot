@@ -127,5 +127,6 @@ struct ModelTests {
         #expect(HexColor("#ff000080")?.alpha == Double(0x80) / 255)
         #expect(HexColor("rgb(255, 0, 0)") == HexColor(red: 1, green: 0, blue: 0))
         #expect(HexColor("red") == nil && HexColor("#12") == nil && HexColor("") == nil)
+        #expect(HexColor("#16161c")!.isDark && !HexColor("#ffffff")!.isDark && !HexColor("#ffd43b")!.isDark)
     }
 }
