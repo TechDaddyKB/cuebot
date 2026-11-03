@@ -1,0 +1,79 @@
+name: ios
+
+# The Cuebot Companion app (clients/ios): CuebotKit's tests on the Mac and on an iPhone and an iPad simulator, then the
+# app's build and UI smoke tests on both simulators. No Apple account or signing is needed (CODE_SIGNING_ALLOWED=NO),
+# so pull requests and forks run it too.
+on:
+  push:
+    branches: [main, ios-companion]
+    paths: ['clients/ios/**', '.github/workflows/ios.yml']
+  pull_request:
+    paths: ['clients/ios/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+# macOS runners are slow: a new push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: clients/ios/CuebotCompanion
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use the newest Xcode on the runner
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$xcode" ] && sudo xcode-select -s "$xcode"
+          xcodebuild -version
+      - name: CuebotKit tests (macOS)
+        working-directory: clients/ios/CuebotCompanion/CuebotKit
+        run: swift test
+      - name: Pick an iPhone and an iPad simulator
+        id: sims
+        run: |
+          # The newest iOS runtime's first iPhone and first iPad (names change with every Xcode).
+          xcrun simctl list devices available -j > devices.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re
+          devices = json.load(open("devices.json"))["devices"]
+          def version(runtime):
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+          runtimes = sorted((r for r in devices if "iOS" in r and devices[r]), key=version, reverse=True)
+          for runtime in runtimes:
+              names = [d["name"] for d in devices[runtime]]
+              iphone = next((n for n in names if n.startswith("iPhone")), None)
+              ipad = next((n for n in names if n.startswith("iPad")), None)
+              if iphone and ipad:
+                  os = ".".join(map(str, version(runtime)))
+                  print(f"iphone=platform=iOS Simulator,name={iphone},OS={os}")
+                  print(f"ipad=platform=iOS Simulator,name={ipad},OS={os}")
+                  break
+          PY
+          cat "$GITHUB_OUTPUT"
+      - name: CuebotKit tests on iPhone and iPad simulators
+        working-directory: clients/ios/CuebotCompanion/CuebotKit
+        run: |
+          xcodebuild test -scheme CuebotKit \
+            -destination "${{ steps.sims.outputs.iphone }}" -destination "${{ steps.sims.outputs.ipad }}" \
+            -resultBundlePath "$RUNNER_TEMP/CuebotKit.xcresult" CODE_SIGNING_ALLOWED=NO
+      - name: App build and UI smoke tests on iPhone and iPad simulators
+        run: |
+          xcodebuild test \
+            -project CuebotCompanion.xcodeproj -scheme CuebotCompanion \
+            -destination "${{ steps.sims.outputs.iphone }}" -destination "${{ steps.sims.outputs.ipad }}" \
+            -resultBundlePath "$RUNNER_TEMP/CuebotCompanion.xcresult" \
+            CODE_SIGNING_ALLOWED=NO
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          retention-days: 7
+          name: CuebotCompanion-xcresult
+          path: |
+            ${{ runner.temp }}/CuebotKit.xcresult
+            ${{ runner.temp }}/CuebotCompanion.xcresult

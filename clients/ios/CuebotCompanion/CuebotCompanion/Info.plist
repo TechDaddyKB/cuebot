@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Keys the build settings cannot express (arrays and dictionaries); the rest comes from INFOPLIST_KEY_* settings. -->
+<plist version="1.0">
+<dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_cuebot._tcp</string>
+	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Cuebot serves plain HTTP on the home network; this allows that without turning ATS off elsewhere. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>digital.techdaddy.cuebot.companion.pair</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cuebot</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

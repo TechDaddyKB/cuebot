@@ -1,0 +1,420 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C0B07A010000000000000001 /* CuebotKit in Frameworks */ = {isa = PBXBuildFile; productRef = C0B07A010000000000000002 /* CuebotKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C0B07A010000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C0B07A010000000000000010 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0B07A010000000000000020;
+			remoteInfo = CuebotCompanion;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		C0B07A010000000000000004 /* Cuebot Companion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cuebot Companion.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0B07A010000000000000005 /* CuebotCompanionUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CuebotCompanionUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C0B07A010000000000000006 /* Exceptions for "CuebotCompanion" folder in "CuebotCompanion" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0B07A010000000000000020 /* CuebotCompanion */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		C0B07A010000000000000007 /* CuebotCompanion */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0B07A010000000000000006 /* Exceptions for "CuebotCompanion" folder in "CuebotCompanion" target */,
+			);
+			path = CuebotCompanion;
+			sourceTree = "<group>";
+		};
+		C0B07A010000000000000008 /* CuebotCompanionUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CuebotCompanionUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C0B07A010000000000000021 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0B07A010000000000000001 /* CuebotKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0B07A010000000000000031 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C0B07A010000000000000011 = {
+			isa = PBXGroup;
+			children = (
+				C0B07A010000000000000007 /* CuebotCompanion */,
+				C0B07A010000000000000008 /* CuebotCompanionUITests */,
+				C0B07A010000000000000012 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C0B07A010000000000000012 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C0B07A010000000000000004 /* Cuebot Companion.app */,
+				C0B07A010000000000000005 /* CuebotCompanionUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C0B07A010000000000000020 /* CuebotCompanion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0B07A010000000000000040 /* Build configuration list for PBXNativeTarget "CuebotCompanion" */;
+			buildPhases = (
+				C0B07A010000000000000022 /* Sources */,
+				C0B07A010000000000000021 /* Frameworks */,
+				C0B07A010000000000000023 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0B07A010000000000000007 /* CuebotCompanion */,
+			);
+			name = CuebotCompanion;
+			packageProductDependencies = (
+				C0B07A010000000000000002 /* CuebotKit */,
+			);
+			productName = CuebotCompanion;
+			productReference = C0B07A010000000000000004 /* Cuebot Companion.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C0B07A010000000000000030 /* CuebotCompanionUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0B07A010000000000000050 /* Build configuration list for PBXNativeTarget "CuebotCompanionUITests" */;
+			buildPhases = (
+				C0B07A010000000000000032 /* Sources */,
+				C0B07A010000000000000031 /* Frameworks */,
+				C0B07A010000000000000033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0B07A010000000000000034 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C0B07A010000000000000008 /* CuebotCompanionUITests */,
+			);
+			name = CuebotCompanionUITests;
+			productName = CuebotCompanionUITests;
+			productReference = C0B07A010000000000000005 /* CuebotCompanionUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C0B07A010000000000000010 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					C0B07A010000000000000020 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					C0B07A010000000000000030 = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = C0B07A010000000000000020;
+					};
+				};
+			};
+			buildConfigurationList = C0B07A010000000000000060 /* Build configuration list for PBXProject "CuebotCompanion" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C0B07A010000000000000011;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C0B07A010000000000000070 /* XCLocalSwiftPackageReference "CuebotKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C0B07A010000000000000012 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C0B07A010000000000000020 /* CuebotCompanion */,
+				C0B07A010000000000000030 /* CuebotCompanionUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C0B07A010000000000000023 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0B07A010000000000000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C0B07A010000000000000022 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0B07A010000000000000032 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0B07A010000000000000034 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0B07A010000000000000020 /* CuebotCompanion */;
+			targetProxy = C0B07A010000000000000003 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		C0B07A010000000000000061 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		C0B07A010000000000000062 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C0B07A010000000000000041 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CuebotCompanion/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cuebot Companion";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the pairing QR code shown in Cuebot.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Cuebot Companion connects to Cuebot on your computer over your local network.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = digital.techdaddy.cuebot.companion;
+				PRODUCT_NAME = "Cuebot Companion";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C0B07A010000000000000042 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CuebotCompanion/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cuebot Companion";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the pairing QR code shown in Cuebot.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Cuebot Companion connects to Cuebot on your computer over your local network.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = digital.techdaddy.cuebot.companion;
+				PRODUCT_NAME = "Cuebot Companion";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C0B07A010000000000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = digital.techdaddy.cuebot.companion.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CuebotCompanion;
+			};
+			name = Debug;
+		};
+		C0B07A010000000000000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = digital.techdaddy.cuebot.companion.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CuebotCompanion;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C0B07A010000000000000040 /* Build configuration list for PBXNativeTarget "CuebotCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0B07A010000000000000041 /* Debug */,
+				C0B07A010000000000000042 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0B07A010000000000000050 /* Build configuration list for PBXNativeTarget "CuebotCompanionUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0B07A010000000000000051 /* Debug */,
+				C0B07A010000000000000052 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0B07A010000000000000060 /* Build configuration list for PBXProject "CuebotCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0B07A010000000000000061 /* Debug */,
+				C0B07A010000000000000062 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C0B07A010000000000000070 /* XCLocalSwiftPackageReference "CuebotKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = CuebotKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C0B07A010000000000000002 /* CuebotKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CuebotKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = C0B07A010000000000000010 /* Project object */;
+}
