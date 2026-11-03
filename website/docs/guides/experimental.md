@@ -64,6 +64,7 @@ These were tried with the real thing, but only some of it.
 | [MIDI](stream-apps-and-devices.md#your-buttons-and-controllers) | **Input > Input**, tab **MIDI** | Sending MIDI on Windows and Linux; a pretend loop on Linux | Pressing keys on a real MIDI controller |
 | [Game controllers](stream-apps-and-devices.md#your-buttons-and-controllers) | **Input > Input**, tab **Game controllers** | The controller part starts on Windows and Linux | A real game controller being pressed |
 | [Rumble](connecting-platforms.md#rumble) | **Platforms > Rumble** | Reading: followers, live state and chat | Not confirmed: writing in Rumble chat |
+| [Cuebot for Mac](installation.md#mac) | Everything | On a Mac with Apple silicon: Cuebot starts and shows its pages, opens the speakers, shows notifications and turns recorded speech into text | A Mac with an Intel chip. Voice Control with a live microphone. Signing in to platforms, OBS and other apps from a Mac. |
 | [The assistant](assistant.md) | **Home > Assistant** | Codex, Claude Code, Grok CLI and Antigravity CLI on Linux; an OpenAI key; Ollama with Qwen3.5 | Keys for Claude (Anthropic), Grok (xAI) and Gemini (Google) were only checked with pretend services. LM Studio is not confirmed. |
 
 ## Tried with the real thing

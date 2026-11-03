@@ -5,7 +5,7 @@
 <h1 align="center">Cuebot</h1>
 
 <p align="center">
-  Streaming automation for Twitch, YouTube, Kick and Rumble, in one desktop app for Windows and Linux.
+  Streaming automation for Twitch, YouTube, Kick and Rumble, in one desktop app for Windows, Linux and macOS.
 </p>
 
 <p align="center">
@@ -74,8 +74,9 @@ Get the latest build from the [releases page](https://github.com/TechDaddyKB/cue
 | Linux (x86-64) | `Cuebot-x86_64.AppImage` | `chmod +x Cuebot-x86_64.AppImage`, then run it. |
 | Linux (x86-64), Flatpak | `Cuebot-x86_64.flatpak` | `flatpak install --user Cuebot-x86_64.flatpak` |
 | Linux (x86-64 or ARM64) | `Cuebot-<version>-linux-<arch>.tar.gz` | Extract and run `Cuebot`. |
+| macOS 15+, Apple silicon or Intel (experimental) | `Cuebot-<version>-macos-<arm64\|x64>.dmg` | Drag Cuebot to Applications. |
 
-Nothing else needs to be installed: each download includes everything it needs. There is no macOS build yet. Arch Linux packages (`cuebot`,
+Nothing else needs to be installed: each download includes everything it needs. The Mac build is new and not yet signed by Apple: macOS asks before the first start. Arch Linux packages (`cuebot`,
 `cuebot-bin`) will be on the AUR with the first stable release.
 
 The [installation guide](https://techdaddykb.github.io/cuebot/guides/installation/) covers Windows SmartScreen, Linux

@@ -4,7 +4,7 @@ Cuebot is a free app for your computer that does jobs on your stream for you. Wh
 follower or someone typing `!hello` in chat, Cuebot does what you told it to: post a message, switch an OBS scene,
 play a sound or read a message out loud.
 
-It works with **Twitch, YouTube, Kick and Rumble**, and runs on **Windows and Linux**.
+It works with **Twitch, YouTube, Kick and Rumble**, and runs on **Windows, Linux and macOS**.
 
 ![Building an action in Cuebot](assets/actions.png)
 
@@ -24,7 +24,7 @@ You do not need to be good with computers. Every page here explains one thing at
 
 ## Start here
 
-1. [Install Cuebot](guides/installation.md) on Windows or Linux.
+1. [Install Cuebot](guides/installation.md) on Windows, Linux or a Mac.
 2. [Your first five minutes](guides/getting-started.md): sign in, connect OBS and make a `!hello` command.
 3. [Connect your platforms](guides/connecting-platforms.md): Twitch, YouTube, Kick and Rumble.
 4. [How actions work](guides/actions-and-triggers.md): the idea behind everything in Cuebot.
