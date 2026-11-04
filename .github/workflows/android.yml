@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v5
-      - run: ./gradlew :core:test testDebugUnitTest lintDebug assembleDebug
+      - run: ci/gradle.sh :core:test testDebugUnitTest lintDebug assembleDebug
       - uses: actions/upload-artifact@v5
         with:
           name: cuebot-companion-debug-apk

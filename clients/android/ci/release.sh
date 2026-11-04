@@ -29,7 +29,7 @@ else
   echo "::warning::ANDROID_KEYSTORE_BASE64 is not set: the Android APK and AAB are unsigned."
 fi
 
-./gradlew --no-configuration-cache -Pcuebot.versionName="$version" -Pcuebot.versionCode="$code" :app:assembleRelease :app:bundleRelease
+ci/gradle.sh --no-configuration-cache -Pcuebot.versionName="$version" -Pcuebot.versionCode="$code" :app:assembleRelease :app:bundleRelease
 
 if $signed; then
   apk=app/build/outputs/apk/release/app-release.apk

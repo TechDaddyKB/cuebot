@@ -73,8 +73,11 @@ jobs:
           name: android
           path: clients/android/dist/*
 
+  # The desktop packages decide whether a release goes out; Cuebot Companion for Android is attached when its job
+  # succeeded and left out (with a warning) when it did not, so an Android problem never holds back a desktop release.
   publish:
     needs: [build, tarballs, android]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.tarballs.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v5
@@ -86,13 +89,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -la dist
+          companion=()
+          if [ "${{ needs.android.result }}" = success ]; then
+            companion=(dist/Cuebot-Companion-*.apk)
+          else
+            echo "::warning::The android job did not succeed (${{ needs.android.result }}): this release has no Cuebot Companion APK."
+          fi
           prerelease=()
           case "$GITHUB_REF_NAME" in *-*) prerelease=(--prerelease) ;; esac
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Cuebot $GITHUB_REF_NAME" --generate-notes "${prerelease[@]}" \
             dist/Cuebot-win-x64.zip dist/Cuebot-x86_64.AppImage dist/Cuebot-x86_64.flatpak dist/Cuebot-*-linux-*.tar.gz \
             dist/Cuebot-macos-arm64.dmg dist/Cuebot-macos-x64.dmg \
             dist/io.github.cuebot.streamdeck.streamDeckPlugin \
-            dist/Cuebot-Companion-*.apk
+            "${companion[@]}"
 
   aur:
     needs: publish
