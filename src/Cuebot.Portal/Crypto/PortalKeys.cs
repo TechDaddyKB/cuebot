@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -34,6 +35,8 @@ public static class PortalKeys
     public static ECParameters FromRawPublicKey(ReadOnlySpan<byte> raw)
     {
         if (raw.Length != PublicKeyLength || raw[0] != 0x04) throw new CryptographicException("Not a raw P-256 public key.");
+        // Checked here because platforms differ: Windows reports an off-curve point as PlatformNotSupportedException.
+        if (!OnCurve(raw[1..33], raw[33..])) throw new CryptographicException("The key is not a point on P-256.");
         var p = new ECParameters
         {
             Curve = ECCurve.NamedCurves.nistP256,
@@ -41,6 +44,21 @@ public static class PortalKeys
         };
         p.Validate();
         return p;
+    }
+
+    private static readonly BigInteger P = Big("ffffffff00000001000000000000000000000000ffffffffffffffffffffffff");
+    private static readonly BigInteger B = Big("5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b");
+
+    private static BigInteger Big(string hex) => BigInteger.Parse("0" + hex, System.Globalization.NumberStyles.HexNumber);
+
+    /// <summary>y² = x³ − 3x + b (mod p), with both coordinates below p.</summary>
+    internal static bool OnCurve(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+    {
+        var bx = new BigInteger(x, isUnsigned: true, isBigEndian: true);
+        var by = new BigInteger(y, isUnsigned: true, isBigEndian: true);
+        if (bx >= P || by >= P) return false;
+        var right = ((BigInteger.ModPow(bx, 3, P) - 3 * bx + B) % P + P) % P;
+        return BigInteger.ModPow(by, 2, P) == right;
     }
 
     /// <summary>True when <paramref name="signature"/> is a valid ECDSA P-256 SHA-256 signature of <paramref name="data"/>.</summary>

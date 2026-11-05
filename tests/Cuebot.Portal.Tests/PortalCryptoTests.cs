@@ -153,6 +153,8 @@ public sealed class PortalCryptoTests
         offCurve[1] = 1;
         Assert.ThrowsAny<CryptographicException>(() => PortalHandshake.Accept(id, [1, .. offCurve]));
         Assert.False(PortalKeys.Verify(offCurve, [1], new byte[64]));
+        Assert.Throws<CryptographicException>(() => PortalKeys.FromRawPublicKey(offCurve));
+        Assert.True(PortalKeys.OnCurve(B("identityPublic")[1..33], B("identityPublic")[33..]));
     }
 
     [Fact]
