@@ -2,6 +2,8 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Exe</OutputType>
+    <!-- TestPython.cs (linked from Cuebot.Scripting.Tests, which is on xunit v2) has a v3 constructor under this symbol. -->
+    <DefineConstants>$(DefineConstants);XUNIT_V3</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

@@ -184,7 +184,7 @@ internal sealed class FakeEmoteProvider : IEmoteProvider
 /// <summary>Serves a generated 28x28 PNG for every URL except ones containing "missing" (404).</summary>
 internal sealed class ImageServer : HttpMessageHandler
 {
-    private static readonly Lazy<byte[]> Png = new(CreatePng);
+    private static readonly byte[] Png = CreatePng();
     private int _requests;
 
     public int Requests => _requests;
@@ -194,31 +194,59 @@ internal sealed class ImageServer : HttpMessageHandler
         Interlocked.Increment(ref _requests);
         if (request.RequestUri!.ToString().Contains("missing", StringComparison.Ordinal))
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Png.Value) });
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Png) });
     }
 
+    /// <summary>
+    /// An orange circle, encoded by hand. Requests arrive on thread-pool threads, where the headless tests' per-test
+    /// Avalonia app is not found, so building it with WriteableBitmap there failed ("Unable to locate
+    /// IPlatformRenderInterface"), and the Lazy kept that failure for every later test in the run.
+    /// </summary>
     private static byte[] CreatePng()
     {
-        using var bitmap = new WriteableBitmap(new PixelSize(28, 28), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
-        using (var buffer = bitmap.Lock())
+        const int size = 28;
+        var stride = 1 + size * 4;   // each row starts with filter type 0 (none), then RGBA pixels
+        var pixels = new byte[size * stride];
+        for (var y = 0; y < size; y++)
         {
-            var row = new byte[buffer.RowBytes];
-            for (var y = 0; y < 28; y++)
+            for (var x = 0; x < size; x++)
             {
-                for (var x = 0; x < 28; x++)
-                {
-                    var inside = (x - 14) * (x - 14) + (y - 14) * (y - 14) < 13 * 13;
-                    row[x * 4 + 0] = (byte)(inside ? 40 : 0);    // B
-                    row[x * 4 + 1] = (byte)(inside ? 200 : 0);   // G
-                    row[x * 4 + 2] = (byte)(inside ? 250 : 0);   // R
-                    row[x * 4 + 3] = (byte)(inside ? 255 : 0);   // A
-                }
-                System.Runtime.InteropServices.Marshal.Copy(row, 0, buffer.Address + y * buffer.RowBytes, row.Length);
+                if ((x - 14) * (x - 14) + (y - 14) * (y - 14) >= 13 * 13) continue;   // outside: transparent
+                var at = y * stride + 1 + x * 4;
+                (pixels[at], pixels[at + 1], pixels[at + 2], pixels[at + 3]) = ((byte)250, (byte)200, (byte)40, (byte)255);
             }
         }
-        using var stream = new MemoryStream();
-        bitmap.Save(stream, PngBitmapEncoderOptions.Default);
-        return stream.ToArray();
+        using var compressed = new MemoryStream();
+        using (var zlib = new System.IO.Compression.ZLibStream(compressed, System.IO.Compression.CompressionLevel.Optimal, leaveOpen: true))
+            zlib.Write(pixels);
+
+        using var png = new MemoryStream();
+        png.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+        Chunk(png, "IHDR", [0, 0, 0, size, 0, 0, 0, size, 8, 6, 0, 0, 0]);   // 8-bit RGBA
+        Chunk(png, "IDAT", compressed.ToArray());
+        Chunk(png, "IEND", []);
+        return png.ToArray();
+    }
+
+    private static void Chunk(Stream png, string type, byte[] data)
+    {
+        var body = Encoding.ASCII.GetBytes(type).Concat(data).ToArray();
+        png.Write(BigEndian((uint)data.Length));
+        png.Write(body);
+        png.Write(BigEndian(Crc32(body)));
+    }
+
+    private static byte[] BigEndian(uint value) => [(byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value];
+
+    private static uint Crc32(byte[] bytes)
+    {
+        var crc = 0xFFFFFFFFu;
+        foreach (var b in bytes)
+        {
+            crc ^= b;
+            for (var bit = 0; bit < 8; bit++) crc = (crc & 1) != 0 ? 0xEDB88320u ^ (crc >> 1) : crc >> 1;
+        }
+        return ~crc;
     }
 }
 

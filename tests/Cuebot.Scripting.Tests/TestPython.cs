@@ -56,7 +56,15 @@ internal static class TestPython
 /// <summary>A fact that is skipped when no Python interpreter is available.</summary>
 internal sealed class PythonFactAttribute : FactAttribute
 {
+#if XUNIT_V3
+    // xunit v3 (Cuebot.UiTests, which links this file) wants the source location for each fact.
+    public PythonFactAttribute(
+        [System.Runtime.CompilerServices.CallerFilePath] string? sourceFilePath = null,
+        [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
+#else
     public PythonFactAttribute()
+#endif
     {
         if (TestPython.Executable is null) Skip = "No Python 3 interpreter found (set CUEBOT_TEST_PYTHON or put python3 on PATH)";
     }

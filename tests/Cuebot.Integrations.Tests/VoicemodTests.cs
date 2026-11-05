@@ -272,8 +272,9 @@ public sealed class VoicemodTests : IAsyncLifetime
         await Assert.ThrowsAsync<IntegrationNotConnectedException>(() => _voicemod.StopAllSoundsAsync());
         var second = await _env.Server.NextAsync();
         _ = new FakeVoicemod(second);
-        await Wait.UntilAsync(() => _voicemod.State == ConnectionState.Connected, "reconnected");
-        Assert.Equal(2, _env.Events(VoicemodEvents.Connected).Length);
+        // The state turns Connected just before the connected event is published: wait for the event.
+        await Wait.UntilAsync(() => _env.Events(VoicemodEvents.Connected).Length == 2, "reconnected");
+        Assert.Equal(ConnectionState.Connected, _voicemod.State);
         // The last port is tried first.
         Assert.Equal(59129, _env.Server.Attempts[^1].Url.Port);
     }
