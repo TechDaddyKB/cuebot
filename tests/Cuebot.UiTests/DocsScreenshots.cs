@@ -219,6 +219,25 @@ public sealed class DocsScreenshots : IAsyncDisposable
 /// <summary>Example content for the documentation screenshots: what a small streamer's Cuebot might hold.</summary>
 internal static class DocsDemoData
 {
+    /// <summary>Two mods, an open invite and a command waiting for approval, for the Mod portal page.</summary>
+    private static void ModPortal(AppHost host)
+    {
+        var directory = host.Get<Cuebot.Portal.Members.PortalDirectory>();
+        Cuebot.Portal.Members.PortalMember Join(Guid role, string id, string name)
+        {
+            using var key = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256);
+            var identity = new Cuebot.Portal.Members.ProviderIdentity(Cuebot.Portal.Members.IdentityProvider.Twitch, id, name.ToLowerInvariant(), name);
+            return directory.RedeemInvite(directory.CreateInvite(role).Secret, identity,
+                Cuebot.Portal.Crypto.PortalKeys.RawPublicKey(key.ExportParameters(false)), "Phone").Member;
+        }
+        Join(Cuebot.Portal.Members.DefaultRoles.LeadModId, "1001", "SamTheMod");
+        var riley = Join(Cuebot.Portal.Members.DefaultRoles.StandardModId, "1002", "Riley");
+        directory.CreateInvite(Cuebot.Portal.Members.DefaultRoles.StandardModId, "For Alex");
+        var command = new Cuebot.Core.Commands.CommandDefinition { Name = "!socials", Commands = ["!socials"] };
+        host.Get<Cuebot.Portal.Changes.PortalChanges>().SubmitAsync(riley, Cuebot.Portal.Changes.CommandArea.AreaName, command.Id,
+            Cuebot.Portal.Changes.PortalChanges.ToNode(command)).GetAwaiter().GetResult();
+    }
+
     public static void Seed(AppHost host)
     {
         var profile = host.Get<ProfileService>();
@@ -272,6 +291,7 @@ internal static class DocsDemoData
         profile.Profile.Timers.Add(new TimerDefinition { Name = "Social links", IntervalSeconds = 900 });
         profile.Profile.Timers.Add(new TimerDefinition { Name = "Hydration reminder", IntervalSeconds = 1800 });
         profile.NotifyChanged();
+        ModPortal(host);
 
         var commands = host.Get<CommandStore>();
         foreach (var (name, group, trigger, cooldown) in new[]

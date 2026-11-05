@@ -68,6 +68,7 @@ nav:
       - Every page in Cuebot: guides/every-page.md
   - Guides:
       - Chat commands: guides/commands.md
+      - The mod portal: guides/mod-portal.md
       - Overlays and alerts: guides/overlays.md
       - Writing your own overlay widgets: guides/widget-code.md
       - Text-to-speech: guides/text-to-speech.md

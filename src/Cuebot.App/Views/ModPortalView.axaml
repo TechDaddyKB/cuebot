@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.ModPortalView"
+             x:DataType="vm:ModPortalViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="12" Margin="0,0,0,24">
+      <Border Classes="card">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="h2" Text="Let your mods help from anywhere" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Invite a mod with a role. They open the link, sign in with Google, Twitch or Discord, and get what that role allows: running actions, changing commands, sound alerts and more. Steps that run code, programs or files are never available to mods." />
+          <TextBlock Foreground="{DynamicResource CuebotAccent}" TextWrapping="Wrap"
+                     Text="Coming in a later update: the online connection that mods use. You can already set up roles and make invites here." />
+          <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayId, StringFormat='Your portal address: {0}'}"
+                     ToolTip.Tip="This Cuebot's address on the portal. It is made from a key kept on this computer and is not tied to your name." />
+          <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Invite a mod" />
+          <Grid ColumnDefinitions="*,12,*,12,120" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="Role" />
+            <TextBlock Grid.Column="2" Text="Note for yourself" />
+            <TextBlock Grid.Column="4" Text="Works for (hours)" />
+            <ComboBox Grid.Row="1" ItemsSource="{Binding Roles}" SelectedItem="{Binding InviteRole}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="What the mod may do once they join. You can change it later." />
+            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding InviteLabel}" PlaceholderText="For Sam"
+                     ToolTip.Tip="Only you see this, so you know who an open invite is for." />
+            <NumericUpDown Grid.Row="1" Grid.Column="4" Value="{Binding InviteHours}" Minimum="1" Maximum="720" FormatString="0"
+                           ToolTip.Tip="How long the link works. It works once: after the mod joins, it is used up." />
+            <TextBlock Grid.Row="2" Text="Only for this account (optional)" Margin="0,6,0,0" />
+            <ComboBox Grid.Row="3" ItemsSource="{x:Static vm:ModPortalViewModel.Providers}" SelectedItem="{Binding InviteLockProvider}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Lock the invite to one account, so a leaked link is useless to anyone else." />
+            <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Text="{Binding InviteLockValue}" PlaceholderText="Twitch name or Google email"
+                     ToolTip.Tip="The Twitch user name or Google email the mod must sign in with." />
+          </Grid>
+          <Button Content="Make invite link" Command="{Binding CreateInviteCommand}" ToolTip.Tip="Makes a one-time link to send to your mod." />
+          <Border IsVisible="{Binding HasNewInvite}" BorderBrush="{DynamicResource CuebotAccent}" BorderThickness="1" CornerRadius="6" Padding="8">
+            <StackPanel Spacing="6">
+              <TextBlock Text="Send this link to your mod privately. It is shown only now." FontWeight="SemiBold" />
+              <SelectableTextBlock Text="{Binding NewInviteLink}" TextWrapping="Wrap" FontSize="12" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Copy link" Command="{Binding CopyInviteCommand}" />
+                <Button Content="Done" Command="{Binding HideInviteCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+          <TextBlock Text="Open invites" FontWeight="SemiBold" Margin="0,4,0,0" />
+          <TextBlock Classes="muted" Text="None" IsVisible="{Binding HasNoInvites}" />
+          <ItemsControl ItemsSource="{Binding Invites}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ModInviteViewModel">
+                <DockPanel Margin="0,2">
+                  <Button DockPanel.Dock="Right" Content="Withdraw" Command="{Binding WithdrawCommand}" ToolTip.Tip="The link stops working at once." />
+                  <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Sign everyone out" Command="{Binding SignOutEveryoneCommand}"
+                    ToolTip.Tip="Signs every mod out on every device. They keep their role and sign in again with their account." />
+            <TextBlock Classes="h2" Text="Mods" VerticalAlignment="Center" />
+          </DockPanel>
+          <TextBlock Classes="muted" Text="Nobody has joined yet." IsVisible="{Binding HasNoMembers}" />
+          <ItemsControl ItemsSource="{Binding Members}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ModMemberViewModel">
+                <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,1,0,0" Padding="0,8">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,12,*,12,*" RowDefinitions="Auto,Auto">
+                      <TextBlock Text="Name" />
+                      <TextBlock Grid.Column="2" Text="Role" />
+                      <TextBlock Grid.Column="4" Text="Their changes" />
+                      <TextBox Grid.Row="1" Text="{Binding Name}" ToolTip.Tip="The name you see for this mod." />
+                      <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}" HorizontalAlignment="Stretch"
+                                ToolTip.Tip="What this mod may do. A change applies at once." />
+                      <ComboBox Grid.Row="1" Grid.Column="4" ItemsSource="{x:Static vm:ModPortalViewModel.MemberChangeModes}" SelectedItem="{Binding Changes}"
+                                HorizontalAlignment="Stretch" ToolTip.Tip="Live: changes apply at once. Live and tell me: you get a notice. Needs approval: changes wait for you below." />
+                    </Grid>
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Account}" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Devices}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <CheckBox Content="Paused" IsChecked="{Binding Suspended}" ToolTip.Tip="Ticked: this mod can do nothing until you untick it." />
+                      <CheckBox Content="Must stay a Twitch mod" IsChecked="{Binding RequireTwitchModerator}" IsVisible="{Binding IsTwitch}"
+                                ToolTip.Tip="Ticked: removing them as a moderator on Twitch pauses their access here too." />
+                      <Button Content="Sign out" Command="{Binding SignOutCommand}" ToolTip.Tip="Signs this mod out on every device." />
+                      <Button Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Takes away their access. A new invite lets them back." />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Waiting for your approval" />
+          <TextBlock Classes="muted" Text="Nothing is waiting." IsVisible="{Binding HasNoPending}" />
+          <ItemsControl ItemsSource="{Binding Pending}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ModChangeViewModel">
+                <DockPanel Margin="0,2">
+                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                    <Button Content="Approve" Command="{Binding ApproveCommand}" ToolTip.Tip="Makes the change live." />
+                    <Button Content="Reject" Command="{Binding RejectCommand}" ToolTip.Tip="Drops the change. Nothing changes." />
+                  </StackPanel>
+                  <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Recent changes by mods" />
+          <TextBlock Classes="muted" Text="No changes yet." IsVisible="{Binding HasNoRecent}" />
+          <ItemsControl ItemsSource="{Binding Recent}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ModChangeViewModel">
+                <DockPanel Margin="0,2">
+                  <Button DockPanel.Dock="Right" Content="Undo" Command="{Binding UndoCommand}" IsVisible="{Binding CanUndo}"
+                          ToolTip.Tip="Puts back what was there before this change." />
+                  <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding Status}" VerticalAlignment="Center" Margin="8,0" />
+                  <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="+ Role" Command="{Binding AddRoleCommand}" ToolTip.Tip="Adds a role you can set up from scratch." />
+            <TextBlock Classes="h2" Text="Roles" VerticalAlignment="Center" />
+          </DockPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="The level decides which steps a role's mods may add or change: 1 chat, sounds, alerts and logic; 2 scenes, audio, raids, polls and timeouts; 3 going live, bans, title and category; 4 variables, web requests and devices. Code, programs and files are never allowed." />
+          <ItemsControl ItemsSource="{Binding Roles}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ModRoleViewModel">
+                <Border BorderBrush="{DynamicResource CuebotCardBorder}" BorderThickness="0,1,0,0" Padding="0,8">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,12,*,12,*,12,Auto" RowDefinitions="Auto,Auto">
+                      <TextBlock Text="Name" />
+                      <TextBlock Grid.Column="2" Text="Highest level" />
+                      <TextBlock Grid.Column="4" Text="Changes" />
+                      <TextBox Grid.Row="1" Text="{Binding Name}" />
+                      <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{x:Static vm:ModPortalViewModel.Levels}" SelectedItem="{Binding Level}" HorizontalAlignment="Stretch" />
+                      <ComboBox Grid.Row="1" Grid.Column="4" ItemsSource="{x:Static vm:ModPortalViewModel.ChangeModes}" SelectedItem="{Binding Changes}" HorizontalAlignment="Stretch" />
+                      <Button Grid.Row="1" Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" />
+                    </Grid>
+                    <TextBox Text="{Binding Groups}" PlaceholderText="All groups"
+                             ToolTip.Tip="Only actions and commands in these groups (separated by commas). Empty: all groups." />
+                    <ItemsControl ItemsSource="{Binding Permissions}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:ModPermissionViewModel">
+                          <CheckBox Content="{Binding Text}" IsChecked="{Binding IsOn}" Margin="0,0,16,0" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

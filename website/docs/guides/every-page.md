@@ -61,6 +61,7 @@ to the guide that explains it.
 | **Chat** | Read and answer every platform's chat in one place, and moderate. Tabs **Chatter** and **Activity**. | [Chat in one place](#the-chat-page) |
 | **History** | Every run, and every event that came in. Tabs **Action history** and **Trigger viewer**. | [History](actions-and-triggers.md#history) |
 | **Users & Groups** | Viewers Cuebot has seen, and groups of them. | [Users & Groups](community.md#users-groups) |
+| **Mod portal** | Invite mods and choose what they may do from their phone or browser. | [The mod portal](mod-portal.md) |
 | **Points** | Your channel money. | [Points](community.md#points) |
 | **Giveaways & Store** | Giveaways, and a store where viewers spend points. | [Giveaways & Store](community.md#giveaways-store) |
 | **Quotes** | Quotes saved from your streams. | [Quotes](community.md#quotes) |
@@ -75,6 +76,8 @@ to the guide that explains it.
 ![History](../assets/screens/page-history.png)
 
 ![Users & Groups](../assets/screens/page-users-groups.png)
+
+![Mod portal](../assets/screens/page-mod-portal.png)
 
 ![Points](../assets/screens/page-points.png)
 

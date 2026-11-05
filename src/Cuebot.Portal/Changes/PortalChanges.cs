@@ -253,7 +253,7 @@ public sealed class PortalChanges
         Changed?.Invoke();
     }
 
-    internal static JsonNode ToNode<T>(T value) => JsonSerializer.SerializeToNode(value, Json.Options)!;
+    public static JsonNode ToNode<T>(T value) => JsonSerializer.SerializeToNode(value, Json.Options)!;
 
-    internal static T FromNode<T>(JsonNode node) => node.Deserialize<T>(Json.Options)!;
+    public static T FromNode<T>(JsonNode node) => node.Deserialize<T>(Json.Options)!;
 }

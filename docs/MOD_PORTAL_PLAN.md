@@ -1,6 +1,7 @@
 # Cuebot mod portal: plan
 
-- **Status (2026-11-05):** designed with Kris in chat; nothing built yet. This document is the agreed design.
+- **Status (2026-11-05):** designed with Kris in chat. Phase 0 and phase 1 are built (see section 11); the relay and
+  sign-in (phases 2 and 3) are next.
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -56,8 +57,9 @@ Mod browser ──GET──▶ portal.techdaddydigital.com   (loader page and th
   `CF-Connecting-IP` or request headers beyond what routing needs.
 
 ### Cuebot identity
-- On first use Cuebot generates an ECDSA P-256 identity key (kept with the other secrets in settings, included in the
-  settings backup, Google Drive backups too).
+- On first use Cuebot generates an ECDSA P-256 identity key, kept in the secret store with every other key. Backups
+  hold no keys by design (`BackupService`), so the key is not in them; a separate "save a copy of the portal key"
+  export is still to come.
 - **Relay ID** = base32 of the first 20 bytes of SHA-256(SPKI public key). Random, not tied to any name or email.
 - `/connect`: the relay sends a nonce; Cuebot answers with its public key and a signature over the nonce and host.
   The relay checks the key hashes to the ID and the signature. No registry.
@@ -126,10 +128,13 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 4 Trusted tech | Global variables, web requests, Stream Deck, MIDI, smart devices, integration-specific steps, run another action |
 | Never | C# and Python code, run program, file read and write, shell, settings, credentials, tokens, members and roles, Export to code |
 
-### Mod-set values are marked
-Any value a mod sets (step fields, variables, command replies, uploaded file names) carries a "set by a mod" mark.
-Steps in the Never row refuse marked values, so a mod cannot reach them through a variable or a field another action
-reads.
+### Mod-set values are marked (built in phase 1)
+- A step a mod added or changed carries `editedBy` (the member). Once one has run, the run carries `__modInfluence`
+  (also into actions it runs), and every Never step in that run refuses to run.
+- Global and user variables a mod's step set are marked (`mod-marks.json`); a Never step whose settings, code
+  included, name a marked variable refuses. The streamer's own write clears the mark.
+- Mods cannot change an action that has a Never step, nor a command that starts one (that would change who reaches
+  it). Running an action is allowed: it runs as the streamer set it up, with no input from the mod.
 
 ### Default roles (the streamer can rename, change and add roles)
 
@@ -220,8 +225,8 @@ reads.
 
 | Phase | Work | Done when |
 |---|---|---|
-| 0 | This plan; a crypto spike (handshake between .NET and WebCrypto, test vectors both ways) | Spike tests pass on all three OSes |
-| 1 | Cuebot core: members, roles, risk levels on every step and trigger type, permission-checked portal API, marked values, change log and undo, approval queue, desktop UI for invites and members | Engine and UI tests; a local test client drives every permission |
+| 0 ✅ | This plan; a crypto spike (handshake between .NET and WebCrypto, test vectors both ways) | `src/Cuebot.Portal/Crypto`, `portal/src/crypto.ts`, shared `portal/test/vectors.json` |
+| 1 ✅ | Cuebot core: members, roles, risk levels on every step and trigger type, permission-checked portal API, marked values, change log and undo, approval queue, desktop UI for invites and members | `StepRiskCatalog`, `ModInfluence`, `PortalDirectory`, `PortalPolicy`, `PortalChanges`, `PortalApi`, the Mod portal page |
 | 2 | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | Worker tests (vitest); a live round trip through the deployed relay |
 | 3 | Sign-in: Google, then Twitch, then Discord; console setup | A real mod account joins by invite on each provider |
 | 4 | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | UI tests; screenshots for the docs |
