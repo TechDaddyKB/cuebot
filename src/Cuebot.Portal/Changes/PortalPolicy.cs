@@ -82,10 +82,12 @@ public static class PortalPolicy
         return [.. problems.Distinct()];
     }
 
-    public static IReadOnlyList<string> CheckCommand(PortalRole? role, CommandDefinition? before, CommandDefinition? after)
+    /// <param name="feedsNeverSteps">The command starts an action with code, program or file steps.</param>
+    public static IReadOnlyList<string> CheckCommand(PortalRole? role, CommandDefinition? before, CommandDefinition? after, bool feedsNeverSteps = false)
     {
         if (role is null) return ["You have no role."];
         var problems = new List<string>();
+        if (feedsNeverSteps) problems.Add("This command starts an action that runs code, programs or files, so it can only be changed on the streamer's computer.");
         var needed = before is null ? PortalPermission.CreateCommands : after is null ? PortalPermission.DeleteCommands : PortalPermission.EditCommands;
         if (!Has(role, needed)) problems.Add(needed switch
         {

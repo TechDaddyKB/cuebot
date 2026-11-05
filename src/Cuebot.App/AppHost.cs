@@ -9,6 +9,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Discord;
 using Cuebot.Obs;
 using Cuebot.Relay;
+using Cuebot.Portal;
 using Cuebot.Remote;
 using Cuebot.Kick;
 using Cuebot.Donations;
@@ -72,6 +73,7 @@ public sealed class AppHost : IAsyncDisposable
             .AddServers()
             .AddStreamDeck()
             .AddRemote()     // links to other Cuebot instances (served on the REST API listener)
+            .AddPortal()     // the mod portal's members, roles, invites and change log
             .AddAssistant()  // the Assistant page; its tools are the MCP server's
             .AddRelay();   // after every module, so it sees all IWebhookHandlers
         // The App provides the real clipboard and in-app toasts; Core registers no-op defaults (last registration wins).
