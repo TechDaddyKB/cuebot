@@ -101,6 +101,54 @@ public sealed class ActionsUxTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task Export_to_code_adds_a_script_copy_that_runs_the_same_and_switches_the_original_off()
+    {
+        var original = new ActionDefinition { Name = "Hype", Queue = "Alerts" };
+        original.Triggers.Add(new TriggerDefinition { Type = "core.manual" });
+        var fork = Step(ParallelSubAction.Id, ("lanes", "2"));
+        fork.Branch(ParallelSubAction.Lane(1)).Add(Step("core.setArgument", ("name", "one"), ("value", "1")));
+        fork.Branch(ParallelSubAction.Lane(2)).Add(Step("core.setArgument", ("name", "two"), ("value", "2")));
+        original.SubActions.AddRange([Step("core.setArgument", ("name", "start"), ("value", "go")), fork,
+            Step("core.setArgument", ("name", "done"), ("value", "%start% %one% %two%"))]);
+        Profile.Profile.Actions.Add(original);
+        Profile.NotifyChanged();
+        TestApp.BindingErrors.Clear();
+        var (window, vm) = Open();
+        var actions = Page<ActionsViewModel>(vm);
+        vm.SelectedPage = actions;
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Hype");
+        Pump();
+
+        actions.ExportToCodeCommand.Execute("csharp");
+        Pump();
+        var csharp = actions.SelectedAction!;
+        Assert.Equal("Hype (C#)", csharp.Name);
+        Assert.False(original.Enabled);
+        Assert.Contains("'Hype' is now off", actions.EditStatus);
+        var step = Assert.Single(csharp.Definition.SubActions);
+        Assert.Equal("code.csharp", step.Type);
+        Assert.Equal("0", step.Parameters["timeoutSeconds"]);
+        Assert.Contains("Cb.Together(", step.Parameters["code"]);
+        Assert.Equal("Alerts", csharp.Definition.Queue);
+        Assert.NotEqual(original.Triggers[0].Id, Assert.Single(csharp.Definition.Triggers).Id);
+
+        Assert.True(await Engine.RunAsync(csharp.Definition));
+        Assert.Equal("go 1 2", Engine.History.Entries.Last().ArgsAfterRun!["done"]);
+
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Hype");
+        actions.ExportToCodeCommand.Execute("python");
+        Pump();
+        var python = actions.SelectedAction!;
+        Assert.Equal("Hype (Python)", python.Name);
+        Assert.Equal("code.python", Assert.Single(python.Definition.SubActions).Type);
+        Assert.Contains("cb.run_steps(", python.Definition.SubActions[0].Parameters["code"]);
+        Assert.Contains("One note about it is at the top of the code.", actions.EditStatus);
+        Assert.DoesNotContain("is now off", actions.EditStatus);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
     private static void Pump()
     {
         Dispatcher.UIThread.RunJobs();

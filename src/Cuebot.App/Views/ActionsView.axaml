@@ -247,6 +247,11 @@
                 <MenuItem Header="Copy action" InputGesture="Ctrl+C" Command="{Binding CopyActionCommand}" IsEnabled="{Binding HasSelection}" />
                 <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
                 <MenuItem Header="Duplicate action" InputGesture="Ctrl+D" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
+                <MenuItem Header="Export to code" IsEnabled="{Binding HasSelection}"
+                          ToolTip.Tip="Makes a copy of this action that runs as one C# or Python script, and switches this one off">
+                  <MenuItem Header="C#" Command="{Binding ExportToCodeCommand}" CommandParameter="csharp" />
+                  <MenuItem Header="Python" Command="{Binding ExportToCodeCommand}" CommandParameter="python" />
+                </MenuItem>
                 <Separator />
                 <MenuItem Header="Delete action" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" />
               </ContextMenu>
@@ -312,6 +317,13 @@
                                   ToolTip.Tip="Copy the selected trigger or sub-action, or the whole action when nothing is selected (Ctrl+C)" />
                           <Button Content="Paste" Command="{Binding PasteCommand}" Click="OnMoreItemClick"
                                   ToolTip.Tip="Paste an action, sub-actions or triggers, also from another Cuebot (Ctrl+V)" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="Export to code" VerticalAlignment="Center" />
+                          <Button Content="C#" Command="{Binding ExportToCodeCommand}" CommandParameter="csharp" Click="OnMoreItemClick"
+                                  ToolTip.Tip="Makes a copy of this action that runs as one C# script, and switches this one off" />
+                          <Button Content="Python" Command="{Binding ExportToCodeCommand}" CommandParameter="python" Click="OnMoreItemClick"
+                                  ToolTip.Tip="Makes a copy of this action that runs as one Python script, and switches this one off" />
                         </StackPanel>
                         <Border Height="1" Background="{DynamicResource CuebotLine}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">

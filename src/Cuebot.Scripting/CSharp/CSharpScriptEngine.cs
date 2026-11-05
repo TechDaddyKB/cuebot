@@ -42,8 +42,15 @@ public sealed class CSharpScriptEngine(ScriptApi api, CphServices? cph = null, F
         {
             var globals = new CSharpScriptGlobals(context.Args, new CuebotHelpers(api, context, token), token,
                 new CphProxy(_cph, api, context, token, _inline));
-            var result = await Task.Run(() => runner(globals, token), token).ConfigureAwait(false);
-            return result is not false;
+            try
+            {
+                var result = await Task.Run(() => runner(globals, token), token).ConfigureAwait(false);
+                return result is not false;
+            }
+            catch (StopActionException)
+            {
+                return false;
+            }
         }, timeout, ct).ConfigureAwait(false);
     }
 

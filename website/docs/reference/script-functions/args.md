@@ -45,6 +45,28 @@ Reads one variable of the running action, like the user who triggered it.
     answer = cb.args_get(name="user")
     ```
 
+## args.resolve
+
+Fills in %variables% and ~globals~ in a text, exactly like a step's settings are filled in. Handy for text you copied from a step.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `text` | `text` | The text, like "Thanks %user% for %bits% bits!". |
+
+**Gives back:** The text with the variables filled in. A %variable% that does not exist stays as it is.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("args.resolve", new { text = "Hi %user%" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.args_resolve(text="Hi %user%")
+    ```
+
 ## args.set
 
 Sets a variable of the running action. Later sub-actions can use it as %name%.

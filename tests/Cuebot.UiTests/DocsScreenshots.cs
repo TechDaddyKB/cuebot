@@ -119,9 +119,16 @@ public sealed class DocsScreenshots : IAsyncDisposable
         Settle();
         Save(window, "actions-flowchart");
         SaveControl(window, window.GetVisualDescendants().OfType<Cuebot.App.Graph.FlowGraphControl>().Single(), "actions-flowchart-close");
+        // Run at the same time: three lanes, joined before the chat message.
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Big entrance");
+        actions.AutoArrangeCommand.Execute(null);
+        Settle();
+        SaveControl(window, window.GetVisualDescendants().OfType<Cuebot.App.Graph.FlowGraphControl>().Single(), "actions-flowchart-parallel");
         window.Width = 1360;
         window.Height = 860;
         actions.IsGraphView = false;
+        Settle();
+        Save(window, "actions-parallel-list");
 
         var python = actions.Actions.Single(a => a.Name == "Death counter (Python)");
         actions.SelectedAction = python;
@@ -134,6 +141,14 @@ public sealed class DocsScreenshots : IAsyncDisposable
         csharp.Selected = csharp.Steps.Items.First();
         Settle();
         Save(window, "actions-csharp-step");
+
+        // Export to code: the copy holds one code step with the whole action as a script.
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Big entrance");
+        actions.ExportToCodeCommand.Execute("csharp");
+        var exported = actions.SelectedAction!;
+        exported.Selected = exported.Steps.Items.First();
+        Settle();
+        Save(window, "actions-exported-code");
         window.Height = 860;
 
         window.Close();
@@ -208,6 +223,7 @@ internal static class DocsDemoData
     {
         var profile = host.Get<ProfileService>();
         profile.Profile.Actions.Add(RaidWelcome());
+        profile.Profile.Actions.Add(BigEntrance());
         profile.Profile.Actions.Add(DeathCounter());
         profile.Profile.Actions.Add(new ActionDefinition
         {
@@ -337,6 +353,36 @@ internal static class DocsDemoData
             [
                 check,
                 Celebration(),
+            ],
+        };
+    }
+
+    /// <summary>A follow alert that does three things at once with "Run at the same time", then thanks the follower.</summary>
+    private static ActionDefinition BigEntrance()
+    {
+        var together = new SubActionDefinition { Type = "core.parallel", Parameters = { ["lanes"] = "3" } };
+        together.Branch("Lane 1").Add(
+            new SubActionDefinition { Type = "audio.playSound", Parameters = { ["file"] = "C:\\Sounds\\fanfare.mp3", ["wait"] = "true" } });
+        together.Branch("Lane 2").AddRange(
+        [
+            new SubActionDefinition { Type = "vtubestudio.triggerHotkey", Parameters = { ["hotkey"] = "Wave" } },
+            new SubActionDefinition { Type = "vtubestudio.moveModel", Parameters = { ["time"] = "1", ["positionX"] = "0.4", ["positionY"] = "-0.2" } },
+        ]);
+        together.Branch("Lane 3").AddRange(
+        [
+            new SubActionDefinition { Type = "obs.setSourceVisibility", Parameters = { ["scene"] = "Live", ["source"] = "Confetti", ["state"] = "Visible" } },
+            new SubActionDefinition { Type = "core.delay", Parameters = { ["milliseconds"] = "4000" } },
+            new SubActionDefinition { Type = "obs.setSourceVisibility", Parameters = { ["scene"] = "Live", ["source"] = "Confetti", ["state"] = "Hidden" } },
+        ]);
+        return new ActionDefinition
+        {
+            Name = "Big entrance",
+            Group = "Alerts",
+            Triggers = [new TriggerDefinition { Type = "twitch.follow" }],
+            SubActions =
+            [
+                together,
+                new SubActionDefinition { Type = "twitch.sendMessage", Parameters = { ["message"] = "Welcome to the crew, %user%!" } },
             ],
         };
     }

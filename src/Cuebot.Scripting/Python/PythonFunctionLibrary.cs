@@ -65,6 +65,16 @@ internal sealed partial class PythonFunctionLibrary
                 """Says the text with text-to-speech."""
             def obs(self, request_type: str, data: Any = None) -> Any:
                 """Sends an obs-websocket request and returns its response data."""
+            def run_step(self, type: str, params: dict[str, Any] | None = None) -> str | None:
+                """Runs one step like the action editor does; returns the branch it picked, or None. Raises StopAction when it stops the action."""
+            def run_steps(self, steps: list[dict[str, Any]] | str) -> str:
+                """Runs steps (with the steps inside them) in order; returns "completed", "stop", "break" or "continue"."""
+            def check(self, left: Any, operator: str, right: Any = "") -> bool:
+                """Checks a condition the way the If step does."""
+            def resolve(self, text: Any) -> str:
+                """Fills in %variables% and ~globals~ in a text, the way step settings are."""
+            def pick(self, *weights: float) -> int:
+                """Picks a position at random by weight (0 = first), like a random group."""
         """";
 
     /// <summary>Names generated methods must not take: the hand-written helpers of <c>cb</c>.</summary>
@@ -167,6 +177,7 @@ internal sealed partial class PythonFunctionLibrary
         sb.Append("# completion and help for every Cuebot function. Cuebot itself does not need it.\n");
         sb.Append("from typing import Any\n\n\n");
         sb.Append("class CuebotError(Exception):\n    \"\"\"Raised when a Cuebot function fails.\"\"\"\n\n\n");
+        sb.Append("class StopAction(Exception):\n    \"\"\"Raised by cb.run_step when the step stopped the action.\"\"\"\n\n\n");
         sb.Append("class Cuebot:\n");
         // The source file has CRLF line endings in a Windows checkout; the stub always uses LF.
         sb.Append(HandWrittenStub.ReplaceLineEndings("\n")).Append('\n');

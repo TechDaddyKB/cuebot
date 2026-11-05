@@ -68,6 +68,16 @@ Runs another action from this one, like calling a helper. Good for reusing the s
 
 <small>Type id: `core.runAction`</small>
 
+## Run at the same time
+
+Does several things at once. Each lane is its own little list of steps, and all lanes start together. The next step waits until every lane is done. Example: play a sound and move your avatar at the same time, then say something in chat.
+
+| Setting | What to put in |
+| --- | --- |
+| **Lanes** | How many lanes run side by side, from 2 to 10. Put the steps for each lane under Lane 1, Lane 2, and so on. Starts as: `2`. |
+
+<small>Type id: `core.parallel`</small>
+
 ## Split text into inputs
 
 Cuts a text into pieces and gives each piece its own variable: %input0%, %input1% and so on. Handy for chat like "!give kris 50".

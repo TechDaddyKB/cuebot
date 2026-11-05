@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Storage;
+using Cuebot.Scripting.Export;
 
 namespace Cuebot.App.ViewModels.Actions;
 
@@ -221,6 +222,49 @@ public sealed partial class ActionsViewModel : PageViewModel
         copy.Name = UniqueName(copy.Name);
         Add(copy);
         EditStatus = $"Duplicated as '{copy.Name}'.";
+    }
+
+    /// <summary>
+    /// "Export to code": a copy of the selected action (same triggers and options) whose steps are replaced by one
+    /// C# or Python code step that does the same. The original is switched off so the triggers don't run both.
+    /// </summary>
+    /// <param name="language">"csharp" or "python".</param>
+    [RelayCommand]
+    private void ExportToCode(string language)
+    {
+        if (SelectedAction is not { } source) return;
+        var python = string.Equals(language, "python", StringComparison.OrdinalIgnoreCase);
+        var export = ActionCodeExporter.Export(source.Definition, _registry, python ? CodeLanguage.Python : CodeLanguage.CSharp,
+            _profile.Profile.Actions);
+
+        var copy = Json.Clone(source.Definition);
+        EditorClip.NewIds(copy);
+        copy.Name = UniqueName($"{source.Name} ({(python ? "Python" : "C#")})");
+        copy.RandomAction = false;
+        copy.ConcurrentSubActions = false;
+        copy.Layout = null;
+        copy.Enabled = true;
+        var step = new SubActionDefinition { Type = python ? "code.python" : "code.csharp" };
+        if (_registry.GetSubAction(step.Type) is { } handler)
+        {
+            foreach (var p in handler.Parameters) step.Parameters[p.Key] = p.DefaultValue;
+        }
+        step.Parameters["code"] = export.Code;
+        // Delays and waits that were steps now run inside the script; no time limit, like the steps had.
+        step.Parameters["timeoutSeconds"] = "0";
+        if (step.Parameters.ContainsKey("description")) step.Parameters["description"] = $"Exported from the action '{source.Name}'.";
+        copy.SubActions = [step];
+
+        var wasEnabled = source.Enabled;
+        source.Enabled = false;
+        Add(copy);
+        var notes = export.Warnings.Count switch
+        {
+            0 => "",
+            1 => " One note about it is at the top of the code.",
+            var n => $" {n} notes about it are at the top of the code.",
+        };
+        EditStatus = $"Exported to '{copy.Name}'." + (wasEnabled ? $" '{source.Name}' is now off so it doesn't run twice." : "") + notes;
     }
 
     [RelayCommand]

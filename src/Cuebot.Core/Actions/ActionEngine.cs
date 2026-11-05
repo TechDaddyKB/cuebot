@@ -376,6 +376,24 @@ public sealed class ActionEngine : IDisposable
         RunForksAsync(context, lanes.Where(lane => lane.Any(s => s.Enabled)).Select(lane => (Func<ActionRunContext, CancellationToken, Task<FlowOutcome>>)
             ((fork, token) => RunChainAsync(fork, lane, token))).ToArray(), ct);
 
+    /// <summary>
+    /// Runs code lanes at the same time inside a run (scripts exported from "Run at the same time"), with the same
+    /// rules as the step: each lane gets its own copy of the arguments, merged back in lane order afterwards, and a
+    /// lane that returns false (stop the action) or fails cancels the others.
+    /// </summary>
+    /// <returns>False when a lane stopped the action.</returns>
+    public async Task<bool> RunTogetherAsync(ActionRunContext context,
+        IReadOnlyList<Func<ActionRunContext, CancellationToken, Task<bool>>> lanes, CancellationToken ct)
+    {
+        var outcome = await RunForksAsync(context, lanes.Select(lane => (Func<ActionRunContext, CancellationToken, Task<FlowOutcome>>)
+            (async (fork, token) => await lane(fork, token).ConfigureAwait(false) ? FlowOutcome.Completed : FlowOutcome.Stop)).ToArray(), ct)
+            .ConfigureAwait(false);
+        return outcome != FlowOutcome.Stop;
+    }
+
+    /// <summary>The random source runs use (Random actions, random groups, weighted picks from scripts).</summary>
+    internal IRandomSource Random => _random;
+
     private static async Task<FlowOutcome> RunForksAsync(ActionRunContext context,
         IReadOnlyList<Func<ActionRunContext, CancellationToken, Task<FlowOutcome>>> work, CancellationToken ct)
     {
@@ -431,6 +449,38 @@ public sealed class ActionEngine : IDisposable
             }
         }
     }
+
+    /// <summary>
+    /// Runs ONE step the way the action editor would (its settings' %variables% resolved first) but not its branches:
+    /// the branch it picked is returned instead, for code that runs the branch itself. Steps that run their own
+    /// branches (Group, Switch, While, Run at the same time) are refused; run them with <see cref="RunStepsAsync"/>.
+    /// </summary>
+    internal async Task<(FlowOutcome Outcome, string? Branch)> RunSingleStepAsync(ActionRunContext context, SubActionDefinition step,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var handler = _registry.GetSubAction(step.Type)
+            ?? throw new InvalidOperationException($"Unknown sub-action type '{step.Type}' (is its module installed?)");
+        if (handler is IFlowContainerHandler)
+        {
+            throw new InvalidOperationException($"{handler.DisplayName} runs its own steps; give it to steps.runList with its branches");
+        }
+        SubActionStarting?.Invoke(new SubActionStart(context.Action, step, handler, context.Args));
+        SubActionResult result;
+        try
+        {
+            result = await handler.ExecuteAsync(context, ResolveParameters(handler, step, context), ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new SubActionFailedException($"{handler.DisplayName}: {ex.Message}", ex);
+        }
+        return result.Continue ? (FlowOutcome.Completed, result.Branch) : (result.ToOutcome(), null);
+    }
+
+    /// <summary>Runs steps (with their branches) in order inside a run, exactly as the action editor would.</summary>
+    internal Task<FlowOutcome> RunStepsAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> steps, CancellationToken ct) =>
+        RunChainAsync(context, steps, ct);
 
     private async Task<FlowOutcome> RunStepAsync(ActionRunContext context, SubActionDefinition step, CancellationToken ct)
     {

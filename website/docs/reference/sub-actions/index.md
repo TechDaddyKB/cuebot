@@ -29,7 +29,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [IFTTT](ifttt.md) | 2 |
 | [JSON](json.md) | 2 |
 | [Kick](kick.md) | 34 |
-| [Logic](logic.md) | 9 |
+| [Logic](logic.md) | 10 |
 | [Lumia Stream](lumia-stream.md) | 11 |
 | [Media requests](media-requests.md) | 2 |
 | [Meld Studio](meld-studio.md) | 25 |

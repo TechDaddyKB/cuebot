@@ -21,7 +21,8 @@ internal sealed class TestBot : IDisposable
         Profile = new ProfileService(null, Log);
         Globals = new GlobalVariables(null, Log);
         var api = new ScriptApi([new CoreScriptFunctions(), Functions, .. extraFunctions]);
-        Engine = new ActionEngine(Bus, Profile, new Registry([.. handlers(this, api), Capture], []), Globals, Log);
+        Registry = new Registry([.. handlers(this, api), Capture], []);
+        Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log);
         Engine.RunCompleted += record => LastRun = record;
     }
 
@@ -30,6 +31,7 @@ internal sealed class TestBot : IDisposable
     public GlobalVariables Globals { get; }
     public ProfileService Profile { get; }
     public ActionEngine Engine { get; }
+    public Registry Registry { get; }
     public FakeFunctions Functions { get; } = new();
     public CaptureSubAction Capture { get; } = new();
     public ActionRunRecord? LastRun { get; private set; }

@@ -1,0 +1,39 @@
+{
+  "functions": {
+    "steps.run": {
+      "description": "Runs one step, exactly like it would run in the action editor. Its settings can use %variables% and ~globals~; they are filled in first. Code made with \"Export to code\" uses this for every step. Steps that hold other steps (Group, Switch, While, Run at the same time) need steps.runList instead.",
+      "parameters": {
+        "type": "The step's id, like \"core.log\" or \"obs.setScene\". The Sub-actions reference shows the id of every step.",
+        "parameters": "The step's settings by name, like {\"message\": \"Hi %user%\"}. Settings you leave out use their usual default."
+      },
+      "returns": "An object: outcome is \"completed\", or \"stop\" when the step stopped the action; branch is the path a step with paths picked (like \"True\"), or null.",
+      "example": { "type": "core.log", "parameters": { "message": "Hello %user%" } }
+    },
+    "steps.runList": {
+      "description": "Runs a list of steps in order, with the steps inside them (the True/False paths of an If, the lanes of Run at the same time, and so on), exactly like the action editor would.",
+      "parameters": {
+        "steps": "The steps, written the way actions.json stores them: each one has a type, its parameters and, for steps that hold others, branches (like {\"Lane 1\": [ ... ]})."
+      },
+      "returns": "How the list ended: \"completed\", \"stop\" (a step stopped the action), \"break\" or \"continue\" (a Loop break or Loop continue step ran).",
+      "example": { "steps": [ { "type": "core.log", "parameters": { "message": "One" } }, { "type": "core.log", "parameters": { "message": "Two" } } ] }
+    },
+    "steps.check": {
+      "description": "Checks a condition the same way the If step does: the same comparisons, numbers compared as numbers, and capital letters do not matter. %variables% in both values are filled in first.",
+      "parameters": {
+        "left": "The value to look at, like \"%user%\".",
+        "operator": "How to compare, like \"equals\", \"contains\", \"greater than\", \"matches regex\", \"exists\" or \"does not exist\".",
+        "right": "What to compare with, like \"5\"."
+      },
+      "returns": "true when the condition holds, otherwise false.",
+      "example": { "left": "%rawInput%", "operator": "contains", "right": "hello" }
+    },
+    "steps.pick": {
+      "description": "Picks one choice at random, where a bigger weight means a bigger chance, like a Group set to \"Run one random step\".",
+      "parameters": {
+        "weights": "One weight per choice, like [1, 3]: the second is three times as likely. 0 is never picked (unless all are 0)."
+      },
+      "returns": "The position of the picked choice: 0 for the first, 1 for the second, and so on. -1 when the list is empty.",
+      "example": { "weights": [1, 3] }
+    }
+  }
+}

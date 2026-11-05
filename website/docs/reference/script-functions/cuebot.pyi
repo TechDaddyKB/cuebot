@@ -7,6 +7,10 @@ class CuebotError(Exception):
     """Raised when a Cuebot function fails."""
 
 
+class StopAction(Exception):
+    """Raised by cb.run_step when the step stopped the action."""
+
+
 class Cuebot:
     @property
     def args(self) -> dict[str, Any]:
@@ -31,6 +35,16 @@ class Cuebot:
         """Says the text with text-to-speech."""
     def obs(self, request_type: str, data: Any = None) -> Any:
         """Sends an obs-websocket request and returns its response data."""
+    def run_step(self, type: str, params: dict[str, Any] | None = None) -> str | None:
+        """Runs one step like the action editor does; returns the branch it picked, or None. Raises StopAction when it stops the action."""
+    def run_steps(self, steps: list[dict[str, Any]] | str) -> str:
+        """Runs steps (with the steps inside them) in order; returns "completed", "stop", "break" or "continue"."""
+    def check(self, left: Any, operator: str, right: Any = "") -> bool:
+        """Checks a condition the way the If step does."""
+    def resolve(self, text: Any) -> str:
+        """Fills in %variables% and ~globals~ in a text, the way step settings are."""
+    def pick(self, *weights: float) -> int:
+        """Picks a position at random by weight (0 = first), like a random group."""
     def actions_run(self, name: Any) -> Any:
         """Runs another action by its name and waits until it is done. It gets a copy of this action's variables. Fails when no action has that name.
 
@@ -50,6 +64,13 @@ class Cuebot:
         name: The variable name without % signs, like \"user\".
         Gives back: The value, or null when the action has no variable with that name.
         Same as cb.call(\"args.get\", ...).
+        """
+    def args_resolve(self, text: Any) -> Any:
+        """Fills in %variables% and ~globals~ in a text, exactly like a step's settings are filled in. Handy for text you copied from a step.
+
+        text: The text, like \"Thanks %user% for %bits% bits!\".
+        Gives back: The text with the variables filled in. A %variable% that does not exist stays as it is.
+        Same as cb.call(\"args.resolve\", ...).
         """
     def args_set(self, name: Any, value: Any) -> Any:
         """Sets a variable of the running action. Later sub-actions can use it as %name%.
@@ -1655,6 +1676,37 @@ class Cuebot:
 
         Gives back: true when signed in, otherwise false.
         Same as cb.call(\"spotify.isSignedIn\", ...).
+        """
+    def steps_check(self, left: Any, operator: Any, right: Any) -> Any:
+        """Checks a condition the same way the If step does: the same comparisons, numbers compared as numbers, and capital letters do not matter. %variables% in both values are filled in first.
+
+        left: The value to look at, like \"%user%\".
+        operator: How to compare, like \"equals\", \"contains\", \"greater than\", \"matches regex\", \"exists\" or \"does not exist\".
+        right: What to compare with, like \"5\".
+        Gives back: true when the condition holds, otherwise false.
+        Same as cb.call(\"steps.check\", ...).
+        """
+    def steps_pick(self, weights: Any) -> Any:
+        """Picks one choice at random, where a bigger weight means a bigger chance, like a Group set to \"Run one random step\".
+
+        weights: One weight per choice, like [1, 3]: the second is three times as likely. 0 is never picked (unless all are 0).
+        Gives back: The position of the picked choice: 0 for the first, 1 for the second, and so on. -1 when the list is empty.
+        Same as cb.call(\"steps.pick\", ...).
+        """
+    def steps_run(self, type: Any, parameters: Any) -> Any:
+        """Runs one step, exactly like it would run in the action editor. Its settings can use %variables% and ~globals~; they are filled in first. Code made with \"Export to code\" uses this for every step. Steps that hold other steps (Group, Switch, While, Run at the same time) need steps.runList instead.
+
+        type: The step's id, like \"core.log\" or \"obs.setScene\". The Sub-actions reference shows the id of every step.
+        parameters: The step's settings by name, like {\"message\": \"Hi %user%\"}. Settings you leave out use their usual default.
+        Gives back: An object: outcome is \"completed\", or \"stop\" when the step stopped the action; branch is the path a step with paths picked (like \"True\"), or null.
+        Same as cb.call(\"steps.run\", ...).
+        """
+    def steps_run_list(self, steps: Any) -> Any:
+        """Runs a list of steps in order, with the steps inside them (the True/False paths of an If, the lanes of Run at the same time, and so on), exactly like the action editor would.
+
+        steps: The steps, written the way actions.json stores them: each one has a type, its parameters and, for steps that hold others, branches (like {\"Lane 1\": [ ... ]}).
+        Gives back: How the list ended: \"completed\", \"stop\" (a step stopped the action), \"break\" or \"continue\" (a Loop break or Loop continue step ran).
+        Same as cb.call(\"steps.runList\", ...).
         """
     def streamdeck_get_instances(self) -> Any:
         """Lists the Stream Deck apps that are connected to Cuebot, with their devices and Cuebot keys.

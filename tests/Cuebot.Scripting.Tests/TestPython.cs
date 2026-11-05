@@ -69,3 +69,19 @@ internal sealed class PythonFactAttribute : FactAttribute
         if (TestPython.Executable is null) Skip = "No Python 3 interpreter found (set CUEBOT_TEST_PYTHON or put python3 on PATH)";
     }
 }
+
+/// <summary>A theory that is skipped when no Python interpreter is available.</summary>
+internal sealed class PythonTheoryAttribute : TheoryAttribute
+{
+#if XUNIT_V3
+    public PythonTheoryAttribute(
+        [System.Runtime.CompilerServices.CallerFilePath] string? sourceFilePath = null,
+        [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
+#else
+    public PythonTheoryAttribute()
+#endif
+    {
+        if (TestPython.Executable is null) Skip = "No Python 3 interpreter found (set CUEBOT_TEST_PYTHON or put python3 on PATH)";
+    }
+}

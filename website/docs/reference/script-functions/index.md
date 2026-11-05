@@ -28,7 +28,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | Area | Functions |
 | --- | --- |
 | [Actions](actions.md) | 1 |
-| [Arguments](args.md) | 3 |
+| [Arguments](args.md) | 4 |
 | [Game controllers](controllers.md) | 7 |
 | [Credits](credits.md) | 4 |
 | [Crowd Control](crowdcontrol.md) | 3 |
@@ -65,6 +65,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [Speech](speech.md) | 10 |
 | [Spending](spending.md) | 6 |
 | [Spotify](spotify.md) | 2 |
+| [Steps](steps.md) | 4 |
 | [Stream Deck](streamdeck.md) | 9 |
 | [StreamElements](streamelements.md) | 7 |
 | [Streamlabs](streamlabs.md) | 2 |

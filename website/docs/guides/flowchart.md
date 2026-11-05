@@ -41,6 +41,7 @@ way hang to the right of the step, going down.
 | **If** | **True** and **False**: yes and no. |
 | **Switch** | One way for each case you type, plus **Default** for "none of them". |
 | **While** | **Body**: the steps it repeats. |
+| **Run at the same time** | **Lane 1**, **Lane 2**, ...: all of them run at once (see below). |
 | **File exists** | **True** and **False**. |
 | **User in group** | **True** and **False**. |
 | Steps that spend or check points | One way for "it worked", one for "not enough points". |
@@ -55,6 +56,32 @@ and writes a big welcome. On **False** it only says thanks. Then both carry on w
 A **Group** step draws a coloured frame around itself and the steps inside it. Its label says **GROUP**, or
 **GROUP · ONE AT RANDOM** when only one of its steps runs, picked at random. Change the frame's colour with the
 group's **Colour** setting. Groups can sit inside other groups.
+
+### Doing several things at once: Run at the same time
+
+![Run at the same time with three lanes, joined before the chat message](../assets/screens/actions-flowchart-parallel.png)
+
+Normally one step waits for the one before it. Sometimes you want two or three things to happen **at the same
+moment**: play a sound *and* make your avatar wave *and* show confetti, and only *then* say thanks in chat.
+
+That is the **Run at the same time** step (in the **Logic** group). Think of a relay race where every runner starts at
+once. Each **lane** is its own little list of steps:
+
+- Its label says **AT THE SAME TIME**, and it has a dot for each lane on its right: **Lane 1**, **Lane 2**, and so on.
+- All lanes start together. Inside a lane, the steps still go one after another.
+- **Dashed lines** go from the end of each lane to the next step. They mean "wait here until every lane is done".
+- Want more lanes? Select the step and change **Lanes** (2 to 10). A new dot appears at once.
+- Click the **+** of a lane's dot to add its first step, or drop a box on it to move a step into that lane.
+
+Some rules, so nothing surprises you:
+
+- Each lane gets its own copy of the action's variables. When all lanes are done, their changes come back together,
+  lane by lane, in order. If two lanes set the same variable, the **higher lane number wins**.
+- A **Stop action** in one lane stops the other lanes too, and the action ends there.
+- If a step in one lane fails, the other lanes stop and the action fails, like any failing step.
+
+In the picture, a follow plays a fanfare (lane 1), makes the VTube Studio model wave and step forward (lane 2), and
+shows a confetti source for 4 seconds (lane 3). The chat message waits for all three.
 
 ### Steps at the same time, or one at random
 

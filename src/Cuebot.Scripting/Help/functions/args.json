@@ -12,7 +12,19 @@
         "name": "The variable name without % signs, like \"user\"."
       },
       "returns": "The value, or null when the action has no variable with that name.",
-      "example": { "name": "user" }
+      "example": {
+        "name": "user"
+      }
+    },
+    "args.resolve": {
+      "description": "Fills in %variables% and ~globals~ in a text, exactly like a step's settings are filled in. Handy for text you copied from a step.",
+      "parameters": {
+        "text": "The text, like \"Thanks %user% for %bits% bits!\"."
+      },
+      "returns": "The text with the variables filled in. A %variable% that does not exist stays as it is.",
+      "example": {
+        "text": "Hi %user%"
+      }
     },
     "args.set": {
       "description": "Sets a variable of the running action. Later sub-actions can use it as %name%.",
@@ -21,7 +33,10 @@
         "value": "The value to store: text, a number, true/false or a list. Leave it out to set it to empty (null)."
       },
       "returns": "Nothing.",
-      "example": { "name": "winner", "value": "CoolViewer42" }
+      "example": {
+        "name": "winner",
+        "value": "CoolViewer42"
+      }
     }
   }
 }

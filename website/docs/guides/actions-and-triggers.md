@@ -80,6 +80,7 @@ Sometimes a step should only happen *sometimes*. These sub-actions help. You fin
 | **Loop break** / **Loop continue** | Stop a repeat early / skip to the next round. | |
 | **Delay** | Waits, in milliseconds (1000 = 1 second). | Show an alert, wait 5000, hide it. |
 | **Group** | Keeps several steps together, like a folder. | |
+| **Run at the same time** | Runs two or more lists (lanes) at once, then carries on when all are done. | Play a sound *and* wave the avatar, then say thanks. |
 | **Run action** | Starts another action. | Reuse one "play alert sound" action everywhere. |
 | **Stop action** | Stops here. | |
 
@@ -87,6 +88,12 @@ When you select a step that has its own lists (like **If**), the word **BRANCH**
 into that list. After the list, the action carries on with the next step.
 
 The **Cheer reaction** action in the **Examples** group shows an **If** in use. It starts switched off.
+
+![Run at the same time in the list: each lane holds its own steps](../assets/screens/actions-parallel-list.png)
+
+**Run at the same time** shows its lanes in the list like an **If** shows True and False. Each lane's steps go one
+after another, but the lanes all start together. The step after it waits until every lane is done.
+[The flowchart editor](flowchart.md#doing-several-things-at-once-run-at-the-same-time) explains the rules.
 
 ### More options
 
@@ -97,6 +104,8 @@ The **More** button on an action has extra choices:
 - **Concurrent sub-actions**: run all steps at the same time instead of one after another.
 - **Always run**: run even when the action's queue is paused.
 - **Exclude from history**: keep this action out of the History list (handy for things that run very often).
+- **Export to code: C# / Python**: turns the whole action into one script. See
+  [Turn an action into code](scripting.md#turn-an-action-into-code).
 
 ## Flowchart
 

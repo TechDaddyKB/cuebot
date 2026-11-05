@@ -35,6 +35,10 @@ class CuebotError(Exception):
     """Raised in scripts when a Cuebot host function fails."""
 
 
+class StopAction(Exception):
+    """Raised by cb.run_step when the step stopped the action; the script then stops the action too."""
+
+
 class _HostClosed(BaseException):
     """The host closed the connection; the worker exits."""
 
@@ -138,6 +142,36 @@ class Cuebot(_load_functions()):
         """Sends an obs-websocket request and returns its response data."""
         return self.call("obs.request", requestType=request_type, requestData=data)
 
+    StopAction = StopAction
+
+    def run_step(self, type, params=None):
+        """Runs one step like the action editor does; returns the branch it picked (like "True") or None.
+
+        Raises StopAction when the step stopped the action, which stops the script the way `return False` does.
+        """
+        result = self.call("steps.run", type=type, parameters={k: _setting(v) for k, v in (params or {}).items()})
+        if result.get("outcome") != "completed":
+            raise StopAction()
+        return result.get("branch")
+
+    def run_steps(self, steps):
+        """Runs steps (with the steps inside them) in order; returns "completed", "stop", "break" or "continue"."""
+        if isinstance(steps, str):
+            steps = json.loads(steps)
+        return self.call("steps.runList", steps=steps)
+
+    def check(self, left, operator, right=""):
+        """Checks a condition the way the If step does (both values' %variables% filled in first)."""
+        return bool(self.call("steps.check", left=str(left), operator=operator, right=str(right)))
+
+    def resolve(self, text):
+        """Fills in %variables% and ~globals~ in a text, the way step settings are."""
+        return self.call("args.resolve", text=str(text))
+
+    def pick(self, *weights):
+        """Picks a position at random by weight (0 = first), like a Group set to run one random step."""
+        return self.call("steps.pick", weights=list(weights))
+
 
 class Worker:
     def __init__(self, channel):
@@ -173,8 +207,12 @@ class Worker:
         run_id = message.get("id")
         self._runs.append(run_id)
         try:
-            namespace = {"__name__": "__cuebot_script__", "cb": Cuebot(self, message.get("args") or {}), "CuebotError": CuebotError}
-            result = _compile(message.get("code") or "", namespace)()
+            namespace = {"__name__": "__cuebot_script__", "cb": Cuebot(self, message.get("args") or {}), "CuebotError": CuebotError,
+                         "StopAction": StopAction}
+            try:
+                result = _compile(message.get("code") or "", namespace)()
+            except StopAction:
+                result = False
             sys.stdout.flush()
             self._channel.send({"type": "done", "id": run_id, "result": _to_json(result)})
         except _HostClosed:
@@ -184,6 +222,13 @@ class Worker:
             self._channel.send({"type": "error", "id": run_id, "error": _describe(error), "traceback": _script_traceback(error)})
         finally:
             self._runs.pop()
+
+
+def _setting(value):
+    """A step setting as the action editor stores it: text, with true/false for booleans."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return "" if value is None else str(value)
 
 
 def _compile(code, namespace):

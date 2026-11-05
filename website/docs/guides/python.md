@@ -36,6 +36,11 @@ It has two kinds of buttons:
     | `cb.send_chat("Hi!")` | Says something in your Twitch chat. |
     | `cb.speak("Hello")` | Says it out loud with text-to-speech. |
     | `cb.obs("GetVersion")` | Sends one raw request to OBS. |
+    | `cb.run_step("core.log", {"message": "Hi %user%"})` | Runs any step, exactly like the action editor does. Gives back the way it picked (like `"True"`), or `None`. |
+    | `cb.check("%bits%", "greater than", "499")` | Checks something the way the **If** step does. Gives back `True` or `False`. |
+    | `cb.resolve("Hi %user%")` | Fills in `%variables%` and `~globals~` in a text, like a step's settings. |
+    | `cb.pick(1, 3)` | Picks a position at random by weight (0 = the first, here 1 in 4). |
+    | `cb.run_steps([...])` | Runs a list of steps (with the steps inside them), the way they are saved. Gives back `"completed"` or `"stop"`. |
 
 2. **One method for every Cuebot function**: chat, OBS, points, quotes, the subathon timer, VTube Studio, Stream
    Deck, music, and everything else. That's the next section.
@@ -202,6 +207,26 @@ Python can do more with packages: small add-ons other people wrote, like `reques
 Cuebot uses its own Python (3.13). It downloads it the first time a Python step runs, or when you click
 **Install Python**. If you already have a Python you like, **Advanced: use an existing Python interpreter instead**
 uses that one.
+
+## Steps inside Python
+
+Any step you can pick in the action editor also works from Python, with `cb.run_step`. Give it the step's id and its
+settings. The [sub-actions reference](../reference/sub-actions/index.md) shows every step's id and settings.
+
+```python
+# Show the confetti source, wait 4 seconds, hide it again
+cb.run_step("obs.setSourceVisibility", {"scene": "Live", "source": "Confetti", "state": "Visible"})
+cb.run_step("core.delay", {"milliseconds": "4000"})
+cb.run_step("obs.setSourceVisibility", {"scene": "Live", "source": "Confetti", "state": "Hidden"})
+
+if cb.check("%user%", "equals", "PixelPanda"):
+    cb.send_chat(cb.resolve("Welcome back, %user%!"))
+```
+
+- Settings are written as text, the same as in the editor, and `%variables%` in them are filled in for you.
+- When a step stops the action (like a **Stop action** step), the code stops there too, as if it said
+  `return False`.
+- This is what [Export to code](scripting.md#turn-an-action-into-code) writes for you.
 
 ## Good to know
 
