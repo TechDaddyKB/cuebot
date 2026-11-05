@@ -291,6 +291,23 @@ jobs:
             artifacts/namcap-*.txt
             artifacts/smoke-*
 
+  portal:
+    # The mod portal's browser-side encryption (portal/), checked against the same vectors as tests/Cuebot.Portal.Tests.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: portal
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: portal/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
   streamdeck-plugin:
     runs-on: ubuntu-latest
     defaults:

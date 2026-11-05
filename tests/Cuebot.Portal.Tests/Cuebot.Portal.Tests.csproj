@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Cuebot.Portal\Cuebot.Portal.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The test vectors shared with the TypeScript side (portal/test), so both implementations agree byte for byte. -->
+    <None Include="..\..\portal\test\vectors.json" Link="vectors.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

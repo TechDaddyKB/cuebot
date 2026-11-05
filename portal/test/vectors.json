@@ -1,0 +1,63 @@
+{
+  "identity": {
+    "d": "IPwtSF2KQZHpKQslZAi9X6JrD3TGCxOXUolke9wgyKc",
+    "x": "kT-VIqjbw7q73LkdHDKCgl2vZFCFQKtQBBY09gn6TgY",
+    "y": "0jCm4kT16ZLxrXT10MpUrCy9to-AWJYrglmxmeqh5xI"
+  },
+  "identityPublic": "BJE_lSKo28O6u9y5HRwygoJdr2RQhUCrUAQWNPYJ-k4G0jCm4kT16ZLxrXT10MpUrCy9to-AWJYrglmxmeqh5xI",
+  "relayId": "fyrsbvvtain3yaljh3d4eu5ka25jvkjt",
+  "fingerprint": "LiMg1rMCG7wBaT7HwlOqBrqaqTOGyoa7JxAEw-mJEuc",
+  "clientEphemeral": {
+    "d": "_RRHi7scUEWSGkh7HD8dQHuFQoCJwUeXCHWss_FOnEo",
+    "x": "dmCC-0O0aTw22CMTbYJs37Vx4LR0WTNlKWw0mSqTgxw",
+    "y": "q_5cbK0YPGt0QfzOhJy4aHWmBrMpWJ2U6KYsyxldoSU"
+  },
+  "serverEphemeral": {
+    "d": "05dUtJsu7ooqLERVDzuLNDoOC4LvYd0TcEJDskGfH-0",
+    "x": "aYyXMH5vf-hw-HnQgcvVDoNz9b65Z8ligrM4A3lXHQs",
+    "y": "exOwSphc_HT_WIdkqGCXRuhunO41sXKRbGzCQaTSlog"
+  },
+  "clientHello": "AQR2YIL7Q7RpPDbYIxNtgmzftXHgtHRZM2UpbDSZKpODHKv-XGytGDxrdEH8zoScuGh1pgazKVidlOimLMsZXaEl",
+  "transcript": "Y3VlYm90LXBvcnRhbC12MQR2YIL7Q7RpPDbYIxNtgmzftXHgtHRZM2UpbDSZKpODHKv-XGytGDxrdEH8zoScuGh1pgazKVidlOimLMsZXaElBGmMlzB-b3_ocPh50IHL1Q6Dc_W-uWfJYoKzOAN5Vx0LexOwSphc_HT_WIdkqGCXRuhunO41sXKRbGzCQaTSlogEkT-VIqjbw7q73LkdHDKCgl2vZFCFQKtQBBY09gn6TgbSMKbiRPXpkvGtdPXQylSsLL22j4BYliuCWbGZ6qHnEg",
+  "shared": "weSWqTFH3z5dIWvQY0Cv-S-oAabUZN3Z0HauMVfYco4",
+  "c2s": "-v0zeI5vBOpIDvk2qJ4UUFwuBdH2QkCgKbN7NechfWk",
+  "s2c": "GW09TFvSOjBa-nOEOlxUOSweojFEOpwOGPhNZrIz_4Y",
+  "frames": [
+    {
+      "from": "client",
+      "text": "hello from the mod",
+      "frame": "Ui79NcjBsZKzl_LPnbCcyyecK7PpKW3sgQYGzfOBcsy_KQ"
+    },
+    {
+      "from": "client",
+      "text": "",
+      "frame": "o_2uXiEElmCO8ayLRQ_x3Q"
+    },
+    {
+      "from": "server",
+      "text": "{\u0022ok\u0022:true}",
+      "frame": "7zUpFoyYWaiExbSNKZVJ3nUS3eE-XMcGUuIU"
+    },
+    {
+      "from": "client",
+      "text": "third frame, counter 2",
+      "frame": "5fVJncfgU4tK-MZ1lBTEycF1YRZhZOSpVNyHpuNUZb2OnUKyTpU"
+    }
+  ],
+  "jsSignature": "u1J50eI9QYYRvrF-pgok7eUhaI7imH5nAaCFIrD68qxYeTK82yjEDn4TsN_OS9vDW21mHB-PHIQWR76PzHGglA",
+  "dotnetSignature": "TqJVchvsc1vj0-djl8k7YnPXSwLzmUexEqYlpFJtwm4J1cbVTnYZfxBdGX_CGDtTEMuxh0bGvsNBvgkVau883w",
+  "seal": {
+    "recipient": {
+      "d": "YjPRzIJjKrkmcmwEd-OcX-4iMqRQstXgMwfLlcqkkcQ",
+      "x": "xTdkg6ZeDjMMEHiSao3vgNWLTP4uYAMZmxoOsXqOO4U",
+      "y": "Et2s5wUuTJH2g1nuWuueaEtPF2fNcSKkOs2OjF6Lb4w"
+    },
+    "ephemeral": {
+      "d": "UqIFX9v10cU9h4NB8cpExktbm5Uc9lg1pVTg_GqUlmk",
+      "x": "9Y7WgUig3x87Kat3PsIrV4Gu4jCRAVmTngVmEpCj8GI",
+      "y": "LDLppus-PWXQTikCqHFdrPaWniF_UsBd0f4-IwP7-BU"
+    },
+    "plaintext": "POST /hook/kofi {\u0022amount\u0022:\u00225.00\u0022}",
+    "sealed": "AQT1jtaBSKDfHzspq3c-witXga7iMJEBWZOeBWYSkKPwYiwy6abrPj1l0E4pAqhxXaz2lp4hf1LAXdH-PiMD-_gVY6eAz7lY-aLj7oul19sWhD9QZN585ZJYpf85r8ITRr5eZLIjI3mNvH4alxMYkCi4CQ"
+  }
+}

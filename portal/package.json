@@ -1,0 +1,20 @@
+{
+  "name": "cuebot-portal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cuebot mod portal: the browser loader and its end-to-end encryption (docs/MOD_PORTAL_PLAN.md).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}
