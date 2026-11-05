@@ -1,0 +1,237 @@
+# Cuebot mod portal: plan
+
+- **Status (2026-11-05):** designed with Kris in chat; nothing built yet. This document is the agreed design.
+- **Owner:** Kris.
+- **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
+  tests the iOS mod mode.
+
+## 1. Goals and non-goals
+
+**Goals**
+- Moderators manage parts of a streamer's Cuebot from anywhere, in a browser or the phone app: commands, actions,
+  sound alerts, audio levels, scenes, queues, TTS, overlays and widgets, uploads of sounds, images, GIFs and video.
+- The streamer decides who gets what: roles set when the invite is made, changeable or revocable at any time.
+- No setup for the streamer beyond creating an invite: no Cloudflare account, no port forwarding.
+- Nothing stored about anyone on the shared relay, and the relay cannot read what passes through it.
+- Uploads cannot smuggle anything but clean media into the streamer's PC.
+
+**Not in v1**
+- Code of any kind through the portal (C#, Python, run program, files, shell). Not for any role, ever.
+- Offline use: when Cuebot is off, the portal does nothing and the relay queues nothing.
+- A direct home-network mode for mods (everything goes through the relay).
+- Discord role checks and platform mod checks for YouTube, Kick and Rumble (later, see section 12).
+
+## 2. Decisions
+
+| # | Topic | Decision |
+|---|---|---|
+| 1 | How far mods change actions | Full editing (option C), limited by step risk levels per role (section 5). |
+| 2 | Changes go live or wait | Per role, overridable per member: **Live**, **Live and tell me**, **Needs approval**. |
+| 3 | Upload cleaning | Bundle a minimal LGPL ffmpeg in every build; re-encode every upload (section 8). |
+| 4 | Sign-in | Google, then Twitch, then Discord; redirect sign-in with PKCE through one fixed return page; an invite binds one account by its permanent provider user ID. |
+| 5 | Where the portal lives | One shared relay on Kris's Cloudflare (techdaddydigital.com), end-to-end encrypted, nothing stored. Also carries webhooks, passed through and never stored. Self-hosted relay stays as an advanced option. |
+| 6 | Platform mod status | The invite's role is authoritative on every platform (Twitch, YouTube, Kick, Rumble). An optional Twitch mod check per member, off by default. |
+
+## 3. Architecture
+
+```
+Mod browser / phone app ──WSS──▶ relay.techdaddydigital.com ◀──WSS── streamer's Cuebot (outbound)
+        └──────── end-to-end encrypted; the relay forwards opaque frames ────────┘
+
+Ko-fi, Patreon, … ──POST──▶ hooks.techdaddydigital.com/<relay id>/<route secret>/<service> ──▶ (same Cuebot link)
+Mod browser ──GET──▶ portal.techdaddydigital.com   (loader page and the sign-in return page only)
+```
+
+### Hosts (one Worker, Workers Paid plan, custom domains)
+- `portal.techdaddydigital.com`: the static loader (crypto, transport, UI bootstrap) and `/auth/return`.
+- `relay.techdaddydigital.com`: `/connect` for Cuebot, `/c/<relay id>` for mod devices.
+- `hooks.techdaddydigital.com`: webhook intake.
+- The domain's wildcard record (to 152.117.109.81) stays; Worker custom domains take precedence for these names.
+
+### Relay state
+- One Durable Object per relay ID, named by the ID. No SQLite, no KV, no R2, no `storage.put`.
+- In memory only (and in hibernation attachments): the Cuebot socket, mod sockets, the route-secret fingerprint,
+  rate counters.
+- Workers observability off, no Logpush, no tail consumers, no analytics engine. Code never reads
+  `CF-Connecting-IP` or request headers beyond what routing needs.
+
+### Cuebot identity
+- On first use Cuebot generates an ECDSA P-256 identity key (kept with the other secrets in settings, included in the
+  settings backup, Google Drive backups too).
+- **Relay ID** = base32 of the first 20 bytes of SHA-256(SPKI public key). Random, not tied to any name or email.
+- `/connect`: the relay sends a nonce; Cuebot answers with its public key and a signature over the nonce and host.
+  The relay checks the key hashes to the ID and the signature. No registry.
+- Losing the key means a new relay ID: every webhook address and mod device stops working. Cuebot shows a clear
+  "your relay address changed" page listing what to update.
+
+### End-to-end encryption (WebCrypto and .NET built-ins, no extra crypto library)
+- The invite link and every pinned device carry the **identity key fingerprint** in the URL fragment
+  (`https://portal.techdaddydigital.com/#i=<invite>&k=<fingerprint>`), never sent to a server.
+- Handshake per connection: the device sends an ephemeral ECDH P-256 key; Cuebot answers with its ephemeral key and an
+  ECDSA signature over the whole transcript with its identity key; the device checks it against the pinned
+  fingerprint. HKDF-SHA256 derives one AES-256-GCM key per direction; nonces are frame counters; replays and
+  reordering close the connection.
+- The relay sees only the relay ID, frame sizes and timing.
+
+### The loader and the real portal
+- The loader on `portal.` is small, versioned and open source. It does the handshake, then asks Cuebot for the portal
+  UI bundle over the encrypted link, so the UI always matches the streamer's Cuebot version.
+- The loader is the trust anchor for web users (whoever controls the Worker could change it). The phone apps ship
+  their own code and do not depend on it.
+- Strict CSP on the loader: no inline script, no third-party origins, `connect-src` only the relay.
+
+## 4. Invites, sign-in and sessions
+
+### Invites
+- The streamer creates an invite in Cuebot: **role**, optional label, expiry (24 hours default), optional lock
+  (must be Twitch user X, or Google email Y; checked inside Cuebot after sign-in).
+- An invite works once. The role is applied automatically when the mod finishes sign-in.
+- Shown as a link and a QR code. Unused invites can be withdrawn.
+
+### Sign-in (PKCE redirect through one fixed return page)
+- Providers in build order: **Google**, **Twitch**, **Discord**. Scopes: identity only (`openid` for Google, no
+  extra Twitch scopes, `identify` for Discord).
+- The device makes the PKCE verifier and keeps it; `redirect_uri` is `https://portal.techdaddydigital.com/auth/return`;
+  `state` carries the relay ID and a nonce. The return page hands the code back to the loader, which sends code and
+  verifier to Cuebot over the encrypted link. Cuebot exchanges them with the client secret it holds and reads the
+  provider's permanent user ID.
+- An intercepted code is useless without the verifier (on the device) and the client secret (in Cuebot).
+- Cuebot stores, per member: provider, provider user ID, a display name for the streamer's own list, role,
+  overrides, devices. On the streamer's PC only.
+- One account per member. Lost account: the streamer removes the member and sends a fresh invite.
+
+### Devices and sessions
+- Each device makes a non-extractable ECDSA key (WebCrypto, Keychain or Keystore) at sign-in; Cuebot records its
+  public key. Later connections prove possession; no bearer token to steal from storage.
+- Sessions last 12 hours of inactivity; re-sign-in with the provider every 30 days.
+- The streamer sees each member's devices, and can sign out one device, one member, or everyone.
+
+### Console setup (done in Chrome when sign-in is built; Kris signs in)
+- **Google:** a new Google Cloud project with an OAuth "Web application" client, identity scopes only, published
+  (basic scopes need no verification). Check the publishing status of the existing YouTube project first.
+- **Twitch:** add the return address to the existing Cuebot app.
+- **Discord:** a new "Cuebot" application with the return address. Check whether Discord allows PKCE without the
+  client secret; otherwise the secret is compiled in like Google's (`docs/BUILT_IN_APPS.md`).
+
+## 5. Roles and permissions
+
+### Step risk levels
+Every step type and trigger type declares a level. A test fails when a registered type has none.
+
+| Level | Examples |
+|---|---|
+| 1 Basic | Send chat message, play sound, delay, TTS say, overlay alert, comment, If/Switch/While, Run at the same time |
+| 2 Stream control | Scenes and sources, audio levels and mutes, raid, ads, shoutouts, polls and predictions, queues, timeouts |
+| 3 Show-critical | Start or end stream or recording, ban, title and category, turn actions or triggers on and off, restart sources |
+| 4 Trusted tech | Global variables, web requests, Stream Deck, MIDI, smart devices, integration-specific steps, run another action |
+| Never | C# and Python code, run program, file read and write, shell, settings, credentials, tokens, members and roles, Export to code |
+
+### Mod-set values are marked
+Any value a mod sets (step fields, variables, command replies, uploaded file names) carries a "set by a mod" mark.
+Steps in the Never row refuse marked values, so a mod cannot reach them through a variable or a field another action
+reads.
+
+### Default roles (the streamer can rename, change and add roles)
+
+| | Standard Mod | Lead/Head Mod | Tech Lead |
+|---|---|---|---|
+| Step levels | 1 | 1–3 | 1–4 |
+| Commands | Create, edit | Create, edit, delete | Create, edit, delete |
+| Other actions | Run allowed ones | Create, edit, delete | Create, edit, delete |
+| Audio levels | Yes | Yes | Yes |
+| Scenes, raid, queues, TTS settings | No | Yes | Yes |
+| End stream, ban, title and category | No | Yes, with a second confirm | Yes |
+| Sound uploads | Yes | Yes | Yes |
+| Image, video, GIF uploads | No | Yes | Yes |
+| Overlays and widgets | No | Edit | Edit, create, delete |
+| Activity feed, alert history | Yes | Yes | Yes |
+| Logs (scrubbed), connection status | No | No | Yes |
+| Undo other mods' changes | Own only | Yes | Yes |
+| Changes go live | Needs approval | Live and tell me | Live |
+
+- Scopes: any permission can be limited to action groups, overlays or folders.
+- Running an allowed action is not a change and never waits for approval.
+- No "trusted with code" switch.
+
+### Approvals and the change log
+- Every change records who, what, when, before and after. One-click undo.
+- The approval queue is in the desktop app and the phone app; it warns when the streamer changed the same thing since;
+  pending changes expire after 7 days.
+- Rate limits per member on changes and runs.
+
+### Optional platform mod check
+- Per member, off by default: Twitch members can be required to stay channel moderators (checked at sign-in and every
+  15 minutes; losing mod status suspends, re-modding restores).
+
+## 6. What mods see
+- **Web portal:** dashboard (live activity, connections, quick actions), commands, actions (the editor limited to the
+  member's step levels), sound alerts, audio levels, scenes, queues, TTS, overlays and widgets, uploads.
+- **Phone app mod mode** (iOS and Android): join by invite link instead of the pairing QR; the same features through
+  the same encrypted link.
+- Pages and buttons a member has no permission for are not shown; Cuebot re-checks every request anyway.
+
+## 7. Webhooks through the shared relay
+- Address: `https://hooks.techdaddydigital.com/<relay id>/<route secret>/<service>`.
+- On connect, Cuebot sends SHA-256 of its route secret; the relay keeps it in memory while connected and drops
+  requests that do not match.
+- **Cuebot online:** the relay answers 200 at once, encrypts the raw request to the Cuebot identity key (ECDH with an
+  ephemeral key) and forwards it. Cuebot checks the service signature as today. The readable request exists only in
+  Worker memory for that request; nothing parses or logs it.
+- **Cuebot offline:** the relay answers 200 and discards it. No replay of old events at the next stream.
+- The self-hosted relay (`relay/`) keeps buffering for anyone who runs their own.
+
+## 8. Uploads
+- Size, duration and resolution limits per type; per-member quotas; no SVG, HTML or anything not listed.
+- Accepted inputs: PNG, JPEG, WebP, GIF; MP3, Ogg (Vorbis, Opus), WAV, FLAC, AAC/M4A; MP4/MOV (H.264, HEVC, AV1),
+  WebM (VP8, VP9, AV1).
+- Pipeline in Cuebot: chunks (about 512 KB) reassembled in a quarantine folder; magic-byte check; full decode and
+  re-encode by ffmpeg in a separate process (time and memory limits, low priority, few threads, only the one file);
+  output PNG or WebP, animated WebP for GIFs, Ogg/Opus or MP3 for audio, VP9 WebM (with alpha when the source has it)
+  or H.264/HEVC MP4 for video.
+- Stored with random names, never executable; served with a fixed `Content-Type`, `nosniff` and a strict CSP.
+- Approval follows the member's change setting; for Live members a file goes live only after the checks pass.
+
+### ffmpeg build
+- Our own minimal LGPL build in CI for Windows x64, macOS arm64 and x64, Linux x64 and arm64: only the demuxers,
+  decoders and encoders above, plus hardware encoders (NVENC, AMF, QuickSync via libvpl, VideoToolbox, VA-API).
+  Expected 15–25 MB.
+- Decoding is always software (untrusted input never reaches GPU drivers).
+- Encoding: transparent video always software VP9; other video uses the GPU only while not live, CPU at low priority
+  while live; a setting for always or never GPU.
+- No x264 (GPL): H.264 output uses the hardware encoders or OpenH264 (BSD).
+- LGPL notice and a link to the exact source and build script in About and the docs. The Arch package depends on the
+  system ffmpeg instead.
+
+## 9. Privacy
+- Stored on the relay: nothing per streamer, mod or webhook.
+- Readable by the relay: nothing of the content (end-to-end encrypted), except webhook bodies for the duration of one
+  request in memory.
+- Unavoidable: IP addresses reach Cloudflare in transit (personal data under GDPR); Cloudflare processes them under
+  its standard data processing agreement and its own network logging.
+- A short privacy notice on `portal.` and in the docs states exactly this. Not legal advice; have it reviewed.
+
+## 10. Abuse limits and cost
+- Per relay ID: max 20 mod devices connected, daily byte cap, max frame size, frame rate, idle close.
+- Connection attempts limited per relay ID and per source in memory only.
+- Workers Paid ($5/month: 10 million requests, Durable Objects included). Idle hibernated sockets cost almost nothing.
+  A Cloudflare spending alert on the account.
+
+## 11. Build phases
+
+| Phase | Work | Done when |
+|---|---|---|
+| 0 | This plan; a crypto spike (handshake between .NET and WebCrypto, test vectors both ways) | Spike tests pass on all three OSes |
+| 1 | Cuebot core: members, roles, risk levels on every step and trigger type, permission-checked portal API, marked values, change log and undo, approval queue, desktop UI for invites and members | Engine and UI tests; a local test client drives every permission |
+| 2 | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | Worker tests (vitest); a live round trip through the deployed relay |
+| 3 | Sign-in: Google, then Twitch, then Discord; console setup | A real mod account joins by invite on each provider |
+| 4 | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | UI tests; screenshots for the docs |
+| 5 | ffmpeg CI build and the upload pipeline | Fuzzed and malformed files rejected; polyglots come out clean |
+| 6 | Overlays and widgets in the portal | Edit and upload from the portal show in OBS |
+| 7 | Phone app mod mode, Android then iOS (on the Mac) | Join, edit and approve from both phones |
+| 8 | Docs, privacy notice, wiki, release | mkdocs strict, wiki synced |
+
+## 12. Open questions and later
+- Discord: PKCE without client secret, or a compiled-in secret.
+- Google: reuse the existing project or a new one (depends on its publishing status).
+- Exact upload limits and per-relay caps (measure in phase 2).
+- Later: Discord role checks; platform mod checks for YouTube, Kick and Rumble; a home-network shortcut for mods.
