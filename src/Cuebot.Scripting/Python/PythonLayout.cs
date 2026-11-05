@@ -18,6 +18,9 @@ internal sealed class PythonLayout(string root)
     /// <summary>The named script functions the worker loads (<see cref="PythonFunctionLibrary"/>).</summary>
     public string FunctionsModule => Path.Combine(Root, PythonFunctionLibrary.ModuleFile);
 
+    /// <summary>The cuebot.pyi stub for code editors (<see cref="PythonFunctionLibrary.Stub"/>); Cuebot itself does not read it.</summary>
+    public string EditorStub => Path.Combine(Root, PythonFunctionLibrary.StubFile);
+
     public string BaseExecutable => OperatingSystem.IsWindows()
         ? Path.Combine(BaseDirectory, "python", "python.exe")
         : Path.Combine(BaseDirectory, "python", "bin", "python3");

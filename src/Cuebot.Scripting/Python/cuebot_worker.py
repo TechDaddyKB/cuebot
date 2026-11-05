@@ -191,10 +191,31 @@ def _compile(code, namespace):
     linecache.cache[SCRIPT_FILE] = (len(code), None, code.splitlines(True), SCRIPT_FILE)
     script = ast.parse(code, SCRIPT_FILE)
     wrapper = ast.parse(_WRAPPER)
-    if script.body:
-        wrapper.body[0].body = script.body
+    body = _without_type_checking(script.body)
+    if body:
+        wrapper.body[0].body = body
     exec(compile(wrapper, SCRIPT_FILE, "exec"), namespace)
     return namespace.pop("__cuebot_main__")
+
+
+def _without_type_checking(body):
+    """Drops top-level `if TYPE_CHECKING:` blocks (keeping any else).
+
+    They never run, but an import inside one (`from cuebot import cb`, for code editors) would still make `cb` a local
+    name of the wrapper function, so every use of it would fail.
+    """
+    kept = []
+    for node in body:
+        if isinstance(node, ast.If) and _is_type_checking(node.test):
+            kept.extend(node.orelse)
+        else:
+            kept.append(node)
+    return kept
+
+
+def _is_type_checking(test):
+    return (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
+        isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING" and isinstance(test.value, ast.Name) and test.value.id == "typing")
 
 
 def _to_json(value):

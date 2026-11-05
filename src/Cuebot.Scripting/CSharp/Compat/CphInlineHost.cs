@@ -29,8 +29,9 @@ internal sealed partial class CphInlineHost : IDisposable
     private static readonly string GlobalUsings =
         "global using System;\nglobal using System.Collections.Generic;\nglobal using System.Linq;\n"
         // Streamer.bot's documented examples use its data classes (TwitchUserInfo, ...), Platform and EventType with
-        // only `using System;`.
-        + "global using Streamer.bot.Plugin.Interface.Model;\nglobal using Streamer.bot.Plugin.Interface.Enums;\n"
+        // only `using System;`, and `public class CPHInline : CPHInlineBase` (also how a class written in a code editor
+        // against Cuebot's DLLs looks).
+        + "global using Streamer.bot.Plugin.Interface;\nglobal using Streamer.bot.Plugin.Interface.Model;\nglobal using Streamer.bot.Plugin.Interface.Enums;\n"
         + "global using Streamer.bot.Common.Events;\nglobal using Twitch.Common.Models.Api;\n";
 
     private readonly Dictionary<string, Compiled> _compiled = [];

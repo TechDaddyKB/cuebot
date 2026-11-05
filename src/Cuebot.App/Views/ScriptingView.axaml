@@ -9,7 +9,7 @@
     <StackPanel MaxWidth="980" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Scripting" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,12"
-                 Text="This page is for people who write code. Add an 'Execute C# code' or 'Execute Python code' step to an action to run your own program. A script can do anything on your computer, so only run code you understand and trust." />
+                 Text="This page is for people who write code. Add a 'Run C# code' or 'Run Python code' step to an action to run your own program. A script can do anything on your computer, so only run code you understand and trust." />
 
       <Grid ColumnDefinitions="*,12,*">
         <Border Classes="card">

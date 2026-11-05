@@ -595,7 +595,8 @@ public sealed class ActionsUxTests : IAsyncDisposable
         var viewer = history.Triggers;
         viewer.ClearCommand.Execute(null);
         var registry = _host.Get<Registry>();
-        var chat = registry.Triggers.First(t => t.EventTypes.Contains("twitch.chatMessage"));
+        // The trigger named after the event is offered first (not "Chat command", which also listens to chat).
+        var chat = registry.Triggers.Single(t => t.TypeId == "twitch.chatMessage");
         var bus = _host.Get<EventBus>();
 
         bus.Publish(new BotEvent("twitch.chatMessage", new Dictionary<string, object?> { ["user"] = "Dana", ["message"] = "hello there" }));

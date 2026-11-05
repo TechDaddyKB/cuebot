@@ -79,6 +79,52 @@ public sealed class PythonScriptTests : IAsyncLifetime
         Assert.Equal("ann", _bot.Capture.Args["user"]);
         Assert.Equal("Adds two numbers", _bot.Capture.Args["doc"]);
         Assert.True(File.Exists(Path.Combine(_data.Path, "python", PythonFunctionLibrary.ModuleFile)));
+        Assert.Contains("    def test_add(self, *, a: Any = None, b: Any = None) -> Any:\n",
+            File.ReadAllText(Path.Combine(_data.Path, "python", PythonFunctionLibrary.StubFile)));
+    }
+
+    /// <summary>The editor-only import from guides/code-editors.md can be pasted into Cuebot as it is.</summary>
+    [PythonFact]
+    public async Task Code_with_the_code_editor_import_lines_runs()
+    {
+        var run = await RunAsync("""
+            from typing import TYPE_CHECKING
+            if TYPE_CHECKING:
+                from cuebot import cb, CuebotError
+
+            cb.set_arg("sum", cb.test_add(a=2, b=3))
+            try:
+                cb.call("test.missing")
+            except CuebotError:
+                cb.set_arg("caught", True)
+            """);
+
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(5L, Convert.ToInt64(_bot.Capture.Args!["sum"]));
+        Assert.Equal(true, _bot.Capture.Args["caught"]);
+    }
+
+    [PythonFact]
+    public async Task Type_checking_blocks_keep_their_else_and_line_numbers()
+    {
+        var withElse = await RunAsync("""
+            import typing
+            if typing.TYPE_CHECKING:
+                from cuebot import cb
+            else:
+                cb.set_arg("else", "ran")
+            """);
+        Assert.True(withElse.Success, withElse.Error);
+        Assert.Equal("ran", _bot.Capture.Args!["else"]);
+
+        var failing = await RunAsync("""
+            from typing import TYPE_CHECKING
+            if TYPE_CHECKING:
+                from cuebot import cb
+            undefined_name
+            """);
+        Assert.False(failing.Success);
+        Assert.Contains("NameError at line 4", failing.Error);
     }
 
     [PythonFact]

@@ -8,7 +8,7 @@
     <StackPanel MaxWidth="860" HorizontalAlignment="Left">
       <c:StatusHeader Title="Stream Deck plugin" Brand="Stream Deck" State="{Binding State}" Detail="{Binding StatusMessage}" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="The Cuebot plugin for Stream Deck lets your Stream Deck keys run Cuebot actions, switch them on and off, set global variables and set off the Stream Deck Action trigger. In return, Cuebot's Stream Deck sub-actions (steps inside an action) can change what a key shows, using the key's button ID (its name)." />
+                 Text="The Cuebot plugin for Stream Deck lets your Stream Deck keys run Cuebot actions, switch them on and off, set global variables and set off the 'Stream Deck key or dial used' trigger. In return, Cuebot's Stream Deck sub-actions (steps inside an action) can change what a key shows, using the key's button ID (its name)." />
 
 
       <!-- Direct USB: decks driven without the Stream Deck app -->
@@ -22,7 +22,7 @@
                   <Button Grid.Column="1" Content="Scan now" Command="{Binding RescanCommand}" ToolTip.Tip="Looks for Stream Decks plugged into this computer again." />
                 </Grid>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Cuebot can run a Stream Deck plugged into this computer by itself, without the Stream Deck app (Linux and macOS). Pressing a key sets off the Stream Deck Action trigger with the key's button ID, and the Stream Deck sub-actions can change its title, image and state. Close other Stream Deck programs (the Elgato Stream Deck app, StreamController, OpenDeck) or turn this off so they can use the deck." />
+                           Text="Cuebot can run a Stream Deck plugged into this computer by itself, without the Stream Deck app (Linux and macOS). Pressing a key sets off the 'Stream Deck key or dial used' trigger with the key's button ID, and the Stream Deck sub-actions can change its title, image and state. Close other Stream Deck programs (the Elgato Stream Deck app, StreamController, OpenDeck) or turn this off so they can use the deck." />
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Name="UsbStatus" Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
                 </TextBlock>
@@ -63,7 +63,7 @@
                                     <Grid ColumnDefinitions="200,220,160,*" Margin="0,1">
                                       <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
                                       <TextBox Grid.Column="1" Text="{Binding ButtonId}" PlaceholderText="{Binding DefaultButtonId}" FontFamily="monospace" Margin="0,0,6,0"
-                                               ToolTip.Tip="The name of this key. Use it in the Stream Deck Action trigger and sub-actions to pick this key. Empty uses the default shown." />
+                                               ToolTip.Tip="The name of this key. Use it in the 'Stream Deck key or dial used' trigger and sub-actions to pick this key. Empty uses the default shown." />
                                       <TextBox Grid.Column="2" Text="{Binding Title}" IsEnabled="{Binding HasDisplay}" Margin="0,0,6,0"
                                                ToolTip.Tip="The text shown on this key. Only keys with a screen can show text." />
                                       <TextBox Grid.Column="3" Text="{Binding Image}" IsEnabled="{Binding HasDisplay}"
@@ -136,7 +136,7 @@
           <StackPanel Spacing="4">
             <TextBlock FontWeight="SemiBold" Text="4. Use it" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Add Cuebot keys from the Cuebot category. Each key has a Button ID (shown in its settings and below). Use it in the Stream Deck Action trigger to react to presses, dial turns and touches, and in the Stream Deck sub-actions (Set Title, Set State, Set Background, Set Value, Show Alert, Show Ok, Toggle State) to change how keys look." />
+                       Text="Add Cuebot keys from the Cuebot category. Each key has a Button ID (shown in its settings and below). Use it in the 'Stream Deck key or dial used' trigger to react to presses, dial turns and touches, and in the Stream Deck sub-actions (Set Title, Set State, Set key picture, Set key value, Show Alert, Show Ok, Toggle State) to change how keys look." />
           </StackPanel>
 
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Message}" />

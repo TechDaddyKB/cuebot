@@ -15,7 +15,10 @@ public sealed class TriggerEventRow(BotEvent e, IReadOnlyList<ITriggerType> trig
     public string Time => Event.Time.ToLocalTime().ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture);
     public IReadOnlyList<ITriggerType> TriggerTypes { get; } = triggers;
 
-    /// <summary>"Twitch › Chat message" (first listening trigger), or the raw type when no trigger listens.</summary>
+    /// <summary>
+    /// "Twitch › Chat message": the trigger named after the event when there is one, else the first listening trigger
+    /// (see TriggersFor), or the raw type when no trigger listens.
+    /// </summary>
     public string Title => TriggerTypes.Count == 0 ? Event.Type : $"{TriggerTypes[0].Category} › {TriggerTypes[0].DisplayName}";
 
     public string Preview
@@ -137,7 +140,10 @@ public sealed partial class TriggerViewerViewModel : ObservableObject
     private IReadOnlyList<ITriggerType> TriggersFor(string eventType)
     {
         if (!_byEventType.TryGetValue(eventType, out var list))
-            _byEventType[eventType] = list = _registry.Triggers.Where(t => t.EventTypes.Contains(eventType)).ToArray();
+            // The trigger named after the event comes first: a Twitch chat message is "Twitch › Chat message", not one of
+            // the triggers that also listen to it ("Chat command", Kick's platform-filtered "First words"…).
+            _byEventType[eventType] = list = _registry.Triggers.Where(t => t.EventTypes.Contains(eventType))
+                .OrderBy(t => string.Equals(t.TypeId, eventType, StringComparison.OrdinalIgnoreCase) ? 0 : 1).ToArray();
         return list;
     }
 

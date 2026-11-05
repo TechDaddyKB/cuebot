@@ -66,7 +66,7 @@ struct ConnectionGate<Content: View>: View {
             ContentUnavailableView {
                 Label("Pair with Cuebot", systemImage: "qrcode.viewfinder")
             } description: {
-                Text("In Cuebot on your computer, open the Servers page and tick \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.")
+                Text("In Cuebot on your computer, open the Servers page and tick \"Show pairing code\" under \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.")
             }
         case .unauthorized:
             ContentUnavailableView {

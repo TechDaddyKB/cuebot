@@ -21,6 +21,7 @@ namespace Cuebot.Scripting;
 internal sealed partial class PythonFunctionLibrary
 {
     public const string ModuleFile = "cuebot_functions.py";
+    public const string StubFile = "cuebot.pyi";
     private const string HelpResourcePrefix = "Cuebot.Scripting.Help.functions.";
 
     private PythonFunctionLibrary(IReadOnlyList<Method> methods, IReadOnlyList<string> skipped)

@@ -173,7 +173,7 @@ fun ConnectionGate(container: AppContainer, goToSettings: () -> Unit, content: @
     when (val s = status) {
         ConnectionStatus.Unpaired -> Unavailable(
             Icons.Filled.QrCodeScanner, "Pair with Cuebot",
-            "In Cuebot on your computer, open the Servers page and tick \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.",
+            "In Cuebot on your computer, open the Servers page and tick \"Show pairing code\" under \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.",
         ) { Button(onClick = goToSettings, modifier = Modifier.testTag("gate-pair")) { Text("Pair a Cuebot") } }
         ConnectionStatus.Unauthorized -> Unavailable(
             Icons.Filled.KeyOff, "Pair again",
