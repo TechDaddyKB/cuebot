@@ -40,17 +40,27 @@ name), and shows up in your alerts, credits and spoken events.
 ![Integrations > Webhooks > Relay](../assets/screens/webhooks-relay.png)
 
 Some services do not "call" Cuebot directly. Instead they send a **webhook**: a small message to a web address. Your
-computer has no public web address, so these services need a helper in between, called the **relay**.
+computer has no public web address, so these services need a helper in between, called a **relay**. You can use
+Cuebot's shared relay, which needs no setup, or set up your own.
 
 **Apps > Webhooks** has two tabs:
 
 - **Services**: **Ko-fi**, **Patreon**, **Throne**, **Fourthwall**, **Shopify**, and **Custom webhooks** for anything
   else (IFTTT, Zapier, your own scripts).
-- **Relay**: connects Cuebot to your relay.
+- **Relay**: chooses the shared relay or connects Cuebot to your own.
 
-### Setting up the relay (once)
+### The easy way: the shared relay
 
-The relay is a tiny program that runs on **your own free Cloudflare account**. The services send their messages to the
+On the **Relay** tab, tick **Use the shared relay**. That is all. Under **Webhook URLs**, click **Copy** next to each
+service and paste the address into that service's webhook settings.
+
+The shared relay passes each message straight to your Cuebot, locked so that only your Cuebot can read it. It stores
+nothing. A message that arrives while Cuebot is closed is dropped, so you never get a flood of old alerts at the start
+of a stream. If you want missed messages delivered later, set up your own relay instead.
+
+### Or: your own relay
+
+Your own relay is a tiny program that runs on **your own free Cloudflare account**. The services send their messages to the
 relay. Cuebot picks them up from there. While Cuebot is closed, the relay keeps them (up to 500 messages, for at most
 24 hours) and hands them over when Cuebot comes back.
 
@@ -62,7 +72,7 @@ relay. Cuebot picks them up from there. While Cuebot is closed, the relay keeps 
    to Cloudflare in your browser.
 2. At the end it shows three values. Type them into the **Relay** tab: **Relay URL**, **Connect token** and **Route
    secret**.
-3. Tick **Use the webhook relay** and click **Connect**.
+3. Untick **Use the shared relay** if it is on. Tick **Use the webhook relay** and click **Connect**.
 4. Under **Webhook URLs**, click **Copy** next to each service and paste the address into that service's webhook
    settings.
 

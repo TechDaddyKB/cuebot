@@ -1,0 +1,20 @@
+// The shared mod portal relay (worker/index.ts, RELAY.md). Deployed to Kris's Cloudflare account for every Cuebot
+// user; nothing in it is per streamer and it has no secrets. `npx wrangler deploy` from this folder.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cuebot-portal",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "PORTAL_RELAY", "class_name": "PortalRelay" }]
+  },
+  // The class never writes to storage; SQLite-backed is simply the current default for new classes.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PortalRelay"] }],
+  "vars": {
+    "PORTAL_DOMAIN": "techdaddydigital.com"
+  },
+  // No logs, traces or tail consumers: the relay keeps nothing about anyone (docs/MOD_PORTAL_PLAN.md, section 9).
+  "observability": { "enabled": false, "logs": { "enabled": false, "invocation_logs": false } },
+  "logpush": false
+}

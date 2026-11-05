@@ -172,6 +172,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Servers", () => Get<Cuebot.Server.ServerManager>().StartAsync()),
             StartSafely(log, "Discord bot", () => Get<DiscordBotService>().StartAsync()),
             StartSafely(log, "Webhook relay", () => Get<Cuebot.Relay.RelayClient>().StartAsync()),
+            StartSafely(log, "Mod portal relay", () => StartPortalRelay()),
             StartSafely(log, "Remote instances", () => Get<RemoteHub>().StartAsync()),
             StartSafely(log, "Hotkeys", () => Get<Cuebot.Core.Desktop.Hotkeys.HotkeyService>().StartAsync()),
             StartSafely(log, "Speech", () => Get<SpeechService>().StartAsync()),
@@ -182,6 +183,15 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Audio", () => Get<Cuebot.Speech.AudioOutput>().WarmUpAsync()));   // first sound plays without device-open delay
 
         Get<EventBus>().Publish(new BotEvent(CoreEvents.AppStarted));
+    }
+
+    /// <summary>Webhooks from the shared portal relay go through the webhook relay client's handlers and history.</summary>
+    private Task StartPortalRelay()
+    {
+        var portal = Get<Cuebot.Portal.Relay.PortalRelayClient>();
+        var relay = Get<Cuebot.Relay.RelayClient>();
+        portal.WebhookSink = relay.DeliverAsync;
+        return portal.StartAsync();
     }
 
     private static async Task StartSafely(AppLog log, string name, Func<Task> start)

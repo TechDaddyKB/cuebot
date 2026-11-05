@@ -140,7 +140,18 @@ public sealed class PortalSettings
 {
     public int Version { get; set; } = 1;
 
+    /// <summary>Let mods connect through the shared relay (relay.techdaddydigital.com).</summary>
     public bool Enabled { get; set; }
+
+    /// <summary>Receive webhooks through the shared relay (hooks.techdaddydigital.com), with or without mods.</summary>
+    public bool SharedWebhooks { get; set; }
+
+    /// <summary>The path segment that makes this Cuebot's shared webhook addresses unguessable. Secret.</summary>
+    [Secret]
+    public string RouteSecret { get; set; } = "";
+
+    /// <summary>Another relay address (for testing a deployment, e.g. its workers.dev name); empty for the shared one.</summary>
+    public string RelayUrl { get; set; } = "";
 
     /// <summary>This Cuebot's identity key (PKCS#8, base64). Its loss changes the relay ID. Secret.</summary>
     [Secret]

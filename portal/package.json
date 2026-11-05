@@ -3,18 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Cuebot mod portal: the browser loader and its end-to-end encryption (docs/MOD_PORTAL_PLAN.md).",
+  "description": "Cuebot mod portal: the browser loader, its end-to-end encryption and the shared relay Worker (docs/MOD_PORTAL_PLAN.md).",
   "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "typecheck": "tsc -p .",
-    "test": "vitest run"
+    "typecheck": "tsc -p . && tsc -p worker",
+    "test": "vitest run && vitest run -c vitest.worker.config.ts",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.9",
+    "@cloudflare/workers-types": "5.20261027.1",
     "@types/node": "24.19.2",
     "typescript": "5.9.3",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "wrangler": "4.154.0"
+  },
+  "allowScripts": {
+    "workerd@1.20261023.1": true,
+    "esbuild@0.28.2": true
   }
 }

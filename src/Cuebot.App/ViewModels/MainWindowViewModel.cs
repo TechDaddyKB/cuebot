@@ -134,7 +134,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 host.Get<Cuebot.Server.ServerManager>(), usb: host.Get<Cuebot.StreamDeck.Hid.StreamDeckHidService>()),
             new Cuebot.App.ViewModels.Webhooks.WebhooksPageViewModel(
                 new Cuebot.App.ViewModels.Webhooks.WebhookServicesViewModel(host.Get<Cuebot.Webhooks.WebhookServices>()),
-                new Cuebot.App.ViewModels.Webhooks.WebhooksViewModel(host.Get<Cuebot.Relay.RelayClient>(), host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>())),
+                new Cuebot.App.ViewModels.Webhooks.WebhooksViewModel(host.Get<Cuebot.Relay.RelayClient>(), host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>(),
+                    host.Get<Cuebot.Portal.Relay.PortalRelayClient>())),
             new Extras.QuotesViewModel(host.Get<Cuebot.Core.Quotes.QuoteStore>()),
             new Extras.CreditsViewModel(host.Get<Cuebot.Core.Credits.CreditsCollector>()),
             new Extras.TopSpendersViewModel(host.Get<Cuebot.Core.Spending.SpendingLedger>()),
@@ -167,7 +168,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new MediaRequestsViewModel(host.Get<Cuebot.Core.Media.MediaRequests>()),
             new MusicViewModel(host.Get<Cuebot.Integrations.NowPlaying.NowPlayingService>(), host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>()),
             new ModPortalViewModel(host.Get<Cuebot.Portal.Members.PortalDirectory>(), host.Get<Cuebot.Portal.Changes.PortalChanges>(),
-                host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>()),
+                host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>(), host.Get<Cuebot.Portal.Relay.PortalRelayClient>()),
             new Transfer.ImportExportViewModel(host.Get<Cuebot.Core.Transfer.TransferService>(), host.Get<Cuebot.Core.Actions.ProfileService>(),
                 host.Get<Cuebot.Core.Commands.CommandStore>(), host.Get<Cuebot.Core.Actions.GlobalVariables>(),
                 host.Get<Cuebot.Core.Desktop.Clipboard.IClipboardService>(),

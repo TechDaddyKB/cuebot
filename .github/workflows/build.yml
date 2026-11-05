@@ -292,7 +292,8 @@ jobs:
             artifacts/smoke-*
 
   portal:
-    # The mod portal's browser-side encryption (portal/), checked against the same vectors as tests/Cuebot.Portal.Tests.
+    # The mod portal (portal/): its browser-side encryption, checked against the same vectors as tests/Cuebot.Portal.Tests,
+    # and the shared relay Worker, tested inside workerd.
     runs-on: ubuntu-latest
     defaults:
       run:

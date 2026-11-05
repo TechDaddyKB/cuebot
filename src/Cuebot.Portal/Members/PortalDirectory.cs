@@ -73,6 +73,55 @@ public sealed class PortalDirectory
 
     public string RelayId => Identity.RelayId;
 
+    /// <summary>Mods may connect through the shared relay.</summary>
+    public bool Enabled
+    {
+        get { lock (_gate) return _settings.Enabled; }
+        set => Set(() => _settings.Enabled = value);
+    }
+
+    /// <summary>Webhooks come in through the shared relay.</summary>
+    public bool SharedWebhooks
+    {
+        get { lock (_gate) return _settings.SharedWebhooks; }
+        set => Set(() => _settings.SharedWebhooks = value);
+    }
+
+    /// <summary>The relay address, or empty for the shared one.</summary>
+    public string RelayUrl
+    {
+        get { lock (_gate) return _settings.RelayUrl; }
+        set => Set(() => _settings.RelayUrl = value.Trim());
+    }
+
+    /// <summary>The webhook route secret, made (and saved) the first time it is needed.</summary>
+    public string RouteSecret
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_settings.RouteSecret.Length >= 16) return _settings.RouteSecret;
+                _settings.RouteSecret = PortalKeys.Base64Url(RandomNumberGenerator.GetBytes(32));
+                _save();
+                return _settings.RouteSecret;
+            }
+        }
+    }
+
+    /// <summary>Makes a new route secret: every shared webhook address changes.</summary>
+    public void RotateRouteSecret() => Set(() => _settings.RouteSecret = PortalKeys.Base64Url(RandomNumberGenerator.GetBytes(32)));
+
+    private void Set(Action change)
+    {
+        lock (_gate)
+        {
+            change();
+            _save();
+        }
+        Changed?.Invoke();
+    }
+
     public IReadOnlyList<PortalRole> Roles { get { lock (_gate) return [.. _settings.Roles]; } }
     public IReadOnlyList<PortalMember> Members { get { lock (_gate) return [.. _settings.Members]; } }
 

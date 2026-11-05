@@ -15,14 +15,14 @@ export const TAG_LENGTH = 16;
 export const CLIENT_HELLO_LENGTH = 1 + PUBLIC_KEY_LENGTH;
 export const SERVER_HELLO_LENGTH = 1 + 2 * PUBLIC_KEY_LENGTH + SIGNATURE_LENGTH;
 
-const subtle = globalThis.crypto.subtle;
+const subtle = crypto.subtle;
 const utf8 = new TextEncoder();
 const ECDH = { name: "ECDH", namedCurve: "P-256" } as const;
 const ECDSA = { name: "ECDSA", namedCurve: "P-256" } as const;
 
 export class PortalCryptoError extends Error {}
 
-export function concat(...parts: Bytes[]): Bytes {
+export function concat(...parts: Uint8Array[]): Bytes {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let at = 0;
   for (const p of parts) {
@@ -77,7 +77,7 @@ export async function fingerprint(publicKey: Bytes): Promise<string> {
 }
 
 export async function rawPublicKey(key: CryptoKey): Promise<Bytes> {
-  return new Uint8Array(await subtle.exportKey("raw", key));
+  return new Uint8Array((await subtle.exportKey("raw", key)) as ArrayBuffer);
 }
 
 function checkRaw(raw: Bytes): void {
@@ -102,7 +102,9 @@ export async function verify(publicKey: Bytes, data: Bytes, signature: Bytes): P
 
 export async function sharedSecret(own: CryptoKey, otherPublicKey: Bytes): Promise<Bytes> {
   const other = await importEcdhPublic(otherPublicKey);
-  return new Uint8Array(await subtle.deriveBits({ name: "ECDH", public: other }, own, 256));
+  // Cloudflare's typings name the field "$public"; the runtime, like every browser, takes "public".
+  const params = { name: "ECDH", public: other } as unknown as Parameters<typeof subtle.deriveBits>[0];
+  return new Uint8Array(await subtle.deriveBits(params, own, 256));
 }
 
 async function hkdf(secret: Bytes, salt: Bytes, info: string): Promise<CryptoKey> {

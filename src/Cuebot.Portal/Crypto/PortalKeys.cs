@@ -161,5 +161,12 @@ public sealed class IdentityKey : IDisposable
     /// <summary>ECDSA P-256 SHA-256 in IEEE P1363 form (64 bytes).</summary>
     public byte[] Sign(ReadOnlySpan<byte> data) => _key.SignData(data, HashAlgorithmName.SHA256);
 
+    /// <summary>Opens a message the relay sealed to this key (<see cref="PortalSeal"/>): the same P-256 key, used for ECDH.</summary>
+    public byte[] OpenSealed(ReadOnlySpan<byte> sealedBytes)
+    {
+        using var ecdh = ECDiffieHellman.Create(_key.ExportParameters(true));
+        return PortalSeal.Open(ecdh, sealedBytes);
+    }
+
     public void Dispose() => _key.Dispose();
 }

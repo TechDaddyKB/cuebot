@@ -5,13 +5,14 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Desktop.Clipboard;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Relay;
 
 namespace Cuebot.App.ViewModels;
 
 /// <summary>
 /// "Mod portal" page (docs/MOD_PORTAL_PLAN.md): invite mods with a role, change or remove their access, approve their
-/// changes and undo them, and set what each role may do. The online part (the relay and sign-in) comes later; until
-/// then invites can be made and managed but not yet used.
+/// changes and undo them, set what each role may do, and open the portal on the shared relay. Signing in comes in a
+/// later version; until then invites can be made and managed but not yet used.
 /// </summary>
 public sealed partial class ModPortalViewModel : PageViewModel
 {
@@ -20,12 +21,16 @@ public sealed partial class ModPortalViewModel : PageViewModel
     private readonly PortalDirectory _directory;
     private readonly PortalChanges _changes;
     private readonly IClipboardService? _clipboard;
+    private readonly PortalRelayClient? _relay;
 
-    public ModPortalViewModel(PortalDirectory directory, PortalChanges changes, IClipboardService? clipboard = null) : base(PageTitle)
+    public ModPortalViewModel(PortalDirectory directory, PortalChanges changes, IClipboardService? clipboard = null, PortalRelayClient? relay = null)
+        : base(PageTitle)
     {
         _directory = directory;
         _changes = changes;
         _clipboard = clipboard;
+        _relay = relay;
+        if (relay is not null) relay.StatusChanged += () => OnUi(() => OnPropertyChanged(nameof(RelayStatus)));
         directory.Changed += () => OnUi(Refresh);
         changes.Changed += () => OnUi(Refresh);
         Refresh();
@@ -38,6 +43,21 @@ public sealed partial class ModPortalViewModel : PageViewModel
     public static IReadOnlyList<string> Levels { get; } = ["1 Basic", "2 Stream control", "3 Show-critical", "4 Trusted tech"];
 
     public string RelayId => _directory.RelayId;
+
+    /// <summary>The portal is open: Cuebot stays connected to the shared relay so mods can reach it.</summary>
+    public bool PortalOpen
+    {
+        get => _directory.Enabled;
+        set
+        {
+            if (value == _directory.Enabled) return;
+            _directory.Enabled = value;
+            OnPropertyChanged();
+            if (_relay is not null) _ = _relay.StartAsync();
+        }
+    }
+
+    public string RelayStatus => _relay?.StatusMessage ?? "";
 
     public ObservableCollection<ModRoleViewModel> Roles { get; } = [];
     public ObservableCollection<ModMemberViewModel> Members { get; } = [];

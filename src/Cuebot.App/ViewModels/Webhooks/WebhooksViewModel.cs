@@ -5,25 +5,30 @@ using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core;
 using Cuebot.Core.Desktop.Clipboard;
 using Cuebot.Core.Webhooks;
+using Cuebot.Portal.Relay;
 using Cuebot.Relay;
 
 namespace Cuebot.App.ViewModels.Webhooks;
 
 /// <summary>
-/// Webhooks page: settings and status of the user's Cloudflare relay (relay/README.md), the webhook URL to paste into
-/// each service that has a handler, and the latest deliveries with their outcome.
+/// Webhooks page: Cuebot's shared relay (nothing to set up, docs/MOD_PORTAL_PLAN.md section 7) or the user's own
+/// Cloudflare relay (relay/README.md), the webhook URL to paste into each service that has a handler, and the latest
+/// deliveries with their outcome.
 /// </summary>
 public sealed partial class WebhooksViewModel : PageViewModel
 {
     private readonly RelayClient _relay;
+    private readonly PortalRelayClient? _shared;
     private readonly IClipboardService? _clipboard;
 
-    public WebhooksViewModel(RelayClient relay, IClipboardService? clipboard = null) : base("Webhook relay")
+    public WebhooksViewModel(RelayClient relay, IClipboardService? clipboard = null, PortalRelayClient? shared = null) : base("Webhook relay")
     {
         _relay = relay;
+        _shared = shared;
         _clipboard = clipboard;
         Routes = [.. relay.Handlers.Select(h => new WebhookRouteViewModel(this, h))];
         relay.StatusChanged += () => OnUi(RefreshStatus);
+        if (shared is not null) shared.StatusChanged += () => OnUi(RefreshStatus);
         relay.DeliveriesChanged += () => OnUi(RefreshDeliveries);
         RefreshDeliveries();
     }
@@ -87,6 +92,25 @@ public sealed partial class WebhooksViewModel : PageViewModel
             if (!value && _relay.IsRunning) _ = Disconnect();
         }
     }
+
+    /// <summary>Whether this Cuebot has the shared relay (always, in the app; tests may leave it out).</summary>
+    public bool HasSharedRelay => _shared is not null;
+
+    /// <summary>Receive webhooks through Cuebot's shared relay instead of the user's own.</summary>
+    public bool UseSharedRelay
+    {
+        get => _shared?.Directory.SharedWebhooks ?? false;
+        set
+        {
+            if (_shared is null || value == _shared.Directory.SharedWebhooks) return;
+            _shared.Directory.SharedWebhooks = value;
+            OnPropertyChanged();
+            RefreshUrls();
+            _ = _shared.StartAsync();
+        }
+    }
+
+    public string SharedStatus => _shared?.StatusMessage ?? "";
 
     public bool AutoConnect
     {
@@ -177,6 +201,7 @@ public sealed partial class WebhooksViewModel : PageViewModel
         OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(IsConnected));
+        OnPropertyChanged(nameof(SharedStatus));
     }
 
     private void RefreshDeliveries()
@@ -189,7 +214,8 @@ public sealed partial class WebhooksViewModel : PageViewModel
     private string NameOf(string service) =>
         _relay.Handlers.FirstOrDefault(h => string.Equals(h.Service, service, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? service;
 
-    internal string? WebhookUrl(string service) => _relay.WebhookUrl(service);
+    /// <summary>The shared relay's address while it is on, otherwise the user's own relay's.</summary>
+    internal string? WebhookUrl(string service) => _shared?.WebhookUrl(service) ?? _relay.WebhookUrl(service);
 
     private static string Masked(string secret, string what)
     {
@@ -206,7 +232,7 @@ public sealed partial class WebhookRouteViewModel(WebhooksViewModel page, IWebho
     public string Service => handler.Service;
 
     /// <summary>The full URL (includes the route secret), or a hint while the settings are incomplete.</summary>
-    public string Url => page.WebhookUrl(handler.Service) ?? "Enter the relay URL and route secret";
+    public string Url => page.WebhookUrl(handler.Service) ?? "Turn on the shared relay, or enter your own relay's URL and route secret";
 
     public bool HasUrl => page.WebhookUrl(handler.Service) is not null;
 

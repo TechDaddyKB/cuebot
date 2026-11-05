@@ -10,8 +10,11 @@
           <TextBlock Classes="h2" Text="Let your mods help from anywhere" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Invite a mod with a role. They open the link, sign in with Google, Twitch or Discord, and get what that role allows: running actions, changing commands, sound alerts and more. Steps that run code, programs or files are never available to mods." />
+          <CheckBox Name="PortalOpen" Content="Open the mod portal" IsChecked="{Binding PortalOpen}"
+                    ToolTip.Tip="Keeps Cuebot connected to the portal relay (relay.techdaddydigital.com) so your mods can reach it. Everything between a mod and Cuebot is encrypted end to end; the relay stores nothing." />
+          <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayStatus}" TextWrapping="Wrap" />
           <TextBlock Foreground="{DynamicResource CuebotAccent}" TextWrapping="Wrap"
-                     Text="Coming in a later update: the online connection that mods use. You can already set up roles and make invites here." />
+                     Text="Coming in a later update: signing in. Until then mods cannot join yet, but you can set up roles and make invites here." />
           <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayId, StringFormat='Your portal address: {0}'}"
                      ToolTip.Tip="This Cuebot's address on the portal. It is made from a key kept on this computer and is not tied to your name." />
           <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />

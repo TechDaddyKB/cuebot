@@ -5,17 +5,18 @@ being at your computer. You decide what each mod may do. They might run actions,
 alerts, or more.
 
 !!! note "Coming in a later update"
-    The online part that mods connect through is not finished yet. You can already set up roles and make invites on
-    the **Mod portal** page, so everything is ready when it arrives.
+    Signing in is not finished yet, so mods cannot join yet. You can already open the portal and set up roles and
+    invites on the **Mod portal** page, so everything is ready when it arrives.
 
 ![The Mod portal page: an open invite, two mods with their roles, a change waiting for approval](../assets/screens/page-mod-portal.png)
 
 ## How it works
 
-1. You make an **invite** on **Chat & Events > Mod portal** and choose a **role** for it.
-2. You send the link to your mod privately.
-3. The mod opens it and signs in with Google, Twitch or Discord. They get the role you chose.
-4. From then on, they sign in with that same account. The link is used up.
+1. You tick **Open the mod portal**. Cuebot stays connected to the portal relay while it runs.
+2. You make an **invite** on **Chat & Events > Mod portal** and choose a **role** for it.
+3. You send the link to your mod privately.
+4. The mod opens it and signs in with Google, Twitch or Discord. They get the role you chose.
+5. From then on, they sign in with that same account. The link is used up.
 
 You can change a mod's role, pause them or remove them at any time. A change applies at once.
 

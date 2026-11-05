@@ -1,9 +1,11 @@
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
+using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Relay;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Portal;
@@ -11,7 +13,10 @@ namespace Cuebot.Portal;
 /// <summary>Registers the mod portal (docs/MOD_PORTAL_PLAN.md).</summary>
 public static class PortalServiceCollectionExtensions
 {
-    /// <summary>Adds portal.json and portal-changes.json, <see cref="PortalDirectory"/>, <see cref="PortalChanges"/> and <see cref="PortalApi"/>.</summary>
+    /// <summary>
+    /// Adds portal.json and portal-changes.json, <see cref="PortalDirectory"/>, <see cref="PortalChanges"/>,
+    /// <see cref="PortalApi"/> and <see cref="PortalRelayClient"/> (also as <see cref="IConnectionStatus"/>).
+    /// </summary>
     public static IServiceCollection AddPortal(this IServiceCollection services)
     {
         services.AddSettingsFile<PortalSettings>("portal.json");
@@ -30,6 +35,8 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
             sp.GetRequiredService<Registry>()));
+        services.AddSingleton(sp => new PortalRelayClient(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PortalRelayClient>());
         return services;
     }
 }

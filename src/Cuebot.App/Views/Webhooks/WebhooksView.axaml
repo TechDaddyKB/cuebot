@@ -7,12 +7,24 @@
     <StackPanel MaxWidth="900" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="Webhook relay" />
       <TextBlock Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
-                 Text="Ko-fi, Patreon, Kick and other services can only send messages to a public web address, and your computer does not have one. The relay is a small helper you set up once on your own free Cloudflare account. The services send their messages to the relay, and Cuebot collects them from there, so you do not need to change your router. The relay keeps messages for up to 24 hours while Cuebot is closed. Cuebot checks the signatures (proof of who sent a message); the relay never sees your service secrets." />
+                 Text="Ko-fi, Patreon, Kick and other services can only send messages to a public web address, and your computer does not have one. A relay is a helper on the internet that receives them for Cuebot, so you do not need to change your router. Use Cuebot's shared relay (nothing to set up), or set up your own on a free Cloudflare account, which also keeps messages for up to 24 hours while Cuebot is closed. Either way Cuebot checks the signatures (proof of who sent a message); no relay ever sees your service secrets." />
+
+      <!-- Shared relay -->
+      <Border Classes="card" IsVisible="{Binding HasSharedRelay}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="The easy way: Cuebot's shared relay" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Nothing to set up. Services send their messages to hooks.techdaddydigital.com, which passes them straight to Cuebot, locked so only your Cuebot can read them. Nothing is stored: messages that arrive while Cuebot is closed are dropped, so you never get a flood of old alerts at the start of a stream." />
+          <CheckBox Name="UseSharedRelay" Content="Use the shared relay" IsChecked="{Binding UseSharedRelay}"
+                    ToolTip.Tip="Tick to receive webhooks through Cuebot's shared relay. The web addresses below change to the shared ones." />
+          <TextBlock Classes="muted" FontSize="12" Text="{Binding SharedStatus}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
 
       <!-- Relay -->
       <Border Classes="card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Relay" />
+          <TextBlock Classes="h2" Text="Or your own relay" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
                      Text="Set it up by running relay/setup.ps1 (Windows) or relay/setup.sh (Linux) from the Cuebot source folder. It asks you to sign in to Cloudflare in your browser and then shows the three values to type below. Details are in relay/README.md." />
           <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">

@@ -510,6 +510,18 @@ public sealed class RelayClient : IConnectable, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Handles a delivery that came in another way (the shared portal relay, docs/MOD_PORTAL_PLAN.md section 7) exactly
+    /// like one from this relay: replays dropped, the matching handler run, the outcome shown on the Webhooks page.
+    /// </summary>
+    public async Task DeliverAsync(WebhookDelivery delivery, CancellationToken ct = default)
+    {
+        if (IsSeen(delivery.Id)) return;
+        var (outcome, detail) = await DispatchAsync(delivery, ct).ConfigureAwait(false);
+        MarkSeen(delivery.Id);
+        Record(delivery, outcome, detail);
+    }
+
     /// <summary>Runs the matching handler; throws only when the session is being cancelled (the delivery is then replayed).</summary>
     internal async Task<(WebhookOutcome Outcome, string Detail)> DispatchAsync(WebhookDelivery delivery, CancellationToken ct)
     {
