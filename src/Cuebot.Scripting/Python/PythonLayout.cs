@@ -15,6 +15,9 @@ internal sealed class PythonLayout(string root)
 
     public string WorkerScript => Path.Combine(Root, "cuebot_worker.py");
 
+    /// <summary>The named script functions the worker loads (<see cref="PythonFunctionLibrary"/>).</summary>
+    public string FunctionsModule => Path.Combine(Root, PythonFunctionLibrary.ModuleFile);
+
     public string BaseExecutable => OperatingSystem.IsWindows()
         ? Path.Combine(BaseDirectory, "python", "python.exe")
         : Path.Combine(BaseDirectory, "python", "bin", "python3");

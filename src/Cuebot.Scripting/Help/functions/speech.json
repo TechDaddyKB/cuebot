@@ -52,8 +52,8 @@
       "description": "Gives a viewer their own voice. Their chat messages are then read with it. An empty alias resets them to the normal voice.",
       "parameters": {
         "platform": "The platform of the viewer, like \"twitch\".",
-        "user": "The viewer's name, like \"CoolViewer\".",
-        "userId": "The viewer's user id. You can give this, the name, or both.",
+        "user": "Optional. The viewer's name, like \"CoolViewer\". Give this, the user id, or both.",
+        "userId": "Optional. The viewer's user id. You can give this, the name, or both.",
         "alias": "The voice name (alias) from the Speech page, like \"Robot\". Empty resets the voice."
       },
       "returns": "Nothing.",
@@ -63,8 +63,8 @@
       "description": "Throws away a viewer's waiting texts and stops theirs if it is playing right now.",
       "parameters": {
         "platform": "The platform of the viewer, like \"twitch\".",
-        "user": "The viewer's name, like \"SpammyViewer\".",
-        "userId": "The viewer's user id. You can give this, the name, or both."
+        "user": "Optional. The viewer's name, like \"SpammyViewer\". Give this, the user id, or both.",
+        "userId": "Optional. The viewer's user id. You can give this, the name, or both."
       },
       "returns": "How many texts were stopped or thrown away (0 when no name or id was given).",
       "example": { "platform": "twitch", "user": "SpammyViewer" }

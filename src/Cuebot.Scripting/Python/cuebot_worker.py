@@ -12,9 +12,13 @@ Runs user scripts for the Cuebot host. The host talks to this process with one J
 While a script waits for a call result the worker keeps serving, so a host call that runs another action
 containing a Python script (a nested "run") works. The protocol uses a private copy of the original stdout;
 file descriptor 1 is pointed at stderr and sys.stdout sends "print" messages, so user output never corrupts it.
+
+`cb` also has a named method for every Cuebot script function (cb.vtubestudio_move_model(...)), from
+cuebot_functions.py, which the host writes next to this file from its script functions each time it starts the worker.
 """
 
 import ast
+import importlib.util
 import io
 import json
 import linecache
@@ -77,8 +81,17 @@ class _PrintStream(io.TextIOBase):
             self._pending = ""
 
 
-class Cuebot:
-    """Host helpers available to scripts as `cb`."""
+def _load_functions():
+    """The CuebotFunctions class of cuebot_functions.py, loaded by path so a user's own modules cannot shadow it."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cuebot_functions.py")
+    spec = importlib.util.spec_from_file_location("cuebot_functions", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.CuebotFunctions
+
+
+class Cuebot(_load_functions()):
+    """Host helpers available to scripts as `cb`, plus the named script functions of CuebotFunctions."""
 
     def __init__(self, worker, args):
         self._worker = worker

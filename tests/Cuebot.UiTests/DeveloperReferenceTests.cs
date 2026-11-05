@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Cuebot.App;
 using Cuebot.Core;
 using Cuebot.Core.Scripting;
+using Cuebot.Scripting;
 using Cuebot.Scripting.Compat;
 using Cuebot.Server;
 using Cuebot.Server.Api;
@@ -120,6 +121,35 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         Assert.True(problems.Count == 0, $"{problems.Count} script function help problems:\n" + string.Join("\n", problems));
     }
 
+    /// <summary>The Python blocks of the guides only use cb methods that exist.</summary>
+    [Fact]
+    public void Guide_Python_examples_use_real_cb_methods()
+    {
+        var known = Library.Methods.Select(m => m.Name).Concat(PythonFunctionLibrary.HandWritten).ToHashSet(StringComparer.Ordinal);
+        var unknown = new List<string>();
+        foreach (var guide in new[] { "scripting.md", "api.md" })
+        {
+            var path = Path.Combine(Root, "website", "docs", "guides", guide);
+            if (!File.Exists(path)) continue;
+            var blocks = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(path), "```python\n(.*?)```", System.Text.RegularExpressions.RegexOptions.Singleline);
+            unknown.AddRange(blocks.SelectMany(b => System.Text.RegularExpressions.Regex.Matches(b.Groups[1].Value, @"\bcb\.([a-z_][a-z0-9_]*)"))
+                .Select(m => m.Groups[1].Value).Where(name => !known.Contains(name)).Select(name => $"{guide}: cb.{name}"));
+        }
+        Assert.True(unknown.Count == 0, "Unknown cb methods in guide examples:\n" + string.Join("\n", unknown.Distinct()));
+    }
+
+    /// <summary>Python's named methods need every required value, so the examples must give them.</summary>
+    [Fact]
+    public void Every_script_function_example_gives_its_required_values()
+    {
+        var help = FunctionHelp();
+        var problems = Library.Methods
+            .SelectMany(m => m.Parameters.Where(p => p.Required && help.GetValueOrDefault(m.Function)?["example"] is JsonObject example && !example.ContainsKey(p.Name))
+                .Select(p => $"{m.Function}: the example leaves out '{p.Name}', which the help does not call Optional"))
+            .ToArray();
+        Assert.True(problems.Length == 0, string.Join("\n", problems));
+    }
+
     [Fact]
     public void Developer_reference_pages_are_up_to_date()
     {
@@ -203,9 +233,17 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         index.Append("Script functions are Cuebot's own tools for code. **C# and Python can both use them.** Each one has a name, " +
                      "like `speech.speak`, and takes named values, like `text`.\n\n");
         index.Append("```csharp\n// C#: await the call; the answer is JSON\nvar answer = await Cb.Call(\"speech.speak\", new { text = \"Hello!\" });\n```\n\n");
-        index.Append("```python\n# Python: no await needed\nanswer = cb.call(\"speech.speak\", text=\"Hello!\")\n```\n\n");
+        index.Append("```python\n# Python: no await needed, and every function has its own method\nanswer = cb.speech_speak(text=\"Hello!\")\n```\n\n");
         index.Append("In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline` class, use the [`CPH` methods](../csharp/index.md) instead. " +
                      "See [Writing code (C# and Python)](../../guides/scripting.md) for whole examples.\n\n");
+        index.Append("## In Python\n\n");
+        index.Append("In Python every function is also a method of `cb`, named after it in Python style: `vtubestudio.moveModel` is " +
+                     "`cb.vtubestudio_move_model(...)`, and its value `positionX` is `position_x`. Values marked Optional can be left out; " +
+                     "the others can also be given in order, like `cb.twitch_send_message(\"Hi!\")`. A value of `None` counts as left out. " +
+                     "`cb.call(\"vtubestudio.moveModel\", positionX=0.5)` still works too.\n\n");
+        index.Append("`help(cb.vtubestudio_move_model)` in your code prints a method's help. For completion in a code editor such as VS Code, " +
+                     "download [cuebot.pyi](cuebot.pyi) and put it next to your script.\n\n");
+        index.Append("## Areas\n\n");
         index.Append("| Area | Functions |\n| --- | --- |\n");
         foreach (var g in groups) index.Append($"| [{AreaTitle(g.Key)}]({g.Key.ToLowerInvariant()}.md) | {g.Count()} |\n");
         pages["script-functions/index.md"] = index.ToString();
@@ -213,26 +251,29 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         foreach (var g in groups)
         {
             var sb = new StringBuilder(Generated);
-            sb.Append($"# {AreaTitle(g.Key)} script functions\n\nFunctions for C# (`Cb.Call`) and Python (`cb.call`). See [Script functions](index.md) for how to use them.\n");
+            sb.Append($"# {AreaTitle(g.Key)} script functions\n\nFunctions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.\n");
             foreach (var f in g.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
             {
                 var entry = help.GetValueOrDefault(f.Name);
                 sb.Append($"\n## {f.Name}\n\n");
                 sb.Append((Str(entry, "description") is { Length: > 0 } d ? d : f.Description)).Append("\n\n");
+                var method = Library.Methods.FirstOrDefault(m => m.Function == f.Name);
                 if (f.ParameterNames.Count > 0)
                 {
                     var parameters = entry?["parameters"] as JsonObject;
-                    sb.Append("| Value | What to put in |\n| --- | --- |\n");
-                    foreach (var p in f.ParameterNames) sb.Append($"| `{p}` | {Cell(parameters?[p]?.GetValue<string>() ?? "")} |\n");
+                    sb.Append("| Value | In Python | What to put in |\n| --- | --- | --- |\n");
+                    foreach (var p in f.ParameterNames)
+                        sb.Append($"| `{p}` | `{method?.Parameters.First(m => m.Name == p).PythonName ?? p}` | {Cell(parameters?[p]?.GetValue<string>() ?? "")} |\n");
                     sb.Append('\n');
                 }
                 if (Str(entry, "returns") is { Length: > 0 } r) sb.Append($"**Gives back:** {r}\n\n");
                 var example = entry?["example"] as JsonObject ?? [];
                 sb.Append("=== \"C#\"\n\n    ```csharp\n    ").Append(CSharpCall(f.Name, example).Replace("\n", "\n    ")).Append("\n    ```\n\n");
-                sb.Append("=== \"Python\"\n\n    ```python\n    ").Append(PythonCall(f.Name, example).Replace("\n", "\n    ")).Append("\n    ```\n");
+                sb.Append("=== \"Python\"\n\n    ```python\n    ").Append(PythonCall(f.Name, method, example).Replace("\n", "\n    ")).Append("\n    ```\n");
             }
             pages[$"script-functions/{g.Key.ToLowerInvariant()}.md"] = sb.ToString();
         }
+        pages["script-functions/cuebot.pyi"] = Library.Stub();
     }
 
     private const string ApiServerUrl = "http://127.0.0.1:7475/api/v1";
@@ -495,6 +536,9 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
 
     private IReadOnlyList<ScriptFunction> Functions => _host.Get<ScriptApi>().Functions;
 
+    private PythonFunctionLibrary? _library;
+    private PythonFunctionLibrary Library => _library ??= PythonFunctionLibrary.Build(Functions);
+
     private static Dictionary<string, JsonObject> FunctionHelp()
     {
         var result = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
@@ -556,8 +600,12 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         "return", "try", "while", "with", "yield",
     ];
 
-    private static string PythonCall(string name, JsonObject example)
+    /// <summary>A Python example: the function's named method, or cb.call for the one without (log, which cb.log covers).</summary>
+    private static string PythonCall(string name, PythonFunctionLibrary.Method? method, JsonObject example)
     {
+        if (method is not null)
+            return $"answer = cb.{method.Name}(" + string.Join(", ", example.Select(p =>
+                $"{method.Parameters.FirstOrDefault(m => m.Name == p.Key)?.PythonName ?? p.Key}={PythonValue(p.Value)}")) + ")";
         if (example.Count == 0) return $"answer = cb.call(\"{name}\")";
         var plain = example.All(p => SyntaxFacts.IsValidIdentifier(p.Key) && !PythonKeywords.Contains(p.Key));
         return plain

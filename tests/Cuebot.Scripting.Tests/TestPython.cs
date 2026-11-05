@@ -12,6 +12,21 @@ internal static class TestPython
 
     public static string? Executable => Found.Value;
 
+    /// <summary>Runs Python code in a folder; fails the test when it does not exit cleanly. Returns its output.</summary>
+    public static string Run(string workingDirectory, string code)
+    {
+        var info = new ProcessStartInfo(TestPython.Executable!) { WorkingDirectory = workingDirectory, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        info.ArgumentList.Add("-c");
+        info.ArgumentList.Add(code);
+        info.Environment["PYTHONIOENCODING"] = "utf-8";
+        using var process = Process.Start(info)!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEnd();
+        Assert.True(process.WaitForExit(60_000), "Python did not finish");
+        Assert.True(process.ExitCode == 0, stderr);
+        return stdout.Result;
+    }
+
     private static string? Find()
     {
         string?[] candidates = [Environment.GetEnvironmentVariable("CUEBOT_TEST_PYTHON"), "python3", "python"];

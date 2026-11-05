@@ -21,12 +21,14 @@ public sealed class PythonScriptHost : IAsyncDisposable
     private readonly AppLog _log;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private PythonWorker? _worker;
+    private readonly Lazy<string> _functionsModule;
 
     public PythonScriptHost(PythonRuntime runtime, ScriptApi api, AppLog log)
     {
         _runtime = runtime;
         _api = api;
         _log = log;
+        _functionsModule = new(() => PythonFunctionLibrary.Build(api.Functions).Module());
         runtime.ReleaseInterpreter = StopWorkerWhenIdleAsync;
     }
 
@@ -91,6 +93,7 @@ public sealed class PythonScriptHost : IAsyncDisposable
 
         if (_worker is not null) await StopWorkerAsync(_worker).ConfigureAwait(false);
         await File.WriteAllTextAsync(_runtime.Layout.WorkerScript, WorkerSource.Value, ct).ConfigureAwait(false);
+        await File.WriteAllTextAsync(_runtime.Layout.FunctionsModule, _functionsModule.Value, ct).ConfigureAwait(false);
         _worker = await PythonWorker.StartAsync(executable, _runtime.Layout.WorkerScript, _runtime.Layout.Root, _api, _log, ct)
             .ConfigureAwait(false);
         return _worker;

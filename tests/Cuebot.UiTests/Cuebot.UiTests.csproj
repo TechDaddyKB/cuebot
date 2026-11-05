@@ -29,6 +29,7 @@
     <Compile Include="..\Cuebot.Twitch.Tests\Support\FakeHttpHandler.cs" Link="Fakes\Twitch\FakeHttpHandler.cs" />
     <Compile Include="..\Cuebot.Twitch.Tests\Support\FakeTimeProvider.cs" Link="Fakes\Twitch\FakeTimeProvider.cs" />
     <Compile Include="..\Cuebot.Obs.Tests\Fakes\FakeObsServer.cs" Link="Fakes\Obs\FakeObsServer.cs" />
+    <Compile Include="..\Cuebot.Scripting.Tests\TestPython.cs" Link="Fakes\Scripting\TestPython.cs" />
     <Compile Include="..\Cuebot.Discord.Tests\Support\Fakes.cs" Link="Fakes\Discord\Fakes.cs" />
     <Compile Include="..\Cuebot.Obs.Tests\Fakes\FakeObsState.cs" Link="Fakes\Obs\FakeObsState.cs" />
     <Compile Include="..\Cuebot.Obs.Tests\Fakes\FakeStreamlabsServer.cs" Link="Fakes\Obs\FakeStreamlabsServer.cs" />

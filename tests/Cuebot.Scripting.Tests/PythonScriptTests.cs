@@ -64,6 +64,24 @@ public sealed class PythonScriptTests : IAsyncLifetime
     }
 
     [PythonFact]
+    public async Task Named_methods_call_the_script_functions()
+    {
+        var run = await RunAsync("""
+            cb.set_arg("sum", cb.test_add(a=2, b=3))
+            cb.set_arg("keys", cb.test_keys(shown=1, hidden=None))
+            cb.set_arg("user", cb.test_user()["userName"])
+            cb.set_arg("doc", cb.test_add.__doc__.splitlines()[0])
+            """);
+
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(5L, Convert.ToInt64(_bot.Capture.Args!["sum"]));
+        Assert.Equal("shown", _bot.Capture.Args["keys"]);
+        Assert.Equal("ann", _bot.Capture.Args["user"]);
+        Assert.Equal("Adds two numbers", _bot.Capture.Args["doc"]);
+        Assert.True(File.Exists(Path.Combine(_data.Path, "python", PythonFunctionLibrary.ModuleFile)));
+    }
+
+    [PythonFact]
     public async Task Print_output_goes_to_the_log()
     {
         var run = await RunAsync("print('hello', 'from print')\nprint('partial', end='')");

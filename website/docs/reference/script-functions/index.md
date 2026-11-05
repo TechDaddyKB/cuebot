@@ -9,11 +9,19 @@ var answer = await Cb.Call("speech.speak", new { text = "Hello!" });
 ```
 
 ```python
-# Python: no await needed
-answer = cb.call("speech.speak", text="Hello!")
+# Python: no await needed, and every function has its own method
+answer = cb.speech_speak(text="Hello!")
 ```
 
 In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline` class, use the [`CPH` methods](../csharp/index.md) instead. See [Writing code (C# and Python)](../../guides/scripting.md) for whole examples.
+
+## In Python
+
+In Python every function is also a method of `cb`, named after it in Python style: `vtubestudio.moveModel` is `cb.vtubestudio_move_model(...)`, and its value `positionX` is `position_x`. Values marked Optional can be left out; the others can also be given in order, like `cb.twitch_send_message("Hi!")`. A value of `None` counts as left out. `cb.call("vtubestudio.moveModel", positionX=0.5)` still works too.
+
+`help(cb.vtubestudio_move_model)` in your code prints a method's help. For completion in a code editor such as VS Code, download [cuebot.pyi](cuebot.pyi) and put it next to your script.
+
+## Areas
 
 | Area | Functions |
 | --- | --- |

@@ -188,7 +188,7 @@ quick.
 
 ```python
 try:
-    cb.call("obs.setScene", sceneName="Gameplay")
+    cb.obs_set_scene(scene_name="Gameplay")
 except CuebotError as error:
     print(f"OBS said no: {error}")
 ```
@@ -208,6 +208,20 @@ except CuebotError as error:
 | `cb.speak(text, alias=None)` | Says the text with text-to-speech. |
 | `cb.obs(request_type, data=None)` | Sends one obs-websocket request to OBS and gives back OBS's answer. |
 | `cb.call(name, **values)` | Runs any [script function](../reference/script-functions/index.md) by name, like `cb.call("speech.speak", text="Hi")`. |
+| `cb.<area>_<function>(...)` | Every [script function](../reference/script-functions/index.md) as its own method, like `cb.speech_speak(text="Hi")` or `cb.vtubestudio_move_model(position_x=0.5)`. |
+
+Every Cuebot function has its own `cb` method in Python, named in Python style: `vtubestudio.moveModel` becomes `cb.vtubestudio_move_model`, and its value `positionX` becomes `position_x`. Each function's page shows its Python name and values. `help(cb.speech_speak)` prints what a method does, and [cuebot.pyi](../reference/script-functions/cuebot.pyi) gives a code editor such as VS Code completion for all of them.
+
+```python
+# Walk the VTube Studio model across the screen with a little bounce
+import math, time
+
+for step in range(61):
+    x = -1.2 + 2.4 * step / 60
+    bounce = abs(math.sin(step / 60 * math.pi * 12)) * 0.05
+    cb.vtubestudio_move_model(time=0, position_x=x, position_y=-0.5 + bounce)
+    time.sleep(0.1)
+```
 
 A death counter in Python:
 

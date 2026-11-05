@@ -12,5 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Python\cuebot_worker.py" LogicalName="Cuebot.Scripting.cuebot_worker.py" />
+    <!-- Script function help, for the named Python methods' docstrings (PythonFunctionLibrary). -->
+    <EmbeddedResource Include="Help\functions\*.json" LogicalName="Cuebot.Scripting.Help.functions.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
