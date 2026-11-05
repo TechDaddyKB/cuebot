@@ -38,4 +38,8 @@ public sealed class FlowStep
     /// <summary>Runs all enabled children of a branch at the same time (see <see cref="ActionDefinition.ConcurrentSubActions"/>).</summary>
     public Task<FlowOutcome> RunBranchConcurrentlyAsync(string name, CancellationToken ct) =>
         _engine.RunConcurrentlyAsync(_context, GetBranch(name), ct);
+
+    /// <summary>Runs the named branches at the same time, each in order, and waits until all of them are done.</summary>
+    public Task<FlowOutcome> RunBranchesTogetherAsync(IEnumerable<string> names, CancellationToken ct) =>
+        _engine.RunLanesAsync(_context, names.Select(GetBranch).ToArray(), ct);
 }

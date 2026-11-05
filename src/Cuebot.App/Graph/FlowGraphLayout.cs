@@ -35,7 +35,8 @@ public sealed class GraphNode(GraphNodeKind kind, object item, Rect bounds, stri
     public GraphPort? InPort => Ports.FirstOrDefault(p => p.Kind == GraphPortKind.In);
 }
 
-public sealed record GraphEdge(GraphPort From, GraphPort To);
+/// <param name="Join">A dashed line from the end of a "Run at the same time" lane to the step that waits for it.</param>
+public sealed record GraphEdge(GraphPort From, GraphPort To, bool Join = false);
 
 /// <summary>A tinted frame drawn behind a Group sub-action and everything inside it.</summary>
 public sealed record GraphFrame(Rect Bounds, Color Color, string Label);
@@ -95,13 +96,17 @@ public static class FlowGraphLayout
         return new FlowGraph(nodes, edges) { Frames = frames };
     }
 
-    /// <returns>The lowest Y and rightmost X used by the chain and everything under it.</returns>
-    private static (double Bottom, double Right) PlaceChain(StepListViewModel list, double x, double y, GraphPort incoming,
+    /// <returns>The lowest Y and rightmost X used by the chain and everything under it, and the last step's output
+    /// (null for an empty chain).</returns>
+    private static (double Bottom, double Right, GraphPort? Last) PlaceChain(StepListViewModel list, double x, double y, GraphPort incoming,
         bool enabled, List<GraphNode> nodes, List<GraphEdge> edges, List<GraphFrame> frames)
     {
         var cursorY = y;
         var previous = incoming;
         double bottom = y, right = x + NodeWidth;
+        GraphPort? last = null;
+        // Ends of the lanes of the "Run at the same time" step just placed: they join the next step.
+        var joins = new List<GraphPort>();
 
         for (var i = 0; i < list.Items.Count; i++)
         {
@@ -113,7 +118,8 @@ public static class FlowGraphLayout
                 step.Category, stepEnabled)
             {
                 Tint = step.IsGroup ? step.GroupColor : null,
-                KindLabel = step.IsGroup ? (step.IsRandomGroup ? "GROUP · ONE AT RANDOM" : "GROUP") : null,
+                KindLabel = step.IsGroup ? (step.IsRandomGroup ? "GROUP · ONE AT RANDOM" : "GROUP")
+                    : step.IsParallel ? "AT THE SAME TIME" : null,
             };
             var frameIndex = frames.Count;
             var firstChild = nodes.Count + 1;
@@ -123,6 +129,8 @@ public static class FlowGraphLayout
             node.Ports.Add(next);
             nodes.Add(node);
             edges.Add(new GraphEdge(previous, input));
+            foreach (var end in joins) edges.Add(new GraphEdge(end, input, Join: true));
+            joins.Clear();
 
             var nodeBottom = node.Bounds.Bottom;
             var branchX = node.Bounds.Right + ColumnGap;
@@ -132,8 +140,9 @@ public static class FlowGraphLayout
                 var portPos = new Point(node.Bounds.Right, node.Bounds.Top + 16 + b * BranchPortSpacing);
                 var port = new GraphPort(node, GraphPortKind.Branch, portPos, branch.Name, new StepInsertTarget(branch.Steps, 0));
                 node.Ports.Add(port);
-                var (branchBottom, branchRight) = PlaceChain(branch.Steps, branchX, node.Bounds.Bottom + RowGap / 2, port,
+                var (branchBottom, branchRight, branchLast) = PlaceChain(branch.Steps, branchX, node.Bounds.Bottom + RowGap / 2, port,
                     stepEnabled, nodes, edges, frames);
+                if (step.IsParallel && branchLast is not null) joins.Add(branchLast);
                 nodeBottom = Math.Max(nodeBottom, branchBottom);
                 branchX = Math.Max(branchX + NodeWidth, branchRight) + ColumnGap;
             }
@@ -150,8 +159,9 @@ public static class FlowGraphLayout
             right = Math.Max(right, Math.Max(node.Bounds.Right, branchX - ColumnGap));
             cursorY = nodeBottom + RowGap;
             previous = next;
+            last = next;
         }
-        return (bottom, right);
+        return (bottom, right, last);
     }
 
     private static Size Size => new(NodeWidth, NodeHeight);

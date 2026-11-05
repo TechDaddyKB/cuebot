@@ -20,6 +20,7 @@ internal static class EngineFeatures
         services.AddSingleton<ISubActionHandler, GroupSubAction>();
         services.AddSingleton<ISubActionHandler, IfSubAction>();
         services.AddSingleton<ISubActionHandler, SwitchSubAction>();
+        services.AddSingleton<ISubActionHandler, ParallelSubAction>();
         services.AddSingleton<ISubActionHandler, WhileSubAction>();
         services.AddSingleton<ISubActionHandler, LoopBreakSubAction>();
         services.AddSingleton<ISubActionHandler, LoopContinueSubAction>();

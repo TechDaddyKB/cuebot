@@ -558,6 +558,13 @@
         "switchCase": "The case line that matched, or Default"
       }
     },
+    "core.parallel": {
+      "description": "Does several things at once. Each lane is its own little list of steps, and all lanes start together. The next step waits until every lane is done. Example: play a sound and move your avatar at the same time, then say something in chat.",
+      "fields": {
+        "lanes": "How many lanes run side by side, from 2 to 10. Put the steps for each lane under Lane 1, Lane 2, and so on."
+      },
+      "variables": {}
+    },
     "core.while": {
       "description": "Repeats the steps inside as long as a check is true, like \"while the count is below 5, do this\". Handy for doing something several times. It has a safety limit.",
       "fields": {

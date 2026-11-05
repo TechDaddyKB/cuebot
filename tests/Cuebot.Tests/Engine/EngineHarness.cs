@@ -23,7 +23,7 @@ internal sealed class EngineHarness : IDisposable
         [
             Recorder, new GateSubAction(Gates), new ThrowSubAction(),
             new DelaySubAction(), new LogSubAction(), new CommentSubAction(), new GroupSubAction(), new IfSubAction(),
-            new SwitchSubAction(), new WhileSubAction(), new LoopBreakSubAction(), new LoopContinueSubAction(),
+            new SwitchSubAction(), new ParallelSubAction(), new WhileSubAction(), new LoopBreakSubAction(), new LoopContinueSubAction(),
             new GetInputSubAction(), new StopSubAction(), new RunActionSubAction(Profile), new SetArgumentSubAction(),
             new SendSignalSubAction(Signals), new WaitForSignalSubAction(Signals),
             new SetActionStateSubAction(Profile), new GetActionStateSubAction(Profile),
@@ -145,6 +145,14 @@ internal sealed class EngineHarness : IDisposable
         var step = Step("core.if", ("left", left), ("operator", op), ("right", right));
         step.Branch(IfSubAction.True).AddRange(whenTrue ?? []);
         step.Branch(IfSubAction.False).AddRange(whenFalse ?? []);
+        return step;
+    }
+
+    /// <summary>A "Run at the same time" step with one lane per array.</summary>
+    public static SubActionDefinition Parallel(params SubActionDefinition[][] lanes)
+    {
+        var step = Step(ParallelSubAction.Id, ("lanes", lanes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        for (var i = 0; i < lanes.Length; i++) step.Branch(ParallelSubAction.Lane(i + 1)).AddRange(lanes[i]);
         return step;
     }
 

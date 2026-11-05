@@ -91,4 +91,41 @@ public class FlowGraphLayoutTests
 
         Assert.False(action.MoveStep(ifStep, new StepInsertTarget(ifStep.Branches[0].Steps, 0)));
     }
+
+    [Fact]
+    public void Run_at_the_same_time_shows_a_lane_per_count_and_joins_them_to_the_next_step()
+    {
+        var registry = new Registry([new ParallelSubAction(), new LogSubAction(), new DelaySubAction()], []);
+        var profile = new ProfileService(null, new AppLog());
+        var definition = new ActionDefinition { Name = "Fork" };
+        profile.Profile.Actions.Add(definition);
+        var action = new ActionItemViewModel(definition, registry, profile);
+        var fork = action.AddStep(registry.GetSubAction(ParallelSubAction.Id)!, new StepInsertTarget(action.Steps, 0));
+        Assert.Equal(["Lane 1", "Lane 2"], fork.Branches.Select(b => b.Name));
+        Assert.True(fork.IsParallel);
+        Assert.Equal("2 lanes at once, then the next step", fork.Summary);
+
+        // Three lanes: the list editor and the flowchart both get the new lane.
+        var lanes = Assert.IsType<TextParameterViewModel>(fork.Parameters.Single(p => p.Descriptor.Key == "lanes"));
+        lanes.Value = "3";
+        Assert.Equal(["Lane 1", "Lane 2", "Lane 3"], fork.Branches.Select(b => b.Name));
+        Assert.Equal("3 lanes at once, then the next step", fork.Summary);
+
+        action.AddStep(registry.GetSubAction("core.log")!, new StepInsertTarget(fork.Branches[0].Steps, 0));
+        action.AddStep(registry.GetSubAction("core.delay")!, new StepInsertTarget(fork.Branches[1].Steps, 0));
+        action.AddStep(registry.GetSubAction("core.log")!, new StepInsertTarget(fork.Branches[1].Steps, 1));
+        var after = action.AddStep(registry.GetSubAction("core.delay")!, new StepInsertTarget(action.Steps, 1));
+
+        var graph = FlowGraphLayout.Build(action);
+        var forkNode = graph.Nodes.Single(n => n.Item == fork);
+        Assert.Equal("AT THE SAME TIME", forkNode.KindLabel);
+        Assert.Equal(["Lane 1", "Lane 2", "Lane 3"], forkNode.Ports.Where(p => p.Kind == GraphPortKind.Branch).Select(p => p.Label));
+        var afterNode = graph.Nodes.Single(n => n.Item == after);
+        // Lane 1 and lane 2 end in a step; lane 3 is empty and has nothing to join.
+        var joins = graph.Edges.Where(e => e.Join).ToArray();
+        Assert.Equal(2, joins.Length);
+        Assert.All(joins, e => Assert.Equal(afterNode.InPort, e.To));
+        Assert.Contains(graph.Edges, e => !e.Join && e.From.Node == forkNode && e.To == afterNode.InPort);
+        Assert.Equal(3, profile.Profile.Actions.Single().SubActions[0].Branches.Count);
+    }
 }

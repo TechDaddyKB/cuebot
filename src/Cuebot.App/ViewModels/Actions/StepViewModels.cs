@@ -140,6 +140,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
     {
         get
         {
+            if (IsParallel) return $"{Branches.Count} lanes at once, then the next step";
             if (!IsGroup) return Summaries.Describe(Handler?.Parameters, Definition.Parameters);
             var count = Branches.Sum(b => b.Steps.Items.Count);
             return IsRandomGroup ? $"Runs one of {count} sub-action(s), picked by weight" : $"{count} sub-action(s), run in order";
@@ -157,6 +158,9 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
             _owner.MarkChanged();
         }
     }
+
+    /// <summary>A "Run at the same time" step: its branches are lanes that all run at once.</summary>
+    public bool IsParallel => Definition.Type == ParallelSubAction.Id;
 
     // ---- Group containers ----
 
@@ -231,6 +235,7 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
 
     private void OnParameterChanged()
     {
+        var structural = RefreshBranches();
         OnPropertyChanged(nameof(Summary));
         if (IsGroup)
         {
@@ -238,7 +243,6 @@ public sealed partial class SubActionItemViewModel : EditorItemViewModel
                          nameof(ContainerBackground), nameof(ContainerBorderBrush)])
                 OnPropertyChanged(name);
         }
-        var structural = RefreshBranches();
         _owner.MarkChanged(structural, structural ? null : "step:" + Definition.Id);
     }
 }

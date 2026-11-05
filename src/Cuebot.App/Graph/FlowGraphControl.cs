@@ -156,8 +156,10 @@ public sealed class FlowGraphControl : Control
             g.CubicBezierTo(c1, c2, b);
             g.EndFigure(false);
         }
-        context.DrawGeometry(null, P.EdgePen, geometry);
+        context.DrawGeometry(null, edge.Join ? JoinPen(P.EdgePen) : P.EdgePen, geometry);
     }
+
+    private static Pen JoinPen(IPen edge) => new(edge.Brush, edge.Thickness, new DashStyle([3, 3], 0));
 
     private void DrawNode(DrawingContext context, GraphNode node)
     {

@@ -364,15 +364,27 @@ public sealed class ActionEngine : IDisposable
     /// Runs every enabled step at once. Each gets its own copy of the arguments; afterwards the changes are merged
     /// back in step order (later steps win). A Stop or failure cancels the siblings that are still running.
     /// </summary>
-    internal async Task<FlowOutcome> RunConcurrentlyAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> steps, CancellationToken ct)
+    internal Task<FlowOutcome> RunConcurrentlyAsync(ActionRunContext context, IReadOnlyList<SubActionDefinition> steps, CancellationToken ct) =>
+        RunForksAsync(context, steps.Where(s => s.Enabled).Select(step => (Func<ActionRunContext, CancellationToken, Task<FlowOutcome>>)
+            ((fork, token) => RunStepAsync(fork, step, token))).ToArray(), ct);
+
+    /// <summary>
+    /// Runs every lane (a chain of steps, run in order) at once, the same way as <see cref="RunConcurrentlyAsync"/>:
+    /// own argument copies merged back in lane order, and a Stop or failure in one lane cancels the others.
+    /// </summary>
+    internal Task<FlowOutcome> RunLanesAsync(ActionRunContext context, IReadOnlyList<IReadOnlyList<SubActionDefinition>> lanes, CancellationToken ct) =>
+        RunForksAsync(context, lanes.Where(lane => lane.Any(s => s.Enabled)).Select(lane => (Func<ActionRunContext, CancellationToken, Task<FlowOutcome>>)
+            ((fork, token) => RunChainAsync(fork, lane, token))).ToArray(), ct);
+
+    private static async Task<FlowOutcome> RunForksAsync(ActionRunContext context,
+        IReadOnlyList<Func<ActionRunContext, CancellationToken, Task<FlowOutcome>>> work, CancellationToken ct)
     {
-        var enabled = steps.Where(s => s.Enabled).ToArray();
-        if (enabled.Length == 0) return FlowOutcome.Completed;
+        if (work.Count == 0) return FlowOutcome.Completed;
 
         var baseline = new Dictionary<string, object?>(context.Args, StringComparer.OrdinalIgnoreCase);
         using var siblings = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var forks = enabled.Select(_ => context.Fork()).ToArray();
-        var tasks = enabled.Select((step, i) => RunForkAsync(forks[i], step)).ToArray();
+        var forks = work.Select(_ => context.Fork()).ToArray();
+        var tasks = work.Select((run, i) => RunForkAsync(forks[i], run)).ToArray();
         try
         {
             await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -403,12 +415,12 @@ public sealed class ActionEngine : IDisposable
         if (outcomes.Contains(FlowOutcome.Break)) return FlowOutcome.Break;
         return outcomes.Contains(FlowOutcome.Continue) ? FlowOutcome.Continue : FlowOutcome.Completed;
 
-        async Task<FlowOutcome> RunForkAsync(ActionRunContext fork, SubActionDefinition step)
+        async Task<FlowOutcome> RunForkAsync(ActionRunContext fork, Func<ActionRunContext, CancellationToken, Task<FlowOutcome>> run)
         {
             await Task.Yield();
             try
             {
-                var outcome = await RunStepAsync(fork, step, siblings.Token).ConfigureAwait(false);
+                var outcome = await run(fork, siblings.Token).ConfigureAwait(false);
                 if (outcome == FlowOutcome.Stop) await siblings.CancelAsync().ConfigureAwait(false);
                 return outcome;
             }

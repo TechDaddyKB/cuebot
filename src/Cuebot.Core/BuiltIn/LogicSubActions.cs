@@ -132,6 +132,50 @@ public sealed class SwitchSubAction : IFlowContainerHandler, IDynamicBranchesPro
 }
 
 /// <summary>
+/// Run at the same time: starts all of its lanes ("Lane 1".."Lane N") together, each running its steps in order, and
+/// continues with the next step once every lane is done. Each lane gets its own copy of the arguments; changes are
+/// merged back in lane order (later lanes win). A Stop or a failure in one lane cancels the others. Loop Break /
+/// Continue in a lane reach the enclosing loop after all lanes have finished.
+/// </summary>
+public sealed class ParallelSubAction : IFlowContainerHandler, IDynamicBranchesProvider
+{
+    public const string Id = "core.parallel";
+    public const int MinLanes = 2;
+    public const int MaxLanes = 10;
+
+    public string TypeId => Id;
+    public string Category => Categories.Logic;
+    public string DisplayName => "Run at the same time";
+    public IReadOnlyList<string> Branches { get; } = [Lane(1), Lane(2)];
+    public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        new("lanes", "Lanes", ParameterKind.Number)
+        {
+            DefaultValue = "2",
+            Help = $"How many lanes run side by side ({MinLanes} to {MaxLanes}). The next step waits until all of them are done.",
+        },
+    ];
+
+    /// <summary>The branch name of lane <paramref name="number"/> (1-based).</summary>
+    public static string Lane(int number) => $"Lane {number}";
+
+    /// <summary>The lane count a raw "lanes" parameter asks for, kept between <see cref="MinLanes"/> and <see cref="MaxLanes"/>.</summary>
+    public static int LaneCount(string? lanes) =>
+        int.TryParse(lanes?.Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n)
+            ? Math.Clamp(n, MinLanes, MaxLanes)
+            : MinLanes;
+
+    public IReadOnlyList<string> GetBranches(IReadOnlyDictionary<string, string> parameters) =>
+        [.. Enumerable.Range(1, LaneCount(parameters.GetValueOrDefault("lanes"))).Select(Lane)];
+
+    public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues parameters, CancellationToken ct) =>
+        throw new NotSupportedException("Run at the same time runs through ExecuteFlowAsync");
+
+    public Task<FlowOutcome> ExecuteFlowAsync(ActionRunContext context, FlowStep step, CancellationToken ct) =>
+        step.RunBranchesTogetherAsync(GetBranches(step.Definition.Parameters), ct);
+}
+
+/// <summary>
 /// While: repeats its "Body" branch while the condition holds (checked before each iteration, with variables
 /// re-resolved). Loop Break / Loop Continue inside the body (even nested in groups or If branches) control it.
 /// Sets %loopIteration% (0-based; the previous value is restored when the loop ends). Stops after "maxIterations" (0 = no limit) as a safety net.
