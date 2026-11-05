@@ -11,6 +11,8 @@ Everything is on **Apps > Servers**.
 
 ## Turning a server on
 
+![Integrations > Servers](../assets/screens/page-servers.png)
+
 1. Go to **Apps > Servers**.
 2. Find the server's card and tick **Enabled**.
 3. Click **Apply and restart servers** at the top. Nothing changes until you click it.
@@ -75,7 +77,10 @@ The **REST API** is for programs that run actions or read data, like the Stream 
 a long secret code. **Show** shows it, **Copy** copies it, **Regenerate** makes a new one and the old one stops
 working. Anyone who has the token can control your Cuebot, so keep it secret and hide it while you stream.
 
-**Pair a phone:** the Cuebot Companion app for iPhone and iPad connects by scanning a code. Tick **Show pairing code**,
+![Pair a phone, with the code and what to change first](../assets/screens/servers-pairing.png)
+
+**Pair a phone:** the [Cuebot Companion app](companion-app.md) for Android (and later iPhone and iPad) connects by
+scanning a code. Tick **Show pairing code**,
 pick the **Address** of your home network (usually `192.168...`) and scan the code with the app or the phone's
 Camera. If something still stops the phone, the card lists what to change first: the REST API and HTTP server on,
 **Allow LAN connections** ticked, and both servers listening on `0.0.0.0`. The code holds your token, so keep it

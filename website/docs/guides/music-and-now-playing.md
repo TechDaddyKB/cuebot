@@ -24,6 +24,8 @@ Want viewers to request **YouTube videos** instead of songs? See
 
 ## Show the song you are playing
 
+![Audio > Music](../assets/screens/page-music.png)
+
 1. Open **Audio > Music**.
 2. Tick **Watch what plays**.
 3. Start a song in your music player. Its name, artist and player show up at the top of the page within a second or
@@ -170,6 +172,8 @@ Viewers can send:
 
 ## YouTube video requests (Media Requests)
 
+![Audio > Media Requests](../assets/screens/page-media-requests.png)
+
 **Audio > Media Requests** lets viewers ask for YouTube videos in chat. The videos play on your stream, one after
 another, in an overlay.
 
@@ -177,13 +181,15 @@ another, in an overlay.
    widget. See [Overlays and alerts](overlays.md). The overlay must be in OBS as a browser source.
 2. Go to **Audio > Media Requests**. Under **Settings**, tick **Taking requests**. It starts switched off, so chat
    can't fill a queue before your player is set up.
-3. Viewers type `!sr` and a YouTube link or a search, like `!sr despacito`. The video goes into the **Queue**.
+3. Viewers type `!sr` and a YouTube link, like `!sr https://youtu.be/dQw4w9WgXcQ` (or just the 11-letter video id at
+   the end of it). The video goes into the **Queue**. Searching by name doesn't work here: anything that isn't a
+   YouTube link gets the answer "that is not a YouTube link".
 
 The commands, which you can change under **Settings**:
 
 | Viewers type | What happens |
 | --- | --- |
-| `!sr` and a link or search (the **Request** word) | Adds a video to the queue. |
+| `!sr` and a YouTube link (the **Request** word) | Adds a video to the queue. |
 | `!wrongsong` (the **Take back** word) | Takes back their latest request. |
 | `!skip` (the **Skip (moderators)** word) | Skips the video that plays. Only you and your moderators. |
 

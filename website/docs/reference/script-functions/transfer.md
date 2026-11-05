@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## transfer.export
 
 Packs actions, commands and timers into one import text (starting with CUEBOT1:) that you can share. Fails when a name is not found.

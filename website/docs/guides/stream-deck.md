@@ -15,6 +15,8 @@ Both are on **Input > Stream Deck**.
 
 ## Way 1: the Stream Deck app and Cuebot's plugin
 
+![Decks & Input > Stream Deck](../assets/screens/page-stream-deck.png)
+
 You need the Elgato Stream Deck app, version 7.1 or newer.
 
 !!! warning "Partly checked"
@@ -109,6 +111,8 @@ The **Stream Deck key or dial used** trigger can react to **Key down**, **Key up
 Disconnected** and **Stream Deck devices changed**.
 
 ## No Stream Deck?
+
+![Decks & Input > Decks](../assets/screens/page-decks.png)
 
 Make a [deck](stream-apps-and-devices.md#decks-buttons-on-your-phone) instead: buttons on your phone or tablet,
 in a web browser.

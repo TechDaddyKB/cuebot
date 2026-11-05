@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## groups.add
 
 Puts a viewer in a group, like "Giveaway". The group is made when it does not exist yet. Leave the user out for the person who triggered the action.

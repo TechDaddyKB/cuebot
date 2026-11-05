@@ -54,6 +54,7 @@ These were tried with the real thing, but only some of it.
 
 | Feature | Where it is | What was checked with the real thing | What was not checked |
 | --- | --- | --- | --- |
+| [The phone app (Cuebot Companion)](companion-app.md) | Your phone; **Apps > Servers**, **Pair a phone** | Android: paired with a real Cuebot over a home network on Android emulators (versions 15 and 16), ran deck buttons, moved the subathon timer and goals live. iPhone and iPad: the same in Apple's simulators. | A real phone or tablet. Android 17's local network permission. The iPhone app isn't available to download yet. |
 | [Tips and donations](donations-and-integrations.md#tip-and-donation-services): Streamlabs, StreamElements, TipeeeStream, DonorDrive, TreatStream, Pally.gg | **Apps > Donations** | Streamlabs and StreamElements connected; DonorDrive read a real Extra Life team. | A real tip or donation coming in. Not confirmed: connecting to TipeeeStream, TreatStream and Pally.gg. |
 | [Webhooks](donations-and-integrations.md#webhooks-ko-fi-patreon-throne-and-more): Ko-fi, Patreon, Throne, Fourthwall, Shopify | **Apps > Webhooks** | The relay: a message sent to a real relay reached Cuebot. The services' own test messages were checked against Cuebot. | A real message sent from each service to Cuebot |
 | [StreamLoots](stream-apps-and-devices.md#lights-mixers-and-other-apps) | **Apps > Apps & devices**, tab **Apps & services** | Connecting to StreamLoots | A real card or chest |

@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## GetGlobalVar
 
 Reads a global variable (one shared by all actions). The type you ask for, like int, is what you get. Pass false to read a temporary (not saved) one.

@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## hyperate.isConnected
 
 Checks whether Cuebot is connected to HypeRate (heart rate) right now.

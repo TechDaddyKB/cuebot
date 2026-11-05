@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## SendMessage
 
 Sends a message in your Twitch chat. Cuebot sends it with its connected Twitch account; the bot and fallback settings are ignored. Empty text sends nothing.

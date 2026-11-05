@@ -80,7 +80,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var failures = new List<string>();
         using var host = new CphInlineHost();
         var compiler = new Cuebot.Scripting.CSharpScriptCompiler();
-        foreach (var guide in new[] { "scripting.md", "api.md" })
+        foreach (var guide in new[] { "scripting.md", "api.md", "code-editors.md", "python.md" })
         {
             var path = Path.Combine(Root, "website", "docs", "guides", guide);
             if (!File.Exists(path)) continue;
@@ -121,22 +121,36 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         Assert.True(problems.Count == 0, $"{problems.Count} script function help problems:\n" + string.Join("\n", problems));
     }
 
-    /// <summary>The Python blocks of the guides only use cb methods that exist.</summary>
+    /// <summary>
+    /// The Python blocks of the guides only use cb methods that exist, with value names those methods take
+    /// (cb.obs_set_scene("Gameplay", connection="PC") passes; a misspelt method or value fails).
+    /// </summary>
     [Fact]
     public void Guide_Python_examples_use_real_cb_methods()
     {
-        var known = Library.Methods.Select(m => m.Name).Concat(PythonFunctionLibrary.HandWritten).ToHashSet(StringComparer.Ordinal);
-        var unknown = new List<string>();
-        foreach (var guide in new[] { "scripting.md", "api.md" })
+        var methods = Library.Methods.ToDictionary(m => m.Name, m => m.Parameters.Select(p => p.PythonName).ToHashSet(), StringComparer.Ordinal);
+        var problems = new List<string>();
+        foreach (var guide in PythonGuides)
         {
             var path = Path.Combine(Root, "website", "docs", "guides", guide);
-            if (!File.Exists(path)) continue;
+            Assert.True(File.Exists(path), $"{guide} is missing");
             var blocks = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(path), "```python\n(.*?)```", System.Text.RegularExpressions.RegexOptions.Singleline);
-            unknown.AddRange(blocks.SelectMany(b => System.Text.RegularExpressions.Regex.Matches(b.Groups[1].Value, @"\bcb\.([a-z_][a-z0-9_]*)"))
-                .Select(m => m.Groups[1].Value).Where(name => !known.Contains(name)).Select(name => $"{guide}: cb.{name}"));
+            foreach (var code in blocks.Select(b => b.Groups[1].Value))
+            {
+                foreach (System.Text.RegularExpressions.Match call in System.Text.RegularExpressions.Regex.Matches(code, @"\bcb\.([a-z_][a-z0-9_]*)(\((?:[^()]|\([^()]*\))*\))?"))
+                {
+                    var name = call.Groups[1].Value;
+                    if (PythonFunctionLibrary.HandWritten.Contains(name)) continue;
+                    if (!methods.TryGetValue(name, out var values)) { problems.Add($"{guide}: cb.{name} does not exist"); continue; }
+                    foreach (var value in System.Text.RegularExpressions.Regex.Matches(call.Groups[2].Value, @"[(,]\s*([a-z_][a-z0-9_]*)\s*=(?!=)").Select(m => m.Groups[1].Value))
+                        if (!values.Contains(value)) problems.Add($"{guide}: cb.{name} has no value '{value}'");
+                }
+            }
         }
-        Assert.True(unknown.Count == 0, "Unknown cb methods in guide examples:\n" + string.Join("\n", unknown.Distinct()));
+        Assert.True(problems.Count == 0, "Guide Python examples:\n" + string.Join("\n", problems.Distinct()));
     }
+
+    private static readonly string[] PythonGuides = ["scripting.md", "python.md", "code-editors.md", "api.md"];
 
     /// <summary>Python's named methods need every required value, so the examples must give them.</summary>
     [Fact]
@@ -178,6 +192,11 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
 
     // ---- pages -----------------------------------------------------------------------------------------------------
 
+    // Screenshots from DocsScreenshots.cs (website/docs/assets/screens), relative to the page that shows them.
+    private const string CSharpPicture = "![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)";
+    private const string PythonPicture = "![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)";
+    private const string ServersPicture = "![Integrations > Servers, where the REST API and MCP server are turned on](../assets/screens/page-servers.png)";
+
     private SortedDictionary<string, string> BuildPages()
     {
         var pages = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -192,7 +211,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
     {
         var areas = CphAreas();
         var index = new StringBuilder(Generated);
-        index.Append("# C# methods (CPH)\n\n");
+        index.Append("# C# methods (CPH)\n\n").Append(CSharpPicture).Append("\n\n");
         index.Append("In a **Run C# code** step you can use `CPH`, a toolbox of ready-made methods. `CPH.SendMessage(\"Hi!\")` sends a chat " +
                      "message, `CPH.ObsSetScene(\"Gameplay\")` switches your OBS scene, and so on. The names are the same as in " +
                      "Streamer.bot, so code written for Streamer.bot works in Cuebot.\n\n");
@@ -208,7 +227,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         {
             var help = CphHelp(a.Key);
             var sb = new StringBuilder(Generated);
-            sb.Append($"# {a.Title}\n\nC# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.\n");
+            sb.Append($"# {a.Title}\n\nC# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.\n\n{CSharpPicture}\n");
             foreach (var group in a.Members.GroupBy(m => m.Name))
             {
                 var entry = help.GetValueOrDefault(group.Key);
@@ -229,7 +248,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var help = FunctionHelp();
         var groups = Functions.GroupBy(f => Prefix(f.Name), StringComparer.OrdinalIgnoreCase).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase).ToArray();
         var index = new StringBuilder(Generated);
-        index.Append("# Script functions\n\n");
+        index.Append("# Script functions\n\n").Append(PythonPicture).Append("\n\n");
         index.Append("Script functions are Cuebot's own tools for code. **C# and Python can both use them.** Each one has a name, " +
                      "like `speech.speak`, and takes named values, like `text`.\n\n");
         index.Append("```csharp\n// C#: await the call; the answer is JSON\nvar answer = await Cb.Call(\"speech.speak\", new { text = \"Hello!\" });\n```\n\n");
@@ -251,7 +270,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         foreach (var g in groups)
         {
             var sb = new StringBuilder(Generated);
-            sb.Append($"# {AreaTitle(g.Key)} script functions\n\nFunctions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.\n");
+            sb.Append($"# {AreaTitle(g.Key)} script functions\n\nFunctions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.\n\n{PythonPicture}\n");
             foreach (var f in g.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
             {
                 var entry = help.GetValueOrDefault(f.Name);
@@ -367,7 +386,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var fieldHelp = help["fields"] as JsonObject ?? [];
         string FieldText(string key, JsonObject prop) => Str(fieldHelp, key) is { Length: > 0 } h ? h : Str(Resolve(prop, schemas), "description");
         var sb = new StringBuilder(Generated);
-        sb.Append("# REST API reference\n\n");
+        sb.Append("# REST API reference\n\n").Append(ServersPicture).Append("\n\n");
         sb.Append("Every web address of Cuebot's **REST API**, made from the same description Cuebot serves at `/api/v1/openapi.json`. " +
                   "New to this? Read [Controlling Cuebot from other programs](../guides/api.md) first: it shows how to turn the API on, " +
                   "where the token is, and how to try it.\n\n");
@@ -431,7 +450,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
     {
         var tools = McpTools.Create(new ApiOperations(_host.Get<ServerServices>())).OrderBy(t => t.Name, StringComparer.Ordinal).ToArray();
         var sb = new StringBuilder(Generated);
-        sb.Append("# MCP tools (for AI apps)\n\n");
+        sb.Append("# MCP tools (for AI apps)\n\n").Append(ServersPicture).Append("\n\n");
         sb.Append("An AI app connected to Cuebot's **MCP server** can use these tools. You do not call them yourself: the AI picks them when you ask it " +
                   "for something, like \"make a !hello command\". See [AI tools](../guides/assistant.md#using-your-own-ai-app-with-cuebot-mcp) " +
                   "for how to connect an AI app, and [Controlling Cuebot from other programs](../guides/api.md#mcp-server-for-ai-apps) for the details.\n\n");

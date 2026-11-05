@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## desktop.getClipboard
 
 Reads the text that is on your clipboard right now. Fails with an error when this computer has no clipboard Cuebot can use.

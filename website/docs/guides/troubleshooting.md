@@ -2,6 +2,8 @@
 
 ## Something does not happen
 
+![Chat & Events > History > Trigger viewer: every event that came in](../assets/screens/history-trigger-viewer.png)
+
 Your action did not run when it should have? Check these, in order:
 
 1. **Is it connected?** The top bar shows a chip for each connection. No Twitch chip means Twitch is not connected.
@@ -62,6 +64,8 @@ Start Cuebot again: the running copy comes to the front. Still off-screen? Close
 
 ## Asking for help
 
+![Settings > Support](../assets/screens/page-support.png)
+
 **Settings > Support**, tab **Report a problem**, builds a report for you: your Cuebot version, your system and the
 recent log.
 
@@ -90,6 +94,8 @@ Trying an [experimental feature](experimental.md)? Please report how it went, ev
 Press ++f1++ anywhere in Cuebot to open the Support page.
 
 ## Where the log is
+
+![The Dashboard; its Log tab shows warnings](../assets/screens/page-dashboard.png)
 
 In the `logs` folder inside your [data folder](backups-and-your-data.md). ++ctrl+alt+l++ opens it. The **Log** tab on
 **Home > Dashboard** shows the current log.

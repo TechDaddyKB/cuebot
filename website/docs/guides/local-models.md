@@ -35,6 +35,8 @@ desktop processor, and longer on a laptop. Use the 4B model, and be patient.
 
 ## Setting it up
 
+![Home > Assistant](../assets/screens/page-assistant.png)
+
 1. **Install Ollama** from [ollama.com](https://ollama.com) (Windows, Linux and Mac). It starts by itself and runs in
    the background.
 2. **Download a model.** Open a terminal (on Windows: PowerShell) and type one of these, then wait for it to finish:
@@ -74,7 +76,7 @@ Changes apply from the next **New chat**.
 | It says "done" but the command does nothing | It made the command but did not connect an action to it, or used the wrong trigger | Check the action's **Triggers**; tell it what is missing ("the !lurk command has no action, add one") |
 | It asks you to type "yes" before deleting | Small models sometimes ask in words instead of using the **Approve** button | Answer "yes"; Cuebot still shows **Approve** before anything is deleted |
 | It changes something you did not ask for | It misread the request | Click **Undo these changes** under its answer, and ask again more simply. Before a big job, a backup (**Settings > Backups**) is a good idea |
-| An empty answer, or "the model server returned an error" | Small models sometimes stop or write a broken request. Cuebot already retries once and nudges once | Send the message again, or press **New chat** |
+| An empty answer, or a message starting with "Local model:" | Small models sometimes stop or write a broken request. Cuebot already retries once and nudges once | Send the message again, or press **New chat** |
 | "The conversation has filled this model's memory" | Long conversations do not fit | Press **New chat**, or raise **Memory** if your graphics card has room |
 | Very slow answers | No graphics card, or the model does not fit in its memory | Use the 4B model, close games and other heavy programs, keep **Let it think first** off |
 | "Ollama is not running" | Ollama is closed | Start Ollama (on Windows, from the Start menu) and press **Refresh** |

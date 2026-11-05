@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## SendAction
 
 Sends a /me line in your Twitch chat, shown in italics. If that is not possible, it is sent as a normal chat message. Empty text sends nothing.

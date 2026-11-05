@@ -33,6 +33,8 @@ The assistant does not have its own AI. It borrows one you already use. Pick **o
 
 ## Setting it up
 
+![Home > Assistant](../assets/screens/page-assistant.png)
+
 1. Go to **Home > Assistant**.
 2. In **AI**, pick your choice. **Automatic (first one ready)** uses the first one that works.
 3. Using an AI app? Click **Sign in** if Cuebot asks you to, then **Refresh**. **Program** is usually found by itself.

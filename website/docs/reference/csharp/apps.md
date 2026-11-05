@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## StreamDeckSetTitle
 
 Changes the text on a Stream Deck key. Find the key by the Button ID you set on it in Stream Deck. Add a state (0 or 1) to change only that state's title.

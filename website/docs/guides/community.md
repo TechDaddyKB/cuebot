@@ -5,6 +5,8 @@ funny quotes. They all live under **Chat** in the left rail, and they work on **
 
 ## Points
 
+![Chat & Events > Points](../assets/screens/page-points.png)
+
 **Points** are your own channel money. Viewers earn them by watching and chatting, and spend them in your store, on
 giveaways and on bets. They are Cuebot's own points, not Twitch channel points.
 
@@ -58,12 +60,14 @@ you set under **Thresholds**.
 
 ## Giveaways & Store
 
+![Chat & Events > Giveaways & Store](../assets/screens/page-giveaways-store.png)
+
 Go to **Chat > Giveaways & Store**. Both use your Cuebot points.
 
 ### A giveaway
 
 1. Type the **Prize**, like `A Steam game`.
-2. **Join command** is `!join`. Viewers type it to enter. `!join 3` buys 3 tickets.
+2. The join command (the box that shows `!join`) is what viewers type to enter. Viewers type it to enter. `!join 3` buys 3 tickets.
 3. Set **Ticket cost** (0 for free), **Tickets per viewer**, how many **Winners**, and **Seconds** (how long entries
    stay open).
 4. Optional: **Subscribers only**, **Subscriber luck** (better odds for subs), **Announce winners in chat**.
@@ -91,6 +95,8 @@ To make something happen when an item is bought, add the **Store item redeemed**
 
 ## Polls and predictions
 
+![Platforms > Twitch > Polls & predictions](../assets/screens/twitch-polls.png)
+
 ### On every platform
 
 Go to **Overlays > Overlays & Widgets** and open **Chat poll and prediction (every platform)**.
@@ -110,6 +116,8 @@ points). Fill in **Question** and the choices (one per line), then **Start poll*
 
 ## Quotes
 
+![Chat & Events > Quotes](../assets/screens/page-quotes.png)
+
 Something funny said on stream? Save it as a quote. Go to **Chat > Quotes**.
 
 - Type the quote in **New quote text**, optionally the **User** who said it and the game, then click **+ Quote**.
@@ -120,11 +128,15 @@ For chat, make your own `!quote` and `!addquote` commands with the **Get quote**
 
 ## Credits
 
+![Chat & Events > Credits](../assets/screens/page-credits.png)
+
 **Chat > Credits** collects everyone who followed, subbed, tipped, raided or chatted during your stream, for an
 end-of-stream **Credits roll** widget. **Start fresh when a stream goes live** clears the list each stream. **Show test
 data** fills it with pretend names, so you can see how it looks.
 
 ## Top spenders
+
+![Chat & Events > Top Spenders](../assets/screens/page-top-spenders.png)
 
 **Chat > Top Spenders** shows who spent the most money on your stream. It adds up everything a viewer paid for, on
 every platform you connected:
@@ -196,8 +208,25 @@ alert. The trigger **Money spent** runs for every purchase, with the amount alre
 
 ## Users & Groups
 
+![Chat & Events > Users & Groups](../assets/screens/page-users-groups.png)
+
 **Chat > Users & Groups** lists the viewers Cuebot has seen. On the **Groups** tab you make groups, like `Regulars` or
 `Friends`. Use groups to:
 
 - let only that group use a command (see [Chat commands](commands.md#permissions));
 - give that group a points multiplier.
+
+**Putting people in a group:** on the **Users** tab, select a viewer, pick the group under **Add to** and click
+**Add user**. Or, on the **Groups** tab, select the group and type the name under **Add a member**. **Clear members**
+empties a group; **Delete group** removes it.
+
+**First words:** the **First words** trigger runs for a viewer's first chat message, handy for a "welcome in!".
+Tick **Reset when a stream goes live** so everyone can be welcomed once per stream, or click **Reset first words now**
+to start over.
+
+**Present viewers:** the **Present viewers** trigger runs every few minutes with everyone who chatted recently, for
+example to give them points for watching. Set how recently (**Present if they chatted in the last** … min) and how
+often (**Fire 'Present viewers' every** … min; 0 turns it off).
+
+**Forget viewer…** deletes everything Cuebot saved about the selected viewer, for example when they ask you to delete
+their data. Cuebot asks you to confirm first.

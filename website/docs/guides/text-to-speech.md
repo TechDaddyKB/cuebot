@@ -10,6 +10,8 @@ Everything is on **Audio > Speech**. It has these tabs: **Overview**, **Engines*
 
 ## 1. Pick an engine
 
+![Audio > Speech](../assets/screens/page-speech.png)
+
 An **engine** is the thing that makes the voice. Open the **Engines** tab.
 
 | Engine | Where it runs | What you need |
@@ -63,7 +65,7 @@ secret". It costs a little money: reading a normal chat message out loud costs a
    to add a little credit (billing) to your OpenAI account first.
 2. In Cuebot, on the **OpenAI** card, paste the key into **API key**.
 3. Optional: type how the voices should sound into **How the voices should sound**. In a voice alias, pick a
-   **Style** (Cheerful, Calm, Excited, Spooky, Like a pirate and more) to change it for just that alias.
+   **Speaking style** (Cheerful, Calm, Excited, Spooky, Like a pirate and more) to change it for just that alias.
 4. Press **Test** to see the 13 voices (Alloy, Coral, Marin and more).
 
 **Model:** leave it on `gpt-4o-mini-tts`. The older `tts-1` models ignore the "how it should sound" text.
@@ -120,7 +122,8 @@ viewer typed.
 ## Filters
 
 **Filters** clean up what viewers write before it is spoken: swap or skip bad words, links and emotes, and limit very
-long messages and "loooooool". You can make different filter profiles and use them per alias.
+long messages and "loooooool". You can make different filter profiles and pick one for reading chat, one for reading events, and one for a single
+**Speak** step.
 
 ## The queue and VoiceGate
 
@@ -131,6 +134,8 @@ waiting and what was spoken, with **Pause**, **Skip**, **Clear** and **Speak nex
 not talk over you. Pick your **Microphone** in a profile. The same tab sets how long the waiting line may get.
 
 ## Voice control: talking to Cuebot
+
+![Audio > Voice Control](../assets/screens/page-voice-control.png)
 
 **Audio > Voice Control** goes the other way: *you* say a phrase, and Cuebot runs an action. For example, say "start
 the countdown" to start a countdown.
@@ -143,6 +148,27 @@ the countdown" to start a countdown.
 5. In an action, add the **Voice Control › Command** trigger and pick your voice command.
 
 Listening happens on your own computer. Nothing you say is sent to the internet.
+
+**Each command** has a few more settings:
+
+- **Location**: **Exact** means the phrase on its own, with a pause before and after. **Start** means what you say
+  begins with it, and the rest becomes `%spokenTextInput%` (say "shout out Pixel Panda" and the action gets
+  "Pixel Panda"). **Anywhere** means the phrase can be anywhere in a sentence.
+- **Stop After** runs the command the moment the phrase is heard, even while you are still talking.
+- **Override Global confidence** gives this command its own **Confidence Threshold**: how sure Cuebot must be
+  that it heard right.
+
+**The Settings tab** has more for fine-tuning:
+
+- **Auto Start Listen (when Cuebot starts)**: no need to click **Start Listening** every time.
+- **Confidence Threshold** and **Match tolerance**: raise the first if Cuebot hears commands you didn't say; raise
+  the second if it misses ones you did (it lets a few letters be different).
+- **Locale**: the language you speak.
+- **Use a GPU runtime** makes Whisper faster on a graphics card. **Interim results** lets **Stop After** commands
+  react sooner, using more processor. **Hint the command phrases to Whisper** helps it spell your phrases the way you
+  wrote them. **Delete model** frees the disk space again.
+- **Log Speech to Text Dictation** writes everything it understood into the log file. The **Log** tab shows it live.
+  Everything it understands also runs the **Dictation** trigger, for actions that listen to all you say.
 
 ## Silent on Linux?
 

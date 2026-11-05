@@ -13,6 +13,8 @@ in testing, releases are marked **Pre-release**. Under **Assets**, pick the file
 | Linux, ARM computer or if you prefer a plain folder | `Cuebot-<version>-linux-arm64.tar.gz` or `...-linux-x64.tar.gz` |
 | Mac with Apple silicon (M1 or newer) | `Cuebot-macos-arm64.dmg` |
 | Mac with an Intel chip | `Cuebot-macos-x64.dmg` |
+| Android phone or tablet (Android 10 or newer): the [phone app](companion-app.md) | `Cuebot-Companion-<version>.apk` |
+| Elgato Stream Deck app (Windows or Mac): the [Cuebot plugin](stream-deck.md) | `io.github.cuebot.streamdeck.streamDeckPlugin` |
 
 !!! warning "Experimental"
     Cuebot for Mac is new. See [What's experimental](experimental.md).
@@ -79,7 +81,7 @@ Download `Cuebot-x86_64.flatpak` and open it with your software centre, or type
 
 ```bash
 tar -xzf Cuebot-<version>-linux-x64.tar.gz
-./Cuebot-<version>-linux-x64/Cuebot
+./Cuebot-<version>-linux-x64/lib/Cuebot
 ```
 
 ### Arch Linux
@@ -89,6 +91,8 @@ The AUR packages `cuebot` and `cuebot-bin` come with the first full (non-test) r
 Linux has a few extras, like sound players and the Stream Deck. See the [Linux page](linux.md).
 
 ## Updating
+
+![Settings > Support > Updates](../assets/screens/support-updates.png)
 
 1. Close Cuebot.
 2. Download the new version.

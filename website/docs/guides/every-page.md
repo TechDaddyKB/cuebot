@@ -13,18 +13,46 @@ to the guide that explains it.
 | **Dashboard** | What is connected, and what just happened. Tabs: **Connections**, **Events**, **Runs** and **Log**. The **Log** tab shows warnings, like a missing Twitch permission. | [Troubleshooting](troubleshooting.md) |
 | **Assistant** | Ask an AI to set Cuebot up for you. | [The setup assistant](assistant.md) |
 
+<div class="grid" markdown>
+
+![Dashboard](../assets/screens/page-dashboard.png)
+
+![Assistant](../assets/screens/page-assistant.png)
+
+</div>
+
 ## Automation
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
-| **Actions** | Make actions: the triggers that start them and the steps they do. Tabs **Sub-actions**, **Triggers** and **Flowchart**. | [How actions work](actions-and-triggers.md) |
+| **Actions** | Make actions: the triggers that start them and the steps they do. Tabs **Sub-actions** and **Flowchart**; on a narrow window the triggers get a **Triggers** tab too. | [How actions work](actions-and-triggers.md), [The flowchart editor](flowchart.md) |
 | **Commands** | Chat commands like `!hello`. | [Chat commands](commands.md) |
 | **Timers** | Run actions every few minutes, or on a schedule. | [Timers](actions-and-triggers.md#timers) |
 | **Queues** | Waiting lines, so alerts play one at a time. Tabs **Pending** and **History**. | [Queues](actions-and-triggers.md#queues-one-at-a-time) |
 | **Variables** | See and change remembered values. Tabs **Persisted**, **Temporary** and **Users**. | [Variables](variables.md#seeing-and-changing-them) |
 | **Watchers** | React to folders, files and programs. Tabs **Folders**, **File tails** and **Processes**. | [Watchers](actions-and-triggers.md#watchers) |
-| **Hotkeys** | Keyboard shortcuts that run actions. | [Hotkeys](actions-and-triggers.md#hotkeys) |
+| **Hotkeys** | Keyboard shortcuts that run actions, and **Desktop**: where notifications appear, and watching the clipboard for the **Clipboard changed** trigger. | [Hotkeys](actions-and-triggers.md#hotkeys) |
 | **Scripting** | Set up Python for code steps, and see the script functions. | [Writing code](scripting.md) |
+
+<div class="grid" markdown>
+
+![Actions](../assets/screens/page-actions.png)
+
+![Commands](../assets/screens/page-commands.png)
+
+![Timers](../assets/screens/page-timers.png)
+
+![Queues](../assets/screens/page-queues.png)
+
+![Variables](../assets/screens/page-variables.png)
+
+![Watchers](../assets/screens/page-watchers.png)
+
+![Hotkeys](../assets/screens/page-hotkeys.png)
+
+![Scripting](../assets/screens/page-scripting.png)
+
+</div>
 
 ## Chat & Events
 
@@ -40,6 +68,28 @@ to the guide that explains it.
 | **Top Spenders** | Who spent the most money this stream, today, this week, month, year or all time. | [Top spenders](community.md#top-spenders) |
 | **Subathon & Goals** | Subathon timers that events add time to, and points goals with steps. | [Subathons and goals](subathon-and-goals.md) |
 
+<div class="grid" markdown>
+
+![Chat](../assets/screens/page-chat.png)
+
+![History](../assets/screens/page-history.png)
+
+![Users & Groups](../assets/screens/page-users-groups.png)
+
+![Points](../assets/screens/page-points.png)
+
+![Giveaways & Store](../assets/screens/page-giveaways-store.png)
+
+![Quotes](../assets/screens/page-quotes.png)
+
+![Credits](../assets/screens/page-credits.png)
+
+![Top Spenders](../assets/screens/page-top-spenders.png)
+
+![Subathon & Goals](../assets/screens/page-subathon-goals.png)
+
+</div>
+
 ## Audio
 
 | Page | What it is for | Guide |
@@ -49,6 +99,18 @@ to the guide that explains it.
 | **Music** | The song you are playing, and Spotify song requests. | [Music and now playing](music-and-now-playing.md) |
 | **Voice Control** | Say a phrase, and Cuebot runs an action. | [Voice control](text-to-speech.md#voice-control-talking-to-cuebot) |
 
+<div class="grid" markdown>
+
+![Speech](../assets/screens/page-speech.png)
+
+![Media Requests](../assets/screens/page-media-requests.png)
+
+![Music](../assets/screens/page-music.png)
+
+![Voice Control](../assets/screens/page-voice-control.png)
+
+</div>
+
 ## Decks & Input
 
 | Page | What it is for | Guide |
@@ -57,14 +119,36 @@ to the guide that explains it.
 | **Stream Deck** | Elgato Stream Deck, with the Stream Deck app or straight over USB. | [Stream Deck](stream-deck.md) |
 | **Input** | MIDI controllers and game controllers. Tabs **MIDI** and **Game controllers**. | [Your buttons and controllers](stream-apps-and-devices.md#your-buttons-and-controllers) |
 
+<div class="grid" markdown>
+
+![Decks](../assets/screens/page-decks.png)
+
+![Stream Deck](../assets/screens/page-stream-deck.png)
+
+![Input](../assets/screens/page-input.png)
+
+</div>
+
 ## Platforms
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
 | **Twitch** | Sign in, your channel, rewards, polls and moderation. Tabs **Accounts**, **Channel**, **Rewards**, **Polls & predictions**, **Moderation** and **Settings**. | [Twitch](connecting-platforms.md#twitch) |
-| **YouTube** | Sign in, your channel and chat. | [YouTube](connecting-platforms.md#youtube) |
+| **YouTube** | Sign in, your current broadcast and chat. | [YouTube](connecting-platforms.md#youtube) |
 | **Kick** | Sign in, your channel and rewards. | [Kick](connecting-platforms.md#kick) |
 | **Rumble** | Your Rumble channel and chat. | [Rumble](connecting-platforms.md#rumble) |
+
+<div class="grid" markdown>
+
+![Twitch](../assets/screens/page-twitch.png)
+
+![YouTube](../assets/screens/page-youtube.png)
+
+![Kick](../assets/screens/page-kick.png)
+
+![Rumble](../assets/screens/page-rumble.png)
+
+</div>
 
 ## Overlays & Widgets
 
@@ -72,15 +156,35 @@ to the guide that explains it.
 | --- | --- | --- |
 | **Overlays & Widgets** | Overlays for OBS, with widgets, alerts, the designer and the community gallery. | [Overlays and alerts](overlays.md) |
 
+<div class="grid" markdown>
+
+![Overlays & Widgets](../assets/screens/page-overlays-widgets.png)
+
+</div>
+
 ## Integrations
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
-| **Stream apps** | OBS, Streamlabs Desktop and other stream apps. Tabs **OBS & Streamlabs Desktop**, **Meld & PolyPop**, **T.I.T.S.**, **Lumia Stream**, **OBSBOT**, **mtion**, **StreamFog** and **VTuber apps**. | [Stream apps](stream-apps-and-devices.md#stream-apps), [VTuber apps](vtuber-apps.md) |
+| **Stream apps** | OBS, Streamlabs Desktop and other stream apps. Tabs **OBS & Streamlabs Desktop**, **Meld & PolyPop**, **T.I.T.S.**, **Lumia Stream**, **OBSBOT**, **mtion**, **VTuber apps** and **StreamFog**. | [Stream apps](stream-apps-and-devices.md#stream-apps), [VTuber apps](vtuber-apps.md) |
 | **Apps & devices** | Lights, mixers, apps and your Discord bot. Tabs **Apps & services**, **Elgato lights & webcams**, **Wave Link**, **GoXLR** and **Discord bot**. | [Lights, mixers and other apps](stream-apps-and-devices.md#lights-mixers-and-other-apps), [Discord bot](discord-bot.md) |
 | **Donations** | Tips and charity services. | [Donations](donations-and-integrations.md#tip-and-donation-services) |
 | **Webhooks** | Events from web services, through your relay. Tabs **Services** and **Relay**. | [Webhooks](donations-and-integrations.md#webhooks-ko-fi-patreon-throne-and-more) |
 | **Servers** | Doors that let other programs talk to Cuebot. | [Cuebot's servers](servers.md) |
+
+<div class="grid" markdown>
+
+![Stream apps](../assets/screens/page-stream-apps.png)
+
+![Apps & devices](../assets/screens/page-apps-devices.png)
+
+![Donations](../assets/screens/page-donations.png)
+
+![Webhooks](../assets/screens/page-webhooks.png)
+
+![Servers](../assets/screens/page-servers.png)
+
+</div>
 
 ## Settings (at the bottom)
 
@@ -89,6 +193,16 @@ to the guide that explains it.
 | **Settings** | Tabs **General** (tray, theme), **Audio & text** (sound devices, number and date format), **Backups**, **Google Drive** and **About** (version, data folder). | [Backups and your data](backups-and-your-data.md), [Settings](#the-settings-page) |
 | **Import / Export** | Bring in Streamer.bot actions, or share your own. Tabs **Import** and **Export**. | [Moving from Streamer.bot](moving-from-streamer-bot.md) |
 | **Support** | Report a problem, and check for updates. Tabs **Report a problem** and **Updates**. | [Asking for help](troubleshooting.md#asking-for-help), [Updates](installation.md#being-told-about-new-versions) |
+
+<div class="grid" markdown>
+
+![Settings](../assets/screens/page-settings.png)
+
+![Import / Export](../assets/screens/page-import-export.png)
+
+![Support](../assets/screens/page-support.png)
+
+</div>
 
 ## The Chat page
 

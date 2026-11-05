@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## ObsGetConnectionByName
 
 Finds the number of an OBS connection by its name, as shown on the OBS page. The first connection is 0. Capital letters do not matter.

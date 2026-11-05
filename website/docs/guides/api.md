@@ -9,6 +9,8 @@ Each way in is a **server**: a door with a number (a **port**). Turn them on in 
 
 ## Which door should I use?
 
+![Integrations > Servers](../assets/screens/page-servers.png)
+
 | I want to… | Use | Port at the start |
 | --- | --- | --- |
 | Run actions and change almost anything, from a script or app | [REST API](#rest-api) | 7475 |
@@ -124,6 +126,8 @@ short version:
 | `/speech`, `/alerts` | Pause, skip and mute text-to-speech and overlay alerts |
 | `/polls`, `/predictions`, `/giveaway`, `/store`, `/media` | Cuebot's chat polls, points predictions, giveaways, points store and media requests |
 | `/import/preview`, `/import/apply`, `/export` | Bring actions in (also from Streamer.bot), or pack them up to share |
+| `/dashboard`, `/decks` | Everything the [phone app](companion-app.md) shows at once (connections, totals, subathon, top spenders, recent activity), and your decks |
+| `/subathon/{timer}/{command}`, `/goals/{goal}/{command}` | Start, pause, add time to a subathon timer; add or set points on a goal |
 | `/events` | A live stream of everything that happens (below) |
 
 When something is wrong, Cuebot answers with a number and a reason, like

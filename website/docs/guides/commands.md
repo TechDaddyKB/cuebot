@@ -14,6 +14,8 @@ through `!hello` step by step.
 
 ## Making a command
 
+![Automation > Commands](../assets/screens/page-commands.png)
+
 1. Go to **Automation > Commands** and click **+**.
 2. **Name**: a name just for you, like `discord`. Viewers never see it.
 3. **Commands**: what viewers type, like `!discord`. Put each one on its own line. Extra lines are other names for the

@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## rumble.sendMessage
 
 Sends a message in your Rumble chat. Only works while you are live on Rumble and signed in; otherwise it fails. Empty text is skipped.

@@ -29,6 +29,8 @@ Each widget runs inside its own little web page. Cuebot puts that page inside yo
 
 ## Make a new widget
 
+![The Overlays & Widgets page](../assets/screens/page-overlays-widgets.png)
+
 1. In Cuebot, go to **Overlays > Overlays & Widgets**.
 2. On your overlay's row, open **Add Cuebot widget** and pick **Blank custom widget (write your own code)**.
 3. A widget called **My widget** shows up under the overlay, in the top left. Click **Edit…** on its row.
@@ -83,7 +85,8 @@ On the left are the tabs. On the right is a **preview** of your widget.
 - **Reset** (next to the Emulate buttons) starts the preview again.
 
 !!! warning "Fields and Data must be correct JSON"
-    The editor will not let you leave the Fields or Data tab while the JSON there is broken. Fix the red message first.
+    While the JSON on the Fields or Data tab is broken, **Save** is blocked and a red message says what is wrong. Fix it
+    before you switch tabs: switching away from broken JSON throws your unsaved changes there away.
     A missing comma or quote is the usual reason.
 
 ### My CSS: restyle a widget without touching its code

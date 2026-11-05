@@ -85,3 +85,20 @@ writing; never guess.
 
 The same rules apply to `ToolTip.Tip` and help lines in the other pages: say what the control does and what happens
 when you use it, in one short sentence, without jargon.
+
+## Screenshots on the documentation site
+
+The pictures in `website/docs/assets/screens` are taken by `tests/Cuebot.UiTests/DocsScreenshots.cs`: it fills a
+temporary Cuebot with example actions, chat, commands, quotes, a subathon timer and so on, then saves every page, some
+tabs, the action editor (list, flowchart, pickers, code steps) and the phone pairing card. It is skipped in normal test
+runs. To take them again after the app changes, build with the version you are documenting and run it:
+
+```bash
+dotnet build tests/Cuebot.UiTests -c Release -p:Version=0.1.0-rc.9
+CUEBOT_WRITE_SCREENSHOTS=1 dotnet test tests/Cuebot.UiTests -c Release --no-build --filter FullyQualifiedName~DocsScreenshots
+```
+
+A new page gets its picture automatically (`page-<title>.png`). To show a tab or a dialog, add it to the test. The
+generated reference pages (triggers, sub-actions, C#, script functions, REST, MCP) point at these pictures from
+`ActionHelpTests.cs` and `DeveloperReferenceTests.cs`. The phone app pictures in `website/docs/assets/phone` come from
+the companion apps' own screenshot runs.

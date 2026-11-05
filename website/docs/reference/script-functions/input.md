@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## input.keyPress
 
 Presses keys on your keyboard for you, in the app that is in front. On Linux your desktop asks once for permission. Fails with an error when the keys cannot be read or sent.

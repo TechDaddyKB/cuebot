@@ -4,6 +4,8 @@ By the end of this page, Cuebot will be signed in to Twitch, connected to OBS, a
 
 ## 1. Find your way around
 
+![The Dashboard, the first page you see](../assets/screens/page-dashboard.png)
+
 On the far left is the **left rail**: a column of icons with short names. **Home**, **Automation**, **Chat**,
 **Audio**, **Input**, **Platforms**, **Overlays**, **Apps** and, at the bottom, **Settings**. Click one, and its pages
 are listed next to it.
@@ -21,6 +23,8 @@ Cuebot saves your changes by itself, a moment after you make them. ++ctrl+s++ sa
 
 ## 2. Sign in to Twitch
 
+![The Twitch page, with the sign-in buttons](../assets/screens/page-twitch.png)
+
 1. Go to **Platforms > Twitch** and open the **Accounts** tab.
 2. Under **Broadcaster account** click **Sign in with Twitch**.
 3. Your browser opens Twitch, and Cuebot shows a short code. Check that you are logged in to Twitch as **your
@@ -32,6 +36,8 @@ On YouTube, Kick or Rumble instead? See [Connecting your platforms](connecting-p
 works the same on every platform.
 
 ## 3. Connect OBS
+
+![Integrations > Stream apps, where OBS is connected](../assets/screens/page-stream-apps.png)
 
 First, in **OBS**:
 
@@ -48,6 +54,8 @@ Then, in **Cuebot**:
 4. Tick **Connect automatically and reconnect when OBS restarts**.
 
 ## 4. Your first chat command: `!hello`
+
+![The Commands page](../assets/screens/page-commands.png)
 
 You will make three small things:
 

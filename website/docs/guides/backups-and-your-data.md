@@ -7,7 +7,7 @@ Everything Cuebot knows (settings, actions, sign-ins, logs and backups) is in on
 | Computer | Data folder |
 | --- | --- |
 | Windows | `%APPDATA%\Cuebot` (type this into the address bar of File Explorer) |
-| Linux | `~/.config/Cuebot` |
+| Linux | `~/.config/Cuebot` (Flatpak: `~/.var/app/io.github.cuebot.Cuebot/config/Cuebot`) |
 | macOS | `~/Library/Application Support/Cuebot` |
 
 The program folder holds no settings. That is why you can replace it when you update.
@@ -22,10 +22,14 @@ Sign-ins, API keys and passwords are stored **encrypted**: scrambled so that onl
 - On **Windows**, your Windows account holds the key.
 - On **Linux**, your desktop's keyring (like GNOME Keyring or KWallet) holds it. Without a keyring, Cuebot uses a file
   only your user can read.
+- On **macOS**, the key is in a file called `secrets.key` in the data folder that only your user can read. (Cuebot
+  doesn't use the macOS Keychain.)
 
 Sign-ins and keys are **never** put in backups. If you restore a backup on a **new** computer, sign in again.
 
 ## Backups
+
+![Settings > Backups](../assets/screens/settings-backups.png)
 
 A **backup** is a zip copy of your data folder. Go to **Settings**, tab **Backups**.
 

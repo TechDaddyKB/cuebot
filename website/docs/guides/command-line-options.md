@@ -15,7 +15,8 @@ add them at the end of **Target**.
 | `--backend=wayland` / `--backend=x11` | Linux only: choose how the window is drawn. See [Linux](linux.md#wayland-and-x11). |
 | `--help` | List the options. |
 
-Every option also works with `/` instead of `--`, like Streamer.bot's `/headless` and `/resetwindow`.
+Every option also works with `/` instead of `--`, like Streamer.bot's `/headless` and `/resetwindow`. The one
+exception is `--backend=…` on Linux: it only works with `--`.
 
 ## Environment variables
 

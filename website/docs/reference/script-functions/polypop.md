@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## polypop.isConnected
 
 Checks whether PolyPop is connected to Cuebot right now (at least one Cuebot plugin in PolyPop).

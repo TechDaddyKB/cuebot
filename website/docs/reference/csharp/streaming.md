@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## SendWhisper
 
 Sends a private Twitch whisper to someone. Your bot account sends it when one is signed in, otherwise your broadcaster account. Set bot to false to always use the broadcaster.

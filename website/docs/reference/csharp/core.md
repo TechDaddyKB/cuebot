@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## TryGetArg
 
 Reads one of the action's variables (the %name% words) by its name. The version with a type turns the value into that type for you, like text or a whole number.

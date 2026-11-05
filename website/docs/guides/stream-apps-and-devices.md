@@ -9,6 +9,8 @@ Nothing connects by itself until you set it up, and most pages have a box to con
 
 ## Stream apps
 
+![Integrations > Stream apps](../assets/screens/page-stream-apps.png)
+
 Go to **Apps > Stream apps**. Each app has its own tab.
 
 ### OBS Studio
@@ -55,6 +57,8 @@ lets the port through.
 
 ## Your buttons and controllers
 
+![Decks & Input > Input > Game controllers](../assets/screens/input-controllers.png)
+
 | Device | Where | What it does |
 | --- | --- | --- |
 | **Stream Deck** | Input > Stream Deck | See the [Stream Deck page](stream-deck.md). |
@@ -64,7 +68,7 @@ lets the port through.
 | **Keyboard shortcuts** | Automation > Hotkeys | See [How actions work](actions-and-triggers.md#hotkeys). |
 | **Your voice** | Audio > Voice Control | See [Text-to-speech](text-to-speech.md#voice-control-talking-to-cuebot). |
 
-**MIDI tip:** add an event for each key or knob, then click **Learn** and press it. Cuebot fills in the details for you.
+**MIDI tip:** add an event for each key or knob, then click **Learn new event** and press it. (On an event you already have, **Learn** changes which key it listens to.) Cuebot fills in the details for you.
 
 !!! warning "Partly checked"
     Sending MIDI was tried on Windows and Linux, and on a Mac with Cuebot's own pretend MIDI ports, but pressing keys
@@ -93,6 +97,8 @@ While you stream, your actions can change a button's title, colour, icon or page
     can press your buttons: open the deck from the link on the **Decks** page, which includes it.
 
 ## Lights, mixers and other apps
+
+![Integrations > Apps & devices](../assets/screens/page-apps-devices.png)
 
 Go to **Apps > Apps & devices**. It has the tabs **Apps & services**, **Elgato lights & webcams**, **Wave Link**,
 **GoXLR** and **Discord bot**.

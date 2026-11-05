@@ -2,6 +2,8 @@
 
 A small dictionary. If a word on another page is new to you, look here.
 
+![An action with its trigger and sub-actions](../assets/screens/actions-sub-actions.png)
+
 **Action**: A job for Cuebot, with a name, like "Thank new followers". It is a list of steps (sub-actions). See [How
 actions work](actions-and-triggers.md).
 

@@ -3,6 +3,8 @@
 
 A **sub-action** is one step of an action: the "then do this" part. An action runs its sub-actions from top to bottom, like a recipe: send a chat message, wait two seconds, switch the OBS scene.
 
+![Adding a sub-action: on the Actions page, click + Sub-action and search for it](../../assets/screens/actions-sub-action-picker.png)
+
 | Area | How many |
 | --- | --- |
 | [Animaze](animaze.md) | 8 |

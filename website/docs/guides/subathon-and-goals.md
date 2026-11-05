@@ -48,6 +48,8 @@ can start a happy hour, and a second action can end it an hour later with a **De
 
 ## A subathon timer
 
+![Chat & Events > Subathon & Goals, with a timer running](../assets/screens/page-subathon-goals.png)
+
 1. Click **Add a timer**. Give it a name.
 2. Open **Settings**. Set the **Starting length**, like 240 minutes for 4 hours.
 3. Open **What events add** and set what each event is worth.

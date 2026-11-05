@@ -21,6 +21,8 @@ You can choose yourself:
 
 ## The tray icon
 
+![Settings > General, with the tray settings](../assets/screens/page-settings.png)
+
 The **tray** is the row of small icons in your desktop's panel. Cuebot puts its icon there. KDE Plasma, Cinnamon, XFCE,
 waybar and most other panels show it. Plain GNOME needs the AppIndicator extension.
 

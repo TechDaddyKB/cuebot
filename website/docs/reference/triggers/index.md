@@ -3,6 +3,8 @@
 
 A **trigger** is the "when" of an action: *when* someone follows, *when* a scene changes, *when* you press a key. Add one or more triggers to an action and it runs every time one of them happens.
 
+![Adding a trigger: on the Actions page, click + Trigger and search for it](../../assets/screens/actions-trigger-picker.png)
+
 | Area | How many |
 | --- | --- |
 | [Animaze](animaze.md) | 3 |

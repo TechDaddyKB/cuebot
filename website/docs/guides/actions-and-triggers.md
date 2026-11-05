@@ -2,6 +2,8 @@
 
 Everything Cuebot does is built from three pieces. Once you know them, you know Cuebot.
 
+![The Actions page: actions on the left, triggers in the middle, steps on the right](../assets/screens/page-actions.png)
+
 | Piece | What it is | Stream example |
 | --- | --- | --- |
 | **Action** | A job, with a name. | "Thank new followers" |
@@ -20,6 +22,8 @@ All of this lives in **Automation > Actions**.
 ![The Actions page](../assets/actions.png)
 
 ## Building an action
+
+![A step selected in the action editor, with its settings below](../assets/screens/actions-step-details.png)
 
 1. Go to **Automation > Actions** and click **+** (New action).
 2. Click the name at the top and give it a clear name, like `Thank new followers`.
@@ -96,6 +100,8 @@ The **More** button on an action has extra choices:
 
 ## Flowchart
 
+![The same action as a flowchart](../assets/screens/actions-flowchart.png)
+
 The **Flowchart** tab shows the same action as boxes joined by lines. It is the same action, just drawn differently.
 Change one view and the other changes too.
 
@@ -106,6 +112,8 @@ Change one view and the other changes too.
 
 ## Queues: one at a time
 
+![The Queues page](../assets/screens/page-queues.png)
+
 What if ten people follow at once? Without a plan, ten alerts would play on top of each other. **Queues** fix this.
 
 A queue is a waiting line. Every action waits in one before it starts. A **blocking** queue lets only one action run at
@@ -115,13 +123,19 @@ a time, in order. Perfect for alerts.
 2. In each alert action, pick that queue under **More > Queue**.
 
 The Queues page also shows what is waiting (**Pending**) and what ran (**History**), and has **Pause**, **Resume** and
-**Clear** for each queue.
+**Clear** for each queue. **Pause all** and **Resume all** do every queue at once (handy before a break), and
+**Requeue** runs a finished action again, with the same values it had the first time.
+
+Actions in the **Default** queue normally wait for each other too. Tick **Allow concurrent runs (Default queue only)**
+under **More** to let one action run several times at once.
 
 ## History
 
+![The History page](../assets/screens/page-history.png)
+
 **Chat > History** lists every run: what ran, what started it and the values it had. Select a run to see its
 variables. **Run again with these variables** repeats it. **Cancel run** stops one that is still going. **Open action**
-jumps to the action.
+jumps to the action. **Open Queues** opens the Queues page, and **Clear history** empties the list.
 
 The **Trigger viewer** tab shows every event that comes in, like a follow, a chat message or a scene change, even when
 no action uses it. Select one to see its variables. Two handy buttons:
@@ -130,6 +144,8 @@ no action uses it. Select one to see its variables. Two handy buttons:
 - **Pause** stops the list from moving, so you can read it. Your actions still run as normal.
 
 ## Timers
+
+![The Timers page](../assets/screens/page-timers.png)
 
 **Automation > Timers** starts actions on a clock, like "post my Discord link every 15 minutes".
 
@@ -142,7 +158,12 @@ no action uses it. Select one to see its variables. Two handy buttons:
     - **Cron**: a schedule, like `0 20 * * 5` (every Friday at 20:00). Five parts: minute, hour, day, month, weekday.
 3. In your action, add the **Timer** trigger and pick the timer.
 
+Untick **Repeat (untick to run only once)** for a timer that goes off one time only, like a "stream ends in 10
+minutes" reminder.
+
 ## Hotkeys
+
+![The Hotkeys page](../assets/screens/page-hotkeys.png)
 
 **Automation > Hotkeys** makes keyboard shortcuts that work even when a game or OBS is in front.
 
@@ -150,6 +171,10 @@ no action uses it. Select one to see its variables. Two handy buttons:
 2. Type the keys, like `Ctrl+Shift+F1`, or right-click and choose **Record keys**.
 3. Either type an action in **Run action (optional)**, or add the **Hotkey pressed** trigger to an action.
 4. **Test** tries it.
+
+**+ Group** keeps hotkeys tidy, like one group per game. The **Desktop** part of the page sets where Cuebot's pop-up
+notifications appear (**Notifications appear**), and **Watch the clipboard ('Clipboard changed' trigger)** lets an
+action start whenever you copy something.
 
 !!! note "Mac"
     On a Mac, `Meta` is the **Command** key and `Alt` is **Option**. The first time you turn on a hotkey, macOS asks
@@ -159,13 +184,20 @@ no action uses it. Select one to see its variables. Two handy buttons:
 
 ## Watchers
 
+![The Watchers page](../assets/screens/page-watchers.png)
+
 **Automation > Watchers** reacts to things on your computer:
 
 - **+ Folder watcher**: a file appears, changes, is deleted or renamed in a folder. Example: a new screenshot.
 - **+ File tail**: a new line is added to a text file. Example: a game writes "You died" to its log.
 - **+ Process watcher**: a program starts or stops. Example: switch to the "Gaming" scene when your game opens.
 
+A folder watcher can also look in folders inside the folder (**Include subfolders**), and **Fire on:** picks which
+changes count: created, changed, deleted or renamed. A file tail can **Skip empty lines**.
+
 ## Scripts (for the curious)
+
+![A Python step in the action editor](../assets/screens/actions-python-step.png)
 
 When no sub-action does what you want, a code step lets you write a little program in C# or Python. This is optional
 and needs some coding. The steps are in the **Code** group of the sub-action list; see the

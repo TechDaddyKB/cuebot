@@ -4,6 +4,8 @@ Cuebot can talk to the apps that move your avatar. A viewer redeems a reward, an
 prop, or shows a new face. Each app has a card on the **Stream apps** page, under **VTuber apps**. None of these apps
 needs a password.
 
+![Integrations > Stream apps > VTuber apps](../assets/screens/stream-apps-vtuber.png)
+
 veadotube mini, PNGTuber Remix, RahiTuber, VNyan and Warudo were tried with the real apps. VRChat, nizima LIVE, Animaze
 and VMC are [experimental](experimental.md): they may not work yet.
 

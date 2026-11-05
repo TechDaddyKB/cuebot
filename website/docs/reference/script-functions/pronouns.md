@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## pronouns.get
 
 Looks up the pronouns a Twitch viewer set on pronouns.alejo.io. Leave the user out for the person who triggered the action.

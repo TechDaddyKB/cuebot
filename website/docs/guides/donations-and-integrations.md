@@ -8,6 +8,8 @@ Everything here is under **Apps** in the left rail. Keys and tokens you type in 
 
 ## Tip and donation services
 
+![Integrations > Donations](../assets/screens/page-donations.png)
+
 Go to **Apps > Donations**. Pick a service on the left.
 
 | Service | What to paste |
@@ -34,6 +36,8 @@ name), and shows up in your alerts, credits and spoken events.
     real tip does not show up. See [What's experimental](experimental.md).
 
 ## Webhooks: Ko-fi, Patreon, Throne and more
+
+![Integrations > Webhooks > Relay](../assets/screens/webhooks-relay.png)
 
 Some services do not "call" Cuebot directly. Instead they send a **webhook**: a small message to a web address. Your
 computer has no public web address, so these services need a helper in between, called the **relay**.
@@ -83,6 +87,8 @@ token** where there is one), and click **Send test event**.
 ending in `/custom/doorbell`, and the **Custom Webhook** trigger runs.
 
 ## Discord
+
+![Integrations > Apps & devices > Discord bot](../assets/screens/apps-devices-discord.png)
 
 There are two ways to post in your Discord server:
 

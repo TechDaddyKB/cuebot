@@ -3,6 +3,7 @@
 # The pages under docs/reference/triggers and docs/reference/sub-actions are generated from src/Cuebot.Core/Help
 # by tests/Cuebot.UiTests/ActionHelpTests.cs (CUEBOT_WRITE_REFERENCE=1); docs/reference/csharp, script-functions,
 # rest-api.md and mcp-tools.md by DeveloperReferenceTests.cs (see docs/WRITING_HELP.md). Do not edit them by hand.
+# The screenshots in docs/assets/screens come from tests/Cuebot.UiTests/DocsScreenshots.cs (CUEBOT_WRITE_SCREENSHOTS=1).
 site_name: Cuebot Docs
 site_description: Stream automation for Twitch, YouTube, Kick and Rumble, explained simply.
 site_url: https://techdaddykb.github.io/cuebot/
@@ -49,6 +50,10 @@ markdown_extensions:
 
 plugins:
   - search
+  # Click a screenshot to see it full size.
+  - glightbox:
+      touchNavigation: true
+      zoomable: true
 
 nav:
   - Home: index.md
@@ -57,6 +62,7 @@ nav:
       - Your first five minutes: guides/getting-started.md
       - Connecting your platforms: guides/connecting-platforms.md
       - How actions work: guides/actions-and-triggers.md
+      - The flowchart editor: guides/flowchart.md
       - Variables, the %words%: guides/variables.md
       - Words you will see: guides/glossary.md
       - Every page in Cuebot: guides/every-page.md
@@ -71,6 +77,7 @@ nav:
       - Stream apps and devices: guides/stream-apps-and-devices.md
       - VTuber apps: guides/vtuber-apps.md
       - Stream Deck: guides/stream-deck.md
+      - The phone app: guides/companion-app.md
       - Donations and integrations: guides/donations-and-integrations.md
       - Discord bot: guides/discord-bot.md
       - The setup assistant and AI tools: guides/assistant.md
@@ -78,6 +85,8 @@ nav:
       - Moving from Streamer.bot: guides/moving-from-streamer-bot.md
       - Cuebot's servers: guides/servers.md
       - Writing code (C# and Python): guides/scripting.md
+      - Python in detail: guides/python.md
+      - Using your own code editor: guides/code-editors.md
       - Controlling Cuebot from other programs: guides/api.md
       - Backups and your data: guides/backups-and-your-data.md
       - Linux: guides/linux.md

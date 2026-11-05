@@ -4,6 +4,8 @@ Cuebot is a free app for your computer that does jobs on your stream for you. Wh
 follower or someone typing `!hello` in chat, Cuebot does what you told it to: post a message, switch an OBS scene,
 play a sound or read a message out loud.
 
+![Cuebot's Dashboard: what is connected and what just happened](assets/screens/page-dashboard.png)
+
 It works with **Twitch, YouTube, Kick and Rumble**, and runs on **Windows, Linux and macOS**.
 
 ![Building an action in Cuebot](assets/actions.png)
@@ -27,7 +29,8 @@ You do not need to be good with computers. Every page here explains one thing at
 1. [Install Cuebot](guides/installation.md) on Windows, Linux or a Mac.
 2. [Your first five minutes](guides/getting-started.md): sign in, connect OBS and make a `!hello` command.
 3. [Connect your platforms](guides/connecting-platforms.md): Twitch, YouTube, Kick and Rumble.
-4. [How actions work](guides/actions-and-triggers.md): the idea behind everything in Cuebot.
+4. [How actions work](guides/actions-and-triggers.md): the idea behind everything in Cuebot. Like pictures? See
+   [the flowchart editor](guides/flowchart.md).
 5. [Variables, the %words%](guides/variables.md): put the viewer's name and other values into your messages.
 6. [Words you will see](guides/glossary.md): a small dictionary for when a word is new.
 
@@ -41,7 +44,11 @@ to pick.
 
 - **Guides**: one page per part of Cuebot, from [chat commands](guides/commands.md) to
   [overlays](guides/overlays.md), [text-to-speech](guides/text-to-speech.md) and the [Stream Deck](guides/stream-deck.md).
-- **[Every page in Cuebot](guides/every-page.md)**: a map of the whole app, with a link to the guide for each page.
+- **[Every page in Cuebot](guides/every-page.md)**: a map of the whole app, with a picture and a link to the guide
+  for each page.
+- **[The phone app](guides/companion-app.md)**: your decks and dashboard on your phone.
+- **Writing code**: [C# and Python](guides/scripting.md), [Python in detail](guides/python.md), and
+  [using your own code editor](guides/code-editors.md) (Visual Studio Code, Visual Studio, Rider, PyCharm…).
 - **[What's experimental](guides/experimental.md)**: the features that have not been tried with the real app or
   service yet.
 - **[Reference](reference/index.md)**: every trigger and sub-action, with what each setting does.

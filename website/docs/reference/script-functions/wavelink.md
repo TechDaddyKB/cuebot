@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## wavelink.addAppToChannel
 
 Sends an app's sound to a Wave Link channel, like putting Spotify on the Music channel. Only for Wave Link 3. Fails with an error when Wave Link is not connected.

@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## TwitchClientId
 
 Not supported in Cuebot: Cuebot never gives its Twitch login details to scripts. Reading it stops your code with a "not supported" error.

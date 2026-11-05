@@ -2,6 +2,8 @@
 
 Cuebot can run **your own Discord bot** in your own Discord server. The bot can:
 
+![Integrations > Apps & devices > Discord bot](../assets/screens/apps-devices-discord.png)
+
 - post your "I'm live!" message, with a nice coloured box (an **embed**), and change it to "Stream ended" later;
 - give people a role, like **Live notifications**, or take it away;
 - answer **slash commands** that people type in Discord, like `/socials`;

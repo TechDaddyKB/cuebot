@@ -8,6 +8,8 @@ can bring your Streamer.bot actions across. Text-to-speech is built in, so you d
 
 ## Bring your actions across
 
+![Settings > Import / Export](../assets/screens/page-import-export.png)
+
 1. In **Streamer.bot**, right-click the actions you want, choose **Export**, and copy the export text.
 2. In **Cuebot**, go to **Settings > Import / Export**, tab **Import**.
 3. Paste the text into the big box (or click **Paste**). You can also load a file with **Open file…**.
@@ -50,6 +52,8 @@ After an import, the **Import report** has three lists:
 - Cloud backups go to **your own Google Drive** (see [Backups and your data](backups-and-your-data.md)).
 
 ## Sharing your own actions
+
+![Settings > Import / Export > Export](../assets/screens/import-export-export.png)
 
 **Settings > Import / Export**, tab **Export**: tick the actions, commands, timers and global variables you want, and
 click **Build string**. You get a code that starts with `CUEBOT1:`. Click **Copy** to share it, or **Save file…** for a

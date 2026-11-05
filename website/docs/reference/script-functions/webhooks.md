@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## webhooks.sendTestEvent
 
 Pretends a webhook service sent an event, like a Ko-fi donation, so you can test your triggers and alerts. Nothing is sent to the service.

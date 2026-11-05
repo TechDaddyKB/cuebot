@@ -10,6 +10,8 @@ Everything is on **Overlays > Overlays & Widgets**.
 
 ## Make your first overlay
 
+![The Overlays & Widgets page](../assets/screens/page-overlays-widgets.png)
+
 1. Go to **Overlays > Overlays & Widgets**.
 2. Type a name in **New overlay name**, like `Main`.
 3. Pick the canvas size. Choose the same size as your stream, usually **1080p (1920 × 1080)**. Streaming in
@@ -76,7 +78,8 @@ Click **Design…** to open the overlay in your web browser, where you can drag 
 
 - **+ Add** puts in text, images, videos, a slideshow or any widget.
 - The **Layers** panel lists everything; the **Properties** panel changes the selected thing.
-- Undo, redo, zoom, bring forward / send backward, group and delete are in the toolbar.
+- Undo, redo and zoom are in the toolbar. Bring forward / send backward, group and delete are in the **Layers**
+  panel.
 - Changes save on their own.
 
 ## Alerts

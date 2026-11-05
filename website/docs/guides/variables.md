@@ -73,6 +73,8 @@ the **Settings** page, tab **Audio & text**.
 
 ## ~Global variables~
 
+![Automation > Variables, with saved values](../assets/screens/page-variables.png)
+
 A **global variable** remembers a value between runs. Use it for counters and anything you want to keep.
 
 **Example: a death counter.**

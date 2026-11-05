@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## TwitchGetRewards
 
 Lists every channel point reward of your channel, with title, cost, prompt, colour and whether it is on or paused. IsOurs tells you if Cuebot created it (only those can be changed).

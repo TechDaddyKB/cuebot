@@ -8,11 +8,17 @@ Cuebot understands two programming languages:
 - **C#** (say "C sharp"). Code written for Streamer.bot works here without changes.
 - **Python**. Cuebot installs Python for you the first time you need it.
 
+More on code: [Python in detail](python.md) explains every Python helper, and
+[Using your own code editor](code-editors.md) sets up Visual Studio Code, Visual Studio, Rider, PyCharm or any other
+editor, with suggestions as you type.
+
 !!! warning "Only run code you trust"
     Code runs with full access to your computer, like any program you start. It can read your files and use the
     internet. Only paste code from people you trust, and read it first.
 
 ## Where the code goes
+
+![A code step in the action editor](../assets/screens/actions-python-step.png)
 
 1. Open an action (see [How actions work](actions-and-triggers.md)).
 2. On the **Sub-actions** tab click **+ Sub-action**, type `code`, and pick **Run C# code** or **Run Python code**.
@@ -148,7 +154,8 @@ Here `return false;` stops the action too. Leaving out `return` carries on.
 | Helper | What it does |
 | --- | --- |
 | `Cb.Call(name, new { ... })` | Runs any [script function](../reference/script-functions/index.md) by name. Gives back its answer as JSON (`JsonElement`). |
-| `Cb.Log(message, level)` | Writes a line in Cuebot's log. `level` is `"Info"` (the default), `"Warning"`, `"Error"` or `"Debug"`. || `Cb.GetGlobal(name)` | Reads a global variable as text, or `null` when it does not exist. |
+| `Cb.Log(message, level)` | Writes a line in Cuebot's log. `level` is `"Info"` (the default), `"Warning"`, `"Error"` or `"Debug"`. |
+| `Cb.GetGlobal(name)` | Reads a global variable as text, or `null` when it does not exist. |
 | `Cb.SetGlobal(name, value, persisted)` | Saves a global variable. `persisted` (true at the start) keeps it after a restart. |
 | `Cb.RunAction(name)` | Runs another action, waits for it, and gives back true when it worked. |
 | `Cb.SendChat(message)` | Sends a message in your Twitch chat. |
@@ -232,6 +239,8 @@ cb.send_chat(f"Deaths so far: {deaths}")
 ```
 
 ### Python packages and your own Python
+
+![Automation > Scripting](../assets/screens/page-scripting.png)
 
 **Automation > Scripting** sets Python up:
 

@@ -3,6 +3,8 @@
 
 C# methods for a **Run C# code** step. See [C# methods](index.md) for how to use them.
 
+![A Run C# code step in the action editor](../../assets/screens/actions-csharp-step.png)
+
 ## EnableCommand
 
 Turns a command on, by its id or name. Stops your code with an error when no command has that id or name.

@@ -3,6 +3,8 @@
 
 Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See [Script functions](index.md) for how to use them.
 
+![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
+
 ## goxlr.command
 
 Sends a raw command to the GoXLR Utility. For advanced users who know the GoXLR Utility's command names.
