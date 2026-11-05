@@ -26,6 +26,8 @@ public sealed class GlobalVariables : IDisposable
     private readonly object _gate = new();
     private readonly Dictionary<string, Entry> _values = new(StringComparer.OrdinalIgnoreCase);
     private readonly JsonFile<Dictionary<string, object?>>? _file;
+    private readonly JsonFile<List<string>>? _modFile;
+    private readonly HashSet<string> _setByMod = new(StringComparer.OrdinalIgnoreCase);
 
     public GlobalVariables(AppPaths? paths, AppLog log, TextEnvironment? text = null)
     {
@@ -39,6 +41,8 @@ public sealed class GlobalVariables : IDisposable
             _file.Value[key] = value;
             _values[key] = new Entry(key, value, true, loadedAt);
         }
+        _modFile = new JsonFile<List<string>>(paths.File("mod-marks.json"), log);
+        _setByMod.UnionWith(_modFile.Value);
     }
 
     /// <summary>Clock, culture and error log used when text is resolved against these globals.</summary>
@@ -182,8 +186,32 @@ public sealed class GlobalVariables : IDisposable
         return changes.Count;
     }
 
+    /// <summary>
+    /// Variable names (global or user) a mod portal member's step last set (<see cref="ModInfluence"/>). Kept in
+    /// mod-marks.json; a later write by the streamer's own step clears the mark.
+    /// </summary>
+    public IReadOnlyCollection<string> SetByMod()
+    {
+        lock (_gate) return [.. _setByMod];
+    }
+
+    public void MarkSetByMod(string name, bool byMod)
+    {
+        lock (_gate)
+        {
+            if (!(byMod ? _setByMod.Add(name) : _setByMod.Remove(name)) || _modFile is null) return;
+            _modFile.Value.Clear();
+            _modFile.Value.AddRange(_setByMod.Order(StringComparer.OrdinalIgnoreCase));
+            _modFile.ScheduleSave();
+        }
+    }
+
     /// <summary>Writes pending changes to disk now.</summary>
-    public void Flush() => _file?.Flush();
+    public void Flush()
+    {
+        _file?.Flush();
+        _modFile?.Flush();
+    }
 
     private GlobalVariableChange Store(string name, object? value, bool persist)
     {
@@ -206,7 +234,11 @@ public sealed class GlobalVariables : IDisposable
         VariableChanged?.Invoke(change);
     }
 
-    public void Dispose() => _file?.Dispose();
+    public void Dispose()
+    {
+        _file?.Dispose();
+        _modFile?.Dispose();
+    }
 
     private sealed record Entry(string Name, object? Value, bool Persisted, DateTimeOffset LastWrite);
 }

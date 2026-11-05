@@ -31,7 +31,7 @@ internal sealed class EngineHarness : IDisposable
             new SetActionQueueBlockingSubAction(Profile), new SetActionQueuePauseSubAction(Queues, Profile),
             new SetTriggerStateSubAction(Profile), new SetSubActionStateSubAction(Profile), new SetSubActionWeightSubAction(Profile),
             new GetActionGroupStateSubAction(Profile), new SetActionGroupStateSubAction(Profile), new TriggerCustomEventSubAction(Bus),
-            new RandomNumberSubAction(),
+            new RandomNumberSubAction(), new SetGlobalSubAction(),
         ],
         [
             new EventTriggerType("test.range", "Test", "Range event", "test.range",

@@ -466,10 +466,13 @@ public sealed class ActionEngine : IDisposable
             throw new InvalidOperationException($"{handler.DisplayName} runs its own steps; give it to steps.runList with its branches");
         }
         SubActionStarting?.Invoke(new SubActionStart(context.Action, step, handler, context.Args));
+        ModInfluence.BeforeStep(context, handler, step);
         SubActionResult result;
         try
         {
-            result = await handler.ExecuteAsync(context, ResolveParameters(handler, step, context), ct).ConfigureAwait(false);
+            var values = ResolveParameters(handler, step, context);
+            result = await handler.ExecuteAsync(context, values, ct).ConfigureAwait(false);
+            ModInfluence.AfterStep(context, handler, step, values);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -489,6 +492,7 @@ public sealed class ActionEngine : IDisposable
             ?? throw new InvalidOperationException($"Unknown sub-action type '{step.Type}' (is its module installed?)");
         SubActionStarting?.Invoke(new SubActionStart(context.Action, step, handler, context.Args));
 
+        ModInfluence.BeforeStep(context, handler, step);
         if (handler is IFlowContainerHandler container)
         {
             try
@@ -506,6 +510,7 @@ public sealed class ActionEngine : IDisposable
         {
             var values = ResolveParameters(handler, step, context);
             result = await handler.ExecuteAsync(context, values, ct).ConfigureAwait(false);
+            ModInfluence.AfterStep(context, handler, step, values);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -564,5 +569,5 @@ public sealed class ActionEngine : IDisposable
     }
 
     /// <summary>A sub-action failed; carries "Display name: message" and is not re-wrapped by enclosing containers.</summary>
-    private sealed class SubActionFailedException(string message, Exception inner) : InvalidOperationException(message, inner);
+    internal sealed class SubActionFailedException(string message, Exception? inner = null) : InvalidOperationException(message, inner);
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Cuebot.Core.Actions;
 
 /// <summary>
@@ -78,6 +80,14 @@ public sealed class SubActionDefinition
     public double Weight { get; set; } = 1;
 
     public NodeLayout? Layout { get; set; }
+
+    /// <summary>
+    /// The mod portal member who last added or changed this step (docs/MOD_PORTAL_PLAN.md); null for the streamer's
+    /// own steps. Once such a step has run, steps that run code, programs or files refuse to in the same run
+    /// (<see cref="ModInfluence"/>).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? EditedBy { get; set; }
 
     public List<SubActionDefinition> Branch(string name)
     {

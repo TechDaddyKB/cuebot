@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Cuebot.Core.Actions;
 
 /// <summary>
@@ -28,7 +30,10 @@ public enum StepRisk
 /// </summary>
 public static class StepRiskCatalog
 {
-    public static StepRisk ForStep(string typeId) => Find(StepRules, typeId) ?? StepRisk.Never;
+    private static readonly ConcurrentDictionary<string, StepRisk> StepCache = new(StringComparer.Ordinal);
+
+    /// <summary>Cached: the engine asks before every step it runs (<see cref="ModInfluence"/>).</summary>
+    public static StepRisk ForStep(string typeId) => StepCache.GetOrAdd(typeId, id => Find(StepRules, id) ?? StepRisk.Never);
 
     public static StepRisk ForTrigger(string typeId) => Find(TriggerRules, typeId) ?? StepRisk.Never;
 
