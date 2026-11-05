@@ -167,7 +167,8 @@ internal sealed partial class PythonFunctionLibrary
         sb.Append("from typing import Any\n\n\n");
         sb.Append("class CuebotError(Exception):\n    \"\"\"Raised when a Cuebot function fails.\"\"\"\n\n\n");
         sb.Append("class Cuebot:\n");
-        sb.Append(HandWrittenStub).Append('\n');
+        // The source file has CRLF line endings in a Windows checkout; the stub always uses LF.
+        sb.Append(HandWrittenStub.ReplaceLineEndings("\n")).Append('\n');
         foreach (var method in Methods)
         {
             sb.Append($"    def {method.Name}({Signature(method, typed: true)}) -> Any:\n");

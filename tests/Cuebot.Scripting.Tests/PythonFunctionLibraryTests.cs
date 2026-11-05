@@ -134,6 +134,8 @@ public sealed class PythonFunctionLibraryTests
         Assert.Contains("    def custom_ping(self) -> Any:\n", stub);
         Assert.Contains("    def obs(self, request_type: str, data: Any = None) -> Any:\n", stub);
         Assert.EndsWith("\n\ncb: Cuebot\n", stub);
+        Assert.DoesNotContain('\r', stub);
+        Assert.DoesNotContain('\r', module);
     }
 
     /// <summary>Runs the generated module and stub in Python: they parse, and help text with quotes and backslashes survives.</summary>
