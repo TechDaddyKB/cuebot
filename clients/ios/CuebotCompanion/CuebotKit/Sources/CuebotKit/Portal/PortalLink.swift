@@ -158,8 +158,20 @@ public final class PortalLink: NSObject, URLSessionWebSocketDelegate, @unchecked
             case .success:
                 self.receiveLoop()   // the relay sends only binary frames
             case .failure:
-                self.fail(Self.closeReason(self.closeCodeNow()))
+                self.whenCloseCodeKnown { self.fail(Self.closeReason($0)) }
             }
+        }
+    }
+
+    /// A failed receive can come before the delegate hears the relay's close code (4404, 4429…); then `didCloseWith`
+    /// usually follows within moments and words it first. Waits briefly for it, then goes with what is known.
+    private func whenCloseCodeKnown(_ then: @escaping @Sendable (Int) -> Void) {
+        lock.lock()
+        let known = closeCode
+        lock.unlock()
+        if let known { return then(known) }
+        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500)) { [weak self] in
+            then(self?.closeCodeNow() ?? 0)
         }
     }
 
@@ -203,7 +215,7 @@ public final class PortalLink: NSObject, URLSessionWebSocketDelegate, @unchecked
             switch result {
             case .success(.data(let data)): self?.finishHello(.success(data))
             case .success: self?.finishHello(.failure(LinkClosed(Self.closeReason(0))))
-            case .failure: self?.finishHello(.failure(LinkClosed(Self.closeReason(self?.closeCodeNow() ?? 0))))
+            case .failure: self?.whenCloseCodeKnown { [weak self] in self?.finishHello(.failure(LinkClosed(Self.closeReason($0)))) }
             }
         }
     }
@@ -219,9 +231,11 @@ public final class PortalLink: NSObject, URLSessionWebSocketDelegate, @unchecked
     }
 
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
-        let words = Self.closeReason(closeCodeNow())
-        finishHello(.failure(LinkClosed(words)))
-        if portalSession != nil { fail(words) }
+        whenCloseCodeKnown { [weak self] code in
+            let words = Self.closeReason(code)
+            self?.finishHello(.failure(LinkClosed(words)))
+            if self?.portalSession != nil { self?.fail(words) }
+        }
     }
 
     /// Words for the relay's close codes (portal/RELAY.md).
