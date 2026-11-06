@@ -4,7 +4,9 @@
 import { clientHello, finishHandshake, newEphemeral, type Bytes, type PortalSession } from "../src/crypto.js";
 import { closeReason } from "./flow.js";
 
-export type Answer = { ok: boolean; error?: string; signIn?: boolean; [key: string]: unknown };
+import type { Answer } from "./host.js";
+
+export type { Answer };
 
 export class LinkClosed extends Error {}
 

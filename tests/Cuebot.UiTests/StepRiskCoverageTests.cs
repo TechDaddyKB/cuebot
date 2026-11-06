@@ -28,6 +28,17 @@ public sealed class StepRiskCoverageTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task The_portal_resolves_alongside_every_connection()
+    {
+        // The portal's controls list the connections, and the portal relay is one of them: this must not loop.
+        var ct = TestContext.Current.CancellationToken;
+        var resolve = Task.Run(() => _host.GetAll<IConnectionStatus>().Count(), ct);
+        Assert.True(await Task.WhenAny(resolve, Task.Delay(TimeSpan.FromSeconds(30), ct)) == resolve,
+            "Resolving the connections hung (a dependency loop).");
+        Assert.NotNull(_host.Get<Cuebot.Portal.PortalControls>());
+    }
+
+    [Fact]
     public void Code_programs_and_files_are_never_available()
     {
         foreach (var h in Registry.SubActions)

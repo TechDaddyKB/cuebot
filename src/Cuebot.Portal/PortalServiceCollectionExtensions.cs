@@ -1,12 +1,15 @@
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
+using Cuebot.Core.Chat;
 using Cuebot.Core.Logging;
+using Cuebot.Obs;
 using Cuebot.Core.Storage;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
 using Cuebot.Portal.SignIn;
+using Cuebot.Speech;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Portal;
@@ -34,9 +37,12 @@ public static class PortalServiceCollectionExtensions
             IPortalArea[] areas = [new ActionArea(sp.GetRequiredService<ProfileService>()), new CommandArea(sp.GetRequiredService<CommandStore>())];
             return new PortalChanges(file.Value, file.ScheduleSave, sp.GetRequiredService<PortalDirectory>(), areas);
         });
+        services.AddSingleton(sp => new PortalControls(sp.GetRequiredService<ProfileService>(),
+            sp.GetService<ChatHub>(), Later(sp), sp.GetService<ObsService>(), sp.GetService<QueueService>(),
+            sp.GetService<SpeechService>(), sp.GetService<AudioService>(), sp.GetService<AppLog>()));
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
-            sp.GetRequiredService<Registry>()));
+            sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>()));
         services.AddSingleton<IPortalIdentityExchange>(sp => new PortalIdentityExchange(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp =>
         {
@@ -49,5 +55,14 @@ public static class PortalServiceCollectionExtensions
         });
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PortalRelayClient>());
         return services;
+    }
+
+    /// <summary>
+    /// The connections, looked up when the dashboard asks. Resolving them up front would loop: the relay client is one
+    /// of them, and it needs <see cref="PortalApi"/>, which needs <see cref="PortalControls"/>.
+    /// </summary>
+    private static IEnumerable<IConnectionStatus> Later(IServiceProvider sp)
+    {
+        foreach (var c in sp.GetServices<IConnectionStatus>()) yield return c;
     }
 }

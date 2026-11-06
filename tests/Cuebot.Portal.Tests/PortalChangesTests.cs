@@ -78,6 +78,8 @@ public sealed class PortalPolicyTests
         Assert.Empty(PortalPolicy.CheckAction(scoped, null, Grouped(Action(Step("chat.send")), "mods")));
         Assert.NotEmpty(PortalPolicy.CheckRun(scoped, Grouped(Action(), "Other")));
         Assert.Empty(PortalPolicy.CheckRun(scoped, Grouped(Action(), "Mods")));
+        Assert.Contains("level", PortalPolicy.CheckRun(scoped, Grouped(Action(Step("chat.send"), Step("obs.setScene")), "Mods")).Single());
+        Assert.Contains("never", PortalPolicy.CheckRun(Tech, Action(Step("core.runProgram"))).Single());
 
         var watch = Action(Step("chat.send"));
         watch.Triggers.Add(new TriggerDefinition { Type = "core.fileTailLine" });

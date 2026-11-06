@@ -92,15 +92,17 @@ public sealed class PortalApiTests : IDisposable
     }
 
     [Fact]
-    public async Task Running_an_action_runs_it_as_set_up()
+    public async Task Running_an_action_needs_the_level_of_its_riskiest_step()
     {
-        var a = AddAction("Hype", "chat.send", "core.runProgram");
+        var chat = AddAction("Hello", "chat.send");
+        var program = AddAction("Hype", "chat.send", "core.runProgram");
         var list = (await Call(Member(DefaultRoles.StandardModId), "actions.list"))["actions"]!.AsArray();
-        Assert.True((bool)list.Single()!["locked"]!);
-        var result = await Call(Member(DefaultRoles.StandardModId), "actions.run", new JsonObject { ["id"] = a.Id.ToString() });
-        Assert.True((bool)result["ok"]!);
-        for (var i = 0; i < 100 && _program.Runs == 0; i++) await Task.Delay(20);
-        Assert.Equal(1, _program.Runs);   // the streamer's own program step, with no input from the mod
+        Assert.True((bool)list.Single(a => (string)a!["name"]! == "Hype")!["locked"]!);
+        Assert.True((bool)(await Call(Member(DefaultRoles.StandardModId), "actions.run", new JsonObject { ["id"] = chat.Id.ToString() }))["ok"]!);
+        foreach (var role in new[] { DefaultRoles.StandardModId, DefaultRoles.TechLeadId })
+            Assert.False((bool)(await Call(Member(role), "actions.run", new JsonObject { ["id"] = program.Id.ToString() }))["ok"]!);
+        await Task.Delay(100);
+        Assert.Equal(0, _program.Runs);   // program steps only ever run from the streamer's own triggers
     }
 
     [Fact]
@@ -166,4 +168,13 @@ public sealed class PortalApiTests : IDisposable
     }
 
     public void Dispose() => _engine.Dispose();
+
+    [Fact]
+    public async Task Sends_the_portal_ui_to_members()
+    {
+        var answer = await Call(Member(DefaultRoles.StandardModId), "ui");
+        Assert.True((bool)answer["ok"]!);
+        Assert.Contains("mount", (string?)answer["js"]);
+        Assert.NotEmpty((string?)answer["css"] ?? "");
+    }
 }

@@ -4,6 +4,7 @@
 
 import { base64Url, deviceProof, rawPublicKey, type Bytes } from "../src/crypto.js";
 import { authorizeUrl, deviceName, parseInvite, random, readReturn, relayOrigin, type PendingSignIn, type Provider, type Target } from "./flow.js";
+import type { PortalHost, PortalUiModule } from "./host.js";
 import { Link, LinkClosed, type Answer } from "./link.js";
 
 /** A device signed in to one streamer's Cuebot. The private key is non-extractable: script can use it, not read it. */
@@ -182,16 +183,48 @@ async function welcome(link: Link, target: Target, key: CryptoKeyPair, me: Answe
   const member = String(me.name ?? "");
   const role = String(me.role ?? "");
   await saveDevice({ relay: target.relay, fingerprint: target.fingerprint, key, member, role, at: Date.now() });
-  const signOut = button("Sign out on this device", async () => {
+  const signOut = async () => {
     await link.request("signout").catch(() => undefined);
     link.close();
     await forgetDevice(target.relay);
     show("Signed out", "This device is no longer signed in. Open an invite link or sign in again to come back.");
-  }, "secondary");
+  };
+
+  show(`Welcome, ${member}`, "Loading the mod portal…");
+  const ui = await link.request("ui");
+  if (ui.ok && typeof ui.js === "string" && typeof ui.css === "string") {
+    try {
+      await mountUi(ui.js, ui.css, { me, request: (op, body) => link.request(op, body), signOut });
+      return;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  // An older Cuebot without the portal UI: say who is signed in.
   show(`Welcome, ${member}`,
     el("p", role ? `You're signed in. Your role: ${role}.` : "You're signed in."),
-    "The full mod portal (actions, commands, sounds and more) arrives with the next Cuebot update. This device stays signed in until then.",
-    signOut);
+    "The streamer's Cuebot needs an update for the full mod portal. This device stays signed in until then.",
+    button("Sign out on this device", () => void signOut(), "secondary"));
+}
+
+/**
+ * Runs the portal UI the streamer's Cuebot sent. It is code from the Cuebot this device pinned at sign-in (the
+ * handshake proves it), loaded from blob: URLs, which the page's CSP allows for script and style and nothing else.
+ */
+async function mountUi(js: string, css: string, host: PortalHost): Promise<void> {
+  const style = document.createElement("link");
+  style.rel = "stylesheet";
+  style.href = URL.createObjectURL(new Blob([css], { type: "text/css" }));
+  document.head.append(style);
+  const url = URL.createObjectURL(new Blob([js], { type: "text/javascript" }));
+  try {
+    const module = (await import(/* @vite-ignore */ url)) as PortalUiModule;
+    main.replaceChildren();
+    document.body.classList.add("portal");
+    module.mount(main, host);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 async function start(): Promise<void> {

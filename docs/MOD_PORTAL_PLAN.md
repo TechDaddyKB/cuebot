@@ -1,8 +1,8 @@
 # Cuebot mod portal: plan
 
-- **Status (2026-11-05):** designed with Kris in chat. Phases 0 to 3 are built (see section 11). The relay Worker
+- **Status (2026-11-05):** designed with Kris in chat. Phases 0 to 4 are built (see section 11). The relay Worker
   `cuebot-portal` is deployed and serves `portal.`, `relay.` and `hooks.techdaddydigital.com` (attached 2026-11-05).
-  Mods can join by invite and sign in; the web portal UI (phase 4) is next.
+  Mods join by invite, sign in and use the web portal; ffmpeg and uploads (phase 5) are next.
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -81,7 +81,10 @@ Mod browser ──GET──▶ portal.techdaddydigital.com   (loader page and th
   UI bundle over the encrypted link, so the UI always matches the streamer's Cuebot version.
 - The loader is the trust anchor for web users (whoever controls the Worker could change it). The phone apps ship
   their own code and do not depend on it.
-- Strict CSP on the loader: no inline script, no third-party origins, `connect-src` only the relay.
+- Strict CSP on the loader: no inline script, no third-party origins, `connect-src` only the relay. The UI bundle
+  arrives over the link (`ui`) and runs from `blob:` URLs the loader makes, so `script-src` and `style-src` are
+  `'self' blob:`. The UI source is `portal/ui` (Preact); `npm run build` writes it to `src/Cuebot.Portal/Web`, which
+  Cuebot embeds, and CI fails when the committed build is stale.
 
 ## 4. Invites, sign-in and sessions
 
@@ -145,7 +148,8 @@ Every step type and trigger type declares a level. A test fails when a registere
 - Global and user variables a mod's step set are marked (`mod-marks.json`); a Never step whose settings, code
   included, name a marked variable refuses. The streamer's own write clears the mark.
 - Mods cannot change an action that has a Never step, nor a command that starts one (that would change who reaches
-  it). Running an action is allowed: it runs as the streamer set it up, with no input from the mod.
+  it). Running an action needs the role's level for its riskiest step (Never steps: no one), decided by Kris
+  2026-11-06; it runs as the streamer set it up, with no input from the mod.
 
 ### Default roles (the streamer can rename, change and add roles)
 
@@ -244,13 +248,15 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 1 ✅ | Cuebot core: members, roles, risk levels on every step and trigger type, permission-checked portal API, marked values, change log and undo, approval queue, desktop UI for invites and members | `StepRiskCatalog`, `ModInfluence`, `PortalDirectory`, `PortalPolicy`, `PortalChanges`, `PortalApi`, the Mod portal page |
 | 2 ✅ | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | `portal/worker`, `portal/RELAY.md`, `PortalRelayClient`; Worker tests in workerd; `PortalRelayLiveTests` passed against `wrangler dev`, the workers.dev address and `relay.techdaddydigital.com` |
 | 3 ✅ | Sign-in: Google, then Twitch, then Discord; console setup | `PortalSignInHandler`, `PortalIdentityExchange`, the loader (`portal/web`); `PortalSignInLiveTests` passed 2026-11-05: a real Google, Twitch and Discord account each joined by invite through `relay.techdaddydigital.com` |
-| 4 | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | UI tests; screenshots for the docs |
+| 4 ✅ | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | `portal/ui`, `PortalControls`; `PortalControlsTests`; `PortalUiLiveTests` + `portal/shots.mjs` drove the deployed loader against the real API (sign-in, editing and saving an action, every page, a Standard Mod's view, phone width) and took the docs screenshots |
 | 5 | ffmpeg CI build and the upload pipeline | Fuzzed and malformed files rejected; polyglots come out clean |
 | 6 | Overlays and widgets in the portal | Edit and upload from the portal show in OBS |
 | 7 | Phone app mod mode, Android then iOS (on the Mac) | Join, edit and approve from both phones |
 | 8 | Docs, privacy notice, wiki, release | mkdocs strict, wiki synced |
 
 ## 12. Open questions and later
+- Phase 4 left for later: live updates pushed from Cuebot (the pages refresh every 3 to 5 seconds), scenes and audio
+  for Streamlabs Desktop and Meld Studio, the approval queue on the phone, choice labels in the editor.
 - A Cloudflare spending alert on the account (section 10).
 - Exact upload limits and per-relay caps (measure in phase 2).
 - Later: Discord role checks; platform mod checks for YouTube, Kick and Rumble; a home-network shortcut for mods.

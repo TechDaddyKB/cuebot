@@ -23,6 +23,10 @@ public static class PortalPolicy
         var problems = new List<string>();
         if (!Has(role, PortalPermission.RunActions)) problems.Add("Your role cannot run actions.");
         if (!InScope(role, action.Group)) problems.Add($"Your role cannot use the group '{action.Group}'.");
+        // Running needs the same level as editing: a mod may not run a step they could not add themselves.
+        if (role is not null && Steps(action.SubActions).MaxBy(s => StepRiskCatalog.ForStep(s.Type)) is { } top
+            && StepRiskCatalog.ForStep(top.Type) is var risk && risk > role.MaxRisk)
+            problems.Add(Describe(top.Type, risk, "run"));
         return problems;
     }
 

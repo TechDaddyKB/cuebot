@@ -168,11 +168,12 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 // The portal pages: one page for the loader (web/main.ts, built to dist/loader.js) and the sign-in return address.
-// Script only from this origin; connections only here and to the relay.
+// Script only from this origin, plus blob: for the portal UI the streamer's Cuebot sends over the encrypted link (the
+// loader makes those blobs); connections only here and to the relay.
 function securityHeaders(env: Env): Record<string, string> {
 	const relay = env.PORTAL_DOMAIN ? ` wss://relay.${env.PORTAL_DOMAIN}` : "";
 	return {
-		"content-security-policy": `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'${relay}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+		"content-security-policy": `default-src 'none'; script-src 'self' blob:; style-src 'self' blob:; img-src 'self' blob: data:; media-src blob:; connect-src 'self'${relay}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
 		"referrer-policy": "no-referrer",
 		"x-content-type-options": "nosniff",
 		"cross-origin-opener-policy": "same-origin",

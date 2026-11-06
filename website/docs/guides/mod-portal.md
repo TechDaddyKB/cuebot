@@ -4,10 +4,6 @@ The mod portal lets your moderators help with your stream from anywhere: from th
 being at your computer. You decide what each mod may do. They might run actions, change chat commands, set up sound
 alerts, or more.
 
-!!! note "Coming in the next update"
-    Mods can already join and sign in. What they can do in the portal itself (actions, commands, sounds and more)
-    arrives in the next update; until then they see a welcome page with their role.
-
 ![The Mod portal page: an open invite, two mods with their roles, a change waiting for approval](../assets/screens/page-mod-portal.png)
 
 ## How it works
@@ -20,6 +16,50 @@ alerts, or more.
    `portal.techdaddydigital.com`. Every 30 days, or on a new device, they sign in again with the same account.
 
 You can change a mod's role, pause them or remove them at any time. A change applies at once.
+
+## What your mods see
+
+Mods open `portal.techdaddydigital.com` on their phone or computer. They only see the pages their role allows:
+
+| Page | What it does | Who (default roles) |
+|---|---|---|
+| **Home** | Quick buttons for the actions they may run, and live activity (follows, subs, raids, tips) | Everyone |
+| **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
+| **Commands** | Add and change chat commands | Everyone |
+| **Sounds** | Play the sounds your actions use, on stream | Everyone |
+| **Audio** | Volume and mute for your OBS audio sources | Everyone |
+| **Scenes** | Switch your OBS scene | Lead Mod, Tech Lead |
+| **Queues** | Pause, resume or clear action queues | Lead Mod, Tech Lead |
+| **Text-to-speech** | Say something with your default voice and word filters; pause, skip or turn it off | Everyone says; Lead Mod and Tech Lead control |
+| **My changes** | Their own changes, with Undo | Everyone |
+
+![The mod portal's home page: quick actions and live activity](../assets/screens/portal-home.png)
+
+In the action editor, steps above the mod's level are shown but locked, and the step list only offers the steps they
+may add. Before running an action that can change the stream itself (end it, ban someone, change the title), the
+portal asks the mod to confirm.
+
+![Editing an action in the mod portal](../assets/screens/portal-action-editor.png)
+
+<div class="grid" markdown>
+
+![The action list in the mod portal](../assets/screens/portal-actions.png)
+
+![The mod portal on a phone](../assets/screens/portal-phone.png)
+
+</div>
+
+Everything a mod does is written to Cuebot's log with their name: scene switches, volume changes, sounds played,
+text-to-speech. Each mod can press at most 30 such controls a minute.
+
+!!! note "Good to know"
+    - Scenes and audio work with OBS (not yet with Streamlabs Desktop or Meld Studio).
+    - **Sounds** lists the sound files your **Play sound** steps use. Mods cannot play any other file.
+    - Uploading sounds and images, and editing overlays, come in later updates.
+    - To **run** an action, a mod needs the level of its riskiest step, the same as for changing it. A Standard Mod
+      can run an action that only sends chat messages, but not one that changes the title. Actions with code,
+      program or file steps never run from the portal. The portal marks the actions a mod can't run. To keep an
+      action away from a role altogether, put it in a group the role cannot use (**Groups** on the role).
 
 ## Roles
 
@@ -42,7 +82,7 @@ The **level** decides which steps a mod may add or change:
 | 4 Trusted tech | Variables, web requests, decks, MIDI, devices and other apps |
 
 **Never, for anyone:** steps that run code (C# or Python), run programs, or read and write files. Mods cannot
-add them. They also cannot change an action that already has one, or a command that starts one. And whatever a mod
+add them, or run an action that has one. They also cannot change such an action, or a command that starts one. And whatever a mod
 changes can never reach those steps, not even through a variable: such a step refuses to run with what a mod set.
 
 A role can also be limited to some **groups** of actions and commands, like "Mod tools".

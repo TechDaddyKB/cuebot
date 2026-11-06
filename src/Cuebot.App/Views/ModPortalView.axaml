@@ -14,8 +14,6 @@
                     ToolTip.Tip="Keeps Cuebot connected to the portal relay (relay.techdaddydigital.com) so your mods can reach it. Everything between a mod and Cuebot is encrypted end to end; the relay stores nothing." />
           <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayStatus}" TextWrapping="Wrap" />
           <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding SignInOptions}" />
-          <TextBlock Foreground="{DynamicResource CuebotAccent}" TextWrapping="Wrap"
-                     Text="Mods can join and sign in now. What they can do in the portal itself (actions, commands, sounds and more) arrives in the next update." />
           <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayId, StringFormat='Your portal address: {0}'}"
                      ToolTip.Tip="This Cuebot's address on the portal. It is made from a key kept on this computer and is not tied to your name." />
           <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />

@@ -10,7 +10,9 @@
 		"noImplicitOverride": true,
 		"skipLibCheck": true,
 		"noEmit": true,
-		"isolatedModules": true
+		"isolatedModules": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "preact"
 	},
-	"include": ["src/**/*.ts", "web/**/*.ts", "test/*.ts", "vitest.config.ts"]
+	"include": ["src/**/*.ts", "web/**/*.ts", "ui/**/*.ts", "ui/**/*.tsx", "test/*.ts", "vitest.config.ts"]
 }

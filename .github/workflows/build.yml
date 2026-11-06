@@ -308,7 +308,7 @@ jobs:
 
   portal:
     # The mod portal (portal/): its browser-side encryption, checked against the same vectors as tests/Cuebot.Portal.Tests,
-    # and the shared relay Worker, tested inside workerd.
+    # the shared relay Worker, tested inside workerd, and the portal UI Cuebot embeds (built by npm test).
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -323,6 +323,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - name: The embedded portal UI matches portal/ui (run npm run build in portal/ and commit)
+        run: git diff --exit-code -- ../src/Cuebot.Portal/Web
 
   streamdeck-plugin:
     runs-on: ubuntu-latest

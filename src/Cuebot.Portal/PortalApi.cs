@@ -3,6 +3,7 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Web;
 
 namespace Cuebot.Portal;
 
@@ -13,7 +14,7 @@ namespace Cuebot.Portal;
 /// so a change of role or a suspension applies at once.
 /// </summary>
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
-    ActionEngine engine, Registry registry)
+    ActionEngine engine, Registry registry, PortalControls? controls = null)
 {
     public async Task<JsonObject> HandleAsync(Guid memberId, JsonObject request)
     {
@@ -22,9 +23,12 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
         var role = directory.RoleOf(member);
         try
         {
-            return (string?)request["op"] switch
+            var name = (string?)request["op"] ?? "";
+            if (controls is not null && PortalControls.Handles(name)) return await controls.HandleAsync(member, role, name, request).ConfigureAwait(false);
+            return name switch
             {
                 "me" => Me(member, role),
+                "ui" => PortalUi.Js.Length > 0 ? Ok(new JsonObject { ["js"] = PortalUi.Js, ["css"] = PortalUi.Css }) : Error("This Cuebot has no portal UI."),
                 "steps.catalog" => StepCatalog(role),
                 "actions.list" => Ok(new JsonObject { ["actions"] = new JsonArray([.. VisibleActions(role).Select(Summary)]) }),
                 "actions.get" => FindAction(role, request) is { } a ? Ok(new JsonObject { ["action"] = PortalChanges.ToNode(a) }) : NotFound(),
@@ -95,6 +99,8 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
         ["enabled"] = a.Enabled,
         ["steps"] = PortalPolicy.Steps(a.SubActions).Count(),
         ["locked"] = PortalPolicy.Steps(a.SubActions).Any(s => StepRiskCatalog.ForStep(s.Type) == StepRisk.Never),
+        // The riskiest step's level (5 for steps only the streamer may change): running needs it, and the portal asks first from 3.
+        ["risk"] = PortalPolicy.Steps(a.SubActions).Select(s => (int)StepRiskCatalog.ForStep(s.Type)).DefaultIfEmpty(0).Max(),
     };
 
     private ActionDefinition? FindAction(PortalRole? role, JsonObject request) =>

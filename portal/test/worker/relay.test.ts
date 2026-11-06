@@ -130,7 +130,8 @@ describe("portal pages", () => {
 			expect(res.status).toBe(200);
 			const csp = res.headers.get("content-security-policy");
 			expect(csp).toContain("default-src 'none'");
-			expect(csp).toContain("script-src 'self';");
+			expect(csp).toContain("script-src 'self' blob:;");
+			expect(csp).not.toContain("unsafe");
 			expect(csp).toContain("connect-src 'self' wss://relay.techdaddydigital.com;");
 			expect(res.headers.get("referrer-policy")).toBe("no-referrer");
 			const html = await res.text();
