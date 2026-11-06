@@ -16,7 +16,7 @@ Browser ──GET──▶ portal.techdaddydigital.com/   and   /auth/return
 
 | Host | Routes |
 | --- | --- |
-| `relay.<domain>` | `GET /connect?id=<relay id>` (Cuebot), `GET /c/<relay id>` (devices), `GET /` health check |
+| `relay.<domain>` | `GET /connect?id=<relay id>` (Cuebot), `GET /c/<relay id>` (devices), `GET /` health check; webhooks under `/h/<relay id>/...` too, for a relay URL override |
 | `hooks.<domain>` | `/<relay id>/<route secret>/<service>[/<path>]` |
 | `portal.<domain>` | `/`, `/auth/return`, `/portal.css` (placeholders until the loader, phase 4) |
 | any other `<name>.<domain>` | 404 |

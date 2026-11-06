@@ -1,8 +1,8 @@
 # Cuebot mod portal: plan
 
 - **Status (2026-11-05):** designed with Kris in chat. Phases 0, 1 and 2 are built (see section 11). The relay Worker
-  `cuebot-portal` is deployed at `cuebot-portal.kris-barrantes.workers.dev`; its custom domains (`portal.`, `relay.`,
-  `hooks.`) are not attached yet. Sign-in (phase 3) is next.
+  `cuebot-portal` is deployed and serves `portal.`, `relay.` and `hooks.techdaddydigital.com` (attached 2026-11-05).
+  Sign-in (phase 3) is next.
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -232,7 +232,7 @@ Every step type and trigger type declares a level. A test fails when a registere
 |---|---|---|
 | 0 ✅ | This plan; a crypto spike (handshake between .NET and WebCrypto, test vectors both ways) | `src/Cuebot.Portal/Crypto`, `portal/src/crypto.ts`, shared `portal/test/vectors.json` |
 | 1 ✅ | Cuebot core: members, roles, risk levels on every step and trigger type, permission-checked portal API, marked values, change log and undo, approval queue, desktop UI for invites and members | `StepRiskCatalog`, `ModInfluence`, `PortalDirectory`, `PortalPolicy`, `PortalChanges`, `PortalApi`, the Mod portal page |
-| 2 ✅ | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | `portal/worker`, `portal/RELAY.md`, `PortalRelayClient`; Worker tests in workerd; `PortalRelayLiveTests` passed against `wrangler dev` and the deployed workers.dev Worker. Custom domains still to attach |
+| 2 ✅ | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | `portal/worker`, `portal/RELAY.md`, `PortalRelayClient`; Worker tests in workerd; `PortalRelayLiveTests` passed against `wrangler dev`, the workers.dev address and `relay.techdaddydigital.com` |
 | 3 | Sign-in: Google, then Twitch, then Discord; console setup | A real mod account joins by invite on each provider |
 | 4 | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | UI tests; screenshots for the docs |
 | 5 | ffmpeg CI build and the upload pipeline | Fuzzed and malformed files rejected; polyglots come out clean |
@@ -241,9 +241,6 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 8 | Docs, privacy notice, wiki, release | mkdocs strict, wiki synced |
 
 ## 12. Open questions and later
-- Attach the custom domains `portal.`, `relay.` and `hooks.techdaddydigital.com` to the `cuebot-portal` Worker (asks
-  Kris first), then rerun `PortalRelayLiveTests` with `CUEBOT_PORTAL_RELAY_URL=https://relay.techdaddydigital.com`.
-  Until then the shared relay only works with `RelayUrl` set to the workers.dev address.
 - A Cloudflare spending alert on the account (section 10).
 - Discord: PKCE without client secret, or a compiled-in secret.
 - Google: reuse the existing project or a new one (depends on its publishing status).

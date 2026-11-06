@@ -6,6 +6,12 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
+  // Custom domains on the techdaddydigital.com zone. They take precedence over the zone's wildcard record.
+  "routes": [
+    { "pattern": "portal.techdaddydigital.com", "custom_domain": true },
+    { "pattern": "relay.techdaddydigital.com", "custom_domain": true },
+    { "pattern": "hooks.techdaddydigital.com", "custom_domain": true }
+  ],
   "durable_objects": {
     "bindings": [{ "name": "PORTAL_RELAY", "class_name": "PortalRelay" }]
   },

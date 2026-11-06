@@ -52,7 +52,10 @@ function route(url: URL, env: Env): { route: Route; path: string } | null {
 	switch (sub) {
 		case "relay": {
 			const r = relayRoute();
-			return r ? { route: r, path: p } : p === "/" ? { route: "portal", path: "/health" } : null;
+			if (r) return { route: r, path: p };
+			// Cuebot builds /h/ addresses from a relay URL override, so the relay host takes them too.
+			if (p.startsWith("/h/")) return { route: "hook", path: p.slice(2) };
+			return p === "/" ? { route: "portal", path: "/health" } : null;
 		}
 		case "hooks":
 			return { route: "hook", path: p };

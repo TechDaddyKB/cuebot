@@ -281,10 +281,12 @@ describe("webhooks", () => {
 		expect((await SELF.fetch(`${HOOKS}/${me.id}/${ROUTE_SECRET}/kofi`, { method: "POST", body: new Uint8Array(LIMITS.maxHookBody + 1) })).status).toBe(413);
 	});
 
-	it("also work under /h/ on the workers.dev address", async () => {
+	it("also work under /h/ on the workers.dev address and the relay host", async () => {
 		const { me, cuebot } = await onlineCuebot();
-		expect((await SELF.fetch(`https://cuebot-portal.example.workers.dev/h/${me.id}/${ROUTE_SECRET}/patreon`, { method: "POST", body: "{}" })).status).toBe(200);
-		expect((await cuebot.binary()).ch).toBe(HOOK_CHANNEL);
+		for (const base of ["https://cuebot-portal.example.workers.dev", RELAY]) {
+			expect((await SELF.fetch(`${base}/h/${me.id}/${ROUTE_SECRET}/patreon`, { method: "POST", body: "{}" })).status).toBe(200);
+			expect((await cuebot.binary()).ch).toBe(HOOK_CHANNEL);
+		}
 		cuebot.ws.close();
 	});
 });
