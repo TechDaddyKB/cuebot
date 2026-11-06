@@ -49,6 +49,7 @@ cc="${cross}gcc"; [ "$os" = darwin ] && cc=clang
 prefix="$work/prefix"
 export CC="$cc" CFLAGS="-O2 $extra_cflags" LDFLAGS="$extra_ldflags"
 export PKG_CONFIG_PATH="$prefix/lib/pkgconfig" PKG_CONFIG_LIBDIR="$prefix/lib/pkgconfig"
+# Empty arrays are expanded as ${a[@]+"${a[@]}"}: macOS ships Bash 3.2, where "${a[@]}" of an empty array fails set -u.
 hostflag=(); [ -n "$host" ] && hostflag=(--host="$host")
 
 mkdir -p "$sources" "$work" "$out"
@@ -66,16 +67,16 @@ done
   make -j"$jobs" libz.a >/dev/null && make install >/dev/null )
 
 ( cd "$work/lame"
-  ./configure "${hostflag[@]}" --prefix="$prefix" --enable-static --disable-shared --disable-frontend --disable-decoder \
+  ./configure ${hostflag[@]+"${hostflag[@]}"} --prefix="$prefix" --enable-static --disable-shared --disable-frontend --disable-decoder \
     --disable-gtktest --disable-analyzer-hooks >/dev/null
   make -j"$jobs" >/dev/null && make install >/dev/null )
 
 ( cd "$work/opus"
-  ./configure "${hostflag[@]}" --prefix="$prefix" --enable-static --disable-shared --disable-doc --disable-extra-programs >/dev/null
+  ./configure ${hostflag[@]+"${hostflag[@]}"} --prefix="$prefix" --enable-static --disable-shared --disable-doc --disable-extra-programs >/dev/null
   make -j"$jobs" >/dev/null && make install >/dev/null )
 
 ( cd "$work/libwebp"
-  ./configure "${hostflag[@]}" --prefix="$prefix" --enable-static --disable-shared --enable-libwebpmux --disable-libwebpdemux \
+  ./configure ${hostflag[@]+"${hostflag[@]}"} --prefix="$prefix" --enable-static --disable-shared --enable-libwebpmux --disable-libwebpdemux \
     --disable-libwebpdecoder --disable-libwebpextras --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic \
     --disable-sdl --disable-gl >/dev/null
   make -j"$jobs" >/dev/null && make install >/dev/null )
@@ -98,7 +99,7 @@ filters=(scale format aformat aresample fps null anull setsar)
 threads=(); [ "$os" = mingw32 ] && threads=(--enable-w32threads)
 crossflags=(); [ -n "$cross$host" ] && crossflags=(--enable-cross-compile --cross-prefix="$cross")
 
-config=(--prefix="$prefix" --arch="$arch" --target-os="$os" --cc="$cc" "${crossflags[@]}" "${threads[@]}"
+config=(--prefix="$prefix" --arch="$arch" --target-os="$os" --cc="$cc" ${crossflags[@]+"${crossflags[@]}"} ${threads[@]+"${threads[@]}"}
   --pkg-config=pkg-config --pkg-config-flags=--static
   --extra-cflags="-I$prefix/include $extra_cflags" --extra-ldflags="-L$prefix/lib $extra_ldflags"
   --disable-everything --disable-autodetect --disable-network --disable-doc --disable-debug --disable-avdevice
