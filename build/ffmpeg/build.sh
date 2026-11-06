@@ -7,7 +7,7 @@
 #
 # rid: linux-x64, linux-arm64, win-x64, osx-x64 or osx-arm64. win-x64 is cross-built on Linux (mingw-w64); linux-arm64
 # builds natively on arm64 or with aarch64-linux-gnu-gcc on x64; osx-x64 builds on Apple silicon with -arch x86_64.
-# Needs a C compiler, make, curl and nasm (x64 targets). Sources are downloaded once and checked against the SHA-256
+# Needs C and C++ compilers (libvpx has a C++ file), make, curl and nasm (x64 targets). Sources are downloaded once and checked against the SHA-256
 # sums below (CUEBOT_FFMPEG_SOURCES keeps them; CUEBOT_FFMPEG_WORK holds the build).
 set -euo pipefail
 
