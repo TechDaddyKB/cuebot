@@ -6,7 +6,7 @@ import Testing
 
 /// A stand-in for the relay and the streamer's Cuebot on a local WebSocket: answers the handshake with its identity key,
 /// then answers every request with {ok, req, op, body}. "binding" answers with the connection's binding, "close"
-/// closes the socket with the code in the body. `closeCode` closes every new connection before the handshake.
+/// closes the socket with the code in the body. `closeCode` closes every new connection instead of the handshake.
 final class FakePortalCuebot: @unchecked Sendable {
     let identity = P256.Signing.PrivateKey()
     var closeCode: Int?
@@ -48,7 +48,9 @@ final class FakePortalCuebot: @unchecked Sendable {
     private func accept(_ connection: NWConnection) {
         connection.start(queue: queue)
         if let code = closeCode {
-            close(connection, code)
+            // The relay closes as soon as it accepts; waiting for the client's hello first keeps the test from racing
+            // the client's own open on slow CI simulators (the real relay's 4404 was checked by hand on a simulator).
+            connection.receiveMessage { [weak self] _, _, _, _ in self?.close(connection, code) }
             return
         }
         var session: PortalSession?
