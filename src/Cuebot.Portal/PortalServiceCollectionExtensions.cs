@@ -9,6 +9,7 @@ using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
 using Cuebot.Portal.SignIn;
+using Cuebot.Portal.Uploads;
 using Cuebot.Speech;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,12 +21,19 @@ public static class PortalServiceCollectionExtensions
     /// <summary>
     /// Adds portal.json and portal-changes.json, <see cref="PortalDirectory"/>, <see cref="PortalChanges"/>,
     /// <see cref="PortalApi"/>, provider sign-in (<see cref="PortalIdentityExchange"/>) and <see cref="PortalRelayClient"/>
-    /// (also as <see cref="IConnectionStatus"/>) with the sign-in handler on its device links.
+    /// (also as <see cref="IConnectionStatus"/>) with the sign-in handler on its device links, and uploads
+    /// (portal-media.json, the portal-media folder, <see cref="PortalUploads"/>).
     /// </summary>
     public static IServiceCollection AddPortal(this IServiceCollection services)
     {
         services.AddSettingsFile<PortalSettings>("portal.json");
         services.AddSettingsFile<PortalChangeLog>("portal-changes.json");
+        services.AddSettingsFile<PortalMediaLibrary>("portal-media.json");
+        services.AddSingleton(sp =>
+        {
+            var file = sp.GetRequiredService<JsonFile<PortalMediaLibrary>>();
+            return new PortalMediaStore(file.Value, file.ScheduleSave, sp.GetRequiredService<AppPaths>().GetDirectory("portal-media"));
+        });
         services.AddSingleton(sp =>
         {
             var file = sp.GetRequiredService<JsonFile<PortalSettings>>();
@@ -34,15 +42,20 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp =>
         {
             var file = sp.GetRequiredService<JsonFile<PortalChangeLog>>();
-            IPortalArea[] areas = [new ActionArea(sp.GetRequiredService<ProfileService>()), new CommandArea(sp.GetRequiredService<CommandStore>())];
+            IPortalArea[] areas = [new ActionArea(sp.GetRequiredService<ProfileService>()), new CommandArea(sp.GetRequiredService<CommandStore>()),
+                new UploadArea(sp.GetRequiredService<PortalMediaStore>())];
             return new PortalChanges(file.Value, file.ScheduleSave, sp.GetRequiredService<PortalDirectory>(), areas);
         });
         services.AddSingleton(sp => new PortalControls(sp.GetRequiredService<ProfileService>(),
             sp.GetService<ChatHub>(), Later(sp), sp.GetService<ObsService>(), sp.GetService<QueueService>(),
             sp.GetService<SpeechService>(), sp.GetService<AudioService>(), sp.GetService<AppLog>()));
+        // Uploads are off (and say so) when no ffmpeg is found.
+        services.AddSingleton(sp => new PortalUploads(sp.GetRequiredService<PortalMediaStore>(), sp.GetRequiredService<PortalChanges>(),
+            MediaTools.Find() is { } tools ? new MediaCleaner(tools) : null, sp.GetRequiredService<AppPaths>().File("portal-quarantine"),
+            sp.GetService<AppLog>()));
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
-            sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>()));
+            sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>(), sp.GetRequiredService<PortalUploads>()));
         services.AddSingleton<IPortalIdentityExchange>(sp => new PortalIdentityExchange(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp =>
         {

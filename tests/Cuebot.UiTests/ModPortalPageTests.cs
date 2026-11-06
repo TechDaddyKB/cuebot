@@ -11,6 +11,7 @@ using Cuebot.Core.Logging;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Crypto;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Uploads;
 using Cuebot.UiTests.Speech;
 
 namespace Cuebot.UiTests;
@@ -21,12 +22,13 @@ public sealed class ModPortalPageTests
     private readonly CommandStore _commands;
     private readonly PortalDirectory _directory = new(new PortalSettings(), () => { });
     private readonly PortalChanges _changes;
+    private readonly PortalMediaStore _media = new(new PortalMediaLibrary(), () => { }, Directory.CreateTempSubdirectory("cuebot-media-").FullName);
 
     public ModPortalPageTests()
     {
         _commands = new CommandStore(null, _log);
         _changes = new PortalChanges(new PortalChangeLog(), () => { }, _directory,
-            [new ActionArea(new ProfileService(null, _log)), new CommandArea(_commands)]);
+            [new ActionArea(new ProfileService(null, _log)), new CommandArea(_commands), new UploadArea(_media)]);
     }
 
     private PortalMember Join(Guid role, string name)
@@ -120,6 +122,28 @@ public sealed class ModPortalPageTests
         vm.Roles.Single(r => r.Id == DefaultRoles.TechLeadId).DeleteCommand.Execute(null);
         Assert.Contains("still given", vm.Message);
         Assert.NotNull(_directory.Role(DefaultRoles.TechLeadId));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task A_pending_upload_can_be_opened_before_approving()
+    {
+        var standard = Join(DefaultRoles.StandardModId, "sam");
+        var cleaned = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".mp3");
+        await File.WriteAllBytesAsync(cleaned, [0xFF, 0xFB, 0x90, 0x00], TestContext.Current.CancellationToken);
+        var item = new PortalMediaItem { Name = "Air horn", Kind = UploadKind.Sound, File = _media.Adopt(cleaned, UploadKind.Sound, "mp3") };
+        await _changes.SubmitAsync(standard, UploadArea.AreaName, item.Id, PortalChanges.ToNode(item));
+
+        var vm = new ModPortalViewModel(_directory, _changes, media: _media);
+        var window = Show(vm);
+        var pending = Assert.Single(vm.Pending);
+        Assert.True(pending.CanOpen);
+        Assert.Contains("sam uploaded the sound 'Air horn'", pending.Text);
+        Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Content as string == "Open" && b.IsVisible);
+
+        pending.ApproveCommand.Execute(null);
+        UiPump.Pump();
+        Assert.Single(_media.Items);
         window.Close();
     }
 }

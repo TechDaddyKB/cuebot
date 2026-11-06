@@ -27,6 +27,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer. They only se
 | **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
 | **Commands** | Add and change chat commands | Everyone |
 | **Sounds** | Play the sounds your actions use, on stream | Everyone |
+| **Uploads** | Upload sounds, pictures, GIFs and videos for your actions (see [Uploads](#uploads)) | Everyone uploads sounds; Lead Mod and Tech Lead also pictures and video |
 | **Audio** | Volume and mute for your OBS audio sources | Everyone |
 | **Scenes** | Switch your OBS scene | Lead Mod, Tech Lead |
 | **Queues** | Pause, resume or clear action queues | Lead Mod, Tech Lead |
@@ -55,11 +56,45 @@ text-to-speech. Each mod can press at most 30 such controls a minute.
 !!! note "Good to know"
     - Scenes and audio work with OBS (not yet with Streamlabs Desktop or Meld Studio).
     - **Sounds** lists the sound files your **Play sound** steps use. Mods cannot play any other file.
-    - Uploading sounds and images, and editing overlays, come in later updates.
+    - Editing overlays from the portal comes in a later update.
     - To **run** an action, a mod needs the level of its riskiest step, the same as for changing it. A Standard Mod
       can run an action that only sends chat messages, but not one that changes the title. Actions with code,
       program or file steps never run from the portal. The portal marks the actions a mod can't run. To keep an
       action away from a role altogether, put it in a group the role cannot use (**Groups** on the role).
+
+## Uploads
+
+Mods can upload files for your alerts and actions on the **Uploads** page, and then pick them in a step.
+
+![Uploading a sound in the mod portal](../assets/screens/portal-uploads.png)
+
+| Kind | Mods can send | Cuebot keeps | Limits |
+|---|---|---|---|
+| Sound | MP3, WAV, Ogg (Vorbis or Opus), FLAC, AAC/M4A, or the sound of an MP4 or WebM | MP3 | 25 MB, 60 seconds |
+| Picture | PNG, JPEG, WebP | PNG (up to 4096 pixels a side) | 15 MB |
+| GIF | GIF | Animated WebP (up to 1280 pixels a side) | 15 MB, 30 seconds |
+| Video | MP4 or MOV (H.264, HEVC), WebM (VP8, VP9; transparency is kept) | WebM (VP9, Opus sound), up to 1920×1080 and 60 frames a second | 200 MB, 2 minutes |
+
+**Nothing a mod uploads reaches your computer as it was sent.** Cuebot looks at the file's first bytes (never its
+name) and refuses anything it does not recognise: SVG, web pages, scripts, archives, programs. Then it decodes the
+file completely and makes a new one from the pictures and sound alone, with no names, tags or other data from the
+original. A file with something hidden in it comes out as a plain sound or picture, or not at all. The checks run
+one file at a time in a separate program with time and memory limits, at low priority so your stream does not
+notice.
+
+- Uploads follow the mod's change setting. A Standard Mod's upload waits under **Waiting for your approval**: press
+  **Open** to see or hear the cleaned file first, then **Approve** or **Reject**.
+- In the action editor, the steps **Play sound**, **Play sound from folder**, **Set image source file** and
+  **Set media source file** offer the uploads as a list. Mods cannot point these steps at any other file on your
+  computer. Steps you set up keep your own files until a mod picks something else.
+- Each mod can keep up to 100 uploads and 1 GB. They can remove their own; Lead Mods and Tech Leads can remove anyone's.
+- Uploads are stored in the `portal-media` folder of Cuebot's data folder, with random file names.
+
+!!! note "Where uploads work"
+    Cuebot checks uploads with its own small build of [FFmpeg](https://ffmpeg.org) that comes with the Windows, macOS
+    and Linux downloads (see [Third-party notices](https://github.com/TechDaddyKB/cuebot/blob/main/THIRD-PARTY-NOTICES.md)).
+    The AUR package `cuebot` uses your system's `ffmpeg` (an optional dependency). The Flatpak has no FFmpeg yet, so
+    uploads are off there; the portal says so.
 
 ## Roles
 

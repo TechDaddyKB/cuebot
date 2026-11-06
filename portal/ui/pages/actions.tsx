@@ -1,9 +1,15 @@
-import { useEffect, useState } from "preact/hooks";
+import { createContext } from "preact";
+import { useContext, useEffect, useState } from "preact/hooks";
 import { changeMessage, confirmRun, LEVELS, useLoad, usePortal, type Answer } from "../api.js";
 import { Check, Field, Select, LoadError } from "../widgets.js";
+import { describe, type UploadItem, type UploadKind, type Uploads } from "./uploads.js";
 
 interface Summary { id: string; name: string; group: string; enabled: boolean; steps: number; locked: boolean; risk?: number }
-interface Param { key: string; label: string; kind: "Text" | "Multiline" | "Number" | "Boolean" | "Choice" | "Code"; default: string; choices: string[]; help: string }
+interface Param {
+  key: string; label: string; kind: "Text" | "Multiline" | "Number" | "Boolean" | "Choice" | "Code"; default: string; choices: string[]; help: string;
+  /** A file setting: the upload kinds it takes (empty: the folder of uploaded sounds). */
+  upload?: UploadKind[];
+}
 interface StepType { type: string; name: string; category: string; risk: number; branches: string[]; parameters: Param[] }
 interface TriggerType { type: string; name: string; category: string; parameters: Param[] }
 interface Catalog extends Answer { steps: StepType[]; triggers: TriggerType[] }
@@ -76,11 +82,14 @@ export function ActionsPage() {
 }
 
 function ActionEditor({ action, isNew, done }: { action: Action; isNew: boolean; done: () => void }) {
-  const { me, can, call, notify } = usePortal();
+  const { me, can, call, notify, host } = usePortal();
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [a, setA] = useState(action);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
   useEffect(() => void call("steps.catalog").then((c) => c.ok && setCatalog(c as Catalog)), []);
+  // Quietly: a role without upload permissions still edits, with no uploads to pick.
+  useEffect(() => void host.request("uploads.list").then((u) => u.ok && setUploads((u as Uploads).items ?? [])).catch(() => {}), []);
   const set = (change: Partial<Action>) => setA({ ...a, ...change });
 
   const save = async (e: Event) => {
@@ -101,6 +110,7 @@ function ActionEditor({ action, isNew, done }: { action: Action; isNew: boolean;
   if (!catalog) return <p class="muted">Loading…</p>;
 
   return (
+    <UploadsContext.Provider value={uploads}>
     <form onSubmit={save}>
       <div class="page-head">
         <h1>{a.name}</h1>
@@ -131,7 +141,22 @@ function ActionEditor({ action, isNew, done }: { action: Action; isNew: boolean;
         <button type="submit" class="primary">Save</button>
       </div>
     </form>
+    </UploadsContext.Provider>
   );
+}
+
+const UploadsContext = createContext<UploadItem[]>([]);
+
+/** A file setting: uploads of the right kind, or the file the streamer chose (kept as it is). */
+function UploadPicker({ param, value, onChange }: { param: Param; value: string; onChange: (v: string) => void }) {
+  const uploads = useContext(UploadsContext);
+  const kinds = param.upload ?? [];
+  const options: [string, string][] = [["", "None"]];
+  if (kinds.length === 0) options.push(["upload:sounds", "All uploaded sounds"]);
+  else for (const u of uploads.filter((u) => kinds.includes(u.kind))) options.push([`upload:${u.id}`, `${u.name} (${describe(u)})`]);
+  if (value && !options.some(([v]) => v === value))
+    options.push([value, value.startsWith("upload:") ? "A removed upload" : "The streamer's own file"]);
+  return <Select label={param.label} help={param.help} value={value} options={options} onChange={onChange} />;
 }
 
 function Params({ params, values, onChange }: { params: Param[]; values: Record<string, string>; onChange: (v: Record<string, string>) => void }) {
@@ -140,6 +165,7 @@ function Params({ params, values, onChange }: { params: Param[]; values: Record<
     <div class="form">
       {params.map((p) => {
         const value = values[p.key] ?? p.default ?? "";
+        if (p.upload) return <UploadPicker key={p.key} param={p} value={value} onChange={(v) => set(p.key, v)} />;
         switch (p.kind) {
           case "Boolean":
             return <Check key={p.key} label={p.label} help={p.help} checked={value === "true"} onChange={(v) => set(p.key, String(v))} />;

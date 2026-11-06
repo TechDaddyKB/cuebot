@@ -16,5 +16,7 @@
   <ItemGroup>
     <!-- The test vectors shared with the TypeScript side (portal/test), so both implementations agree byte for byte. -->
     <None Include="..\..\portal\test\vectors.json" Link="vectors.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Small samples of every accepted upload format, made with ffmpeg's test sources. -->
+    <None Include="Media\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

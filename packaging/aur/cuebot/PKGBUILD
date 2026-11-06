@@ -11,6 +11,7 @@ depends=('dotnet-runtime>=10.0' 'aspnet-runtime>=10.0' 'fontconfig' 'gcc-libs' '
          'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'wayland')
 makedepends=('dotnet-sdk>=10.0' 'aspnet-targeting-pack>=10.0')
 optdepends=('espeak-ng: offline text-to-speech voices'
+            'ffmpeg: checking the files mods upload through the mod portal'
             'pipewire-audio: audio playback through pw-play'
             'libpulse: audio playback through paplay'
             'alsa-utils: audio playback through aplay'

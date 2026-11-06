@@ -56,6 +56,23 @@ public static class FolderLauncher
     }
 }
 
+/// <summary>Opens a file in its default app (a cleaned mod upload, to look at it before approving).</summary>
+public static class FileLauncher
+{
+    public static void Open(string path)
+    {
+        if (!File.Exists(path)) return;
+        var info = OperatingSystem.IsWindows()
+            ? new ProcessStartInfo("explorer.exe") { ArgumentList = { path } }
+            : OperatingSystem.IsMacOS()
+                ? new ProcessStartInfo("open") { ArgumentList = { path } }
+                : new ProcessStartInfo("xdg-open") { ArgumentList = { path } };
+        info.UseShellExecute = false;
+        try { Process.Start(info)?.Dispose(); }
+        catch (System.ComponentModel.Win32Exception) { }
+    }
+}
+
 /// <summary>Opens a web page (sign-in links, docs) in the default browser. Only http(s) URLs are opened.</summary>
 public static class UrlLauncher
 {

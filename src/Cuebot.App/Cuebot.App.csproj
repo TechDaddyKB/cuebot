@@ -56,4 +56,13 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.UiTests" />
   </ItemGroup>
+  <!-- Cuebot's own ffmpeg for cleaning mod portal uploads (build/ffmpeg/build.sh), when it was built or downloaded
+       into artifacts/ffmpeg/<rid>: every publish (packages, tarballs, the AppImage) puts it in the ffmpeg folder. -->
+  <Target Name="CopyPortalFfmpeg" AfterTargets="Publish"
+          Condition="'$(RuntimeIdentifier)' != '' And Exists('$(MSBuildThisFileDirectory)..\..\artifacts\ffmpeg\$(RuntimeIdentifier)')">
+    <ItemGroup>
+      <PortalFfmpeg Include="$(MSBuildThisFileDirectory)..\..\artifacts\ffmpeg\$(RuntimeIdentifier)\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PortalFfmpeg)" DestinationFolder="$(PublishDir)ffmpeg" />
+  </Target>
 </Project>

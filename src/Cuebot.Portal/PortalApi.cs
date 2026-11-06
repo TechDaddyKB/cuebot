@@ -3,6 +3,7 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Uploads;
 using Cuebot.Portal.Web;
 
 namespace Cuebot.Portal;
@@ -14,8 +15,10 @@ namespace Cuebot.Portal;
 /// so a change of role or a suspension applies at once.
 /// </summary>
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
-    ActionEngine engine, Registry registry, PortalControls? controls = null)
+    ActionEngine engine, Registry registry, PortalControls? controls = null, PortalUploads? uploads = null)
 {
+    private readonly PortalFiles _files = new(uploads?.Store);
+
     public async Task<JsonObject> HandleAsync(Guid memberId, JsonObject request)
     {
         var member = directory.Member(memberId);
@@ -25,13 +28,14 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
         {
             var name = (string?)request["op"] ?? "";
             if (controls is not null && PortalControls.Handles(name)) return await controls.HandleAsync(member, role, name, request).ConfigureAwait(false);
+            if (uploads is not null && PortalUploads.Handles(name)) return await uploads.HandleAsync(member, role, name, request).ConfigureAwait(false);
             return name switch
             {
                 "me" => Me(member, role),
                 "ui" => PortalUi.Js.Length > 0 ? Ok(new JsonObject { ["js"] = PortalUi.Js, ["css"] = PortalUi.Css }) : Error("This Cuebot has no portal UI."),
                 "steps.catalog" => StepCatalog(role),
                 "actions.list" => Ok(new JsonObject { ["actions"] = new JsonArray([.. VisibleActions(role).Select(Summary)]) }),
-                "actions.get" => FindAction(role, request) is { } a ? Ok(new JsonObject { ["action"] = PortalChanges.ToNode(a) }) : NotFound(),
+                "actions.get" => FindAction(role, request) is { } a ? Ok(new JsonObject { ["action"] = PortalChanges.ToNode(_files.ToPortal(a)) }) : NotFound(),
                 "actions.run" => await RunAsync(member, role, request).ConfigureAwait(false),
                 "actions.save" => await SaveActionAsync(member, role, request).ConfigureAwait(false),
                 "actions.delete" => await DeleteActionAsync(member, role, request).ConfigureAwait(false),
@@ -69,17 +73,27 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
     private JsonObject StepCatalog(PortalRole? role)
     {
         var max = role?.MaxRisk ?? StepRisk.Basic;
-        JsonArray Params(IEnumerable<ParameterDescriptor> ps) => new([.. ps.Select(p => (JsonNode)new JsonObject
+        JsonArray Params(IEnumerable<ParameterDescriptor> ps, string type = "") => new([.. ps.Select(p =>
         {
-            ["key"] = p.Key, ["label"] = p.Label, ["kind"] = p.Kind.ToString(), ["default"] = p.DefaultValue,
-            ["choices"] = new JsonArray([.. p.Choices.Select(c => (JsonNode)c)]), ["help"] = p.Help,
+            var param = new JsonObject
+            {
+                ["key"] = p.Key, ["label"] = p.Label, ["kind"] = p.Kind.ToString(), ["default"] = p.DefaultValue,
+                ["choices"] = new JsonArray([.. p.Choices.Select(c => (JsonNode)c)]), ["help"] = p.Help,
+            };
+            // A file setting: the editor offers uploads of these kinds (none: the uploaded sounds folder).
+            if (PortalFiles.Settings.TryGetValue(type, out var file) && file.Key == p.Key)
+            {
+                param["upload"] = new JsonArray([.. file.Kinds.Select(k => (JsonNode)k.ToString())]);
+                param["help"] = file.Kinds.Length == 0 ? "Plays one of the uploaded sounds at random." : "Pick an upload (Uploads page).";
+            }
+            return (JsonNode)param;
         })]);
         return Ok(new JsonObject
         {
             ["steps"] = new JsonArray([.. registry.SubActions.Where(h => StepRiskCatalog.ForStep(h.TypeId) <= max).Select(h => (JsonNode)new JsonObject
             {
                 ["type"] = h.TypeId, ["name"] = h.DisplayName, ["category"] = h.Category, ["risk"] = (int)StepRiskCatalog.ForStep(h.TypeId),
-                ["branches"] = new JsonArray([.. h.Branches.Select(b => (JsonNode)b)]), ["parameters"] = Params(h.Parameters),
+                ["branches"] = new JsonArray([.. h.Branches.Select(b => (JsonNode)b)]), ["parameters"] = Params(h.Parameters, h.TypeId),
             })]),
             ["triggers"] = new JsonArray([.. registry.Triggers.Where(t => StepRiskCatalog.ForTrigger(t.TypeId) <= max).Select(t => (JsonNode)new JsonObject
             {
@@ -129,7 +143,8 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
         if (request["action"] is not JsonObject node) return Error("No action given.");
         var after = PortalChanges.FromNode<ActionDefinition>(node);
         var before = profile.Snapshot.Actions.FirstOrDefault(a => a.Id == after.Id);
-        if (PortalPolicy.CheckAction(role, before, after) is { Count: > 0 } problems) return Refused(problems);
+        _files.FromPortal(after);
+        if (PortalPolicy.CheckAction(role, before, after).Concat(_files.Check(before, after)).ToList() is { Count: > 0 } problems) return Refused(problems);
         PortalPolicy.StampEdits(before, after, member.Id);
         return Submitted(await changes.SubmitAsync(member, ActionArea.AreaName, after.Id, PortalChanges.ToNode(after)).ConfigureAwait(false));
     }

@@ -9,6 +9,7 @@ using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
 using Cuebot.Portal.SignIn;
+using Cuebot.Portal.Uploads;
 
 namespace Cuebot.Portal.Tests;
 
@@ -101,12 +102,16 @@ public sealed class PortalUiLiveTests
             TestFeedAdapter.Publish(bus, kind, user, title);
 
         var directory = new PortalDirectory(new PortalSettings { Enabled = true, RelayUrl = Environment.GetEnvironmentVariable("CUEBOT_PORTAL_RELAY_URL") ?? "" }, () => { });
-        var changes = new PortalChanges(new PortalChangeLog(), () => { }, directory, [new ActionArea(profile), new CommandArea(commands)]);
+        var media = Directory.CreateTempSubdirectory("cuebot-portal-ui-").FullName;
+        var store = new PortalMediaStore(new PortalMediaLibrary(), () => { }, Path.Combine(media, "library"));
+        var changes = new PortalChanges(new PortalChangeLog(), () => { }, directory, [new ActionArea(profile), new CommandArea(commands), new UploadArea(store)]);
+        var tools = MediaTools.Find();
+        using var uploads = new PortalUploads(store, changes, tools is null ? null : new MediaCleaner(tools), Path.Combine(media, "quarantine"), log);
         var controls = new PortalControls(profile, chat,
             [new TestConnection("Twitch", ConnectionState.Connected, "Connected as TechDaddy"), new TestConnection("OBS", ConnectionState.Connected, "Connected"),
              new TestConnection("Ko-fi", ConnectionState.Error, "Webhook not set up")],
             obs: null, engine.Queues, speech: null, audio: null, log);
-        var api = new PortalApi(directory, changes, profile, commands, engine, registry, controls);
+        var api = new PortalApi(directory, changes, profile, commands, engine, registry, controls, uploads);
         await using var client = new PortalRelayClient(directory, log) { LinkHandler = new PortalSignInHandler(directory, new TestExchange(), api.HandleAsync, log) };
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(30));
         await client.ConnectAsync(timeout.Token);

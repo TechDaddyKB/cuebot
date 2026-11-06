@@ -11,6 +11,7 @@ import { QueuesPage } from "./pages/queues.js";
 import { ScenesPage } from "./pages/scenes.js";
 import { SoundsPage } from "./pages/sounds.js";
 import { SpeechPage } from "./pages/speech.js";
+import { UploadsPage } from "./pages/uploads.js";
 
 interface PageInfo {
   id: string;
@@ -25,6 +26,7 @@ export const PAGES: PageInfo[] = [
   { id: "actions", title: "Actions", page: ActionsPage, needs: ["RunActions", "CreateActions", "EditActions", "DeleteActions"] },
   { id: "commands", title: "Commands", page: CommandsPage, needs: ["CreateCommands", "EditCommands", "DeleteCommands"] },
   { id: "sounds", title: "Sounds", page: SoundsPage, needs: ["RunActions"] },
+  { id: "uploads", title: "Uploads", page: UploadsPage, needs: ["UploadSounds", "UploadMedia"] },
   { id: "audio", title: "Audio", page: AudioPage, needs: ["AudioLevels"] },
   { id: "scenes", title: "Scenes", page: ScenesPage, needs: ["StreamControl"] },
   { id: "queues", title: "Queues", page: QueuesPage, needs: ["StreamControl"] },

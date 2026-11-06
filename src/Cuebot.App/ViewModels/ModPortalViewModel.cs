@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Cuebot.App.Shell;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Desktop.Clipboard;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
+using Cuebot.Portal.Uploads;
 
 namespace Cuebot.App.ViewModels;
 
@@ -23,13 +25,15 @@ public sealed partial class ModPortalViewModel : PageViewModel
     private readonly IClipboardService? _clipboard;
     private readonly PortalRelayClient? _relay;
 
-    public ModPortalViewModel(PortalDirectory directory, PortalChanges changes, IClipboardService? clipboard = null, PortalRelayClient? relay = null)
+    public ModPortalViewModel(PortalDirectory directory, PortalChanges changes, IClipboardService? clipboard = null, PortalRelayClient? relay = null,
+        PortalMediaStore? media = null)
         : base(PageTitle)
     {
         _directory = directory;
         _changes = changes;
         _clipboard = clipboard;
         _relay = relay;
+        Media = media;
         if (relay is not null) relay.StatusChanged += () => OnUi(() => OnPropertyChanged(nameof(RelayStatus)));
         directory.Changed += () => OnUi(Refresh);
         changes.Changed += () => OnUi(Refresh);
@@ -96,6 +100,9 @@ public sealed partial class ModPortalViewModel : PageViewModel
 
     internal PortalDirectory Directory => _directory;
     internal PortalChanges Changes => _changes;
+
+    /// <summary>The upload library, to open a pending upload before approving it.</summary>
+    internal PortalMediaStore? Media { get; }
     internal void Say(string text) => Message = text;
 
     [RelayCommand]
@@ -398,6 +405,13 @@ public sealed partial class ModChangeViewModel : ObservableObject, IHasId
     {
         get
         {
+            if (_change.Area == UploadArea.AreaName)
+            {
+                var node = _change.After ?? _change.Before;
+                var kind = (string?)node?["kind"] switch { "Image" => "picture", "Video" => "video", _ => "sound" };
+                var verb = _change.Kind == ChangeKind.Delete ? "wants to remove" : "uploaded";
+                return $"{_change.MemberName} {verb} the {kind} '{_change.TargetName}' · {_change.At.LocalDateTime:g}";
+            }
             var what = _change.Kind switch { ChangeKind.Create => "created", ChangeKind.Delete => "deleted", _ => "changed" };
             return $"{_change.MemberName} {what} the {_change.Area} '{_change.TargetName}' · {_change.At.LocalDateTime:g}";
         }
@@ -414,6 +428,19 @@ public sealed partial class ModChangeViewModel : ObservableObject, IHasId
     };
 
     public bool CanUndo => _change.Status == ChangeStatus.Applied;
+
+    /// <summary>An upload whose cleaned file can be opened.</summary>
+    public bool CanOpen => UploadFile is not null;
+
+    private string? UploadFile =>
+        _change.Area == UploadArea.AreaName && _page.Media is { } media && (string?)(_change.After ?? _change.Before)?["file"] is { } file
+        && Path.Combine(media.Folder, file) is var path && File.Exists(path) ? path : null;
+
+    [RelayCommand]
+    private void Open()
+    {
+        if (UploadFile is { } path) FileLauncher.Open(path);
+    }
 
     internal void Update(PortalChange change)
     {

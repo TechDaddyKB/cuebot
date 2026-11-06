@@ -1,8 +1,8 @@
 # Cuebot mod portal: plan
 
-- **Status (2026-11-05):** designed with Kris in chat. Phases 0 to 4 are built (see section 11). The relay Worker
+- **Status (2026-11-06):** designed with Kris in chat. Phases 0 to 5 are built (see section 11). The relay Worker
   `cuebot-portal` is deployed and serves `portal.`, `relay.` and `hooks.techdaddydigital.com` (attached 2026-11-05).
-  Mods join by invite, sign in and use the web portal; ffmpeg and uploads (phase 5) are next.
+  Mods join by invite, sign in, use the web portal and upload media; overlays and widgets (phase 6) are next.
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -213,11 +213,29 @@ Every step type and trigger type declares a level. A test fails when a registere
   or H.264/HEVC MP4 for video.
 - Stored with random names, never executable; served with a fixed `Content-Type`, `nosniff` and a strict CSP.
 - Approval follows the member's change setting; for Live members a file goes live only after the checks pass.
+- As built (phase 5): chunks are 32 KB (the relay takes device frames up to 64 KB), checked against the size and
+  SHA-256 the browser declares. Sounds come out as MP3, not Ogg/Opus: Cuebot's own player plays WAV, MP3, Ogg Vorbis
+  and FLAC only. Stills come out as PNG, GIFs as animated WebP (checked by structure: ffmpeg 9 cannot decode animated
+  WebP, so animated WebP is also not accepted as input), video as VP9/Opus WebM, transparent when the source is (libvpx
+  decodes WebM alpha). AV1 input is left out (it needs dav1d). Every run: forced demuxer, `-protocol_whitelist file`,
+  `-enable_drefs 0`, `-max_alloc`, two threads, below-normal priority, a time limit, a polled memory limit plus
+  `ulimit -v` on Linux, an empty environment, all metadata and chapters dropped, bitexact output.
+- Uploads are a change area (`upload`), so approval, undo, "My changes" and the 7-day expiry work as for actions.
+  Files stay while the change log mentions them (undo); a sweep deletes the rest. The streamer can open a pending
+  upload from the Mod portal page before approving.
+- Mods may only point file settings (Play sound, Play sound from folder, Set image/media source file) at uploads; the
+  portal sees an upload as `upload:<id>`, never the folder. Settings the streamer chose stay until a mod changes them.
 
 ### ffmpeg build
 - Our own minimal LGPL build in CI for Windows x64, macOS arm64 and x64, Linux x64 and arm64: only the demuxers,
   decoders and encoders above, plus hardware encoders (NVENC, AMF, QuickSync via libvpl, VideoToolbox, VA-API).
   Expected 15–25 MB.
+- As built (phase 5): `build/ffmpeg/build.sh` (FFmpeg 9.0.2, libvpx, Opus, libwebp, LAME, zlib; pinned SHA-256 sums)
+  in the `ffmpeg` job of build.yml, cached by the script's hash; packages pick it up from `artifacts/ffmpeg/<rid>`
+  (a publish target in Cuebot.App.csproj). Windows and Linux arm64 are cross-built on Linux, Intel Macs on Apple
+  silicon. Software only so far: no hardware encoders and no H.264 output yet (VP9 WebM plays everywhere the portal
+  needs). ffmpeg plus ffprobe are 32 MB installed (12 MB zipped); a shared-library build would roughly halve that.
+  The Flatpak has none yet (uploads are off there).
 - Decoding is always software (untrusted input never reaches GPU drivers).
 - Encoding: transparent video always software VP9; other video uses the GPU only while not live, CPU at low priority
   while live; a setting for always or never GPU.
@@ -249,7 +267,7 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 2 ✅ | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | `portal/worker`, `portal/RELAY.md`, `PortalRelayClient`; Worker tests in workerd; `PortalRelayLiveTests` passed against `wrangler dev`, the workers.dev address and `relay.techdaddydigital.com` |
 | 3 ✅ | Sign-in: Google, then Twitch, then Discord; console setup | `PortalSignInHandler`, `PortalIdentityExchange`, the loader (`portal/web`); `PortalSignInLiveTests` passed 2026-11-05: a real Google, Twitch and Discord account each joined by invite through `relay.techdaddydigital.com` |
 | 4 ✅ | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | `portal/ui`, `PortalControls`; `PortalControlsTests`; `PortalUiLiveTests` + `portal/shots.mjs` drove the deployed loader against the real API (sign-in, editing and saving an action, every page, a Standard Mod's view, phone width) and took the docs screenshots |
-| 5 | ffmpeg CI build and the upload pipeline | Fuzzed and malformed files rejected; polyglots come out clean |
+| 5 ✅ | ffmpeg CI build and the upload pipeline | `build/ffmpeg/build.sh`, `PortalUploads`, `MediaCleaner`; `MediaCleanerTests` (every format, polyglots: PNG+HTML/ZIP, GIFAR, JPEG comment, ID3, WAV chunk, MP4 atom; cut-off and fuzzed files; a pixel bomb; refused types) pass with Cuebot's build and with a system ffmpeg; Windows (Wine) and arm64 (qemu) builds converted files locally; an upload through the deployed relay went live and was picked in a step |
 | 6 | Overlays and widgets in the portal | Edit and upload from the portal show in OBS |
 | 7 | Phone app mod mode, Android then iOS (on the Mac) | Join, edit and approve from both phones |
 | 8 | Docs, privacy notice, wiki, release | mkdocs strict, wiki synced |
@@ -258,5 +276,6 @@ Every step type and trigger type declares a level. A test fails when a registere
 - Phase 4 left for later: live updates pushed from Cuebot (the pages refresh every 3 to 5 seconds), scenes and audio
   for Streamlabs Desktop and Meld Studio, the approval queue on the phone, choice labels in the editor.
 - A Cloudflare spending alert on the account (section 10).
-- Exact upload limits and per-relay caps (measure in phase 2).
+- Phase 5 left for later: hardware encoders and H.264/HEVC output (section 8), a smaller shared-library ffmpeg,
+  ffmpeg in the Flatpak, AV1 and animated WebP input, previews of uploads in the portal itself.
 - Later: Discord role checks; platform mod checks for YouTube, Kick and Rumble; a home-network shortcut for mods.

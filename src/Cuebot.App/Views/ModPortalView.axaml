@@ -114,6 +114,8 @@
               <DataTemplate DataType="vm:ModChangeViewModel">
                 <DockPanel Margin="0,2">
                   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                    <Button Content="Open" Command="{Binding OpenCommand}" IsVisible="{Binding CanOpen}"
+                            ToolTip.Tip="Opens the cleaned file in its usual app, to see or hear it first." />
                     <Button Content="Approve" Command="{Binding ApproveCommand}" ToolTip.Tip="Makes the change live." />
                     <Button Content="Reject" Command="{Binding RejectCommand}" ToolTip.Tip="Drops the change. Nothing changes." />
                   </StackPanel>

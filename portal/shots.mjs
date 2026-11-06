@@ -1,5 +1,6 @@
 // Docs screenshots of the mod portal: `node shots.mjs <invite link> <output folder>`, with the demo Cuebot from
-// tests/Cuebot.Portal.Tests/PortalUiLiveTests running (its stand-in sign-in accepts the code "test"). Drives headless
+// tests/Cuebot.Portal.Tests/PortalUiLiveTests running (its stand-in sign-in accepts the code "test"; uploads need an
+// ffmpeg, e.g. CUEBOT_FFMPEG_DIR). Drives headless
 // Chromium over the DevTools protocol and saves PNGs in dark mode.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -75,6 +76,25 @@ try {
   await shot("portal-action-editor.png");
   await size(1280, 800);
   await run(`[...document.querySelectorAll("button.link")].find(b => b.textContent === "Back").click(), true`);
+  // Uploads: a generated one-second tone, put into the file input as if picked, then uploaded and cleaned.
+  await open("Uploads");
+  await until(`document.getElementById("upload-file") !== null`);
+  await run(`(() => {
+    const rate = 22050, n = rate, data = new Uint8Array(44 + n * 2), v = new DataView(data.buffer);
+    const w = (o, s) => [...s].forEach((c, i) => (data[o + i] = c.charCodeAt(0)));
+    w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+    v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true);
+    v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(8000 * Math.sin((i * 2 * Math.PI * 440) / rate)), true);
+    const input = document.getElementById("upload-file"), dt = new DataTransfer();
+    dt.items.add(new File([data], "Air horn.wav", { type: "audio/wav" }));
+    input.files = dt.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return true; })()`);
+  await sleep(300);
+  await run(`document.querySelector("form.card button.primary").click(), true`);
+  await until(`document.querySelectorAll(".rows li").length > 0`, 30000);
+  await shot("portal-uploads.png");
   await open("Commands");
   await until(`document.querySelectorAll(".rows li").length > 0`);
   await size(390, 760, true);

@@ -34,6 +34,26 @@ Each keeps its own license; full license texts are available from the linked pro
 | [.NET runtime](https://github.com/dotnet/runtime) (self-contained builds) | Runtime | MIT |
 | [jQuery](https://jquery.com) 3.7.1 (`src/Cuebot.Server/Overlays/Runtime/jquery-3.7.1.min.js`, unmodified, sha256 `/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=`) | Preloaded for overlay widgets, as StreamElements does | MIT, © OpenJS Foundation and other contributors |
 
+### FFmpeg (separate programs)
+
+The `ffmpeg` folder next to Cuebot holds `ffmpeg` and `ffprobe`, built by
+[build/ffmpeg/build.sh](build/ffmpeg/build.sh) and used only to check and clean files mods upload through the mod portal.
+They are separate programs that Cuebot starts; Cuebot does not link to them. They are licensed under the
+**GNU Lesser General Public License 2.1 or later** (no GPL or non-free parts are enabled): the license text and the
+exact sources and configure options are in `ffmpeg/LICENSE.txt` and `ffmpeg/SOURCES.txt`, and the build script in this
+repository rebuilds them from those sources. You may replace them with your own build.
+
+| Component (statically linked into those programs) | License |
+|---|---|
+| [FFmpeg](https://ffmpeg.org) 9.0.2 (libavcodec, libavformat, libavfilter, libswscale, libswresample, libavutil) | LGPL-2.1-or-later |
+| [libvpx](https://chromium.googlesource.com/webm/libvpx) 1.17.0 | BSD-3-Clause |
+| [Opus](https://opus-codec.org) 1.6.1 | BSD-3-Clause |
+| [libwebp](https://chromium.googlesource.com/webm/libwebp) 1.6.0 | BSD-3-Clause |
+| [LAME](https://lame.sourceforge.io) 3.100 | LGPL-2.0-or-later |
+| [zlib](https://zlib.net) 1.4 | zlib |
+
+The Arch source package (`cuebot`) uses the system's `ffmpeg` instead, when installed.
+
 ## System libraries used, not bundled
 
 | Component | Used for | License |
