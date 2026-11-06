@@ -39,9 +39,18 @@ public static partial class BuiltInApps
 
     public static AppCredentials TreatStream { get; } = Make(TreatStreamClientId, TreatStreamClientSecret);
 
+    /// <summary>Mod portal sign-in with Google: a "Web application" client returning to portal.techdaddydigital.com.</summary>
+    public static AppCredentials PortalGoogle { get; } = Make(PortalGoogleClientId, PortalGoogleClientSecret);
+
+    /// <summary>Mod portal sign-in with Twitch: a Confidential app (Twitch's public apps only have the device-code flow).</summary>
+    public static AppCredentials PortalTwitch { get; } = Make(PortalTwitchClientId, PortalTwitchClientSecret);
+
+    /// <summary>Mod portal sign-in with Discord: a Public Client app (PKCE, no secret).</summary>
+    public static AppCredentials PortalDiscord { get; } = Make(PortalDiscordClientId, "");
+
     /// <summary>Every built-in secret, for log scrubbing.</summary>
     public static IEnumerable<string> Secrets =>
-        new[] { Google, GoogleDevice, Kick, TreatStream }.Select(a => a.ClientSecret).Where(s => s.Length > 0);
+        new[] { Google, GoogleDevice, Kick, TreatStream, PortalGoogle, PortalTwitch }.Select(a => a.ClientSecret).Where(s => s.Length > 0);
 
     private static AppCredentials Make(string id, string secret) =>
         id.Trim().Length > 0 ? new(id.Trim(), secret.Trim(), true) : AppCredentials.None;

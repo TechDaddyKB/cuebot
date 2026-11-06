@@ -12,6 +12,8 @@
     { "pattern": "relay.techdaddydigital.com", "custom_domain": true },
     { "pattern": "hooks.techdaddydigital.com", "custom_domain": true }
   ],
+  // The built loader (npm run build). The Worker answers every request itself and fetches loader.js from here.
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
   "durable_objects": {
     "bindings": [{ "name": "PORTAL_RELAY", "class_name": "PortalRelay" }]
   },

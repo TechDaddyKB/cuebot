@@ -1,8 +1,8 @@
 # Cuebot mod portal: plan
 
-- **Status (2026-11-05):** designed with Kris in chat. Phases 0, 1 and 2 are built (see section 11). The relay Worker
+- **Status (2026-11-05):** designed with Kris in chat. Phases 0 to 3 are built (see section 11). The relay Worker
   `cuebot-portal` is deployed and serves `portal.`, `relay.` and `hooks.techdaddydigital.com` (attached 2026-11-05).
-  Sign-in (phase 3) is next.
+  Mods can join by invite and sign in; the web portal UI (phase 4) is next.
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -92,29 +92,39 @@ Mod browser ──GET──▶ portal.techdaddydigital.com   (loader page and th
 - Shown as a link and a QR code. Unused invites can be withdrawn.
 
 ### Sign-in (PKCE redirect through one fixed return page)
-- Providers in build order: **Google**, **Twitch**, **Discord**. Scopes: identity only (`openid` for Google, no
-  extra Twitch scopes, `identify` for Discord).
-- The device makes the PKCE verifier and keeps it; `redirect_uri` is `https://portal.techdaddydigital.com/auth/return`;
-  `state` carries the relay ID and a nonce. The return page hands the code back to the loader, which sends code and
-  verifier to Cuebot over the encrypted link. Cuebot exchanges them with the client secret it holds and reads the
-  provider's permanent user ID.
-- An intercepted code is useless without the verifier (on the device) and the client secret (in Cuebot).
+- Providers in build order: **Google**, **Twitch**, **Discord**. Scopes: identity only (`openid email profile` for
+  Google, none for Twitch, `identify` for Discord). The email is used only for invite locks, and only when Google says
+  it is verified.
+- The loader asks Cuebot for the providers (`providers`), makes the PKCE verifier and a random `state`, keeps both in
+  sessionStorage and sends the mod to the provider. `redirect_uri` is `https://portal.techdaddydigital.com/auth/return`
+  for every provider. Back on the return page the loader checks `state`, removes the code from the address bar,
+  reconnects and sends code, verifier, invite and its device key to Cuebot (`signin`, over the encrypted link).
+- Cuebot (`PortalIdentityExchange`) exchanges the code, reads the provider's permanent user ID, then revokes the
+  token: the portal keeps no provider token. Twitch: the token must belong to Cuebot's app (`/oauth2/validate`).
+- PKCE: Google and Discord. Twitch has no PKCE; the code still needs the client secret, and the return page is on our
+  own origin with `Referrer-Policy: no-referrer`.
+- An already-signed-in member who opens another invite is signed in without using it up. Five sign-in attempts per
+  connection.
 - Cuebot stores, per member: provider, provider user ID, a display name for the streamer's own list, role,
   overrides, devices. On the streamer's PC only.
 - One account per member. Lost account: the streamer removes the member and sends a fresh invite.
 
 ### Devices and sessions
-- Each device makes a non-extractable ECDSA key (WebCrypto, Keychain or Keystore) at sign-in; Cuebot records its
-  public key. Later connections prove possession; no bearer token to steal from storage.
-- Sessions last 12 hours of inactivity; re-sign-in with the provider every 30 days.
+- Each device makes a non-extractable ECDSA key (WebCrypto, kept in IndexedDB; Keychain or Keystore in the apps) at
+  sign-in; Cuebot records its public key. On every connection the device signs `cuebot-portal-device-v1` || the
+  handshake binding (SHA-256 of the transcript), so a proof cannot be replayed on another connection (`resume`). No
+  bearer token to steal from storage. Each invite gets a fresh key, so two memberships never share one.
+- Re-sign-in with the provider every 30 days (`PortalDirectory.Resume`). Not built yet: ending a session after 12
+  hours without activity.
 - The streamer sees each member's devices, and can sign out one device, one member, or everyone.
 
-### Console setup (done in Chrome when sign-in is built; Kris signs in)
-- **Google:** a new Google Cloud project with an OAuth "Web application" client, identity scopes only, published
-  (basic scopes need no verification). Check the publishing status of the existing YouTube project first.
-- **Twitch:** add the return address to the existing Cuebot app.
-- **Discord:** a new "Cuebot" application with the return address. Check whether Discord allows PKCE without the
-  client secret; otherwise the secret is compiled in like Google's (`docs/BUILT_IN_APPS.md`).
+### Console setup (done 2026-11-05; details in `docs/BUILT_IN_APPS.md`)
+- **Google:** project `cuebot-mod-portal` ("Cuebot Mod Portal"), separate from the YouTube project so its pending
+  verification cannot affect sign-in. Web client "Cuebot mod portal (web)", basic scopes only, published.
+- **Twitch:** a new Confidential app "Cuebot Mod Portal". The existing Cuebot app is Public, and Twitch allows public
+  apps only the device-code flow.
+- **Discord:** a new application "Cuebot Mod Portal" with Public Client on: PKCE without a secret (confirmed live).
+- Values reach builds as `CUEBOT_PORTAL_*` repository secrets, like the other built-in apps.
 
 ## 5. Roles and permissions
 
@@ -233,7 +243,7 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 0 ✅ | This plan; a crypto spike (handshake between .NET and WebCrypto, test vectors both ways) | `src/Cuebot.Portal/Crypto`, `portal/src/crypto.ts`, shared `portal/test/vectors.json` |
 | 1 ✅ | Cuebot core: members, roles, risk levels on every step and trigger type, permission-checked portal API, marked values, change log and undo, approval queue, desktop UI for invites and members | `StepRiskCatalog`, `ModInfluence`, `PortalDirectory`, `PortalPolicy`, `PortalChanges`, `PortalApi`, the Mod portal page |
 | 2 ✅ | Shared relay Worker: `/connect`, device routes, webhooks, limits, no-storage config; Cuebot relay client for it; deploy to techdaddydigital.com | `portal/worker`, `portal/RELAY.md`, `PortalRelayClient`; Worker tests in workerd; `PortalRelayLiveTests` passed against `wrangler dev`, the workers.dev address and `relay.techdaddydigital.com` |
-| 3 | Sign-in: Google, then Twitch, then Discord; console setup | A real mod account joins by invite on each provider |
+| 3 ✅ | Sign-in: Google, then Twitch, then Discord; console setup | `PortalSignInHandler`, `PortalIdentityExchange`, the loader (`portal/web`); `PortalSignInLiveTests` passed 2026-11-05: a real Google, Twitch and Discord account each joined by invite through `relay.techdaddydigital.com` |
 | 4 | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | UI tests; screenshots for the docs |
 | 5 | ffmpeg CI build and the upload pipeline | Fuzzed and malformed files rejected; polyglots come out clean |
 | 6 | Overlays and widgets in the portal | Edit and upload from the portal show in OBS |
@@ -242,7 +252,5 @@ Every step type and trigger type declares a level. A test fails when a registere
 
 ## 12. Open questions and later
 - A Cloudflare spending alert on the account (section 10).
-- Discord: PKCE without client secret, or a compiled-in secret.
-- Google: reuse the existing project or a new one (depends on its publishing status).
 - Exact upload limits and per-relay caps (measure in phase 2).
 - Later: Discord role checks; platform mod checks for YouTube, Kick and Rumble; a home-network shortcut for mods.

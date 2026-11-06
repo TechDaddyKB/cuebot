@@ -25,6 +25,9 @@ Unset ones only produce a warning in the release run; that service then asks use
 | `CUEBOT_GOOGLE_DEVICE_CLIENT_ID`, `CUEBOT_GOOGLE_DEVICE_CLIENT_SECRET` | YouTube "sign in with a code" (optional; "TVs and Limited Input devices" client) |
 | `CUEBOT_KICK_CLIENT_ID`, `CUEBOT_KICK_CLIENT_SECRET` | Kick |
 | `CUEBOT_TREATSTREAM_CLIENT_ID`, `CUEBOT_TREATSTREAM_CLIENT_SECRET` | TreatStream |
+| `CUEBOT_PORTAL_GOOGLE_CLIENT_ID`, `CUEBOT_PORTAL_GOOGLE_CLIENT_SECRET` | Mod portal sign-in with Google ("Web application" client) |
+| `CUEBOT_PORTAL_TWITCH_CLIENT_ID`, `CUEBOT_PORTAL_TWITCH_CLIENT_SECRET` | Mod portal sign-in with Twitch (Confidential app) |
+| `CUEBOT_PORTAL_DISCORD_CLIENT_ID` | Mod portal sign-in with Discord (Public Client, no secret) |
 
 For a local build with the apps, export the same variables before `dotnet build` / `build/publish.sh`. Values may only
 contain URL-safe characters (`A-Z a-z 0-9 . _ ~ + / = -`); the build fails otherwise, without printing the value.
@@ -70,3 +73,25 @@ always uses port 47582; users with their own app may pick another), scopes as li
 
 TreatStream account settings → API apps: redirect URL `http://localhost:8913/callback` exactly (the built-in app
 always uses port 8913). Copy the Client ID and Client Secret.
+
+### Mod portal sign-in
+
+Mods sign in on `https://portal.techdaddydigital.com`; every provider returns to
+`https://portal.techdaddydigital.com/auth/return`, and the streamer's Cuebot exchanges the code
+(`src/Cuebot.Portal/SignIn`, docs/MOD_PORTAL_PLAN.md section 4). These apps only identify the mod, then Cuebot
+revokes the token. A build without them cannot let mods sign in (the Mod portal page says so); there is no "own app"
+option for the portal yet.
+
+- **Google:** project `cuebot-mod-portal` ("Cuebot Mod Portal"), kept apart from the YouTube project so its
+  verification cannot affect sign-in. Branding: the same home, privacy and terms links on techdaddydigital.com,
+  authorized domain `techdaddydigital.com`, audience External, **published**. Scopes `openid email profile` are not
+  sensitive, so no verification is needed. Client: **Web application** "Cuebot mod portal (web)" with the return
+  address as its only redirect URI.
+- **Twitch:** app "Cuebot Mod Portal", category Website Integration, client type **Confidential** (Twitch lets Public
+  apps use only the device-code flow), redirect the return address. "New Secret" makes the secret.
+- **Discord:** application "Cuebot Mod Portal", OAuth2 → **Public Client** on (PKCE, no secret) and the return
+  address under Redirects.
+
+To try sign-in with real accounts, build with these variables set and run
+`CUEBOT_PORTAL_SIGNIN_LINKS=<file> dotnet test tests/Cuebot.Portal.Tests --filter PortalSignInLiveTests`, then open each
+link it writes (one per account).

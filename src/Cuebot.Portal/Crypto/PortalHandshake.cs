@@ -20,6 +20,9 @@ public static class PortalHandshake
     public const byte Version = 1;
     public const string Label = "cuebot-portal-v1";
 
+    /// <summary>What a device signs with its own key to prove it holds it on this connection: label || binding.</summary>
+    public const string DeviceProofLabel = "cuebot-portal-device-v1";
+
     public const int ClientHelloLength = 1 + PortalKeys.PublicKeyLength;
     public const int ServerHelloLength = 1 + 2 * PortalKeys.PublicKeyLength + PortalKeys.SignatureLength;
 
@@ -45,7 +48,7 @@ public static class PortalHandshake
         signature.CopyTo(hello, 1 + 2 * PortalKeys.PublicKeyLength);
 
         var keys = DeriveKeys(PortalKeys.SharedSecret(ephemeral, clientEphemeral), transcript);
-        return (hello, new PortalSession(send: keys.ServerToClient, receive: keys.ClientToServer));
+        return (hello, new PortalSession(send: keys.ServerToClient, receive: keys.ClientToServer, binding: keys.Binding));
     }
 
     /// <summary>A device's side: the ephemeral key and the hello to send.</summary>
@@ -81,18 +84,21 @@ public static class PortalHandshake
         if (!PortalKeys.Verify(identity, transcript, signature)) throw new CryptographicException("The handshake signature is wrong.");
 
         var keys = DeriveKeys(PortalKeys.SharedSecret(ephemeral, serverEphemeral), transcript);
-        return new PortalSession(send: keys.ClientToServer, receive: keys.ServerToClient);
+        return new PortalSession(send: keys.ClientToServer, receive: keys.ServerToClient, binding: keys.Binding);
     }
 
     internal static byte[] Transcript(ReadOnlySpan<byte> clientEphemeral, ReadOnlySpan<byte> serverEphemeral, ReadOnlySpan<byte> identity) =>
         [.. PortalKeys.Utf8(Label), .. clientEphemeral, .. serverEphemeral, .. identity];
 
-    internal static (byte[] ClientToServer, byte[] ServerToClient) DeriveKeys(byte[] shared, byte[] transcript)
+    internal static (byte[] ClientToServer, byte[] ServerToClient, byte[] Binding) DeriveKeys(byte[] shared, byte[] transcript)
     {
         var salt = SHA256.HashData(transcript);
         return (HKDF.DeriveKey(HashAlgorithmName.SHA256, shared, 32, salt, PortalKeys.Utf8("c2s")),
-                HKDF.DeriveKey(HashAlgorithmName.SHA256, shared, 32, salt, PortalKeys.Utf8("s2c")));
+                HKDF.DeriveKey(HashAlgorithmName.SHA256, shared, 32, salt, PortalKeys.Utf8("s2c")), salt);
     }
+
+    /// <summary>The bytes a device signs to prove its key on the connection with this <paramref name="binding"/>.</summary>
+    public static byte[] DeviceProof(ReadOnlySpan<byte> binding) => [.. PortalKeys.Utf8(DeviceProofLabel), .. binding];
 }
 
 /// <summary>
@@ -110,11 +116,15 @@ public sealed class PortalSession : IDisposable
     private ulong _received;
     private bool _broken;
 
-    internal PortalSession(byte[] send, byte[] receive)
+    internal PortalSession(byte[] send, byte[] receive, byte[] binding)
     {
+        Binding = binding;
         _send = new AesGcm(send, TagLength);
         _receive = new AesGcm(receive, TagLength);
     }
+
+    /// <summary>SHA-256 of the handshake transcript: the same on both ends and unique to this connection.</summary>
+    public byte[] Binding { get; }
 
     public byte[] Encrypt(ReadOnlySpan<byte> plaintext)
     {

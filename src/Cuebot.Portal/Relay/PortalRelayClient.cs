@@ -29,24 +29,42 @@ public sealed record PortalRelayTimings(
         SilenceTimeout: TimeSpan.FromSeconds(95));
 }
 
-/// <summary>What a mod device's decrypted messages are handed to. Phase 3 adds sign-in and the portal API behind it.</summary>
+/// <summary>One mod device's encrypted connection, as the link handler sees it.</summary>
+public sealed class PortalLinkContext(uint channel, byte[] binding)
+{
+    /// <summary>The relay's channel number for this device (new on every connection).</summary>
+    public uint Channel { get; } = channel;
+
+    /// <summary>The connection's handshake binding (<see cref="Crypto.PortalSession.Binding"/>), which device proofs sign.</summary>
+    public byte[] Binding { get; } = binding;
+
+    /// <summary>The member signed in on this connection, once a sign-in or resume succeeded.</summary>
+    public Guid? MemberId { get; set; }
+
+    public Guid? DeviceId { get; set; }
+
+    /// <summary>Sign-in attempts on this connection (each one costs a call to the provider).</summary>
+    public int SignInAttempts { get; set; }
+}
+
+/// <summary>What a mod device's decrypted messages are handed to (<see cref="SignIn.PortalSignInHandler"/> in the app).</summary>
 public interface IPortalLinkHandler
 {
     /// <summary>The answer to one message, or null for none. Throwing closes the device's connection.</summary>
-    Task<byte[]?> HandleAsync(uint channel, byte[] message, CancellationToken ct);
+    Task<byte[]?> HandleAsync(PortalLinkContext link, byte[] message, CancellationToken ct);
 }
 
-/// <summary>Until sign-in exists, a device can only check the link works: <c>{"op":"ping"}</c> → <c>{"op":"pong"}</c>.</summary>
+/// <summary>Only checks the link works: <c>{"op":"ping"}</c> → <c>{"op":"pong"}</c>. The default until the app sets a handler.</summary>
 public sealed class PingLinkHandler : IPortalLinkHandler
 {
-    public Task<byte[]?> HandleAsync(uint channel, byte[] message, CancellationToken ct)
+    public Task<byte[]?> HandleAsync(PortalLinkContext link, byte[] message, CancellationToken ct)
     {
         string? op = null;
         try { op = JsonNode.Parse(message)?["op"]?.GetValue<string>(); }
         catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException) { }
         JsonObject answer = op == "ping"
             ? new() { ["op"] = "pong", ["version"] = PortalRelayClient.ProtocolVersion }
-            : new() { ["op"] = "error", ["error"] = "Signing in to the mod portal comes in a later version of Cuebot." };
+            : new() { ["op"] = "error", ["error"] = "This Cuebot does not offer sign-in." };
         return Task.FromResult<byte[]?>(JsonSerializer.SerializeToUtf8Bytes(answer));
     }
 }
@@ -532,6 +550,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
         private readonly Channel<byte[]> _inbox = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(LinkQueue) { SingleReader = true, SingleWriter = true });
         private CancellationTokenSource? _stop;
         private PortalSession? _session;
+        private PortalLinkContext? _context;
         private bool _disposed;
 
         public void Start(CancellationToken ct)
@@ -554,6 +573,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
                 if (_session is null)
                 {
                     (serverHello, _session) = PortalHandshake.Accept(identity, payload);
+                    _context = new PortalLinkContext(ch, _session.Binding);
                     return true;
                 }
                 if (_inbox.Writer.TryWrite(_session.Decrypt(payload))) return true;
@@ -573,7 +593,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
             {
                 await foreach (var message in _inbox.Reader.ReadAllAsync(ct).ConfigureAwait(false))
                 {
-                    var answer = await client.LinkHandler.HandleAsync(ch, message, ct).ConfigureAwait(false);
+                    var answer = await client.LinkHandler.HandleAsync(_context!, message, ct).ConfigureAwait(false);
                     if (answer is not null && _session is { } s) await transport.SendBinaryAsync(Frame(ch, s.Encrypt(answer)), ct).ConfigureAwait(false);
                 }
             }

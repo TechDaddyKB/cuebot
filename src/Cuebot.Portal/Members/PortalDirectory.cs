@@ -220,6 +220,9 @@ public sealed class PortalDirectory
         return (member, device);
     }
 
+    /// <summary>Whether this account is already a member (then an invite is not needed, and not used up).</summary>
+    public bool IsMember(ProviderIdentity identity) { lock (_gate) return FindMember(identity) is not null; }
+
     /// <summary>A member signs in again with their provider, on a known or a new device.</summary>
     public (PortalMember Member, PortalDevice Device) SignIn(ProviderIdentity identity, byte[] devicePublicKey, string deviceName)
     {

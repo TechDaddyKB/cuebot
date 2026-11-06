@@ -4,9 +4,9 @@ The mod portal lets your moderators help with your stream from anywhere: from th
 being at your computer. You decide what each mod may do. They might run actions, change chat commands, set up sound
 alerts, or more.
 
-!!! note "Coming in a later update"
-    Signing in is not finished yet, so mods cannot join yet. You can already open the portal and set up roles and
-    invites on the **Mod portal** page, so everything is ready when it arrives.
+!!! note "Coming in the next update"
+    Mods can already join and sign in. What they can do in the portal itself (actions, commands, sounds and more)
+    arrives in the next update; until then they see a welcome page with their role.
 
 ![The Mod portal page: an open invite, two mods with their roles, a change waiting for approval](../assets/screens/page-mod-portal.png)
 
@@ -16,7 +16,8 @@ alerts, or more.
 2. You make an **invite** on **Chat & Events > Mod portal** and choose a **role** for it.
 3. You send the link to your mod privately.
 4. The mod opens it and signs in with Google, Twitch or Discord. They get the role you chose.
-5. From then on, they sign in with that same account. The link is used up.
+5. The link is used up. Their browser remembers them, so next time they just open
+   `portal.techdaddydigital.com`. Every 30 days, or on a new device, they sign in again with the same account.
 
 You can change a mod's role, pause them or remove them at any time. A change applies at once.
 
@@ -61,12 +62,19 @@ you to press Undo once more to be sure.
 ## Invites
 
 - An invite works **once**, for the hours you choose (24 by default, at most 30 days).
-- **Only for this account** locks it to one Twitch name or Google email, so a leaked link is useless to anyone else.
+- **Only for this account** locks it to one Twitch name, Google email or Discord user name, so a leaked link is
+  useless to anyone else.
 - **Withdraw** stops an open invite at once.
 - A mod who lost their account: remove them and send a new invite.
+- Your Cuebot has to be running with **Open the mod portal** ticked when the mod opens the link. Otherwise they see
+  "The streamer's Cuebot is not online right now".
 
 ## Privacy
 
 The connection between your mods and your Cuebot is encrypted end to end. The portal service in between only
 passes it along and stores nothing about you or your mods. Your mods' details stay on your computer, in
 `portal.json`.
+
+Signing in only tells your Cuebot who the mod is: the account's permanent ID and name (and, for Google, the email
+address, used only for **Only for this account**). Cuebot cancels its access to the mod's account right after
+reading that. It never posts, reads messages or keeps a login for their account.

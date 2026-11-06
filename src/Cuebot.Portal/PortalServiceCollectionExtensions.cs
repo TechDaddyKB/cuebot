@@ -6,6 +6,7 @@ using Cuebot.Core.Storage;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
+using Cuebot.Portal.SignIn;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Portal;
@@ -15,7 +16,8 @@ public static class PortalServiceCollectionExtensions
 {
     /// <summary>
     /// Adds portal.json and portal-changes.json, <see cref="PortalDirectory"/>, <see cref="PortalChanges"/>,
-    /// <see cref="PortalApi"/> and <see cref="PortalRelayClient"/> (also as <see cref="IConnectionStatus"/>).
+    /// <see cref="PortalApi"/>, provider sign-in (<see cref="PortalIdentityExchange"/>) and <see cref="PortalRelayClient"/>
+    /// (also as <see cref="IConnectionStatus"/>) with the sign-in handler on its device links.
     /// </summary>
     public static IServiceCollection AddPortal(this IServiceCollection services)
     {
@@ -35,7 +37,16 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
             sp.GetRequiredService<Registry>()));
-        services.AddSingleton(sp => new PortalRelayClient(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<IPortalIdentityExchange>(sp => new PortalIdentityExchange(sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton(sp =>
+        {
+            var api = sp.GetRequiredService<PortalApi>();
+            return new PortalRelayClient(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<AppLog>())
+            {
+                LinkHandler = new PortalSignInHandler(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<IPortalIdentityExchange>(),
+                    api.HandleAsync, sp.GetRequiredService<AppLog>()),
+            };
+        });
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PortalRelayClient>());
         return services;
     }

@@ -59,6 +59,19 @@ public sealed partial class ModPortalViewModel : PageViewModel
 
     public string RelayStatus => _relay?.StatusMessage ?? "";
 
+    /// <summary>Which accounts mods can sign in with in this copy of Cuebot (built-in apps; none in a source build).</summary>
+    public string SignInOptions
+    {
+        get
+        {
+            var apps = Cuebot.Portal.SignIn.PortalProviderApps.BuiltIn;
+            string[] names = [.. Enum.GetValues<IdentityProvider>().Where(p => apps.For(p).IsSet).Select(p => p.ToString())];
+            return names.Length > 0
+                ? $"Mods sign in with {string.Join(", ", names[..^1]) + (names.Length > 1 ? " or " : "") + names[^1]}."
+                : "This copy of Cuebot was built without the sign-in apps, so mods cannot sign in. The release downloads have them.";
+        }
+    }
+
     public ObservableCollection<ModRoleViewModel> Roles { get; } = [];
     public ObservableCollection<ModMemberViewModel> Members { get; } = [];
     public ObservableCollection<ModInviteViewModel> Invites { get; } = [];

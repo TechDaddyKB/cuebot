@@ -65,7 +65,7 @@ public sealed class PortalCryptoTests
         var shared = PortalKeys.SharedSecret(client, serverPublic);
         Assert.Equal(B("shared"), shared);
         Assert.Equal(shared, PortalKeys.SharedSecret(server, clientPublic));
-        var (c2s, s2c) = PortalHandshake.DeriveKeys(shared, transcript);
+        var (c2s, s2c, _) = PortalHandshake.DeriveKeys(shared, transcript);
         Assert.Equal(B("c2s"), c2s);
         Assert.Equal(B("s2c"), s2c);
         Assert.Equal(B("clientHello"), PortalHandshake.ClientHello(client));

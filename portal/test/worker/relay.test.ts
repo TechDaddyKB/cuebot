@@ -124,14 +124,23 @@ async function open(me: Identity, sealed: Bytes): Promise<Delivery> {
 }
 
 describe("portal pages", () => {
-	it("serves the loader placeholder and the return page with a strict policy", async () => {
+	it("serves the loader page and the return page with a strict policy", async () => {
 		for (const path of ["/", "/auth/return"]) {
 			const res = await SELF.fetch(`https://portal.techdaddydigital.com${path}`);
 			expect(res.status).toBe(200);
-			expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");
+			const csp = res.headers.get("content-security-policy");
+			expect(csp).toContain("default-src 'none'");
+			expect(csp).toContain("script-src 'self';");
+			expect(csp).toContain("connect-src 'self' wss://relay.techdaddydigital.com;");
 			expect(res.headers.get("referrer-policy")).toBe("no-referrer");
-			expect(await res.text()).toContain("Cuebot mod portal");
+			const html = await res.text();
+			expect(html).toContain('<script type="module" src="/loader.js"></script>');
+			expect(html).not.toMatch(/<script>|style=/);
 		}
+		const loader = await SELF.fetch("https://portal.techdaddydigital.com/loader.js");
+		expect(loader.status).toBe(200);
+		expect(loader.headers.get("content-type")).toContain("text/javascript");
+		expect(await loader.text()).toContain("cuebot-portal-device-v1");
 		expect((await SELF.fetch("https://portal.techdaddydigital.com/portal.css")).headers.get("content-type")).toContain("text/css");
 		expect((await SELF.fetch("https://portal.techdaddydigital.com/nope")).status).toBe(404);
 	});

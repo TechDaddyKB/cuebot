@@ -13,8 +13,9 @@
           <CheckBox Name="PortalOpen" Content="Open the mod portal" IsChecked="{Binding PortalOpen}"
                     ToolTip.Tip="Keeps Cuebot connected to the portal relay (relay.techdaddydigital.com) so your mods can reach it. Everything between a mod and Cuebot is encrypted end to end; the relay stores nothing." />
           <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayStatus}" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding SignInOptions}" />
           <TextBlock Foreground="{DynamicResource CuebotAccent}" TextWrapping="Wrap"
-                     Text="Coming in a later update: signing in. Until then mods cannot join yet, but you can set up roles and make invites here." />
+                     Text="Mods can join and sign in now. What they can do in the portal itself (actions, commands, sounds and more) arrives in the next update." />
           <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayId, StringFormat='Your portal address: {0}'}"
                      ToolTip.Tip="This Cuebot's address on the portal. It is made from a key kept on this computer and is not tied to your name." />
           <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />
@@ -37,8 +38,8 @@
             <TextBlock Grid.Row="2" Text="Only for this account (optional)" Margin="0,6,0,0" />
             <ComboBox Grid.Row="3" ItemsSource="{x:Static vm:ModPortalViewModel.Providers}" SelectedItem="{Binding InviteLockProvider}" HorizontalAlignment="Stretch"
                       ToolTip.Tip="Lock the invite to one account, so a leaked link is useless to anyone else." />
-            <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Text="{Binding InviteLockValue}" PlaceholderText="Twitch name or Google email"
-                     ToolTip.Tip="The Twitch user name or Google email the mod must sign in with." />
+            <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Text="{Binding InviteLockValue}" PlaceholderText="Twitch name, Google email or Discord user name"
+                     ToolTip.Tip="The Twitch user name, Google email or Discord user name the mod must sign in with." />
           </Grid>
           <Button Content="Make invite link" Command="{Binding CreateInviteCommand}" ToolTip.Tip="Makes a one-time link to send to your mod." />
           <Border IsVisible="{Binding HasNewInvite}" BorderBrush="{DynamicResource CuebotAccent}" BorderThickness="1" CornerRadius="6" Padding="8">

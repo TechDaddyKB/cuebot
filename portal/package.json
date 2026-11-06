@@ -9,14 +9,16 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "node build.mjs",
     "typecheck": "tsc -p . && tsc -p worker",
-    "test": "vitest run && vitest run -c vitest.worker.config.ts",
-    "deploy": "wrangler deploy"
+    "test": "npm run build && vitest run && vitest run -c vitest.worker.config.ts",
+    "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.4.9",
     "@cloudflare/workers-types": "5.20261027.1",
     "@types/node": "24.19.2",
+    "esbuild": "0.28.2",
     "typescript": "5.9.3",
     "vitest": "5.0.5",
     "wrangler": "4.154.0"

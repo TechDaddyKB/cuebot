@@ -18,6 +18,8 @@ export interface Env {
 	PORTAL_RELAY: DurableObjectNamespace<PortalRelay>;
 	/** The domain whose portal., relay. and hooks. names this Worker answers (wrangler.jsonc "vars"). */
 	PORTAL_DOMAIN?: string;
+	/** dist/: the built loader (npm run build). */
+	ASSETS: Fetcher;
 }
 
 const RELAY_ID = /^[a-z2-7]{32}$/;
@@ -99,7 +101,7 @@ export default {
 			case "hook":
 				return hook(request, url, r.path, env);
 			case "portal":
-				return portal(request, r.path);
+				return portal(request, r.path, env);
 		}
 	},
 } satisfies ExportedHandler<Env>;
@@ -165,38 +167,48 @@ function toBase64(bytes: Uint8Array): string {
 	return btoa(binary);
 }
 
-// The portal pages. Phase 4 replaces the loader with the real one; until then it says what is coming.
-const SECURITY_HEADERS = {
-	"content-security-policy": "default-src 'none'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-	"referrer-policy": "no-referrer",
-	"x-content-type-options": "nosniff",
-	"cross-origin-opener-policy": "same-origin",
-	"cross-origin-resource-policy": "same-origin",
-	"permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-	"strict-transport-security": "max-age=31536000",
-	"cache-control": "no-store",
-};
-
-const CSS = `body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem;color:#1d1d20;background:#fafafa}
-h1{font-size:1.4rem}@media(prefers-color-scheme:dark){body{color:#e8e8ea;background:#17171a}}`;
-
-function page(title: string, text: string): Response {
-	const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title><link rel="stylesheet" href="/portal.css"></head><body><h1>${title}</h1><p>${text}</p></body></html>`;
-	return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", ...SECURITY_HEADERS } });
+// The portal pages: one page for the loader (web/main.ts, built to dist/loader.js) and the sign-in return address.
+// Script only from this origin; connections only here and to the relay.
+function securityHeaders(env: Env): Record<string, string> {
+	const relay = env.PORTAL_DOMAIN ? ` wss://relay.${env.PORTAL_DOMAIN}` : "";
+	return {
+		"content-security-policy": `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'${relay}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+		"referrer-policy": "no-referrer",
+		"x-content-type-options": "nosniff",
+		"cross-origin-opener-policy": "same-origin",
+		"cross-origin-resource-policy": "same-origin",
+		"permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+		"strict-transport-security": "max-age=31536000",
+		"cache-control": "no-store",
+	};
 }
 
-function portal(request: Request, path: string): Response {
+const CSS = `body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem;color:#1d1d20;background:#fafafa}
+h1{font-size:1.4rem}.error{color:#b3261e}.providers{display:flex;flex-direction:column;gap:.6rem;margin:1.2rem 0}
+button{font:inherit;padding:.65rem 1rem;border-radius:.5rem;border:1px solid #c9c9d1;background:#fff;color:inherit;cursor:pointer;text-align:left}
+button:hover{border-color:#6b5cff}button.secondary{margin-top:1rem}
+@media(prefers-color-scheme:dark){body{color:#e8e8ea;background:#17171a}button{background:#24242a;border-color:#3a3a44}.error{color:#f2b8b5}}`;
+
+const LOADER_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cuebot mod portal</title><link rel="stylesheet" href="/portal.css"><script type="module" src="/loader.js"></script></head>
+<body><main><h1>Cuebot mod portal</h1><noscript><p>The mod portal needs JavaScript.</p></noscript></main></body></html>`;
+
+async function portal(request: Request, path: string, env: Env): Promise<Response> {
 	if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: { allow: "GET, HEAD" } });
+	const headers = securityHeaders(env);
 	switch (path) {
 		case "/":
-			return page("Cuebot mod portal", "The mod portal is not open yet. When a streamer sends you an invite link, it will open here.");
 		case "/auth/return":
-			return page("Cuebot mod portal", "Signing in to the mod portal comes in a later version of Cuebot.");
+			return new Response(LOADER_PAGE, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+		case "/loader.js": {
+			const asset = await env.ASSETS.fetch(new Request(new URL("/loader.js", request.url)));
+			if (!asset.ok) return notFound();
+			return new Response(asset.body, { headers: { "content-type": "text/javascript; charset=utf-8", ...headers } });
+		}
 		case "/portal.css":
-			return new Response(CSS, { headers: { "content-type": "text/css; charset=utf-8", ...SECURITY_HEADERS } });
+			return new Response(CSS, { headers: { "content-type": "text/css; charset=utf-8", ...headers } });
 		case "/health":
-			return new Response("Cuebot portal relay\n", { headers: { "content-type": "text/plain", ...SECURITY_HEADERS } });
+			return new Response("Cuebot portal relay\n", { headers: { "content-type": "text/plain", ...headers } });
 		default:
 			return notFound();
 	}

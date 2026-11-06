@@ -9,6 +9,7 @@ export type Bytes = Uint8Array<ArrayBuffer>;
 export const VERSION = 1;
 export const LABEL = "cuebot-portal-v1";
 export const SEAL_LABEL = "cuebot-seal-v1";
+export const DEVICE_PROOF_LABEL = "cuebot-portal-device-v1";
 export const PUBLIC_KEY_LENGTH = 65;
 export const SIGNATURE_LENGTH = 64;
 export const TAG_LENGTH = 16;
@@ -122,9 +123,14 @@ export function transcript(clientEphemeral: Bytes, serverEphemeral: Bytes, ident
   return concat(utf8.encode(LABEL), clientEphemeral, serverEphemeral, identity);
 }
 
-export async function deriveKeys(shared: Bytes, transcriptBytes: Bytes): Promise<{ c2s: CryptoKey; s2c: CryptoKey }> {
+export async function deriveKeys(shared: Bytes, transcriptBytes: Bytes): Promise<{ c2s: CryptoKey; s2c: CryptoKey; binding: Bytes }> {
   const salt = await sha256(transcriptBytes);
-  return { c2s: await hkdf(shared, salt, "c2s"), s2c: await hkdf(shared, salt, "s2c") };
+  return { c2s: await hkdf(shared, salt, "c2s"), s2c: await hkdf(shared, salt, "s2c"), binding: salt };
+}
+
+/** The bytes a device signs with its own key to prove it holds it on the connection with this binding. */
+export function deviceProof(binding: Bytes): Bytes {
+  return concat(utf8.encode(DEVICE_PROOF_LABEL), binding);
 }
 
 export function nonce(counter: number): Bytes {
@@ -139,7 +145,8 @@ export class PortalSession {
   private received = 0;
   private broken = false;
 
-  constructor(private readonly sendKey: CryptoKey, private readonly receiveKey: CryptoKey) {}
+  /** SHA-256 of the handshake transcript: the same on both ends and unique to this connection. */
+  constructor(private readonly sendKey: CryptoKey, private readonly receiveKey: CryptoKey, readonly binding: Bytes) {}
 
   async encrypt(plaintext: Bytes): Promise<Bytes> {
     const n = nonce(this.sent++);
@@ -177,7 +184,7 @@ export async function finishHandshake(ephemeral: CryptoKeyPair, serverHello: Byt
   const t = transcript(await rawPublicKey(ephemeral.publicKey), serverEphemeral, identity);
   if (!(await verify(identity, t, signature))) throw new PortalCryptoError("The handshake signature is wrong.");
   const keys = await deriveKeys(await sharedSecret(ephemeral.privateKey, serverEphemeral), t);
-  return new PortalSession(keys.c2s, keys.s2c);
+  return new PortalSession(keys.c2s, keys.s2c, keys.binding);
 }
 
 async function sealKey(shared: Bytes, ephemeral: Bytes, recipient: Bytes): Promise<CryptoKey> {

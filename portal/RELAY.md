@@ -18,7 +18,7 @@ Browser ──GET──▶ portal.techdaddydigital.com/   and   /auth/return
 | --- | --- |
 | `relay.<domain>` | `GET /connect?id=<relay id>` (Cuebot), `GET /c/<relay id>` (devices), `GET /` health check; webhooks under `/h/<relay id>/...` too, for a relay URL override |
 | `hooks.<domain>` | `/<relay id>/<route secret>/<service>[/<path>]` |
-| `portal.<domain>` | `/`, `/auth/return`, `/portal.css` (placeholders until the loader, phase 4) |
+| `portal.<domain>` | `/` and `/auth/return` (the loader page), `/loader.js` (built from `web/` by `npm run build`), `/portal.css` |
 | any other `<name>.<domain>` | 404 |
 | any other host (workers.dev, `wrangler dev`) | all of the above; webhooks under `/h/<relay id>/...` |
 

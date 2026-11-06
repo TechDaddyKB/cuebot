@@ -30,6 +30,11 @@
     <_CuebotBuiltInApp Include="KickClientSecret" Value="$(CUEBOT_KICK_CLIENT_SECRET)" />
     <_CuebotBuiltInApp Include="TreatStreamClientId" Value="$(CUEBOT_TREATSTREAM_CLIENT_ID)" />
     <_CuebotBuiltInApp Include="TreatStreamClientSecret" Value="$(CUEBOT_TREATSTREAM_CLIENT_SECRET)" />
+    <_CuebotBuiltInApp Include="PortalGoogleClientId" Value="$(CUEBOT_PORTAL_GOOGLE_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="PortalGoogleClientSecret" Value="$(CUEBOT_PORTAL_GOOGLE_CLIENT_SECRET)" />
+    <_CuebotBuiltInApp Include="PortalTwitchClientId" Value="$(CUEBOT_PORTAL_TWITCH_CLIENT_ID)" />
+    <_CuebotBuiltInApp Include="PortalTwitchClientSecret" Value="$(CUEBOT_PORTAL_TWITCH_CLIENT_SECRET)" />
+    <_CuebotBuiltInApp Include="PortalDiscordClientId" Value="$(CUEBOT_PORTAL_DISCORD_CLIENT_ID)" />
   </ItemGroup>
 
   <Target Name="CuebotGenerateBuiltInApps" BeforeTargets="CoreCompile">

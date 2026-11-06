@@ -79,8 +79,8 @@ async function build(): Promise<Record<string, unknown>> {
   const t = transcript(clientPublic, serverPublic, identityPublic);
   const shared = await sharedSecret((await pair(clientEphemeral, ECDH)).privateKey, serverPublic);
   const keys = await deriveKeys(shared, t);
-  const client = new PortalSession(keys.c2s, keys.s2c);
-  const server = new PortalSession(keys.s2c, keys.c2s);
+  const client = new PortalSession(keys.c2s, keys.s2c, keys.binding);
+  const server = new PortalSession(keys.s2c, keys.c2s, keys.binding);
   const frames = [];
   for (const f of FRAMES) frames.push({ ...f, frame: base64Url(await (f.from === "client" ? client : server).encrypt(text.encode(f.text))) });
   const sealPlain = "POST /hook/kofi {\"amount\":\"5.00\"}";
@@ -198,7 +198,7 @@ describe("handshake", () => {
 describe("session", () => {
   async function sessions(): Promise<[PortalSession, PortalSession]> {
     const keys = await deriveKeys(fromBase64Url(v.shared), fromBase64Url(v.transcript));
-    return [new PortalSession(keys.c2s, keys.s2c), new PortalSession(keys.s2c, keys.c2s)];
+    return [new PortalSession(keys.c2s, keys.s2c, keys.binding), new PortalSession(keys.s2c, keys.c2s, keys.binding)];
   }
 
   it("matches the vector frames byte for byte", async () => {
