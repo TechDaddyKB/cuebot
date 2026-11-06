@@ -57,6 +57,9 @@ class CompanionUiTest {
         "topSpenders":{"currency":"USD","periods":{"stream":{"all":{"total":0,"spenders":[]}}}},
         "feed":[{"platform":"Twitch","kind":"Cheer","user":"ann","title":"ann cheered 500 bits","isTest":true}]}""".replace("\n", "")
 
+    private val change = """{"id":"c1","member":"Sam","area":"command","kind":"update","target":"!hello","summary":"Sam changed the command '!hello'","at":1,"expires":2}"""
+    @Volatile private var approved = false
+
     @Before fun setUp() {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
@@ -68,6 +71,8 @@ class CompanionUiTest {
                     "POST /deck/d1/press", "POST /deck/d1/page" -> json("{}")
                     "GET /api/v1/dashboard" -> json(dashboard)
                     "GET /api/v1/events" -> sse(": connected\n\n")
+                    "GET /api/v1/portal/changes" -> json(if (approved) """{"changes":[]}""" else """{"changes":[$change]}""")
+                    "POST /api/v1/portal/changes/c1/approve" -> { approved = true; json("""{"result":"applied","changes":[]}""") }
                     "POST /api/v1/subathon/main/time" -> json("""{"timers":[{"id":"main","name":"Subathon","state":"paused","remaining":3900}],"goals":[]}""")
                     else -> MockResponse.Builder().code(404).build()
                 }
@@ -164,5 +169,19 @@ class CompanionUiTest {
         compose.waitUntilExactlyOneExists(hasTestTag("unreachable"), 15_000)
         compose.onNodeWithText("Is \"Allow LAN\" on in Cuebot (Servers page)?").assertExists()
         assertTrue(requests.isEmpty())
+    }
+
+    @Test fun modsTabApprovesChangesAndOffersToJoin() {
+        pairWithServer()
+        launch()
+        compose.waitUntilExactlyOneExists(hasTestTag("tab-mods"), 10_000)
+        compose.onNodeWithTag("tab-mods").performClick()
+        compose.waitUntilExactlyOneExists(hasText("Sam changed the command '!hello'"), 10_000)
+        compose.onNodeWithTag("approve-c1").performClick()
+        compose.waitUntilExactlyOneExists(hasText("Approved: it is live now."), 5_000)
+        assertEquals(1, count("POST /api/v1/portal/changes/c1/approve"))
+
+        compose.onNodeWithTag("join-button").performClick()
+        compose.onNodeWithTag("invite-paste").assertExists()
     }
 }

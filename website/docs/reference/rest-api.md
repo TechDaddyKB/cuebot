@@ -694,6 +694,40 @@ curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
   "http://127.0.0.1:7475/api/v1/store/redemptions/REDEMPTION_ID/approve"
 ```
 
+## Mod portal
+
+### GET /portal/changes
+
+Lists your mods' changes that wait for your OK in the mod portal, the oldest first: who made it, what it changes (summary) and when it expires (7 days after it was made). Times are Unix milliseconds.
+
+**Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://127.0.0.1:7475/api/v1/portal/changes"
+```
+
+### POST /portal/changes/{id}/{command}
+
+Answers a mod's change that waits for your OK. approve: make it live. reject: drop it. If you changed the same thing yourself since the mod asked, approve answers result conflict and changes nothing; send force true to use the mod's version anyway. Answers with the queue as it is now.
+
+| In the address | What it is |
+| --- | --- |
+| `id` (required, in the path) | Change id |
+| `command` (required, in the path) | approve or reject |
+
+| Body field | Type | What it is |
+| --- | --- | --- |
+| `force` | true/false | Approve even when the thing changed since the mod asked |
+
+**Answers:** `200` OK; `404` Not found; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"force":false}' \
+  "http://127.0.0.1:7475/api/v1/portal/changes/Thank%20followers/pause"
+```
+
 ## Polls
 
 ### GET /polls

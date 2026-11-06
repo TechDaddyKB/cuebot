@@ -1,6 +1,7 @@
 package digital.techdaddy.cuebot.companion.ui.mod
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.ClipboardManager
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +50,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +76,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import digital.techdaddy.cuebot.companion.data.Membership
 import digital.techdaddy.cuebot.companion.ui.settings.QrImageReader
 import digital.techdaddy.cuebot.companion.ui.settings.QrScanner
 import digital.techdaddy.cuebot.companion.ui.theme.LocalCuebotColors
@@ -89,7 +93,13 @@ fun ModScreen(vm: ModViewModel, approvals: ApprovalsViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LaunchedEffect(vm) {
-        vm.browser.collect { url -> CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, Uri.parse(url)) }
+        vm.browser.collect { url ->
+            try {
+                CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, Uri.parse(url))
+            } catch (e: ActivityNotFoundException) {
+                vm.noBrowser()
+            }
+        }
     }
     when (val s = state) {
         ModState.Home -> Home(vm, approvals)
@@ -106,6 +116,7 @@ private fun Home(vm: ModViewModel, approvals: ApprovalsViewModel) {
     val notice by vm.notice.collectAsStateWithLifecycle()
     val queue by approvals.state.collectAsStateWithLifecycle()
     var joining by rememberSaveable { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf<Membership?>(null) }
     val rowColors = ListItemDefaults.colors(containerColor = colors.card)
 
     Column(Modifier.fillMaxSize()) {
@@ -126,13 +137,14 @@ private fun Home(vm: ModViewModel, approvals: ApprovalsViewModel) {
             items(memberships, key = { it.relay }) { m ->
                 var menu by remember { mutableStateOf(false) }
                 ListItem(
-                    headlineContent = { Text(m.member.ifEmpty { "Mod portal" }) },
-                    supportingContent = { Text(m.role.ifEmpty { "Mod" }, color = colors.muted) },
+                    headlineContent = { Text(m.name) },
+                    supportingContent = { Text(listOf("Signed in as ${m.member}", m.role).filter { it.isNotBlank() }.joinToString(" · "), color = colors.muted) },
                     leadingContent = { Icon(Icons.Filled.Groups, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     trailingContent = {
                         Box {
-                            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More for ${m.member}") }
+                            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More for ${m.name}") }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; renaming = m })
                                 DropdownMenuItem(text = { Text("Forget on this phone", color = colors.bad) }, onClick = { menu = false; vm.forget(m) })
                             }
                         }
@@ -152,9 +164,19 @@ private fun Home(vm: ModViewModel, approvals: ApprovalsViewModel) {
             }
             item {
                 Footer(if (memberships.isEmpty()) "When a streamer invites you to help with their stream, scan the invite's QR code or paste its link here. You sign in with Google, Twitch or Discord so their Cuebot knows it's you."
-                else "Tap a streamer to open their mod portal.")
+                else "Tap one to open its mod portal. Use ⋮ to give it the streamer's name.")
             }
         }
+    }
+    renaming?.let { m ->
+        var name by remember(m.relay) { mutableStateOf(m.name) }
+        AlertDialog(
+            onDismissRequest = { renaming = null },
+            title = { Text("Rename") },
+            text = { OutlinedTextField(name, { name = it }, singleLine = true, label = { Text("Whose stream is it?") }) },
+            confirmButton = { TextButton(onClick = { vm.rename(m, name); renaming = null }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } },
+        )
     }
     if (joining) InviteDialog(open = { link -> vm.openInvite(link).also { if (it == null) joining = false } }, close = { joining = false })
 }
@@ -168,7 +190,11 @@ private fun PendingRow(change: PendingChange, conflict: Boolean, approve: () -> 
     ) {
         Column(Modifier.padding(14.dp)) {
             Text(change.summary, fontWeight = FontWeight.SemiBold)
-            val ago = if (change.at > 0) DateUtils.getRelativeTimeSpanString(change.at).toString() else ""
+            val ago = when {
+                change.at <= 0 -> ""
+                System.currentTimeMillis() - change.at < DateUtils.MINUTE_IN_MILLIS -> "Just now"
+                else -> DateUtils.getRelativeTimeSpanString(change.at).toString()
+            }
             Text(ago, color = colors.muted, style = MaterialTheme.typography.bodySmall)
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(onClick = approve, modifier = Modifier.testTag("approve-${change.id}")) { Text(if (conflict) "Approve anyway" else "Approve") }
@@ -302,7 +328,7 @@ private fun PortalScreen(vm: ModViewModel, portal: ModState.Portal) {
     BackHandler { vm.home() }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(portal.membership.member.ifEmpty { "Mod portal" }) },
+            title = { Text(portal.membership.name) },
             navigationIcon = { IconButton(onClick = vm::home) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Leave the portal") } },
             actions = {
                 Box {

@@ -260,6 +260,15 @@
     "POST /store/redemptions/{id}/{command}": {
       "description": "Answers a store purchase that waits for your OK. approve: accept it. reject: say no; the viewer gets the points back and the item goes back in stock. Find the id in pending from GET /store."
     },
+    "GET /portal/changes": {
+      "description": "Lists your mods' changes that wait for your OK in the mod portal, the oldest first: who made it, what it changes (summary) and when it expires (7 days after it was made). Times are Unix milliseconds."
+    },
+    "POST /portal/changes/{id}/{command}": {
+      "description": "Answers a mod's change that waits for your OK. approve: make it live. reject: drop it. If you changed the same thing yourself since the mod asked, approve answers result conflict and changes nothing; send force true to use the mod's version anyway. Answers with the queue as it is now.",
+      "example": {
+        "force": false
+      }
+    },
     "GET /polls": {
       "description": "Tells you the latest poll and prediction from each place (Twitch, YouTube and Cuebot's own), with votes and points, plus the chat commands to vote and bet in Cuebot's own ones."
     },

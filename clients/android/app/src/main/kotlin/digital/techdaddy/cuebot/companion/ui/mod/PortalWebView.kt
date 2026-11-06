@@ -34,7 +34,7 @@ import java.io.ByteArrayInputStream
 
 private const val HOST = "appassets.androidplatform.net"
 private const val ORIGIN = "https://$HOST"
-private const val PAGE = "$ORIGIN/portal/index.html"
+private const val PAGE = "$ORIGIN/assets/portal/index.html"
 
 /** Whether this phone's WebView can run the portal (a message listener needs a WebView from 2021 or later). */
 fun portalWebViewSupported(): Boolean = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
@@ -64,7 +64,7 @@ fun PortalWebView(portal: ModState.Portal, onSignOut: () -> Unit, onFailed: (Str
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             settings.setSupportMultipleWindows(false)
-            val assets = WebViewAssetLoader.Builder().setDomain(HOST).addPathHandler("/portal/", WebViewAssetLoader.AssetsPathHandler(context)).build()
+            val assets = WebViewAssetLoader.Builder().setDomain(HOST).addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context)).build()
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse =
                     assets.shouldInterceptRequest(request.url)

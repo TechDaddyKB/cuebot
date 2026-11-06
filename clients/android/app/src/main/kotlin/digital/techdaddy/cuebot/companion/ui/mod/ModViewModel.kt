@@ -98,6 +98,12 @@ class ModViewModel(
         _browser.trySend(url)
     }
 
+    /** The phone has no browser to sign in with. */
+    fun noBrowser() {
+        memberships.pending = null
+        _state.value = ModState.Problem("Signing in needs a web browser on this phone, like Chrome. Install or turn one on, then try again.")
+    }
+
     /** Back from the provider: the return page opened cuebot-portal://signin?code=…&state=… */
     fun finishSignIn(returnLink: String) {
         val pending = memberships.pending
@@ -135,7 +141,7 @@ class ModViewModel(
 
     /** Opens the portal for a streamer this phone already mods for. */
     fun resume(membership: Membership) {
-        _state.value = ModState.Busy("Mod portal", "Connecting to ${membership.member.ifEmpty { "the streamer" }}'s Cuebot…")
+        _state.value = ModState.Busy(membership.name, "Connecting to the streamer's Cuebot…")
         viewModelScope.launch {
             val signInAgain = { chooseProvider(membership.target) }
             val key = memberships.keys.open(membership.keyAlias) ?: return@launch signInAgain()
@@ -150,7 +156,8 @@ class ModViewModel(
     }
 
     private suspend fun welcome(link: PortalLink, target: PortalTarget, alias: String, me: JsonObject) {
-        val membership = Membership(target.copy(invite = null), me.string("name") ?: "", me.string("role") ?: "", alias, now())
+        val name = memberships.find(target.relay)?.name ?: Membership.DEFAULT_NAME
+        val membership = Membership(target.copy(invite = null), name, me.string("name") ?: "", me.string("role") ?: "", alias, now())
         memberships.save(membership)
         val ui = link.request("ui")
         val portal = ModState.Portal(membership, link, me, ui.string("js")?.takeIf { ui.ok }, ui.string("css")?.takeIf { ui.ok })
@@ -165,7 +172,7 @@ class ModViewModel(
             runCatching { portal.link.request("signout") }
             portal.link.close()
             memberships.forget(portal.membership.relay)
-            notice.value = "Signed out. This phone is no longer a mod for ${portal.membership.member.ifEmpty { "that streamer" }}."
+            notice.value = "Signed out of ${portal.membership.name} on this phone."
             _state.value = ModState.Home
         }
     }
@@ -176,6 +183,8 @@ class ModViewModel(
         if (_state.value is ModState.InBrowser) memberships.pending = null
         _state.value = ModState.Home
     }
+
+    fun rename(membership: Membership, name: String) = memberships.rename(membership.relay, name)
 
     /** Forgets a membership without asking Cuebot (for one this phone can no longer reach). */
     fun forget(membership: Membership) = memberships.forget(membership.relay)

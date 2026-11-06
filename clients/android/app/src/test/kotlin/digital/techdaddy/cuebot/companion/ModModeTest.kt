@@ -151,6 +151,7 @@ class ModViewModelTest {
         assertEquals("export function mount(){}", open.js)
         val m = memberships.all.value.single()
         assertEquals(Triple("SamTheMod", "Lead Mod", null), Triple(m.member, m.role, m.target.invite))
+        assertEquals("Mod portal", m.name)
         assertEquals(portal.fingerprint, m.target.fingerprint)
         val signin = portal.requests.single { it.string("op") == "signin" }
         assertEquals("s".repeat(43), signin.string("invite"))
@@ -167,8 +168,11 @@ class ModViewModelTest {
         vm.home()
         val m = memberships.all.value.single()
 
-        vm.resume(m)
+        vm.rename(m, "  Kris's stream ")
+        vm.resume(memberships.all.value.single())
         eventually("resumed") { vm.state.value is ModState.Portal }
+        // Signing in again keeps the name the mod gave it.
+        assertEquals("Kris's stream", memberships.all.value.single().name)
         assertEquals(1, portal.requests.count { it.string("op") == "resume" })
         vm.home()
 

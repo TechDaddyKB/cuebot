@@ -183,7 +183,7 @@ public static class OpenApiDocument
                 ["parameters"] = new JsonArray(IdParam("Change id"), PathParam("command", "approve or reject")),
                 ["post"] = Op("decidePortalChange", "Mod portal",
                     "Approve or reject a pending mod change. result: applied, rejected, conflict (it changed since the mod asked; nothing was applied, approve with force to use the mod's version) or notPending",
-                    body: Obj(("force", Bool())),
+                    body: Obj(("force", Bool("Approve even when the thing changed since the mod asked"))),
                     responses: Responses(("200", "OK", Obj(("result", Str()), ("changes", Arr(new JsonObject { ["type"] = "object" })))), NotFound())),
             },
             ["/polls"] = new JsonObject

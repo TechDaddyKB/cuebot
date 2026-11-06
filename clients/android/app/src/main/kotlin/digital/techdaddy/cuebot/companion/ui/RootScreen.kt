@@ -35,6 +35,8 @@ import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.KeyOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -78,11 +80,6 @@ import digital.techdaddy.cuebot.companion.ui.mod.ModScreen
 import digital.techdaddy.cuebot.companion.ui.mod.ModViewModel
 import digital.techdaddy.cuebot.core.portal.PortalSignIn
 import digital.techdaddy.cuebot.core.portal.PortalTarget
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
-import androidx.compose.runtime.rememberCoroutineScope
 import digital.techdaddy.cuebot.companion.ui.settings.SettingsScreen
 import digital.techdaddy.cuebot.companion.ui.settings.SettingsViewModel
 import digital.techdaddy.cuebot.companion.ui.theme.LocalCuebotColors
@@ -106,15 +103,8 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
     val dashboard: DashboardViewModel = viewModel(factory = viewModelFactory { initializer { DashboardViewModel(container.connection, container.store, container.foreground) } })
     val settings: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(container.paired, container.connection, container.store) } })
     val mods: ModViewModel = viewModel(factory = viewModelFactory { initializer { ModViewModel(container.memberships) } })
-    // The approval queue is checked only while the Mods tab is on screen.
-    val modsTab = remember { MutableStateFlow(tab == Tab.Mods) }
-    LaunchedEffect(tab) { modsTab.value = tab == Tab.Mods }
-    val scope = rememberCoroutineScope()
-    val approvals: ApprovalsViewModel = viewModel(factory = viewModelFactory {
-        initializer {
-            ApprovalsViewModel(container.connection, combine(modsTab, container.foreground) { m, f -> m && f }.stateIn(scope, SharingStarted.Eagerly, false))
-        }
-    })
+    // The approval queue is checked while the app is on screen, so the Mods tab can show how many changes wait.
+    val approvals: ApprovalsViewModel = viewModel(factory = viewModelFactory { initializer { ApprovalsViewModel(container.connection, container.foreground) } })
     val colors = LocalCuebotColors.current
 
     LocalNetworkPermission(container)
@@ -134,11 +124,15 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
         bottomBar = {
             if (!streamMode) {
                 NavigationBar(containerColor = colors.card) {
+                    val waiting = approvals.state.collectAsStateWithLifecycle().value.pending.size
                     Tab.entries.forEach { t ->
                         NavigationBarItem(
                             selected = tab == t,
                             onClick = { tab = t },
-                            icon = { Icon(t.icon, contentDescription = null) },
+                            icon = {
+                                if (t == Tab.Mods && waiting > 0) BadgedBox(badge = { Badge { Text("$waiting") } }) { Icon(t.icon, contentDescription = "$waiting waiting") }
+                                else Icon(t.icon, contentDescription = null)
+                            },
                             label = { Text(t.label) },
                             modifier = Modifier.testTag("tab-${t.name.lowercase()}"),
                         )

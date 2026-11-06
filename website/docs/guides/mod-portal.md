@@ -19,7 +19,8 @@ You can change a mod's role, pause them or remove them at any time. A change app
 
 ## What your mods see
 
-Mods open `portal.techdaddydigital.com` on their phone or computer. They only see the pages their role allows:
+Mods open `portal.techdaddydigital.com` on their phone or computer, or use the [Cuebot phone app](companion-app.md#for-mods)
+on Android. They only see the pages their role allows:
 
 | Page | What it does | Who (default roles) |
 |---|---|---|
@@ -158,6 +159,9 @@ A role can also be limited to some **groups** of actions and commands, like "Mod
   answers expires after 7 days.
 
 Every role has one of these. You can set a different one for a single mod under **Their changes**.
+
+You can also approve from your phone: the [Cuebot phone app](companion-app.md#approving-from-your-phone), paired
+with this Cuebot, lists the changes waiting for you on its **Mods** tab.
 
 Under **Recent changes by mods**, **Undo** puts back what was there before. If it changed again since, Cuebot asks
 you to press Undo once more to be sure.

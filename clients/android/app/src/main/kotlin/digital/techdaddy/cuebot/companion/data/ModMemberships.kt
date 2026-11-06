@@ -26,12 +26,19 @@ import java.security.spec.ECGenParameterSpec
 @Serializable
 data class Membership(
     val target: PortalTarget,
+    /** What the mod calls this streamer here (Cuebot does not say whose it is); they can rename it. */
+    val name: String = DEFAULT_NAME,
+    /** The mod's own name, as Cuebot knows them. */
     val member: String,
     val role: String,
     val keyAlias: String,
     val at: Long,
 ) {
     val relay: String get() = target.relay
+
+    companion object {
+        const val DEFAULT_NAME = "Mod portal"
+    }
 }
 
 /** This device's portal keys, one per membership. */
@@ -112,6 +119,14 @@ class ModMemberships(private val store: KeyValueStore, private val cipher: Token
         val old = find(membership.relay)
         if (old != null && old.keyAlias != membership.keyAlias) keys.delete(old.keyAlias)
         _all.update { list -> (listOf(membership) + list.filter { it.relay != membership.relay }).sortedByDescending { it.at } }
+        store.put(LIST_KEY, json.encodeToString(_all.value))
+    }
+
+    fun rename(relay: String, name: String) {
+        val trimmed = name.trim()
+        val m = find(relay) ?: return
+        if (trimmed.isEmpty()) return
+        _all.update { list -> list.map { if (it.relay == relay) m.copy(name = trimmed) else it } }
         store.put(LIST_KEY, json.encodeToString(_all.value))
     }
 

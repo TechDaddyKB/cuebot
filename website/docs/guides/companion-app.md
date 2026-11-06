@@ -15,12 +15,13 @@ to keep an eye on your stream from the couch.
 
 </div>
 
-It has three tabs:
+It has four tabs:
 
 | Tab | What it is for |
 | --- | --- |
 | **Deck** | The buttons of your [decks](stream-apps-and-devices.md#decks-buttons-on-your-phone). Tap one and Cuebot runs it, just like a Stream Deck. **Choose deck** switches decks, and the arrows at the bottom switch pages. |
 | **Dashboard** | What is connected, your **Quick actions**, your [subathon timers and goals](subathon-and-goals.md) with their buttons, **Top spenders** for **This stream** and more, totals, and the **Activity** list of follows, subs, tips and raids. |
+| **Mods** | Your mods' changes that wait for your OK, and, if you are a mod for someone, their [mod portal](mod-portal.md). |
 | **Settings** | The Cuebots you paired, light or dark look, and **Troubleshooting**. |
 
 ## Get the app
@@ -76,6 +77,29 @@ You can pair more than one Cuebot, like a gaming PC and a streaming PC. Tap one 
 - **TEST** badges in the Activity list mark test events: the ones you start with **Test trigger…**, a service's test
   button or the assistant's emulator. They don't count towards top spenders, but they *do* move subathon timers and
   goals, so you can try those out.
+
+## Approving from your phone
+
+If your mods' changes need your approval (see [Approving and undoing changes](mod-portal.md#approving-and-undoing-changes)),
+the **Mods** tab lists them under **Waiting for your OK**, with a count on the tab. Tap **Approve** to make a change
+live or **Reject** to drop it. If you changed the same thing yourself since the mod asked, the app says so: tap
+**Approve anyway** to use the mod's version. An older Cuebot shows nothing here: update it first.
+
+## For mods
+
+A streamer can make you a mod in their Cuebot with an invite (a link or a QR code). In the app:
+
+1. Open the **Mods** tab and tap **Join with an invite**.
+2. Scan the invite's QR code, choose a picture of it, or copy the link and tap **Paste the invite link**.
+3. Tap **Sign in with** Google, Twitch or Discord. The sign-in opens in your browser and comes back to the app when
+   it is done. Your account is only used to recognise you.
+4. The streamer's mod portal opens, with the same pages as in a browser.
+
+The app remembers each streamer you mod for: tap one on the **Mods** tab to open their portal again without signing
+in. **Sign out on this phone** (⋮ in the portal) removes you from this phone. You don't need to pair the app with a
+Cuebot of your own for this; the portal goes through the streamer's Cuebot over the internet, encrypted end to end.
+
+On iPhone the mod mode comes with the iPhone app.
 
 ## It doesn't connect?
 
