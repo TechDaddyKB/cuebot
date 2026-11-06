@@ -25,7 +25,7 @@ class DeckViewModelTest {
         cuebot.route("POST /deck/d1/page", json("{}"))
     }
 
-    private fun viewModel() = DeckViewModel(cuebot.connection, cuebot.store, cuebot.foreground)
+    private fun viewModel() = cuebot.viewModel { DeckViewModel(cuebot.connection, cuebot.store, cuebot.foreground) }
 
     @Test fun opensTheOnlyEnabledDeckAndShowsItLive() {
         oneDeck()
