@@ -2,8 +2,8 @@
 
 - **Status (2026-11-06):** designed with Kris in chat. Phases 0 to 6 are built (see section 11). The relay Worker
   `cuebot-portal` is deployed and serves `portal.`, `relay.` and `hooks.techdaddydigital.com` (attached 2026-11-05).
-  Mods join by invite, sign in, use the web portal, upload media and edit overlays. The Android app's mod mode and
-  approvals from the phone are done (phase 7); the iOS app's are being built on the Mac.
+  Mods join by invite, sign in, use the web portal, upload media and edit overlays. The phone apps' mod mode and
+  approvals from the phone are done on Android and iOS (phase 7).
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -270,7 +270,7 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 4 ✅ | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | `portal/ui`, `PortalControls`; `PortalControlsTests`; `PortalUiLiveTests` + `portal/shots.mjs` drove the deployed loader against the real API (sign-in, editing and saving an action, every page, a Standard Mod's view, phone width) and took the docs screenshots |
 | 5 ✅ | ffmpeg CI build and the upload pipeline | `build/ffmpeg/build.sh`, `PortalUploads`, `MediaCleaner`; `MediaCleanerTests` (every format, polyglots: PNG+HTML/ZIP, GIFAR, JPEG comment, ID3, WAV chunk, MP4 atom; cut-off and fuzzed files; a pixel bomb; refused types) pass with Cuebot's build and with a system ffmpeg; Windows (Wine) and arm64 (qemu) builds converted files locally; an upload through the deployed relay went live and was picked in a step |
 | 6 ✅ | Overlays and widgets in the portal | `PortalOverlays` (`overlay` and `widget` change areas), `OverlayValues`, `portal/ui/pages/overlays.tsx`; `PortalOverlaysTests` (roles, links never sent, text that cannot become code, fields a widget pastes unsafely, uploads only, alert designs, approval and undo, an undone delete keeps its link); `PortalOverlaysLiveDemo` + `shots.mjs overlays` through `relay.techdaddydigital.com`: an upload, text, picture, goal and alert edits went live on the overlay page |
-| 7 (Android ✅) | Phone app mod mode, Android then iOS (on the Mac) | Android: `clients/android` `core/portal` (`PortalCrypto`, `PortalLink`, `PortalFlow`), the Mods tab (`ModViewModel`, `PortalWebView`, `ApprovalsViewModel`); `IPortalApprovals` and `/api/v1/portal/changes`; the return page hands `app.` sign-ins to the app. `PortalCryptoTest` (vectors), `PortalLinkTest`, `ModViewModelTest`, `ApprovalsViewModelTest`; `PortalPhoneLiveDemo` on an emulator through `relay.techdaddydigital.com`: a Standard Mod joined by invite, edited a command in the app, and the paired app approved it. iOS: open |
+| 7 ✅ | Phone app mod mode, Android then iOS (on the Mac) | Android: `clients/android` `core/portal` (`PortalCrypto`, `PortalLink`, `PortalFlow`), the Mods tab (`ModViewModel`, `PortalWebView`, `ApprovalsViewModel`); `IPortalApprovals` and `/api/v1/portal/changes`; the return page hands `app.` sign-ins to the app. `PortalCryptoTest` (vectors), `PortalLinkTest`, `ModViewModelTest`, `ApprovalsViewModelTest`; `PortalPhoneLiveDemo` on an emulator through `relay.techdaddydigital.com`: a Standard Mod joined by invite, edited a command in the app, and the paired app approved it. iOS (built on the Mac): CuebotKit `Portal` (CryptoKit), the Mods tab (`ModStore`, `ApprovalsStore`, `PortalWebView` with a `cuebot-app://` scheme handler and a content rule blocking network loads), device keys in the Secure Enclave or Keychain; `swift test` and simulator UI tests; the same flow end to end on an iPhone 17 simulator. Not yet run on a real iPhone (the Secure Enclave path) |
 | 8 | Docs, privacy notice, wiki, release | mkdocs strict, wiki synced |
 
 ## 12. Open questions and later

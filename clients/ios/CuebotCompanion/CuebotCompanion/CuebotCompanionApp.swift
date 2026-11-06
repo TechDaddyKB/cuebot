@@ -8,6 +8,8 @@ struct CuebotCompanionApp: App {
     @State private var deck = DeckStore()
     @State private var dashboard = DashboardStore()
     @State private var quickActions = QuickActionsStore()
+    @State private var mods = ModStore(memberships: ModMemberships())
+    @State private var approvals = ApprovalsStore()
     @State private var pairingError: String?
     /// The Appearance setting; `-appearance dark` on the command line sets it too (UI tests, screenshots).
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
@@ -28,7 +30,13 @@ struct CuebotCompanionApp: App {
                 .environment(deck)
                 .environment(dashboard)
                 .environment(quickActions)
+                .environment(mods)
+                .environment(approvals)
                 .onOpenURL { url in
+                    if url.scheme == PortalSignIn.returnScheme {
+                        mods.finishSignIn(url)
+                        return
+                    }
                     do {
                         paired.pair(try PairingLink.parse(url.absoluteString))
                     } catch {
@@ -53,6 +61,7 @@ enum UITestSupport {
         return switch args[index + 1] {
         case "dashboard": .dashboard
         case "settings": .settings
+        case "mods": .mods
         case "deck": .deck
         default: nil
         }

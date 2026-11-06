@@ -9,18 +9,18 @@ using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
 using Cuebot.Portal.SignIn;
 using Cuebot.Server;
-using Cuebot.Server.Api;
 
 namespace Cuebot.UiTests;
 
 /// <summary>
-/// A manual check of the phone app's mod mode, skipped unless CUEBOT_PORTAL_PHONE_LINK names a file: the app's real
-/// services behind the shared relay (CUEBOT_PORTAL_RELAY_URL for another one), with a command "!hello" and the REST API
-/// on 127.0.0.1:7481 (an Android emulator reaches it as 10.0.2.2). It writes a Standard Mod invite link (their changes
-/// need the streamer's OK) to that file and a cuebot://pair link for the emulator to the same name plus ".pair", and
-/// serves until the link file is deleted (at most 30 minutes). Sign-in is stood in for as in PortalUiLiveTests: the
-/// provider page fails, and the code "test" is handed to the app with
-/// `adb shell am start -d "cuebot-portal://signin?code=test&amp;state=…"`.
+/// A manual check of the phone apps' mod mode and approvals, skipped unless CUEBOT_PORTAL_PHONE_LINK names a file: the
+/// app's real services, with a command "!hello", the REST API on 127.0.0.1 (CUEBOT_PORTAL_PHONE_API_PORT, default 7495)
+/// and the portal behind the shared relay (CUEBOT_PORTAL_RELAY_URL for another one). It writes a Standard Mod invite
+/// link to that file (that role's changes wait for the streamer's OK) and a cuebot://pair link for the REST API to the
+/// same name plus ".pair", for the phone that approves. The pairing link names 127.0.0.1, which an iOS simulator
+/// reaches; set CUEBOT_PORTAL_PHONE_PAIR_HOST=10.0.2.2 for an Android emulator. Sign-in is stood in for as in
+/// PortalUiLiveTests (the code "test"; a phone gets it as cuebot-portal://signin?code=test&amp;state=…, with
+/// `xcrun simctl openurl` or `adb shell am start -d`). Serves until the link file is deleted (at most 30 minutes).
 /// </summary>
 public sealed class PortalPhoneLiveDemo
 {
@@ -41,7 +41,7 @@ public sealed class PortalPhoneLiveDemo
     }
 
     [Fact]
-    public async Task Serve_the_portal_to_a_phone()
+    public async Task Serve_the_portal_and_approvals_to_phones()
     {
         var linkFile = Environment.GetEnvironmentVariable("CUEBOT_PORTAL_PHONE_LINK");
         Assert.SkipWhen(string.IsNullOrWhiteSpace(linkFile), "Set CUEBOT_PORTAL_PHONE_LINK to a file to serve the portal to a phone");
@@ -50,12 +50,15 @@ public sealed class PortalPhoneLiveDemo
         await using var host = AppHost.Create(new AppPaths(data));
         try
         {
-            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
             var servers = host.Get<ServerManager>();
-            servers.Settings.Api = new ApiServerSettings { Enabled = true, Port = 7481, Token = token };
+            var token = "cb_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
+            var port = int.TryParse(Environment.GetEnvironmentVariable("CUEBOT_PORTAL_PHONE_API_PORT"), out var p) ? p : 7495;
+            var pairHost = Environment.GetEnvironmentVariable("CUEBOT_PORTAL_PHONE_PAIR_HOST") is { Length: > 0 } h ? h : "127.0.0.1";
+            (servers.Settings.Api.Enabled, servers.Settings.Api.Port, servers.Settings.Api.Token) = (true, port, token);
             await servers.RestartAsync(ServerKind.Api, timeout.Token);
-            Assert.True(servers.Api.IsRunning, "The REST API did not start (port 7481 in use?)");
+            Assert.True(servers.Api?.IsRunning, $"The REST API did not start (port {port} in use?)");
             host.Get<CommandStore>().Save(new CommandDefinition { Name = "!hello", Commands = ["!hello"] });
+            await File.WriteAllTextAsync(linkFile + ".pair", $"cuebot://pair?v=1&name=Portal%20demo&host={pairHost}&api={port}&http={port}&token={token}", timeout.Token);
 
             var directory = host.Get<PortalDirectory>();
             directory.Enabled = true;
@@ -66,7 +69,6 @@ public sealed class PortalPhoneLiveDemo
                 LinkHandler = new PortalSignInHandler(directory, new TestExchange(), host.Get<PortalApi>().HandleAsync, log),
             };
             await client.ConnectAsync(timeout.Token);
-            await File.WriteAllTextAsync(linkFile + ".pair", $"cuebot://pair?v=1&host=10.0.2.2&api=7481&http=7481&token={token}&name=Phone%20demo", timeout.Token);
             await File.WriteAllTextAsync(linkFile, directory.CreateInvite(DefaultRoles.StandardModId, "Phone test").Link, timeout.Token);
             try
             {

@@ -23,6 +23,15 @@
 				<string>cuebot</string>
 			</array>
 		</dict>
+		<dict>
+			<!-- The mod portal's return page hands a provider's answer to the app: cuebot-portal://signin?code=…&state=… -->
+			<key>CFBundleURLName</key>
+			<string>digital.techdaddy.cuebot.companion.portal-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cuebot-portal</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>
