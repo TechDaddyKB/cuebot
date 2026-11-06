@@ -42,6 +42,18 @@ public actor CuebotClient {
         return list.items(key: "decks")
     }
 
+    // MARK: Mod portal approvals: mods' changes waiting for the streamer's OK
+
+    public func portalChanges() async throws(CuebotError) -> [PendingChange] {
+        let list: Listed<PendingChange> = try await get(api("/api/v1/portal/changes"))
+        return list.items(key: "changes")
+    }
+
+    /// Approves (with `force`, even when it changed since the mod asked) or rejects one change; the queue as it is now.
+    public func decideChange(_ id: String, approve: Bool, force: Bool = false) async throws(CuebotError) -> ChangeDecision {
+        try await post(api("/api/v1/portal/changes/\(escaped(id))/\(approve ? "approve" : "reject")"), body: ["force": .bool(force)])
+    }
+
     public func runAction(_ id: String, args: [String: String] = [:]) async throws(CuebotError) {
         try await send(api("/api/v1/actions/\(escaped(id))/run"), method: "POST", body: args.isEmpty ? nil : ["args": .object(args.mapValues(JSONValue.string))])
     }
