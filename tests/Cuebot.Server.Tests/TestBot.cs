@@ -52,7 +52,7 @@ internal sealed class TestBot : IAsyncDisposable
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
-            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon,
+            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon, Approvals = Approvals,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -156,6 +156,9 @@ internal sealed class TestBot : IAsyncDisposable
     public TimerService Timers { get; }
     public Cuebot.Core.Transfer.TransferService Transfer { get; }
     public ActionEngine Engine { get; }
+    /// <summary>The mod portal's approval queue, as the REST API sees it.</summary>
+    public FakeApprovals Approvals { get; } = new();
+
     public ServerServices Services { get; }
     public ServerManager Manager { get; }
     public FakeSender Sender { get; } = new();

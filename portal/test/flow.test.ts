@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizeUrl, challenge, closeReason, deviceName, parseInvite, readReturn, relayOrigin, type PendingSignIn, type Provider } from "../web/flow.js";
+import { appReturnLink, authorizeUrl, challenge, closeReason, deviceName, isAppReturn, parseInvite, readReturn, relayOrigin, type PendingSignIn, type Provider } from "../web/flow.js";
 
 const RELAY = "a".repeat(32);
 const KEY = "K".repeat(43);
@@ -52,6 +52,19 @@ describe("the return page", () => {
     expect(readReturn("?code=abc&state=s1", null)).toHaveProperty("error");
     expect(readReturn("?error=access_denied&state=s1", pending)).toEqual({ error: "The sign-in was cancelled." });
     expect(readReturn("?state=s1", pending)).toHaveProperty("error");
+  });
+});
+
+describe("the phone app's sign-in", () => {
+  it("is told apart by its state and handed to the app only", () => {
+    expect(isAppReturn("?code=c&state=app.xyz")).toBe(true);
+    expect(isAppReturn("?code=c&state=xyz")).toBe(false);
+    expect(isAppReturn("?code=c")).toBe(false);
+    const android = "Mozilla/5.0 (Linux; Android 16) Chrome/140.0 Mobile Safari/537.36";
+    expect(appReturnLink("?code=4%2F0A&scope=email&state=app.xyz", android))
+      .toBe("intent://signin?code=4%2F0A&state=app.xyz#Intent;scheme=cuebot-portal;package=digital.techdaddy.cuebot.companion;end");
+    expect(appReturnLink("?error=access_denied&state=app.xyz", "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0)"))
+      .toBe("cuebot-portal://signin?state=app.xyz&error=access_denied");
   });
 });
 

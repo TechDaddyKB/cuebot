@@ -508,6 +508,33 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.Equal(404, (await _host.PostAsync($"/api/v1/store/redemptions/{id}/reject", new { })).Status);
     }
 
+    [Fact]
+    public async Task Mod_portal_changes_are_approved_and_rejected_over_the_api()
+    {
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        Bot.Approvals.Waiting.AddRange([first, second]);
+        var (status, list) = await _host.GetAsync("/api/v1/portal/changes");
+        Assert.Equal(200, status);
+        Assert.Equal(2, list!["changes"]!.AsArray().Count);
+
+        Bot.Approvals.Next = "conflict";
+        var (_, conflict) = await _host.PostAsync($"/api/v1/portal/changes/{first}/approve", new { });
+        Assert.Equal(("conflict", 2), (conflict!["result"]!.GetValue<string>(), conflict["changes"]!.AsArray().Count));
+        Bot.Approvals.Next = "applied";
+        var (_, applied) = await _host.PostAsync($"/api/v1/portal/changes/{first}/approve", new { force = true });
+        Assert.Equal(("applied", 1), (applied!["result"]!.GetValue<string>(), applied["changes"]!.AsArray().Count));
+        Bot.Approvals.Next = "rejected";
+        var (_, rejected) = await _host.PostAsync($"/api/v1/portal/changes/{second}/reject", new { });
+        Assert.Equal("rejected", rejected!["result"]!.GetValue<string>());
+        Assert.Equal([(first, true, false), (first, true, true), (second, false, false)], Bot.Approvals.Decisions);
+
+        Assert.Equal(404, (await _host.PostAsync($"/api/v1/portal/changes/{second}/approve", new { })).Status);
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/portal/changes/not-an-id/approve", new { })).Status);
+        Assert.Equal(404, (await _host.PostAsync($"/api/v1/portal/changes/{first}/explode", new { })).Status);
+        Assert.Equal(405, (await _host.SendAsync(HttpMethod.Delete, "/api/v1/portal/changes")).Status);
+    }
+
     // ---- polls ----
 
     [Fact]

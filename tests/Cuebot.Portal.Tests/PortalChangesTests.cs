@@ -248,4 +248,38 @@ public sealed class PortalChangesTests
         await _changes.SubmitAsync(tech, ActionArea.AreaName, action.Id, null);
         Assert.Empty(_profile.Snapshot.Actions);
     }
+
+    [Fact]
+    public async Task The_rest_api_queue_lists_and_decides_pending_changes()
+    {
+        var approvals = new PortalApprovals(_changes);
+        var mod = Member(DefaultRoles.StandardModId);
+        var first = Guid.NewGuid();
+        await _changes.SubmitAsync(mod, CommandArea.AreaName, first, Command(first, "!first"));
+        _time.Now += TimeSpan.FromMinutes(1);
+        var second = Guid.NewGuid();
+        await _changes.SubmitAsync(mod, CommandArea.AreaName, second, Command(second, "!second"));
+
+        var pending = approvals.Pending()["changes"]!.AsArray();
+        Assert.Equal(["!first", "!second"], pending.Select(c => c!["target"]!.GetValue<string>()));
+        var one = pending[0]!;
+        Assert.Equal(("Mod", "command", "create", "Mod created the command '!first'"),
+            (one["member"]!.GetValue<string>(), one["area"]!.GetValue<string>(), one["kind"]!.GetValue<string>(), one["summary"]!.GetValue<string>()));
+        Assert.Equal(_time.Now.AddMinutes(-1).AddDays(7).ToUnixTimeMilliseconds(), one["expires"]!.GetValue<long>());
+
+        var firstChange = Guid.Parse(one["id"]!.GetValue<string>());
+        Assert.Equal("applied", await approvals.DecideAsync(firstChange, approve: true, force: false));
+        Assert.Equal("!first", _commands.Get(first)!.Name);
+        Assert.Equal("notPending", await approvals.DecideAsync(firstChange, approve: false, force: false));
+        Assert.Equal("notFound", await approvals.DecideAsync(Guid.NewGuid(), approve: true, force: false));
+
+        // The streamer made the same command meanwhile: approving says so first, and force uses the mod's version.
+        var secondChange = Guid.Parse(pending[1]!["id"]!.GetValue<string>());
+        _commands.Save(new CommandDefinition { Id = second, Name = "!mine", Commands = ["!mine"] });
+        Assert.Equal("conflict", await approvals.DecideAsync(secondChange, approve: true, force: false));
+        Assert.Equal("!mine", _commands.Get(second)!.Name);
+        Assert.Equal("applied", await approvals.DecideAsync(secondChange, approve: true, force: true));
+        Assert.Equal("!second", _commands.Get(second)!.Name);
+        Assert.Empty(approvals.Pending()["changes"]!.AsArray());
+    }
 }

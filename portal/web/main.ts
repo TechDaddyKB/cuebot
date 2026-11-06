@@ -3,7 +3,7 @@
 // (docs/MOD_PORTAL_PLAN.md, section 11). No inline script or style: the page's CSP forbids both.
 
 import { base64Url, deviceProof, rawPublicKey, type Bytes } from "../src/crypto.js";
-import { authorizeUrl, deviceName, parseInvite, random, readReturn, relayOrigin, type PendingSignIn, type Provider, type Target } from "./flow.js";
+import { appReturnLink, authorizeUrl, deviceName, isAppReturn, parseInvite, random, readReturn, relayOrigin, type PendingSignIn, type Provider, type Target } from "./flow.js";
 import type { PortalHost, PortalUiModule } from "./host.js";
 import { Link, LinkClosed, type Answer } from "./link.js";
 
@@ -122,8 +122,18 @@ async function startSignIn(target: Target, provider: Provider): Promise<void> {
   }
 }
 
+/** A sign-in the Cuebot phone app started: give the answer to the app and sign nothing in here. */
+function handToApp(): void {
+  const link = appReturnLink(location.search, navigator.userAgent);
+  history.replaceState(null, "", "/");
+  const open = () => location.assign(link);
+  show("Back to the Cuebot app", "You're signed in with the provider. The Cuebot app finishes joining.", button("Open the Cuebot app", open));
+  open();
+}
+
 /** Back from the provider on /auth/return. */
 async function finishSignIn(): Promise<void> {
+  if (isAppReturn(location.search)) return handToApp();
   const raw = sessionStorage.getItem(PENDING);
   sessionStorage.removeItem(PENDING);
   const pending = raw ? (JSON.parse(raw) as PendingSignIn) : null;

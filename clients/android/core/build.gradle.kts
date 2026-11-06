@@ -15,3 +15,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
 }
+
+// The portal's shared crypto test vectors (portal/test/vectors.json), which the .NET and TypeScript tests check too.
+tasks.test {
+    systemProperty("cuebot.portalVectors", rootProject.file("../../portal/test/vectors.json").absolutePath)
+}

@@ -36,6 +36,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="cuebot" android:host="pair" />
             </intent-filter>
+            <!-- The mod portal's sign-in return page hands the provider's answer back: cuebot-portal://signin?code=…&state=… -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="cuebot-portal" android:host="signin" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>

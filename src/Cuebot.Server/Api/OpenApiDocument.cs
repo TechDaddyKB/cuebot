@@ -172,6 +172,20 @@ public static class OpenApiDocument
                 ["parameters"] = new JsonArray(IdParam("Redemption id"), PathParam("command", "approve or reject (refunds the points)")),
                 ["post"] = Op("reviewRedemption", "Store", "Approve or reject a pending store redemption", responses: Responses(("200", "OK", new JsonObject { ["type"] = "object" }), NotFound())),
             },
+            ["/portal/changes"] = new JsonObject
+            {
+                ["get"] = Op("getPortalChanges", "Mod portal", "Mods' changes waiting for the streamer's OK, the oldest first",
+                    responses: Ok(Obj(("changes", Arr(Obj(("id", Str()), ("member", Str()), ("area", Str()), ("kind", Str()), ("target", Str()),
+                        ("summary", Str()), ("at", Int()), ("expires", Int()))))))),
+            },
+            ["/portal/changes/{id}/{command}"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(IdParam("Change id"), PathParam("command", "approve or reject")),
+                ["post"] = Op("decidePortalChange", "Mod portal",
+                    "Approve or reject a pending mod change. result: applied, rejected, conflict (it changed since the mod asked; nothing was applied, approve with force to use the mod's version) or notPending",
+                    body: Obj(("force", Bool())),
+                    responses: Responses(("200", "OK", Obj(("result", Str()), ("changes", Arr(new JsonObject { ["type"] = "object" })))), NotFound())),
+            },
             ["/polls"] = new JsonObject
             {
                 ["get"] = Op("getPolls", "Polls", "The latest poll and prediction from each source (twitch, youtube, cuebot) and Cuebot's vote and bet commands",

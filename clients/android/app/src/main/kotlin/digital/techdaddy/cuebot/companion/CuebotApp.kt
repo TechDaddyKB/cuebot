@@ -7,7 +7,10 @@ import digital.techdaddy.cuebot.companion.data.Connection
 import digital.techdaddy.cuebot.companion.data.DataStoreKeyValueStore
 import digital.techdaddy.cuebot.companion.data.IconCache
 import digital.techdaddy.cuebot.companion.data.KeyValueStore
+import digital.techdaddy.cuebot.companion.data.DeviceKeys
+import digital.techdaddy.cuebot.companion.data.KeystoreDeviceKeys
 import digital.techdaddy.cuebot.companion.data.KeystoreTokenCipher
+import digital.techdaddy.cuebot.companion.data.ModMemberships
 import digital.techdaddy.cuebot.companion.data.PairedCuebots
 import digital.techdaddy.cuebot.companion.data.RemoteImages
 import digital.techdaddy.cuebot.companion.data.TokenCipher
@@ -24,12 +27,15 @@ class AppContainer(
     val store: KeyValueStore,
     cipher: TokenCipher,
     iconFolder: File,
+    deviceKeys: DeviceKeys,
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
 ) {
     val paired = PairedCuebots(store, cipher)
     val connection = Connection(paired, scope)
     val icons = IconCache(iconFolder)
     val images = RemoteImages()
+    /** The streamers this phone is a mod for (the Mods tab). */
+    val memberships = ModMemberships(store, cipher, deviceKeys)
 
     /** True while the app is on screen: live streams run only then (no background networking in v1). */
     val foreground = MutableStateFlow(false)
@@ -57,7 +63,7 @@ class CuebotApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        container = AppContainer(DataStoreKeyValueStore(settings, scope), KeystoreTokenCipher(), File(cacheDir, "IconifyIcons"), scope)
+        container = AppContainer(DataStoreKeyValueStore(settings, scope), KeystoreTokenCipher(), File(cacheDir, "IconifyIcons"), KeystoreDeviceKeys(), scope)
     }
 }
 

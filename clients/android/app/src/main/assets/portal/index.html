@@ -1,0 +1,15 @@
+<!doctype html>
+<!-- The page the Cuebot app runs the mod portal in (ui/mod/PortalWebView.kt). The app does the encrypted link to the
+     streamer's Cuebot itself; this page only runs the portal UI that Cuebot sent over it, from blob: URLs. It has no
+     network access at all: the app answers every request the UI makes. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' blob:; style-src 'self' blob:; img-src 'self' blob: data:; media-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Cuebot mod portal</title>
+<link rel="stylesheet" href="host.css">
+<script type="module" src="host.js"></script>
+</head>
+<body><main><p class="loading">Loading the mod portal…</p></main></body>
+</html>

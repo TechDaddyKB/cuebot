@@ -85,6 +85,17 @@ class CuebotClient(val endpoint: CuebotEndpoint, client: OkHttpClient = defaultH
 
     suspend fun goalReset(goal: String) = state(api("/api/v1/goals/${seg(goal)}/reset"), null)
 
+    // Mod portal approvals: mods' changes waiting for the streamer's OK
+
+    suspend fun portalChanges(): List<PendingChange> = listed(getJson(api("/api/v1/portal/changes")), "changes").map(PendingChange::from)
+
+    /** Approves (with [force], even when it changed since the mod asked) or rejects one change; the queue as it is now. */
+    suspend fun decideChange(id: String, approve: Boolean, force: Boolean = false): ChangeDecision {
+        val answer = parseJson(send(api("/api/v1/portal/changes/${seg(id)}/${if (approve) "approve" else "reject"}"), buildJsonObject { put("force", force) })).obj()
+            ?: throw CuebotException.InvalidResponse("no decision")
+        return ChangeDecision(ChangeDecision.Result.of(answer.str("result")), answer.list("changes", PendingChange::from))
+    }
+
     // Decks (HTTP server)
 
     suspend fun deckState(deck: String): DeckView = DeckView.from(getJson(deckRequest(deck, "state")))

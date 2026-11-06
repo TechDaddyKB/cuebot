@@ -138,4 +138,24 @@ class ClientTest {
         assertNull(result)
         assertTrue((System.nanoTime() - started) / 1_000_000 < 3_000)
     }
+
+    @Test fun listsAndDecidesModChanges() = runBlocking {
+        val waiting = """{"id":"c1","member":"Sam","area":"action","kind":"update","target":"Hype","summary":"Sam changed the action 'Hype'","at":1000,"expires":2000}"""
+        server.enqueue(json("""{"changes":[$waiting]}"""))
+        val pending = client().portalChanges().single()
+        assertEquals(PendingChange("c1", "Sam", "action", "update", "Hype", "Sam changed the action 'Hype'", 1000, 2000), pending)
+        assertEquals("/api/v1/portal/changes", server.takeRequest().url.encodedPath)
+
+        server.enqueue(json("""{"result":"conflict","changes":[$waiting]}"""))
+        val conflict = client().decideChange("c1", approve = true)
+        assertEquals(ChangeDecision.Result.Conflict, conflict.result)
+        assertEquals(1, conflict.pending.size)
+        val r = server.takeRequest()
+        assertEquals("/api/v1/portal/changes/c1/approve", r.url.encodedPath)
+        assertEquals("""{"force":false}""", r.body?.utf8())
+
+        server.enqueue(json("""{"result":"rejected","changes":[]}"""))
+        assertEquals(ChangeDecision.Result.Rejected, client().decideChange("c1", approve = false).result)
+        assertEquals("/api/v1/portal/changes/c1/reject", server.takeRequest().url.encodedPath)
+    }
 }

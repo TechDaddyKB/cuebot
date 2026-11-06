@@ -235,3 +235,30 @@ data class FeedItem(
 
 /** The data of a `/api/v1/events` message: `{"type": "...", "time": "ISO-8601", "args": {...}}`. */
 data class ApiEvent(val type: String, val time: String = "", val args: JsonObject = JsonObject(emptyMap()))
+
+/** One entry of `GET /api/v1/portal/changes`: a mod's change waiting for the streamer. Times are Unix milliseconds. */
+data class PendingChange(
+    val id: String, val member: String, val area: String, val kind: String, val target: String, val summary: String,
+    val at: Long, val expires: Long,
+) {
+    companion object {
+        fun from(o: JsonObject) = PendingChange(o.str("id"), o.str("member"), o.str("area"), o.str("kind"), o.str("target"),
+            o.str("summary").ifEmpty { "${o.str("member")} changed '${o.str("target")}'" }, o.num("at")?.toLong() ?: 0, o.num("expires")?.toLong() ?: 0)
+    }
+}
+
+/** What approving or rejecting did, and the queue after it. */
+data class ChangeDecision(val result: Result, val pending: List<PendingChange>) {
+    enum class Result {
+        Applied, Rejected,
+        /** The thing changed since the mod asked: nothing was applied; approving with force uses the mod's version. */
+        Conflict,
+        /** Someone decided it already, or it expired. */
+        NotPending;
+
+        companion object {
+            fun of(text: String) = when (text) { "applied" -> Applied; "rejected" -> Rejected; "conflict" -> Conflict; else -> NotPending }
+        }
+    }
+}
+

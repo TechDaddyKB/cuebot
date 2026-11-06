@@ -22,8 +22,8 @@ namespace Cuebot.Portal;
 public static class PortalServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds portal.json and portal-changes.json, <see cref="PortalDirectory"/>, <see cref="PortalChanges"/>,
-    /// <see cref="PortalApi"/>, provider sign-in (<see cref="PortalIdentityExchange"/>) and <see cref="PortalRelayClient"/>
+    /// Adds portal.json and portal-changes.json, <see cref="PortalDirectory"/>, <see cref="PortalChanges"/>
+    /// (with <see cref="PortalApprovals"/> for the REST API), <see cref="PortalApi"/>, provider sign-in (<see cref="PortalIdentityExchange"/>) and <see cref="PortalRelayClient"/>
     /// (also as <see cref="IConnectionStatus"/>) with the sign-in handler on its device links, and uploads
     /// (portal-media.json, the portal-media folder, <see cref="PortalUploads"/>) and overlays (<see cref="PortalOverlays"/>).
     /// </summary>
@@ -51,6 +51,7 @@ public static class PortalServiceCollectionExtensions
                 new WidgetArea(sp.GetRequiredService<ElementStore>(), sp.GetRequiredService<WidgetCodeStore>())];
             return new PortalChanges(file.Value, file.ScheduleSave, sp.GetRequiredService<PortalDirectory>(), areas);
         });
+        services.AddSingleton<Cuebot.Core.Portal.IPortalApprovals>(sp => new PortalApprovals(sp.GetRequiredService<PortalChanges>()));
         services.AddSingleton(sp => new PortalControls(sp.GetRequiredService<ProfileService>(),
             sp.GetService<ChatHub>(), Later(sp), sp.GetService<ObsService>(), sp.GetService<QueueService>(),
             sp.GetService<SpeechService>(), sp.GetService<AudioService>(), sp.GetService<AppLog>()));

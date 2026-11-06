@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -72,6 +73,16 @@ import digital.techdaddy.cuebot.companion.ui.dashboard.DashboardScreen
 import digital.techdaddy.cuebot.companion.ui.dashboard.DashboardViewModel
 import digital.techdaddy.cuebot.companion.ui.deck.DeckScreen
 import digital.techdaddy.cuebot.companion.ui.deck.DeckViewModel
+import digital.techdaddy.cuebot.companion.ui.mod.ApprovalsViewModel
+import digital.techdaddy.cuebot.companion.ui.mod.ModScreen
+import digital.techdaddy.cuebot.companion.ui.mod.ModViewModel
+import digital.techdaddy.cuebot.core.portal.PortalSignIn
+import digital.techdaddy.cuebot.core.portal.PortalTarget
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
+import androidx.compose.runtime.rememberCoroutineScope
 import digital.techdaddy.cuebot.companion.ui.settings.SettingsScreen
 import digital.techdaddy.cuebot.companion.ui.settings.SettingsViewModel
 import digital.techdaddy.cuebot.companion.ui.theme.LocalCuebotColors
@@ -80,6 +91,7 @@ import digital.techdaddy.cuebot.core.PairingLink
 enum class Tab(val label: String, val icon: ImageVector) {
     Deck("Deck", Icons.Filled.GridView),
     Dashboard("Dashboard", Icons.Filled.Speed),
+    Mods("Mods", Icons.Filled.Groups),
     Settings("Settings", Icons.Filled.Settings),
 }
 
@@ -93,9 +105,28 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
     val deck: DeckViewModel = viewModel(factory = viewModelFactory { initializer { DeckViewModel(container.connection, container.store, container.foreground) } })
     val dashboard: DashboardViewModel = viewModel(factory = viewModelFactory { initializer { DashboardViewModel(container.connection, container.store, container.foreground) } })
     val settings: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(container.paired, container.connection, container.store) } })
+    val mods: ModViewModel = viewModel(factory = viewModelFactory { initializer { ModViewModel(container.memberships) } })
+    // The approval queue is checked only while the Mods tab is on screen.
+    val modsTab = remember { MutableStateFlow(tab == Tab.Mods) }
+    LaunchedEffect(tab) { modsTab.value = tab == Tab.Mods }
+    val scope = rememberCoroutineScope()
+    val approvals: ApprovalsViewModel = viewModel(factory = viewModelFactory {
+        initializer {
+            ApprovalsViewModel(container.connection, combine(modsTab, container.foreground) { m, f -> m && f }.stateIn(scope, SharingStarted.Eagerly, false))
+        }
+    })
     val colors = LocalCuebotColors.current
 
     LocalNetworkPermission(container)
+
+    // The mod portal's links: the sign-in coming back from the browser, and invite links.
+    val modLink = pendingLink?.takeIf { it.startsWith("${PortalSignIn.RETURN_SCHEME}:") || PortalTarget.parse(it) != null }
+    LaunchedEffect(modLink) {
+        if (modLink == null) return@LaunchedEffect
+        tab = Tab.Mods
+        if (modLink.startsWith("${PortalSignIn.RETURN_SCHEME}:")) mods.finishSignIn(modLink) else mods.openInvite(modLink)
+        onLinkHandled()
+    }
 
     Scaffold(
         containerColor = colors.ground,
@@ -120,12 +151,13 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
             when (tab) {
                 Tab.Deck -> DeckScreen(deck, container, streamMode, onStreamMode = { streamMode = it }, goToSettings = { tab = Tab.Settings })
                 Tab.Dashboard -> DashboardScreen(dashboard, container, goToSettings = { tab = Tab.Settings })
+                Tab.Mods -> ModScreen(mods, approvals)
                 Tab.Settings -> SettingsScreen(settings)
             }
         }
     }
 
-    if (pendingLink != null) {
+    if (pendingLink != null && modLink == null) {
         val endpoint = remember(pendingLink) { runCatching { PairingLink.parse(pendingLink) } }
         endpoint.onSuccess { e ->
             AlertDialog(

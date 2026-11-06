@@ -276,6 +276,16 @@ public sealed class ApiServer : IAsyncDisposable
             case "store" when s.Length == 4 && method == "POST" && s[1].Equals("redemptions", StringComparison.OrdinalIgnoreCase):
                 result = ops.ReviewRedemption(s[2], s[3].ToLowerInvariant());
                 break;
+            case "portal" when s.Length == 2 && method == "GET" && s[1].Equals("changes", StringComparison.OrdinalIgnoreCase):
+                result = ops.PortalChanges();
+                break;
+            case "portal" when s.Length == 4 && method == "POST" && s[1].Equals("changes", StringComparison.OrdinalIgnoreCase):
+            {
+                var body = await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? [];
+                var force = body["force"] is JsonValue f && f.TryGetValue<bool>(out var fv) && fv;
+                result = await ops.DecidePortalChangeAsync(s[2], s[3].ToLowerInvariant(), force).ConfigureAwait(false);
+                break;
+            }
             case "polls" when s.Length == 1 && method == "GET": result = ops.Polls(); break;
             case "polls" when s.Length == 1 && method == "POST":
                 result = ops.ChatPollCommand("startPoll", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
@@ -346,7 +356,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events", "dashboard", "decks", "subathon", "goals"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "portal", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events", "dashboard", "decks", "subathon", "goals"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);

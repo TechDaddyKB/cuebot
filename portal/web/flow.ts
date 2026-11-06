@@ -74,6 +74,36 @@ export function readReturn(search: string, pending: PendingSignIn | null): { cod
   return code ? { code } : { error: "The provider did not send a sign-in code. Start again." };
 }
 
+/**
+ * The Cuebot phone app signs in through this same return page (providers allow one return address), with a state that
+ * starts with this. "." never appears in base64url, so a browser sign-in's state never does.
+ */
+export const APP_STATE = "app.";
+
+const APP_PACKAGE = "digital.techdaddy.cuebot.companion";
+
+/** Whether the provider's answer belongs to a sign-in the phone app started. */
+export function isAppReturn(search: string): boolean {
+  return new URLSearchParams(search).get("state")?.startsWith(APP_STATE) ?? false;
+}
+
+/**
+ * The link that hands the provider's answer to the phone app: cuebot-portal://signin?code=…&state=… On Android an
+ * intent: link names the app's package, so only the Cuebot app can receive the code (the app also checks the state,
+ * and the code is useless without the PKCE verifier the app kept).
+ */
+export function appReturnLink(search: string, userAgent: string): string {
+  const p = new URLSearchParams(search);
+  const out = new URLSearchParams();
+  for (const k of ["code", "state", "error"]) {
+    const v = p.get(k);
+    if (v !== null) out.set(k, v);
+  }
+  return /Android/.test(userAgent)
+    ? `intent://signin?${out}#Intent;scheme=cuebot-portal;package=${APP_PACKAGE};end`
+    : `cuebot-portal://signin?${out}`;
+}
+
 /** relay.<domain> next to portal.<domain>; the same host anywhere else (workers.dev, wrangler dev). */
 export function relayOrigin(location: { protocol: string; host: string; hostname: string }): string {
   if (location.hostname.startsWith("portal.")) return `wss://relay.${location.host.slice("portal.".length)}`;

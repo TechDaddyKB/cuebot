@@ -119,6 +119,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Subathon.SubathonService? _subathon;
 
+    /// <summary>The mod portal's approval queue (the companion app approves mods' changes through the REST API).</summary>
+    public Cuebot.Core.Portal.IPortalApprovals? Approvals
+    {
+        get => _approvals ??= _provider?.GetService<Cuebot.Core.Portal.IPortalApprovals>();
+        init => _approvals = value;
+    }
+
+    private Cuebot.Core.Portal.IPortalApprovals? _approvals;
+
     /// <summary>Pronouns (GetUserPronouns; cached pronouns in Streamer.bot user payloads).</summary>
     public Cuebot.Core.Chat.Pronouns.PronounService? Pronouns
     {

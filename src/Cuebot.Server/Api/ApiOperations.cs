@@ -755,6 +755,31 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
         return done ? Store() : throw ApiException.NotFound($"No pending redemption '{id}'");
     }
 
+    /// <summary>Mods' changes waiting for the streamer's OK (the mod portal).</summary>
+    public JsonObject PortalChanges() => Approvals.Pending();
+
+    /// <summary>
+    /// Approves or rejects a pending mod change: <c>{result, changes}</c> with the queue as it is now. A conflict (the
+    /// thing changed since the mod asked) applies nothing; approving again with <c>force</c> uses the mod's version.
+    /// </summary>
+    public async Task<JsonObject> DecidePortalChangeAsync(string id, string command, bool force)
+    {
+        var approve = command switch
+        {
+            "approve" => true,
+            "reject" => false,
+            _ => throw ApiException.NotFound($"Unknown command '{command}' (approve or reject)"),
+        };
+        if (!Guid.TryParse(id, out var changeId)) throw ApiException.NotFound($"No pending change '{id}'");
+        var result = await Approvals.DecideAsync(changeId, approve, force).ConfigureAwait(false);
+        if (result == "notFound") throw ApiException.NotFound($"No pending change '{id}'");
+        var answer = Approvals.Pending();
+        answer["result"] = result;
+        return answer;
+    }
+
+    private Cuebot.Core.Portal.IPortalApprovals Approvals => services.Approvals ?? throw ApiException.Unavailable("The mod portal is not available");
+
     /// <summary>Media requests: the player state (<see cref="Cuebot.Core.Media.MediaRequests.Snapshot"/>) plus the whole queue.</summary>
     public JsonObject Media()
     {
