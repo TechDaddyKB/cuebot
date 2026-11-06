@@ -3,6 +3,7 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Overlays;
 using Cuebot.Portal.Uploads;
 using Cuebot.Portal.Web;
 
@@ -15,7 +16,8 @@ namespace Cuebot.Portal;
 /// so a change of role or a suspension applies at once.
 /// </summary>
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
-    ActionEngine engine, Registry registry, PortalControls? controls = null, PortalUploads? uploads = null)
+    ActionEngine engine, Registry registry, PortalControls? controls = null, PortalUploads? uploads = null,
+    PortalOverlays? overlays = null)
 {
     private readonly PortalFiles _files = new(uploads?.Store);
 
@@ -29,6 +31,7 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
             var name = (string?)request["op"] ?? "";
             if (controls is not null && PortalControls.Handles(name)) return await controls.HandleAsync(member, role, name, request).ConfigureAwait(false);
             if (uploads is not null && PortalUploads.Handles(name)) return await uploads.HandleAsync(member, role, name, request).ConfigureAwait(false);
+            if (overlays is not null && PortalOverlays.Handles(name)) return await overlays.HandleAsync(member, role, name, request).ConfigureAwait(false);
             return name switch
             {
                 "me" => Me(member, role),
@@ -47,7 +50,7 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
                 "commands.delete" => await DeleteCommandAsync(member, role, request).ConfigureAwait(false),
                 "changes.mine" => Ok(new JsonObject
                 {
-                    ["changes"] = new JsonArray([.. changes.All.Where(c => c.MemberId == member.Id).TakeLast(100).Select(c => PortalChanges.ToNode(c))]),
+                    ["changes"] = new JsonArray([.. changes.All.Where(c => c.MemberId == member.Id).TakeLast(100).Select(ForPortal)]),
                 }),
                 "changes.undo" => await UndoAsync(member, request).ConfigureAwait(false),
                 var op => Error($"Unknown request '{op}'."),
@@ -183,6 +186,16 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
             ChangeResult.NotPending => Error("That change is not live, so there is nothing to undo."),
             _ => NotFound(),
         };
+    }
+
+    /// <summary>A change as the portal sees it: overlay links (their tokens) stay on the streamer's computer.</summary>
+    private static JsonNode ForPortal(PortalChange change)
+    {
+        var node = PortalChanges.ToNode(change);
+        if (change.Area == OverlayArea.AreaName)
+            foreach (var side in new[] { "before", "after" })
+                (node[side] as JsonObject)?.Remove("token");
+        return node;
     }
 
     private static JsonObject Submitted((ChangeResult Result, PortalChange Change) r) => Ok(new JsonObject

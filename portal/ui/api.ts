@@ -58,6 +58,7 @@ export function useLoad<T extends Answer>(op: string, refreshMs = 0, body?: Reco
 
 /** What a saved change did: live at once, or waiting for the streamer. */
 export function changeMessage(answer: Answer): string {
+  if (answer.status === "unchanged") return "Nothing had changed.";
   return answer.status === "pending" ? "Sent to the streamer for approval." : "Saved. It's live.";
 }
 

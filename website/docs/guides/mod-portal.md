@@ -27,6 +27,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer. They only se
 | **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
 | **Commands** | Add and change chat commands | Everyone |
 | **Sounds** | Play the sounds your actions use, on stream | Everyone |
+| **Overlays** | Move, restyle, show and hide overlay layers, change widget settings and alert designs (see [Overlays](#overlays)) | Lead Mod changes; Tech Lead also adds and removes layers and overlays |
 | **Uploads** | Upload sounds, pictures, GIFs and videos for your actions (see [Uploads](#uploads)) | Everyone uploads sounds; Lead Mod and Tech Lead also pictures and video |
 | **Audio** | Volume and mute for your OBS audio sources | Everyone |
 | **Scenes** | Switch your OBS scene | Lead Mod, Tech Lead |
@@ -56,7 +57,6 @@ text-to-speech. Each mod can press at most 30 such controls a minute.
 !!! note "Good to know"
     - Scenes and audio work with OBS (not yet with Streamlabs Desktop or Meld Studio).
     - **Sounds** lists the sound files your **Play sound** steps use. Mods cannot play any other file.
-    - Editing overlays from the portal comes in a later update.
     - To **run** an action, a mod needs the level of its riskiest step, the same as for changing it. A Standard Mod
       can run an action that only sends chat messages, but not one that changes the title. Actions with code,
       program or file steps never run from the portal. The portal marks the actions a mod can't run. To keep an
@@ -96,6 +96,33 @@ notice.
     The AUR package `cuebot` uses your system's `ffmpeg` (an optional dependency). The Flatpak has no FFmpeg yet, so
     uploads are off there; the portal says so.
 
+## Overlays
+
+On the **Overlays** page, mods see your overlays drawn to scale. They tap a layer to change it, or drag it to move it.
+What they save shows in OBS straight away (or after your approval, by their change setting), and **Undo** puts it back.
+
+![Editing an overlay in the mod portal](../assets/screens/portal-overlays.png)
+
+- **Layers:** name, position, size, opacity, rotation, shown or hidden, the order of the layers, and the animations
+  they come in and go out with.
+- **Text, image, video and slideshow layers:** the text and its look; pictures and videos are picked from the uploads.
+- **Widgets:** the settings in the widget's own settings form (the same ones the widget editor shows). A widget used
+  on several overlays changes on all of them; the portal says so.
+- **Alert box:** each alert's text, picture or video, sound, look and text-to-speech, and turning alerts and their
+  variations on or off. Adding or removing variations, and when one is used, stay with you.
+- With **Create overlays** (Tech Lead), mods can also add layers (text, image, video, slideshow, Cuebot's widgets and
+  widgets already in your library), remove layers, change an overlay's size, and create and delete overlays.
+
+**Widget code stays yours.** Mods never see or change a widget's HTML, CSS or JavaScript, your CSS overrides or its
+hidden settings, and they cannot add widgets from code or a zip. Because widgets paste their settings into their code,
+text from the portal cannot contain `< > \ { }`, a `&` straight before a letter, or a script address, and straight
+quotes become curly ones (`'` → `’`). A setting the widget's code uses in a place where no text is safe (bare in its
+script, or in an HTML attribute without quotes) is shown but only you can change it.
+
+**Files are uploads.** Pictures, videos and sounds in overlays can only be uploads (or files your overlays already
+use), never other files on your computer or addresses on the internet. Overlay links (with their keys) are never sent
+to the portal.
+
 ## Roles
 
 Cuebot starts with three roles. You can rename them, change them, or add your own with **+ Role**.
@@ -105,6 +132,7 @@ Cuebot starts with three roles. You can rename them, change them, or add your ow
 | Highest level | 1 | 3 | 4 |
 | Commands | Create, change | Create, change, delete | Create, change, delete |
 | Actions | Run | Create, change, delete | Create, change, delete |
+| Overlays | No | Change | Change, add, delete |
 | Their changes | Need your approval | Live, and you get a notice | Live |
 
 The **level** decides which steps a mod may add or change:

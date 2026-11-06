@@ -97,6 +97,28 @@ public sealed class OverlayStore : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Adds a copy of <paramref name="overlay"/> as it is, id and token included (a missing token gets a new one), or
+    /// replaces the overlay with that id, so an undone delete keeps its browser source URL.
+    /// </summary>
+    public void Put(Overlay overlay)
+    {
+        var copy = Json.Clone(overlay);
+        if (string.IsNullOrWhiteSpace(copy.Token)) copy.Token = NewToken();
+        copy.Name = CleanName(copy.Name);
+        copy.Width = Math.Clamp(copy.Width, MinSize, MaxSize);
+        copy.Height = Math.Clamp(copy.Height, MinSize, MaxSize);
+        copy.Modified = DateTimeOffset.UtcNow;
+        lock (_gate)
+        {
+            var i = Document.Overlays.FindIndex(o => o.Id == copy.Id);
+            if (i >= 0) Document.Overlays[i] = copy;
+            else Document.Overlays.Add(copy);
+            Save();
+        }
+        Changed?.Invoke(copy.Id);
+    }
+
     public bool Delete(Guid id)
     {
         lock (_gate)

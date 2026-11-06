@@ -7,8 +7,10 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const [invite, out] = process.argv.slice(2);
-if (!invite || !out) throw new Error("usage: node shots.mjs <invite link> <output folder>");
+// With "overlays" as a third argument it drives the overlay editor instead, against tests/Cuebot.UiTests/PortalOverlaysLiveDemo
+// (a picture upload, then text, picture, goal and alert edits saved to the overlay that OBS shows).
+const [invite, out, mode] = process.argv.slice(2);
+if (!invite || !out) throw new Error("usage: node shots.mjs <invite link> <output folder> [overlays]");
 const browserPath = process.env.CHROMIUM ?? "chromium";
 const profile = mkdtempSync(join(tmpdir(), "cuebot-shots-"));
 const port = 9333;
@@ -44,7 +46,7 @@ try {
       if (await run(expression)) return;
       await sleep(250);
     }
-    throw new Error(`Timed out waiting for ${expression}`);
+    throw new Error(`Timed out waiting for ${expression}; the page says: ${(await run("document.body.innerText")).slice(0, 400)}`);
   };
   const size = (width, height, mobile = false) =>
     send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: mobile ? 2 : 1, mobile });
@@ -64,8 +66,82 @@ try {
   await run(`(() => { const i = JSON.parse(sessionStorage.getItem("cuebot-invite"));
     sessionStorage.setItem("cuebot-signin", JSON.stringify({ ...i, provider: "google", state: "shots", verifier: "v".repeat(64) }));
     location.assign("/auth/return?code=test&state=shots"); return true; })()`);
-  await until(`document.querySelector(".shell .feed") !== null`);
+  await until(mode === "overlays" ? `document.querySelector(".shell .nav") !== null` : `document.querySelector(".shell .feed") !== null`);
+  // Sets a labelled form control as if typed or picked (inside the element matching scope).
+  await run(`window.setField = (label, value, scope = "main") => {
+    const l = [...document.querySelectorAll(scope + " label")].find(x => x.textContent === label);
+    if (!l) throw new Error("No field " + label);
+    const el = document.getElementById(l.htmlFor);
+    if (el.tagName === "SELECT") {
+      const o = [...el.options].find(o => o.value === value || o.textContent.startsWith(value));
+      if (!o) throw new Error("No choice " + value);
+      el.value = o.value;
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    } else {
+      el.value = value;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    return true;
+  }; true`);
+  const button = (text, scope = "main") => run(`[...document.querySelectorAll(${JSON.stringify(scope + " button")})].find(b => b.textContent === ${JSON.stringify(text)}).click(), true`);
+  const saved = async () => {
+    const state = await run(`(() => { const b = [...document.querySelectorAll(".sticky-save button")].find(b => b.textContent === "Save"); return b ? (b.disabled ? "disabled" : "ready") : "missing"; })()`);
+    if (state !== "ready") throw new Error(`The Save button is ${state}`);
+    await button("Save", ".sticky-save");
+    // Saved when nothing is left unsaved (an error leaves the changes there and shows why).
+    await until(`document.querySelector(".notice.error") !== null || document.querySelector(".sticky-save .muted")?.textContent === ""`);
+    const notice = await run(`document.querySelector(".notice")?.textContent ?? ""`);
+    if (!notice.includes("live")) throw new Error(notice);
+    console.log(notice);
+  };
 
+  if (mode === "overlays") {
+    await open("Uploads");
+    await until(`document.getElementById("upload-file") !== null`);
+    await run(`setField("What is it?", "Image")`);
+    await run(`(async () => {
+      const c = new OffscreenCanvas(256, 256), g = c.getContext("2d");
+      const grad = g.createLinearGradient(0, 0, 256, 256); grad.addColorStop(0, "#7b6dff"); grad.addColorStop(1, "#22d3ee");
+      g.fillStyle = grad; g.beginPath(); g.arc(128, 128, 120, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#fff"; g.font = "bold 120px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("C", 128, 136);
+      const blob = await c.convertToBlob({ type: "image/png" });
+      const input = document.getElementById("upload-file"), dt = new DataTransfer();
+      dt.items.add(new File([blob], "Cuebot logo.png", { type: "image/png" }));
+      input.files = dt.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      return true; })()`);
+    await sleep(300);
+    await run(`document.querySelector("form.card button.primary").click(), true`);
+    await until(`[...document.querySelectorAll(".rows li")].some(li => li.textContent.includes("Cuebot logo"))`, 60000);
+
+    await open("Overlays");
+    await until(`document.querySelectorAll(".rows li").length > 0`);
+    await button("Edit");
+    await until(`document.querySelector(".canvas") !== null`);
+    await button("Headline", ".layers");
+    await run(`setField("Text", "Back in 5 minutes!")`);
+    await run(`setField("Colour", "#ffcc33")`);
+    await button("Logo", ".layers");
+    await run(`setField("Picture", "Cuebot logo")`);
+    await button("Goal", ".layers");
+    await run(`setField("Title", "Road to 100 followers")`);
+    await run(`setField("Goal", "100")`);
+    await saved();
+    await until(`document.querySelector(".canvas") !== null`);
+    await button("Headline", ".layers");
+    await size(1280, 1700);
+    await shot("portal-overlays.png");
+    await size(1280, 800);
+    await button("Alert box", ".layers");
+    await until(`document.querySelector("details.item") !== null`);
+    await run(`document.querySelector("details.item").open = true, true`);
+    await run(`setField("Text", "{name} joined the crew!", "details.item")`);
+    await saved();
+    await size(390, 760, true);
+    await until(`document.querySelector(".canvas") !== null`);
+    await shot("portal-overlays-phone.png");
+    ws.close();
+  } else {
   await shot("portal-home.png");
   await open("Actions");
   await until(`document.querySelectorAll(".rows li").length > 0`);
@@ -102,6 +178,7 @@ try {
   await until(`document.querySelector(".feed") !== null`);
   await shot("portal-phone.png");
   ws.close();
+  }
 } finally {
   browser.kill();
   await sleep(300);

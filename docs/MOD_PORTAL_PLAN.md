@@ -1,8 +1,9 @@
 # Cuebot mod portal: plan
 
-- **Status (2026-11-06):** designed with Kris in chat. Phases 0 to 5 are built (see section 11). The relay Worker
+- **Status (2026-11-06):** designed with Kris in chat. Phases 0 to 6 are built (see section 11). The relay Worker
   `cuebot-portal` is deployed and serves `portal.`, `relay.` and `hooks.techdaddydigital.com` (attached 2026-11-05).
-  Mods join by invite, sign in, use the web portal and upload media; overlays and widgets (phase 6) are next.
+  Mods join by invite, sign in, use the web portal, upload media and edit overlays; the phone app's mod mode (phase 7)
+  is next.
 - **Owner:** Kris.
 - **Builders:** the Linux session (DailyDriver) builds Cuebot, the relay and the web portal. The Mac session builds and
   tests the iOS mod mode.
@@ -268,7 +269,7 @@ Every step type and trigger type declares a level. A test fails when a registere
 | 3 ✅ | Sign-in: Google, then Twitch, then Discord; console setup | `PortalSignInHandler`, `PortalIdentityExchange`, the loader (`portal/web`); `PortalSignInLiveTests` passed 2026-11-05: a real Google, Twitch and Discord account each joined by invite through `relay.techdaddydigital.com` |
 | 4 ✅ | Web portal UI: dashboard, commands, actions editor by level, sound alerts, audio, scenes, queues, TTS | `portal/ui`, `PortalControls`; `PortalControlsTests`; `PortalUiLiveTests` + `portal/shots.mjs` drove the deployed loader against the real API (sign-in, editing and saving an action, every page, a Standard Mod's view, phone width) and took the docs screenshots |
 | 5 ✅ | ffmpeg CI build and the upload pipeline | `build/ffmpeg/build.sh`, `PortalUploads`, `MediaCleaner`; `MediaCleanerTests` (every format, polyglots: PNG+HTML/ZIP, GIFAR, JPEG comment, ID3, WAV chunk, MP4 atom; cut-off and fuzzed files; a pixel bomb; refused types) pass with Cuebot's build and with a system ffmpeg; Windows (Wine) and arm64 (qemu) builds converted files locally; an upload through the deployed relay went live and was picked in a step |
-| 6 | Overlays and widgets in the portal | Edit and upload from the portal show in OBS |
+| 6 ✅ | Overlays and widgets in the portal | `PortalOverlays` (`overlay` and `widget` change areas), `OverlayValues`, `portal/ui/pages/overlays.tsx`; `PortalOverlaysTests` (roles, links never sent, text that cannot become code, fields a widget pastes unsafely, uploads only, alert designs, approval and undo, an undone delete keeps its link); `PortalOverlaysLiveDemo` + `shots.mjs overlays` through `relay.techdaddydigital.com`: an upload, text, picture, goal and alert edits went live on the overlay page |
 | 7 | Phone app mod mode, Android then iOS (on the Mac) | Join, edit and approve from both phones |
 | 8 | Docs, privacy notice, wiki, release | mkdocs strict, wiki synced |
 
@@ -278,4 +279,6 @@ Every step type and trigger type declares a level. A test fails when a registere
 - A Cloudflare spending alert on the account (section 10).
 - Phase 5 left for later: hardware encoders and H.264/HEVC output (section 8), a smaller shared-library ffmpeg,
   ffmpeg in the Flatpak, AV1 and animated WebP input, previews of uploads in the portal itself.
+- Phase 6 left for later: limiting a role to some overlays (scopes cover action groups only), a live preview of the
+  overlay in the portal (it shows layer boxes to scale), adding or reordering alert variations, colour pickers.
 - Later: Discord role checks; platform mod checks for YouTube, Kick and Rumble; a home-network shortcut for mods.
