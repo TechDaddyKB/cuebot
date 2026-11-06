@@ -10,7 +10,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var tab = UITestSupport.initialTab ?? .deck
 
-    enum Tab: Hashable { case deck, dashboard, settings }
+    enum Tab: Hashable { case deck, dashboard, mods, settings }
 
     var body: some View {
         TabView(selection: $tab) {
@@ -21,6 +21,10 @@ struct RootView: View {
                 .toolbarBackground(Color.cuebotGround, for: .tabBar)
                 .tabItem { Label("Dashboard", systemImage: "gauge.with.dots.needle.50percent") }
                 .tag(Tab.dashboard)
+            ModsTab()
+                .toolbarBackground(Color.cuebotGround, for: .tabBar)
+                .tabItem { Label("Mods", systemImage: "person.2") }
+                .tag(Tab.mods)
             SettingsTab()
                 .toolbarBackground(Color.cuebotGround, for: .tabBar)
                 .tabItem { Label("Settings", systemImage: "gearshape") }

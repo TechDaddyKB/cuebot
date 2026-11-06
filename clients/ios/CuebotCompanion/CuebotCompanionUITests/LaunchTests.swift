@@ -23,11 +23,14 @@ final class LaunchTests: XCTestCase {
     }
 
     @MainActor
-    func testStartsUnpairedWithTheThreeTabs() {
+    func testStartsUnpairedWithTheFourTabs() {
         let app = launchUnpaired()
         XCTAssertTrue(app.staticTexts["Pair with Cuebot"].waitForExistence(timeout: wait))
         XCTAssertTrue(tab(app, "Deck").exists)
         XCTAssertTrue(tab(app, "Dashboard").exists)
+        // Mods works without a paired Cuebot: a mod joins other streamers' portals by invite.
+        tab(app, "Mods").tap()
+        XCTAssertTrue(app.buttons["join-invite"].waitForExistence(timeout: wait))
         tab(app, "Settings").tap()
         XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: wait))
     }
