@@ -163,15 +163,14 @@ public final class PortalLink: NSObject, URLSessionWebSocketDelegate, @unchecked
         }
     }
 
-    /// A failed receive can come before the delegate hears the relay's close code (4404, 4429…); then `didCloseWith`
-    /// usually follows within moments and words it first. Waits briefly for it, then goes with what is known.
-    private func whenCloseCodeKnown(_ then: @escaping @Sendable (Int) -> Void) {
-        lock.lock()
-        let known = closeCode
-        lock.unlock()
-        if let known { return then(known) }
-        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500)) { [weak self] in
-            then(self?.closeCodeNow() ?? 0)
+    /// A failed receive can come before the relay's close code (4404, 4429…) is known: `didCloseWith`, or the task's
+    /// closeCode, usually follows within moments. Checks every 0.1 s for up to 2 s, then goes with what is known.
+    private func whenCloseCodeKnown(_ then: @escaping @Sendable (Int) -> Void, tries: Int = 20) {
+        let code = closeCodeNow()
+        if code != 0 || tries == 0 { return then(code) }
+        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(100)) { [weak self] in
+            guard let self else { return then(0) }
+            self.whenCloseCodeKnown(then, tries: tries - 1)
         }
     }
 
