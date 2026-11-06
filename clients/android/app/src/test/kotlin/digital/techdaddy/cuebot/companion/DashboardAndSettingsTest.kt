@@ -22,7 +22,7 @@ class DashboardViewModelTest {
         "goals":[{"id":"subgoal","name":"Sub goal","points":$points,"steps":[{"name":"Emote","points":10}]}]},
         "feed":[{"platform":"Twitch","kind":"Cheer","user":"ann","isTest":true}]}""")
 
-    private fun viewModel() = DashboardViewModel(cuebot.connection, cuebot.store, cuebot.foreground)
+    private fun viewModel() = cuebot.viewModel { DashboardViewModel(cuebot.connection, cuebot.store, cuebot.foreground) }
 
     @Test fun loadsAndFollowsDashboardChanged() {
         val fetches = AtomicInteger()
@@ -88,7 +88,7 @@ class DashboardViewModelTest {
 
 class SettingsViewModelTest {
     @get:Rule val cuebot = FakeCuebot()
-    private val vm by lazy { SettingsViewModel(cuebot.paired, cuebot.connection, cuebot.store) }
+    private val vm by lazy { cuebot.viewModel { SettingsViewModel(cuebot.paired, cuebot.connection, cuebot.store) } }
 
     @Test fun pairsFromALinkOrExplainsWhy() {
         assertEquals("That is not a Cuebot pairing code.", vm.pair("https://example.com"))

@@ -4,16 +4,25 @@ import digital.techdaddy.cuebot.companion.data.Connection
 import digital.techdaddy.cuebot.companion.data.MemoryKeyValueStore
 import digital.techdaddy.cuebot.companion.data.PairedCuebots
 import digital.techdaddy.cuebot.companion.data.TokenCipher
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewModelScope
 import digital.techdaddy.cuebot.core.CuebotEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeout
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -32,7 +41,8 @@ object ReversingCipher : TokenCipher {
 
 /**
  * A Cuebot stand-in on MockWebServer: answers by path (method + path → handler), records requests, and gives the
- * ViewModels a real Main dispatcher (one thread) so their coroutines run as in the app.
+ * ViewModels a real Main dispatcher (one thread) so their coroutines run as in the app. Make ViewModels with
+ * [viewModel], so they are cleared, and their coroutines finished, before Main is reset.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FakeCuebot : ExternalResource() {
@@ -45,6 +55,8 @@ class FakeCuebot : ExternalResource() {
     val foreground = MutableStateFlow(true)
     lateinit var paired: PairedCuebots
     lateinit var connection: Connection
+    private val viewModels = ViewModelStore()
+    private val viewModelJobs = CopyOnWriteArrayList<Job>()
 
     override fun before() {
         Dispatchers.setMain(main)
@@ -63,10 +75,28 @@ class FakeCuebot : ExternalResource() {
     }
 
     override fun after() {
-        scope.cancel()
+        // resetMain throws if anything is dispatching on Main at that moment, and ViewModel coroutines run there:
+        // clear the ViewModels and wait for their coroutines to end (and the connection's) before resetting it.
+        viewModels.clear()
+        runBlocking {
+            withTimeout(5_000) {
+                viewModelJobs.joinAll()
+                scope.coroutineContext.job.cancelAndJoin()
+            }
+        }
         server.close()
         Dispatchers.resetMain()
         main.close()
+    }
+
+    /** Makes a ViewModel that is cleared when the test ends, as the app's screens clear theirs. */
+    fun <T : ViewModel> viewModel(create: () -> T): T {
+        val factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST") override fun <VM : ViewModel> create(modelClass: Class<VM>) = create() as VM
+        }
+        val vm = ViewModelProvider(viewModels, factory)["vm${viewModelJobs.size}", ViewModel::class.java]
+        viewModelJobs += vm.viewModelScope.coroutineContext.job
+        @Suppress("UNCHECKED_CAST") return vm as T
     }
 
     fun endpoint(deckToken: String? = "dk") = CuebotEndpoint("Test", server.hostName, server.port, server.port, "api-token", deckToken)

@@ -123,7 +123,7 @@ class ModViewModelTest {
 
     @After fun stop() = portal.server.close()
 
-    private fun viewModel() = ModViewModel(memberships, open = { PortalLink.open(it.copy(relayOrigin = portal.origin)) })
+    private fun viewModel() = app.viewModel { ModViewModel(memberships, open = { PortalLink.open(it.copy(relayOrigin = portal.origin)) }) }
 
     private fun ModViewModel.join(): String = runBlocking {
         assertNull(openInvite(portal.invite()))
@@ -228,7 +228,7 @@ class ApprovalsViewModelTest {
             if (body.contains("true")) json("""{"result":"applied","changes":[]}""") else json("""{"result":"conflict","changes":[$change]}""")
         }
         val visible = MutableStateFlow(false)
-        val vm = ApprovalsViewModel(cuebot.connection, visible, interval = 100)
+        val vm = cuebot.viewModel { ApprovalsViewModel(cuebot.connection, visible, interval = 100) }
         cuebot.pair()
         Thread.sleep(300)
         assertEquals("not checked while hidden", 0, cuebot.requested("GET /api/v1/portal/changes"))
@@ -246,7 +246,7 @@ class ApprovalsViewModelTest {
 
     @Test fun `an older Cuebot says so`() {
         cuebot.route("GET /api/v1/portal/changes", json("", 404))
-        val vm = ApprovalsViewModel(cuebot.connection, MutableStateFlow(true), interval = 100)
+        val vm = cuebot.viewModel { ApprovalsViewModel(cuebot.connection, MutableStateFlow(true), interval = 100) }
         cuebot.pair()
         eventually("too old") { vm.state.value.tooOld }
     }

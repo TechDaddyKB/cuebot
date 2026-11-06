@@ -31,6 +31,10 @@ class ClientTest {
 
     private fun sse(body: String) = MockResponse.Builder().addHeader("Content-Type", "text/event-stream").body(body).build()
 
+    /** An event stream that sends [body] and then stays open (an idle stream) for a while. */
+    private fun idleAfter(body: String) = MockResponse.Builder().addHeader("Content-Type", "text/event-stream")
+        .body(body + ": idle\n\n").throttleBody(body.length.toLong(), 30, TimeUnit.SECONDS).build()
+
     @Test fun sendsTheBearerTokenAndDecodesTheDashboard() = runBlocking {
         server.enqueue(json("""{"revision":3,"feed":[]}"""))
         assertEquals(3L, client().dashboard().revision)
@@ -111,7 +115,9 @@ class ClientTest {
     @Test fun apiEventsReconnectWithTheLastEventId() = runBlocking {
         server.enqueue(sse("id: 4\nevent: a\ndata: 1\n\n"))
         server.enqueue(MockResponse.Builder().code(503).build())
-        server.enqueue(sse("id: 5\nevent: b\ndata: 2\n\n"))
+        // The last stream stays open after its event: if it ended, the stream would report Reconnecting again
+        // before take(2) cancels it, racing the check that it was left Connected.
+        server.enqueue(idleAfter("id: 5\nevent: b\ndata: 2\n\n"))
         val states = mutableListOf<StreamState>()
         val events = withTimeout(5_000) { client().apiEvents(listOf("a", "b"), fast) { states += it }.take(2).toList() }
         assertEquals(listOf("a", "b"), events.map { it.type })
