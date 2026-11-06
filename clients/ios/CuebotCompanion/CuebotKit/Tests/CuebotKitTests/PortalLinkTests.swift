@@ -98,8 +98,10 @@ final class FakePortalCuebot: @unchecked Sendable {
     private func close(_ connection: NWConnection, _ code: Int) {
         let meta = NWProtocolWebSocket.Metadata(opcode: .close)
         meta.closeCode = .privateCode(UInt16(code))
+        // Like the relay: send the close frame and give the client time to read it before the socket goes (cancelling
+        // at once can reset the connection before the frame arrives, and then there is no code to read).
         connection.send(content: nil, contentContext: .init(identifier: "close", metadata: [meta]), isComplete: true,
-                        completion: .contentProcessed { _ in connection.cancel() })
+                        completion: .contentProcessed { [queue] _ in queue.asyncAfter(deadline: .now() + 2) { connection.cancel() } })
     }
 }
 
