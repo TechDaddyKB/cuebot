@@ -10,6 +10,9 @@ import digital.techdaddy.cuebot.core.CuebotClient
 import digital.techdaddy.cuebot.core.CuebotException
 import digital.techdaddy.cuebot.core.Dashboard
 import digital.techdaddy.cuebot.core.PointsGoal
+import digital.techdaddy.cuebot.core.ProfileInfo
+import digital.techdaddy.cuebot.core.ProfileSwitch
+import digital.techdaddy.cuebot.core.Profiles
 import digital.techdaddy.cuebot.core.StreamState
 import digital.techdaddy.cuebot.core.SubathonState
 import digital.techdaddy.cuebot.core.SubathonTimer
@@ -17,6 +20,7 @@ import digital.techdaddy.cuebot.core.numberValue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -30,6 +34,9 @@ import kotlinx.serialization.json.Json
  * The Dashboard tab: one /api/v1/dashboard snapshot, fetched again whenever a `dashboard.changed` event says the
  * revision moved on, the subathon and goal controls, and the actions pinned for the active Cuebot.
  */
+/** How long the Dashboard waits for Cuebot to come back on another profile. */
+private const val SWITCH_WAIT_SECONDS = 30
+
 class DashboardViewModel(
     private val connection: Connection,
     private val store: KeyValueStore,
@@ -55,7 +62,13 @@ class DashboardViewModel(
         val pinned: List<Pinned> = emptyList(),
         val available: List<ActionSummary> = emptyList(),
         val actionsError: String? = null,
+        /** The streamer profiles (personas), when Cuebot has them. */
+        val profiles: Profiles? = null,
+        /** A switch this phone asked for, until Cuebot is back on that profile. */
+        val switchingTo: ProfileInfo? = null,
     ) {
+        /** The profile row shows once there is more than one profile to switch between. */
+        val showsProfiles: Boolean get() = (profiles?.profiles?.size ?: 0) > 1
         val isReconnecting: Boolean get() = streamState is StreamState.Reconnecting
     }
 
@@ -107,6 +120,7 @@ class DashboardViewModel(
 
     private suspend fun fetch(s: Session) {
         _state.update { it.copy(refreshing = true) }
+        fetchProfiles(s)
         try {
             val snapshot = s.client.dashboard()
             _state.update { st ->
@@ -121,6 +135,62 @@ class DashboardViewModel(
             _state.update { it.copy(error = e.message) }
         } finally {
             _state.update { it.copy(refreshing = false) }
+        }
+    }
+
+    /** The profiles, best effort: the Dashboard works without them. A switch is done once Cuebot is back on its profile. */
+    private suspend fun fetchProfiles(s: Session) {
+        val profiles = try {
+            s.client.profiles()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: CuebotException) {
+            return
+        }
+        _state.update { st ->
+            val arrived = st.switchingTo != null && profiles?.current?.id == st.switchingTo.id
+            st.copy(profiles = profiles, switchingTo = if (arrived) null else st.switchingTo)
+        }
+    }
+
+    /**
+     * Asks Cuebot to switch to [profile] (with [force], even while live). On [ProfileSwitch.Switching] Cuebot restarts;
+     * the event stream reconnects and the Dashboard follows. A failure comes back as its message.
+     */
+    suspend fun switchProfile(profile: ProfileInfo, force: Boolean = false): Result<ProfileSwitch> {
+        val client = session?.client ?: return Result.failure(IllegalStateException("Not paired"))
+        return try {
+            val outcome = client.activateProfile(profile.id, force)
+            if (outcome == ProfileSwitch.Switching) {
+                _state.update { it.copy(switchingTo = profile) }
+                session?.let { s -> viewModelScope.launch { followSwitch(s, profile) } }
+            }
+            Result.success(outcome)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: CuebotException) {
+            connection.report(e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Cuebot restarts on the other profile: asks for the profiles every second until it answers on [target] (at most
+     * [SWITCH_WAIT_SECONDS]), then loads the Dashboard again. The event stream reconnects by itself, but a restart can
+     * be quicker than it notices.
+     */
+    private suspend fun followSwitch(s: Session, target: ProfileInfo) {
+        repeat(SWITCH_WAIT_SECONDS) {
+            delay(1_000)
+            if (session !== s) return
+            fetchProfiles(s)
+            if (_state.value.switchingTo == null) {
+                fetch(s)
+                return
+            }
+        }
+        _state.update {
+            it.copy(switchingTo = null, controlError = "Cuebot has not come back on ${target.name} yet. Pull down to refresh.")
         }
     }
 

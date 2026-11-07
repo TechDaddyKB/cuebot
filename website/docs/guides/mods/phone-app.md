@@ -81,6 +81,21 @@ You can pair more than one Cuebot, like a gaming PC and a streaming PC. Tap one 
   sample events the assistant sends. They don't count towards top spenders. The assistant's sample events *do* move
   subathon timers and goals, so you can try those out; a service's test button doesn't.
 
+## Switching persona
+
+Stream as more than one persona, with [profiles](../platforms/profiles.md)? The **Dashboard** then starts with a
+**Profile** card that shows the open one, with its colour.
+
+1. Tap **Switch** on the **Profile** card.
+2. Pick the profile.
+3. Tap **Switch** to confirm.
+
+Cuebot restarts on that profile. The card says **Switching to …** for a few seconds, and then the Dashboard shows the
+other persona's timers, goals and feed. You don't need to pair again: every profile shares the pairing.
+
+While you are live, the app asks first: tap **Switch anyway** only if you mean it. The card only shows when there are
+two or more profiles.
+
 ## Approving from your phone
 
 Your mods can change things through the [mod portal](mod-portal.md). If their changes need your OK (see

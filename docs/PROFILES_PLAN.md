@@ -24,7 +24,7 @@ A **profile** is one persona's whole Cuebot; the streamer switches between them 
 | Phase | What | Done when |
 | --- | --- | --- |
 | 1 ✅ | Shared and profile folders, the move, `ProfileCatalog` (create, copy by parts, rename, colour, delete), switching by restart, `--profile`, the top-bar profile chip and menu, the tray's Profiles menu, profiles in the Ctrl+K jump box, a Profiles tab in Settings, docs | Two profiles with different Twitch accounts switch both ways; tests for the move, the catalog, copying with secrets, backups and the options |
-| 2 | Triggers **Profile started** / **Profile stopping**, a **Switch profile** sub-action, a live guard (asks first while streaming), REST `GET /profiles`, `POST /profiles/{id}/activate`, the phone app showing and switching the persona | A deck button switches persona and the started action changes the OBS scene collection |
+| 2 ✅ | Triggers **Profile started** / **Profile stopping**, a **Switch profile** sub-action, a live guard (asks first while streaming), REST `GET /profiles`, `POST /profiles/{id}/activate`, the phone app showing and switching the persona | A deck button switches persona and the started action changes the OBS scene collection |
 | 3 | Copy single actions, commands and overlays to another profile; desk connections (OBS, Stream Deck, MIDI, lights) shared by default with a per-profile "own settings" switch; restoring one profile from a backup; avatars and a tinted tray icon | — |
 | Later | Two personas live at once | — |
 
@@ -49,3 +49,21 @@ A **profile** is one persona's whole Cuebot; the streamer switches between them 
   readable; switching headless and with the window (on Xvfb) via `--profile` restarted on the other profile, and the
   servers bound their ports again. Not checked live: the Linux keyring path of the move (tests and the live run used
   the key file), Windows and macOS.
+
+## Phase 2 notes (2026-11-07)
+
+- `ProfileSwitcher` (Cuebot.Core.Profiles) is the one way to switch: the top bar, the tray, the jump box, Settings, the
+  **Switch profile** step (`core.switchProfile`, never allowed in the mod portal), `--profile` and
+  `POST /api/v1/profiles/{id}/activate`. It refuses while `PointsService.LivePlatforms` is not empty unless told to
+  switch anyway, runs the **Profile stopping** actions (waits at most 10 s), then the shell restarts on the profile.
+  It finds the action engine lazily: the engine's registry holds the step, which needs the switcher.
+- Live guard: the desktop asks again (choose the profile again within 10 s, with an in-app notice); the phone asks
+  "Switch anyway?"; the step has **Switch even while live**; the API takes `force`; `--profile` always switches.
+- **Profile started** runs after **Application started** with `%profile%` and `%previousProfile%` (the restart passes
+  the old id in `CUEBOT_PROFILE_SWITCH`); **Profile stopping** has `%nextProfile%`.
+- `servers.json` (ports, API token, deck token) is shared now, so the phone, OBS docks and the MCP bridge keep working
+  across a switch. The first open of this version lifts the active profile's copy (and its secrets) into the data
+  folder; other profiles' copies are ignored. A data folder from before profiles keeps it at the top when moved.
+- REST: `GET /profiles` (503 without profiles), `POST /profiles/{id}/activate` (`force`; 409 live or busy; 404 unknown).
+- Android: a **Profile** card on the Dashboard (shown with two or more profiles), switch with confirm and the live
+  question. iOS: delegated to the Mac session (branch reported separately).

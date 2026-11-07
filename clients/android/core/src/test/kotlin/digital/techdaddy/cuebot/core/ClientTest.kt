@@ -164,4 +164,36 @@ class ClientTest {
         assertEquals(ChangeDecision.Result.Rejected, client().decideChange("c1", approve = false).result)
         assertEquals("/api/v1/portal/changes/c1/reject", server.takeRequest().url.encodedPath)
     }
+
+    @Test fun listsAndSwitchesProfiles(): Unit = runBlocking {
+        server.enqueue(json("""{"current":{"id":"main","name":"Kitsune","color":"#8B5CF6","open":true},
+            "profiles":[{"id":"main","name":"Kitsune","color":"#8B5CF6","open":true},{"id":"night-owl","name":"Night Owl","color":"#EC4899","open":false}],
+            "live":["Twitch"],"switching":false}"""))
+        val profiles = client().profiles()!!
+        assertEquals("Kitsune", profiles.current?.name)
+        assertEquals(listOf("main", "night-owl"), profiles.profiles.map { it.id })
+        assertEquals(listOf("Twitch"), profiles.live)
+        assertEquals("/api/v1/profiles", server.takeRequest().url.encodedPath)
+
+        server.enqueue(MockResponse.Builder().code(409).body("""{"error":"Live on Twitch; send force true to switch anyway"}""").build())
+        assertEquals(ProfileSwitch.Live("Live on Twitch; send force true to switch anyway"), client().activateProfile("night-owl"))
+        val r = server.takeRequest()
+        assertEquals("/api/v1/profiles/night-owl/activate", r.url.encodedPath)
+        assertEquals("""{"force":false}""", r.body?.utf8())
+
+        server.enqueue(json("""{"result":"switching"}"""))
+        assertEquals(ProfileSwitch.Switching, client().activateProfile("night-owl", force = true))
+        assertEquals("""{"force":true}""", server.takeRequest().body?.utf8())
+
+        server.enqueue(MockResponse.Builder().code(409).body("""{"error":"A profile switch is already under way"}""").build())
+        assertTrue(client().activateProfile("night-owl") is ProfileSwitch.Busy)
+        server.takeRequest()
+
+        // No profiles (503) and a Cuebot too old to know them (404) both hide the feature.
+        server.enqueue(MockResponse.Builder().code(503).body("""{"error":"Profiles are not available"}""").build())
+        assertNull(client().profiles())
+        server.takeRequest()
+        server.enqueue(MockResponse.Builder().code(404).body("""{"error":"Not found"}""").build())
+        assertNull(client().profiles())
+    }
 }

@@ -6,6 +6,7 @@ import digital.techdaddy.cuebot.companion.ui.dashboard.DashboardViewModel
 import digital.techdaddy.cuebot.companion.ui.settings.SettingsViewModel
 import digital.techdaddy.cuebot.companion.ui.theme.Appearance
 import digital.techdaddy.cuebot.core.ActionSummary
+import digital.techdaddy.cuebot.core.ProfileSwitch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -35,6 +36,47 @@ class DashboardViewModelTest {
         assertTrue(vm.state.value.dashboard!!.feed.single().isTest)
         val stream = cuebot.requests.first { it.url.encodedPath == "/api/v1/events" }
         assertEquals("dashboard.changed", stream.url.queryParameter("types"))
+    }
+
+    private fun profilesJson(open: String) = json("""{"current":{"id":"$open","name":"${if (open == "main") "Kitsune" else "Night Owl"}","color":"#8B5CF6","open":true},
+        "profiles":[{"id":"main","name":"Kitsune","color":"#8B5CF6","open":${open == "main"}},{"id":"night-owl","name":"Night Owl","color":"#EC4899","open":${open == "night-owl"}}],
+        "live":[],"switching":false}""")
+
+    @Test fun showsTheProfileAndSwitchesUntilCuebotIsBackOnIt(): Unit = runBlocking {
+        var open = "main"
+        cuebot.route("GET /api/v1/dashboard", board(1))
+        cuebot.route("GET /api/v1/events", sse(": hi\n\n"))
+        cuebot.route("GET /api/v1/profiles") { profilesJson(open) }
+        val live = AtomicInteger()
+        cuebot.route("POST /api/v1/profiles/night-owl/activate") { r ->
+            if (!r.body!!.utf8().contains("true") && live.incrementAndGet() == 1) json("""{"error":"Live on Twitch; send force true to switch anyway"}""", 409)
+            else json("""{"result":"switching"}""")
+        }
+        val vm = viewModel()
+        cuebot.pair()
+        eventually("profiles") { vm.state.value.profiles?.current?.name == "Kitsune" }
+        assertTrue(vm.state.value.showsProfiles)
+        val owl = vm.state.value.profiles!!.profiles.single { it.id == "night-owl" }
+
+        assertTrue(vm.switchProfile(owl).getOrThrow() is ProfileSwitch.Live)
+        assertNull(vm.state.value.switchingTo)
+        assertEquals(ProfileSwitch.Switching, vm.switchProfile(owl, force = true).getOrThrow())
+        assertEquals("night-owl", vm.state.value.switchingTo?.id)
+
+        open = "night-owl"   // Cuebot is back, on the other profile
+        vm.refresh()
+        eventually("switched") { vm.state.value.switchingTo == null && vm.state.value.profiles?.current?.id == "night-owl" }
+    }
+
+    @Test fun oneProfileOrNoneShowsNoProfileRow() {
+        cuebot.route("GET /api/v1/dashboard", board(1))
+        cuebot.route("GET /api/v1/events", sse(": hi\n\n"))
+        cuebot.route("GET /api/v1/profiles", json("""{"error":"Profiles are not available"}""", 503))
+        val vm = viewModel()
+        cuebot.pair()
+        eventually("loaded") { vm.state.value.dashboard != null }
+        assertNull(vm.state.value.profiles)
+        assertTrue(!vm.state.value.showsProfiles)
     }
 
     @Test fun anOlderCuebotSaysUpdate() {

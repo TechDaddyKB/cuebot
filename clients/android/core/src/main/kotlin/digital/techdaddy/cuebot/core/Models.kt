@@ -1,8 +1,10 @@
 package digital.techdaddy.cuebot.core
 
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -245,6 +247,35 @@ data class PendingChange(
         fun from(o: JsonObject) = PendingChange(o.str("id"), o.str("member"), o.str("area"), o.str("kind"), o.str("target"),
             o.str("summary").ifEmpty { "${o.str("member")} changed '${o.str("target")}'" }, o.num("at")?.toLong() ?: 0, o.num("expires")?.toLong() ?: 0)
     }
+}
+
+/** One streamer profile (persona) of the paired Cuebot. */
+data class ProfileInfo(val id: String, val name: String, val color: String, val open: Boolean) {
+    companion object {
+        fun from(o: JsonObject) = ProfileInfo(o.str("id"), o.str("name").ifEmpty { o.str("id") }, o.str("color"), o.bool("open"))
+    }
+}
+
+/** `GET /api/v1/profiles`: the open profile, every profile, the platforms that are live, and whether a switch is under way. */
+data class Profiles(val current: ProfileInfo?, val profiles: List<ProfileInfo>, val live: List<String>, val switching: Boolean) {
+    companion object {
+        fun from(e: JsonElement?): Profiles {
+            val o = e.obj() ?: return Profiles(null, emptyList(), emptyList(), false)
+            return Profiles(o["current"].obj()?.let(ProfileInfo::from), o.list("profiles", ProfileInfo::from),
+                (o["live"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull } ?: emptyList(), o.bool("switching"))
+        }
+    }
+}
+
+/** What asking Cuebot to switch profile did. */
+sealed interface ProfileSwitch {
+    /** Cuebot is restarting on the other profile; it is back in a few seconds. */
+    data object Switching : ProfileSwitch
+    data object AlreadyOpen : ProfileSwitch
+    /** A stream is live; ask again with force to switch anyway. */
+    data class Live(val message: String) : ProfileSwitch
+    /** Another switch is under way. */
+    data class Busy(val message: String) : ProfileSwitch
 }
 
 /** What approving or rejecting did, and the queue after it. */

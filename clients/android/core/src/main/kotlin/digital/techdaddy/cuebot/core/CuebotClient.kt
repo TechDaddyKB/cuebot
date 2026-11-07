@@ -96,6 +96,30 @@ class CuebotClient(val endpoint: CuebotEndpoint, client: OkHttpClient = defaultH
         return ChangeDecision(ChangeDecision.Result.of(answer.str("result")), answer.list("changes", PendingChange::from))
     }
 
+    // Streamer profiles (personas)
+
+    /** The profiles, or null when this Cuebot has none (503) or is too old to know them (404). */
+    suspend fun profiles(): Profiles? = try {
+        Profiles.from(getJson(api("/api/v1/profiles")))
+    } catch (e: CuebotException.NotFound) {
+        null
+    } catch (e: CuebotException.Http) {
+        if (e.status == 503) null else throw e
+    }
+
+    /** Switches Cuebot to another profile (with [force], even while live). Cuebot restarts, so streams drop briefly. */
+    suspend fun activateProfile(id: String, force: Boolean = false): ProfileSwitch = try {
+        val answer = parseJson(send(api("/api/v1/profiles/${seg(id)}/activate"), buildJsonObject { put("force", force) })).obj()
+        if (answer?.str("result") == "alreadyOpen") ProfileSwitch.AlreadyOpen else ProfileSwitch.Switching
+    } catch (e: CuebotException.Http) {
+        if (e.status != 409) throw e
+        val message = errorMessage(e.body)
+        if (message.contains("under way", ignoreCase = true)) ProfileSwitch.Busy(message) else ProfileSwitch.Live(message)
+    }
+
+    /** The `error` text of an API error answer, or the answer itself. */
+    private fun errorMessage(body: String): String = parseJson(body).obj()?.str("error")?.ifEmpty { null } ?: body
+
     // Decks (HTTP server)
 
     suspend fun deckState(deck: String): DeckView = DeckView.from(getJson(deckRequest(deck, "state")))

@@ -110,6 +110,8 @@ import digital.techdaddy.cuebot.core.ConnectionState
 import digital.techdaddy.cuebot.core.CuebotClient
 import digital.techdaddy.cuebot.core.FeedItem
 import digital.techdaddy.cuebot.core.PointsGoal
+import digital.techdaddy.cuebot.core.ProfileInfo
+import digital.techdaddy.cuebot.core.ProfileSwitch
 import digital.techdaddy.cuebot.core.StreamTotals
 import digital.techdaddy.cuebot.core.SubathonTimer
 import digital.techdaddy.cuebot.core.TopSpenders
@@ -159,6 +161,7 @@ private fun Content(vm: DashboardViewModel, state: DashboardViewModel.UiState, e
                     verticalItemSpacing = 16.dp,
                     modifier = Modifier.fillMaxSize().testTag("dashboard"),
                 ) {
+                    if (state.showsProfiles) item(span = StaggeredGridItemSpan.FullLine) { ProfileCard(vm, state) }
                     item(span = StaggeredGridItemSpan.FullLine) { ConnectionsStrip(dashboard.connections) }
                     state.controlError?.let { error ->
                         item(span = StaggeredGridItemSpan.FullLine) {
@@ -203,6 +206,101 @@ fun Card(title: String, icon: ImageVector, modifier: Modifier = Modifier, conten
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         }
         content()
+    }
+}
+
+// Profiles (personas)
+
+/** A profile's colour, like `#8B5CF6`; the accent when it is not one. */
+@Composable
+private fun profileColor(hex: String): Color =
+    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(MaterialTheme.colorScheme.primary)
+
+/**
+ * The open profile (persona) with a Switch button: pick another profile, confirm, and Cuebot restarts on it. While a
+ * stream is live Cuebot refuses, and the phone asks again before switching anyway.
+ */
+@Composable
+private fun ProfileCard(vm: DashboardViewModel, state: DashboardViewModel.UiState) {
+    val colors = LocalCuebotColors.current
+    val scope = rememberCoroutineScope()
+    val profiles = state.profiles ?: return
+    var picking by remember { mutableStateOf(false) }
+    var confirming by remember { mutableStateOf<ProfileInfo?>(null) }
+    var live by remember { mutableStateOf<Pair<ProfileInfo, String>?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    fun switch(profile: ProfileInfo, force: Boolean) {
+        scope.launch {
+            error = null
+            vm.switchProfile(profile, force)
+                .onSuccess { outcome ->
+                    when (outcome) {
+                        is ProfileSwitch.Live -> live = profile to outcome.message
+                        is ProfileSwitch.Busy -> error = outcome.message
+                        else -> Unit
+                    }
+                }
+                .onFailure { error = it.message }
+        }
+    }
+    Row(
+        Modifier.fillMaxWidth().background(colors.card, RoundedCornerShape(16.dp)).border(0.5.dp, colors.line, RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 10.dp).testTag("profile-card"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val shown = state.switchingTo ?: profiles.current
+        Box(Modifier.size(12.dp).background(profileColor(shown?.color ?: ""), RoundedCornerShape(6.dp)))
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text("Profile", color = colors.muted, style = MaterialTheme.typography.labelSmall)
+            Text(
+                state.switchingTo?.let { "Switching to ${it.name}…" } ?: profiles.current?.name ?: "",
+                fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            error?.let { Text(it, color = colors.bad, style = MaterialTheme.typography.bodySmall) }
+        }
+        TextButton(onClick = { picking = true }, enabled = state.switchingTo == null, modifier = Modifier.testTag("profile-switch")) { Text("Switch") }
+    }
+    if (picking) {
+        AlertDialog(
+            onDismissRequest = { picking = false },
+            title = { Text("Switch profile") },
+            text = {
+                Column {
+                    profiles.profiles.forEach { p ->
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                .clickable(enabled = !p.open) { picking = false; confirming = p }.testTag("profile-${p.id}"),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.size(12.dp).background(profileColor(p.color), RoundedCornerShape(6.dp)))
+                            Spacer(Modifier.width(12.dp))
+                            Text(p.name, modifier = Modifier.weight(1f), fontWeight = if (p.open) FontWeight.SemiBold else FontWeight.Normal)
+                            if (p.open) Text("Open", color = colors.muted, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { picking = false }) { Text("Close") } },
+        )
+    }
+    confirming?.let { p ->
+        AlertDialog(
+            onDismissRequest = { confirming = null },
+            title = { Text("Switch to ${p.name}?") },
+            text = { Text("Cuebot restarts on that profile, with its own accounts, mods and actions. It takes a few seconds.") },
+            confirmButton = { TextButton(onClick = { confirming = null; switch(p, force = false) }, modifier = Modifier.testTag("profile-confirm")) { Text("Switch") } },
+            dismissButton = { TextButton(onClick = { confirming = null }) { Text("Cancel") } },
+        )
+    }
+    live?.let { (p, message) ->
+        AlertDialog(
+            onDismissRequest = { live = null },
+            title = { Text("You are live") },
+            text = { Text("$message. Switching to ${p.name} now changes your accounts and actions mid-stream.") },
+            confirmButton = { TextButton(onClick = { live = null; switch(p, force = true) }, modifier = Modifier.testTag("profile-force")) { Text("Switch anyway") } },
+            dismissButton = { TextButton(onClick = { live = null }) { Text("Cancel") } },
+        )
     }
 }
 
