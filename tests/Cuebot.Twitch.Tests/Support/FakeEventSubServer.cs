@@ -80,7 +80,8 @@ public sealed class FakeEventSubServer : IAsyncDisposable
         FakeEventSubConnection[] all;
         lock (_all) all = _all.ToArray();
         foreach (var connection in all) connection.Abort();
-        _listener.Stop();
+        // Close alone: after Stop has unbound the port, Close binds it again to unbind it, which fails ("Address already
+        // in use") once another test has taken the port.
         _listener.Close();
         await _acceptLoop;
     }
