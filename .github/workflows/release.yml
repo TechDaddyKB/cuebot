@@ -45,11 +45,11 @@ jobs:
             var="CUEBOT_$name"
             [ -n "${!var}" ] || echo "::warning::Secret $var is not set: this release asks users for their own app there."
           done
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           pattern: ffmpeg-linux-*
           path: artifacts/ffmpeg-download
@@ -61,7 +61,7 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           packaging/linux/build-tarball.sh "$version" linux-x64
           packaging/linux/build-tarball.sh "$version" linux-arm64
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-tarballs
           path: artifacts/Cuebot-*-linux-*.tar.gz
@@ -77,14 +77,14 @@ jobs:
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       - run: clients/android/ci/release.sh "${GITHUB_REF_NAME#v}" "${{ github.run_number }}"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: clients/android/dist/*
@@ -96,7 +96,7 @@ jobs:
     if: ${{ !cancelled() && needs.build.result == 'success' && needs.tarballs.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -126,7 +126,7 @@ jobs:
     container: archlinux:base-devel
     steps:
       - run: pacman -Syu --noconfirm --needed git openssh
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Pin versions and checksums, write .SRCINFO
         env:
           GH_TOKEN: ${{ github.token }}
@@ -142,7 +142,7 @@ jobs:
           gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir dl --pattern 'Cuebot-*-linux-*.tar.gz'
           useradd -m builder && chown -R builder .
           su builder -c "packaging/aur/prepare.sh $version dl/cuebot-$version.tar.gz dl/Cuebot-$version-linux-x64.tar.gz dl/Cuebot-$version-linux-arm64.tar.gz"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: aur-packages
           path: artifacts/aur
