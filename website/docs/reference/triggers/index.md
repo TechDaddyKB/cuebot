@@ -10,7 +10,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Animaze](animaze.md) | 3 |
 | [Chat (all platforms)](chat-all-platforms.md) | 5 |
 | [Commands](commands.md) | 2 |
-| [Core](core.md) | 3 |
+| [Core](core.md) | 5 |
 | [Crowd Control](crowd-control.md) | 14 |
 | [Custom](custom.md) | 1 |
 | [Custom Webhooks](custom-webhooks.md) | 1 |

@@ -79,7 +79,7 @@ public static class StepRiskCatalog
         // Files, programs, the desktop: never.
         ["core.deleteFile"] = No, ["core.fileExists"] = No, ["core.readFile"] = No, ["core.readLines"] = No,
         ["core.readRandomLine"] = No, ["core.readSpecificLine"] = No, ["core.writeFile"] = No, ["core.runProgram"] = No,
-        ["core.setWatcherState"] = No, ["code.*"] = No, ["desktop.getClipboard"] = No, ["desktop.setClipboard"] = No,
+        ["core.setWatcherState"] = No, ["core.switchProfile"] = No, ["code.*"] = No, ["desktop.getClipboard"] = No, ["desktop.setClipboard"] = No,
         ["input.*"] = No, ["desktop.showNotification"] = L1,
 
         // Chat on every platform.
@@ -156,7 +156,7 @@ public static class StepRiskCatalog
         ["streamelements.*"] = L1, ["streamlabs.*"] = L1, ["fourthwall.*"] = L1, ["tipeeestream.*"] = L1,
         ["patreon.*"] = L1, ["kofi.*"] = L1, ["donordrive.*"] = L1, ["treatstream.*"] = L1, ["throne.*"] = L1,
         ["shopify.*"] = L1, ["pally.*"] = L1, ["streamloots.*"] = L1,
-        ["core.timer"] = L1, ["core.cron"] = L1, ["core.appStarted"] = L1,
+        ["core.timer"] = L1, ["core.cron"] = L1, ["core.appStarted"] = L1, ["core.profileStarted"] = L1, ["core.profileStopping"] = L1,
         ["obs.*"] = L1, ["slobs.*"] = L1, ["meldstudio.*"] = L1,
 
         // Devices, integrations, the network and variables.

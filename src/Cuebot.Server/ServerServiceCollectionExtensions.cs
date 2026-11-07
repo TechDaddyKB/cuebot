@@ -1,4 +1,5 @@
 using Cuebot.Core;
+using Cuebot.Core.Profiles;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Scripting;
 using Cuebot.Core.Storage;
@@ -15,7 +16,10 @@ public static class ServerServiceCollectionExtensions
 {
     public static IServiceCollection AddServers(this IServiceCollection services)
     {
-        services.AddSettingsFile<ServerSettings>("servers.json");
+        // Shared by every streamer profile: one set of ports and one API token per computer, so OBS docks and the paired
+        // phone keep working after a switch.
+        services.AddSingleton(sp => new JsonFile<ServerSettings>(sp.GetRequiredService<AppPaths>().SharedFile(ProfileCatalog.ServerSettingsFile),
+            sp.GetRequiredService<Cuebot.Core.Logging.AppLog>()));
         services.AddSingleton<ISpeakerBackend>(sp => new SpeechServiceBackend(sp.GetRequiredService<SpeechService>()));
         services.AddSingleton(sp => new ServerServices(sp));
         services.AddSingleton(sp => new ServerManager(sp.GetRequiredService<JsonFile<ServerSettings>>(), sp.GetRequiredService<ServerServices>()));

@@ -186,6 +186,19 @@ public static class OpenApiDocument
                     body: Obj(("force", Bool("Approve even when the thing changed since the mod asked"))),
                     responses: Responses(("200", "OK", Obj(("result", Str()), ("changes", Arr(new JsonObject { ["type"] = "object" })))), NotFound())),
             },
+            ["/profiles"] = new JsonObject
+            {
+                ["get"] = Op("getProfiles", "Profiles", "The streamer profiles (personas): the open one, every profile, the platforms that are live, and whether a switch is under way",
+                    responses: Ok(Obj(("current", Ref("Profile")), ("profiles", Arr(Ref("Profile"))), ("live", Arr(Str())), ("switching", Bool())))),
+            },
+            ["/profiles/{id}/activate"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(IdParam("Profile id or name")),
+                ["post"] = Op("activateProfile", "Profiles",
+                    "Switch to this profile. Cuebot runs the Profile stopping actions, then restarts on it, so the connection drops soon after the answer. result: switching or alreadyOpen",
+                    body: Obj(("force", Bool("Switch even while a stream is live"))),
+                    responses: Responses(("200", "OK", Obj(("result", Str()))), NotFound(), Err("409", "A stream is live (send force) or a switch is already under way"))),
+            },
             ["/polls"] = new JsonObject
             {
                 ["get"] = Op("getPolls", "Polls", "The latest poll and prediction from each source (twitch, youtube, cuebot) and Cuebot's vote and bet commands",
@@ -337,6 +350,7 @@ public static class OpenApiDocument
         ["Giveaway"] = Obj(("id", Str()), ("title", Str()), ("status", Str("open, closed, drawn or canceled")), ("command", Str()),
             ("ticketCost", Int()), ("maxTickets", Int()), ("currency", Str()), ("subscribersOnly", Bool()), ("endsAt", Str()), ("entrants", Int()),
             ("tickets", Int()), ("recent", Arr(Str())), ("winners", Arr(Obj(("name", Str()), ("platform", Str()))))),
+        ["Profile"] = Obj(("id", Str("Folder name, like night-owl")), ("name", Str()), ("color", Str("Like #8B5CF6")), ("open", Bool("The open profile"))),
         ["Poll"] = Obj(("source", Str("twitch, youtube or cuebot")), ("kind", Str("poll or prediction")), ("id", Str()), ("title", Str()),
             ("status", Str("active, locked, ended or canceled")),
             ("choices", Arr(Obj(("id", Str()), ("title", Str()), ("votes", Int()), ("points", Int()), ("percent", new JsonObject { ["type"] = "number" })))),

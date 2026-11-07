@@ -26,6 +26,36 @@ Runs on a clock schedule that you write, like every 15 minutes or every day at 8
 
 <small>Type id: `core.cron`</small>
 
+## Profile started
+
+Runs each time Cuebot finishes starting on a profile (a persona), also right after you switch to it. Good for getting that persona's stream ready: switch the OBS scene collection, load the VTube Studio model, set the stream title.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%profile%` | The name of the profile that started, like "Night Owl" |
+| `%profileId%` | Its folder name, like "night-owl" |
+| `%previousProfile%` | The profile Cuebot switched from, or empty when Cuebot just started |
+| `%previousProfileId%` | The folder name of the profile Cuebot switched from, or empty |
+
+<small>Type id: `core.profileStarted`</small>
+
+## Profile stopping
+
+Runs just before Cuebot switches to another profile. Cuebot waits for these actions to finish (at most 10 seconds), then opens again on the other profile. Good for saying goodbye in chat or putting OBS back the way it was.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%profile%` | The name of the profile that is closing |
+| `%profileId%` | Its folder name |
+| `%nextProfile%` | The name of the profile Cuebot is switching to |
+| `%nextProfileId%` | Its folder name |
+
+<small>Type id: `core.profileStopping`</small>
+
 ## Timer
 
 Runs each time one of your timers goes off. You make timers on the Timers page. Good for a repeating reminder like "follow the channel" every 20 minutes.

@@ -53,6 +53,7 @@ internal sealed class TestBot : IAsyncDisposable
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
             Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon, Approvals = Approvals,
+            Profiles = Profiles,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -156,6 +157,10 @@ internal sealed class TestBot : IAsyncDisposable
     public TimerService Timers { get; }
     public Cuebot.Core.Transfer.TransferService Transfer { get; }
     public ActionEngine Engine { get; }
+    /// <summary>Streamer profiles; tests attach a catalog (none by default, as in a Cuebot without profiles).</summary>
+    public Cuebot.Core.Profiles.ProfileSwitcher Profiles => _profiles ??= new(new LateProvider(this), Points, Bus, Log);
+    private Cuebot.Core.Profiles.ProfileSwitcher? _profiles;
+
     /// <summary>The mod portal's approval queue, as the REST API sees it.</summary>
     public FakeApprovals Approvals { get; } = new();
 

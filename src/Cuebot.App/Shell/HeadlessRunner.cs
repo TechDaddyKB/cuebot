@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Profiles;
 
 namespace Cuebot.App.Shell;
 
@@ -27,6 +28,10 @@ public static class HeadlessRunner
         ctx.FlushNotes(log);
 
         var stopped = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ctx.AttachSwitcher(host, id =>
+        {
+            if (ctx.PrepareSwitch(id)) stopped.TrySetResult($"switching to the profile {ctx.Profiles!.Active.Name}");
+        });
         using var registration = stop.Register(() => stopped.TrySetResult("stop requested"));
         var signals = new List<PosixSignalRegistration>();
         foreach (var signal in new[] { PosixSignal.SIGINT, PosixSignal.SIGTERM, PosixSignal.SIGQUIT, PosixSignal.SIGHUP })
@@ -46,10 +51,11 @@ public static class HeadlessRunner
         {
             instance.ActivationRequested += () => log.Info("Cuebot", "Another launch asked to show the window; running headless, so it was ignored");
             instance.ShutdownRequested += () => stopped.TrySetResult("--shutdown requested");
+            // An explicit --profile switches even while live; there is no window to ask in.
             instance.ProfileRequested += name =>
             {
-                if (ctx.PrepareSwitch(name)) stopped.TrySetResult($"switching to the profile {ctx.Profiles!.Active.Name}");
-                else log.Warn("Cuebot", $"Another launch asked for the profile '{name}', which does not exist or is already open");
+                var result = host.Get<ProfileSwitcher>().Switch(name, evenWhileLive: true);
+                if (result != ProfileSwitchResult.Switching) log.Warn("Cuebot", $"Another launch asked for the profile '{name}': {result}");
             };
         }
 

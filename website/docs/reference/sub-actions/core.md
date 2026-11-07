@@ -162,6 +162,23 @@ Changes how likely a step is to be picked when an action or group runs one rando
 
 <small>Type id: `core.setSubActionWeight`</small>
 
+## Switch profile
+
+Opens Cuebot on another profile (persona): its own accounts, mods, actions and overlays. Cuebot runs the "Profile stopping" actions, then closes and opens again on the other profile, so put this step last. While you are live it does nothing and the step fails, unless you tick Switch even while live.
+
+| Setting | What to put in |
+| --- | --- |
+| **Profile** | The profile's name, like "Night Owl". Its folder name works too. |
+| **Switch even while live** | Ticked: switch even while a stream is live on any platform. Not ticked: refuse while live, so a stray button press never switches persona mid-stream. Starts as: `false`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%profileSwitch%` | What happened: Switching, or AlreadyOpen when that profile is already the open one |
+
+<small>Type id: `core.switchProfile`</small>
+
 ## Trigger custom event
 
 Sends out a custom event with a name you choose. Any action with a matching "Custom code event" trigger runs. A way to start several actions at once.

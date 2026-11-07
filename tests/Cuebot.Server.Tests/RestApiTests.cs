@@ -535,6 +535,41 @@ public sealed class RestApiTests : IAsyncLifetime
         Assert.Equal(405, (await _host.SendAsync(HttpMethod.Delete, "/api/v1/portal/changes")).Status);
     }
 
+    // ---- profiles ----
+
+    [Fact]
+    public async Task Profiles_are_listed_and_switched_over_the_api_and_live_needs_force()
+    {
+        Assert.Equal(503, (await _host.GetAsync("/api/v1/profiles")).Status);   // a Cuebot without profiles
+
+        var dir = Directory.CreateTempSubdirectory("cuebot-api-profiles-").FullName;
+        var catalog = Cuebot.Core.Profiles.ProfileCatalog.Open(dir);
+        catalog.Rename("main", "Kitsune");
+        catalog.Create("Night Owl");
+        var switched = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Bot.Profiles.Attach(catalog, catalog.Find("main")!, null, id => switched.TrySetResult(id));
+
+        var (status, list) = await _host.GetAsync("/api/v1/profiles");
+        Assert.Equal(200, status);
+        Assert.Equal("Kitsune", list!["current"]!["name"]!.GetValue<string>());
+        Assert.Equal(["main", "night-owl"], list["profiles"]!.AsArray().Select(p => p!["id"]!.GetValue<string>()));
+        Assert.Equal([true, false], list["profiles"]!.AsArray().Select(p => p!["open"]!.GetValue<bool>()));
+        Assert.Empty(list["live"]!.AsArray());
+
+        Bot.Points.SetLive("Twitch", true);
+        var live = await _host.PostAsync("/api/v1/profiles/night-owl/activate", new { });
+        Assert.Equal(409, live.Status);
+        Assert.Equal(["Twitch"], (await _host.GetAsync("/api/v1/profiles")).Body!["live"]!.AsArray().Select(p => p!.GetValue<string>()));
+        Assert.Equal(404, (await _host.PostAsync("/api/v1/profiles/nobody/activate", new { force = true })).Status);
+        var (_, open) = await _host.PostAsync("/api/v1/profiles/Kitsune/activate", new { force = true });
+        Assert.Equal("alreadyOpen", open!["result"]!.GetValue<string>());
+
+        var (ok, result) = await _host.PostAsync("/api/v1/profiles/Night%20Owl/activate", new { force = true });
+        Assert.Equal((200, "switching"), (ok, result!["result"]!.GetValue<string>()));
+        Assert.Equal("night-owl", await switched.Task.WaitAsync(TimeSpan.FromSeconds(10)));
+        Directory.Delete(dir, recursive: true);
+    }
+
     // ---- polls ----
 
     [Fact]

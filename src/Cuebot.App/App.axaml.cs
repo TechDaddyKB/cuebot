@@ -31,6 +31,8 @@ public partial class App : Application
             // The "Get input" sub-action asks in a dialog.
             host.Get<Cuebot.Core.Actions.UserPromptService>().Handler = Views.InputPromptWindow.AskAsync;
             _shell = new DesktopShell(this, desktop, ctx, host);
+            var shell = _shell;
+            ctx.AttachSwitcher(host, id => Avalonia.Threading.Dispatcher.UIThread.Post(() => shell.SwitchNow(id)));
             _shell.Start();
             // Begin flushing as soon as shutdown starts, without blocking the UI thread (no deadlock on async
             // disposal); Program.Main waits for the same disposal task once the lifetime has ended.

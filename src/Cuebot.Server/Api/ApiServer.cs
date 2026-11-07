@@ -286,6 +286,14 @@ public sealed class ApiServer : IAsyncDisposable
                 result = await ops.DecidePortalChangeAsync(s[2], s[3].ToLowerInvariant(), force).ConfigureAwait(false);
                 break;
             }
+            case "profiles" when s.Length == 1 && method == "GET": result = ops.Profiles(); break;
+            case "profiles" when s.Length == 3 && method == "POST" && s[2].Equals("activate", StringComparison.OrdinalIgnoreCase):
+            {
+                var body = await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? [];
+                var force = body["force"] is JsonValue f && f.TryGetValue<bool>(out var fv) && fv;
+                result = ops.ActivateProfile(s[1], force);
+                break;
+            }
             case "polls" when s.Length == 1 && method == "GET": result = ops.Polls(); break;
             case "polls" when s.Length == 1 && method == "POST":
                 result = ops.ChatPollCommand("startPoll", await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? []);
@@ -356,7 +364,7 @@ public sealed class ApiServer : IAsyncDisposable
     }
 
     private static readonly HashSet<string> Resources = new(
-        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "portal", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events", "dashboard", "decks", "subathon", "goals"],
+        ["status", "openapi.json", "actions", "triggers", "subactions", "scriptfunctions", "commands", "timers", "globals", "history", "media", "giveaway", "store", "portal", "profiles", "polls", "predictions", "speech", "alerts", "chat", "import", "export", "events", "dashboard", "decks", "subathon", "goals"],
         StringComparer.OrdinalIgnoreCase);
 
     private static bool IsKnownResource(string[] segments) => segments.Length is > 0 and <= 3 && Resources.Contains(segments[0]);

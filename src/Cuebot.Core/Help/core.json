@@ -15,6 +15,26 @@
         "triggeredAt": "The date and time (to the minute) when it ran"
       }
     },
+    "core.profileStarted": {
+      "description": "Runs each time Cuebot finishes starting on a profile (a persona), also right after you switch to it. Good for getting that persona's stream ready: switch the OBS scene collection, load the VTube Studio model, set the stream title.",
+      "fields": {},
+      "variables": {
+        "profile": "The name of the profile that started, like \"Night Owl\"",
+        "profileId": "Its folder name, like \"night-owl\"",
+        "previousProfile": "The profile Cuebot switched from, or empty when Cuebot just started",
+        "previousProfileId": "The folder name of the profile Cuebot switched from, or empty"
+      }
+    },
+    "core.profileStopping": {
+      "description": "Runs just before Cuebot switches to another profile. Cuebot waits for these actions to finish (at most 10 seconds), then opens again on the other profile. Good for saying goodbye in chat or putting OBS back the way it was.",
+      "fields": {},
+      "variables": {
+        "profile": "The name of the profile that is closing",
+        "profileId": "Its folder name",
+        "nextProfile": "The name of the profile Cuebot is switching to",
+        "nextProfileId": "Its folder name"
+      }
+    },
     "core.timer": {
       "description": "Runs each time one of your timers goes off. You make timers on the Timers page. Good for a repeating reminder like \"follow the channel\" every 20 minutes.",
       "fields": {
@@ -326,6 +346,16 @@
     }
   },
   "subActions": {
+    "core.switchProfile": {
+      "description": "Opens Cuebot on another profile (persona): its own accounts, mods, actions and overlays. Cuebot runs the \"Profile stopping\" actions, then closes and opens again on the other profile, so put this step last. While you are live it does nothing and the step fails, unless you tick Switch even while live.",
+      "fields": {
+        "profile": "The profile's name, like \"Night Owl\". Its folder name works too.",
+        "evenWhileLive": "Ticked: switch even while a stream is live on any platform. Not ticked: refuse while live, so a stray button press never switches persona mid-stream."
+      },
+      "variables": {
+        "profileSwitch": "What happened: Switching, or AlreadyOpen when that profile is already the open one"
+      }
+    },
     "core.clearActionQueue": {
       "description": "Throws away the actions waiting in line in an action queue. Actions already running finish. Handy as an \"emergency stop\" button for a pile-up of alerts.",
       "fields": {

@@ -12,7 +12,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Chat (all platforms)](chat-all-platforms.md) | 2 |
 | [Code](code.md) | 3 |
 | [Commands](commands.md) | 6 |
-| [Core](core.md) | 17 |
+| [Core](core.md) | 18 |
 | [Credits](credits.md) | 3 |
 | [Crowd Control](crowd-control.md) | 2 |
 | [Decks](decks.md) | 10 |

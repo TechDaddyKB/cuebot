@@ -44,6 +44,8 @@ internal static class EngineFeatures
         services.AddSingleton<ISubActionHandler>(sp => new SetSubActionStateSubAction(sp.GetRequiredService<ProfileService>(), LazyRegistry(sp)));
         services.AddSingleton<ISubActionHandler>(sp => new SetSubActionWeightSubAction(sp.GetRequiredService<ProfileService>(), LazyRegistry(sp)));
         services.AddSingleton<ITriggerProvider, CoreTriggers>();
+        services.AddSingleton<Cuebot.Core.Profiles.ProfileSwitcher>();
+        services.AddSingleton<ISubActionHandler, Cuebot.Core.Profiles.SwitchProfileSubAction>();
         return services;
     }
 

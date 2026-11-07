@@ -49,6 +49,9 @@ public sealed class ProfileCatalog
     public const string FolderName = "profiles";
     public const string FirstId = "main";
 
+    /// <summary>The servers' settings (ports, the API token): shared by every profile, in the data folder.</summary>
+    public const string ServerSettingsFile = "servers.json";
+
     /// <summary>Colours offered for profiles, in the order new profiles get them.</summary>
     public static readonly IReadOnlyList<string> Colors =
         ["#8B5CF6", "#EC4899", "#06B6D4", "#F59E0B", "#10B981", "#EF4444", "#3B82F6", "#84CC16"];
@@ -59,7 +62,7 @@ public sealed class ProfileCatalog
     /// </summary>
     public static readonly IReadOnlySet<string> SharedEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        FileName, FolderName, "app.json", "updates.json", "instance.lock", "instance.sock", "restore.pending",
+        FileName, FolderName, ServerSettingsFile, "app.json", "updates.json", "instance.lock", "instance.sock", "restore.pending",
         "logs", "backups", "python", "piper", "models", "cache", "crashes", "reports",
     };
 
@@ -72,7 +75,7 @@ public sealed class ProfileCatalog
         [ProfileParts.DecksAndHotkeys] = ["decks.json", "hotkeys.json", "controllers.json", "midi.json", "streamdeck-usb.json"],
         [ProfileParts.Variables] = ["globals.json"],
         [ProfileParts.AppsAndDevices] =
-            ["obs.json", "streamapps.json", "streamlabs-desktop.json", "elgato.json", "wavelink.json", "goxlr.json", "servers.json", "desktop.json"],
+            ["obs.json", "streamapps.json", "streamlabs-desktop.json", "elgato.json", "wavelink.json", "goxlr.json", "desktop.json"],
         [ProfileParts.Voices] = ["speech.json", "voices.json", "voicecontrol.json"],
     };
 
@@ -156,6 +159,7 @@ public sealed class ProfileCatalog
             list.Profiles.Add(new ProfileEntry { Id = FirstId, Name = "Main", Color = Colors[0], Created = DateTimeOffset.Now });
         if (catalog.Find(list.Active) is null) list.Active = list.Profiles[0].Id;
         Directory.CreateDirectory(catalog.ActiveFolder);
+        ShareServerSettings(root, catalog.ActiveFolder);
         catalog.Save();
         return catalog;
     }
@@ -274,8 +278,8 @@ public sealed class ProfileCatalog
     /// <summary>
     /// Moves every persona entry of a data folder from before profiles into <c>profiles/main/</c>. The key of its
     /// secret store is saved for the new folder first (the Linux keyring keeps one per folder), so an interrupted move
-    /// still finds it; the secrets of the shared <c>app.json</c> (the Google Drive sign-in) are copied to a new store
-    /// in the data folder. True when something was moved.
+    /// still finds it; the secrets of the shared files (the Google Drive sign-in in <c>app.json</c>, the API token in
+    /// <c>servers.json</c>) are copied to a store in the data folder. True when something was moved.
     /// </summary>
     private static bool MoveIntoFirstProfile(string root)
     {
@@ -301,8 +305,22 @@ public sealed class ProfileCatalog
 
         // Stores opened before the move point at the old places.
         SecretStore.ResetCache();
-        SecretStore.For(target).CopyFileTo("app.json", SecretStore.For(root));
+        foreach (var shared in new[] { "app.json", ServerSettingsFile, "updates.json" })
+            SecretStore.For(target).CopyFileTo(shared, SecretStore.For(root));
         return true;
+    }
+
+    /// <summary>
+    /// The servers' settings became shared after profiles came: the first open after that lifts the active profile's
+    /// copy (with its API token) into the data folder. Other profiles' copies are left alone and unused.
+    /// </summary>
+    private static void ShareServerSettings(string root, string activeFolder)
+    {
+        var shared = Path.Combine(root, ServerSettingsFile);
+        var own = Path.Combine(activeFolder, ServerSettingsFile);
+        if (File.Exists(shared) || !File.Exists(own)) return;
+        SecretStore.For(activeFolder).CopyFileTo(ServerSettingsFile, SecretStore.For(root));
+        File.Move(own, shared);
     }
 
     /// <summary>Moves a file or folder, merging into what is already there (the newer copy wins).</summary>

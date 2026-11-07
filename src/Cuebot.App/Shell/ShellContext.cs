@@ -20,6 +20,19 @@ public sealed class ShellContext
     /// <summary>The profile this Cuebot opened (<see cref="Profiles"/> may already name the next one).</summary>
     public Cuebot.Core.Profiles.ProfileEntry? OpenProfile { get; init; }
 
+    /// <summary>The profile Cuebot switched from to open this one; null on a normal start.</summary>
+    public Cuebot.Core.Profiles.ProfileEntry? PreviousProfile { get; init; }
+
+    /// <summary>
+    /// Gives the profile switcher the profiles and how to restart on another one (<paramref name="switchNow"/> makes
+    /// it active and quits). Nothing without profiles.
+    /// </summary>
+    public void AttachSwitcher(AppHost host, Action<string> switchNow)
+    {
+        if (Profiles is not null && OpenProfile is not null)
+            host.Get<Cuebot.Core.Profiles.ProfileSwitcher>().Attach(Profiles, OpenProfile, PreviousProfile, switchNow);
+    }
+
     /// <summary>The restart is a switch to another profile (already active in <see cref="Profiles"/>).</summary>
     public bool SwitchingProfile { get; set; }
 

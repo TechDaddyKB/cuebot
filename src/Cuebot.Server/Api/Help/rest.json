@@ -269,6 +269,15 @@
         "force": false
       }
     },
+    "GET /profiles": {
+      "description": "Tells you your profiles (personas, each with its own accounts, mods and actions): which one is open, all of them with their colour, which platforms are live right now, and whether Cuebot is switching profile."
+    },
+    "POST /profiles/{id}/activate": {
+      "description": "Switches Cuebot to another profile, by its id (folder name) or name. Cuebot runs your Profile stopping actions, then closes and opens again on that profile, so the API is gone for a few seconds after the answer. While you are live on any platform it answers 409 and does nothing; send force true to switch anyway.",
+      "example": {
+        "force": false
+      }
+    },
     "GET /polls": {
       "description": "Tells you the latest poll and prediction from each place (Twitch, YouTube and Cuebot's own), with votes and points, plus the chat commands to vote and bet in Cuebot's own ones."
     },
@@ -541,6 +550,7 @@
     "Poll.source": "Where it runs: twitch, youtube or cuebot (Cuebot's own chat poll or prediction).",
     "Poll.kind": "What it is: poll (viewers vote) or prediction (viewers bet points on the result).",
     "Poll.id": "The poll's or prediction's id.",
+    "Profile.name": "The profile's name, like \"Night Owl\". It shows in the app's top bar and the tray.",
     "Poll.title": "The question, like \"Which game next?\".",
     "Poll.status": "Where it is: active, locked (a prediction taking no more bets), ended or canceled.",
     "Poll.choices": "The answers, each with its id, title, votes (people), points bet and percent.",

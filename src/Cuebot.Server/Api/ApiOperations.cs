@@ -755,6 +755,42 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
         return done ? Store() : throw ApiException.NotFound($"No pending redemption '{id}'");
     }
 
+    /// <summary>The streamer profiles: the open one, every profile, the platforms that are live and whether a switch is under way.</summary>
+    public JsonObject Profiles()
+    {
+        var switcher = services.Profiles ?? throw ApiException.Unavailable("Profiles are not available");
+        var current = switcher.Current ?? throw ApiException.Unavailable("Profiles are not available");
+        return new JsonObject
+        {
+            ["current"] = ProfileJson(current, true),
+            ["profiles"] = new JsonArray([.. switcher.Profiles.Select(p => (JsonNode)ProfileJson(p, p.Id == current.Id))]),
+            ["live"] = new JsonArray([.. switcher.LivePlatforms.Select(p => (JsonNode)JsonValue.Create(p)!)]),
+            ["switching"] = switcher.IsSwitching,
+        };
+    }
+
+    /// <summary>
+    /// Switches to another profile: Cuebot runs the "Profile stopping" actions, then restarts on it, so this connection
+    /// ends shortly after the answer. While a stream is live it answers 409 unless <paramref name="force"/>.
+    /// </summary>
+    public JsonObject ActivateProfile(string idOrName, bool force)
+    {
+        var switcher = services.Profiles ?? throw ApiException.Unavailable("Profiles are not available");
+        return switcher.Switch(idOrName, force) switch
+        {
+            Cuebot.Core.Profiles.ProfileSwitchResult.Switching => new JsonObject { ["result"] = "switching" },
+            Cuebot.Core.Profiles.ProfileSwitchResult.AlreadyOpen => new JsonObject { ["result"] = "alreadyOpen" },
+            Cuebot.Core.Profiles.ProfileSwitchResult.NotFound => throw ApiException.NotFound($"No profile '{idOrName}'"),
+            Cuebot.Core.Profiles.ProfileSwitchResult.Live =>
+                throw ApiException.Conflict($"Live on {string.Join(", ", switcher.LivePlatforms)}; send force true to switch anyway"),
+            Cuebot.Core.Profiles.ProfileSwitchResult.Busy => throw ApiException.Conflict("A profile switch is already under way"),
+            _ => throw ApiException.Unavailable("Profiles are not available"),
+        };
+    }
+
+    private static JsonObject ProfileJson(Cuebot.Core.Profiles.ProfileEntry p, bool open) =>
+        new() { ["id"] = p.Id, ["name"] = p.Name, ["color"] = p.Color, ["open"] = open };
+
     /// <summary>Mods' changes waiting for the streamer's OK (the mod portal).</summary>
     public JsonObject PortalChanges() => Approvals.Pending();
 

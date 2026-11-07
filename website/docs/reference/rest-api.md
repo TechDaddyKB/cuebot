@@ -728,6 +728,39 @@ curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application
   "http://127.0.0.1:7475/api/v1/portal/changes/CHANGE_ID/approve"
 ```
 
+## Profiles
+
+### GET /profiles
+
+Tells you your profiles (personas, each with its own accounts, mods and actions): which one is open, all of them with their colour, which platforms are live right now, and whether Cuebot is switching profile.
+
+**Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://127.0.0.1:7475/api/v1/profiles"
+```
+
+### POST /profiles/{id}/activate
+
+Switches Cuebot to another profile, by its id (folder name) or name. Cuebot runs your Profile stopping actions, then closes and opens again on that profile, so the API is gone for a few seconds after the answer. While you are live on any platform it answers 409 and does nothing; send force true to switch anyway.
+
+| In the address | What it is |
+| --- | --- |
+| `id` (required, in the path) | Profile id or name |
+
+| Body field | Type | What it is |
+| --- | --- | --- |
+| `force` | true/false | Switch even while a stream is live |
+
+**Answers:** `200` OK; `404` Not found; `409` A stream is live (send force) or a switch is already under way; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"force":false}' \
+  "http://127.0.0.1:7475/api/v1/profiles/Thank%20followers/activate"
+```
+
 ## Polls
 
 ### GET /polls
@@ -1070,6 +1103,15 @@ The objects the answers above name, with their fields.
 | `tickets` | whole number | How many tickets there are in all. |
 | `recent` | list of text | The names of the latest viewers who entered, newest first (up to 8). |
 | `winners` | list of object | The winners so far, each with name and platform. |
+
+### Profile
+
+| Field | Type | What it is |
+| --- | --- | --- |
+| `id` | text | Folder name, like night-owl |
+| `name` | text | The profile's name, like "Night Owl". It shows in the app's top bar and the tray. |
+| `color` | text | Like #8B5CF6 |
+| `open` | true/false | The open profile |
 
 ### Poll
 

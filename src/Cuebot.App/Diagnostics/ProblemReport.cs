@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Cuebot.Core;
+using Cuebot.Core.Profiles;
 using Cuebot.Core.Storage;
 
 namespace Cuebot.App.Diagnostics;
@@ -64,7 +65,7 @@ public static class InfoGatherer
     {
         var modules = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in ModuleSettingsFiles)
-            if (ReadSmall(paths.File(name)) is { } text) modules[name] = text;
+            if (ReadSmall(name == ProfileCatalog.ServerSettingsFile ? paths.SharedFile(name) : paths.File(name)) is { } text) modules[name] = text;
         var accounts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var text in modules.Values) accounts.UnionWith(SecretScrubber.CollectAccountNames(text));
         return new CollectedInfo

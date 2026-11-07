@@ -119,6 +119,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Subathon.SubathonService? _subathon;
 
+    /// <summary>Streamer profiles (personas): which is open, and switching (the companion app switches through the REST API).</summary>
+    public Cuebot.Core.Profiles.ProfileSwitcher? Profiles
+    {
+        get => _profiles ??= _provider?.GetService<Cuebot.Core.Profiles.ProfileSwitcher>();
+        init => _profiles = value;
+    }
+
+    private Cuebot.Core.Profiles.ProfileSwitcher? _profiles;
+
     /// <summary>The mod portal's approval queue (the companion app approves mods' changes through the REST API).</summary>
     public Cuebot.Core.Portal.IPortalApprovals? Approvals
     {

@@ -8,7 +8,9 @@ using Cuebot.App.Platform;
 using Cuebot.App.ViewModels;
 using Cuebot.App.Views;
 using Cuebot.Core;
+using Cuebot.Core.Desktop.Notifications;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Profiles;
 
 namespace Cuebot.App.Shell;
 
@@ -98,8 +100,9 @@ public sealed class DesktopShell : IShellHost, IDisposable
             instance.ShutdownRequested += () => Dispatcher.UIThread.Post(Quit);
             instance.ProfileRequested += name => Dispatcher.UIThread.Post(() =>
             {
-                if (_ctx.Profiles?.Find(name) is null) _log.Warn("Cuebot", $"Another launch asked for the profile '{name}', which does not exist");
-                SwitchProfile(name);
+                // A launch with --profile is a clear choice, so it switches even while live.
+                var result = _host.Get<ProfileSwitcher>().Switch(name, evenWhileLive: true);
+                if (result != ProfileSwitchResult.Switching) _log.Warn("Cuebot", $"Another launch asked for the profile '{name}': {result}");
                 ShowWindow();
             });
             if (instance.ListenError is { } error)
@@ -239,9 +242,39 @@ public sealed class DesktopShell : IShellHost, IDisposable
 
     public Cuebot.Core.Profiles.ProfileCatalog? Profiles => _ctx.Profiles;
 
+    /// <summary>How long choosing a profile again switches even while live.</summary>
+    internal static readonly TimeSpan LiveConfirmWindow = TimeSpan.FromSeconds(10);
+
+    private (string Id, DateTime At)? _liveConfirm;
+
+    /// <summary>
+    /// A switch asked for in the window or tray. While a stream is live the first request only warns; asking for the
+    /// same profile again within <see cref="LiveConfirmWindow"/> switches anyway.
+    /// </summary>
     public void SwitchProfile(string idOrName)
     {
-        if (!_ctx.PrepareSwitch(idOrName)) return;
+        var switcher = _host.Get<ProfileSwitcher>();
+        if (switcher.Find(idOrName) is not { } target) return;
+        var confirmed = _liveConfirm is { } c && c.Id == target.Id && DateTime.UtcNow - c.At < LiveConfirmWindow;
+        var result = switcher.Switch(target.Id, evenWhileLive: confirmed);
+        _liveConfirm = null;
+        if (result == ProfileSwitchResult.Live)
+        {
+            _liveConfirm = (target.Id, DateTime.UtcNow);
+            _ = _host.Get<INotifier>().ShowAsync(new DesktopNotification("You are live",
+                $"You are live on {string.Join(", ", switcher.LivePlatforms)}. Choose {target.Name} again within " +
+                $"{LiveConfirmWindow.TotalSeconds:0} seconds to switch anyway."), NotificationTarget.InApp);
+        }
+        else if (result == ProfileSwitchResult.Busy)
+        {
+            _log.Info("Cuebot", "A profile switch is already under way");
+        }
+    }
+
+    /// <summary>Restarts on another profile now (the switcher calls this once "Profile stopping" actions are done).</summary>
+    public void SwitchNow(string id)
+    {
+        if (!_ctx.PrepareSwitch(id)) return;
         _log.Info("Cuebot", $"Switching to the profile {_ctx.Profiles!.Active.Name}");
         Quit();
     }

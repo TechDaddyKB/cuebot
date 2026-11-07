@@ -185,6 +185,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "Audio", () => Get<Cuebot.Speech.AudioOutput>().WarmUpAsync()));   // first sound plays without device-open delay
 
         Get<EventBus>().Publish(new BotEvent(CoreEvents.AppStarted));
+        Get<Cuebot.Core.Profiles.ProfileSwitcher>().PublishStarted();
     }
 
     /// <summary>Webhooks from the shared portal relay go through the webhook relay client's handlers and history.</summary>
