@@ -18,15 +18,15 @@
   },
   "dependencies": {
     "@elgato/streamdeck": "2.1.2",
-    "ws": "8.22.0"
+    "ws": "8.22.1"
   },
   "devDependencies": {
-    "@elgato/cli": "1.10.3",
+    "@elgato/cli": "1.10.4",
     "@types/node": "24.19.2",
     "@types/ws": "8.18.2",
     "esbuild": "0.28.2",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   },
   "overrides": {
     "zod": "4.6.6",
