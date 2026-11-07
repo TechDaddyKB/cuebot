@@ -1,9 +1,9 @@
-import streamDeck, { type DialAction, type FeedbackPayload, type KeyAction } from "@elgato/streamdeck";
+import streamDeck, { type Action, type FeedbackPayload, type KeyAction } from "@elgato/streamdeck";
 import WebSocket from "ws";
 import { CuebotClient } from "./client.js";
 import { fetchImageAsDataUri, KeyRegistry, type KeyTarget } from "./keys.js";
 import { handlePiMessage } from "./pi-bridge.js";
-import { type ActionSummary, connectionFrom, type DeviceInfo, type GlobalSettings, PLUGIN_UUID } from "./protocol.js";
+import { type ActionSummary, connectionFrom, type DeviceInfo, type GlobalSettings, type KeySettings, PLUGIN_UUID } from "./protocol.js";
 
 /** Shared plugin state: the Cuebot connection, the visible keys and the latest action list. */
 export const registry = new KeyRegistry({
@@ -52,7 +52,7 @@ export function devices(): DeviceInfo[] {
 }
 
 /** Wraps an SDK key or dial in the registry's interface. */
-export function targetFor(action: KeyAction | DialAction): KeyTarget {
+export function targetFor(action: Action<KeySettings>): KeyTarget {
 	if (action.isDial()) {
 		const dial = action;
 		return {
@@ -65,7 +65,7 @@ export function targetFor(action: KeyAction | DialAction): KeyTarget {
 			showOk: () => undefined,
 		};
 	}
-	const key = action as KeyAction;
+	const key = action as KeyAction<KeySettings>;
 	return {
 		isDial: false,
 		setTitle: (title, state) => key.setTitle(title, state === undefined ? undefined : { state }),
