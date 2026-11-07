@@ -15,6 +15,7 @@ public sealed class SingleInstance : IDisposable
     public const string SocketFileName = "instance.sock";
     private const string ActivateMessage = "activate";
     internal const string ShutdownMessage = "shutdown";
+    private const string ProfilePrefix = "profile ";
     private const int MaxSocketPathBytes = 100;   // sun_path is 108 bytes on Linux and Windows
 
     private readonly FileStream _lock;
@@ -42,6 +43,9 @@ public sealed class SingleInstance : IDisposable
 
     /// <summary>Raised on a thread-pool thread when a launch with --shutdown asks this instance to quit.</summary>
     public event Action? ShutdownRequested;
+
+    /// <summary>A later launch with <c>--profile</c> asked to switch to this profile (name or id).</summary>
+    public event Action<string>? ProfileRequested;
 
     /// <summary>The socket path for a data folder: inside it when short enough, else a hashed name in the temp folder.</summary>
     public static string SocketPathFor(string dataRoot)
@@ -93,6 +97,10 @@ public sealed class SingleInstance : IDisposable
     /// <summary>Asks the instance owning <paramref name="dataRoot"/> to quit (Streamer.bot <c>/shutdown</c>). True when it answered.</summary>
     public static Task<bool> ShutdownExistingAsync(string dataRoot, TimeSpan timeout) =>
         SendAsync(SocketPathFor(dataRoot), ShutdownMessage, timeout, retryUntilTimeout: true);
+
+    /// <summary>Asks the instance owning <paramref name="dataRoot"/> to switch to a profile. True when it answered.</summary>
+    public static Task<bool> SwitchExistingAsync(string dataRoot, string profile, TimeSpan timeout) =>
+        SendAsync(SocketPathFor(dataRoot), ProfilePrefix + profile.ReplaceLineEndings(" "), timeout, retryUntilTimeout: true);
 
     public static Task<bool> ActivateExistingAsync(string socketPath, TimeSpan timeout, bool retryUntilTimeout) =>
         SendAsync(socketPath, ActivateMessage, timeout, retryUntilTimeout);
@@ -156,6 +164,11 @@ public sealed class SingleInstance : IDisposable
                 var read = await stream.ReadAsync(buffer, timeout.Token);
                 var message = Encoding.UTF8.GetString(buffer, 0, read).Trim();
                 var handler = message switch { ActivateMessage => ActivationRequested, ShutdownMessage => ShutdownRequested, _ => null };
+                if (message.StartsWith(ProfilePrefix, StringComparison.Ordinal) && ProfileRequested is { } profile)
+                {
+                    var name = message[ProfilePrefix.Length..].Trim();
+                    handler = () => profile(name);
+                }
                 if (handler is null) return;
                 try { handler.Invoke(); }
                 catch (Exception) { /* a failing handler must not break the handshake */ }

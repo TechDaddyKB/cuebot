@@ -79,7 +79,7 @@ public sealed class CrashStore(AppPaths paths)
     public const int Keep = 20;
     private const string SeenSuffix = ".seen.json";
 
-    public string Folder => Path.Combine(paths.Root, "crashes");
+    public string Folder => Path.Combine(paths.Shared, "crashes");
 
     public string Write(CrashRecord record)
     {

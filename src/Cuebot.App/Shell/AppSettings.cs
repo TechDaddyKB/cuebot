@@ -114,7 +114,7 @@ public sealed class AppSettingsStore
 
     public AppSettingsStore(AppPaths paths)
     {
-        Path = paths.File(FileName);
+        Path = paths.SharedFile(FileName);
         Settings = Load(Path, out var error, out var needsSave);
         LoadError = error;
         if (needsSave) TrySave();   // move secrets still stored in app.json into the secret store

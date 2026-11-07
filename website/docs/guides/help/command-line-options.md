@@ -11,6 +11,7 @@ shortcut.
 | `--minimized` | Start hidden in the tray (or minimized when there is no tray). Same as the **Start minimized** box on the **Settings** page, tab **General**. |
 | `--headless` | Start with no window at all. Everything else runs, and the log is written to the terminal and the log file. Good for a computer without a screen. Stop it with ++ctrl+c++. |
 | `--data <folder>` | Use another [data folder](your-data.md). For a second setup or a USB stick. |
+| `--profile <name>` | Open this [profile](../platforms/profiles.md) (persona), like `--profile "Night Owl"`. If Cuebot is already running, it switches to that profile. One shortcut per persona makes switching a double-click. |
 | `--reset-window` | Forget where the window was and how big it was. Use it when the window is off-screen. |
 | `--shutdown` | Close a Cuebot that is already running on the same data folder, with a window or headless. |
 | `--mcp-stdio` | For AI apps: lets an app like Claude Desktop talk to a running Cuebot. See [AI apps](../ai/ai-apps.md). |
@@ -34,5 +35,6 @@ These are settings you put in your computer's environment instead of on the comm
 
 ## Only one Cuebot at a time
 
-If you start Cuebot while it is already running, the running window comes to the front and the new one closes. That
+If you start Cuebot while it is already running, the running window comes to the front and the new one closes. (With
+`--profile`, the running Cuebot switches to that profile instead.) That
 way two copies can never write the same files. Copies with **different** data folders can run side by side.

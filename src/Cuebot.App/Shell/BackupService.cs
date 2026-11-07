@@ -12,7 +12,8 @@ public sealed record BackupInfo(string Path, DateTime Created, string Reason, lo
 
 /// <summary>
 /// Zips the data folder into <c>backups/</c> as <c>cuebot-yyyyMMdd-HHmmss-reason[-vVersion].zip</c>, keeping the
-/// newest N. Logs, the managed Python runtime, the backups themselves and transient files are left out.
+/// newest N. Logs, the managed Python runtime, the backups themselves and transient files are left out. Every streamer
+/// profile is in the same zip (the data folder holds them under <c>profiles/</c>).
 /// A restore never touches live files: it is scheduled (<see cref="ScheduleRestore"/>) and applied at the next
 /// start, before any store is open (<see cref="ApplyPendingRestore"/>), after a safety backup of the current data.
 /// </summary>
@@ -45,7 +46,7 @@ public sealed class BackupService
 
     public BackupService(AppPaths paths, Func<int> keep, Func<DateTime>? clock = null)
     {
-        Root = paths.Root;
+        Root = paths.Shared;
         Folder = Path.Combine(Root, FolderName);
         Keep = keep;
         _clock = clock ?? (() => DateTime.Now);
@@ -202,15 +203,16 @@ public sealed class BackupService
                     throw new InvalidDataException($"Backup entry {entry.FullName} points outside the data folder");
             }
 
+            // Files only: the sign-ins of every profile (secret files at any depth) stay where they are.
             foreach (var file in DataFiles().ToArray()) File.Delete(file);
             foreach (var dir in Directory.EnumerateDirectories(Root).Where(d => !ExcludedFolders.Contains(Path.GetFileName(d))))
-                Directory.Delete(dir, recursive: true);
+                DeleteEmptyFolders(dir);
 
             foreach (var entry in entries)
             {
                 var top = entry.FullName.Split('/', 2)[0];
                 if (ExcludedFolders.Contains(top) && entry.FullName.Contains('/')) continue;
-                if (ExcludedFiles.Contains(entry.FullName)) continue;
+                if (ExcludedFiles.Contains(entry.FullName) || IsSecretFile(entry.Name)) continue;
                 var target = Path.Combine(Root, entry.FullName);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 entry.ExtractToFile(target, overwrite: true);
@@ -233,8 +235,21 @@ public sealed class BackupService
         {
             if (ExcludedFolders.Contains(Path.GetFileName(dir))) continue;
             foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-                if (!file.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)) yield return file;
+                if (!file.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) && !IsSecretFile(Path.GetFileName(file))) yield return file;
         }
+    }
+
+    /// <summary>A profile's secret store or key (or a kept unreadable store): never in a backup, never replaced by one.</summary>
+    private static bool IsSecretFile(string name) =>
+        name.Equals(SecretStore.FileName, StringComparison.OrdinalIgnoreCase)
+        || name.Equals(FileKeyProtector.FileName, StringComparison.OrdinalIgnoreCase)
+        || name.StartsWith(SecretStore.FileName + ".", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Removes the folders under <paramref name="dir"/> (and it) that hold no files any more.</summary>
+    private static void DeleteEmptyFolders(string dir)
+    {
+        foreach (var child in Directory.EnumerateDirectories(dir)) DeleteEmptyFolders(child);
+        if (!Directory.EnumerateFileSystemEntries(dir).Any()) Directory.Delete(dir);
     }
 
     private static BackupInfo Describe(string path)

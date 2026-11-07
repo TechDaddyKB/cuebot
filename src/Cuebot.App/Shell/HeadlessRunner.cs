@@ -46,6 +46,11 @@ public static class HeadlessRunner
         {
             instance.ActivationRequested += () => log.Info("Cuebot", "Another launch asked to show the window; running headless, so it was ignored");
             instance.ShutdownRequested += () => stopped.TrySetResult("--shutdown requested");
+            instance.ProfileRequested += name =>
+            {
+                if (ctx.PrepareSwitch(name)) stopped.TrySetResult($"switching to the profile {ctx.Profiles!.Active.Name}");
+                else log.Warn("Cuebot", $"Another launch asked for the profile '{name}', which does not exist or is already open");
+            };
         }
 
         try

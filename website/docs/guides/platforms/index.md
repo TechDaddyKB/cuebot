@@ -7,6 +7,8 @@ has its own page under **Platforms** in the left rail: **Twitch**, **YouTube**, 
 - [YouTube](youtube.md): sign in with Google, and keep an eye on YouTube's daily limit.
 - [Kick](kick.md): sign in, set your title and category, and manage rewards.
 - [Rumble](rumble.md): connect with a key link from Rumble, and optionally sign in to write in chat.
+- [More than one persona (profiles)](profiles.md): give each persona its own accounts, mods, actions and overlays,
+  and switch between them in two clicks.
 
 Every platform page has **Connect** and **Disconnect** buttons at the top. Tick **Connect automatically on startup**
 (on Rumble: **Connect automatically**) and Cuebot reconnects each time it starts.

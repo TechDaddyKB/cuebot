@@ -30,7 +30,7 @@ public sealed class UpdateSettingsStore
 
     public UpdateSettingsStore(AppPaths paths)
     {
-        Path = paths.File(FileName);
+        Path = paths.SharedFile(FileName);
         Settings = Load(Path);
     }
 

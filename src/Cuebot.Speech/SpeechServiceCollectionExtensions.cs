@@ -63,7 +63,7 @@ public static class SpeechServiceCollectionExtensions
     {
         services.AddSingleton<ITtsEngine, WindowsSpeechEngine>();
         services.AddSingleton<ITtsEngine, EspeakEngine>();
-        services.AddSingleton(sp => new PiperStore(sp.GetRequiredService<AppPaths>().GetDirectory("piper"),
+        services.AddSingleton(sp => new PiperStore(sp.GetRequiredService<AppPaths>().GetSharedDirectory("piper"),
             sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<ITtsEngine>(sp =>
         {

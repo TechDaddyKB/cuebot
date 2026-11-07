@@ -7,8 +7,8 @@ page shows how Cuebot makes backups by itself, and how to get one back.
 
 ![Settings > Backups](../../assets/screens/settings-backups.png)
 
-A **backup** is a zip copy of your [data folder](your-data.md). Log files and the Python that Cuebot downloaded are
-not included. Go to **Settings**, tab **Backups**.
+A **backup** is a zip copy of your [data folder](your-data.md), with every [profile](../platforms/profiles.md) in it.
+Log files and the Python that Cuebot downloaded are not included. Go to **Settings**, tab **Backups**.
 
 - **Back up the data folder every time Cuebot starts**: ticked, Cuebot makes a backup each time it starts. It is
   ticked from the start.

@@ -112,7 +112,9 @@ public sealed class AppHost : IAsyncDisposable
     public async Task StartAsync()
     {
         var log = Get<AppLog>();
-        log.Info("Cuebot", $"Starting (data folder: {Get<AppPaths>().Root}, display backend: {Program.BackendName})");
+        var paths = Get<AppPaths>();
+        var profile = paths.Root == paths.Shared ? "" : $", profile: {Path.GetFileName(paths.Root)}";
+        log.Info("Cuebot", $"Starting (data folder: {paths.Shared}{profile}, display backend: {Program.BackendName})");
         Get<Cuebot.Core.Chat.ChatHub>();   // created before platforms connect, so no chat is missed
         Get<Cuebot.Core.Chat.Emotes.EmoteService>();   // indexes emote args from the first message on
         Get<Cuebot.Core.Overlays.Events.OverlayEventBridge>();   // chat and alerts for overlay widgets

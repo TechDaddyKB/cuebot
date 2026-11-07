@@ -19,6 +19,9 @@ public sealed record StartupOptions
     /// <summary>Data folder; overrides <c>CUEBOT_DATA</c>.</summary>
     public string? DataFolder { get; init; }
 
+    /// <summary>The streamer profile to open (by name or id); a running Cuebot switches to it.</summary>
+    public string? Profile { get; init; }
+
     /// <summary><c>--backend=wayland|x11</c> (Linux only; parsed by <see cref="Platform.LinuxBackend"/>).</summary>
     public string? Backend { get; init; }
 
@@ -39,6 +42,8 @@ public sealed record StartupOptions
                                log file; Ctrl+C or SIGTERM shuts down cleanly.
           --minimized          Start hidden in the tray (minimized when no tray is available).
           --data <folder>      Use this data folder (overrides CUEBOT_DATA).
+          --profile <name>     Open this streamer profile. If Cuebot is already running, it
+                               switches to it.
           --reset-window       Forget the saved window size and position.
           --backend=<name>     Linux display backend: wayland or x11 (default: Wayland when available).
           --mcp-stdio          Run as an MCP stdio server for a running Cuebot (for AI apps).
@@ -68,6 +73,11 @@ public sealed record StartupOptions
                 case "help" or "h" or "?": options = options with { ShowHelp = true }; break;
                 case "shutdown": options = options with { Shutdown = true }; break;
                 case "backend": options = options with { Backend = value ?? Next(args, ref i) }; break;
+                case "profile":
+                    var profile = value ?? Next(args, ref i);
+                    if (string.IsNullOrWhiteSpace(profile)) errors.Add("--profile needs a profile name");
+                    else options = options with { Profile = profile.Trim() };
+                    break;
                 case "data":
                     var folder = value ?? Next(args, ref i);
                     if (string.IsNullOrWhiteSpace(folder)) errors.Add("--data needs a folder");
@@ -82,6 +92,25 @@ public sealed record StartupOptions
     /// <summary>The data folder to use: <c>--data</c>, then <c>CUEBOT_DATA</c>, then the platform default (null).</summary>
     public string? ResolveDataFolder(Func<string, string?> env) =>
         DataFolder ?? (string.IsNullOrWhiteSpace(env("CUEBOT_DATA")) ? null : Path.GetFullPath(env("CUEBOT_DATA")!));
+
+    /// <summary>
+    /// <paramref name="args"/> without <c>--profile</c> and its value, for a restart that switches profile (the
+    /// switch is in <c>profiles.json</c> already).
+    /// </summary>
+    public static string[] WithoutProfile(IReadOnlyList<string> args)
+    {
+        var kept = new List<string>();
+        for (var i = 0; i < args.Count; i++)
+        {
+            if (TrySplit(args[i], out var name, out var value) && name == "profile")
+            {
+                if (value is null) Next(args, ref i);
+                continue;
+            }
+            kept.Add(args[i]);
+        }
+        return [.. kept];
+    }
 
     private static string? Next(IReadOnlyList<string> args, ref int i)
     {

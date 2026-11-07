@@ -15,7 +15,7 @@ public sealed class EmoteDiskCache(string directory, AppLog log)
 {
     public string Directory { get; } = directory;
 
-    public static EmoteDiskCache For(AppPaths paths, AppLog log) => new(paths.GetDirectory(Path.Combine("cache", "emotes")), log);
+    public static EmoteDiskCache For(AppPaths paths, AppLog log) => new(paths.GetSharedDirectory(Path.Combine("cache", "emotes")), log);
 
     public CachedEmoteSet? Load(string provider, string scope)
     {

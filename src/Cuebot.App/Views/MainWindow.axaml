@@ -34,7 +34,7 @@
         xmlns:sdv="using:Cuebot.App.Views.StreamDeck"
         x:Class="Cuebot.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Cuebot"
+        Title="{Binding WindowTitle}"
         Icon="avares://Cuebot/Assets/cuebot.ico"
         Width="1360" Height="860" MinWidth="960" MinHeight="600"
         Background="{DynamicResource CuebotGround}"
@@ -158,6 +158,27 @@
                 <Path Data="{StaticResource Brand.TddHead}" Fill="{DynamicResource CuebotText}" Stretch="Uniform" Height="18" />
                 <TextBlock Text="by Tech Daddy Digital" FontSize="11" VerticalAlignment="Center" />
               </StackPanel>
+            </Button>
+            <!-- The open streamer profile (persona); its menu switches profile. -->
+            <Button x:Name="ProfileChip" IsVisible="{Binding HasProfiles}" Padding="10,4" CornerRadius="7"
+                    Background="{DynamicResource CuebotCard}" BorderBrush="{Binding ProfileColor, Converter={x:Static c:PlatformBrush.Hex}}" BorderThickness="1"
+                    ToolTip.Tip="{Binding ProfileTip}" AutomationProperties.Name="Profile">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <Ellipse Width="10" Height="10" Fill="{Binding ProfileColor, Converter={x:Static c:PlatformBrush.Hex}}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding ProfileName}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Text="▾" FontSize="10" Classes="muted" VerticalAlignment="Center" />
+              </StackPanel>
+              <Button.Flyout>
+                <MenuFlyout Placement="BottomEdgeAlignedLeft" ItemsSource="{Binding ProfileMenu}">
+                  <MenuFlyout.ItemContainerTheme>
+                    <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:ProfileMenuItem">
+                      <Setter Property="Header" Value="{Binding Name}" />
+                      <Setter Property="Command" Value="{Binding Command}" />
+                      <Setter Property="IsEnabled" Value="{Binding !IsOpen}" />
+                    </ControlTheme>
+                  </MenuFlyout.ItemContainerTheme>
+                </MenuFlyout>
+              </Button.Flyout>
             </Button>
           </StackPanel>
           <!-- Connection chips: only connections in use. -->

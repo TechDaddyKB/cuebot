@@ -29,6 +29,7 @@ public sealed class DesktopShell : IShellHost, IDisposable
     private MainWindow? _window;
     private TrayIcon? _tray;
     private NativeMenuItem? _toggleItem;
+    private NativeMenuItem? _profilesItem;
     private readonly List<(IConnectionStatus Status, NativeMenuItem Item)> _statusItems = [];
     private readonly List<PosixSignalRegistration> _signals = [];
     private bool _trayAvailable;
@@ -67,7 +68,9 @@ public sealed class DesktopShell : IShellHost, IDisposable
         _desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         Theme.Apply(_app, General.Theme);
 
-        _window = new MainWindow { DataContext = new MainWindowViewModel(_host, this) };
+        var model = new MainWindowViewModel(_host, this);
+        model.Settings.Profiles.ProfilesChanged += UpdateTrayProfiles;
+        _window = new MainWindow { DataContext = model };
         ApplyPlacement(_window);
         TrackPlacement(_window);
         _window.Closing += OnClosing;
@@ -93,6 +96,12 @@ public sealed class DesktopShell : IShellHost, IDisposable
         {
             instance.ActivationRequested += () => Dispatcher.UIThread.Post(ShowWindow);
             instance.ShutdownRequested += () => Dispatcher.UIThread.Post(Quit);
+            instance.ProfileRequested += name => Dispatcher.UIThread.Post(() =>
+            {
+                if (_ctx.Profiles?.Find(name) is null) _log.Warn("Cuebot", $"Another launch asked for the profile '{name}', which does not exist");
+                SwitchProfile(name);
+                ShowWindow();
+            });
             if (instance.ListenError is { } error)
                 _log.Warn("Cuebot", $"Later launches cannot bring this window forward ({error})");
         }
@@ -228,6 +237,15 @@ public sealed class DesktopShell : IShellHost, IDisposable
         Quit();
     }
 
+    public Cuebot.Core.Profiles.ProfileCatalog? Profiles => _ctx.Profiles;
+
+    public void SwitchProfile(string idOrName)
+    {
+        if (!_ctx.PrepareSwitch(idOrName)) return;
+        _log.Info("Cuebot", $"Switching to the profile {_ctx.Profiles!.Active.Name}");
+        Quit();
+    }
+
     private void ApplyPlacement(Window window)
     {
         var screens = window.Screens.All.Select(s => new ScreenArea(s.WorkingArea, s.Scaling)).ToArray();
@@ -288,6 +306,13 @@ public sealed class DesktopShell : IShellHost, IDisposable
         _toggleItem.Click += (_, _) => ToggleWindow();
         menu.Items.Add(_toggleItem);
         menu.Items.Add(new NativeMenuItemSeparator());
+        if (_ctx.Profiles is not null)
+        {
+            _profilesItem = new NativeMenuItem("Profiles") { Menu = new NativeMenu() };
+            menu.Items.Add(_profilesItem);
+            menu.Items.Add(new NativeMenuItemSeparator());
+            UpdateTrayProfiles();
+        }
         foreach (var status in _connections)
         {
             var item = new NativeMenuItem { IsEnabled = false };
@@ -316,6 +341,21 @@ public sealed class DesktopShell : IShellHost, IDisposable
             SetTrayAvailable(false);
         }
         UpdateTrayMenu();
+    }
+
+    /// <summary>The tray's Profiles menu: every profile, the open one ticked; choosing another switches to it.</summary>
+    private void UpdateTrayProfiles()
+    {
+        if (_profilesItem?.Menu is not { } items || _ctx.Profiles is not { } profiles) return;
+        items.Items.Clear();
+        foreach (var profile in profiles.Profiles)
+        {
+            var open = profile.Id == _ctx.OpenProfile?.Id;
+            var item = new NativeMenuItem(profile.Name) { ToggleType = MenuItemToggleType.Radio, IsChecked = open, IsEnabled = !open };
+            var id = profile.Id;
+            item.Click += (_, _) => SwitchProfile(id);
+            items.Items.Add(item);
+        }
     }
 
     private void DestroyTray()

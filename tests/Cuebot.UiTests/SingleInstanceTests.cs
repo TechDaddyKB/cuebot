@@ -99,4 +99,15 @@ public sealed class SingleInstanceTests : IDisposable
     {
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { }
     }
+
+    [Fact]
+    public async Task A_profile_request_reaches_the_running_instance_with_its_name()
+    {
+        using var first = SingleInstance.TryAcquire(_root);
+        Assert.NotNull(first);
+        var requested = new TaskCompletionSource<string>();
+        first.ProfileRequested += name => requested.TrySetResult(name);
+        Assert.True(await SingleInstance.SwitchExistingAsync(_root, "Night Owl", TimeSpan.FromSeconds(5)));
+        Assert.Equal("Night Owl", await requested.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+    }
 }

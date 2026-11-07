@@ -15,7 +15,12 @@ Everything Cuebot knows (settings, actions, sign-ins, logs and backups) is in on
 
 The program folder holds no settings. That is why you can replace it when you update.
 
-**Want a second setup**, or Cuebot on a USB stick? Start Cuebot with `--data <folder>` to use another folder (see
+Inside the data folder, each [profile](../platforms/profiles.md) (persona) has its own folder under `profiles`, like
+`profiles/main`. It holds that persona's settings, sign-ins, actions and overlays. Things every profile shares stay at
+the top: `app.json` (the theme, the window, backups), the logs, the backups, and downloads like Python and voices.
+
+**Streaming as more than one persona?** Use [profiles](../platforms/profiles.md). **Want Cuebot on a USB stick**, or a
+completely separate setup? Start Cuebot with `--data <folder>` to use another data folder (see
 [Command-line options](command-line-options.md)). Only one Cuebot can use one data folder at a time.
 
 ## Your sign-ins are locked
@@ -25,8 +30,10 @@ Sign-ins, API keys and passwords are stored **encrypted**: scrambled so that onl
 - On **Windows**, your Windows account holds the key.
 - On **Linux**, your desktop's keyring (like GNOME Keyring or KWallet) holds it. Without a keyring, Cuebot uses a file
   only your user can read.
-- On **macOS**, the key is in a file called `secrets.key` in the data folder that only your user can read. (Cuebot
+- On **macOS**, the key is in a file called `secrets.key` that only your user can read, next to the sign-ins. (Cuebot
   doesn't use the macOS Keychain.)
+
+Each profile has its own locked sign-ins, in its own folder.
 
 Sign-ins and keys are **never** put in backups. If you restore a [backup](backups.md) on a **new** computer, sign in again.
 

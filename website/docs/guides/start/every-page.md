@@ -194,7 +194,7 @@ brackets.
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
-| **Settings** | Tabs **General** (tray, theme), **Audio & text** (sound devices, number and date format), **Backups**, **Google Drive** and **About** (version, data folder, startup switches and keyboard shortcuts). | [Backups](../help/backups.md), [Google Drive backups](../help/google-drive-backups.md), [Your data](../help/your-data.md), [Settings](#the-settings-page) |
+| **Settings** | Tabs **General** (tray, theme), **Profiles** (your personas), **Audio & text** (sound devices, number and date format), **Backups**, **Google Drive** and **About** (version, data folder, startup switches and keyboard shortcuts). | [Profiles](../platforms/profiles.md), [Backups](../help/backups.md), [Google Drive backups](../help/google-drive-backups.md), [Your data](../help/your-data.md), [Settings](#the-settings-page) |
 | **Import / Export** | Bring in Streamer.bot actions, or share your own. Tabs **Import** and **Export**. | [Moving from Streamer.bot](moving-from-streamer-bot.md) |
 | **Support** | Report a problem, and check for updates. Tabs **Report a problem** and **Updates**. | [Asking for help](../help/troubleshooting.md#asking-for-help), [Updating Cuebot](updating.md) |
 
@@ -228,6 +228,8 @@ Want the chat inside OBS? The [HTTP server](../developers/http-server.md) gives 
 - **General**: **Show an icon in the system tray** (ticked at first) keeps Cuebot next to the clock. **Closing the window keeps
   Cuebot running in the tray** hides it instead of closing it. **Start minimized** starts it hidden. **Theme** picks
   light, dark (the first choice), or **System** (the same as your computer).
+- **Profiles**: your personas, each with its own accounts, mods and everything else. Make, rename, recolour, switch
+  and delete them here. See [More than one persona (profiles)](../platforms/profiles.md).
 - **Audio & text**: pick the **Output devices** (speakers) and **Input devices** (microphones) Cuebot may use. **Culture**
   sets how numbers and dates look, like `1,000.5` or `1.000,5`.
 - **Backups** and **Google Drive**: see [Backups](../help/backups.md) and [Backups on Google Drive](../help/google-drive-backups.md).

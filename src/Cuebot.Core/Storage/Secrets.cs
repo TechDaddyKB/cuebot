@@ -167,6 +167,29 @@ public sealed class SecretStore
         }
     }
 
+    /// <summary>
+    /// Copies the secrets of one settings file (by file name) into another folder's store under the same ids, so a
+    /// copy of that file in the other folder finds them. Returns how many were copied.
+    /// </summary>
+    public int CopyFileTo(string file, SecretStore target)
+    {
+        if (ReferenceEquals(this, target)) return 0;
+        List<KeyValuePair<string, Entry>> copied;
+        lock (_gate)
+        {
+            EnsureLoaded();
+            copied = _entries.Where(e => e.Value.File == file).ToList();
+        }
+        if (copied.Count == 0) return 0;
+        lock (target._gate)
+        {
+            target.EnsureLoaded();
+            foreach (var (id, entry) in copied) target._entries[id] = entry;
+            target.Write();
+        }
+        return copied.Count;
+    }
+
     private Dictionary<string, string> Ids(string file)
     {
         if (!_idsByFile.TryGetValue(file, out var ids)) _idsByFile[file] = ids = new Dictionary<string, string>(StringComparer.Ordinal);

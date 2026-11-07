@@ -108,6 +108,9 @@ and your mods' changes. See [The phone app](../mods/phone-app.md).
 **Port**: A door number. Programs on one computer use different port numbers, so their messages do not get mixed up.
 Example: OBS listens on port 4455. See [Cuebot's servers](../developers/servers.md).
 
+**Profile**: One persona's whole Cuebot: its own accounts, mods, actions, overlays and viewers. Switch profiles from
+the top bar. See [More than one persona (profiles)](../platforms/profiles.md).
+
 **REST API**: Cuebot's main door for other programs: web addresses that run actions and change things, with a
 **token**. See [REST API](../developers/rest-api.md).
 

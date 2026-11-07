@@ -2,12 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels"
              xmlns:shell="using:Cuebot.App.Shell"
+             xmlns:c="using:Cuebot.App.Controls"
              x:Class="Cuebot.App.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
   <Grid>
     <DockPanel Margin="24,8,24,0">
       <TextBlock x:Name="SubPageTitle" DockPanel.Dock="Top" Text="{Binding SubPageTitle}" FontSize="16" FontWeight="SemiBold" />
-      <!-- One sub-page at a time (General, Audio & text, Backups, Google Drive, About), picked in the section list. -->
+      <!-- One sub-page at a time (General, Profiles, Audio & text, Backups, Google Drive, About), picked in the section list. -->
       <TabControl x:Name="Sections" Classes="subpages" SelectedIndex="{Binding SelectedTab}">
         <TabItem Header="General">
           <ScrollViewer>
@@ -33,6 +34,92 @@
                   <TextBlock Classes="muted" TextWrapping="Wrap" Text="System follows the desktop's light or dark preference." />
                 </StackPanel>
               </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Profiles">
+          <ScrollViewer>
+            <StackPanel MaxWidth="820" HorizontalAlignment="Left" Margin="0,12,0,24" DataContext="{Binding Profiles}" x:DataType="vm:ProfilesViewModel">
+              <Border Classes="card">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="h2" Text="Your profiles" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="A profile is a whole Cuebot for one persona: its own Twitch, YouTube, Kick and Rumble accounts, mods, donation services, actions, commands and overlays. Only one profile runs at a time. Switching saves everything and opens Cuebot again on the other profile." />
+                  <TextBlock Classes="muted" IsVisible="{Binding !IsAvailable}" Text="Profiles are not available here." />
+                  <ListBox x:Name="ProfileList" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" MinHeight="80" MaxHeight="260"
+                           AutomationProperties.Name="Profiles">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate DataType="vm:ProfileRowViewModel">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                          <Border Width="14" Height="14" CornerRadius="7" Background="{Binding Color, Converter={x:Static c:PlatformBrush.Hex}}" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding State}" Classes="muted" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                  <StackPanel Spacing="8" IsVisible="{Binding HasSelection}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="Name" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding EditName}" Width="220" MaxLength="40" AutomationProperties.Name="Profile name"
+                               ToolTip.Tip="What this profile is called in the top bar and the tray, like the persona's name." />
+                      <TextBlock Text="Colour" VerticalAlignment="Center" />
+                      <ComboBox ItemsSource="{Binding Colors}" SelectedItem="{Binding EditColor}" MinWidth="70" AutomationProperties.Name="Profile colour"
+                                ToolTip.Tip="Shown next to the name, so you can tell at a glance which persona is open.">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="x:String">
+                            <Border Width="28" Height="14" CornerRadius="4" Background="{Binding Converter={x:Static c:PlatformBrush.Hex}}" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <Button Content="Save" Command="{Binding SaveChangesCommand}" ToolTip.Tip="Saves the new name and colour." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Content="Switch to this profile" Classes="accent" Command="{Binding SwitchToCommand}" IsEnabled="{Binding CanSwitch}"
+                              ToolTip.Tip="Saves everything, then opens Cuebot again on this profile. It takes a few seconds." />
+                      <Button Content="{Binding DeleteConfirm.Text}" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}"
+                              ToolTip.Tip="Deletes this profile: its sign-ins, actions, overlays and everything else. Switch away from it first. A backup made before keeps it." />
+                    </StackPanel>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+              <Border Classes="card" IsVisible="{Binding IsAvailable}">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="New profile" />
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="Name" VerticalAlignment="Center" />
+                    <TextBox Text="{Binding NewName}" Width="220" MaxLength="40" Watermark="Like Kitsune or Night Owl" AutomationProperties.Name="New profile name" />
+                    <TextBlock Text="Colour" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding Colors}" SelectedItem="{Binding NewColor}" MinWidth="70" AutomationProperties.Name="New profile colour">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                          <Border Width="28" Height="14" CornerRadius="4" Background="{Binding Converter={x:Static c:PlatformBrush.Hex}}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="Start with" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding NewSource}" MinWidth="220" AutomationProperties.Name="Start with"
+                              ToolTip.Tip="Start empty, or copy parts of another profile into the new one." />
+                  </StackPanel>
+                  <StackPanel Spacing="4" IsVisible="{Binding IsCopying}" Margin="12,0,0,0">
+                    <TextBlock Classes="muted" TextWrapping="Wrap"
+                               Text="Copy these parts. Sign-ins to Twitch, YouTube, Kick, Rumble, the mod portal and its mods, donation services, webhooks and the Discord bot are never copied, so the new profile never posts as this one." />
+                    <ItemsControl ItemsSource="{Binding Parts}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:ProfilePartOption">
+                          <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" ToolTip.Tip="{Binding Tip}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <Button Content="Make profile" Classes="accent" Command="{Binding CreateCommand}" HorizontalAlignment="Left"
+                          ToolTip.Tip="Makes the new profile. It opens when you switch to it." />
+                </StackPanel>
+              </Border>
+              <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" Margin="4,0" />
             </StackPanel>
           </ScrollViewer>
         </TabItem>
@@ -223,7 +310,7 @@
                   <TextBlock Grid.Row="1" Classes="muted" Text="Data folder" Margin="0,4" VerticalAlignment="Center" />
                   <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,4">
                     <SelectableTextBlock Text="{Binding DataFolder}" VerticalAlignment="Center" />
-                    <Button Content="Open" Command="{Binding OpenDataFolderCommand}" Padding="8,2" ToolTip.Tip="Opens the folder where Cuebot keeps all your settings and data." />
+                    <Button Content="Open" Command="{Binding OpenDataFolderCommand}" Padding="8,2" ToolTip.Tip="Opens the folder where Cuebot keeps all your settings and data. Each profile has its own folder inside it, under profiles." />
                   </StackPanel>
                   <TextBlock Grid.Row="2" Classes="muted" Text="Display backend" Margin="0,4" ToolTip.Tip="The system Cuebot uses to draw its window. Only useful when asking for help." />
                   <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DisplayBackend}" Margin="0,4" />

@@ -21,6 +21,12 @@ public interface IShellHost
     void Restart();
 
     bool CanRestart { get; }
+
+    /// <summary>The streamer profiles, or null where there are none (tests, the designer).</summary>
+    Cuebot.Core.Profiles.ProfileCatalog? Profiles { get; }
+
+    /// <summary>Saves everything and opens Cuebot again on another profile (by id or name).</summary>
+    void SwitchProfile(string idOrName);
 }
 
 public static class Theme
@@ -87,8 +93,15 @@ public static class UrlLauncher
 }
 
 /// <summary>Used where there is no real shell (tests, designer): applies the theme, cannot restart.</summary>
-public sealed class DetachedShellHost(AppSettingsStore settings) : IShellHost
+public sealed class DetachedShellHost(AppSettingsStore settings, Cuebot.Core.Profiles.ProfileCatalog? profiles = null) : IShellHost
 {
+    public Cuebot.Core.Profiles.ProfileCatalog? Profiles => profiles;
+
+    /// <summary>The last profile <see cref="SwitchProfile"/> was asked for (tests).</summary>
+    public string? SwitchRequested { get; private set; }
+
+    public void SwitchProfile(string idOrName) => SwitchRequested = idOrName;
+
     public bool IsTrayAvailable => false;
 
     public event Action? TrayAvailabilityChanged { add { } remove { } }

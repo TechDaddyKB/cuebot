@@ -25,7 +25,7 @@ public sealed class PythonRuntime : IAsyncDisposable
 
     public PythonRuntime(AppPaths paths, JsonFile<ScriptingSettings> settings, HttpClient http, AppLog log)
     {
-        Layout = new PythonLayout(paths.GetDirectory("python"));
+        Layout = new PythonLayout(paths.GetSharedDirectory("python"));
         _settings = settings;
         _installer = new PythonInstaller(http, Layout);
         _log = log;

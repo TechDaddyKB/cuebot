@@ -162,4 +162,33 @@ public sealed class BackupServiceTests : IDisposable
     {
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { }
     }
+
+    [Fact]
+    public void Every_profile_is_backed_up_without_its_sign_ins_and_a_restore_keeps_them()
+    {
+        var kitsune = Path.Combine(_root, "profiles", "kitsune");
+        Directory.CreateDirectory(Path.Combine(kitsune, "overlays"));
+        File.WriteAllText(Path.Combine(kitsune, "twitch.json"), "{\"login\":\"kitsune\"}");
+        File.WriteAllText(Path.Combine(kitsune, "overlays", "alert.png"), "png");
+        File.WriteAllText(Path.Combine(kitsune, "secrets.bin"), "SECRET");
+        File.WriteAllText(Path.Combine(kitsune, "secrets.key"), "KEY");
+        File.WriteAllText(Path.Combine(_root, "profiles.json"), "{}");
+        var service = Service();
+        var backup = service.Create("manual");
+
+        var entries = Entries(backup.Path);
+        Assert.Contains("profiles/kitsune/twitch.json", entries);
+        Assert.Contains("profiles/kitsune/overlays/alert.png", entries);
+        Assert.Contains("profiles.json", entries);
+        Assert.DoesNotContain(entries, e => e.EndsWith("secrets.bin", StringComparison.Ordinal) || e.EndsWith("secrets.key", StringComparison.Ordinal));
+
+        File.WriteAllText(Path.Combine(kitsune, "twitch.json"), "{\"login\":\"changed\"}");
+        File.WriteAllText(Path.Combine(kitsune, "overlays", "new.png"), "new");
+        service.RestoreNow(backup.Path);
+
+        Assert.Equal("{\"login\":\"kitsune\"}", File.ReadAllText(Path.Combine(kitsune, "twitch.json")));
+        Assert.False(File.Exists(Path.Combine(kitsune, "overlays", "new.png")));
+        Assert.Equal("SECRET", File.ReadAllText(Path.Combine(kitsune, "secrets.bin")));
+        Assert.Equal("KEY", File.ReadAllText(Path.Combine(kitsune, "secrets.key")));
+    }
 }

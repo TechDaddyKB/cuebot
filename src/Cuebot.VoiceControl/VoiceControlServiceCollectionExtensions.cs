@@ -25,7 +25,7 @@ public static class VoiceControlServiceCollectionExtensions
     {
         services.AddSettingsFile<VoiceControlSettings>("voicecontrol.json");
         services.AddSingleton(sp => new ModelStore(
-            sp.GetRequiredService<AppPaths>().GetDirectory(Path.Combine("models", "whisper")),
+            sp.GetRequiredService<AppPaths>().GetSharedDirectory(Path.Combine("models", "whisper")),
             sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<ISpeechRecognizerEngine>(sp =>
         {

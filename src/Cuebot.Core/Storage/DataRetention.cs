@@ -12,8 +12,8 @@ public static class DataRetention
 
     /// <summary>Prunes the data folder's reports and emote image cache; returns how many files were deleted.</summary>
     public static int PruneDataFolder(AppPaths paths, DateTime now) =>
-        Prune(Path.Combine(paths.Root, "reports"), "*", now)
-        + Prune(Path.Combine(paths.Root, "cache", "emote-images"), "*", now);
+        Prune(Path.Combine(paths.Shared, "reports"), "*", now)
+        + Prune(Path.Combine(paths.Shared, "cache", "emote-images"), "*", now);
 
     private static int Prune(string folder, string pattern, DateTime now)
     {

@@ -207,12 +207,12 @@ public sealed class MainWindowTests : IAsyncDisposable
         Assert.Equal(1, window.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "Tabs").SelectedIndex);
         Save(window, "input-game-controllers");
 
-        Assert.Equal(["General", "Audio & text", "Backups", "Google Drive", "About"], vm.Settings.SubPages);
+        Assert.Equal(["General", "Profiles", "Audio & text", "Backups", "Google Drive", "About"], vm.Settings.SubPages);
         vm.OpenAboutCommand.Execute(null);
         Pump();
         Assert.Same(vm.Settings, vm.SelectedPage);
         Assert.Equal("About", vm.Settings.SubPageTitle);
-        Assert.Equal(4, vm.Settings.SubPageIndex);
+        Assert.Equal(5, vm.Settings.SubPageIndex);
         Save(window, "settings-about");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();

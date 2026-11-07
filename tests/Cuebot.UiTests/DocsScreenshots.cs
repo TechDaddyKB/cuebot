@@ -28,8 +28,16 @@ public sealed class DocsScreenshots : IAsyncDisposable
 
     private readonly string _dataDir = Directory.CreateTempSubdirectory("cuebot-docs-shots-").FullName;
     private readonly AppHost _host;
+    private readonly Cuebot.Core.Profiles.ProfileCatalog _profiles;
 
-    public DocsScreenshots() => _host = AppHost.Create(new AppPaths(_dataDir));
+    public DocsScreenshots()
+    {
+        // Two personas, so the top bar's profile chip and Settings > Profiles show what a streamer with profiles sees.
+        _profiles = Cuebot.Core.Profiles.ProfileCatalog.Open(_dataDir);
+        _profiles.Rename(Cuebot.Core.Profiles.ProfileCatalog.FirstId, "Kitsune");
+        _profiles.Create("Night Owl");
+        _host = AppHost.Create(new AppPaths(_profiles.ActiveFolder, _dataDir));
+    }
 
     [AvaloniaFact]
     public void Write_the_documentation_screenshots()
@@ -39,7 +47,8 @@ public sealed class DocsScreenshots : IAsyncDisposable
         Directory.CreateDirectory(OutputDir);
         DocsDemoData.Seed(_host);
 
-        var vm = new MainWindowViewModel(_host);
+        var vm = new MainWindowViewModel(_host, new Cuebot.App.Shell.DetachedShellHost(_host.Settings, _profiles));
+        vm.Settings.Profiles.Selected = vm.Settings.Profiles.Rows[^1];   // Settings > Profiles shows the switch and edit buttons
         var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
         window.Show();
         Pump();
@@ -58,7 +67,7 @@ public sealed class DocsScreenshots : IAsyncDisposable
         // Pages whose guide talks about one tab.
         foreach (var (page, tab, name) in new[]
                  {
-                     ("Settings", "Backups", "settings-backups"), ("Settings", "About", "settings-about"),
+                     ("Settings", "Profiles", "settings-profiles"), ("Settings", "Backups", "settings-backups"), ("Settings", "About", "settings-about"),
                      ("Support", "Updates", "support-updates"), ("Stream apps", "VTuber apps", "stream-apps-vtuber"),
                      ("Apps & devices", "Discord bot", "apps-devices-discord"), ("Twitch", "Rewards", "twitch-rewards"),
                      ("Twitch", "Polls & predictions", "twitch-polls"),

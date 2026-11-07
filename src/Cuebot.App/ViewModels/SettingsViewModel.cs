@@ -55,7 +55,8 @@ public sealed partial class SettingsViewModel : PageViewModel
         _drive = host.DriveBackups;
         _shell = shell;
         _log = host.Get<AppLog>();
-        DataFolder = host.Get<AppPaths>().Root;
+        DataFolder = host.Get<AppPaths>().Shared;
+        Profiles = new ProfilesViewModel(shell);
 
         _loading = true;
         var s = _store.Settings;
@@ -479,7 +480,12 @@ public sealed partial class SettingsViewModel : PageViewModel
     /// <summary>The selected tab (General, Audio &amp; text, Backups, Google Drive, About).</summary>
     [ObservableProperty] private int _selectedTab;
 
-    public override IReadOnlyList<string> SubPages { get; } = ["General", "Audio & text", "Backups", "Google Drive", "About"];
+    public override IReadOnlyList<string> SubPages { get; } = ["General", "Profiles", "Audio & text", "Backups", "Google Drive", "About"];
+
+    /// <summary>The Profiles sub-page.</summary>
+    public ProfilesViewModel Profiles { get; }
+
+    public void ShowProfiles() => SelectedTab = 1;
 
     public override int SubPageIndex
     {
@@ -496,7 +502,7 @@ public sealed partial class SettingsViewModel : PageViewModel
         OnPropertyChanged(nameof(SubPageTitle));
     }
 
-    public void ShowAbout() => SelectedTab = 4;
+    public void ShowAbout() => SelectedTab = 5;
 
     public string Version => BackupService.Version;
     public string DataFolder { get; }

@@ -71,7 +71,7 @@ public static class InfoGatherer
         {
             Environment = environment,
             Connections = connections,
-            AppSettings = ReadSmall(paths.File("app.json")),
+            AppSettings = ReadSmall(paths.SharedFile("app.json")),
             ModuleSettings = modules,
             Log = LogTail.Read(paths.Logs),
             Crash = crashFile is null ? null : CrashStore.Read(crashFile),

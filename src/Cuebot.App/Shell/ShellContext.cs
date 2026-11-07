@@ -14,6 +14,28 @@ public sealed class ShellContext
     public required AppSettingsStore Settings { get; init; }
     public SingleInstance? Instance { get; init; }
 
+    /// <summary>The streamer profiles; <see cref="Paths"/> is the active one's folder. Null in tests and the designer.</summary>
+    public Cuebot.Core.Profiles.ProfileCatalog? Profiles { get; init; }
+
+    /// <summary>The profile this Cuebot opened (<see cref="Profiles"/> may already name the next one).</summary>
+    public Cuebot.Core.Profiles.ProfileEntry? OpenProfile { get; init; }
+
+    /// <summary>The restart is a switch to another profile (already active in <see cref="Profiles"/>).</summary>
+    public bool SwitchingProfile { get; set; }
+
+    /// <summary>
+    /// Makes another profile the one Cuebot opens and asks for the restart that opens it; the caller then quits.
+    /// False when there is no such profile or it is the open one.
+    /// </summary>
+    public bool PrepareSwitch(string idOrName)
+    {
+        if (Profiles?.Find(idOrName) is not { } profile || profile.Id == OpenProfile?.Id) return false;
+        Profiles.SetActive(profile.Id);
+        SwitchingProfile = true;
+        RestartRequested = true;
+        return true;
+    }
+
     /// <summary>Started early so the answer is usually ready by the time the window would be hidden.</summary>
     public Task<bool> TrayProbe { get; set; } = Task.FromResult(OperatingSystem.IsWindows());
 

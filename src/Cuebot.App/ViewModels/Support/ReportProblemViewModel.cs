@@ -29,7 +29,7 @@ public sealed partial class ReportProblemViewModel : ObservableObject
         _reportSettings = new ReportSettingsStore(services.Paths);
         _sender = new ReportSender(services.HttpHandler, services.ReportEndpoint);
         _sendCrashesAutomatically = _reportSettings.Settings.SendCrashesAutomatically;
-        ReportsFolder = Path.Combine(services.Paths.Root, "reports");
+        ReportsFolder = Path.Combine(services.Paths.Shared, "reports");
         _crashFile = _crashes.Latest();
         _includeCrash = false;   // an older crash is offered, not attached; the crash prompt attaches a new one
         Refresh();

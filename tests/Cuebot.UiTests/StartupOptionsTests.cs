@@ -81,4 +81,15 @@ public class StartupOptionsTests
         Assert.True(StartupOptions.Parse(["/shutdown"]).Shutdown);
         Assert.True(StartupOptions.Parse(["--Shutdown"]).Shutdown);
     }
+
+    [Fact]
+    public void Profile_takes_a_name_and_a_switch_restart_leaves_it_out()
+    {
+        Assert.Equal("Night Owl", StartupOptions.Parse(["--profile", "Night Owl"]).Profile);
+        Assert.Equal("kitsune", StartupOptions.Parse(["--profile=kitsune"]).Profile);
+        Assert.Contains("--profile needs a profile name", StartupOptions.Parse(["--profile"]).Errors);
+
+        Assert.Equal(["--minimized", "--data", "/x"], StartupOptions.WithoutProfile(["--minimized", "--profile", "Kitsune", "--data", "/x"]));
+        Assert.Equal(["--headless"], StartupOptions.WithoutProfile(["--profile=kitsune", "--headless"]));
+    }
 }

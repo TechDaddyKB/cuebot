@@ -38,7 +38,7 @@ public sealed class ChatPageServices
         {
             Emotes = host.GetAll<EmoteService>().FirstOrDefault(),
             EmoteSettings = host.GetAll<JsonFile<EmoteSettings>>().FirstOrDefault(),
-            Images = new EmoteImageLoader(host.Get<HttpClient>(), paths.GetDirectory(Path.Combine("cache", "emote-images"))),
+            Images = new EmoteImageLoader(host.Get<HttpClient>(), paths.GetSharedDirectory(Path.Combine("cache", "emote-images"))),
             Pronouns = host.GetAll<PronounService>().FirstOrDefault(),
             Moderation = host.GetAll<ChatModerationService>().FirstOrDefault(),
             Engine = host.Get<ActionEngine>(),

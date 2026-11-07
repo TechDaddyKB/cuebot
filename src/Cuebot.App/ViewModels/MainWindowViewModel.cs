@@ -91,6 +91,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _host = host;
         _shell = shellHost;
         Settings = new SettingsViewModel(host, shellHost);
+        Settings.Profiles.ProfilesChanged += OnProfilesChanged;
         Support = new Cuebot.App.ViewModels.Support.SupportViewModel(Cuebot.App.ViewModels.Support.SupportServices.From(host, shellHost));
         var log = host.Get<AppLog>();
         Dashboard = new DashboardViewModel(log, host.Get<ActionEngine>(), host.GetAll<IConnectionStatus>());
@@ -324,7 +325,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public void Navigate(PageViewModel page) => SelectedPage = page;
 
     /// <summary>Page names for the jump box (Ctrl+K), in rail order.</summary>
-    public IReadOnlyList<string> JumpTargets => NavGroups.SelectMany(g => g.Pages).Select(p => p.Title).ToArray();
+    public IReadOnlyList<string> JumpTargets => [.. NavGroups.SelectMany(g => g.Pages).Select(p => p.Title), .. ProfileJumpTargets];
 
     /// <summary>Ctrl+K: the window focuses the jump box.</summary>
     public event Action? JumpRequested;
@@ -334,16 +335,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>
     /// Opens the page with this title (case-insensitive), or else the first page in the jump list whose title contains
-    /// it (what the jump box's list shows first); false when there is none.
+    /// it (what the jump box's list shows first); a "Profile: name" entry switches to that profile. False when there is
+    /// none.
     /// </summary>
     public bool JumpTo(string? title)
     {
         var text = title?.Trim();
         if (string.IsNullOrEmpty(text)) return false;
+        if (JumpToProfile(text)) return true;
         var partial = JumpTargets.FirstOrDefault(t => t.Contains(text, StringComparison.OrdinalIgnoreCase));
         var page = Pages.FirstOrDefault(p => string.Equals(p.Title, text, StringComparison.OrdinalIgnoreCase))
                    ?? Pages.FirstOrDefault(p => p.Title == partial);
-        if (page is null) return false;
+        if (page is null) return partial is not null && JumpToProfile(partial);
         SelectedPage = page;
         return true;
     }

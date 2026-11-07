@@ -12,6 +12,10 @@ public sealed class PlatformBrush : IValueConverter
     public static readonly FuncValueConverter<string?, string> Initial =
         new(name => string.IsNullOrEmpty(name) ? "" : name[..1].ToUpperInvariant());
 
+    /// <summary>A colour written like <c>#8B5CF6</c> (a profile's colour) as a brush; grey when it is not one.</summary>
+    public static readonly FuncValueConverter<string?, IBrush> Hex =
+        new(hex => Color.TryParse(hex, out var color) ? new SolidColorBrush(color) : Brushes.Gray);
+
     private static readonly IReadOnlyDictionary<string, IBrush> Brands = new Dictionary<string, IBrush>(StringComparer.OrdinalIgnoreCase)
     {
         ["Twitch"] = new SolidColorBrush(Color.Parse("#9146FF")),

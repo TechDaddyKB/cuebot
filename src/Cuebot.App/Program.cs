@@ -4,6 +4,7 @@ using Cuebot.App.Platform;
 using Cuebot.App.Shell;
 using Cuebot.Core;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Profiles;
 using Cuebot.Core.Storage;
 
 namespace Cuebot.App;
@@ -11,6 +12,9 @@ namespace Cuebot.App;
 internal static class Program
 {
     private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(20);
+
+    /// <summary>Set on the Cuebot a profile switch starts, so it skips the start-up backup.</summary>
+    private const string SwitchMarker = "CUEBOT_PROFILE_SWITCH";
 
     /// <summary>The display backend in use, logged at startup.</summary>
     public static string BackendName { get; private set; } = "default";
@@ -54,13 +58,15 @@ internal static class Program
             else StartupWarnings.Add("Secrets", m);
         }
         SecretStore.Warn = SecretWarning;
-        SecretStore.ProtectorFor = folder => OperatingSystem.IsLinux() && folder == dataRoot
+        // The data folder's own store (the Google Drive sign-in) and every profile's store use the keyring.
+        var profilesRoot = Path.Combine(dataRoot, ProfileCatalog.FolderName) + Path.DirectorySeparatorChar;
+        SecretStore.ProtectorFor = folder => OperatingSystem.IsLinux() && (folder == dataRoot || folder.StartsWith(profilesRoot, StringComparison.Ordinal))
             ? new SecretServiceKeyProtector(SecretWarning)
             : FileKeyProtector.Instance;
 
         // AI clients spawn "Cuebot --mcp-stdio"; it only bridges stdio to the running instance's MCP endpoint, reading
-        // the API token from the secret store set up above.
-        if (bridging) return Cuebot.Server.Mcp.McpStdioBridge.Run(paths.Root);
+        // the API token from the active profile's secret store.
+        if (bridging) return Cuebot.Server.Mcp.McpStdioBridge.Run(ProfileCatalog.ActiveFolderOf(dataRoot));
 
         // One instance per data folder: a second launch brings the first one forward and exits.
         var instance = SingleInstance.TryAcquire(paths.Root);
@@ -76,6 +82,14 @@ internal static class Program
             var stopped = SingleInstance.ShutdownExistingAsync(paths.Root, TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             Console.WriteLine(stopped ? "Asked the running Cuebot to quit." : $"Cuebot is running with {paths.Root} but did not respond.");
             return stopped ? 0 : 1;
+        }
+        if (instance is null && options.Profile is { } wanted)
+        {
+            var switched = SingleInstance.SwitchExistingAsync(paths.Root, wanted, TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+            Console.WriteLine(switched
+                ? $"Cuebot is already running; asked it to switch to the profile '{wanted}'."
+                : $"Cuebot is already running with {paths.Root} but did not respond.");
+            return switched ? 0 : 1;
         }
         if (instance is null)
         {
@@ -101,18 +115,23 @@ internal static class Program
         finally
         {
             instance.Dispose();
-            if (ctx.RestartRequested) Restart(args);
+            if (ctx.RestartRequested) Restart(ctx.SwitchingProfile ? StartupOptions.WithoutProfile(args) : args, ctx.SwitchingProfile);
         }
     }
 
-    /// <summary>Applies a scheduled restore, the window reset and the start-up backup, before any store opens.</summary>
+    /// <summary>
+    /// Applies a scheduled restore, the window reset and the start-up backup, then opens the streamer profiles (moving
+    /// a data folder from before profiles into the first one) and picks the profile to open, before any store is open.
+    /// </summary>
     private static ShellContext Prepare(StartupOptions options, AppPaths paths, SingleInstance instance)
     {
         var notes = new List<(LogLevel, string)>();
         var settings = new AppSettingsStore(paths);
         if (settings.LoadError is { } loadError) notes.Add((LogLevel.Warning, loadError));
         var backups = new BackupService(paths, () => settings.Settings.Backups.Keep);
-        var relaunched = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(LinuxBackend.FallbackMarker));
+        var switching = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(SwitchMarker));
+        Environment.SetEnvironmentVariable(SwitchMarker, null);   // not for this Cuebot's own children and restarts
+        var relaunched = switching || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(LinuxBackend.FallbackMarker));
 
         try
         {
@@ -151,7 +170,27 @@ internal static class Program
             }
         }
 
-        var ctx = new ShellContext { Options = options, Paths = paths, Settings = settings, Instance = instance };
+        if (ProfileCatalog.NeedsMove(paths.Root))
+        {
+            try
+            {
+                notes.Add((LogLevel.Info, $"Backup created before moving the data into the first profile: {backups.Create("before-profiles").Name}"));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+            {
+                notes.Add((LogLevel.Error, $"Backup before moving the data into the first profile failed: {ex.Message}"));
+            }
+        }
+        var profiles = ProfileCatalog.Open(paths.Root);
+        if (profiles.MovedExistingData) notes.Add((LogLevel.Info, $"Moved the data into the first profile, {profiles.Active.Name} ({profiles.ActiveFolder})"));
+        if (options.Profile is { } wanted)
+        {
+            if (profiles.Find(wanted) is { } chosen) profiles.SetActive(chosen.Id);
+            else notes.Add((LogLevel.Warning, $"There is no profile '{wanted}' (--profile); opened {profiles.Active.Name}"));
+        }
+        var profilePaths = new AppPaths(profiles.ActiveFolder, paths.Root);
+
+        var ctx = new ShellContext { Options = options, Paths = profilePaths, Settings = settings, Instance = instance, Profiles = profiles, OpenProfile = profiles.Active };
         foreach (var (level, message) in notes) ctx.Note(level, message);
         return ctx;
     }
@@ -224,13 +263,15 @@ internal static class Program
     }
 
     /// <summary>Starts a new Cuebot with the same arguments (minus one-shot switches) after this one has exited.</summary>
-    private static void Restart(string[] args)
+    private static void Restart(string[] args, bool switchingProfile)
     {
         var kept = args.Where(a => !a.Equals("--reset-window", StringComparison.OrdinalIgnoreCase)
                                    && !a.Equals("--minimized", StringComparison.OrdinalIgnoreCase)).ToArray();
         try
         {
-            Process.Start(SelfStartInfo(kept, preferAppImage: true))?.Dispose();
+            var info = SelfStartInfo(kept, preferAppImage: true);
+            if (switchingProfile) info.Environment[SwitchMarker] = "1";
+            Process.Start(info)?.Dispose();
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {

@@ -6,7 +6,7 @@ the top and work down.
 | Topic | What's in it |
 | --- | --- |
 | [Getting started](start/index.md) | Install and update Cuebot, your first five minutes, moving from Streamer.bot, and a map of every page. |
-| [Your platforms](platforms/index.md) | Sign in to Twitch, YouTube, Kick and Rumble. |
+| [Your platforms](platforms/index.md) | Sign in to Twitch, YouTube, Kick and Rumble, and keep personas apart with profiles. |
 | [Actions and automation](actions/index.md) | Actions, triggers and the flowchart, variables, queues, timers, hotkeys, watchers and history. |
 | [Chat and community](chat/index.md) | Chat commands, points, giveaways, the store, polls, quotes, credits, top spenders, users and groups. |
 | [Overlays and alerts](overlays/index.md) | Put things on your stream: overlays, alerts and your own widgets. |
