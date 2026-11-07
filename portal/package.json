@@ -15,14 +15,14 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.4.9",
-    "@cloudflare/workers-types": "5.20261027.1",
+    "@cloudflare/vitest-plugin": "1.5.1",
+    "@cloudflare/workers-types": "5.20261104.1",
     "@types/node": "24.19.2",
     "esbuild": "0.28.2",
     "preact": "11.1.1",
     "typescript": "7.0.2",
-    "vitest": "5.0.5",
-    "wrangler": "4.154.0"
+    "vitest": "5.1.0",
+    "wrangler": "4.157.0"
   },
   "allowScripts": {
     "workerd@1.20261023.1": true,
