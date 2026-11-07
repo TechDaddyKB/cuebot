@@ -42,6 +42,27 @@ public actor CuebotClient {
         return list.items(key: "decks")
     }
 
+    // MARK: Streamer profiles
+
+    /// The profiles, or nil when this Cuebot has none to offer (503: no profiles in this build or tool; 404: too old).
+    public func profiles() async throws(CuebotError) -> ProfilesState? {
+        do { return try await get(api("/api/v1/profiles")) as ProfilesState }
+        catch .notFound { return nil }
+        catch .http(status: 503, message: _) { return nil }
+    }
+
+    /// Opens another profile (by id or name). Without `force` Cuebot refuses while a stream is live.
+    public func activateProfile(_ id: String, force: Bool = false) async throws(CuebotError) -> ProfileActivation {
+        do {
+            let answer: JSONValue = try await post(api("/api/v1/profiles/\(escaped(id))/activate"), body: ["force": .bool(force)])
+            return answer["result"]?.string == "alreadyOpen" ? .alreadyOpen : .switching
+        } catch .http(status: 409, let body) {
+            // Both refusals are 409; only the live one tells you to send force.
+            let message = Self.errorMessage(body)
+            return message.localizedCaseInsensitiveContains("force") ? .live(message) : .busy(message)
+        }
+    }
+
     // MARK: Mod portal approvals: mods' changes waiting for the streamer's OK
 
     public func portalChanges() async throws(CuebotError) -> [PendingChange] {
@@ -213,6 +234,11 @@ public actor CuebotClient {
         guard let http = response as? HTTPURLResponse else { throw .invalidResponse("not HTTP") }
         if let failure = Self.failure(status: http.statusCode, body: data) { throw failure }
         return data
+    }
+
+    /// The `error` text of a JSON error body (`{"error": "…"}`), else the body itself.
+    static func errorMessage(_ body: String) -> String {
+        (try? JSONDecoder().decode(JSONValue.self, from: Data(body.utf8)))?["error"]?.string ?? body
     }
 
     static func failure(status: Int, body: Data) -> CuebotError? {
