@@ -1,0 +1,11 @@
+# CodeQL configuration for .github/workflows/codeql.yml. Generated, vendored and build output is not scanned: findings
+# there belong to the source it came from (portal/ui for the embedded portal UI) or to someone else's project.
+paths-ignore:
+  - '**/bin/**'
+  - '**/obj/**'
+  - '**/node_modules/**'
+  - '**/build/**'
+  - '**/dist/**'
+  - 'artifacts/**'
+  - 'website/**'
+  - 'src/Cuebot.Portal/Web/portal-ui.js'

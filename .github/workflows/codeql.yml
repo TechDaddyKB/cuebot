@@ -1,0 +1,91 @@
+name: codeql
+
+# CodeQL code scanning (advanced setup; the repository's default setup is off). Each language gets the build it needs:
+# C#, TypeScript/JavaScript, Python and the workflows are read straight from source (build-mode none); the Android app
+# is Kotlin, which CodeQL can only analyse while Gradle compiles it; the iOS app is Swift, compiled with Xcode on a Mac.
+# What is left out of the results is in .github/codeql/codeql-config.yml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 4 * * 1'   # Mondays: new CodeQL queries find things in code that has not changed
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { language: csharp, build-mode: none, os: ubuntu-latest }
+          - { language: javascript-typescript, build-mode: none, os: ubuntu-latest }
+          - { language: python, build-mode: none, os: ubuntu-latest }
+          - { language: actions, build-mode: none, os: ubuntu-latest }
+          - { language: java-kotlin, build-mode: manual, os: ubuntu-latest }
+          - { language: swift, build-mode: manual, os: macos-latest }
+    steps:
+      - uses: actions/checkout@v5
+
+      - if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - if: matrix.language == 'java-kotlin'
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: true
+
+      - if: matrix.language == 'swift'
+        name: Use the newest Xcode on the runner
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$xcode" ] && sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # CodeQL sees only what is compiled while it watches: no Gradle daemon, build cache or configuration cache
+      # (gradle.properties turns both caches on), and every compile task runs.
+      - if: matrix.language == 'java-kotlin'
+        name: Compile the Android app
+        working-directory: clients/android
+        run: >-
+          ci/gradle.sh --no-daemon --no-build-cache --no-configuration-cache --rerun-tasks
+          :core:compileTestKotlin :app:compileDebugUnitTestKotlin
+
+      # The app target builds CuebotKit too. A simulator build needs no Apple account or signing.
+      - if: matrix.language == 'swift'
+        name: Build the iOS app
+        working-directory: clients/ios/CuebotCompanion
+        run: |
+          xcodebuild build -project CuebotCompanion.xcodeproj -scheme CuebotCompanion \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
