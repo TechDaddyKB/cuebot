@@ -3,14 +3,17 @@
 let next = 0;
 const uid = () => `f${++next}`;
 
-export function Field(props: { label: string; value: string; onInput: (v: string) => void; multiline?: boolean; type?: string; help?: string; mono?: boolean }) {
+export function Field(props: { label: string; value: string; onInput: (v: string) => void; multiline?: boolean; type?: "text" | "number"; help?: string; mono?: boolean }) {
   const id = uid();
   return (
     <div class="field">
       <label for={id}>{props.label}</label>
       {props.multiline
         ? <textarea id={id} rows={3} class={props.mono ? "mono" : ""} value={props.value} onInput={(e) => props.onInput((e.target as HTMLTextAreaElement).value)} />
-        : <input id={id} type={props.type ?? "text"} value={props.value} onInput={(e) => props.onInput((e.target as HTMLInputElement).value)} />}
+        : props.type === "number"
+          // Preact 11 types each input type separately, so the type has to be a literal here.
+          ? <input id={id} type="number" value={props.value} onInput={(e) => props.onInput((e.target as HTMLInputElement).value)} />
+          : <input id={id} type="text" value={props.value} onInput={(e) => props.onInput((e.target as HTMLInputElement).value)} />}
       {props.help && <small class="muted">{props.help}</small>}
     </div>
   );
