@@ -49,7 +49,7 @@ help file:
   example body when it takes one) and a plain description for every field the OpenAPI document leaves without one.
 
 A test fails when a member, function, parameter, operation or field has no help, when a file names one that does not
-exist, or when a C# example (also in `guides/scripting.md` and `guides/api.md`) does not compile. Rewrite the pages
+exist, or when a C# example (also in any guide) does not compile. Rewrite the pages
 with `CUEBOT_WRITE_REFERENCE=1`. MCP tool descriptions come from `McpTools` itself.
 
 ## How to write it

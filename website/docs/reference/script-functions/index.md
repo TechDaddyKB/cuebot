@@ -15,7 +15,7 @@ var answer = await Cb.Call("speech.speak", new { text = "Hello!" });
 answer = cb.speech_speak(text="Hello!")
 ```
 
-In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline` class, use the [`CPH` methods](../csharp/index.md) instead. See [Writing code (C# and Python)](../../guides/scripting.md) for whole examples.
+In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline` class, use the [`CPH` methods](../csharp/index.md) instead. See [Writing code (C# and Python)](../../guides/developers/writing-code.md) for whole examples.
 
 ## In Python
 

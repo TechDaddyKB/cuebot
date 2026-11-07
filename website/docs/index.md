@@ -26,37 +26,40 @@ You do not need to be good with computers. Every page here explains one thing at
 
 ## Start here
 
-1. [Install Cuebot](guides/installation.md) on Windows, Linux or a Mac.
-2. [Your first five minutes](guides/getting-started.md): sign in, connect OBS and make a `!hello` command.
-3. [Connect your platforms](guides/connecting-platforms.md): Twitch, YouTube, Kick and Rumble.
-4. [How actions work](guides/actions-and-triggers.md): the idea behind everything in Cuebot. Like pictures? See
-   [the flowchart editor](guides/flowchart.md).
-5. [Variables, the %words%](guides/variables.md): put the viewer's name and other values into your messages.
-6. [Words you will see](guides/glossary.md): a small dictionary for when a word is new.
+1. [Install Cuebot](guides/start/installing.md) on Windows, Linux or a Mac.
+2. [Your first five minutes](guides/start/first-five-minutes.md): sign in, connect OBS and make a `!hello` command.
+3. [Connect your platforms](guides/platforms/index.md): Twitch, YouTube, Kick and Rumble.
+4. [How actions work](guides/actions/how-actions-work.md): the idea behind everything in Cuebot. Like pictures? See
+   [the flowchart editor](guides/actions/flowchart.md).
+5. [Variables, the %words%](guides/actions/variables.md): put the viewer's name and other values into your messages.
+6. [Words you will see](guides/start/glossary.md): a small dictionary for when a word is new.
 
 ## Download
 
 Get Cuebot from the [releases page on GitHub](https://github.com/TechDaddyKB/cuebot/releases). While Cuebot is in
-testing, every download is marked **Pre-release**. The [installation guide](guides/installation.md) tells you which file
-to pick.
+testing, every download is marked **Pre-release**. The [installation guide](guides/start/installing.md) tells you which
+file to pick.
 
 ## What else is here
 
-- **Guides**: one page per part of Cuebot, from [chat commands](guides/commands.md) to
-  [overlays](guides/overlays.md), [text-to-speech](guides/text-to-speech.md) and the [Stream Deck](guides/stream-deck.md).
-- **[Every page in Cuebot](guides/every-page.md)**: a map of the whole app, with a picture and a link to the guide
+- **[Guides](guides/index.md)**: one page for each job, grouped by topic, from [chat commands](guides/chat/commands.md)
+  to [overlays](guides/overlays/overlays.md), [text-to-speech](guides/sound/text-to-speech.md) and the
+  [Stream Deck](guides/apps/stream-deck.md).
+- **[Every page in Cuebot](guides/start/every-page.md)**: a map of the whole app, with a picture and a link to the guide
   for each page.
-- **[The phone app](guides/companion-app.md)**: your decks and dashboard on your phone.
-- **Writing code**: [C# and Python](guides/scripting.md), [Python in detail](guides/python.md), and
-  [using your own code editor](guides/code-editors.md) (Visual Studio Code, Visual Studio, Rider, PyCharm…).
-- **[What's experimental](guides/experimental.md)**: the features that have not been tried with the real app or
+- **[The mod portal](guides/mods/mod-portal.md)**: let your mods help from their own browser, and approve their changes
+  from your [phone](guides/mods/phone-app.md).
+- **Writing code**: [C# and Python](guides/developers/writing-code.md), [Python in detail](guides/developers/python.md),
+  and [using your own code editor](guides/developers/code-editors.md) (Visual Studio Code, Visual Studio, Rider,
+  PyCharm…).
+- **[What's experimental](guides/help/experimental.md)**: the features that have not been tried with the real app or
   service yet.
 - **[Reference](reference/index.md)**: every trigger and sub-action, with what each setting does.
 
 ## Your data stays with you
 
 Cuebot keeps your settings and sign-ins on your own computer. It has no tracking. It only talks to a service (like
-Twitch or OBS) when you connect it. See [Backups and your data](guides/backups-and-your-data.md).
+Twitch or OBS) when you connect it. See [Your data and privacy](guides/help/your-data.md).
 
 Cuebot is free and open source. It is made by [Tech Daddy Digital](https://techdaddydigital.com/cuebot/) and is not
 made by, or part of, Streamer.bot, Twitch, YouTube, Kick, Rumble or OBS.

@@ -3,7 +3,7 @@
 
 ![Integrations > Servers, where the REST API and MCP server are turned on](../assets/screens/page-servers.png)
 
-Every web address of Cuebot's **REST API**, made from the same description Cuebot serves at `/api/v1/openapi.json`. New to this? Read [Controlling Cuebot from other programs](../guides/api.md) first: it shows how to turn the API on, where the token is, and how to try it.
+Every web address of Cuebot's **REST API**, made from the same description Cuebot serves at `/api/v1/openapi.json`. New to this? Read [the REST API guide](../guides/developers/rest-api.md) first: it shows how to turn the API on, where the token is, and how to try it.
 
 - **Address:** `http://127.0.0.1:7475/api/v1` (the port is on the REST API card on **Apps > Servers**).
 - **Token:** every request needs the header `Authorization: Bearer YOUR_TOKEN`. Without it you get `401`.
@@ -725,7 +725,7 @@ Answers a mod's change that waits for your OK. approve: make it live. reject: dr
 ```bash
 curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
   -d '{"force":false}' \
-  "http://127.0.0.1:7475/api/v1/portal/changes/Thank%20followers/pause"
+  "http://127.0.0.1:7475/api/v1/portal/changes/CHANGE_ID/approve"
 ```
 
 ## Polls

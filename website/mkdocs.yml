@@ -54,46 +54,157 @@ plugins:
   - glightbox:
       touchNavigation: true
       zoomable: true
+  # The guides moved into category folders in November 2026; old links keep working.
+  - redirects:
+      redirect_maps:
+        guides/installation.md: guides/start/installing.md
+        guides/getting-started.md: guides/start/first-five-minutes.md
+        guides/connecting-platforms.md: guides/platforms/index.md
+        guides/actions-and-triggers.md: guides/actions/how-actions-work.md
+        guides/flowchart.md: guides/actions/flowchart.md
+        guides/variables.md: guides/actions/variables.md
+        guides/glossary.md: guides/start/glossary.md
+        guides/every-page.md: guides/start/every-page.md
+        guides/commands.md: guides/chat/commands.md
+        guides/mod-portal.md: guides/mods/mod-portal.md
+        guides/overlays.md: guides/overlays/overlays.md
+        guides/widget-code.md: guides/overlays/widget-code.md
+        guides/text-to-speech.md: guides/sound/text-to-speech.md
+        guides/music-and-now-playing.md: guides/sound/now-playing.md
+        guides/community.md: guides/chat/points.md
+        guides/subathon-and-goals.md: guides/services/subathon-timers.md
+        guides/stream-apps-and-devices.md: guides/apps/index.md
+        guides/vtuber-apps.md: guides/apps/vtuber/index.md
+        guides/stream-deck.md: guides/apps/stream-deck.md
+        guides/companion-app.md: guides/mods/phone-app.md
+        guides/donations-and-integrations.md: guides/services/tips-and-donations.md
+        guides/discord-bot.md: guides/services/discord-bot.md
+        guides/assistant.md: guides/ai/assistant.md
+        guides/local-models.md: guides/ai/local-models.md
+        guides/moving-from-streamer-bot.md: guides/start/moving-from-streamer-bot.md
+        guides/servers.md: guides/developers/servers.md
+        guides/scripting.md: guides/developers/writing-code.md
+        guides/python.md: guides/developers/python.md
+        guides/code-editors.md: guides/developers/code-editors.md
+        guides/api.md: guides/developers/servers.md
+        guides/backups-and-your-data.md: guides/help/backups.md
+        guides/linux.md: guides/help/linux.md
+        guides/command-line-options.md: guides/help/command-line-options.md
+        guides/troubleshooting.md: guides/help/troubleshooting.md
+        guides/experimental.md: guides/help/experimental.md
 
 nav:
   - Home: index.md
-  - Start here:
-      - Installing Cuebot: guides/installation.md
-      - Your first five minutes: guides/getting-started.md
-      - Connecting your platforms: guides/connecting-platforms.md
-      - How actions work: guides/actions-and-triggers.md
-      - The flowchart editor: guides/flowchart.md
-      - Variables, the %words%: guides/variables.md
-      - Words you will see: guides/glossary.md
-      - Every page in Cuebot: guides/every-page.md
   - Guides:
-      - Chat commands: guides/commands.md
-      - The mod portal: guides/mod-portal.md
-      - Overlays and alerts: guides/overlays.md
-      - Writing your own overlay widgets: guides/widget-code.md
-      - Text-to-speech: guides/text-to-speech.md
-      - Music and now playing: guides/music-and-now-playing.md
-      - Points, store and giveaways: guides/community.md
-      - Subathons and goals: guides/subathon-and-goals.md
-      - Stream apps and devices: guides/stream-apps-and-devices.md
-      - VTuber apps: guides/vtuber-apps.md
-      - Stream Deck: guides/stream-deck.md
-      - The phone app: guides/companion-app.md
-      - Donations and integrations: guides/donations-and-integrations.md
-      - Discord bot: guides/discord-bot.md
-      - The setup assistant and AI tools: guides/assistant.md
-      - The assistant on your own computer: guides/local-models.md
-      - Moving from Streamer.bot: guides/moving-from-streamer-bot.md
-      - Cuebot's servers: guides/servers.md
-      - Writing code (C# and Python): guides/scripting.md
-      - Python in detail: guides/python.md
-      - Using your own code editor: guides/code-editors.md
-      - Controlling Cuebot from other programs: guides/api.md
-      - Backups and your data: guides/backups-and-your-data.md
-      - Linux: guides/linux.md
-      - Command-line options: guides/command-line-options.md
-      - Troubleshooting: guides/troubleshooting.md
-      - What's experimental: guides/experimental.md
+      - guides/index.md
+      - Getting started:
+          - guides/start/index.md
+          - Installing Cuebot: guides/start/installing.md
+          - Updating Cuebot: guides/start/updating.md
+          - Your first five minutes: guides/start/first-five-minutes.md
+          - Moving from Streamer.bot: guides/start/moving-from-streamer-bot.md
+          - Every page in Cuebot: guides/start/every-page.md
+          - Words you will see: guides/start/glossary.md
+      - Your platforms:
+          - guides/platforms/index.md
+          - Twitch: guides/platforms/twitch.md
+          - YouTube: guides/platforms/youtube.md
+          - Kick: guides/platforms/kick.md
+          - Rumble: guides/platforms/rumble.md
+      - Actions and automation:
+          - guides/actions/index.md
+          - How actions work: guides/actions/how-actions-work.md
+          - The flowchart editor: guides/actions/flowchart.md
+          - Variables, the %words%: guides/actions/variables.md
+          - Queues: guides/actions/queues.md
+          - Timers: guides/actions/timers.md
+          - Hotkeys: guides/actions/hotkeys.md
+          - Watchers: guides/actions/watchers.md
+          - History: guides/actions/history.md
+      - Chat and community:
+          - guides/chat/index.md
+          - Chat commands: guides/chat/commands.md
+          - Points: guides/chat/points.md
+          - Giveaways: guides/chat/giveaways.md
+          - The store: guides/chat/store.md
+          - Polls and predictions: guides/chat/polls-and-predictions.md
+          - Quotes: guides/chat/quotes.md
+          - Credits: guides/chat/credits.md
+          - Top spenders: guides/chat/top-spenders.md
+          - Users and groups: guides/chat/users-and-groups.md
+      - Overlays and alerts:
+          - guides/overlays/index.md
+          - Overlays: guides/overlays/overlays.md
+          - Alerts: guides/overlays/alerts.md
+          - Writing your own widgets: guides/overlays/widget-code.md
+          - Streamlabs widgets: guides/overlays/streamlabs-widgets.md
+      - Speech, sound and music:
+          - guides/sound/index.md
+          - Text-to-speech: guides/sound/text-to-speech.md
+          - Reading chat and events aloud: guides/sound/reading-chat-aloud.md
+          - Voice control: guides/sound/voice-control.md
+          - Now playing: guides/sound/now-playing.md
+          - Spotify: guides/sound/spotify.md
+          - Song requests: guides/sound/song-requests.md
+          - Media requests: guides/sound/media-requests.md
+      - Stream apps and devices:
+          - guides/apps/index.md
+          - OBS Studio: guides/apps/obs.md
+          - Other stream apps: guides/apps/other-stream-apps.md
+          - Stream Deck: guides/apps/stream-deck.md
+          - Decks: guides/apps/decks.md
+          - Buttons and controllers: guides/apps/controllers.md
+          - Lights, mixers and other apps: guides/apps/lights-and-mixers.md
+          - VTuber apps:
+              - guides/apps/vtuber/index.md
+              - veadotube: guides/apps/vtuber/veadotube.md
+              - PNGTuber Remix: guides/apps/vtuber/pngtuber-remix.md
+              - RahiTuber: guides/apps/vtuber/rahituber.md
+              - VNyan: guides/apps/vtuber/vnyan.md
+              - VRChat: guides/apps/vtuber/vrchat.md
+              - Warudo: guides/apps/vtuber/warudo.md
+              - nizima LIVE: guides/apps/vtuber/nizima-live.md
+              - Animaze: guides/apps/vtuber/animaze.md
+              - VSeeFace and other 3D apps (VMC): guides/apps/vtuber/vmc.md
+      - Donations and services:
+          - guides/services/index.md
+          - Tips and donations: guides/services/tips-and-donations.md
+          - Webhooks (Ko-fi, Patreon…): guides/services/webhooks.md
+          - Discord bot: guides/services/discord-bot.md
+          - Subathon timers: guides/services/subathon-timers.md
+          - Goals: guides/services/goals.md
+      - Mods and your phone:
+          - guides/mods/index.md
+          - The mod portal: guides/mods/mod-portal.md
+          - The phone app: guides/mods/phone-app.md
+      - The AI assistant:
+          - guides/ai/index.md
+          - The setup assistant: guides/ai/assistant.md
+          - On your own computer: guides/ai/local-models.md
+          - Your own AI app (MCP): guides/ai/ai-apps.md
+      - Code and connections:
+          - guides/developers/index.md
+          - Writing code (C# and Python): guides/developers/writing-code.md
+          - Turn an action into code: guides/developers/export-to-code.md
+          - Python in detail: guides/developers/python.md
+          - Using your own code editor: guides/developers/code-editors.md
+          - Cuebot's servers: guides/developers/servers.md
+          - REST API: guides/developers/rest-api.md
+          - WebSocket API (Streamer.bot): guides/developers/websocket-api.md
+          - HTTP server: guides/developers/http-server.md
+          - UDP server: guides/developers/udp-server.md
+          - Speaker.bot API: guides/developers/speakerbot-api.md
+          - Your own WebSocket servers and clients: guides/developers/websocket-clients.md
+          - Linking two Cuebots: guides/developers/linking-two-cuebots.md
+      - Your data and help:
+          - guides/help/index.md
+          - Your data and privacy: guides/help/your-data.md
+          - Backups: guides/help/backups.md
+          - Backups on Google Drive: guides/help/google-drive-backups.md
+          - Linux: guides/help/linux.md
+          - Command-line options: guides/help/command-line-options.md
+          - Troubleshooting: guides/help/troubleshooting.md
+          - What's experimental: guides/help/experimental.md
   - Reference:
       - reference/index.md
       - Triggers: reference/triggers/index.md

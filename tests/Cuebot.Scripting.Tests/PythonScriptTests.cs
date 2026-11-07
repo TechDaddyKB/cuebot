@@ -83,7 +83,7 @@ public sealed class PythonScriptTests : IAsyncLifetime
             File.ReadAllText(Path.Combine(_data.Path, "python", PythonFunctionLibrary.StubFile)));
     }
 
-    /// <summary>The editor-only import from guides/code-editors.md can be pasted into Cuebot as it is.</summary>
+    /// <summary>The editor-only import from guides/developers/code-editors.md can be pasted into Cuebot as it is.</summary>
     [PythonFact]
     public async Task Code_with_the_code_editor_import_lines_runs()
     {

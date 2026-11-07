@@ -94,7 +94,7 @@ public sealed class PythonScriptHost : IAsyncDisposable
         if (_worker is not null) await StopWorkerAsync(_worker).ConfigureAwait(false);
         await File.WriteAllTextAsync(_runtime.Layout.WorkerScript, WorkerSource.Value, ct).ConfigureAwait(false);
         await File.WriteAllTextAsync(_runtime.Layout.FunctionsModule, _library.Value.Module(), ct).ConfigureAwait(false);
-        // For code editors: point one at this folder for completion that matches this Cuebot (guides/code-editors.md).
+        // For code editors: point one at this folder for completion that matches this Cuebot (guides/developers/code-editors.md).
         await File.WriteAllTextAsync(_runtime.Layout.EditorStub, _library.Value.Stub(), ct).ConfigureAwait(false);
         _worker = await PythonWorker.StartAsync(executable, _runtime.Layout.WorkerScript, _runtime.Layout.Root, _api, _log, ct)
             .ConfigureAwait(false);

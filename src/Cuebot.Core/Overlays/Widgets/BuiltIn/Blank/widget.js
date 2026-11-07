@@ -1,5 +1,5 @@
 // A starting point: shows the latest follower. Change anything you like, then click Save.
-// Help: https://techdaddykb.github.io/cuebot/guides/widget-code/
+// Help: https://techdaddykb.github.io/cuebot/guides/overlays/widget-code/
 function show(name) {
   document.getElementById("name").textContent = name;
 }

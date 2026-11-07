@@ -80,10 +80,9 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var failures = new List<string>();
         using var host = new CphInlineHost();
         var compiler = new Cuebot.Scripting.CSharpScriptCompiler();
-        foreach (var guide in new[] { "scripting.md", "api.md", "code-editors.md", "python.md" })
+        foreach (var guide in Guides())
         {
             var path = Path.Combine(Root, "website", "docs", "guides", guide);
-            if (!File.Exists(path)) continue;
             var blocks = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(path), "```csharp\n(.*?)```", System.Text.RegularExpressions.RegexOptions.Singleline);
             foreach (var code in blocks.Select(b => b.Groups[1].Value))
             {
@@ -130,10 +129,9 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
     {
         var methods = Library.Methods.ToDictionary(m => m.Name, m => m.Parameters.Select(p => p.PythonName).ToHashSet(), StringComparer.Ordinal);
         var problems = new List<string>();
-        foreach (var guide in PythonGuides)
+        foreach (var guide in Guides())
         {
             var path = Path.Combine(Root, "website", "docs", "guides", guide);
-            Assert.True(File.Exists(path), $"{guide} is missing");
             var blocks = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(path), "```python\n(.*?)```", System.Text.RegularExpressions.RegexOptions.Singleline);
             foreach (var code in blocks.Select(b => b.Groups[1].Value))
             {
@@ -150,7 +148,12 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         Assert.True(problems.Count == 0, "Guide Python examples:\n" + string.Join("\n", problems.Distinct()));
     }
 
-    private static readonly string[] PythonGuides = ["scripting.md", "python.md", "code-editors.md", "api.md"];
+    /// <summary>Every guide page, as a path under website/docs/guides (like "developers/python.md").</summary>
+    private static string[] Guides()
+    {
+        var root = Path.Combine(Root, "website", "docs", "guides");
+        return Directory.GetFiles(root, "*.md", SearchOption.AllDirectories).Select(f => Path.GetRelativePath(root, f).Replace('\\', '/')).Order().ToArray();
+    }
 
     /// <summary>Python's named methods need every required value, so the examples must give them.</summary>
     [Fact]
@@ -215,7 +218,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         index.Append("In a **Run C# code** step you can use `CPH`, a toolbox of ready-made methods. `CPH.SendMessage(\"Hi!\")` sends a chat " +
                      "message, `CPH.ObsSetScene(\"Gameplay\")` switches your OBS scene, and so on. The names are the same as in " +
                      "Streamer.bot, so code written for Streamer.bot works in Cuebot.\n\n");
-        index.Append("New to code? Read [Writing code (C# and Python)](../../guides/scripting.md) first. It shows where the code goes " +
+        index.Append("New to code? Read [Writing code (C# and Python)](../../guides/developers/writing-code.md) first. It shows where the code goes " +
                      "and how a whole script looks. Every example on these pages goes inside `Execute()`:\n\n");
         index.Append("```csharp\npublic class CPHInline\n{\n    public bool Execute()\n    {\n        // the example goes here\n        return true;\n    }\n}\n```\n\n");
         index.Append("| Area | Methods |\n| --- | --- |\n");
@@ -254,7 +257,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         index.Append("```csharp\n// C#: await the call; the answer is JSON\nvar answer = await Cb.Call(\"speech.speak\", new { text = \"Hello!\" });\n```\n\n");
         index.Append("```python\n# Python: no await needed, and every function has its own method\nanswer = cb.speech_speak(text=\"Hello!\")\n```\n\n");
         index.Append("In C#, `Cb.Call` works in plain C# code. Inside a Streamer.bot-style `CPHInline` class, use the [`CPH` methods](../csharp/index.md) instead. " +
-                     "See [Writing code (C# and Python)](../../guides/scripting.md) for whole examples.\n\n");
+                     "See [Writing code (C# and Python)](../../guides/developers/writing-code.md) for whole examples.\n\n");
         index.Append("## In Python\n\n");
         index.Append("In Python every function is also a method of `cb`, named after it in Python style: `vtubestudio.moveModel` is " +
                      "`cb.vtubestudio_move_model(...)`, and its value `positionX` is `position_x`. Values marked Optional can be left out; " +
@@ -388,7 +391,7 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var sb = new StringBuilder(Generated);
         sb.Append("# REST API reference\n\n").Append(ServersPicture).Append("\n\n");
         sb.Append("Every web address of Cuebot's **REST API**, made from the same description Cuebot serves at `/api/v1/openapi.json`. " +
-                  "New to this? Read [Controlling Cuebot from other programs](../guides/api.md) first: it shows how to turn the API on, " +
+                  "New to this? Read [the REST API guide](../guides/developers/rest-api.md) first: it shows how to turn the API on, " +
                   "where the token is, and how to try it.\n\n");
         sb.Append("- **Address:** `http://127.0.0.1:7475/api/v1` (the port is on the REST API card on **Apps > Servers**).\n");
         sb.Append("- **Token:** every request needs the header `Authorization: Bearer YOUR_TOKEN`. Without it you get `401`.\n");
@@ -452,8 +455,8 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var sb = new StringBuilder(Generated);
         sb.Append("# MCP tools (for AI apps)\n\n").Append(ServersPicture).Append("\n\n");
         sb.Append("An AI app connected to Cuebot's **MCP server** can use these tools. You do not call them yourself: the AI picks them when you ask it " +
-                  "for something, like \"make a !hello command\". See [AI tools](../guides/assistant.md#using-your-own-ai-app-with-cuebot-mcp) " +
-                  "for how to connect an AI app, and [Controlling Cuebot from other programs](../guides/api.md#mcp-server-for-ai-apps) for the details.\n\n");
+                  "for something, like \"make a !hello command\". See [Your own AI app (MCP)](../guides/ai/ai-apps.md) " +
+                  "for how to connect one.\n\n");
         sb.Append("**Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked " +
                   "on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it.\n\n");
         sb.Append($"There are {tools.Length} tools.\n\n| Tool | What it does | Only reads | Asks first |\n| --- | --- | --- | --- |\n");
@@ -696,11 +699,12 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
         var section = path.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
         var command = section switch
         {
-            "giveaway" => "draw", "store" => "approve", "predictions" => "lock", "media" => "skip", _ => "pause",
+            "giveaway" => "draw", "store" => "approve", "portal" => "approve", "predictions" => "lock", "media" => "skip", _ => "pause",
         };
         var id = section switch
         {
-            "commands" => "Hello%20command", "timers" => "Reminder", "media" => "REQUEST_ID", "store" => "REDEMPTION_ID", _ => "Thank%20followers",
+            "commands" => "Hello%20command", "timers" => "Reminder", "media" => "REQUEST_ID", "store" => "REDEMPTION_ID", "portal" => "CHANGE_ID",
+            _ => "Thank%20followers",
         };
         var url = server + path.Replace("{id}", id).Replace("{type}", section == "subactions" ? "chat.send" : "twitch.follow")
             .Replace("{name}", "deaths").Replace("{command}", command);

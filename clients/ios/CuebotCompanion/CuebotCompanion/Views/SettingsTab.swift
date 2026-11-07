@@ -54,7 +54,7 @@ struct SettingsTab: View {
                         LabeledContent("Cuebot", value: status.app.version)
                         LabeledContent("API", value: status.app.apiVersion)
                     }
-                    Link("Troubleshooting", destination: URL(string: "https://techdaddykb.github.io/cuebot/guides/troubleshooting/")!)
+                    Link("Troubleshooting", destination: URL(string: "https://techdaddykb.github.io/cuebot/guides/help/troubleshooting/")!)
                 }
                 }
                 .listRowBackground(Color.cuebotCard)

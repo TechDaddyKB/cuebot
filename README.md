@@ -57,7 +57,7 @@ a Stream Deck button or a timer. Text-to-speech, chat moderation and your stream
 
 Some integrations are built and unit-tested but not yet tried against the real app or service (for example the
 Discord bot, Spotify, VRChat and most cloud voices). The docs mark them; see
-[What's experimental](https://techdaddykb.github.io/cuebot/guides/experimental/).
+[What's experimental](https://techdaddykb.github.io/cuebot/guides/help/experimental/).
 
 <p align="center">
   <img src="docs/images/speech.png" alt="Text-to-speech queue and voices" width="420">
@@ -79,7 +79,7 @@ Get the latest build from the [releases page](https://github.com/TechDaddyKB/cue
 Nothing else needs to be installed: each download includes everything it needs. The Mac build is new and not yet signed by Apple: macOS asks before the first start. Arch Linux packages (`cuebot`,
 `cuebot-bin`) will be on the AUR with the first stable release.
 
-The [installation guide](https://techdaddykb.github.io/cuebot/guides/installation/) covers Windows SmartScreen, Linux
+The [installation guide](https://techdaddykb.github.io/cuebot/guides/start/installing/) covers Windows SmartScreen, Linux
 desktop integration and updating.
 
 ## Getting started

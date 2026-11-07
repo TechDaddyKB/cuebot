@@ -3,7 +3,7 @@
 
 ![Integrations > Servers, where the REST API and MCP server are turned on](../assets/screens/page-servers.png)
 
-An AI app connected to Cuebot's **MCP server** can use these tools. You do not call them yourself: the AI picks them when you ask it for something, like "make a !hello command". See [AI tools](../guides/assistant.md#using-your-own-ai-app-with-cuebot-mcp) for how to connect an AI app, and [Controlling Cuebot from other programs](../guides/api.md#mcp-server-for-ai-apps) for the details.
+An AI app connected to Cuebot's **MCP server** can use these tools. You do not call them yourself: the AI picks them when you ask it for something, like "make a !hello command". See [Your own AI app (MCP)](../guides/ai/ai-apps.md) for how to connect one.
 
 **Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it.
 

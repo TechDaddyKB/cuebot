@@ -13,7 +13,7 @@ namespace Cuebot.App.ViewModels.Integrations;
 public sealed partial class DiscordBotViewModel : ObservableObject
 {
     public const string PortalUrl = "https://discord.com/developers/applications";
-    public const string GuideUrl = "https://techdaddykb.github.io/cuebot/guides/discord-bot/";
+    public const string GuideUrl = "https://techdaddykb.github.io/cuebot/guides/services/discord-bot/";
 
     private readonly DiscordBotService _bot;
 

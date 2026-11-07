@@ -126,7 +126,7 @@ fun SettingsScreen(vm: SettingsViewModel) {
                     headlineContent = { Text("Troubleshooting", color = MaterialTheme.colorScheme.primary) },
                     trailingContent = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     colors = rowColors,
-                    modifier = Modifier.clickable { uri.openUri("https://techdaddykb.github.io/cuebot/guides/troubleshooting/") },
+                    modifier = Modifier.clickable { uri.openUri("https://techdaddykb.github.io/cuebot/guides/help/troubleshooting/") },
                 )
             }
         }
