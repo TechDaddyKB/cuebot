@@ -6,6 +6,7 @@ import SwiftUI
 struct DashboardTab: View {
     @Environment(DashboardStore.self) private var store
     @Environment(ConnectionStore.self) private var connection
+    @Environment(ProfileStore.self) private var profiles
     @State private var editingActions = false
 
     private let columns = [GridItem(.adaptive(minimum: 340), spacing: 16, alignment: .top)]
@@ -14,6 +15,9 @@ struct DashboardTab: View {
         NavigationStack {
             ConnectionGate {
                 content
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let profile = profiles.switchingTo { ProfileSwitchingBar(profile: profile) }
             }
             .navigationTitle("Dashboard")
             .toolbarBackground(Color.cuebotGround, for: .navigationBar)
@@ -38,6 +42,7 @@ struct DashboardTab: View {
                 VStack(spacing: 0) {
                     if store.isReconnecting { ReconnectingBar() }
                     VStack(alignment: .leading, spacing: 16) {
+                        if profiles.isShown { ProfileRow() }
                         ConnectionsStrip(connections: dashboard.connections)
                         if let error = store.controlError {
                             Label(error, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(Color.cuebotBad)
@@ -55,7 +60,11 @@ struct DashboardTab: View {
                 }
             }
             .background(Color.cuebotGround)
-            .refreshable { await store.refresh() }
+            .refreshable {
+                async let board: Void = store.refresh()
+                async let personas: Void = profiles.refresh()
+                _ = await (board, personas)
+            }
         } else if let error = store.error {
             ContentUnavailableView("Dashboard unavailable", systemImage: "exclamationmark.triangle", description: Text(error))
         } else {

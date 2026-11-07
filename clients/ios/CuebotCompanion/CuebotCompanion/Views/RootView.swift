@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(ConnectionStore.self) private var connection
     @Environment(DeckStore.self) private var deck
     @Environment(DashboardStore.self) private var dashboard
+    @Environment(ProfileStore.self) private var profiles
     @Environment(QuickActionsStore.self) private var quickActions
     @Environment(\.scenePhase) private var scenePhase
     @State private var tab = UITestSupport.initialTab ?? .deck
@@ -30,18 +31,21 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
-        .task(id: paired.revision) {
+        // Again after a profile switch: the deck and dashboard belong to the profile that is open.
+        .task(id: [paired.revision, profiles.switchCount]) {
             await connection.connect()
             quickActions.load(cuebotId: paired.activeId, client: connection.client)
             async let decks: Void = deck.load(client: connection.client)
             async let board: Void = dashboard.load(client: connection.client)
-            _ = await (decks, board)
+            async let personas: Void = profiles.load(client: connection.client)
+            _ = await (decks, board, personas)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
                 deck.resume()
                 dashboard.resume()
+                Task { await profiles.refresh() }
                 Task { await connection.check() }
             case .background:
                 deck.stop()   // no background networking in v1
