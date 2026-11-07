@@ -9,6 +9,13 @@ updates:
     groups:
       nuget-minor:
         update-types: [minor, patch]
+    ignore:
+      # SkiaSharp moves with Avalonia (Avalonia.Skia pins its version), never on its own.
+      - dependency-name: 'SkiaSharp*'
+        update-types: [version-update:semver-major]
+      # xunit.v3 4 needs Microsoft.Testing.Platform on .NET 10, and Cuebot.Tests is still on xunit v2 (VSTest).
+      - dependency-name: xunit.v3
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directories: [/portal, /relay, /report, /streamdeck]
@@ -16,6 +23,10 @@ updates:
     groups:
       npm-minor:
         update-types: [minor, patch]
+    ignore:
+      # The types follow the Node that runs the code: 24 for the builds, 20 inside Stream Deck.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: gradle
     directory: /clients/android

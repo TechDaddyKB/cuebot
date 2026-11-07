@@ -136,7 +136,8 @@ describe("portal pages", () => {
 			expect(res.headers.get("referrer-policy")).toBe("no-referrer");
 			const html = await res.text();
 			expect(html).toContain('<script type="module" src="/loader.js"></script>');
-			expect(html).not.toMatch(/<script>|style=/);
+			expect(html).not.toContain("<script>");
+			expect(html).not.toContain("style=");
 		}
 		const loader = await SELF.fetch("https://portal.techdaddydigital.com/loader.js");
 		expect(loader.status).toBe(200);
