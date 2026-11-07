@@ -70,7 +70,7 @@ public sealed partial class ProfilesViewModel : ObservableObject
         new(ProfileParts.Overlays, "Overlays and widgets", "Overlays, their widgets, pictures and sounds. OBS needs the new links after the switch."),
         new(ProfileParts.DecksAndHotkeys, "Decks, hotkeys and controllers", "Deck buttons, keyboard shortcuts, Stream Deck, MIDI and game controllers."),
         new(ProfileParts.Variables, "Global variables", "Remembered ~values~, like a death counter. Viewer variables stay behind."),
-        new(ProfileParts.AppsAndDevices, "Stream apps, devices and servers", "OBS, Streamlabs Desktop, lights, mixers and the server settings (so the phone app and OBS docks keep working)."),
+        new(ProfileParts.AppsAndDevices, "Stream apps and devices", "OBS, Streamlabs Desktop, lights and mixers. (The servers' settings, the phone pairing included, are shared by every profile anyway.)"),
         new(ProfileParts.Voices, "Voices and voice control", "Speech engines and keys, voice aliases and voice control."),
     ];
 

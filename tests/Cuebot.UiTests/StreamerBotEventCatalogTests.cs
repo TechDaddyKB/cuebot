@@ -23,7 +23,7 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
         "DonorDrive.Connected", "DonorDrive.Disconnected",
         "Elgato.ControlCenterColorChanged", "Elgato.ControlCenterDeviceOffline", "Elgato.ControlCenterDeviceOnline",
         "Kick.Host", "Kick.MessageDeleted", "Kick.UserUnbanned",
-        "Misc.FirstWords", "Misc.PresentViewers",
+        "Misc.FirstWords", "Misc.PresentViewers", "Misc.ProfileStarted", "Misc.ProfileStopping",
         "Obs.FilterStateChanged", "Obs.InputMuteChanged", "Obs.InputVolumeChanged", "Obs.MediaAction",
         "Obs.MediaEnded", "Obs.MediaStarted", "Obs.PreviewSceneChanged", "Obs.ProfileChanged", "Obs.RecordFileChanged",
         "Obs.RecordPaused", "Obs.RecordResumed", "Obs.ReplayBufferSaved", "Obs.ReplayBufferStarted",

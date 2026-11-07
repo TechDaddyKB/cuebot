@@ -86,6 +86,8 @@ You can pair more than one Cuebot, like a gaming PC and a streaming PC. Tap one 
 Stream as more than one persona, with [profiles](../platforms/profiles.md)? The **Dashboard** then starts with a
 **Profile** card that shows the open one, with its colour.
 
+![The Profile card's Switch list: the open profile and the others, each with its colour](../../assets/phone/android-profiles.png){ width="320" }
+
 1. Tap **Switch** on the **Profile** card.
 2. Pick the profile.
 3. Tap **Switch** to confirm.
