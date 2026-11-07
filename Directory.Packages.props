@@ -22,7 +22,7 @@
          renders Stream Deck key images for direct USB mode (src/Cuebot.StreamDeck/Hid); NativeAssets.Linux brings
          libSkiaSharp for Linux to projects that do not reference Avalonia (Windows/macOS natives come with SkiaSharp). -->
     <PackageVersion Include="SkiaSharp" Version="3.119.4" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="4.155.0" />
     <!-- Infrastructure -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
     <!-- Scripting / speech -->
