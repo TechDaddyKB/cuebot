@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_call:
 
+# Read-only by default; a job that needs more (windows-package's Azure login) asks for it itself.
+permissions:
+  contents: read
+
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_NOLOGO: 1
@@ -25,9 +29,9 @@ jobs:
           - { rid: osx-x64, os: macos-latest }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: artifacts/ffmpeg/${{ matrix.rid }}
           key: ffmpeg-${{ matrix.rid }}-${{ hashFiles('build/ffmpeg/build.sh') }}
@@ -49,7 +53,7 @@ jobs:
         run: |
           artifacts/ffmpeg/${{ matrix.rid }}/ffmpeg -hide_banner -version | tee version.txt
           ! grep -qE -- '--enable-(gpl|nonfree)' version.txt
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           retention-days: 7
           name: ffmpeg-${{ matrix.rid }}
@@ -63,15 +67,15 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
       - name: Install Linux test dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y espeak-ng python3
       # The upload cleaner's tests run against Cuebot's own ffmpeg (tests/Cuebot.Portal.Tests/MediaCleanerTests).
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: ffmpeg-${{ runner.os == 'Windows' && 'win-x64' || 'linux-x64' }}
           path: artifacts/ffmpeg/${{ runner.os == 'Windows' && 'win-x64' || 'linux-x64' }}
@@ -112,11 +116,11 @@ jobs:
       CUEBOT_PORTAL_TWITCH_CLIENT_SECRET: ${{ secrets.CUEBOT_PORTAL_TWITCH_CLIENT_SECRET }}
       CUEBOT_PORTAL_DISCORD_CLIENT_ID: ${{ secrets.CUEBOT_PORTAL_DISCORD_CLIENT_ID }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: ffmpeg-win-x64
           path: artifacts/ffmpeg/win-x64
@@ -162,7 +166,7 @@ jobs:
           if ($sig.Status -ne 'Valid') { throw "Cuebot.exe is not validly signed" }
       - run: ./build/publish.ps1 -Runtimes win-x64 -ZipOnly
         shell: pwsh
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-win-x64
@@ -189,15 +193,15 @@ jobs:
       CUEBOT_PORTAL_TWITCH_CLIENT_SECRET: ${{ secrets.CUEBOT_PORTAL_TWITCH_CLIENT_SECRET }}
       CUEBOT_PORTAL_DISCORD_CLIENT_ID: ${{ secrets.CUEBOT_PORTAL_DISCORD_CLIENT_ID }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
       - name: Install packaging and smoke-test tools
         run: |
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder xvfb xdotool scrot sway grim jq weston dbus-x11
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: ffmpeg-linux-x64
           path: artifacts/ffmpeg/linux-x64
@@ -205,7 +209,7 @@ jobs:
         run: |
           chmod +x artifacts/ffmpeg/linux-x64/ff*
           packaging/linux/build-appimage.sh linux-x64
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-x86_64.AppImage
@@ -217,7 +221,7 @@ jobs:
             artifacts/flatpak-build packaging/flatpak/io.github.cuebot.Cuebot.yml
           flatpak build-bundle artifacts/flatpak-repo artifacts/Cuebot-x86_64.flatpak io.github.cuebot.Cuebot
           flatpak install --user -y --noninteractive artifacts/Cuebot-x86_64.flatpak
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-x86_64.flatpak
@@ -235,7 +239,7 @@ jobs:
           dbus-run-session -- packaging/linux/smoke-test.sh fallback appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run || status=1
           dbus-run-session -- packaging/linux/smoke-test.sh hang appimage artifacts/Cuebot-x86_64.AppImage --appimage-extract-and-run || status=1
           exit $status
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
@@ -248,8 +252,8 @@ jobs:
     needs: ffmpeg
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ffmpeg-osx-arm64
           path: artifacts/ffmpeg/osx-arm64
@@ -257,7 +261,7 @@ jobs:
         run: |
           chmod +x artifacts/ffmpeg/osx-arm64/ff*
           echo "CUEBOT_FFMPEG_DIR=$PWD/artifacts/ffmpeg/osx-arm64" >> "$GITHUB_ENV"
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
       - name: Install macOS test dependencies
@@ -286,11 +290,11 @@ jobs:
       CUEBOT_PORTAL_TWITCH_CLIENT_SECRET: ${{ secrets.CUEBOT_PORTAL_TWITCH_CLIENT_SECRET }}
       CUEBOT_PORTAL_DISCORD_CLIENT_ID: ${{ secrets.CUEBOT_PORTAL_DISCORD_CLIENT_ID }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           pattern: ffmpeg-osx-*
           path: artifacts/ffmpeg-download
@@ -323,7 +327,7 @@ jobs:
           kill $pid || true
           cat "$RUNNER_TEMP/cuebot.out"
           grep -q "listening on" "$RUNNER_TEMP/cuebot.out"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-macos
@@ -341,8 +345,8 @@ jobs:
           install -m755 /usr/bin/sway /usr/local/bin/sway
           useradd -m builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ffmpeg-linux-x64
           path: artifacts/ffmpeg/linux-x64
@@ -388,7 +392,7 @@ jobs:
             su builder -c "dbus-run-session -- packaging/linux/smoke-test.sh $mode arch-bin cuebot" || status=1
           done
           exit $status
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
@@ -406,8 +410,8 @@ jobs:
       run:
         working-directory: portal
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -424,8 +428,8 @@ jobs:
       run:
         working-directory: streamdeck
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -435,7 +439,7 @@ jobs:
       - run: npm test
       - run: npm run validate
       - run: npm run pack
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-StreamDeck-plugin

@@ -213,7 +213,9 @@ public sealed class BackupService
                 var top = entry.FullName.Split('/', 2)[0];
                 if (ExcludedFolders.Contains(top) && entry.FullName.Contains('/')) continue;
                 if (ExcludedFiles.Contains(entry.FullName) || IsSecretFile(entry.Name)) continue;
-                var target = Path.Combine(Root, entry.FullName);
+                var target = Path.GetFullPath(Path.Combine(Root, entry.FullName));
+                if (!target.StartsWith(rootFull, StringComparison.Ordinal))
+                    throw new InvalidDataException($"Backup entry {entry.FullName} points outside the data folder");
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 entry.ExtractToFile(target, overwrite: true);
             }
