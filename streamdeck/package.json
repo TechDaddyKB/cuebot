@@ -17,7 +17,7 @@
     "pack": "npm run build && streamdeck pack io.github.cuebot.streamdeck.sdPlugin --output dist --force --no-update-check"
   },
   "dependencies": {
-    "@elgato/streamdeck": "2.1.2",
+    "@elgato/streamdeck": "3.0.4",
     "ws": "8.22.1"
   },
   "devDependencies": {
