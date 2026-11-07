@@ -1,0 +1,39 @@
+# Dependabot version updates: one weekly pull request per ecosystem and directory, minor and patch updates grouped.
+# Security updates for vulnerable dependencies come as soon as an advisory is published, independent of this schedule.
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directory: /   # Directory.Packages.props: central package versions for every project in Cuebot.slnx
+    schedule: { interval: weekly }
+    groups:
+      nuget-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directories: [/portal, /relay, /report, /streamdeck]
+    schedule: { interval: weekly }
+    groups:
+      npm-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: gradle
+    directory: /clients/android
+    schedule: { interval: weekly }
+    groups:
+      gradle-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /website
+    schedule: { interval: weekly }
+    groups:
+      pip-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions:
+        patterns: ['*']
