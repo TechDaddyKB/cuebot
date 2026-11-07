@@ -1,6 +1,6 @@
 import streamDeck, {
+	type Action,
 	action,
-	type DialAction,
 	type DialDownEvent,
 	type DialRotateEvent,
 	type DialUpEvent,
@@ -28,7 +28,8 @@ import {
 	parseArgs,
 } from "./protocol.js";
 
-type AnyAction = KeyAction<KeySettings> | DialAction<KeySettings>;
+// Includes the Neo info bar, which these actions never run on (their manifest controllers are Keypad and Encoder).
+type AnyAction = Action<KeySettings>;
 
 /**
  * Shared behaviour of every Cuebot key and dial: a button id (assigned on first use) so Cuebot's sub-actions can reach
@@ -104,7 +105,7 @@ abstract class CuebotAction extends SingletonAction<KeySettings> {
 			if (!target.isDial()) await (target as KeyAction<KeySettings>).showOk();
 		} catch (error) {
 			streamDeck.logger.warn(`Cuebot request failed: ${error instanceof Error ? error.message : String(error)}`);
-			await target.showAlert();
+			if (!target.isNeoInfobar()) await target.showAlert();
 		}
 	}
 }
@@ -288,7 +289,7 @@ export class TriggerKey extends CuebotAction {
 			args: parseArgs(settings.args),
 			...extra,
 		});
-		if (!sent && (event === "keyDown" || event === "dialDown" || event === "touchTap")) void target.showAlert();
+		if (!sent && !target.isNeoInfobar() && (event === "keyDown" || event === "dialDown" || event === "touchTap")) void target.showAlert();
 	}
 }
 
