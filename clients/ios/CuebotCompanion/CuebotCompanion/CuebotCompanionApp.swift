@@ -7,6 +7,7 @@ struct CuebotCompanionApp: App {
     @State private var connection: ConnectionStore
     @State private var deck = DeckStore()
     @State private var dashboard = DashboardStore()
+    @State private var profiles = ProfileStore()
     @State private var quickActions = QuickActionsStore()
     @State private var mods = ModStore(memberships: ModMemberships())
     @State private var approvals = ApprovalsStore()
@@ -29,6 +30,7 @@ struct CuebotCompanionApp: App {
                 .environment(connection)
                 .environment(deck)
                 .environment(dashboard)
+                .environment(profiles)
                 .environment(quickActions)
                 .environment(mods)
                 .environment(approvals)
