@@ -1,0 +1,92 @@
+{
+  "format": "cuebot.bundle",
+  "version": 1,
+  "header": {
+    "name": "RahiTuber examples",
+    "author": "Cuebot",
+    "description": "Three RahiTuber actions: the Twitch reward \"Surprise\" presses the state Surprised; a new sub holds the \"while held\" state Hat for 30 seconds; the chat command !outfit (30 s cooldown) presses the states Jacket and Scarf one after the other. Change the reward, command and state names to your own.",
+    "bundleVersion": "1",
+    "createdAt": "2026-11-11T00:00:00+00:00",
+    "generator": "Cuebot"
+  },
+  "actions": [
+    {
+      "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a01",
+      "name": "RahiTuber: surprised face on redeem",
+      "group": "RahiTuber",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a02",
+          "type": "twitch.rewardRedemption",
+          "enabled": true,
+          "settings": { "rewardTitle": "Surprise" }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a03",
+          "type": "rahituber.state",
+          "enabled": true,
+          "parameters": { "state": "Surprised", "how": "Press" }
+        }
+      ]
+    },
+    {
+      "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a04",
+      "name": "RahiTuber: hat for 30 seconds on a sub",
+      "group": "RahiTuber",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a05",
+          "type": "twitch.sub",
+          "enabled": true,
+          "settings": {}
+        }
+      ],
+      "subActions": [
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a06",
+          "type": "rahituber.state",
+          "enabled": true,
+          "parameters": { "state": "Hat", "how": "Hold", "seconds": "30" }
+        }
+      ]
+    },
+    {
+      "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a07",
+      "name": "RahiTuber: outfit change on !outfit",
+      "group": "RahiTuber",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a08",
+          "type": "twitch.command",
+          "enabled": true,
+          "settings": { "command": "!outfit", "globalCooldown": "30" }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a09",
+          "type": "rahituber.state",
+          "enabled": true,
+          "parameters": { "state": "Jacket", "how": "Press" }
+        },
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a0a",
+          "type": "core.delay",
+          "enabled": true,
+          "parameters": { "milliseconds": "300" }
+        },
+        {
+          "id": "7c3e2a41-9b0d-4c6e-8f1a-2d5b6e7f8a0b",
+          "type": "rahituber.state",
+          "enabled": true,
+          "parameters": { "state": "Scarf", "how": "Press" }
+        }
+      ]
+    }
+  ]
+}

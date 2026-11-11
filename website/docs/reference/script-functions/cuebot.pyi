@@ -1495,6 +1495,40 @@ class Cuebot:
         Gives back: The quote with id, text, user, userId, platform, game and createdAt, or null when there is no such quote.
         Same as cb.call(\"quotes.show\", ...).
         """
+    def rahituber_check(self) -> Any:
+        """Checks that RahiTuber, and not another program, answers on its port, without changing your avatar.
+
+        Gives back: What was found, such as \"RahiTuber 14.51 answers at 127.0.0.1:8000; avatar Demo: 3 states\".
+        Same as cb.call(\"rahituber.check\", ...).
+        """
+    def rahituber_get_states(self) -> Any:
+        """Lists the states of the avatar RahiTuber has loaded, read from RahiTuber's files. Needs RahiTuber's folder set on the RahiTuber card.
+
+        Gives back: A list of objects with index, name, type (Toggle, Held or Permanent), enabled, condition (Always, WhileTalking or WhileIdle) and timeout (seconds, or null). Empty when the folder is not set.
+        Same as cb.call(\"rahituber.getStates\", ...).
+        """
+    def rahituber_hold(self, state: Any, *, seconds: Any = None) -> Any:
+        """Holds a \"while held\" RahiTuber state for some seconds, then lets go (also when the action is stopped).
+
+        state: The state's exact name, or its place counted from 0.
+        seconds: Optional. How long to hold it. The default is 3.
+        Gives back: Nothing.
+        Same as cb.call(\"rahituber.hold\", ...).
+        """
+    def rahituber_press(self, state: Any) -> Any:
+        """Presses a RahiTuber state like its hotkey: a Toggle state switches, a \"while held\" state turns on until it is let go.
+
+        state: The state's exact name, or its place in RahiTuber's list counted from 0.
+        Gives back: Nothing.
+        Same as cb.call(\"rahituber.press\", ...).
+        """
+    def rahituber_release(self, state: Any) -> Any:
+        """Lets go of a \"while held\" RahiTuber state. Other states ignore it.
+
+        state: The state's exact name, or its place counted from 0.
+        Gives back: Nothing.
+        Same as cb.call(\"rahituber.release\", ...).
+        """
     def remote_get_instances(self) -> Any:
         """Lists the other Cuebot computers set up on the Remote page, and the ones connected to you, with their status.
 

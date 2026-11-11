@@ -59,6 +59,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [Pronouns](pronouns.md) | 1 |
 | [Pulsoid](pulsoid.md) | 1 |
 | [Quotes](quotes.md) | 8 |
+| [Rahituber](rahituber.md) | 5 |
 | [Remote instances](remote.md) | 3 |
 | [Rumble](rumble.md) | 1 |
 | [Streamlabs Desktop](slobs.md) | 2 |

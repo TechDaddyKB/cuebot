@@ -5,12 +5,12 @@
 
 ## RahiTuber state
 
-Presses one of your RahiTuber states, just like its hotkey, for example to show a surprised face or put on a hat.
+Presses one of your RahiTuber states, just like its hotkey, for example to show a surprised face or put on a hat. A Toggle state switches on or off with each press (and turns itself off after its timeout, if it has one); a "while held" state stays on until it is let go; a Permanent state changes the avatar's defaults for good. RahiTuber ignores a second press of the same Toggle state within 0.2 seconds, so Cuebot spaces them out.
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | The state's name, or its place in RahiTuber's list counted from 0 (0 is the top state, 1 the next one and so on). |
-| **How** | Press it (like tapping its hotkey), let go (only matters for states set to "while held"), or hold it for some seconds and then let go. Options: Press it (like its hotkey), Let go (for "while held" states), Hold it for some seconds, then let go. Starts as: `Press it (like its hotkey)`. |
+| **State** | The state's name, exactly as in RahiTuber (capitals too), or its place in RahiTuber's list counted from 0 (0 is the top state, 1 the next one and so on). Names must be unique; avoid names that are plain numbers, because RahiTuber also reads them as places. With RahiTuber's folder set on the RahiTuber card, the names are suggested. |
+| **How** | Press it (like tapping its hotkey), let go (only matters for "while held" states), or hold it for some seconds and then let go. Hold only works for "while held" states: on a Toggle state it is just a press, and the state stays on until its own timeout or the next press. The let go is sent even when the action is stopped during the hold. Options: Press it (like its hotkey; a Toggle state switches), Let go (only for "while held" states), Hold it for some seconds, then let go ("while held" states). Starts as: `Press it (like its hotkey; a Toggle state switches)`. |
 | **Seconds** | For Hold: how many seconds to hold the state. Empty means 3. |
 
 <small>Type id: `rahituber.state`</small>

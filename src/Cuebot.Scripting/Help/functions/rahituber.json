@@ -1,0 +1,48 @@
+{
+  "functions": {
+    "rahituber.press": {
+      "description": "Presses a RahiTuber state like its hotkey: a Toggle state switches, a \"while held\" state turns on until it is let go.",
+      "parameters": {
+        "state": "The state's exact name, or its place in RahiTuber's list counted from 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "state": "Hat"
+      }
+    },
+    "rahituber.release": {
+      "description": "Lets go of a \"while held\" RahiTuber state. Other states ignore it.",
+      "parameters": {
+        "state": "The state's exact name, or its place counted from 0."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "state": "Hat"
+      }
+    },
+    "rahituber.hold": {
+      "description": "Holds a \"while held\" RahiTuber state for some seconds, then lets go (also when the action is stopped).",
+      "parameters": {
+        "state": "The state's exact name, or its place counted from 0.",
+        "seconds": "Optional. How long to hold it. The default is 3."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "state": "Hat",
+        "seconds": 30
+      }
+    },
+    "rahituber.getStates": {
+      "description": "Lists the states of the avatar RahiTuber has loaded, read from RahiTuber's files. Needs RahiTuber's folder set on the RahiTuber card.",
+      "parameters": {},
+      "returns": "A list of objects with index, name, type (Toggle, Held or Permanent), enabled, condition (Always, WhileTalking or WhileIdle) and timeout (seconds, or null). Empty when the folder is not set.",
+      "example": {}
+    },
+    "rahituber.check": {
+      "description": "Checks that RahiTuber, and not another program, answers on its port, without changing your avatar.",
+      "parameters": {},
+      "returns": "What was found, such as \"RahiTuber 14.51 answers at 127.0.0.1:8000; avatar Demo: 3 states\".",
+      "example": {}
+    }
+  }
+}

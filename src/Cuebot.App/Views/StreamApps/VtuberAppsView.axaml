@@ -101,7 +101,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="RahiTuber" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="In RahiTuber open the menu (Esc), then Preferences, then Integration, and tick &quot;Control States via HTTP&quot;. Then actions can press your states like their hotkeys. Use a state's name, or its place in the list counted from 0 (0 is the top one)." />
+                     Text="In RahiTuber open the menu (Esc), then Preferences, then Integration, and tick &quot;Control States via HTTP&quot;. Then actions can press your states like their hotkeys. Use a state's exact name, or its place in the list counted from 0 (0 is the top one). Set RahiTuber's folder to see your states and their types." />
           <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Column="1" Name="RahituberHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
@@ -110,10 +110,17 @@
             <NumericUpDown Grid.Column="3" Name="RahituberPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
                            ToolTip.Tip="The HTTP Port next to &quot;Control States via HTTP&quot; in RahiTuber (8000). Only change it if you changed it there too." />
           </Grid>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
+            <TextBlock Text="Folder" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="RahituberFolder" Text="{Binding Folder}" PlaceholderText="Optional: the folder with RahiTuber and its config.xml"
+                     ToolTip.Tip="Optional. The folder where RahiTuber's program, config.xml and RahiTuber_Log.txt are. Cuebot only reads them: it lists your avatar's states and confirms each request from the log." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Reload states" Command="{Binding ReloadStatesCommand}"
+                    ToolTip.Tip="Reads the states again (after you saved your avatar in RahiTuber)." />
+          </Grid>
           <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto">
             <TextBlock Text="Test state" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBox Grid.Column="1" Name="RahituberTestState" Text="{Binding TestState}"
-                     ToolTip.Tip="A state's name, or its number counted from 0." />
+            <TextBox Grid.Column="1" Name="RahituberTestState" Text="{Binding TestState}" PlaceholderText="A Toggle or Held state"
+                     ToolTip.Tip="A state's exact name, or its number counted from 0. Pick a Toggle or &quot;while held&quot; state, not a Permanent one: pressing a Permanent state changes your avatar for good." />
             <Button Grid.Column="2" Margin="8,0,0,0" Content="Press it" Classes="accent" Command="{Binding SendTestCommand}"
                     ToolTip.Tip="Presses this state in RahiTuber now, as a test. Watch your avatar." />
             <Button Grid.Column="3" Margin="8,0,0,0" Content="Check connection" Command="{Binding ConnectCommand}"
@@ -122,6 +129,17 @@
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding StatesInfo}" />
+          <ItemsControl Name="RahituberStates" ItemsSource="{Binding States}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VtuberRowViewModel">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />
         </StackPanel>

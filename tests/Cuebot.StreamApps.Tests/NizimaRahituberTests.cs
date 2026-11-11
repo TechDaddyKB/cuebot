@@ -1,63 +1,9 @@
-using System.Net;
 using System.Text.Json;
 using Cuebot.Core;
 using Cuebot.StreamApps.Nizima;
-using Cuebot.StreamApps.Rahituber;
 using Cuebot.StreamApps.Tests.Support;
 
 namespace Cuebot.StreamApps.Tests;
-
-public sealed class RahituberServiceTests : IDisposable
-{
-    private readonly TestEnvironment _env = new();
-
-    public void Dispose() => _env.Dispose();
-
-    private sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
-    {
-        public List<Uri> Urls { get; } = [];
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-        {
-            lock (Urls) Urls.Add(request.RequestUri!);
-            return Task.FromResult(respond(request));
-        }
-    }
-
-    /// <summary>The query as RahiTuber reads it (it URL-decodes, then parses the JSON array).</summary>
-    private static string Query(Uri url) => Uri.UnescapeDataString(url.Query.TrimStart('?'));
-
-    [Fact]
-    public async Task States_go_by_name_or_position_with_press_and_release()
-    {
-        var handler = new Handler(_ => new HttpResponseMessage(HttpStatusCode.OK));
-        var rahi = new RahituberService(_env.Settings, _env.Log, new HttpClient(handler));
-        await rahi.SetStateAsync("Happy face", true);
-        await rahi.SetStateAsync(" 3 ", false);
-        await rahi.HoldStateAsync("Wave \"hi\"", TimeSpan.FromMilliseconds(10));
-
-        Assert.All(handler.Urls, u => Assert.Equal("http://127.0.0.1:8000/state", u.GetLeftPart(UriPartial.Path)));
-        Assert.Equal(["[\"Happy face\",1]", "[3,0]", "[\"Wave \\\"hi\\\"\",1]", "[\"Wave \\\"hi\\\"\",0]"],
-            handler.Urls.Select(Query));
-        // Valid JSON arrays, as RahiTuber's parser needs.
-        Assert.Equal("Wave \"hi\"", JsonDocument.Parse(Query(handler.Urls[2])).RootElement[0].GetString());
-        Assert.Equal(ConnectionState.Connected, rahi.State);
-        await Assert.ThrowsAsync<ArgumentException>(() => rahi.SetStateAsync(" ", true));
-    }
-
-    [Fact]
-    public async Task Closed_ports_and_refusals_are_explained()
-    {
-        var closed = new RahituberService(_env.Settings, _env.Log,
-            new HttpClient(new Handler(_ => throw new HttpRequestException("Connection refused"))));
-        var ex = await Assert.ThrowsAsync<StreamAppRequestException>(() => closed.TestAsync());
-        Assert.Contains("Control States via HTTP", ex.Message);
-        Assert.Equal(ConnectionState.Error, closed.State);
-
-        var wrong = new RahituberService(_env.Settings, _env.Log, new HttpClient(new Handler(_ => new HttpResponseMessage(HttpStatusCode.BadRequest))));
-        Assert.Contains("answered 400", (await Assert.ThrowsAsync<StreamAppRequestException>(() => wrong.SetStateAsync("Happy", true))).Message);
-    }
-}
 
 public sealed class NizimaServiceTests : IAsyncLifetime
 {

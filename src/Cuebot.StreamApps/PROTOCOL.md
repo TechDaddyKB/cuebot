@@ -802,11 +802,36 @@ under Wine it aborts at start (unimplemented `GDI32.D3DKMTSetProcessSchedulingPr
 
 ### RahiTuber (`Rahituber/`)
 
-- Source: RahiTuber's v12.0 devlog ("HTTP state triggers") and its BSD-licensed source (websocket.h, LayerManager.cpp),
-  read for the wire format only.
-- Preferences > Integration > "Control States via HTTP" (off by default; port 8000, listens on 0.0.0.0).
-  `GET /state?[<state>,<active>]` (URL-encoded JSON array): state is a JSON string (matched against state names) or a
-  number (position from 0); active 1 = like pressing the hotkey, 0 = letting go (matters for "while held" states).
-- RahiTuber replies 200 to every /state request before matching it (its JSON reply even prints the state id with %d),
-  so Cuebot only reports that the request arrived. Names are sent with only quotes and backslashes escaped, because its
-  JSON reader may not decode \u escapes.
+- Source: RahiTuber's BSD-licensed source at commit `ad8fe33` (2026-10-21, v14.51: `websocket.h`, `LayerManager.cpp/.h`,
+  `MainEngine.h`), read for the wire format only; first written from the v12.0 devlog ("HTTP state triggers"). There is
+  no websocket despite the class name: no events, no state readback, no auth.
+- Preferences > Integration > "Control States via HTTP" (`listenHTTP`, off by default; `httpPort` 8000, listens on
+  0.0.0.0 with mongoose). `mg_http_listen`'s result is ignored, so a taken port fails silently.
+  `GET /state?[<state>,<active>]` (URL-encoded JSON array): `$[0]` is read as a JSON string, else as an integer turned
+  into text; `$[1]` as an integer (-1 if missing). active 1 = like pressing the hotkey (for a Held state it stays down
+  until a non-1 arrives), anything else = letting go. Any other path gets 400 with an empty body.
+- The query is URL-decoded into a buffer exactly as long as the escaped query; Cuebot escapes the brackets, commas and
+  quotes (`%5B..%5D`), so the decoded text is always shorter. An unescaped query may lose its final `]` (inferred from
+  mongoose's decode bound, not seen live).
+- RahiTuber replies 200, `Content-Type: application/json`, `{"state":<id printed with %d>, "active":<n>}` to every
+  /state request before matching it; the state value is garbage. Cuebot takes the content type plus an `"active":<n>`
+  field as RahiTuber's fingerprint, so another program on the port is reported. The connection check sends
+  `["Cuebot connection check",-1]`, which matches no state and is dropped. (`""` would match the first unnamed state.)
+- The request is logged to `RahiTuber_Log.txt` beside the program ("State change added to queue: <id> = <n>") and pushed
+  onto an unlocked `std::deque` from the HTTP thread, while the render thread pops it once per frame
+  (`LayerManager::CheckHotkeys`): requests are sent one at a time, with a 20 ms gap.
+- Matching: the id is compared with both `to_string(index)` and the state's name, in list order; the first match wins.
+  Unmatched ids are dropped. The queue is not drained while an avatar loads, a layer rename box is open, or the avatar
+  has no states (requests then run in a burst later).
+- State types (`activeType`): 0 Toggle (each press flips; optional timeout, 5 s by default; let go ignored), 1 Held,
+  2 Permanent (overwrites the layer and tag defaults). Non-Held states ignore a change within 0.2 s of their last one
+  (Cuebot spaces presses of one state 250 ms apart, `SameStateGapMs`). `canTrigger` 1/2 = only while talking/quiet; a
+  press at another time is lost. Disabled states still consume their requests.
+- States are saved in the avatar XML as `<hotkeys><hotkey enabled name activeType canTrigger timeout useTimeout ...>` in
+  list order; older files have `toggle="true|false"` (false = Held) and no name. `config.xml` beside the program has
+  `<Common lastLayerSet="<path without .xml>">` (fallback `lastLayers.xml`). With the optional folder set, Cuebot reads
+  these (read-only, re-read when they change), suggests names, resolves names with spaces at the ends, and tails the
+  log after each request to confirm it.
+- Names are sent with only quotes and backslashes escaped, because its JSON reader may not decode \u escapes.
+- Upstream wishes, not filed (the owner decides): a mutex on the queue, `GET /states`, state readback, a reply that says
+  whether a state matched, and a log line when the HTTP port cannot be bound.

@@ -597,32 +597,82 @@ public sealed partial class NizimaCardViewModel : StreamAppCardViewModel
     }
 }
 
-public sealed partial class RahituberCardViewModel(RahituberService rahi) : StreamAppCardViewModel(rahi)
+public sealed partial class RahituberCardViewModel : StreamAppCardViewModel
 {
-    private RahituberSettings S => rahi.Settings;
+    private readonly RahituberService _rahi;
+
+    public RahituberCardViewModel(RahituberService rahi) : base(rahi)
+    {
+        _rahi = rahi;
+        LoadStates();
+    }
+
+    private RahituberSettings S => _rahi.Settings;
 
     public string Host
     {
         get => S.Host;
-        set { S.Host = value.Trim(); rahi.SaveSettings(); OnPropertyChanged(); }
+        set { S.Host = value.Trim(); _rahi.SaveSettings(); OnPropertyChanged(); }
     }
 
     public decimal? Port
     {
         get => S.Port;
-        set { S.Port = (int)(value ?? 8000); rahi.SaveSettings(); OnPropertyChanged(); }
+        set { S.Port = (int)(value ?? 8000); _rahi.SaveSettings(); OnPropertyChanged(); }
     }
 
-    [ObservableProperty] private string _testState = "0";
+    /// <summary>RahiTuber's folder (optional): lists the avatar's states and confirms requests from its log.</summary>
+    public string Folder
+    {
+        get => S.Folder;
+        set { S.Folder = value.Trim(); _rahi.SaveSettings(); OnPropertyChanged(); LoadStates(); }
+    }
 
-    protected override Task StartAsync() => rahi.TestAsync();
+    // Empty at first: a test press of state 0 could switch it off, or rewrite the avatar if it is a Permanent state.
+    [ObservableProperty] private string _testState = "";
+
+    /// <summary>The loaded avatar's states with their type, when the folder is set.</summary>
+    public ObservableCollection<VtuberRowViewModel> States { get; } = [];
+
+    public string StatesInfo => _rahi.Folder is null
+        ? "Set RahiTuber's folder (where its program and config.xml are) to list your states here."
+        : _rahi.Avatar is { } avatar
+            ? avatar.States.Count == 0 ? $"{avatar.Name} has no states yet." : $"States of {avatar.Name}:"
+            : _rahi.AvatarProblem ?? "";
+
+    protected override async Task StartAsync()
+    {
+        Info = await _rahi.TestAsync();
+        LoadStates();
+    }
 
     protected override Task StopAsync() => Task.CompletedTask;
 
     [RelayCommand]
-    private Task SendTest() => RunAsync(async () =>
+    private void ReloadStates() => LoadStates();
+
+    private void LoadStates()
     {
-        await rahi.SetStateAsync(TestState, true);
-        return $"RahiTuber got '{TestState.Trim()}'. Watch your avatar: RahiTuber does not say whether that state exists.";
-    });
+        States.Clear();
+        foreach (var state in _rahi.Avatar?.States ?? [])
+            States.Add(new VtuberRowViewModel($"{state.Index}: {(state.Name.Length > 0 ? state.Name : "(no name)")} - {state.Describe()}", "Press",
+                state.Type == RahituberStateType.Permanent
+                    ? "Permanent states rewrite your avatar's defaults, so this button does not press them."
+                    : "Presses this state in RahiTuber now, as a test. A Toggle state switches; press again to switch it back.",
+                () => RunAsync(() => PressAsync(state.Target))));
+        OnPropertyChanged(nameof(StatesInfo));
+    }
+
+    private async Task<string> PressAsync(string state)
+    {
+        if (_rahi.Avatar?.Find(state) is { Type: RahituberStateType.Permanent })
+            return $"'{state}' is a Permanent state: pressing it changes your avatar's defaults for good, so the test does not. Use a step if you mean it.";
+        await _rahi.SetStateAsync(state, true);
+        return _rahi.Avatar?.Find(state) is { } info
+            ? $"RahiTuber got '{state}' ({info.Describe()}). Watch your avatar."
+            : $"RahiTuber got '{state}'. Watch your avatar: RahiTuber does not say whether that state exists.";
+    }
+
+    [RelayCommand]
+    private Task SendTest() => RunAsync(() => PressAsync(TestState.Trim()));
 }
