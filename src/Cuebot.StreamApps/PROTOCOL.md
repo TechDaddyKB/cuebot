@@ -628,6 +628,24 @@ VRChat only through unit tests (it stopped at its terms page before OSC came up)
 - Commands: stateEvents payload `set|push|pop|toggle` with `state`, or `clear`; boolean `set` with `value` or `toggle`;
   number `set|add` with `value`. veadotube does not acknowledge them; the listen updates confirm.
 - A boolean answering `{}` has no value yet and is treated as off, so the first push-to-talk press is a change.
+- Checked live on veadotube mini 2.2 (2026-11-11): right after the upgrade veadotube sends
+  `instance:{"event":"info",name,id,version,language,server}` (used for the status when connected by address); a
+  stateEvents `listen` answers at once with `list` and `peek`; a boolean `get` gets no answer while it has no value, and
+  `clear` is not announced; `thumb {state}` answers `{state,hash,width,height,png}` (128x129 PNG); an unknown state id in
+  `thumb` answers with empty fields. Node's built-in WebSocket client (undici) cannot connect to veadotube's server
+  (Python websockets and .NET can).
+- Numbers: nodes of type `number` are listened to and read (`get` answers `{value}` or `{value,min,max}`). A `set`
+  without a range drops the node's range (documented), so Cuebot sends the known range back with the value unless new
+  `min`/`max` are given (`value:{value,min,max}`); `add` keeps it. Changes become `veadotube.numberChanged`.
+- State lists are read again whenever the node list arrives and when `peek` reports a state id that is not in the list
+  (another avatar loaded). Thumbnails are asked for when a state's `thumbHash` changes (64 per node at most).
+- Timed changes ("For seconds"): push is undone by pop, pop by push, toggle by toggle, set/random by set to the state
+  before (or clear); a boolean by setting it back. One pending undo per node (and state, for push/pop/toggle); a
+  second timed change restarts the timer and keeps the first undo; dropped when the session ends.
+- Other instances: a step naming another open veadotube (name, id, type or address) uses one-off GET commands
+  (`http://<server>/?cmd0=nodes&cmd1=<type>&cmd2=<id>&cmd3=<event>&cmd4..`; `nodes` lists `type id` lines,
+  `nodes <type> <id>` its name, `list`/`peek`/`get` answer as text). veadotube 2.2 answers every GET with the header
+  `Veadotube-Command: Error`, also when the command worked, so the header is ignored.
 
 ### VNyan (`Vnyan/`)
 

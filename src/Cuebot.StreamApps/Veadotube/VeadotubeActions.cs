@@ -19,6 +19,7 @@ internal static class VeadotubeRegistration
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<Cuebot.Core.IConnectionStatus>(sp => sp.GetRequiredService<VeadotubeService>());
         services.AddSingleton<ITriggerProvider>(sp => new VeadotubeTriggers(sp.GetRequiredService<VeadotubeService>()));
+        services.AddSingleton<Cuebot.Core.Scripting.IScriptFunctionProvider>(sp => new VeadotubeScriptFunctions(sp.GetRequiredService<VeadotubeService>()));
     }
 }
 
@@ -47,17 +48,38 @@ internal sealed class VeadotubeTriggers(VeadotubeService veadotube) : ITriggerPr
             ],
             (e, s) => MatchesList(s["node"], e.Text("nodeName"), e.Text("nodeId"))
                       && (s["state"] is "" or "Any" || string.Equals(s["state"], e.Text("state"), StringComparison.OrdinalIgnoreCase))),
+        Trigger(Category, E.NumberChanged, "Number node changed",
+            [
+                new("node", "Nodes")
+                {
+                    Help = "Comma-separated Number node names (full veadotube); leave empty for any",
+                    Suggestions = () => veadotube.NodeNames(VeadotubeProtocol.NumberType),
+                },
+            ],
+            (e, s) => MatchesList(s["node"], e.Text("nodeName"), e.Text("nodeId"))),
     ];
 }
 
 /// <summary>veadotube sub-actions. Type ids are stored in actions.json and must never change.</summary>
 internal static class VeadotubeSubActions
 {
-    public static readonly string[] TypeIds = ["veadotube.changeState", "veadotube.setSwitch", "veadotube.setNumber", "veadotube.getState"];
+    public static readonly string[] TypeIds =
+    [
+        "veadotube.changeState", "veadotube.setSwitch", "veadotube.setNumber", "veadotube.getState", "veadotube.getNumber", "veadotube.resetNode",
+    ];
 
     public static IReadOnlyList<ISubActionHandler> Create(VeadotubeService veadotube)
     {
-        ParameterDescriptor Node(string help) => new("node", "Node") { Help = help };
+        ParameterDescriptor Node(string help, Func<IEnumerable<string>>? suggestions = null) => new("node", "Node") { Help = help, Suggestions = suggestions };
+        ParameterDescriptor Instance() => new("instance", "Which veadotube")
+        {
+            Help = "Leave empty for the connected one. To control another open veadotube too, type its name (e.g. veadotube mini) or address",
+            Suggestions = veadotube.InstanceNames,
+        };
+        ParameterDescriptor For(string what) => new("seconds", "For (seconds)", ParameterKind.Number)
+        {
+            Help = $"Puts {what} back after this many seconds; leave empty to keep it",
+        };
         return
         [
             new StreamAppSubAction("veadotube.changeState", VeadotubeTriggers.Category, "Change avatar state",
@@ -65,50 +87,103 @@ internal static class VeadotubeSubActions
                     new("mode", "How", ParameterKind.Choice)
                     {
                         DefaultValue = "Set",
-                        Choices = ["Set", "Push", "Pop", "Toggle", "Clear"],
+                        Choices = ["Set", "Push", "Pop", "Toggle", "Random", "Clear"],
                         ChoiceLabels = new Dictionary<string, string>
                         {
                             ["Set"] = "Switch to this state",
                             ["Push"] = "Show on top (remember the one before)",
                             ["Pop"] = "Take this state off (go back)",
                             ["Toggle"] = "Show on top, or take off if showing",
+                            ["Random"] = "Switch to a random state (from the list, or any)",
                             ["Clear"] = "Back to the first state",
                         },
                     },
-                    new("state", "State") { Help = "The avatar state's name, as in veadotube; may use %arguments%", Suggestions = veadotube.AllStateNames },
-                    Node("Leave empty: veadotube mini has one (avatar state). In full veadotube, the name of a State Events node."),
+                    new("state", "State")
+                    {
+                        Help = "The avatar state's name, as in veadotube; for Random, a comma-separated list or empty for any; may use %arguments%",
+                        Suggestions = veadotube.AllStateNames,
+                    },
+                    For("the state before"),
+                    Node("Leave empty: veadotube mini has one (avatar state). In full veadotube, the name of a State Events node.",
+                        () => veadotube.NodeNames(VeadotubeProtocol.StateEventsType)),
+                    Instance(),
                 ],
                 async (ctx, v, ct) => Store(ctx, "veadotube.state",
-                    await veadotube.ChangeStateAsync(v["mode"], v["state"], v["node"], ct).ConfigureAwait(false))),
+                    await veadotube.ChangeStateAsync(v["mode"], v["state"], v["node"], v["instance"], Seconds(v["seconds"]), ct).ConfigureAwait(false))),
             new StreamAppSubAction("veadotube.setSwitch", VeadotubeTriggers.Category, "Push-to-talk on/off",
                 [
                     Switch("On", "Off"),
-                    Node("Leave empty for push-to-talk (veadotube mini). In full veadotube, the name of a Boolean node."),
+                    For("it"),
+                    Node("Leave empty for push-to-talk (veadotube mini). In full veadotube, the name of a Boolean node.",
+                        () => veadotube.NodeNames(VeadotubeProtocol.BooleanType)),
+                    Instance(),
                 ],
                 async (ctx, v, ct) => Store(ctx, "veadotube.value",
-                    await veadotube.SetSwitchAsync(ParseSwitch(v["state"]), v["node"], ct).ConfigureAwait(false))),
+                    await veadotube.SetSwitchAsync(ParseSwitch(v["state"]), v["node"], v["instance"], Seconds(v["seconds"]), ct).ConfigureAwait(false))),
             new StreamAppSubAction("veadotube.setNumber", VeadotubeTriggers.Category, "Set number node",
                 [
-                    Node("The name of a Number node you exposed in full veadotube (veadotube mini has none)"),
+                    Node("The name of a Number node you exposed in full veadotube (veadotube mini has none)",
+                        () => veadotube.NodeNames(VeadotubeProtocol.NumberType)),
                     new("value", "Value") { Help = "A number; may use %arguments%" },
                     new("add", "Add to the current number instead", ParameterKind.Boolean) { DefaultValue = "false" },
+                    new("min", "Lowest value", ParameterKind.Number) { Help = "With Highest: the node's range (shown as a graph in veadotube). Empty keeps the range it has" },
+                    new("max", "Highest value", ParameterKind.Number) { Help = "With Lowest: the node's range" },
+                    Instance(),
                 ],
-                (_, v, ct) => veadotube.SetNumberAsync(v["node"],
-                    OptionalNumber(v["value"], "Value") ?? throw new ArgumentException("Value is required."),
-                    bool.TryParse(v["add"], out var add) && add, ct)),
+                async (ctx, v, ct) =>
+                {
+                    var number = await veadotube.SetNumberAsync(v["node"],
+                        OptionalNumber(v["value"], "Value") ?? throw new ArgumentException("Value is required."),
+                        bool.TryParse(v["add"], out var add) && add, OptionalNumber(v["min"], "Lowest value"), OptionalNumber(v["max"], "Highest value"),
+                        v["instance"], ct).ConfigureAwait(false);
+                    if (number is not null) ctx.Args["veadotube.number"] = number.Value;
+                }),
             new StreamAppSubAction("veadotube.getState", VeadotubeTriggers.Category, "Get avatar state",
                 [
-                    Node("Leave empty for veadotube mini's avatar state"),
+                    Node("Leave empty for veadotube mini's avatar state", () => veadotube.NodeNames(VeadotubeProtocol.StateEventsType)),
+                    Instance(),
                 ],
-                (ctx, v, _) =>
+                async (ctx, v, ct) =>
                 {
-                    var node = veadotube.StateNode(v["node"]) ?? throw new StreamAppRequestException("veadotube is not connected, or has no avatar state node.");
-                    ctx.Args["veadotube.state"] = veadotube.CurrentState(node) ?? "";
-                    ctx.Args["veadotube.states"] = string.Join(", ", veadotube.States(node).Select(s => s.Name));
-                    ctx.Args["veadotube.stateCount"] = veadotube.States(node).Count.ToString(CultureInfo.InvariantCulture);
-                    if (veadotube.SwitchNode() is { } ptt && veadotube.SwitchValue(ptt) is { } on) ctx.Args["veadotube.pushToTalk"] = on;
-                    return Task.CompletedTask;
+                    var (state, stateId, states, image) = await veadotube.GetStateAsync(v["node"], v["instance"], ct).ConfigureAwait(false);
+                    ctx.Args["veadotube.state"] = state;
+                    ctx.Args["veadotube.stateId"] = stateId;
+                    ctx.Args["veadotube.states"] = string.Join(", ", states.Select(s => s.Name));
+                    ctx.Args["veadotube.stateCount"] = states.Count.ToString(CultureInfo.InvariantCulture);
+                    ctx.Args["veadotube.stateImage"] = image;
+                    if (v["instance"].Trim().Length == 0)
+                    {
+                        if (veadotube.SwitchNode() is { } ptt && veadotube.SwitchValue(ptt) is { } on) ctx.Args["veadotube.pushToTalk"] = on;
+                        foreach (var number in veadotube.NumberNodes())
+                            if (veadotube.NumberValue(number) is { } n) ctx.Args[$"veadotube.number.{number.Label}"] = n.Value;
+                    }
                 }),
+            new StreamAppSubAction("veadotube.getNumber", VeadotubeTriggers.Category, "Get number node",
+                [
+                    Node("The name of a Number node you exposed in full veadotube", () => veadotube.NodeNames(VeadotubeProtocol.NumberType)),
+                    Instance(),
+                ],
+                async (ctx, v, ct) =>
+                {
+                    var number = await veadotube.GetNumberAsync(v["node"], v["instance"], ct).ConfigureAwait(false);
+                    ctx.Args["veadotube.number"] = number?.Value;
+                    ctx.Args["veadotube.numberMin"] = number?.Min;
+                    ctx.Args["veadotube.numberMax"] = number?.Max;
+                }),
+            new StreamAppSubAction("veadotube.resetNode", VeadotubeTriggers.Category, "Reset node",
+                [
+                    new("type", "Node type", ParameterKind.Choice)
+                    {
+                        DefaultValue = "OnOff", Choices = ["OnOff", "Number"],
+                        ChoiceLabels = new Dictionary<string, string> { ["OnOff"] = "On/off (push-to-talk, Boolean)", ["Number"] = "Number" },
+                    },
+                    Node("Leave empty for push-to-talk; otherwise the node's name"),
+                    Instance(),
+                ],
+                (_, v, ct) => veadotube.ResetNodeAsync(v["type"], v["node"], v["instance"], ct)),
         ];
     }
+
+    private static TimeSpan? Seconds(string value) =>
+        OptionalNumber(value, "Seconds") is { } s && s > 0 ? TimeSpan.FromSeconds(Math.Min(s, 86_400)) : null;
 }

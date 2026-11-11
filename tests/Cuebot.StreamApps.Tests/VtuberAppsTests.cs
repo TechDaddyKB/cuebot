@@ -108,7 +108,7 @@ public sealed class VeadotubeServiceTests : IAsyncLifetime
     public async Task Connects_to_the_open_instance_and_reports_state_changes()
     {
         var socket = await ConnectAsync();
-        Assert.Equal("Connected to veadotube mini: 3 avatar states, showing idle", _veado.StatusMessage);
+        Assert.Equal("Connected to veadotube mini 2.2: 3 avatar states, showing idle", _veado.StatusMessage);
         Assert.Equal(["idle", "happy", "angry"], _veado.AllStateNames());
         await _env.WaitForEventAsync(VeadotubeEvents.Connected);
         Assert.Empty(_env.Events(VeadotubeEvents.StateChanged));   // the first state is not a change

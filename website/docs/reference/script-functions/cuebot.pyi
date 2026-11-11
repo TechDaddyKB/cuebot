@@ -3163,6 +3163,61 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"userVars.set\", ...).
         """
+    def veadotube_change_state(self, state: Any, *, mode: Any = None, seconds: Any = None, node: Any = None, instance: Any = None) -> Any:
+        """Changes your veadotube avatar state, optionally only for some seconds.
+
+        state: The state's name. For Random, several names separated by commas, or leave it out for any.
+        mode: Optional. Set, Push, Pop, Toggle, Random or Clear. The default is Set.
+        seconds: Optional. Seconds until it goes back.
+        node: Optional. A State Events node's name in full veadotube; leave it out for veadotube mini.
+        instance: Optional. Another open veadotube by name or address; leave it out for the connected one.
+        Gives back: The id of the state that was sent.
+        Same as cb.call(\"veadotube.changeState\", ...).
+        """
+    def veadotube_get_number(self, node: Any, *, instance: Any = None) -> Any:
+        """Reads a Number node's value in full veadotube.
+
+        node: The Number node's name.
+        instance: Optional. Another open veadotube by name or address; leave it out for the connected one.
+        Gives back: An object with value, min and max, or null when it has no value.
+        Same as cb.call(\"veadotube.getNumber\", ...).
+        """
+    def veadotube_get_state(self, *, node: Any = None, instance: Any = None) -> Any:
+        """Reads which avatar state is showing.
+
+        node: Optional. A State Events node's name in full veadotube.
+        instance: Optional. Another open veadotube by name or address; leave it out for the connected one.
+        Gives back: An object with state, stateId, states (all names) and image (the state's picture as a data: address).
+        Same as cb.call(\"veadotube.getState\", ...).
+        """
+    def veadotube_is_connected(self) -> Any:
+        """Checks whether Cuebot is connected to veadotube.
+
+        Gives back: true while connected, otherwise false.
+        Same as cb.call(\"veadotube.isConnected\", ...).
+        """
+    def veadotube_set_number(self, node: Any, value: Any, *, add: Any = None, min: Any = None, max: Any = None, instance: Any = None) -> Any:
+        """Sets or adds to a Number node in full veadotube.
+
+        node: The Number node's name.
+        value: The number.
+        add: Optional. true to add to the current value.
+        min: Optional. The lowest value of the node's range (give max too).
+        max: Optional. The highest value of the node's range.
+        instance: Optional. Another open veadotube by name or address; leave it out for the connected one.
+        Gives back: The node's value afterwards, when known.
+        Same as cb.call(\"veadotube.setNumber\", ...).
+        """
+    def veadotube_set_push_to_talk(self, *, state: Any = None, seconds: Any = None, node: Any = None, instance: Any = None) -> Any:
+        """Turns push-to-talk (or another on/off node) on, off or the other way, optionally only for some seconds.
+
+        state: Optional. On, Off or Toggle. The default is On.
+        seconds: Optional. Seconds until it is set back.
+        node: Optional. A Boolean node's name in full veadotube.
+        instance: Optional. Another open veadotube by name or address; leave it out for the connected one.
+        Gives back: The value asked for (true or false), when known.
+        Same as cb.call(\"veadotube.setPushToTalk\", ...).
+        """
     def voice_control_commands(self) -> Any:
         """Lists all your voice commands from the Voice Control page.
 

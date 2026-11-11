@@ -9,9 +9,11 @@ Changes which avatar state veadotube shows, for example a surprised face when so
 
 | Setting | What to put in |
 | --- | --- |
-| **How** | How to change it. "Switch to this state" just shows it. "Show on top" shows it but remembers the one before, so "Take this state off" can go back. "Back to the first state" clears them all. Options: Switch to this state, Show on top (remember the one before), Take this state off (go back), Show on top, or take off if showing, Back to the first state. Starts as: `Switch to this state`. |
-| **State** | The state's name exactly as in veadotube. Not needed for "Back to the first state". |
+| **How** | Switch to this state, show it on top (and remember the one before), take it off, toggle it, pick a random state, or go back to the first state. Options: Switch to this state, Show on top (remember the one before), Take this state off (go back), Show on top, or take off if showing, Switch to a random state (from the list, or any), Back to the first state. Starts as: `Switch to this state`. |
+| **State** | The state's name exactly as in veadotube. Not needed for "Back to the first state". For Random, type several names separated by commas, or leave it empty to pick from all states. |
+| **For (seconds)** | Seconds until the state goes back: a state shown on top is taken off, a switched or random state goes back to the one before. Leave empty to keep it. |
 | **Node** | Leave empty. Only full veadotube users with several State Events nodes type a node name here. |
+| **Which veadotube** | Leave empty for the connected veadotube. To control another open veadotube at the same time (for example veadotube and veadotube mini, or two minis), type its name or address. |
 
 **Variables it adds**
 
@@ -28,6 +30,7 @@ Finds out which avatar state is showing, so later steps can use it.
 | Setting | What to put in |
 | --- | --- |
 | **Node** | Leave empty for veadotube mini's avatar state. |
+| **Which veadotube** | Leave empty for the connected veadotube. To control another open veadotube at the same time (for example veadotube and veadotube mini, or two minis), type its name or address. |
 
 **Variables it adds**
 
@@ -37,8 +40,30 @@ Finds out which avatar state is showing, so later steps can use it.
 | `%veadotube.states%` | All state names, separated by commas |
 | `%veadotube.stateCount%` | How many states there are |
 | `%veadotube.pushToTalk%` | True when push-to-talk is on |
+| `%veadotube.stateId%` | veadotube's id for the state showing now |
+| `%veadotube.stateImage%` | The picture of the state showing now, as a data: address an overlay can show (connected veadotube only) |
+| `%veadotube.number.<name>%` | The value of each Number node, by its name (full veadotube) |
 
 <small>Type id: `veadotube.getState`</small>
+
+## Get number node
+
+Reads a Number node's value (full veadotube), so later steps can use it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Node** | The Number node's name. |
+| **Which veadotube** | Leave empty for the connected veadotube. To control another open veadotube at the same time (for example veadotube and veadotube mini, or two minis), type its name or address. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%veadotube.number%` | The node's value |
+| `%veadotube.numberMin%` | The lowest value of its range, if it has one |
+| `%veadotube.numberMax%` | The highest value of its range, if it has one |
+
+<small>Type id: `veadotube.getNumber`</small>
 
 ## Push-to-talk on/off
 
@@ -47,7 +72,9 @@ Turns veadotube's push-to-talk on, off or the other way round. With push-to-talk
 | Setting | What to put in |
 | --- | --- |
 | **State** | On, Off, or Toggle (the opposite of now). Options: On, Off, Toggle. Starts as: `Toggle`. |
+| **For (seconds)** | Seconds until it is set back, like holding a button down. Leave empty to keep it. |
 | **Node** | Leave empty for push-to-talk. Full veadotube users can type the name of another on/off (Boolean) node. |
+| **Which veadotube** | Leave empty for the connected veadotube. To control another open veadotube at the same time (for example veadotube and veadotube mini, or two minis), type its name or address. |
 
 **Variables it adds**
 
@@ -56,6 +83,18 @@ Turns veadotube's push-to-talk on, off or the other way round. With push-to-talk
 | `%veadotube.value%` | True when it was turned on, false when off (empty if unknown) |
 
 <small>Type id: `veadotube.setSwitch`</small>
+
+## Reset node
+
+Clears push-to-talk (or another on/off node) or a Number node back to no value, as if nothing had set it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Node type** | Which kind of node to reset. Options: On/off (push-to-talk, Boolean), Number. Starts as: `On/off (push-to-talk, Boolean)`. |
+| **Node** | The node's name. Leave empty for push-to-talk. |
+| **Which veadotube** | Leave empty for the connected veadotube. To control another open veadotube at the same time (for example veadotube and veadotube mini, or two minis), type its name or address. |
+
+<small>Type id: `veadotube.resetNode`</small>
 
 ## Set number node
 
@@ -66,5 +105,14 @@ Sets a number in full veadotube, for nodes you exposed yourself (veadotube mini 
 | **Node** | The name of the Number node in veadotube. |
 | **Value** | The number to set (or add). |
 | **Add to the current number instead** | Tick to add the number to the current one instead of replacing it. Starts as: `false`. |
+| **Lowest value** | With Highest value: the node's range, shown as a graph in veadotube. Leave both empty to keep the range the node already has. |
+| **Highest value** | With Lowest value: the node's range. |
+| **Which veadotube** | Leave empty for the connected veadotube. To control another open veadotube at the same time (for example veadotube and veadotube mini, or two minis), type its name or address. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%veadotube.number%` | The node's value afterwards, when veadotube reports it |
 
 <small>Type id: `veadotube.setNumber`</small>

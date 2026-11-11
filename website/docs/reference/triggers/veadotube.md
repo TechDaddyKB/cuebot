@@ -52,6 +52,29 @@ Runs when the connection to veadotube drops, for example because you closed it.
 
 <small>Type id: `veadotube.disconnected`</small>
 
+## Number node changed
+
+Runs when a Number node you exposed in full veadotube changes.
+
+| Setting | What to put in |
+| --- | --- |
+| **Nodes** | Only react to these Number nodes, by name. Separate several with commas. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%veadotube.instance%` | The name of the veadotube that is connected |
+| `%veadotube.instanceId%` | veadotube's own id for that window |
+| `%nodeName%` | The node that changed |
+| `%nodeId%` | That node's id |
+| `%value%` | Its new value |
+| `%previousValue%` | Its value before |
+| `%min%` | The lowest value of its range, if it has one |
+| `%max%` | The highest value of its range, if it has one |
+
+<small>Type id: `veadotube.numberChanged`</small>
+
 ## Push-to-talk (on/off node) changed
 
 Runs when push-to-talk (or another on/off node in full veadotube) turns on or off.

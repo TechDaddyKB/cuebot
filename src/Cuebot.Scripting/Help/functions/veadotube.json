@@ -1,0 +1,77 @@
+{
+  "functions": {
+    "veadotube.isConnected": {
+      "description": "Checks whether Cuebot is connected to veadotube.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "veadotube.changeState": {
+      "description": "Changes your veadotube avatar state, optionally only for some seconds.",
+      "parameters": {
+        "state": "The state's name. For Random, several names separated by commas, or leave it out for any.",
+        "mode": "Optional. Set, Push, Pop, Toggle, Random or Clear. The default is Set.",
+        "seconds": "Optional. Seconds until it goes back.",
+        "node": "Optional. A State Events node's name in full veadotube; leave it out for veadotube mini.",
+        "instance": "Optional. Another open veadotube by name or address; leave it out for the connected one."
+      },
+      "returns": "The id of the state that was sent.",
+      "example": {
+        "state": "surprised",
+        "mode": "Push",
+        "seconds": 5
+      }
+    },
+    "veadotube.getState": {
+      "description": "Reads which avatar state is showing.",
+      "parameters": {
+        "node": "Optional. A State Events node's name in full veadotube.",
+        "instance": "Optional. Another open veadotube by name or address; leave it out for the connected one."
+      },
+      "returns": "An object with state, stateId, states (all names) and image (the state's picture as a data: address).",
+      "example": {}
+    },
+    "veadotube.setPushToTalk": {
+      "description": "Turns push-to-talk (or another on/off node) on, off or the other way, optionally only for some seconds.",
+      "parameters": {
+        "state": "Optional. On, Off or Toggle. The default is On.",
+        "seconds": "Optional. Seconds until it is set back.",
+        "node": "Optional. A Boolean node's name in full veadotube.",
+        "instance": "Optional. Another open veadotube by name or address; leave it out for the connected one."
+      },
+      "returns": "The value asked for (true or false), when known.",
+      "example": {
+        "state": "On",
+        "seconds": 3
+      }
+    },
+    "veadotube.setNumber": {
+      "description": "Sets or adds to a Number node in full veadotube.",
+      "parameters": {
+        "node": "The Number node's name.",
+        "value": "The number.",
+        "add": "Optional. true to add to the current value.",
+        "min": "Optional. The lowest value of the node's range (give max too).",
+        "max": "Optional. The highest value of the node's range.",
+        "instance": "Optional. Another open veadotube by name or address; leave it out for the connected one."
+      },
+      "returns": "The node's value afterwards, when known.",
+      "example": {
+        "node": "hype",
+        "value": 1,
+        "add": true
+      }
+    },
+    "veadotube.getNumber": {
+      "description": "Reads a Number node's value in full veadotube.",
+      "parameters": {
+        "node": "The Number node's name.",
+        "instance": "Optional. Another open veadotube by name or address; leave it out for the connected one."
+      },
+      "returns": "An object with value, min and max, or null when it has no value.",
+      "example": {
+        "node": "hype"
+      }
+    }
+  }
+}

@@ -30,11 +30,17 @@ public sealed class VtuberAppsViewModel(VeadotubeService veadotube, VnyanService
 }
 
 /// <summary>A button row: a name and what pressing it does (a test from the Apps page).</summary>
-public sealed partial class VtuberRowViewModel(string name, string actionLabel, string tip, Func<Task> run) : ObservableObject
+public sealed partial class VtuberRowViewModel(string name, string actionLabel, string tip, Func<Task> run, Avalonia.Media.Imaging.Bitmap? image = null)
+    : ObservableObject
 {
     public string Name => name;
     public string ActionLabel => actionLabel;
     public string Tip => tip;
+
+    /// <summary>A picture of the item (veadotube's state thumbnails), when the app has one.</summary>
+    public Avalonia.Media.Imaging.Bitmap? Image => image;
+
+    public bool HasImage => image is not null;
 
     [RelayCommand]
     private Task Run() => run();
@@ -109,8 +115,25 @@ public sealed partial class VeadotubeCardViewModel : StreamAppCardViewModel
                     {
                         await _veado.ChangeStateAsync("Set", state.Name);
                         return $"Showing {state.Name}.";
-                    })));
+                    }), Picture(_veado.Thumbnail(node, state.Id))));
+        OnPropertyChanged(nameof(HasNoStates));
+        OnPropertyChanged(nameof(PushToTalk));
         Refresh();
+    }
+
+    /// <summary>veadotube's state thumbnail as a bitmap; null when there is none or it does not decode.</summary>
+    private static Avalonia.Media.Imaging.Bitmap? Picture(byte[]? png)
+    {
+        if (png is null) return null;
+        try
+        {
+            using var stream = new MemoryStream(png);
+            return new Avalonia.Media.Imaging.Bitmap(stream);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or IOException)
+        {
+            return null;
+        }
     }
 }
 

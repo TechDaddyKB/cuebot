@@ -14,7 +14,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="veadotube (mini or full)" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Nothing to switch on in veadotube: Cuebot finds it by itself while it is open (it picks a new &quot;door&quot; number every time it starts). Then actions can change your avatar state and push-to-talk, and state changes can start actions." />
+                     Text="Cuebot finds veadotube by itself while it is open (it picks a new &quot;door&quot; number every time it starts); its WebSocket server must be on (it is by default). Then actions can change your avatar state and push-to-talk, and state changes can start actions. For push-to-talk, tick &quot;use websocket&quot; in veadotube mini's push-to-talk settings." />
           <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto">
             <TextBlock Text="Which veadotube" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Column="1" Name="VeadoInstance" Text="{Binding Instance}" PlaceholderText="Leave empty for the first one that is open"
@@ -38,9 +38,11 @@
           <ItemsControl Name="VeadoStates" ItemsSource="{Binding States}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:VtuberRowViewModel">
-                <Grid ColumnDefinitions="*,Auto" Margin="0,2">
-                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                  <Button Grid.Column="1" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                  <Image Source="{Binding Image}" IsVisible="{Binding HasImage}" Width="40" Height="40" Margin="0,0,8,0"
+                         AutomationProperties.Name="{Binding Name}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="{Binding ActionLabel}" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tip}" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
