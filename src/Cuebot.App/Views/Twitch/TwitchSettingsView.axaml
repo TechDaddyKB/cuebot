@@ -58,7 +58,7 @@
             <TextBlock Classes="h2" Text="Watched channels" />
             <TextBlock Classes="hint" TextWrapping="Wrap"
                        Text="Other channels whose going live and going offline run the Watched channel triggers, for example to tell your chat that a friend is live." />
-            <TextBox Text="{Binding WatchedChannels, UpdateSourceTrigger=LostFocus}" Watermark="friend1, friend2"
+            <TextBox Text="{Binding WatchedChannels, UpdateSourceTrigger=LostFocus}" PlaceholderText="friend1, friend2"
                      ToolTip.Tip="Twitch login names, separated by commas" />
             <CheckBox Content="Also when they change their title or category" IsChecked="{Binding WatchedChannelUpdates}"
                       ToolTip.Tip="Runs the Watched channel changed title or category trigger too. Each channel then counts more against Twitch's limit." />

@@ -141,6 +141,14 @@ internal sealed class TwitchEventSubListener(
             if (ex.Message.Contains("transports limit", StringComparison.OrdinalIgnoreCase)) WarnTransportLimitOnce();
             return SubscribeResult.Refused;
         }
+        catch (TwitchApiException ex) when (ex.StatusCode == 403)
+        {
+            // Subscriptions whose scopes are missing are never sent, so a 403 here is Twitch refusing a granted scope:
+            // signing in again (what the generic Helix 403 hint says) cannot help.
+            log.Warn("Twitch", $"Twitch refused the {spec.Name} event for {account.Login()} (403) although Cuebot has the "
+                + "permission it needs; it stays unavailable. Signing in again will not change this.");
+            return SubscribeResult.Failed;
+        }
         catch (TwitchApiException ex)
         {
             log.Warn("Twitch", ex.Message);

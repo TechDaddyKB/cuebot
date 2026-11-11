@@ -290,6 +290,23 @@ public sealed class TwitchDevDocsAlignmentTests
         Assert.Equal(ConnectionState.Connected, states[^1].State);
     }
 
+    [Fact]
+    public async Task A_403_for_a_granted_scope_does_not_tell_the_user_to_sign_in_again()
+    {
+        var http = new FakeHttpHandler(r => r.Body.Contains("stream.online", StringComparison.Ordinal)
+            ? FakeHttpHandler.Json(HttpStatusCode.Forbidden, """{"message":"subscription missing proper authorization"}""")
+            : FakeHttpHandler.Json(HttpStatusCode.Accepted, "{}"));
+        var log = new AppLog();
+        var listener = Listener(http, log, []);
+
+        await listener.OnSessionStartedAsync("s1", default);
+
+        Assert.Contains("stream.online", listener.Unavailable);
+        var warning = Assert.Single(log.Recent(), e => e.Message.Contains("stream.online"));
+        Assert.Contains("Signing in again will not change this", warning.Message);
+        Assert.DoesNotContain(log.Recent(), e => e.Message.Contains("sign in again", StringComparison.Ordinal));
+    }
+
     private sealed class StaticTokens : ITwitchTokenSource
     {
         public string ClientId => "client";

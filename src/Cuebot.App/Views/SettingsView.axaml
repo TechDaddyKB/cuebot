@@ -89,7 +89,7 @@
                   <TextBlock Classes="h2" Text="New profile" />
                   <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="Name" VerticalAlignment="Center" />
-                    <TextBox Text="{Binding NewName}" Width="220" MaxLength="40" Watermark="Like Kitsune or Night Owl" AutomationProperties.Name="New profile name" />
+                    <TextBox Text="{Binding NewName}" Width="220" MaxLength="40" PlaceholderText="Like Kitsune or Night Owl" AutomationProperties.Name="New profile name" />
                     <TextBlock Text="Colour" VerticalAlignment="Center" />
                     <ComboBox ItemsSource="{Binding Colors}" SelectedItem="{Binding NewColor}" MinWidth="70" AutomationProperties.Name="New profile colour">
                       <ComboBox.ItemTemplate>
