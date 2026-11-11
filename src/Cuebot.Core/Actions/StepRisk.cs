@@ -174,7 +174,7 @@ public static class StepRiskCatalog
         // Devices, integrations, the network and variables.
         ["elgato.*"] = L4, ["wavelink.*"] = L4, ["goxlr.*"] = L4, ["vtubestudio.*"] = L4, ["voicemod.*"] = L4,
         ["tits.*"] = L4, ["obsbot.*"] = L4, ["lumia.*"] = L4, ["veadotube.*"] = L4, ["mtion.*"] = L4, ["warudo.*"] = L4,
-        ["polypop.*"] = L4, ["nizima.*"] = L4, ["animaze.*"] = L4, ["vrchat.*"] = L4, ["pngtuberRemix.*"] = L4,
+        ["polypop.*"] = L4, ["nizima.*"] = L4, ["animaze.*"] = L4, ["vrchat.*"] = L4, ["vnyan.*"] = L4, ["pngtuberRemix.*"] = L4,
         ["controller.*"] = L4, ["midi.*"] = L4, ["streamDeck.*"] = L4, ["voiceControl.*"] = L4, ["decks.*"] = L4,
         ["websocket.*"] = L4, ["remote.*"] = L4, ["webhook.*"] = L4, ["variables.*"] = L4, ["custom.*"] = L4,
         ["hotkeys.*"] = L4, ["input.*"] = L4, ["desktop.toastActivated"] = L4,

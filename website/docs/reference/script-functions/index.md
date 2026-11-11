@@ -79,6 +79,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [Twitch](twitch.md) | 143 |
 | [User variables](uservars.md) | 7 |
 | [Veadotube](veadotube.md) | 6 |
+| [Vnyan](vnyan.md) | 3 |
 | [Voice control](voicecontrol.md) | 10 |
 | [Voicemod](voicemod.md) | 14 |
 | [VTube Studio](vtubestudio.md) | 18 |

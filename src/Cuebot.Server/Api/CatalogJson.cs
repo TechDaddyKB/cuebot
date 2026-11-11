@@ -63,6 +63,7 @@ public static class CatalogJson
                 case ParameterKind.Code: description.Add($"Source code ({d.Language ?? "text"}); variables are not substituted."); break;
                 case ParameterKind.Choice: description.Add("One of the listed values."); break;
             }
+            if (!d.ResolveVariables && d.Kind != ParameterKind.Code) description.Add("Variables are substituted in each value after the text is read.");
             var property = new JsonObject { ["type"] = "string", ["title"] = d.Label };
             if (description.Count > 0) property["description"] = string.Join(" ", description);
             if (d.DefaultValue.Length > 0) property["default"] = d.DefaultValue;

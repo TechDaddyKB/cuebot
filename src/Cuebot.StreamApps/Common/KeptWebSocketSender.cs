@@ -1,14 +1,13 @@
-using Cuebot.StreamApps.Common;
-
-namespace Cuebot.StreamApps.Warudo;
+namespace Cuebot.StreamApps.Common;
 
 /// <summary>
-/// A send-only connection to Warudo's own WebSocket endpoint (ws://localhost:19190). A connection without a
-/// <c>Channel</c> header goes to Warudo's raw-message pipeline, which fires every "On WebSocket Message Received"
-/// node with the text (docs.warudo.app, scripting/api/external-callbacks). It is opened on the first message, kept
-/// open, and opened again on the next message after Warudo closed it. Anything Warudo sends back is read and ignored.
+/// A send-only websocket connection to an app's own endpoint (Warudo's ws://localhost:19190, VNyan's
+/// ws://localhost:8000/vnyan). It is opened on the first message, kept open, and opened again on the next message
+/// after the app closed it. Anything the app sends back is read and ignored.
 /// </summary>
-internal sealed class WarudoWebSocketSender(Func<IWebSocketTransport> transports, StreamAppsTimings timings) : IAsyncDisposable
+/// <param name="unreachable">The error text when the endpoint cannot be opened (URL, reason).</param>
+internal sealed class KeptWebSocketSender(Func<IWebSocketTransport> transports, StreamAppsTimings timings, Func<Uri, string, string> unreachable)
+    : IAsyncDisposable
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private IWebSocketTransport? _socket;
@@ -36,7 +35,7 @@ internal sealed class WarudoWebSocketSender(Func<IWebSocketTransport> transports
                 }
                 catch (Exception ex) when (attempt == 0 && ex is not OperationCanceledException)
                 {
-                    // Warudo closed the connection since the last message (e.g. it restarted): open a new one, once.
+                    // The app closed the connection since the last message (e.g. it restarted): open a new one, once.
                     await CloseAsync().ConfigureAwait(false);
                 }
             }
@@ -60,8 +59,7 @@ internal sealed class WarudoWebSocketSender(Func<IWebSocketTransport> transports
         catch (Exception ex) when (!ct.IsCancellationRequested)
         {
             await socket.DisposeAsync().ConfigureAwait(false);
-            throw new StreamAppRequestException(
-                $"Warudo's WebSocket port is not reachable at {url.Authority} ({(ex is OperationCanceledException ? "timed out" : ex.Message)}). Is Warudo open?");
+            throw new StreamAppRequestException(unreachable(url, ex is OperationCanceledException ? "timed out" : ex.Message));
         }
         _socket = socket;
         _url = url;
@@ -77,7 +75,7 @@ internal sealed class WarudoWebSocketSender(Func<IWebSocketTransport> transports
         {
             while (await socket.ReceiveAsync(ct).ConfigureAwait(false) is not null)
             {
-                // Nothing Warudo sends on this connection is used.
+                // Nothing the app sends on this connection is used.
             }
         }
         catch (Exception)

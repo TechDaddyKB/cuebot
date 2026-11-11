@@ -35,6 +35,9 @@ internal sealed class LocalWebSocketServer : IAsyncDisposable
         return IPAddress.TryParse(t, out var address) ? address : throw new FormatException($"'{t}' is not an IP address.");
     }
 
+    /// <summary>The path that accepts clients on every path (for apps where users type the address themselves).</summary>
+    public const string AnyPath = "/*";
+
     public static string NormalizePath(string? path) => "/" + (path ?? "").Trim().Trim('/');
 
     /// <summary>Starts listening; throws <see cref="SocketException"/> when the port is taken.</summary>
@@ -80,7 +83,7 @@ internal sealed class LocalWebSocketServer : IAsyncDisposable
         if (request.Length < 2 || request[0] != "GET")
             return await RefuseAsync(stream, "405 Method Not Allowed", ct).ConfigureAwait(false);
         var path = NormalizePath(request[1].Split('?')[0]);
-        if (!string.Equals(path, _path, StringComparison.OrdinalIgnoreCase))
+        if (_path != AnyPath && !string.Equals(path, _path, StringComparison.OrdinalIgnoreCase))
             return await RefuseAsync(stream, "404 Not Found", ct).ConfigureAwait(false);
         if (!headers.TryGetValue("Upgrade", out var upgrade) || !upgrade.Contains("websocket", StringComparison.OrdinalIgnoreCase)
             || !headers.TryGetValue("Sec-WebSocket-Key", out var key) || key.Length == 0)

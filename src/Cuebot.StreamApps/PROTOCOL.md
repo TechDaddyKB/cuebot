@@ -649,9 +649,41 @@ VRChat only through unit tests (it stopped at its terms page before OSC came up)
 
 ### VNyan (`Vnyan/`)
 
-- `POST http://<host>:8069/` with `{"action":"<name>","payload":{..}}`; VNyan answers `{"result":0}` when accepted.
-  It fires the API message node (`APIMessageNode`) whose action name matches; the payload goes to its outputs and, when the
-  node names one, a VNyan dictionary. VNyan cannot say whether a node used it. No persistent connection.
+- Sources: the VNyanDoc GitHub wiki (How-To "VNyan Rest API", Callback-Nodes "API Message"/"WebSocket", Action-Nodes
+  "Websocket Message", Parameters "OSC Parameters"/"VRChat OSC Parameters", Miscellaneous), read 2026-11-11. The wiki
+  has no Streamer.bot section (empty heading) and gives no default for the WebSocket or OSC receiver ports.
+- HTTP API: `POST http://<host>:8069/` with `{"action":"<name>","payload":{..}}`. VNyan answers `{"result":0}` when it
+  got the message; that reply was observed live, it is not documented, so a non-zero result being a refusal is
+  Cuebot's reading. It fires the API Message node whose action name matches exactly (case-sensitive; an empty node
+  name matches nothing); the payload goes to its outputs (`Payload` dict, `json` text) and, when the node names one, a
+  VNyan dictionary. VNyan cannot say whether a node used it. No persistent connection.
+- POST rather than the GET form (`/?action=Name&k=v`, since 1.4.1) because GET does not fill the node's `json` output.
+- The docs only name `http://localhost:8069`; reaching it from another PC is untested, so errors for a non-loopback
+  host say so.
+- Payload numbers: the docs call the payload "key/value pairs of strings" but their POST example sends `"key2":2`.
+  Cuebot sends name=value lines as strings by default; "As numbers" sends plain numbers (`-?(0|[1-9]\d*)(\.\d+)?`, so
+  `007`, `1,5` and `1e5` stay text) unquoted. A JSON object typed into the step keeps its value types. Whether VNyan's
+  dictionary treats `"100"` and `100` differently has not been checked live.
+- Variables in the payload (and in the parameter bundle) are filled in after the text is parsed
+  (`ParameterDescriptor.ResolveVariables = false`), so a value with quotes, `=` or line breaks stays one value; a JSON
+  object that is only valid once variables are in (`{"n":%amount%}`) is resolved as a whole first.
+- WebSocket receiver (Settings > Misc > Websockets, Start Receiver): `ws://<host>:<port>/vnyan`, port 8000 in the
+  docs' Mix It Up example. A text message fires WebSocket nodes whose Command Text equals it or is its first
+  space-separated part; the number after it is the node's `Value` (an int). Cuebot opens the connection on the first
+  command and keeps it (`Common/KeptWebSocketSender`, shared with Warudo), opening it again after VNyan closed it.
+- OSC receiver (UDP, port under Settings > Misc, no documented default so the setting starts empty):
+  `/VNyan/Param/Float (name:s, value:f)` and `/VNyan/Param/String (name:s, value:s)` set `[name]` / `<name>`;
+  bundles are accepted (several parameters go as one bundle, time tag 1). `/avatar/parameters/<name> (f)` is
+  accepted too. VNyan's own strings name these addresses in lower case; Cuebot sends the documented casing.
+- VNyan → Cuebot: the "Websocket Message" action node sends text to a WebSocket server address. Cuebot can listen on
+  `ws://127.0.0.1:<port>/` (default 8070, any path, loopback only) and publishes `vnyan.message`: JSON objects give
+  every key as an argument plus `vnyanCommand` (command/event/action/name) and `vnyanValue` (value); other text is
+  split like VNyan's WebSocket node (first word, then the rest, a number when it is one). Whether the node keeps its
+  connection open, and whether it needs VNyan's own receiver on, is unchecked.
+- Not done: a VNyan plugin (`VNyanInterface.dll` trigger listener / `callTrigger` / parameters) would need Unity and
+  VNyan's reference assembly and a live test; and ready-made graph files need VNyan to export them.
+- Still to check live: the reply for unknown or malformed messages, which address 8069 binds to, the default OSC and
+  WebSocket ports, whether `"100"` and `100` differ in VNyan's dictionary, and the installed version.
 
 ### VRChat (`Vrchat/`)
 

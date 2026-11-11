@@ -1,0 +1,31 @@
+{
+  "functions": {
+    "vnyan.send": {
+      "description": "Starts every \"API Message\" node in VNyan with this action name.",
+      "parameters": {
+        "action": "The name typed into the API Message node. Capital letters matter.",
+        "payload": "Optional. An object of values for the node; numbers stay numbers and text stays text. name=value lines also work."
+      },
+      "returns": "Nothing.",
+      "example": { "action": "Cheer", "payload": { "user": "Ann", "bits": 100 } }
+    },
+    "vnyan.sendWebSocket": {
+      "description": "Runs VNyan's \"WebSocket\" nodes with this command (Start Receiver must be on in VNyan).",
+      "parameters": {
+        "command": "The node's Command Text.",
+        "value": "Optional. A number sent after the command; the node gives it on as Value."
+      },
+      "returns": "Nothing.",
+      "example": { "command": "Throw", "value": 5 }
+    },
+    "vnyan.setParameter": {
+      "description": "Sets a VNyan parameter over OSC (VNyan's OSC port must be set on the VNyan card).",
+      "parameters": {
+        "name": "The parameter's name without brackets.",
+        "value": "A number sets [name]; text sets <name>."
+      },
+      "returns": "Nothing.",
+      "example": { "name": "donor", "value": "Ann" }
+    }
+  }
+}

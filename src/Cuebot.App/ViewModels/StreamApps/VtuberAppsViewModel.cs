@@ -153,7 +153,67 @@ public sealed partial class VnyanCardViewModel(VnyanService vnyan) : StreamAppCa
         set { S.Port = (int)(value ?? 8069); vnyan.SaveSettings(); OnPropertyChanged(); }
     }
 
+    public decimal? WebSocketPort
+    {
+        get => S.WebSocketPort;
+        set { S.WebSocketPort = (int)(value ?? 8000); vnyan.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    /// <summary>VNyan's OSC receiver port; empty until set (VNyan's docs give no default).</summary>
+    public decimal? OscPort
+    {
+        get => S.OscPort > 0 ? S.OscPort : null;
+        set { S.OscPort = (int)(value ?? 0); vnyan.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    public decimal? ListenPort
+    {
+        get => S.ListenPort;
+        set
+        {
+            S.ListenPort = (int)(value ?? 8070);
+            vnyan.SaveSettings();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ListenAddress));
+            if (S.Listen) _ = RunAsync(async () => { await vnyan.StartListeningAsync(); return $"Cuebot listens for VNyan on {ListenAddress}"; });
+        }
+    }
+
+    public bool Listen
+    {
+        get => S.Listen;
+        set
+        {
+            S.Listen = value;
+            vnyan.SaveSettings();
+            OnPropertyChanged();
+            _ = RunAsync(async () =>
+            {
+                if (value) await vnyan.StartListeningAsync();
+                else await vnyan.StopListeningAsync();
+                return value ? $"Cuebot listens for VNyan on {ListenAddress}" : "Cuebot stopped listening for VNyan.";
+            });
+        }
+    }
+
+    /// <summary>The address to type into VNyan's "Websocket Message" node.</summary>
+    public string ListenAddress => $"ws://127.0.0.1:{(S.ListenPort is > 0 and < 65536 ? S.ListenPort : 8070)}/";
+
+    /// <summary>Action names used in "Send to VNyan" steps, and a warning about names that differ only in capital letters.</summary>
+    public string UsedNames
+    {
+        get
+        {
+            var names = vnyan.UsedActionNames().ToList();
+            if (names.Count == 0) return "";
+            var text = $"Names used in your actions: {string.Join(", ", names)}.";
+            var clashes = VnyanService.CaseClashes(names);
+            return clashes.Count == 0 ? text : $"{text} Check {string.Join("; ", clashes)}: VNyan treats different capital letters as different nodes.";
+        }
+    }
+
     [ObservableProperty] private string _testAction = "CuebotTest";
+    [ObservableProperty] private string _testCommand = "CuebotTest";
 
     protected override Task StartAsync() => vnyan.TestAsync();
 
@@ -163,7 +223,14 @@ public sealed partial class VnyanCardViewModel(VnyanService vnyan) : StreamAppCa
     private Task SendTest() => RunAsync(async () =>
     {
         await vnyan.SendAsync(TestAction, new Dictionary<string, string> { ["user"] = "Cuebot" });
-        return $"VNyan accepted '{TestAction.Trim()}'. Any API Message node with that name ran.";
+        return $"VNyan got '{TestAction.Trim()}'. If nothing happened, check the API Message node's name (capital letters matter).";
+    });
+
+    [RelayCommand]
+    private Task SendWebSocketTest() => RunAsync(async () =>
+    {
+        await vnyan.SendWebSocketAsync(TestCommand.Trim());
+        return $"Sent '{TestCommand.Trim()}' to VNyan's WebSocket receiver. If nothing happened, check the WebSocket node's Command Text.";
     });
 }
 

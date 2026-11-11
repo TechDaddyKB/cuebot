@@ -1,11 +1,58 @@
 {
-  "triggers": {},
+  "triggers": {
+    "vnyan.message": {
+      "description": "Runs when VNyan's \"Websocket Message\" node sends text to Cuebot, so a VNyan graph (a prop hitting you, an avatar loading, a hotkey, a gesture) can start Cuebot actions. Turn on \"Listen for VNyan\" on the VNyan card first and put the address it shows into the node.",
+      "fields": {
+        "command": "Only react to these commands: the first word of the text, or the \"command\" or \"event\" of a JSON message. Separate several with commas; leave empty for every message."
+      },
+      "variables": {
+        "message": "The whole text VNyan sent",
+        "vnyanCommand": "The first word of the text, or the \"command\", \"event\", \"action\" or \"name\" of a JSON message",
+        "vnyanValue": "The rest of the text (a number when it is one, for example 5 from \"Throw 5\"), or the \"value\" of a JSON message",
+        "vnyanJson": "true when VNyan sent a JSON object; each of its keys is then a variable too, for example %user%"
+      }
+    }
+  },
   "subActions": {
     "vnyan.send": {
       "description": "Sends a message to VNyan that runs your node graph: every \"API Message\" node with the same name starts, for example to throw something at your model or change an expression.",
       "fields": {
         "action": "The name you typed into the API Message node in VNyan, for example Wave. Capital letters matter.",
-        "payload": "Optional extra values the node can use, one name=value per line, for example user=%user%."
+        "payload": "Optional extra values the node can use, one name=value per line, for example user=%user%. Variables are filled in after the lines are read, so quotes or line breaks in a chat message stay inside their value.",
+        "numbers": "As text sends every value as text, which is what VNyan's dictionaries hold. As numbers sends values written like 100 or 2.5 as real numbers, for graphs that read the node's json output; values like 007 or 1,5 stay text."
+      },
+      "variables": {}
+    },
+    "vnyan.sendWebSocket": {
+      "description": "Runs VNyan's \"WebSocket\" nodes, the ones graphs made for Stream Deck, Streamer.bot or Mix It Up use. In VNyan turn on Settings > Misc > Websockets > Start Receiver.",
+      "fields": {
+        "command": "The Command Text typed into the WebSocket node, for example Wave.",
+        "value": "Optional number sent after the command, for example 5 for \"Throw 5\". The node gives it on as Value (and [message])."
+      },
+      "variables": {}
+    },
+    "vnyan.setParameter": {
+      "description": "Puts a value straight into a VNyan parameter, for example the latest donor's name or a bit total, so graphs and text props can use it. No node is needed. Type VNyan's OSC port on the VNyan card first.",
+      "fields": {
+        "name": "The parameter's name without brackets, for example donor.",
+        "value": "The value. Numbers use a dot for decimals (2.5).",
+        "type": "Number sets the numeric parameter [name]; Text sets the text parameter <name>."
+      },
+      "variables": {}
+    },
+    "vnyan.setParameters": {
+      "description": "Sets several VNyan parameters at once (sent together as one OSC bundle). Type VNyan's OSC port on the VNyan card first.",
+      "fields": {
+        "values": "One name=value per line, for example donor=%user% and amount=%amount%.",
+        "type": "Number when it is one sets [name] for values like 100 or 2.5 and <name> for everything else. Text sets <name> for every value."
+      },
+      "variables": {}
+    },
+    "vnyan.setAvatarParameter": {
+      "description": "Sends a VRChat-style avatar parameter (/avatar/parameters/name) to VNyan's OSC port, for setups shared with VRChat.",
+      "fields": {
+        "name": "The parameter's name, for example HatOn.",
+        "value": "A number; true and false send 1 and 0."
       },
       "variables": {}
     }

@@ -198,7 +198,7 @@ public sealed class VnyanServiceTests : IDisposable
     public async Task Send_posts_the_action_and_payload()
     {
         var handler = new Handler((_, _) => Json("""{ "result": 0 }"""));
-        var vnyan = new VnyanService(_env.Settings, _env.Log, new HttpClient(handler));
+        var vnyan = new VnyanService(_env.Settings, _env.Bus, _env.Log, new HttpClient(handler));
         await vnyan.SendAsync("Wave", new Dictionary<string, string> { ["user"] = "Ann", ["bits"] = "100" });
 
         var (request, body) = Assert.Single(handler.Requests);
@@ -215,12 +215,12 @@ public sealed class VnyanServiceTests : IDisposable
     [Fact]
     public async Task Refusals_and_closed_ports_are_explained()
     {
-        var vnyan = new VnyanService(_env.Settings, _env.Log, new HttpClient(new Handler((_, _) => Json("""{ "result": 2 }"""))));
+        var vnyan = new VnyanService(_env.Settings, _env.Bus, _env.Log, new HttpClient(new Handler((_, _) => Json("""{ "result": 2 }"""))));
         var refused = await Assert.ThrowsAsync<StreamAppRequestException>(() => vnyan.TestAsync());
         Assert.Contains("result 2", refused.Message);
         Assert.Equal(ConnectionState.Error, vnyan.State);
 
-        var closed = new VnyanService(_env.Settings, _env.Log,
+        var closed = new VnyanService(_env.Settings, _env.Bus, _env.Log,
             new HttpClient(new Handler((_, _) => throw new HttpRequestException("Connection refused"))));
         var ex = await Assert.ThrowsAsync<StreamAppRequestException>(() => closed.TestAsync());
         Assert.Contains("Is VNyan open?", ex.Message);

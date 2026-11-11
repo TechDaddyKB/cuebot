@@ -132,11 +132,11 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="VNyan" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="In VNyan's node graph, add an &quot;API Message&quot; node and type a name into it, for example Wave. Then use the &quot;Send to VNyan&quot; step with that same name, and whatever you connect after the node runs. VNyan's API is on by default on port 8069." />
+                     Text="In VNyan's node graph, add an &quot;API Message&quot; node and type a name into it, for example Wave. Then use the &quot;Send to VNyan&quot; step with that same name, and whatever you connect after the node runs. VNyan's API needs no switch; its docs name port 8069." />
           <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Column="1" Name="VnyanHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
-                     ToolTip.Tip="The address of the computer where VNyan runs. 127.0.0.1 means this same computer, so most people can leave it." />
+                     ToolTip.Tip="The address of the computer where VNyan runs. 127.0.0.1 means this same computer, so most people can leave it. VNyan's docs only mention this same computer; another PC may not work." />
             <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="12,0,8,0" />
             <NumericUpDown Grid.Column="3" Name="VnyanPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
                            ToolTip.Tip="The &quot;door&quot; number of VNyan's API. Only change it if you changed it in VNyan too." />
@@ -146,8 +146,34 @@
             <TextBox Grid.Column="1" Name="VnyanTestAction" Text="{Binding TestAction}"
                      ToolTip.Tip="The name of an API Message node in VNyan to run as a test." />
             <Button Grid.Column="2" Margin="8,0,0,0" Content="Send test" Classes="accent" Command="{Binding SendTestCommand}"
-                    ToolTip.Tip="Sends this name to VNyan now. VNyan says it got it; your node then runs." />
+                    ToolTip.Tip="Sends this name to VNyan now. VNyan only says it got it, not whether a node used it." />
           </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding UsedNames}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="WebSocket nodes and parameters: in VNyan open Settings, then Misc. For the &quot;Send WebSocket command&quot; step turn on Websockets &gt; Start Receiver; for the parameter steps type VNyan's OSC Receiver Port below." />
+          <Grid ColumnDefinitions="Auto,140,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="WebSocket port" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <NumericUpDown Grid.Column="1" Name="VnyanWebSocketPort" Value="{Binding WebSocketPort}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="The port of VNyan's WebSocket receiver (Settings &gt; Misc &gt; Websockets). VNyan's docs use 8000." />
+            <TextBlock Grid.Column="2" Text="OSC port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="VnyanOscPort" Value="{Binding OscPort}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="VNyan's OSC Receiver Port (Settings &gt; Misc). Needed by the Set parameter steps." />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
+            <TextBlock Text="Test command" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="VnyanTestCommand" Text="{Binding TestCommand}"
+                     ToolTip.Tip="The Command Text of a WebSocket node in VNyan to run as a test." />
+            <Button Grid.Column="2" Margin="8,0,0,0" Content="Send" Command="{Binding SendWebSocketTestCommand}"
+                    ToolTip.Tip="Sends this command to VNyan's WebSocket receiver now." />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,Auto,140" RowDefinitions="Auto">
+            <CheckBox Content="Listen for VNyan on port" IsChecked="{Binding Listen}" VerticalAlignment="Center" Name="VnyanListen"
+                      ToolTip.Tip="Lets VNyan's &quot;Websocket Message&quot; node start Cuebot actions through the VNyan message trigger." />
+            <NumericUpDown Grid.Column="2" Margin="8,0,0,0" Name="VnyanListenPort" Value="{Binding ListenPort}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="Change it before turning listening on. Then type the address shown below into VNyan's Websocket Message node." />
+          </Grid>
+          <SelectableTextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding Listen}"
+                               Text="{Binding ListenAddress, StringFormat='In VNyan, put {0} into the Websocket Message node.'}" />
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />
           </TextBlock>

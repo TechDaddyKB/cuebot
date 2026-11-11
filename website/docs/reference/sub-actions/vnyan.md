@@ -10,6 +10,52 @@ Sends a message to VNyan that runs your node graph: every "API Message" node wit
 | Setting | What to put in |
 | --- | --- |
 | **Action name** | The name you typed into the API Message node in VNyan, for example Wave. Capital letters matter. |
-| **Values** | Optional extra values the node can use, one name=value per line, for example user=%user%. |
+| **Values** | Optional extra values the node can use, one name=value per line, for example user=%user%. Variables are filled in after the lines are read, so quotes or line breaks in a chat message stay inside their value. |
+| **Numbers** | As text sends every value as text, which is what VNyan's dictionaries hold. As numbers sends values written like 100 or 2.5 as real numbers, for graphs that read the node's json output; values like 007 or 1,5 stay text. Options: As text, As numbers. Starts as: `As text`. |
 
 <small>Type id: `vnyan.send`</small>
+
+## Send WebSocket command
+
+Runs VNyan's "WebSocket" nodes, the ones graphs made for Stream Deck, Streamer.bot or Mix It Up use. In VNyan turn on Settings > Misc > Websockets > Start Receiver.
+
+| Setting | What to put in |
+| --- | --- |
+| **Command** | The Command Text typed into the WebSocket node, for example Wave. |
+| **Value** | Optional number sent after the command, for example 5 for "Throw 5". The node gives it on as Value (and [message]). |
+
+<small>Type id: `vnyan.sendWebSocket`</small>
+
+## Set avatar parameter (VRChat style)
+
+Sends a VRChat-style avatar parameter (/avatar/parameters/name) to VNyan's OSC port, for setups shared with VRChat.
+
+| Setting | What to put in |
+| --- | --- |
+| **Parameter** | The parameter's name, for example HatOn. |
+| **Value** | A number; true and false send 1 and 0. |
+
+<small>Type id: `vnyan.setAvatarParameter`</small>
+
+## Set parameter
+
+Puts a value straight into a VNyan parameter, for example the latest donor's name or a bit total, so graphs and text props can use it. No node is needed. Type VNyan's OSC port on the VNyan card first.
+
+| Setting | What to put in |
+| --- | --- |
+| **Parameter** | The parameter's name without brackets, for example donor. |
+| **Value** | The value. Numbers use a dot for decimals (2.5). |
+| **Type** | Number sets the numeric parameter [name]; Text sets the text parameter <name>. Options: Number, Text. Starts as: `Number`. |
+
+<small>Type id: `vnyan.setParameter`</small>
+
+## Set several parameters
+
+Sets several VNyan parameters at once (sent together as one OSC bundle). Type VNyan's OSC port on the VNyan card first.
+
+| Setting | What to put in |
+| --- | --- |
+| **Values** | One name=value per line, for example donor=%user% and amount=%amount%. |
+| **Type** | Number when it is one sets [name] for values like 100 or 2.5 and <name> for everything else. Text sets <name> for every value. Options: Number when it is one, Text. Starts as: `Number when it is one`. |
+
+<small>Type id: `vnyan.setParameters`</small>

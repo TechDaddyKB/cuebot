@@ -159,6 +159,7 @@ public sealed class AppHost : IAsyncDisposable
             StartSafely(log, "OBSBOT", () => Get<Cuebot.StreamApps.Obsbot.ObsbotService>().StartAsync()),
             StartSafely(log, "mtion studio", () => Get<Cuebot.StreamApps.Mtion.MtionService>().StartAsync()),
             StartSafely(log, "veadotube", () => Get<Cuebot.StreamApps.Veadotube.VeadotubeService>().StartAsync()),
+            StartSafely(log, "VNyan", () => Get<Cuebot.StreamApps.Vnyan.VnyanService>().StartAsync()),
             StartSafely(log, "VRChat", () => Get<Cuebot.StreamApps.Vrchat.VrchatService>().StartAsync()),
             StartSafely(log, "Warudo", () => Get<Cuebot.StreamApps.Warudo.WarudoService>().StartAsync()),
             StartSafely(log, "PNGTuber Remix", () => Get<Cuebot.StreamApps.PngtuberRemix.PngtuberRemixService>().StartAsync()),

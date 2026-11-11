@@ -44,6 +44,12 @@ public sealed record ParameterDescriptor(string Key, string Label, ParameterKind
 
     public string? Help { get; init; }
 
+    /// <summary>
+    /// False hands the step the text exactly as typed (with its %variables% still in it), for steps that substitute
+    /// variables themselves after parsing the text, so a variable's value cannot break its structure (such as JSON).
+    /// </summary>
+    public bool ResolveVariables { get; init; } = true;
+
     /// <summary>A live message shown above the editor, such as "Python is not installed [Install Python]".</summary>
     public IParameterNoticeSource? Notice { get; init; }
 }

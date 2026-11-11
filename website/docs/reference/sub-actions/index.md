@@ -68,7 +68,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Variables](variables.md) | 11 |
 | [veadotube](veadotube.md) | 6 |
 | [VMC (3D avatars)](vmc-3d-avatars.md) | 2 |
-| [VNyan](vnyan.md) | 1 |
+| [VNyan](vnyan.md) | 5 |
 | [Voice Control](voice-control.md) | 4 |
 | [Voicemod](voicemod.md) | 12 |
 | [VRChat](vrchat.md) | 4 |

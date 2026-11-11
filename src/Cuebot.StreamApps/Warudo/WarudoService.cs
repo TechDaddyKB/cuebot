@@ -38,7 +38,7 @@ public sealed class WarudoService : StreamAppConnection
     private readonly ConcurrentDictionary<string, bool> _toggles = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, byte> _warned = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
-    private readonly WarudoWebSocketSender _webSocket;
+    private readonly KeptWebSocketSender _webSocket;
     private readonly Func<string, int, CancellationToken, Task<bool>> _probe;
     private volatile IReadOnlyDictionary<WarudoReceiverKind, IReadOnlyList<string>> _receivers = Empty();
     private long _lastRefreshTicks;
@@ -53,7 +53,8 @@ public sealed class WarudoService : StreamAppConnection
         : base("Warudo", bus, log, transports, timings)
     {
         _settings = settings;
-        _webSocket = new WarudoWebSocketSender(webSocketTransports ?? transports, timings);
+        _webSocket = new KeptWebSocketSender(webSocketTransports ?? transports, timings,
+            (url, reason) => $"Warudo's WebSocket port is not reachable at {url.Authority} ({reason}). Is Warudo open?");
         _probe = probe ?? ProbeAsync;
     }
 

@@ -3399,6 +3399,30 @@ class Cuebot:
         Gives back: The value asked for (true or false), when known.
         Same as cb.call(\"veadotube.setPushToTalk\", ...).
         """
+    def vnyan_send(self, action: Any, *, payload: Any = None) -> Any:
+        """Starts every \"API Message\" node in VNyan with this action name.
+
+        action: The name typed into the API Message node. Capital letters matter.
+        payload: Optional. An object of values for the node; numbers stay numbers and text stays text. name=value lines also work.
+        Gives back: Nothing.
+        Same as cb.call(\"vnyan.send\", ...).
+        """
+    def vnyan_send_web_socket(self, command: Any, *, value: Any = None) -> Any:
+        """Runs VNyan's \"WebSocket\" nodes with this command (Start Receiver must be on in VNyan).
+
+        command: The node's Command Text.
+        value: Optional. A number sent after the command; the node gives it on as Value.
+        Gives back: Nothing.
+        Same as cb.call(\"vnyan.sendWebSocket\", ...).
+        """
+    def vnyan_set_parameter(self, name: Any, value: Any) -> Any:
+        """Sets a VNyan parameter over OSC (VNyan's OSC port must be set on the VNyan card).
+
+        name: The parameter's name without brackets.
+        value: A number sets [name]; text sets <name>.
+        Gives back: Nothing.
+        Same as cb.call(\"vnyan.setParameter\", ...).
+        """
     def voice_control_commands(self) -> Any:
         """Lists all your voice commands from the Voice Control page.
 

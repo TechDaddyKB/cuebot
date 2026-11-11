@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Events;
 
@@ -80,27 +81,74 @@ internal static class Steps
     }
 
     /// <summary>"name=value" lines (or a JSON object) to an ordered dictionary; values are kept as text.</summary>
-    public static Dictionary<string, string> ParsePairs(string text)
+    public static Dictionary<string, string> ParsePairs(string text, Func<string, string>? resolve = null)
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (name, value) in ParsePairNodes(text, resolve))
+            result[name] = value is null ? "null" : value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : value.ToJsonString();
+        return result;
+    }
+
+    /// <summary>
+    /// "name=value" lines or a JSON object, in order, keeping JSON values as typed (a number stays a number); line
+    /// values are strings. With <paramref name="resolve"/> the text is read first and variables are then substituted
+    /// in each name and text value, so a chat message with quotes, line breaks or "=" stays one value. A JSON object
+    /// that is only valid once variables are in (e.g. <c>{"n":%amount%}</c>) is substituted as a whole first.
+    /// </summary>
+    public static List<(string Name, JsonNode? Value)> ParsePairNodes(string text, Func<string, string>? resolve = null)
+    {
         var trimmed = text.Trim();
         if (trimmed.StartsWith('{'))
         {
-            using var doc = JsonDocument.Parse(trimmed);
-            foreach (var p in doc.RootElement.EnumerateObject())
-                result[p.Name] = p.Value.ValueKind == JsonValueKind.String ? p.Value.GetString() ?? "" : p.Value.GetRawText();
-            return result;
+            JsonObject? obj = null;
+            try
+            {
+                obj = JsonNode.Parse(trimmed) as JsonObject;
+            }
+            catch (JsonException) when (resolve is not null)
+            {
+                // Not JSON as typed; maybe once the variables are in.
+            }
+            catch (JsonException ex)
+            {
+                throw new ArgumentException($"The values are not a valid JSON object ({ex.Message}). Use name=value lines instead.", ex);
+            }
+            if (obj is null && resolve is not null) return ParsePairNodes(resolve(trimmed));
+            if (obj is null) throw new ArgumentException("The values must be a JSON object ({...}) or name=value lines.");
+            var pairs = new List<(string, JsonNode?)>();
+            foreach (var (name, value) in obj)
+                pairs.Add((resolve?.Invoke(name) ?? name, resolve is null ? value?.DeepClone() : ResolveNode(value, resolve)));
+            return pairs;
         }
+        var result = new List<(string, JsonNode?)>();
         foreach (var raw in text.Split('\n'))
         {
             var line = raw.Trim();
             if (line.Length == 0) continue;
             var eq = line.IndexOf('=');
             if (eq <= 0) throw new ArgumentException($"Expected name=value, got '{line}'.");
-            result[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+            var name = line[..eq].Trim();
+            var value = line[(eq + 1)..].Trim();
+            if (resolve is not null)
+            {
+                name = resolve(name).Trim();
+                value = resolve(value);
+                if (name.Length == 0) throw new ArgumentException($"The name in '{line}' is empty once its variables are filled in.");
+            }
+            result.RemoveAll(p => p.Item1 == name);
+            result.Add((name, JsonValue.Create(value)));
         }
         return result;
     }
+
+    private static JsonNode? ResolveNode(JsonNode? node, Func<string, string> resolve) => node switch
+    {
+        null => null,
+        JsonValue v when v.GetValueKind() == JsonValueKind.String => JsonValue.Create(resolve(v.GetValue<string>())),
+        JsonObject o => new JsonObject(o.Select(p => KeyValuePair.Create(resolve(p.Key), ResolveNode(p.Value, resolve)))),
+        JsonArray a => new JsonArray(a.Select(i => ResolveNode(i, resolve)).ToArray()),
+        _ => node.DeepClone(),
+    };
 }
 
 internal static class JsonUtil

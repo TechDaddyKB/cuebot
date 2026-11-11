@@ -95,6 +95,27 @@ public static class Osc
         return stream.ToArray();
     }
 
+    /// <summary>
+    /// An OSC 1.0 bundle of <paramref name="messages"/> with the time tag "immediately" (1): "#bundle", the 8-byte
+    /// time tag, then each message prefixed with its int32 big-endian size.
+    /// </summary>
+    public static byte[] EncodeBundle(IEnumerable<OscMessage> messages)
+    {
+        using var stream = new MemoryStream();
+        WriteString(stream, "#bundle");
+        Span<byte> buffer = stackalloc byte[8];
+        BinaryPrimitives.WriteInt64BigEndian(buffer, 1);
+        stream.Write(buffer);
+        foreach (var message in messages)
+        {
+            var packet = Encode(message);
+            BinaryPrimitives.WriteInt32BigEndian(buffer, packet.Length);
+            stream.Write(buffer[..4]);
+            stream.Write(packet);
+        }
+        return stream.ToArray();
+    }
+
     private static char Tag(object? arg) => arg switch
     {
         int => 'i',
