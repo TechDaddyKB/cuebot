@@ -59,14 +59,14 @@ public sealed partial class TwitchApi
     /// <summary>Every moderator of the channel.</summary>
     public Task<IReadOnlyList<TwitchChannelUser>> GetModeratorsAsync(CancellationToken ct = default)
     {
-        Require(TwitchScopes.ModerationRead, TwitchScopes.ManageModerators, TwitchScopes.ReadModerators);
+        Require(TwitchScopes.ModerationRead, TwitchScopes.ManageModerators);
         return ChannelUsersAsync("moderation/moderators", "Listing moderators", ct);
     }
 
     /// <summary>Every VIP of the channel.</summary>
     public Task<IReadOnlyList<TwitchChannelUser>> GetVipsAsync(CancellationToken ct = default)
     {
-        Require(TwitchScopes.ManageVips, TwitchScopes.ReadVips);
+        Require(TwitchScopes.ManageVips, TwitchScopes.ChannelReadVips);
         return ChannelUsersAsync("channels/vips", "Listing VIPs", ct);
     }
 

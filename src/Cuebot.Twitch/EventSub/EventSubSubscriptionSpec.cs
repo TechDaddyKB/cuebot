@@ -10,8 +10,12 @@ internal sealed record EventSubSubscriptionSpec(
     string Version,
     IReadOnlyList<string> Scopes,
     Func<string, IReadOnlyDictionary<string, string>> BuildCondition,
-    IReadOnlyList<IReadOnlyList<string>>? AlsoRequired = null)
+    IReadOnlyList<IReadOnlyList<string>>? AlsoRequired = null,
+    string? Label = null)
 {
+    /// <summary>How the subscription is named in logs and the unavailable list (the type, plus the channel when watched).</summary>
+    public string Name => Label ?? Type;
+
     public bool IsAuthorized(IReadOnlySet<string> granted) => MissingScope(granted) is null;
 
     /// <summary>A scope to grant so this subscription can be created; null when it is authorized.</summary>
@@ -30,7 +34,6 @@ internal static class EventSubSubscriptions
     private const string ReadShoutouts = "moderator:read:shoutouts";
     private const string ReadShieldMode = "moderator:read:shield_mode";
     private const string ReadWhispers = "user:read:whispers";
-    private const string ReadVips = "channel:read:vips";
     private const string ReadWarnings = "moderator:read:warnings";
     private const string ReadUnbanRequests = "moderator:read:unban_requests";
 
@@ -62,6 +65,9 @@ internal static class EventSubSubscriptions
         WithUser("channel.chat.clear", TwitchScopes.ReadChat),
         WithUser("channel.chat.clear_user_messages", TwitchScopes.ReadChat),
         WithUser("channel.chat_settings.update", TwitchScopes.ReadChat),
+        // The broadcaster's own messages held by AutoMod (the bot session has its own).
+        WithUser("channel.chat.user_message_hold", TwitchScopes.ReadChat),
+        WithUser("channel.chat.user_message_update", TwitchScopes.ReadChat),
         new("user.whisper.message", "1", [ReadWhispers, TwitchScopes.ManageWhispers], id => Condition(("user_id", id))),
 
         // Channel
@@ -80,6 +86,7 @@ internal static class EventSubSubscriptions
         Broadcaster("channel.subscribe", "1", TwitchScopes.ReadSubscriptions),
         Broadcaster("channel.subscription.message", "1", TwitchScopes.ReadSubscriptions),
         Broadcaster("channel.subscription.gift", "1", TwitchScopes.ReadSubscriptions),
+        Broadcaster("channel.subscription.end", "1", TwitchScopes.ReadSubscriptions),
         Broadcaster("channel.cheer", "1", TwitchScopes.ReadBits),
         Broadcaster("channel.bits.use", "1", TwitchScopes.ReadBits),
         Broadcaster("channel.custom_power_up_redemption.add", "1", TwitchScopes.ReadBits),
@@ -120,16 +127,18 @@ internal static class EventSubSubscriptions
         Broadcaster("channel.unban", "1", TwitchScopes.ChannelModerate),
         Broadcaster("channel.moderator.add", "1", TwitchScopes.ModerationRead),
         Broadcaster("channel.moderator.remove", "1", TwitchScopes.ModerationRead),
-        Broadcaster("channel.vip.add", "1", ReadVips, TwitchScopes.ManageVips),
-        Broadcaster("channel.vip.remove", "1", ReadVips, TwitchScopes.ManageVips),
+        Broadcaster("channel.vip.add", "1", TwitchScopes.ChannelReadVips, TwitchScopes.ManageVips),
+        Broadcaster("channel.vip.remove", "1", TwitchScopes.ChannelReadVips, TwitchScopes.ManageVips),
         WithModerator("channel.warning.send", "1", ReadWarnings, TwitchScopes.ManageWarnings),
         WithModerator("channel.warning.acknowledge", "1", ReadWarnings, TwitchScopes.ManageWarnings),
         WithModerator("channel.unban_request.create", "1", ReadUnbanRequests, TwitchScopes.ManageUnbanRequests),
         WithModerator("channel.unban_request.resolve", "1", ReadUnbanRequests, TwitchScopes.ManageUnbanRequests),
         WithModerator("channel.suspicious_user.update", "1", TwitchScopes.ReadSuspiciousUsers),
         WithModerator("channel.suspicious_user.message", "1", TwitchScopes.ReadSuspiciousUsers),
-        WithModerator("automod.message.hold", "1", TwitchScopes.ManageAutomod),
-        WithModerator("automod.message.update", "1", TwitchScopes.ManageAutomod),
+        // Version 2: only public blocked terms, and the reason (automod, blocked_term or blocked_link).
+        WithModerator("automod.message.hold", "2", TwitchScopes.ManageAutomod),
+        WithModerator("automod.message.update", "2", TwitchScopes.ManageAutomod),
+        WithModerator("automod.settings.update", "1", TwitchScopes.ManageAutomodSettings),
         WithModerator("automod.terms.update", "1", TwitchScopes.ManageAutomod),
         // Only its shared_chat_* actions are used (bans, timeouts and deletions in the other shared chat channels).
         new("channel.moderate", "2", [TwitchScopes.ReadModerators],
@@ -142,11 +151,39 @@ internal static class EventSubSubscriptions
         WithModerator("channel.guest_star_settings.update", "beta", GuestStar),
     ];
 
-    /// <summary>Subscriptions of the bot account session: only its whispers.</summary>
-    public static IReadOnlyList<EventSubSubscriptionSpec> Bot { get; } =
+    /// <summary>
+    /// Subscriptions of the bot account session: its whispers, and its messages in the broadcaster's chat that
+    /// AutoMod holds (conditions need the broadcaster's id, read when the session starts).
+    /// </summary>
+    public static IReadOnlyList<EventSubSubscriptionSpec> ForBot(Func<string> broadcasterId) =>
     [
         new("user.whisper.message", "1", [ReadWhispers, TwitchScopes.ManageWhispers], id => Condition(("user_id", id))),
+        new("channel.chat.user_message_hold", "1", [TwitchScopes.ReadChat],
+            id => Condition(("broadcaster_user_id", broadcasterId()), ("user_id", id))),
+        new("channel.chat.user_message_update", "1", [TwitchScopes.ReadChat],
+            id => Condition(("broadcaster_user_id", broadcasterId()), ("user_id", id))),
     ];
+
+    /// <summary>
+    /// Twitch's cost budget for subscriptions about channels that have not authorized Cuebot (per account, over
+    /// WebSocket). Each watched channel subscription costs 1; the broadcaster's own cost nothing.
+    /// </summary>
+    public const int MaxWatchedCost = 10;
+
+    /// <summary>Going live and offline (and, with <paramref name="updates"/>, title and category changes) of another channel.</summary>
+    public static IReadOnlyList<EventSubSubscriptionSpec> ForWatchedChannel(string channelId, string login, bool updates)
+    {
+        var specs = new List<EventSubSubscriptionSpec>
+        {
+            Watched("stream.online", "1", channelId, login),
+            Watched("stream.offline", "1", channelId, login),
+        };
+        if (updates) specs.Add(Watched("channel.update", "2", channelId, login));
+        return specs;
+    }
+
+    private static EventSubSubscriptionSpec Watched(string type, string version, string channelId, string login) =>
+        new(type, version, [], _ => Condition(("broadcaster_user_id", channelId)), Label: $"{type} ({login})");
 
     private static EventSubSubscriptionSpec Broadcaster(string type, string version = "1", params string[] scopes) =>
         new(type, version, scopes, id => Condition(("broadcaster_user_id", id)));

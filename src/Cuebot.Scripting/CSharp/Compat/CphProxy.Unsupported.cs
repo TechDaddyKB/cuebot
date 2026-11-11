@@ -19,14 +19,6 @@ public sealed partial class CphProxy
     public long TwitchGetChannelPointsUsedByUserId(string userId) =>
         NotSupported(0L, "Cuebot counts redemptions per reward but does not track the channel points users spent");
 
-    private const string NoBlockedUsersScope = "Cuebot does not request Twitch's user:manage:blocked_users scope";
-
-    /// <summary>Not supported (needs a Twitch scope Cuebot does not request). Returns false.</summary>
-    public bool TwitchUnblockUser(string userLogin) => NotSupported(false, NoBlockedUsersScope);
-
-    /// <summary>Not supported (needs a Twitch scope Cuebot does not request). Returns false.</summary>
-    public bool TwitchUnblockUserById(string userId) => NotSupported(false, NoBlockedUsersScope);
-
     /// <summary>Not supported: Cuebot does not keep a per-user tally of cheered Bits. Returns 0.</summary>
     public long TwitchGetBitsDonatedByUserId(string userId) => NotSupported(0L, "Cuebot does not keep a per-user tally of cheered Bits");
 

@@ -12,12 +12,17 @@ internal sealed class TwitchTriggers : ITriggerProvider
     private static readonly IReadOnlyList<string> TierChoices = ["Any", "1", "2", "3"];
 
     private readonly CommandTriggerType _command;
+    private readonly Func<IEnumerable<string>>? _powerUpTitles;
 
     public TwitchTriggers() : this(TimeProvider.System)
     {
     }
 
-    internal TwitchTriggers(TimeProvider time) => _command = new CommandTriggerType(new CooldownTracker(time));
+    internal TwitchTriggers(TimeProvider time, Func<IEnumerable<string>>? powerUpTitles = null)
+    {
+        _command = new CommandTriggerType(new CooldownTracker(time));
+        _powerUpTitles = powerUpTitles;
+    }
 
     public IEnumerable<ITriggerType> GetTriggers() =>
     [
@@ -57,6 +62,12 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.PyramidBroken, "Emote pyramid broken"),
         Event(T.WatchStreak, "Watch streak shared", [Min("minStreak", "Minimum streak", "0")], (e, s) => AtLeast(e, "streak", s, "minStreak")),
         Event(T.Modiversary, "Modiversary", [Min("minMonths", "Minimum months", "0")], (e, s) => AtLeast(e, "months", s, "minMonths")),
+        Event(T.GiftedDrops, "Drops gifted to chat", [Min("minRecipients", "Minimum recipients", "0")],
+            (e, s) => AtLeast(e, "recipientCount", s, "minRecipients")),
+        Event(T.SentMessageHeld, "Cuebot's message held by AutoMod"),
+        Event(T.SentMessageUpdated, "Cuebot's held message reviewed",
+            [new("status", "Result", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "approved", "denied", "invalid"] }],
+            (e, s) => s["status"] is "" or "Any" || Equal(e, "status", s["status"])),
 
         // Channel
         Event(T.Follow, "Follow"),
@@ -67,6 +78,10 @@ internal sealed class TwitchTriggers : ITriggerProvider
             (e, s) => Equal(e, "categoryName", s["categoryName"])),
         Event(T.ViewerCountUpdate, "Viewer count update", [Min("minViewers", "Minimum viewers", "0")], (e, s) => AtLeast(e, "viewers", s, "minViewers")),
         Event(T.PresentViewers, "People in chat (every few minutes)"),
+        Event(T.WatchedChannelOnline, "Watched channel went live", [ChannelParameter()], (e, s) => Equal(e, "channelUserName", s["channel"])),
+        Event(T.WatchedChannelOffline, "Watched channel went offline", [ChannelParameter()], (e, s) => Equal(e, "channelUserName", s["channel"])),
+        Event(T.WatchedChannelUpdate, "Watched channel changed title or category", [ChannelParameter()],
+            (e, s) => Equal(e, "channelUserName", s["channel"])),
 
         // Subscriptions and bits
         Event(T.Sub, "Subscription", [TierParameter()], (e, s) => TierMatches(e, s)),
@@ -77,6 +92,7 @@ internal sealed class TwitchTriggers : ITriggerProvider
             [new("minTotal", "Minimum gifted", ParameterKind.Number) { DefaultValue = "1" }],
             (e, s) => e.Args.GetLong("total") >= s.GetInt("minTotal")),
         Event(T.SubGift, "Gift subscription (each receiver)", [TierParameter()], (e, s) => TierMatches(e, s)),
+        Event(T.SubEnded, "Subscription ended", [TierParameter()], (e, s) => TierMatches(e, s)),
         Event(T.GiftBomb, "Gift bundle (community gift)",
             [TierParameter(), Min("minTotal", "Minimum gifted", "1")],
             (e, s) => TierMatches(e, s) && AtLeast(e, "total", s, "minTotal")),
@@ -95,7 +111,7 @@ internal sealed class TwitchTriggers : ITriggerProvider
                 { DefaultValue = "Any", Choices = ["Any", "gigantify_an_emote", "celebration", "message_effect"] }],
             (e, s) => s["powerUpType"] == "Any" || Equal(e, "powerUpType", s["powerUpType"])),
         Event(T.CustomPowerUpRedemption, "Custom power-up redemption",
-            [new("powerUp", "Power-up") { Help = "Title or id of one of your custom power-ups; leave empty to match every one" }],
+            [new("powerUp", "Power-up") { Help = "Title or id of one of your custom power-ups; leave empty to match every one", Suggestions = _powerUpTitles }],
             (e, s) => Equal(e, "rewardTitle", s["powerUp"]) || Equal(e, "rewardId", s["powerUp"])),
         Event(T.SubCounterRollover, "Sub counter rollover"),
 
@@ -178,6 +194,7 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.SharedChatRaid, "Shared chat: raid"),
         Event(T.SharedChatAnnouncement, "Shared chat: announcement"),
         Event(T.SharedChatModiversary, "Shared chat: modiversary"),
+        Event(T.SharedChatGiftedDrops, "Shared chat: drops gifted"),
         Event(T.SharedChatMessageDeleted, "Shared chat: message deleted"),
         Event(T.SharedChatUserBanned, "Shared chat: user banned"),
         Event(T.SharedChatUserTimedOut, "Shared chat: user timed out"),
@@ -212,6 +229,7 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.SuspiciousUserMessage, "Suspicious user message"),
         Event(T.AutomodMessageHeld, "AutoMod message held"),
         Event(T.AutomodMessageUpdated, "AutoMod message updated"),
+        Event(T.AutomodSettingsUpdated, "AutoMod settings changed"),
         Event(T.BlockedTermsAdded, "Blocked terms added"),
         Event(T.BlockedTermsDeleted, "Blocked terms deleted"),
         Event(T.PermittedTermsAdded, "Permitted terms added"),
@@ -226,6 +244,9 @@ internal sealed class TwitchTriggers : ITriggerProvider
         Event(T.BotConnected, "Bot account connected"),
         Event(T.BotDisconnected, "Bot account disconnected"),
     ];
+
+    private static ParameterDescriptor ChannelParameter() =>
+        new("channel", "Channel (login)") { Help = "Leave empty for every watched channel" };
 
     private static ParameterDescriptor ContainsParameter() =>
         new("contains", "Message contains") { Help = "Leave empty to match every message" };

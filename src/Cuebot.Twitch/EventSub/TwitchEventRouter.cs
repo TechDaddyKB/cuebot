@@ -73,6 +73,18 @@ internal sealed class TwitchEventRouter(
         lock (_gate) _chatSettings = settings;
     }
 
+    /// <summary>The running hype train's level when connecting (0: none), so the next update can report a level-up.</summary>
+    public void SeedHypeTrain(int level)
+    {
+        lock (_gate) _hypeTrainLevel = Math.Max(0, level);
+    }
+
+    /// <summary>Whether the channel is in a shared chat session when connecting (null: not in one; true: hosting it).</summary>
+    public void SeedSharedChat(bool? isHost)
+    {
+        lock (_gate) _sharedChatHost = isHost;
+    }
+
     /// <summary>The broadcaster's account (read once per connection), for Streamer.bot's broadcastUser* and broadcaster* arguments.</summary>
     public void SeedBroadcaster(TwitchUser user)
     {

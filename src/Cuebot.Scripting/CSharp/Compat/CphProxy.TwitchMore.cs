@@ -295,13 +295,19 @@ public sealed partial class CphProxy
             ? element.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.ValueKind == JsonValueKind.String ? p.Value.GetString() ?? "" : "")
             : [];
 
-    /// <summary>Not supported: Cuebot does not request Twitch's user:manage:blocked_users scope. Returns false.</summary>
+    /// <summary>Blocks a user for the broadcaster account (needs user:manage:blocked_users). The context and reason are not sent.</summary>
     public bool TwitchBlockUser(string userLogin, TwitchBlockContext context = TwitchBlockContext.None, TwitchBlockReason reason = TwitchBlockReason.None) =>
-        NotSupported(false, "Cuebot does not request Twitch's user:manage:blocked_users scope");
+        TwitchUserStep("twitch.blockUser", Login(userLogin));
 
-    /// <summary>Not supported: Cuebot does not request Twitch's user:manage:blocked_users scope. Returns false.</summary>
+    /// <summary>Blocks a user by id for the broadcaster account (needs user:manage:blocked_users).</summary>
     public bool TwitchBlockUserById(string userId, TwitchBlockContext context = TwitchBlockContext.None, TwitchBlockReason reason = TwitchBlockReason.None) =>
-        NotSupported(false, "Cuebot does not request Twitch's user:manage:blocked_users scope");
+        TwitchUserStep("twitch.blockUser", "id:" + userId.Trim());
+
+    /// <summary>Unblocks a user for the broadcaster account (needs user:manage:blocked_users).</summary>
+    public bool TwitchUnblockUser(string userLogin) => TwitchUserStep("twitch.unblockUser", Login(userLogin));
+
+    /// <summary>Unblocks a user by id for the broadcaster account (needs user:manage:blocked_users).</summary>
+    public bool TwitchUnblockUserById(string userId) => TwitchUserStep("twitch.unblockUser", "id:" + userId.Trim());
 
     // ---- Clips (most viewed first, as Twitch sorts them; at most 1000) ---------------------------------------------
 

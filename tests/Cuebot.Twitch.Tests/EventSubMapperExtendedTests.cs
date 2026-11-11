@@ -546,7 +546,7 @@ public sealed class EventSubMapperExtendedTests
     [Fact]
     public void Every_subscribed_type_has_a_mapping()
     {
-        foreach (var spec in EventSubSubscriptions.All.Concat(EventSubSubscriptions.Bot))
+        foreach (var spec in EventSubSubscriptions.All.Concat(EventSubSubscriptions.ForBot(() => "1")))
         {
             var payload = spec.Type switch
             {

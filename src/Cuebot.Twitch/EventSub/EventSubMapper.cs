@@ -27,12 +27,18 @@ internal static class EventSubMapper
         "channel.chat.clear_user_messages" => Event(TwitchEventTypes.UserMessagesCleared, User(e, "target_user")),
         "channel.chat_settings.update" => ChatSettings(e),
         "user.whisper.message" => Whisper(e),
+        "channel.chat.user_message_hold" => SentMessage(TwitchEventTypes.SentMessageHeld, e),
+        "channel.chat.user_message_update" => SentMessage(TwitchEventTypes.SentMessageUpdated, e),
 
         // Channel
         "channel.follow" => Event(TwitchEventTypes.Follow, User(e, "user"), a => a["followedAt"] = e.Str("followed_at")),
+        // stream.online/offline and channel.update for another channel come from the watched channels list.
+        "channel.update" when IsOtherChannel(e, broadcasterId) => WatchedChannel(TwitchEventTypes.WatchedChannelUpdate, e),
+        "stream.online" when IsOtherChannel(e, broadcasterId) => WatchedChannel(TwitchEventTypes.WatchedChannelOnline, e),
+        "stream.offline" when IsOtherChannel(e, broadcasterId) => WatchedChannel(TwitchEventTypes.WatchedChannelOffline, e),
         "channel.update" => StreamUpdate(e),
         "stream.online" => StreamOnline(e),
-        "stream.offline" => new BotEvent(TwitchEventTypes.StreamOffline, User(e, "broadcaster_user")),
+        "stream.offline" => Event(TwitchEventTypes.StreamOffline, User(e, "broadcaster_user"), a => a["streamId"] = e.Str("id")),
         "channel.raid" => Raid(e, broadcasterId),
         "channel.ad_break.begin" => AdBreak(e),
         "channel.shared_chat.begin" => SharedChatSession(TwitchEventTypes.SharedChatBegin, e),
@@ -43,6 +49,11 @@ internal static class EventSubMapper
         "channel.subscribe" => Sub(e),
         "channel.subscription.message" => Resub(e),
         "channel.subscription.gift" => GiftSub(e),
+        "channel.subscription.end" => Event(TwitchEventTypes.SubEnded, User(e, "user"), a =>
+        {
+            a["tier"] = Tier(e.Str("tier"));
+            a["isGift"] = e.Bool("is_gift");
+        }),
         "channel.cheer" => Cheer(e),
         "channel.bits.use" => BitsUse(e),
         "channel.custom_power_up_redemption.add" => CustomPowerUp(e),
@@ -122,8 +133,7 @@ internal static class EventSubMapper
         {
             a["messageId"] = e.Str("message_id");
             a["message"] = Text(e);
-            a["category"] = e.Str("category");
-            a["level"] = e.Int("level");
+            AutomodReason(a, e);
             a["heldAt"] = e.Str("held_at");
         }),
         "automod.message.update" => Event(TwitchEventTypes.AutomodMessageUpdated, User(e, "user"), a =>
@@ -131,9 +141,15 @@ internal static class EventSubMapper
             Moderator(a, e);
             a["messageId"] = e.Str("message_id");
             a["message"] = Text(e);
-            a["category"] = e.Str("category");
-            a["level"] = e.Int("level");
+            AutomodReason(a, e);
             a["status"] = e.Str("status");
+        }),
+        "automod.settings.update" => Event(TwitchEventTypes.AutomodSettingsUpdated, User(e, "broadcaster_user"), a =>
+        {
+            Moderator(a, e);
+            // overall_level is null when the categories were set one by one.
+            a["overallLevel"] = e.Child("overall_level") is { ValueKind: JsonValueKind.Number } ? e.Int("overall_level") : -1;
+            foreach (var (field, arg) in AutomodCategories) a[arg] = e.Int(field);
         }),
         "automod.terms.update" => AutomodTerms(e),
         "channel.moderate" => SharedChatModeration(e),
@@ -183,6 +199,7 @@ internal static class EventSubMapper
         args["isPowerUp"] = type.StartsWith("power_ups_", StringComparison.Ordinal);
         args["rewardId"] = e.Str("channel_points_custom_reward_id");
         Emotes(args, e);
+        Gifs(args, e);
 
         var reply = e.Child("reply");
         args["isReply"] = reply is not null;
@@ -283,8 +300,12 @@ internal static class EventSubMapper
             case "modiversary":
                 args["months"] = detail.Int("months");
                 return new BotEvent(shared ? TwitchEventTypes.SharedChatModiversary : TwitchEventTypes.Modiversary, args);
+            case "gifted_drops_summary":
+                args["recipientCount"] = detail.Int("recipient_count");
+                return new BotEvent(shared ? TwitchEventTypes.SharedChatGiftedDrops : TwitchEventTypes.GiftedDrops, args);
             default:
-                // sub, resub, raid and charity donations have dedicated EventSub types.
+                // sub, resub, raid and charity donations have dedicated EventSub types; "unknown" is a notice type
+                // Twitch has not documented yet, which has nothing to act on.
                 return null;
         }
     }
@@ -350,6 +371,17 @@ internal static class EventSubMapper
             CultureInfo.InvariantCulture, out var months) ? months : 0;
     }
 
+    /// <summary>GIF fragments (added by Twitch 2026-07-16): their ids and URLs, which must be used unmodified.</summary>
+    internal static void Gifs(Dictionary<string, object?> args, JsonElement e)
+    {
+        var gifs = (e.Child("message") ?? default).Items("fragments")
+            .Where(f => f.Str("type") == "gif" && f.Child("gif") is not null)
+            .Select(f => f.Child("gif")!.Value).ToArray();
+        args["hasGif"] = gifs.Length > 0;
+        args["gifIds"] = string.Join(",", gifs.Select(g => g.Str("id")));
+        args["gifUrls"] = string.Join(" ", gifs.Select(g => g.Str("url")));
+    }
+
     /// <summary>
     /// Emote positions in the Twitch IRC format ("id:0-4,6-10/id2:12-16", code points, inclusive) plus names and count,
     /// computed from the message fragments.
@@ -394,6 +426,37 @@ internal static class EventSubMapper
     }
 
     // ---------------------------------------------------------------- channel
+
+    private static bool IsOtherChannel(JsonElement e, string broadcasterId) =>
+        broadcasterId.Length > 0 && e.Str("broadcaster_user_id") is { Length: > 0 } id && id != broadcasterId;
+
+    /// <summary>A watched channel went live, offline or changed its title or category.</summary>
+    private static BotEvent WatchedChannel(string type, JsonElement e) => Event(type, User(e, "broadcaster_user"), a =>
+    {
+        a["channel"] = e.Str("broadcaster_user_name");
+        a["channelUserName"] = e.Str("broadcaster_user_login");
+        a["channelId"] = e.Str("broadcaster_user_id");
+        if (type == TwitchEventTypes.WatchedChannelOnline)
+        {
+            a["streamType"] = e.Str("type");
+            a["startedAt"] = e.Str("started_at");
+        }
+        if (type == TwitchEventTypes.WatchedChannelUpdate)
+        {
+            a["title"] = e.Str("title");
+            a["categoryName"] = e.Str("category_name");
+            a["categoryId"] = e.Str("category_id");
+            a["language"] = e.Str("language");
+        }
+    });
+
+    /// <summary>One of Cuebot's own messages (bot or broadcaster) held by AutoMod, or its review result.</summary>
+    private static BotEvent SentMessage(string type, JsonElement e) => Event(type, User(e, "user"), a =>
+    {
+        a["messageId"] = e.Str("message_id");
+        a["message"] = Text(e);
+        a["status"] = e.Str("status");
+    });
 
     private static BotEvent StreamUpdate(JsonElement e)
     {
@@ -898,6 +961,28 @@ internal static class EventSubMapper
     }
 
     /// <summary>The text of a <c>message</c> field that is either an object with <c>text</c> or a plain string.</summary>
+    private static readonly (string Field, string Arg)[] AutomodCategories =
+    [
+        ("disability", "disability"), ("aggression", "aggression"), ("sexuality_sex_or_gender", "sexualitySexOrGender"),
+        ("misogyny", "misogyny"), ("bullying", "bullying"), ("swearing", "swearing"),
+        ("race_ethnicity_or_religion", "raceEthnicityOrReligion"), ("sex_based_terms", "sexBasedTerms"),
+    ];
+
+    /// <summary>
+    /// Why AutoMod held a message. Version 2 sends reason (automod, blocked_term or blocked_link) with the category and
+    /// level under "automod"; version 1 sent category and level at the top level.
+    /// </summary>
+    private static void AutomodReason(Dictionary<string, object?> a, JsonElement e)
+    {
+        var automod = e.Child("automod");
+        a["reason"] = e.Str("reason") is { Length: > 0 } reason ? reason : "automod";
+        a["category"] = automod is { } am ? am.Str("category") : e.Str("category");
+        a["level"] = automod is { } al ? al.Int("level") : e.Int("level");
+        var terms = (e.Child("blocked_term") ?? default).Items("terms_found").ToArray();
+        a["blockedTermIds"] = string.Join(",", terms.Select(t => t.Str("term_id")));
+        a["isBlockedTerm"] = terms.Length > 0;
+    }
+
     private static string Text(JsonElement e) => e.Child("message") switch
     {
         { ValueKind: JsonValueKind.Object } message => message.Str("text"),

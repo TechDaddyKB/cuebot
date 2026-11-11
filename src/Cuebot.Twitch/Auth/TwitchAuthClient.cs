@@ -98,6 +98,10 @@ internal sealed class TwitchAuthClient(HttpClient http, Uri authBase, TimeProvid
             body.Strings("scopes"), body.Int("expires_in"));
     }
 
+    /// <summary>
+    /// Revokes the token. A 400 ("Invalid token") means it no longer works anyway; any other failure throws so the
+    /// caller can report that the token may still be valid.
+    /// </summary>
     public async Task RevokeAsync(string clientId, string accessToken, CancellationToken ct)
     {
         using var response = await PostFormAsync("revoke", new()
@@ -105,6 +109,9 @@ internal sealed class TwitchAuthClient(HttpClient http, Uri authBase, TimeProvid
             ["client_id"] = clientId,
             ["token"] = accessToken,
         }, ct).ConfigureAwait(false);
+        if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest) return;
+        var body = await ReadJsonAsync(response, ct).ConfigureAwait(false);
+        throw new TwitchApiException($"Revoking the Twitch token failed: {ErrorMessage(body)}", (int)response.StatusCode);
     }
 
     private Task<HttpResponseMessage> PostFormAsync(string path, Dictionary<string, string> form, CancellationToken ct) =>

@@ -249,6 +249,33 @@ public sealed class SubActionTests : IDisposable
             "broadcaster_id=1337&moderator_id=1337&session_id=s1&guest_id=55&slot_id=2&should_reinvite_guest=true", "" },
         { "twitch.updateGuestStarSlotSettings", "slot=2;audio=Off;volume=50", "PATCH", "/helix/guest_star/slot_settings",
             "broadcaster_id=1337&moderator_id=1337&session_id=s1&slot_id=2&is_audio_enabled=false&volume=50", "" },
+
+        // Added from the 2026 Twitch API reference
+        { "twitch.createClipFromVod", "videoId=v1;endOffset=120;title=Nice;duration=20", "POST", "/helix/videos/clips",
+            "editor_id=1337&broadcaster_id=1337&vod_id=v1&vod_offset=120&title=Nice&duration=20.0", "" },
+        { "twitch.getVideos", "", "GET", "/helix/videos", "user_id=1337&type=archive&sort=time&first=1", "" },
+        { "twitch.searchChannels", "query=cozy", "GET", "/helix/search/channels", "query=cozy&live_only=false&first=5", "" },
+        { "twitch.getStreamMarkers", "", "GET", "/helix/streams/markers", "user_id=1337&first=20", "" },
+        { "twitch.getHypeTrain", "", "GET", "/helix/hypetrain/status", "broadcaster_id=1337", "" },
+        { "twitch.getCreatorGoals", "", "GET", "/helix/goals", "broadcaster_id=1337", "" },
+        { "twitch.getBitsLeaderboard", "count=3;period=week", "GET", "/helix/bits/leaderboard", "count=3&period=week", "" },
+        { "twitch.getCustomPowerUps", "", "GET", "/helix/bits/custom_power_ups", "broadcaster_id=1337", "" },
+        { "twitch.getCharityDonations", "", "GET", "/helix/charity/donations", "broadcaster_id=1337&first=20", "" },
+        { "twitch.getUnbanRequests", "", "GET", "/helix/moderation/unban_requests", "broadcaster_id=1337&moderator_id=1337&status=pending&first=100", "" },
+        { "twitch.resolveUnbanRequest", "requestId=u1;decision=approve;message=ok", "PATCH", "/helix/moderation/unban_requests",
+            "broadcaster_id=1337&moderator_id=1337&unban_request_id=u1&status=approved&resolution_text=ok", "" },
+        { "twitch.getBanStatus", "user=target", "GET", "/helix/moderation/banned", "broadcaster_id=1337&first=100&user_id=4242", "" },
+        { "twitch.getAutomodSettings", "", "GET", "/helix/moderation/automod/settings", "broadcaster_id=1337&moderator_id=1337", "" },
+        { "twitch.setAutomodLevel", "level=2", "PUT", "/helix/moderation/automod/settings", "broadcaster_id=1337&moderator_id=1337", "overall_level=2" },
+        { "twitch.blockUser", "user=target", "PUT", "/helix/users/blocks", "target_user_id=4242&source_context=chat", "" },
+        { "twitch.unblockUser", "user=target", "DELETE", "/helix/users/blocks", "target_user_id=4242", "" },
+        { "twitch.getSchedule", "", "GET", "/helix/schedule", "broadcaster_id=1337&first=5", "" },
+        { "twitch.addScheduleSegment", "start=2026-12-01T19:00:00Z;duration=120;title=Games;recurring=true", "POST", "/helix/schedule/segment",
+            "broadcaster_id=1337", "start_time=\"2026-12-01T19:00:00Z\";duration=\"120\";is_recurring=true;title=\"Games\";!category_id" },
+        { "twitch.cancelScheduleSegment", "segmentId=s1;canceled=true", "PATCH", "/helix/schedule/segment", "broadcaster_id=1337&id=s1", "is_canceled=true" },
+        { "twitch.deleteScheduleSegment", "segmentId=s1", "DELETE", "/helix/schedule/segment", "broadcaster_id=1337&id=s1", "" },
+        { "twitch.setVacation", "enabled=false", "PATCH", "/helix/schedule/settings", "broadcaster_id=1337&is_vacation_enabled=false", "" },
+        { "twitch.getSharedChatSession", "", "GET", "/helix/shared_chat/session", "broadcaster_id=1337", "" },
     };
 
     [Fact]

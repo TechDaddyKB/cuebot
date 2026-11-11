@@ -75,6 +75,9 @@ Runs when AutoMod holds back a message for a moderator to review.
 | `%message%` | The held message |
 | `%category%` | Why AutoMod held it, such as swearing |
 | `%level%` | How strong the match was |
+| `%reason%` | Why it was held: automod (AutoMod's filter), blocked_term (one of your blocked terms) or blocked_link (a link) |
+| `%isBlockedTerm%` | True when a blocked term caught it |
+| `%blockedTermIds%` | The ids of the blocked terms it matched |
 
 <small>Type id: `twitch.automodMessageHeld`</small>
 
@@ -93,8 +96,25 @@ Runs when a moderator approves or denies a message AutoMod was holding.
 | `%moderatorUserName%` | The lowercase login name of that moderator |
 | `%message%` | The held message |
 | `%status%` | What happened to it, such as approved or denied |
+| `%reason%` | Why it was held: automod (AutoMod's filter), blocked_term (one of your blocked terms) or blocked_link (a link) |
+| `%isBlockedTerm%` | True when a blocked term caught it |
+| `%blockedTermIds%` | The ids of the blocked terms it matched |
 
 <small>Type id: `twitch.automodMessageUpdated`</small>
+
+## AutoMod settings changed
+
+Runs when someone changes how strict AutoMod is in your chat.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%overallLevel%` | The overall level, or -1 when the kinds were set one by one |
+| `%moderator%` | Who changed it |
+| `%swearing%` | The level for swearing (also aggression, bullying, disability, misogyny, raceEthnicityOrReligion, sexBasedTerms, sexualitySexOrGender) |
+
+<small>Type id: `twitch.automodSettingsUpdated`</small>
 
 ## Bits badge tier
 
@@ -390,6 +410,9 @@ Runs when someone writes a message in your Twitch chat. Use it to react to words
 | `%emoteCount%` | How many emotes are in the message |
 | `%color%` | Their chat name colour |
 | `%isSharedChat%` | True if it came from another channel in a shared chat |
+| `%hasGif%` | True when the message has a GIF in it |
+| `%gifUrls%` | The GIFs' web addresses, separated by spaces |
+| `%gifIds%` | The GIFs' ids, separated by commas |
 
 <small>Type id: `twitch.chatMessage`</small>
 
@@ -663,6 +686,39 @@ Runs when someone cheers with Bits in your chat. Use the limits to give bigger c
 
 <small>Type id: `twitch.cheer`</small>
 
+## Cuebot's held message reviewed
+
+Runs when a held message Cuebot sent has been reviewed.
+
+| Setting | What to put in |
+| --- | --- |
+| **Result** | Only run for this result: approved (shown in chat), denied (removed) or invalid. Any runs for all. Options: Any, approved, denied, invalid. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%status%` | approved, denied or invalid |
+| `%message%` | The message |
+| `%messageId%` | Its id |
+| `%user%` | The account that sent it |
+
+<small>Type id: `twitch.sentMessageUpdated`</small>
+
+## Cuebot's message held by AutoMod
+
+Runs when AutoMod holds back a message Cuebot sent (from your bot account or your own account), so it is not shown until a moderator reviews it.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%message%` | The held message |
+| `%messageId%` | Its id |
+| `%user%` | The account that sent it |
+
+<small>Type id: `twitch.sentMessageHeld`</small>
+
 ## Custom power-up redemption
 
 Runs when a viewer redeems one of your own custom power-ups (the ones you made and viewers pay for with Bits).
@@ -682,6 +738,24 @@ Runs when a viewer redeems one of your own custom power-ups (the ones you made a
 | `%rewardPrompt%` | The description you gave it |
 
 <small>Type id: `twitch.customPowerUpRedemption`</small>
+
+## Drops gifted to chat
+
+Runs when someone gifts Drops to people in your chat.
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum recipients** | Only run when at least this many people got a Drop. 0 runs every time. Starts as: `0`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who gifted the Drops |
+| `%recipientCount%` | How many people got one |
+| `%systemMessage%` | Twitch's own message about it |
+
+<small>Type id: `twitch.giftedDrops`</small>
 
 ## Emote pyramid broken
 
@@ -1661,6 +1735,20 @@ Runs when an announcement is posted in another channel of a shared chat you are 
 
 <small>Type id: `twitch.sharedChatAnnouncement`</small>
 
+## Shared chat: drops gifted
+
+Runs when someone gifts Drops in another channel of your Shared Chat session.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who gifted the Drops |
+| `%recipientCount%` | How many people got one |
+| `%sourceBroadcaster%` | The channel it happened in |
+
+<small>Type id: `twitch.sharedChatGiftedDrops`</small>
+
 ## Shared chat: gift bomb
 
 Runs when someone gifts a bundle of subs in another channel of a shared chat you are in.
@@ -1964,6 +2052,7 @@ Runs when your stream ends. Handy for a goodbye message or to switch things off.
 | --- | --- |
 | `%user%` | Your channel's display name |
 | `%endedAt%` | When the stream ended |
+| `%streamId%` | The id of the stream that ended |
 
 <small>Type id: `twitch.streamOffline`</small>
 
@@ -2038,6 +2127,25 @@ Runs when someone subscribes to your channel for the first time. Great for a tha
 | `%isGift%` | True if someone gifted it to them |
 
 <small>Type id: `twitch.sub`</small>
+
+## Subscription ended
+
+Runs when someone's subscription ends (they did not renew, or a gifted sub ran out).
+
+| Setting | What to put in |
+| --- | --- |
+| **Tier** | Only run for this subscription level (1, 2 or 3). Choose Any to run for every level. Options: Any, 1, 2, 3. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Whose subscription ended |
+| `%userName%` | Their login name |
+| `%tier%` | Subscription level: 1, 2 or 3 |
+| `%isGift%` | True when it was a gifted sub |
+
+<small>Type id: `twitch.subEnded`</small>
 
 ## Suspicious user message
 
@@ -2312,6 +2420,66 @@ Runs when a viewer shares their watch streak in chat (how many streams in a row 
 | `%message%` | Their message |
 
 <small>Type id: `twitch.watchStreak`</small>
+
+## Watched channel changed title or category
+
+Runs when a watched channel changes its title or category. Turn it on under Watched channels on the Twitch Settings tab.
+
+| Setting | What to put in |
+| --- | --- |
+| **Channel (login)** | Only run for this channel (its login name). Leave empty to run for every watched channel. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%channel%` | The channel's display name |
+| `%channelUserName%` | Its login name |
+| `%channelId%` | Its id |
+| `%title%` | The new title |
+| `%categoryName%` | The new category |
+| `%categoryId%` | Its id |
+| `%language%` | The stream language |
+
+<small>Type id: `twitch.watchedChannelUpdate`</small>
+
+## Watched channel went live
+
+Runs when one of your watched channels goes live. Add channels under Watched channels on the Twitch Settings tab.
+
+| Setting | What to put in |
+| --- | --- |
+| **Channel (login)** | Only run for this channel (its login name). Leave empty to run for every watched channel. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%channel%` | The channel's display name |
+| `%channelUserName%` | Its login name |
+| `%channelId%` | Its id |
+| `%startedAt%` | When the stream started |
+| `%streamType%` | live, or another kind Twitch reports |
+
+<small>Type id: `twitch.watchedChannelOnline`</small>
+
+## Watched channel went offline
+
+Runs when one of your watched channels ends its stream.
+
+| Setting | What to put in |
+| --- | --- |
+| **Channel (login)** | Only run for this channel (its login name). Leave empty to run for every watched channel. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%channel%` | The channel's display name |
+| `%channelUserName%` | Its login name |
+| `%channelId%` | Its id |
+
+<small>Type id: `twitch.watchedChannelOffline`</small>
 
 ## Whisper (bot account)
 

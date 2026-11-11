@@ -373,7 +373,7 @@ public sealed class TwitchEventSubListenerTests
     {
         foreach (var spec in EventSubSubscriptions.All.Where(s => s.Scopes.Count > 0))
             Assert.True(spec.Scopes.Any(TwitchScopes.All.Contains), spec.Type);
-        Assert.True(EventSubSubscriptions.Bot.All(s => s.Scopes.Any(TwitchScopes.Bot.Contains)));
+        Assert.True(EventSubSubscriptions.ForBot(() => "1").All(s => s.Scopes.Any(TwitchScopes.Bot.Contains)));
     }
 
     [Fact]

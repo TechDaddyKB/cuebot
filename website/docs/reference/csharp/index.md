@@ -25,7 +25,7 @@ public class CPHInline
 | [Global and user variables](variables.md) | 35 |
 | [Chat, OBS, speech and sounds](platforms.md) | 30 |
 | [Twitch, YouTube and Kick accounts and moderation](streaming.md) | 21 |
-| [Twitch rewards, chat, moderation and clips](twitchmore.md) | 44 |
+| [Twitch rewards, chat, moderation and clips](twitchmore.md) | 46 |
 | [Twitch polls, predictions, raids, rewards and Guest Star](twitchchannel.md) | 64 |
 | [YouTube, Kick, Meld Studio, OBS filters and Parse](platformsmore.md) | 48 |
 | [More OBS, and Streamlabs Desktop](obs.md) | 67 |
@@ -33,6 +33,6 @@ public class CPHInline
 | [Commands, groups and timers](management.md) | 55 |
 | [Chat actions, custom events, other code and the keyboard](system.md) | 13 |
 | [Stream Deck, VTube Studio, Voicemod, Wave Link, Lumia, MIDI and T.I.T.S.](apps.md) | 75 |
-| [What Cuebot does not support](unsupported.md) | 38 |
+| [What Cuebot does not support](unsupported.md) | 36 |
 
 Python code has no `CPH`. It uses [script functions](../script-functions/index.md) instead, which C# can use too.

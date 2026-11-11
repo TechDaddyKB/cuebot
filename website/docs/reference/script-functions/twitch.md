@@ -49,6 +49,32 @@ Makes a viewer a moderator in your Twitch channel. Fails when Twitch is not conn
     answer = cb.twitch_add_moderator(user="coolviewer42")
     ```
 
+## twitch.addScheduleSegment
+
+Adds a stream to your Twitch schedule. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `start` | `start` | Optional. When it starts, like 2026-12-01 19:00, in this computer's time zone. |
+| `duration` | `duration` | Optional. How long it runs, in minutes (30 to 1380). |
+| `title` | `title` | Optional. The stream's title, up to 140 characters. |
+| `category` | `category` | Optional. A category name or id. Leave empty for none. |
+| `recurring` | `recurring` | Optional. Tick to repeat it every week. |
+
+**Gives back:** An object with scheduleSegmentId.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.addScheduleSegment", new { start = "2026-12-01 19:00", duration = "180", title = "Cozy games", recurring = "true" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_add_schedule_segment(start="2026-12-01 19:00", duration="180", title="Cozy games", recurring="true")
+    ```
+
 ## twitch.addSuspiciousStatus
 
 Marks a viewer as suspicious. "Active Monitoring" flags their messages for your mods; "Restricted" keeps their messages out of chat. Fails when Twitch is not connected.
@@ -163,6 +189,28 @@ Bans a viewer from your Twitch chat for good. Fails when the user is not found. 
     answer = cb.twitch_ban(user="spambot123", reason="Spam")
     ```
 
+## twitch.blockUser
+
+Blocks someone for your Twitch account, so they cannot whisper you or appear in your chat. Needs the Block users permission on the Twitch Settings tab. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action. |
+
+**Gives back:** Nothing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.blockUser", new { user = "spammer123" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_block_user(user="spammer123")
+    ```
+
 ## twitch.cancelPrediction
 
 Cancels the running Twitch prediction and gives everyone their points back. Fails when Twitch is not connected.
@@ -197,6 +245,29 @@ Stops the raid you started, before it goes. Fails when Twitch is not connected.
 
     ```python
     answer = cb.twitch_cancel_raid()
+    ```
+
+## twitch.cancelScheduleSegment
+
+Cancels one scheduled stream (it stays on the schedule, marked cancelled), or brings it back. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `segmentId` | `segment_id` | Optional. The scheduled stream's id, from Get stream schedule or Add to stream schedule. |
+| `canceled` | `canceled` | Optional. Tick to cancel it; untick to bring it back. |
+
+**Gives back:** Nothing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.cancelScheduleSegment", new { segmentId = "abc123", canceled = "true" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_cancel_schedule_segment(segment_id="abc123", canceled="true")
     ```
 
 ## twitch.clearChat
@@ -268,6 +339,8 @@ Makes a clip of your live Twitch stream. Fails when Twitch is not connected.
 | Value | In Python | What to put in |
 | --- | --- | --- |
 | `hasDelay` | `has_delay` | Optional. true makes the clip account for your stream delay. Leave it out for false. |
+| `title` | `title` | Optional. The clip's title. Leave it out to use your stream title. |
+| `duration` | `duration` | Optional. The clip's length in seconds, 5 to 60. Leave it out for Twitch's 30 seconds. |
 
 **Gives back:** An object with clipId, clipEditUrl, clipUrl, createClipSuccess, createClipId, createClipCreatedAt and createClipUrl.
 
@@ -281,6 +354,32 @@ Makes a clip of your live Twitch stream. Fails when Twitch is not connected.
 
     ```python
     answer = cb.twitch_create_clip()
+    ```
+
+## twitch.createClipFromVod
+
+Clips a moment that already happened, from your current or a past broadcast. Use it for "clip the last 2 minutes" style commands. Twitch only allows this when past broadcasts are stored on your channel. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `title` | `title` | Optional. The clip's title. Twitch requires one. |
+| `secondsAgo` | `seconds_ago` | Optional. When no video id is given: how many seconds ago the clip should end, counted back from now in the current broadcast. 0 ends it now. |
+| `duration` | `duration` | Optional. How long the clip is, in seconds, from 5 to 60. |
+| `videoId` | `video_id` | Optional. The video to clip. Leave empty for your current (or latest) broadcast. |
+| `endOffset` | `end_offset` | Optional. With a video id: where the clip ends, in seconds from the start of the video. |
+
+**Gives back:** An object with clipId, clipUrl, clipEditUrl and clipVideoId.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.createClipFromVod", new { title = "That play", secondsAgo = "60", duration = "30" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_create_clip_from_vod(title="That play", seconds_ago="60", duration="30")
     ```
 
 ## twitch.createGuestStarSession
@@ -490,6 +589,28 @@ Deletes a channel point reward for good. Twitch only lets Cuebot change rewards 
     answer = cb.twitch_delete_reward(reward="Hydrate!")
     ```
 
+## twitch.deleteScheduleSegment
+
+Removes a stream from your schedule. For a weekly stream this removes every week. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `segmentId` | `segment_id` | Optional. The scheduled stream's id, from Get stream schedule or Add to stream schedule. |
+
+**Gives back:** Nothing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.deleteScheduleSegment", new { segmentId = "abc123" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_delete_schedule_segment(segment_id="abc123")
+    ```
+
 ## twitch.emoteOnly
 
 Turns emote-only chat on or off: viewers can only send emotes. Fails when Twitch is not connected.
@@ -595,6 +716,69 @@ Gets your Twitch ad schedule: when the next ad comes and how many snoozes you ha
 
     ```python
     answer = cb.twitch_get_ad_schedule()
+    ```
+
+## twitch.getAutomodSettings
+
+Reads how strict AutoMod is in your chat, from 0 (off) to 4 (strictest) for each kind of message. Fails when Twitch is not connected.
+
+**Gives back:** An object with automodLevel, automodAggression, automodBullying, automodDisability, automodMisogyny, automodRaceEthnicityOrReligion, automodSexBasedTerms, automodSexualitySexOrGender and automodSwearing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getAutomodSettings");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_automod_settings()
+    ```
+
+## twitch.getBanStatus
+
+Checks whether someone is banned or timed out in your chat. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action. |
+
+**Gives back:** An object with isBanned, isTimedOut, banReason, bannedAt, timeoutEndsAt and bannedBy.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getBanStatus", new { user = "coolviewer42" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_ban_status(user="coolviewer42")
+    ```
+
+## twitch.getBitsLeaderboard
+
+Gets your top cheerers for a day, week, month, year or all time. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `count` | `count` | Optional. How many people to get (1 to 100). |
+| `period` | `period` | Optional. The time span: all time, or the current day, week, month or year. |
+
+**Gives back:** An object with leaderCount, leader0.user, leader0.userName, leader0.userId, leader0.score and leader0.rank.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getBitsLeaderboard", new { count = "3", period = "week" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_bits_leaderboard(count="3", period="week")
     ```
 
 ## twitch.getBlockedTerms
@@ -709,6 +893,50 @@ Gets your running Twitch charity campaign. Fails when Twitch is not connected.
     answer = cb.twitch_get_charity_campaign()
     ```
 
+## twitch.getCharityDonations
+
+Lists the donations to your running charity campaign. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `count` | `count` | Optional. How many donations to get (1 to 100). |
+
+**Gives back:** An object with donationCount, donation0.user, donation0.userName, donation0.amount and donation0.currency.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getCharityDonations");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_charity_donations()
+    ```
+
+## twitch.getChatColors
+
+Gets the name colors people use in Twitch chat. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `users` | `users` | Login names or "id:12345", separated by commas (up to 100). |
+
+**Gives back:** An object from user id to color, like #FF7F50. The color is empty for someone who never picked one.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getChatColors", new { users = "coolviewer42, otherviewer" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_chat_colors(users="coolviewer42, otherviewer")
+    ```
+
 ## twitch.getCheermotes
 
 Lists the Bits cheer emotes (cheermotes) that work in your channel, exactly as Twitch gives them. Fails when Twitch is not connected.
@@ -774,6 +1002,83 @@ Lists clips of a Twitch channel or of a category, most viewed first. Handy for a
 
     ```python
     answer = cb.twitch_get_clips(count=10)
+    ```
+
+## twitch.getContentLabels
+
+Lists Twitch's content classification labels, such as Gambling or Mature-rated game, with their ids. Use an id with Set content label. Fails when Twitch is not connected.
+
+**Gives back:** A list of labels, each with id, name and description.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getContentLabels");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_content_labels()
+    ```
+
+## twitch.getCreatorGoals
+
+Lists the creator goals you have running on Twitch, like a follower or sub goal. Fails when Twitch is not connected.
+
+**Gives back:** An object with goalCount, goal0.type, goal0.description, goal0.current, goal0.target and goal0.id.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getCreatorGoals");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_creator_goals()
+    ```
+
+## twitch.getCustomPowerUps
+
+Lists your channel's custom Power-ups (the ones viewers buy with Bits). Fails when Twitch is not connected.
+
+**Gives back:** An object with powerUpCount, powerUp0.title, powerUp0.bits, powerUp0.enabled, powerUp0.paused, powerUp0.id and powerUp0.image.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getCustomPowerUps");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_custom_power_ups()
+    ```
+
+## twitch.getEmotes
+
+Lists Twitch emotes with their images: your channel's own, Twitch's global ones, or the emotes of emote sets. Handy for emote walls. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `source` | `source` | Optional. "channel" (your emotes, the default), "global" or "set". |
+| `setIds` | `set_ids` | Optional. With source "set": emote set ids separated by commas (up to 25). |
+
+**Gives back:** A list of emotes, each with id, name, type, tier, setId, isAnimated and imageUrl.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getEmotes", new { source = "channel" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_emotes(source="channel")
     ```
 
 ## twitch.getFollowAge
@@ -872,6 +1177,24 @@ Gets your Twitch Guest Star settings. Fails when Twitch is not connected.
 
     ```python
     answer = cb.twitch_get_guest_star_settings()
+    ```
+
+## twitch.getHypeTrain
+
+Checks whether a Hype Train is running right now and how far it is, plus your channel's record. Fails when Twitch is not connected.
+
+**Gives back:** An object with hypeTrainActive, hypeTrainLevel, hypeTrainProgress, hypeTrainGoal, hypeTrainPercent, hypeTrainTotal, hypeTrainType, hypeTrainExpiresAt, hypeTrainIsShared, hypeTrainTopContributor, hypeTrainTopContribution, hypeTrainRecordLevel, hypeTrainRecordTotal, hypeTrainRecordAt and hypeTrainId.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getHypeTrain");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_hype_train()
     ```
 
 ## twitch.getLatestSubscriber
@@ -1112,6 +1435,46 @@ Tells you how often each viewer redeemed a channel point reward, as Cuebot count
     answer = cb.twitch_get_reward_user_counters(reward="Hydrate!")
     ```
 
+## twitch.getSchedule
+
+Reads your Twitch stream schedule, for example to answer a !schedule command. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `count` | `count` | Optional. How many upcoming streams to get (1 to 25). |
+
+**Gives back:** An object with nextStreamAt, nextStreamAtLocal, nextStreamTitle, nextStreamCategory, scheduleCount, schedule0.title, onVacation, vacationStart and vacationEnd.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getSchedule", new { count = "3" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_schedule(count="3")
+    ```
+
+## twitch.getSharedChatSession
+
+Checks whether your chat is shared with other channels right now (Shared Chat). Fails when Twitch is not connected.
+
+**Gives back:** An object with sharedChatActive, sharedChatIsHost, sharedChatParticipantCount, sharedChatParticipantIds, sharedChatHostId and sharedChatSessionId.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getSharedChatSession");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_shared_chat_session()
+    ```
+
 ## twitch.getShieldMode
 
 Checks whether Twitch Shield Mode is on. Fails when Twitch is not connected.
@@ -1150,6 +1513,28 @@ Checks whether a Twitch channel is live, with its viewers, title and uptime. Fai
 
     ```python
     answer = cb.twitch_get_stream_info()
+    ```
+
+## twitch.getStreamMarkers
+
+Lists the stream markers of your current (or latest) broadcast. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `count` | `count` | Optional. How many markers to get (1 to 100). |
+
+**Gives back:** An object with markerCount, marker0.description, marker0.position, marker0.url and marker0.id.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getStreamMarkers");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_stream_markers()
     ```
 
 ## twitch.getSubCounter
@@ -1232,6 +1617,28 @@ Gets the Twitch teams a channel belongs to. Fails when Twitch is not connected.
     answer = cb.twitch_get_team_info(user="coolstreamer")
     ```
 
+## twitch.getUnbanRequests
+
+Lists unban requests: people who were banned and asked to be let back in. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `status` | `status` | Optional. Which requests: pending (not answered yet), approved, denied, acknowledged or canceled. |
+
+**Gives back:** An object with unbanRequestCount, unbanRequest0.id, unbanRequest0.user, unbanRequest0.userName, unbanRequest0.userId, unbanRequest0.text and unbanRequest0.createdAt.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getUnbanRequests", new { status = "pending" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_unban_requests(status="pending")
+    ```
+
 ## twitch.getUser
 
 Looks up a Twitch user. Fails when Twitch is not connected.
@@ -1274,6 +1681,30 @@ Gets lots of details about a Twitch user: profile, account age, mod/VIP/sub stat
 
     ```python
     answer = cb.twitch_get_user_info(user="coolviewer42")
+    ```
+
+## twitch.getVideos
+
+Looks up the newest videos of a channel: past broadcasts, highlights or uploads. Handy for shoutouts ("check out their last stream"). Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | Optional. The channel, as a login name or id:12345. Leave empty for your own channel. |
+| `type` | `type` | Optional. Past broadcasts (archive), highlights, uploads, or all of them. |
+| `count` | `count` | Optional. How many videos to get, newest first (1 to 100). |
+
+**Gives back:** An object with videoCount, videoTitle, videoUrl, videoCreatedAt, videoDuration, videoViews and video0.title.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.getVideos", new { user = "coolstreamer", type = "archive", count = "1" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_get_videos(user="coolstreamer", type="archive", count="1")
     ```
 
 ## twitch.getVips
@@ -1604,6 +2035,30 @@ Picks the winning outcome of your Twitch prediction and pays out the points. Fai
     answer = cb.twitch_resolve_prediction(winner="Yes")
     ```
 
+## twitch.resolveUnbanRequest
+
+Approves or denies an unban request. Approving lets the person chat again. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `requestId` | `request_id` | Optional. The request to answer. The Unban request created trigger and Get unban requests give you this id. |
+| `decision` | `decision` | Optional. Approve lets them back in; deny keeps the ban. |
+| `message` | `message` | Optional. An optional note the person sees, up to 500 characters. |
+
+**Gives back:** An object with unbanRequestStatus.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.resolveUnbanRequest", new { requestId = "%requestId%", decision = "approve", message = "Welcome back" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_resolve_unban_request(request_id="%requestId%", decision="approve", message="Welcome back")
+    ```
+
 ## twitch.runAd
 
 Starts an ad break on your Twitch stream right now. Fails when Twitch is not connected.
@@ -1624,6 +2079,30 @@ Starts an ad break on your Twitch stream right now. Fails when Twitch is not con
 
     ```python
     answer = cb.twitch_run_ad(length=60)
+    ```
+
+## twitch.searchChannels
+
+Searches Twitch for channels by name. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `query` | `query` | Optional. The name, or part of it, to search for. |
+| `liveOnly` | `live_only` | Optional. Tick to find only channels that are live right now. |
+| `count` | `count` | Optional. How many results to get (1 to 100). |
+
+**Gives back:** An object with channelCount, channel0.login, channel0.name, channel0.isLive, channel0.title, channel0.gameName and channel0.startedAt.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.searchChannels", new { query = "cozy", liveOnly = "true" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_search_channels(query="cozy", live_only="true")
     ```
 
 ## twitch.sendAndPinMessage
@@ -1762,6 +2241,28 @@ Sends a private whisper to a Twitch viewer. The sending account needs a verified
 
     ```python
     answer = cb.twitch_send_whisper(user="coolviewer42", message="Thanks for the raid!")
+    ```
+
+## twitch.setAutomodLevel
+
+Sets how strict AutoMod is for every kind of message at once. For example, turn it up when a raid arrives. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `level` | `level` | Optional. 0 turns AutoMod off; 4 holds the most messages for review. |
+
+**Gives back:** An object with automodLevel.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.setAutomodLevel", new { level = "3" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_set_automod_level(level="3")
     ```
 
 ## twitch.setBrandedContent
@@ -2176,6 +2677,30 @@ Changes the title of your Twitch stream. Fails when Twitch is not connected.
     answer = cb.twitch_set_title(title="Chill games with chat")
     ```
 
+## twitch.setVacation
+
+Turns schedule vacation on or off. While on, the streams in that time are hidden from your schedule. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `enabled` | `enabled` | Optional. Tick to go on vacation; untick to end it. |
+| `start` | `start` | Optional. When the vacation starts, like 2026-12-20 00:00. Needed when turning it on. |
+| `end` | `end` | Optional. When it ends. Needed when turning it on. |
+
+**Gives back:** Nothing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.setVacation", new { enabled = "true", start = "2026-12-20 00:00", end = "2027-01-03 00:00" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_set_vacation(enabled="true", start="2026-12-20 00:00", end="2027-01-03 00:00")
+    ```
+
 ## twitch.slowMode
 
 Turns slow mode on or off: viewers must wait between messages. Fails when Twitch is not connected.
@@ -2305,6 +2830,28 @@ Lets a banned viewer chat in your Twitch channel again. Fails when Twitch is not
 
     ```python
     answer = cb.twitch_unban(user="coolviewer42")
+    ```
+
+## twitch.unblockUser
+
+Unblocks someone you blocked before. Fails when Twitch is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action. |
+
+**Gives back:** Nothing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("twitch.unblockUser", new { user = "spammer123" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.twitch_unblock_user(user="spammer123")
     ```
 
 ## twitch.uniqueChat

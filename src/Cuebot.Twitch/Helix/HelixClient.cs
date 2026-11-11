@@ -10,10 +10,17 @@ namespace Cuebot.Twitch.Helix;
 
 /// <summary>
 /// Thin Helix transport: authenticated JSON requests with readable errors. A 401 triggers one token refresh and a
-/// single retry.
+/// single retry; an exhausted rate-limit bucket (429 with Ratelimit-Remaining 0) waits for Ratelimit-Reset and a 503
+/// retries once, as Twitch's API guide asks.
 /// </summary>
-internal sealed class HelixClient(HttpClient http, Uri helixBase, ITwitchTokenSource tokens)
+internal sealed class HelixClient(HttpClient http, Uri helixBase, ITwitchTokenSource tokens, TimeProvider? time = null)
 {
+    /// <summary>The longest Cuebot waits for the rate-limit bucket to refill before reporting the 429.</summary>
+    internal static readonly TimeSpan MaxRateLimitWait = TimeSpan.FromSeconds(30);
+
+    private static readonly TimeSpan UnavailableRetryDelay = TimeSpan.FromSeconds(1);
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
     /// <summary>Subscribes the WebSocket session to one event type. An already existing subscription is not an error.</summary>
     public async Task CreateEventSubSubscriptionAsync(EventSubSubscriptionSpec spec, string userId, string sessionId, CancellationToken ct)
     {
@@ -115,13 +122,37 @@ internal sealed class HelixClient(HttpClient http, Uri helixBase, ITwitchTokenSo
     {
         var token = tokens.AccessToken;
         var response = await SendOnceAsync(method, path, body, token, ct).ConfigureAwait(false);
-        if (response.StatusCode != HttpStatusCode.Unauthorized) return response;
-
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            response.Dispose();
+            if (!await tokens.TryRefreshAsync(token, ct).ConfigureAwait(false))
+                throw new TwitchApiException("Twitch sign-in has expired. Please sign in again.", 401);
+            response = await SendOnceAsync(method, path, body, tokens.AccessToken, ct).ConfigureAwait(false);
+        }
+        if (RetryDelay(response) is not { } delay) return response;
         response.Dispose();
-        if (!await tokens.TryRefreshAsync(token, ct).ConfigureAwait(false))
-            throw new TwitchApiException("Twitch sign-in has expired. Please sign in again.", 401);
+        await Task.Delay(delay, _time, ct).ConfigureAwait(false);
         return await SendOnceAsync(method, path, body, tokens.AccessToken, ct).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// How long to wait before the one retry, or null for none: a 503 retries after a second; a 429 from an empty
+    /// rate-limit bucket waits until it refills (other 429s are endpoint limits, such as EventSub's, that waiting
+    /// does not fix).
+    /// </summary>
+    internal TimeSpan? RetryDelay(HttpResponseMessage response)
+    {
+        if (response.StatusCode == HttpStatusCode.ServiceUnavailable) return UnavailableRetryDelay;
+        if (response.StatusCode != HttpStatusCode.TooManyRequests) return null;
+        if (Header(response, "Ratelimit-Remaining") is not { } remaining || remaining != 0) return null;
+        if (Header(response, "Ratelimit-Reset") is not { } reset) return null;
+        var wait = DateTimeOffset.FromUnixTimeSeconds(reset) - _time.GetUtcNow();
+        if (wait > MaxRateLimitWait) return null;
+        return wait < TimeSpan.FromMilliseconds(250) ? TimeSpan.FromMilliseconds(250) : wait;
+    }
+
+    private static long? Header(HttpResponseMessage response, string name) =>
+        response.Headers.TryGetValues(name, out var values) && long.TryParse(values.FirstOrDefault(), out var value) ? value : null;
 
     private async Task<HttpResponseMessage> SendOnceAsync(HttpMethod method, string path, object? body, string token, CancellationToken ct)
     {

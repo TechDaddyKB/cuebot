@@ -12,7 +12,8 @@ internal sealed record EventSubAccount(
     Func<string> Login,
     Func<IReadOnlyCollection<string>> GrantedScopes,
     IReadOnlyList<EventSubSubscriptionSpec> Subscriptions,
-    bool IsBot = false);
+    bool IsBot = false,
+    Func<CancellationToken, Task<IReadOnlyList<EventSubSubscriptionSpec>>>? MoreSubscriptions = null);
 
 /// <summary>
 /// Bridges an EventSub session to the rest of Cuebot: creates the subscriptions the granted scopes allow (skipping
@@ -64,24 +65,25 @@ internal sealed class TwitchEventSubListener(
         var unavailable = new List<string>();
         var missingScopes = new SortedSet<string>(StringComparer.Ordinal);
         var refused = new List<EventSubSubscriptionSpec>();
-        foreach (var spec in account.Subscriptions)
+        _revocationsLogged.Clear();
+        foreach (var spec in account.Subscriptions.Concat(await MoreSubscriptionsAsync(ct).ConfigureAwait(false)))
         {
             if (spec.MissingScope(granted) is { } missing)
             {
-                unavailable.Add(spec.Type);
+                unavailable.Add(spec.Name);
                 missingScopes.Add(missing);
                 continue;
             }
             switch (await TrySubscribeAsync(spec, sessionId, ct).ConfigureAwait(false))
             {
                 case SubscribeResult.Refused: refused.Add(spec); break;
-                case SubscribeResult.Failed: unavailable.Add(spec.Type); break;
+                case SubscribeResult.Failed: unavailable.Add(spec.Name); break;
             }
         }
         if (missingScopes.Count > 0)
             log.Warn("Twitch", $"{account.Label}: skipped {unavailable.Count} event types because these scopes were not granted: "
                                + $"{string.Join(", ", missingScopes)}. Enable them on the Twitch Settings tab and sign in again.");
-        Unavailable = [.. unavailable, .. refused.Select(s => s.Type)];
+        Unavailable = [.. unavailable, .. refused.Select(s => s.Name)];
 
         if (ct.IsCancellationRequested) return;
         if (onSubscribed is not null)
@@ -106,6 +108,21 @@ internal sealed class TwitchEventSubListener(
             return;
         }
         ReportConnected(unavailable);
+    }
+
+    /// <summary>Extra subscriptions worked out per session (the watched channels); a failure only costs those.</summary>
+    private async Task<IReadOnlyList<EventSubSubscriptionSpec>> MoreSubscriptionsAsync(CancellationToken ct)
+    {
+        if (account.MoreSubscriptions is null) return [];
+        try
+        {
+            return await account.MoreSubscriptions(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            log.Warn("Twitch", $"{account.Label}: {ex.Message}");
+            return [];
+        }
     }
 
     private enum SubscribeResult { Done, Refused, Failed }
@@ -145,11 +162,11 @@ internal sealed class TwitchEventSubListener(
                     switch (await TrySubscribeAsync(spec, sessionId, ct).ConfigureAwait(false))
                     {
                         case SubscribeResult.Refused: still.Add(spec); break;
-                        case SubscribeResult.Failed: unavailable.Add(spec.Type); break;
+                        case SubscribeResult.Failed: unavailable.Add(spec.Name); break;
                     }
                 }
                 refused = still;
-                Unavailable = [.. unavailable, .. refused.Select(s => s.Type)];
+                Unavailable = [.. unavailable, .. refused.Select(s => s.Name)];
                 if (refused.Count == 0)
                 {
                     log.Info("Twitch", $"{account.Label}: all event types are subscribed again");
@@ -158,7 +175,7 @@ internal sealed class TwitchEventSubListener(
                 }
                 reportStatus(ConnectionState.Connecting, Waiting(refused.Count));
             }
-            log.Error("Twitch", $"{account.Label}: Twitch still refuses {refused.Count} event types ({string.Join(", ", refused.Select(s => s.Type))}). "
+            log.Error("Twitch", $"{account.Label}: Twitch still refuses {refused.Count} event types ({string.Join(", ", refused.Select(s => s.Name))}). "
                                 + "Alerts for them will not fire. Close other copies of Cuebot signed in as this account, then reconnect.");
             reportStatus(ConnectionState.Error, $"Connected as {account.Login()}, but {refused.Count} event types are not working (see log)");
         }
@@ -220,7 +237,8 @@ internal sealed class TwitchEventSubListener(
     {
         // channel.update has no box art: a new category is looked up first (Stream Update's gameBoxArt). Updates
         // wait for each other so the router still compares them in order.
-        if (lookUpBoxArt is not null && notification.SubscriptionType == "channel.update")
+        if (lookUpBoxArt is not null && notification.SubscriptionType == "channel.update"
+            && notification.Event.Str("broadcaster_user_id") == account.UserId())
         {
             var categoryId = notification.Event.Str("category_id");
             lock (_gate)
@@ -258,8 +276,41 @@ internal sealed class TwitchEventSubListener(
         foreach (var botEvent in events) bus.Publish(botEvent);
     }
 
-    public void OnRevocation(string subscriptionType, string status) =>
-        log.Warn("Twitch", $"Twitch revoked the {subscriptionType} subscription ({status})");
+    private readonly HashSet<string> _revocationsLogged = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Twitch stopped a subscription and sends nothing more for it: the type joins the unavailable list and the
+    /// status says why. A withdrawn authorization means signing in again; nothing is resubscribed, because Twitch
+    /// would refuse it for the same reason (a lost connection resubscribes everything anyway).
+    /// </summary>
+    public void OnRevocation(string subscriptionType, string status)
+    {
+        List<string> unavailable;
+        bool firstOfItsKind;
+        lock (_gate)
+        {
+            unavailable = [.. Unavailable];
+            if (!unavailable.Contains(subscriptionType)) unavailable.Add(subscriptionType);
+            Unavailable = unavailable;
+            firstOfItsKind = _revocationsLogged.Add(status);
+        }
+        if (status is "authorization_revoked" or "user_removed")
+            reportStatus(ConnectionState.Error, $"Twitch withdrew Cuebot's access for {account.Login()}; sign in again");
+        else
+            reportStatus(ConnectionState.Connected, $"Connected as {account.Login()} ({unavailable.Count} event types unavailable, see log)");
+        if (!firstOfItsKind) return;   // Twitch revokes every subscription at once: explain it once
+        var why = status switch
+        {
+            "authorization_revoked" => "Cuebot's access was withdrawn (disconnected on Twitch, or the password changed); sign in again",
+            "user_removed" => "the account is no longer available on Twitch",
+            "version_removed" => "Twitch retired the version Cuebot uses; update Cuebot",
+            "moderator_removed" => "the account is no longer a moderator of the channel",
+            "chat_user_banned" => "the account is banned from the channel's chat",
+            "beta_maintenance" => "Twitch paused this beta feature; reconnect later",
+            _ => $"Twitch gave the reason \"{status}\"",
+        };
+        log.Warn("Twitch", $"{account.Label}: Twitch stopped sending {subscriptionType} events: {why}.");
+    }
 
     public void OnConnectionLost(string reason, TimeSpan retryIn)
     {

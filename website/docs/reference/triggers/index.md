@@ -62,7 +62,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Throne](throne.md) | 3 |
 | [TipeeeStream](tipeeestream.md) | 8 |
 | [TreatStream](treatstream.md) | 4 |
-| [Twitch](twitch.md) | 132 |
+| [Twitch](twitch.md) | 141 |
 | [Users](users.md) | 2 |
 | [Variables](variables.md) | 4 |
 | [veadotube](veadotube.md) | 4 |

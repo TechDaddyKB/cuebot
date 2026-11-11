@@ -27,6 +27,9 @@ public static class TwitchEventTypes
     public const string UniqueModeOff = "twitch.uniqueModeOff";
     public const string WatchStreak = "twitch.watchStreak";
     public const string Modiversary = "twitch.modiversary";
+    public const string GiftedDrops = "twitch.giftedDrops";
+    public const string SentMessageHeld = "twitch.sentMessageHeld";
+    public const string SentMessageUpdated = "twitch.sentMessageUpdated";
     public const string Pyramid = "twitch.pyramid";
     public const string PyramidBroken = "twitch.pyramidBroken";
 
@@ -37,11 +40,15 @@ public static class TwitchEventTypes
     public const string StreamUpdate = "twitch.streamUpdate";
     public const string ViewerCountUpdate = "twitch.viewerCountUpdate";
     public const string PresentViewers = "twitch.presentViewers";
+    public const string WatchedChannelOnline = "twitch.watchedChannelOnline";
+    public const string WatchedChannelOffline = "twitch.watchedChannelOffline";
+    public const string WatchedChannelUpdate = "twitch.watchedChannelUpdate";
 
     // Subscriptions and bits
     public const string Sub = "twitch.sub";
     public const string Resub = "twitch.resub";
     public const string GiftSub = "twitch.giftSub";
+    public const string SubEnded = "twitch.subEnded";
     public const string SubGift = "twitch.subGift";
     public const string GiftBomb = "twitch.giftBomb";
     public const string GiftPaidUpgrade = "twitch.giftPaidUpgrade";
@@ -112,6 +119,7 @@ public static class TwitchEventTypes
     public const string SharedChatRaid = "twitch.sharedChatRaid";
     public const string SharedChatAnnouncement = "twitch.sharedChatAnnouncement";
     public const string SharedChatModiversary = "twitch.sharedChatModiversary";
+    public const string SharedChatGiftedDrops = "twitch.sharedChatGiftedDrops";
     public const string SharedChatMessageDeleted = "twitch.sharedChatMessageDeleted";
     public const string SharedChatUserBanned = "twitch.sharedChatUserBanned";
     public const string SharedChatUserTimedOut = "twitch.sharedChatUserTimedOut";
@@ -142,6 +150,7 @@ public static class TwitchEventTypes
     public const string SuspiciousUserMessage = "twitch.suspiciousUserMessage";
     public const string AutomodMessageHeld = "twitch.automodMessageHeld";
     public const string AutomodMessageUpdated = "twitch.automodMessageUpdated";
+    public const string AutomodSettingsUpdated = "twitch.automodSettingsUpdated";
     public const string BlockedTermsAdded = "twitch.blockedTermsAdded";
     public const string BlockedTermsDeleted = "twitch.blockedTermsDeleted";
     public const string PermittedTermsAdded = "twitch.permittedTermsAdded";

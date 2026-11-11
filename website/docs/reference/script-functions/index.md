@@ -76,7 +76,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [T.I.T.S.](tits.md) | 9 |
 | [Import and export](transfer.md) | 1 |
 | [TreatStream](treatstream.md) | 2 |
-| [Twitch](twitch.md) | 118 |
+| [Twitch](twitch.md) | 143 |
 | [User variables](uservars.md) | 7 |
 | [Voice control](voicecontrol.md) | 10 |
 | [Voicemod](voicemod.md) | 14 |

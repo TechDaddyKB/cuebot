@@ -16,7 +16,7 @@ public sealed class EventSubSubscriptionSpecTests
     [Fact]
     public void No_subscription_uses_a_bare_broadcaster_id_condition()
     {
-        Assert.All(EventSubSubscriptions.All.Concat(EventSubSubscriptions.Bot), s =>
+        Assert.All(EventSubSubscriptions.All.Concat(EventSubSubscriptions.ForBot(() => "1")), s =>
             Assert.DoesNotContain("broadcaster_id", s.BuildCondition("123").Keys));
     }
 }

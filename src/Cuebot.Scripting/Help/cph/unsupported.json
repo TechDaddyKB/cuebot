@@ -13,16 +13,6 @@
       "returns": "Always 0.",
       "example": "long used = CPH.TwitchGetChannelPointsUsedByUserId(\"12345678\");\nCPH.LogInfo($\"Points used: {used}\");"
     },
-    "TwitchUnblockUser": {
-      "description": "Not supported in Cuebot: Cuebot does not ask Twitch for the permission to manage blocked users. It only writes a warning in the log.",
-      "returns": "Always false.",
-      "example": "bool ok = CPH.TwitchUnblockUser(\"coolviewer\");\nCPH.LogInfo($\"Unblocked: {ok}\");"
-    },
-    "TwitchUnblockUserById": {
-      "description": "Not supported in Cuebot: Cuebot does not ask Twitch for the permission to manage blocked users. It only writes a warning in the log.",
-      "returns": "Always false.",
-      "example": "bool ok = CPH.TwitchUnblockUserById(\"12345678\");\nCPH.LogInfo($\"Unblocked: {ok}\");"
-    },
     "TwitchGetBitsDonatedByUserId": {
       "description": "Not supported in Cuebot: Cuebot does not keep a total of the Bits each viewer cheered. It only writes a warning in the log.",
       "returns": "Always 0.",

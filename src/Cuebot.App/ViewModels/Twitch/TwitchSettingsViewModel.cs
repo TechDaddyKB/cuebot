@@ -63,6 +63,41 @@ public sealed partial class TwitchSettingsViewModel : TwitchTabViewModel
         set { Twitch.Settings.UpcomingAdWarnings = value; Twitch.SaveSettings(); OnPropertyChanged(); }
     }
 
+    // ---------------------------------------------------------------- watched channels
+
+    /// <summary>Other channels to watch (logins, separated by commas or spaces); used from the next connection.</summary>
+    public string WatchedChannels
+    {
+        get => string.Join(", ", Twitch.Settings.WatchedChannels);
+        set
+        {
+            Twitch.Settings.WatchedChannels = value.Split([',', ' ', ';', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(l => l.TrimStart('@').ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToList();
+            Twitch.SaveSettings();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(WatchedChannelsHint));
+        }
+    }
+
+    public bool WatchedChannelUpdates
+    {
+        get => Twitch.Settings.WatchedChannelUpdates;
+        set { Twitch.Settings.WatchedChannelUpdates = value; Twitch.SaveSettings(); OnPropertyChanged(); OnPropertyChanged(nameof(WatchedChannelsHint)); }
+    }
+
+    /// <summary>How many channels Twitch's cost limit allows, and whether the list is over it.</summary>
+    public string WatchedChannelsHint
+    {
+        get
+        {
+            var fits = 10 / (Twitch.Settings.WatchedChannelUpdates ? 3 : 2);
+            var count = Twitch.Settings.WatchedChannels.Count;
+            var over = count > fits ? $" Only the first {fits} of your {count} are watched." : "";
+            return $"Twitch allows up to {fits} watched channels{(Twitch.Settings.WatchedChannelUpdates ? " with title and category changes" : "")}.{over} "
+                   + "Changes apply the next time Cuebot connects to Twitch.";
+        }
+    }
+
     // ---------------------------------------------------------------- sub counter
 
     public decimal SubCount

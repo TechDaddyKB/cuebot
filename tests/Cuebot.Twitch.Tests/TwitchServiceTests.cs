@@ -59,6 +59,7 @@ public sealed class TwitchServiceTests : IAsyncLifetime
             """{"access_token":"fresh-token","refresh_token":"refresh-2","scope":["user:read:chat","user:write:chat"],"token_type":"bearer"}"""),
         ("/helix/eventsub/subscriptions", _) => FakeHttpHandler.Json(HttpStatusCode.Accepted, """{"data":[]}"""),
         ("/helix/chat/messages", _) => FakeHttpHandler.Json(HttpStatusCode.OK, """{"data":[{"message_id":"m","is_sent":true}]}"""),
+        ("/oauth2/revoke", _) => new HttpResponseMessage(HttpStatusCode.OK),
         _ => new HttpResponseMessage(HttpStatusCode.NotFound),
     };
 
@@ -113,7 +114,8 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         string[] expected =
         [
             "channel.chat.clear", "channel.chat.clear_user_messages", "channel.chat.message", "channel.chat.message_delete",
-            "channel.chat.notification", "channel.chat_settings.update", "channel.raid", "channel.raid",
+            "channel.chat.notification", "channel.chat.user_message_hold", "channel.chat.user_message_update",
+            "channel.chat_settings.update", "channel.raid", "channel.raid",
             "channel.shared_chat.begin", "channel.shared_chat.end", "channel.shared_chat.update", "channel.update",
             "stream.offline", "stream.online",
         ];
@@ -165,7 +167,14 @@ public sealed class TwitchServiceTests : IAsyncLifetime
         await WaitUntilAsync(() => service.State == ConnectionState.Connected && service.BotState == ConnectionState.Connected);
 
         var botSubscriptions = http.Requests.Where(r => r.Path == "/helix/eventsub/subscriptions" && r.Authorization == "Bearer bot-token").ToArray();
-        var whisper = JsonSerializer.Deserialize<JsonElement>(Assert.Single(botSubscriptions).Body);
+        // Its whispers, and its own messages that AutoMod holds in the broadcaster's chat.
+        var bodies = botSubscriptions.Select(r => JsonSerializer.Deserialize<JsonElement>(r.Body)).ToArray();
+        Assert.Equal(["channel.chat.user_message_hold", "channel.chat.user_message_update", "user.whisper.message"],
+            bodies.Select(b => b.GetProperty("type").GetString()).Order(StringComparer.Ordinal));
+        var held = bodies.First(b => b.GetProperty("type").GetString() == "channel.chat.user_message_hold").GetProperty("condition");
+        Assert.Equal("1337", held.GetProperty("broadcaster_user_id").GetString());
+        Assert.Equal("777", held.GetProperty("user_id").GetString());
+        var whisper = bodies.Single(b => b.GetProperty("type").GetString() == "user.whisper.message");
         Assert.Equal("user.whisper.message", whisper.GetProperty("type").GetString());
         Assert.Equal("777", whisper.GetProperty("condition").GetProperty("user_id").GetString());
         Assert.Contains(published, e => e.Type == TwitchEventTypes.BotConnected);
@@ -222,14 +231,30 @@ public sealed class TwitchServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task StartAsync_does_nothing_when_auto_connect_is_off()
+    public async Task StartAsync_with_auto_connect_off_only_validates_the_stored_token()
     {
         _settings.Value.AutoConnect = false;
 
         await _service.StartAsync();
+        // Twitch requires validating stored tokens on startup and hourly, connected or not.
+        await WaitUntilAsync(() => _http.Requests.Count(r => r.Path == "/oauth2/validate") == 2);
 
-        Assert.Empty(_http.Requests);
+        Assert.All(_http.Requests, r => Assert.StartsWith("/oauth2/", r.Path));
         Assert.Equal(ConnectionState.Disconnected, _service.State);
+        Assert.Equal("1337", _settings.Value.UserId);
+    }
+
+    [Fact]
+    public async Task An_idle_sign_in_Twitch_no_longer_accepts_is_reported()
+    {
+        _settings.Value.AutoConnect = false;
+        _settings.Value.RefreshToken = "";
+
+        await _service.StartAsync();
+        await WaitUntilAsync(() => _service.State == ConnectionState.Error);
+
+        Assert.Contains("sign in again", _service.StatusMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(_http.Requests, r => r.Path.StartsWith("/helix/", StringComparison.Ordinal));
     }
 
     [Fact]

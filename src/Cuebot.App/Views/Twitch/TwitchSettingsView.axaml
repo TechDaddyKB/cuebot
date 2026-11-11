@@ -55,6 +55,19 @@
 
         <Border Classes="card">
           <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Watched channels" />
+            <TextBlock Classes="hint" TextWrapping="Wrap"
+                       Text="Other channels whose going live and going offline run the Watched channel triggers, for example to tell your chat that a friend is live." />
+            <TextBox Text="{Binding WatchedChannels, UpdateSourceTrigger=LostFocus}" Watermark="friend1, friend2"
+                     ToolTip.Tip="Twitch login names, separated by commas" />
+            <CheckBox Content="Also when they change their title or category" IsChecked="{Binding WatchedChannelUpdates}"
+                      ToolTip.Tip="Runs the Watched channel changed title or category trigger too. Each channel then counts more against Twitch's limit." />
+            <TextBlock Classes="hint" TextWrapping="Wrap" Text="{Binding WatchedChannelsHint}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Sub counter" />
             <TextBlock Classes="hint" TextWrapping="Wrap"
                        Text="Counts new subscriptions. When the count reaches the rollover number, it starts again from zero and the Sub counter rollover trigger runs, for example for a goal. Actions can read and change it with the sub counter sub-actions." />

@@ -59,6 +59,26 @@ Marks a viewer as suspicious, so their messages are flagged or limited. Good aga
 
 <small>Type id: `twitch.addSuspiciousStatus`</small>
 
+## Add to stream schedule (scheduleSegmentId)
+
+Adds a stream to your Twitch schedule.
+
+| Setting | What to put in |
+| --- | --- |
+| **Starts at** | When it starts, like 2026-12-01 19:00, in this computer's time zone. |
+| **Length (minutes)** | How long it runs, in minutes (30 to 1380). Starts as: `180`. |
+| **Title** | The stream's title, up to 140 characters. |
+| **Category** | A category name or id. Leave empty for none. |
+| **Repeat every week** | Tick to repeat it every week. Starts as: `false`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%scheduleSegmentId%` | The id of the added stream, for cancelling or removing it later |
+
+<small>Type id: `twitch.addScheduleSegment`</small>
+
 ## Add VIP
 
 Makes a viewer a VIP on your channel.
@@ -68,6 +88,24 @@ Makes a viewer a VIP on your channel.
 | **User** | Who to pick: a Twitch login name like "coolviewer" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action. |
 
 <small>Type id: `twitch.addVip`</small>
+
+## Approve or deny an unban request
+
+Approves or denies an unban request. Approving lets the person chat again.
+
+| Setting | What to put in |
+| --- | --- |
+| **Unban request id** | The request to answer. The Unban request created trigger and Get unban requests give you this id. Starts as: `%requestId%`. |
+| **Decision** | Approve lets them back in; deny keeps the ban. Options: approve, deny. Starts as: `deny`. |
+| **Message to the user** | An optional note the person sees, up to 500 characters. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%unbanRequestStatus%` | approved or denied |
+
+<small>Type id: `twitch.resolveUnbanRequest`</small>
 
 ## Approve or deny AutoMod message
 
@@ -100,6 +138,16 @@ Bans a viewer from your channel for good. They can no longer chat or watch in ch
 
 <small>Type id: `twitch.ban`</small>
 
+## Block user (for the broadcaster account)
+
+Blocks someone for your Twitch account, so they cannot whisper you or appear in your chat. Needs the Block users permission on the Twitch Settings tab.
+
+| Setting | What to put in |
+| --- | --- |
+| **User** | Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action. |
+
+<small>Type id: `twitch.blockUser`</small>
+
 ## Cancel active prediction (refund) (cancelled, prediction.*)
 
 Cancels the running prediction and gives every viewer their channel points back.
@@ -112,6 +160,17 @@ Cancels the running prediction and gives every viewer their channel points back.
 | `%prediction.Title%` | The question |
 
 <small>Type id: `twitch.cancelPrediction`</small>
+
+## Cancel or restore a scheduled stream
+
+Cancels one scheduled stream (it stays on the schedule, marked cancelled), or brings it back.
+
+| Setting | What to put in |
+| --- | --- |
+| **Schedule segment id** | The scheduled stream's id, from Get stream schedule or Add to stream schedule. Starts as: `%schedule0.id%`. |
+| **Cancelled** | Tick to cancel it; untick to bring it back. Starts as: `true`. |
+
+<small>Type id: `twitch.cancelScheduleSegment`</small>
 
 ## Cancel raid
 
@@ -189,6 +248,29 @@ Wipes all messages from your Twitch chat at once.
 
 <small>Type id: `twitch.clearChat`</small>
 
+## Clip a past moment (clipId, clipUrl, clipEditUrl)
+
+Clips a moment that already happened, from your current or a past broadcast. Use it for "clip the last 2 minutes" style commands. Twitch only allows this when past broadcasts are stored on your channel.
+
+| Setting | What to put in |
+| --- | --- |
+| **Title** | The clip's title. Twitch requires one. Starts as: `Clip`. |
+| **Ends how many seconds ago** | When no video id is given: how many seconds ago the clip should end, counted back from now in the current broadcast. 0 ends it now. Starts as: `0`. |
+| **Length (seconds)** | How long the clip is, in seconds, from 5 to 60. Starts as: `30`. |
+| **Video id** | The video to clip. Leave empty for your current (or latest) broadcast. |
+| **Ends at (seconds into the video)** | With a video id: where the clip ends, in seconds from the start of the video. Starts as: `0`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%clipId%` | The new clip's id |
+| `%clipUrl%` | A link to the clip |
+| `%clipEditUrl%` | A link where you can edit the clip |
+| `%clipVideoId%` | The video the clip was made from |
+
+<small>Type id: `twitch.createClipFromVod`</small>
+
 ## Configure rewards
 
 Turns, pauses and resumes many rewards at once, by name or by group. Only rewards that Cuebot created can be changed.
@@ -217,6 +299,8 @@ Makes a clip of the last moments of your stream and saves its web links for the 
 | Setting | What to put in |
 | --- | --- |
 | **Account for stream delay** | Tick if your stream has a delay set on Twitch, so the clip matches what your viewers saw. Starts as: `false`. |
+| **Title** | The clip's title. Leave it empty and Twitch uses your stream title. |
+| **Length (seconds)** | How long the clip is, in seconds, from 5 to 60. 0 uses Twitch's default of 30 seconds. Starts as: `0`. |
 
 **Variables it adds**
 
@@ -343,6 +427,69 @@ Looks up when your next ad is due and how many snoozes you have, and saves it fo
 
 <small>Type id: `twitch.getAdSchedule`</small>
 
+## Get AutoMod settings (automodLevel, automodAggression, automodBullying, automodSwearing...)
+
+Reads how strict AutoMod is in your chat, from 0 (off) to 4 (strictest) for each kind of message.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%automodLevel%` | The overall level, or -1 when the kinds were set one by one |
+| `%automodAggression%` | The level for aggression |
+| `%automodBullying%` | The level for bullying |
+| `%automodDisability%` | The level for disability |
+| `%automodMisogyny%` | The level for misogyny |
+| `%automodRaceEthnicityOrReligion%` | The level for race, ethnicity or religion |
+| `%automodSexBasedTerms%` | The level for sex-based terms |
+| `%automodSexualitySexOrGender%` | The level for sexuality, sex or gender |
+| `%automodSwearing%` | The level for swearing |
+
+<small>Type id: `twitch.getAutomodSettings`</small>
+
+## Get ban status (isBanned, isTimedOut, banReason, timeoutEndsAt, bannedBy)
+
+Checks whether someone is banned or timed out in your chat.
+
+| Setting | What to put in |
+| --- | --- |
+| **User** | Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%isBanned%` | True when they are banned |
+| `%isTimedOut%` | True when they are in a timeout |
+| `%banReason%` | The reason given, if any |
+| `%bannedAt%` | When it happened |
+| `%timeoutEndsAt%` | When the timeout ends (empty for a ban) |
+| `%bannedBy%` | The moderator who did it |
+
+<small>Type id: `twitch.getBanStatus`</small>
+
+## Get bits leaderboard (leaderCount, leader0.user, leader0.score, leader0.rank...)
+
+Gets your top cheerers for a day, week, month, year or all time.
+
+| Setting | What to put in |
+| --- | --- |
+| **How many** | How many people to get (1 to 100). Starts as: `10`. |
+| **Period** | The time span: all time, or the current day, week, month or year. Options: all, day, week, month, year. Starts as: `all`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%leaderCount%` | How many people are on the list |
+| `%leader0.user%` | The top cheerer's display name (leader1 for second place, and so on) |
+| `%leader0.userName%` | Their login name |
+| `%leader0.userId%` | Their id |
+| `%leader0.score%` | How many Bits they cheered |
+| `%leader0.rank%` | Their place on the list |
+
+<small>Type id: `twitch.getBitsLeaderboard`</small>
+
 ## Get broadcaster info
 
 Saves facts about your own channel and your bot account, like your name and whether you are an affiliate, for the next steps.
@@ -402,6 +549,26 @@ Looks up your running charity campaign and saves the amounts for the next steps.
 
 <small>Type id: `twitch.getCharityCampaign`</small>
 
+## Get charity donations (donationCount, donation0.user, donation0.amount, donation0.currency...)
+
+Lists the donations to your running charity campaign.
+
+| Setting | What to put in |
+| --- | --- |
+| **How many** | How many donations to get (1 to 100). Starts as: `20`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%donationCount%` | How many donations were found |
+| `%donation0.user%` | The donor's display name (donation1 for the next, and so on) |
+| `%donation0.userName%` | Their login name |
+| `%donation0.amount%` | How much they gave |
+| `%donation0.currency%` | The currency, like USD |
+
+<small>Type id: `twitch.getCharityDonations`</small>
+
 ## Get clip download URLs (clipDownloadUrl, clipPortraitDownloadUrl, clipDownload0.., clipDownloadCount)
 
 Looks up download links for clips of your channel, so you can save or reuse them.
@@ -421,6 +588,41 @@ Looks up download links for clips of your channel, so you can save or reuse them
 | `%clipDownload0.portraitUrl%` | Tall download link of the first clip |
 
 <small>Type id: `twitch.getClipDownloadUrls`</small>
+
+## Get creator goals (goalCount, goal0.type, goal0.current, goal0.target, goal0.description...)
+
+Lists the creator goals you have running on Twitch, like a follower or sub goal.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%goalCount%` | How many goals are running |
+| `%goal0.type%` | The first goal's kind, like follower or new_subscription (goal1 for the next, and so on) |
+| `%goal0.description%` | Its description |
+| `%goal0.current%` | How far it is |
+| `%goal0.target%` | Its target |
+| `%goal0.id%` | Its id |
+
+<small>Type id: `twitch.getCreatorGoals`</small>
+
+## Get custom power-ups (powerUpCount, powerUp0.id, powerUp0.title, powerUp0.bits...)
+
+Lists your channel's custom Power-ups (the ones viewers buy with Bits).
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%powerUpCount%` | How many custom Power-ups you have |
+| `%powerUp0.title%` | The first one's title (powerUp1 for the next, and so on) |
+| `%powerUp0.bits%` | What it costs in Bits |
+| `%powerUp0.enabled%` | True when it is turned on |
+| `%powerUp0.paused%` | True when it is paused |
+| `%powerUp0.id%` | Its id |
+| `%powerUp0.image%` | A link to its image |
+
+<small>Type id: `twitch.getCustomPowerUps`</small>
 
 ## Get follow age
 
@@ -456,6 +658,32 @@ Looks up how many followers you have and who followed last, and saves it for the
 | `%latestFollowerUserName%` | Their login name |
 
 <small>Type id: `twitch.getFollowerCount`</small>
+
+## Get hype train status (hypeTrainActive, hypeTrainLevel, hypeTrainProgress, hypeTrainGoal, hypeTrainRecordLevel...)
+
+Checks whether a Hype Train is running right now and how far it is, plus your channel's record.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%hypeTrainActive%` | True when a Hype Train is running |
+| `%hypeTrainLevel%` | Its current level |
+| `%hypeTrainProgress%` | Points towards the next level |
+| `%hypeTrainGoal%` | Points needed for the next level |
+| `%hypeTrainPercent%` | Progress towards the next level, 0 to 100 |
+| `%hypeTrainTotal%` | All points so far |
+| `%hypeTrainType%` | regular, treasure or golden_kappa |
+| `%hypeTrainExpiresAt%` | When it ends unless it levels up |
+| `%hypeTrainIsShared%` | True when it is a shared Hype Train |
+| `%hypeTrainTopContributor%` | Who has given the most |
+| `%hypeTrainTopContribution%` | How much they gave |
+| `%hypeTrainRecordLevel%` | Your channel's highest level ever |
+| `%hypeTrainRecordTotal%` | Points of that record train |
+| `%hypeTrainRecordAt%` | When the record was set |
+| `%hypeTrainId%` | The train's id |
+
+<small>Type id: `twitch.getHypeTrain`</small>
 
 ## Get latest poll (pollId, pollTitle, pollStatus, pollChoice0.., active, poll.*)
 
@@ -564,6 +792,23 @@ Looks up the chat message that is pinned right now and saves its details for the
 
 <small>Type id: `twitch.getPinnedMessage`</small>
 
+## Get shared chat session (sharedChatActive, sharedChatHostId, sharedChatParticipantCount...)
+
+Checks whether your chat is shared with other channels right now (Shared Chat).
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%sharedChatActive%` | True when your chat is shared |
+| `%sharedChatIsHost%` | True when you started the shared session |
+| `%sharedChatParticipantCount%` | How many channels share the chat |
+| `%sharedChatParticipantIds%` | Their ids, separated by commas |
+| `%sharedChatHostId%` | The id of the channel that started it |
+| `%sharedChatSessionId%` | The session's id |
+
+<small>Type id: `twitch.getSharedChatSession`</small>
+
 ## Get shield mode status
 
 Checks whether shield mode is on and saves the answer for the next steps.
@@ -597,6 +842,50 @@ Checks whether a channel is live and saves the viewer count, title and uptime fo
 | `%uptimeSeconds%` | How many seconds the stream has been live |
 
 <small>Type id: `twitch.getStreamInfo`</small>
+
+## Get stream markers of the current broadcast (markerCount, marker0.description, marker0.position...)
+
+Lists the stream markers of your current (or latest) broadcast.
+
+| Setting | What to put in |
+| --- | --- |
+| **How many** | How many markers to get (1 to 100). Starts as: `20`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%markerCount%` | How many markers were found |
+| `%marker0.description%` | The first marker's description (marker1 for the next, and so on) |
+| `%marker0.position%` | Where it is, in seconds from the start of the broadcast |
+| `%marker0.url%` | A link to that moment |
+| `%marker0.id%` | The marker's id |
+
+<small>Type id: `twitch.getStreamMarkers`</small>
+
+## Get stream schedule (nextStreamAt, nextStreamTitle, nextStreamCategory, scheduleCount, schedule0.title...)
+
+Reads your Twitch stream schedule, for example to answer a !schedule command.
+
+| Setting | What to put in |
+| --- | --- |
+| **How many** | How many upcoming streams to get (1 to 25). Starts as: `5`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%nextStreamAt%` | When the next stream starts (UTC) |
+| `%nextStreamAtLocal%` | The same in this computer's time, written out |
+| `%nextStreamTitle%` | Its title |
+| `%nextStreamCategory%` | Its category |
+| `%scheduleCount%` | How many upcoming streams were found |
+| `%schedule0.title%` | The first one's title (schedule1 for the next, and so on; also .start, .end, .category, .isRecurring, .id) |
+| `%onVacation%` | True when your schedule is on vacation now |
+| `%vacationStart%` | When the vacation starts |
+| `%vacationEnd%` | When it ends |
+
+<small>Type id: `twitch.getSchedule`</small>
 
 ## Get sub counter (subCounter.count, subCounter.rollover, subCounter.rolloverCount)
 
@@ -662,6 +951,28 @@ Looks up which Twitch teams a user belongs to and saves them for the next steps.
 
 <small>Type id: `twitch.getTeamInfo`</small>
 
+## Get unban requests (unbanRequestCount, unbanRequest0.id, unbanRequest0.user, unbanRequest0.text...)
+
+Lists unban requests: people who were banned and asked to be let back in.
+
+| Setting | What to put in |
+| --- | --- |
+| **Status** | Which requests: pending (not answered yet), approved, denied, acknowledged or canceled. Options: pending, approved, denied, acknowledged, canceled. Starts as: `pending`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%unbanRequestCount%` | How many requests were found |
+| `%unbanRequest0.id%` | The first request's id, for Approve or deny an unban request (unbanRequest1 for the next, and so on) |
+| `%unbanRequest0.user%` | Who asked |
+| `%unbanRequest0.userName%` | Their login name |
+| `%unbanRequest0.userId%` | Their id |
+| `%unbanRequest0.text%` | What they wrote |
+| `%unbanRequest0.createdAt%` | When they asked |
+
+<small>Type id: `twitch.getUnbanRequests`</small>
+
 ## Get user info (targetUser, targetUserId, targetDescription, targetCreatedAt...)
 
 Looks up a Twitch user and saves their name, account age, subscriber status and more for the next steps.
@@ -688,6 +999,30 @@ Looks up a Twitch user and saves their name, account age, subscriber status and 
 | `%targetProfileImageUrl%` | The web link of their profile picture |
 
 <small>Type id: `twitch.getUserInfo`</small>
+
+## Get videos (videoCount, video0.title, video0.url, videoTitle, videoUrl...)
+
+Looks up the newest videos of a channel: past broadcasts, highlights or uploads. Handy for shoutouts ("check out their last stream").
+
+| Setting | What to put in |
+| --- | --- |
+| **Channel** | The channel, as a login name or id:12345. Leave empty for your own channel. |
+| **Type** | Past broadcasts (archive), highlights, uploads, or all of them. Options: archive, highlight, upload, all. Starts as: `archive`. |
+| **How many** | How many videos to get, newest first (1 to 100). Starts as: `1`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%videoCount%` | How many videos were found |
+| `%videoTitle%` | The newest video's title |
+| `%videoUrl%` | A link to the newest video |
+| `%videoCreatedAt%` | When the newest video was made |
+| `%videoDuration%` | How long it is, like 3h2m1s |
+| `%videoViews%` | How many views it has |
+| `%video0.title%` | The first video's title (video1.title for the next, and so on; also .id, .url, .type, .duration, .views, .createdAt, .thumbnail) |
+
+<small>Type id: `twitch.getVideos`</small>
 
 ## Guest Star: assign slot
 
@@ -905,6 +1240,16 @@ Removes one tag from your stream tags and keeps the others.
 | **Tag** | The tag to remove, like "Cozy". Capital letters and a leading # do not matter. |
 
 <small>Type id: `twitch.removeTag`</small>
+
+## Remove from stream schedule
+
+Removes a stream from your schedule. For a weekly stream this removes every week.
+
+| Setting | What to put in |
+| --- | --- |
+| **Schedule segment id** | The scheduled stream's id, from Get stream schedule or Add to stream schedule. Starts as: `%scheduleSegmentId%`. |
+
+<small>Type id: `twitch.deleteScheduleSegment`</small>
 
 ## Remove moderator
 
@@ -1254,6 +1599,30 @@ Starts a commercial break on your channel. Only works while you are live and are
 
 <small>Type id: `twitch.runAd`</small>
 
+## Search channels (channelCount, channel0.login, channel0.isLive, channel0.gameName...)
+
+Searches Twitch for channels by name.
+
+| Setting | What to put in |
+| --- | --- |
+| **Search for** | The name, or part of it, to search for. |
+| **Only live channels** | Tick to find only channels that are live right now. Starts as: `false`. |
+| **How many** | How many results to get (1 to 100). Starts as: `5`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%channelCount%` | How many channels were found |
+| `%channel0.login%` | The first channel's login name (channel1.login for the next, and so on) |
+| `%channel0.name%` | Its display name |
+| `%channel0.isLive%` | True when it is live |
+| `%channel0.title%` | Its stream title |
+| `%channel0.gameName%` | Its category |
+| `%channel0.startedAt%` | When its stream started (empty when offline) |
+
+<small>Type id: `twitch.searchChannels`</small>
+
 ## Send announcement
 
 Posts a highlighted announcement in your Twitch chat, which stands out from normal messages.
@@ -1303,6 +1672,22 @@ Sends a private message (whisper) to one viewer. The account that sends it needs
 | **Send as** | Which account writes it. Default uses your bot account if it is signed in (see the Twitch page), otherwise your own account. Or pick Bot or Broadcaster. Options: Default, Bot, Broadcaster. Starts as: `Default`. |
 
 <small>Type id: `twitch.sendWhisper`</small>
+
+## Set AutoMod level
+
+Sets how strict AutoMod is for every kind of message at once. For example, turn it up when a raid arrives.
+
+| Setting | What to put in |
+| --- | --- |
+| **Level** | 0 turns AutoMod off; 4 holds the most messages for review. Options: 0: off, 1: less filtering, 2, 3, 4: most filtering. Starts as: `1: less filtering`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%automodLevel%` | The level now set |
+
+<small>Type id: `twitch.setAutomodLevel`</small>
 
 ## Set branded content (success)
 
@@ -1375,6 +1760,18 @@ Turns one content warning label (like gambling or violence) on or off for your c
 | **Enabled** | Tick to add the label to your channel, untick to remove it. Starts as: `true`. |
 
 <small>Type id: `twitch.setContentLabel`</small>
+
+## Set schedule vacation
+
+Turns schedule vacation on or off. While on, the streams in that time are hidden from your schedule.
+
+| Setting | What to put in |
+| --- | --- |
+| **On vacation** | Tick to go on vacation; untick to end it. Starts as: `true`. |
+| **From** | When the vacation starts, like 2026-12-20 00:00. Needed when turning it on. |
+| **Until** | When it ends. Needed when turning it on. |
+
+<small>Type id: `twitch.setVacation`</small>
 
 ## Set shield mode
 
@@ -1473,6 +1870,16 @@ Lifts a ban so the viewer can chat again.
 | `%unbanResult%` | True when the unban worked |
 
 <small>Type id: `twitch.unban`</small>
+
+## Unblock user
+
+Unblocks someone you blocked before.
+
+| Setting | What to put in |
+| --- | --- |
+| **User** | Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action. |
+
+<small>Type id: `twitch.unblockUser`</small>
 
 ## Unpin chat message
 

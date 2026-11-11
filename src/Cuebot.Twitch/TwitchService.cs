@@ -37,6 +37,8 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
     private ActiveConnection? _connection;
     private ActiveConnection? _botConnection;
     private Task _pendingSignOut = Task.CompletedTask;
+    private readonly CancellationTokenSource _lifetime = new();
+    private Task? _idleValidation;
     private bool _announcedConnected;
     private bool _announcedChat;
 
@@ -58,8 +60,8 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         _auth = new TwitchAuthClient(http, endpoints.Auth, time);
         _tokens = new TwitchTokenManager(settings, _auth, log, () => App.ClientId);
         _botTokens = new TwitchTokenManager(settings, _auth, log, () => App.ClientId, s => new BotAccount(s), "Twitch bot");
-        _helix = new HelixClient(http, endpoints.Helix, _tokens);
-        _botHelix = new HelixClient(http, endpoints.Helix, _botTokens);
+        _helix = new HelixClient(http, endpoints.Helix, _tokens, time);
+        _botHelix = new HelixClient(http, endpoints.Helix, _botTokens, time);
         var sent = new SentMessageTracker();
         var counters = new TwitchCounters(() => Settings, settings.ScheduleSave);
         _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent, counters: counters,
@@ -134,7 +136,9 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         var account = await _botTokens.ValidateAsync(ct).ConfigureAwait(false);
         if (account.UserId == Settings.UserId && Settings.UserId.Length > 0)
         {
+            var wrongToken = Settings.Bot.AccessToken;
             _botTokens.Clear();
+            _pendingSignOut = Task.WhenAll(_pendingSignOut, RevokeAsync(App.ClientId, wrongToken));
             throw new InvalidOperationException(
                 "That is the broadcaster account. Log out of Twitch in the browser (or use a private window), log in as the bot and try again.");
         }
@@ -255,17 +259,64 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
     public Task SendChatMessageAsync(string message, CancellationToken ct = default) =>
         Api.SendChatMessageAsync(message, TwitchSender.Default, null, ct);
 
-    /// <summary>Connects automatically when signed in and auto-connect is enabled. Never throws.</summary>
+    /// <summary>
+    /// Connects automatically when signed in and auto-connect is enabled, and starts the startup-and-hourly token
+    /// validation of accounts that are not connected. Never throws.
+    /// </summary>
     public async Task StartAsync(CancellationToken ct = default)
     {
-        if (!IsAuthorized || !Settings.AutoConnect) return;
+        if (IsAuthorized && Settings.AutoConnect)
+        {
+            try
+            {
+                await ConnectAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+            {
+                _log.Error("Twitch", "Automatic connection failed", ex);
+            }
+        }
+        _idleValidation ??= ValidateIdleAccountsAsync(_lifetime.Token);
+    }
+
+    /// <summary>
+    /// Twitch requires every stored token to be validated on startup and hourly, not only while connected (a
+    /// connection validates its own token). Signed-in accounts without a connection are checked here, so sub-actions
+    /// never use a token Twitch has stopped accepting.
+    /// </summary>
+    private async Task ValidateIdleAccountsAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(ValidationInterval, _time);
         try
         {
-            await ConnectAsync(ct).ConfigureAwait(false);
+            do
+            {
+                if (IsAuthorized && _connection is null)
+                    await ValidateIdleAsync(_tokens, SetStatus, ct).ConfigureAwait(false);
+                if (IsBotAuthorized && _botConnection is null)
+                    await ValidateIdleAsync(_botTokens, SetBotStatus, ct).ConfigureAwait(false);
+            }
+            while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false));
         }
-        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            _log.Error("Twitch", "Automatic connection failed", ex);
+        }
+    }
+
+    private async Task ValidateIdleAsync(TwitchTokenManager tokens, Action<ConnectionState, string> report, CancellationToken ct)
+    {
+        try
+        {
+            await tokens.ValidateAsync(ct).ConfigureAwait(false);
+        }
+        catch (TwitchApiException ex) when (ex.StatusCode == 401)
+        {
+            _log.Warn("Twitch", ex.Message);
+            report(ConnectionState.Error, ex.Message);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.Debug("Twitch", $"Token validation failed: {ex.Message}");
         }
     }
 
@@ -275,6 +326,8 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
     /// </summary>
     public async ValueTask DisposeAsync()
     {
+        if (!_lifetime.IsCancellationRequested) await _lifetime.CancelAsync().ConfigureAwait(false);
+        if (_idleValidation is { } idle) await idle.ConfigureAwait(false);
         try
         {
             await _pendingSignOut.WaitAsync(SignOutGrace).ConfigureAwait(false);
@@ -290,7 +343,7 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
     {
         var cts = new CancellationTokenSource();
         var account = new EventSubAccount("Twitch", () => Settings.UserId, () => Settings.Login, () => Settings.Scopes,
-            EventSubSubscriptions.All);
+            EventSubSubscriptions.All, MoreSubscriptions: WatchedChannelSubscriptionsAsync);
         TwitchEventSubListener? listener = null;
         listener = new TwitchEventSubListener(_helix, account, _router, _bus, _log, (state, message) =>
         {
@@ -308,7 +361,7 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
     {
         var cts = new CancellationTokenSource();
         var account = new EventSubAccount("Twitch bot", () => Settings.Bot.UserId, () => Settings.Bot.Login, () => Settings.Bot.Scopes,
-            EventSubSubscriptions.Bot, IsBot: true);
+            EventSubSubscriptions.ForBot(() => Settings.UserId), IsBot: true);
         var listener = new TwitchEventSubListener(_botHelix, account, _router, _bus, _log, (state, message) =>
         {
             if (!cts.IsCancellationRequested) SetBotStatus(state, message);
@@ -316,6 +369,33 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         var eventSub = new EventSubClient(_endpoints.EventSub, listener, _log, _eventSubTimeouts);
         var run = Task.WhenAll(eventSub.RunAsync(cts.Token), ValidatePeriodicallyAsync(_botTokens, cts, SetBotStatus));
         return new ActiveConnection(cts, run);
+    }
+
+    /// <summary>
+    /// The watched channels' subscriptions, within Twitch's cost budget for channels that have not authorized
+    /// Cuebot (the ones that do not fit are left out with a warning).
+    /// </summary>
+    private async Task<IReadOnlyList<EventSubSubscriptionSpec>> WatchedChannelSubscriptionsAsync(CancellationToken ct)
+    {
+        var logins = Settings.WatchedChannels.Select(l => l.Trim().TrimStart('@').ToLowerInvariant())
+            .Where(l => l.Length > 0 && l != Settings.Login.ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToList();
+        if (logins.Count == 0) return [];
+        var perChannel = Settings.WatchedChannelUpdates ? 3 : 2;
+        var fits = EventSubSubscriptions.MaxWatchedCost / perChannel;
+        if (logins.Count > fits)
+            _log.Warn("Twitch", $"Twitch allows {fits} watched channels{(Settings.WatchedChannelUpdates ? " with title and category changes" : "")}; "
+                                + $"not watching {string.Join(", ", logins.Skip(fits))}");
+        var specs = new List<EventSubSubscriptionSpec>();
+        foreach (var login in logins.Take(fits))
+        {
+            if (await Api.GetUserAsync(login, ct).ConfigureAwait(false) is not { } user)
+            {
+                _log.Warn("Twitch", $"Watched channel \"{login}\" was not found on Twitch");
+                continue;
+            }
+            specs.AddRange(EventSubSubscriptions.ForWatchedChannel(user.Id, user.Login, Settings.WatchedChannelUpdates));
+        }
+        return specs;
     }
 
     /// <summary>
@@ -339,7 +419,21 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         if (Settings.Scopes.Contains(TwitchScopes.ReadRedemptions) || Settings.Scopes.Contains(TwitchScopes.ManageRedemptions))
             await SeedAsync("rewards", async () => _router.SeedRewards(await Api.GetRewardsAsync(ct).ConfigureAwait(false))).ConfigureAwait(false);
         await SeedAsync("chat badges", async () => ChatBadges = await Api.GetChatBadgesAsync(ct).ConfigureAwait(false)).ConfigureAwait(false);
+        await SeedAsync("shared chat session", async () =>
+        {
+            var session = await Api.GetSharedChatSessionAsync(ct).ConfigureAwait(false);
+            _router.SeedSharedChat(session is null ? null : session.HostBroadcasterId == Settings.UserId);
+        }).ConfigureAwait(false);
+        if (Settings.Scopes.Contains(TwitchScopes.ReadHypeTrain))
+            await SeedAsync("hype train", async () =>
+                _router.SeedHypeTrain((await Api.GetHypeTrainStatusAsync(ct).ConfigureAwait(false)).Current?.Level ?? 0)).ConfigureAwait(false);
+        if (Settings.Scopes.Contains(TwitchScopes.ReadBits))
+            await SeedAsync("custom power-ups", async () =>
+                CustomPowerUpTitles = (await Api.GetCustomPowerUpsAsync(ct).ConfigureAwait(false)).Select(p => p.Title).ToArray()).ConfigureAwait(false);
     }
+
+    /// <summary>Titles of the channel's custom Power-ups (read when connecting), offered in the trigger editor.</summary>
+    public IReadOnlyList<string> CustomPowerUpTitles { get; private set; } = [];
 
     /// <summary>Chat badge images ("set/version" → 4x image URL and title), loaded when the broadcaster connects.</summary>
     public IReadOnlyDictionary<string, (string Url, string Title)> ChatBadges { get; private set; } =

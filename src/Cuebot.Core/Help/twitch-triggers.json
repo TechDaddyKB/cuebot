@@ -46,7 +46,10 @@
         "isReply": "True if the message replies to another one",
         "emoteCount": "How many emotes are in the message",
         "color": "Their chat name colour",
-        "isSharedChat": "True if it came from another channel in a shared chat"
+        "isSharedChat": "True if it came from another channel in a shared chat",
+        "hasGif": "True when the message has a GIF in it",
+        "gifUrls": "The GIFs' web addresses, separated by spaces",
+        "gifIds": "The GIFs' ids, separated by commas"
       }
     },
     "twitch.announcement": {
@@ -369,7 +372,8 @@
       "fields": {},
       "variables": {
         "user": "Your channel's display name",
-        "endedAt": "When the stream ended"
+        "endedAt": "When the stream ended",
+        "streamId": "The id of the stream that ended"
       }
     },
     "twitch.streamUpdate": {
@@ -1484,7 +1488,10 @@
         "userId": "The Twitch user number of the person who wrote it",
         "message": "The held message",
         "category": "Why AutoMod held it, such as swearing",
-        "level": "How strong the match was"
+        "level": "How strong the match was",
+        "reason": "Why it was held: automod (AutoMod's filter), blocked_term (one of your blocked terms) or blocked_link (a link)",
+        "isBlockedTerm": "True when a blocked term caught it",
+        "blockedTermIds": "The ids of the blocked terms it matched"
       }
     },
     "twitch.automodMessageUpdated": {
@@ -1497,7 +1504,10 @@
         "moderator": "The display name of the moderator who did it",
         "moderatorUserName": "The lowercase login name of that moderator",
         "message": "The held message",
-        "status": "What happened to it, such as approved or denied"
+        "status": "What happened to it, such as approved or denied",
+        "reason": "Why it was held: automod (AutoMod's filter), blocked_term (one of your blocked terms) or blocked_link (a link)",
+        "isBlockedTerm": "True when a blocked term caught it",
+        "blockedTermIds": "The ids of the blocked terms it matched"
       }
     },
     "twitch.blockedTermsAdded": {
@@ -1604,6 +1614,107 @@
         "userName": "The account's login name",
         "userId": "The account's Twitch user number",
         "reason": "Why it disconnected"
+      }
+    },
+    "twitch.giftedDrops": {
+      "description": "Runs when someone gifts Drops to people in your chat.",
+      "fields": {
+        "minRecipients": "Only run when at least this many people got a Drop. 0 runs every time."
+      },
+      "variables": {
+        "user": "Who gifted the Drops",
+        "recipientCount": "How many people got one",
+        "systemMessage": "Twitch's own message about it"
+      }
+    },
+    "twitch.sharedChatGiftedDrops": {
+      "description": "Runs when someone gifts Drops in another channel of your Shared Chat session.",
+      "fields": {},
+      "variables": {
+        "user": "Who gifted the Drops",
+        "recipientCount": "How many people got one",
+        "sourceBroadcaster": "The channel it happened in"
+      }
+    },
+    "twitch.sentMessageHeld": {
+      "description": "Runs when AutoMod holds back a message Cuebot sent (from your bot account or your own account), so it is not shown until a moderator reviews it.",
+      "fields": {},
+      "variables": {
+        "message": "The held message",
+        "messageId": "Its id",
+        "user": "The account that sent it"
+      }
+    },
+    "twitch.sentMessageUpdated": {
+      "description": "Runs when a held message Cuebot sent has been reviewed.",
+      "fields": {
+        "status": "Only run for this result: approved (shown in chat), denied (removed) or invalid. Any runs for all."
+      },
+      "variables": {
+        "status": "approved, denied or invalid",
+        "message": "The message",
+        "messageId": "Its id",
+        "user": "The account that sent it"
+      }
+    },
+    "twitch.watchedChannelOnline": {
+      "description": "Runs when one of your watched channels goes live. Add channels under Watched channels on the Twitch Settings tab.",
+      "fields": {
+        "channel": "Only run for this channel (its login name). Leave empty to run for every watched channel."
+      },
+      "variables": {
+        "channel": "The channel's display name",
+        "channelUserName": "Its login name",
+        "channelId": "Its id",
+        "startedAt": "When the stream started",
+        "streamType": "live, or another kind Twitch reports"
+      }
+    },
+    "twitch.watchedChannelOffline": {
+      "description": "Runs when one of your watched channels ends its stream.",
+      "fields": {
+        "channel": "Only run for this channel (its login name). Leave empty to run for every watched channel."
+      },
+      "variables": {
+        "channel": "The channel's display name",
+        "channelUserName": "Its login name",
+        "channelId": "Its id"
+      }
+    },
+    "twitch.watchedChannelUpdate": {
+      "description": "Runs when a watched channel changes its title or category. Turn it on under Watched channels on the Twitch Settings tab.",
+      "fields": {
+        "channel": "Only run for this channel (its login name). Leave empty to run for every watched channel."
+      },
+      "variables": {
+        "channel": "The channel's display name",
+        "channelUserName": "Its login name",
+        "channelId": "Its id",
+        "title": "The new title",
+        "categoryName": "The new category",
+        "categoryId": "Its id",
+        "language": "The stream language"
+      }
+    },
+    "twitch.subEnded": {
+      "description": "Runs when someone's subscription ends (they did not renew, or a gifted sub ran out).",
+      "fields": {
+        "tier": "Only run for this subscription level (1, 2 or 3). Choose Any to run for every level."
+      },
+      "variables": {
+        "user": "Whose subscription ended",
+        "userName": "Their login name",
+        "tier": "Subscription level: 1, 2 or 3",
+        "isGift": "True when it was a gifted sub"
+      }
+    },
+    "twitch.automodSettingsUpdated": {
+      "description": "Runs when someone changes how strict AutoMod is in your chat.",
+      "fields": {},
+      "variables": {
+        "overallLevel": "The overall level, or -1 when the kinds were set one by one",
+        "moderator": "Who changed it",
+        "swearing": "The level for swearing (also aggression, bullying, disability, misogyny, raceEthnicityOrReligion, sexBasedTerms, sexualitySexOrGender)"
       }
     }
   },

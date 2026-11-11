@@ -627,13 +627,13 @@ CPH.LogInfo($"First cheermote: {cheermotes.FirstOrDefault()?.Prefix}");
 
 ## TwitchBlockUser
 
-Not supported in Cuebot: Cuebot does not ask Twitch for permission to block users. It only writes a warning to the log.
+Blocks someone for your Twitch account, so they cannot whisper you or show up in your chat. userLogin is their login name. The context and reason are not sent to Twitch. Needs the "Block and unblock users" permission on the Twitch Settings tab (sign in again after ticking it).
 
 ```csharp
 bool TwitchBlockUser(string userLogin, TwitchBlockContext context = TwitchBlockContext.None, TwitchBlockReason reason = TwitchBlockReason.None)
 ```
 
-**Gives back:** Always false.
+**Gives back:** true when Twitch blocked them; false otherwise (a warning goes to the log).
 
 **Example**
 
@@ -644,19 +644,53 @@ CPH.LogInfo($"Blocked: {ok}");
 
 ## TwitchBlockUserById
 
-Not supported in Cuebot: Cuebot does not ask Twitch for permission to block users. It only writes a warning to the log.
+Like TwitchBlockUser, with the person's Twitch user id. Needs the "Block and unblock users" permission on the Twitch Settings tab (sign in again after ticking it).
 
 ```csharp
 bool TwitchBlockUserById(string userId, TwitchBlockContext context = TwitchBlockContext.None, TwitchBlockReason reason = TwitchBlockReason.None)
 ```
 
-**Gives back:** Always false.
+**Gives back:** true when Twitch blocked them; false otherwise (a warning goes to the log).
 
 **Example**
 
 ```csharp
 bool ok = CPH.TwitchBlockUserById("12345678");
 CPH.LogInfo($"Blocked: {ok}");
+```
+
+## TwitchUnblockUser
+
+Unblocks someone you blocked before. userLogin is their login name. Needs the "Block and unblock users" permission on the Twitch Settings tab (sign in again after ticking it).
+
+```csharp
+bool TwitchUnblockUser(string userLogin)
+```
+
+**Gives back:** true when Twitch unblocked them; false otherwise (a warning goes to the log).
+
+**Example**
+
+```csharp
+bool ok = CPH.TwitchUnblockUser("coolviewer");
+CPH.LogInfo($"Unblocked: {ok}");
+```
+
+## TwitchUnblockUserById
+
+Like TwitchUnblockUser, with the person's Twitch user id. Needs the "Block and unblock users" permission on the Twitch Settings tab (sign in again after ticking it).
+
+```csharp
+bool TwitchUnblockUserById(string userId)
+```
+
+**Gives back:** true when Twitch unblocked them; false otherwise (a warning goes to the log).
+
+**Example**
+
+```csharp
+bool ok = CPH.TwitchUnblockUserById("12345678");
+CPH.LogInfo($"Unblocked: {ok}");
 ```
 
 ## GetAllClips

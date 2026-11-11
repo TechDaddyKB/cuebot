@@ -2039,6 +2039,17 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"twitch.addModerator\", ...).
         """
+    def twitch_add_schedule_segment(self, *, start: Any = None, duration: Any = None, title: Any = None, category: Any = None, recurring: Any = None) -> Any:
+        """Adds a stream to your Twitch schedule. Fails when Twitch is not connected.
+
+        start: Optional. When it starts, like 2026-12-01 19:00, in this computer's time zone.
+        duration: Optional. How long it runs, in minutes (30 to 1380).
+        title: Optional. The stream's title, up to 140 characters.
+        category: Optional. A category name or id. Leave empty for none.
+        recurring: Optional. Tick to repeat it every week.
+        Gives back: An object with scheduleSegmentId.
+        Same as cb.call(\"twitch.addScheduleSegment\", ...).
+        """
     def twitch_add_suspicious_status(self, *, user: Any = None, status: Any = None) -> Any:
         """Marks a viewer as suspicious. \"Active Monitoring\" flags their messages for your mods; \"Restricted\" keeps their messages out of chat. Fails when Twitch is not connected.
 
@@ -2078,6 +2089,13 @@ class Cuebot:
         Gives back: An object with bannedUser (display name), bannedUserName (login), bannedUserId, bannedUserType (\"twitch\") and banResult (true).
         Same as cb.call(\"twitch.ban\", ...).
         """
+    def twitch_block_user(self, *, user: Any = None) -> Any:
+        """Blocks someone for your Twitch account, so they cannot whisper you or appear in your chat. Needs the Block users permission on the Twitch Settings tab. Fails when Twitch is not connected.
+
+        user: Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action.
+        Gives back: Nothing.
+        Same as cb.call(\"twitch.blockUser\", ...).
+        """
     def twitch_cancel_prediction(self) -> Any:
         """Cancels the running Twitch prediction and gives everyone their points back. Fails when Twitch is not connected.
 
@@ -2089,6 +2107,14 @@ class Cuebot:
 
         Gives back: Nothing.
         Same as cb.call(\"twitch.cancelRaid\", ...).
+        """
+    def twitch_cancel_schedule_segment(self, *, segment_id: Any = None, canceled: Any = None) -> Any:
+        """Cancels one scheduled stream (it stays on the schedule, marked cancelled), or brings it back. Fails when Twitch is not connected.
+
+        segment_id: Optional. The scheduled stream's id, from Get stream schedule or Add to stream schedule.
+        canceled: Optional. Tick to cancel it; untick to bring it back.
+        Gives back: Nothing.
+        Same as cb.call(\"twitch.cancelScheduleSegment\", ...).
         """
     def twitch_clear_chat(self) -> Any:
         """Clears every message from your Twitch chat. Fails when Twitch is not connected.
@@ -2113,12 +2139,25 @@ class Cuebot:
         Gives back: An object with rewardsChanged and rewardsSkipped (rewards Cuebot could not change).
         Same as cb.call(\"twitch.configureRewards\", ...).
         """
-    def twitch_create_clip(self, *, has_delay: Any = None) -> Any:
+    def twitch_create_clip(self, *, has_delay: Any = None, title: Any = None, duration: Any = None) -> Any:
         """Makes a clip of your live Twitch stream. Fails when Twitch is not connected.
 
         has_delay: Optional. true makes the clip account for your stream delay. Leave it out for false.
+        title: Optional. The clip's title. Leave it out to use your stream title.
+        duration: Optional. The clip's length in seconds, 5 to 60. Leave it out for Twitch's 30 seconds.
         Gives back: An object with clipId, clipEditUrl, clipUrl, createClipSuccess, createClipId, createClipCreatedAt and createClipUrl.
         Same as cb.call(\"twitch.createClip\", ...).
+        """
+    def twitch_create_clip_from_vod(self, *, title: Any = None, seconds_ago: Any = None, duration: Any = None, video_id: Any = None, end_offset: Any = None) -> Any:
+        """Clips a moment that already happened, from your current or a past broadcast. Use it for \"clip the last 2 minutes\" style commands. Twitch only allows this when past broadcasts are stored on your channel. Fails when Twitch is not connected.
+
+        title: Optional. The clip's title. Twitch requires one.
+        seconds_ago: Optional. When no video id is given: how many seconds ago the clip should end, counted back from now in the current broadcast. 0 ends it now.
+        duration: Optional. How long the clip is, in seconds, from 5 to 60.
+        video_id: Optional. The video to clip. Leave empty for your current (or latest) broadcast.
+        end_offset: Optional. With a video id: where the clip ends, in seconds from the start of the video.
+        Gives back: An object with clipId, clipUrl, clipEditUrl and clipVideoId.
+        Same as cb.call(\"twitch.createClipFromVod\", ...).
         """
     def twitch_create_guest_star_session(self) -> Any:
         """Starts a Twitch Guest Star session. Fails when Twitch is not connected.
@@ -2195,6 +2234,13 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"twitch.deleteReward\", ...).
         """
+    def twitch_delete_schedule_segment(self, *, segment_id: Any = None) -> Any:
+        """Removes a stream from your schedule. For a weekly stream this removes every week. Fails when Twitch is not connected.
+
+        segment_id: Optional. The scheduled stream's id, from Get stream schedule or Add to stream schedule.
+        Gives back: Nothing.
+        Same as cb.call(\"twitch.deleteScheduleSegment\", ...).
+        """
     def twitch_emote_only(self, *, enabled: Any = None) -> Any:
         """Turns emote-only chat on or off: viewers can only send emotes. Fails when Twitch is not connected.
 
@@ -2229,6 +2275,27 @@ class Cuebot:
 
         Gives back: An object with nextAdAt, lastAdAt, adDuration, prerollFreeTime, snoozeCount, snoozeRefreshAt, prerollFree and prerollFreeSeconds.
         Same as cb.call(\"twitch.getAdSchedule\", ...).
+        """
+    def twitch_get_automod_settings(self) -> Any:
+        """Reads how strict AutoMod is in your chat, from 0 (off) to 4 (strictest) for each kind of message. Fails when Twitch is not connected.
+
+        Gives back: An object with automodLevel, automodAggression, automodBullying, automodDisability, automodMisogyny, automodRaceEthnicityOrReligion, automodSexBasedTerms, automodSexualitySexOrGender and automodSwearing.
+        Same as cb.call(\"twitch.getAutomodSettings\", ...).
+        """
+    def twitch_get_ban_status(self, *, user: Any = None) -> Any:
+        """Checks whether someone is banned or timed out in your chat. Fails when Twitch is not connected.
+
+        user: Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action.
+        Gives back: An object with isBanned, isTimedOut, banReason, bannedAt, timeoutEndsAt and bannedBy.
+        Same as cb.call(\"twitch.getBanStatus\", ...).
+        """
+    def twitch_get_bits_leaderboard(self, *, count: Any = None, period: Any = None) -> Any:
+        """Gets your top cheerers for a day, week, month, year or all time. Fails when Twitch is not connected.
+
+        count: Optional. How many people to get (1 to 100).
+        period: Optional. The time span: all time, or the current day, week, month or year.
+        Gives back: An object with leaderCount, leader0.user, leader0.userName, leader0.userId, leader0.score and leader0.rank.
+        Same as cb.call(\"twitch.getBitsLeaderboard\", ...).
         """
     def twitch_get_blocked_terms(self) -> Any:
         """Lists every blocked word or phrase of your Twitch channel. Fails when Twitch is not connected.
@@ -2267,6 +2334,20 @@ class Cuebot:
         Gives back: An object with charityActive, charityName, charityCurrent, charityTarget and charityCurrency. Values are empty when no campaign runs.
         Same as cb.call(\"twitch.getCharityCampaign\", ...).
         """
+    def twitch_get_charity_donations(self, *, count: Any = None) -> Any:
+        """Lists the donations to your running charity campaign. Fails when Twitch is not connected.
+
+        count: Optional. How many donations to get (1 to 100).
+        Gives back: An object with donationCount, donation0.user, donation0.userName, donation0.amount and donation0.currency.
+        Same as cb.call(\"twitch.getCharityDonations\", ...).
+        """
+    def twitch_get_chat_colors(self, users: Any) -> Any:
+        """Gets the name colors people use in Twitch chat. Fails when Twitch is not connected.
+
+        users: Login names or \"id:12345\", separated by commas (up to 100).
+        Gives back: An object from user id to color, like #FF7F50. The color is empty for someone who never picked one.
+        Same as cb.call(\"twitch.getChatColors\", ...).
+        """
     def twitch_get_cheermotes(self) -> Any:
         """Lists the Bits cheer emotes (cheermotes) that work in your channel, exactly as Twitch gives them. Fails when Twitch is not connected.
 
@@ -2291,6 +2372,32 @@ class Cuebot:
         featured: Optional. true gives only featured clips, false only the others. Leave it out for all.
         Gives back: A list of clips, each with id, url, embedUrl, broadcasterName, creatorName, title, viewCount, createdAt, thumbnailUrl, duration, isFeatured and more.
         Same as cb.call(\"twitch.getClips\", ...).
+        """
+    def twitch_get_content_labels(self) -> Any:
+        """Lists Twitch's content classification labels, such as Gambling or Mature-rated game, with their ids. Use an id with Set content label. Fails when Twitch is not connected.
+
+        Gives back: A list of labels, each with id, name and description.
+        Same as cb.call(\"twitch.getContentLabels\", ...).
+        """
+    def twitch_get_creator_goals(self) -> Any:
+        """Lists the creator goals you have running on Twitch, like a follower or sub goal. Fails when Twitch is not connected.
+
+        Gives back: An object with goalCount, goal0.type, goal0.description, goal0.current, goal0.target and goal0.id.
+        Same as cb.call(\"twitch.getCreatorGoals\", ...).
+        """
+    def twitch_get_custom_power_ups(self) -> Any:
+        """Lists your channel's custom Power-ups (the ones viewers buy with Bits). Fails when Twitch is not connected.
+
+        Gives back: An object with powerUpCount, powerUp0.title, powerUp0.bits, powerUp0.enabled, powerUp0.paused, powerUp0.id and powerUp0.image.
+        Same as cb.call(\"twitch.getCustomPowerUps\", ...).
+        """
+    def twitch_get_emotes(self, *, source: Any = None, set_ids: Any = None) -> Any:
+        """Lists Twitch emotes with their images: your channel's own, Twitch's global ones, or the emotes of emote sets. Handy for emote walls. Fails when Twitch is not connected.
+
+        source: Optional. \"channel\" (your emotes, the default), \"global\" or \"set\".
+        set_ids: Optional. With source \"set\": emote set ids separated by commas (up to 25).
+        Gives back: A list of emotes, each with id, name, type, tier, setId, isAnimated and imageUrl.
+        Same as cb.call(\"twitch.getEmotes\", ...).
         """
     def twitch_get_follow_age(self, *, user: Any = None) -> Any:
         """Tells you if and how long a viewer has followed your Twitch channel. Fails when Twitch is not connected.
@@ -2323,6 +2430,12 @@ class Cuebot:
 
         Gives back: An object with guestStarSlotCount, guestStarLayout, guestStarModeratorSendLive, guestStarBrowserSourceAudio and guestStarBrowserSourceToken.
         Same as cb.call(\"twitch.getGuestStarSettings\", ...).
+        """
+    def twitch_get_hype_train(self) -> Any:
+        """Checks whether a Hype Train is running right now and how far it is, plus your channel's record. Fails when Twitch is not connected.
+
+        Gives back: An object with hypeTrainActive, hypeTrainLevel, hypeTrainProgress, hypeTrainGoal, hypeTrainPercent, hypeTrainTotal, hypeTrainType, hypeTrainExpiresAt, hypeTrainIsShared, hypeTrainTopContributor, hypeTrainTopContribution, hypeTrainRecordLevel, hypeTrainRecordTotal, hypeTrainRecordAt and hypeTrainId.
+        Same as cb.call(\"twitch.getHypeTrain\", ...).
         """
     def twitch_get_latest_subscriber(self) -> Any:
         """Tells you who subscribed last, as Cuebot saw it.
@@ -2403,6 +2516,19 @@ class Cuebot:
         Gives back: An object with each viewer's user id and their count, like { \"12345\": 3 }.
         Same as cb.call(\"twitch.getRewardUserCounters\", ...).
         """
+    def twitch_get_schedule(self, *, count: Any = None) -> Any:
+        """Reads your Twitch stream schedule, for example to answer a !schedule command. Fails when Twitch is not connected.
+
+        count: Optional. How many upcoming streams to get (1 to 25).
+        Gives back: An object with nextStreamAt, nextStreamAtLocal, nextStreamTitle, nextStreamCategory, scheduleCount, schedule0.title, onVacation, vacationStart and vacationEnd.
+        Same as cb.call(\"twitch.getSchedule\", ...).
+        """
+    def twitch_get_shared_chat_session(self) -> Any:
+        """Checks whether your chat is shared with other channels right now (Shared Chat). Fails when Twitch is not connected.
+
+        Gives back: An object with sharedChatActive, sharedChatIsHost, sharedChatParticipantCount, sharedChatParticipantIds, sharedChatHostId and sharedChatSessionId.
+        Same as cb.call(\"twitch.getSharedChatSession\", ...).
+        """
     def twitch_get_shield_mode(self) -> Any:
         """Checks whether Twitch Shield Mode is on. Fails when Twitch is not connected.
 
@@ -2415,6 +2541,13 @@ class Cuebot:
         user: Optional. A channel's login name or \"id:12345\". Leave it out for your own channel.
         Gives back: An object with isLive, viewerCount, streamTitle, streamGame, streamStartedAt and uptimeSeconds. Values are empty or 0 when the channel is offline.
         Same as cb.call(\"twitch.getStreamInfo\", ...).
+        """
+    def twitch_get_stream_markers(self, *, count: Any = None) -> Any:
+        """Lists the stream markers of your current (or latest) broadcast. Fails when Twitch is not connected.
+
+        count: Optional. How many markers to get (1 to 100).
+        Gives back: An object with markerCount, marker0.description, marker0.position, marker0.url and marker0.id.
+        Same as cb.call(\"twitch.getStreamMarkers\", ...).
         """
     def twitch_get_sub_counter(self) -> Any:
         """Reads Cuebot's sub counter, for a sub goal or sub train.
@@ -2442,6 +2575,13 @@ class Cuebot:
         Gives back: An object with teamCount, teams (names, separated by commas) and teamName (the first team).
         Same as cb.call(\"twitch.getTeamInfo\", ...).
         """
+    def twitch_get_unban_requests(self, *, status: Any = None) -> Any:
+        """Lists unban requests: people who were banned and asked to be let back in. Fails when Twitch is not connected.
+
+        status: Optional. Which requests: pending (not answered yet), approved, denied, acknowledged or canceled.
+        Gives back: An object with unbanRequestCount, unbanRequest0.id, unbanRequest0.user, unbanRequest0.userName, unbanRequest0.userId, unbanRequest0.text and unbanRequest0.createdAt.
+        Same as cb.call(\"twitch.getUnbanRequests\", ...).
+        """
     def twitch_get_user(self, user: Any) -> Any:
         """Looks up a Twitch user. Fails when Twitch is not connected.
 
@@ -2455,6 +2595,15 @@ class Cuebot:
         user: Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.
         Gives back: An object with targetFound, targetUser, targetUserName, targetUserId, targetDescription, targetProfileImageUrl, targetCreatedAt, targetAccountAgeDays, targetIsModerator, targetIsVip, targetGame, targetTitle and more.
         Same as cb.call(\"twitch.getUserInfo\", ...).
+        """
+    def twitch_get_videos(self, *, user: Any = None, type: Any = None, count: Any = None) -> Any:
+        """Looks up the newest videos of a channel: past broadcasts, highlights or uploads. Handy for shoutouts (\"check out their last stream\"). Fails when Twitch is not connected.
+
+        user: Optional. The channel, as a login name or id:12345. Leave empty for your own channel.
+        type: Optional. Past broadcasts (archive), highlights, uploads, or all of them.
+        count: Optional. How many videos to get, newest first (1 to 100).
+        Gives back: An object with videoCount, videoTitle, videoUrl, videoCreatedAt, videoDuration, videoViews and video0.title.
+        Same as cb.call(\"twitch.getVideos\", ...).
         """
     def twitch_get_vips(self) -> Any:
         """Lists every VIP of your Twitch channel. Fails when Twitch is not connected.
@@ -2565,12 +2714,30 @@ class Cuebot:
         Gives back: An object with success (true), the prediction's details (prediction.Id, prediction.Title, prediction.outcome0.title and so on) and prediction.winningOutcome.title, .users and .points.
         Same as cb.call(\"twitch.resolvePrediction\", ...).
         """
+    def twitch_resolve_unban_request(self, *, request_id: Any = None, decision: Any = None, message: Any = None) -> Any:
+        """Approves or denies an unban request. Approving lets the person chat again. Fails when Twitch is not connected.
+
+        request_id: Optional. The request to answer. The Unban request created trigger and Get unban requests give you this id.
+        decision: Optional. Approve lets them back in; deny keeps the ban.
+        message: Optional. An optional note the person sees, up to 500 characters.
+        Gives back: An object with unbanRequestStatus.
+        Same as cb.call(\"twitch.resolveUnbanRequest\", ...).
+        """
     def twitch_run_ad(self, *, length: Any = None) -> Any:
         """Starts an ad break on your Twitch stream right now. Fails when Twitch is not connected.
 
         length: Optional. How long, in seconds: 30, 60, 90, 120, 150 or 180. Leave it out for 30.
         Gives back: An object with adLength and adRetryAfter (seconds until you can run another one).
         Same as cb.call(\"twitch.runAd\", ...).
+        """
+    def twitch_search_channels(self, *, query: Any = None, live_only: Any = None, count: Any = None) -> Any:
+        """Searches Twitch for channels by name. Fails when Twitch is not connected.
+
+        query: Optional. The name, or part of it, to search for.
+        live_only: Optional. Tick to find only channels that are live right now.
+        count: Optional. How many results to get (1 to 100).
+        Gives back: An object with channelCount, channel0.login, channel0.name, channel0.isLive, channel0.title, channel0.gameName and channel0.startedAt.
+        Same as cb.call(\"twitch.searchChannels\", ...).
         """
     def twitch_send_and_pin_message(self, message: Any, *, duration: Any = None) -> Any:
         """Sends a message in your Twitch chat as yourself (not the bot) and pins it right away. Fails when the message is empty. Fails when Twitch is not connected.
@@ -2619,6 +2786,13 @@ class Cuebot:
         send_as: Optional. Who sends it: \"Default\" (your bot account when it is signed in, otherwise you), \"Bot\" or \"Broadcaster\".
         Gives back: Nothing.
         Same as cb.call(\"twitch.sendWhisper\", ...).
+        """
+    def twitch_set_automod_level(self, *, level: Any = None) -> Any:
+        """Sets how strict AutoMod is for every kind of message at once. For example, turn it up when a raid arrives. Fails when Twitch is not connected.
+
+        level: Optional. 0 turns AutoMod off; 4 holds the most messages for review.
+        Gives back: An object with automodLevel.
+        Same as cb.call(\"twitch.setAutomodLevel\", ...).
         """
     def twitch_set_branded_content(self, *, enabled: Any = None) -> Any:
         """Turns the branded content (sponsored stream) label on your Twitch channel on or off. Fails when Twitch is not connected.
@@ -2762,6 +2936,15 @@ class Cuebot:
         Gives back: An object with titleSuccess (true).
         Same as cb.call(\"twitch.setTitle\", ...).
         """
+    def twitch_set_vacation(self, *, enabled: Any = None, start: Any = None, end: Any = None) -> Any:
+        """Turns schedule vacation on or off. While on, the streams in that time are hidden from your schedule. Fails when Twitch is not connected.
+
+        enabled: Optional. Tick to go on vacation; untick to end it.
+        start: Optional. When the vacation starts, like 2026-12-20 00:00. Needed when turning it on.
+        end: Optional. When it ends. Needed when turning it on.
+        Gives back: Nothing.
+        Same as cb.call(\"twitch.setVacation\", ...).
+        """
     def twitch_slow_mode(self, *, enabled: Any = None, seconds: Any = None) -> Any:
         """Turns slow mode on or off: viewers must wait between messages. Fails when Twitch is not connected.
 
@@ -2805,6 +2988,13 @@ class Cuebot:
         user: Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.
         Gives back: An object with unbannedUser (display name), unbannedUserName (login), unbannedUserId, unbannedUserType (\"twitch\") and unbanResult (true).
         Same as cb.call(\"twitch.unban\", ...).
+        """
+    def twitch_unblock_user(self, *, user: Any = None) -> Any:
+        """Unblocks someone you blocked before. Fails when Twitch is not connected.
+
+        user: Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action.
+        Gives back: Nothing.
+        Same as cb.call(\"twitch.unblockUser\", ...).
         """
     def twitch_unique_chat(self, *, enabled: Any = None) -> Any:
         """Turns unique chat on or off: viewers cannot post the same message twice in a row. Fails when Twitch is not connected.

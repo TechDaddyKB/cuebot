@@ -50,40 +50,6 @@ long used = CPH.TwitchGetChannelPointsUsedByUserId("12345678");
 CPH.LogInfo($"Points used: {used}");
 ```
 
-## TwitchUnblockUser
-
-Not supported in Cuebot: Cuebot does not ask Twitch for the permission to manage blocked users. It only writes a warning in the log.
-
-```csharp
-bool TwitchUnblockUser(string userLogin)
-```
-
-**Gives back:** Always false.
-
-**Example**
-
-```csharp
-bool ok = CPH.TwitchUnblockUser("coolviewer");
-CPH.LogInfo($"Unblocked: {ok}");
-```
-
-## TwitchUnblockUserById
-
-Not supported in Cuebot: Cuebot does not ask Twitch for the permission to manage blocked users. It only writes a warning in the log.
-
-```csharp
-bool TwitchUnblockUserById(string userId)
-```
-
-**Gives back:** Always false.
-
-**Example**
-
-```csharp
-bool ok = CPH.TwitchUnblockUserById("12345678");
-CPH.LogInfo($"Unblocked: {ok}");
-```
-
 ## TwitchGetBitsDonatedByUserId
 
 Not supported in Cuebot: Cuebot does not keep a total of the Bits each viewer cheered. It only writes a warning in the log.

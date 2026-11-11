@@ -42,6 +42,15 @@ public sealed class TwitchSettings
     /// <summary>Publish "upcoming ad" warnings each minute from 5 minutes before a scheduled ad. Needs channel:read:ads.</summary>
     public bool UpcomingAdWarnings { get; set; } = true;
 
+    /// <summary>
+    /// Other channels (logins) whose going live and offline raise the "Watched channel" triggers. Twitch allows a
+    /// cost of 10 per account: 5 channels, or 3 with <see cref="WatchedChannelUpdates"/>.
+    /// </summary>
+    public List<string> WatchedChannels { get; set; } = [];
+
+    /// <summary>Also report title and category changes of the watched channels (one more subscription each).</summary>
+    public bool WatchedChannelUpdates { get; set; }
+
     /// <summary>The sub counter (Streamer.bot's Twitch sub counter with rollover).</summary>
     public TwitchSubCounter SubCounter { get; set; } = new();
 

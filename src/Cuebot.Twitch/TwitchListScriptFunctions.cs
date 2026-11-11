@@ -46,6 +46,17 @@ internal static class TwitchListScriptFunctions
         new("twitch.sendAndPinMessage", "Send a chat message as the broadcaster and pin it (duration seconds, 0 = until the stream ends); returns its id",
             ["message", "duration"], async (_, a, ct) =>
                 await api().SendAndPinMessageAsync(a.GetString("message"), Int(a, "duration"), ct).ConfigureAwait(false)),
+        new("twitch.getEmotes",
+            "Emotes: source \"channel\" (default, the broadcaster's), \"global\" or \"set\" with setIds (comma-separated); id, name, type, tier, setId, isAnimated, imageUrl",
+            ["source", "setIds"], async (_, a, ct) =>
+                await api().GetEmotesAsync(a.GetString("source") is { Length: > 0 } source ? source : "channel",
+                    a.GetString("setIds").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), ct).ConfigureAwait(false)),
+        new("twitch.getChatColors", "Chat name colors of users (comma-separated logins or id:123, up to 100): userId → hex color (empty when unset)", ["users"],
+            async (_, a, ct) => await api().GetChatColorsAsync(
+                a.GetString("users").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), ct).ConfigureAwait(false)),
+        new("twitch.getContentLabels", "Twitch's content classification labels: id, name, description", [],
+            async (_, _, ct) => (await api().GetContentLabelsAsync(ct).ConfigureAwait(false))
+                .Select(l => new { id = l.Id, name = l.Name, description = l.Description }).ToArray()),
         new("twitch.getRewardUserCounters", "Every user's redemption count of a reward (title or id): userId → count", ["reward"],
             async (_, a, ct) =>
             {

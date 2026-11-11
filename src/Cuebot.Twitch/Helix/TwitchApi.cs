@@ -15,6 +15,19 @@ namespace Cuebot.Twitch;
 public sealed partial class TwitchApi
 {
     private const int MaxPollChoices = 5;
+
+    /// <summary>Twitch's limit for a chat message (and an announcement).</summary>
+    internal const int MaxChatMessageLength = 500;
+
+    /// <summary>Twitch's limit for a whisper (500 to someone not whispered before; Twitch reports that case itself).</summary>
+    internal const int MaxWhisperLength = 10_000;
+
+    /// <summary>Fails before calling Twitch, which would only answer "message too long" or truncate silently.</summary>
+    private static void CheckLength(string message, int max, string what)
+    {
+        var length = message.EnumerateRunes().Count();
+        if (length > max) throw new ArgumentException($"{what} can be at most {max} characters; this one has {length}.");
+    }
     private const int MaxPredictionOutcomes = 10;
 
     private readonly HelixClient _helix;
@@ -75,6 +88,7 @@ public sealed partial class TwitchApi
     {
         if (!_isConnected()) throw new InvalidOperationException("Twitch is not connected.");
         if (string.IsNullOrWhiteSpace(message)) return sender;
+        CheckLength(message, MaxChatMessageLength, "Twitch chat messages");
         var chosen = Choose(sender, _settings().SendChatAsBot, TwitchScopes.WriteChat);
         var (helix, tokens) = Account(chosen);
         RequireScope(tokens, chosen, TwitchScopes.WriteChat);
@@ -88,6 +102,7 @@ public sealed partial class TwitchApi
     {
         RequireSignedIn();
         if (string.IsNullOrWhiteSpace(message)) return;
+        CheckLength(message, MaxWhisperLength, "Twitch whispers");
         var chosen = Choose(sender, _settings().SendWhispersAsBot, TwitchScopes.ManageWhispers);
         var (helix, tokens) = Account(chosen);
         RequireScope(tokens, chosen, TwitchScopes.ManageWhispers);
@@ -100,6 +115,7 @@ public sealed partial class TwitchApi
     {
         Require(TwitchScopes.ManageAnnouncements);
         if (string.IsNullOrWhiteSpace(message)) return;
+        CheckLength(message, MaxChatMessageLength, "Twitch announcements");
         var normalized = AnnouncementColors.All.FirstOrDefault(c => c.Equals(color.Trim(), StringComparison.OrdinalIgnoreCase)) ?? "primary";
         await _helix.RequestAsync(HttpMethod.Post, "chat/announcements", Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)),
             new { message, color = normalized }, "Sending announcement", ct).ConfigureAwait(false);
@@ -184,19 +200,19 @@ public sealed partial class TwitchApi
         return json.Items("data").Select(HelixParse.User).FirstOrDefault();
     }
 
-    /// <summary>Whether the user moderates the channel (needs moderation:read, moderator:read:moderators or channel:manage:moderators).</summary>
+    /// <summary>Whether the user moderates the channel (Get Moderators: moderation:read or channel:manage:moderators).</summary>
     public async Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default)
     {
-        Require(TwitchScopes.ModerationRead, TwitchScopes.ReadModerators, TwitchScopes.ManageModerators);
+        Require(TwitchScopes.ModerationRead, TwitchScopes.ManageModerators);
         var json = await _helix.RequestAsync(HttpMethod.Get, "moderation/moderators", Q(("broadcaster_id", BroadcasterId), ("user_id", userId)),
             null, "Checking moderator", ct).ConfigureAwait(false);
         return json.Items("data").Any();
     }
 
-    /// <summary>Whether the user is a VIP of the channel (needs moderator:read:vips or channel:manage:vips).</summary>
+    /// <summary>Whether the user is a VIP of the channel (Get VIPs: channel:read:vips or channel:manage:vips).</summary>
     public async Task<bool> IsVipAsync(string userId, CancellationToken ct = default)
     {
-        Require(TwitchScopes.ReadVips, TwitchScopes.ManageVips);
+        Require(TwitchScopes.ChannelReadVips, TwitchScopes.ManageVips);
         var json = await _helix.RequestAsync(HttpMethod.Get, "channels/vips", Q(("broadcaster_id", BroadcasterId), ("user_id", userId)),
             null, "Checking VIP", ct).ConfigureAwait(false);
         return json.Items("data").Any();
@@ -371,14 +387,8 @@ public sealed partial class TwitchApi
         return new TwitchMarker(marker.Str("id"), marker.Int("position_seconds"), marker.Str("description"));
     }
 
-    public async Task<TwitchClip> CreateClipAsync(bool hasDelay = false, CancellationToken ct = default)
-    {
-        Require(TwitchScopes.EditClips);
-        var json = await _helix.RequestAsync(HttpMethod.Post, "clips",
-            Q(("broadcaster_id", BroadcasterId), ("has_delay", hasDelay ? "true" : "false")), null, "Creating clip", ct).ConfigureAwait(false);
-        var clip = json.Items("data").FirstOrDefault();
-        return new TwitchClip(clip.Str("id"), clip.Str("edit_url"));
-    }
+    public Task<TwitchClip> CreateClipAsync(bool hasDelay = false, CancellationToken ct = default) =>
+        CreateClipAsync(hasDelay, null, null, ct);
 
     /// <summary>
     /// Temporary download URLs of up to 10 of the channel's clips (Helix "Get Clips Download"; the broadcaster is the
@@ -587,8 +597,9 @@ public sealed partial class TwitchApi
     public async Task<TwitchChatSettings> GetChatSettingsAsync(CancellationToken ct = default)
     {
         RequireSignedIn();
-        var json = await _helix.RequestAsync(HttpMethod.Get, "chat/settings", Q(("broadcaster_id", BroadcasterId)), null,
-            "Getting chat settings", ct).ConfigureAwait(false);
+        // With moderator_id Twitch adds the moderator-only fields (the chat delay); the broadcaster is the moderator.
+        var json = await _helix.RequestAsync(HttpMethod.Get, "chat/settings",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)), null, "Getting chat settings", ct).ConfigureAwait(false);
         return HelixParse.ChatSettings(json.Items("data").FirstOrDefault());
     }
 

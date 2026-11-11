@@ -48,7 +48,16 @@ public static class TwitchScopes
     public const string ManageBlockedTerms = "moderator:manage:blocked_terms";
     public const string ReadChatters = "moderator:read:chatters";
     public const string ReadModerators = "moderator:read:moderators";
+
+    /// <summary>The moderator form (for channel.moderate); Get VIPs needs <see cref="ChannelReadVips"/> or <see cref="ManageVips"/>.</summary>
     public const string ReadVips = "moderator:read:vips";
+
+    /// <summary>Reads the VIP list (Get VIPs, VIP events); Cuebot requests <see cref="ManageVips"/>, which covers it.</summary>
+    public const string ChannelReadVips = "channel:read:vips";
+
+    public const string ManageAutomodSettings = "moderator:manage:automod_settings";
+    public const string ManageSchedule = "channel:manage:schedule";
+    public const string ManageBlockedUsers = "user:manage:blocked_users";
     public const string ManageGuestStar = "channel:manage:guest_star";
 
     /// <summary>Every scope Cuebot knows, grouped for the Settings tab.</summary>
@@ -60,11 +69,11 @@ public static class TwitchScopes
         new(ManageWhispers, "Chat", "Send and receive whispers"),
         new(ReadChatters, "Chat", "List present viewers"),
         new(ReadFollowers, "Community", "Follow events, follower count and follow age"),
-        new(ReadSubscriptions, "Community", "Subscription events, sub count and sub status"),
-        new(ReadBits, "Community", "Cheers, bits and power-ups"),
-        new(ReadHypeTrain, "Community", "Hype train events"),
-        new(ReadGoals, "Community", "Creator goal events"),
-        new(ReadCharity, "Community", "Charity campaign events"),
+        new(ReadSubscriptions, "Community", "Subscription events (including subs ending), sub count and sub status"),
+        new(ReadBits, "Community", "Cheers, bits, power-ups, custom power-ups and the bits leaderboard"),
+        new(ReadHypeTrain, "Community", "Hype train events and status"),
+        new(ReadGoals, "Community", "Creator goals: events and current goals"),
+        new(ReadCharity, "Community", "Charity campaign: events and donations"),
         new(ReadRedemptions, "Channel points", "Read reward redemptions"),
         new(ManageRedemptions, "Channel points", "Manage rewards and fulfil or cancel redemptions"),
         new(ManagePolls, "Channel points", "Polls: events, create and end"),
@@ -75,7 +84,7 @@ public static class TwitchScopes
         new(ManageAds, "Channel", "Snooze the next ad"),
         new(ManageRaids, "Channel", "Start and cancel raids"),
         new(EditClips, "Channel", "Create clips"),
-        new(ManageClips, "Channel", "Clip download URLs"),
+        new(ManageClips, "Channel", "Clip download URLs and clips from past broadcasts"),
         new(ManageShoutouts, "Moderation", "Send shoutouts and shoutout events"),
         new(ChannelModerate, "Moderation", "Ban and unban events"),
         new(ModerationRead, "Moderation", "Moderator added and removed events"),
@@ -86,14 +95,17 @@ public static class TwitchScopes
         new(ManageModerators, "Moderation", "Add and remove moderators"),
         new(ManageChatSettings, "Moderation", "Slow, follower, subscriber, emote-only and unique chat modes"),
         new(ManageShieldMode, "Moderation", "Shield mode: events and toggle"),
-        new(ManageUnbanRequests, "Moderation", "Unban request events"),
+        new(ManageUnbanRequests, "Moderation", "Unban requests: events, list, approve and deny"),
         new(ReadSuspiciousUsers, "Moderation", "Suspicious user events"),
         new(ManageSuspiciousUsers, "Moderation", "Add and remove a chatter's suspicious status"),
         new(ManageAutomod, "Moderation", "AutoMod held messages and term list events"),
         new(ManageBlockedTerms, "Moderation", "Add and remove blocked terms"),
+        new(ManageAutomodSettings, "Moderation", "AutoMod settings: read, change and change events"),
+        new(ManageBlockedUsers, "Moderation", "Block and unblock users"),
         new(ReadModerators, "Moderation", "Shared chat moderation events (with the ban, chat message, chat mode, term, unban request and warning scopes)"),
         new(ReadVips, "Moderation", "Shared chat moderation events (see above)"),
         new(ManageGuestStar, "Channel", "Guest Star: events, sessions, invites and slots (Twitch beta)"),
+        new(ManageSchedule, "Channel", "Stream schedule: add, change and remove segments, vacation"),
     ];
 
     /// <summary>Everything Cuebot can use (the default).</summary>

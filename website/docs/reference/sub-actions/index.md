@@ -62,7 +62,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [System](system.md) | 6 |
 | [T.I.T.S.](t-i-t-s.md) | 8 |
 | [Timers](timers.md) | 2 |
-| [Twitch](twitch.md) | 104 |
+| [Twitch](twitch.md) | 126 |
 | [Users](users.md) | 2 |
 | [Variables](variables.md) | 11 |
 | [veadotube](veadotube.md) | 4 |

@@ -32,7 +32,7 @@ internal sealed class TwitchSubAction(TwitchSubActionSpec spec, Func<TwitchApi> 
 /// Every Twitch sub-action. Results of "get" actions are written into the action's arguments (listed in each
 /// display name's help); a missing scope or sign-in fails the action with a message saying what to enable.
 /// </summary>
-internal static class TwitchSubActions
+internal static partial class TwitchSubActions
 {
     private static readonly IReadOnlyList<string> SenderChoices = ["Default", "Bot", "Broadcaster"];
 
@@ -60,7 +60,12 @@ internal static class TwitchSubActions
     private static ParameterDescriptor Number(string key, string label, string value, string? help = null) =>
         new(key, label, ParameterKind.Number) { DefaultValue = value, Help = help };
 
-    public static IReadOnlyList<TwitchSubActionSpec> All { get; } =
+    private static IReadOnlyList<TwitchSubActionSpec>? _all;
+
+    /// <summary>Every Twitch sub-action, in editor order.</summary>
+    public static IReadOnlyList<TwitchSubActionSpec> All => _all ??= [.. Core, .. Extra];
+
+    private static IReadOnlyList<TwitchSubActionSpec> Core { get; } =
     [
         // ---------------------------------------------------------------- chat
         new("twitch.sendMessage", "Send chat message", [new("message", "Message", ParameterKind.Multiline), SendAs()],
@@ -228,10 +233,16 @@ internal static class TwitchSubActions
                 c.Args["streamMarkerDescription"] = marker.Description.Length > 0 ? marker.Description : p["description"];
                 c.Args["streamMarkerPosition"] = marker.PositionSeconds;
             }),
-        new("twitch.createClip", "Create clip", [Bool("hasDelay", "Account for stream delay", false)],
+        new("twitch.createClip", "Create clip",
+            [
+                Bool("hasDelay", "Account for stream delay", false),
+                new("title", "Title") { Help = "Leave empty for Twitch's default (the stream title)" },
+                Number("duration", "Length (seconds)", "0", "5 to 60; 0 uses Twitch's default of 30"),
+            ],
             async (api, c, p, ct) =>
             {
-                var clip = await api.CreateClipAsync(p.GetBool("hasDelay"), ct).ConfigureAwait(false);
+                var length = p.GetDouble("duration");
+                var clip = await api.CreateClipAsync(p.GetBool("hasDelay"), p["title"], length > 0 ? length : null, ct).ConfigureAwait(false);
                 c.Args["clipId"] = clip.Id;
                 c.Args["clipEditUrl"] = clip.EditUrl;
                 c.Args["clipUrl"] = $"https://clips.twitch.tv/{clip.Id}";

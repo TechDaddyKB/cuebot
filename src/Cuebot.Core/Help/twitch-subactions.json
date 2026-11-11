@@ -209,7 +209,9 @@
     "twitch.createClip": {
       "description": "Makes a clip of the last moments of your stream and saves its web links for the next steps.",
       "fields": {
-        "hasDelay": "Tick if your stream has a delay set on Twitch, so the clip matches what your viewers saw."
+        "hasDelay": "Tick if your stream has a delay set on Twitch, so the clip matches what your viewers saw.",
+        "title": "The clip's title. Leave it empty and Twitch uses your stream title.",
+        "duration": "How long the clip is, in seconds, from 5 to 60. 0 uses Twitch's default of 30 seconds."
       },
       "variables": {
         "clipId": "Twitch's id for the new clip",
@@ -1029,6 +1031,287 @@
         "sessionId": "Leave empty to use the Guest Star session that is running now. Most people leave this alone."
       },
       "variables": {}
+    },
+    "twitch.createClipFromVod": {
+      "description": "Clips a moment that already happened, from your current or a past broadcast. Use it for \"clip the last 2 minutes\" style commands. Twitch only allows this when past broadcasts are stored on your channel.",
+      "fields": {
+        "title": "The clip's title. Twitch requires one.",
+        "secondsAgo": "When no video id is given: how many seconds ago the clip should end, counted back from now in the current broadcast. 0 ends it now.",
+        "duration": "How long the clip is, in seconds, from 5 to 60.",
+        "videoId": "The video to clip. Leave empty for your current (or latest) broadcast.",
+        "endOffset": "With a video id: where the clip ends, in seconds from the start of the video."
+      },
+      "variables": {
+        "clipId": "The new clip's id",
+        "clipUrl": "A link to the clip",
+        "clipEditUrl": "A link where you can edit the clip",
+        "clipVideoId": "The video the clip was made from"
+      }
+    },
+    "twitch.getVideos": {
+      "description": "Looks up the newest videos of a channel: past broadcasts, highlights or uploads. Handy for shoutouts (\"check out their last stream\").",
+      "fields": {
+        "user": "The channel, as a login name or id:12345. Leave empty for your own channel.",
+        "type": "Past broadcasts (archive), highlights, uploads, or all of them.",
+        "count": "How many videos to get, newest first (1 to 100)."
+      },
+      "variables": {
+        "videoCount": "How many videos were found",
+        "videoTitle": "The newest video's title",
+        "videoUrl": "A link to the newest video",
+        "videoCreatedAt": "When the newest video was made",
+        "videoDuration": "How long it is, like 3h2m1s",
+        "videoViews": "How many views it has",
+        "video0.title": "The first video's title (video1.title for the next, and so on; also .id, .url, .type, .duration, .views, .createdAt, .thumbnail)"
+      }
+    },
+    "twitch.searchChannels": {
+      "description": "Searches Twitch for channels by name.",
+      "fields": {
+        "query": "The name, or part of it, to search for.",
+        "liveOnly": "Tick to find only channels that are live right now.",
+        "count": "How many results to get (1 to 100)."
+      },
+      "variables": {
+        "channelCount": "How many channels were found",
+        "channel0.login": "The first channel's login name (channel1.login for the next, and so on)",
+        "channel0.name": "Its display name",
+        "channel0.isLive": "True when it is live",
+        "channel0.title": "Its stream title",
+        "channel0.gameName": "Its category",
+        "channel0.startedAt": "When its stream started (empty when offline)"
+      }
+    },
+    "twitch.getStreamMarkers": {
+      "description": "Lists the stream markers of your current (or latest) broadcast.",
+      "fields": {
+        "count": "How many markers to get (1 to 100)."
+      },
+      "variables": {
+        "markerCount": "How many markers were found",
+        "marker0.description": "The first marker's description (marker1 for the next, and so on)",
+        "marker0.position": "Where it is, in seconds from the start of the broadcast",
+        "marker0.url": "A link to that moment",
+        "marker0.id": "The marker's id"
+      }
+    },
+    "twitch.getHypeTrain": {
+      "description": "Checks whether a Hype Train is running right now and how far it is, plus your channel's record.",
+      "fields": {},
+      "variables": {
+        "hypeTrainActive": "True when a Hype Train is running",
+        "hypeTrainLevel": "Its current level",
+        "hypeTrainProgress": "Points towards the next level",
+        "hypeTrainGoal": "Points needed for the next level",
+        "hypeTrainPercent": "Progress towards the next level, 0 to 100",
+        "hypeTrainTotal": "All points so far",
+        "hypeTrainType": "regular, treasure or golden_kappa",
+        "hypeTrainExpiresAt": "When it ends unless it levels up",
+        "hypeTrainIsShared": "True when it is a shared Hype Train",
+        "hypeTrainTopContributor": "Who has given the most",
+        "hypeTrainTopContribution": "How much they gave",
+        "hypeTrainRecordLevel": "Your channel's highest level ever",
+        "hypeTrainRecordTotal": "Points of that record train",
+        "hypeTrainRecordAt": "When the record was set",
+        "hypeTrainId": "The train's id"
+      }
+    },
+    "twitch.getCreatorGoals": {
+      "description": "Lists the creator goals you have running on Twitch, like a follower or sub goal.",
+      "fields": {},
+      "variables": {
+        "goalCount": "How many goals are running",
+        "goal0.type": "The first goal's kind, like follower or new_subscription (goal1 for the next, and so on)",
+        "goal0.description": "Its description",
+        "goal0.current": "How far it is",
+        "goal0.target": "Its target",
+        "goal0.id": "Its id"
+      }
+    },
+    "twitch.getBitsLeaderboard": {
+      "description": "Gets your top cheerers for a day, week, month, year or all time.",
+      "fields": {
+        "count": "How many people to get (1 to 100).",
+        "period": "The time span: all time, or the current day, week, month or year."
+      },
+      "variables": {
+        "leaderCount": "How many people are on the list",
+        "leader0.user": "The top cheerer's display name (leader1 for second place, and so on)",
+        "leader0.userName": "Their login name",
+        "leader0.userId": "Their id",
+        "leader0.score": "How many Bits they cheered",
+        "leader0.rank": "Their place on the list"
+      }
+    },
+    "twitch.getCustomPowerUps": {
+      "description": "Lists your channel's custom Power-ups (the ones viewers buy with Bits).",
+      "fields": {},
+      "variables": {
+        "powerUpCount": "How many custom Power-ups you have",
+        "powerUp0.title": "The first one's title (powerUp1 for the next, and so on)",
+        "powerUp0.bits": "What it costs in Bits",
+        "powerUp0.enabled": "True when it is turned on",
+        "powerUp0.paused": "True when it is paused",
+        "powerUp0.id": "Its id",
+        "powerUp0.image": "A link to its image"
+      }
+    },
+    "twitch.getCharityDonations": {
+      "description": "Lists the donations to your running charity campaign.",
+      "fields": {
+        "count": "How many donations to get (1 to 100)."
+      },
+      "variables": {
+        "donationCount": "How many donations were found",
+        "donation0.user": "The donor's display name (donation1 for the next, and so on)",
+        "donation0.userName": "Their login name",
+        "donation0.amount": "How much they gave",
+        "donation0.currency": "The currency, like USD"
+      }
+    },
+    "twitch.getUnbanRequests": {
+      "description": "Lists unban requests: people who were banned and asked to be let back in.",
+      "fields": {
+        "status": "Which requests: pending (not answered yet), approved, denied, acknowledged or canceled."
+      },
+      "variables": {
+        "unbanRequestCount": "How many requests were found",
+        "unbanRequest0.id": "The first request's id, for Approve or deny an unban request (unbanRequest1 for the next, and so on)",
+        "unbanRequest0.user": "Who asked",
+        "unbanRequest0.userName": "Their login name",
+        "unbanRequest0.userId": "Their id",
+        "unbanRequest0.text": "What they wrote",
+        "unbanRequest0.createdAt": "When they asked"
+      }
+    },
+    "twitch.resolveUnbanRequest": {
+      "description": "Approves or denies an unban request. Approving lets the person chat again.",
+      "fields": {
+        "requestId": "The request to answer. The Unban request created trigger and Get unban requests give you this id.",
+        "decision": "Approve lets them back in; deny keeps the ban.",
+        "message": "An optional note the person sees, up to 500 characters."
+      },
+      "variables": {
+        "unbanRequestStatus": "approved or denied"
+      }
+    },
+    "twitch.getBanStatus": {
+      "description": "Checks whether someone is banned or timed out in your chat.",
+      "fields": {
+        "user": "Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action."
+      },
+      "variables": {
+        "isBanned": "True when they are banned",
+        "isTimedOut": "True when they are in a timeout",
+        "banReason": "The reason given, if any",
+        "bannedAt": "When it happened",
+        "timeoutEndsAt": "When the timeout ends (empty for a ban)",
+        "bannedBy": "The moderator who did it"
+      }
+    },
+    "twitch.getAutomodSettings": {
+      "description": "Reads how strict AutoMod is in your chat, from 0 (off) to 4 (strictest) for each kind of message.",
+      "fields": {},
+      "variables": {
+        "automodLevel": "The overall level, or -1 when the kinds were set one by one",
+        "automodAggression": "The level for aggression",
+        "automodBullying": "The level for bullying",
+        "automodDisability": "The level for disability",
+        "automodMisogyny": "The level for misogyny",
+        "automodRaceEthnicityOrReligion": "The level for race, ethnicity or religion",
+        "automodSexBasedTerms": "The level for sex-based terms",
+        "automodSexualitySexOrGender": "The level for sexuality, sex or gender",
+        "automodSwearing": "The level for swearing"
+      }
+    },
+    "twitch.setAutomodLevel": {
+      "description": "Sets how strict AutoMod is for every kind of message at once. For example, turn it up when a raid arrives.",
+      "fields": {
+        "level": "0 turns AutoMod off; 4 holds the most messages for review."
+      },
+      "variables": {
+        "automodLevel": "The level now set"
+      }
+    },
+    "twitch.blockUser": {
+      "description": "Blocks someone for your Twitch account, so they cannot whisper you or appear in your chat. Needs the Block users permission on the Twitch Settings tab.",
+      "fields": {
+        "user": "Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action."
+      },
+      "variables": {}
+    },
+    "twitch.unblockUser": {
+      "description": "Unblocks someone you blocked before.",
+      "fields": {
+        "user": "Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action."
+      },
+      "variables": {}
+    },
+    "twitch.getSchedule": {
+      "description": "Reads your Twitch stream schedule, for example to answer a !schedule command.",
+      "fields": {
+        "count": "How many upcoming streams to get (1 to 25)."
+      },
+      "variables": {
+        "nextStreamAt": "When the next stream starts (UTC)",
+        "nextStreamAtLocal": "The same in this computer's time, written out",
+        "nextStreamTitle": "Its title",
+        "nextStreamCategory": "Its category",
+        "scheduleCount": "How many upcoming streams were found",
+        "schedule0.title": "The first one's title (schedule1 for the next, and so on; also .start, .end, .category, .isRecurring, .id)",
+        "onVacation": "True when your schedule is on vacation now",
+        "vacationStart": "When the vacation starts",
+        "vacationEnd": "When it ends"
+      }
+    },
+    "twitch.addScheduleSegment": {
+      "description": "Adds a stream to your Twitch schedule.",
+      "fields": {
+        "start": "When it starts, like 2026-12-01 19:00, in this computer's time zone.",
+        "duration": "How long it runs, in minutes (30 to 1380).",
+        "title": "The stream's title, up to 140 characters.",
+        "category": "A category name or id. Leave empty for none.",
+        "recurring": "Tick to repeat it every week."
+      },
+      "variables": {
+        "scheduleSegmentId": "The id of the added stream, for cancelling or removing it later"
+      }
+    },
+    "twitch.cancelScheduleSegment": {
+      "description": "Cancels one scheduled stream (it stays on the schedule, marked cancelled), or brings it back.",
+      "fields": {
+        "segmentId": "The scheduled stream's id, from Get stream schedule or Add to stream schedule.",
+        "canceled": "Tick to cancel it; untick to bring it back."
+      },
+      "variables": {}
+    },
+    "twitch.deleteScheduleSegment": {
+      "description": "Removes a stream from your schedule. For a weekly stream this removes every week.",
+      "fields": {
+        "segmentId": "The scheduled stream's id, from Get stream schedule or Add to stream schedule."
+      },
+      "variables": {}
+    },
+    "twitch.setVacation": {
+      "description": "Turns schedule vacation on or off. While on, the streams in that time are hidden from your schedule.",
+      "fields": {
+        "enabled": "Tick to go on vacation; untick to end it.",
+        "start": "When the vacation starts, like 2026-12-20 00:00. Needed when turning it on.",
+        "end": "When it ends. Needed when turning it on."
+      },
+      "variables": {}
+    },
+    "twitch.getSharedChatSession": {
+      "description": "Checks whether your chat is shared with other channels right now (Shared Chat).",
+      "fields": {},
+      "variables": {
+        "sharedChatActive": "True when your chat is shared",
+        "sharedChatIsHost": "True when you started the shared session",
+        "sharedChatParticipantCount": "How many channels share the chat",
+        "sharedChatParticipantIds": "Their ids, separated by commas",
+        "sharedChatHostId": "The id of the channel that started it",
+        "sharedChatSessionId": "The session's id"
+      }
     }
   }
 }

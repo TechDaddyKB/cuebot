@@ -67,7 +67,7 @@ public sealed record TwitchMarker(string Id, int PositionSeconds, string Descrip
 
 public sealed record TwitchChatSettings(
     bool EmoteMode, bool FollowerMode, int FollowerModeDuration, bool SlowMode, int SlowModeWaitTime,
-    bool SubscriberMode, bool UniqueChatMode);
+    bool SubscriberMode, bool UniqueChatMode, bool NonModeratorChatDelay = false, int NonModeratorChatDelaySeconds = 0);
 
 /// <summary>Chat modes to change; null leaves a mode unchanged. Durations: follower minutes, slow seconds.</summary>
 public sealed record ChatSettingsUpdate
@@ -189,5 +189,53 @@ internal static class HelixParse
 
     public static TwitchChatSettings ChatSettings(JsonElement s) => new(s.Bool("emote_mode"), s.Bool("follower_mode"),
         s.Int("follower_mode_duration"), s.Bool("slow_mode"), s.Int("slow_mode_wait_time"), s.Bool("subscriber_mode"),
-        s.Bool("unique_chat_mode"));
+        s.Bool("unique_chat_mode"), s.Bool("non_moderator_chat_delay"), s.Int("non_moderator_chat_delay_duration"));
 }
+
+public sealed record TwitchVideo(string Id, string UserLogin, string UserName, string Title, string Url, string Type, string Duration,
+    int ViewCount, DateTimeOffset? CreatedAt, string StreamId, string ThumbnailUrl);
+
+public sealed record TwitchChannelSearchResult(string Id, string Login, string DisplayName, bool IsLive, string Title, string GameName,
+    string GameId, string ThumbnailUrl, DateTimeOffset? StartedAt);
+
+public sealed record TwitchStreamMarker(string Id, string Description, int PositionSeconds, DateTimeOffset? CreatedAt, string Url, string VideoId);
+
+public sealed record TwitchHypeTrainContribution(string UserId, string UserLogin, string UserName, string Type, int Total);
+
+public sealed record TwitchHypeTrain(string Id, string Type, int Level, int Total, int Progress, int Goal, DateTimeOffset? StartedAt,
+    DateTimeOffset? ExpiresAt, bool IsShared, IReadOnlyList<TwitchHypeTrainContribution> TopContributions);
+
+/// <summary>Get Hype Train Status: the running train (null when none) and the channel's record.</summary>
+public sealed record TwitchHypeTrainStatus(TwitchHypeTrain? Current, int RecordLevel, int RecordTotal, DateTimeOffset? RecordAchievedAt);
+
+public sealed record TwitchCreatorGoal(string Id, string Type, string Description, int CurrentAmount, int TargetAmount, DateTimeOffset? CreatedAt);
+
+public sealed record TwitchLeaderboardEntry(int Rank, string UserId, string UserLogin, string UserName, int Score);
+
+public sealed record TwitchCustomPowerUp(string Id, string Title, string Prompt, int Bits, bool IsEnabled, bool IsPaused, bool IsInStock,
+    bool IsUserInputRequired, string ImageUrl);
+
+public sealed record TwitchCharityDonation(string Id, string UserId, string UserLogin, string UserName, string Amount, string Currency);
+
+public sealed record TwitchUnbanRequest(string Id, string UserId, string UserLogin, string UserName, string Text, string Status,
+    DateTimeOffset? CreatedAt, string ResolvedBy, string ResolutionText);
+
+public sealed record TwitchBannedUser(string UserId, string UserLogin, string UserName, string Reason, DateTimeOffset? BannedAt,
+    DateTimeOffset? ExpiresAt, string ModeratorName)
+{
+    /// <summary>A timeout (it ends) rather than a ban.</summary>
+    public bool IsTimeout => ExpiresAt is not null;
+}
+
+/// <summary>AutoMod levels (0 off to 4 strictest). OverallLevel is null when the categories were set one by one.</summary>
+public sealed record TwitchAutomodSettings(int? OverallLevel, int Disability, int Aggression, int SexualitySexOrGender, int Misogyny,
+    int Bullying, int Swearing, int RaceEthnicityOrReligion, int SexBasedTerms);
+
+public sealed record TwitchScheduleSegment(string Id, string Title, DateTimeOffset? Start, DateTimeOffset? End, string CategoryName,
+    string CategoryId, bool IsRecurring, bool IsCanceled);
+
+public sealed record TwitchSchedule(IReadOnlyList<TwitchScheduleSegment> Segments, DateTimeOffset? VacationStart, DateTimeOffset? VacationEnd);
+
+public sealed record TwitchSharedChatSession(string SessionId, string HostBroadcasterId, IReadOnlyList<string> ParticipantIds, DateTimeOffset? CreatedAt);
+
+public sealed record TwitchEmote(string Id, string Name, string Type, string Tier, string SetId, bool IsAnimated, string ImageUrl);

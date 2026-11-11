@@ -240,7 +240,9 @@
     "twitch.createClip": {
       "description": "Makes a clip of your live Twitch stream. Fails when Twitch is not connected.",
       "parameters": {
-        "hasDelay": "Optional. true makes the clip account for your stream delay. Leave it out for false."
+        "hasDelay": "Optional. true makes the clip account for your stream delay. Leave it out for false.",
+        "title": "Optional. The clip's title. Leave it out to use your stream title.",
+        "duration": "Optional. The clip's length in seconds, 5 to 60. Leave it out for Twitch's 30 seconds."
       },
       "returns": "An object with clipId, clipEditUrl, clipUrl, createClipSuccess, createClipId, createClipCreatedAt and createClipUrl.",
       "example": {}
@@ -1174,6 +1176,261 @@
         "slot": "2",
         "audio": "Off"
       }
+    },
+    "twitch.createClipFromVod": {
+      "description": "Clips a moment that already happened, from your current or a past broadcast. Use it for \"clip the last 2 minutes\" style commands. Twitch only allows this when past broadcasts are stored on your channel. Fails when Twitch is not connected.",
+      "parameters": {
+        "title": "Optional. The clip's title. Twitch requires one.",
+        "secondsAgo": "Optional. When no video id is given: how many seconds ago the clip should end, counted back from now in the current broadcast. 0 ends it now.",
+        "duration": "Optional. How long the clip is, in seconds, from 5 to 60.",
+        "videoId": "Optional. The video to clip. Leave empty for your current (or latest) broadcast.",
+        "endOffset": "Optional. With a video id: where the clip ends, in seconds from the start of the video."
+      },
+      "returns": "An object with clipId, clipUrl, clipEditUrl and clipVideoId.",
+      "example": {
+        "title": "That play",
+        "secondsAgo": "60",
+        "duration": "30"
+      }
+    },
+    "twitch.getVideos": {
+      "description": "Looks up the newest videos of a channel: past broadcasts, highlights or uploads. Handy for shoutouts (\"check out their last stream\"). Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. The channel, as a login name or id:12345. Leave empty for your own channel.",
+        "type": "Optional. Past broadcasts (archive), highlights, uploads, or all of them.",
+        "count": "Optional. How many videos to get, newest first (1 to 100)."
+      },
+      "returns": "An object with videoCount, videoTitle, videoUrl, videoCreatedAt, videoDuration, videoViews and video0.title.",
+      "example": {
+        "user": "coolstreamer",
+        "type": "archive",
+        "count": "1"
+      }
+    },
+    "twitch.searchChannels": {
+      "description": "Searches Twitch for channels by name. Fails when Twitch is not connected.",
+      "parameters": {
+        "query": "Optional. The name, or part of it, to search for.",
+        "liveOnly": "Optional. Tick to find only channels that are live right now.",
+        "count": "Optional. How many results to get (1 to 100)."
+      },
+      "returns": "An object with channelCount, channel0.login, channel0.name, channel0.isLive, channel0.title, channel0.gameName and channel0.startedAt.",
+      "example": {
+        "query": "cozy",
+        "liveOnly": "true"
+      }
+    },
+    "twitch.getStreamMarkers": {
+      "description": "Lists the stream markers of your current (or latest) broadcast. Fails when Twitch is not connected.",
+      "parameters": {
+        "count": "Optional. How many markers to get (1 to 100)."
+      },
+      "returns": "An object with markerCount, marker0.description, marker0.position, marker0.url and marker0.id.",
+      "example": {}
+    },
+    "twitch.getHypeTrain": {
+      "description": "Checks whether a Hype Train is running right now and how far it is, plus your channel's record. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with hypeTrainActive, hypeTrainLevel, hypeTrainProgress, hypeTrainGoal, hypeTrainPercent, hypeTrainTotal, hypeTrainType, hypeTrainExpiresAt, hypeTrainIsShared, hypeTrainTopContributor, hypeTrainTopContribution, hypeTrainRecordLevel, hypeTrainRecordTotal, hypeTrainRecordAt and hypeTrainId.",
+      "example": {}
+    },
+    "twitch.getCreatorGoals": {
+      "description": "Lists the creator goals you have running on Twitch, like a follower or sub goal. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with goalCount, goal0.type, goal0.description, goal0.current, goal0.target and goal0.id.",
+      "example": {}
+    },
+    "twitch.getBitsLeaderboard": {
+      "description": "Gets your top cheerers for a day, week, month, year or all time. Fails when Twitch is not connected.",
+      "parameters": {
+        "count": "Optional. How many people to get (1 to 100).",
+        "period": "Optional. The time span: all time, or the current day, week, month or year."
+      },
+      "returns": "An object with leaderCount, leader0.user, leader0.userName, leader0.userId, leader0.score and leader0.rank.",
+      "example": {
+        "count": "3",
+        "period": "week"
+      }
+    },
+    "twitch.getCustomPowerUps": {
+      "description": "Lists your channel's custom Power-ups (the ones viewers buy with Bits). Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with powerUpCount, powerUp0.title, powerUp0.bits, powerUp0.enabled, powerUp0.paused, powerUp0.id and powerUp0.image.",
+      "example": {}
+    },
+    "twitch.getCharityDonations": {
+      "description": "Lists the donations to your running charity campaign. Fails when Twitch is not connected.",
+      "parameters": {
+        "count": "Optional. How many donations to get (1 to 100)."
+      },
+      "returns": "An object with donationCount, donation0.user, donation0.userName, donation0.amount and donation0.currency.",
+      "example": {}
+    },
+    "twitch.getUnbanRequests": {
+      "description": "Lists unban requests: people who were banned and asked to be let back in. Fails when Twitch is not connected.",
+      "parameters": {
+        "status": "Optional. Which requests: pending (not answered yet), approved, denied, acknowledged or canceled."
+      },
+      "returns": "An object with unbanRequestCount, unbanRequest0.id, unbanRequest0.user, unbanRequest0.userName, unbanRequest0.userId, unbanRequest0.text and unbanRequest0.createdAt.",
+      "example": {
+        "status": "pending"
+      }
+    },
+    "twitch.resolveUnbanRequest": {
+      "description": "Approves or denies an unban request. Approving lets the person chat again. Fails when Twitch is not connected.",
+      "parameters": {
+        "requestId": "Optional. The request to answer. The Unban request created trigger and Get unban requests give you this id.",
+        "decision": "Optional. Approve lets them back in; deny keeps the ban.",
+        "message": "Optional. An optional note the person sees, up to 500 characters."
+      },
+      "returns": "An object with unbanRequestStatus.",
+      "example": {
+        "requestId": "%requestId%",
+        "decision": "approve",
+        "message": "Welcome back"
+      }
+    },
+    "twitch.getBanStatus": {
+      "description": "Checks whether someone is banned or timed out in your chat. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action."
+      },
+      "returns": "An object with isBanned, isTimedOut, banReason, bannedAt, timeoutEndsAt and bannedBy.",
+      "example": {
+        "user": "coolviewer42"
+      }
+    },
+    "twitch.getAutomodSettings": {
+      "description": "Reads how strict AutoMod is in your chat, from 0 (off) to 4 (strictest) for each kind of message. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with automodLevel, automodAggression, automodBullying, automodDisability, automodMisogyny, automodRaceEthnicityOrReligion, automodSexBasedTerms, automodSexualitySexOrGender and automodSwearing.",
+      "example": {}
+    },
+    "twitch.setAutomodLevel": {
+      "description": "Sets how strict AutoMod is for every kind of message at once. For example, turn it up when a raid arrives. Fails when Twitch is not connected.",
+      "parameters": {
+        "level": "Optional. 0 turns AutoMod off; 4 holds the most messages for review."
+      },
+      "returns": "An object with automodLevel.",
+      "example": {
+        "level": "3"
+      }
+    },
+    "twitch.blockUser": {
+      "description": "Blocks someone for your Twitch account, so they cannot whisper you or appear in your chat. Needs the Block users permission on the Twitch Settings tab. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "spammer123"
+      }
+    },
+    "twitch.unblockUser": {
+      "description": "Unblocks someone you blocked before. Fails when Twitch is not connected.",
+      "parameters": {
+        "user": "Optional. Login name (a leading @ is fine) or id:12345. Leave empty for the person who triggered the action."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "user": "spammer123"
+      }
+    },
+    "twitch.getSchedule": {
+      "description": "Reads your Twitch stream schedule, for example to answer a !schedule command. Fails when Twitch is not connected.",
+      "parameters": {
+        "count": "Optional. How many upcoming streams to get (1 to 25)."
+      },
+      "returns": "An object with nextStreamAt, nextStreamAtLocal, nextStreamTitle, nextStreamCategory, scheduleCount, schedule0.title, onVacation, vacationStart and vacationEnd.",
+      "example": {
+        "count": "3"
+      }
+    },
+    "twitch.addScheduleSegment": {
+      "description": "Adds a stream to your Twitch schedule. Fails when Twitch is not connected.",
+      "parameters": {
+        "start": "Optional. When it starts, like 2026-12-01 19:00, in this computer's time zone.",
+        "duration": "Optional. How long it runs, in minutes (30 to 1380).",
+        "title": "Optional. The stream's title, up to 140 characters.",
+        "category": "Optional. A category name or id. Leave empty for none.",
+        "recurring": "Optional. Tick to repeat it every week."
+      },
+      "returns": "An object with scheduleSegmentId.",
+      "example": {
+        "start": "2026-12-01 19:00",
+        "duration": "180",
+        "title": "Cozy games",
+        "recurring": "true"
+      }
+    },
+    "twitch.cancelScheduleSegment": {
+      "description": "Cancels one scheduled stream (it stays on the schedule, marked cancelled), or brings it back. Fails when Twitch is not connected.",
+      "parameters": {
+        "segmentId": "Optional. The scheduled stream's id, from Get stream schedule or Add to stream schedule.",
+        "canceled": "Optional. Tick to cancel it; untick to bring it back."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "segmentId": "abc123",
+        "canceled": "true"
+      }
+    },
+    "twitch.deleteScheduleSegment": {
+      "description": "Removes a stream from your schedule. For a weekly stream this removes every week. Fails when Twitch is not connected.",
+      "parameters": {
+        "segmentId": "Optional. The scheduled stream's id, from Get stream schedule or Add to stream schedule."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "segmentId": "abc123"
+      }
+    },
+    "twitch.setVacation": {
+      "description": "Turns schedule vacation on or off. While on, the streams in that time are hidden from your schedule. Fails when Twitch is not connected.",
+      "parameters": {
+        "enabled": "Optional. Tick to go on vacation; untick to end it.",
+        "start": "Optional. When the vacation starts, like 2026-12-20 00:00. Needed when turning it on.",
+        "end": "Optional. When it ends. Needed when turning it on."
+      },
+      "returns": "Nothing.",
+      "example": {
+        "enabled": "true",
+        "start": "2026-12-20 00:00",
+        "end": "2027-01-03 00:00"
+      }
+    },
+    "twitch.getSharedChatSession": {
+      "description": "Checks whether your chat is shared with other channels right now (Shared Chat). Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "An object with sharedChatActive, sharedChatIsHost, sharedChatParticipantCount, sharedChatParticipantIds, sharedChatHostId and sharedChatSessionId.",
+      "example": {}
+    },
+    "twitch.getEmotes": {
+      "description": "Lists Twitch emotes with their images: your channel's own, Twitch's global ones, or the emotes of emote sets. Handy for emote walls. Fails when Twitch is not connected.",
+      "parameters": {
+        "source": "Optional. \"channel\" (your emotes, the default), \"global\" or \"set\".",
+        "setIds": "Optional. With source \"set\": emote set ids separated by commas (up to 25)."
+      },
+      "returns": "A list of emotes, each with id, name, type, tier, setId, isAnimated and imageUrl.",
+      "example": {
+        "source": "channel"
+      }
+    },
+    "twitch.getChatColors": {
+      "description": "Gets the name colors people use in Twitch chat. Fails when Twitch is not connected.",
+      "parameters": {
+        "users": "Login names or \"id:12345\", separated by commas (up to 100)."
+      },
+      "returns": "An object from user id to color, like #FF7F50. The color is empty for someone who never picked one.",
+      "example": {
+        "users": "coolviewer42, otherviewer"
+      }
+    },
+    "twitch.getContentLabels": {
+      "description": "Lists Twitch's content classification labels, such as Gambling or Mature-rated game, with their ids. Use an id with Set content label. Fails when Twitch is not connected.",
+      "parameters": {},
+      "returns": "A list of labels, each with id, name and description.",
+      "example": {}
     }
   }
 }
