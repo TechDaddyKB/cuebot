@@ -15,10 +15,16 @@
   // The built loader (npm run build). The Worker answers every request itself and fetches loader.js from here.
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
   "durable_objects": {
-    "bindings": [{ "name": "PORTAL_RELAY", "class_name": "PortalRelay" }]
+    "bindings": [
+      { "name": "PORTAL_RELAY", "class_name": "PortalRelay" },
+      { "name": "KICK_ROUTES", "class_name": "KickRoute" }
+    ]
   },
   // The class never writes to storage; SQLite-backed is simply the current default for new classes.
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PortalRelay"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PortalRelay"] },
+    { "tag": "v2", "new_sqlite_classes": ["KickRoute"] }
+  ],
   "vars": {
     "PORTAL_DOMAIN": "techdaddydigital.com"
   },

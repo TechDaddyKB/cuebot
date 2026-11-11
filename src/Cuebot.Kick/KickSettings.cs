@@ -74,6 +74,20 @@ public sealed class KickSettings
     /// </summary>
     public bool UseWebhookRelay { get; set; }
 
+    /// <summary>
+    /// With Cuebot's built-in Kick app: receive Kick's official events (follows, subs, gifts, KICKs, reward redemptions,
+    /// stream online/offline, bans) through Cuebot's shared event intake on hooks.techdaddydigital.com, which hands each
+    /// event to this Cuebot over the shared relay. Kick sends every event of an app to one address, so streamers on the
+    /// built-in app cannot use their own relay for this. See PROTOCOL.md section 3.
+    /// </summary>
+    public bool UseSharedEvents { get; set; } = true;
+
+    /// <summary>
+    /// Also receive chat through Kick's events (besides the real-time websocket). Kick allows an unverified app only
+    /// 1,000 chat subscriptions across all its users, so this is off for the built-in app until Kick verifies it.
+    /// </summary>
+    public bool WebhookChat { get; set; }
+
     /// <summary>Watch the channel's 7TV emote set in real time (7TV EventAPI) for the 7TV emote added/removed triggers.</summary>
     public bool UseSevenTvEvents { get; set; } = true;
 

@@ -4,18 +4,25 @@
 //   relay.<domain>/connect?id=<relay id>   the streamer's Cuebot (outbound WebSocket, proves its identity key)
 //   relay.<domain>/c/<relay id>            mod devices (WebSocket; end-to-end encrypted with Cuebot, opaque here)
 //   hooks.<domain>/<relay id>/<route secret>/<service>[/<path>]   webhooks, sealed to Cuebot's identity key
+//   hooks.<domain>/kick                    Kick events of Cuebot's built-in Kick app, routed by broadcaster (kick.ts)
 //   portal.<domain>/                       the loader page and /auth/return
 // Any other host (workers.dev, local tests) serves all of them, with webhooks under /h/.
 //
-// One Durable Object per relay ID holds the sockets. Nothing is ever written to storage: no storage.put, no SQL,
-// no KV, no logs. Webhooks for an offline Cuebot are answered 200 and dropped.
+// One Durable Object per relay ID holds the sockets and writes nothing to storage. The only stored data is one
+// KickRoute object per Kick broadcaster on the built-in app: that broadcaster's Kick user id (the object's name) and
+// the relay ID of the Cuebot that proved it holds a token of that broadcaster, forgotten after 30 days without a
+// refresh. No KV, no logs. Webhooks for an offline Cuebot are answered 200 and dropped.
 
 import { DurableObject } from "cloudflare:workers";
 import { type Bytes, base64Url, concat, fromBase64Url, relayId, seal, verify } from "../src/crypto.js";
-import { CLOSE, CONNECT_LABEL, HOOK_CHANNEL, LIMITS, PROTOCOL_VERSION } from "./protocol.js";
+import { broadcasterOf, isFresh, kickAccount, verifyKickSignature } from "./kick.js";
+import { CLOSE, CONNECT_LABEL, HOOK_CHANNEL, KICK_ROUTE_TTL_MS, LIMITS, PROTOCOL_VERSION } from "./protocol.js";
 
 export interface Env {
 	PORTAL_RELAY: DurableObjectNamespace<PortalRelay>;
+	KICK_ROUTES: DurableObjectNamespace<KickRoute>;
+	/** Client ID of Cuebot's built-in Kick app (a Worker secret). Without it the Kick intake takes no routes. */
+	KICK_CLIENT_ID?: string;
 	/** The domain whose portal., relay. and hooks. names this Worker answers (wrangler.jsonc "vars"). */
 	PORTAL_DOMAIN?: string;
 	/** dist/: the built loader (npm run build). */
@@ -43,7 +50,7 @@ export interface Delivery {
 	receivedAt: string;
 }
 
-type Route = "connect" | "device" | "hook" | "portal";
+type Route = "connect" | "device" | "hook" | "kick" | "portal";
 
 function route(url: URL, env: Env): { route: Route; path: string } | null {
 	const domain = (env.PORTAL_DOMAIN ?? "").toLowerCase();
@@ -56,16 +63,18 @@ function route(url: URL, env: Env): { route: Route; path: string } | null {
 			const r = relayRoute();
 			if (r) return { route: r, path: p };
 			// Cuebot builds /h/ addresses from a relay URL override, so the relay host takes them too.
+			if (p === "/h/kick") return { route: "kick", path: "/kick" };
 			if (p.startsWith("/h/")) return { route: "hook", path: p.slice(2) };
 			return p === "/" ? { route: "portal", path: "/health" } : null;
 		}
 		case "hooks":
-			return { route: "hook", path: p };
+			return { route: p === "/kick" ? "kick" : "hook", path: p };
 		case "portal":
 			return { route: "portal", path: p };
 		case null: {
 			const r = relayRoute();
 			if (r) return { route: r, path: p };
+			if (p === "/h/kick") return { route: "kick", path: "/kick" };
 			if (p.startsWith("/h/")) return { route: "hook", path: p.slice(2) };
 			return { route: "portal", path: p };
 		}
@@ -78,6 +87,10 @@ const notFound = () => new Response("Not found", { status: 404 });
 
 function relay(env: Env, id: string): DurableObjectStub<PortalRelay> {
 	return env.PORTAL_RELAY.get(env.PORTAL_RELAY.idFromName(id));
+}
+
+function kickRoute(env: Env, userId: number): DurableObjectStub<KickRoute> {
+	return env.KICK_ROUTES.get(env.KICK_ROUTES.idFromName(`kick:${userId}`));
 }
 
 export default {
@@ -100,6 +113,8 @@ export default {
 			}
 			case "hook":
 				return hook(request, url, r.path, env);
+			case "kick":
+				return kickIntake(request, url, env);
 			case "portal":
 				return portal(request, r.path, env);
 		}
@@ -135,6 +150,43 @@ async function hook(request: Request, url: URL, path: string, env: Env): Promise
 	// webhook address reveals nothing about whether the streamer is online. Nothing is kept for later.
 	await relay(env, id).hook(secret, delivery);
 	return new Response(null, { status: 200 });
+}
+
+/**
+ * A Kick event for any streamer on Cuebot's built-in Kick app. Checked against Kick's signature and age, then handed
+ * (sealed) to the Cuebot that registered that broadcaster. Kick always gets a quick empty 200, because it unsubscribes an
+ * app whose address keeps failing; nothing is kept for an offline Cuebot.
+ */
+async function kickIntake(request: Request, url: URL, env: Env): Promise<Response> {
+	if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST" } });
+	if (Number(request.headers.get("content-length") ?? "0") > LIMITS.maxHookBody) return new Response("Payload too large", { status: 413 });
+	const body = await readLimited(request, LIMITS.maxHookBody);
+	if (body === null) return new Response("Payload too large", { status: 413 });
+	const ok = () => new Response(null, { status: 200 });
+	const h = (name: string) => request.headers.get(name) ?? "";
+	const timestamp = h("kick-event-message-timestamp");
+	if (!isFresh(timestamp) || !(await verifyKickSignature(h("kick-event-message-id"), timestamp, body, h("kick-event-signature")))) return ok();
+	const userId = broadcasterOf(body);
+	if (userId === null) return ok();
+	const relayId = await kickRoute(env, userId).get();
+	if (!relayId || !RELAY_ID.test(relayId)) return ok();
+	const headers: Record<string, string> = {};
+	request.headers.forEach((value, name) => {
+		const lower = name.toLowerCase();
+		if (!DROPPED_HEADER.test(lower)) headers[lower] = value;
+	});
+	await relay(env, relayId).kickHook({
+		type: "delivery",
+		id: crypto.randomUUID(),
+		service: "kick",
+		path: "",
+		method: "POST",
+		query: url.search.startsWith("?") ? url.search.slice(1) : "",
+		headers,
+		bodyBase64: toBase64(body),
+		receivedAt: new Date().toISOString(),
+	});
+	return ok();
 }
 
 async function readLimited(request: Request, max: number): Promise<Bytes | null> {
@@ -218,7 +270,7 @@ async function portal(request: Request, path: string, env: Env): Promise<Respons
 /** What each socket's hibernation attachment holds. */
 type Attachment =
 	| { role: "pending"; id: string; nonce: string; host: string; issued: number }
-	| { role: "cuebot"; key: string; hooks: string }
+	| { role: "cuebot"; id: string; key: string; hooks: string }
 	| { role: "device"; ch: number };
 
 interface Bucket {
@@ -234,6 +286,7 @@ export class PortalRelay extends DurableObject<Env> {
 	private readonly buckets = new Map<number, Bucket>();
 	private connects: Bucket = { tokens: LIMITS.connectsPerMinute, at: Date.now() };
 	private hooks: Bucket = { tokens: LIMITS.hooksPerMinute, at: Date.now() };
+	private kickRoutes: Bucket = { tokens: LIMITS.kickRoutesPerMinute, at: Date.now() };
 	private day = utcDay();
 	private bytes = 0;
 	private identity: { raw: Bytes; hooks: Bytes } | null = null;
@@ -287,13 +340,25 @@ export class PortalRelay extends DurableObject<Env> {
 		send(cuebot, frame(HOOK_CHANNEL, sealed));
 	}
 
+	/** A Kick event the intake checked and routed here: sealed and forwarded while Cuebot is connected. */
+	async kickHook(delivery: Delivery): Promise<void> {
+		const cuebot = this.cuebot();
+		if (!cuebot) return;
+		const identity = this.identityOf(cuebot);
+		if (!identity) return;
+		if (!take(this.refill(this.hooks, LIMITS.hooksPerMinute, LIMITS.hooksPerMinute / 60_000), 1) || this.overDailyCap()) return;
+		const sealed = await seal(identity.raw, utf8.encode(JSON.stringify(delivery)));
+		this.count(sealed.length);
+		send(cuebot, frame(HOOK_CHANNEL, sealed));
+	}
+
 	async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
 		const a = ws.deserializeAttachment() as Attachment | null;
 		switch (a?.role) {
 			case "pending":
 				return this.authenticate(ws, a, message);
 			case "cuebot":
-				return this.fromCuebot(message);
+				return this.fromCuebot(ws, a, message);
 			case "device":
 				return this.fromDevice(ws, a.ch, message);
 			default:
@@ -338,19 +403,20 @@ export class PortalRelay extends DurableObject<Env> {
 			if (old !== ws && (old.deserializeAttachment() as Attachment | null)?.role === "cuebot") close(old, CLOSE.replaced, "Replaced by a newer connection");
 		}
 		for (const device of this.devices()) close(device, CLOSE.cuebotLeft, "The streamer's Cuebot reconnected");
-		ws.serializeAttachment({ role: "cuebot", key: base64Url(key), hooks: base64Url(hooks) } satisfies Attachment);
+		ws.serializeAttachment({ role: "cuebot", id: a.id, key: base64Url(key), hooks: base64Url(hooks) } satisfies Attachment);
 		this.identity = { raw: key, hooks };
 		send(ws, JSON.stringify({ type: "ready", version: PROTOCOL_VERSION, maxDevices: LIMITS.maxDevices }));
 	}
 
-	private fromCuebot(message: string | ArrayBuffer): void {
+	private async fromCuebot(ws: WebSocket, a: Extract<Attachment, { role: "cuebot" }>, message: string | ArrayBuffer): Promise<void> {
 		if (typeof message === "string") {
-			let msg: { type?: unknown; ch?: unknown; code?: unknown; reason?: unknown };
+			let msg: { type?: unknown; ch?: unknown; code?: unknown; reason?: unknown; rid?: unknown; token?: unknown; userId?: unknown };
 			try {
 				msg = JSON.parse(message);
 			} catch {
 				return;
 			}
+			if (msg.type === "kick-route" || msg.type === "kick-unroute") return this.kickRouteRequest(ws, a.id, msg);
 			if (msg.type === "close" && typeof msg.ch === "number") {
 				const device = this.device(msg.ch);
 				const code = typeof msg.code === "number" && msg.code >= 4000 && msg.code <= 4999 ? msg.code : 1000;
@@ -365,6 +431,29 @@ export class PortalRelay extends DurableObject<Env> {
 		this.count(message.byteLength);
 		if (this.overDailyCap()) return this.closeAllDevices(CLOSE.tooMany, "The relay's daily limit was reached");
 		send(device, message.slice(4));
+	}
+
+	/**
+	 * kick-route: {"type":"kick-route","rid":n,"token":"<Kick user token>"} routes that broadcaster's Kick events to this
+	 * relay once Kick confirms the token (the token is not kept). kick-unroute: {"type":"kick-unroute","rid":n,"userId":n}
+	 * removes the route when it points here. Answer: {"type":<same>,"rid":n,"ok":true,"userId":n} or {...,"ok":false,"error":"..."}.
+	 */
+	private async kickRouteRequest(ws: WebSocket, relayId: string, msg: { type?: unknown; rid?: unknown; token?: unknown; userId?: unknown }): Promise<void> {
+		const rid = typeof msg.rid === "number" ? msg.rid : 0;
+		const answer = (body: Record<string, unknown>) => send(ws, JSON.stringify({ type: msg.type, rid, ...body }));
+		if (!RELAY_ID.test(relayId)) return answer({ ok: false, error: "Unknown relay" });
+		if (!take(this.refill(this.kickRoutes, LIMITS.kickRoutesPerMinute, LIMITS.kickRoutesPerMinute / 60_000), 1))
+			return answer({ ok: false, error: "Too many requests; try again in a minute" });
+		if (msg.type === "kick-unroute") {
+			const userId = typeof msg.userId === "number" && Number.isSafeInteger(msg.userId) && msg.userId > 0 ? msg.userId : 0;
+			if (!userId) return answer({ ok: false, error: "No Kick user" });
+			await kickRoute(this.env, userId).clear(relayId);
+			return answer({ ok: true, userId });
+		}
+		const account = await kickAccount(typeof msg.token === "string" ? msg.token : "", this.env.KICK_CLIENT_ID ?? "");
+		if ("error" in account) return answer({ ok: false, error: account.error });
+		await kickRoute(this.env, account.userId).set(relayId);
+		return answer({ ok: true, userId: account.userId });
 	}
 
 	private fromDevice(ws: WebSocket, ch: number, message: string | ArrayBuffer): void {
@@ -483,5 +572,34 @@ function close(ws: WebSocket, code: number, reason: string): void {
 		ws.close(code, reason);
 	} catch {
 		// Already closed.
+	}
+}
+
+/**
+ * Where one Kick broadcaster's events go: the relay ID of the Cuebot that last proved it holds a token of that
+ * broadcaster for the built-in app. Named "kick:<user id>". Kept KICK_ROUTE_TTL_MS after the last refresh (Cuebot
+ * refreshes it on every relay connection), then forgotten.
+ */
+export class KickRoute extends DurableObject<Env> {
+	async set(relayId: string): Promise<void> {
+		await this.ctx.storage.put("route", { relay: relayId, at: Date.now() });
+	}
+
+	async get(): Promise<string | null> {
+		const route = await this.ctx.storage.get<{ relay: string; at: number }>("route");
+		if (!route) return null;
+		if (Date.now() - route.at > KICK_ROUTE_TTL_MS) {
+			await this.ctx.storage.deleteAll();
+			return null;
+		}
+		return route.relay;
+	}
+
+	/** Removes the route when it points to relayId (a Cuebot can only remove its own route). */
+	async clear(relayId: string): Promise<boolean> {
+		const route = await this.ctx.storage.get<{ relay: string; at: number }>("route");
+		if (route?.relay !== relayId) return false;
+		await this.ctx.storage.deleteAll();
+		return true;
 	}
 }

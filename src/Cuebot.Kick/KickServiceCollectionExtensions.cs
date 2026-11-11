@@ -56,6 +56,14 @@ public static class KickServiceCollectionExtensions
         services.AddSingleton<ISubActionHandler>(sp => new UnbanUserSubAction(sp.GetRequiredService<KickService>(), "kick.untimeoutUser", "Remove timeout"));
         services.AddSingleton<ISubActionHandler, AddBroadcasterInfoSubAction>();
         services.AddSingleton<ISubActionHandler, GetUserInfoSubAction>();
+        services.AddSingleton<ISubActionHandler, SetTagsSubAction>();
+        services.AddSingleton<ISubActionHandler, GetChannelInfoSubAction>();
+        services.AddSingleton<ISubActionHandler, GetSubscriberCountSubAction>();
+        services.AddSingleton<ISubActionHandler, GetLiveStatusSubAction>();
+        services.AddSingleton<ISubActionHandler, GetLivestreamsSubAction>();
+        services.AddSingleton<ISubActionHandler, GetKicksLeaderboardSubAction>();
+        services.AddSingleton<ISubActionHandler, RunAdBreakSubAction>();
+        services.AddSingleton<ISubActionHandler, GetAdStatusSubAction>();
         services.AddSingleton<ISubActionHandler, KickAddRandomUsersSubAction>();
         services.AddSingleton<ISubActionHandler, KickAddUserToGroupSubAction>();
         services.AddSingleton<ISubActionHandler, KickRemoveUserFromGroupSubAction>();

@@ -110,6 +110,47 @@ public sealed class AuthTests : IDisposable
         Assert.DoesNotContain("REFRESH", ex.Message);
     }
 
+    [Fact]
+    public async Task Revoke_sends_both_spellings_of_the_token_hint()
+    {
+        var handler = new FakeHttpHandler(_ => new HttpResponseMessage());
+        var auth = new KickAuthClient(new HttpClient(handler), Endpoints, TimeProvider.System);
+        Assert.True(await auth.RevokeAsync("RT", "refresh_token", default));
+        var r = Assert.Single(handler.Requests);
+        Assert.Equal("/oauth/revoke", r.Path);
+        Assert.Equal("?token=RT&token_type_hint=refresh_token&token_hint_type=refresh_token", r.Query);
+    }
+
+    [Fact]
+    public async Task Introspection_reads_scopes_and_treats_inactive_tokens_as_such()
+    {
+        var active = true;
+        var handler = new FakeHttpHandler(_ => FakeHttpHandler.Json(active
+            ? """{"data":{"active":true,"client_id":"client-1","token_type":"user","scope":"user:read ads:read","exp":1771046347},"message":"OK"}"""
+            : """{"data":{"active":false},"message":"OK"}"""));
+        var auth = new KickAuthClient(new HttpClient(handler), Endpoints, TimeProvider.System);
+
+        var info = await auth.IntrospectAsync("AT", default);
+        active = false;
+        var gone = await auth.IntrospectAsync("OLD", default);
+
+        Assert.Equal(("/oauth/token/introspect", "Bearer AT"), (handler.Requests[0].Path, handler.Requests[0].Authorization));
+        Assert.Equal((true, "client-1", "user"), (info.Active, info.ClientId, info.TokenType));
+        Assert.Equal(["user:read", "ads:read"], info.Scopes);
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1771046347), info.ExpiresAt);
+        Assert.False(gone.Active);
+    }
+
+    [Fact]
+    public async Task App_token_uses_the_client_credentials_grant()
+    {
+        var handler = new FakeHttpHandler(_ => FakeHttpHandler.Json("""{"access_token":"APP","token_type":"Bearer","expires_in":3600}"""));
+        var auth = new KickAuthClient(new HttpClient(handler), Endpoints, TimeProvider.System);
+        var tokens = await auth.GetAppTokenAsync("client-1", "secret-1", default);
+        Assert.Equal("APP", tokens.AccessToken);
+        Assert.Equal("grant_type=client_credentials&client_id=client-1&client_secret=secret-1", Assert.Single(handler.Requests).Body);
+    }
+
     [Theory]
     [InlineData("?code=abc&state=s1", "abc", null)]
     [InlineData("?code=abc&state=other", null, "state mismatch")]

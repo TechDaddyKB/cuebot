@@ -134,8 +134,98 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
 
     private readonly ConcurrentDictionary<uint, Link> _links = new();
 
-    /// <summary>Should the relay connection be up: the portal or shared webhooks are on.</summary>
-    public bool Wanted => _directory.Enabled || _directory.SharedWebhooks;
+    /// <summary>Should the relay connection be up: the portal or shared webhooks are on, or Kick events are routed here.</summary>
+    public bool Wanted => _directory.Enabled || _directory.SharedWebhooks || KickEventsWanted();
+
+    // ---- Kick events (Cuebot's built-in Kick app; portal/RELAY.md "Kick events") ----
+
+    /// <summary>
+    /// The broadcaster's Kick access token while this Cuebot wants Kick's events through the shared intake, else null
+    /// (set by the app from the Kick module). The relay checks the token with Kick and does not keep it.
+    /// </summary>
+    public Func<CancellationToken, Task<string?>>? KickRouteToken { get; set; }
+
+    /// <summary>True while Kick events should come here (keeps the relay connected).</summary>
+    public Func<bool>? KickRouteWanted { get; set; }
+
+    /// <summary>The last answer about the Kick route, for the Kick page ("" when not used).</summary>
+    public string KickRouteStatus { get; private set; } = "";
+
+    public event Action<string>? KickRouteStatusChanged;
+
+    private IPortalRelayTransport? _session;
+    private long _kickRoutedUser;
+    private int _kickRequestId;
+
+    private bool KickEventsWanted() => KickRouteWanted?.Invoke() == true;
+
+    /// <summary>
+    /// Brings the Kick route up to date: connects when Kick events are now wanted, then registers the broadcaster (or
+    /// removes the route when they are no longer wanted). Never throws.
+    /// </summary>
+    public async Task RefreshKickRouteAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            if (Wanted && _run is null) await ConnectAsync(ct).ConfigureAwait(false);   // the route is sent once connected
+            else if (_session is { } transport) await SendKickRouteAsync(transport, ct).ConfigureAwait(false);
+            if (!Wanted && _run is not null) await DisconnectAsync().ConfigureAwait(false);
+            if (!KickEventsWanted() && KickRouteToken is not null) SetKickRouteStatus("");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _log.Warn(LogSource, $"Could not update the Kick event route: {Redact(ex.Message)}");
+        }
+    }
+
+    private async Task SendKickRouteAsync(IPortalRelayTransport transport, CancellationToken ct)
+    {
+        if (KickRouteToken is not { } provider) return;
+        var token = KickEventsWanted() ? await provider(ct).ConfigureAwait(false) : null;
+        var rid = Interlocked.Increment(ref _kickRequestId);
+        if (token is { Length: > 0 })
+        {
+            SetKickRouteStatus("Registering with Cuebot's Kick event intake...");
+            await transport.SendTextAsync(new JsonObject { ["type"] = "kick-route", ["rid"] = rid, ["token"] = token }.ToJsonString(), ct)
+                .ConfigureAwait(false);
+        }
+        else if (Interlocked.Read(ref _kickRoutedUser) is > 0 and var user)
+        {
+            await transport.SendTextAsync(new JsonObject { ["type"] = "kick-unroute", ["rid"] = rid, ["userId"] = user }.ToJsonString(), ct)
+                .ConfigureAwait(false);
+        }
+    }
+
+    private void OnKickRouteAnswer(JsonElement root)
+    {
+        var ok = root.TryGetProperty("ok", out var o) && o.ValueKind == JsonValueKind.True;
+        var user = root.TryGetProperty("userId", out var u) && u.TryGetInt64(out var id) ? id : 0;
+        if (Str(root, "type") == "kick-unroute")
+        {
+            if (ok) Interlocked.Exchange(ref _kickRoutedUser, 0);
+            SetKickRouteStatus("");
+            return;
+        }
+        if (ok)
+        {
+            Interlocked.Exchange(ref _kickRoutedUser, user);
+            SetKickRouteStatus("Kick events arrive through Cuebot's relay");
+            _log.Info(LogSource, "Kick events are routed to this Cuebot");
+        }
+        else
+        {
+            var error = Str(root, "error");
+            SetKickRouteStatus("Kick events through Cuebot's relay are not available: " + (error.Length > 0 ? error : "unknown error"));
+            _log.Warn(LogSource, $"Cuebot's Kick event intake refused the route: {error}");
+        }
+    }
+
+    private void SetKickRouteStatus(string status)
+    {
+        if (status == KickRouteStatus) return;
+        KickRouteStatus = status;
+        KickRouteStatusChanged?.Invoke(status);
+    }
 
     /// <summary>The connect address for a relay setting (empty: the shared relay), or null when it is not a valid address.</summary>
     public static Uri? ConnectUri(string relayUrl, string relayId)
@@ -307,6 +397,9 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
             hadConnected = true;
             SetStatus(ConnectionState.Connected, "Connected to the portal relay");
             _log.Info(LogSource, $"Connected to the portal relay ({uri.Host})");
+            _session = transport;
+            // Routes are kept 30 days after the last refresh: register again on every connection.
+            if (KickEventsWanted()) _ = Task.Run(() => SendKickRouteQuietlyAsync(transport, ct), CancellationToken.None);
             string reason;
             var fatal = false;
             try
@@ -330,9 +423,22 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
         }
         finally
         {
+            if (ReferenceEquals(_session, transport)) _session = null;
             foreach (var link in _links.Values) link.Dispose();
             _links.Clear();
             await transport.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task SendKickRouteQuietlyAsync(IPortalRelayTransport transport, CancellationToken ct)
+    {
+        try
+        {
+            await SendKickRouteAsync(transport, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _log.Warn(LogSource, $"Could not register Kick events with the relay: {Redact(ex.Message)}");
         }
     }
 
@@ -443,6 +549,9 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
                 case "close":
                     if (_links.TryRemove(ch, out var gone)) gone.Dispose();
                     break;
+                case "kick-route" or "kick-unroute":
+                    OnKickRouteAnswer(root);
+                    break;
             }
         }
     }
@@ -477,7 +586,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
     {
         await foreach (var sealedBytes in reader.ReadAllAsync(ct).ConfigureAwait(false))
         {
-            if (!_directory.SharedWebhooks || WebhookSink is not { } sink) continue;
+            if (WebhookSink is not { } sink || !(_directory.SharedWebhooks || KickEventsWanted())) continue;
             WebhookDelivery? delivery;
             try
             {
@@ -492,6 +601,9 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
                 _log.Warn(LogSource, "Ignored a webhook from the portal relay that could not be opened");
                 continue;
             }
+            // Kick events come from the shared intake, which needs no route secret; everything else only while shared
+            // webhooks are on.
+            if (!_directory.SharedWebhooks && delivery.Service != "kick") continue;
             try
             {
                 await sink(delivery, ct).ConfigureAwait(false);

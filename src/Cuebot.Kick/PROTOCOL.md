@@ -15,8 +15,9 @@ Sources:
 
 ## 1. OAuth 2.1 (official) — `Auth/`
 
-Host `https://id.kick.com`. The user registers their **own** Kick app (kick.com → Settings → Developer) and
-enters its Client ID and Client Secret in Cuebot; the redirect URL must be registered exactly.
+Host `https://id.kick.com`. Release builds carry Cuebot's own Kick app (`docs/BUILT_IN_APPS.md`, redirect
+`http://localhost:47582/callback`); a user may instead register their **own** app (kick.com → Settings → Developer)
+and enter its Client ID and Client Secret under Advanced; its redirect URL must be registered exactly.
 
 | Step | Request |
 | --- | --- |
@@ -24,7 +25,9 @@ enters its Client ID and Client Secret in Cuebot; the redirect URL must be regis
 | Redirect | `http://localhost:{port}/callback?code=…&state=…` (default port 47582). Cuebot listens with `HttpListener` only for the sign-in, checks `state`, answers with a "you can close this tab" page. `localhost` rather than `127.0.0.1` because Kick's docs note a problem with `127.0.0.1` redirect hosts. |
 | Code exchange | `POST /oauth/token` form: `grant_type=authorization_code, code, client_id, client_secret, redirect_uri, code_verifier` → `access_token, token_type, refresh_token, expires_in, scope` |
 | Refresh | `POST /oauth/token` form: `grant_type=refresh_token, refresh_token, client_id, client_secret` (refresh tokens are reusable per the changelog; Cuebot stores the newest one returned) |
-| Revoke | `POST /oauth/revoke?token=…&token_hint_type=refresh_token` (on sign-out, best effort) |
+| Revoke | `POST /oauth/revoke?token=…&token_type_hint=refresh_token&token_hint_type=refresh_token` (on sign-out, best effort; the OpenAPI spec and RFC 7009 say `token_type_hint`, the prose docs `token_hint_type`, so both are sent) |
+| Introspect | `POST /oauth/token/introspect` with `Authorization: Bearer <token>` → `data{active, client_id, token_type (user/app), scope, exp}` (moved from `/public/v1/token/introspect` in January 2026). On connect Cuebot reads the granted scopes from it and names the missing ones on the Kick page ("Sign in again to let Cuebot …"). |
+| App token | `POST /oauth/token` form `grant_type=client_credentials, client_id, client_secret` → an app access token without refresh token or scopes, used for public reads (users, channels by slug/id, categories, live streams) when no broadcaster is signed in. |
 
 PKCE: 64 random bytes → base64url verifier (86 chars), challenge = base64url(SHA-256(verifier)), checked against
 RFC 7636's example in the tests. Kick requires the client secret on the token endpoint even with PKCE, so it is
@@ -34,9 +37,10 @@ Tokens are refreshed when they expire within a minute, and once more after any `
 A refresh rejected with 400/401 clears the account (sign in again).
 
 Scopes requested — broadcaster: `user:read channel:read channel:write chat:write events:subscribe moderation:ban
-moderation:chat_message:manage kicks:read channel:rewards:read channel:rewards:write`; optional bot account: `user:read chat:write
-moderation:ban moderation:chat_message:manage`. `channel:rewards:write` was added with reward management (Oct 2026): broadcasters
-who signed in before must **sign in again** (Kick page) to grant it; until then reward changes fail with 403.
+moderation:chat_message:manage kicks:read channel:rewards:read channel:rewards:write ads:read ads:write streamkey:read`; optional
+bot account: `user:read chat:write moderation:ban moderation:chat_message:manage`. `channel:rewards:write` was added with reward
+management (Oct 2026), `ads:read ads:write streamkey:read` in November 2026: broadcasters who signed in before must **sign in
+again** (Kick page) to grant them; until then those calls fail with 403 and the Kick page says which permissions are missing.
 
 ## 2. Public API (official) — `Api/KickApiClient.cs`
 
@@ -48,13 +52,20 @@ Base `https://api.kick.com`, `Authorization: Bearer <user token>`, JSON bodies, 
 | Users by id | `GET /public/v1/users?id=1&id=2` |
 | Own channel / by slug / by id | `GET /public/v1/channels` / `?slug=` / `?broadcaster_user_id=` → `broadcaster_user_id, slug, stream_title, category{id,name,thumbnail}, channel_description, stream{is_live, viewer_count, start_time, language, is_mature, custom_tags}, active_subscribers_count` |
 | Title / category | `PATCH /public/v1/channels` `{stream_title?, category_id?}` → 204 |
-| Category search | `GET /public/v1/categories?q=` (documented keyword search; marked deprecated in favour of `GET /public/v2/categories?name=`, which only matches names exactly) and `GET /public/v1/categories/{id}` |
+| Category search | `GET /public/v2/categories?limit=1000&cursor=` read page by page (`data[{id, name, tags, thumbnail}], pagination.next_cursor`), kept 12 hours and searched locally (exact name, then starts with, then contains). v1's keyword search `GET /public/v1/categories?q=` is deprecated (January 2026) and v2's `name=` only matches whole names, so v1 is only the fallback when v2 fails. `GET /public/v1/categories/{id}` for numeric ids. |
+| Tags | `PATCH /public/v1/channels` `{custom_tags: [...]}` (an empty list clears them; fixed by Kick in December 2025) |
+| Subscriber counts | from `GET /public/v1/channels`: `active_subscribers_count` (includes gifted subs since Kick's 2026-08-11 change), `active_gifted_subscribers_count`, `canceled_subscribers_count`; also `banner_picture` |
+| Stream key | `GET /public/v1/channels` (own channel, `streamkey:read`) → `stream.url`, `stream.key`. Read only on request ("Send stream key to OBS" on the Kick page, which sets OBS's custom RTMP service), held in a type whose ToString hides the key, never logged or stored. |
+| Live streams of users | `GET /public/v1/users/livestreams?user_id=1&user_id=2` → `data[{broadcaster_user{id, username, profile_picture}, channel{slug}, category{id,name,thumbnail}, title, viewer_count, started_at, language_code, has_mature_content, tags, thumbnail}]` (offline users are left out) |
+| Live streams | `GET /public/v2/livestreams?limit (≤100)&category_id&language_code&cursor` → same items, oldest first, `pagination.next_cursor` (v1 `GET /public/v1/livestreams` is deprecated) |
+| KICKs leaderboard | `GET /public/v1/kicks/leaderboard?top=1..100` (`kicks:read`) → `data{week, month, lifetime: [{rank, user_id, username, gifted_amount}]}` |
+| Ads | `POST /public/v1/ads/ad-break` `{break_duration_seconds (7–90), id (a UUID the client makes, so a retry is recognised)}` → `{id, ad_break_id, remaining_ad_breaks}` (`ads:write`); `GET /public/v1/ads/ad-break-status` → `{opted_in, ads_blocked, auto_ads_active, remaining_ad_breaks, limits{max, period_seconds}, ad_breaks[{id, ad_break_id, break_duration_seconds, status, source, created_at}]}` (`ads:read`); `POST /public/v1/ads/enroll` (`ads:write`) |
 | Send chat | `POST /public/v1/chat` `{content (≤500 graphemes, ≤2048 bytes), type: "user"|"bot", broadcaster_user_id (for user), reply_to_message_id?}` → `{message_id, is_sent}` |
 | Delete message | `DELETE /public/v1/chat/{message_id}` → 204 (`moderation:chat_message:manage`) |
 | Ban / timeout | `POST /public/v1/moderation/bans` `{broadcaster_user_id, user_id, duration? (minutes 1–10080; omit = permanent), reason? (≤100)}` |
 | Unban / untimeout | `DELETE /public/v1/moderation/bans` `{broadcaster_user_id, user_id}` |
 | Webhook public key | `GET /public/v1/public-key` → `data.public_key` (PEM) |
-| Event subscriptions | `GET/POST/DELETE /public/v1/events/subscriptions`; POST `{method:"webhook", events:[{name, version}]}` |
+| Event subscriptions | `GET/POST/DELETE /public/v1/events/subscriptions`; POST `{method:"webhook", events:[{name, version}]}`; DELETE `?id=…&id=…`. Kick allows 10,000 subscriptions per event type per app, and only **1,000** for `chat.message.sent` until Kick verifies the app. |
 | Rewards | `GET /public/v1/channels/rewards` (`channel:rewards:read`) → `id (ulid), title, description, cost, background_color, is_enabled, is_paused, is_user_input_required, should_redemptions_skip_request_queue` (max 50 per channel) |
 | Create reward | `POST /public/v1/channels/rewards` `{title (≤50), cost (≥1), description? (≤200), background_color? (#hex, default #00e701), is_enabled?, is_user_input_required?, should_redemptions_skip_request_queue?}` (`channel:rewards:write`) |
 | Update / delete reward | `PATCH /public/v1/channels/rewards/{id}` (only changed fields, plus `is_paused`) → reward; `DELETE /public/v1/channels/rewards/{id}` → 204. Only the app that created a reward may change or delete it (403 otherwise). |
@@ -65,8 +76,9 @@ Cuebot splits long chat messages into Kick-sized parts at word boundaries. "Send
 signed-in bot account with `type: "user"` into the broadcaster's chat (falls back to the broadcaster when
 allowed). Timeouts are given in seconds by users and rounded **up** to Kick's whole minutes.
 
-The official API has no endpoint for the chatroom id, follower list/count, or real-time events other than
-webhooks. Polling `GET /channels` (default every 60 s, minimum 15 s) gives stream online/offline, viewer count and
+Public reads (users, channels by slug or id, categories, live streams) use the broadcaster's token when signed in and an
+app access token otherwise. The official API has no endpoint for the chatroom id, follower list/count, polls,
+predictions, hosts, pinned messages, or real-time events other than webhooks. Polling `GET /channels` (default every 60 s, minimum 15 s) gives stream online/offline, viewer count and
 title/category changes without a public URL.
 
 ## 3. Webhooks (official) — `Webhooks/`
@@ -90,7 +102,30 @@ Setting it up (once, after deploying the relay with `relay/setup.ps1` or `relay/
    subscriptions (`GET /public/v1/events/subscriptions`) and subscribes the missing ones below with
    `method: "webhook"`. Kick sends every subscribed event to the app's single webhook URL.
 
-Kick's webhook URL is per app, not per user, so each streamer uses their own developer app and their own relay.
+Kick's webhook URL is per app, not per user. With their **own** Kick app a streamer points it at their own relay (or
+at Cuebot's shared webhooks address, `https://hooks.techdaddydigital.com/<relay id>/<route secret>/kick`) as above.
+
+**Built-in app: Cuebot's shared Kick intake (November 2026).** Every streamer on Cuebot's built-in app shares that
+app's single webhook address, so Cuebot runs one intake for all of them: the built-in app's webhook URL is
+`https://hooks.techdaddydigital.com/kick`, served by the shared portal relay Worker (`portal/worker/kick.ts`,
+`portal/RELAY.md` "Kick events").
+
+1. On connect, with **Receive Kick's official events through Cuebot's relay** on (`UseSharedEvents`, default on), Cuebot
+   subscribes the broadcaster to the supported events (chat only with `WebhookChat`, because of the 1,000 chat
+   subscriptions an unverified app may have) and connects the portal relay.
+2. Over its authenticated relay socket Cuebot sends `{"type":"kick-route","rid":n,"token":"<broadcaster access token>"}`
+   on every relay connection. The Worker asks Kick's introspection endpoint whether the token is active and belongs to
+   the built-in app's client id, reads the user id (`GET /public/v1/users`), and stores only "Kick user id → relay ID"
+   (Durable Object `KickRoute`, forgotten 30 days after the last refresh). The token is not kept. Answer:
+   `{"type":"kick-route","rid":n,"ok":true,"userId":n}` or `ok:false` with an `error`, shown on the Kick page.
+3. Kick posts an event to `/kick`; the Worker checks the timestamp (±10 minutes) and Kick's signature (with the key
+   from `/public/v1/public-key`, cached an hour and fetched again on a failure), reads `broadcaster.user_id`, and seals
+   the unchanged delivery (`service: "kick"`, Kick's headers, raw body) to that Cuebot's identity key on the relay's
+   webhook channel. It always answers Kick with an empty 200, because Kick unsubscribes an app whose address keeps
+   failing for a day; events for an offline Cuebot are dropped.
+4. Cuebot verifies the signature again and handles the delivery like any relay webhook (`KickWebhookHandler`).
+5. Signing out deletes the app's subscriptions for the broadcaster, revokes the token and sends `kick-unroute`
+   (`{"userId":n}`; the Worker only removes a route that points to the asking relay).
 
 Headers: `Kick-Event-Message-Id`, `Kick-Event-Subscription-Id`, `Kick-Event-Signature`,
 `Kick-Event-Message-Timestamp`, `Kick-Event-Type`, `Kick-Event-Version`.
@@ -195,10 +230,10 @@ Available **now** without any public URL: chat, message deletions, bans/timeouts
 gifted subs, hosts, stream online/offline (websocket + API polling), viewer count and title/category changes
 (polling), follows (websocket, when Kick includes the follower's name).
 
-Reliable only through the **webhook relay** (best effort on the websocket today): **Kicks gifted**, **channel
-reward redemptions** (including accepted/rejected status updates), follows with full user ids, and every event
-when the website's websocket or its id lookup is unavailable. All of them are parsed and verified already; the
-relay only has to forward deliveries.
+Reliable only through **Kick's webhooks** (best effort on the websocket): **Kicks gifted**, **channel reward
+redemptions** (including accepted/rejected status updates), follows with full user ids, and every event when the
+website's websocket or its id lookup is unavailable. With the built-in app they arrive through Cuebot's shared Kick
+intake (section 3) with no setup; with an own app, through the streamer's relay.
 
 ## 7. 7TV emote events (public 7TV APIs, not Kick) — `SevenTv/`
 
@@ -234,3 +269,6 @@ documentation (<https://7tv.io/docs>, <https://github.com/SevenTV/EventAPI>).
   `kick.rewardRedemption` is counted (`counter`, `userCounter`), counters reset on going live unless persisted, and
   the group steps change rewards one `PATCH` each, counting the ones Kick refuses with 403 as skipped.)
 - `type: "bot"` chat (posting as the app's own bot user) is supported by the API client but not exposed in the UI.
+- Kick Drops and organizations (docs.kick.com `drops/*`, `organizations/*`) are for game developers running campaigns
+  and do not apply to a streaming bot.
+- App verification (verified bot badge, 10,000 chat subscriptions) is requested by email to developers@kick.com.

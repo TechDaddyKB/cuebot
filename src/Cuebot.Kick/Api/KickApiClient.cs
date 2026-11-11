@@ -29,22 +29,35 @@ internal sealed class KickApiClient(HttpClient http, KickEndpoints endpoints, IK
     {
         var query = string.Join('&', ids.Select(id => "id=" + id.ToString(CultureInfo.InvariantCulture)));
         if (query.Length == 0) return [];
-        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, "public/v1/users?" + query, null, ct).ConfigureAwait(false);
+        using var doc = await ReadPublicAsync("public/v1/users?" + query, ct).ConfigureAwait(false);
         return doc.RootElement.Items("data").Select(ParseUser).ToArray();
     }
 
     /// <summary>The broadcaster's own channel (no parameters), or the channel with <paramref name="slug"/>.</summary>
     public async Task<KickChannel?> GetChannelAsync(string? slug, CancellationToken ct)
     {
-        var path = string.IsNullOrWhiteSpace(slug) ? "public/v1/channels" : "public/v1/channels?slug=" + Uri.EscapeDataString(slug.Trim());
-        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, path, null, ct).ConfigureAwait(false);
+        using var doc = string.IsNullOrWhiteSpace(slug)
+            ? await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, "public/v1/channels", null, ct).ConfigureAwait(false)
+            : await ReadPublicAsync("public/v1/channels?slug=" + Uri.EscapeDataString(slug.Trim()), ct).ConfigureAwait(false);
         return doc.RootElement.Items("data").Select(ParseChannel).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// The broadcaster's ingest address and stream key from GET /channels (filled only with <c>streamkey:read</c>), or
+    /// null when Kick did not include them.
+    /// </summary>
+    public async Task<KickStreamCredentials?> GetStreamCredentialsAsync(CancellationToken ct)
+    {
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, "public/v1/channels", null, ct).ConfigureAwait(false);
+        var stream = doc.RootElement.Items("data").FirstOrDefault().Prop("stream");
+        var (url, key) = (stream.Str("url"), stream.Str("key"));
+        return url.Length > 0 && key.Length > 0 ? new KickStreamCredentials(url, key) : null;
     }
 
     public async Task<KickChannel?> GetChannelByIdAsync(long broadcasterUserId, CancellationToken ct)
     {
-        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get,
-            "public/v1/channels?broadcaster_user_id=" + broadcasterUserId.ToString(CultureInfo.InvariantCulture), null, ct).ConfigureAwait(false);
+        using var doc = await ReadPublicAsync("public/v1/channels?broadcaster_user_id=" + broadcasterUserId.ToString(CultureInfo.InvariantCulture), ct)
+            .ConfigureAwait(false);
         return doc.RootElement.Items("data").Select(ParseChannel).FirstOrDefault();
     }
 
@@ -58,19 +71,191 @@ internal sealed class KickApiClient(HttpClient http, KickEndpoints endpoints, IK
         using var _ = await SendAsync(KickAccount.Broadcaster, HttpMethod.Patch, "public/v1/channels", body, ct).ConfigureAwait(false);
     }
 
-    /// <summary>Searches categories by name (GET /public/v1/categories?q=, the documented keyword search).</summary>
+    /// <summary>PATCH /channels with <c>custom_tags</c>: replaces the channel's tags (an empty list clears them).</summary>
+    public async Task SetTagsAsync(IReadOnlyList<string> tags, CancellationToken ct)
+    {
+        var clean = tags.Select(t => t.Trim()).Where(t => t.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var body = new Dictionary<string, object> { ["custom_tags"] = clean };
+        using var _ = await SendAsync(KickAccount.Broadcaster, HttpMethod.Patch, "public/v1/channels", body, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>How long the category list from /public/v2/categories is reused before it is read again.</summary>
+    internal static readonly TimeSpan CategoryListLifetime = TimeSpan.FromHours(12);
+    private const int CategoryPageSize = 1000;
+    private const int MaxCategoryPages = 50;
+    private const int MaxSearchResults = 25;
+    private readonly SemaphoreSlim _categoryGate = new(1, 1);
+    private IReadOnlyList<KickCategory>? _categories;
+    private DateTimeOffset _categoriesAt;
+
+    /// <summary>
+    /// Searches categories by name. Kick deprecated the keyword search (GET /public/v1/categories?q=) in January 2026, and
+    /// its replacement (/public/v2/categories?name=) only matches whole names, so Cuebot reads the full list from v2 (a
+    /// few pages, kept for <see cref="CategoryListLifetime"/>) and searches it here: exact names first, then names that
+    /// start with the text, then names that contain it. The v1 search is the fallback while it still answers.
+    /// </summary>
     public async Task<IReadOnlyList<KickCategory>> SearchCategoriesAsync(string query, CancellationToken ct)
     {
-        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get,
-            "public/v1/categories?q=" + Uri.EscapeDataString(query.Trim()), null, ct).ConfigureAwait(false);
-        return doc.RootElement.Items("data").Select(ParseCategory).ToArray();
+        query = query.Trim();
+        if (query.Length == 0) return [];
+        IReadOnlyList<KickCategory> all;
+        try
+        {
+            all = await AllCategoriesAsync(ct).ConfigureAwait(false);
+        }
+        catch (KickApiException)
+        {
+            using var doc = await ReadPublicAsync("public/v1/categories?q=" + Uri.EscapeDataString(query), ct).ConfigureAwait(false);
+            return doc.RootElement.Items("data").Select(ParseCategory).ToArray();
+        }
+        return RankCategories(all, query);
+    }
+
+    internal static IReadOnlyList<KickCategory> RankCategories(IEnumerable<KickCategory> all, string query) => all
+        .Select(c => (Category: c, Rank: string.Equals(c.Name, query, StringComparison.OrdinalIgnoreCase) ? 0
+            : c.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 1
+            : c.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 2 : 3))
+        .Where(x => x.Rank < 3)
+        .OrderBy(x => x.Rank).ThenBy(x => x.Category.Name.Length).ThenBy(x => x.Category.Name, StringComparer.OrdinalIgnoreCase)
+        .Take(MaxSearchResults)
+        .Select(x => x.Category)
+        .ToArray();
+
+    /// <summary>Every category, from /public/v2/categories (cursor pages of 1000), cached.</summary>
+    internal async Task<IReadOnlyList<KickCategory>> AllCategoriesAsync(CancellationToken ct)
+    {
+        if (_categories is { } cached && DateTimeOffset.UtcNow - _categoriesAt < CategoryListLifetime) return cached;
+        await _categoryGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (_categories is { } again && DateTimeOffset.UtcNow - _categoriesAt < CategoryListLifetime) return again;
+            var list = new List<KickCategory>();
+            var cursor = "";
+            for (var page = 0; page < MaxCategoryPages; page++)
+            {
+                var path = "public/v2/categories?limit=" + CategoryPageSize.ToString(CultureInfo.InvariantCulture)
+                           + (cursor.Length > 0 ? "&cursor=" + Uri.EscapeDataString(cursor) : "");
+                using var doc = await ReadPublicAsync(path, ct).ConfigureAwait(false);
+                list.AddRange(doc.RootElement.Items("data").Select(ParseCategory).Where(c => c.Id > 0));
+                cursor = doc.RootElement.Prop("pagination").Str("next_cursor");
+                if (cursor.Length == 0) break;
+            }
+            if (list.Count == 0) throw new KickApiException("Kick returned no categories");
+            _categories = list;
+            _categoriesAt = DateTimeOffset.UtcNow;
+            return list;
+        }
+        finally
+        {
+            _categoryGate.Release();
+        }
     }
 
     public async Task<KickCategory?> GetCategoryAsync(long id, CancellationToken ct)
     {
-        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get,
-            "public/v1/categories/" + id.ToString(CultureInfo.InvariantCulture), null, ct).ConfigureAwait(false);
+        using var doc = await ReadPublicAsync("public/v1/categories/" + id.ToString(CultureInfo.InvariantCulture), ct).ConfigureAwait(false);
         return doc.RootElement.Prop("data") is { } data ? ParseCategory(data) : null;
+    }
+
+    // ---- live streams ----
+
+    /// <summary>GET /public/v1/users/livestreams: the live streams of these users (users who are offline are left out).</summary>
+    public async Task<IReadOnlyList<KickLivestream>> GetLivestreamsForUsersAsync(IEnumerable<long> userIds, CancellationToken ct)
+    {
+        var query = string.Join('&', userIds.Where(id => id > 0).Distinct().Select(id => "user_id=" + id.ToString(CultureInfo.InvariantCulture)));
+        if (query.Length == 0) return [];
+        using var doc = await ReadPublicAsync("public/v1/users/livestreams?" + query, ct).ConfigureAwait(false);
+        return doc.RootElement.Items("data").Select(ParseLivestream).ToArray();
+    }
+
+    /// <summary>GET /public/v2/livestreams: live streams, optionally in one category or language (one page, oldest first).</summary>
+    public async Task<(IReadOnlyList<KickLivestream> Items, string NextCursor)> GetLivestreamsAsync(long? categoryId, string? languageCode, int limit,
+        string? cursor, CancellationToken ct)
+    {
+        var query = new List<string> { "limit=" + Math.Clamp(limit, 1, 100).ToString(CultureInfo.InvariantCulture) };
+        if (categoryId is > 0) query.Add("category_id=" + categoryId.Value.ToString(CultureInfo.InvariantCulture));
+        if (!string.IsNullOrWhiteSpace(languageCode)) query.Add("language_code=" + Uri.EscapeDataString(languageCode.Trim().ToLowerInvariant()));
+        if (!string.IsNullOrWhiteSpace(cursor)) query.Add("cursor=" + Uri.EscapeDataString(cursor));
+        using var doc = await ReadPublicAsync("public/v2/livestreams?" + string.Join('&', query), ct).ConfigureAwait(false);
+        return (doc.RootElement.Items("data").Select(ParseLivestream).ToArray(), doc.RootElement.Prop("pagination").Str("next_cursor"));
+    }
+
+    internal static KickLivestream ParseLivestream(JsonElement l)
+    {
+        var user = l.Prop("broadcaster_user");
+        var start = l.Str("started_at");
+        return new KickLivestream(
+            user.Long("id"),
+            user.Str("username"),
+            l.Prop("channel").Str("slug"),
+            user.Str("profile_picture"),
+            l.Str("title"),
+            l.Prop("category") is { } cat && cat.Long("id") > 0 ? ParseCategory(cat) : null,
+            (int)l.Long("viewer_count"),
+            DateTimeOffset.TryParse(start, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t) && t.Year > 2000 ? t : null,
+            l.Str("language_code"),
+            l.Bool("has_mature_content"),
+            l.Items("tags").Select(x => x.AsString()).ToArray(),
+            l.Str("thumbnail"));
+    }
+
+    // ---- KICKs ----
+
+    public const int MaxLeaderboardEntries = 100;
+
+    /// <summary>GET /public/v1/kicks/leaderboard (<c>kicks:read</c>): the top gifters of the broadcaster's channel.</summary>
+    public async Task<KickLeaderboard> GetKicksLeaderboardAsync(int top, CancellationToken ct)
+    {
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get,
+            "public/v1/kicks/leaderboard?top=" + Math.Clamp(top, 1, MaxLeaderboardEntries).ToString(CultureInfo.InvariantCulture), null, ct).ConfigureAwait(false);
+        var data = doc.RootElement.Prop("data");
+        KickLeaderboardEntry[] Entries(string name) => data.Items(name)
+            .Select(e => new KickLeaderboardEntry((int)e.Long("rank"), e.Long("user_id"), e.Str("username"), e.Long("gifted_amount")))
+            .OrderBy(e => e.Rank)
+            .ToArray();
+        return new KickLeaderboard(Entries("week"), Entries("month"), Entries("lifetime"));
+    }
+
+    // ---- ads ----
+
+    public const int MinAdBreakSeconds = 7;
+    public const int MaxAdBreakSeconds = 90;
+
+    /// <summary>
+    /// POST /public/v1/ads/ad-break (<c>ads:write</c>): starts an ad break of 7 to 90 seconds. <paramref name="requestId"/>
+    /// is the UUID Kick uses to recognise a retried request.
+    /// </summary>
+    public async Task<KickAdBreak> CreateAdBreakAsync(int seconds, Guid requestId, CancellationToken ct)
+    {
+        var body = new Dictionary<string, object>
+        {
+            ["break_duration_seconds"] = Math.Clamp(seconds, MinAdBreakSeconds, MaxAdBreakSeconds),
+            ["id"] = requestId.ToString("D"),
+        };
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Post, "public/v1/ads/ad-break", body, ct).ConfigureAwait(false);
+        var data = doc.RootElement.Prop("data");
+        return new KickAdBreak(data.Str("id") is { Length: > 0 } id ? id : requestId.ToString("D"), data.Str("ad_break_id"),
+            (int)data.Long("remaining_ad_breaks"));
+    }
+
+    /// <summary>GET /public/v1/ads/ad-break-status (<c>ads:read</c> or <c>ads:write</c>).</summary>
+    public async Task<KickAdStatus> GetAdStatusAsync(CancellationToken ct)
+    {
+        using var doc = await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, "public/v1/ads/ad-break-status", null, ct).ConfigureAwait(false);
+        var d = doc.RootElement.Prop("data");
+        var limits = d.Prop("limits");
+        return new KickAdStatus(d.Bool("opted_in"), d.Bool("ads_blocked"), d.Bool("auto_ads_active"), (int)d.Long("remaining_ad_breaks"),
+            (int)limits.Long("max"), (int)limits.Long("period_seconds"),
+            d.Items("ad_breaks").Select(b => new KickAdBreakItem(b.Str("id"), b.Str("ad_break_id"), (int)b.Long("break_duration_seconds"),
+                b.Str("status"), b.Str("source"),
+                DateTimeOffset.TryParse(b.Str("created_at"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t) ? t : null)).ToArray());
+    }
+
+    /// <summary>POST /public/v1/ads/enroll (<c>ads:write</c>): enrols the broadcaster's channel in Kick's ads.</summary>
+    public async Task EnrollInAdsAsync(CancellationToken ct)
+    {
+        using var _ = await SendAsync(KickAccount.Broadcaster, HttpMethod.Post, "public/v1/ads/enroll", new Dictionary<string, object>(), ct)
+            .ConfigureAwait(false);
     }
 
     // ---- chat ----
@@ -268,6 +453,17 @@ internal sealed class KickApiClient(HttpClient http, KickEndpoints endpoints, IK
             .ToArray();
     }
 
+    /// <summary>DELETE /events/subscriptions?id=...: removes webhook subscriptions (for example on sign-out).</summary>
+    public async Task DeleteEventSubscriptionsAsync(IEnumerable<string> ids, CancellationToken ct)
+    {
+        foreach (var chunk in ids.Where(i => !string.IsNullOrWhiteSpace(i)).Distinct(StringComparer.Ordinal).Chunk(50))
+        {
+            var query = string.Join('&', chunk.Select(id => "id=" + Uri.EscapeDataString(id)));
+            using var _ = await SendAsync(KickAccount.Broadcaster, HttpMethod.Delete, "public/v1/events/subscriptions?" + query, null, ct)
+                .ConfigureAwait(false);
+        }
+    }
+
     // ---- plumbing ----
 
     /// <summary>Sends a request; returns the parsed body (null for 204). Throws <see cref="KickApiException"/> on failure.</summary>
@@ -285,6 +481,31 @@ internal sealed class KickApiClient(HttpClient http, KickEndpoints endpoints, IK
         try
         {
             return JsonDocument.Parse(text);
+        }
+        catch (JsonException)
+        {
+            return JsonDocument.Parse("{}");
+        }
+    }
+
+    /// <summary>
+    /// A GET of public data: with the broadcaster's token when signed in, otherwise with an app access token (client
+    /// credentials), renewed once when Kick rejects it.
+    /// </summary>
+    private async Task<JsonDocument> ReadPublicAsync(string path, CancellationToken ct)
+    {
+        if (tokens.IsSignedIn(KickAccount.Broadcaster)) return await SendAsync(KickAccount.Broadcaster, HttpMethod.Get, path, null, ct).ConfigureAwait(false);
+        var token = await tokens.GetAppTokenAsync(false, ct).ConfigureAwait(false);
+        var (status, text) = await SendOnceAsync(HttpMethod.Get, path, null, token, ct).ConfigureAwait(false);
+        if (status == HttpStatusCode.Unauthorized)
+        {
+            token = await tokens.GetAppTokenAsync(true, ct).ConfigureAwait(false);
+            (status, text) = await SendOnceAsync(HttpMethod.Get, path, null, token, ct).ConfigureAwait(false);
+        }
+        if ((int)status is < 200 or > 299) throw new KickApiException(Describe(status, text, KickAccount.Broadcaster), (int)status);
+        try
+        {
+            return string.IsNullOrWhiteSpace(text) ? JsonDocument.Parse("{}") : JsonDocument.Parse(text);
         }
         catch (JsonException)
         {
@@ -344,6 +565,11 @@ internal sealed class KickApiClient(HttpClient http, KickEndpoints endpoints, IK
             stream.Str("language"),
             stream.Bool("is_mature"),
             stream.Items("custom_tags").Select(x => x.AsString()).ToArray(),
-            (int)c.Long("active_subscribers_count"));
+            (int)c.Long("active_subscribers_count"))
+        {
+            ActiveGiftedSubscribers = (int)c.Long("active_gifted_subscribers_count"),
+            CanceledSubscribers = (int)c.Long("canceled_subscribers_count"),
+            BannerPicture = c.Str("banner_picture"),
+        };
     }
 }

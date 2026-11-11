@@ -12,11 +12,13 @@ namespace Cuebot.App.ViewModels.Kick;
 public sealed partial class KickViewModel : PageViewModel
 {
     private readonly KickService _kick;
+    private readonly Cuebot.Obs.ObsService? _obs;
     private CancellationTokenSource? _signIn;
 
-    public KickViewModel(KickService kick) : base("Kick")
+    public KickViewModel(KickService kick, Cuebot.Obs.ObsService? obs = null) : base("Kick")
     {
         _kick = kick;
+        _obs = obs;
         kick.StatusChanged += () => OnUi(() => OnPropertyChanged(string.Empty));
     }
 
@@ -65,6 +67,43 @@ public sealed partial class KickViewModel : PageViewModel
     {
         get => S.UseWebhookRelay;
         set { S.UseWebhookRelay = value; Save(); }
+    }
+
+    /// <summary>Kick's official events through Cuebot's shared intake (built-in app only).</summary>
+    public bool UseSharedEvents
+    {
+        get => S.UseSharedEvents;
+        set { S.UseSharedEvents = value; Save(); _ = ReconnectForEvents(); }
+    }
+
+    public bool WebhookChat
+    {
+        get => S.WebhookChat;
+        set { S.WebhookChat = value; Save(); }
+    }
+
+    /// <summary>The shared intake only serves Cuebot's built-in Kick app; with an own app the relay setting applies.</summary>
+    public bool UsesBuiltInApp => _kick.App.IsBuiltIn;
+
+    public string SharedEventsStatus => !S.UseSharedEvents ? "Off"
+        : _kick.SharedEventsStatus is { Length: > 0 } status ? status
+        : _kick.IsConnected ? "Connecting..." : "Connects with Kick";
+
+    /// <summary>"Sign in again to let Cuebot ..." when the broadcaster sign-in lacks scopes Cuebot now asks for.</summary>
+    public string MissingScopesMessage => _kick.MissingScopesMessage ?? "";
+
+    public bool HasMissingScopes => _kick.MissingScopesMessage is not null;
+
+    public string SubscriberCount => _kick.Channel is { } c
+        ? $"{c.ActiveSubscribers} ({c.ActiveGiftedSubscribers} gifted)"
+        : "—";
+
+    public string Tags => _kick.Channel is { Tags.Count: > 0 } c ? string.Join(", ", c.Tags) : "—";
+
+    private async Task ReconnectForEvents()
+    {
+        if (!_kick.IsConnected) return;
+        await Run(async () => await _kick.ConnectAsync());
     }
 
     public bool UseSevenTvEvents
@@ -117,6 +156,9 @@ public sealed partial class KickViewModel : PageViewModel
     [ObservableProperty] private bool _testAsBot;
     [ObservableProperty] private string _newRewardTitle = "";
     [ObservableProperty] private decimal _newRewardCost = 100;
+    [ObservableProperty] private string _newTags = "";
+    [ObservableProperty] private decimal _adLength = 30;
+    [ObservableProperty] private string _adStatus = "";
     [ObservableProperty] private string _error = "";
     [ObservableProperty] private string _info = "";
 
@@ -192,6 +234,67 @@ public sealed partial class KickViewModel : PageViewModel
         NewCategory = "";
         Info = $"Category set to {category.Name}.";
         await _kick.RefreshChannelAsync();
+    });
+
+    [RelayCommand]
+    private Task UpdateTags() => Run(async () =>
+    {
+        var tags = await _kick.SetTagsAsync(NewTags);
+        NewTags = "";
+        Info = tags.Count == 0 ? "Tags removed." : $"Tags set to {string.Join(", ", tags)}.";
+        await _kick.RefreshChannelAsync();
+    });
+
+    // ---- ads ----
+
+    [RelayCommand]
+    private Task RunAd() => Run(async () =>
+    {
+        var ad = await _kick.RunAdBreakAsync((int)AdLength);
+        Info = $"Ad break started; {ad.RemainingAdBreaks} left in this period.";
+        await LoadAdStatus();
+    });
+
+    [RelayCommand]
+    private Task RefreshAdStatus() => Run(LoadAdStatus);
+
+    [RelayCommand]
+    private Task EnrollInAds() => Run(async () =>
+    {
+        await _kick.EnrollInAdsAsync();
+        Info = "Your channel is enrolled in Kick ads.";
+        await LoadAdStatus();
+    });
+
+    private async Task LoadAdStatus()
+    {
+        var s = await _kick.GetAdStatusAsync();
+        AdStatus = !s.OptedIn ? "Not enrolled in Kick ads"
+            : s.AdsBlocked ? "Ads are blocked on this channel right now"
+            : $"{s.RemainingAdBreaks} of {s.MaxAdBreaks} ad breaks left (per {Math.Max(1, s.LimitPeriodSeconds / 60)} min)"
+              + (s.AutoAdsActive ? " · automatic ads on" : "");
+    }
+
+    // ---- stream key ----
+
+    public bool HasObs => _obs is not null;
+
+    /// <summary>Puts the channel's ingest address and stream key into OBS's stream settings (custom RTMP). The key is not shown.</summary>
+    [RelayCommand]
+    private Task SendStreamKeyToObs() => Run(async () =>
+    {
+        if (_obs is null) return;
+        if (!_obs.IsConnected) throw new InvalidOperationException("Connect OBS first (OBS page).");
+        var credentials = await _kick.GetStreamCredentialsAsync();
+        var status = await _obs.RequestAsync("GetStreamStatus");
+        if (status.TryGetProperty("outputActive", out var active) && active.GetBoolean())
+            throw new InvalidOperationException("OBS is streaming; stop the stream before changing where it goes.");
+        await _obs.RequestAsync("SetStreamServiceSettings", new
+        {
+            streamServiceType = "rtmp_custom",
+            streamServiceSettings = new { server = credentials.Url, key = credentials.Key },
+        });
+        Info = "OBS now streams to your Kick channel.";
     });
 
     [RelayCommand]

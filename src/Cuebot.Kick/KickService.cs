@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Cuebot.Core;
 using Cuebot.Core.Chat.Emotes;
 using Cuebot.Core.Events;
@@ -245,6 +246,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
     public async Task SignOutAsync(KickAccount account)
     {
         var t = _tokens.Tokens(account);
+        if (account == KickAccount.Broadcaster && t.IsSignedIn && (Settings.UseWebhookRelay || App.IsBuiltIn)) await RemoveWebhooksAsync().ConfigureAwait(false);
         if (t.RefreshToken.Length > 0) await _auth.RevokeAsync(t.RefreshToken, "refresh_token", CancellationToken.None).ConfigureAwait(false);
         else if (t.AccessToken.Length > 0) await _auth.RevokeAsync(t.AccessToken, "access_token", CancellationToken.None).ConfigureAwait(false);
         _tokens.Clear(account);
@@ -286,11 +288,13 @@ public sealed class KickService : IConnectable, IAsyncDisposable
             PublishAuthenticated();
             await StartRealtimeAsync(ct).ConfigureAwait(false);
             if (_sevenTv is not null && Settings.UseSevenTvEvents) await _sevenTv.StartAsync(Settings.Broadcaster.UserId).ConfigureAwait(false);
-            if (Settings.UseWebhookRelay) await RegisterWebhooksAsync(ct).ConfigureAwait(false);
+            await CheckScopesAsync(ct).ConfigureAwait(false);
+            if (Settings.UseWebhookRelay || WantsSharedEvents) await RegisterWebhooksAsync(ct).ConfigureAwait(false);
             _pollStop = new CancellationTokenSource();
             _poll = PollLoopAsync(_pollStop.Token);
             UpdateConnectedStatus();
             _log.Info("Kick", $"Connected to Kick channel {Settings.ChannelSlug}");
+            RaiseSharedEventsChanged();
         }
         finally
         {
@@ -381,7 +385,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         try
         {
             var existing = await _api.ListEventSubscriptionsAsync(ct).ConfigureAwait(false);
-            var missing = KickWebhookParser.SupportedEvents
+            var missing = WebhookEvents()
                 .Where(e => !existing.Any(s => s.Event == e.Name && s.Version == e.Version && s.Method == "webhook"))
                 .ToArray();
             if (missing.Length == 0) return;
@@ -391,6 +395,105 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         catch (KickApiException ex)
         {
             _log.Warn("Kick", $"Could not register webhook subscriptions: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// The webhook events to subscribe. Chat is left out for the built-in app unless chosen: Kick allows an unverified
+    /// app only 1,000 chat subscriptions across all its users, and real-time chat covers it.
+    /// </summary>
+    internal IEnumerable<(string Name, int Version)> WebhookEvents() =>
+        KickWebhookParser.SupportedEvents.Where(e => e.Name != "chat.message.sent" || !App.IsBuiltIn || Settings.WebhookChat);
+
+    /// <summary>Removes this app's webhook subscriptions for the broadcaster (on sign-out), so Kick stops sending them.</summary>
+    private async Task RemoveWebhooksAsync()
+    {
+        try
+        {
+            var existing = await _api.ListEventSubscriptionsAsync(CancellationToken.None).ConfigureAwait(false);
+            if (existing.Count > 0) await _api.DeleteEventSubscriptionsAsync(existing.Select(s => s.Id), CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is KickApiException or HttpRequestException or TaskCanceledException)
+        {
+            _log.Debug("Kick", $"Could not remove the webhook subscriptions: {ex.Message}");
+        }
+    }
+
+    // ---- shared events (built-in app) ----
+
+    /// <summary>
+    /// True while Kick's official events should come through Cuebot's shared intake: the built-in app, the setting on,
+    /// and the broadcaster signed in and connected.
+    /// </summary>
+    public bool WantsSharedEvents => App.IsBuiltIn && Settings.UseSharedEvents && IsBroadcasterSignedIn && _connected;
+
+    /// <summary>Raised when <see cref="WantsSharedEvents"/> may have changed (the app re-registers with the shared intake).</summary>
+    public event Action? SharedEventsChanged;
+
+    /// <summary>What the shared intake said last (set by the app from the portal relay), for the Kick page.</summary>
+    public string SharedEventsStatus { get; private set; } = "";
+
+    public void SetSharedEventsStatus(string status)
+    {
+        if (status == SharedEventsStatus) return;
+        SharedEventsStatus = status;
+        StatusChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// The broadcaster's current access token for the shared intake to check which Kick account this Cuebot speaks for
+    /// (it is not kept there), or null when shared events are not wanted.
+    /// </summary>
+    public async Task<string?> GetSharedEventsTokenAsync(CancellationToken ct)
+    {
+        if (!WantsSharedEvents) return null;
+        return await _tokens.GetAccessTokenAsync(KickAccount.Broadcaster, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The Kick user id the shared intake routes to this Cuebot, or 0.</summary>
+    public long SharedEventsUserId => WantsSharedEvents ? Settings.Broadcaster.UserId : 0;
+
+    private void RaiseSharedEventsChanged()
+    {
+        try
+        {
+            SharedEventsChanged?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            _log.Debug("Kick", $"Shared events update failed: {ex.Message}");
+        }
+    }
+
+    // ---- scopes ----
+
+    /// <summary>Broadcaster scopes Cuebot asks for that the current sign-in does not grant (sign in again to add them).</summary>
+    public IReadOnlyList<string> MissingScopes =>
+        !IsBroadcasterSignedIn || Settings.Broadcaster.Scopes.Count == 0 ? []
+            : KickScopes.Broadcaster.Where(s => !Settings.Broadcaster.Scopes.Contains(s)).ToArray();
+
+    /// <summary>A sentence for the Kick page when <see cref="MissingScopes"/> is not empty, else null.</summary>
+    public string? MissingScopesMessage => MissingScopes is { Count: > 0 } missing
+        ? "Sign in again to let Cuebot " + string.Join(", ", missing.Select(KickScopes.Describe).Distinct()) + "."
+        : null;
+
+    /// <summary>Asks Kick which scopes the broadcaster's token really has (token introspection) and remembers them.</summary>
+    private async Task CheckScopesAsync(CancellationToken ct)
+    {
+        try
+        {
+            var token = await _tokens.GetAccessTokenAsync(KickAccount.Broadcaster, ct).ConfigureAwait(false);
+            var info = await _auth.IntrospectAsync(token, ct).ConfigureAwait(false);
+            if (info.Active && info.Scopes.Count > 0)
+            {
+                Settings.Broadcaster.Scopes = [.. info.Scopes];
+                SaveSettings();
+            }
+            if (MissingScopesMessage is { } message) _log.Warn("Kick", message);
+        }
+        catch (Exception ex) when (ex is KickApiException or HttpRequestException or JsonException or TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            _log.Debug("Kick", $"Could not check the sign-in's scopes: {ex.Message}");
         }
     }
 
@@ -438,6 +541,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         }
         if (_sevenTv is not null) await _sevenTv.StopAsync().ConfigureAwait(false);
         await _realtime.StopAsync().ConfigureAwait(false);
+        if (wasConnected) RaiseSharedEventsChanged();
         return wasConnected;
     }
 
@@ -555,6 +659,133 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         return results.FirstOrDefault(c => string.Equals(c.Name, category, StringComparison.OrdinalIgnoreCase)) ?? results.FirstOrDefault();
     }
 
+    /// <summary>Replaces the channel's tags with a comma-separated list (empty clears them).</summary>
+    public async Task<IReadOnlyList<string>> SetTagsAsync(string tags, CancellationToken ct = default)
+    {
+        var list = tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        await _api.SetTagsAsync(list, ct).ConfigureAwait(false);
+        _log.Info("Kick", list.Length == 0 ? "Stream tags cleared" : $"Stream tags set to {string.Join(", ", list)}");
+        return list;
+    }
+
+    /// <summary>
+    /// A channel (the broadcaster's own when <paramref name="user"/> is empty, else a name, slug or user id) as action
+    /// arguments prefixed with <paramref name="prefix"/>. Subscriber counts are only filled for the own channel.
+    /// </summary>
+    public async Task<Dictionary<string, object?>> GetChannelInfoAsync(string user, string prefix = "channel", CancellationToken ct = default)
+    {
+        user = user.Trim().TrimStart('@');
+        var own = user.Length == 0 || string.Equals(user, Settings.ChannelSlug, StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(user, Settings.Broadcaster.UserName, StringComparison.OrdinalIgnoreCase)
+                  || user == KickArgs.Id(Settings.Broadcaster.UserId);
+        KickChannel? channel;
+        if (own) channel = await RefreshChannelAsync(ct).ConfigureAwait(false);
+        else if (long.TryParse(user, NumberStyles.Integer, CultureInfo.InvariantCulture, out var numeric) && numeric > 0)
+            channel = await _api.GetChannelByIdAsync(numeric, ct).ConfigureAwait(false);
+        else channel = await _api.GetChannelAsync(user, ct).ConfigureAwait(false);
+        if (channel is null) throw new KickApiException($"Kick has no channel '{user}'");
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            [prefix + "Slug"] = channel.Slug,
+            [prefix + "UserId"] = KickArgs.Id(channel.BroadcasterUserId),
+            [prefix + "Title"] = channel.Title,
+            [prefix + "Description"] = channel.Description,
+            [prefix + "Category"] = channel.Category?.Name ?? "",
+            [prefix + "CategoryId"] = channel.Category is { Id: > 0 } c ? KickArgs.Id(c.Id) : "",
+            [prefix + "IsLive"] = channel.IsLive,
+            [prefix + "ViewerCount"] = channel.ViewerCount,
+            [prefix + "StartedAt"] = channel.StartTime?.LocalDateTime ?? default(DateTime),
+            [prefix + "Language"] = channel.Language,
+            [prefix + "IsMature"] = channel.IsMature,
+            [prefix + "Tags"] = string.Join(", ", channel.Tags),
+            [prefix + "BannerPicture"] = channel.BannerPicture,
+            [prefix + "Url"] = channel.Slug.Length > 0 ? "https://kick.com/" + channel.Slug : "",
+            [prefix + "SubscriberCount"] = own ? channel.ActiveSubscribers : 0,
+            [prefix + "GiftedSubscriberCount"] = own ? channel.ActiveGiftedSubscribers : 0,
+            [prefix + "PaidSubscriberCount"] = own ? Math.Max(channel.ActiveSubscribers - channel.ActiveGiftedSubscribers, 0) : 0,
+            [prefix + "CanceledSubscriberCount"] = own ? channel.CanceledSubscribers : 0,
+        };
+    }
+
+    /// <summary>
+    /// Whether a user (name, slug or id) is live right now, with the stream's details, as action arguments prefixed with
+    /// <paramref name="prefix"/> (GET /public/v1/users/livestreams).
+    /// </summary>
+    public async Task<Dictionary<string, object?>> GetLiveStatusAsync(string user, string prefix = "live", CancellationToken ct = default)
+    {
+        var id = await ResolveUserIdAsync(user, ct).ConfigureAwait(false);
+        var stream = (await _api.GetLivestreamsForUsersAsync([id], ct).ConfigureAwait(false)).FirstOrDefault(l => l.BroadcasterUserId == id);
+        var args = LivestreamArgs(stream, prefix);
+        args[prefix + "UserId"] = KickArgs.Id(id);
+        if (stream is null) args[prefix + "UserName"] = user.Trim().TrimStart('@');
+        return args;
+    }
+
+    internal static Dictionary<string, object?> LivestreamArgs(KickLivestream? l, string prefix) => new(StringComparer.OrdinalIgnoreCase)
+    {
+        [prefix + "IsLive"] = l is not null,
+        [prefix + "UserName"] = l?.UserName ?? "",
+        [prefix + "UserId"] = l is null ? "" : KickArgs.Id(l.BroadcasterUserId),
+        [prefix + "Slug"] = l?.Slug ?? "",
+        [prefix + "Url"] = l is { Slug.Length: > 0 } ? "https://kick.com/" + l.Slug : "",
+        [prefix + "ProfilePicture"] = l?.ProfilePicture ?? "",
+        [prefix + "Title"] = l?.Title ?? "",
+        [prefix + "Category"] = l?.Category?.Name ?? "",
+        [prefix + "CategoryId"] = l?.Category is { Id: > 0 } c ? KickArgs.Id(c.Id) : "",
+        [prefix + "ViewerCount"] = l?.ViewerCount ?? 0,
+        [prefix + "StartedAt"] = l?.StartedAt?.LocalDateTime ?? default(DateTime),
+        [prefix + "Language"] = l?.Language ?? "",
+        [prefix + "IsMature"] = l?.IsMature ?? false,
+        [prefix + "Tags"] = l is null ? "" : string.Join(", ", l.Tags),
+        [prefix + "Thumbnail"] = l?.Thumbnail ?? "",
+    };
+
+    /// <summary>
+    /// Live streams in a category (name or id) and/or language, the most watched first among the ones Kick returns
+    /// (GET /public/v2/livestreams, up to 100).
+    /// </summary>
+    public async Task<IReadOnlyList<KickLivestream>> GetLivestreamsAsync(string category, string language, int count, CancellationToken ct = default)
+    {
+        long? categoryId = null;
+        if (category.Trim().Length > 0)
+            categoryId = (await FindCategoryAsync(category, ct).ConfigureAwait(false) ?? throw new KickApiException($"No Kick category matches '{category}'")).Id;
+        var (items, _) = await _api.GetLivestreamsAsync(categoryId, language, 100, null, ct).ConfigureAwait(false);
+        return items.OrderByDescending(l => l.ViewerCount).Take(Math.Clamp(count, 1, 100)).ToArray();
+    }
+
+    // ---- KICKs ----
+
+    /// <summary>The KICKs leaderboard of the broadcaster's channel (<c>kicks:read</c>).</summary>
+    public Task<KickLeaderboard> GetKicksLeaderboardAsync(int top, CancellationToken ct = default) => _api.GetKicksLeaderboardAsync(top, ct);
+
+    // ---- ads ----
+
+    /// <summary>Starts an ad break of 7 to 90 seconds (<c>ads:write</c>).</summary>
+    public async Task<KickAdBreak> RunAdBreakAsync(int seconds, CancellationToken ct = default)
+    {
+        var result = await _api.CreateAdBreakAsync(seconds, Guid.NewGuid(), ct).ConfigureAwait(false);
+        _log.Info("Kick", $"Ad break of {Math.Clamp(seconds, KickApiClient.MinAdBreakSeconds, KickApiClient.MaxAdBreakSeconds)} s started ({result.RemainingAdBreaks} left)");
+        return result;
+    }
+
+    public Task<KickAdStatus> GetAdStatusAsync(CancellationToken ct = default) => _api.GetAdStatusAsync(ct);
+
+    public async Task EnrollInAdsAsync(CancellationToken ct = default)
+    {
+        await _api.EnrollInAdsAsync(ct).ConfigureAwait(false);
+        _log.Info("Kick", "Channel enrolled in Kick ads");
+    }
+
+    // ---- stream key ----
+
+    /// <summary>The broadcaster's ingest address and stream key (<c>streamkey:read</c>); never logged.</summary>
+    public async Task<KickStreamCredentials> GetStreamCredentialsAsync(CancellationToken ct = default) =>
+        await _api.GetStreamCredentialsAsync(ct).ConfigureAwait(false)
+        ?? throw new KickApiException(Settings.Broadcaster.Scopes.Contains(KickScopes.StreamKeyRead)
+            ? "Kick did not return a stream key for this channel."
+            : "Sign in to Kick again to let Cuebot read your stream key.");
+
     // ---- moderation ----
 
     /// <summary>Bans <paramref name="user"/> (name or numeric id) permanently.</summary>
@@ -635,6 +866,9 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         ["broadcasterTitle"] = _channel?.Title ?? "",
         ["broadcasterCategory"] = _channel?.Category?.Name ?? "",
         ["broadcasterViewerCount"] = _channel?.ViewerCount ?? 0,
+        ["broadcasterSubscriberCount"] = _channel?.ActiveSubscribers ?? 0,
+        ["broadcasterGiftedSubscriberCount"] = _channel?.ActiveGiftedSubscribers ?? 0,
+        ["broadcasterTags"] = _channel is null ? "" : string.Join(", ", _channel.Tags),
         ["botUser"] = Settings.Bot.UserName,
         ["botUserId"] = Settings.Bot.UserId > 0 ? KickArgs.Id(Settings.Bot.UserId) : "",
     };

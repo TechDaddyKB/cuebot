@@ -14,6 +14,9 @@ internal interface IKickTokenSource
 
     /// <summary>Called after a 401 with the token Kick rejected. Returns true when a newer token is available.</summary>
     Task<bool> TryRefreshAsync(KickAccount account, string rejectedToken, CancellationToken ct);
+
+    /// <summary>An app access token (client credentials) for public data; <paramref name="renew"/> forces a new one.</summary>
+    Task<string> GetAppTokenAsync(bool renew, CancellationToken ct);
 }
 
 /// <summary>Owns the tokens stored in <see cref="KickSettings"/>: storing, refreshing (single-flight per account), clearing.</summary>
@@ -57,6 +60,29 @@ internal sealed class KickTokenManager(JsonFile<KickSettings> settings, KickAuth
         await TryRefreshAsync(account, t.AccessToken, ct).ConfigureAwait(false);
         if (t.AccessToken.Length == 0) throw new KickApiException("Kick sign-in has expired. Please sign in again.", 401);
         return t.AccessToken;
+    }
+
+    private string _appToken = "";
+    private DateTimeOffset _appTokenExpires;
+    private string _appTokenClient = "";
+
+    public async Task<string> GetAppTokenAsync(bool renew, CancellationToken ct)
+    {
+        var app = _app();
+        if (app.ClientId.Length == 0 || app.ClientSecret.Length == 0)
+            throw new KickApiException("Kick's public data needs a Kick app (Client ID and Client Secret) or a signed-in account.", 401);
+        await _refreshGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (!renew && _appToken.Length > 0 && _appTokenClient == app.ClientId && _appTokenExpires - RefreshMargin > time.GetUtcNow()) return _appToken;
+            var tokens = await auth.GetAppTokenAsync(app.ClientId, app.ClientSecret, ct).ConfigureAwait(false);
+            (_appToken, _appTokenExpires, _appTokenClient) = (tokens.AccessToken, tokens.ExpiresAt, app.ClientId);
+            return _appToken;
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
     }
 
     public async Task<bool> TryRefreshAsync(KickAccount account, string rejectedToken, CancellationToken ct)

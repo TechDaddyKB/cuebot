@@ -245,7 +245,11 @@ Every step type and trigger type declares a level. A test fails when a registere
   system ffmpeg instead.
 
 ## 9. Privacy
-- Stored on the relay: nothing per streamer, mod or webhook.
+- Stored on the relay: nothing per streamer, mod or webhook, except for Kick events of streamers on Cuebot's built-in
+  Kick app (November 2026, `portal/RELAY.md` "Kick events"): one record per Kick broadcaster, "Kick user id → relay
+  ID", kept 30 days after Cuebot last confirmed it (on every connection) and removed on sign-out. The Kick token Cuebot
+  sends to prove the account is checked with Kick and not kept. Kick event bodies are readable by the Worker for the
+  one request, like other webhooks.
 - Readable by the relay: nothing of the content (end-to-end encrypted), except webhook bodies for the duration of one
   request in memory.
 - Unavoidable: IP addresses reach Cloudflare in transit (personal data under GDPR); Cloudflare processes them under

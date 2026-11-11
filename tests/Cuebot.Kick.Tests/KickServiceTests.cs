@@ -54,7 +54,12 @@ public sealed class KickServiceTests : IAsyncLifetime
         Directory.Delete(_dir, recursive: true);
     }
 
-    private HttpResponseMessage Respond(RecordedRequest r) => (r.Uri.Host, r.Path) switch
+    /// <summary>Answers a test adds for requests it cares about (null: the defaults below).</summary>
+    private Func<RecordedRequest, HttpResponseMessage?>? _extra;
+
+    private HttpResponseMessage Respond(RecordedRequest r) => _extra?.Invoke(r) ?? Defaults(r);
+
+    private HttpResponseMessage Defaults(RecordedRequest r) => (r.Uri.Host, r.Path) switch
     {
         ("id.test", "/oauth/token") => FakeHttpHandler.Json(
             """{"access_token":"AT-1","token_type":"Bearer","refresh_token":"RT-1","expires_in":7200,"scope":"user:read chat:write"}"""),
@@ -168,6 +173,114 @@ public sealed class KickServiceTests : IAsyncLifetime
         _settings.Value.ClientSecret = "own-secret";
         Assert.False(service.App.IsBuiltIn);
         Assert.Equal("http://localhost:50001/callback", service.RedirectUri);
+    }
+
+    private KickService BuiltInService() => new(_settings, new HttpClient(_http), new EventBus(_log), _log, Endpoints, TestTimings.Fast,
+        TimeProvider.System, _pusher.Create, _ => _receiver, builtInApp: new AppCredentials("builtin-cid", "builtin-secret", true));
+
+    [Fact]
+    public async Task Built_in_app_routes_events_through_the_shared_intake_and_leaves_chat_out()
+    {
+        _settings.Value.ClientId = "";
+        _settings.Value.ClientSecret = "";
+        _settings.Value.UseRealtimeChat = false;
+        _extra = r => r.Path == "/public/v1/events/subscriptions" && r.Method == HttpMethod.Get
+            ? FakeHttpHandler.Json("""{"data":[{"id":"S1","event":"channel.followed","version":1,"method":"webhook"}]}""")
+            : r.Path == "/public/v1/events/subscriptions" ? FakeHttpHandler.Json("""{"data":[]}""") : null;
+        await using var service = BuiltInService();
+        var changes = 0;
+        service.SharedEventsChanged += () => changes++;
+        SignedIn();
+
+        Assert.False(service.WantsSharedEvents);
+        Assert.Null(await service.GetSharedEventsTokenAsync(default));
+        await service.ConnectAsync();
+
+        Assert.True(service.WantsSharedEvents);
+        Assert.Equal(1, changes);
+        Assert.Equal("AT-1", await service.GetSharedEventsTokenAsync(default));
+        Assert.Equal(100, service.SharedEventsUserId);
+        var subscribed = Body(_http.Requests.Single(r => r.Path == "/public/v1/events/subscriptions" && r.Method == HttpMethod.Post))
+            .GetProperty("events").EnumerateArray().Select(e => e.GetProperty("name").GetString()).ToArray();
+        Assert.DoesNotContain("chat.message.sent", subscribed);   // Kick allows unverified apps 1,000 chat subscriptions
+        Assert.DoesNotContain("channel.followed", subscribed);   // already there
+        Assert.Contains("kicks.gifted", subscribed);
+
+        service.SetSharedEventsStatus("Kick events arrive through Cuebot's relay");
+        Assert.Equal("Kick events arrive through Cuebot's relay", service.SharedEventsStatus);
+
+        // Signing out removes the app's subscriptions for the channel before revoking, and stops wanting events.
+        await service.SignOutAsync(KickAccount.Broadcaster);
+        var delete = _http.Requests.Single(r => r.Method == HttpMethod.Delete && r.Path == "/public/v1/events/subscriptions");
+        Assert.Equal("?id=S1", delete.Query);
+        Assert.True(_http.Requests.ToList().FindIndex(r => r.Method == HttpMethod.Delete) < _http.Requests.ToList().FindIndex(r => r.Path == "/oauth/revoke"));
+        Assert.False(service.WantsSharedEvents);
+        Assert.Equal(2, changes);
+    }
+
+    [Fact]
+    public async Task Shared_events_stay_off_for_an_own_app_or_when_switched_off()
+    {
+        SignedIn();
+        await _service.ConnectAsync();
+        Assert.False(_service.WantsSharedEvents);   // the user's own app (cid) sends events to its own address
+
+        _settings.Value.ClientId = "";
+        _settings.Value.ClientSecret = "";
+        _settings.Value.UseSharedEvents = false;
+        await using var service = BuiltInService();
+        await service.ConnectAsync();
+        Assert.False(service.WantsSharedEvents);
+        Assert.DoesNotContain(_http.Requests, r => r.Path == "/public/v1/events/subscriptions");
+    }
+
+    [Fact]
+    public async Task Connecting_asks_kick_which_scopes_the_sign_in_has()
+    {
+        _extra = r => r.Path == "/oauth/token/introspect"
+            ? FakeHttpHandler.Json("""{"data":{"active":true,"client_id":"cid","token_type":"user","scope":"user:read channel:read chat:write channel:rewards:read"}}""")
+            : null;
+        SignedIn();
+        await _service.ConnectAsync();
+
+        Assert.Equal(["user:read", "channel:read", "chat:write", "channel:rewards:read"], _settings.Value.Broadcaster.Scopes);
+        Assert.Contains(Auth.KickScopes.AdsWrite, _service.MissingScopes);
+        Assert.Contains("run and check ad breaks", _service.MissingScopesMessage);
+        Assert.Contains("read your stream key", _service.MissingScopesMessage);
+    }
+
+    [Fact]
+    public async Task Channel_info_tags_live_status_and_leaderboard()
+    {
+        _extra = r => (r.Path, r.Method.Method) switch
+        {
+            ("/public/v1/users/livestreams", _) => FakeHttpHandler.Json("""
+                {"data":[{"broadcaster_user":{"id":666,"username":"Spammer","profile_picture":""},"category":{"id":15,"name":"Just Chatting","thumbnail":""},
+                  "channel":{"slug":"spammer"},"title":"Live now","viewer_count":5,"started_at":"2026-11-10T20:00:00Z","tags":[],"language_code":"en"}]}
+                """),
+            ("/public/v1/kicks/leaderboard", _) => FakeHttpHandler.Json("""{"data":{"week":[{"rank":1,"user_id":7,"username":"Gifter","gifted_amount":500}],"month":[],"lifetime":[]}}"""),
+            _ => null,
+        };
+        SignedIn();
+        await _service.ConnectAsync();
+
+        var own = await _service.GetChannelInfoAsync("");
+        Assert.Equal("cuebotdev", own["channelSlug"]);
+        Assert.Equal("https://kick.com/cuebotdev", own["channelUrl"]);
+
+        var tags = await _service.SetTagsAsync("chill, English ,english,");
+        Assert.Equal(["chill", "English"], tags);
+        Assert.Equal("""{"custom_tags":["chill","English"]}""", _http.Requests.Last(r => r.Method == HttpMethod.Patch).Body);
+
+        var live = await _service.GetLiveStatusAsync("666");
+        Assert.Equal(true, live["liveIsLive"]);
+        Assert.Equal("Live now", live["liveTitle"]);
+        Assert.Equal("https://kick.com/spammer", live["liveUrl"]);
+
+        var board = await _service.GetKicksLeaderboardAsync(10);
+        var args = new Dictionary<string, object?>();
+        SubActions.GetKicksLeaderboardSubAction.Write(args, board.Week);
+        Assert.Equal(("Gifter", 500L, "Gifter (500)"), (args["leaderboard1User"], args["leaderboard1Amount"], args["leaderboardList"]));
     }
 
     [Fact]
@@ -426,6 +539,8 @@ public sealed class KickServiceTests : IAsyncLifetime
             "kick.setRewardColor", "kick.setRewardUserInput", "kick.setRewardSkipQueue",
             "kick.getRewardCounter", "kick.resetRewardCounter", "kick.resetRewardUserCounters", "kick.setRewardGroupEnabled",
             "kick.setRewardGroupPaused", "kick.configureRewards",
+            "kick.setTags", "kick.getChannelInfo", "kick.getSubscriberCount", "kick.getLiveStatus", "kick.getLivestreams",
+            "kick.getKicksLeaderboard", "kick.runAdBreak", "kick.getAdStatus",
         ];
         Assert.Equal(expected.Order(), handlers.Select(h => h.TypeId).Order());
         Assert.All(handlers, h => Assert.Equal("Kick", h.Category));

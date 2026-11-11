@@ -255,6 +255,86 @@ public sealed class PortalRelayClientTests : IAsyncDisposable
         Assert.NotNull(third);
     }
 
+    // ---- Kick events through the shared intake (built-in Kick app) ----
+
+    private bool _kickWanted = true;
+
+    private void KickRouting(string? token = "kick-user-token")
+    {
+        _directory.Enabled = false;
+        _client.KickRouteWanted = () => _kickWanted;
+        _client.KickRouteToken = _ => Task.FromResult(_kickWanted ? token : null);
+    }
+
+    [Fact]
+    public async Task Registers_the_Kick_route_on_every_connection_and_removes_it_when_no_longer_wanted()
+    {
+        KickRouting();
+        var statuses = new List<string>();
+        _client.KickRouteStatusChanged += statuses.Add;
+        await _client.StartAsync();   // Kick events alone keep the relay up
+        var relay = await ConnectAfterStartAsync();
+
+        var route = await relay.NextJsonAsync();
+        Assert.Equal("kick-route", (string?)route["type"]);
+        Assert.Equal("kick-user-token", (string?)route["token"]);
+        relay.Text(new { type = "kick-route", rid = (int)route["rid"]!, ok = true, userId = 4242 });
+        await Until(() => _client.KickRouteStatus == "Kick events arrive through Cuebot's relay");
+
+        _kickWanted = false;
+        _directory.SharedWebhooks = true;   // keeps the connection, so the route can be removed
+        await _client.RefreshKickRouteAsync();
+        var unroute = await relay.NextJsonAsync();
+        Assert.Equal("kick-unroute", (string?)unroute["type"]);
+        Assert.Equal(4242, (long)unroute["userId"]!);
+        Assert.DoesNotContain(statuses, s => s.Contains("token", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Reports_a_refused_Kick_route()
+    {
+        KickRouting();
+        await _client.StartAsync();
+        var relay = await ConnectAfterStartAsync();
+        var route = await relay.NextJsonAsync();
+        relay.Text(new { type = "kick-route", rid = (int)route["rid"]!, ok = false, error = "The token is not for Cuebot's Kick app" });
+        await Until(() => _client.KickRouteStatus.Contains("not for Cuebot's Kick app", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Kick_events_get_through_without_shared_webhooks_but_other_services_do_not()
+    {
+        KickRouting();
+        var received = Channel.CreateUnbounded<WebhookDelivery>();
+        _client.WebhookSink = (d, ct) => received.Writer.WriteAsync(d, ct).AsTask();
+        await _client.StartAsync();
+        var relay = await ConnectAfterStartAsync();
+        await relay.NextJsonAsync();   // the route request
+
+        byte[] Delivery(string id, string service) => PortalSeal.Seal(_directory.Identity.PublicKey, JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            type = "delivery", id, service, path = "", method = "POST", query = "", headers = new Dictionary<string, string>(),
+            bodyBase64 = Convert.ToBase64String("{}"u8.ToArray()), receivedAt = "2026-11-11T12:00:00Z",
+        }));
+        relay.Binary(PortalRelayClient.HookChannel, Delivery("d1", "kofi"));
+        relay.Binary(PortalRelayClient.HookChannel, Delivery("d2", "kick"));
+
+        using var timeout = new CancellationTokenSource(Wait);
+        var delivery = await received.Reader.ReadAsync(timeout.Token);
+        Assert.Equal(("d2", "kick"), (delivery.Id, delivery.Service));
+    }
+
+    /// <summary>Plays the relay's half of the challenge for a connection that StartAsync opened.</summary>
+    private async Task<FakeRelay> ConnectAfterStartAsync()
+    {
+        var relay = await NextRelayAsync();
+        relay.Text(new { type = "challenge", version = 1, nonce = PortalKeys.Base64Url(RandomNumberGenerator.GetBytes(32)) });
+        Assert.Equal("auth", (string?)(await relay.NextJsonAsync())["type"]);
+        relay.Text(new { type = "ready", version = 1, maxDevices = 20 });
+        await Until(() => _client.State == ConnectionState.Connected);
+        return relay;
+    }
+
     [Fact]
     public async Task Starts_only_when_the_portal_or_shared_webhooks_are_on()
     {

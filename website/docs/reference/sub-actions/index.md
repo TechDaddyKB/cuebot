@@ -28,7 +28,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Heart Rate](heart-rate.md) | 1 |
 | [IFTTT](ifttt.md) | 2 |
 | [JSON](json.md) | 2 |
-| [Kick](kick.md) | 34 |
+| [Kick](kick.md) | 42 |
 | [Logic](logic.md) | 10 |
 | [Lumia Stream](lumia-stream.md) | 11 |
 | [Media requests](media-requests.md) | 2 |

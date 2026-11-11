@@ -115,7 +115,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new TwitchViewModel(host.Get<TwitchService>()),
             new RumbleViewModel(host.Get<Cuebot.Rumble.RumbleService>()),
             new Cuebot.App.ViewModels.YouTube.YouTubeViewModel(host.Get<Cuebot.YouTube.YouTubeService>()),
-            new Cuebot.App.ViewModels.Kick.KickViewModel(host.Get<Cuebot.Kick.KickService>()),
+            new Cuebot.App.ViewModels.Kick.KickViewModel(host.Get<Cuebot.Kick.KickService>(), host.Get<Cuebot.Obs.ObsService>()),
             new Cuebot.App.ViewModels.Donations.DonationsViewModel(host.Get<Cuebot.Donations.DonationServices>()),
             new Cuebot.App.ViewModels.VoiceControl.VoiceControlViewModel(host.Get<Cuebot.VoiceControl.VoiceControlService>()),
             new InputPageViewModel(

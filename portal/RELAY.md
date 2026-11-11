@@ -82,6 +82,28 @@ Sealing: `0x01 ‖ ephemeral public key (65) ‖ AES-256-GCM ciphertext ‖ tag`
 between a fresh ephemeral key and the identity key, salt SHA-256(`"cuebot-seal-v1"` ‖ ephemeral ‖ identity), info
 `"seal"`, nonce zero. `PortalSeal` and `IdentityKey.OpenSealed` in .NET, `seal` in `src/crypto.ts`.
 
+## Kick events
+
+Kick sends every webhook of an app to one address, so the events of all streamers on Cuebot's built-in Kick app arrive
+at `hooks.<domain>/kick` (`/h/kick` on other hosts), served by `worker/kick.ts`:
+
+| Direction | Message | Meaning |
+| --- | --- | --- |
+| Cuebot → relay | `{"type":"kick-route","rid":<n>,"token":"<Kick user access token>"}` | Route this broadcaster's Kick events here. The Worker checks the token with Kick (`POST id.kick.com/oauth/token/introspect`: active, the built-in app's client id, a user token; then `GET api.kick.com/public/v1/users` for the user id) and does not keep it. |
+| Cuebot → relay | `{"type":"kick-unroute","rid":<n>,"userId":<n>}` | Remove the route, only when it points to this relay ID. |
+| relay → Cuebot | `{"type":"kick-route" or "kick-unroute","rid":<n>,"ok":true,"userId":<n>}` or `{…,"ok":false,"error":"…"}` | The answer. |
+
+At most 6 route requests a minute per relay ID. A POST to `/kick` is checked for age (its
+`Kick-Event-Message-Timestamp` within 10 minutes) and Kick's signature (RSA PKCS#1 v1.5 SHA-256 over
+`<message id>.<timestamp>.<raw body>`, key from `api.kick.com/public/v1/public-key`, cached an hour and fetched again
+after a failure). The Worker reads `broadcaster.user_id` from the body, looks up the route and sends the delivery
+(`service` `kick`, Kick's headers, raw body) sealed on channel 0, within the relay's webhook limits. Kick always gets an
+empty 200: it unsubscribes an app whose address keeps failing. Only `POST` is accepted (`405` otherwise).
+
+The built-in app's client ID is the Worker secret `KICK_CLIENT_ID` (`npx wrangler secret put KICK_CLIENT_ID`); without
+it no routes are accepted. In Kick's developer settings the built-in app's webhook URL is
+`https://hooks.techdaddydigital.com/kick`.
+
 ## Limits (per relay ID, in memory)
 
 20 devices; 60 device connections a minute; 50 frames a second per device (bursts of 200); 64 KB per device frame,
@@ -90,7 +112,10 @@ There is no per-address limit: the Worker never reads the sender's IP address.
 
 ## What is kept
 
-Nothing is written to Durable Object storage, KV, R2 or D1. Workers logs, traces, Logpush and tail consumers are off
+Nothing is written to Durable Object storage, KV, R2 or D1, except one `KickRoute` Durable Object per Kick broadcaster
+on the built-in app: its name is `kick:<Kick user id>` and it stores the relay ID that Kick events go to and when that
+was last confirmed. It is forgotten 30 days after the last confirmation (Cuebot confirms on every connection) and
+removed when the streamer signs out of Kick. Workers logs, traces, Logpush and tail consumers are off
 in `wrangler.jsonc`. The sockets' hibernation attachments hold only: the challenge nonce while Cuebot signs in; then
 the identity public key and the route secret's hash; and each device's channel number. Cloudflare itself still sees IP
 addresses in transit (docs/MOD_PORTAL_PLAN.md, section 9).

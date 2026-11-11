@@ -20,12 +20,17 @@ export const LIMITS = {
 	connectsPerMinute: 60,
 	/** Webhooks per minute. */
 	hooksPerMinute: 300,
+	/** Kick route requests per minute (each one asks Kick twice). */
+	kickRoutesPerMinute: 6,
 	maxHookBody: 1024 * 1024,
 	/** Bytes per UTC day through the relay, both directions. */
 	dailyBytes: 4 * 1024 * 1024 * 1024,
 	/** Cuebot must answer the challenge within this. */
 	authTimeoutMs: 15_000,
 } as const;
+
+/** A Kick route is forgotten this long after the last refresh. */
+export const KICK_ROUTE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Close codes (portal/RELAY.md). */
 export const CLOSE = {

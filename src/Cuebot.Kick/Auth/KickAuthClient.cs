@@ -6,6 +6,12 @@ namespace Cuebot.Kick.Auth;
 /// <summary>Tokens returned by id.kick.com.</summary>
 internal sealed record KickTokens(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt, IReadOnlyList<string> Scopes);
 
+/// <summary>What Kick's token introspection says about an access token.</summary>
+internal sealed record KickTokenInfo(bool Active, string ClientId, string TokenType, IReadOnlyList<string> Scopes, DateTimeOffset? ExpiresAt)
+{
+    public static KickTokenInfo Inactive { get; } = new(false, "", "", [], null);
+}
+
 /// <summary>
 /// Kick's OAuth 2.1 endpoints on id.kick.com: authorize URL (authorization code + PKCE S256), code exchange,
 /// refresh and revoke. Kick requires the app's client secret on the token endpoint.
@@ -47,7 +53,9 @@ internal sealed class KickAuthClient(HttpClient http, KickEndpoints endpoints, T
     {
         try
         {
-            var url = new Uri(endpoints.Id, "oauth/revoke?" + Form(("token", token), ("token_hint_type", hint)));
+            // Kick's OpenAPI spec (and RFC 7009) name the hint token_type_hint; its prose docs say token_hint_type. The hint
+            // is optional, so both spellings are sent.
+            var url = new Uri(endpoints.Id, "oauth/revoke?" + Form(("token", token), ("token_type_hint", hint), ("token_hint_type", hint)));
             using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = new FormUrlEncodedContent([]) };
             using var response = await http.SendAsync(request, ct).ConfigureAwait(false);
             return response.IsSuccessStatusCode;
@@ -56,6 +64,36 @@ internal sealed class KickAuthClient(HttpClient http, KickEndpoints endpoints, T
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// An app access token (client credentials grant) for Kick's public data when no account is signed in. It has no
+    /// refresh token and no scopes.
+    /// </summary>
+    public Task<KickTokens> GetAppTokenAsync(string clientId, string clientSecret, CancellationToken ct) =>
+        TokenRequestAsync(ct,
+            ("grant_type", "client_credentials"),
+            ("client_id", clientId),
+            ("client_secret", clientSecret));
+
+    /// <summary>
+    /// POST /oauth/token/introspect: whether <paramref name="accessToken"/> is still valid, for which app, and which
+    /// scopes it grants (Kick moved this endpoint from /public/v1/token/introspect in January 2026).
+    /// </summary>
+    public async Task<KickTokenInfo> IntrospectAsync(string accessToken, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(endpoints.Id, "oauth/token/introspect"));
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        using var response = await http.SendAsync(request, ct).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (response.StatusCode == HttpStatusCode.Unauthorized) return KickTokenInfo.Inactive;
+        if (!response.IsSuccessStatusCode) throw new KickApiException($"Kick token check failed ({(int)response.StatusCode})", (int)response.StatusCode);
+        using var doc = JsonDocument.Parse(body);
+        var data = doc.RootElement.Prop("data");
+        if (!data.Bool("active")) return KickTokenInfo.Inactive;
+        var exp = data.Long("exp");
+        return new KickTokenInfo(true, data.Str("client_id"), data.Str("token_type"),
+            data.Str("scope").Split(' ', StringSplitOptions.RemoveEmptyEntries), exp > 0 ? DateTimeOffset.FromUnixTimeSeconds(exp) : null);
     }
 
     private async Task<KickTokens> TokenRequestAsync(CancellationToken ct, params (string Key, string Value)[] fields)

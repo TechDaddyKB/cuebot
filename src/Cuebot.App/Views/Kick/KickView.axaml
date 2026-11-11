@@ -36,6 +36,8 @@
             <TextBlock Text="{Binding BotAccount, StringFormat='Bot: {0}'}" />
             <TextBlock TextWrapping="Wrap" Text="{Binding RealtimeStatus, StringFormat='Real-time chat: {0}'}" />
             <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to Kick by itself every time it starts." />
+            <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding MissingScopesMessage}" IsVisible="{Binding HasMissingScopes}"
+                       ToolTip.Tip="Kick only gives Cuebot what you allowed when you signed in. Click Sign in broadcaster (Kick app and sign-in) to allow the new things." />
             <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
@@ -48,6 +50,8 @@
             <TextBlock Text="{Binding LiveStatus, StringFormat='Stream: {0}'}" />
             <TextBlock TextWrapping="Wrap" Text="{Binding StreamTitle, StringFormat='Title: {0}'}" />
             <TextBlock Text="{Binding Category, StringFormat='Category: {0}'}" />
+            <TextBlock TextWrapping="Wrap" Text="{Binding Tags, StringFormat='Tags: {0}'}" />
+            <TextBlock Text="{Binding SubscriberCount, StringFormat='Subscribers: {0}'}" ToolTip.Tip="Active subscriptions, including gifted ones, as Kick counts them." />
             <Button Content="Refresh" Command="{Binding RefreshChannelCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Asks Kick again for your channel title, category and live status." />
             <Grid ColumnDefinitions="*,8,Auto">
               <TextBox Text="{Binding NewTitle}" PlaceholderText="New stream title" ToolTip.Tip="The title you want for your Kick stream." />
@@ -57,6 +61,12 @@
               <TextBox Text="{Binding NewCategory}" PlaceholderText="Category name or id" ToolTip.Tip="The game or category on Kick, written the way Kick names it (or its number)." />
               <Button Grid.Column="2" Content="Set category" Command="{Binding UpdateCategoryCommand}" ToolTip.Tip="Changes your Kick category right now. Viewers see it." />
             </Grid>
+            <Grid ColumnDefinitions="*,8,Auto">
+              <TextBox Text="{Binding NewTags}" PlaceholderText="Tags, separated by commas" ToolTip.Tip="Words that describe your stream, like: chill, english, cozy. Empty removes every tag." />
+              <Button Grid.Column="2" Content="Set tags" Command="{Binding UpdateTagsCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Replaces your Kick stream tags right now. Viewers see them." />
+            </Grid>
+            <Button Content="Send stream key to OBS" Command="{Binding SendStreamKeyToObsCommand}" IsVisible="{Binding HasObs}" IsEnabled="{Binding IsBroadcasterSignedIn}"
+                    ToolTip.Tip="Sets OBS to stream to your Kick channel: Cuebot reads your stream address and key from Kick and puts them into OBS's stream settings. The key is never shown. OBS must be connected and not streaming." />
           </StackPanel>
         </Border>
 
@@ -91,6 +101,24 @@
               <NumericUpDown Grid.Column="2" Value="{Binding NewRewardCost}" Minimum="1" Increment="10" FormatString="0" ToolTip.Tip="How many Kick points the reward costs." />
               <Button Grid.Column="4" Content="Create reward" Command="{Binding CreateRewardCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Adds this reward to your Kick channel so viewers can redeem it." />
             </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Ads" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Run an ad break on your Kick stream now. Kick decides how many you may run in a period. Your channel must be enrolled in Kick ads first." />
+            <Grid ColumnDefinitions="Auto,8,120,8,Auto">
+              <TextBlock VerticalAlignment="Center" Text="Length (seconds)" />
+              <NumericUpDown Grid.Column="2" Value="{Binding AdLength}" Minimum="7" Maximum="90" Increment="1" FormatString="0" ToolTip.Tip="How long the ad break lasts, from 7 to 90 seconds." />
+              <Button Grid.Column="4" Content="Run ad break" Command="{Binding RunAdCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Starts an ad break on your Kick stream right now. Your viewers see ads." />
+            </Grid>
+            <WrapPanel ItemSpacing="8" LineSpacing="8">
+              <Button Content="Check ads" Command="{Binding RefreshAdStatusCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Asks Kick how many ad breaks you have left and whether ads are on." />
+              <Button Content="Enroll in ads" Command="{Binding EnrollInAdsCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Signs your Kick channel up for Kick's ads. You only need to do this once." />
+            </WrapPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding AdStatus}" IsVisible="{Binding AdStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
         </Border>
 
@@ -142,7 +170,14 @@
               <TextBlock VerticalAlignment="Center" Text="Check channel (live, viewers, title) every (seconds)" />
               <NumericUpDown Grid.Column="2" Value="{Binding PollSeconds}" Minimum="15" Maximum="3600" Increment="5" FormatString="0" ToolTip.Tip="How often, in seconds, Cuebot asks Kick if you are live, how many are watching and what your title is." />
             </Grid>
-            <CheckBox Content="Register webhook events for the Cuebot relay (only with a deployed relay)" IsChecked="{Binding UseWebhookRelay}" ToolTip.Tip="Advanced. Only tick this if you run a Cuebot relay (a small web service that passes Kick events to Cuebot). Otherwise leave it off." />
+            <StackPanel Spacing="8" IsVisible="{Binding UsesBuiltInApp}">
+              <CheckBox Content="Receive Kick's official events through Cuebot's relay (recommended)" IsChecked="{Binding UseSharedEvents}"
+                        ToolTip.Tip="Ticked: follows, subs, gifts, KICKs, reward redemptions, bans and going live come straight from Kick, through Cuebot's event service at hooks.techdaddydigital.com. Kick sends them there for every Cuebot user, and the service passes yours only to your Cuebot, encrypted. Nothing is stored except which Cuebot your Kick account belongs to." />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SharedEventsStatus, StringFormat='Official events: {0}'}" />
+              <CheckBox Content="Also receive chat that way" IsChecked="{Binding WebhookChat}"
+                        ToolTip.Tip="Real-time chat already covers chat. Kick lets Cuebot's app receive chat this way for only 1,000 channels in total until Kick verifies it, so leave this off unless real-time chat does not work for you." />
+            </StackPanel>
+            <CheckBox Content="Register webhook events for my own relay (with my own Kick app)" IsChecked="{Binding UseWebhookRelay}" IsVisible="{Binding !UsesBuiltInApp}" ToolTip.Tip="Advanced. Only tick this if you use your own Kick app and run a Cuebot relay (or Cuebot's shared webhooks) and pasted its Kick address into your Kick app's webhook setting." />
             <CheckBox Content="Watch this channel's 7TV emote set in real time (7TV EventAPI, for the 7TV emote triggers)" IsChecked="{Binding UseSevenTvEvents}" ToolTip.Tip="Ticked: Cuebot notices right away when emotes are added to or removed from your 7TV emote set, so the 7TV emote triggers can start your actions." />
             <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SevenTvStatus, StringFormat='7TV: {0}'}" />
           </StackPanel>

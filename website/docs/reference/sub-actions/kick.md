@@ -113,6 +113,150 @@ Deletes one message from your Kick chat. Good for removing spam from a command o
 
 <small>Type id: `kick.deleteMessage`</small>
 
+## Find live streams (livestreamCount, livestream1UserName, livestreamNames...)
+
+Finds Kick streams that are live right now, the most watched first. Handy for picking someone to host after your stream.
+
+| Setting | What to put in |
+| --- | --- |
+| **Category** | Only streams in this category: its name, like "Just Chatting", or its number. Leave empty for every category. |
+| **Language code** | Only streams in this language, as a short code like en or es. Leave empty for every language. |
+| **How many** | How many streams to get, from 1 to 100. Starts as: `5`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%livestreamCount%` | How many streams were found |
+| `%livestreamNames%` | Their names, separated by commas |
+| `%livestream1IsLive%` | True if the first one is live right now |
+| `%livestream1UserName%` | The first one's name |
+| `%livestream1UserId%` | The first one's Kick ID number |
+| `%livestream1Slug%` | The first one's channel's web name |
+| `%livestream1Url%` | Web link to the first one's channel |
+| `%livestream1Title%` | The first one's stream title |
+| `%livestream1Category%` | What they play |
+| `%livestream1ViewerCount%` | How many people are watching |
+| `%livestream1StartedAt%` | When the stream started |
+| `%livestream1Thumbnail%` | Web link to a picture of the stream |
+
+<small>Type id: `kick.getLivestreams`</small>
+
+## Get ad status (adsOptedIn, remainingAdBreaks, maxAdBreaks...)
+
+Asks Kick about ads on your channel: whether you are enrolled, how many ad breaks are left and how the last one went.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%adsOptedIn%` | True if your channel is enrolled in Kick ads |
+| `%adsBlocked%` | True if ads cannot run right now |
+| `%autoAdsActive%` | True if Kick runs ads by itself |
+| `%remainingAdBreaks%` | How many ad breaks you have left |
+| `%maxAdBreaks%` | How many ad breaks you may run per period |
+| `%adLimitPeriodSeconds%` | How long that period is, in seconds |
+| `%lastAdBreakStatus%` | What happened to the last ad break |
+| `%lastAdBreakLength%` | How long the last ad break was, in seconds |
+| `%lastAdBreakAt%` | When the last ad break started |
+
+<small>Type id: `kick.getAdStatus`</small>
+
+## Get channel info (channelTitle, channelIsLive, channelSubscriberCount...)
+
+Reads a Kick channel, yours or someone else's, and saves its details as variables for the next steps.
+
+| Setting | What to put in |
+| --- | --- |
+| **Channel** | A Kick user name, channel name or number ID. Leave empty for your own channel. |
+| **Variable name start** | A word put in front of the variable names. With "channel" you get %channelTitle% and %channelIsLive%. Empty uses "channel". Starts as: `channel`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%channelSlug%` | The channel's web name |
+| `%channelUserId%` | The owner's Kick ID number |
+| `%channelTitle%` | The stream title |
+| `%channelDescription%` | The channel description |
+| `%channelCategory%` | What they play |
+| `%channelIsLive%` | True if they are live |
+| `%channelViewerCount%` | How many people are watching |
+| `%channelLanguage%` | The stream's language, like en |
+| `%channelIsMature%` | True if marked for adults |
+| `%channelTags%` | The stream tags, separated by commas |
+| `%channelBannerPicture%` | Web link to the channel banner |
+| `%channelUrl%` | Web link to the channel |
+| `%channelSubscriberCount%` | Your active subscribers, gifted ones included (your own channel only) |
+| `%channelGiftedSubscriberCount%` | Your active gifted subscribers (your own channel only) |
+| `%channelPaidSubscriberCount%` | Your active subscribers who paid themselves (your own channel only) |
+| `%channelCanceledSubscriberCount%` | Subscriptions that were cancelled but have not run out yet (your own channel only) |
+
+<small>Type id: `kick.getChannelInfo`</small>
+
+## Get KICKs leaderboard (leaderboardCount, leaderboard1User, leaderboard1Amount...)
+
+Reads who gifted your channel the most KICKs this week, this month or of all time. Handy for a top gifters list.
+
+| Setting | What to put in |
+| --- | --- |
+| **Period** | Which list: this week, this month or all time. Options: This week, This month, All time. Starts as: `This week`. |
+| **How many** | How many people to get, from 1 to 100. Starts as: `10`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%leaderboardCount%` | How many people are on the list |
+| `%leaderboardList%` | Everyone on the list with their amount, like "Alex (500), Sam (300)" |
+| `%leaderboard1User%` | Name of the person in first place (leaderboard2User is second, and so on) |
+| `%leaderboard1UserId%` | Their Kick ID number |
+| `%leaderboard1Amount%` | How many KICKs they gave |
+| `%leaderboard1Rank%` | Their place on the list |
+
+<small>Type id: `kick.getKicksLeaderboard`</small>
+
+## Get subscriber count (subscriberCount, giftedSubscriberCount, paidSubscriberCount)
+
+Asks Kick how many subscribers your channel has right now. Handy for a sub goal or a !subs command.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%subscriberCount%` | Active subscribers, gifted ones included |
+| `%giftedSubscriberCount%` | Active gifted subscribers |
+| `%paidSubscriberCount%` | Active subscribers who paid themselves |
+| `%canceledSubscriberCount%` | Cancelled subscriptions that have not run out yet |
+
+<small>Type id: `kick.getSubscriberCount`</small>
+
+## Is a user live? (liveIsLive, liveTitle, liveViewerCount, liveCategory...)
+
+Checks whether a Kick user is live right now and saves their stream's details. Handy for a shout-out that says what they are playing.
+
+| Setting | What to put in |
+| --- | --- |
+| **User to check** | The Kick user name, like "SomeStreamer", or their Kick number ID. Leave the default to check the person who started this action. Starts as: `%userName%`. |
+| **Variable name start** | A word put in front of the variable names. With "live" you get %liveIsLive% and %liveTitle%. Empty uses "live". Starts as: `live`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%liveIsLive%` | True if they are live right now |
+| `%liveUserName%` | Their name |
+| `%liveUserId%` | Their Kick ID number |
+| `%liveSlug%` | Their channel's web name |
+| `%liveUrl%` | Web link to their channel |
+| `%liveTitle%` | Their stream title |
+| `%liveCategory%` | What they play |
+| `%liveViewerCount%` | How many people are watching |
+| `%liveStartedAt%` | When the stream started |
+| `%liveThumbnail%` | Web link to a picture of the stream |
+
+<small>Type id: `kick.getLiveStatus`</small>
+
 ## Look up a Kick user
 
 Looks up another Kick user and saves their details as variables for the next steps. Handy for a shout-out command.
@@ -447,6 +591,24 @@ Chooses whether viewers must type a text when they redeem a Kick reward. Only wo
 
 <small>Type id: `kick.setRewardUserInput`</small>
 
+## Run ad break (adBreakId, remainingAdBreaks)
+
+Starts an ad break on your Kick stream right now. Kick decides how many ad breaks you may run in a period.
+
+| Setting | What to put in |
+| --- | --- |
+| **Length (seconds)** | How long the ad break lasts, from 7 to 90 seconds. Starts as: `30`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%adBreakId%` | The ad break's ID |
+| `%adLength%` | How long it lasts, in seconds |
+| `%remainingAdBreaks%` | How many ad breaks you have left in this period |
+
+<small>Type id: `kick.runAdBreak`</small>
+
 ## Send message to channel
 
 Writes a message in your Kick chat. You can use variables like %user% in the text.
@@ -482,6 +644,23 @@ Changes your Kick stream category (the game or topic).
 | `%category.success%` | True when the category was changed |
 
 <small>Type id: `kick.setCategory`</small>
+
+## Set channel tags (tags)
+
+Changes the tags of your Kick stream, the short words viewers see under it, like "chill" or "english".
+
+| Setting | What to put in |
+| --- | --- |
+| **Tags** | The tags, separated by commas, like "chill, english, cozy". Leave empty to remove every tag. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%tags%` | The tags that were set |
+| `%tagsSuccess%` | True when Kick took the tags |
+
+<small>Type id: `kick.setTags`</small>
 
 ## Set channel title
 

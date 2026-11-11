@@ -159,7 +159,8 @@ public sealed class ApiClientTests
 
         Assert.Equal("?id=1&id=2", http.Requests[0].Query);
         Assert.Equal(new KickUser(1, "A", "p1"), users[0]);
-        Assert.Equal("?q=just%20chat", http.Requests[1].Query);
+        Assert.Equal("/public/v2/categories", http.Requests[1].Path);
+        Assert.Equal("?limit=1000", http.Requests[1].Query);
         Assert.Equal("Just Chatting", Assert.Single(categories).Name);
     }
 
@@ -250,11 +251,173 @@ public sealed class ApiClientTests
     [InlineData(" @someone ", "someone")]
     public void Slugs_are_normalized(string input, string expected) => Assert.Equal(expected, KickWebClient.NormalizeSlug(input));
 
+    // ---- endpoints added from the KickDevDocs review (2026-11) ----
+
+    [Fact]
+    public async Task Category_search_reads_every_v2_page_once_and_ranks_names()
+    {
+        var (api, http) = Create(r => r.Query.Contains("cursor=")
+            ? FakeHttpHandler.Json("""{"data":[{"id":3,"name":"Rust","tags":[],"thumbnail":""},{"id":4,"name":"Just Chatting","tags":["IRL"],"thumbnail":"t"}],"pagination":{"next_cursor":""}}""")
+            : FakeHttpHandler.Json("""{"data":[{"id":1,"name":"Fortnite","tags":[],"thumbnail":""},{"id":2,"name":"Chatting Games","tags":[],"thumbnail":""}],"pagination":{"next_cursor":"c2"}}"""));
+
+        var first = await api.SearchCategoriesAsync("chatting", default);
+        var again = await api.SearchCategoriesAsync("rust", default);
+
+        Assert.Equal(["?limit=1000", "?limit=1000&cursor=c2"], http.Requests.Select(r => r.Query));   // read once, then cached
+        Assert.Equal(["Chatting Games", "Just Chatting"], first.Select(c => c.Name));   // starts-with before contains
+        Assert.Equal(new KickCategory(3, "Rust", ""), Assert.Single(again));
+        Assert.Equal(["Just Chatting"], KickApiClient.RankCategories(first, "JUST CHATTING").Select(c => c.Name));
+    }
+
+    [Fact]
+    public async Task Category_search_falls_back_to_the_v1_keyword_search()
+    {
+        var (api, http) = Create(r => r.Path.StartsWith("/public/v2/", StringComparison.Ordinal)
+            ? FakeHttpHandler.Json("""{"message":"Not found"}""", HttpStatusCode.NotFound)
+            : FakeHttpHandler.Json("""{"data":[{"id":15,"name":"Just Chatting","thumbnail":""}]}"""));
+        var categories = await api.SearchCategoriesAsync("just chat", default);
+        Assert.Equal("?q=just%20chat", http.Requests[1].Query);
+        Assert.Equal("Just Chatting", Assert.Single(categories).Name);
+    }
+
+    [Fact]
+    public async Task Tags_are_patched_as_custom_tags()
+    {
+        var (api, http) = Create(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        await api.SetTagsAsync([" chill ", "English", "english", ""], default);
+        var r = Assert.Single(http.Requests);
+        Assert.Equal(HttpMethod.Patch, r.Method);
+        Assert.Equal("""{"custom_tags":["chill","English"]}""", r.Body);
+    }
+
+    [Fact]
+    public async Task Channel_has_subscriber_counts_and_banner()
+    {
+        var (api, _) = Create(_ => FakeHttpHandler.Json("""
+            {"data":[{"active_subscribers_count":12,"active_gifted_subscribers_count":5,"canceled_subscribers_count":2,
+              "banner_picture":"https://kick.test/banner.png","broadcaster_user_id":100,"slug":"cuebotdev","stream_title":"",
+              "stream":{"is_live":false,"key":"sk_live_secret","url":"rtmps://ingest.kick.test/app"}}]}
+            """));
+        var channel = await api.GetChannelAsync(null, default);
+        Assert.Equal(12, channel!.ActiveSubscribers);
+        Assert.Equal(5, channel.ActiveGiftedSubscribers);
+        Assert.Equal(2, channel.CanceledSubscribers);
+        Assert.Equal("https://kick.test/banner.png", channel.BannerPicture);
+        Assert.DoesNotContain("sk_live_secret", channel.ToString(), StringComparison.Ordinal);   // the key never rides on the channel
+    }
+
+    [Fact]
+    public async Task Stream_credentials_come_from_the_own_channel_and_hide_the_key()
+    {
+        var (api, http) = Create(_ => FakeHttpHandler.Json("""
+            {"data":[{"broadcaster_user_id":100,"slug":"x","stream":{"key":"sk_live_secret","url":"rtmps://ingest.kick.test/app"}}]}
+            """));
+        var credentials = await api.GetStreamCredentialsAsync(default);
+        Assert.Equal("/public/v1/channels", Assert.Single(http.Requests).Path);
+        Assert.Equal("rtmps://ingest.kick.test/app", credentials!.Url);
+        Assert.Equal("sk_live_secret", credentials.Key);
+        Assert.DoesNotContain("sk_live_secret", credentials.ToString(), StringComparison.Ordinal);
+
+        var (empty, _) = Create(_ => FakeHttpHandler.Json("""{"data":[{"stream":{"key":"","url":""}}]}"""));
+        Assert.Null(await empty.GetStreamCredentialsAsync(default));
+    }
+
+    [Fact]
+    public async Task Livestreams_by_user_and_by_category_are_parsed()
+    {
+        const string stream = """
+            {"broadcaster_user":{"id":7,"username":"Pal","profile_picture":"p"},"category":{"id":15,"name":"Just Chatting","thumbnail":""},
+             "channel":{"slug":"pal"},"has_mature_content":true,"id":99,"language_code":"en","started_at":"2026-11-10T20:00:00Z",
+             "tags":["chill"],"thumbnail":"th","title":"Hi","viewer_count":321}
+            """;
+        var (api, http) = Create(_ => FakeHttpHandler.Json("{\"data\":[" + stream + "],\"pagination\":{\"next_cursor\":\"n\"}}"));
+
+        var byUser = await api.GetLivestreamsForUsersAsync([7, 8, 7], default);
+        var (byCategory, next) = await api.GetLivestreamsAsync(15, " EN ", 500, "c", default);
+
+        Assert.Equal("/public/v1/users/livestreams", http.Requests[0].Path);
+        Assert.Equal("?user_id=7&user_id=8", http.Requests[0].Query);
+        Assert.Equal("?limit=100&category_id=15&language_code=en&cursor=c", http.Requests[1].Query);
+        Assert.Equal("n", next);
+        var l = Assert.Single(byUser);
+        Assert.Equal((7L, "Pal", "pal", "Hi", "Just Chatting", 321, "en", true), (l.BroadcasterUserId, l.UserName, l.Slug, l.Title, l.Category!.Name, l.ViewerCount, l.Language, l.IsMature));
+        Assert.Equal(new DateTimeOffset(2026, 11, 10, 20, 0, 0, TimeSpan.Zero), l.StartedAt);
+        Assert.Single(byCategory);
+    }
+
+    [Fact]
+    public async Task Kicks_leaderboard_has_three_periods_in_rank_order()
+    {
+        var (api, http) = Create(_ => FakeHttpHandler.Json("""
+            {"data":{"week":[{"rank":2,"user_id":2,"username":"b","gifted_amount":50},{"rank":1,"user_id":1,"username":"a","gifted_amount":100}],
+                     "month":[{"rank":1,"user_id":3,"username":"c","gifted_amount":900}],"lifetime":[]}}
+            """));
+        var board = await api.GetKicksLeaderboardAsync(500, default);
+        Assert.Equal("?top=100", Assert.Single(http.Requests).Query);
+        Assert.Equal(["a", "b"], board.Week.Select(e => e.UserName));
+        Assert.Equal(900, Assert.Single(board.Month).GiftedAmount);
+        Assert.Empty(board.Lifetime);
+    }
+
+    [Fact]
+    public async Task Ad_break_sends_a_clamped_length_and_a_request_uuid()
+    {
+        var id = Guid.Parse("123e4567-e89b-12d3-a456-426614174000");
+        var (api, http) = Create(r => r.Path.EndsWith("ad-break-status", StringComparison.Ordinal)
+            ? FakeHttpHandler.Json("""
+                {"data":{"opted_in":true,"ads_blocked":false,"auto_ads_active":true,"remaining_ad_breaks":2,"limits":{"max":3,"period_seconds":3600},
+                 "ad_breaks":[{"id":"x","ad_break_id":"a1","break_duration_seconds":30,"status":"inserted","source":"public_api","created_at":"2026-11-10T20:00:00Z"}]}}
+                """)
+            : FakeHttpHandler.Json("""{"data":{"id":"123e4567-e89b-12d3-a456-426614174000","ad_break_id":"Xq3","remaining_ad_breaks":2}}"""));
+
+        var ad = await api.CreateAdBreakAsync(200, id, default);
+        var status = await api.GetAdStatusAsync(default);
+        await api.EnrollInAdsAsync(default);
+
+        var body = Body(http.Requests[0]);
+        Assert.Equal(90, body.GetProperty("break_duration_seconds").GetInt32());
+        Assert.Equal(id.ToString("D"), body.GetProperty("id").GetString());
+        Assert.Equal(new KickAdBreak(id.ToString("D"), "Xq3", 2), ad);
+        Assert.Equal((true, false, true, 2, 3, 3600), (status.OptedIn, status.AdsBlocked, status.AutoAdsActive, status.RemainingAdBreaks, status.MaxAdBreaks, status.LimitPeriodSeconds));
+        Assert.Equal("inserted", Assert.Single(status.AdBreaks).Status);
+        Assert.Equal((HttpMethod.Post, "/public/v1/ads/enroll"), (http.Requests[2].Method, http.Requests[2].Path));
+    }
+
+    [Fact]
+    public async Task Event_subscriptions_are_deleted_by_id()
+    {
+        var (api, http) = Create(_ => new HttpResponseMessage(HttpStatusCode.NoContent));
+        await api.DeleteEventSubscriptionsAsync(["01A", "01B", "01A", ""], default);
+        var r = Assert.Single(http.Requests);
+        Assert.Equal(HttpMethod.Delete, r.Method);
+        Assert.Equal("?id=01A&id=01B", r.Query);
+    }
+
+    [Fact]
+    public async Task Public_reads_use_an_app_token_when_nobody_is_signed_in()
+    {
+        _tokens.SignedIn = false;
+        var calls = 0;
+        var (api, http) = Create(_ => ++calls == 1
+            ? FakeHttpHandler.Json("""{"message":"Unauthorized"}""", HttpStatusCode.Unauthorized)
+            : FakeHttpHandler.Json("""{"data":[]}"""));
+        await api.GetLivestreamsForUsersAsync([7], default);
+        Assert.Equal(["Bearer app-token-1", "Bearer app-token-2"], http.Requests.Select(r => r.Authorization));
+    }
+
     private sealed class FakeTokens : IKickTokenSource
     {
         public string Broadcaster { get; set; } = "broadcaster-token";
         public Action? OnRefresh { get; set; }
-        public bool IsSignedIn(KickAccount account) => true;
+        public bool SignedIn { get; set; } = true;
+        private int _appTokens;
+        public bool IsSignedIn(KickAccount account) => SignedIn;
+
+        public Task<string> GetAppTokenAsync(bool renew, CancellationToken ct)
+        {
+            if (renew || _appTokens == 0) _appTokens++;
+            return Task.FromResult($"app-token-{_appTokens}");
+        }
         public Task<string> GetAccessTokenAsync(KickAccount account, CancellationToken ct) =>
             Task.FromResult(account == KickAccount.Bot ? "bot-token" : Broadcaster);
         public Task<bool> TryRefreshAsync(KickAccount account, string rejectedToken, CancellationToken ct)

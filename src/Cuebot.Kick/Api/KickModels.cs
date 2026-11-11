@@ -18,7 +18,16 @@ public sealed record KickChannel(
     string Language,
     bool IsMature,
     IReadOnlyList<string> Tags,
-    int ActiveSubscribers);
+    int ActiveSubscribers)
+{
+    /// <summary>Active gifted subscriptions (part of <see cref="ActiveSubscribers"/> since Kick's 2026-08-11 change).</summary>
+    public int ActiveGiftedSubscribers { get; init; }
+
+    /// <summary>Subscriptions that were cancelled but have not run out yet.</summary>
+    public int CanceledSubscribers { get; init; }
+
+    public string BannerPicture { get; init; } = "";
+}
 
 /// <summary>Result of POST /public/v1/chat.</summary>
 public sealed record KickChatSendResult(string MessageId, bool IsSent);
@@ -63,3 +72,46 @@ public sealed record KickRedemption(string Id, string RewardId, string RewardTit
 
 /// <summary>A redemption Kick could not accept or reject (reason UNKNOWN, NOT_PENDING, NOT_FOUND or NOT_OWNED).</summary>
 public sealed record KickRedemptionFailure(string Id, string Reason);
+
+/// <summary>A live stream from GET /public/v1/users/livestreams or /public/v2/livestreams.</summary>
+public sealed record KickLivestream(
+    long BroadcasterUserId,
+    string UserName,
+    string Slug,
+    string ProfilePicture,
+    string Title,
+    KickCategory? Category,
+    int ViewerCount,
+    DateTimeOffset? StartedAt,
+    string Language,
+    bool IsMature,
+    IReadOnlyList<string> Tags,
+    string Thumbnail);
+
+/// <summary>One place on the KICKs leaderboard.</summary>
+public sealed record KickLeaderboardEntry(int Rank, long UserId, string UserName, long GiftedAmount);
+
+/// <summary>GET /public/v1/kicks/leaderboard: the top gifters this week, this month and of all time.</summary>
+public sealed record KickLeaderboard(IReadOnlyList<KickLeaderboardEntry> Week, IReadOnlyList<KickLeaderboardEntry> Month,
+    IReadOnlyList<KickLeaderboardEntry> Lifetime);
+
+/// <summary>One ad break from the ad status.</summary>
+public sealed record KickAdBreakItem(string Id, string AdBreakId, int DurationSeconds, string Status, string Source, DateTimeOffset? CreatedAt);
+
+/// <summary>GET /public/v1/ads/ad-break-status.</summary>
+public sealed record KickAdStatus(bool OptedIn, bool AdsBlocked, bool AutoAdsActive, int RemainingAdBreaks, int MaxAdBreaks, int LimitPeriodSeconds,
+    IReadOnlyList<KickAdBreakItem> AdBreaks);
+
+/// <summary>Result of POST /public/v1/ads/ad-break.</summary>
+public sealed record KickAdBreak(string Id, string AdBreakId, int RemainingAdBreaks);
+
+/// <summary>
+/// The broadcaster's ingest address and stream key (<c>streamkey:read</c>). A class, not a record, so the key never
+/// shows up in ToString() output or logs.
+/// </summary>
+public sealed class KickStreamCredentials(string url, string key)
+{
+    public string Url { get; } = url;
+    public string Key { get; } = key;
+    public override string ToString() => $"Kick ingest {Url} (key hidden)";
+}

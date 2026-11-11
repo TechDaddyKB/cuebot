@@ -130,6 +130,8 @@ public sealed class AppHost : IAsyncDisposable
         var pruned = Cuebot.Core.Storage.DataRetention.PruneDataFolder(Get<AppPaths>(), DateTime.Now);
         if (pruned > 0) log.Info("Cuebot", $"Deleted {pruned} report(s) and cached image(s) older than {Cuebot.Core.Storage.DataRetention.KeepDays} days");
 
+        WireKickEvents();   // before Kick and the portal relay start, so the first connection already registers
+
         await Task.WhenAll(
             StartSafely(log, "Twitch", () => Get<TwitchService>().StartAsync()),
             StartSafely(log, "OBS", () => Get<ObsService>().StartAsync()),
@@ -195,6 +197,21 @@ public sealed class AppHost : IAsyncDisposable
         var relay = Get<Cuebot.Relay.RelayClient>();
         portal.WebhookSink = relay.DeliverAsync;
         return portal.StartAsync();
+    }
+
+    /// <summary>
+    /// Kick's official events for streamers on the built-in Kick app come through Cuebot's shared intake and the portal
+    /// relay (src/Cuebot.Kick/PROTOCOL.md section 3): the relay registers the broadcaster whenever Kick wants that, and
+    /// tells the Kick page how it went.
+    /// </summary>
+    private void WireKickEvents()
+    {
+        var portal = Get<Cuebot.Portal.Relay.PortalRelayClient>();
+        var kick = Get<Cuebot.Kick.KickService>();
+        portal.KickRouteToken = kick.GetSharedEventsTokenAsync;
+        portal.KickRouteWanted = () => kick.WantsSharedEvents;
+        portal.KickRouteStatusChanged += kick.SetSharedEventsStatus;
+        kick.SharedEventsChanged += () => _ = portal.RefreshKickRouteAsync();
     }
 
     private static async Task StartSafely(AppLog log, string name, Func<Task> start)
