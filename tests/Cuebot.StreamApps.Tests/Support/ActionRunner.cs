@@ -33,6 +33,14 @@ internal sealed class ActionRunner : IAsyncDisposable
         return (ok, _capture.Args ?? []);
     }
 
+    /// <summary>Runs a ready-made action (put <c>test.capture</c> steps where the args should be read); null when no capture ran.</summary>
+    public async Task<(bool Ok, Dictionary<string, object?>? Args)> RunAsync(ActionDefinition action)
+    {
+        _capture.Reset();
+        var ok = await Engine.RunAsync(action);
+        return (ok, _capture.Args);
+    }
+
     public string? LastError => Engine.History.Entries.LastOrDefault(e => e.Error is not null)?.Error;
 
     public async ValueTask DisposeAsync()
@@ -45,6 +53,7 @@ internal sealed class ActionRunner : IAsyncDisposable
     private sealed class CaptureStep : ISubActionHandler
     {
         public Dictionary<string, object?>? Args { get; private set; }
+        public void Reset() => Args = null;
         public string TypeId => "test.capture";
         public string Category => "Test";
         public string DisplayName => "Capture";

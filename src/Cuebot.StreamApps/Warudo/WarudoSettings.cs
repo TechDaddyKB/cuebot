@@ -12,6 +12,12 @@ public sealed class WarudoSettings
     /// <summary>Warudo's Stream Deck service port (fixed at 19069 in Warudo).</summary>
     public int Port { get; set; } = 19069;
 
+    /// <summary>
+    /// Warudo's own WebSocket port (19190, always open while Warudo runs): messages sent there fire the "On WebSocket
+    /// Message Received" node, and it tells "Warudo is running" apart from "Warudo is closed".
+    /// </summary>
+    public int WebSocketPort { get; set; } = 19190;
+
     public bool AutoConnect { get; set; }
 
     /// <summary>Reconnect (with backoff) when Warudo closes or is not listening yet.</summary>

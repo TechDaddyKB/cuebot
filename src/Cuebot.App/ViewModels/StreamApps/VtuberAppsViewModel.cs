@@ -244,6 +244,12 @@ public sealed partial class WarudoCardViewModel : StreamAppCardViewModel
         set { S.Port = (int)(value ?? 19069); _warudo.SaveSettings(); OnPropertyChanged(); }
     }
 
+    public decimal? WebSocketPort
+    {
+        get => S.WebSocketPort;
+        set { S.WebSocketPort = (int)(value ?? 19190); _warudo.SaveSettings(); OnPropertyChanged(); }
+    }
+
     public bool AutoConnect
     {
         get => S.AutoConnect;
@@ -269,6 +275,13 @@ public sealed partial class WarudoCardViewModel : StreamAppCardViewModel
     {
         await _warudo.RefreshAsync();
         return $"{Receivers.Count} receivers in the open scene.";
+    });
+
+    [RelayCommand]
+    private Task TestWebSocket() => RunAsync(async () =>
+    {
+        await _warudo.SendWebSocketMessageAsync("Hello from Cuebot");
+        return $"Sent \"Hello from Cuebot\" to Warudo's WebSocket port {_warudo.WebSocketPort} (On WebSocket Message Received nodes).";
     });
 
     private void RefreshData()

@@ -664,16 +664,39 @@ VRChat only through unit tests (it stopped at its terms page before OSC came up)
 ### Warudo (`Warudo/`)
 
 - Warudo's built-in Stream Deck plugin service, `ws://localhost:19069/` (websocket-sharp, localhost only; under Proton
-  it binds `::1`, hence the `localhost` default). Started only once the opened scene has an On Stream Deck node.
-- Envelope `{"action":..,"data":{..}}` both ways. Requests: `trigger` / `toggle` `{receiverName}`, `message`
-  `{receiverName,message}`, `getReceivers {type: trigger|toggle|message}` (answer `{"action":"getReceivers","data":[names]}`,
-  no type in the answer, so requests are answered in order), `getToggles` (answer `{name: bool}`). Warudo broadcasts
-  `toggle {receiverName,state,isResponse}` on every toggle change.
-- Learned from Warudo's own Stream Deck service (StreamDeckService.HandleAction / WebSocketService envelope) for
-  interoperability, and confirmed live.
-- Warudo -> Cuebot: the MIT WarudoStreamerBot plugin talks to Cuebot's Streamer.bot-compatible server (GetEvents,
-  GetActions, DoAction with `"args":null`, Subscribe `{"Twitch":[..]}`); covered by
-  `StreamerBotWebSocketTests.Warudo_streamerbot_plugin_messages_work_as_sent`.
+  it binds `::1`, hence the `localhost` default). Started only once the opened scene has an On Stream Deck node, and
+  stopped when the last one is removed (so switching to a scene without one closes the connection; auto-reconnect
+  picks it up again once a node exists).
+- Envelope `{"action":..,"data":{..}}` both ways; errors are `{"action":..,"error":".."}` without `data`. Requests:
+  `trigger` / `toggle` `{receiverName}`, `message` `{receiverName,message}` (rejected without `message`),
+  `getReceivers {type: trigger|toggle|message}` (answer `{"action":"getReceivers","data":[names]}`, no type in the
+  answer), `getToggles` (answer `{name: bool}`). Warudo broadcasts `toggle {receiverName,state,isResponse}` on every
+  toggle change, also from the Warudo UI.
+- Answers carry no request id, so an answer belongs to the oldest open request with the same `action`, error or not
+  (an error fails that request at once). A request that times out keeps its place, so its late answer is used up there
+  instead of answering the next request; one whose answer never comes is dropped after 4x the request timeout.
+- On/Off for a toggle whose state Cuebot does not know asks `getToggles` first (Warudo can only flip), and the step's
+  result is the state from the following `toggle` broadcast (2 s wait). A broadcast without a boolean `state` is
+  ignored; one naming an unlisted toggle re-reads the receivers. Receivers are also re-read for editor suggestions
+  older than 10 s. Sending to a receiver that is not listed still sends, with one log warning per name and session.
+- When 19069 refuses, a TCP probe of 19190 (below) tells "Warudo running, no On Stream Deck node in the scene" apart
+  from "Warudo not running".
+- Source: Hakuya Labs' public example source for the Stream Deck plugin
+  (github.com/HakuyaLabs/WarudoPluginExamples/tree/main/StreamDeck, which docs.warudo.app/docs/scripting/overview
+  names as the built-in plugin's source) and the `WebSocketService` envelope in the SDK stubs
+  (github.com/HakuyaLabs/Warudo-Mod-Tool). The node names and ports (Exit; If Yes/If No; Message) are from
+  docs.warudo.app/docs/blueprints/miscellaneous/streamdeck-integration. Confirmed live on Warudo 0.15.1.
+- Warudo's own WebSocket endpoint `ws://localhost:19190` (docs.warudo.app/docs/scripting/api/external-callbacks): a
+  connection without a `Channel` header goes to the raw-message pipeline, which fires On WebSocket Message Received
+  with the text. Cuebot opens it on the first message (send only, anything received is ignored) and reopens it once
+  when a send fails. The On WebSocket Action node's JSON format is not documented, so Cuebot has no step for it.
+- Warudo -> Cuebot: the MIT WarudoStreamerBot plugin (github.com/dbqt/WarudoStreamerBot, v0.0.4) talks to Cuebot's
+  Streamer.bot-compatible server: GetEvents, GetActions, DoAction with the request `id` set to the action name and
+  `args` a string dictionary (or `null`). It never authenticates, so with Authentication on DoAction is refused
+  (Cuebot logs this once per client). Its event node is commented out in v0.0.4, so it sends no Subscribe today; the
+  test still covers the `{"Twitch":[..]}` Subscribe it would send. Covered by
+  `StreamerBotWebSocketTests.Warudo_streamerbot_plugin_messages_work_as_sent` and
+  `StreamerBotAuthenticationTests.Warudo_plugin_without_authentication_is_refused_with_one_warning`.
 
 ## VTuber apps: PNGTuber Remix, Animaze, VMC
 

@@ -106,6 +106,34 @@ public sealed class ActionHelpTests : IAsyncDisposable
         foreach (var key in entry.Fields.Keys.Where(k => !keys.Contains(k))) problems.Add($"{kind} {id}: no setting '{key}'");
     }
 
+    [Fact]
+    public void Example_bundles_in_the_guides_use_only_known_types_and_settings()
+    {
+        var guides = Path.Combine(RepoRoot(), "website", "docs", "guides");
+        var files = Directory.GetFiles(guides, "*" + Cuebot.Core.Transfer.TransferCodec.FileExtension, SearchOption.AllDirectories);
+        Assert.NotEmpty(files);
+        var problems = new List<string>();
+        foreach (var file in files)
+        {
+            var bundle = Cuebot.Core.Transfer.TransferCodec.DecodeBundle(File.ReadAllText(file));
+            Assert.NotEmpty(bundle.Actions);
+            foreach (var action in bundle.Actions)
+            {
+                foreach (var t in action.Triggers)
+                {
+                    if (Registry.GetTrigger(t.Type) is not { } type) problems.Add($"{file}: unknown trigger {t.Type}");
+                    else problems.AddRange(t.Settings.Keys.Where(k => type.Parameters.All(p => p.Key != k)).Select(k => $"{file}: {t.Type} has no setting {k}"));
+                }
+                foreach (var step in action.SubActions)
+                {
+                    if (Registry.GetSubAction(step.Type) is not { } type) problems.Add($"{file}: unknown sub-action {step.Type}");
+                    else problems.AddRange(step.Parameters.Keys.Where(k => type.Parameters.All(p => p.Key != k)).Select(k => $"{file}: {step.Type} has no setting {k}"));
+                }
+            }
+        }
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
+    }
+
     private static string RepoRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

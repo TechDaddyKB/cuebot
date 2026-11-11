@@ -1,0 +1,52 @@
+{
+  "functions": {
+    "warudo.isConnected": {
+      "description": "Checks whether Cuebot is connected to Warudo's Stream Deck service.",
+      "parameters": {},
+      "returns": "true while connected, otherwise false.",
+      "example": {}
+    },
+    "warudo.trigger": {
+      "description": "Starts every \"On Stream Deck Trigger\" node in Warudo with this Receiver Name.",
+      "parameters": {
+        "receiver": "The Receiver Name typed into the node. Capital letters matter."
+      },
+      "returns": "Nothing.",
+      "example": { "receiver": "Confetti" }
+    },
+    "warudo.setToggle": {
+      "description": "Turns \"On Stream Deck Toggle\" nodes with this Receiver Name on (their If Yes path) or off (their If No path). For On and Off, Cuebot skips the flip when the toggle is already right.",
+      "parameters": {
+        "receiver": "The Receiver Name typed into the node.",
+        "state": "Optional. On, Off or Toggle. The default is Toggle."
+      },
+      "returns": "true when Warudo reports it is now on, false when off, null when Warudo did not report a state.",
+      "example": { "receiver": "Hat", "state": "On" }
+    },
+    "warudo.getToggle": {
+      "description": "Asks Warudo whether an \"On Stream Deck Toggle\" node is on.",
+      "parameters": {
+        "receiver": "The Receiver Name typed into the node."
+      },
+      "returns": "true when on, false when off, null when Warudo does not know this toggle.",
+      "example": { "receiver": "Hat" }
+    },
+    "warudo.sendMessage": {
+      "description": "Sends text to every \"On Stream Deck Message\" node with this Receiver Name.",
+      "parameters": {
+        "receiver": "The Receiver Name typed into the node.",
+        "message": "The text the node passes on."
+      },
+      "returns": "Nothing.",
+      "example": { "receiver": "Say", "message": "Thanks for the follow!" }
+    },
+    "warudo.sendWebSocket": {
+      "description": "Sends text to Warudo's own WebSocket port (19190), which starts every \"On WebSocket Message Received\" node. Needs no Stream Deck node.",
+      "parameters": {
+        "message": "The text to send, for example a viewer's name or some JSON."
+      },
+      "returns": "Nothing.",
+      "example": { "message": "Zed" }
+    }
+  }
+}

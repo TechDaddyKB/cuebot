@@ -43,6 +43,8 @@ public sealed class ServerManager : IAsyncDisposable
     private IDisposable? _subscription;
     private bool _started;
 
+    private void WarnWebSocket(string message) => _services.Log.Warn(LogSource, $"WebSocket server: {message}");
+
     /// <summary>The Cuebot services the servers work on (the Assistant's undo reads actions and commands through them).</summary>
     public ServerServices Services => _services;
 
@@ -51,7 +53,7 @@ public sealed class ServerManager : IAsyncDisposable
         _file = file;
         _services = services;
         Requests = new StreamerBotRequests(services);
-        WebSocket = new StreamerBotWebSocketServer(Settings.WebSocket, Requests, Origins);
+        WebSocket = new StreamerBotWebSocketServer(Settings.WebSocket, Requests, Origins, WarnWebSocket);
         Http = new HttpApiServer(() => Settings, Requests, services.Decks);
         CustomServers = new CustomWebSocketServers(() => Settings, services.Bus, services.Log);
         CustomClients = new CustomWebSocketClients(() => Settings, services.Bus, services.Log);
@@ -361,7 +363,7 @@ public sealed class ServerManager : IAsyncDisposable
             switch (kind)
             {
                 case ServerKind.WebSocket:
-                    WebSocket = new StreamerBotWebSocketServer(s.WebSocket, Requests, Origins);
+                    WebSocket = new StreamerBotWebSocketServer(s.WebSocket, Requests, Origins, WarnWebSocket);
                     WebSocket.ClientsChanged += RaiseChanged;
                     await WebSocket.StartAsync(address, ct).ConfigureAwait(false);
                     break;

@@ -58,6 +58,9 @@ public abstract class StreamAppConnection : IConnectable, IAsyncDisposable
     {
     }
 
+    /// <summary>The status text when the app could not be reached; an app can add a likely cause. Must not throw.</summary>
+    private protected virtual Task<string> ExplainUnreachableAsync(string reason, CancellationToken ct) => Task.FromResult(reason);
+
     /// <summary>Starts connecting in the background (replacing a running loop).</summary>
     public async Task ConnectAsync(CancellationToken ct = default)
     {
@@ -170,7 +173,8 @@ public abstract class StreamAppConnection : IConnectable, IAsyncDisposable
                 catch (Exception ex) when (!ct.IsCancellationRequested)
                 {
                     await transport.DisposeAsync().ConfigureAwait(false);
-                    reason = $"{display} not reachable ({(ex is OperationCanceledException ? "timed out" : Describe(ex))})";
+                    reason = await ExplainUnreachableAsync($"{display} not reachable ({(ex is OperationCanceledException ? "timed out" : Describe(ex))})", ct)
+                        .ConfigureAwait(false);
                 }
                 if (ct.IsCancellationRequested) return;
                 if (hadConnected) delay = Timings.ReconnectDelay;
@@ -267,6 +271,10 @@ public abstract class StreamAppConnection : IConnectable, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync().ConfigureAwait(false);
+        await DisposeMoreAsync().ConfigureAwait(false);
         GC.SuppressFinalize(this);
     }
+
+    /// <summary>Releases what a subclass holds besides the connection (called by <see cref="DisposeAsync"/>).</summary>
+    private protected virtual ValueTask DisposeMoreAsync() => ValueTask.CompletedTask;
 }

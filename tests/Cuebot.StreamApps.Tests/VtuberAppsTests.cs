@@ -382,10 +382,11 @@ public sealed class WarudoServiceTests : IAsyncLifetime
         // Hat is already on: "On" sends nothing, "Off" flips it.
         Assert.True(await _warudo.SetToggleAsync("Hat", SwitchMode.On));
         Assert.False(_socket.TryReadSent(out _));
-        Assert.False(await _warudo.SetToggleAsync("Hat", SwitchMode.Off));
+        // The answer is the state Warudo reports after the flip.
+        var off = _warudo.SetToggleAsync("Hat", SwitchMode.Off);
         Assert.Equal("""{"action":"toggle","data":{"receiverName":"Hat"}}""", await _socket.NextSentAsync());
-
         _socket.Push("""{"action":"toggle","data":{"receiverName":"Hat","state":false,"isResponse":true}}""");
+        Assert.False(await off);
         var changed = await _env.WaitForEventAsync(WarudoEvents.ToggleChanged);
         Assert.Equal("Hat", changed.Args["receiver"]);
         Assert.Equal("Off", changed.Args["state"]);

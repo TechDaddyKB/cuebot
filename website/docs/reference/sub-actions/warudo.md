@@ -3,6 +3,24 @@
 
 ![Adding a sub-action: on the Actions page, click + Sub-action and search for it](../../assets/screens/actions-sub-action-picker.png)
 
+## Get Warudo toggle state
+
+Reads whether a Warudo toggle ("On Stream Deck Toggle" node) is on, asking Warudo for its current state, then runs the On or the Off branch. An unknown toggle runs Off.
+
+| Setting | What to put in |
+| --- | --- |
+| **Receiver name** | The Receiver Name typed into the node in Warudo. |
+
+Paths it can take: **On**, **Off**.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%warudo.toggle%` | True when it is on, false when off (empty if Warudo does not know this toggle) |
+
+<small>Type id: `warudo.getToggle`</small>
+
 ## Send message to Warudo
 
 Sends text to Warudo: "On Stream Deck Message" nodes with this Receiver Name start and pass the text on, for example a viewer's name to show.
@@ -14,29 +32,39 @@ Sends text to Warudo: "On Stream Deck Message" nodes with this Receiver Name sta
 
 <small>Type id: `warudo.message`</small>
 
+## Send WebSocket message to Warudo
+
+Sends text to Warudo's own WebSocket port (19190): every "On WebSocket Message Received" node in the open scene starts with it. This needs no Stream Deck node and no Stream Deck connection, only Warudo running.
+
+| Setting | What to put in |
+| --- | --- |
+| **Message** | The text to send. It can use %arguments% like %user%, and can be JSON if your blueprint parses it. |
+
+<small>Type id: `warudo.webSocketMessage`</small>
+
 ## Trigger Warudo blueprint
 
 Runs a Warudo blueprint: every "On Stream Deck Trigger" node with this Receiver Name starts, for example to throw props or play an animation.
 
 | Setting | What to put in |
 | --- | --- |
-| **Receiver name** | The Receiver Name typed into the node in Warudo. Capital letters matter. |
+| **Receiver name** | The Receiver Name typed into the node in Warudo. Capital letters matter. If the open scene has no such node, Cuebot still sends it and writes a warning to the log. |
 
 <small>Type id: `warudo.trigger`</small>
 
 ## Warudo toggle on/off
 
-Turns a Warudo toggle on or off: "On Stream Deck Toggle" nodes with this Receiver Name run their On or Off path, for example to show or hide an accessory.
+Turns a Warudo toggle on or off: "On Stream Deck Toggle" nodes with this Receiver Name run their "If Yes" path (turned on) or their "If No" path (turned off), for example to show or hide an accessory.
 
 | Setting | What to put in |
 | --- | --- |
 | **Receiver name** | The Receiver Name typed into the node in Warudo. |
-| **State** | On, Off, or Toggle (the opposite of now). Cuebot skips On when it is already on. Options: On, Off, Toggle. Starts as: `Toggle`. |
+| **State** | On, Off, or Toggle (the opposite of now). Warudo can only flip a toggle, so for On and Off Cuebot first asks Warudo for its state when it does not know it, and skips the flip when it is already right. Options: On, Off, Toggle. Starts as: `Toggle`. |
 
 **Variables it adds**
 
 | Variable | What it holds |
 | --- | --- |
-| `%warudo.toggle%` | True when it is now on, false when off (empty if unknown) |
+| `%warudo.toggle%` | True when Warudo reports it is now on, false when off (empty if Warudo did not report a state, for example because no node has this Receiver Name) |
 
 <small>Type id: `warudo.toggle`</small>

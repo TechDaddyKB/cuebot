@@ -208,6 +208,13 @@
             <NumericUpDown Grid.Column="3" Name="WarudoPort" Value="{Binding Port}" Minimum="1" Maximum="65535" FormatString="0"
                            ToolTip.Tip="Warudo's Stream Deck door number, 19069. You should not need to change it." />
           </Grid>
+          <Grid ColumnDefinitions="*,Auto,140" RowDefinitions="Auto">
+            <TextBlock Classes="muted" TextWrapping="Wrap" VerticalAlignment="Center"
+                       Text="Warudo's own WebSocket door is always open while Warudo runs. The step Send WebSocket message to Warudo uses it for On WebSocket Message Received nodes." />
+            <TextBlock Grid.Column="1" Text="WebSocket port" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="2" Name="WarudoWebSocketPort" Value="{Binding WebSocketPort}" Minimum="1" Maximum="65535" FormatString="0"
+                           ToolTip.Tip="Warudo's WebSocket door number, 19190. You should not need to change it." />
+          </Grid>
           <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to Warudo as soon as Cuebot starts." />
           <CheckBox Content="Keep trying when Warudo closes (or is not listening yet)" IsChecked="{Binding AutoReconnect}"
                     ToolTip.Tip="Tries again by itself, so you can open Warudo before or after Cuebot." />
@@ -216,6 +223,8 @@
             <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to Warudo." />
             <Button Content="Reload receivers" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Asks Warudo again for the Receiver Names in your scene. Use it after you add a node." />
+            <Button Content="Test WebSocket" Command="{Binding TestWebSocketCommand}"
+                    ToolTip.Tip="Sends &quot;Hello from Cuebot&quot; to Warudo's On WebSocket Message Received nodes." />
           </StackPanel>
           <TextBlock TextWrapping="Wrap">
             <Run Text="{Binding State}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding StatusMessage}" Foreground="{StaticResource CuebotMuted}" />

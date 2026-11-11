@@ -82,6 +82,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [Voice control](voicecontrol.md) | 10 |
 | [Voicemod](voicemod.md) | 14 |
 | [VTube Studio](vtubestudio.md) | 18 |
+| [Warudo](warudo.md) | 6 |
 | [Wave Link](wavelink.md) | 25 |
 | [Webhooks](webhooks.md) | 2 |
 | [WebSocket](websocket.md) | 13 |

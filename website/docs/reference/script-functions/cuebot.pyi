@@ -3713,6 +3713,49 @@ class Cuebot:
         Gives back: The id of the hotkey that ran.
         Same as cb.call(\"vtubestudio.triggerHotkey\", ...).
         """
+    def warudo_get_toggle(self, receiver: Any) -> Any:
+        """Asks Warudo whether an \"On Stream Deck Toggle\" node is on.
+
+        receiver: The Receiver Name typed into the node.
+        Gives back: true when on, false when off, null when Warudo does not know this toggle.
+        Same as cb.call(\"warudo.getToggle\", ...).
+        """
+    def warudo_is_connected(self) -> Any:
+        """Checks whether Cuebot is connected to Warudo's Stream Deck service.
+
+        Gives back: true while connected, otherwise false.
+        Same as cb.call(\"warudo.isConnected\", ...).
+        """
+    def warudo_send_message(self, receiver: Any, message: Any) -> Any:
+        """Sends text to every \"On Stream Deck Message\" node with this Receiver Name.
+
+        receiver: The Receiver Name typed into the node.
+        message: The text the node passes on.
+        Gives back: Nothing.
+        Same as cb.call(\"warudo.sendMessage\", ...).
+        """
+    def warudo_send_web_socket(self, message: Any) -> Any:
+        """Sends text to Warudo's own WebSocket port (19190), which starts every \"On WebSocket Message Received\" node. Needs no Stream Deck node.
+
+        message: The text to send, for example a viewer's name or some JSON.
+        Gives back: Nothing.
+        Same as cb.call(\"warudo.sendWebSocket\", ...).
+        """
+    def warudo_set_toggle(self, receiver: Any, *, state: Any = None) -> Any:
+        """Turns \"On Stream Deck Toggle\" nodes with this Receiver Name on (their If Yes path) or off (their If No path). For On and Off, Cuebot skips the flip when the toggle is already right.
+
+        receiver: The Receiver Name typed into the node.
+        state: Optional. On, Off or Toggle. The default is Toggle.
+        Gives back: true when Warudo reports it is now on, false when off, null when Warudo did not report a state.
+        Same as cb.call(\"warudo.setToggle\", ...).
+        """
+    def warudo_trigger(self, receiver: Any) -> Any:
+        """Starts every \"On Stream Deck Trigger\" node in Warudo with this Receiver Name.
+
+        receiver: The Receiver Name typed into the node. Capital letters matter.
+        Gives back: Nothing.
+        Same as cb.call(\"warudo.trigger\", ...).
+        """
     def wavelink_add_app_to_channel(self, channel: Any, *, app: Any = None) -> Any:
         """Sends an app's sound to a Wave Link channel, like putting Spotify on the Music channel. Only for Wave Link 3. Fails with an error when Wave Link is not connected.
 

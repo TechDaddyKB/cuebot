@@ -1,0 +1,58 @@
+{
+  "format": "cuebot.bundle",
+  "version": 1,
+  "header": {
+    "name": "Warudo redeems",
+    "author": "Cuebot",
+    "description": "Two Twitch channel point rewards for Warudo. \"Throw\" sends the viewer's name to the On Stream Deck Message node with Receiver Name Throw; \"Water\" starts the On Stream Deck Trigger node with Receiver Name Water. Change the reward titles to match your rewards.",
+    "bundleVersion": "1",
+    "createdAt": "2026-11-11T00:00:00+00:00",
+    "generator": "Cuebot"
+  },
+  "actions": [
+    {
+      "id": "5b0b8f0e-6f43-4a51-9d0e-0c6a7d1e2a01",
+      "name": "Warudo: throw a prop on redeem",
+      "group": "Warudo",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "5b0b8f0e-6f43-4a51-9d0e-0c6a7d1e2a02",
+          "type": "twitch.rewardRedemption",
+          "enabled": true,
+          "settings": { "rewardTitle": "Throw" }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "5b0b8f0e-6f43-4a51-9d0e-0c6a7d1e2a03",
+          "type": "warudo.message",
+          "enabled": true,
+          "parameters": { "receiver": "Throw", "message": "%user%" }
+        }
+      ]
+    },
+    {
+      "id": "5b0b8f0e-6f43-4a51-9d0e-0c6a7d1e2a04",
+      "name": "Warudo: launch liquid on redeem",
+      "group": "Warudo",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "5b0b8f0e-6f43-4a51-9d0e-0c6a7d1e2a05",
+          "type": "twitch.rewardRedemption",
+          "enabled": true,
+          "settings": { "rewardTitle": "Water" }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "5b0b8f0e-6f43-4a51-9d0e-0c6a7d1e2a06",
+          "type": "warudo.trigger",
+          "enabled": true,
+          "parameters": { "receiver": "Water" }
+        }
+      ]
+    }
+  ]
+}

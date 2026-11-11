@@ -269,6 +269,15 @@ public sealed class StreamerBotWebSocketTests : IAsyncLifetime
         Assert.Equal("ok", S((await _client.NextAsync(m => S(m["id"]) == "doaction1"))["status"]));
         await _bot.WaitForRunAsync("Wave");
 
+        // The plugin sets the request id to the action's name, and passes the node's Args (a string dictionary).
+        var greet = _bot.AddAction("Say hi to chat");
+        await _client.SendRawAsync($$"""{"action":{"id":"{{greet.Id}}","name":"Say hi to chat"},"args":{"user":"Zed","amount":"5"},"request":"DoAction","id":"Say hi to chat"}""");
+        Assert.Equal("ok", S((await _client.NextAsync(m => S(m["id"]) == "Say hi to chat"))["status"]));
+        await _bot.WaitForRunAsync("Say hi to chat");
+        Assert.Equal("Zed", _bot.Capture.ByAction["Say hi to chat"]["user"]);
+        Assert.Equal("5", _bot.Capture.ByAction["Say hi to chat"]["amount"]);
+
+        // Its event node is commented out in the published plugin (v0.0.4); this guards the Subscribe it would send.
         await _client.SendRawAsync("""{"events":{"Twitch":["Follow"]},"request":"Subscribe","id":"3f2b"}""");
         await _client.NextAsync(m => S(m["id"]) == "3f2b");
         _bot.Bus.Publish(new BotEvent("twitch.follow", new Dictionary<string, object?> { ["user"] = "Zed" }));
@@ -390,5 +399,25 @@ public sealed class StreamerBotAuthenticationTests
         Assert.Equal("error", S((await client.RequestAsync("SendMessage", new { message = "x" }))["status"]));
         Assert.Equal("error", S((await client.RequestAsync("DoAction", new { action = new { name = "x" } }))["status"]));
         Assert.Empty(bot.Sender.Sent);
+    }
+
+    [Fact]
+    public async Task Warudo_plugin_without_authentication_is_refused_with_one_warning()
+    {
+        // The Warudo StreamerBot plugin never answers Hello or sends Authenticate, so with Authentication on its
+        // DoAction is refused; it ignores the answer, so the refusal is logged once for the user.
+        var (bot, client, _) = await ConnectAsync(enforce: false);
+        await using var b = bot;
+        await using var c = client;
+        bot.AddAction("Wave");
+        for (var i = 0; i < 2; i++)
+        {
+            await client.SendRawAsync($$"""{"action":{"id":null,"name":"Wave"},"args":null,"request":"DoAction","id":"Wave{{i}}"}""");
+            var answer = await client.NextAsync(m => S(m["id"]) == $"Wave{i}");
+            Assert.Equal("Authentication required", S(answer["error"]));
+        }
+        var warnings = bot.Log.Recent().Where(e => e.Message.Contains("Refused DoAction")).ToArray();
+        Assert.Single(warnings);
+        Assert.Contains("need Authentication off", warnings[0].Message);
     }
 }

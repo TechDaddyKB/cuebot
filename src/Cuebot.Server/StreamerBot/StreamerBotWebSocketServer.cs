@@ -18,15 +18,17 @@ public sealed class StreamerBotWebSocketServer : IWebSocketHandler, IAsyncDispos
     private readonly StreamerBotWebSocketSettings _settings;
     private readonly StreamerBotRequests _requests;
     private readonly Func<IReadOnlyCollection<string>> _origins;
+    private readonly Action<string>? _warn;
     private readonly ConcurrentDictionary<string, Session> _sessions = new();
     private WebSocketEndpoint? _endpoint;
 
     public StreamerBotWebSocketServer(StreamerBotWebSocketSettings settings, StreamerBotRequests requests,
-        Func<IReadOnlyCollection<string>>? origins = null)
+        Func<IReadOnlyCollection<string>>? origins = null, Action<string>? warn = null)
     {
         _settings = settings;
         _requests = requests;
         _origins = origins ?? (() => []);
+        _warn = warn;
     }
 
     public int Port => _endpoint?.Port ?? 0;
@@ -150,6 +152,14 @@ public sealed class StreamerBotWebSocketServer : IWebSocketHandler, IAsyncDispos
                 if (AuthRequired && !session.Authenticated
                     && (_settings.EnforceAuthentication || StreamerBotRequests.Privileged.Contains(request)))
                 {
+                    // Some clients (e.g. the Warudo StreamerBot plugin) never authenticate and ignore this answer, so
+                    // say it once per client where the user can see it.
+                    if (!session.WarnedUnauthenticated)
+                    {
+                        session.WarnedUnauthenticated = true;
+                        _warn?.Invoke($"Refused {request} from {session.Connection.Remote}: the client has not authenticated. " +
+                                      "Clients that cannot authenticate (such as Warudo's StreamerBot plugin) need Authentication off.");
+                    }
                     return Error(id, "Authentication required");
                 }
                 body = request.ToLowerInvariant() switch
@@ -214,6 +224,7 @@ public sealed class StreamerBotWebSocketServer : IWebSocketHandler, IAsyncDispos
         public string Salt { get; } = StreamerBotAuth.NewToken();
         public string Challenge { get; } = StreamerBotAuth.NewToken();
         public bool Authenticated { get; set; }
+        public bool WarnedUnauthenticated { get; set; }
 
         public int SubscriptionCount
         {
