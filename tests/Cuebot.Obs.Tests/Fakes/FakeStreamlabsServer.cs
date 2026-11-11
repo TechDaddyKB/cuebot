@@ -54,6 +54,24 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
     public Dictionary<string, bool> Muted { get; } = new() { ["src-mic"] = false };
     public Dictionary<string, JsonElement> SourceSettings { get; } = new();
     public List<string> FilterCalls { get; } = [];
+
+    /// <summary>Subscriptions ("Resource.event") the fake refuses, like an app version without that event.</summary>
+    public HashSet<string> RefusedSubscriptions { get; } = [];
+
+    /// <summary>When set, toggleStreaming's promise is rejected with this message (e.g. a missing stream key).</summary>
+    public string? RejectStreamingWith { get; set; }
+
+    /// <summary>When false, promise methods answer only the PROMISE acknowledgement and never the EVENT.</summary>
+    public bool CompletePromises { get; set; } = true;
+
+    public bool StudioMode { get; set; }
+    public string ActiveCollection { get; set; } = "c1";
+    public List<string> Notifications { get; } = [];
+
+    private int _promiseCount;
+
+    /// <summary>A message the session sends right after the current reply (a promise's EVENT).</summary>
+    private string? _followUp;
     public List<string> Transforms { get; } = [];
 
     public Task<WebSocket> WaitForSessionAsync() => _session.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -140,11 +158,28 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
             case ("StreamingService", "getModel"):
                 return new { streamingStatus = StreamingStatus, recordingStatus = RecordingStatus, replayBufferStatus = ReplayBufferStatus };
             case ("StreamingService", "toggleStreaming"):
-                StreamingStatus = StreamingStatus == "offline" ? "live" : "offline";
-                return null;
+                // A promise method: the reply is a PROMISE subscription, then one EVENT says how it ended.
+                if (RejectStreamingWith is null) StreamingStatus = StreamingStatus == "offline" ? "live" : "offline";
+                return Promise(RejectStreamingWith);
             case ("StreamingService", "toggleRecording"):
                 RecordingStatus = RecordingStatus == "offline" ? "recording" : "offline";
-                return null;
+                return Promise(null);
+            case ("TransitionsService", "getModel"): return new { studioMode = StudioMode };
+            case ("TransitionsService", "enableStudioMode"): StudioMode = true; return null;
+            case ("TransitionsService", "disableStudioMode"): StudioMode = false; return null;
+            case ("TransitionsService", "executeStudioModeTransition"): return true;
+            case ("SceneCollectionsService", "collections"):
+                return new object[] { new { id = "c1", name = "Main collection" }, new { id = "c2", name = "Gaming" } };
+            case ("SceneCollectionsService", "activeCollection"):
+                return new { id = ActiveCollection, name = ActiveCollection == "c1" ? "Main collection" : "Gaming" };
+            case ("SceneCollectionsService", "load"):
+                ActiveCollection = args[0].GetString()!;
+                return Promise(null);
+            case ("PerformanceService", "getModel"):
+                return new { CPU = 12.34, numberDroppedFrames = 7, percentageDroppedFrames = 0.5, bandwidth = 6000.4, frameRate = 59.94 };
+            case ("NotificationsService", "push"):
+                Notifications.Add(args[0].GetRawText());
+                return new { id = 1 };
             case ("StreamingService", "startReplayBuffer"): ReplayBufferStatus = "running"; return null;
             case ("StreamingService", "stopReplayBuffer"): ReplayBufferStatus = "offline"; return null;
             case ("StreamingService", "saveReplay"): return null;
@@ -170,14 +205,31 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
             case (_, "updateSettings") when resource.StartsWith("Source[", StringComparison.Ordinal):
                 SourceSettings[resource.Split('"')[1]] = args[0].Clone();
                 return null;
+            case (_, _) when RefusedSubscriptions.Contains($"{resource}.{method}"):
+                error = $"INVALID_REQUEST Resource {resource} has no event {method}";
+                return null;
             case (_, _) when method.EndsWith("Change", StringComparison.Ordinal) || method.StartsWith("scene", StringComparison.Ordinal) ||
                              method.StartsWith("item", StringComparison.Ordinal) || method.StartsWith("source", StringComparison.Ordinal) ||
-                             method == "replayBufferFileWrite":
+                             method is "replayBufferFileWrite" or "studioModeChanged" or "collectionSwitched" or "streamErrorCreated":
                 return new { _type = "SUBSCRIPTION", resourceId = $"{resource}.{method}", emitter = "STREAM" };
             default:
                 error = $"Unknown {resource}.{method}";
                 return null;
         }
+    }
+
+    private object Promise(string? rejection)
+    {
+        var id = $"promise-{Interlocked.Increment(ref _promiseCount)}";
+        if (CompletePromises)
+        {
+            _followUp = JsonSerializer.Serialize(new
+            {
+                jsonrpc = "2.0", id = (int?)null,
+                result = new { _type = "EVENT", emitter = "PROMISE", resourceId = id, isRejected = rejection is not null, data = (object?)(rejection is null ? null : new { message = rejection }) },
+            });
+        }
+        return new { _type = "SUBSCRIPTION", emitter = "PROMISE", resourceId = id };
     }
 
     private async Task AcceptLoopAsync()
@@ -234,6 +286,7 @@ internal sealed class FakeStreamlabsServer : IAsyncDisposable
                         ? JsonSerializer.Serialize(new { jsonrpc = "2.0", id, result = value })
                         : JsonSerializer.Serialize(new { jsonrpc = "2.0", id, error = new { code = -32603, message = error } });
                     await SendAsync(socket, "a" + JsonSerializer.Serialize(new[] { reply }));
+                    if (Interlocked.Exchange(ref _followUp, null) is { } followUp) await SendAsync(socket, "a" + JsonSerializer.Serialize(new[] { followUp }));
                 }
             }
         }

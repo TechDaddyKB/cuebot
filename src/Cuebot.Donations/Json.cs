@@ -29,6 +29,12 @@ internal static class JsonReaders
 
     public static string Str(this JsonElement? element, string name) => element is { } e ? e.Str(name) : "";
 
+    /// <summary>A field as text: strings as they are, objects and arrays as their JSON, null or missing as "".</summary>
+    public static string Raw(this JsonElement element, string name) =>
+        element.Child(name) is { } value
+            ? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.GetRawText()
+            : "";
+
     /// <summary>The first non-empty of several fields.</summary>
     public static string First(this JsonElement element, params string[] names)
     {

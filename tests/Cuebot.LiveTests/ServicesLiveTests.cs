@@ -32,6 +32,31 @@ public sealed class ServicesLiveTests
         await streamlabs.DisconnectAsync();
     }
 
+    /// <summary>
+    /// Read-only Streamlabs REST checks with an access token from "Connect with Streamlabs" (nothing shows on stream):
+    /// the account, the socket token, the alert queue status, the latest donation and the alert profiles answer, and
+    /// the socket connects with the fetched token. Optional CUEBOT_LIVE_STREAMLABS_POINTS_CHANNEL / _POINTS_USER also
+    /// read one viewer's Cloudbot points.
+    /// </summary>
+    [LiveServiceFact("CUEBOT_LIVE_STREAMLABS_ACCESS_TOKEN")]
+    public async Task Streamlabs_rest_reads_answer()
+    {
+        await using var services = Build("streamlabs-rest");
+        var streamlabs = services.GetRequiredService<StreamlabsService>();
+        streamlabs.Settings.AccessToken = ServicesLiveEnvironment.Get("CUEBOT_LIVE_STREAMLABS_ACCESS_TOKEN")!;
+        streamlabs.Settings.SocketToken = "";
+        var user = await streamlabs.GetUserAsync();
+        Assert.NotEmpty(user.DisplayName);
+        await streamlabs.IsAlertQueuePausedAsync();
+        Assert.NotNull(await streamlabs.GetDonationsAsync(1));
+        Assert.NotNull(await streamlabs.GetAlertProfilesAsync());
+        if (ServicesLiveEnvironment.Get("CUEBOT_LIVE_STREAMLABS_POINTS_USER") is { } viewer)
+            await streamlabs.GetPointsAsync(viewer, ServicesLiveEnvironment.Get("CUEBOT_LIVE_STREAMLABS_POINTS_CHANNEL"));
+        await streamlabs.ConnectAsync();   // fetches the socket token first
+        await WaitConnectedAsync(streamlabs, ConnectTimeout);
+        await streamlabs.DisconnectAsync();
+    }
+
     [LiveServiceFact("CUEBOT_LIVE_STREAMELEMENTS_JWT")]
     public async Task StreamElements_connects_with_the_jwt()
     {

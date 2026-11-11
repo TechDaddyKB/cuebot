@@ -22,6 +22,10 @@ public sealed class StreamlabsClient : IAsyncDisposable
     private static readonly JsonElement Null = JsonDocument.Parse("null").RootElement.Clone();
 
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
+
+    /// <summary>Promise results (by the promise's resourceId) still waiting for their completion EVENT.</summary>
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonElement>> _promises = new(StringComparer.Ordinal);
+    private readonly TimeSpan _promiseTimeout;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private readonly TimeSpan _requestTimeout;
@@ -32,7 +36,11 @@ public sealed class StreamlabsClient : IAsyncDisposable
     private volatile bool _authenticated;
     private int _disposed;
 
-    public StreamlabsClient(TimeSpan? requestTimeout = null) => _requestTimeout = requestTimeout ?? TimeSpan.FromSeconds(10);
+    public StreamlabsClient(TimeSpan? requestTimeout = null, TimeSpan? promiseTimeout = null)
+    {
+        _requestTimeout = requestTimeout ?? TimeSpan.FromSeconds(10);
+        _promiseTimeout = promiseTimeout ?? TimeSpan.FromSeconds(30);
+    }
 
     /// <summary>Raised on the receive thread for every subscribed event: (resourceId such as "ScenesService.sceneSwitched", data).</summary>
     public event Action<string, JsonElement>? EventReceived;
@@ -82,9 +90,42 @@ public sealed class StreamlabsClient : IAsyncDisposable
         }
     }
 
-    /// <summary>Calls <paramref name="method"/> on <paramref name="resource"/> and returns its <c>result</c>.</summary>
+    /// <summary>
+    /// Calls <paramref name="method"/> on <paramref name="resource"/> and returns its <c>result</c>. A method that returns
+    /// a promise (e.g. <c>toggleStreaming</c>) first answers <c>{_type: "SUBSCRIPTION", emitter: "PROMISE"}</c>; then this
+    /// waits for the promise's EVENT and returns its data, or throws when <c>isRejected</c> is true. When no EVENT comes
+    /// within the promise timeout the acknowledgement is returned (Streamlabs Desktop accepted the call).
+    /// </summary>
     /// <exception cref="StreamlabsException">Not connected, the session ended, or Streamlabs Desktop returned an error.</exception>
     public async Task<JsonElement> CallAsync(string resource, string method, object?[]? args = null, CancellationToken ct = default)
+    {
+        var result = await CallCoreAsync(resource, method, args, ct).ConfigureAwait(false);
+        if (!IsPromise(result, out var promiseId)) return result;
+        if (!_promises.TryGetValue(promiseId, out var completion)) return result;
+        try
+        {
+            return await completion.Task.WaitAsync(_promiseTimeout, ct).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            return result;
+        }
+        finally
+        {
+            _promises.TryRemove(promiseId, out _);
+        }
+    }
+
+    private static bool IsPromise(JsonElement result, out string promiseId)
+    {
+        promiseId = "";
+        if (result.ValueKind != JsonValueKind.Object || result.GetStringOrNull("_type") != "SUBSCRIPTION" ||
+            result.GetStringOrNull("emitter") != "PROMISE") return false;
+        promiseId = result.GetStringOrNull("resourceId") ?? "";
+        return promiseId.Length > 0;
+    }
+
+    private async Task<JsonElement> CallCoreAsync(string resource, string method, object?[]? args, CancellationToken ct)
     {
         var socket = _socket;
         if (socket is null || _receiveLoop is null || _closeReason is not null)
@@ -203,6 +244,8 @@ public sealed class StreamlabsClient : IAsyncDisposable
         _closeReason = reason;
         foreach (var id in _pending.Keys)
             if (_pending.TryRemove(id, out var pending)) pending.TrySetException(new StreamlabsException(reason));
+        foreach (var id in _promises.Keys)
+            if (_promises.TryRemove(id, out var promise)) promise.TrySetException(new StreamlabsException(reason));
         socket.Dispose();
         if (_authenticated) Disconnected?.Invoke(reason);   // a failed handshake is reported by ConnectAsync instead
     }
@@ -224,15 +267,35 @@ public sealed class StreamlabsClient : IAsyncDisposable
         var result = root.TryGetProperty("result", out var r) ? r : Null;
         if (result.ValueKind == JsonValueKind.Object && result.GetStringOrNull("_type") == "EVENT")
         {
-            EventReceived?.Invoke(result.GetStringOrNull("resourceId") ?? "", result.TryGetProperty("data", out var data) ? data : Null);
+            var resourceId = result.GetStringOrNull("resourceId") ?? "";
+            var data = result.TryGetProperty("data", out var d) ? d : Null;
+            if (_promises.TryGetValue(resourceId, out var promise))
+            {
+                if (result.GetBoolOrNull("isRejected") == true) promise.TrySetException(new StreamlabsException(RejectionMessage(data)));
+                else promise.TrySetResult(data);
+                return;
+            }
+            EventReceived?.Invoke(resourceId, data);
             return;
         }
         if (!root.TryGetProperty("id", out var idElement) || idElement.ValueKind != JsonValueKind.Number ||
             !idElement.TryGetInt32(out var id)) return;
         if (!_pending.TryRemove(id, out var pending)) return;
         if (root.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.Object)
+        {
             pending.TrySetException(new StreamlabsException(error.GetStringOrNull("message") ?? "Streamlabs Desktop returned an error."));
-        else
-            pending.TrySetResult(result);
+            return;
+        }
+        // Registered here, on the receive thread, so the promise's EVENT (which may follow at once) finds it.
+        if (IsPromise(result, out var promiseId))
+            _promises.TryAdd(promiseId, new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously));
+        pending.TrySetResult(result);
     }
+
+    private static string RejectionMessage(JsonElement data) => data.ValueKind switch
+    {
+        JsonValueKind.String => data.GetString() ?? "Streamlabs Desktop rejected the call.",
+        JsonValueKind.Object => data.GetStringOrNull("message") ?? data.GetStringOrNull("error") ?? $"Streamlabs Desktop rejected the call: {data.GetRawText()}",
+        _ => "Streamlabs Desktop rejected the call.",
+    };
 }

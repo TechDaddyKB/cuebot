@@ -461,10 +461,10 @@ public sealed partial class StreamElementsService : DonationServiceBase, IStream
             authenticated = false;
             SetStatus(ConnectionState.Connecting, "Authenticating with StreamElements (legacy)...");
         };
-        client.Disconnected += reason =>
+        client.Disconnected += (reason, fatal) =>
         {
             failures = authenticated ? 0 : failures + 1;
-            OnDisconnected(reason, fatal: reason.Contains("refused", StringComparison.Ordinal));
+            OnDisconnected(reason, fatal);
             if (failures >= LegacyFailuresBeforeFallback) stop.Cancel();
         };
         client.EventReceived += (name, args) =>

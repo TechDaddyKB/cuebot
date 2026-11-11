@@ -237,6 +237,101 @@ public sealed class StreamlabsTests : IAsyncLifetime
         Assert.Equal(ConnectionState.Connected, slobs.State);
     }
 
+    [Fact]
+    public async Task A_refused_subscription_is_logged_and_the_connection_still_comes_up()
+    {
+        // replayBufferFileWrite and streamErrorCreated are internal-API events; an app without them must still connect.
+        _server.RefusedSubscriptions.Add("StreamingService.replayBufferFileWrite");
+        _server.RefusedSubscriptions.Add("StreamingService.streamErrorCreated");
+
+        await _slobs.ConnectAsync();
+
+        await _recorder.WaitForAsync(StreamlabsEvents.Connected);
+        Assert.Equal(ConnectionState.Connected, _slobs.State);
+        Assert.Contains(_server.Calls, c => c is { Resource: "StreamingService", Method: "replayBufferStatusChange" });
+        Assert.Contains(_server.Calls, c => c is { Resource: "TransitionsService", Method: "studioModeChanged" });
+        Assert.Contains(_server.Calls, c => c is { Resource: "SceneCollectionsService", Method: "collectionSwitched" });
+    }
+
+    [Fact]
+    public async Task A_rejected_promise_fails_the_step_instead_of_reporting_success()
+    {
+        // toggleStreaming returns a promise: the reply is SUBSCRIPTION/PROMISE, then one EVENT with isRejected.
+        _server.RejectStreamingWith = "No stream key";
+        await _slobs.ConnectAsync();
+
+        var ex = await Assert.ThrowsAsync<StreamlabsException>(() => _slobs.ControlStreamingAsync(OutputCommand.Start));
+
+        Assert.Contains("No stream key", ex.Message);
+        Assert.Equal("offline", _server.StreamingStatus);
+    }
+
+    [Fact]
+    public async Task A_resolved_promise_returns_and_a_silent_one_still_returns_after_the_timeout()
+    {
+        await _slobs.ConnectAsync();
+        await _slobs.ControlStreamingAsync(OutputCommand.Start);
+        Assert.Equal("live", _server.StreamingStatus);
+
+        await using var client = new StreamlabsClient(promiseTimeout: TimeSpan.FromMilliseconds(200));
+        await client.ConnectAsync(new UriBuilder("ws", "localhost", _server.Port, "api").Uri, FakeStreamlabsServer.Token);
+        _server.CompletePromises = false;
+        var ack = await client.CallAsync("StreamingService", "toggleRecording");
+        Assert.Equal("PROMISE", ack.GetProperty("emitter").GetString());
+    }
+
+    [Fact]
+    public async Task Reconnecting_replay_buffer_studio_mode_collection_and_error_events_are_published()
+    {
+        await _slobs.ConnectAsync();
+        Assert.Equal("Main collection", _slobs.CurrentSceneCollection);
+        Assert.Equal(["Main collection", "Gaming"], _slobs.SceneCollectionNames);
+
+        await _server.SendEventAsync("StreamingService.streamingStatusChange", "reconnecting");
+        await _server.SendEventAsync("StreamingService.replayBufferStatusChange", "running");
+        await _server.SendEventAsync("StreamingService.replayBufferStatusChange", "saving");
+        await _server.SendEventAsync("StreamingService.replayBufferStatusChange", "offline");
+        await _server.SendEventAsync("TransitionsService.studioModeChanged", true);
+        await _server.SendEventAsync("SceneCollectionsService.collectionSwitched", new { id = "c2", name = "Gaming" });
+        await _server.SendEventAsync("StreamingService.streamErrorCreated", new { type = "DISCONNECTED", message = "Lost connection to the server" });
+
+        await _recorder.WaitForAsync(StreamlabsEvents.StreamReconnecting);
+        await _recorder.WaitForAsync(StreamlabsEvents.ReplayBufferStarted);
+        await _recorder.WaitForAsync(StreamlabsEvents.ReplayBufferStopped);
+        Assert.Equal(true, (await _recorder.WaitForAsync(StreamlabsEvents.StudioModeChanged)).Args["studioMode"]);
+        var collection = await _recorder.WaitForAsync(StreamlabsEvents.SceneCollectionChanged);
+        Assert.Equal(("Gaming", "c2"), (collection.Args["sceneCollectionName"], collection.Args["sceneCollectionId"]));
+        Assert.Equal("Lost connection to the server", (await _recorder.WaitForAsync(StreamlabsEvents.StreamError)).Args["errorMessage"]);
+        Assert.Equal("localhost", (await _recorder.WaitForAsync(StreamlabsEvents.StreamReconnecting)).Args["sd.host"]);
+        Assert.DoesNotContain(_recorder.Events, e => e.Type is StreamlabsEvents.StreamStarted or StreamlabsEvents.StreamStopped);
+        Assert.True(_slobs.IsStudioMode);
+        Assert.Equal("Gaming", _slobs.CurrentSceneCollection);
+    }
+
+    [Fact]
+    public async Task Studio_mode_scene_collection_health_and_notification_steps()
+    {
+        await _slobs.ConnectAsync();
+
+        await Run("slobs.studioMode", new() { ["mode"] = "Toggle" });
+        Assert.True(_server.StudioMode);
+        await Run("slobs.studioMode", new() { ["mode"] = "Transition" });
+        Assert.Contains(_server.Calls, c => c.Method == "executeStudioModeTransition");
+        await Run("slobs.studioMode", new() { ["mode"] = "Disable" });
+        Assert.False(_server.StudioMode);
+
+        await Run("slobs.setSceneCollection", new() { ["collection"] = "gaming" });
+        Assert.Equal("c2", _server.ActiveCollection);
+
+        var health = await Run("slobs.getPerformance", new());
+        Assert.Equal((12.3, 59.9, 7L, 0.5, 6000.4),
+            (health["slobsCpu"], health["slobsFps"], health["slobsDroppedFrames"], health["slobsDroppedPercent"], health["slobsBandwidth"]));
+
+        await Run("slobs.notify", new() { ["message"] = "Hydrate!", ["type"] = "Warning", ["playSound"] = "true" });
+        var note = System.Text.Json.JsonDocument.Parse(Assert.Single(_server.Notifications)).RootElement;
+        Assert.Equal(("Hydrate!", "WARNING", true), (note.GetProperty("message").GetString(), note.GetProperty("type").GetString(), note.GetProperty("playSound").GetBoolean()));
+    }
+
     private async Task<Dictionary<string, object?>> Run(string type, Dictionary<string, string> parameters)
     {
         _capture.Reset();

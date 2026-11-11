@@ -12,7 +12,84 @@
         "kind": "Optional. Which event: \"donation\", \"charity\", \"merch\" or \"loyalty\". Default \"donation\"."
       },
       "returns": "true when the test event was sent, false when the kind is unknown.",
-      "example": { "kind": "donation" }
+      "example": {
+        "kind": "donation"
+      }
+    },
+    "streamlabs.isSignedIn": {
+      "description": "Checks whether your own Streamlabs app is connected, which the alert, wheel, points and donation-list functions need.",
+      "parameters": {},
+      "returns": "true when connected, otherwise false.",
+      "example": {}
+    },
+    "streamlabs.alertQueue": {
+      "description": "Controls your Streamlabs alert box. Needs your Streamlabs app connected.",
+      "parameters": {
+        "command": "Optional. \"skip\" (default), \"pause_queue\", \"unpause_queue\", \"mute_volume\", \"unmute_volume\", \"show_video\" or \"hide_video\"."
+      },
+      "returns": "true when Streamlabs accepted it.",
+      "example": {
+        "command": "skip"
+      }
+    },
+    "streamlabs.createAlert": {
+      "description": "Shows your own alert in the Streamlabs alert box. At most 2 a minute (Cuebot waits). Needs your Streamlabs app connected.",
+      "parameters": {
+        "type": "Optional. donation (default), follow, subscription or host: whose style to use.",
+        "message": "The main text; *stars* highlight words.",
+        "userMessage": "Optional second line.",
+        "image": "Optional image or GIF link.",
+        "sound": "Optional sound link.",
+        "duration": "Optional milliseconds."
+      },
+      "returns": "true when Streamlabs accepted it.",
+      "example": {
+        "type": "follow",
+        "message": "*Kris* just hit 100 subs!"
+      }
+    },
+    "streamlabs.getDonations": {
+      "description": "Gets your latest Streamlabs donations, newest first. Needs your Streamlabs app connected.",
+      "parameters": {
+        "count": "Optional. How many (default 5).",
+        "currency": "Optional. Only this currency."
+      },
+      "returns": "A list of {id, user, amount, currency, formattedAmount, message, createdAt}.",
+      "example": {
+        "count": 3
+      }
+    },
+    "streamlabs.getPoints": {
+      "description": "Gets a viewer's Streamlabs Cloudbot loyalty points. Needs your Streamlabs app connected.",
+      "parameters": {
+        "user": "The viewer's login name."
+      },
+      "returns": "Their points as a number.",
+      "example": {
+        "user": "anna"
+      }
+    },
+    "streamlabs.addPoints": {
+      "description": "Adds (or with a negative amount removes) Streamlabs Cloudbot loyalty points. Needs your Streamlabs app connected.",
+      "parameters": {
+        "user": "The viewer's login name.",
+        "amount": "How many points; negative removes."
+      },
+      "returns": "Their points afterwards.",
+      "example": {
+        "user": "anna",
+        "amount": 50
+      }
+    },
+    "streamlabs.widget": {
+      "description": "Spins the wheel, empties the tip jar or rolls the credits. Needs your Streamlabs app connected.",
+      "parameters": {
+        "widget": "\"wheel\" (default), \"jar\" or \"credits\"."
+      },
+      "returns": "true when Streamlabs accepted it.",
+      "example": {
+        "widget": "wheel"
+      }
     }
   }
 }

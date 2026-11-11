@@ -26,8 +26,54 @@ public sealed class StreamlabsSettings
     /// </summary>
     public bool RelayPlatformEvents { get; set; }
 
-    /// <summary>Engine.IO protocol version that last worked (4 = Socket.IO v3/v4, 3 = Socket.IO v2); tried first.</summary>
-    public int EngineIoVersion { get; set; } = 4;
+    /// <summary>
+    /// Engine.IO protocol version that last worked (4 = Socket.IO v3/v4, 3 = Socket.IO v2); tried first. Starts at 3
+    /// because the Socket API docs load socket.io 2.0.3; the other version is tried when it is refused.
+    /// </summary>
+    public int EngineIoVersion { get; set; } = 3;
+
+    /// <summary>
+    /// OAuth client id of the user's own Streamlabs app (streamlabs.com/dashboard#/settings/api-settings → Register App).
+    /// Needed only for the REST features (alerts, wheel, jar, credits, points, media share, back-fill).
+    /// </summary>
+    public string ClientId { get; set; } = "";
+
+    /// <summary>OAuth client secret of that app. A secret.</summary>
+    [Secret]
+    public string ClientSecret { get; set; } = "";
+
+    /// <summary>Port of the sign-in redirect, http://localhost:{port}/callback (register it in the Streamlabs app).</summary>
+    public int RedirectPort { get; set; } = DefaultRedirectPort;
+
+    public const int DefaultRedirectPort = 8914;
+
+    /// <summary>OAuth access token from "Connect with Streamlabs". Streamlabs says it does not expire. A secret.</summary>
+    [Secret]
+    public string AccessToken { get; set; } = "";
+
+    /// <summary>OAuth refresh token, used only when Streamlabs answers 401. A secret.</summary>
+    [Secret]
+    public string RefreshToken { get; set; } = "";
+
+    /// <summary>Streamlabs display name of the connected account (from GET /user), for display.</summary>
+    public string AccountName { get; set; } = "";
+
+    /// <summary>Platforms linked to that account, e.g. "Twitch: name, YouTube: title", for display.</summary>
+    public string LinkedAccounts { get; set; } = "";
+
+    /// <summary>
+    /// The <c>channel</c> sent with Cloudbot loyalty points calls; filled from the linked Twitch account when empty.
+    /// </summary>
+    public string PointsChannel { get; set; } = "";
+
+    /// <summary>
+    /// Client-side limit of REST requests per minute. An app Streamlabs has not approved (TESTING tier) may make 5; an
+    /// approved one 2400.
+    /// </summary>
+    public int RequestsPerMinute { get; set; } = 5;
+
+    /// <summary>After the socket reconnects, fetch donations missed meanwhile (GET /donations; needs a connected app).</summary>
+    public bool BackfillMissedDonations { get; set; } = true;
 }
 
 public enum StreamElementsTransport

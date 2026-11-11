@@ -19,6 +19,41 @@ internal sealed class DonationsScriptFunctions(StreamlabsService streamlabs, Str
             (_, _, _) => Task.FromResult<object?>(streamlabs.State == ConnectionState.Connected)),
         new("streamlabs.sendTestEvent", "Publish a local test event (donation, charity, merch, loyalty)", ["kind"],
             (_, args, _) => Task.FromResult<object?>(streamlabs.SendTestEvent(args.GetString("kind", "donation")))),
+        new("streamlabs.isSignedIn", "True while your Streamlabs app is connected (the REST features work)", [],
+            (_, _, _) => Task.FromResult<object?>(streamlabs.IsSignedIn)),
+        new("streamlabs.alertQueue", "Skip the alert, pause/unpause the queue, mute/unmute alert sounds, show/hide video", ["command"],
+            async (_, args, ct) =>
+            {
+                await streamlabs.AlertCommandAsync(args.GetString("command", "skip"), ct).ConfigureAwait(false);
+                return true;
+            }),
+        new("streamlabs.createAlert", "Show a custom alert in the Streamlabs alert box", ["type", "message", "userMessage", "image", "sound", "duration"],
+            async (_, args, ct) =>
+            {
+                await streamlabs.CreateAlertAsync(args.GetString("type", "donation"), args.GetString("message"), args.GetString("userMessage"),
+                    args.GetString("image"), args.GetString("sound"), (int)Math.Max(0, Number(args, "duration")), args.GetString("color"), ct).ConfigureAwait(false);
+                return true;
+            }),
+        new("streamlabs.getDonations", "Get the latest Streamlabs donations", ["count", "currency"], async (_, args, ct) =>
+            (await streamlabs.GetDonationsAsync(Count(args), args.GetString("currency"), ct).ConfigureAwait(false))
+                .Select(d => new { id = d.Id, user = d.Name, amount = d.Amount, currency = d.Currency, formattedAmount = d.FormattedAmount, message = d.Message, createdAt = d.CreatedAt })
+                .ToArray()),
+        new("streamlabs.getPoints", "Get a viewer's Streamlabs (Cloudbot) loyalty points", ["user"], async (_, args, ct) =>
+            await streamlabs.GetPointsAsync(args.GetString("user"), null, ct).ConfigureAwait(false)),
+        new("streamlabs.addPoints", "Add (or with a negative amount remove) Streamlabs points; returns the new total", ["user", "amount"],
+            async (_, args, ct) => await streamlabs.AddPointsAsync(args.GetString("user"), (long)Math.Round(Number(args, "amount")), null, ct).ConfigureAwait(false)),
+        new("streamlabs.widget", "Spin the wheel, empty the tip jar or roll the credits", ["widget"], async (_, args, ct) =>
+        {
+            var widget = args.GetString("widget", "wheel").Trim().ToLowerInvariant();
+            await (widget switch
+            {
+                "wheel" => streamlabs.SpinWheelAsync(ct),
+                "jar" => streamlabs.EmptyJarAsync(ct),
+                "credits" => streamlabs.RollCreditsAsync(ct),
+                _ => throw new ScriptException("streamlabs.widget takes \"wheel\", \"jar\" or \"credits\""),
+            }).ConfigureAwait(false);
+            return true;
+        }),
         new("streamelements.isConnected", "True while the StreamElements socket is connected", [],
             (_, _, _) => Task.FromResult<object?>(streamElements.State == ConnectionState.Connected)),
         new("streamelements.sendTestEvent", "Publish a local test event (tip, merch, redemption)", ["kind"],

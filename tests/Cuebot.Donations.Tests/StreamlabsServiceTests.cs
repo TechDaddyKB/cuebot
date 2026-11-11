@@ -25,6 +25,7 @@ public sealed class StreamlabsServiceTests : IAsyncLifetime
         Directory.CreateDirectory(_dataDir);
         _settings = new JsonFile<DonationsSettings>(Path.Combine(_dataDir, "donations.json"), _log);
         _settings.Value.Streamlabs.SocketToken = Token;
+        _settings.Value.Streamlabs.EngineIoVersion = 4;   // as saved after a Socket.IO v4 connection (the default is 3)
         var bus = new EventBus(_log);
         bus.Subscribe(_published.Enqueue);
         _service = new StreamlabsService(_settings, bus, _log, _server.Create, new Uri("https://sockets.test"), TestTimings.Fast);

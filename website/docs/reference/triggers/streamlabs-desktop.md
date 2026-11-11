@@ -43,7 +43,7 @@ Runs when Streamlabs Desktop stops recording.
 
 ## Replay buffer saved
 
-Runs when Streamlabs Desktop saves a replay clip (the last moments of your stream).
+Runs when Streamlabs Desktop saves a replay clip (the last moments of your stream). This relies on an undocumented Streamlabs Desktop event; "Replay buffer started"/"stopped" use the documented one.
 
 **Variables you get**
 
@@ -52,6 +52,18 @@ Runs when Streamlabs Desktop saves a replay clip (the last moments of your strea
 | `%savedReplayPath%` | Where the replay file was saved |
 
 <small>Type id: `slobs.replayBufferSaved`</small>
+
+## Replay buffer started
+
+Runs when the replay buffer starts recording in the background.
+
+<small>Type id: `slobs.replayBufferStarted`</small>
+
+## Replay buffer stopped
+
+Runs when the replay buffer stops.
+
+<small>Type id: `slobs.replayBufferStopped`</small>
 
 ## Scene changed
 
@@ -71,6 +83,37 @@ Runs when Streamlabs Desktop switches to another scene.
 
 <small>Type id: `slobs.sceneChanged`</small>
 
+## Scene collection changed
+
+Runs when Streamlabs Desktop switches to another scene collection (a whole set of scenes).
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%sceneCollectionName%` | The name of the collection now in use |
+| `%sceneCollectionId%` | Its id |
+
+<small>Type id: `slobs.sceneCollectionChanged`</small>
+
+## Stream error
+
+Runs when Streamlabs Desktop reports a streaming error, like losing the connection to the server. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%errorMessage%` | What Streamlabs Desktop said went wrong |
+
+<small>Type id: `slobs.streamError`</small>
+
+## Stream reconnecting
+
+Runs when your stream drops and Streamlabs Desktop is trying to reconnect. Handy to put up a "technical difficulties" message or warn yourself.
+
+<small>Type id: `slobs.streamReconnecting`</small>
+
 ## Streaming started
 
 Runs when Streamlabs Desktop starts streaming. Good for a "going live" message.
@@ -82,3 +125,15 @@ Runs when Streamlabs Desktop starts streaming. Good for a "going live" message.
 Runs when Streamlabs Desktop stops streaming.
 
 <small>Type id: `slobs.streamStopped`</small>
+
+## Studio mode changed
+
+Runs when studio mode is turned on or off in Streamlabs Desktop.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%studioMode%` | True when studio mode was turned on, false when off |
+
+<small>Type id: `slobs.studioModeChanged`</small>

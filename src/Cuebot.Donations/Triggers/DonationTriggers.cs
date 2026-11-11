@@ -57,7 +57,11 @@ internal sealed class StreamlabsTriggers : ITriggerProvider
     [
         Event(StreamlabsEventTypes.Connected, "Connected"),
         Event(StreamlabsEventTypes.Disconnected, "Disconnected"),
-        Event(StreamlabsEventTypes.Donation, "Donation", DonationFilters.Amount, DonationFilters.MatchesAmount),
+        Event(StreamlabsEventTypes.Donation, "Donation",
+            [.. DonationFilters.Amount,
+                new("includeBackfill", "Include donations fetched after a reconnect", ParameterKind.Boolean) { DefaultValue = "true" }],
+            (e, s) => DonationFilters.MatchesAmount(e, s)
+                && (s.GetBool("includeBackfill", true) || !(e.Args.TryGetValue("isBackfill", out var b) && b is true))),
         Event(StreamlabsEventTypes.CharityDonation, "Charity donation", DonationFilters.Amount, DonationFilters.MatchesAmount),
         Event(StreamlabsEventTypes.Merch, "Merchandise", DonationFilters.TestsOnly, DonationFilters.MatchesTest),
         Event(StreamlabsEventTypes.LoyaltyStoreRedemption, "Loyalty store redemption", DonationFilters.TestsOnly, DonationFilters.MatchesTest),
@@ -70,8 +74,10 @@ internal sealed class StreamlabsTriggers : ITriggerProvider
         Event(StreamlabsEventTypes.Raid, "Relayed raid",
             [new("minViewers", "Minimum viewers", ParameterKind.Number) { DefaultValue = "0" }],
             (e, s) => DonationFilters.AtLeast(e, s, "viewers", "minViewers")),
-        Event(StreamlabsEventTypes.Host, "Relayed host"),
         Event(StreamlabsEventTypes.Superchat, "Relayed Super Chat", DonationFilters.Amount, DonationFilters.MatchesAmount),
+        // Twitch removed hosting in 2022 and Mixer is gone: Streamlabs never sends this any more. Kept (last in the
+        // list) so existing actions still load.
+        Event(StreamlabsEventTypes.Host, "Relayed host (legacy, never sent)"),
     ];
 
     internal static EventTriggerType Event(string eventType, string displayName,

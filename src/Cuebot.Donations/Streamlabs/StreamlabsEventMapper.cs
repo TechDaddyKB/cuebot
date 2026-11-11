@@ -49,8 +49,14 @@ internal static class StreamlabsEventMapper
         if (eventId.Length > 0) keys.Add($"evt:{eventId}:{index}");
         if (item.Str("_id") is { Length: > 0 } alertId) keys.Add($"{type}:_id:{alertId}");
         else if (item.Str("id") is { Length: > 0 } id) keys.Add($"{type}:id:{id}");
+        // A donation's "id" is the donation_id of GET /donations: lets the REST back-fill recognise socket donations.
+        if (type.Equals("donation", StringComparison.OrdinalIgnoreCase) && item.Str("id") is { Length: > 0 } donationId)
+            keys.Add(DonationKey(donationId));
         return [.. keys];
     }
+
+    /// <summary>The dedupe key of a donation by its Streamlabs donation id (socket <c>id</c>, REST <c>donation_id</c>).</summary>
+    internal static string DonationKey(string donationId) => $"donation:donation_id:{donationId}";
 
     private static DonationEvent? Own(string type, JsonElement m, string[] keys) => type.ToLowerInvariant() switch
     {
@@ -78,7 +84,29 @@ internal static class StreamlabsEventMapper
         args["donationFormattedAmount"] = formatted;
         args["donationFrom"] = from;
         args["donationMessage"] = message;
+        args["emotes"] = m.Raw("emotes");
+        args["isBackfill"] = false;
         return new DonationEvent(StreamlabsEventTypes.Donation, keys, args);
+    }
+
+    /// <summary>A donation from GET /donations (the back-fill after a reconnect), shaped like a socket donation.</summary>
+    internal static DonationEvent Backfilled(StreamlabsDonation d)
+    {
+        var args = Base(d.Name, d.Message, d.Amount, d.Currency, d.FormattedAmount);
+        args["userId"] = "";
+        args["donationId"] = d.Id;
+        args["recipient"] = "";
+        args["iconClassName"] = "";
+        args["donationAmount"] = d.Amount;
+        args["donationCurrency"] = d.Currency;
+        args["donationFormattedAmount"] = d.FormattedAmount;
+        args["donationFrom"] = d.Name;
+        args["donationMessage"] = d.Message;
+        args["emotes"] = "";
+        args["isBackfill"] = true;
+        args["createdAt"] = d.CreatedAt;
+        Common(args, "", false, "");
+        return new DonationEvent(StreamlabsEventTypes.Donation, [DonationKey(d.Id)], args);
     }
 
     private static DonationEvent Charity(JsonElement m, string[] keys)
@@ -134,8 +162,11 @@ internal static class StreamlabsEventMapper
     {
         var name = m.First("name", "from");
         var args = Base(name, "", 0, "", "");
+        // Follows (Twitch user id, YouTube channel id) and YouTube members carry the user in "id"; bits and
+        // Super Chats do not (their "id" is the cheer or the chat message), see the cases below.
         args["userId"] = m.First("id", "from_user_id", "channelId");
         args["createdAt"] = m.First("created_at", "publishedAt", "createdAt");
+        args["emotes"] = m.Raw("emotes");
         switch (type.ToLowerInvariant())
         {
             case "follow":
@@ -145,13 +176,21 @@ internal static class StreamlabsEventMapper
                 args["months"] = (int)m.Number("months");
                 args["tier"] = m.First("sub_plan", "membershipLevelName");
                 args["tierName"] = m.Str("sub_plan_name");
-                args["subType"] = m.Str("sub_type") is { Length: > 0 } subType ? subType : type;
-                // YouTube sponsors carry "sponsorSince", Mixer subscribers "since".
+                var subType = m.Str("sub_type") is { Length: > 0 } st ? st : type;
+                var gifter = m.First("gifter", "gifter_display_name");
+                args["subType"] = subType;
+                // YouTube sponsors carry "sponsorSince", Mixer subscribers "since" (Mixer is gone; kept for old payloads).
                 args["since"] = m.First("sponsorSince", "since");
-                args["recipient"] = m.First("gifter") is { Length: > 0 } ? name : "";
-                args["gifter"] = m.Str("gifter");
+                args["recipient"] = gifter.Length > 0 ? name : "";
+                args["gifter"] = gifter;
+                // The docs only show sub_type "resub"; Twitch's other values are sub, subgift, anonsubgift, primepaidupgrade...
+                args["isGift"] = gifter.Length > 0 || subType.Contains("gift", StringComparison.OrdinalIgnoreCase);
+                args["isResub"] = subType.Equals("resub", StringComparison.OrdinalIgnoreCase) || m.Number("months") > 1;
                 return new DonationEvent(StreamlabsEventTypes.Subscription, keys, args, Relayed: true);
             case "bits":
+                // The documented sample's "id" is the cheer's transaction id (a UUID), not the user: it has no user id.
+                args["bitsId"] = m.Str("id");
+                args["userId"] = m.Str("from_user_id");
                 var bits = (int)m.Number("amount");
                 args["bits"] = bits;
                 args["amount"] = (double)bits;
@@ -162,6 +201,8 @@ internal static class StreamlabsEventMapper
             case "raid" or "raids":
                 args["viewers"] = (int)m.Number("raiders");
                 return new DonationEvent(StreamlabsEventTypes.Raid, keys, args, Relayed: true);
+            // Legacy: Twitch removed hosting in October 2022 and Mixer shut down in July 2020, so this is never sent
+            // today; the docs still list it. Kept so old payloads and existing triggers keep working.
             case "host":
                 args["viewers"] = (int)m.Number("viewers");
                 args["hostType"] = m.Str("type");

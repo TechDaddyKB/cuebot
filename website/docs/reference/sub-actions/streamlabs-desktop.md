@@ -32,6 +32,22 @@ Finds out which scene Streamlabs Desktop is showing and keeps its name for later
 
 <small>Type id: `slobs.getCurrentScene`</small>
 
+## Get stream health
+
+Reads your stream health from Streamlabs Desktop: CPU use, frames per second and dropped frames. Handy for a "!health" command.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%slobsCpu%` | CPU use in percent |
+| `%slobsFps%` | Frames per second right now |
+| `%slobsDroppedFrames%` | How many frames were dropped |
+| `%slobsDroppedPercent%` | Dropped frames in percent |
+| `%slobsBandwidth%` | Upload bandwidth (kb/s) |
+
+<small>Type id: `slobs.getPerformance`</small>
+
 ## Hide all scene sources
 
 Hides every source in a scene at once.
@@ -55,7 +71,7 @@ Hides every source inside a group (a folder of sources) at once.
 
 ## Hide source's filters
 
-Turns off every filter on one source in a scene.
+Turns off every filter on one source in a scene. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.
 
 | Setting | What to put in |
 | --- | --- |
@@ -154,9 +170,19 @@ Shows one randomly picked source in a group and hides the others. Fun for random
 
 <small>Type id: `slobs.randomGroupSource`</small>
 
+## Set scene collection
+
+Switches Streamlabs Desktop to another scene collection (a whole set of scenes). It takes a moment and reloads every scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Scene collection** | The scene collection name exactly as Streamlabs Desktop shows it (capitals do not matter). |
+
+<small>Type id: `slobs.setSceneCollection`</small>
+
 ## Set scene filter state
 
-Shows, hides or flips a filter that sits on a whole scene.
+Shows, hides or flips a filter that sits on a whole scene. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.
 
 | Setting | What to put in |
 | --- | --- |
@@ -168,7 +194,7 @@ Shows, hides or flips a filter that sits on a whole scene.
 
 ## Set source filter state
 
-Turns a filter (an effect on a source) on or off.
+Turns a filter (an effect on a source) on or off. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.
 
 | Setting | What to put in |
 | --- | --- |
@@ -203,7 +229,7 @@ Shows or hides one source (like a camera or image) inside a scene.
 
 ## Set state of a random filter
 
-Picks one random filter on a source (or on the scene) and shows, hides or flips it. Fun for random effects.
+Picks one random filter on a source (or on the scene) and shows, hides or flips it. Fun for random effects. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.
 
 | Setting | What to put in |
 | --- | --- |
@@ -231,6 +257,18 @@ Changes the words shown by a text source. Handy for "latest follower" or a messa
 
 <small>Type id: `slobs.setText`</small>
 
+## Show a Streamlabs Desktop notification
+
+Shows a notification inside Streamlabs Desktop, like a reminder only you see.
+
+| Setting | What to put in |
+| --- | --- |
+| **Message** | The text to show. |
+| **Type** | Info, Warning or Success (changes the colour). Options: Info, Warning, Success. Starts as: `Info`. |
+| **Play a sound** | Tick to also play Streamlabs Desktop's notification sound. Starts as: `false`. |
+
+<small>Type id: `slobs.notify`</small>
+
 ## Streaming
 
 Starts or stops your stream in Streamlabs Desktop.
@@ -240,3 +278,13 @@ Starts or stops your stream in Streamlabs Desktop.
 | **Mode** | Start begins streaming, Stop ends it, Toggle does the opposite of what it is doing now. Start does nothing if you are already streaming. Options: Start, Stop, Toggle. Starts as: `Start`. |
 
 <small>Type id: `slobs.streaming`</small>
+
+## Studio mode
+
+Turns studio mode on or off, or swaps the preview scene onto the stream (Transition).
+
+| Setting | What to put in |
+| --- | --- |
+| **Mode** | Enable, Disable, Toggle (switch to the other state) or Transition (run the studio mode transition). Options: Enable, Disable, Toggle, Transition. Starts as: `Toggle`. |
+
+<small>Type id: `slobs.studioMode`</small>

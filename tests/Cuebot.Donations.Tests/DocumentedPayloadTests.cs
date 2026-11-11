@@ -84,7 +84,8 @@ public sealed class DocumentedPayloadTests
         Assert.Equal(("test", 13.37, "USD", "$13.37", "test donation"),
             (a["donationFrom"], a["donationAmount"], a["donationCurrency"], a["donationFormattedAmount"], a["donationMessage"]));
         Assert.Equal(("96164121", "", "Sai Harsha Maddela", "user"), (a["donationId"], a["userId"], a["recipient"], a["iconClassName"]));
-        Assert.Equal(["evt:evt_17e5f4dc6888767ed9799f78dfa2cabc:0", "donation:_id:0820c9d5bafd768c9843f5e35c885e71"], e.Keys);
+        Assert.Equal(["evt:evt_17e5f4dc6888767ed9799f78dfa2cabc:0", "donation:_id:0820c9d5bafd768c9843f5e35c885e71",
+            "donation:donation_id:96164121"], e.Keys);
     }
 
     [Fact]
@@ -131,6 +132,39 @@ public sealed class DocumentedPayloadTests
         Assert.Equal((2.0, "USD", "$2.00", "love the stream"), (superchat["amount"], superchat["currency"], superchat["formattedAmount"], superchat["message"]));
         Assert.Equal("UCec4hVEu3ZXE8qlRtUeK0DA", superchat["userId"]);
         Assert.StartsWith("LCC.", (string)superchat["superchatId"]!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Streamlabs_documented_bits_id_is_the_cheer_not_the_user()
+    {
+        // The "id" of the documented bits sample is a transaction UUID; there is no user id in the payload.
+        var bits = StreamlabsMappingTests.One(SlTwitchBits).Args;
+        Assert.Equal(("fc546f7d-aab8-42b2-9933-8681e9fb5eb0", ""), (bits["bitsId"], bits["userId"]));
+        Assert.Equal("", bits["emotes"]);   // "emotes": null
+        // Follows keep their user id; YouTube follows carry the channel id there.
+        Assert.Equal("170884026", StreamlabsMappingTests.One(SlTwitchFollow).Args["userId"]);
+        Assert.Equal("UCec4hVEu3ZXE8qlRtUeK0DA", StreamlabsMappingTests.One(SlYouTubeSubscription).Args["userId"]);
+        // A cheer that does name its user (from_user_id) uses it.
+        var named = StreamlabsMappingTests.One(SlTwitchBits.Replace("\"name\"", "\"from_user_id\":\"4242\",\"name\"", StringComparison.Ordinal)).Args;
+        Assert.Equal("4242", named["userId"]);
+    }
+
+    [Fact]
+    public void Streamlabs_documented_resub_carries_sub_type_and_emotes()
+    {
+        var sub = StreamlabsMappingTests.One(SlTwitchSubscription).Args;
+        Assert.Equal(("resub", true, false, ""), (sub["subType"], sub["isResub"], sub["isGift"], sub["gifter"]));
+        var gift = StreamlabsMappingTests.One(SlTwitchSubscription.Replace("\"sub_type\":\"resub\"", "\"sub_type\":\"subgift\",\"gifter\":\"santa\"", StringComparison.Ordinal)
+            .Replace("\"emotes\":null", "\"emotes\":\"25:0-4\"", StringComparison.Ordinal)).Args;
+        Assert.Equal(("subgift", true, "santa", "kevin"), (gift["subType"], gift["isGift"], gift["gifter"], gift["recipient"]));
+        Assert.Equal("25:0-4", gift["emotes"]);
+    }
+
+    [Fact]
+    public void Streamlabs_host_trigger_is_labelled_legacy()
+    {
+        var host = new Cuebot.Donations.Triggers.StreamlabsTriggers().GetTriggers().Single(t => t.TypeId == StreamlabsEventTypes.Host);
+        Assert.Contains("legacy", host.DisplayName, StringComparison.Ordinal);
     }
 
     [Fact]

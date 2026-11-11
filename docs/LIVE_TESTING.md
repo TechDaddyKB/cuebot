@@ -95,7 +95,10 @@ checks that a wrong hook token is rejected in Cuebot. Nothing reaches viewers.
 ### Streamlabs, StreamElements, VTube Studio, Voicemod
 
 `ServicesLiveTests` connects to each service whose setting is filled in, checks it answers, and disconnects;
-nothing reaches viewers. Streamlabs needs `CUEBOT_LIVE_STREAMLABS_SOCKET_TOKEN`, StreamElements
+nothing reaches viewers. Streamlabs needs `CUEBOT_LIVE_STREAMLABS_SOCKET_TOKEN` (socket) and, for the read-only REST
+test, `CUEBOT_LIVE_STREAMLABS_ACCESS_TOKEN` (from "Connect with Streamlabs" with your own app; optional
+`CUEBOT_LIVE_STREAMLABS_POINTS_USER` / `_POINTS_CHANNEL`). A wrong socket token shows what the server does on refusal
+(CONNECT_ERROR, close or silence), and the status says which Socket.IO version connected. StreamElements
 `CUEBOT_LIVE_STREAMELEMENTS_JWT`, Voicemod (running) `CUEBOT_LIVE_VOICEMOD_API_KEY`. VTube Studio runs with
 `CUEBOT_LIVE_VTS=1` and the API turned on (Settings → "Start API"); the first run waits up to two minutes for you to
 click **Allow** on VTube Studio's plugin popup, and the plugin token is kept for later runs.
@@ -126,7 +129,9 @@ Desktop's Settings → Remote Control → Show details (`CUEBOT_LIVE_SLOBS_HOST`
 127.0.0.1:59650). One test adds a temporary scene, switches to it and back (checking the scene changed events), toggles
 a source twice and removes the scene; `CUEBOT_LIVE_SLOBS_RECORD=1` also records for 3 s. The other builds a scratch
 scene (colour sources, a filter, a folder) and runs every visibility, filter, group, transform, settings and mute
-command on it, then removes it. Last run: Streamlabs Desktop 1.22.2, 2026-10-28, both pass. Streamlabs Desktop limits
+command on it, then removes it. A third (added 2026-11-11, not run live yet) reads stream health and scene
+collections, toggles studio mode and puts it back, shows a notification, and checks the studioModeChanged event.
+Last run: Streamlabs Desktop 1.22.2, 2026-10-28, the first two pass. Streamlabs Desktop limits
 how often `ScenesService.getScenes` may be called, so Cuebot reloads only the scene a command or event touches.
 
 ### Imported Streamer.bot setup

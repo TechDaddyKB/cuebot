@@ -30,7 +30,8 @@ public static class DonationsServiceCollectionExtensions
         services.AddSingleton(sp => new StreamlabsService(
             sp.GetRequiredService<JsonFile<DonationsSettings>>(),
             sp.GetRequiredService<EventBus>(),
-            sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<AppLog>(),
+            sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp => new StreamElementsService(
             sp.GetRequiredService<JsonFile<DonationsSettings>>(),
             sp.GetRequiredService<EventBus>(),
@@ -87,6 +88,12 @@ public static class DonationsServiceCollectionExtensions
             services.AddSingleton<ISubActionHandler>(sp =>
                 sp.GetRequiredService<StreamElementsMoreSubActionSet>().Steps.First(s => s.TypeId == typeId));
         }
+        foreach (var typeId in StreamlabsSubActions.TypeIds)
+        {
+            services.AddSingleton<ISubActionHandler>(sp =>
+                sp.GetRequiredService<StreamlabsSubActionSet>().Steps.First(s => s.TypeId == typeId));
+        }
+        services.AddSingleton(sp => new StreamlabsSubActionSet(StreamlabsSubActions.Create(sp.GetRequiredService<StreamlabsService>())));
         services.AddSingleton(sp => new StreamElementsMoreSubActionSet(StreamElementsMoreSubActions.Create(sp.GetRequiredService<StreamElementsService>())));
         services.AddSingleton<IScriptFunctionProvider, DonationsScriptFunctions>();
         return services;

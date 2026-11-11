@@ -122,7 +122,7 @@ public sealed class SocketIoClientTests
     {
         var client = Client();
         var disconnects = new List<string>();
-        client.Disconnected += r => { lock (disconnects) disconnects.Add(r); };
+        client.Disconnected += (r, _) => { lock (disconnects) disconnects.Add(r); };
         using var cts = new CancellationTokenSource();
         var run = client.RunAsync(Url, cts.Token);
 

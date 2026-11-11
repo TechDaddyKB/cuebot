@@ -54,7 +54,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Stream Deck](stream-deck.md) | 4 |
 | [StreamElements](streamelements.md) | 40 |
 | [Streamlabs](streamlabs.md) | 13 |
-| [Streamlabs Desktop](streamlabs-desktop.md) | 8 |
+| [Streamlabs Desktop](streamlabs-desktop.md) | 14 |
 | [StreamLoots](streamloots.md) | 6 |
 | [Subathon timer](subathon-timer.md) | 5 |
 | [System](system.md) | 11 |

@@ -21,7 +21,8 @@
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "includeBackfill": "Tick to also run for donations Cuebot fetched after the connection came back (they happened while it was down). Needs your Streamlabs app connected."
       },
       "variables": {
         "user": "Who donated (\"Anonymous\" if unknown)",
@@ -30,11 +31,13 @@
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
         "message": "The message the donor wrote",
         "donationId": "The number Streamlabs gave this donation",
-        "isTest": "True when this is a test event, not a real one"
+        "isTest": "True when this is a test event, not a real one",
+        "isBackfill": "True when Cuebot fetched this donation after a reconnect instead of hearing it live",
+        "emotes": "Emote data Streamlabs sent with the message, if any"
       }
     },
     "streamlabs.charityDonation": {
-      "description": "Runs when someone gives to a charity campaign you run on Streamlabs. Good for a special thank-you.",
+      "description": "Runs when someone gives to a charity campaign you run on Streamlabs. Good for a special thank-you. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.",
       "fields": {
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
@@ -53,7 +56,7 @@
       }
     },
     "streamlabs.merch": {
-      "description": "Runs when someone buys something from your Streamlabs merch store. Handy to thank buyers on stream.",
+      "description": "Runs when someone buys something from your Streamlabs merch store. Handy to thank buyers on stream. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.",
       "fields": {
         "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
       },
@@ -66,7 +69,7 @@
       }
     },
     "streamlabs.loyaltyStoreRedemption": {
-      "description": "Runs when a viewer spends points on an item in your Streamlabs Cloudbot loyalty store.",
+      "description": "Runs when a viewer spends points on an item in your Streamlabs Cloudbot loyalty store. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.",
       "fields": {
         "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
       },
@@ -78,7 +81,7 @@
       }
     },
     "streamlabs.primeSubGift": {
-      "description": "Runs when someone gives away a Twitch Prime sub through Streamlabs. Nice for a shout-out.",
+      "description": "Runs when someone gives away a Twitch Prime sub through Streamlabs. Nice for a shout-out. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.",
       "fields": {
         "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
       },
@@ -107,7 +110,11 @@
         "tier": "The sub level",
         "message": "Their message",
         "gifter": "Who paid for it, if it was a gift",
-        "platform": "Where they subscribed"
+        "platform": "Where they subscribed",
+        "subType": "What kind of sub it was, like \"resub\" or \"subgift\"",
+        "isGift": "True when someone gifted it",
+        "isResub": "True for a returning subscriber",
+        "emotes": "Emote data Streamlabs sent with the message, if any"
       }
     },
     "streamlabs.bits": {
@@ -118,11 +125,13 @@
       "variables": {
         "user": "Who cheered",
         "bits": "How many bits",
-        "message": "Their message"
+        "message": "Their message",
+        "bitsId": "The id of this cheer (not the viewer)",
+        "userId": "The viewer's id, when Streamlabs sends one (its sample does not)"
       }
     },
     "streamlabs.host": {
-      "description": "Runs when Streamlabs passes on another streamer hosting you. Only runs if you tick the \"Also publish...\" box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).",
+      "description": "Legacy: never runs today. Twitch removed hosting in 2022 and Mixer closed in 2020, so Streamlabs no longer sends hosts. Kept only so older actions still load.",
       "fields": {},
       "variables": {
         "user": "Who is hosting you",
@@ -1634,6 +1643,170 @@
     }
   },
   "subActions": {
+    "streamlabs.alertQueue": {
+      "description": "Controls your Streamlabs alert box: skip the alert showing now, pause or resume the alert queue, mute or unmute alert sounds, or show or hide the media share video. Great for a Stream Deck button. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "command": "What to do."
+      },
+      "variables": {}
+    },
+    "streamlabs.getAlertQueueStatus": {
+      "description": "Checks whether your Streamlabs alert queue is paused. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {},
+      "variables": {
+        "slAlertsPaused": "True when the alert queue is paused"
+      }
+    },
+    "streamlabs.createAlert": {
+      "description": "Shows your own alert in the Streamlabs alert box, styled like one of its alert types. Streamlabs asks apps to send at most 2 a minute, so Cuebot waits when you send more. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "type": "Which alert style to borrow: donation, follow, subscription or host.",
+        "message": "The main text. Put words in *stars* to highlight them, like *%user%* says hi.",
+        "userMessage": "Optional second line under the main text.",
+        "image": "Optional link to an image or GIF. Empty uses the alert type's own.",
+        "sound": "Optional link to a sound. Empty uses the alert type's own.",
+        "duration": "How long it shows, in milliseconds (5000 = 5 seconds). 0 uses the default.",
+        "color": "Optional colour of the highlighted words, like #32C3A6."
+      },
+      "variables": {}
+    },
+    "streamlabs.sendTestAlert": {
+      "description": "Asks Streamlabs to play one of its own test alerts in your alert box. Unlike \"Send test event\" on the Donations page, this shows on stream. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "type": "Which test alert.",
+        "platform": "Twitch or YouTube style."
+      },
+      "variables": {}
+    },
+    "streamlabs.setAlertProfile": {
+      "description": "Switches your Streamlabs alert profile, for example to a calmer set while Just Chatting. Pair it with a scene change. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "profile": "The profile name as Streamlabs shows it (capitals do not matter)."
+      },
+      "variables": {
+        "slAlertProfileId": "The id of the profile switched to",
+        "slAlertProfileName": "Its name"
+      }
+    },
+    "streamlabs.spinWheel": {
+      "description": "Spins your Streamlabs spin-the-wheel widget. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {},
+      "variables": {}
+    },
+    "streamlabs.emptyJar": {
+      "description": "Empties your Streamlabs tip jar widget. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {},
+      "variables": {}
+    },
+    "streamlabs.rollCredits": {
+      "description": "Rolls your Streamlabs end credits. Streamlabs only rolls them while you are live; otherwise the step fails with a message saying so. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {},
+      "variables": {}
+    },
+    "streamlabs.mediaShare": {
+      "description": "Controls Streamlabs media share: play, pause, skip, volume, and turning requests, autoplay, auto-show or moderation on or off. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "command": "What to do.",
+        "volume": "For the volume actions only: a level from 0 to 100. Leave empty to change by Streamlabs' own step."
+      },
+      "variables": {}
+    },
+    "streamlabs.getDonations": {
+      "description": "Gets your latest Streamlabs donations, newest first. Handy for a \"last donation\" command or credits. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "count": "How many (1 to 100).",
+        "currency": "Only this currency, like USD. Leave empty for all."
+      },
+      "variables": {
+        "slDonationCount": "How many came back",
+        "slDonation0User": "The newest donor's name (then slDonation1User and so on)",
+        "slDonation0Amount": "Its amount as a number",
+        "slDonation0Currency": "Its currency code",
+        "slDonation0FormattedAmount": "Its amount written nicely, like $5.00",
+        "slDonation0Message": "Its message",
+        "slDonation0Id": "Its Streamlabs donation id",
+        "slDonation0CreatedAt": "When it was made"
+      }
+    },
+    "streamlabs.getTopDonors": {
+      "description": "Adds up your last 100 Streamlabs donations per donor and lists the biggest givers. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "count": "How many donors.",
+        "currency": "Only donations in this currency are added up (amounts are not converted)."
+      },
+      "variables": {
+        "slTopDonorCount": "How many donors came back",
+        "slTopDonor0User": "The top donor (then slTopDonor1User and so on)",
+        "slTopDonor0Total": "Their total as a number",
+        "slTopDonor0FormattedTotal": "Their total written nicely"
+      }
+    },
+    "streamlabs.createDonation": {
+      "description": "Adds a donation to Streamlabs by hand, for example cash handed over at a meetup, so goals and lists count it. At most 2 a minute. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "name": "The donor's name, 2 to 25 characters.",
+        "amount": "The amount.",
+        "currency": "The currency code, like USD.",
+        "message": "Optional message, under 255 characters.",
+        "skipAlert": "Tick to add it without playing an alert."
+      },
+      "variables": {
+        "slDonationId": "The new donation's id, when Streamlabs says it"
+      }
+    },
+    "streamlabs.getPoints": {
+      "description": "Looks up a viewer's Streamlabs Cloudbot loyalty points. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "user": "The viewer's login name. The default %userName% means the person who ran the action."
+      },
+      "variables": {
+        "slPointsUser": "The viewer's name",
+        "slPoints": "Their points"
+      }
+    },
+    "streamlabs.addPoints": {
+      "description": "Gives a viewer Streamlabs Cloudbot loyalty points, or takes them away with a negative number. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "user": "The viewer's login name.",
+        "amount": "How many points. Negative numbers remove points."
+      },
+      "variables": {
+        "slPoints": "Their points afterwards"
+      }
+    },
+    "streamlabs.setPoints": {
+      "description": "Sets a viewer's Streamlabs Cloudbot loyalty points to an exact number. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "user": "The viewer's login name.",
+        "points": "The new number of points."
+      },
+      "variables": {
+        "slPoints": "Their points afterwards"
+      }
+    },
+    "streamlabs.addPointsToAll": {
+      "description": "Gives everyone in your channel Streamlabs Cloudbot loyalty points. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "amount": "How many points each."
+      },
+      "variables": {}
+    },
+    "streamlabs.resetPoints": {
+      "description": "Sets everyone's Streamlabs Cloudbot loyalty points back to 0. This cannot be undone. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {},
+      "variables": {}
+    },
+    "streamlabs.getPointsLeaderboard": {
+      "description": "Gets the viewers with the most Streamlabs Cloudbot loyalty points. Needs your own Streamlabs app connected (Donations → Streamlabs → Connect with Streamlabs).",
+      "fields": {
+        "count": "How many viewers."
+      },
+      "variables": {
+        "slPointsLeaderCount": "How many came back",
+        "slPointsLeader0User": "The top viewer (then slPointsLeader1User and so on)",
+        "slPointsLeader0Total": "Their points"
+      }
+    },
     "streamelements.getUserPoints": {
       "description": "Looks up how many StreamElements loyalty points a viewer has. Handy for a \"you have X points\" chat reply. Loyalty is not available on YouTube channels.",
       "fields": {

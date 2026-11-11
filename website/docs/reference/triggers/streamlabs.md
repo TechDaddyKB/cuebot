@@ -5,7 +5,7 @@
 
 ## Charity donation
 
-Runs when someone gives to a charity campaign you run on Streamlabs. Good for a special thank-you.
+Runs when someone gives to a charity campaign you run on Streamlabs. Good for a special thank-you. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.
 
 | Setting | What to put in |
 | --- | --- |
@@ -64,6 +64,7 @@ Runs when someone donates through Streamlabs. Great for a thank-you message or a
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Include donations fetched after a reconnect** | Tick to also run for donations Cuebot fetched after the connection came back (they happened while it was down). Needs your Streamlabs app connected. Starts as: `true`. |
 
 **Variables you get**
 
@@ -76,12 +77,14 @@ Runs when someone donates through Streamlabs. Great for a thank-you message or a
 | `%message%` | The message the donor wrote |
 | `%donationId%` | The number Streamlabs gave this donation |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isBackfill%` | True when Cuebot fetched this donation after a reconnect instead of hearing it live |
+| `%emotes%` | Emote data Streamlabs sent with the message, if any |
 
 <small>Type id: `streamlabs.donation`</small>
 
 ## Loyalty store redemption
 
-Runs when a viewer spends points on an item in your Streamlabs Cloudbot loyalty store.
+Runs when a viewer spends points on an item in your Streamlabs Cloudbot loyalty store. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.
 
 | Setting | What to put in |
 | --- | --- |
@@ -100,7 +103,7 @@ Runs when a viewer spends points on an item in your Streamlabs Cloudbot loyalty 
 
 ## Merchandise
 
-Runs when someone buys something from your Streamlabs merch store. Handy to thank buyers on stream.
+Runs when someone buys something from your Streamlabs merch store. Handy to thank buyers on stream. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.
 
 | Setting | What to put in |
 | --- | --- |
@@ -120,7 +123,7 @@ Runs when someone buys something from your Streamlabs merch store. Handy to than
 
 ## Prime gift
 
-Runs when someone gives away a Twitch Prime sub through Streamlabs. Nice for a shout-out.
+Runs when someone gives away a Twitch Prime sub through Streamlabs. Nice for a shout-out. Unverified: Streamlabs does not document this event, so Cuebot reads it from a guessed shape; tell us if a field comes out empty.
 
 | Setting | What to put in |
 | --- | --- |
@@ -153,6 +156,8 @@ Runs when Streamlabs passes on someone cheering bits. Only runs if you tick the 
 | `%user%` | Who cheered |
 | `%bits%` | How many bits |
 | `%message%` | Their message |
+| `%bitsId%` | The id of this cheer (not the viewer) |
+| `%userId%` | The viewer's id, when Streamlabs sends one (its sample does not) |
 
 <small>Type id: `streamlabs.bits`</small>
 
@@ -169,9 +174,9 @@ Runs when Streamlabs passes on a new follower. Only runs if you tick the "Also p
 
 <small>Type id: `streamlabs.follow`</small>
 
-## Relayed host
+## Relayed host (legacy, never sent)
 
-Runs when Streamlabs passes on another streamer hosting you. Only runs if you tick the "Also publish..." box for Streamlabs on the Donations page (off by default, because your streaming site already reports it).
+Legacy: never runs today. Twitch removed hosting in 2022 and Mixer closed in 2020, so Streamlabs no longer sends hosts. Kept only so older actions still load.
 
 **Variables you get**
 
@@ -213,6 +218,10 @@ Runs when Streamlabs passes on a new or returning subscriber. Only runs if you t
 | `%message%` | Their message |
 | `%gifter%` | Who paid for it, if it was a gift |
 | `%platform%` | Where they subscribed |
+| `%subType%` | What kind of sub it was, like "resub" or "subgift" |
+| `%isGift%` | True when someone gifted it |
+| `%isResub%` | True for a returning subscriber |
+| `%emotes%` | Emote data Streamlabs sent with the message, if any |
 
 <small>Type id: `streamlabs.subscription`</small>
 

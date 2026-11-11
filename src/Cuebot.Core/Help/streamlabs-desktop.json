@@ -48,10 +48,47 @@
       "variables": {}
     },
     "slobs.replayBufferSaved": {
-      "description": "Runs when Streamlabs Desktop saves a replay clip (the last moments of your stream).",
+      "description": "Runs when Streamlabs Desktop saves a replay clip (the last moments of your stream). This relies on an undocumented Streamlabs Desktop event; \"Replay buffer started\"/\"stopped\" use the documented one.",
       "fields": {},
       "variables": {
         "savedReplayPath": "Where the replay file was saved"
+      }
+    },
+    "slobs.streamReconnecting": {
+      "description": "Runs when your stream drops and Streamlabs Desktop is trying to reconnect. Handy to put up a \"technical difficulties\" message or warn yourself.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.streamError": {
+      "description": "Runs when Streamlabs Desktop reports a streaming error, like losing the connection to the server. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.",
+      "fields": {},
+      "variables": {
+        "errorMessage": "What Streamlabs Desktop said went wrong"
+      }
+    },
+    "slobs.replayBufferStarted": {
+      "description": "Runs when the replay buffer starts recording in the background.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.replayBufferStopped": {
+      "description": "Runs when the replay buffer stops.",
+      "fields": {},
+      "variables": {}
+    },
+    "slobs.studioModeChanged": {
+      "description": "Runs when studio mode is turned on or off in Streamlabs Desktop.",
+      "fields": {},
+      "variables": {
+        "studioMode": "True when studio mode was turned on, false when off"
+      }
+    },
+    "slobs.sceneCollectionChanged": {
+      "description": "Runs when Streamlabs Desktop switches to another scene collection (a whole set of scenes).",
+      "fields": {},
+      "variables": {
+        "sceneCollectionName": "The name of the collection now in use",
+        "sceneCollectionId": "Its id"
       }
     }
   },
@@ -135,7 +172,7 @@
       "variables": {}
     },
     "slobs.setFilterState": {
-      "description": "Turns a filter (an effect on a source) on or off.",
+      "description": "Turns a filter (an effect on a source) on or off. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.",
       "fields": {
         "source": "The source or scene the filter is on, exactly as Streamlabs Desktop shows it.",
         "filter": "The filter name exactly as shown, like \"Color Correction\".",
@@ -144,7 +181,7 @@
       "variables": {}
     },
     "slobs.setSceneFilterState": {
-      "description": "Shows, hides or flips a filter that sits on a whole scene.",
+      "description": "Shows, hides or flips a filter that sits on a whole scene. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.",
       "fields": {
         "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
         "filter": "The filter name exactly as shown.",
@@ -153,7 +190,7 @@
       "variables": {}
     },
     "slobs.setRandomFilterState": {
-      "description": "Picks one random filter on a source (or on the scene) and shows, hides or flips it. Fun for random effects.",
+      "description": "Picks one random filter on a source (or on the scene) and shows, hides or flips it. Fun for random effects. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.",
       "fields": {
         "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
         "source": "The source whose filters to pick from. Leave empty to pick from the scene's own filters.",
@@ -165,7 +202,7 @@
       }
     },
     "slobs.hideSourceFilters": {
-      "description": "Turns off every filter on one source in a scene.",
+      "description": "Turns off every filter on one source in a scene. This uses an undocumented part of the Streamlabs Desktop API (its internal API), so a Streamlabs Desktop update may break it.",
       "fields": {
         "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
         "source": "The source name exactly as Streamlabs Desktop shows it, like \"Webcam\"."
@@ -206,6 +243,40 @@
         "scene": "The scene name exactly as Streamlabs Desktop shows it, like \"Just Chatting\".",
         "source": "The source name exactly as Streamlabs Desktop shows it, like \"Webcam\".",
         "degrees": "The angle to set, in degrees: 90 is a quarter turn, 180 is upside down. It sets the angle, it does not add to the current one."
+      },
+      "variables": {}
+    },
+    "slobs.studioMode": {
+      "description": "Turns studio mode on or off, or swaps the preview scene onto the stream (Transition).",
+      "fields": {
+        "mode": "Enable, Disable, Toggle (switch to the other state) or Transition (run the studio mode transition)."
+      },
+      "variables": {}
+    },
+    "slobs.setSceneCollection": {
+      "description": "Switches Streamlabs Desktop to another scene collection (a whole set of scenes). It takes a moment and reloads every scene.",
+      "fields": {
+        "collection": "The scene collection name exactly as Streamlabs Desktop shows it (capitals do not matter)."
+      },
+      "variables": {}
+    },
+    "slobs.getPerformance": {
+      "description": "Reads your stream health from Streamlabs Desktop: CPU use, frames per second and dropped frames. Handy for a \"!health\" command.",
+      "fields": {},
+      "variables": {
+        "slobsCpu": "CPU use in percent",
+        "slobsFps": "Frames per second right now",
+        "slobsDroppedFrames": "How many frames were dropped",
+        "slobsDroppedPercent": "Dropped frames in percent",
+        "slobsBandwidth": "Upload bandwidth (kb/s)"
+      }
+    },
+    "slobs.notify": {
+      "description": "Shows a notification inside Streamlabs Desktop, like a reminder only you see.",
+      "fields": {
+        "message": "The text to show.",
+        "type": "Info, Warning or Success (changes the colour).",
+        "playSound": "Tick to also play Streamlabs Desktop's notification sound."
       },
       "variables": {}
     },

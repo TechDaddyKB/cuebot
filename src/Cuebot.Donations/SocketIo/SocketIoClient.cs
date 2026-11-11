@@ -19,7 +19,8 @@ internal sealed record SocketIoSessionEnd(string Reason, bool Opened, bool Fatal
 internal sealed class SocketIoClient(Func<IWebSocketTransport> transports, DonationsTimings timings, AppLog log, string source)
 {
     public event Action<int>? Connected;
-    public event Action<string>? Disconnected;
+    /// <summary>(reason, fatal): fatal when the server refused us (a Socket.IO CONNECT_ERROR, e.g. a bad token).</summary>
+    public event Action<string, bool>? Disconnected;
     public event Action<string, IReadOnlyList<JsonElement>>? EventReceived;
 
     /// <summary>Called once the namespace is connected; use the sender to emit (e.g. an "authenticate" event).</summary>
@@ -53,7 +54,7 @@ internal sealed class SocketIoClient(Func<IWebSocketTransport> transports, Donat
             }
 
             var reason = Redact(end.Reason);
-            Disconnected?.Invoke(reason);
+            Disconnected?.Invoke(reason, end.Fatal);
             TimeSpan wait;
             if (end.Opened)
             {

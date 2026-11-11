@@ -1951,11 +1951,59 @@ class Cuebot:
         Gives back: The item after the change: id, name, enabled, cost and stock.
         Same as cb.call(\"streamelements.setStoreItem\", ...).
         """
+    def streamlabs_add_points(self, user: Any, amount: Any) -> Any:
+        """Adds (or with a negative amount removes) Streamlabs Cloudbot loyalty points. Needs your Streamlabs app connected.
+
+        user: The viewer's login name.
+        amount: How many points; negative removes.
+        Gives back: Their points afterwards.
+        Same as cb.call(\"streamlabs.addPoints\", ...).
+        """
+    def streamlabs_alert_queue(self, *, command: Any = None) -> Any:
+        """Controls your Streamlabs alert box. Needs your Streamlabs app connected.
+
+        command: Optional. \"skip\" (default), \"pause_queue\", \"unpause_queue\", \"mute_volume\", \"unmute_volume\", \"show_video\" or \"hide_video\".
+        Gives back: true when Streamlabs accepted it.
+        Same as cb.call(\"streamlabs.alertQueue\", ...).
+        """
+    def streamlabs_create_alert(self, message: Any, *, type: Any = None, user_message: Any = None, image: Any = None, sound: Any = None, duration: Any = None) -> Any:
+        """Shows your own alert in the Streamlabs alert box. At most 2 a minute (Cuebot waits). Needs your Streamlabs app connected.
+
+        message: The main text; *stars* highlight words.
+        type: Optional. donation (default), follow, subscription or host: whose style to use.
+        user_message: Optional second line.
+        image: Optional image or GIF link.
+        sound: Optional sound link.
+        duration: Optional milliseconds.
+        Gives back: true when Streamlabs accepted it.
+        Same as cb.call(\"streamlabs.createAlert\", ...).
+        """
+    def streamlabs_get_donations(self, *, count: Any = None, currency: Any = None) -> Any:
+        """Gets your latest Streamlabs donations, newest first. Needs your Streamlabs app connected.
+
+        count: Optional. How many (default 5).
+        currency: Optional. Only this currency.
+        Gives back: A list of {id, user, amount, currency, formattedAmount, message, createdAt}.
+        Same as cb.call(\"streamlabs.getDonations\", ...).
+        """
+    def streamlabs_get_points(self, user: Any) -> Any:
+        """Gets a viewer's Streamlabs Cloudbot loyalty points. Needs your Streamlabs app connected.
+
+        user: The viewer's login name.
+        Gives back: Their points as a number.
+        Same as cb.call(\"streamlabs.getPoints\", ...).
+        """
     def streamlabs_is_connected(self) -> Any:
         """Checks whether Cuebot is connected to Streamlabs right now.
 
         Gives back: true while connected, otherwise false.
         Same as cb.call(\"streamlabs.isConnected\", ...).
+        """
+    def streamlabs_is_signed_in(self) -> Any:
+        """Checks whether your own Streamlabs app is connected, which the alert, wheel, points and donation-list functions need.
+
+        Gives back: true when connected, otherwise false.
+        Same as cb.call(\"streamlabs.isSignedIn\", ...).
         """
     def streamlabs_send_test_event(self, *, kind: Any = None) -> Any:
         """Fakes a Streamlabs event inside Cuebot, so you can test your triggers. Nothing is sent to Streamlabs and it works without a connection.
@@ -1963,6 +2011,13 @@ class Cuebot:
         kind: Optional. Which event: \"donation\", \"charity\", \"merch\" or \"loyalty\". Default \"donation\".
         Gives back: true when the test event was sent, false when the kind is unknown.
         Same as cb.call(\"streamlabs.sendTestEvent\", ...).
+        """
+    def streamlabs_widget(self, widget: Any) -> Any:
+        """Spins the wheel, empties the tip jar or rolls the credits. Needs your Streamlabs app connected.
+
+        widget: \"wheel\" (default), \"jar\" or \"credits\".
+        Gives back: true when Streamlabs accepted it.
+        Same as cb.call(\"streamlabs.widget\", ...).
         """
     def streamloots_is_connected(self) -> Any:
         """Checks whether Cuebot is connected to your StreamLoots alerts right now.

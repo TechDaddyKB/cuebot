@@ -157,6 +157,40 @@ public sealed class StreamlabsDesktopLiveTests
         await slobs.DisconnectAsync();
     }
 
+    /// <summary>
+    /// The newer commands, harmlessly: stream health and scene collections are read, studio mode is toggled and put back,
+    /// and a notification is shown. Also checks that the documented events subscribed (nothing goes live).
+    /// </summary>
+    [LiveServiceFact("CUEBOT_LIVE_SLOBS_TOKEN")]
+    public async Task Studio_mode_collections_health_and_notifications_work()
+    {
+        var dataDirectory = Path.Combine(LiveEnvironment.DataDirectory, "slobs-extras");
+        Directory.CreateDirectory(dataDirectory);
+        await using var services = new ServiceCollection().AddCuebotCore(new AppPaths(dataDirectory)).AddObs().BuildServiceProvider();
+        var events = new ConcurrentQueue<BotEvent>();
+        services.GetRequiredService<EventBus>().Subscribe(events.Enqueue);
+        var settings = services.GetRequiredService<JsonFile<StreamlabsSettings>>().Value;
+        settings.Token = ServicesLiveEnvironment.Get("CUEBOT_LIVE_SLOBS_TOKEN")!;
+        if (ServicesLiveEnvironment.Get("CUEBOT_LIVE_SLOBS_HOST") is { } host) settings.Host = host;
+        if (int.TryParse(ServicesLiveEnvironment.Get("CUEBOT_LIVE_SLOBS_PORT"), out var port)) settings.Port = port;
+        var slobs = services.GetRequiredService<StreamlabsDesktopService>();
+        await slobs.ConnectAsync();
+        await WaitAsync(() => slobs.State == ConnectionState.Connected, () => $"Streamlabs Desktop did not connect ({slobs.StatusMessage})");
+
+        var perf = await slobs.GetPerformanceAsync();
+        Assert.True(perf.Cpu >= 0 && perf.Fps >= 0);
+        Assert.NotEmpty(await slobs.GetSceneCollectionsAsync());
+        Assert.NotEmpty(slobs.CurrentSceneCollection);
+
+        var studio = slobs.IsStudioMode;
+        await slobs.ControlStudioModeAsync(StudioModeCommand.Toggle);
+        await WaitAsync(() => events.Any(e => e.Type == StreamlabsEvents.StudioModeChanged), () => "no studioModeChanged event");
+        await slobs.ControlStudioModeAsync(studio ? StudioModeCommand.Enable : StudioModeCommand.Disable);
+
+        await slobs.PushNotificationAsync("Cuebot live test: you can dismiss this.", SlobsNotificationType.Info, playSound: false);
+        await slobs.DisconnectAsync();
+    }
+
     private static string SceneId(StreamlabsDesktopService slobs, string name) =>
         slobs.Scenes.First(s => s.Name == name).Id;
 

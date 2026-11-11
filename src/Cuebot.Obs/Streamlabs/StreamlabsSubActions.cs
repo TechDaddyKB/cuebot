@@ -93,6 +93,25 @@ public static class StreamlabsCatalog
             Make("slobs.rotateSource", "Rotate source", [Scene(), Source(), new("degrees", "Degrees") { DefaultValue = "90" }],
                 (_, v, ct) => slobs.RotateSourceAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"),
                     RequireNumber(v["degrees"], "Degrees"), ct)),
+            Make("slobs.studioMode", "Studio mode", [Choice("mode", "Mode", StudioModeCommand.Toggle)],
+                (_, v, ct) => slobs.ControlStudioModeAsync(ParseChoice<StudioModeCommand>(v["mode"], "Mode"), ct)),
+            Make("slobs.setSceneCollection", "Set scene collection",
+                [new("collection", "Scene collection") { Suggestions = () => slobs.SceneCollectionNames }],
+                (_, v, ct) => slobs.SetSceneCollectionAsync(Require(v["collection"], "Scene collection"), ct)),
+            Make("slobs.getPerformance", "Get stream health", [], async (ctx, _, ct) =>
+            {
+                var perf = await slobs.GetPerformanceAsync(ct).ConfigureAwait(false);
+                ctx.Args["slobsCpu"] = Math.Round(perf.Cpu, 1);
+                ctx.Args["slobsFps"] = Math.Round(perf.Fps, 1);
+                ctx.Args["slobsDroppedFrames"] = perf.DroppedFrames;
+                ctx.Args["slobsDroppedPercent"] = Math.Round(perf.DroppedPercent, 2);
+                ctx.Args["slobsBandwidth"] = Math.Round(perf.Bandwidth, 1);
+            }),
+            Make("slobs.notify", "Show a Streamlabs Desktop notification",
+                [new("message", "Message"), Choice("type", "Type", SlobsNotificationType.Info),
+                 new("playSound", "Play a sound", ParameterKind.Boolean) { DefaultValue = "false" }],
+                (_, v, ct) => slobs.PushNotificationAsync(Require(v["message"], "Message"), ParseChoice<SlobsNotificationType>(v["type"], "Type"),
+                    v.GetBool("playSound"), ct)),
             Make("slobs.raw", "Send Streamlabs command (advanced)",
                 [new("resource", "Resource") { DefaultValue = "ScenesService" }, new("method", "Method") { DefaultValue = "getScenes" },
                  new("args", "Arguments (JSON array)", ParameterKind.Multiline) { Help = "Leave empty for none" },
@@ -119,6 +138,12 @@ public static class StreamlabsCatalog
         new EventTriggerType(StreamlabsEvents.RecordStarted, Category, "Recording started", StreamlabsEvents.RecordStarted),
         new EventTriggerType(StreamlabsEvents.RecordStopped, Category, "Recording stopped", StreamlabsEvents.RecordStopped),
         new EventTriggerType(StreamlabsEvents.ReplayBufferSaved, Category, "Replay buffer saved", StreamlabsEvents.ReplayBufferSaved),
+        new EventTriggerType(StreamlabsEvents.ReplayBufferStarted, Category, "Replay buffer started", StreamlabsEvents.ReplayBufferStarted),
+        new EventTriggerType(StreamlabsEvents.ReplayBufferStopped, Category, "Replay buffer stopped", StreamlabsEvents.ReplayBufferStopped),
+        new EventTriggerType(StreamlabsEvents.StreamReconnecting, Category, "Stream reconnecting", StreamlabsEvents.StreamReconnecting),
+        new EventTriggerType(StreamlabsEvents.StreamError, Category, "Stream error", StreamlabsEvents.StreamError),
+        new EventTriggerType(StreamlabsEvents.StudioModeChanged, Category, "Studio mode changed", StreamlabsEvents.StudioModeChanged),
+        new EventTriggerType(StreamlabsEvents.SceneCollectionChanged, Category, "Scene collection changed", StreamlabsEvents.SceneCollectionChanged),
         new EventTriggerType(StreamlabsEvents.Connected, Category, "Connected", StreamlabsEvents.Connected),
         new EventTriggerType(StreamlabsEvents.Disconnected, Category, "Disconnected", StreamlabsEvents.Disconnected),
     ];

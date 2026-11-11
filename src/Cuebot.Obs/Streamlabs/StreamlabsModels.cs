@@ -46,9 +46,42 @@ public static class StreamlabsEvents
     public const string RecordStarted = "slobs.recordStarted";
     public const string RecordStopped = "slobs.recordStopped";
 
-    /// <summary>Args: savedReplayPath.</summary>
+    /// <summary>Args: savedReplayPath. Relies on replayBufferFileWrite, which only Streamlabs Desktop's internal API has.</summary>
     public const string ReplayBufferSaved = "slobs.replayBufferSaved";
+
+    /// <summary>The stream dropped and Streamlabs Desktop is reconnecting (streamingStatusChange "reconnecting").</summary>
+    public const string StreamReconnecting = "slobs.streamReconnecting";
+
+    /// <summary>Args: errorMessage. StreamingService.streamErrorCreated (in the app's source, not the API docs).</summary>
+    public const string StreamError = "slobs.streamError";
+
+    public const string ReplayBufferStarted = "slobs.replayBufferStarted";
+    public const string ReplayBufferStopped = "slobs.replayBufferStopped";
+
+    /// <summary>Args: studioMode (true when turned on).</summary>
+    public const string StudioModeChanged = "slobs.studioModeChanged";
+
+    /// <summary>Args: sceneCollectionName, sceneCollectionId.</summary>
+    public const string SceneCollectionChanged = "slobs.sceneCollectionChanged";
 }
+
+public enum StudioModeCommand
+{
+    Enable,
+    Disable,
+    Toggle,
+    Transition,
+}
+
+public enum SlobsNotificationType
+{
+    Info,
+    Warning,
+    Success,
+}
+
+/// <summary>PerformanceService.getModel: CPU %, frames per second, dropped frames (count and %), bandwidth.</summary>
+public sealed record SlobsPerformance(double Cpu, double Fps, long DroppedFrames, double DroppedPercent, double Bandwidth);
 
 /// <summary>Parses Streamlabs Desktop models leniently.</summary>
 internal static class StreamlabsParser
@@ -97,6 +130,14 @@ internal static class StreamlabsParser
     public static bool? StreamingState(string? status) => status switch
     {
         "live" => true,
+        "offline" => false,
+        _ => null,
+    };
+
+    /// <summary>"running" → started, "offline" → stopped, "saving"/"stopping" → null.</summary>
+    public static bool? ReplayBufferState(string? status) => status switch
+    {
+        "running" => true,
         "offline" => false,
         _ => null,
     };

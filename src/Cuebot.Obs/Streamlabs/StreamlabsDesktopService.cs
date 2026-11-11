@@ -22,7 +22,10 @@ public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
         ("ScenesService", "itemAdded"), ("ScenesService", "itemRemoved"), ("ScenesService", "itemUpdated"),
         ("SourcesService", "sourceAdded"), ("SourcesService", "sourceRemoved"), ("SourcesService", "sourceUpdated"),
         ("StreamingService", "streamingStatusChange"), ("StreamingService", "recordingStatusChange"),
-        ("StreamingService", "replayBufferFileWrite"),
+        ("StreamingService", "replayBufferStatusChange"), ("TransitionsService", "studioModeChanged"),
+        ("SceneCollectionsService", "collectionSwitched"),
+        // Not in the external API docs: they resolve through Streamlabs Desktop's internal API and may disappear.
+        ("StreamingService", "replayBufferFileWrite"), ("StreamingService", "streamErrorCreated"),
     ];
 
     private readonly JsonFile<StreamlabsSettings> _settingsFile;
@@ -70,6 +73,10 @@ public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
     public string? CurrentScene => _currentScene;
     public bool IsStreaming { get; private set; }
     public bool IsRecording { get; private set; }
+    public bool IsReplayBufferActive { get; private set; }
+    public bool IsStudioMode { get; private set; }
+    public string CurrentSceneCollection { get; private set; } = "";
+    public IReadOnlyList<string> SceneCollectionNames { get; private set; } = [];
 
     /// <summary>Raised (on a background thread) when scenes, sources or the current scene change.</summary>
     public event Action? ScenesChanged;
@@ -278,6 +285,67 @@ public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
         return scene.Items.Where(i => i.ParentId == group.Id && !i.IsFolder).ToArray();
     }
 
+    // ---- Studio mode, scene collections, performance, notifications ----
+
+    /// <summary>Turns studio mode on, off or over (Toggle), or runs the studio mode transition (TransitionsService).</summary>
+    public async Task ControlStudioModeAsync(StudioModeCommand command, CancellationToken ct = default)
+    {
+        switch (command)
+        {
+            case StudioModeCommand.Transition:
+                await CallAsync("TransitionsService", "executeStudioModeTransition", null, ct).ConfigureAwait(false);
+                return;
+            case StudioModeCommand.Toggle:
+                var model = await CallAsync("TransitionsService", "getModel", null, ct).ConfigureAwait(false);
+                command = model.GetBoolOrNull("studioMode") == true ? StudioModeCommand.Disable : StudioModeCommand.Enable;
+                break;
+        }
+        await CallAsync("TransitionsService", command == StudioModeCommand.Enable ? "enableStudioMode" : "disableStudioMode", null, ct)
+            .ConfigureAwait(false);
+        IsStudioMode = command == StudioModeCommand.Enable;
+    }
+
+    /// <summary>The scene collections (SceneCollectionsService.collections): id and name.</summary>
+    public async Task<IReadOnlyList<(string Id, string Name)>> GetSceneCollectionsAsync(CancellationToken ct = default)
+    {
+        var list = await CallAsync("SceneCollectionsService", "collections", null, ct).ConfigureAwait(false);
+        return list.ValueKind != JsonValueKind.Array
+            ? []
+            : list.EnumerateArray()
+                .Where(c => c.ValueKind == JsonValueKind.Object && c.GetStringOrNull("id") is not null)
+                .Select(c => (c.GetStringOrNull("id")!, c.GetStringOrNull("name") ?? c.GetStringOrNull("id")!))
+                .ToArray();
+    }
+
+    /// <summary>Loads a scene collection by name (SceneCollectionsService.load). Returns its id.</summary>
+    public async Task<string> SetSceneCollectionAsync(string name, CancellationToken ct = default)
+    {
+        var collections = await GetSceneCollectionsAsync(ct).ConfigureAwait(false);
+        var match = collections.FirstOrDefault(c => string.Equals(c.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (match.Id is null)
+            throw new StreamlabsException($"Streamlabs Desktop has no scene collection named '{name}'" +
+                (collections.Count > 0 ? $" (there are: {string.Join(", ", collections.Select(c => c.Name))})." : "."));
+        await CallAsync("SceneCollectionsService", "load", [match.Id], ct).ConfigureAwait(false);
+        return match.Id;
+    }
+
+    /// <summary>Stream health from PerformanceService.getModel (CPU %, FPS, dropped frames, bandwidth).</summary>
+    public async Task<SlobsPerformance> GetPerformanceAsync(CancellationToken ct = default)
+    {
+        var model = await CallAsync("PerformanceService", "getModel", null, ct).ConfigureAwait(false);
+        return new SlobsPerformance(model.GetDoubleOrNull("CPU") ?? 0, model.GetDoubleOrNull("frameRate") ?? 0,
+            (long)(model.GetDoubleOrNull("numberDroppedFrames") ?? 0), model.GetDoubleOrNull("percentageDroppedFrames") ?? 0,
+            model.GetDoubleOrNull("bandwidth") ?? 0);
+    }
+
+    /// <summary>Shows a notification in Streamlabs Desktop (NotificationsService.push).</summary>
+    public Task PushNotificationAsync(string message, SlobsNotificationType type, bool playSound, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(message)) throw new StreamlabsException("The notification needs a message.");
+        return CallAsync("NotificationsService", "push",
+            [new { message, type = type.ToString().ToUpperInvariant(), playSound, unread = true }], ct);
+    }
+
     /// <summary>Mirrors a source by negating its scale on one axis.</summary>
     public async Task FlipSourceAsync(string sceneName, string sourceName, FlipAxis axis, CancellationToken ct = default)
     {
@@ -339,7 +407,17 @@ public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
             {
                 await client.ConnectAsync(new UriBuilder("ws", Settings.Host, Settings.Port, "api").Uri, Settings.Token, ct).ConfigureAwait(false);
                 foreach (var (resource, eventName) in Subscriptions)
-                    await client.SubscribeAsync(resource, eventName, ct).ConfigureAwait(false);
+                {
+                    // Best effort: an event an older or newer Streamlabs Desktop lacks must not stop the connection.
+                    try
+                    {
+                        await client.SubscribeAsync(resource, eventName, ct).ConfigureAwait(false);
+                    }
+                    catch (StreamlabsException ex) when (client.IsConnected)
+                    {
+                        _log.Warn(LogSource, $"Could not subscribe to {resource}.{eventName}: {ex.Message}");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -434,11 +512,58 @@ public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
                     RefreshInBackground(RefreshSourcesAsync);
                     break;
                 case "StreamingService.streamingStatusChange":
-                    if (StreamlabsParser.StreamingState(data.ValueKind == JsonValueKind.String ? data.GetString() : null) is { } live)
+                    var streamStatus = data.ValueKind == JsonValueKind.String ? data.GetString() : null;
+                    if (StreamlabsParser.StreamingState(streamStatus) is { } live)
                     {
                         IsStreaming = live;
                         Publish(live ? StreamlabsEvents.StreamStarted : StreamlabsEvents.StreamStopped);
                     }
+                    else if (streamStatus == "reconnecting")
+                    {
+                        Publish(StreamlabsEvents.StreamReconnecting);
+                    }
+                    break;
+                case "StreamingService.replayBufferStatusChange":
+                    var replayStatus = data.ValueKind == JsonValueKind.String ? data.GetString() : null;
+                    if (StreamlabsParser.ReplayBufferState(replayStatus) is { } running)
+                    {
+                        if (IsReplayBufferActive == running) break;
+                        IsReplayBufferActive = running;
+                        Publish(running ? StreamlabsEvents.ReplayBufferStarted : StreamlabsEvents.ReplayBufferStopped);
+                    }
+                    break;
+                case "TransitionsService.studioModeChanged":
+                    var studio = data.ValueKind is JsonValueKind.True or JsonValueKind.False ? data.GetBoolean() : (bool?)null;
+                    if (studio is { } on)
+                    {
+                        IsStudioMode = on;
+                        Publish(StreamlabsEvents.StudioModeChanged, new() { ["studioMode"] = on });
+                    }
+                    break;
+                case "SceneCollectionsService.collectionSwitched":
+                    var collectionName = data.ValueKind == JsonValueKind.Object ? data.GetStringOrNull("name") ?? "" : "";
+                    CurrentSceneCollection = collectionName;
+                    Publish(StreamlabsEvents.SceneCollectionChanged, new()
+                    {
+                        ["sceneCollectionName"] = collectionName,
+                        ["sceneCollectionId"] = data.ValueKind == JsonValueKind.Object ? data.GetStringOrNull("id") ?? "" : "",
+                    });
+                    RefreshInBackground(async c =>
+                    {
+                        await RefreshScenesAsync(c).ConfigureAwait(false);
+                        await RefreshSourcesAsync(c).ConfigureAwait(false);
+                    });
+                    break;
+                case "StreamingService.streamErrorCreated":
+                    Publish(StreamlabsEvents.StreamError, new()
+                    {
+                        ["errorMessage"] = data.ValueKind switch
+                        {
+                            JsonValueKind.String => data.GetString() ?? "",
+                            JsonValueKind.Object => data.GetStringOrNull("message") ?? data.GetStringOrNull("type") ?? data.GetRawText(),
+                            _ => "",
+                        },
+                    });
                     break;
                 case "StreamingService.recordingStatusChange":
                     if (StreamlabsParser.RecordingState(data.ValueKind == JsonValueKind.String ? data.GetString() : null) is { } recording)
@@ -476,10 +601,22 @@ public sealed class StreamlabsDesktopService : IConnectable, IAsyncDisposable
             var model = await CallAsync("StreamingService", "getModel", null, ct).ConfigureAwait(false);
             IsStreaming = StreamlabsParser.StreamingState(model.GetStringOrNull("streamingStatus")) ?? false;
             IsRecording = StreamlabsParser.RecordingState(model.GetStringOrNull("recordingStatus")) ?? false;
+            IsReplayBufferActive = StreamlabsParser.ReplayBufferState(model.GetStringOrNull("replayBufferStatus")) ?? false;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _log.Warn(LogSource, $"Could not load scenes and sources: {ex.Message}");
+        }
+        try
+        {
+            SceneCollectionNames = (await GetSceneCollectionsAsync(ct).ConfigureAwait(false)).Select(c => c.Name).ToArray();
+            var active = await CallAsync("SceneCollectionsService", "activeCollection", null, ct).ConfigureAwait(false);
+            CurrentSceneCollection = active.ValueKind == JsonValueKind.Object ? active.GetStringOrNull("name") ?? "" : "";
+            IsStudioMode = (await CallAsync("TransitionsService", "getModel", null, ct).ConfigureAwait(false)).GetBoolOrNull("studioMode") ?? false;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.Warn(LogSource, $"Could not load scene collections or studio mode: {ex.Message}");
         }
     }
 

@@ -178,9 +178,108 @@ public abstract partial class DonationCardViewModel : ObservableObject
     }
 }
 
-public sealed class StreamlabsCardViewModel(StreamlabsService service) : DonationCardViewModel(service)
+public sealed partial class StreamlabsCardViewModel : DonationCardViewModel
 {
-    private StreamlabsSettings S => service.Settings;
+    private readonly StreamlabsService _service;
+    private readonly Action<string> _openBrowser;
+
+    public StreamlabsCardViewModel(StreamlabsService service, Action<string>? openBrowser = null) : base(service)
+    {
+        _service = service;
+        _openBrowser = openBrowser ?? Cuebot.App.Shell.UrlLauncher.Open;
+    }
+
+    private StreamlabsSettings S => _service.Settings;
+
+    public string ClientId
+    {
+        get => S.ClientId;
+        set { S.ClientId = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    /// <summary>The client secret; the view masks it.</summary>
+    public string ClientSecret
+    {
+        get => S.ClientSecret;
+        set { S.ClientSecret = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    public decimal RedirectPort
+    {
+        get => S.RedirectPort;
+        set { S.RedirectPort = Math.Clamp((int)value, 1024, 65535); Save(); OnPropertyChanged(); OnPropertyChanged(nameof(RedirectUri)); }
+    }
+
+    public string RedirectUri => _service.RedirectUri;
+
+    /// <summary>Advanced starts open once an app is set up.</summary>
+    public bool ShowOwnApp => S.ClientId.Trim().Length > 0 || _service.IsSignedIn;
+
+    public string SignInState => _service.IsSignedIn
+        ? S.AccountName.Length > 0
+            ? $"Connected as {S.AccountName}{(S.LinkedAccounts.Length > 0 ? $" ({S.LinkedAccounts})" : "")}"
+            : "Connected"
+        : "Not connected (alerts, wheel, points and back-fill are off)";
+
+    public string PointsChannel
+    {
+        get => S.PointsChannel;
+        set { S.PointsChannel = value.Trim(); Save(); OnPropertyChanged(); }
+    }
+
+    public decimal RequestsPerMinute
+    {
+        get => S.RequestsPerMinute;
+        set { S.RequestsPerMinute = Math.Clamp((int)value, 1, 2400); Save(); OnPropertyChanged(); }
+    }
+
+    public bool BackfillMissedDonations
+    {
+        get => S.BackfillMissedDonations;
+        set { S.BackfillMissedDonations = value; Save(); OnPropertyChanged(); }
+    }
+
+    [ObservableProperty] private bool _isSigningIn;
+
+    [RelayCommand]
+    private async Task SignIn()
+    {
+        Error = "";
+        IsSigningIn = true;
+        try
+        {
+            await _service.SignInAsync(_openBrowser);
+            Info = $"Connected to Streamlabs{(S.AccountName.Length > 0 ? $" as {S.AccountName}" : "")}.";
+            OnPropertyChanged(nameof(Token));
+            OnPropertyChanged(nameof(MaskedToken));
+            await _service.ConnectAsync();
+        }
+        catch (Exception ex) { Error = ex.Message; }
+        finally { IsSigningIn = false; }
+        OnPropertyChanged(string.Empty);
+    }
+
+    [RelayCommand]
+    private void SignOut()
+    {
+        Error = "";
+        _service.SignOut();
+        Info = "Forgot the Streamlabs app connection. The socket token stays.";
+        OnPropertyChanged(string.Empty);
+    }
+
+    /// <summary>Streamlabs' own test alert (shown in the alert box), unlike "Send test event" which stays in Cuebot.</summary>
+    [RelayCommand]
+    private async Task SendStreamlabsTestAlert()
+    {
+        Error = "";
+        try
+        {
+            await _service.SendTestAlertAsync("donation", "twitch");
+            Info = "Asked Streamlabs to show a test donation alert.";
+        }
+        catch (Exception ex) { Error = ex.Message; }
+    }
 
     protected override string GetToken() => S.SocketToken;
     protected override void SetToken(string token) => S.SocketToken = token;

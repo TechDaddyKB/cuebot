@@ -33,12 +33,38 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Streamlabs" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="On streamlabs.com open Settings → API Settings → API Tokens and copy the Socket API Token. Cuebot connects to Streamlabs (using that token) for donations, charity donations, merch, loyalty store redemptions and Prime gifts." />
+                     Text="On streamlabs.com open Settings → API Settings → API Tokens and copy the Socket API Token (the menu sometimes moves; connecting your own app below fills it in too). Cuebot connects to Streamlabs (using that token) for donations, charity donations, merch, loyalty store redemptions and Prime gifts." />
           <TextBox Name="StreamlabsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="Socket API token"
                    ToolTip.Tip="A secret code from Streamlabs that lets Cuebot hear your donations. Paste it here. It stays hidden." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
           <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
           <CheckBox Content="Also publish the Twitch/YouTube events Streamlabs relays (follows, subs, bits, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" ToolTip.Tip="Streamlabs also passes on follows, subs and so on. Tick only if you do not already get them from Twitch or YouTube directly, or they may run twice." />
+          <Expander Header="Optional: connect your own Streamlabs app (alerts, wheel, points, back-fill)" HorizontalAlignment="Stretch" IsExpanded="{Binding ShowOwnApp, Mode=OneTime}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="Needed only for the Streamlabs steps (skip or pause alerts, custom alerts, alert profiles, wheel, jar, credits, media share, Cloudbot points) and for fetching donations missed while the connection was down. On streamlabs.com open Settings → API Settings → Register App, set the redirect URL to the address below, whitelist your own Streamlabs account, then copy the Client ID and Client Secret here. Until Streamlabs approves the app it may make 5 requests a minute. Connecting also fills in the socket token." />
+              <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" ToolTip.Tip="The public ID of your Streamlabs app." />
+              <TextBox Name="StreamlabsSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" ToolTip.Tip="The secret code of your Streamlabs app. It stays hidden." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Redirect port" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding RedirectPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="140" ToolTip.Tip="The door number on this computer that Streamlabs sends you back to after signing in. Change it only if another program already uses it." />
+                <SelectableTextBlock Text="{Binding RedirectUri}" VerticalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Connect with Streamlabs" Classes="accent" Command="{Binding SignInCommand}" IsEnabled="{Binding !IsSigningIn}" ToolTip.Tip="Opens Streamlabs in your browser. Log in there and allow your app." />
+                <Button Content="Forget app connection" Command="{Binding SignOutCommand}" ToolTip.Tip="Forgets the app sign-in on this computer. The socket token stays, so donations keep arriving." />
+                <TextBlock Classes="muted" Text="{Binding SignInState}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              </StackPanel>
+              <CheckBox Content="Fetch donations missed while the connection was down" IsChecked="{Binding BackfillMissedDonations}" ToolTip.Tip="After a reconnect, Cuebot asks Streamlabs for donations made meanwhile and runs them (they carry isBackfill = true)." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Points channel" VerticalAlignment="Center" />
+                <TextBox Text="{Binding PointsChannel}" MinWidth="200" PlaceholderText="your Twitch login" ToolTip.Tip="The channel Cloudbot loyalty points belong to. Filled from your linked Twitch account when you connect." />
+                <TextBlock Text="Requests per minute" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding RequestsPerMinute}" Minimum="1" Maximum="2400" Increment="1" FormatString="0" Width="120" ToolTip.Tip="5 for an app Streamlabs has not approved yet, up to 2400 once approved. Extra requests wait." />
+              </StackPanel>
+              <Button Content="Show a Streamlabs test alert" Command="{Binding SendStreamlabsTestAlertCommand}" ToolTip.Tip="Asks Streamlabs to play a test donation alert in your alert box (unlike Send test event, which stays inside Cuebot)." />
+            </StackPanel>
+          </Expander>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
             <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />

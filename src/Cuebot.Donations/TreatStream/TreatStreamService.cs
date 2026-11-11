@@ -190,7 +190,7 @@ public sealed class TreatStreamService : DonationServiceBase
             Redact = RedactSecrets,
         };
         client.Connected += _ => OnConnected("Connected to TreatStream");
-        client.Disconnected += reason => OnDisconnected(reason, fatal: reason.Contains("refused", StringComparison.Ordinal));
+        client.Disconnected += (reason, fatal) => OnDisconnected(reason, fatal);
         client.EventReceived += (name, args) =>
         {
             if (name == "realTimeTreat" && args.Count > 0) HandleTreat(args[0]);

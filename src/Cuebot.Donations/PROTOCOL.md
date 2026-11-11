@@ -9,13 +9,19 @@ No service is contacted by the tests; `isTest` events from "Send test event" nev
   query string, so URLs are never logged (all reasons/status texts go through `Secrets.Redact`).
 - **Endpoint:** `https://sockets.streamlabs.com?token=<socket token>`, Socket.IO, websocket transport only.
   Cuebot connects to `wss://sockets.streamlabs.com/socket.io/?token=…&EIO=4&transport=websocket`.
-- **Protocol version:** the official docs still show the Socket.IO 2.0.3 client (Engine.IO 3); Speaker.bot's
-  changelog says it uses Socket.IO v4. Cuebot tries **EIO=4 first and falls back to EIO=3** when the upgrade is
-  refused or no handshake arrives, then remembers what worked (`donations.json` → `streamlabs.engineIoVersion`).
+- **Protocol version:** the official docs still load the Socket.IO **2.0.3** client (Engine.IO 3), the only documented
+  protocol; Speaker.bot's changelog says it uses Socket.IO v4. Since 2026-11-11 a fresh install tries **EIO=3 first**
+  (`streamlabs.engineIoVersion` defaults to 3) and falls back to EIO=4 when it is refused or no handshake arrives, then
+  remembers what worked. Which one `sockets.streamlabs.com` accepts today is still a live check.
+- **Refusal:** the Socket API documents no refusal signal for a bad token. A Socket.IO `CONNECT_ERROR` is treated as
+  fatal through `SocketIoSessionEnd.Fatal` (carried by `SocketIoClient.Disconnected(reason, fatal)`), never by matching
+  the reason text (a local "connection actively refused" is only a lost connection and retried).
 - **Event name:** `event`, one argument `{ "type", "for"?, "message": [ … ], "event_id"? }`. One bot event is published
   per entry of `message` (an object instead of an array is accepted too).
 - **Dedupe:** an entry is a duplicate when its `event_id:index` or its `_id` (alert id; `id` when there is no `_id`)
-  was seen in the last 500 events. Test events are never deduplicated.
+  was seen in the last 500 events; the key includes the type, because the docs' sample `_id`s repeat across types. A
+  donation also gets `donation:donation_id:<id>` (its `id` equals `donation_id` of `GET /donations`), so the REST
+  back-fill recognises donations the socket already delivered. Test events are never deduplicated.
 
 | Streamlabs `type` (`for`) | Bot event | Notes |
 | --- | --- | --- |
@@ -24,19 +30,46 @@ No service is contacted by the tests; `isTest` events from "Send test event" nev
 | `merch` | `streamlabs.merch` | `from`, `product`, `message`, `image_href`/`imageHref` (undocumented shape; tolerant) |
 | `loyalty_store_redemption` | `streamlabs.loyaltyStoreRedemption` | same shape as merch (undocumented; tolerant) |
 | `prime_sub_gift` | `streamlabs.primeSubGift` | `name` (recipient), `from` (gifter), `giftType` (undocumented; tolerant) |
-| `follow` (`twitch_account`, `youtube_account`, …) | `streamlabs.follow` | relayed |
-| `subscription`, `resub` | `streamlabs.subscription` | relayed; `months`, `sub_plan`, `sub_plan_name`, `sub_type`, `message` |
-| `bits` | `streamlabs.bits` | relayed; `amount` = bits |
+| `follow` (`twitch_account`, `youtube_account`, …) | `streamlabs.follow` | relayed; `id` = Twitch user id / YouTube channel id (`userId`) |
+| `subscription`, `resub` | `streamlabs.subscription` | relayed; `months`, `sub_plan`, `sub_plan_name`, `sub_type` (`subType`, plus `isGift`/`isResub`), `gifter` (undocumented), `message`, `emotes` |
+| `bits` | `streamlabs.bits` | relayed; `amount` = bits; `id` is the cheer's transaction UUID (`bitsId`), **not** the user: `userId` is `from_user_id` or empty |
 | `raid` (the docs' table says `raids`; both accepted) | `streamlabs.raid` | relayed; `raiders` |
-| `host` | `streamlabs.host` | relayed; `viewers` |
+| `host` | `streamlabs.host` | **legacy**: still in the docs' table, never sent (Twitch removed hosting in Oct 2022, Mixer closed Jul 2020). Kept so old actions load; trigger labelled "legacy, never sent" |
 | `superchat` (`youtube_account`) | `streamlabs.superchat` | relayed; `amount` in micros, `displayString`, `comment`; `channelId` = sender (`userId`), `id` = chat message (`superchatId`) |
 
 Relayed events (anything with a platform `for`) are published only with *Relay platform events* on (off by
 default, so they do not duplicate the native Twitch/YouTube modules). Other types (`alertPlaying`, `streamlabels`, …)
 are ignored. Connection events: `streamlabs.connected`, `streamlabs.disconnected`.
 
-Streamlabs' REST API (donations list, Spin Wheel, alerts) needs an OAuth app; the Socket API token cannot call it, so
-there are no Streamlabs REST sub-actions yet.
+Charity, merch, loyalty store and Prime gift shapes, and the "Send test event" samples for them, are Cuebot's guesses
+(not documented anywhere on dev.streamlabs.com); their help text says "unverified" until real payloads are captured.
+
+### REST API v2.0 (`https://streamlabs.com/api/v2.0/`, OAuth2; optional)
+
+- **App:** the user registers their own app (Settings → API Settings → Register App) and pastes its client id and
+  secret: the token exchange needs `client_secret`, which a desktop program cannot ship. Until Streamlabs approves an
+  app, only **10 whitelisted users** may authorize it and it gets **5 requests per minute** (TESTING tier; APPROVED =
+  2400/min). Cuebot limits itself to `streamlabs.requestsPerMinute` (default 5; extra calls wait) and to 2 `POST
+  /alerts` / `POST /donations` a minute, as the docs recommend.
+- **Sign-in:** `GET /authorize?response_type=code&client_id&redirect_uri&scope&state` (redirect
+  `http://localhost:8914/callback` by default, `HttpListener`), `POST /token` (form: `grant_type=authorization_code`,
+  `client_id`, `client_secret`, `redirect_uri`, `code`; the code is valid 5 minutes, single use) →
+  `{access_token, token_type, refresh_token}`. The docs say tokens do not expire; Cuebot refreshes
+  (`grant_type=refresh_token`) only after a 401 and retries the call once.
+- **Scopes asked:** `socket.token donations.read donations.create alerts.create alerts.write profiles.write
+  credits.write jar.write wheel.write points.read points.write mediashare.control` (not the restricted `legacy.token`).
+- **Calls:** token only in `Authorization: Bearer` (v2.0 refuses `?access_token=`, which some guides still show), plus
+  `X-Requested-With: XMLHttpRequest` as in the samples; JSON bodies. `GET /socket/token` fills the socket token,
+  `GET /user` the account and linked platforms (Twitch `name` → points channel), `GET /donations?limit&after&before&currency`
+  (`{data:[{donation_id, created_at (Unix s), currency, amount, name, message}]}`), `POST /donations`, `POST /alerts`,
+  `POST /alerts/{skip,mute_volume,unmute_volume,pause_queue,unpause_queue,show_video,hide_video,send_test_alert}`,
+  `GET /alerts/get_status`, `GET /alert_profiles/get` + `POST /alert_profiles/activate {id}`, `POST /credits/roll` (422
+  when not live), `POST /jar/empty`, `POST /wheel/spin`, points (`GET /points`, `POST /points/subtract|import|add_to_all|
+  user_point_edit|reset`, `GET /points/user_points`), media share (`/media-share/{command}`: the reference shows PATCH
+  for enable/disable, the scopes page PUT for all; Cuebot tries the documented verb and the other one on 404/405).
+- **Back-fill:** on the first socket connect Cuebot notes the newest `donation_id` (`GET /donations?limit=1`); after a
+  reconnect it publishes `GET /donations?after=<last id>` (oldest first, ids above the last only) as
+  `streamlabs.donation` with `isBackfill=true`, deduplicated against the socket by donation id.
 
 ## Socket.IO / Engine.IO framing (implemented in `SocketIo/`)
 
@@ -335,8 +368,10 @@ are test fixtures, copied verbatim, in `tests/Cuebot.Donations.Tests/DocumentedP
   `recipient`, `iconClassName` is kept; a superchat's sender is `channelId` (`userId`), its `id` the chat message
   (`superchatId`); relayed events carry `createdAt` (`created_at`/`publishedAt`) and subscriptions `since`
   (`sponsorSince`/`since`).
+- **Re-checked 2026-11-11** (every `/docs/*` guide and `/reference/*` page, `updatedAt` 2025-06-05/06): bits `id` is a
+  transaction id (now `bitsId`, not `userId`); `host` is legacy; EIO 3 is now tried first; REST API added (see above).
 - **Not settled by the docs:** the Socket.IO version the server speaks today (the page still loads client 2.0.3; Cuebot
-  keeps its EIO 4 → 3 fallback); merch, loyalty store redemption, charity (`streamlabscharitydonation`) and Prime gift
+  now tries EIO 3 first and keeps the fallback to 4); merch, loyalty store redemption, charity (`streamlabscharitydonation`) and Prime gift
   payloads are not documented at all (that the charity type exists comes from a Streamlabs developer quoted in a
   TwitchSpawn issue, community); a test-event flag (none is documented); rate limits.
 

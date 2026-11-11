@@ -5,6 +5,123 @@ Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See 
 
 ![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
 
+## streamlabs.addPoints
+
+Adds (or with a negative amount removes) Streamlabs Cloudbot loyalty points. Needs your Streamlabs app connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | The viewer's login name. |
+| `amount` | `amount` | How many points; negative removes. |
+
+**Gives back:** Their points afterwards.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.addPoints", new { user = "anna", amount = 50 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_add_points(user="anna", amount=50)
+    ```
+
+## streamlabs.alertQueue
+
+Controls your Streamlabs alert box. Needs your Streamlabs app connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `command` | `command` | Optional. "skip" (default), "pause_queue", "unpause_queue", "mute_volume", "unmute_volume", "show_video" or "hide_video". |
+
+**Gives back:** true when Streamlabs accepted it.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.alertQueue", new { command = "skip" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_alert_queue(command="skip")
+    ```
+
+## streamlabs.createAlert
+
+Shows your own alert in the Streamlabs alert box. At most 2 a minute (Cuebot waits). Needs your Streamlabs app connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `type` | `type` | Optional. donation (default), follow, subscription or host: whose style to use. |
+| `message` | `message` | The main text; *stars* highlight words. |
+| `userMessage` | `user_message` | Optional second line. |
+| `image` | `image` | Optional image or GIF link. |
+| `sound` | `sound` | Optional sound link. |
+| `duration` | `duration` | Optional milliseconds. |
+
+**Gives back:** true when Streamlabs accepted it.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.createAlert", new { type = "follow", message = "*Kris* just hit 100 subs!" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_create_alert(type="follow", message="*Kris* just hit 100 subs!")
+    ```
+
+## streamlabs.getDonations
+
+Gets your latest Streamlabs donations, newest first. Needs your Streamlabs app connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `count` | `count` | Optional. How many (default 5). |
+| `currency` | `currency` | Optional. Only this currency. |
+
+**Gives back:** A list of {id, user, amount, currency, formattedAmount, message, createdAt}.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.getDonations", new { count = 3 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_get_donations(count=3)
+    ```
+
+## streamlabs.getPoints
+
+Gets a viewer's Streamlabs Cloudbot loyalty points. Needs your Streamlabs app connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | The viewer's login name. |
+
+**Gives back:** Their points as a number.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.getPoints", new { user = "anna" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_get_points(user="anna")
+    ```
+
 ## streamlabs.isConnected
 
 Checks whether Cuebot is connected to Streamlabs right now.
@@ -21,6 +138,24 @@ Checks whether Cuebot is connected to Streamlabs right now.
 
     ```python
     answer = cb.streamlabs_is_connected()
+    ```
+
+## streamlabs.isSignedIn
+
+Checks whether your own Streamlabs app is connected, which the alert, wheel, points and donation-list functions need.
+
+**Gives back:** true when connected, otherwise false.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.isSignedIn");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_is_signed_in()
     ```
 
 ## streamlabs.sendTestEvent
@@ -43,4 +178,26 @@ Fakes a Streamlabs event inside Cuebot, so you can test your triggers. Nothing i
 
     ```python
     answer = cb.streamlabs_send_test_event(kind="donation")
+    ```
+
+## streamlabs.widget
+
+Spins the wheel, empties the tip jar or rolls the credits. Needs your Streamlabs app connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `widget` | `widget` | "wheel" (default), "jar" or "credits". |
+
+**Gives back:** true when Streamlabs accepted it.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamlabs.widget", new { widget = "wheel" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamlabs_widget(widget="wheel")
     ```

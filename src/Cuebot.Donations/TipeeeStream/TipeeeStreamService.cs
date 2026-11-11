@@ -94,7 +94,7 @@ public sealed class TipeeeStreamService : DonationServiceBase
                 new { room = key, username = username.Length > 0 ? username : "cuebot" })),
         };
         client.Connected += eio => OnConnected($"Connected to TipeeeStream (Socket.IO {(eio >= 4 ? "v4" : "v2")})");
-        client.Disconnected += reason => OnDisconnected(reason, fatal: reason.Contains("refused", StringComparison.Ordinal));
+        client.Disconnected += (reason, fatal) => OnDisconnected(reason, fatal);
         client.EventReceived += (name, args) =>
         {
             if (name == "new-event" && args.Count > 0) HandleEvent(args[0]);

@@ -8,6 +8,8 @@ stored locked (encrypted) on your computer, and never written to the log.
 
 - [Tips and donations](tips-and-donations.md): Streamlabs, StreamElements, TipeeeStream, Pally.gg, DonorDrive and
   TreatStream.
+- [Streamlabs](streamlabs.md): donations, plus alert box control, wheel, jar, credits, media share, loyalty points and
+  missed-donation back-fill with your own Streamlabs app.
 - [StreamElements](streamelements.md): tip moderation, going live, session data, the chatbot, store, contests,
   giveaways and song requests.
 - [Webhooks](webhooks.md): Ko-fi, Patreon, Throne, Fourthwall, Shopify and your own webhooks.

@@ -21,6 +21,25 @@ For **OBS Studio**, see [OBS Studio](obs.md).
     app's own instructions and checked by Cuebot's tests, but not yet with the real apps. **OBS Studio** and
     **Streamlabs Desktop** were tried for real. See [What's experimental](../help/experimental.md).
 
+## Streamlabs Desktop
+
+Besides scenes, sources, filters, streaming, recording and the replay buffer, Cuebot can:
+
+- turn **studio mode** on or off and run its transition (step *Studio mode*);
+- switch the **scene collection** (*Set scene collection*);
+- read **stream health**: CPU, FPS and dropped frames (*Get stream health*), handy for a `!health` command;
+- show a **notification** inside Streamlabs Desktop (*Show a Streamlabs Desktop notification*).
+
+Triggers include *Stream reconnecting* (your stream dropped and Streamlabs Desktop is reconnecting), *Stream error*,
+*Replay buffer started/stopped*, *Studio mode changed* and *Scene collection changed*. When starting the stream or a
+recording fails in Streamlabs Desktop (for example no stream key), the step now fails with Streamlabs' reason instead of
+looking successful.
+
+The filter steps, *Replay buffer saved* and *Stream error* use parts of Streamlabs Desktop that its API documentation
+does not list, so a Streamlabs Desktop update may break them. Cuebot still connects when one of them is missing.
+
+For Streamlabs donations, alerts and the Streamlabs website, see [Streamlabs](../services/streamlabs.md).
+
 !!! note "StreamFog"
     The **StreamFog** tab explains that StreamFog has no public way for other apps to control it, so Cuebot cannot
     change its lenses or outfits. You can still show and hide its OBS source with Cuebot's OBS sub-actions.
