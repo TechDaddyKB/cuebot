@@ -62,6 +62,8 @@ Runs when an expression (a face or pose preset) is switched on or off in VTube S
 | --- | --- |
 | **Expression names** | Only react to these expressions, typed by name or file. Separate several with commas. Leave empty for any expression. |
 | **State** | Pick On to react when it turns on, Off when it turns off, or Any for both. Options: Either way, Turned on, Turned off. Starts as: `Either way`. |
+| **Expressions of** | React to expressions of your model, of Live2D items you loaded, or both. Options: The model and Live2D items, The model only, Live2D items only. Starts as: `The model and Live2D items`. |
+| **Ignore the list sent when a model loads** | Tick to ignore the full list VTube Studio sends when a model loads (one message per expression). Untick to react to those too. Starts as: `true`. |
 
 **Variables you get**
 
@@ -72,6 +74,9 @@ Runs when an expression (a face or pose preset) is switched on or off in VTube S
 | `%expressionName%` | The name of the expression |
 | `%expressionFile%` | The expression's file |
 | `%active%` | True when the expression is now on |
+| `%justLoaded%` | True when the message is part of the list sent when a model loads, not a change |
+| `%isLive2DItem%` | True when the expression belongs to a Live2D item |
+| `%itemInstanceId%` | The id of that Live2D item, if any |
 
 <small>Type id: `vtubestudio.expressionToggled`</small>
 
@@ -102,6 +107,44 @@ Runs when VTube Studio can no longer see your face. Good for a "brb" reaction.
 | `%rightHandFound%` | True if the right hand is tracked |
 
 <small>Type id: `vtubestudio.trackingLost`</small>
+
+## Hand tracking found
+
+Runs when VTube Studio sees one of your hands again (hand tracking).
+
+| Setting | What to put in |
+| --- | --- |
+| **Hand** | React to the left hand, the right hand, or either. Options: Any, Left, Right. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%hand%` | Left or Right |
+| `%faceFound%` | True if a face is being tracked |
+| `%leftHandFound%` | True if the left hand is tracked |
+| `%rightHandFound%` | True if the right hand is tracked |
+
+<small>Type id: `vtubestudio.handFound`</small>
+
+## Hand tracking lost
+
+Runs when VTube Studio stops seeing one of your hands (hand tracking).
+
+| Setting | What to put in |
+| --- | --- |
+| **Hand** | React to the left hand, the right hand, or either. Options: Any, Left, Right. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%hand%` | Left or Right |
+| `%faceFound%` | True if a face is being tracked |
+| `%leftHandFound%` | True if the left hand is tracked |
+| `%rightHandFound%` | True if the right hand is tracked |
+
+<small>Type id: `vtubestudio.handLost`</small>
 
 ## Hotkey triggered
 
@@ -187,6 +230,20 @@ Runs when an item (a prop or picture) is removed from your VTube Studio scene.
 
 <small>Type id: `vtubestudio.itemRemoved`</small>
 
+## Live2D Cubism Editor connection changed
+
+Runs when VTube Studio connects to or disconnects from the Live2D Cubism Editor (for model makers testing their model live).
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%tryingToConnect%` | True while VTube Studio tries to connect |
+| `%connected%` | True when it is connected |
+| `%shouldSendParameters%` | True when VTube Studio sends tracking to the editor |
+
+<small>Type id: `vtubestudio.cubismEditorConnection`</small>
+
 ## Model animation
 
 Runs when an animation on the model starts, ends or sends a custom signal.
@@ -195,6 +252,7 @@ Runs when an animation on the model starts, ends or sends a custom signal.
 | --- | --- |
 | **Animation event** | Start reacts when an animation begins, End when it finishes, Custom for special signals set inside the animation, Any for all. Options: Any, Start, End, Custom. Starts as: `Any`. |
 | **Animation names** | Only react to these animations, typed by name. Separate several with commas. Leave empty for any animation. |
+| **Custom event texts** | Only react to custom signals with this text (the text you gave the event in the Cubism Animator). Separate several with commas. Leave empty for any. |
 | **Ignore idle animations** | Tick to ignore the animations the model plays by itself while doing nothing (idle animations). Starts as: `true`. |
 
 **Variables you get**
@@ -219,6 +277,7 @@ Runs when someone clicks in the VTube Studio window, for example on your model.
 | --- | --- |
 | **Mouse button** | Only react to this mouse button, or pick Any. Options: Any, Left, Right, Middle. Starts as: `Any`. |
 | **Only clicks on the model** | Tick to only react when the click lands on the model. Untick to react to clicks anywhere. Starts as: `true`. |
+| **Clicked ArtMeshes** | Only react to clicks on these parts of the model, by ArtMesh id (for example the head, for headpats). Separate several with commas. Leave empty for anywhere. |
 
 **Variables you get**
 
@@ -231,6 +290,8 @@ Runs when someone clicks in the VTube Studio window, for example on your model.
 | `%clickX%` | Where the click landed, sideways |
 | `%clickY%` | Where the click landed, up or down |
 | `%clickedArtMeshCount%` | How many parts of the model were hit |
+| `%artMeshId%` | The id of the topmost part of the model under the click |
+| `%artMeshIds%` | Every part of the model under the click, separated by commas |
 
 <small>Type id: `vtubestudio.modelClicked`</small>
 
@@ -295,19 +356,6 @@ Runs when the model (your avatar) is unloaded from VTube Studio.
 
 <small>Type id: `vtubestudio.modelUnloaded`</small>
 
-## Post-processing changed
-
-Runs when VTube Studio's post-processing (extra visual effects) is turned on or off or its preset changes.
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%postProcessingOn%` | True when post-processing is on |
-| `%postProcessingPreset%` | The name of the preset in use |
-
-<small>Type id: `vtubestudio.postProcessingChanged`</small>
-
 ## Tracking status changed
 
 Runs when VTube Studio's face or hand tracking changes (found or lost).
@@ -321,3 +369,20 @@ Runs when VTube Studio's face or hand tracking changes (found or lost).
 | `%rightHandFound%` | True if the right hand is tracked |
 
 <small>Type id: `vtubestudio.trackingStatusChanged`</small>
+
+## Visual effects changed
+
+Runs when VTube Studio's visual effects (post-processing) are turned on or off or their preset changes.
+
+| Setting | What to put in |
+| --- | --- |
+| **Presets** | Only react when one of these presets is in use. Separate several with commas. Leave empty for any change. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%postProcessingOn%` | True when visual effects are on |
+| `%postProcessingPreset%` | The name of the preset in use |
+
+<small>Type id: `vtubestudio.postProcessingChanged`</small>

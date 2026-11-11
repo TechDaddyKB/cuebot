@@ -31,6 +31,15 @@ public sealed class VTubeStudioSettings
     public string PluginName { get; set; } = "Cuebot";
 
     public string PluginDeveloper { get; set; } = "Cuebot contributors";
+
+    /// <summary>
+    /// Listen for VTube Studio's network announcements (UDP 47779) and also try the ports it reports, so a VTube Studio
+    /// started on 8002 (a second window) or with a changed port is still found.
+    /// </summary>
+    public bool AutoDiscover { get; set; } = true;
+
+    /// <summary>Custom tracking parameters Cuebot created; created again on every connection (VTube Studio deletes them on revoke).</summary>
+    public List<VTubeStudio.VtsCustomParameter> CustomParameters { get; set; } = [];
 }
 
 public sealed class VoicemodSettings

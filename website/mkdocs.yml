@@ -158,6 +158,7 @@ nav:
           - Lights, mixers and other apps: guides/apps/lights-and-mixers.md
           - VTuber apps:
               - guides/apps/vtuber/index.md
+              - VTube Studio: guides/apps/vtuber/vtube-studio.md
               - veadotube: guides/apps/vtuber/veadotube.md
               - PNGTuber Remix: guides/apps/vtuber/pngtuber-remix.md
               - RahiTuber: guides/apps/vtuber/rahituber.md

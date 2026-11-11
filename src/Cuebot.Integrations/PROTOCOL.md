@@ -28,40 +28,100 @@ the user disconnects or the credentials are refused (`IntegrationAuthException`,
   `{"apiName":"VTubeStudioPublicAPI","apiVersion":"1.0","requestID":"cuebot-N","messageType":"<X>Request","data":{...}}`.
   Responses echo `requestID`. Errors use `messageType:"APIError"` with `data.errorID` and `data.message`. Events have
   `messageType` ending in `Event`.
+- Discovery: VTube Studio broadcasts `VTubeStudioAPIStateBroadcast {active, port, instanceID, windowTitle}` on UDP
+  47779 every 2 s, even with the API off. Cuebot listens (shared socket, SO_REUSEADDR; only this computer's
+  addresses) and, for a local host, tries the configured port first and then every other active instance's port
+  (a second window takes 8002). Setting `AutoDiscover` (default on).
 - Session:
   1. `APIStateRequest`, which reports `vTubeStudioVersion`.
-  2. Authentication. With no saved token, send `AuthenticationTokenRequest {pluginName:"Cuebot", pluginDeveloper}`.
-     VTube Studio then shows a popup. Cuebot waits up to 2 minutes for `data.authenticationToken` and saves it in
-     `integrations.json`. `errorID 50` means the user clicked Deny; that error is fatal.
+  2. Authentication. With no saved token, send `AuthenticationTokenRequest {pluginName:"Cuebot", pluginDeveloper,
+     pluginIcon}` (`pluginIcon`: the Cuebot logo, base64 PNG, exactly 128x128). VTube Studio then shows a popup.
+     Cuebot waits up to 2 minutes for `data.authenticationToken` and saves it in `integrations.json`. `errorID 50`
+     means the user clicked Deny; that error is fatal.
   3. `AuthenticationRequest {pluginName, pluginDeveloper, authenticationToken}`. If `authenticated:false` (token
      revoked or invalid), the saved token is cleared and a new one is requested once.
-  4. `EventSubscriptionRequest {eventName, subscribe:true, config:{}}` for each of: ModelLoadedEvent,
+  4. `EventSubscriptionRequest {eventName, subscribe:true, config}` for each of: ModelLoadedEvent,
      TrackingStatusChangedEvent, BackgroundChangedEvent, ModelConfigChangedEvent, ModelMovedEvent,
-     HotkeyTriggeredEvent, ModelAnimationEvent, ItemEvent, ModelClickedEvent, ExpressionToggledEvent (beta),
-     PostProcessingEvent. Failures are ignored, because older versions do not have every event.
+     HotkeyTriggeredEvent, ModelAnimationEvent `{ignoreLive2DItems:false, ignoreIdleAnimations:false}`, ItemEvent,
+     ModelClickedEvent `{onlyClicksOnModel:false}` (the spec leaves the default open; Cuebot filters itself),
+     ExpressionToggledEvent (beta) `{sendAllActiveStatesOnSubscription:false, ignoreLive2DItems:false}`,
+     PostProcessingEvent, Live2DCubismEditorConnectedEvent. A failure is logged (Info) and listed in
+     `UnavailableEvents`; older and non-beta versions do not have every event.
   5. Caches for suggestions and the UI: CurrentModelRequest, AvailableModelsRequest, HotkeysInCurrentModelRequest,
-     ExpressionStateRequest, InputParameterListRequest, ItemListRequest. They refresh in the background after
-     ModelLoaded/ModelConfigChanged, item Added/Removed and ExpressionToggled.
+     ExpressionStateRequest, InputParameterListRequest, ArtMeshListRequest, GetCurrentModelPhysicsRequest,
+     ItemListRequest (with `includeAvailableItemFiles:true` only here and on request: it makes VTube Studio read its
+     Items folder and can stutter), PostProcessingListRequest (presets and effect config ids, also a disk read; only
+     on connect and on request). After ModelLoaded/ModelConfigChanged the model caches refresh; item
+     Added/Removed/DroppedPinned/DroppedUnpinned refresh the instances only (debounced 250 ms, files excluded);
+     ExpressionToggled bursts (one per expression with `justLoaded:true` on a model load) refresh once (debounced).
+  6. Restore: custom parameters in `CustomParameters` are created again (ParameterCreationRequest is idempotent for
+     the same plugin; VTube Studio deletes them on revoke) and the remembered color tints are sent again (VTube Studio
+     resets a session's tints when it ends).
+- Mid-session: an APIError 8 (needs authentication), 50 (access revoked) or 1 (API switched off) on any request ends
+  the session, so the reconnect authenticates again (and asks for a new token if the old one is rejected). Error
+  messages get a hint for the errors a streamer can fix (`VtsProtocol.Hint`).
+- Requests that wait for a click in VTube Studio (AuthenticationTokenRequest, PermissionRequest,
+  ArtMeshSelectionRequest, ItemLoadRequest with `customDataAskUserFirst`) use the 2-minute approval timeout, also
+  through the raw request.
 - Requests used by sub-actions:
   - HotkeyTriggerRequest `{hotkeyID, itemInstanceID?}`. The name is resolved to an id from the cache; an unknown name
-    is passed through as-is.
-  - ModelLoadRequest `{modelID}`.
+    is passed through as-is. Errors 200 (queue full) and 203 (cooldown) are retried twice after 500 ms.
+  - HotkeysInCurrentModelRequest `{modelID?, live2DItemFileName?}` for another model or a Live2D item.
+  - ModelLoadRequest `{modelID}`; an empty id unloads. Error 153 (2-second model cooldown) is retried once after
+    2.1 s. Next/previous/random pick from AvailableModelsRequest sorted by name.
   - MoveModelRequest `{timeInSeconds 0-2, valuesAreRelativeToModel, positionX?, positionY?, rotation?, size?}`.
-    Omitted values stay unchanged.
+    Omitted values stay unchanged (documented).
   - ExpressionActivationRequest `{expressionFile, fadeTime, active}`. Toggle reads ExpressionStateRequest first.
-  - InjectParameterDataRequest `{faceFound, mode:"set"|"add", parameterValues:[{id, value, weight?}]}`. VTube Studio
-    drops injected values after about 1 s, so "hold N seconds" re-sends every 500 ms.
-  - ColorTintRequest `{colorTint:{colorR,colorG,colorB,colorA,mixWithSceneLightingColor}, artMeshMatcher:{tintAll, nameContains?, tagContains?}}`.
-    Reset tints everything white at 255.
-  - ItemLoadRequest. ItemUnloadRequest `{unloadAllInScene, instanceIDs, fileNames, allowUnloadingItemsLoadedByUserOrOtherPlugins:true}`.
-    ItemMoveRequest `{itemsToMove:[{itemInstanceID, timeInSeconds, fadeMode, positionX?, positionY?, size?, rotation?, userCanStop:true}]}`.
-    Assumed: leaving out a field in ItemMoveRequest leaves that value unchanged.
+  - InjectParameterDataRequest `{faceFound, mode:"set"|"add", parameterValues:[{id, value, weight?}]}`. Values
+    ±1,000,000 and weights 0-1 are checked first. VTube Studio drops injected values after about 1 s, so "hold N
+    seconds" re-sends every 500 ms. In "set" mode the newest injection owns a parameter: an older hold stops
+    re-sending it. "Set parameter (keep it)" keeps values in one background loop (500 ms) until stopped, expired or
+    disconnected.
+  - ParameterCreationRequest `{parameterName (4-32 alphanumeric), explanation (<256), min, max, defaultValue}`,
+    ParameterDeletionRequest `{parameterName}`.
+  - ColorTintRequest `{colorTint:{colorR,colorG,colorB,colorA,mixWithSceneLightingColor}, artMeshMatcher:{tintAll,
+    artMeshNumber?, nameExact?, nameContains?, tagExact?, tagContains?, artMeshGroupIDExact?}}`. Group names are
+    resolved to ids from ArtMeshListRequest. Reset tints everything white at 255. Rainbow sends a tint every 100 ms.
+  - ArtMeshSelectionRequest `{textOverride (4-1024 chars or null), helpOverride, requestedArtMeshCount,
+    activeArtMeshes}` answers only after OK/Cancel (`success`).
+  - ItemLoadRequest with every documented field; `unloadWhenPluginDisconnects` defaults to true. Images use
+    `customDataBase64` (PNG/JPG/GIF by magic bytes, at most 5 MB) and a generated `fileName`
+    `cuebot<12 hex of SHA-256>.<ext>` (8-32 alphanumeric, as required); the `LoadCustomImagesAsItems` permission is
+    requested once per session first.
+  - ItemUnloadRequest `{unloadAllInScene, unloadAllLoadedByThisPlugin, allowUnloadingItemsLoadedByUserOrOtherPlugins,
+    instanceIDs, fileNames}`. VTube Studio ignores unknown entries, so an entry that is neither a cached instance id
+    nor a known file name goes in both lists (animation folders and Live2D items have file names without a dot).
+  - ItemMoveRequest `{itemsToMove:[{itemInstanceID, timeInSeconds 0-30, fadeMode, positionX, positionY, size,
+    rotation, order, setFlip, flip, userCanStop:true}]}` (up to 64). Values to keep are sent as -1000 and `order` as
+    -1000, as documented. A file name moves every instance of it.
+  - ItemPinRequest `{pin, itemInstanceID, angleRelativeTo, sizeRelativeTo, vertexPinType Provided|Center|Random,
+    pinInfo{modelID, artMeshID, angle, size, vertexID1-3, vertexWeight1-3}}`; "where last clicked" uses the topmost
+    `artMeshHits` entry of the last ModelClickedEvent.
+  - ItemAnimationControlRequest (-1 keeps framerate/frame/brightness/opacity), ItemSortRequest
+    (`setFrontOrder`/`setBackOrder` UseArtMeshID or UseSpecialID FullyInFront/FullyInBack, Unchanged when empty).
+  - PostProcessingUpdateRequest for presets, on/off, values (`configID`/`configValue` strings, duplicates rejected)
+    and `randomizeAll` with `randomizeAllChaosLevel`.
+  - SetCurrentModelPhysicsRequest: base values (`setBaseValue:true`, id "", 0-100) or group multipliers (0-2),
+    re-sent every 4 s with `overrideSeconds` 0.5-5 until the duration ends.
+  - PermissionRequest `{requestedPermission}`; NDIConfigRequest (needs `ControlNDISettings`; reads first with
+    `setNewConfig:false`, -1 keeps the resolution); StatisticsRequest, SceneColorOverlayInfoRequest, FaceFoundRequest.
+  - Throwing: one ModelOutlineEvent (subscribed `{draw:false}` just long enough to get one, then unsubscribed) gives
+    the head (60% from the hull center to its top; CurrentModel position as fallback). Each item loads off-screen
+    (x ±1.35, `unloadWhenPluginDisconnects:true`), moves to the head (`easeIn`), the model flinches by
+    InjectParameterData `mode:"add"` (FaceAngleX/Z, FacePositionX, EyeOpenLeft/Right, 350 ms), the item falls and is
+    unloaded.
+  - Timed changes ("Undo after"): one pending undo per target (expression file, model, position, tint, visual
+    effects, item). A second timed change of the same target restarts the timer and keeps the first undo; a change
+    without a timer cancels it; a lost connection drops them all.
   - Any other request can be sent through "Send raw request" or the `vtubestudio.request` script function.
 - Bot events (`vtubestudio.*`): modelLoaded, modelUnloaded (`ModelLoadedEvent` with `modelLoaded:false`),
   hotkeyTriggered, trackingStatusChanged, trackingLost and trackingFound (derived from changes in `faceFound`),
-  backgroundChanged, modelConfigChanged, modelMoved, modelAnimation, itemEvent (`itemEventType` is Added, Removed,
-  DroppedPinned, DroppedUnpinned, Clicked, Locked or Unlocked), modelClicked, expressionToggled,
-  postProcessingChanged, and `event` (raw: `eventName` plus `data` JSON).
+  handLost and handFound (`hand` Left/Right, from changes after the first status), backgroundChanged,
+  modelConfigChanged, modelMoved (the UI is refreshed at most every 250 ms), modelAnimation, itemEvent
+  (`itemEventType` is Added, Removed, DroppedPinned, DroppedUnpinned, Clicked, Locked or Unlocked; the spec's example
+  sends `ItemClicked`, so an `Item` prefix is dropped), modelClicked (plus `artMeshId`, the topmost hit, and
+  `artMeshIds`), expressionToggled (plus `justLoaded`, `isLive2DItem`, `itemInstanceId`), postProcessingChanged,
+  cubismEditorConnection, and `event` (raw: `eventName` plus `data` JSON). ModelOutlineEvent is never republished.
 
 ## 2. Voicemod: Control API (Voicemod V3)
 

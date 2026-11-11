@@ -3323,6 +3323,16 @@ class Cuebot:
         Gives back: true when done.
         Same as cb.call(\"voicemod.stopSounds\", ...).
         """
+    def vtubestudio_color_tint(self, color: Any, *, name_contains: Any = None, mix: Any = None, revert_after: Any = None) -> Any:
+        """Tints your model a color, optionally only the parts whose names contain some text, and optionally only for a while.
+
+        color: The color, like \"#FF8080\".
+        name_contains: Optional. Only parts whose ArtMesh names contain this text.
+        mix: Optional. How much the color replaces scene lighting, from 0 to 1. The default is 1.
+        revert_after: Optional. Seconds until the colors go back.
+        Gives back: How many parts were tinted.
+        Same as cb.call(\"vtubestudio.colorTint\", ...).
+        """
     def vtubestudio_get_current_model(self) -> Any:
         """Tells you which model VTube Studio has loaded and where it is on screen. Fails with an error when VTube Studio is not connected.
 
@@ -3357,12 +3367,34 @@ class Cuebot:
         Gives back: true while connected and allowed, otherwise false.
         Same as cb.call(\"vtubestudio.isConnected\", ...).
         """
+    def vtubestudio_load_item(self, file_name: Any, *, image: Any = None, position_x: Any = None, position_y: Any = None, size: Any = None, pin: Any = None, unload_after: Any = None) -> Any:
+        """Puts an item (or a picture) into the scene.
+
+        file_name: The item file, like \"star.png\". Leave it out when you give an image.
+        image: Optional. A picture to load instead: a web address, a file or base64.
+        position_x: Optional. -1 (left edge) to 1 (right edge). The default is 0.
+        position_y: Optional. -1 (bottom) to 1 (top). The default is 0.
+        size: Optional. 0 to 1. The default is 0.32.
+        pin: Optional. None, Random, ArtMeshCenter, ArtMeshRandom or LastClick. The default is None.
+        unload_after: Optional. Seconds until it is removed again.
+        Gives back: The new item's id.
+        Same as cb.call(\"vtubestudio.loadItem\", ...).
+        """
     def vtubestudio_load_model(self, model: Any) -> Any:
         """Switches VTube Studio to another model. Fails with an error when no model has that name or VTube Studio is not connected.
 
         model: The model's name as VTube Studio shows it, like \"Akari\", or its id.
         Gives back: The id of the model that was loaded.
         Same as cb.call(\"vtubestudio.loadModel\", ...).
+        """
+    def vtubestudio_load_vfx_preset(self, preset: Any, *, fade_time: Any = None, revert_after: Any = None) -> Any:
+        """Turns on one of your visual effects presets, optionally only for a while.
+
+        preset: The preset name.
+        fade_time: Optional. Seconds the change takes (0-2). The default is 0.5.
+        revert_after: Optional. Seconds until the previous effects come back.
+        Gives back: The preset now in use.
+        Same as cb.call(\"vtubestudio.loadVfxPreset\", ...).
         """
     def vtubestudio_move_model(self, *, time: Any = None, relative: Any = None, position_x: Any = None, position_y: Any = None, rotation: Any = None, size: Any = None) -> Any:
         """Moves, turns or resizes your model on screen. Values you leave out stay as they are. Fails with an error when VTube Studio is not connected.
@@ -3375,6 +3407,15 @@ class Cuebot:
         size: Optional. The model's size, from -100 (small) to 100 (big).
         Gives back: true when done.
         Same as cb.call(\"vtubestudio.moveModel\", ...).
+        """
+    def vtubestudio_physics(self, *, strength: Any = None, wind: Any = None, seconds: Any = None) -> Any:
+        """Turns up the physics or the wind for a while.
+
+        strength: Optional. Physics strength from 0 to 100.
+        wind: Optional. Wind from 0 to 100.
+        seconds: Optional. How long. The default is 5.
+        Gives back: true
+        Same as cb.call(\"vtubestudio.physics\", ...).
         """
     def vtubestudio_request(self, message_type: Any, *, data: Any = None) -> Any:
         """Sends any VTube Studio API request and gives back its answer. For advanced users who know VTube Studio's request names.
@@ -3392,6 +3433,41 @@ class Cuebot:
         fade_time: Optional. How many seconds the change takes to fade in or out. Leave it out for 0.25 seconds.
         Gives back: The new state: true for on, false for off.
         Same as cb.call(\"vtubestudio.setExpression\", ...).
+        """
+    def vtubestudio_set_parameter(self, parameter: Any, value: Any, *, weight: Any = None, seconds: Any = None) -> Any:
+        """Keeps a tracking parameter at a value (Cuebot keeps sending it) until it is set again or stopped.
+
+        parameter: The parameter, like FaceAngleX or one you created.
+        value: The value.
+        weight: Optional. 0 to 1: how much it overrides face tracking.
+        seconds: Optional. How long to keep it.
+        Gives back: true
+        Same as cb.call(\"vtubestudio.setParameter\", ...).
+        """
+    def vtubestudio_set_vfx(self, *, state: Any = None) -> Any:
+        """Turns visual effects On, Off, or Toggle.
+
+        state: Optional. On, Off or Toggle. The default is Toggle.
+        Gives back: true when visual effects are now on.
+        Same as cb.call(\"vtubestudio.setVfx\", ...).
+        """
+    def vtubestudio_stop_parameter(self, *, parameter: Any = None) -> Any:
+        """Stops keeping a parameter set, so face tracking takes over again.
+
+        parameter: Optional. The parameter; leave it out to stop all of them.
+        Gives back: How many parameters were stopped.
+        Same as cb.call(\"vtubestudio.stopParameter\", ...).
+        """
+    def vtubestudio_throw_items(self, *, files: Any = None, images: Any = None, count: Any = None, size: Any = None, flinch: Any = None) -> Any:
+        """Throws items or pictures at your model; it flinches and they fall away. Fails with an error when VTube Studio is not connected.
+
+        files: Optional. Item files to throw, separated by commas (give files or images).
+        images: Optional. Pictures to throw instead (web addresses or files), separated by commas.
+        count: Optional. How many to throw. The default is 1.
+        size: Optional. The size from 0 to 1. The default is 0.15.
+        flinch: Optional. How hard the model reacts, from 0 to 1. The default is 0.5.
+        Gives back: How many were thrown.
+        Same as cb.call(\"vtubestudio.throwItems\", ...).
         """
     def vtubestudio_trigger_hotkey(self, hotkey: Any, *, item_instance_id: Any = None) -> Any:
         """Runs one of your VTube Studio hotkeys, like a wave or an outfit change. Fails with an error when VTube Studio is not connected.

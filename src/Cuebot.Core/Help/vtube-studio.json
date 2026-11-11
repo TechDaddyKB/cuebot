@@ -108,7 +108,8 @@
       "fields": {
         "animationEventType": "Start reacts when an animation begins, End when it finishes, Custom for special signals set inside the animation, Any for all.",
         "animationName": "Only react to these animations, typed by name. Separate several with commas. Leave empty for any animation.",
-        "ignoreIdle": "Tick to ignore the animations the model plays by itself while doing nothing (idle animations)."
+        "ignoreIdle": "Tick to ignore the animations the model plays by itself while doing nothing (idle animations).",
+        "animationEventData": "Only react to custom signals with this text (the text you gave the event in the Cubism Animator). Separate several with commas. Leave empty for any."
       },
       "variables": {
         "modelName": "The name of the model",
@@ -164,7 +165,8 @@
       "description": "Runs when someone clicks in the VTube Studio window, for example on your model.",
       "fields": {
         "mouseButton": "Only react to this mouse button, or pick Any.",
-        "onlyOnModel": "Tick to only react when the click lands on the model. Untick to react to clicks anywhere."
+        "onlyOnModel": "Tick to only react when the click lands on the model. Untick to react to clicks anywhere.",
+        "artMeshes": "Only react to clicks on these parts of the model, by ArtMesh id (for example the head, for headpats). Separate several with commas. Leave empty for anywhere."
       },
       "variables": {
         "modelName": "The name of the model",
@@ -173,28 +175,37 @@
         "mouseButton": "Left, Right or Middle",
         "clickX": "Where the click landed, sideways",
         "clickY": "Where the click landed, up or down",
-        "clickedArtMeshCount": "How many parts of the model were hit"
+        "clickedArtMeshCount": "How many parts of the model were hit",
+        "artMeshId": "The id of the topmost part of the model under the click",
+        "artMeshIds": "Every part of the model under the click, separated by commas"
       }
     },
     "vtubestudio.expressionToggled": {
       "description": "Runs when an expression (a face or pose preset) is switched on or off in VTube Studio.",
       "fields": {
         "expressionName": "Only react to these expressions, typed by name or file. Separate several with commas. Leave empty for any expression.",
-        "stateFilter": "Pick On to react when it turns on, Off when it turns off, or Any for both."
+        "stateFilter": "Pick On to react when it turns on, Off when it turns off, or Any for both.",
+        "source": "React to expressions of your model, of Live2D items you loaded, or both.",
+        "ignoreSnapshots": "Tick to ignore the full list VTube Studio sends when a model loads (one message per expression). Untick to react to those too."
       },
       "variables": {
         "modelName": "The name of the model",
         "modelId": "VTube Studio's id for the model",
         "expressionName": "The name of the expression",
         "expressionFile": "The expression's file",
-        "active": "True when the expression is now on"
+        "active": "True when the expression is now on",
+        "justLoaded": "True when the message is part of the list sent when a model loads, not a change",
+        "isLive2DItem": "True when the expression belongs to a Live2D item",
+        "itemInstanceId": "The id of that Live2D item, if any"
       }
     },
     "vtubestudio.postProcessingChanged": {
-      "description": "Runs when VTube Studio's post-processing (extra visual effects) is turned on or off or its preset changes.",
-      "fields": {},
+      "description": "Runs when VTube Studio's visual effects (post-processing) are turned on or off or their preset changes.",
+      "fields": {
+        "postProcessingPreset": "Only react when one of these presets is in use. Separate several with commas. Leave empty for any change."
+      },
       "variables": {
-        "postProcessingOn": "True when post-processing is on",
+        "postProcessingOn": "True when visual effects are on",
         "postProcessingPreset": "The name of the preset in use"
       }
     },
@@ -206,6 +217,39 @@
       "variables": {
         "eventName": "The kind of VTube Studio message",
         "data": "All the details of the message, as raw text"
+      }
+    },
+    "vtubestudio.handLost": {
+      "description": "Runs when VTube Studio stops seeing one of your hands (hand tracking).",
+      "fields": {
+        "hand": "React to the left hand, the right hand, or either."
+      },
+      "variables": {
+        "hand": "Left or Right",
+        "faceFound": "True if a face is being tracked",
+        "leftHandFound": "True if the left hand is tracked",
+        "rightHandFound": "True if the right hand is tracked"
+      }
+    },
+    "vtubestudio.handFound": {
+      "description": "Runs when VTube Studio sees one of your hands again (hand tracking).",
+      "fields": {
+        "hand": "React to the left hand, the right hand, or either."
+      },
+      "variables": {
+        "hand": "Left or Right",
+        "faceFound": "True if a face is being tracked",
+        "leftHandFound": "True if the left hand is tracked",
+        "rightHandFound": "True if the right hand is tracked"
+      }
+    },
+    "vtubestudio.cubismEditorConnection": {
+      "description": "Runs when VTube Studio connects to or disconnects from the Live2D Cubism Editor (for model makers testing their model live).",
+      "fields": {},
+      "variables": {
+        "tryingToConnect": "True while VTube Studio tries to connect",
+        "connected": "True when it is connected",
+        "shouldSendParameters": "True when VTube Studio sends tracking to the editor"
       }
     }
   },
@@ -223,7 +267,8 @@
     "vtubestudio.loadModel": {
       "description": "Switches VTube Studio to another model (avatar).",
       "fields": {
-        "model": "The model name (or id) as VTube Studio shows it."
+        "model": "The model name (or id) as VTube Studio shows it.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
       },
       "variables": {
         "vtsModelId": "The id of the model that was loaded"
@@ -237,7 +282,8 @@
         "positionX": "Left to right: -1 is the left edge, 1 is the right edge. Leave empty to keep it.",
         "positionY": "Bottom to top: -1 is the bottom, 1 is the top. Leave empty to keep it.",
         "rotation": "How far to turn it, in degrees (-360 to 360). Leave empty to keep it.",
-        "size": "How big it is (-100 to 100). Leave empty to keep it."
+        "size": "How big it is (-100 to 100). Leave empty to keep it.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
       },
       "variables": {}
     },
@@ -246,7 +292,8 @@
       "fields": {
         "expression": "The expression name or file as VTube Studio shows it.",
         "state": "On turns it on, Off turns it off, Toggle flips it.",
-        "fadeTime": "How long the change takes, in seconds."
+        "fadeTime": "How long the change takes, in seconds.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
       },
       "variables": {
         "vtsExpressionActive": "True if the expression is on afterwards"
@@ -273,9 +320,14 @@
       "description": "Tints your model with a color, for example red when someone is angry. Can tint all of it or only some parts.",
       "fields": {
         "color": "The color as a hex code like #FF8080, or as numbers like \"255,128,128\" (red, green, blue, and optional see-through).",
-        "nameContains": "Only tint parts whose names contain these words. Separate several with commas. Leave both boxes empty to tint everything.",
+        "nameContains": "Only tint parts whose ArtMesh names contain this text. Separate several with commas. Leave every filter empty to tint the whole model.",
         "tagContains": "Only tint parts whose tags contain these words. Separate several with commas.",
-        "mix": "How much the tint mixes with the scene lighting, from 0 to 1."
+        "mix": "How much the tint mixes with the scene lighting, from 0 to 1.",
+        "nameExact": "Only tint parts with exactly these ArtMesh ids. Separate several with commas.",
+        "tagExact": "Only tint parts with exactly these tags. Separate several with commas.",
+        "groups": "Only tint the parts in these ArtMesh groups (the groups you made in VTube Studio), by name. Separate several with commas.",
+        "numbers": "Only tint the parts at these positions in the model, like 1, 3, 5.",
+        "revertAfter": "Seconds until the colors go back to how they were. Leave empty to keep the tint."
       },
       "variables": {
         "vtsMatchedArtMeshes": "How many parts of the model were tinted"
@@ -296,8 +348,17 @@
         "rotation": "How far to turn it, in degrees.",
         "fadeTime": "How long it takes to fade in, in seconds.",
         "order": "Which layer it sits on, from -30 to 30. Leave empty to let VTube Studio pick a free one.",
-        "unloadOnDisconnect": "Tick to remove the item automatically if Cuebot disconnects from VTube Studio.",
-        "resultArgument": "The name of the variable that will hold the item's id, so you can move or remove it later. The default is vtsItemInstanceId."
+        "unloadOnDisconnect": "Tick to remove the item automatically if Cuebot disconnects from VTube Studio (recommended, so items never get stuck).",
+        "resultArgument": "The name of the variable that will hold the item's id, so you can move or remove it later. The default is vtsItemInstanceId.",
+        "image": "A picture to load instead of an item file: a web address, a file on this computer, or base64 data, like %userProfileImageUrl%. The first time, VTube Studio asks you to allow Cuebot to load pictures.",
+        "askFirst": "Tick to have VTube Studio ask you before showing a picture it hasn't seen yet.",
+        "pin": "Pin the item to your model so it moves with it, and where.",
+        "pinArtMesh": "The part of the model (ArtMesh id) to pin to, for the ArtMesh choices.",
+        "flipped": "Tick to mirror the item.",
+        "locked": "Tick so the item can't be dragged with the mouse.",
+        "censored": "Tick to pixelate the item.",
+        "smoothing": "How smoothly the item follows when it moves, from 0 to 1.",
+        "unloadAfter": "Seconds until the item is removed again. Leave empty to keep it."
       },
       "variables": {
         "vtsItemInstanceId": "The id of the new item (or the name you chose above)"
@@ -307,7 +368,8 @@
       "description": "Removes items (props or pictures) from your VTube Studio scene.",
       "fields": {
         "item": "The items to remove, by id or file name. Separate several with commas.",
-        "all": "Tick to remove every item in the scene."
+        "all": "Tick to remove every item in the scene.",
+        "onlyCuebot": "Tick to remove every item Cuebot put into the scene (and nothing you added yourself)."
       },
       "variables": {
         "vtsUnloadedItems": "How many items were removed"
@@ -316,13 +378,15 @@
     "vtubestudio.moveItem": {
       "description": "Moves, turns or resizes an item in your scene, smoothly.",
       "fields": {
-        "item": "The item to move: its id (from Load item) or its file name.",
+        "item": "The item's id or file name. A file name moves every copy of it. Separate several with commas.",
         "time": "How long the move takes, in seconds.",
         "fadeMode": "How the motion feels: linear is steady, easeIn starts slow, easeOut ends slow, easeBoth does both, overshoot goes past and bounces back, zip is a quick snap.",
         "positionX": "Left to right position (-1 is the left edge, 1 is the right edge). Leave empty to keep it.",
         "positionY": "Bottom to top position (-1 is the bottom, 1 is the top). Leave empty to keep it.",
         "size": "How big it is, from 0 to 1. Leave empty to keep it.",
-        "rotation": "How far to turn it, in degrees. Leave empty to keep it."
+        "rotation": "How far to turn it, in degrees. Leave empty to keep it.",
+        "order": "Move the item to this layer, from -30 to 30 (the spot must be free). Leave empty to keep it.",
+        "flip": "Mirror the item, un-mirror it, or leave it as it is."
       },
       "variables": {}
     },
@@ -350,7 +414,10 @@
     },
     "vtubestudio.getHotkeys": {
       "description": "Reads the hotkeys of the loaded model and keeps them for later steps.",
-      "fields": {},
+      "fields": {
+        "model": "Another model to list the hotkeys of, by name. Leave empty for the current model.",
+        "live2DItem": "A Live2D item to list the hotkeys of, by file name. Leave empty for the model."
+      },
       "variables": {
         "vtsHotkeys": "All hotkey names, separated by commas",
         "vtsHotkeyCount": "How many hotkeys there are",
@@ -377,6 +444,311 @@
       },
       "variables": {
         "vtsResult": "The whole answer as raw text (or the name you chose above)"
+      }
+    },
+    "vtubestudio.changeModel": {
+      "description": "Switches to the next, previous or a random other model, or unloads the model.",
+      "fields": {
+        "change": "Which model to switch to, or Unload to show none.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
+      },
+      "variables": {
+        "vtsModelName": "The name of the model now loaded (empty after unloading)"
+      }
+    },
+    "vtubestudio.loadVfxPreset": {
+      "description": "Turns on one of the visual effects presets you saved in VTube Studio, like a rain or glitch look.",
+      "fields": {
+        "preset": "The preset name as VTube Studio shows it.",
+        "fadeTime": "How long the change takes, from 0 to 2 seconds.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
+      },
+      "variables": {
+        "vtsVfxOn": "True when visual effects are on",
+        "vtsVfxPreset": "The preset in use, if any",
+        "vtsVfxActiveEffects": "How many effects are active"
+      }
+    },
+    "vtubestudio.setVfx": {
+      "description": "Turns VTube Studio's visual effects on or off, keeping their settings.",
+      "fields": {
+        "state": "Turn on, turn off, or switch.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
+      },
+      "variables": {
+        "vtsVfxOn": "True when visual effects are now on"
+      }
+    },
+    "vtubestudio.setVfxValues": {
+      "description": "Changes single visual effect settings, like the bloom strength or a color.",
+      "fields": {
+        "values": "Settings as name=value, like Bloom_Strength=0.8. Colors are written as RRGGBBAA. Separate several with commas or new lines.",
+        "fadeTime": "How long the change takes, from 0 to 2 seconds.",
+        "othersToDefault": "Tick to turn every other effect off.",
+        "restricted": "Tick if you use effects VTube Studio marks as restricted (you must allow them in VTube Studio first).",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
+      },
+      "variables": {
+        "vtsVfxOn": "True when visual effects are on",
+        "vtsVfxPreset": "The preset in use, if any",
+        "vtsVfxActiveEffects": "How many effects are active"
+      }
+    },
+    "vtubestudio.randomizeVfx": {
+      "description": "Picks random visual effects, just for fun.",
+      "fields": {
+        "chaos": "How wild it gets, from 0 (calm) to 1 (chaos).",
+        "fadeTime": "How long the change takes, from 0 to 2 seconds.",
+        "revertAfter": "Seconds until Cuebot puts it back the way it was. Leave empty to keep the change."
+      },
+      "variables": {
+        "vtsVfxOn": "True when visual effects are on",
+        "vtsVfxPreset": "The preset in use, if any",
+        "vtsVfxActiveEffects": "How many effects are active"
+      }
+    },
+    "vtubestudio.getVfx": {
+      "description": "Reads whether visual effects are on and which preset is in use.",
+      "fields": {
+        "refreshPresets": "Tick to read the list of presets again (VTube Studio reads it from disk)."
+      },
+      "variables": {
+        "vtsVfxOn": "True when visual effects are on",
+        "vtsVfxPreset": "The preset in use, if any",
+        "vtsVfxActiveEffects": "How many effects are active",
+        "vtsVfxPresets": "Every preset you saved, separated by commas"
+      }
+    },
+    "vtubestudio.throwItems": {
+      "description": "Throws items or pictures at your model: they fly in from the side, your model flinches, and they fall away and disappear.",
+      "fields": {
+        "files": "Item files to throw. Separate several with commas; one is picked at random for each throw.",
+        "images": "Or pictures to throw instead, like %userProfileImageUrl% (web addresses, files or base64). The first time, VTube Studio asks you to allow Cuebot to load pictures.",
+        "count": "How many to throw.",
+        "size": "How big each one is, from 0 to 1.",
+        "interval": "Seconds between throws.",
+        "flightTime": "Seconds each one takes to reach the model.",
+        "flinch": "How hard your model reacts, from 0 (not at all) to 1.",
+        "from": "Which side they come from.",
+        "askFirst": "Tick to have VTube Studio ask you before showing a picture it hasn't seen yet."
+      },
+      "variables": {
+        "vtsThrown": "How many were thrown"
+      }
+    },
+    "vtubestudio.pinItem": {
+      "description": "Pins an item to your model so it moves with it, like a hat on the head.",
+      "fields": {
+        "item": "The item's id or file name. A file name pins every copy.",
+        "place": "Where to pin it: somewhere random, an ArtMesh, or where the model was last clicked.",
+        "artMesh": "The part of the model (ArtMesh id), for the ArtMesh choices.",
+        "angle": "The angle in degrees, relative to the model. Leave empty to keep the item's rotation.",
+        "size": "The size from 0 to 1. Leave empty to keep it."
+      },
+      "variables": {
+        "vtsPinnedItems": "How many items were pinned"
+      }
+    },
+    "vtubestudio.unpinItem": {
+      "description": "Unpins an item from your model.",
+      "fields": {
+        "item": "The item's id or file name. A file name unpins every copy."
+      },
+      "variables": {
+        "vtsUnpinnedItems": "How many items were unpinned"
+      }
+    },
+    "vtubestudio.getItems": {
+      "description": "Lists the items in your VTube Studio scene.",
+      "fields": {
+        "includeFiles": "Tick to also read the list of item files again (VTube Studio may stutter for a moment)."
+      },
+      "variables": {
+        "vtsItemCount": "How many items are in the scene",
+        "vtsItems": "Their file names, separated by commas",
+        "vtsItemsJson": "Every item with its details, as JSON",
+        "vtsItem0.instanceId": "The first item's id (vtsItem1.instanceId for the second, and so on)",
+        "vtsItem0.fileName": "The first item's file name",
+        "vtsItem0.pinned": "True if the first item is pinned to the model",
+        "vtsItemFiles": "Every item file, when you ticked the box"
+      }
+    },
+    "vtubestudio.itemAnimation": {
+      "description": "Changes how a picture or animated item looks: see-through, darker, faster or slower, or a set frame. Doesn't work on Live2D items.",
+      "fields": {
+        "item": "The item's id or file name.",
+        "opacity": "From 0 (invisible) to 1. Leave empty to keep it.",
+        "brightness": "From 0 (black) to 1. Leave empty to keep it.",
+        "framerate": "Animation speed in frames per second. Leave empty to keep it.",
+        "frame": "Jump to this frame (0 is the first). Leave empty to keep it.",
+        "play": "Play or stop the animation, or leave it.",
+        "autoStopFrames": "Frame numbers where the animation stops by itself, separated by commas. Type none to clear them. Leave empty to keep them."
+      },
+      "variables": {
+        "vtsItemFrame": "The frame the animation is on",
+        "vtsItemPlaying": "True when the animation is playing"
+      }
+    },
+    "vtubestudio.sortItem": {
+      "description": "Puts an item between your model's layers, for example behind the hair but in front of the face.",
+      "fields": {
+        "item": "The item's id or file name.",
+        "front": "The part of the model (ArtMesh id) the item goes in front of, or FullyInFront / FullyInBack. Leave empty to take the item out of the model's layers.",
+        "back": "Live2D items only: where the item's back part goes.",
+        "splitAt": "Live2D items only: the item's own ArtMesh where it is split into a front and back part."
+      },
+      "variables": {}
+    },
+    "vtubestudio.rainbowTint": {
+      "description": "Cycles your model through the colors of the rainbow for a while, then puts the colors back.",
+      "fields": {
+        "seconds": "How long the rainbow lasts.",
+        "cycleSeconds": "Seconds for one trip through every color.",
+        "mix": "How much the color replaces VTube Studio's scene lighting, from 0 to 1.",
+        "nameContains": "Only parts whose ArtMesh names contain this text. Leave every filter empty for the whole model.",
+        "tagContains": "Only parts whose tags contain this text.",
+        "nameExact": "Only parts with exactly these ArtMesh ids.",
+        "tagExact": "Only parts with exactly these tags.",
+        "groups": "Only the parts in these ArtMesh groups, by name.",
+        "numbers": "Only the parts at these positions in the model, like 1, 3, 5."
+      },
+      "variables": {}
+    },
+    "vtubestudio.pickArtMeshes": {
+      "description": "Opens a list in VTube Studio where you pick parts of your model; Cuebot waits until you click OK.",
+      "fields": {
+        "text": "The message shown above the list in VTube Studio.",
+        "count": "How many parts must be picked. 0 lets you pick any number.",
+        "resultArgument": "The name of the variable that will hold the picked ArtMesh ids. The default is vtsArtMeshes."
+      },
+      "variables": {
+        "vtsArtMeshes": "The picked ArtMesh ids, separated by commas (empty if you clicked Cancel)",
+        "vtsArtMeshCount": "How many were picked"
+      }
+    },
+    "vtubestudio.getArtMeshes": {
+      "description": "Lists the parts (ArtMeshes), tags and groups of your model.",
+      "fields": {},
+      "variables": {
+        "vtsArtMeshes": "Every ArtMesh id, separated by commas",
+        "vtsArtMeshCount": "How many there are",
+        "vtsArtMeshTags": "Every tag",
+        "vtsArtMeshGroups": "Every ArtMesh group name"
+      }
+    },
+    "vtubestudio.createParameter": {
+      "description": "Adds a new tracking parameter that your model can react to, like a heart rate or a goal's progress. Cuebot creates it again every time it connects.",
+      "fields": {
+        "name": "4 to 32 letters and digits, no spaces, like CuebotHeartRate.",
+        "explanation": "A short note shown in VTube Studio.",
+        "min": "The usual lowest value.",
+        "max": "The usual highest value.",
+        "default": "The value when nothing sets it."
+      },
+      "variables": {}
+    },
+    "vtubestudio.deleteParameter": {
+      "description": "Removes a tracking parameter Cuebot created.",
+      "fields": {
+        "name": "The parameter's name."
+      },
+      "variables": {}
+    },
+    "vtubestudio.setParameter": {
+      "description": "Sets a tracking parameter and keeps it there (Cuebot keeps sending it) until you set it again or stop it. Good for values that change now and then, like a heart rate.",
+      "fields": {
+        "parameter": "The parameter's name, like FaceAngleX or one you created.",
+        "value": "The value, like %heartRate%.",
+        "weight": "From 0 to 1: how much it overrides face tracking. Leave empty to override fully.",
+        "seconds": "How long to keep it. Leave empty to keep it until it is set again or stopped."
+      },
+      "variables": {}
+    },
+    "vtubestudio.stopParameter": {
+      "description": "Stops keeping a parameter set, so face tracking takes over again.",
+      "fields": {
+        "parameter": "The parameter's name. Leave empty to stop every parameter Cuebot keeps."
+      },
+      "variables": {
+        "vtsStoppedParameters": "How many parameters were stopped"
+      }
+    },
+    "vtubestudio.physics": {
+      "description": "Turns up the physics (bouncing hair and clothes) or the wind for a while.",
+      "fields": {
+        "strength": "Physics strength from 0 to 100 for the whole model, or a multiplier from 0 to 2 with groups. Leave empty to keep it.",
+        "wind": "Wind from 0 to 100 for the whole model, or a multiplier from 0 to 2 with groups. Leave empty to keep it.",
+        "groups": "Only these physics groups, by name. Leave empty for the whole model.",
+        "seconds": "How long it lasts."
+      },
+      "variables": {}
+    },
+    "vtubestudio.getPhysics": {
+      "description": "Reads your model's physics settings.",
+      "fields": {},
+      "variables": {
+        "vtsHasPhysics": "True if the model has physics",
+        "vtsPhysicsOn": "True if physics are switched on",
+        "vtsPhysicsStrength": "The physics strength (0-100)",
+        "vtsWind": "The wind strength (0-100)",
+        "vtsPhysicsGroups": "The physics group names"
+      }
+    },
+    "vtubestudio.requestPermission": {
+      "description": "Asks VTube Studio to allow Cuebot something extra; VTube Studio shows a popup for you to answer.",
+      "fields": {
+        "permission": "LoadCustomImagesAsItems lets Cuebot show pictures (like profile pictures) as items. ControlNDISettings lets Cuebot turn NDI output on and off."
+      },
+      "variables": {
+        "vtsPermissionGranted": "True when VTube Studio allowed it"
+      }
+    },
+    "vtubestudio.ndi": {
+      "description": "Turns VTube Studio's NDI video output on or off. The first time, VTube Studio asks you to allow it.",
+      "fields": {
+        "state": "Turn on, turn off, or switch.",
+        "width": "A fixed width (a multiple of 16). Leave empty to keep it.",
+        "height": "A fixed height (a multiple of 8). Leave empty to keep it."
+      },
+      "variables": {
+        "vtsNdiOn": "True when NDI output is now on"
+      }
+    },
+    "vtubestudio.getStatistics": {
+      "description": "Reads VTube Studio's version, frame rate, window size and how long it has been running.",
+      "fields": {},
+      "variables": {
+        "vtsUptimeSeconds": "Seconds since VTube Studio started",
+        "vtsFramerate": "Frames per second",
+        "vtsVersion": "The VTube Studio version",
+        "vtsAllowedPlugins": "How many plugins you allowed",
+        "vtsConnectedPlugins": "How many plugins are connected",
+        "vtsWindowWidth": "The window width in pixels",
+        "vtsWindowHeight": "The window height in pixels",
+        "vtsFullscreen": "True when the window is fullscreen"
+      }
+    },
+    "vtubestudio.getSceneLighting": {
+      "description": "Reads the color VTube Studio's scene lighting picks up from your screen, for example to match your room lights to it.",
+      "fields": {},
+      "variables": {
+        "vtsLightingOn": "True when scene lighting is on",
+        "vtsLightingColor": "The average color as #RRGGBB",
+        "vtsLightingR": "Its red part (0-255)",
+        "vtsLightingG": "Its green part (0-255)",
+        "vtsLightingB": "Its blue part (0-255)",
+        "vtsOverlayR": "The red part of the final overlay (up to 459)",
+        "vtsOverlayG": "The green part of the final overlay",
+        "vtsOverlayB": "The blue part of the final overlay"
+      }
+    },
+    "vtubestudio.getTracking": {
+      "description": "Checks whether VTube Studio sees your face and hands right now.",
+      "fields": {},
+      "variables": {
+        "vtsFaceFound": "True if your face is tracked",
+        "vtsLeftHandFound": "True if your left hand is tracked",
+        "vtsRightHandFound": "True if your right hand is tracked"
       }
     }
   }

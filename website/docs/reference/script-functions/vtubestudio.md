@@ -5,6 +5,31 @@ Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See 
 
 ![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
 
+## vtubestudio.colorTint
+
+Tints your model a color, optionally only the parts whose names contain some text, and optionally only for a while.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `color` | `color` | The color, like "#FF8080". |
+| `nameContains` | `name_contains` | Optional. Only parts whose ArtMesh names contain this text. |
+| `mix` | `mix` | Optional. How much the color replaces scene lighting, from 0 to 1. The default is 1. |
+| `revertAfter` | `revert_after` | Optional. Seconds until the colors go back. |
+
+**Gives back:** How many parts were tinted.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.colorTint", new { color = "#80FF80", revertAfter = 10 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_color_tint(color="#80FF80", revert_after=10)
+    ```
+
 ## vtubestudio.getCurrentModel
 
 Tells you which model VTube Studio has loaded and where it is on screen. Fails with an error when VTube Studio is not connected.
@@ -102,6 +127,34 @@ Checks whether Cuebot is connected to VTube Studio and allowed in as a plugin.
     answer = cb.vtubestudio_is_connected()
     ```
 
+## vtubestudio.loadItem
+
+Puts an item (or a picture) into the scene.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `fileName` | `file_name` | The item file, like "star.png". Leave it out when you give an image. |
+| `image` | `image` | Optional. A picture to load instead: a web address, a file or base64. |
+| `positionX` | `position_x` | Optional. -1 (left edge) to 1 (right edge). The default is 0. |
+| `positionY` | `position_y` | Optional. -1 (bottom) to 1 (top). The default is 0. |
+| `size` | `size` | Optional. 0 to 1. The default is 0.32. |
+| `pin` | `pin` | Optional. None, Random, ArtMeshCenter, ArtMeshRandom or LastClick. The default is None. |
+| `unloadAfter` | `unload_after` | Optional. Seconds until it is removed again. |
+
+**Gives back:** The new item's id.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.loadItem", new { fileName = "star.png", pin = "Random", unloadAfter = 20 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_load_item(file_name="star.png", pin="Random", unload_after=20)
+    ```
+
 ## vtubestudio.loadModel
 
 Switches VTube Studio to another model. Fails with an error when no model has that name or VTube Studio is not connected.
@@ -122,6 +175,30 @@ Switches VTube Studio to another model. Fails with an error when no model has th
 
     ```python
     answer = cb.vtubestudio_load_model(model="Akari")
+    ```
+
+## vtubestudio.loadVfxPreset
+
+Turns on one of your visual effects presets, optionally only for a while.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `preset` | `preset` | The preset name. |
+| `fadeTime` | `fade_time` | Optional. Seconds the change takes (0-2). The default is 0.5. |
+| `revertAfter` | `revert_after` | Optional. Seconds until the previous effects come back. |
+
+**Gives back:** The preset now in use.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.loadVfxPreset", new { preset = "Rain", revertAfter = 30 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_load_vfx_preset(preset="Rain", revert_after=30)
     ```
 
 ## vtubestudio.moveModel
@@ -149,6 +226,30 @@ Moves, turns or resizes your model on screen. Values you leave out stay as they 
 
     ```python
     answer = cb.vtubestudio_move_model(time=1, position_x=0.5, position_y=-0.2)
+    ```
+
+## vtubestudio.physics
+
+Turns up the physics or the wind for a while.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `strength` | `strength` | Optional. Physics strength from 0 to 100. |
+| `wind` | `wind` | Optional. Wind from 0 to 100. |
+| `seconds` | `seconds` | Optional. How long. The default is 5. |
+
+**Gives back:** true
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.physics", new { wind = 80, seconds = 10 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_physics(wind=80, seconds=10)
     ```
 
 ## vtubestudio.request
@@ -196,6 +297,101 @@ Turns a face expression on your model on or off, like blush or angry eyes. Fails
 
     ```python
     answer = cb.vtubestudio_set_expression(expression="Blush", state="On")
+    ```
+
+## vtubestudio.setParameter
+
+Keeps a tracking parameter at a value (Cuebot keeps sending it) until it is set again or stopped.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `parameter` | `parameter` | The parameter, like FaceAngleX or one you created. |
+| `value` | `value` | The value. |
+| `weight` | `weight` | Optional. 0 to 1: how much it overrides face tracking. |
+| `seconds` | `seconds` | Optional. How long to keep it. |
+
+**Gives back:** true
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.setParameter", new { parameter = "CuebotHeartRate", value = 92 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_set_parameter(parameter="CuebotHeartRate", value=92)
+    ```
+
+## vtubestudio.setVfx
+
+Turns visual effects On, Off, or Toggle.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `state` | `state` | Optional. On, Off or Toggle. The default is Toggle. |
+
+**Gives back:** true when visual effects are now on.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.setVfx", new { state = "Off" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_set_vfx(state="Off")
+    ```
+
+## vtubestudio.stopParameter
+
+Stops keeping a parameter set, so face tracking takes over again.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `parameter` | `parameter` | Optional. The parameter; leave it out to stop all of them. |
+
+**Gives back:** How many parameters were stopped.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.stopParameter", new { parameter = "CuebotHeartRate" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_stop_parameter(parameter="CuebotHeartRate")
+    ```
+
+## vtubestudio.throwItems
+
+Throws items or pictures at your model; it flinches and they fall away. Fails with an error when VTube Studio is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `files` | `files` | Optional. Item files to throw, separated by commas (give files or images). |
+| `images` | `images` | Optional. Pictures to throw instead (web addresses or files), separated by commas. |
+| `count` | `count` | Optional. How many to throw. The default is 1. |
+| `size` | `size` | Optional. The size from 0 to 1. The default is 0.15. |
+| `flinch` | `flinch` | Optional. How hard the model reacts, from 0 to 1. The default is 0.5. |
+
+**Gives back:** How many were thrown.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("vtubestudio.throwItems", new { files = "tomato.png", count = 3 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.vtubestudio_throw_items(files="tomato.png", count=3)
     ```
 
 ## vtubestudio.triggerHotkey

@@ -5,6 +5,7 @@
   <ItemGroup>
     <!-- The Windows now-playing helper, run by Windows PowerShell 5.1 (NowPlaying/Smtc/SmtcSource.cs). -->
     <EmbeddedResource Include="NowPlaying\Smtc\smtc-helper.ps1" LogicalName="Cuebot.Integrations.NowPlaying.smtc-helper.ps1" />
+    <EmbeddedResource Include="VTubeStudio\plugin-icon.png" LogicalName="Cuebot.Integrations.VTubeStudio.plugin-icon.png" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Integrations.Tests" />

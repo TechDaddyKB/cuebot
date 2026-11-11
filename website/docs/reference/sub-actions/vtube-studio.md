@@ -3,6 +3,39 @@
 
 ![Adding a sub-action: on the Actions page, click + Sub-action and search for it](../../assets/screens/actions-sub-action-picker.png)
 
+## Ask VTube Studio for a permission
+
+Asks VTube Studio to allow Cuebot something extra; VTube Studio shows a popup for you to answer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Permission** | LoadCustomImagesAsItems lets Cuebot show pictures (like profile pictures) as items. ControlNDISettings lets Cuebot turn NDI output on and off. Options: LoadCustomImagesAsItems, ControlNDISettings. Starts as: `LoadCustomImagesAsItems`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsPermissionGranted%` | True when VTube Studio allowed it |
+
+<small>Type id: `vtubestudio.requestPermission`</small>
+
+## Change model (next, random, unload)
+
+Switches to the next, previous or a random other model, or unloads the model.
+
+| Setting | What to put in |
+| --- | --- |
+| **Change** | Which model to switch to, or Unload to show none. Options: Next model (alphabetically), Previous model, A random other model, Unload the model. Starts as: `Next model (alphabetically)`. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsModelName%` | The name of the model now loaded (empty after unloading) |
+
+<small>Type id: `vtubestudio.changeModel`</small>
+
 ## Color tint
 
 Tints your model with a color, for example red when someone is angry. Can tint all of it or only some parts.
@@ -10,9 +43,14 @@ Tints your model with a color, for example red when someone is angry. Can tint a
 | Setting | What to put in |
 | --- | --- |
 | **Color** | The color as a hex code like #FF8080, or as numbers like "255,128,128" (red, green, blue, and optional see-through). Starts as: `#FF8080`. |
-| **Art mesh names containing** | Only tint parts whose names contain these words. Separate several with commas. Leave both boxes empty to tint everything. |
+| **Art mesh names containing** | Only tint parts whose ArtMesh names contain this text. Separate several with commas. Leave every filter empty to tint the whole model. |
 | **Art mesh tags containing** | Only tint parts whose tags contain these words. Separate several with commas. |
+| **Art mesh names (exact)** | Only tint parts with exactly these ArtMesh ids. Separate several with commas. |
+| **Art mesh tags (exact)** | Only tint parts with exactly these tags. Separate several with commas. |
+| **ArtMesh groups** | Only tint the parts in these ArtMesh groups (the groups you made in VTube Studio), by name. Separate several with commas. |
+| **Art mesh numbers** | Only tint the parts at these positions in the model, like 1, 3, 5. |
 | **Mix with scene lighting (0-1)** | How much the tint mixes with the scene lighting, from 0 to 1. Starts as: `1`. |
+| **Undo after (seconds)** | Seconds until the colors go back to how they were. Leave empty to keep the tint. |
 
 **Variables it adds**
 
@@ -21,6 +59,45 @@ Tints your model with a color, for example red when someone is angry. Can tint a
 | `%vtsMatchedArtMeshes%` | How many parts of the model were tinted |
 
 <small>Type id: `vtubestudio.colorTint`</small>
+
+## Create custom parameter
+
+Adds a new tracking parameter that your model can react to, like a heart rate or a goal's progress. Cuebot creates it again every time it connects.
+
+| Setting | What to put in |
+| --- | --- |
+| **Name** | 4 to 32 letters and digits, no spaces, like CuebotHeartRate. |
+| **Explanation** | A short note shown in VTube Studio. |
+| **Lowest value** | The usual lowest value. Starts as: `0`. |
+| **Highest value** | The usual highest value. Starts as: `1`. |
+| **Default value** | The value when nothing sets it. Starts as: `0`. |
+
+<small>Type id: `vtubestudio.createParameter`</small>
+
+## Delete custom parameter
+
+Removes a tracking parameter Cuebot created.
+
+| Setting | What to put in |
+| --- | --- |
+| **Name** | The parameter's name. |
+
+<small>Type id: `vtubestudio.deleteParameter`</small>
+
+## Get ArtMeshes
+
+Lists the parts (ArtMeshes), tags and groups of your model.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsArtMeshes%` | Every ArtMesh id, separated by commas |
+| `%vtsArtMeshCount%` | How many there are |
+| `%vtsArtMeshTags%` | Every tag |
+| `%vtsArtMeshGroups%` | Every ArtMesh group name |
+
+<small>Type id: `vtubestudio.getArtMeshes`</small>
 
 ## Get available models
 
@@ -73,6 +150,11 @@ Reads the expressions of the loaded model and which ones are on, and keeps them 
 
 Reads the hotkeys of the loaded model and keeps them for later steps.
 
+| Setting | What to put in |
+| --- | --- |
+| **Of another model** | Another model to list the hotkeys of, by name. Leave empty for the current model. |
+| **Of a Live2D item (file name)** | A Live2D item to list the hotkeys of, by file name. Leave empty for the model. |
+
 **Variables it adds**
 
 | Variable | What it holds |
@@ -82,6 +164,138 @@ Reads the hotkeys of the loaded model and keeps them for later steps.
 | `%vtsHotkeysJson%` | The full list as raw text |
 
 <small>Type id: `vtubestudio.getHotkeys`</small>
+
+## Get items in the scene
+
+Lists the items in your VTube Studio scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Also re-read the item files** | Tick to also read the list of item files again (VTube Studio may stutter for a moment). Starts as: `false`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsItemCount%` | How many items are in the scene |
+| `%vtsItems%` | Their file names, separated by commas |
+| `%vtsItemsJson%` | Every item with its details, as JSON |
+| `%vtsItem0.instanceId%` | The first item's id (vtsItem1.instanceId for the second, and so on) |
+| `%vtsItem0.fileName%` | The first item's file name |
+| `%vtsItem0.pinned%` | True if the first item is pinned to the model |
+| `%vtsItemFiles%` | Every item file, when you ticked the box |
+
+<small>Type id: `vtubestudio.getItems`</small>
+
+## Get physics
+
+Reads your model's physics settings.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsHasPhysics%` | True if the model has physics |
+| `%vtsPhysicsOn%` | True if physics are switched on |
+| `%vtsPhysicsStrength%` | The physics strength (0-100) |
+| `%vtsWind%` | The wind strength (0-100) |
+| `%vtsPhysicsGroups%` | The physics group names |
+
+<small>Type id: `vtubestudio.getPhysics`</small>
+
+## Get scene lighting color
+
+Reads the color VTube Studio's scene lighting picks up from your screen, for example to match your room lights to it.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsLightingOn%` | True when scene lighting is on |
+| `%vtsLightingColor%` | The average color as #RRGGBB |
+| `%vtsLightingR%` | Its red part (0-255) |
+| `%vtsLightingG%` | Its green part (0-255) |
+| `%vtsLightingB%` | Its blue part (0-255) |
+| `%vtsOverlayR%` | The red part of the final overlay (up to 459) |
+| `%vtsOverlayG%` | The green part of the final overlay |
+| `%vtsOverlayB%` | The blue part of the final overlay |
+
+<small>Type id: `vtubestudio.getSceneLighting`</small>
+
+## Get tracking status
+
+Checks whether VTube Studio sees your face and hands right now.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsFaceFound%` | True if your face is tracked |
+| `%vtsLeftHandFound%` | True if your left hand is tracked |
+| `%vtsRightHandFound%` | True if your right hand is tracked |
+
+<small>Type id: `vtubestudio.getTracking`</small>
+
+## Get visual effects state
+
+Reads whether visual effects are on and which preset is in use.
+
+| Setting | What to put in |
+| --- | --- |
+| **Re-read the preset list** | Tick to read the list of presets again (VTube Studio reads it from disk). Starts as: `false`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsVfxOn%` | True when visual effects are on |
+| `%vtsVfxPreset%` | The preset in use, if any |
+| `%vtsVfxActiveEffects%` | How many effects are active |
+| `%vtsVfxPresets%` | Every preset you saved, separated by commas |
+
+<small>Type id: `vtubestudio.getVfx`</small>
+
+## Get VTube Studio statistics
+
+Reads VTube Studio's version, frame rate, window size and how long it has been running.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsUptimeSeconds%` | Seconds since VTube Studio started |
+| `%vtsFramerate%` | Frames per second |
+| `%vtsVersion%` | The VTube Studio version |
+| `%vtsAllowedPlugins%` | How many plugins you allowed |
+| `%vtsConnectedPlugins%` | How many plugins are connected |
+| `%vtsWindowWidth%` | The window width in pixels |
+| `%vtsWindowHeight%` | The window height in pixels |
+| `%vtsFullscreen%` | True when the window is fullscreen |
+
+<small>Type id: `vtubestudio.getStatistics`</small>
+
+## Item look and animation
+
+Changes how a picture or animated item looks: see-through, darker, faster or slower, or a set frame. Doesn't work on Live2D items.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item (instance id or file name)** | The item's id or file name. |
+| **Opacity (0-1)** | From 0 (invisible) to 1. Leave empty to keep it. |
+| **Brightness (0-1)** | From 0 (black) to 1. Leave empty to keep it. |
+| **Frames per second** | Animation speed in frames per second. Leave empty to keep it. |
+| **Jump to frame** | Jump to this frame (0 is the first). Leave empty to keep it. |
+| **Animation** | Play or stop the animation, or leave it. Options: Unchanged, Play, Stop. Starts as: `Unchanged`. |
+| **Stop on frames** | Frame numbers where the animation stops by itself, separated by commas. Type none to clear them. Leave empty to keep them. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsItemFrame%` | The frame the animation is on |
+| `%vtsItemPlaying%` | True when the animation is playing |
+
+<small>Type id: `vtubestudio.itemAnimation`</small>
 
 ## Load item
 
@@ -96,7 +310,16 @@ Puts an item (a prop or picture) into your VTube Studio scene.
 | **Rotation (degrees)** | How far to turn it, in degrees. Starts as: `0`. |
 | **Fade time (seconds)** | How long it takes to fade in, in seconds. Starts as: `0.5`. |
 | **Order** | Which layer it sits on, from -30 to 30. Leave empty to let VTube Studio pick a free one. |
-| **Unload when Cuebot disconnects** | Tick to remove the item automatically if Cuebot disconnects from VTube Studio. Starts as: `false`. |
+| **Unload when Cuebot disconnects** | Tick to remove the item automatically if Cuebot disconnects from VTube Studio (recommended, so items never get stuck). Starts as: `true`. |
+| **Image instead of an item file** | A picture to load instead of an item file: a web address, a file on this computer, or base64 data, like %userProfileImageUrl%. The first time, VTube Studio asks you to allow Cuebot to load pictures. |
+| **Ask in VTube Studio before showing a new image** | Tick to have VTube Studio ask you before showing a picture it hasn't seen yet. Starts as: `false`. |
+| **Pin to the model** | Pin the item to your model so it moves with it, and where. Options: Don't pin, Somewhere random on the model, The middle of an ArtMesh, Somewhere random on an ArtMesh, Where the model was last clicked. Starts as: `Don't pin`. |
+| **Pin to ArtMesh** | The part of the model (ArtMesh id) to pin to, for the ArtMesh choices. |
+| **Flipped** | Tick to mirror the item. Starts as: `false`. |
+| **Locked (cannot be dragged)** | Tick so the item can't be dragged with the mouse. Starts as: `false`. |
+| **Censored (pixelated)** | Tick to pixelate the item. Starts as: `false`. |
+| **Movement smoothing (0-1)** | How smoothly the item follows when it moves, from 0 to 1. Starts as: `0`. |
+| **Unload after (seconds)** | Seconds until the item is removed again. Leave empty to keep it. |
 | **Save the answer in variable** | The name of the variable that will hold the item's id, so you can move or remove it later. The default is vtsItemInstanceId. Starts as: `vtsItemInstanceId`. |
 
 **Variables it adds**
@@ -114,6 +337,7 @@ Switches VTube Studio to another model (avatar).
 | Setting | What to put in |
 | --- | --- |
 | **Model (name or id)** | The model name (or id) as VTube Studio shows it. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
 
 **Variables it adds**
 
@@ -123,19 +347,41 @@ Switches VTube Studio to another model (avatar).
 
 <small>Type id: `vtubestudio.loadModel`</small>
 
+## Load visual effects preset
+
+Turns on one of the visual effects presets you saved in VTube Studio, like a rain or glitch look.
+
+| Setting | What to put in |
+| --- | --- |
+| **Preset** | The preset name as VTube Studio shows it. |
+| **Fade time (seconds, 0-2)** | How long the change takes, from 0 to 2 seconds. Starts as: `0.5`. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsVfxOn%` | True when visual effects are on |
+| `%vtsVfxPreset%` | The preset in use, if any |
+| `%vtsVfxActiveEffects%` | How many effects are active |
+
+<small>Type id: `vtubestudio.loadVfxPreset`</small>
+
 ## Move item
 
 Moves, turns or resizes an item in your scene, smoothly.
 
 | Setting | What to put in |
 | --- | --- |
-| **Item (instance id or file name)** | The item to move: its id (from Load item) or its file name. |
+| **Item (instance id or file name)** | The item's id or file name. A file name moves every copy of it. Separate several with commas. |
 | **Time (seconds)** | How long the move takes, in seconds. Starts as: `1`. |
 | **Motion** | How the motion feels: linear is steady, easeIn starts slow, easeOut ends slow, easeBoth does both, overshoot goes past and bounces back, zip is a quick snap. Options: linear, easeIn, easeOut, easeBoth, overshoot, zip. Starts as: `easeBoth`. |
 | **Position X** | Left to right position (-1 is the left edge, 1 is the right edge). Leave empty to keep it. |
 | **Position Y** | Bottom to top position (-1 is the bottom, 1 is the top). Leave empty to keep it. |
 | **Size** | How big it is, from 0 to 1. Leave empty to keep it. |
 | **Rotation** | How far to turn it, in degrees. Leave empty to keep it. |
+| **Layer order** | Move the item to this layer, from -30 to 30 (the spot must be free). Leave empty to keep it. |
+| **Flip** | Mirror the item, un-mirror it, or leave it as it is. Options: Unchanged, Flipped, NotFlipped. Starts as: `Unchanged`. |
 
 <small>Type id: `vtubestudio.moveItem`</small>
 
@@ -151,6 +397,7 @@ Moves, turns or resizes your model on screen, smoothly.
 | **Position Y** | Bottom to top: -1 is the bottom, 1 is the top. Leave empty to keep it. |
 | **Rotation (degrees)** | How far to turn it, in degrees (-360 to 360). Leave empty to keep it. |
 | **Size** | How big it is (-100 to 100). Leave empty to keep it. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
 
 <small>Type id: `vtubestudio.moveModel`</small>
 
@@ -166,6 +413,127 @@ Moves parts of your model yourself, like head angle or mouth opening, as if your
 | **Report the face as found** | Tick to tell VTube Studio a face was found, so it does not show "tracking lost" while Cuebot controls the model. Starts as: `false`. |
 
 <small>Type id: `vtubestudio.injectParameters`</small>
+
+## NDI output
+
+Turns VTube Studio's NDI video output on or off. The first time, VTube Studio asks you to allow it.
+
+| Setting | What to put in |
+| --- | --- |
+| **State** | Turn on, turn off, or switch. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Turn on`. |
+| **Width** | A fixed width (a multiple of 16). Leave empty to keep it. |
+| **Height** | A fixed height (a multiple of 8). Leave empty to keep it. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsNdiOn%` | True when NDI output is now on |
+
+<small>Type id: `vtubestudio.ndi`</small>
+
+## Physics and wind boost
+
+Turns up the physics (bouncing hair and clothes) or the wind for a while.
+
+| Setting | What to put in |
+| --- | --- |
+| **Physics strength** | Physics strength from 0 to 100 for the whole model, or a multiplier from 0 to 2 with groups. Leave empty to keep it. |
+| **Wind** | Wind from 0 to 100 for the whole model, or a multiplier from 0 to 2 with groups. Leave empty to keep it. |
+| **Physics groups** | Only these physics groups, by name. Leave empty for the whole model. |
+| **For (seconds)** | How long it lasts. Starts as: `5`. |
+
+<small>Type id: `vtubestudio.physics`</small>
+
+## Pick ArtMeshes in VTube Studio
+
+Opens a list in VTube Studio where you pick parts of your model; Cuebot waits until you click OK.
+
+| Setting | What to put in |
+| --- | --- |
+| **Message shown in VTube Studio** | The message shown above the list in VTube Studio. Starts as: `Pick the ArtMeshes for Cuebot`. |
+| **How many (0 for any)** | How many parts must be picked. 0 lets you pick any number. Starts as: `0`. |
+| **Save the answer in variable** | The name of the variable that will hold the picked ArtMesh ids. The default is vtsArtMeshes. Starts as: `vtsArtMeshes`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsArtMeshes%` | The picked ArtMesh ids, separated by commas (empty if you clicked Cancel) |
+| `%vtsArtMeshCount%` | How many were picked |
+
+<small>Type id: `vtubestudio.pickArtMeshes`</small>
+
+## Pin item to the model
+
+Pins an item to your model so it moves with it, like a hat on the head.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item (instance id or file name)** | The item's id or file name. A file name pins every copy. |
+| **Where** | Where to pin it: somewhere random, an ArtMesh, or where the model was last clicked. Options: Don't pin, Somewhere random on the model, The middle of an ArtMesh, Somewhere random on an ArtMesh, Where the model was last clicked. Starts as: `Somewhere random on the model`. |
+| **ArtMesh** | The part of the model (ArtMesh id), for the ArtMesh choices. |
+| **Angle (degrees)** | The angle in degrees, relative to the model. Leave empty to keep the item's rotation. |
+| **Size (0-1)** | The size from 0 to 1. Leave empty to keep it. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsPinnedItems%` | How many items were pinned |
+
+<small>Type id: `vtubestudio.pinItem`</small>
+
+## Put item between model layers
+
+Puts an item between your model's layers, for example behind the hair but in front of the face.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item (instance id or file name)** | The item's id or file name. |
+| **In front of** | The part of the model (ArtMesh id) the item goes in front of, or FullyInFront / FullyInBack. Leave empty to take the item out of the model's layers. |
+| **Back part in front of** | Live2D items only: where the item's back part goes. |
+| **Split the Live2D item at** | Live2D items only: the item's own ArtMesh where it is split into a front and back part. |
+
+<small>Type id: `vtubestudio.sortItem`</small>
+
+## Rainbow color tint
+
+Cycles your model through the colors of the rainbow for a while, then puts the colors back.
+
+| Setting | What to put in |
+| --- | --- |
+| **For (seconds)** | How long the rainbow lasts. Starts as: `10`. |
+| **One rainbow every (seconds)** | Seconds for one trip through every color. Starts as: `2`. |
+| **Art mesh names containing** | Only parts whose ArtMesh names contain this text. Leave every filter empty for the whole model. |
+| **Art mesh tags containing** | Only parts whose tags contain this text. |
+| **Art mesh names (exact)** | Only parts with exactly these ArtMesh ids. |
+| **Art mesh tags (exact)** | Only parts with exactly these tags. |
+| **ArtMesh groups** | Only the parts in these ArtMesh groups, by name. |
+| **Art mesh numbers** | Only the parts at these positions in the model, like 1, 3, 5. |
+| **Mix with scene lighting (0-1)** | How much the color replaces VTube Studio's scene lighting, from 0 to 1. Starts as: `1`. |
+
+<small>Type id: `vtubestudio.rainbowTint`</small>
+
+## Randomize visual effects
+
+Picks random visual effects, just for fun.
+
+| Setting | What to put in |
+| --- | --- |
+| **Chaos (0-1)** | How wild it gets, from 0 (calm) to 1 (chaos). Starts as: `0.5`. |
+| **Fade time (seconds, 0-2)** | How long the change takes, from 0 to 2 seconds. Starts as: `0.5`. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsVfxOn%` | True when visual effects are on |
+| `%vtsVfxPreset%` | The preset in use, if any |
+| `%vtsVfxActiveEffects%` | How many effects are active |
+
+<small>Type id: `vtubestudio.randomizeVfx`</small>
 
 ## Remove all expressions
 
@@ -211,6 +579,7 @@ Turns an expression (a face or pose preset) on or off.
 | **Expression (name or file)** | The expression name or file as VTube Studio shows it. |
 | **State** | On turns it on, Off turns it off, Toggle flips it. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Turn on`. |
 | **Fade time (seconds)** | How long the change takes, in seconds. Starts as: `0.25`. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
 
 **Variables it adds**
 
@@ -219,6 +588,81 @@ Turns an expression (a face or pose preset) on or off.
 | `%vtsExpressionActive%` | True if the expression is on afterwards |
 
 <small>Type id: `vtubestudio.setExpression`</small>
+
+## Set parameter (keep it)
+
+Sets a tracking parameter and keeps it there (Cuebot keeps sending it) until you set it again or stop it. Good for values that change now and then, like a heart rate.
+
+| Setting | What to put in |
+| --- | --- |
+| **Parameter** | The parameter's name, like FaceAngleX or one you created. |
+| **Value** | The value, like %heartRate%. |
+| **Weight (0-1)** | From 0 to 1: how much it overrides face tracking. Leave empty to override fully. |
+| **For (seconds)** | How long to keep it. Leave empty to keep it until it is set again or stopped. |
+
+<small>Type id: `vtubestudio.setParameter`</small>
+
+## Set visual effect settings
+
+Changes single visual effect settings, like the bloom strength or a color.
+
+| Setting | What to put in |
+| --- | --- |
+| **Settings** | Settings as name=value, like Bloom_Strength=0.8. Colors are written as RRGGBBAA. Separate several with commas or new lines. |
+| **Fade time (seconds, 0-2)** | How long the change takes, from 0 to 2 seconds. Starts as: `0.5`. |
+| **Turn every other effect off** | Tick to turn every other effect off. Starts as: `false`. |
+| **Uses restricted effects** | Tick if you use effects VTube Studio marks as restricted (you must allow them in VTube Studio first). Starts as: `false`. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsVfxOn%` | True when visual effects are on |
+| `%vtsVfxPreset%` | The preset in use, if any |
+| `%vtsVfxActiveEffects%` | How many effects are active |
+
+<small>Type id: `vtubestudio.setVfxValues`</small>
+
+## Stop setting parameter
+
+Stops keeping a parameter set, so face tracking takes over again.
+
+| Setting | What to put in |
+| --- | --- |
+| **Parameter** | The parameter's name. Leave empty to stop every parameter Cuebot keeps. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsStoppedParameters%` | How many parameters were stopped |
+
+<small>Type id: `vtubestudio.stopParameter`</small>
+
+## Throw items at the model
+
+Throws items or pictures at your model: they fly in from the side, your model flinches, and they fall away and disappear.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item files** | Item files to throw. Separate several with commas; one is picked at random for each throw. |
+| **Or images** | Or pictures to throw instead, like %userProfileImageUrl% (web addresses, files or base64). The first time, VTube Studio asks you to allow Cuebot to load pictures. |
+| **How many** | How many to throw. Starts as: `1`. |
+| **Size (0-1)** | How big each one is, from 0 to 1. Starts as: `0.15`. |
+| **Seconds between throws** | Seconds between throws. Starts as: `0.15`. |
+| **Flight time (seconds)** | Seconds each one takes to reach the model. Starts as: `0.35`. |
+| **Flinch (0-1)** | How hard your model reacts, from 0 (not at all) to 1. Starts as: `0.5`. |
+| **From** | Which side they come from. Options: Random, Left, Right. Starts as: `Random`. |
+| **Ask in VTube Studio before showing a new image** | Tick to have VTube Studio ask you before showing a picture it hasn't seen yet. Starts as: `false`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsThrown%` | How many were thrown |
+
+<small>Type id: `vtubestudio.throwItems`</small>
 
 ## Trigger hotkey
 
@@ -237,6 +681,23 @@ Presses a VTube Studio hotkey for you, for example to play an animation or chang
 
 <small>Type id: `vtubestudio.triggerHotkey`</small>
 
+## Turn visual effects on or off
+
+Turns VTube Studio's visual effects on or off, keeping their settings.
+
+| Setting | What to put in |
+| --- | --- |
+| **State** | Turn on, turn off, or switch. Options: Switch (on if off, off if on), Turn on, Turn off. Starts as: `Switch (on if off, off if on)`. |
+| **Undo after (seconds)** | Seconds until Cuebot puts it back the way it was. Leave empty to keep the change. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsVfxOn%` | True when visual effects are now on |
+
+<small>Type id: `vtubestudio.setVfx`</small>
+
 ## Unload item
 
 Removes items (props or pictures) from your VTube Studio scene.
@@ -245,6 +706,7 @@ Removes items (props or pictures) from your VTube Studio scene.
 | --- | --- |
 | **Item (instance id or file name)** | The items to remove, by id or file name. Separate several with commas. |
 | **Unload every item in the scene** | Tick to remove every item in the scene. Starts as: `false`. |
+| **Unload every item Cuebot loaded** | Tick to remove every item Cuebot put into the scene (and nothing you added yourself). Starts as: `false`. |
 
 **Variables it adds**
 
@@ -253,3 +715,19 @@ Removes items (props or pictures) from your VTube Studio scene.
 | `%vtsUnloadedItems%` | How many items were removed |
 
 <small>Type id: `vtubestudio.unloadItem`</small>
+
+## Unpin item
+
+Unpins an item from your model.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item (instance id or file name)** | The item's id or file name. A file name unpins every copy. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%vtsUnpinnedItems%` | How many items were unpinned |
+
+<small>Type id: `vtubestudio.unpinItem`</small>

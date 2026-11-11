@@ -48,6 +48,7 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
         "Twitch.SharedChatGiftedDrops", "Twitch.SubEnded", "Twitch.WatchedChannelOffline", "Twitch.WatchedChannelOnline",
         "Twitch.WatchedChannelUpdate",
         "VTubeStudio.Event", "VTubeStudio.ExpressionToggled", "VTubeStudio.ModelMoved",
+        "VTubeStudio.CubismEditorConnection", "VTubeStudio.HandFound", "VTubeStudio.HandLost",
         "VTubeStudio.PostProcessingChanged", "VTubeStudio.TrackingFound", "VTubeStudio.TrackingLost",
         "VoiceMod.BackgroundEffectsToggled", "VoiceMod.HearMyselfToggled", "VoiceMod.MuteToggled",
         "VoiceMod.VoiceChangerToggled",

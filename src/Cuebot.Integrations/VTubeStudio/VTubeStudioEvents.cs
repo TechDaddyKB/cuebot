@@ -23,6 +23,9 @@ public static class VTubeStudioEvents
     public const string ModelClicked = Prefix + ".modelClicked";
     public const string ExpressionToggled = Prefix + ".expressionToggled";
     public const string PostProcessingChanged = Prefix + ".postProcessingChanged";
+    public const string HandLost = Prefix + ".handLost";
+    public const string HandFound = Prefix + ".handFound";
+    public const string CubismEditorConnection = Prefix + ".cubismEditorConnection";
 
     /// <summary>Every VTube Studio API event, raw (eventName + data JSON).</summary>
     public const string Any = Prefix + ".event";
@@ -32,6 +35,15 @@ public static class VTubeStudioEvents
 internal sealed class VtsTrackingState
 {
     public bool? FaceFound { get; set; }
+    public bool? LeftHandFound { get; set; }
+    public bool? RightHandFound { get; set; }
+
+    public void Reset()
+    {
+        FaceFound = null;
+        LeftHandFound = null;
+        RightHandFound = null;
+    }
 }
 
 /// <summary>Maps VTube Studio API events to bot events (pure; see PROTOCOL.md for the field list).</summary>
@@ -65,7 +77,20 @@ internal static class VtsEventMapper
                         result.Add((face ? VTubeStudioEvents.TrackingFound : VTubeStudioEvents.TrackingLost, new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase)));
                     tracking.FaceFound = face;
                 }
+                // Hands only report changes after the first status (most streamers never track hands, so a first "lost" is noise).
+                Hand("Left", data.Bool("leftHandFound") ?? false, tracking.LeftHandFound, v => tracking.LeftHandFound = v);
+                Hand("Right", data.Bool("rightHandFound") ?? false, tracking.RightHandFound, v => tracking.RightHandFound = v);
                 break;
+
+                void Hand(string hand, bool found, bool? before, Action<bool> remember)
+                {
+                    if (before is not null && before != found)
+                    {
+                        var handArgs = new Dictionary<string, object?>(args, StringComparer.OrdinalIgnoreCase) { ["hand"] = hand };
+                        result.Add((found ? VTubeStudioEvents.HandFound : VTubeStudioEvents.HandLost, handArgs));
+                    }
+                    remember(found);
+                }
             }
             case "BackgroundChangedEvent":
                 result.Add((VTubeStudioEvents.BackgroundChanged, Args(("backgroundName", data.Str("backgroundName")))));
@@ -92,7 +117,9 @@ internal static class VtsEventMapper
             case "ItemEvent":
             {
                 var position = data.Obj("itemPosition");
-                result.Add((VTubeStudioEvents.ItemEvent, Args(("itemEventType", data.Str("itemEventType")),
+                // The spec lists "Clicked" but its example sends "ItemClicked": both mean the same.
+                var itemEventType = data.Str("itemEventType") is { } t && t.StartsWith("Item", StringComparison.Ordinal) && t.Length > 4 ? t[4..] : data.Str("itemEventType");
+                result.Add((VTubeStudioEvents.ItemEvent, Args(("itemEventType", itemEventType),
                     ("itemInstanceId", data.Str("itemInstanceID")), ("itemFileName", data.Str("itemFileName")),
                     ("itemX", position.Num("x") ?? 0), ("itemY", position.Num("y") ?? 0),
                     ("position.x", position.Num("x") ?? 0), ("position.y", position.Num("y") ?? 0))));   // Streamer.bot's names
@@ -101,6 +128,7 @@ internal static class VtsEventMapper
             case "ModelClickedEvent":
             {
                 var click = data.Obj("clickPosition");
+                var hits = VtsProtocol.ParseHits(data);
                 var window = data.Obj("windowSize");
                 var button = (int)(data.Num("mouseButtonID") ?? 0);
                 result.Add((VTubeStudioEvents.ModelClicked, Args(("modelLoaded", data.Bool("modelLoaded") ?? false),
@@ -112,13 +140,23 @@ internal static class VtsEventMapper
                     ("clickPosition.X", click.Num("x") ?? 0), ("clickPosition.Y", click.Num("y") ?? 0),
                     ("windowSize.X", window.Num("x") ?? 0), ("windowSize.Y", window.Num("y") ?? 0),
                     ("clickedArtMeshCount", (int)(data.Num("clickedArtMeshCount") ?? 0)),
-                    ("artMeshHits", data.Prop("artMeshHits")?.GetRawText() ?? "[]"))));
+                    ("artMeshHits", data.Prop("artMeshHits")?.GetRawText() ?? "[]"),
+                    // The topmost ArtMesh (the one an item dropped there would pin to) and every ArtMesh under the click.
+                    ("artMeshId", hits.FirstOrDefault()?.ArtMeshId ?? ""),
+                    ("artMeshIds", string.Join(", ", hits.Select(h => h.ArtMeshId))))));
                 break;
             }
             case "ExpressionToggledEvent":
                 result.Add((VTubeStudioEvents.ExpressionToggled, Args(("expressionName", data.Str("expressionName")),
                     ("expressionFile", data.Str("expressionFile")), ("active", data.Bool("active") ?? false),
-                    ("modelName", data.Str("modelName")), ("modelId", data.Str("modelID")))));
+                    ("modelName", data.Str("modelName")), ("modelId", data.Str("modelID")),
+                    // justLoaded: part of the snapshot VTube Studio sends for every expression when a model loads, not a change.
+                    ("justLoaded", data.Bool("justLoaded") ?? false), ("isLive2DItem", data.Bool("isLive2DItem") ?? false),
+                    ("itemInstanceId", data.Str("itemInstanceID")))));
+                break;
+            case "Live2DCubismEditorConnectedEvent":
+                result.Add((VTubeStudioEvents.CubismEditorConnection, Args(("tryingToConnect", data.Bool("tryingToConnect") ?? false),
+                    ("connected", data.Bool("connected") ?? false), ("shouldSendParameters", data.Bool("shouldSendParameters") ?? false))));
                 break;
             case "PostProcessingEvent":
                 result.Add((VTubeStudioEvents.PostProcessingChanged, Args(("postProcessingOn", data.Bool("currentOnState") ?? false),

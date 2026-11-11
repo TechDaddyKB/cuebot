@@ -37,6 +37,8 @@ internal sealed class VTubeStudioTriggers(VTubeStudioService vts) : ITriggerProv
             Steps.Trigger(Category, E.TrackingStatusChanged, "Tracking status changed"),
             Steps.Trigger(Category, E.TrackingLost, "Face tracking lost"),
             Steps.Trigger(Category, E.TrackingFound, "Face tracking found"),
+            Steps.Trigger(Category, E.HandLost, "Hand tracking lost", [HandFilter()], (e, s) => HandMatches(e, s)),
+            Steps.Trigger(Category, E.HandFound, "Hand tracking found", [HandFilter()], (e, s) => HandMatches(e, s)),
             Steps.Trigger(Category, E.BackgroundChanged, "Background changed",
                 [new("backgroundName", "Background names") { Help = "Comma-separated; leave empty for any" }],
                 (e, s) => Steps.MatchesList(s["backgroundName"], e.Text("backgroundName"))),
@@ -46,10 +48,12 @@ internal sealed class VTubeStudioTriggers(VTubeStudioService vts) : ITriggerProv
                 [
                     new("animationEventType", "Animation event", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "Start", "End", "Custom"] },
                     new("animationName", "Animation names") { Help = "Comma-separated; leave empty for any" },
+                    new("animationEventData", "Custom event texts") { Help = "Only Custom events with this text (set in the Cubism Animator), comma-separated; empty for any" },
                     new("ignoreIdle", "Ignore idle animations", ParameterKind.Boolean) { DefaultValue = "true" },
                 ],
                 (e, s) => (s["animationEventType"] is "Any" or "" || string.Equals(s["animationEventType"], e.Text("animationEventType"), StringComparison.OrdinalIgnoreCase))
                     && Steps.MatchesList(s["animationName"], e.Text("animationName"))
+                    && Steps.MatchesList(s["animationEventData"], e.Text("animationEventData"))
                     && !(s.GetBool("ignoreIdle", true) && e.Flag("isIdleAnimation") == true)),
             Steps.Trigger(Category, E.ItemEvent, "Item event",
                 [
@@ -63,14 +67,38 @@ internal sealed class VTubeStudioTriggers(VTubeStudioService vts) : ITriggerProv
                 [
                     new("mouseButton", "Mouse button", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "Left", "Right", "Middle"] },
                     new("onlyOnModel", "Only clicks on the model", ParameterKind.Boolean) { DefaultValue = "true" },
+                    new("artMeshes", "Clicked ArtMeshes")
+                    {
+                        Help = "Only clicks on these ArtMeshes (ids, comma-separated), e.g. the head for headpats; empty for anywhere",
+                        Suggestions = () => vts.ArtMeshes.Names,
+                    },
                 ],
                 (e, s) => (s["mouseButton"] is "Any" or "" || s["mouseButton"] == e.Text("mouseButton"))
-                    && !(s.GetBool("onlyOnModel", true) && e.Flag("modelWasClicked") != true)),
+                    && !(s.GetBool("onlyOnModel", true) && e.Flag("modelWasClicked") != true)
+                    && Steps.MatchesList(s["artMeshes"], e.Text("artMeshIds").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))),
             Steps.Trigger(Category, E.ExpressionToggled, "Expression toggled",
-                [new("expressionName", "Expression names") { Help = "Names or files, comma-separated; leave empty for any", Suggestions = () => vts.Expressions.Select(x => x.DisplayName) },
-                 Steps.StateFilter()],
-                (e, s) => Steps.MatchesList(s["expressionName"], e.Text("expressionName"), e.Text("expressionFile")) && Steps.MatchesState(e, s, "active")),
-            Steps.Trigger(Category, E.PostProcessingChanged, "Post-processing changed"),
+                [
+                    new("expressionName", "Expression names") { Help = "Names or files, comma-separated; leave empty for any", Suggestions = () => vts.Expressions.Select(x => x.DisplayName) },
+                    Steps.StateFilter(),
+                    new("source", "Expressions of", ParameterKind.Choice)
+                    {
+                        DefaultValue = "Any", Choices = ["Any", "Model", "Live2DItems"],
+                        ChoiceLabels = new Dictionary<string, string> { ["Any"] = "The model and Live2D items", ["Model"] = "The model only", ["Live2DItems"] = "Live2D items only" },
+                    },
+                    new("ignoreSnapshots", "Ignore the list sent when a model loads", ParameterKind.Boolean) { DefaultValue = "true" },
+                ],
+                (e, s) => Steps.MatchesList(s["expressionName"], e.Text("expressionName"), e.Text("expressionFile")) && Steps.MatchesState(e, s, "active")
+                    && !(s.GetBool("ignoreSnapshots", true) && e.Flag("justLoaded") == true)
+                    && s["source"] switch
+                    {
+                        "Model" => e.Flag("isLive2DItem") != true,
+                        "Live2DItems" => e.Flag("isLive2DItem") == true,
+                        _ => true,
+                    }),
+            Steps.Trigger(Category, E.PostProcessingChanged, "Visual effects changed",
+                [new("postProcessingPreset", "Presets") { Help = "Only when one of these presets is active (comma-separated); empty for any change", Suggestions = () => vts.VfxPresets }],
+                (e, s) => Steps.MatchesList(s["postProcessingPreset"], e.Text("postProcessingPreset"))),
+            Steps.Trigger(Category, E.CubismEditorConnection, "Live2D Cubism Editor connection changed"),
             Steps.Trigger(Category, E.Any, "Any VTube Studio message (advanced)",
                 [new("eventName", "API event names") { Help = "e.g. ModelMovedEvent; comma-separated, empty for any" }],
                 (e, s) => Steps.MatchesList(s["eventName"], e.Text("eventName"))),
@@ -82,6 +110,10 @@ internal sealed class VTubeStudioTriggers(VTubeStudioService vts) : ITriggerProv
             Suggestions = () => vts.ItemFiles.Select(f => f.FileName),
         };
     }
+
+    private static ParameterDescriptor HandFilter() => new("hand", "Hand", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "Left", "Right"] };
+
+    private static bool HandMatches(Cuebot.Core.Events.BotEvent e, ParameterValues s) => s["hand"] is "Any" or "" || s["hand"] == e.Text("hand");
 
     private static bool ItemMatches(Cuebot.Core.Events.BotEvent e, string type, ParameterValues s) =>
         (type is "Any" or "" || string.Equals(type, e.Text("itemEventType"), StringComparison.OrdinalIgnoreCase))

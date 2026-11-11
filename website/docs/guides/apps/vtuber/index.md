@@ -18,6 +18,7 @@ and VMC are [experimental](../../help/experimental.md): they may not work yet.
 
 | App | What Cuebot can do | What you switch on in the app |
 | --- | --- | --- |
+| [**VTube Studio**](vtube-studio.md) | Hotkeys, expressions, models, tints, throwing things, pinning items, visual effects, physics, custom tracking values; most can undo themselves after some seconds. Starts actions on clicks, hotkeys, tracking, animations and more. | **Start API (allow plugins)**, then **Allow** the Cuebot popup. Its card is on **Apps > Apps & devices**. |
 | [**veadotube mini** and **veadotube**](veadotube.md) | Change your avatar state, turn push-to-talk on or off. Starts actions when the state or push-to-talk changes. | Nothing. Cuebot finds veadotube by itself while it is open. |
 | [**PNGTuber Remix**](pngtuber-remix.md) | Change your avatar state, show or hide sprites, shake, bounce or move them, throw things at your avatar, load another model. | The **WebSocket** tab: tick **Auto-Start** and press **Start**. |
 | [**RahiTuber**](rahituber.md) | Press your states, like their hotkeys: tap them, let go, or hold them for some seconds. | **Preferences > Integration > Control States via HTTP**. |

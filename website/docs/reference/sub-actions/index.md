@@ -71,7 +71,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Voice Control](voice-control.md) | 4 |
 | [Voicemod](voicemod.md) | 12 |
 | [VRChat](vrchat.md) | 4 |
-| [VTube Studio](vtube-studio.md) | 16 |
+| [VTube Studio](vtube-studio.md) | 42 |
 | [Warudo](warudo.md) | 3 |
 | [Wave Link](wave-link.md) | 23 |
 | [Wave Link (legacy)](wave-link-legacy.md) | 16 |

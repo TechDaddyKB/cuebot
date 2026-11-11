@@ -332,6 +332,12 @@ public abstract class IntegrationConnection : IConnectable, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync().ConfigureAwait(false);
+        OnDisposed();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>Releases what a connection keeps between sessions (listeners, timers). Runs after the disconnect.</summary>
+    private protected virtual void OnDisposed()
+    {
     }
 }
