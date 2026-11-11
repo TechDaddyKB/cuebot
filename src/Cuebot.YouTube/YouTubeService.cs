@@ -25,6 +25,11 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable
     private readonly YouTubeApps _apps;
     private readonly EventBus _bus;
     private readonly AppLog _log;
+    private readonly AutoConnectRetry _autoConnect;
+    private readonly IDisposable _obsStreamStarted;
+
+    /// <summary>OBS's "stream started" event type (Cuebot.Obs is not referenced from here).</summary>
+    public const string ObsStreamStarted = "obs.streamStarted";
     private readonly TimeProvider _time;
     private readonly YouTubeTimings _timings;
     private readonly GoogleOAuthClient _oauth;
@@ -53,7 +58,13 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable
         _apps = new YouTubeApps(builtInBrowserApp ?? YouTubeApps.BuiltIn.Browser, builtInDeviceApp ?? YouTubeApps.BuiltIn.Device);
         _settings = settings;
         _bus = bus;
+        // Going live in OBS: look for the YouTube broadcast now instead of at the next regular check.
+        _obsStreamStarted = bus.Subscribe(e =>
+        {
+            if (e.Type == ObsStreamStarted) _connection?.CheckBroadcastsSoon();
+        });
         _log = log;
+        _autoConnect = new AutoConnectRetry("YouTube", log, time);
         _time = time;
         _timings = timings;
         _oauth = new GoogleOAuthClient(http, endpoints, time);
@@ -235,6 +246,12 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable
     /// <summary>Checks the broadcaster sign-in (refreshing it if needed), then starts monitoring broadcasts and chat.</summary>
     public async Task ConnectAsync(CancellationToken ct = default)
     {
+        _autoConnect.Cancel();   // a manual connect replaces any automatic retries
+        await ConnectCoreAsync(ct).ConfigureAwait(false);
+    }
+
+    private async Task ConnectCoreAsync(CancellationToken ct)
+    {
         RequireClient();
         if (!IsBroadcasterSignedIn) throw new InvalidOperationException("Sign in the YouTube broadcaster account first.");
         await _connectGate.WaitAsync(ct).ConfigureAwait(false);
@@ -272,6 +289,7 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable
 
     public async Task DisconnectAsync()
     {
+        _autoConnect.Cancel();
         await _connectGate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -287,18 +305,15 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable
     public async Task StartAsync(CancellationToken ct = default)
     {
         if (!Settings.AutoConnect || !IsConfigured || !IsBroadcasterSignedIn) return;
-        try
-        {
-            await ConnectAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
-        {
-            _log.Error("YouTube", "Automatic connection failed", ex);
-        }
+        // Retries in the background when the first attempt fails (no network yet, a brief outage). A missing sign-in or
+        // setting, or a rejected sign-in or key, needs the user, so it is not retried.
+        await _autoConnect.StartAsync(ConnectCoreAsync, ex => ex is InvalidOperationException or YouTubeApiException { NeedsSignIn: true } or YouTubeApiException { Reason: "noChannel" }, ct).ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync()
     {
+        _autoConnect.Dispose();
+        _obsStreamStarted.Dispose();
         await DisconnectAsync().ConfigureAwait(false);
         _pollWatch.Dispose();
         (_chatStream as IDisposable)?.Dispose();

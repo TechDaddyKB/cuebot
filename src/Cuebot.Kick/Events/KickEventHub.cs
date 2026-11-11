@@ -15,6 +15,7 @@ namespace Cuebot.Kick.Events;
 internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan dedupeWindow)
 {
     private readonly RecentKeys _recent = new(dedupeWindow);
+    private readonly CrossSourceKeys _occurrences = new(dedupeWindow);
     private readonly ConcurrentDictionary<string, string> _userIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _liveGate = new();
     private readonly object _memoryGate = new();
@@ -196,6 +197,10 @@ internal sealed class KickEventHub(EventBus bus, TimeProvider time, TimeSpan ded
                 }
             case KickEventTypes.ViewerCountUpdate:
                 return true;
+            // Their keys (sender, amount and gift; redeemer, reward and status) carry no event id, so a viewer repeating
+            // the same gift or redemption within the window would look like a copy: only drop copies from another source.
+            case KickEventTypes.KicksGifted or KickEventTypes.RewardRedemption:
+                return _occurrences.TryAdd(e.Type + "|" + e.DedupeKey, e.Source, time.GetUtcNow());
             default:
                 return _recent.TryAdd(e.Type + "|" + e.DedupeKey, time.GetUtcNow());
         }

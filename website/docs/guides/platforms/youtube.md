@@ -15,7 +15,9 @@ It also explains YouTube's daily limit, the quota.
 !!! note "\"Google hasn't verified this app\""
     While Google is still checking Cuebot, you may see this warning. Click **Advanced**, then **Go to Cuebot**.
 
-Cuebot finds your live stream by itself and reads its chat once you go live. A bot account is optional, with **Sign
+Cuebot finds your live stream by itself and reads its chat once you go live. When Cuebot is connected to OBS, it
+looks for the stream as soon as OBS starts streaming, and chat sent since the stream started still runs your commands
+and alerts. If YouTube briefly stops the chat during a stream, Cuebot starts reading it again by itself. A bot account is optional, with **Sign
 in bot with the browser** (or **Sign in bot with a code**). See
 [Broadcaster account and bot account](index.md#broadcaster-account-and-bot-account).
 

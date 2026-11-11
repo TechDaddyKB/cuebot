@@ -11,7 +11,10 @@ has its own page under **Platforms** in the left rail: **Twitch**, **YouTube**, 
   and switch between them in two clicks.
 
 Every platform page has **Connect** and **Disconnect** buttons at the top. Tick **Connect automatically on startup**
-(on Rumble: **Connect automatically**) and Cuebot reconnects each time it starts.
+(on Rumble: **Connect automatically**) and Cuebot reconnects each time it starts. If the platform can't be reached at
+startup (your internet isn't up yet, or the platform has a short outage), Cuebot keeps trying in the background, at
+first every few seconds and then once a minute, until it connects. Clicking **Connect** or **Disconnect** yourself
+stops the retries. A sign-in or key the platform rejects is not retried: sign in again or fix the key.
 
 !!! note "Your sign-ins stay on your computer"
     Cuebot stores sign-ins in a locked (encrypted) form on your computer. They are never put in backups and never

@@ -55,6 +55,29 @@ public sealed class EventHubTests
     }
 
     [Fact]
+    public void Repeated_kicks_gifts_from_one_source_are_each_published_but_the_other_sources_copies_are_not()
+    {
+        _hub.Handle(KickEventFactory.Kicks("realtime", Fan, 100, "Rage Quit", "LEVEL_UP", "BASIC", ""));
+        _hub.Handle(KickEventFactory.Kicks("realtime", Fan, 100, "Rage Quit", "LEVEL_UP", "BASIC", ""));
+        _hub.Handle(KickEventFactory.Kicks("webhook", Fan, 100, "Rage Quit", "LEVEL_UP", "BASIC", ""));
+        _hub.Handle(KickEventFactory.Kicks("webhook", Fan, 100, "Rage Quit", "LEVEL_UP", "BASIC", ""));
+        _hub.Handle(KickEventFactory.Kicks("webhook", Fan, 100, "Rage Quit", "LEVEL_UP", "BASIC", ""));
+
+        // Two gifts over the websocket, their two webhook copies dropped, and a third gift seen only by the webhook.
+        Assert.Equal(3, _published.Count(e => e.Type == KickEventTypes.KicksGifted));
+    }
+
+    [Fact]
+    public void Repeated_redemptions_of_one_reward_are_each_published()
+    {
+        _hub.Handle(KickEventFactory.Reward("realtime", Fan, "01HYDRATE", "Hydrate", 100, "", "pending", "R1"));
+        _hub.Handle(KickEventFactory.Reward("webhook", Fan, "01HYDRATE", "Hydrate", 100, "", "pending", "R1"));
+        _hub.Handle(KickEventFactory.Reward("realtime", Fan, "01HYDRATE", "Hydrate", 100, "", "pending", "R2"));
+
+        Assert.Equal(2, _published.Count(e => e.Type == KickEventTypes.RewardRedemption));
+    }
+
+    [Fact]
     public void Duplicates_are_allowed_again_after_the_window()
     {
         _hub.Handle(KickEventFactory.Follow("realtime", Fan));

@@ -15,6 +15,12 @@ internal sealed class ChatContext(string broadcastId, string liveChatId, Chatter
     public string LiveChatId { get; } = liveChatId;
     public ChatterDirectory Chatters { get; } = chatters;
 
+    /// <summary>
+    /// When the chat is known to be new from this moment (the broadcast went live, or a stopped reader is restarting,
+    /// while Cuebot watched): items published since then are not history even on the first page.
+    /// </summary>
+    public DateTimeOffset? LiveSince { get; init; }
+
     /// <summary>Channel id of the bot account, so its own messages can be flagged <c>isBotAccount</c>.</summary>
     public string BotChannelId { get; set; } = "";
 

@@ -17,6 +17,7 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
     private readonly JsonFile<RumbleSettings> _settings;
     private readonly EventBus _bus;
     private readonly AppLog _log;
+    private readonly AutoConnectRetry _autoConnect;
     private readonly TimeProvider _time;
     private readonly RumbleTimings _timings;
     private readonly HttpClient _http;
@@ -42,6 +43,7 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
         _settings = settings;
         _bus = bus;
         _log = log;
+        _autoConnect = new AutoConnectRetry("Rumble", log, time);
         _time = time;
         _timings = timings;
         _http = http;
@@ -92,6 +94,12 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
     /// </summary>
     public async Task ConnectAsync(CancellationToken ct = default)
     {
+        _autoConnect.Cancel();   // a manual connect replaces any automatic retries
+        await ConnectCoreAsync(ct).ConfigureAwait(false);
+    }
+
+    private async Task ConnectCoreAsync(CancellationToken ct)
+    {
         var apiUrl = LiveStreamApiUrl.Parse(Settings.LiveStreamApiUrl);
         await _connectGate.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -118,6 +126,7 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
 
     public async Task DisconnectAsync()
     {
+        _autoConnect.Cancel();
         await _connectGate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -133,14 +142,9 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
     public async Task StartAsync(CancellationToken ct = default)
     {
         if (!Settings.AutoConnect || Settings.LiveStreamApiUrl.Trim().Length == 0) return;
-        try
-        {
-            await ConnectAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
-        {
-            _log.Error("Rumble", "Automatic connection failed", ex);
-        }
+        // Retries in the background when the first attempt fails (no network yet, a brief outage). A missing sign-in or
+        // setting, or a rejected sign-in or key, needs the user, so it is not retried.
+        await _autoConnect.StartAsync(ConnectCoreAsync, ex => ex is InvalidOperationException or RumbleApiException { StatusCode: 401 or 403 or 404 }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -197,6 +201,7 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
     /// <summary>Disconnects. Safe to call more than once (DI disposes each registration of this singleton).</summary>
     public async ValueTask DisposeAsync()
     {
+        _autoConnect.Dispose();
         await DisconnectAsync().ConfigureAwait(false);
         if (_ownsHttp) _http.Dispose();
     }

@@ -30,9 +30,11 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
     private volatile string _active = "";
     private volatile string _videoTitle = "Dev testing";
     private volatile bool _quotaExhausted;
+    private int _chatDisabledReads;
     private JsonFile<YouTubeSettings> _settings = null!;
     private FakeHttpHandler _http = null!;
     private YouTubeService _service = null!;
+    private EventBus _bus = null!;
 
     public Task InitializeAsync()
     {
@@ -49,7 +51,7 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
         s.LivePollSeconds = 0;
         s.SubscriberPollSeconds = 0;
         _http = new FakeHttpHandler(Respond);
-        var bus = new EventBus(_log);
+        var bus = _bus = new EventBus(_log);
         bus.Subscribe(_published.Enqueue);
         _service = new YouTubeService(_settings, new HttpClient(_http), bus, _log, TestApi.Endpoints, TimeProvider.System, TestApi.Fast);
         return Task.CompletedTask;
@@ -85,6 +87,8 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
                   "statistics":{"viewCount":"10"},"liveStreamingDetails":{"concurrentViewers":"7","activeLiveChatId":"chat1"}}]}
                 """),
             ("PUT", "/youtube/v3/videos") => FakeHttpHandler.Json(r.Body),
+            ("GET", "/youtube/v3/liveChat/messages") when Interlocked.Decrement(ref _chatDisabledReads) >= 0 =>
+                FakeHttpHandler.Error(HttpStatusCode.Forbidden, "liveChatDisabled"),
             ("GET", "/youtube/v3/liveChat/messages") => FakeHttpHandler.Json(_chatPages.TryDequeue(out var page) ? page : Page("same", 0)),
             ("POST", "/youtube/v3/liveChat/messages") => FakeHttpHandler.Json("""{"id":"SENT"}"""),
             ("POST", "/youtube/v3/liveChat/bans") => FakeHttpHandler.Json("""{"id":"BAN-ID"}"""),
@@ -123,6 +127,39 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
         Assert.True(_service.IsLive);
         Assert.Equal(Owner, _settings.Value.Broadcaster.ChannelId);
         Assert.Equal("chat1", _http.To("/liveChat/messages")[0].Query("liveChatId"));
+    }
+
+    [Fact]
+    public async Task Chat_that_briefly_reports_disabled_restarts_while_the_broadcast_is_live()
+    {
+        await ConnectLiveAsync();
+        Interlocked.Exchange(ref _chatDisabledReads, 1);
+
+        await Wait.UntilAsync(() => _log.Recent().Any(e => e.Message.StartsWith("Restarting live chat", StringComparison.Ordinal)),
+            "chat restart");
+        var reads = _http.To("/liveChat/messages").Count;
+        await Wait.UntilAsync(() => _http.To("/liveChat/messages").Count >= reads + 2, "restarted chat to be seeded");
+        _chatPages.Enqueue(Page("p3", 0, Text("m9", "back again")));
+
+        var message = await WaitForEvent(YouTubeEventTypes.ChatMessage);
+        Assert.Equal("back again", message.Args["message"]);
+        Assert.DoesNotContain(_published, e => e.Type == YouTubeEventTypes.BroadcastEnded);
+    }
+
+    [Fact]
+    public async Task OBS_going_live_finds_the_broadcast_at_once_and_chat_since_it_started_fires()
+    {
+        _settings.Value.BroadcastPollSeconds = 3600;
+        await _service.ConnectAsync();
+        await Wait.UntilAsync(() => _service.StatusMessage.Contains("waiting", StringComparison.Ordinal), "waiting status");
+
+        _active = LiveBroadcast;   // started 17:00; the chat below was sent at 18:00, before Cuebot found the broadcast
+        _chatPages.Enqueue(Page("p1", 0, Text("early", "!hello")));
+        _bus.Publish(new BotEvent(YouTubeService.ObsStreamStarted));
+
+        await WaitForEvent(YouTubeEventTypes.BroadcastStarted);
+        var message = await WaitForEvent(YouTubeEventTypes.ChatMessage);
+        Assert.Equal("!hello", message.Args["message"]);
     }
 
     [Fact]

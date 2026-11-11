@@ -192,7 +192,8 @@ internal sealed class ChatPoller(
 
     /// <summary>
     /// Publishes new items; returns true when the chat ended. Items of the seeding page, and items published before
-    /// <paramref name="historyBefore"/>, are history: remembered but not published.
+    /// <paramref name="historyBefore"/>, are history: remembered but not published, unless they were published after
+    /// <see cref="ChatContext.LiveSince"/>.
     /// </summary>
     internal bool Process(ChatPage page, bool seeded, DateTimeOffset? historyBefore = null)
     {
@@ -200,7 +201,10 @@ internal sealed class ChatPoller(
         foreach (var item in page.Items)
         {
             if (!_seen.Add(ChatItemMapper.DedupeKey(item))) continue;
-            if (!seeded || (historyBefore is { } cutoff && item.Prop("snippet").Time("publishedAt") is { } published && published < cutoff))
+            var publishedAt = item.Prop("snippet").Time("publishedAt");
+            var history = !seeded || (historyBefore is { } cutoff && publishedAt is { } published && published < cutoff);
+            if (history && context.LiveSince is { } since && publishedAt is { } at && at >= since) history = false;
+            if (history)
             {
                 // History from before Cuebot connected: remember authors and polls, but trigger nothing.
                 var snippet = item.Prop("snippet");

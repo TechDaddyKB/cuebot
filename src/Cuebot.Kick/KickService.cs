@@ -28,6 +28,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
     private readonly AppCredentials _builtInApp;
     private readonly EventBus _bus;
     private readonly AppLog _log;
+    private readonly AutoConnectRetry _autoConnect;
     private readonly TimeProvider _time;
     private readonly KickTimings _timings;
     private readonly KickAuthClient _auth;
@@ -65,6 +66,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         _settings = settings;
         _bus = bus;
         _log = log;
+        _autoConnect = new AutoConnectRetry("Kick", log, time);
         _time = time;
         _timings = timings;
         _receivers = receivers;
@@ -260,6 +262,12 @@ public sealed class KickService : IConnectable, IAsyncDisposable
     /// <summary>Checks the broadcaster sign-in, loads the channel, then starts real-time events and polling.</summary>
     public async Task ConnectAsync(CancellationToken ct = default)
     {
+        _autoConnect.Cancel();   // a manual connect replaces any automatic retries
+        await ConnectCoreAsync(ct).ConfigureAwait(false);
+    }
+
+    private async Task ConnectCoreAsync(CancellationToken ct)
+    {
         if (!IsBroadcasterSignedIn) throw new InvalidOperationException("Sign in to Kick first.");
         await _connectGate.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -304,6 +312,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
 
     public async Task DisconnectAsync()
     {
+        _autoConnect.Cancel();
         await _connectGate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -319,14 +328,9 @@ public sealed class KickService : IConnectable, IAsyncDisposable
     public async Task StartAsync(CancellationToken ct = default)
     {
         if (!Settings.AutoConnect || !IsBroadcasterSignedIn) return;
-        try
-        {
-            await ConnectAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
-        {
-            _log.Error("Kick", "Automatic connection failed", ex);
-        }
+        // Retries in the background when the first attempt fails (no network yet, a brief outage). A missing sign-in or
+        // setting, or a rejected sign-in or key, needs the user, so it is not retried.
+        await _autoConnect.StartAsync(ConnectCoreAsync, ex => ex is InvalidOperationException or KickApiException { Status: 401 or 403 }, ct).ConfigureAwait(false);
     }
 
     /// <summary>Re-reads the channel from the official API now (also done periodically while connected).</summary>
@@ -369,6 +373,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
                 SaveSettings();
             }
             await _realtime.StartAsync(Settings.ChannelId, Settings.ChatroomId, Settings.Broadcaster.UserId).ConfigureAwait(false);
+            RealtimeProblem = null;
         }
         catch (Exception ex) when (ex is KickApiException or HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
@@ -515,6 +520,23 @@ public sealed class KickService : IConnectable, IAsyncDisposable
             catch (Exception ex)
             {
                 _log.Warn("Kick", $"Channel poll failed: {ex.Message}");
+            }
+            if (RealtimeProblem is not null && !ct.IsCancellationRequested)
+            {
+                // Real-time chat failed to start with the connection (for example the chatroom lookup failed); try again.
+                try
+                {
+                    await StartRealtimeAsync(ct).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (!ct.IsCancellationRequested)
+                {
+                    RealtimeProblem = ex.Message;
+                }
+                if (RealtimeProblem is null)
+                {
+                    _log.Info("Kick", "Real-time chat connected");
+                    UpdateConnectedStatus();
+                }
             }
         }
     }
@@ -1018,6 +1040,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
     /// <summary>Disconnects. Safe to call more than once.</summary>
     public async ValueTask DisposeAsync()
     {
+        _autoConnect.Dispose();
         await DisconnectAsync().ConfigureAwait(false);
         await _realtime.DisposeAsync().ConfigureAwait(false);
         if (_sevenTv is not null) await _sevenTv.DisposeAsync().ConfigureAwait(false);

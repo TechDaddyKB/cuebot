@@ -72,13 +72,46 @@ internal sealed class YouTubeConnection : IAsyncDisposable
     {
         var ct = _cts.Token;
         _run = Task.WhenAll(
-            Task.Run(() => LoopAsync(BroadcastPassAsync, () => YouTubeTimings.Clamp(_settings().BroadcastPollSeconds, _timings.MinimumBroadcastPoll), ct), ct),
+            Task.Run(() => LoopAsync(BroadcastPassAsync, BroadcastInterval, ct, wakeable: true), ct),
             Task.Run(() => LoopAsync(LivePassAsync, () => YouTubeTimings.Clamp(_settings().LivePollSeconds, _timings.MinimumLivePoll), ct, initialDelay: true), ct),
             Task.Run(() => LoopAsync(SubscriberPassAsync, () => YouTubeTimings.Clamp(_settings().SubscriberPollSeconds, _timings.MinimumSubscriberPoll), ct), ct));
     }
 
+    /// <summary>How often broadcasts are checked right after OBS starts streaming, until one is live.</summary>
+    internal static readonly TimeSpan FastBroadcastPoll = TimeSpan.FromSeconds(10);
+
+    /// <summary>How long the fast checks last after OBS starts streaming.</summary>
+    internal static readonly TimeSpan FastBroadcastWindow = TimeSpan.FromMinutes(3);
+
+    private DateTimeOffset _fastChecksUntil = DateTimeOffset.MinValue;
+    private CancellationTokenSource? _broadcastWait;
+
+    /// <summary>
+    /// The stream just started (OBS reported it): check for the broadcast now and every few seconds until it is live,
+    /// instead of waiting up to the normal interval, so chat is read from the start.
+    /// </summary>
+    public void CheckBroadcastsSoon()
+    {
+        _fastChecksUntil = _time.GetUtcNow() + FastBroadcastWindow;
+        try
+        {
+            _broadcastWait?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private TimeSpan BroadcastInterval()
+    {
+        var normal = YouTubeTimings.Clamp(_settings().BroadcastPollSeconds, _timings.MinimumBroadcastPoll);
+        var fast = _time.GetUtcNow() < _fastChecksUntil && !Broadcasts.Monitored.Any(b => b.LifeCycleStatus == "live");
+        return fast && FastBroadcastPoll < normal ? FastBroadcastPoll : normal;
+    }
+
     /// <summary>Runs a pass forever at an interval, backing off on errors and waiting out quota exhaustion.</summary>
-    private async Task LoopAsync(Func<CancellationToken, Task> pass, Func<TimeSpan> interval, CancellationToken ct, bool initialDelay = false)
+    private async Task LoopAsync(Func<CancellationToken, Task> pass, Func<TimeSpan> interval, CancellationToken ct, bool initialDelay = false,
+        bool wakeable = false)
     {
         var backoff = TimeSpan.Zero;
         try
@@ -106,7 +139,8 @@ internal sealed class YouTubeConnection : IAsyncDisposable
                     _log.Warn("YouTube", ex.Message);
                     SetProblem(ex.Message);
                 }
-                await Task.Delay(wait, _time, ct).ConfigureAwait(false);
+                if (wakeable) await WakeableDelayAsync(wait, ct).ConfigureAwait(false);
+                else await Task.Delay(wait, _time, ct).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -114,8 +148,30 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         }
     }
 
+    /// <summary>When the previous broadcast check started (a broadcast found by the next one went live after it).</summary>
+    private DateTimeOffset? _lastCheck;
+
+    private async Task WakeableDelayAsync(TimeSpan wait, CancellationToken ct)
+    {
+        using var waitCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _broadcastWait = waitCts;
+        try
+        {
+            await Task.Delay(wait, _time, waitCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // Woken by CheckBroadcastsSoon.
+        }
+        finally
+        {
+            _broadcastWait = null;
+        }
+    }
+
     private async Task BroadcastPassAsync(CancellationToken ct)
     {
+        var checkedAt = _time.GetUtcNow();
         var active = await _api.ListBroadcastsAsync(_broadcaster, "active", ct).ConfigureAwait(false);
         Handle(Broadcasts.UpdateActive(active));
         if (_settings().MonitorUpcoming)
@@ -123,6 +179,8 @@ internal sealed class YouTubeConnection : IAsyncDisposable
             var upcoming = await _api.ListBroadcastsAsync(_broadcaster, "upcoming", ct).ConfigureAwait(false);
             Handle(Broadcasts.UpdateUpcoming(upcoming));
         }
+        RestartStoppedChats();
+        _lastCheck = checkedAt;
         SetProblem(null);
         if (!HasChecked)
         {
@@ -171,7 +229,9 @@ internal sealed class YouTubeConnection : IAsyncDisposable
             {
                 case BroadcastChangeKind.MonitoringStarted:
                     _log.Info("YouTube", $"Monitoring broadcast \"{change.Broadcast.Title}\" ({change.Broadcast.Id})");
-                    StartChat(change.Broadcast);
+                    // A broadcast that appears after the first check went live while Cuebot watched: chat sent since it
+                    // started is new, not history (so early !commands and Super Chats still fire).
+                    StartChat(change.Broadcast, HasChecked ? change.Broadcast.ActualStart ?? _lastCheck : null);
                     break;
                 case BroadcastChangeKind.MonitoringEnded:
                     _log.Info("YouTube", $"Stopped monitoring broadcast {change.Broadcast.Id}");
@@ -184,7 +244,7 @@ internal sealed class YouTubeConnection : IAsyncDisposable
         if (changes.Count > 0) _statusChanged();
     }
 
-    private void StartChat(YouTubeBroadcast broadcast)
+    private void StartChat(YouTubeBroadcast broadcast, DateTimeOffset? liveSince = null)
     {
         if (broadcast.LiveChatId.Length == 0)
         {
@@ -192,7 +252,11 @@ internal sealed class YouTubeConnection : IAsyncDisposable
             return;
         }
         var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-        var context = new ChatContext(broadcast.Id, broadcast.LiveChatId, _chatters) { BotChannelId = _settings().Bot.ChannelId };
+        var context = new ChatContext(broadcast.Id, broadcast.LiveChatId, _chatters)
+        {
+            BotChannelId = _settings().Bot.ChannelId,
+            LiveSince = liveSince,
+        };
         var poller = new ChatPoller(_api, _broadcaster, context, Publish, _timings, _time, () => _settings().MinimumChatPollSeconds,
             _log, SetProblem, _settings().StreamChat ? _chatStream : null);
         var task = Task.Run(async () =>
@@ -202,18 +266,40 @@ internal sealed class YouTubeConnection : IAsyncDisposable
                 var reason = await poller.RunAsync(cts.Token).ConfigureAwait(false);
                 _chats.TryRemove(broadcast.Id, out _);
                 if (reason == ChatEndReason.ChatEnded) Handle(Broadcasts.End(broadcast.Id));
+                else if (reason == ChatEndReason.Unavailable) _stoppedChats[broadcast.Id] = _time.GetUtcNow();
                 _statusChanged();
             }
             catch (Exception ex)
             {
+                _chats.TryRemove(broadcast.Id, out _);
+                if (!cts.IsCancellationRequested) _stoppedChats[broadcast.Id] = _time.GetUtcNow();
                 _log.Error("YouTube", "Live chat reader stopped unexpectedly", ex);
+                _statusChanged();
             }
         });
         _chats[broadcast.Id] = new RunningChat(cts, task, poller);
     }
 
+    /// <summary>
+    /// Broadcasts whose chat reader stopped while the broadcast stayed monitored (chat briefly reported disabled or not
+    /// found, or the reader failed): the next broadcast check starts their chat again.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _stoppedChats = new();
+
+    private void RestartStoppedChats()
+    {
+        foreach (var id in _stoppedChats.Keys)
+        {
+            if (!_stoppedChats.TryRemove(id, out var stoppedAt) || _chats.ContainsKey(id) || Broadcasts.Find(id) is not { } broadcast)
+                continue;
+            _log.Info("YouTube", $"Restarting live chat for \"{broadcast.Title}\" ({broadcast.Id})");
+            StartChat(broadcast, stoppedAt);   // chat sent while it was stopped is not history
+        }
+    }
+
     private void StopChat(string broadcastId)
     {
+        _stoppedChats.TryRemove(broadcastId, out _);
         if (_chats.TryRemove(broadcastId, out var chat)) chat.Cancellation.Cancel();
     }
 
