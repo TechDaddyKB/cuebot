@@ -171,6 +171,7 @@ nav:
       - Donations and services:
           - guides/services/index.md
           - Tips and donations: guides/services/tips-and-donations.md
+          - StreamElements: guides/services/streamelements.md
           - Webhooks (Ko-fi, Patreon…): guides/services/webhooks.md
           - Discord bot: guides/services/discord-bot.md
           - Subathon timers: guides/services/subathon-timers.md

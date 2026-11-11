@@ -137,7 +137,24 @@ internal static partial class OverlayWidgetHost
     {
         if (request == TtsRequest) return await SpeakAsync(data, layer, services).ConfigureAwait(false);
         if (request == MediaRequest) return Media(data, layer, services);
+        if (request == "counter_get") return await CounterAsync(data, services).ConfigureAwait(false);
         return Answer(request, data, services);
+    }
+
+    /// <summary>
+    /// SE_API.counters.get: a numeric Cuebot global of that name (Cuebot's own counters) wins; otherwise, with a
+    /// StreamElements JWT set, the real StreamElements chatbot counter; else 0.
+    /// </summary>
+    private static async Task<JsonNode?> CounterAsync(JsonObject? data, ServerServices services)
+    {
+        var name = data?["name"]?.GetValue<string>() ?? data?["counter"]?.GetValue<string>() ?? "";
+        var value = services.Globals.GetValue(name);
+        double number;
+        if (value is long or int or decimal or double) number = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+        else if (services.StreamElementsOverlays is { } se && await se.GetBotCounterAsync(name, CancellationToken.None).ConfigureAwait(false) is { } fromSe)
+            number = fromSe;
+        else number = 0;
+        return new JsonObject { ["counter"] = name, ["value"] = number };
     }
 
     /// <summary>
@@ -167,15 +184,6 @@ internal static partial class OverlayWidgetHost
             case "store_set":
                 if (services.WidgetStore?.Set(Key(data), data?["value"]) != true) throw new ArgumentException("The value could not be stored");
                 return null;
-            case "counter_get":
-            {
-                // StreamElements' bot counters are Cuebot's global variables; only numeric ones, so widgets cannot read
-                // other things kept in globals.
-                var name = data?["name"]?.GetValue<string>() ?? data?["counter"]?.GetValue<string>() ?? "";
-                var value = services.Globals.GetValue(name);
-                var number = value is long or int or decimal or double ? Convert.ToDouble(value, CultureInfo.InvariantCulture) : 0;
-                return new JsonObject { ["counter"] = name, ["value"] = number };
-            }
             case "sanitize":
                 // No word filter is applied yet; the message comes back as it is.
                 return new JsonObject { ["skip"] = false, ["result"] = new JsonObject { ["message"] = data?["message"]?.DeepClone() ?? "" } };

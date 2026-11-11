@@ -18,6 +18,9 @@ public interface IStreamElementsOverlaySource
 
     /// <summary>One overlay as StreamElements stores it: <c>{name, settings: {width, height}, widgets: [...]}</c>.</summary>
     Task<JsonObject> GetOverlayAsync(string id, CancellationToken ct);
+
+    /// <summary>A StreamElements chatbot counter (for <c>SE_API.counters.get</c>), or null when it cannot be read.</summary>
+    Task<double?> GetBotCounterAsync(string name, CancellationToken ct) => Task.FromResult<double?>(null);
 }
 
 /// <summary>What an import made: the new overlay, how many widgets came across, and what was left out (and why).</summary>

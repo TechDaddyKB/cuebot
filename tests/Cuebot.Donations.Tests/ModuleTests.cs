@@ -37,7 +37,7 @@ public sealed class TriggerTests
             Assert.Equal(triggers.Length, triggers.Select(t => t.TypeId).Distinct().Count());
         }
         Assert.Equal(13, new StreamlabsTriggers().GetTriggers().Count());
-        Assert.Equal(15, new StreamElementsTriggers().GetTriggers().Count());
+        Assert.Equal(40, new StreamElementsTriggers().GetTriggers().Count());
     }
 
     [Fact]

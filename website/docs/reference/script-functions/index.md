@@ -67,7 +67,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [Spotify](spotify.md) | 2 |
 | [Steps](steps.md) | 4 |
 | [Stream Deck](streamdeck.md) | 9 |
-| [StreamElements](streamelements.md) | 7 |
+| [StreamElements](streamelements.md) | 24 |
 | [Streamlabs](streamlabs.md) | 2 |
 | [Streamloots](streamloots.md) | 2 |
 | [Subathon](subathon.md) | 9 |

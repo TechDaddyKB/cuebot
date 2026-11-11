@@ -126,6 +126,8 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
         await client.NextAsync(m => m["type"]?.GetValue<string>() == "hello");
         _bot.Globals.SetValue("deaths", 7L, false);
         _bot.Globals.SetValue("secret", "hunter2", false);
+        _bot.StreamElements.Counters["wins"] = 12;   // a real StreamElements chatbot counter, used when no global has the name
+        _bot.StreamElements.Counters["deaths"] = 99;
 
         async Task<JsonObject> Ask(string id, string request, JsonObject data)
         {
@@ -140,6 +142,7 @@ public sealed class OverlayWidgetTests : IAsyncLifetime
 
         Assert.Equal(7, (await Ask("3", "counter_get", new JsonObject { ["name"] = "deaths" }))["result"]!["value"]!.GetValue<double>());
         Assert.Equal(0, (await Ask("4", "counter_get", new JsonObject { ["name"] = "secret" }))["result"]!["value"]!.GetValue<double>());
+        Assert.Equal(12, (await Ask("4b", "counter_get", new JsonObject { ["name"] = "wins" }))["result"]!["value"]!.GetValue<double>());
         Assert.Equal("great stream", (await Ask("5", "cheer_filter", new JsonObject { ["message"] = "Cheer100 great  stream Kappa50" }))["result"]!.GetValue<string>());
         Assert.Equal("hi", (await Ask("6", "sanitize", new JsonObject { ["message"] = "hi" }))["result"]!["result"]!["message"]!.GetValue<string>());
         Assert.Contains("Unknown", (await Ask("7", "delete_everything", new JsonObject()))["error"]!.GetValue<string>());

@@ -54,6 +54,145 @@
       },
       "returns": "A list of the viewers with the most points. Each has user and points.",
       "example": { "count": 10 }
+    },
+    "streamelements.isLive": {
+      "description": "Checks whether StreamElements says your stream is live on any platform it watches. Works with the connection on.",
+      "parameters": {},
+      "returns": "true when live, false when offline, null before StreamElements has said.",
+      "example": {}
+    },
+    "streamelements.say": {
+      "description": "Sends a chat message as the StreamElements bot. The bot must be in your chat. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "message": "What the bot should say. Needed."
+      },
+      "returns": "true when sent.",
+      "example": { "message": "Thanks for watching!" }
+    },
+    "streamelements.getCounter": {
+      "description": "Reads a StreamElements chatbot counter, like a death counter. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "counter": "The counter's name, like \"deaths\". Needed."
+      },
+      "returns": "The counter's value as a number.",
+      "example": { "counter": "deaths" }
+    },
+    "streamelements.overlayAction": {
+      "description": "Controls your StreamElements overlays. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "action": "\"pause\", \"play\", \"mute\", \"unmute\" or \"reload\". Default \"pause\"."
+      },
+      "returns": "true when done.",
+      "example": { "action": "pause" }
+    },
+    "streamelements.setSessionValue": {
+      "description": "Changes one StreamElements session value, like the tip goal. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "key": "The session key, like \"tip-goal\". Needed.",
+        "field": "Which part, like \"amount\". Needed.",
+        "value": "The new value, like 100."
+      },
+      "returns": "true when done.",
+      "example": { "key": "tip-goal", "field": "amount", "value": 100 }
+    },
+    "streamelements.getUserRank": {
+      "description": "Looks up a viewer's place on your StreamElements points list. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "user": "The viewer's name. Needed."
+      },
+      "returns": "Their place as a number (1 is the top).",
+      "example": { "user": "CoolViewer" }
+    },
+    "streamelements.bulkPoints": {
+      "description": "Adds (or sets) the same points for many viewers at once. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "users": "A list of names, or one text with names separated by commas or spaces. Needed.",
+        "amount": "How many points, like 50.",
+        "mode": "Optional. \"add\" (default) or \"set\"."
+      },
+      "returns": "How many viewers were changed.",
+      "example": { "users": ["anna", "ben"], "amount": 50 }
+    },
+    "streamelements.createTip": {
+      "description": "Adds a tip to your StreamElements tip list (for example one paid elsewhere) so goals and leaderboards count it. No money moves. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "user": "Who gave it. Needed.",
+        "amount": "How much, more than 0. Needed.",
+        "currency": "Optional. 3-letter code, default \"USD\".",
+        "message": "Optional. Their message."
+      },
+      "returns": "The new tip's id.",
+      "example": { "user": "CoolViewer", "amount": 5, "currency": "USD" }
+    },
+    "streamelements.getPendingTips": {
+      "description": "Gets the StreamElements tips waiting for a moderator. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {},
+      "returns": "A list of tips. Each has id, user, amount, currency, formattedAmount and message.",
+      "example": {}
+    },
+    "streamelements.getCheerLeaderboard": {
+      "description": "Gets the people who cheered the most bits. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "count": "Optional. How many people. Default 5.",
+        "period": "Optional. \"alltime\" (default), \"months\", \"weeks\" or \"session\"."
+      },
+      "returns": "A list. Each has user and total.",
+      "example": { "count": 3, "period": "weeks" }
+    },
+    "streamelements.getStoreItems": {
+      "description": "Lists the items in your StreamElements loyalty store. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {},
+      "returns": "A list. Each has id, name, enabled, cost and stock (-1 for no limit).",
+      "example": {}
+    },
+    "streamelements.setStoreItem": {
+      "description": "Changes a loyalty store item: on or off, its price or how many are left. Leave out what should stay. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "item": "The item's name or id. Needed.",
+        "enabled": "Optional. true or false.",
+        "cost": "Optional. The new price in points.",
+        "stock": "Optional. How many are left."
+      },
+      "returns": "The item after the change: id, name, enabled, cost and stock.",
+      "example": { "item": "Hydrate!", "enabled": false }
+    },
+    "streamelements.completeRedemption": {
+      "description": "Marks a StreamElements store redemption as done. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "redemptionId": "The redemption's id, like the trigger's redemptionId. Needed."
+      },
+      "returns": "true when done.",
+      "example": { "redemptionId": "5f0c0000000000000000abcd" }
+    },
+    "streamelements.refundRedemption": {
+      "description": "Cancels a StreamElements store redemption and gives the points back. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "redemptionId": "The redemption's id. Needed."
+      },
+      "returns": "true when done.",
+      "example": { "redemptionId": "5f0c0000000000000000abcd" }
+    },
+    "streamelements.getPlayingSong": {
+      "description": "Gets the StreamElements song request playing now. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {},
+      "returns": "id, title, url, user and duration, or null when nothing plays.",
+      "example": {}
+    },
+    "streamelements.addSong": {
+      "description": "Adds a song to your StreamElements song request queue. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "video": "A YouTube link, video id or search words. Needed."
+      },
+      "returns": "The queued song: id, title and url.",
+      "example": { "video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+    },
+    "streamelements.replayLatest": {
+      "description": "Asks StreamElements to send its newest real event of a kind again, to test alerts end to end. Needs your StreamElements JWT token; fails with an error otherwise.",
+      "parameters": {
+        "type": "Optional. \"tip\" (default), \"merch\", \"redemption\", \"cheer\", \"subscriber\", \"follow\" or \"raid\"."
+      },
+      "returns": "The replayed event's id, or \"\" when there was none.",
+      "example": { "type": "tip" }
     }
   }
 }

@@ -13,7 +13,7 @@ Go to **Apps > Donations**. Pick a service on the left.
 | Service | What to paste |
 | --- | --- |
 | **Streamlabs** | On streamlabs.com open **Settings > API Settings > API Tokens** and copy the **Socket API Token**. |
-| **StreamElements** | On streamelements.com open your account, then **Channels**, choose **Show secrets** and copy the **JWT Token**. |
+| **StreamElements** | On streamelements.com click your avatar (top right), choose your channel name, pick the channel and copy the **JWT token** (it belongs to that one platform account). See [StreamElements](streamelements.md). |
 | **TipeeeStream** | The **API key** from your TipeeeStream account's API page. |
 | **Pally.gg** | On pally.gg open **Dashboard > Settings > API Keys** and make a key for Cuebot. |
 | **DonorDrive (Extra Life and other charities)** | No key: the charity site's address and your **Participant or team id** (the number in your fundraising page's address). |
@@ -32,5 +32,9 @@ name), and shows up in your alerts, credits and spoken events.
     Streamlabs and StreamElements connected for real, and DonorDrive read a real Extra Life team. But no real tip or
     donation has come in through Cuebot yet. Use **Send test event** to check your actions, and please tell us if a
     real tip does not show up. See [What's experimental](../help/experimental.md).
+
+Tips only arrive while you are live on StreamElements (and on YouTube only for public streams). StreamElements also
+does much more in Cuebot (tip moderation, going live, session data, its chatbot, store, contests and song
+requests): see [StreamElements](streamelements.md).
 
 Ko-fi, Patreon, Throne, Fourthwall and Shopify work differently: they send webhooks. See [Webhooks](webhooks.md).

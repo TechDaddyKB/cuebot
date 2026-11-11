@@ -53,65 +53,128 @@ there are no Streamlabs REST sub-actions yet.
 
 ## StreamElements (official)
 
-- **Token:** the *JWT Token* from streamelements.com → account → Channels → Show secrets. Sent in the Astro
-  subscribe message and as `Authorization: Bearer <jwt>` to the REST API; never logged.
+- **Token:** the *JWT* from streamelements.com → avatar (top right) → channel name → pick the channel → copy the JWT.
+  Tokens are platform-account specific (docs.streamelements.com/websockets#authentication): with several platforms
+  linked, the token of the account that was selected is the one whose activities arrive. Sent in the Astro subscribe
+  message and as `Authorization: Bearer <jwt>` to the REST API; never logged. The *Overlay Token* may be used instead
+  for events only (Astro `token_type: "apikey"`, no REST); which topics it may read is undocumented.
 
 ### Astro gateway (current; default)
 
 - `wss://astro.streamelements.com`. The server sends `welcome` right after the upgrade; Cuebot subscribes when it arrives
-  (or after the open timeout if it never does), one command per 110 ms (Astro allows one per 100 ms). Subscribe per topic:
-  `{"type":"subscribe","nonce":"<id>","data":{"topic":"channel.activities","token":"<jwt>","token_type":"jwt"}}`.
+  (or after the open timeout if it never does), one command per 110 ms (Astro allows one per 100 ms, burst 100 per 10 s).
+  Subscribe per topic:
+  `{"type":"subscribe","nonce":"<id>","data":{"topic":"channel.activities","room":"<channel id>","token":"<jwt>","token_type":"jwt"}}`.
+- **`room`:** the docs contradict each other. The WebSockets page says `data.room` "defaults to `""` (global)"; the
+  topic pages (channel-session-update, chatbot-counters) say it "defaults to the authenticated channel"; every example
+  sends the channel id. Cuebot sends the channel id from `GET channels/me` when it is known (always for a JWT), and
+  leaves `room` out otherwise (Overlay Token, failed lookup). The response's `data.room` is "the canonical room ID
+  returned by the authorization service, which may differ from the requested value"; Cuebot keeps it (shown on the
+  Donations card) for any later unsubscribe.
 - Responses: `{"type":"response","nonce","data":{"message","topic","room"}}`, or with `"error"`
-  (`err_unauthorized`, `err_bad_request`, `rate_limit_exceeded`, …). An unauthorized response for every topic ends the
-  session as a refusal (shown as "StreamElements rejected the JWT token"). `err_deadline_exceeded` ("Retry the request") and
-  `rate_limit_exceeded` (sent without a nonce, so every unanswered subscription is re-sent) are retried after the reconnect
-  delay, up to 5 times per session. `room` is left out: it "defaults to the authenticated channel".
+  (`err_unauthorized`, `err_bad_request`, `rate_limit_exceeded`, …). An unauthorized response for **every** topic ends
+  the session as a refusal ("StreamElements rejected the JWT token"); a refused optional topic is only logged (the
+  status turns red only when `channel.activities` is refused). `err_deadline_exceeded` ("Retry the request") is
+  retried after the reconnect delay; `rate_limit_exceeded` (sent without a nonce, so every unanswered subscription is
+  re-sent) waits 5 s, doubling per retry (FAQ example: 5 s), up to 5 retries per session.
+- Connection errors (docs: Connection): **502** while an edge drains → reconnect after 0.5 s without growing the
+  backoff (another edge takes it); **429** with `Retry-After: 2` → wait `Retry-After` (at least 2 s). The status comes
+  from `ClientWebSocket.HttpStatusCode` (`CollectHttpResponseDetails`). Other failures back off 2 s → 60 s.
 - Messages: `{"id","ts","type":"message","topic","room","data":{…}}`.
-- Keep-alive: the server sends websocket PING frames every 30 s (answered by the .NET websocket); the client also
-  sends its own keep-alive pings and drops the connection if no pong arrives.
+- Keep-alive: the server sends websocket PING frames every 30 s and closes after 70 s without a PONG (answered by the
+  .NET websocket). Cuebot also sends its own keep-alive pings (30 s, 30 s timeout); that Astro answers client PINGs is
+  not documented and still needs a live soak.
 - Reconnect: a `{"type":"reconnect","data":{"reconnect_token":"…"}}` message makes Cuebot reconnect immediately to
   `wss://astro.streamelements.com/?reconnect_token=…` without resubscribing (the server restores subscriptions and
-  sends `welcome`). The token is used once. That `welcome` counts as subscribed (status Connected).
-- Cuebot subscribes to **`channel.activities`** only. Its `data` is an activity:
-  `{type, provider, channel, data:{username, displayName, providerId, avatar, amount, currency, message, items, …}, _id, activityId, createdAt}`.
-  `channel.tips` (tip documents with `donation.user.username`, `donation.amount`, …) carries the same tips with
-  moderation state; it is not subscribed to avoid publishing each tip twice.
+  sends `welcome`). The token is used once. That `welcome` counts as subscribed (status Connected). After a reconnect
+  that was **not** a resume, Cuebot back-fills: `GET activities/{channel}?after=<last activity createdAt>&before=<now>
+  &limit=25&types=tip&types=merch&types=redemption&origin=feed&min*=0` and publishes what it missed (the
+  `activity:<id>` dedupe drops what was already seen).
+
+**Topics** (docs.streamelements.com/websockets/topics; `channel.chat` only with "receive chat" on):
+
+| Topic (scope) | Bot event(s) | Payload read |
+| --- | --- | --- |
+| `channel.activities` (activities:read) | see the activity table | activity |
+| `channel.tips` (tips:read), `channel.tips.moderation` (tips:moderation) | `streamelements.tipPending`, `.tipRejected`; gate `streamelements.tip` | `{donation:{user:{username,geo,email},message,amount,currency},_id,provider,approved,status,approvedBy}` |
+| `channel.stream.status` (stream-live:read) | `.streamOnline` / `.streamOffline` on change; global `seIsLive` | `{isLive}` |
+| `channel.session.update` / `.reset` (session:read) | `.sessionUpdated` / `.sessionReset`; globals `se.<key>.<field>` | `{key,name,data:{…},provider}` / `{"<key>":{…},…}` |
+| `channel.overlay.action` (overlays:read) | `.overlayAction` | `{action}`: pause, unpause, mute, unmute, skip, playNext, emptyHypeCup, reload |
+| `channel.overlay.update` (overlays:read) | `.overlayUpdated` (+ re-import hint on the Overlays page) | full overlay `{_id,name,type,settings,widgets}` |
+| `channel.overlay.broadcast` (overlays:broadcast) | `.overlayBroadcast` (receive only: no publish path is documented) | `{target,event,data}` |
+| `channel.chatbot.counters` (none) | `.counterChanged` (reset and delete both send 0) | `{counter,value}` |
+| `channel.contests` (none) | `.contestBet`, `.contestStateChanged`, `.contestWinner` | `{event:update|state|winner,payload}` |
+| `channel.giveaways` (none) | `.giveawayEntered`, `.giveawayWinner`, `.giveawayStateChanged` | `{giveawayId,event,state,data:{totalUsers,totalTickets,entry|winner}}` |
+| `channel.songrequest` (overlays:read) | `.songRequest` (`event` = play, pause, volume, queue.add, song.next, …) | `{event,payload}` |
+| `channel.chatbot.audiencequeue` (bot:read) | `.viewerQueue` | `{event:queue.*|member.*,payload}` |
+| `channel.chatbot.modules.emotecombo` / `.pyramid` (bot:read) | `.emoteCombo` / `.pyramid` | `{msg_id,user_id,user_name,emote,count}` / `{…,word,width}` |
+| `channel.chatbot.status` (bot:read, Twitch only) | `.botStatus` | `{mod}` or `{banned}` |
+| `channel.chat` (overlays:read) | `.chatMessage`, `.chatMessageDeleted`, `.chatUserCleared`, `.chatCleared` | v1 unified chat; the last 300 deleted ids drop late messages |
+
+Not subscribed: `channel.chat.message` (raw per-platform chat; `channel.chat` covers it), `channel.loyalty.redemptions`,
+`channel.loyalty.items`, `channel.kvstore.update`, `channel.announcements`, `channel.chatstats` (payloads undocumented).
+
+**Tip moderation.** A tip arrives as a `tip` activity (`data.tipId`) and as a tip document (`_id`; the docs' examples
+use the same id, `67b5f39d07ecd4c594e60f73`, for both, which Cuebot relies on). With "Wait for tip approval" (default)
+the activity is held until its document says `approved: allowed` (and `status: success`): `pending` raises `tipPending`
+and keeps waiting (no timeout; at most 200 held), `rejected` raises `tipRejected` and drops the tip. With no document
+within 5 s (topic refused, ids not matching) the tip is published with `tipApproved: unknown`. Without waiting, tips
+publish at once unless their document already said `rejected`. Donor `email`/`geo` are never copied into args.
 
 | Activity `type` | Bot event | Notes |
 | --- | --- | --- |
-| `tip` | `streamelements.tip` | `tipId`, `amount`, `currency`, `message`; dedupe also by `tip:<tipId>` |
+| `tip` | `streamelements.tip` (moderation-gated) | `tipId`, `amount`, `currency`, `message`; dedupe also by `tip:<tipId>`; `tipApproved`, `approvedBy` |
 | `merch` | `streamelements.merch` | `items: [{name, price, quantity}]`, `amount`, `message` |
-| `redemption` | `streamelements.redemption` | loyalty store item: `itemName`/`item`, `amount` = cost, `message` |
+| `redemption` | `streamelements.redemption` | loyalty store item: `itemName`/`item`, `amount` = cost, `message`; `redemptionId`, `userInput` (`input`/`userInput`) read leniently (undocumented) |
 | `follow`, `follower` | `streamelements.follow` | relayed |
 | `subscriber` | `streamelements.subscriber` | relayed; `amount` = months, `tier`, `gifted`, `sender` |
 | `cheer` | `streamelements.cheer` | relayed; `amount` = bits |
-| `raid`, `host` | `streamelements.raid`, `.host` | relayed; `amount` = viewers |
+| `raid`, `host` | `streamelements.raid`, `.host` | relayed; `amount` = viewers (`host` is legacy) |
 | `superchat`, `sponsor`, `communityGiftPurchase`, `charityCampaignDonation` | `streamelements.superchat`, `.sponsor`, `.communityGift`, `.charityDonation` | relayed |
-| anything else | `streamelements.activity` | relayed; `activityType` says which |
+| anything else (`hypetrain*`, `cheerPurchase`, `elixir`, …) | `streamelements.activity` | relayed; `activityType` says which |
 
-Dedupe: `activity:<activityId|_id>` (an updated activity is re-sent with the same id).
+Every activity also carries `updatedAt`, `sessionEventsCount` and each field of `data` as `data.<key>` (nested objects as
+`data.<key>.<child>`; `email` and `geo` never). Dedupe: `activity:<activityId|_id>` (an updated activity is re-sent
+with the same id).
 
-### Legacy realtime socket (fallback option)
+### Legacy realtime socket (deprecated fallback option)
 
 - `https://realtime.streamelements.com`, Socket.IO v2 (EIO=3, falls back to 4). After connecting, emit
   `42["authenticate",{"method":"jwt","token":"<jwt>"}]`; the server answers `authenticated` (or `unauthorized`) and
-  then sends `event` with the same activity objects as above. Kept because it predates Astro and many tools still use
-  it; StreamElements presents Astro as the gateway for new integrations, so the legacy socket may be retired. The
-  dashboard's emulated alerts arrive as `event:test` in the widget shape `{listener, event:{name, amount, message, ...}}`;
-  `tip-latest` and `merch-latest` are published as tests (other listeners are ignored).
+  then sends `event` with the same activity objects as above. docs.streamelements.com no longer mentions it (only the
+  old dev.streamelements.com article does, with socket.io 2.2.0); its Developers page points integrators to Astro.
+  Selecting it logs a warning, and after 3 sessions in a row that end before `authenticated` Cuebot switches to Astro
+  for the rest of the run. The dashboard's emulated alerts arrive as `event:test` in the widget shape
+  `{listener, event:{name, amount, message, ...}}`; `tip-latest` and `merch-latest` are published as tests.
 
-### REST API (`https://api.streamelements.com/kappa/v2/`, Bearer JWT)
+### REST API (`https://api.streamelements.com/kappa/v2/`, Bearer JWT; giveaways `kappa/v3`)
 
 | Use | Request | Response fields read |
 | --- | --- | --- |
-| channel of the token | `GET channels/me` | `_id`, `username`, `displayName` (cached as `channelId`) |
-| user points | `GET points/{channel}/{user}` | `username`, `points`, `pointsAlltime`, `rank` |
-| add / remove points | `PUT points/{channel}/{user}/{amount}` (negative removes) | `newAmount` |
-| points leaderboard | `GET points/{channel}/top?limit=N&offset=0` | `users[].username`, `users[].points` (response not documented; a bare array is accepted) |
-| latest tips | `GET tips/{channel}?limit=N&offset=0&sort=-createdAt` | `docs[]._id`, `donation.user.username`, `donation.amount`, `donation.currency`, `donation.message`, `createdAt` (tips with `deleted: true` are skipped) |
-| top tippers | `GET tips/{channel}/top` (takes no limit; Cuebot sorts by `total` and cuts) | array of `username`, `total` (also `count`, `average`, `first`, `last`, `email`) |
+| channel of the token | `GET channels/me` | `_id`, `username`, `displayName`, `provider` (cached as `channelId`, shown with the platform) |
+| user points | `GET points/{channel}/{user}` | `username`, `points`, `pointsAlltime`, `rank` (no schema; without `rank`, `GET points/{channel}/{user}/rank`) |
+| add / remove points | `PUT points/{channel}/{user}/{amount}` (negative removes) | `newAmount` (undocumented) |
+| bulk points | `PUT points/{channel}` `{users:[{username,current}],mode:"add"|"set"}` | — |
+| reset a user / everyone | `DELETE points/{channel}/{user}`, `DELETE points/{channel}/reset/{current|alltime}` | — |
+| leaderboards | `GET points/{channel}/top|alltime|watchtime?limit&offset` | `users[].username` + `points` / `pointsAlltime` / `minutes` (no schema; bare arrays accepted) |
+| latest tips | `GET tips/{channel}?limit=N&offset=0&sort=-createdAt` | `docs[]`; tips with `deleted`, `approved` ≠ allowed or `status` ≠ success are skipped |
+| tips awaiting moderation | `GET tips/{channel}/moderation` | `pending[]` tip documents |
+| add a tip | `POST tips/{channel}` `{user:{username,email},provider,message,amount,currency,imported:true}` | the tip document |
+| top tippers | `GET tips/{channel}/top` (no limit; sorted by `total` and cut) | `username`, `total` |
+| tip / cheer leaderboard by period | `GET activities/{channel}/top?type=tip|cheer&period=alltime|months|weeks|session&limit&offset` | `[{username,total}]` |
+| recent activities / replay | `GET activities/{channel}?after&before&limit&types…&origin=feed&min*=0`; `POST activities/{channel}/{id}/replay` | activity array; `{success}` |
+| chatbot | `GET bot/{channel}`; `POST bot/{channel}/say {message}`; `POST bot/{channel}/mute|unmute`; `GET bot/{channel}/counters/{counter}` | `bot.{joined,muted,mod,name}`; `value` |
+| timers / commands on-off | `GET bot/timers/{channel}`, `GET bot/commands/{channel}`, then `PUT …/{id}` with the listed document and `enabled` changed (server fields `_id`, `createdAt`, `updatedAt`, `__v` removed; the spec gives the body no schema) | — |
+| overlay control | `PUT overlays/{channel}/action/{reload|mute|unmute|pause|play}` | — |
+| session data | `GET sessions/{channel}`; set a value: GET, change `data.<key>.<field>`, `PUT sessions/{channel}` with the whole document (no body schema; sending everything cannot clear other keys); `PUT sessions/{channel}/reset` | `data` |
+| loyalty store | `GET store/{channel}/items?limit=100&offset=0`; `PUT store/{channel}/items/{id}` with the listed item changed (`enabled`, `cost`, `quantity.current`); `GET store/{channel}/redemptions?limit&offset&pending`; `PUT …/redemptions/{id} {completed:true}` (body undocumented); `DELETE …/redemptions/{id}` (refund) | LoyaltyItem; redemptions read leniently (`docs` or array; `item`, `redeemer`, `input`) |
+| contests | `GET contests/{channel}` (`active`/`contests`); `POST contests/{channel}` `{title,minBet,maxBet,duration,options:[{title,command}]}` (no body schema: the Contest document's fields); `PUT …/{id}/start`; `PUT …/{id}/winner {winnerId}`; `DELETE …/{id}/close`, `…/refund` | Contest |
+| giveaways (v3) | `GET giveaways/{channel}`; `PUT …/{id}/start|winner|complete|reopen`; `DELETE …/{id}/close|refund` (creating one is not offered: no body schema) | Giveaway |
+| song requests | `POST songrequest/{channel}/player/play|pause`; `GET …/playing`, `…/next`, `…/queue`; `POST …/queue {video}`; `DELETE …/queue/{song}` | Song |
+| overlays (import) | `GET overlays/{channel}`, `GET overlays/{channel}/{id}` (the spec marks `search`/`type` required on the list, like nearly every query parameter; sent without them until a live 400 says otherwise) | `docs[]`; the overlay with `widgets` |
 
-`limit` is clamped to 1–100. User names are URL-escaped.
+`limit` is clamped to 1–100. User names and ids are URL-escaped. No REST rate limit is documented. Write operations
+that answer with plain text (`Created`) count as success.
 
 ## TipeeeStream (official socket.io API)
 

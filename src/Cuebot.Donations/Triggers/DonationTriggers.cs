@@ -115,7 +115,56 @@ internal sealed class StreamElementsTriggers : ITriggerProvider
             [new("activityType", "Activity type") { Help = "e.g. hypetrainStart; leave empty for any" }],
             (e, s) => s["activityType"].Length == 0
                 || string.Equals(Convert.ToString(e.Args.GetValueOrDefault("activityType"), CultureInfo.InvariantCulture), s["activityType"], StringComparison.OrdinalIgnoreCase)),
+        Event(StreamElementsEventTypes.TipPending, "Tip waiting for approval", DonationFilters.Amount, DonationFilters.MatchesAmount),
+        Event(StreamElementsEventTypes.TipRejected, "Tip rejected", DonationFilters.Amount, DonationFilters.MatchesAmount),
+        Event(StreamElementsEventTypes.StreamOnline, "Stream went live"),
+        Event(StreamElementsEventTypes.StreamOffline, "Stream went offline"),
+        Event(StreamElementsEventTypes.SessionUpdated, "Session value changed",
+            [Text("key", "Session key", "e.g. tip-goal, follower-session; comma-separated; empty for any")], (e, s) => Matches(e, "key", s["key"])),
+        Event(StreamElementsEventTypes.SessionReset, "Session reset"),
+        Event(StreamElementsEventTypes.OverlayAction, "Overlay control used",
+            [Text("action", "Action", "pause, unpause, mute, unmute, skip, playNext, emptyHypeCup, reload; empty for any")],
+            (e, s) => Matches(e, "action", s["action"])),
+        Event(StreamElementsEventTypes.OverlayUpdated, "Overlay changed"),
+        Event(StreamElementsEventTypes.OverlayBroadcast, "Overlay broadcast",
+            [Text("event", "Event name", "e.g. emotesplosion-kappagen; empty for any")], (e, s) => Matches(e, "event", s["event"])),
+        Event(StreamElementsEventTypes.CounterChanged, "Chatbot counter changed",
+            [Text("counter", "Counter", "e.g. deaths; comma-separated; empty for any")], (e, s) => Matches(e, "counter", s["counter"])),
+        Event(StreamElementsEventTypes.ContestBet, "Contest bet placed"),
+        Event(StreamElementsEventTypes.ContestState, "Contest state changed",
+            [Text("state", "State", "created, running, closed, completed, refunded; empty for any")], (e, s) => Matches(e, "state", s["state"])),
+        Event(StreamElementsEventTypes.ContestWinner, "Contest winner picked"),
+        Event(StreamElementsEventTypes.GiveawayEntered, "Giveaway entry"),
+        Event(StreamElementsEventTypes.GiveawayWinner, "Giveaway winner"),
+        Event(StreamElementsEventTypes.GiveawayState, "Giveaway state changed",
+            [Text("event", "Event", "start, complete, close, refund, refund-entry; empty for any")], (e, s) => Matches(e, "event", s["event"])),
+        Event(StreamElementsEventTypes.SongRequest, "Song request event",
+            [Text("event", "Event", "e.g. queue.add, play, pause, song.next, volume; comma-separated; empty for any")],
+            (e, s) => Matches(e, "event", s["event"])),
+        Event(StreamElementsEventTypes.ViewerQueue, "Viewer queue event",
+            [Text("event", "Event", "queue.created, queue.updated, queue.deleted, member.enqueued, member.selected, member.removed; empty for any")],
+            (e, s) => Matches(e, "event", s["event"])),
+        Event(StreamElementsEventTypes.EmoteCombo, "Emote combo broken",
+            [new("minCount", "Minimum combo", ParameterKind.Number) { DefaultValue = "0" }], (e, s) => DonationFilters.AtLeast(e, s, "count", "minCount")),
+        Event(StreamElementsEventTypes.Pyramid, "Pyramid completed",
+            [new("minWidth", "Minimum width", ParameterKind.Number) { DefaultValue = "0" }], (e, s) => DonationFilters.AtLeast(e, s, "width", "minWidth")),
+        Event(StreamElementsEventTypes.BotStatus, "Chatbot modded or banned"),
+        Event(StreamElementsEventTypes.ChatMessage, "Chat message (through StreamElements)",
+            [Text("platform", "Platforms", "e.g. X, Twitch; comma-separated; empty for any")], (e, s) => Matches(e, "platform", s["platform"])),
+        Event(StreamElementsEventTypes.ChatMessageDeleted, "Chat message deleted (through StreamElements)"),
+        Event(StreamElementsEventTypes.ChatUserCleared, "Chat timeout or ban (through StreamElements)"),
+        Event(StreamElementsEventTypes.ChatCleared, "Chat cleared (through StreamElements)"),
     ];
+
+    private static ParameterDescriptor Text(string key, string label, string help) => new(key, label) { Help = help };
+
+    /// <summary>An empty filter matches; otherwise any comma-separated entry equal to the arg, ignoring case.</summary>
+    internal static bool Matches(BotEvent e, string arg, string filter)
+    {
+        if (filter.Trim().Length == 0) return true;
+        var value = Convert.ToString(e.Args.GetValueOrDefault(arg), CultureInfo.InvariantCulture) ?? "";
+        return filter.Split(',').Any(f => f.Trim().Equals(value, StringComparison.OrdinalIgnoreCase));
+    }
 
     private static EventTriggerType Event(string eventType, string displayName,
         IReadOnlyList<ParameterDescriptor>? parameters = null, Func<BotEvent, ParameterValues, bool>? filter = null) =>

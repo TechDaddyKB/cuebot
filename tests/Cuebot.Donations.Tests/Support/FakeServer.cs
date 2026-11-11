@@ -15,6 +15,22 @@ internal sealed class FakeServer
     /// <summary>Return true to fail the connection (like an HTTP 400 on the upgrade).</summary>
     public Func<Uri, bool> Reject { get; set; } = _ => false;
 
+    /// <summary>Return an exception to fail the connection with it (e.g. an HTTP 502 or 429 on the upgrade).</summary>
+    public Func<Uri, Exception?> Fail { get; set; } = _ => null;
+
+    private readonly List<(Uri Url, DateTime At)> _attempts = [];
+
+    /// <summary>Every connection attempt, accepted or not, with its time.</summary>
+    public IReadOnlyList<(Uri Url, DateTime At)> Attempts
+    {
+        get { lock (_attempts) return _attempts.ToArray(); }
+    }
+
+    internal void Attempt(Uri url)
+    {
+        lock (_attempts) _attempts.Add((url, DateTime.UtcNow));
+    }
+
     public IReadOnlyList<Uri> Urls
     {
         get { lock (_urls) return _urls.ToArray(); }
@@ -46,6 +62,8 @@ internal sealed class FakeSocket(FakeServer server) : IWebSocketTransport
 
     public Task ConnectAsync(Uri url, CancellationToken ct)
     {
+        server.Attempt(url);
+        if (server.Fail(url) is { } failure) throw failure;
         if (server.Reject(url))
         {
             throw new WebSocketException($"Unable to connect to {url}: status code '400'");

@@ -3,6 +3,42 @@
 
 ![Adding a sub-action: on the Actions page, click + Sub-action and search for it](../../assets/screens/actions-sub-action-picker.png)
 
+## Add a tip to StreamElements
+
+Adds a tip to your StreamElements tip list, for example one paid somewhere else, so goals and leaderboards count it. It does not take money.
+
+| Setting | What to put in |
+| --- | --- |
+| **Tipper** | Who gave it. Starts as: `%user%`. |
+| **Amount** | How much, like 5. Starts as: `5`. |
+| **Currency** | The 3-letter currency code, like USD or EUR. Starts as: `USD`. |
+| **Message** | Their message (optional). |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seTipId%` | The new tip's id |
+
+<small>Type id: `streamelements.createTip`</small>
+
+## Add song request
+
+Adds a song to your StreamElements song request queue.
+
+| Setting | What to put in |
+| --- | --- |
+| **Song** | A YouTube link, video id or search words. %rawInput% is what the viewer typed after the command. Starts as: `%rawInput%`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seSongTitle%` | The song that was added |
+| `%seSongId%` | Its id |
+
+<small>Type id: `streamelements.addSong`</small>
+
 ## Add user points
 
 Gives a viewer StreamElements loyalty points, or takes some away with a negative number. Good for rewards.
@@ -19,6 +55,135 @@ Gives a viewer StreamElements loyalty points, or takes some away with a negative
 | `%sePoints%` | Their points after the change |
 
 <small>Type id: `streamelements.addUserPoints`</small>
+
+## Change store item
+
+Changes an item in your StreamElements loyalty store: turn it on or off, change its price or how many are left.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item** | The item's name as in your store, like "Hydrate!". |
+| **On/off** | Keep leaves it as it is; On, Off or Toggle switches it. Options: Keep, On, Off, Toggle. Starts as: `Keep`. |
+| **Cost** | The new price in points. Leave empty to keep it. |
+| **Stock** | How many are left. Leave empty to keep it. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seItemEnabled%` | True when it can be bought now |
+| `%seItemCost%` | Its price now |
+| `%seItemStock%` | How many are left now |
+
+<small>Type id: `streamelements.setStoreItem`</small>
+
+## Complete store redemption
+
+Marks a StreamElements store redemption as done.
+
+| Setting | What to put in |
+| --- | --- |
+| **Redemption id** | The redemption's id. %redemptionId% is the one that started this action. Starts as: `%redemptionId%`. |
+
+<small>Type id: `streamelements.completeRedemption`</small>
+
+## Control StreamElements overlays
+
+Controls your StreamElements overlays: pause or play the alert queue, mute or unmute them, or reload them.
+
+| Setting | What to put in |
+| --- | --- |
+| **Action** | pause holds alerts, play lets them run again, mute/unmute switch their sound, reload refreshes every overlay. Options: pause, play, mute, unmute, reload. Starts as: `pause`. |
+
+<small>Type id: `streamelements.overlayAction`</small>
+
+## Create contest
+
+Creates a StreamElements contest where viewers bet points on an answer. Start it with Run contest.
+
+| Setting | What to put in |
+| --- | --- |
+| **Title** | The question, like "Will I beat the boss?". |
+| **Options** | The answers, separated by commas, like "Yes, No". Starts as: `Yes, No`. |
+| **Smallest bet** | The smallest bet in points. Starts as: `10`. |
+| **Biggest bet** | The biggest bet in points. Starts as: `1000`. |
+| **Minutes open** | How many minutes betting stays open. Starts as: `5`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seContestId%` | The new contest's id |
+
+<small>Type id: `streamelements.createContest`</small>
+
+## Get chatbot counter
+
+Reads a StreamElements chatbot counter, like a death counter.
+
+| Setting | What to put in |
+| --- | --- |
+| **Counter** | The counter's name as in StreamElements, like "deaths". Starts as: `deaths`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seCounter%` | The counter's name |
+| `%seCounterValue%` | Its value |
+
+<small>Type id: `streamelements.getCounter`</small>
+
+## Get cheer leaderboard
+
+Looks up who cheered the most bits, as StreamElements counted them.
+
+| Setting | What to put in |
+| --- | --- |
+| **Cheerers** | How many people to fetch. 5 gets five. Starts as: `5`. |
+| **Period** | Which time span: all time, this month, this week or this stream. Options: All time, This month, This week, This stream. Starts as: `All time`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seCheerLeaderCount%` | How many people were found |
+| `%seCheerLeader0User%` | Number 1's name (use 1, 2, 3... for the next ones) |
+| `%seCheerLeader0Total%` | Their bits |
+
+<small>Type id: `streamelements.getCheerLeaderboard`</small>
+
+## Get contest
+
+Looks up the current StreamElements contest.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seContestFound%` | True when there is one |
+| `%seContestTitle%` | Its question |
+| `%seContestState%` | Its state, like running |
+| `%seContestTotal%` | Points bet in total |
+| `%seContestOption0Title%` | The first answer (use 1, 2... for the next) |
+| `%seContestOption0Total%` | Points bet on it |
+
+<small>Type id: `streamelements.getContest`</small>
+
+## Get giveaway
+
+Looks up the current StreamElements giveaway.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seGiveawayFound%` | True when there is one |
+| `%seGiveawayTitle%` | Its title |
+| `%seGiveawayState%` | Its state, like running |
+| `%seGiveawayUsers%` | How many people joined |
+
+<small>Type id: `streamelements.getGiveaway`</small>
 
 ## Get latest tips
 
@@ -39,8 +204,29 @@ Looks up your most recent StreamElements tips. Handy to show or read out the lat
 | `%seTip0FormattedAmount%` | The amount written nicely |
 | `%seTip0Message%` | Their message |
 | `%seTip0CreatedAt%` | When it was sent |
+| `%seTip0Id%` | The tip's id |
 
 <small>Type id: `streamelements.getTips`</small>
+
+## Get pending store redemptions
+
+Looks up StreamElements store redemptions that are not done yet.
+
+| Setting | What to put in |
+| --- | --- |
+| **Redemptions** | How many redemptions to fetch. 5 gets five. Starts as: `5`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seRedemptionCount%` | How many were found |
+| `%seRedemption0Item%` | The first one's item (use 1, 2, 3... for the next ones) |
+| `%seRedemption0User%` | Who redeemed it |
+| `%seRedemption0Input%` | What they typed |
+| `%seRedemption0Id%` | Its id |
+
+<small>Type id: `streamelements.getPendingRedemptions`</small>
 
 ## Get points leaderboard
 
@@ -49,6 +235,7 @@ Looks up your top viewers by StreamElements loyalty points. Handy to read out a 
 | Setting | What to put in |
 | --- | --- |
 | **Users** | How many people to fetch, starting from the top. 5 gets the top five. Starts as: `5`. |
+| **Leaderboard** | Which list: current points, all-time points (everything they ever earned) or watch time. Options: Current points, All-time points, Watch time. Starts as: `Current points`. |
 
 **Variables it adds**
 
@@ -60,6 +247,79 @@ Looks up your top viewers by StreamElements loyalty points. Handy to read out a 
 
 <small>Type id: `streamelements.getPointsLeaderboard`</small>
 
+## Get song request
+
+Looks up the StreamElements song request playing now, or the next one.
+
+| Setting | What to put in |
+| --- | --- |
+| **Which song** | playing for the song now, next for the one after it. Options: playing, next. Starts as: `playing`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seSongFound%` | True when there is one |
+| `%seSongTitle%` | Its title |
+| `%seSongUrl%` | Its link |
+| `%seSongUser%` | Who asked for it |
+| `%seSongId%` | Its id |
+
+<small>Type id: `streamelements.getSong`</small>
+
+## Get song request queue
+
+Looks up the songs waiting in your StreamElements song request queue.
+
+| Setting | What to put in |
+| --- | --- |
+| **Songs** | How many songs to fetch. 5 gets five. Starts as: `5`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seQueueCount%` | How many songs are waiting |
+| `%seQueue0Title%` | The first one's title (use 1, 2, 3... for the next ones) |
+| `%seQueue0User%` | Who asked for it |
+
+<small>Type id: `streamelements.getSongQueue`</small>
+
+## Get store item
+
+Looks up an item in your StreamElements loyalty store.
+
+| Setting | What to put in |
+| --- | --- |
+| **Item** | The item's name as in your store, like "Hydrate!". |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seItemName%` | Its name |
+| `%seItemEnabled%` | True when it can be bought |
+| `%seItemCost%` | Its price in points |
+| `%seItemStock%` | How many are left (-1 for no limit) |
+| `%seItemId%` | Its id |
+
+<small>Type id: `streamelements.getStoreItem`</small>
+
+## Get StreamElements bot status
+
+Checks whether the StreamElements bot is in your chat, muted or a moderator.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seBotName%` | The bot's name |
+| `%seBotJoined%` | True when it is in your chat |
+| `%seBotMuted%` | True when it is muted |
+| `%seBotMod%` | True when it is a moderator |
+
+<small>Type id: `streamelements.getBotStatus`</small>
+
 ## Get tip leaderboard
 
 Looks up the people who tipped you the most on StreamElements. Handy for a thank-you list.
@@ -67,6 +327,7 @@ Looks up the people who tipped you the most on StreamElements. Handy for a thank
 | Setting | What to put in |
 | --- | --- |
 | **Tippers** | How many people to fetch, starting from the top. 5 gets the top five. Starts as: `5`. |
+| **Period** | Which time span to count: all time, this month, this week or this stream. Options: All time, This month, This week, This stream. Starts as: `All time`. |
 
 **Variables it adds**
 
@@ -78,9 +339,24 @@ Looks up the people who tipped you the most on StreamElements. Handy for a thank
 
 <small>Type id: `streamelements.getTipLeaderboard`</small>
 
+## Get tips waiting for approval
+
+Looks up StreamElements tips waiting for a moderator to approve them.
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seTipCount%` | How many are waiting |
+| `%seTip0User%` | Who sent the first (use 1, 2, 3... for the next ones) |
+| `%seTip0FormattedAmount%` | Its amount written nicely |
+| `%seTip0Id%` | Its id |
+
+<small>Type id: `streamelements.getPendingTips`</small>
+
 ## Get user points
 
-Looks up how many StreamElements loyalty points a viewer has. Handy for a "you have X points" chat reply.
+Looks up how many StreamElements loyalty points a viewer has. Handy for a "you have X points" chat reply. Loyalty is not available on YouTube channels.
 
 | Setting | What to put in |
 | --- | --- |
@@ -96,3 +372,210 @@ Looks up how many StreamElements loyalty points a viewer has. Handy for a "you h
 | `%sePointsRank%` | Their place on your points list (1 is the top) |
 
 <small>Type id: `streamelements.getUserPoints`</small>
+
+## Get user rank
+
+Looks up a viewer's place on your StreamElements points list.
+
+| Setting | What to put in |
+| --- | --- |
+| **User** | The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site. Starts as: `%userName%`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%sePointsRank%` | Their place (1 is the top) |
+
+<small>Type id: `streamelements.getUserRank`</small>
+
+## Give points to many users
+
+Gives (or sets) the same StreamElements points for many viewers at once, like "everyone in chat gets 50".
+
+| Setting | What to put in |
+| --- | --- |
+| **Users** | The viewers' names, separated by commas or spaces, like "anna, ben, cleo". |
+| **Points** | How many points. Use a minus number with Add to take some away. Starts as: `50`. |
+| **Mode** | Add adds to what they have; Set replaces it. Options: Add, Set. Starts as: `Add`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seBulkCount%` | How many viewers were changed |
+
+<small>Type id: `streamelements.bulkPoints`</small>
+
+## Mute or unmute the StreamElements bot
+
+Mutes the StreamElements bot (it stops talking in chat) or unmutes it.
+
+| Setting | What to put in |
+| --- | --- |
+| **State** | Mute to silence the bot, Unmute to let it talk again. Options: Mute, Unmute. Starts as: `Mute`. |
+
+<small>Type id: `streamelements.botMute`</small>
+
+## Play or pause song requests
+
+Plays or pauses StreamElements song requests.
+
+| Setting | What to put in |
+| --- | --- |
+| **State** | play or pause. Options: play, pause. Starts as: `play`. |
+
+<small>Type id: `streamelements.songPlayer`</small>
+
+## Refund store redemption
+
+Cancels a StreamElements store redemption and gives the viewer their points back.
+
+| Setting | What to put in |
+| --- | --- |
+| **Redemption id** | The redemption's id. %redemptionId% is the one that started this action. Starts as: `%redemptionId%`. |
+
+<small>Type id: `streamelements.refundRedemption`</small>
+
+## Remove song request
+
+Removes a song from your StreamElements song request queue.
+
+| Setting | What to put in |
+| --- | --- |
+| **Song id** | The song's id, like %seSongId% or %songId%. Starts as: `%songId%`. |
+
+<small>Type id: `streamelements.removeSong`</small>
+
+## Replay the latest activity
+
+Asks StreamElements to send your newest real event of a kind again (like the dashboard's replay). Handy to test alerts end to end.
+
+| Setting | What to put in |
+| --- | --- |
+| **Activity** | Which kind of event to replay, like a tip. Options: tip, merch, redemption, cheer, subscriber, follow, raid. Starts as: `tip`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seReplayedId%` | The replayed event's id (empty when there was none) |
+
+<small>Type id: `streamelements.replayLatest`</small>
+
+## Reset everyone's points
+
+Resets everyone's StreamElements points. Careful: this cannot be undone.
+
+| Setting | What to put in |
+| --- | --- |
+| **Which points** | current resets the points people have now; alltime resets the all-time list. Options: current, alltime. Starts as: `current`. |
+
+<small>Type id: `streamelements.resetPoints`</small>
+
+## Reset session
+
+Starts a new StreamElements session: session counts and amounts go back to 0, like the dashboard's reset button.
+
+<small>Type id: `streamelements.resetSession`</small>
+
+## Reset user points
+
+Sets a viewer's StreamElements points back to 0.
+
+| Setting | What to put in |
+| --- | --- |
+| **User** | The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site. Starts as: `%userName%`. |
+
+<small>Type id: `streamelements.resetUserPoints`</small>
+
+## Run contest
+
+Starts, closes, refunds or picks the winner of a StreamElements contest.
+
+| Setting | What to put in |
+| --- | --- |
+| **Action** | start opens betting, close stops it, winner pays out, refund gives every bet back. Options: start, close, winner, refund. Starts as: `start`. |
+| **Winning option** | For winner: the winning answer's name or number, like "Yes" or 1. |
+| **Contest id** | Leave empty for the current contest. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seContestId%` | The contest's id |
+
+<small>Type id: `streamelements.contestAction`</small>
+
+## Run giveaway
+
+Starts, closes, draws a winner for, completes, reopens or refunds a StreamElements giveaway.
+
+| Setting | What to put in |
+| --- | --- |
+| **Action** | What to do with the giveaway. Options: start, close, winner, complete, reopen, refund. Starts as: `start`. |
+| **Giveaway id** | Leave empty for the current giveaway. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seGiveawayId%` | The giveaway's id |
+
+<small>Type id: `streamelements.giveawayAction`</small>
+
+## Send chat message as the StreamElements bot
+
+Sends a chat message as the StreamElements bot. The bot must be in your chat (dashboard → Chatbot).
+
+| Setting | What to put in |
+| --- | --- |
+| **Message** | What the bot should say, like "Thanks for the tip, %user%!" |
+
+<small>Type id: `streamelements.botSay`</small>
+
+## Set session value
+
+Changes one StreamElements session value, like the tip goal. Handy to set a goal from an action.
+
+| Setting | What to put in |
+| --- | --- |
+| **Session key** | The session key, like "tip-goal" or "follower-goal". The keys are listed in StreamElements' session data reference. Starts as: `tip-goal`. |
+| **Field** | Which part of it, like "amount" or "count". Starts as: `amount`. |
+| **Value** | The new value, like 100. |
+
+<small>Type id: `streamelements.setSessionValue`</small>
+
+## Turn a chatbot command on or off
+
+Turns a StreamElements chatbot command on or off.
+
+| Setting | What to put in |
+| --- | --- |
+| **Command** | The command, like "!discord" (the ! is optional). |
+| **State** | On, Off, or Toggle to flip it. Options: On, Off, Toggle. Starts as: `Toggle`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seCommandEnabled%` | True when the command is on now |
+
+<small>Type id: `streamelements.setCommand`</small>
+
+## Turn a chatbot timer on or off
+
+Turns a StreamElements chatbot timer on or off, for example only during a certain game.
+
+| Setting | What to put in |
+| --- | --- |
+| **Timer** | The timer's name as in StreamElements, like "Discord". |
+| **State** | On, Off, or Toggle to flip it. Options: On, Off, Toggle. Starts as: `Toggle`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%seTimerEnabled%` | True when the timer is on now |
+
+<small>Type id: `streamelements.setTimer`</small>

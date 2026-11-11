@@ -43,6 +43,30 @@ public sealed class ServicesLiveTests
         await se.DisconnectAsync();
     }
 
+    /// <summary>
+    /// Read-only REST checks and one Astro session with every topic (nothing is visible to viewers): the channel, points
+    /// top list, latest tip, chatbot status and session data answer, and the activities topic is subscribed in the
+    /// channel's room. Which other topics the JWT may read is written to the test output via the log.
+    /// </summary>
+    [LiveServiceFact("CUEBOT_LIVE_STREAMELEMENTS_JWT")]
+    public async Task StreamElements_rest_reads_and_topics_answer()
+    {
+        await using var services = Build("streamelements");
+        var se = services.GetRequiredService<StreamElementsService>();
+        se.Settings.JwtToken = ServicesLiveEnvironment.Get("CUEBOT_LIVE_STREAMELEMENTS_JWT")!;
+        se.ResetChannel();
+        Assert.NotEmpty(await se.GetChannelIdAsync());
+        Assert.NotNull(await se.GetPointsLeaderboardAsync(3));
+        Assert.NotNull(await se.GetTipsAsync(1));
+        Assert.NotNull(await se.GetBotAsync());
+        await se.ConnectAsync();
+        await WaitConnectedAsync(se, ConnectTimeout);
+        await KickLiveBot.WaitUntilAsync(() => se.SubscribedTopics.Count >= 5, ConnectTimeout, "StreamElements topics");
+        Assert.Contains(StreamElementsTopics.Activities, se.SubscribedTopics);
+        Assert.NotEmpty(se.Room);
+        await se.DisconnectAsync();
+    }
+
     [LiveServiceFact("CUEBOT_LIVE_VTS", flag: true)]
     public async Task VTube_Studio_authenticates_and_reads_the_model_and_hotkeys()
     {

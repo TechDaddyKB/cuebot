@@ -57,11 +57,19 @@ internal sealed class GetPointsLeaderboardSubAction(StreamElementsService servic
 {
     public override string TypeId => "streamelements.getPointsLeaderboard";
     public override string DisplayName => "Get points leaderboard";
-    public override IReadOnlyList<ParameterDescriptor> Parameters { get; } = [Count("Users")];
+    public override IReadOnlyList<ParameterDescriptor> Parameters { get; } =
+    [
+        Count("Users"),
+        new("board", "Leaderboard", ParameterKind.Choice)
+        {
+            DefaultValue = "top", Choices = ["top", "alltime", "watchtime"],
+            ChoiceLabels = new Dictionary<string, string> { ["top"] = "Current points", ["alltime"] = "All-time points", ["watchtime"] = "Watch time" },
+        },
+    ];
 
     public override async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        var rows = await Service.GetPointsLeaderboardAsync(p.GetInt("count", 5), ct).ConfigureAwait(false);
+        var rows = await Service.GetPointsBoardAsync(p["board"], p.GetInt("count", 5), ct).ConfigureAwait(false);
         WriteRanks(context, "sePointsLeader", rows);
         return SubActionResult.Next;
     }
@@ -86,6 +94,12 @@ internal sealed class GetTipsSubAction(StreamElementsService service) : StreamEl
     public override async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
         var tips = await Service.GetTipsAsync(p.GetInt("count", 5), ct).ConfigureAwait(false);
+        WriteTips(context, tips);
+        return SubActionResult.Next;
+    }
+
+    internal static void WriteTips(ActionRunContext context, IReadOnlyList<StreamElementsTip> tips)
+    {
         context.Args["seTipCount"] = tips.Count;
         for (var i = 0; i < tips.Count; i++)
         {
@@ -97,8 +111,8 @@ internal sealed class GetTipsSubAction(StreamElementsService service) : StreamEl
             context.Args[$"seTip{n}FormattedAmount"] = tip.FormattedAmount;
             context.Args[$"seTip{n}Message"] = tip.Message;
             context.Args[$"seTip{n}CreatedAt"] = tip.CreatedAt;
+            context.Args[$"seTip{n}Id"] = tip.Id;
         }
-        return SubActionResult.Next;
     }
 }
 
@@ -106,11 +120,17 @@ internal sealed class GetTipLeaderboardSubAction(StreamElementsService service) 
 {
     public override string TypeId => "streamelements.getTipLeaderboard";
     public override string DisplayName => "Get tip leaderboard";
-    public override IReadOnlyList<ParameterDescriptor> Parameters { get; } = [Count("Tippers")];
+    public override IReadOnlyList<ParameterDescriptor> Parameters { get; } = [Count("Tippers"), Period];
+
+    internal static ParameterDescriptor Period { get; } = new("period", "Period", ParameterKind.Choice)
+    {
+        DefaultValue = "alltime", Choices = ["alltime", "months", "weeks", "session"],
+        ChoiceLabels = new Dictionary<string, string> { ["alltime"] = "All time", ["months"] = "This month", ["weeks"] = "This week", ["session"] = "This stream" },
+    };
 
     public override async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        var rows = await Service.GetTipLeaderboardAsync(p.GetInt("count", 5), ct).ConfigureAwait(false);
+        var rows = await Service.GetTipLeaderboardAsync(p.GetInt("count", 5), p["period"], ct).ConfigureAwait(false);
         GetPointsLeaderboardSubAction.WriteRanks(context, "seTipLeader", rows);
         return SubActionResult.Next;
     }

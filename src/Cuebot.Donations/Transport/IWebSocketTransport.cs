@@ -17,6 +17,16 @@ internal interface IWebSocketTransport : IAsyncDisposable
     string? CloseReason { get; }
 }
 
+/// <summary>The websocket upgrade was refused with an HTTP status (e.g. Astro's 502 while draining, 429 with Retry-After).</summary>
+internal sealed class WebSocketUpgradeException(int status, TimeSpan? retryAfter, Exception? inner = null)
+    : Exception($"the server refused the websocket upgrade (HTTP {status})", inner)
+{
+    public int Status { get; } = status;
+
+    /// <summary>The <c>Retry-After</c> header, when the server sent one.</summary>
+    public TimeSpan? RetryAfter { get; } = retryAfter;
+}
+
 /// <summary>
 /// <see cref="IWebSocketTransport"/> over <see cref="ClientWebSocket"/>. Websocket PING control frames (Astro sends
 /// one every 30 s) are answered by the runtime; our own keep-alive pings detect dead connections.
@@ -33,11 +43,37 @@ internal sealed class ClientWebSocketTransport : IWebSocketTransport
         _socket.Options.SetRequestHeader("User-Agent", "Cuebot");
         _socket.Options.KeepAliveInterval = keepAlive;
         _socket.Options.KeepAliveTimeout = keepAlive;
+        _socket.Options.CollectHttpResponseDetails = true;
     }
 
     public string? CloseReason { get; private set; }
 
-    public Task ConnectAsync(Uri url, CancellationToken ct) => _socket.ConnectAsync(url, ct);
+    public async Task ConnectAsync(Uri url, CancellationToken ct)
+    {
+        try
+        {
+            await _socket.ConnectAsync(url, ct).ConfigureAwait(false);
+        }
+        catch (WebSocketException ex) when ((int)_socket.HttpStatusCode >= 400)
+        {
+            throw new WebSocketUpgradeException((int)_socket.HttpStatusCode, RetryAfter(_socket.HttpResponseHeaders), ex);
+        }
+    }
+
+    internal static TimeSpan? RetryAfter(IReadOnlyDictionary<string, IEnumerable<string>>? headers)
+    {
+        if (headers is null) return null;
+        foreach (var (name, values) in headers)
+        {
+            if (!name.Equals("Retry-After", StringComparison.OrdinalIgnoreCase)) continue;
+            var value = values.FirstOrDefault()?.Trim() ?? "";
+            if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var seconds) && seconds >= 0)
+                return TimeSpan.FromSeconds(seconds);
+            if (DateTimeOffset.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var at))
+                return at - DateTimeOffset.UtcNow is { Ticks: > 0 } wait ? wait : TimeSpan.Zero;
+        }
+        return null;
+    }
 
     public async Task SendAsync(string text, CancellationToken ct)
     {

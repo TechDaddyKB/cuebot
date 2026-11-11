@@ -136,8 +136,12 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
         socket.Push(Welcome);
-        var subscribe = JsonDocument.Parse(await socket.NextSentAsync()).RootElement;
-        socket.Push($$$"""{"id":"e","type":"response","nonce":"{{{subscribe.GetProperty("nonce").GetString()}}}","error":"err_unauthorized","data":{"message":"invalid token"}}""");
+        // Fatal only when every topic is refused (a token may lack the scope of one topic).
+        foreach (var _ in StreamElementsTopics.For(false))
+        {
+            var subscribe = JsonDocument.Parse(await socket.NextSentAsync()).RootElement;
+            socket.Push($$$"""{"id":"e","type":"response","nonce":"{{{subscribe.GetProperty("nonce").GetString()}}}","error":"err_unauthorized","data":{"message":"invalid token"}}""");
+        }
         var status = await rejected.Task.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.DoesNotContain(Jwt, status, StringComparison.Ordinal);
         Assert.DoesNotContain(_log.Recent(), e => e.Message.Contains(Jwt, StringComparison.Ordinal));
@@ -202,15 +206,24 @@ public sealed class StreamElementsServiceTests : IAsyncLifetime
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
         socket.Push(Welcome);
-        await socket.NextSentAsync();
-        // Documented: rate limit responses carry no nonce.
+        foreach (var _ in StreamElementsTopics.For(false)) await socket.NextSentAsync();
+        // Documented: rate limit responses carry no nonce, so every unanswered subscription is sent again.
         socket.Push("""{"id":"e1","ts":"2026-03-19T12:00:01Z","type":"response","error":"rate_limit_exceeded","data":{"message":"rate limit exceeded"}}""");
-        var again = JsonDocument.Parse(await socket.NextSentAsync()).RootElement.Clone();
-        Assert.Equal("channel.activities", again.GetProperty("data").GetProperty("topic").GetString());
+        var again = await NextSubscribeAsync(socket, "channel.activities");
         socket.Push($$$"""{"id":"e2","type":"response","nonce":"{{{again.GetProperty("nonce").GetString()}}}","error":"err_deadline_exceeded","data":{"message":"authorization timed out"}}""");
-        var third = JsonDocument.Parse(await socket.NextSentAsync()).RootElement.Clone();
+        var third = await NextSubscribeAsync(socket, "channel.activities");
         socket.Push($$$"""{"id":"r1","type":"response","nonce":"{{{third.GetProperty("nonce").GetString()}}}","data":{"message":"successfully subscribed to topic","topic":"channel.activities","room":"5ad23dcc18fff500d78c5348"}}""");
         await Wait.UntilAsync(() => _service.State == ConnectionState.Connected, "connected");
+    }
+
+    /// <summary>The next subscribe for <paramref name="topic"/>, skipping the other topics' subscribes.</summary>
+    private static async Task<JsonElement> NextSubscribeAsync(FakeSocket socket, string topic)
+    {
+        while (true)
+        {
+            var sent = JsonDocument.Parse(await socket.NextSentAsync()).RootElement.Clone();
+            if (sent.GetProperty("data").GetProperty("topic").GetString() == topic) return sent;
+        }
     }
 
     [Fact]

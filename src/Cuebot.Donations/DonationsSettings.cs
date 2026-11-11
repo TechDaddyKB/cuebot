@@ -35,15 +35,37 @@ public enum StreamElementsTransport
     /// <summary>The current Astro gateway (wss://astro.streamelements.com).</summary>
     Astro,
 
-    /// <summary>The older Socket.IO endpoint (realtime.streamelements.com), kept as a fallback.</summary>
+    /// <summary>
+    /// The older Socket.IO endpoint (realtime.streamelements.com). Deprecated: StreamElements' docs no longer describe
+    /// it and it may stop working; Cuebot falls back to Astro when it keeps failing.
+    /// </summary>
     LegacyRealtime,
 }
 
 public sealed class StreamElementsSettings
 {
-    /// <summary>JWT token (StreamElements dashboard → Account → Channels → Show secrets). A secret.</summary>
+    /// <summary>
+    /// JWT token (StreamElements dashboard → avatar (top right) → channel name → pick the channel → copy the JWT). It is
+    /// specific to the platform account selected there. A secret.
+    /// </summary>
     [Secret]
     public string JwtToken { get; set; } = "";
+
+    /// <summary>
+    /// Overlay Token, used only when no JWT is set: Astro events with <c>token_type: apikey</c>, without the REST
+    /// features (points, store, bot...). Which topics it may read is not documented. A secret.
+    /// </summary>
+    [Secret]
+    public string OverlayToken { get; set; } = "";
+
+    /// <summary>
+    /// Hold tips until StreamElements' tip moderation allows them (pending tips run "Tip pending", rejected ones "Tip
+    /// rejected", never "Tip"). On by default.
+    /// </summary>
+    public bool WaitForTipApproval { get; set; } = true;
+
+    /// <summary>Also receive chat (Twitch, YouTube, Kick, X) through StreamElements' unified chat topic. Off by default.</summary>
+    public bool ReceiveChat { get; set; }
 
     public bool AutoConnect { get; set; } = true;
 
@@ -57,6 +79,9 @@ public sealed class StreamElementsSettings
 
     /// <summary>Channel name of the token, for display.</summary>
     public string ChannelName { get; set; } = "";
+
+    /// <summary>The platform account the token belongs to (twitch, youtube, kick...), from <c>channels/me</c>.</summary>
+    public string ChannelProvider { get; set; } = "";
 }
 
 public sealed class TipeeeStreamSettings

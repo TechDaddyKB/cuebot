@@ -428,6 +428,12 @@ public sealed class FakeStreamElements : Cuebot.Core.Overlays.Widgets.IStreamEle
 
     public Task<System.Text.Json.Nodes.JsonObject> GetOverlayAsync(string id, CancellationToken ct) =>
         Task.FromResult((System.Text.Json.Nodes.JsonObject)Overlays[id].DeepClone());
+
+    /// <summary>StreamElements chatbot counters (null for unknown ones, like a missing token).</summary>
+    public Dictionary<string, double> Counters { get; } = [];
+
+    public Task<double?> GetBotCounterAsync(string name, CancellationToken ct) =>
+        Task.FromResult<double?>(Counters.TryGetValue(name, out var value) ? value : null);
 }
 
 public sealed class FakeConnectable(string name) : IConnectable

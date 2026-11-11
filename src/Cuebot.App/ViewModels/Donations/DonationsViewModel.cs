@@ -198,7 +198,7 @@ public sealed class StreamlabsCardViewModel(StreamlabsService service) : Donatio
     }
 }
 
-public sealed class StreamElementsCardViewModel(StreamElementsService service) : DonationCardViewModel(service)
+public sealed partial class StreamElementsCardViewModel(StreamElementsService service) : DonationCardViewModel(service)
 {
     private StreamElementsSettings S => service.Settings;
 
@@ -209,6 +209,23 @@ public sealed class StreamElementsCardViewModel(StreamElementsService service) :
         S.JwtToken = token;
         service.ResetChannel();
     }
+
+    /// <summary>The Overlay Token, used for events only when no JWT is set; the view masks it.</summary>
+    public string OverlayToken
+    {
+        get => S.OverlayToken;
+        set
+        {
+            var trimmed = value.Trim();
+            if (trimmed == S.OverlayToken) return;
+            S.OverlayToken = trimmed;
+            Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(MaskedOverlayToken));
+        }
+    }
+
+    public string MaskedOverlayToken => S.OverlayToken.Length == 0 ? "No Overlay Token saved" : $"Saved Overlay Token: {Secrets.Mask(S.OverlayToken)}";
 
     public bool AutoConnect
     {
@@ -222,14 +239,55 @@ public sealed class StreamElementsCardViewModel(StreamElementsService service) :
         set { S.RelayPlatformEvents = value; Save(); OnPropertyChanged(); }
     }
 
-    /// <summary>Use the older realtime.streamelements.com Socket.IO endpoint instead of Astro.</summary>
+    public bool WaitForTipApproval
+    {
+        get => S.WaitForTipApproval;
+        set { S.WaitForTipApproval = value; Save(); OnPropertyChanged(); }
+    }
+
+    public bool ReceiveChat
+    {
+        get => S.ReceiveChat;
+        set { S.ReceiveChat = value; Save(); OnPropertyChanged(); }
+    }
+
+    /// <summary>Use the deprecated realtime.streamelements.com Socket.IO endpoint instead of Astro.</summary>
     public bool UseLegacyRealtime
     {
         get => S.Transport == StreamElementsTransport.LegacyRealtime;
         set { S.Transport = value ? StreamElementsTransport.LegacyRealtime : StreamElementsTransport.Astro; Save(); OnPropertyChanged(); }
     }
 
-    public string Channel => S.ChannelName.Length > 0 ? S.ChannelName : "—";
+    /// <summary>"TechDaddy (Twitch), room 5ad2…": shows which platform account the token belongs to.</summary>
+    public string Channel
+    {
+        get
+        {
+            if (S.ChannelName.Length == 0) return "—";
+            var text = S.ChannelName;
+            if (S.ChannelProvider.Length > 0) text += $" ({StreamElementsService.PlatformName(S.ChannelProvider)})";
+            if (service.Room.Length > 0) text += $", room {service.Room}";
+            return text;
+        }
+    }
+
+    /// <summary>Asks StreamElements to send the newest real tip again, to test the whole way from StreamElements.</summary>
+    [RelayCommand]
+    private async Task ReplayLastTip()
+    {
+        Error = "";
+        try
+        {
+            var id = await service.ReplayLatestAsync("tip");
+            Info = id.Length > 0
+                ? "StreamElements is sending your newest tip again; it runs your tip actions like a real one."
+                : "No tip from the last 30 days to replay.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StreamElementsApiException or ArgumentException)
+        {
+            Error = ex.Message;
+        }
+    }
 }
 
 public sealed class TipeeeStreamCardViewModel(TipeeeStreamService service) : DonationCardViewModel(service)

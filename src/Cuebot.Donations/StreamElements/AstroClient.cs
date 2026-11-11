@@ -9,9 +9,11 @@ internal sealed record AstroSessionEnd(string Reason, bool Fatal = false, bool R
 
 /// <summary>
 /// Client for the StreamElements Astro websocket gateway (wss://astro.streamelements.com): subscribes to topics
-/// with the JWT once the server's <c>welcome</c> arrives, retries subscriptions Astro refuses only for now
-/// (<c>err_deadline_exceeded</c>, <c>rate_limit_exceeded</c>), raises topic messages, follows <c>reconnect</c> hand-offs with their reconnect token (the server
-/// restores subscriptions), and reconnects with backoff. Websocket PING frames are answered by the runtime.
+/// with the token once the server's <c>welcome</c> arrives (in the token's channel room when it is known), retries
+/// subscriptions Astro refuses only for now (<c>err_deadline_exceeded</c>, <c>rate_limit_exceeded</c>, the latter with a
+/// growing wait), raises topic messages, follows <c>reconnect</c> hand-offs with their reconnect token (the server
+/// restores subscriptions), and reconnects with backoff: at once when an edge is draining (HTTP 502), after
+/// <c>Retry-After</c> when connecting too fast (HTTP 429). Websocket PING frames are answered by the runtime.
 /// </summary>
 internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endpoint, DonationsTimings timings, AppLog log)
 {
@@ -20,13 +22,37 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
     /// <summary>Astro's command limit is one subscribe/unsubscribe per 100 ms.</summary>
     private static readonly TimeSpan CommandSpacing = TimeSpan.FromMilliseconds(110);
 
+    /// <summary>Docs: a 429 carries <c>Retry-After: 2</c>; never retry sooner than that.</summary>
+    private static readonly TimeSpan MinRetryAfter = TimeSpan.FromSeconds(2);
+
     /// <summary>Retries of temporarily refused subscriptions per session.</summary>
     private const int MaxRetries = 5;
 
     private string _reconnectToken = "";
 
+    /// <summary>Room sent with each subscribe (the token's channel id); empty leaves it out.</summary>
+    public string Room { get; init; } = "";
+
+    /// <summary><c>jwt</c> (default), <c>apikey</c> (Overlay Token) or <c>oauth2</c>.</summary>
+    public string TokenType { get; init; } = "jwt";
+
+    /// <summary>The canonical room the last successful subscribe response named.</summary>
+    public string CanonicalRoom { get; private set; } = "";
+
+    /// <summary>Wait before the next attempt when the gateway is draining (HTTP 502); tests shorten it.</summary>
+    public TimeSpan DrainingRetryDelay { get; init; } = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>Lower bound for a 429's Retry-After; tests shorten it.</summary>
+    public TimeSpan MinRateLimitWait { get; init; } = MinRetryAfter;
+
     public event Action? Connected;
-    public event Action<string>? Subscribed;
+
+    /// <summary>A topic is subscribed (topic, canonical room; empty when restored by a resumed session).</summary>
+    public event Action<string, string>? Subscribed;
+
+    /// <summary>The server greeted a session; true when it resumed one with a reconnect token.</summary>
+    public event Action<bool>? Welcomed;
+
     public event Action<string>? Disconnected;
 
     /// <summary>A subscription was refused (topic, error code, description).</summary>
@@ -34,12 +60,10 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
 
     public event Action<string, JsonElement>? MessageReceived;
 
-    public static string SubscribeMessage(string topic, string token, string nonce) => JsonSerializer.Serialize(new
-    {
-        type = "subscribe",
-        nonce,
-        data = new { topic, token, token_type = "jwt" },
-    });
+    public static string SubscribeMessage(string topic, string token, string nonce, string room = "", string tokenType = "jwt") =>
+        room.Length > 0
+            ? JsonSerializer.Serialize(new { type = "subscribe", nonce, data = new { topic, room, token, token_type = tokenType } })
+            : JsonSerializer.Serialize(new { type = "subscribe", nonce, data = new { topic, token, token_type = tokenType } });
 
     public async Task RunAsync(string token, IReadOnlyList<string> topics, CancellationToken ct)
     {
@@ -48,6 +72,7 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
         {
             AstroSessionEnd end;
             var healthy = false;
+            TimeSpan? overrideWait = null;
             try
             {
                 end = await RunSessionAsync(token, topics, () => healthy = true, ct).ConfigureAwait(false);
@@ -56,13 +81,20 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
             {
                 return;
             }
+            catch (WebSocketUpgradeException ex) when (ex.Status is 502 or 429)
+            {
+                // 502: this edge is draining, another one takes the next connection. 429: connecting too fast.
+                overrideWait = ex.Status == 502 ? DrainingRetryDelay
+                    : ex.RetryAfter is { } after && after > MinRateLimitWait ? after : MinRateLimitWait;
+                end = new AstroSessionEnd(ex.Status == 502 ? "the gateway is restarting (HTTP 502)" : "too many connections (HTTP 429)");
+            }
             catch (Exception ex)
             {
                 end = new AstroSessionEnd(Secrets.Redact(ex.Message, token));
             }
             if (healthy) delay = timings.ReconnectDelay;
             Disconnected?.Invoke(end.Reason);
-            var wait = end.ReconnectNow ? TimeSpan.Zero : end.Fatal ? timings.MaxReconnectDelay : delay;
+            var wait = overrideWait ?? (end.ReconnectNow ? TimeSpan.Zero : end.Fatal ? timings.MaxReconnectDelay : delay);
             if (end.Fatal) log.Error(Source, $"Astro refused the connection: {end.Reason}");
             else log.Warn(Source, $"Astro connection lost ({end.Reason}); reconnecting in {wait.TotalSeconds:0.#}s");
             try
@@ -73,7 +105,7 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
             {
                 return;
             }
-            if (!end.ReconnectNow && !end.Fatal) delay = TimeSpan.FromTicks(Math.Min(timings.MaxReconnectDelay.Ticks, delay.Ticks * 2));
+            if (overrideWait is null && !end.ReconnectNow && !end.Fatal) delay = TimeSpan.FromTicks(Math.Min(timings.MaxReconnectDelay.Ticks, delay.Ticks * 2));
         }
     }
 
@@ -126,9 +158,10 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
                     onHealthy();
                     if (welcomed) break;
                     welcomed = true;
+                    Welcomed?.Invoke(resuming);
                     if (resuming)
                     {
-                        foreach (var restored in topics) Subscribed?.Invoke(restored);
+                        foreach (var restored in topics) Subscribed?.Invoke(restored, CanonicalRoom);
                     }
                     else if (!subscribed)
                     {
@@ -150,8 +183,13 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
                                 ? pending.Values.Distinct(StringComparer.Ordinal).ToArray()
                                 : topic.Length > 0 ? [topic] : [];
                             if (error == "rate_limit_exceeded" && nonce.Length == 0) pending.Clear();
-                            log.Warn(Source, $"Astro answered {error}; subscribing to {string.Join(", ", again)} again");
-                            await Task.Delay(timings.ReconnectDelay, ct).ConfigureAwait(false);
+                            // The command limit is 1 per 100 ms with a burst of 100 per 10 s: back off from 5 s and double,
+                            // so a reconnect storm cannot burn every retry inside one window.
+                            var backoff = error == "rate_limit_exceeded"
+                                ? TimeSpan.FromTicks(Math.Min(timings.MaxReconnectDelay.Ticks, timings.RateLimitBackoff.Ticks << (retries - 1)))
+                                : timings.ReconnectDelay;
+                            log.Warn(Source, $"Astro answered {error}; subscribing to {string.Join(", ", again)} again in {backoff.TotalSeconds:0.#}s");
+                            await Task.Delay(backoff, ct).ConfigureAwait(false);
                             await SubscribeAsync(transport, again, token, pending, ct).ConfigureAwait(false);
                             break;
                         }
@@ -165,7 +203,10 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
                     else
                     {
                         onHealthy();
-                        Subscribed?.Invoke(topic);
+                        // "The canonical room ID returned by the authorization service, which may differ from the
+                        // requested value": kept for status and for any later unsubscribe.
+                        if (data.Str("room") is { Length: > 0 } canonical) CanonicalRoom = canonical;
+                        Subscribed?.Invoke(topic, data.Str("room"));
                     }
                     break;
                 case "message":
@@ -198,7 +239,7 @@ internal sealed class AstroClient(Func<IWebSocketTransport> transports, Uri endp
             if (i > 0) await Task.Delay(CommandSpacing, ct).ConfigureAwait(false);
             var nonce = Guid.NewGuid().ToString("N");
             pending[nonce] = topics[i];
-            await transport.SendAsync(SubscribeMessage(topics[i], token, nonce), ct).ConfigureAwait(false);
+            await transport.SendAsync(SubscribeMessage(topics[i], token, nonce, Room, TokenType), ct).ConfigureAwait(false);
         }
     }
 }

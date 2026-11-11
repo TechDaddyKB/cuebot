@@ -59,14 +59,20 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="StreamElements" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="On streamelements.com open your account → Channels, choose Show secrets and copy the JWT Token. Cuebot subscribes to your channel's activities (tips, merch, store redemptions) and uses the REST API for points and tips sub-actions." />
+                     Text="On streamelements.com click your avatar (top right), choose your channel name, pick the channel whose events you want and copy the JWT token. A token belongs to one platform account: if Twitch, YouTube and Kick are linked, copy it while switched to the right one. Cuebot then gets tips, merch, store redemptions, tip moderation, go-live, session data, chatbot and song request events, and can use points, the store, the bot and more in actions." />
           <TextBox Name="StreamElementsToken" Text="{Binding Token}" PasswordChar="•" PlaceholderText="JWT token"
                    ToolTip.Tip="A secret code from StreamElements that lets Cuebot hear your tips. Paste it here. It stays hidden." />
           <TextBlock Classes="muted" Text="{Binding MaskedToken}" />
-          <TextBlock Text="{Binding Channel, StringFormat='Channel: {0}'}" />
+          <TextBox Text="{Binding OverlayToken}" PasswordChar="•" PlaceholderText="Overlay Token (optional, only if you do not want to use the JWT)"
+                   ToolTip.Tip="Only used when no JWT is saved. Gets events only: points, store, bot and other steps need the JWT." />
+          <TextBlock Classes="muted" Text="{Binding MaskedOverlayToken}" />
+          <TextBlock Text="{Binding Channel, StringFormat='Channel: {0}'}" TextWrapping="Wrap" />
           <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects to this service by itself every time it starts." />
+          <CheckBox Content="Wait for tip approval (tips a moderator rejects never run your tip actions)" IsChecked="{Binding WaitForTipApproval}" ToolTip.Tip="Ticked: a tip runs your Tip actions only once StreamElements' tip moderation allows it. Pending and rejected tips have their own triggers." />
           <CheckBox Content="Also publish relayed platform activities (follows, subs, cheers, raids, Super Chats)" IsChecked="{Binding RelayPlatformEvents}" ToolTip.Tip="StreamElements also passes on follows, subs and so on. Tick only if you do not already get them from Twitch or YouTube directly, or they may run twice." />
-          <CheckBox Content="Use the legacy realtime socket instead of Astro (fallback)" IsChecked="{Binding UseLegacyRealtime}" ToolTip.Tip="Only tick this if the normal connection does not work. It switches to StreamElements' older way of sending live events." />
+          <CheckBox Content="Also receive chat through StreamElements (for X chat)" IsChecked="{Binding ReceiveChat}" ToolTip.Tip="StreamElements can pass on chat from Twitch, YouTube, Kick and X. Tick to get the StreamElements chat triggers. Reconnect after changing it." />
+          <CheckBox Content="Use the legacy realtime socket (deprecated, may stop working)" IsChecked="{Binding UseLegacyRealtime}" ToolTip.Tip="Only tick this if the normal connection does not work. StreamElements no longer documents this older way; Cuebot switches back to the normal one if it keeps failing." />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="No events? YouTube activities only arrive while your stream is public, and tips only while you are live." />
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to this service now, so donations can arrive." />
             <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Stops listening to this service. Your saved settings stay." />
@@ -77,6 +83,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <ComboBox ItemsSource="{Binding TestKinds}" SelectedItem="{Binding SelectedTestKind}" MinWidth="140" ToolTip.Tip="Choose which kind of pretend event to send, like a tip or a store redemption." />
             <Button Content="Send test event" Command="{Binding SendTestCommand}" ToolTip.Tip="Sends a pretend event to your own actions so you can test them. Nothing is sent to the real service." />
+            <Button Content="Replay last tip" Command="{Binding ReplayLastTipCommand}" ToolTip.Tip="Asks StreamElements to send your newest real tip again, so the whole way from StreamElements to your actions is tested." />
           </StackPanel>
           <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
           <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}" />

@@ -1776,6 +1776,13 @@ class Cuebot:
         Gives back: How many keys have this button id (0 when none was found).
         Same as cb.call(\"streamdeck.toggleState\", ...).
         """
+    def streamelements_add_song(self, video: Any) -> Any:
+        """Adds a song to your StreamElements song request queue. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        video: A YouTube link, video id or search words. Needed.
+        Gives back: The queued song: id, title and url.
+        Same as cb.call(\"streamelements.addSong\", ...).
+        """
     def streamelements_add_user_points(self, user: Any, amount: Any) -> Any:
         """Gives a viewer StreamElements loyalty points. Use a minus number to take points away. Needs your StreamElements token; fails with an error otherwise.
 
@@ -1784,12 +1791,71 @@ class Cuebot:
         Gives back: The viewer's new points total.
         Same as cb.call(\"streamelements.addUserPoints\", ...).
         """
+    def streamelements_bulk_points(self, users: Any, amount: Any, *, mode: Any = None) -> Any:
+        """Adds (or sets) the same points for many viewers at once. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        users: A list of names, or one text with names separated by commas or spaces. Needed.
+        amount: How many points, like 50.
+        mode: Optional. \"add\" (default) or \"set\".
+        Gives back: How many viewers were changed.
+        Same as cb.call(\"streamelements.bulkPoints\", ...).
+        """
+    def streamelements_complete_redemption(self, redemption_id: Any) -> Any:
+        """Marks a StreamElements store redemption as done. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        redemption_id: The redemption's id, like the trigger's redemptionId. Needed.
+        Gives back: true when done.
+        Same as cb.call(\"streamelements.completeRedemption\", ...).
+        """
+    def streamelements_create_tip(self, user: Any, amount: Any, *, currency: Any = None, message: Any = None) -> Any:
+        """Adds a tip to your StreamElements tip list (for example one paid elsewhere) so goals and leaderboards count it. No money moves. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        user: Who gave it. Needed.
+        amount: How much, more than 0. Needed.
+        currency: Optional. 3-letter code, default \"USD\".
+        message: Optional. Their message.
+        Gives back: The new tip's id.
+        Same as cb.call(\"streamelements.createTip\", ...).
+        """
+    def streamelements_get_cheer_leaderboard(self, *, count: Any = None, period: Any = None) -> Any:
+        """Gets the people who cheered the most bits. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        count: Optional. How many people. Default 5.
+        period: Optional. \"alltime\" (default), \"months\", \"weeks\" or \"session\".
+        Gives back: A list. Each has user and total.
+        Same as cb.call(\"streamelements.getCheerLeaderboard\", ...).
+        """
+    def streamelements_get_counter(self, counter: Any) -> Any:
+        """Reads a StreamElements chatbot counter, like a death counter. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        counter: The counter's name, like \"deaths\". Needed.
+        Gives back: The counter's value as a number.
+        Same as cb.call(\"streamelements.getCounter\", ...).
+        """
+    def streamelements_get_pending_tips(self) -> Any:
+        """Gets the StreamElements tips waiting for a moderator. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        Gives back: A list of tips. Each has id, user, amount, currency, formattedAmount and message.
+        Same as cb.call(\"streamelements.getPendingTips\", ...).
+        """
+    def streamelements_get_playing_song(self) -> Any:
+        """Gets the StreamElements song request playing now. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        Gives back: id, title, url, user and duration, or null when nothing plays.
+        Same as cb.call(\"streamelements.getPlayingSong\", ...).
+        """
     def streamelements_get_points_leaderboard(self, *, count: Any = None) -> Any:
         """Gets the viewers with the most StreamElements loyalty points. Needs your StreamElements token; fails with an error otherwise.
 
         count: Optional. How many people to get. Default 5.
         Gives back: A list of the viewers with the most points. Each has user and points.
         Same as cb.call(\"streamelements.getPointsLeaderboard\", ...).
+        """
+    def streamelements_get_store_items(self) -> Any:
+        """Lists the items in your StreamElements loyalty store. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        Gives back: A list. Each has id, name, enabled, cost and stock (-1 for no limit).
+        Same as cb.call(\"streamelements.getStoreItems\", ...).
         """
     def streamelements_get_tip_leaderboard(self, *, count: Any = None) -> Any:
         """Gets the viewers who tipped you the most on StreamElements. Needs your StreamElements token; fails with an error otherwise.
@@ -1812,11 +1878,52 @@ class Cuebot:
         Gives back: user, points (now), pointsAllTime and rank.
         Same as cb.call(\"streamelements.getUserPoints\", ...).
         """
+    def streamelements_get_user_rank(self, user: Any) -> Any:
+        """Looks up a viewer's place on your StreamElements points list. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        user: The viewer's name. Needed.
+        Gives back: Their place as a number (1 is the top).
+        Same as cb.call(\"streamelements.getUserRank\", ...).
+        """
     def streamelements_is_connected(self) -> Any:
         """Checks whether Cuebot is connected to StreamElements right now.
 
         Gives back: true while connected, otherwise false.
         Same as cb.call(\"streamelements.isConnected\", ...).
+        """
+    def streamelements_is_live(self) -> Any:
+        """Checks whether StreamElements says your stream is live on any platform it watches. Works with the connection on.
+
+        Gives back: true when live, false when offline, null before StreamElements has said.
+        Same as cb.call(\"streamelements.isLive\", ...).
+        """
+    def streamelements_overlay_action(self, action: Any) -> Any:
+        """Controls your StreamElements overlays. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        action: \"pause\", \"play\", \"mute\", \"unmute\" or \"reload\". Default \"pause\".
+        Gives back: true when done.
+        Same as cb.call(\"streamelements.overlayAction\", ...).
+        """
+    def streamelements_refund_redemption(self, redemption_id: Any) -> Any:
+        """Cancels a StreamElements store redemption and gives the points back. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        redemption_id: The redemption's id. Needed.
+        Gives back: true when done.
+        Same as cb.call(\"streamelements.refundRedemption\", ...).
+        """
+    def streamelements_replay_latest(self, *, type: Any = None) -> Any:
+        """Asks StreamElements to send its newest real event of a kind again, to test alerts end to end. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        type: Optional. \"tip\" (default), \"merch\", \"redemption\", \"cheer\", \"subscriber\", \"follow\" or \"raid\".
+        Gives back: The replayed event's id, or \"\" when there was none.
+        Same as cb.call(\"streamelements.replayLatest\", ...).
+        """
+    def streamelements_say(self, message: Any) -> Any:
+        """Sends a chat message as the StreamElements bot. The bot must be in your chat. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        message: What the bot should say. Needed.
+        Gives back: true when sent.
+        Same as cb.call(\"streamelements.say\", ...).
         """
     def streamelements_send_test_event(self, *, kind: Any = None) -> Any:
         """Fakes a StreamElements event inside Cuebot, so you can test your triggers. Nothing is sent to StreamElements and it works without a connection.
@@ -1824,6 +1931,25 @@ class Cuebot:
         kind: Optional. Which event: \"tip\", \"merch\" or \"redemption\". Default \"tip\".
         Gives back: true when the test event was sent, false when the kind is unknown.
         Same as cb.call(\"streamelements.sendTestEvent\", ...).
+        """
+    def streamelements_set_session_value(self, key: Any, field: Any, value: Any) -> Any:
+        """Changes one StreamElements session value, like the tip goal. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        key: The session key, like \"tip-goal\". Needed.
+        field: Which part, like \"amount\". Needed.
+        value: The new value, like 100.
+        Gives back: true when done.
+        Same as cb.call(\"streamelements.setSessionValue\", ...).
+        """
+    def streamelements_set_store_item(self, item: Any, *, enabled: Any = None, cost: Any = None, stock: Any = None) -> Any:
+        """Changes a loyalty store item: on or off, its price or how many are left. Leave out what should stay. Needs your StreamElements JWT token; fails with an error otherwise.
+
+        item: The item's name or id. Needed.
+        enabled: Optional. true or false.
+        cost: Optional. The new price in points.
+        stock: Optional. How many are left.
+        Gives back: The item after the change: id, name, enabled, cost and stock.
+        Same as cb.call(\"streamelements.setStoreItem\", ...).
         """
     def streamlabs_is_connected(self) -> Any:
         """Checks whether Cuebot is connected to Streamlabs right now.

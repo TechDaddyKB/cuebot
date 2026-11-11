@@ -171,7 +171,7 @@
       }
     },
     "streamelements.tip": {
-      "description": "Runs when someone tips you through StreamElements. Great for a thank-you message or an alert.",
+      "description": "Runs when someone tips you through StreamElements. With \"Wait for tip approval\" on (the default), it runs only once StreamElements' tip moderation allows the tip.",
       "fields": {
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
@@ -186,7 +186,10 @@
         "message": "The message they wrote",
         "avatar": "Their picture (web link)",
         "tipId": "The number StreamElements gave this tip",
-        "isTest": "True when this is a test event, not a real one"
+        "isTest": "True when this is a test event, not a real one",
+        "tipApproved": "allowed when a moderator (or no moderation) let it through; unknown when StreamElements did not say",
+        "approvedBy": "The moderator who approved it, if one did",
+        "data.<name>": "Any other detail StreamElements sent, like %data.tipId%"
       }
     },
     "streamelements.merch": {
@@ -219,7 +222,9 @@
         "item": "The item they picked",
         "cost": "How many points it cost",
         "message": "Their message",
-        "isTest": "True when this is a test event, not a real one"
+        "isTest": "True when this is a test event, not a real one",
+        "redemptionId": "The redemption's id, for the Complete or Refund store redemption steps (when StreamElements sends it)",
+        "userInput": "What the viewer typed, for items that ask for text"
       }
     },
     "streamelements.follow": {
@@ -264,7 +269,7 @@
       }
     },
     "streamelements.host": {
-      "description": "Runs when StreamElements passes on another streamer hosting you. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page (off by default, because your streaming site already reports it).",
+      "description": "Runs when StreamElements passes on a host. Twitch has ended hosting, so this is legacy. Only runs if you tick the \"Also publish...\" box for StreamElements on the Donations page.",
       "fields": {},
       "variables": {
         "user": "Who is hosting you",
@@ -330,7 +335,268 @@
         "activityType": "The kind of activity",
         "user": "Who it was about, if anyone",
         "amount": "A number that came with it, if any",
-        "message": "A message that came with it, if any"
+        "message": "A message that came with it, if any",
+        "data.<name>": "Every detail StreamElements sent, by name, like %data.tier% or %data.quantity%"
+      }
+    },
+    "streamelements.tipPending": {
+      "description": "Runs when a StreamElements tip waits for a moderator to approve it. Handy to remind your mods.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who tipped",
+        "amount": "The amount as a number",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "tipId": "StreamElements' id for the tip",
+        "tipApproved": "pending, allowed or rejected",
+        "approvedBy": "The moderator who decided, if any"
+      }
+    },
+    "streamelements.tipRejected": {
+      "description": "Runs when a moderator rejects a StreamElements tip. The normal Tip trigger never runs for it.",
+      "fields": {
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "Who tipped",
+        "amount": "The amount as a number",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "Their message",
+        "tipId": "StreamElements' id for the tip",
+        "tipApproved": "pending, allowed or rejected",
+        "approvedBy": "The moderator who decided, if any"
+      }
+    },
+    "streamelements.streamOnline": {
+      "description": "Runs when StreamElements sees your stream go live on any platform it watches. Also sets the global ~seIsLive~ to true.",
+      "fields": {},
+      "variables": {
+        "isLive": "True"
+      }
+    },
+    "streamelements.streamOffline": {
+      "description": "Runs when StreamElements sees your last live stream end. Also sets the global ~seIsLive~ to false.",
+      "fields": {},
+      "variables": {
+        "isLive": "False"
+      }
+    },
+    "streamelements.sessionUpdated": {
+      "description": "Runs when a StreamElements session value changes, like the latest follower or the tip goal. The values are also kept in globals like ~se.tipSession.amount~.",
+      "fields": {
+        "key": "Only run for these session keys, like \"tip-goal, follower-latest\". Leave empty for every change."
+      },
+      "variables": {
+        "key": "Which session value changed, like tip-session",
+        "variable": "The start of its global names, like se.tipSession",
+        "name": "A name that came with it (for example the latest follower)",
+        "amount": "An amount that came with it",
+        "count": "A count that came with it"
+      }
+    },
+    "streamelements.sessionReset": {
+      "description": "Runs when your StreamElements session starts over (by hand or on the automatic reset). The se.* globals are refilled.",
+      "fields": {},
+      "variables": {}
+    },
+    "streamelements.overlayAction": {
+      "description": "Runs when someone pauses, mutes, skips or reloads your StreamElements overlays, for example a mod in the dashboard.",
+      "fields": {
+        "action": "Only run for these actions, like \"pause, skip\". Leave empty for any."
+      },
+      "variables": {
+        "action": "What was done: pause, unpause, mute, unmute, skip, playNext, emptyHypeCup or reload"
+      }
+    },
+    "streamelements.overlayUpdated": {
+      "description": "Runs when one of your StreamElements overlays is changed and saved. Handy to know it is time to import it into Cuebot again.",
+      "fields": {},
+      "variables": {
+        "overlayId": "The overlay's id",
+        "overlayName": "Its name",
+        "widgetCount": "How many widgets it has"
+      }
+    },
+    "streamelements.overlayBroadcast": {
+      "description": "Runs when StreamElements sends a custom event to your overlays, like the !kappagen emote explosion.",
+      "fields": {
+        "event": "Only run for this event name, like \"emotesplosion-kappagen\". Leave empty for any."
+      },
+      "variables": {
+        "event": "The event name",
+        "target": "global, or the id of one overlay",
+        "dataJson": "Everything that came with it, as JSON text",
+        "data.<name>": "One detail that came with it, by name"
+      }
+    },
+    "streamelements.counterChanged": {
+      "description": "Runs when a StreamElements chatbot counter changes, like a death counter. Deleting or resetting one sends 0.",
+      "fields": {
+        "counter": "Only run for these counters, like \"deaths\". Leave empty for any."
+      },
+      "variables": {
+        "counter": "The counter's name",
+        "value": "Its new value"
+      }
+    },
+    "streamelements.contestBet": {
+      "description": "Runs when a viewer bets points on a StreamElements contest.",
+      "fields": {},
+      "variables": {
+        "optionId": "The option they bet on (its id)",
+        "amount": "How many points",
+        "userId": "The viewer's id"
+      }
+    },
+    "streamelements.contestStateChanged": {
+      "description": "Runs when a StreamElements contest is created, starts, closes, completes or is refunded.",
+      "fields": {
+        "state": "Only run for these states, like \"running, closed\". Leave empty for any."
+      },
+      "variables": {
+        "state": "The new state",
+        "contestId": "The contest's id (sent when it starts)"
+      }
+    },
+    "streamelements.contestWinner": {
+      "description": "Runs when the winning option of a StreamElements contest is picked.",
+      "fields": {},
+      "variables": {
+        "winnerId": "The winning option's id"
+      }
+    },
+    "streamelements.giveawayEntered": {
+      "description": "Runs when a viewer joins a StreamElements giveaway.",
+      "fields": {},
+      "variables": {
+        "user": "Who joined",
+        "tickets": "How many tickets they have",
+        "totalUsers": "How many people are in",
+        "isNew": "True for a first entry"
+      }
+    },
+    "streamelements.giveawayWinner": {
+      "description": "Runs when a StreamElements giveaway picks a winner.",
+      "fields": {},
+      "variables": {
+        "user": "The winner",
+        "tickets": "Their tickets",
+        "totalUsers": "How many people were in"
+      }
+    },
+    "streamelements.giveawayStateChanged": {
+      "description": "Runs when a StreamElements giveaway starts, completes, closes or is refunded.",
+      "fields": {
+        "event": "Only run for these, like \"start, close\". Leave empty for any."
+      },
+      "variables": {
+        "event": "What happened",
+        "state": "The giveaway's state now",
+        "giveawayId": "The giveaway's id"
+      }
+    },
+    "streamelements.songRequest": {
+      "description": "Runs when something happens in your StreamElements song requests: a song is added, played, paused, skipped, the volume changes...",
+      "fields": {
+        "event": "Only run for these, like \"queue.add\". Leave empty for any."
+      },
+      "variables": {
+        "event": "What happened, like queue.add or song.next",
+        "songTitle": "The song's title, when one came with it",
+        "songUrl": "Its link",
+        "user": "Who asked for it",
+        "volume": "The new volume (for volume)",
+        "songId": "The song's id"
+      }
+    },
+    "streamelements.viewerQueue": {
+      "description": "Runs when your StreamElements viewer queue opens, changes or closes, or someone joins, is picked or leaves.",
+      "fields": {
+        "event": "Only run for these, like \"member.selected\". Leave empty for any."
+      },
+      "variables": {
+        "event": "What happened",
+        "user": "The viewer (for member events)",
+        "position": "Their place in the queue",
+        "title": "The queue's title (for queue events)"
+      }
+    },
+    "streamelements.emoteCombo": {
+      "description": "Runs when someone breaks a StreamElements emote combo in chat.",
+      "fields": {
+        "minCount": "Only run when the combo was at least this long. Leave 0 for any."
+      },
+      "variables": {
+        "user": "Who broke it",
+        "emote": "The emote",
+        "count": "How long the combo was"
+      }
+    },
+    "streamelements.pyramid": {
+      "description": "Runs when someone finishes an emote pyramid in chat (StreamElements bot module).",
+      "fields": {
+        "minWidth": "Only run when the pyramid was at least this wide. Leave 0 for any."
+      },
+      "variables": {
+        "user": "Who finished it",
+        "word": "The emote",
+        "width": "How wide it was"
+      }
+    },
+    "streamelements.botStatus": {
+      "description": "Runs when the StreamElements bot is made a mod or un-modded, or banned or unbanned (Twitch only).",
+      "fields": {},
+      "variables": {
+        "change": "mod or banned",
+        "isMod": "True if it is a mod now (for mod changes)",
+        "isBanned": "True if it is banned now (for ban changes)"
+      }
+    },
+    "streamelements.chatMessage": {
+      "description": "Runs for each chat message StreamElements passes on (Twitch, YouTube, Kick, X). Only with \"Also receive chat through StreamElements\" ticked. Mostly useful for X chat.",
+      "fields": {
+        "platform": "Only run for these platforms, like \"X\". Leave empty for any."
+      },
+      "variables": {
+        "user": "Who wrote it",
+        "message": "What they wrote",
+        "platform": "Where it was written",
+        "messageId": "The message's id",
+        "isModerator": "True for a moderator",
+        "bits": "Bits cheered in it (Twitch)"
+      }
+    },
+    "streamelements.chatMessageDeleted": {
+      "description": "Runs when a chat message StreamElements passed on is deleted (Twitch and X). Only with \"Also receive chat through StreamElements\" ticked.",
+      "fields": {},
+      "variables": {
+        "messageId": "The deleted message's id",
+        "platform": "Where"
+      }
+    },
+    "streamelements.chatUserCleared": {
+      "description": "Runs when someone is timed out or banned in a chat StreamElements passes on. Only with \"Also receive chat through StreamElements\" ticked.",
+      "fields": {},
+      "variables": {
+        "user": "Who",
+        "duration": "How many seconds (0 for a ban or when not known)",
+        "isTimeout": "True when a length was sent",
+        "platform": "Where"
+      }
+    },
+    "streamelements.chatCleared": {
+      "description": "Runs when the whole chat is cleared (Twitch, through StreamElements). Only with \"Also receive chat through StreamElements\" ticked.",
+      "fields": {},
+      "variables": {
+        "platform": "Where"
       }
     },
     "tipeeestream.connected": {
@@ -1369,7 +1635,7 @@
   },
   "subActions": {
     "streamelements.getUserPoints": {
-      "description": "Looks up how many StreamElements loyalty points a viewer has. Handy for a \"you have X points\" chat reply.",
+      "description": "Looks up how many StreamElements loyalty points a viewer has. Handy for a \"you have X points\" chat reply. Loyalty is not available on YouTube channels.",
       "fields": {
         "user": "The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site."
       },
@@ -1393,7 +1659,8 @@
     "streamelements.getPointsLeaderboard": {
       "description": "Looks up your top viewers by StreamElements loyalty points. Handy to read out a top list in chat.",
       "fields": {
-        "count": "How many people to fetch, starting from the top. 5 gets the top five."
+        "count": "How many people to fetch, starting from the top. 5 gets the top five.",
+        "board": "Which list: current points, all-time points (everything they ever earned) or watch time."
       },
       "variables": {
         "sePointsLeaderCount": "How many people were found",
@@ -1413,18 +1680,330 @@
         "seTip0Currency": "Its currency",
         "seTip0FormattedAmount": "The amount written nicely",
         "seTip0Message": "Their message",
-        "seTip0CreatedAt": "When it was sent"
+        "seTip0CreatedAt": "When it was sent",
+        "seTip0Id": "The tip's id"
       }
     },
     "streamelements.getTipLeaderboard": {
       "description": "Looks up the people who tipped you the most on StreamElements. Handy for a thank-you list.",
       "fields": {
-        "count": "How many people to fetch, starting from the top. 5 gets the top five."
+        "count": "How many people to fetch, starting from the top. 5 gets the top five.",
+        "period": "Which time span to count: all time, this month, this week or this stream."
       },
       "variables": {
         "seTipLeaderCount": "How many people were found",
         "seTipLeader0User": "The name of number 1 (use 1, 2, 3... for the next ones)",
         "seTipLeader0Total": "How much they tipped in total (use 1, 2, 3... for the next ones)"
+      }
+    },
+    "streamelements.botSay": {
+      "description": "Sends a chat message as the StreamElements bot. The bot must be in your chat (dashboard → Chatbot).",
+      "fields": {
+        "message": "What the bot should say, like \"Thanks for the tip, %user%!\""
+      },
+      "variables": {}
+    },
+    "streamelements.botMute": {
+      "description": "Mutes the StreamElements bot (it stops talking in chat) or unmutes it.",
+      "fields": {
+        "state": "Mute to silence the bot, Unmute to let it talk again."
+      },
+      "variables": {}
+    },
+    "streamelements.getBotStatus": {
+      "description": "Checks whether the StreamElements bot is in your chat, muted or a moderator.",
+      "fields": {},
+      "variables": {
+        "seBotName": "The bot's name",
+        "seBotJoined": "True when it is in your chat",
+        "seBotMuted": "True when it is muted",
+        "seBotMod": "True when it is a moderator"
+      }
+    },
+    "streamelements.getCounter": {
+      "description": "Reads a StreamElements chatbot counter, like a death counter.",
+      "fields": {
+        "counter": "The counter's name as in StreamElements, like \"deaths\"."
+      },
+      "variables": {
+        "seCounter": "The counter's name",
+        "seCounterValue": "Its value"
+      }
+    },
+    "streamelements.setTimer": {
+      "description": "Turns a StreamElements chatbot timer on or off, for example only during a certain game.",
+      "fields": {
+        "timer": "The timer's name as in StreamElements, like \"Discord\".",
+        "state": "On, Off, or Toggle to flip it."
+      },
+      "variables": {
+        "seTimerEnabled": "True when the timer is on now"
+      }
+    },
+    "streamelements.setCommand": {
+      "description": "Turns a StreamElements chatbot command on or off.",
+      "fields": {
+        "command": "The command, like \"!discord\" (the ! is optional).",
+        "state": "On, Off, or Toggle to flip it."
+      },
+      "variables": {
+        "seCommandEnabled": "True when the command is on now"
+      }
+    },
+    "streamelements.overlayAction": {
+      "description": "Controls your StreamElements overlays: pause or play the alert queue, mute or unmute them, or reload them.",
+      "fields": {
+        "action": "pause holds alerts, play lets them run again, mute/unmute switch their sound, reload refreshes every overlay."
+      },
+      "variables": {}
+    },
+    "streamelements.setSessionValue": {
+      "description": "Changes one StreamElements session value, like the tip goal. Handy to set a goal from an action.",
+      "fields": {
+        "key": "The session key, like \"tip-goal\" or \"follower-goal\". The keys are listed in StreamElements' session data reference.",
+        "field": "Which part of it, like \"amount\" or \"count\".",
+        "value": "The new value, like 100."
+      },
+      "variables": {}
+    },
+    "streamelements.resetSession": {
+      "description": "Starts a new StreamElements session: session counts and amounts go back to 0, like the dashboard's reset button.",
+      "fields": {},
+      "variables": {}
+    },
+    "streamelements.replayLatest": {
+      "description": "Asks StreamElements to send your newest real event of a kind again (like the dashboard's replay). Handy to test alerts end to end.",
+      "fields": {
+        "type": "Which kind of event to replay, like a tip."
+      },
+      "variables": {
+        "seReplayedId": "The replayed event's id (empty when there was none)"
+      }
+    },
+    "streamelements.getUserRank": {
+      "description": "Looks up a viewer's place on your StreamElements points list.",
+      "fields": {
+        "user": "The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site."
+      },
+      "variables": {
+        "sePointsRank": "Their place (1 is the top)"
+      }
+    },
+    "streamelements.resetUserPoints": {
+      "description": "Sets a viewer's StreamElements points back to 0.",
+      "fields": {
+        "user": "The viewer's login name. The default %userName% means the person who ran the action. Make sure it is their name on the streaming site."
+      },
+      "variables": {}
+    },
+    "streamelements.bulkPoints": {
+      "description": "Gives (or sets) the same StreamElements points for many viewers at once, like \"everyone in chat gets 50\".",
+      "fields": {
+        "users": "The viewers' names, separated by commas or spaces, like \"anna, ben, cleo\".",
+        "amount": "How many points. Use a minus number with Add to take some away.",
+        "mode": "Add adds to what they have; Set replaces it."
+      },
+      "variables": {
+        "seBulkCount": "How many viewers were changed"
+      }
+    },
+    "streamelements.resetPoints": {
+      "description": "Resets everyone's StreamElements points. Careful: this cannot be undone.",
+      "fields": {
+        "context": "current resets the points people have now; alltime resets the all-time list."
+      },
+      "variables": {}
+    },
+    "streamelements.getCheerLeaderboard": {
+      "description": "Looks up who cheered the most bits, as StreamElements counted them.",
+      "fields": {
+        "count": "How many people to fetch. 5 gets five.",
+        "period": "Which time span: all time, this month, this week or this stream."
+      },
+      "variables": {
+        "seCheerLeaderCount": "How many people were found",
+        "seCheerLeader0User": "Number 1's name (use 1, 2, 3... for the next ones)",
+        "seCheerLeader0Total": "Their bits"
+      }
+    },
+    "streamelements.createTip": {
+      "description": "Adds a tip to your StreamElements tip list, for example one paid somewhere else, so goals and leaderboards count it. It does not take money.",
+      "fields": {
+        "user": "Who gave it.",
+        "amount": "How much, like 5.",
+        "currency": "The 3-letter currency code, like USD or EUR.",
+        "message": "Their message (optional)."
+      },
+      "variables": {
+        "seTipId": "The new tip's id"
+      }
+    },
+    "streamelements.getPendingTips": {
+      "description": "Looks up StreamElements tips waiting for a moderator to approve them.",
+      "fields": {},
+      "variables": {
+        "seTipCount": "How many are waiting",
+        "seTip0User": "Who sent the first (use 1, 2, 3... for the next ones)",
+        "seTip0FormattedAmount": "Its amount written nicely",
+        "seTip0Id": "Its id"
+      }
+    },
+    "streamelements.getStoreItem": {
+      "description": "Looks up an item in your StreamElements loyalty store.",
+      "fields": {
+        "item": "The item's name as in your store, like \"Hydrate!\"."
+      },
+      "variables": {
+        "seItemName": "Its name",
+        "seItemEnabled": "True when it can be bought",
+        "seItemCost": "Its price in points",
+        "seItemStock": "How many are left (-1 for no limit)",
+        "seItemId": "Its id"
+      }
+    },
+    "streamelements.setStoreItem": {
+      "description": "Changes an item in your StreamElements loyalty store: turn it on or off, change its price or how many are left.",
+      "fields": {
+        "item": "The item's name as in your store, like \"Hydrate!\".",
+        "state": "Keep leaves it as it is; On, Off or Toggle switches it.",
+        "cost": "The new price in points. Leave empty to keep it.",
+        "stock": "How many are left. Leave empty to keep it."
+      },
+      "variables": {
+        "seItemEnabled": "True when it can be bought now",
+        "seItemCost": "Its price now",
+        "seItemStock": "How many are left now"
+      }
+    },
+    "streamelements.completeRedemption": {
+      "description": "Marks a StreamElements store redemption as done.",
+      "fields": {
+        "redemptionId": "The redemption's id. %redemptionId% is the one that started this action."
+      },
+      "variables": {}
+    },
+    "streamelements.refundRedemption": {
+      "description": "Cancels a StreamElements store redemption and gives the viewer their points back.",
+      "fields": {
+        "redemptionId": "The redemption's id. %redemptionId% is the one that started this action."
+      },
+      "variables": {}
+    },
+    "streamelements.getPendingRedemptions": {
+      "description": "Looks up StreamElements store redemptions that are not done yet.",
+      "fields": {
+        "count": "How many redemptions to fetch. 5 gets five."
+      },
+      "variables": {
+        "seRedemptionCount": "How many were found",
+        "seRedemption0Item": "The first one's item (use 1, 2, 3... for the next ones)",
+        "seRedemption0User": "Who redeemed it",
+        "seRedemption0Input": "What they typed",
+        "seRedemption0Id": "Its id"
+      }
+    },
+    "streamelements.createContest": {
+      "description": "Creates a StreamElements contest where viewers bet points on an answer. Start it with Run contest.",
+      "fields": {
+        "title": "The question, like \"Will I beat the boss?\".",
+        "options": "The answers, separated by commas, like \"Yes, No\".",
+        "minBet": "The smallest bet in points.",
+        "maxBet": "The biggest bet in points.",
+        "minutes": "How many minutes betting stays open."
+      },
+      "variables": {
+        "seContestId": "The new contest's id"
+      }
+    },
+    "streamelements.contestAction": {
+      "description": "Starts, closes, refunds or picks the winner of a StreamElements contest.",
+      "fields": {
+        "action": "start opens betting, close stops it, winner pays out, refund gives every bet back.",
+        "winner": "For winner: the winning answer's name or number, like \"Yes\" or 1.",
+        "contestId": "Leave empty for the current contest."
+      },
+      "variables": {
+        "seContestId": "The contest's id"
+      }
+    },
+    "streamelements.getContest": {
+      "description": "Looks up the current StreamElements contest.",
+      "fields": {},
+      "variables": {
+        "seContestFound": "True when there is one",
+        "seContestTitle": "Its question",
+        "seContestState": "Its state, like running",
+        "seContestTotal": "Points bet in total",
+        "seContestOption0Title": "The first answer (use 1, 2... for the next)",
+        "seContestOption0Total": "Points bet on it"
+      }
+    },
+    "streamelements.giveawayAction": {
+      "description": "Starts, closes, draws a winner for, completes, reopens or refunds a StreamElements giveaway.",
+      "fields": {
+        "action": "What to do with the giveaway.",
+        "giveawayId": "Leave empty for the current giveaway."
+      },
+      "variables": {
+        "seGiveawayId": "The giveaway's id"
+      }
+    },
+    "streamelements.getGiveaway": {
+      "description": "Looks up the current StreamElements giveaway.",
+      "fields": {},
+      "variables": {
+        "seGiveawayFound": "True when there is one",
+        "seGiveawayTitle": "Its title",
+        "seGiveawayState": "Its state, like running",
+        "seGiveawayUsers": "How many people joined"
+      }
+    },
+    "streamelements.songPlayer": {
+      "description": "Plays or pauses StreamElements song requests.",
+      "fields": {
+        "state": "play or pause."
+      },
+      "variables": {}
+    },
+    "streamelements.getSong": {
+      "description": "Looks up the StreamElements song request playing now, or the next one.",
+      "fields": {
+        "which": "playing for the song now, next for the one after it."
+      },
+      "variables": {
+        "seSongFound": "True when there is one",
+        "seSongTitle": "Its title",
+        "seSongUrl": "Its link",
+        "seSongUser": "Who asked for it",
+        "seSongId": "Its id"
+      }
+    },
+    "streamelements.addSong": {
+      "description": "Adds a song to your StreamElements song request queue.",
+      "fields": {
+        "video": "A YouTube link, video id or search words. %rawInput% is what the viewer typed after the command."
+      },
+      "variables": {
+        "seSongTitle": "The song that was added",
+        "seSongId": "Its id"
+      }
+    },
+    "streamelements.removeSong": {
+      "description": "Removes a song from your StreamElements song request queue.",
+      "fields": {
+        "songId": "The song's id, like %seSongId% or %songId%."
+      },
+      "variables": {}
+    },
+    "streamelements.getSongQueue": {
+      "description": "Looks up the songs waiting in your StreamElements song request queue.",
+      "fields": {
+        "count": "How many songs to fetch. 5 gets five."
+      },
+      "variables": {
+        "seQueueCount": "How many songs are waiting",
+        "seQueue0Title": "The first one's title (use 1, 2, 3... for the next ones)",
+        "seQueue0User": "Who asked for it"
       }
     },
     "streamloots.sendTestEvent": {

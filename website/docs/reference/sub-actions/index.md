@@ -55,7 +55,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Spotify](spotify.md) | 5 |
 | [Store](store.md) | 2 |
 | [Stream Deck](stream-deck.md) | 7 |
-| [StreamElements](streamelements.md) | 5 |
+| [StreamElements](streamelements.md) | 37 |
 | [Streamlabs Desktop](streamlabs-desktop.md) | 19 |
 | [StreamLoots](streamloots.md) | 1 |
 | [Subathon timer](subathon-timer.md) | 5 |

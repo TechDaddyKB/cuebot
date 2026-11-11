@@ -37,8 +37,13 @@ internal static class StreamElementsEventMapper
             ["platform"] = Platform(activity.Str("provider")),
             ["channelId"] = activity.Str("channel"),
             ["createdAt"] = activity.Str("createdAt"),
+            ["updatedAt"] = activity.Str("updatedAt"),
+            ["sessionEventsCount"] = (int)activity.Number("sessionEventsCount"),
             ["isTest"] = isTest,
         };
+        // Every field of the activity's data as data.<key>, so tier, quantity, items... of any activity type can be
+        // used without a code change (never the donor's e-mail or location).
+        if (d.ValueKind == JsonValueKind.Object) StreamElementsTopicMapper.Flatten(d, "data.", args);
 
         DonationEvent? result = type switch
         {
@@ -68,6 +73,45 @@ internal static class StreamElementsEventMapper
         args["tipAvatar"] = args["avatar"];
         args["platform"] = Service;
         return new DonationEvent(StreamElementsEventTypes.Tip, keys, args);
+    }
+
+    /// <summary>
+    /// A tip document (<c>channel.tips</c>, <c>channel.tips.moderation</c>: <c>{donation: {user: {username}, amount,
+    /// currency, message}, _id, provider, approved, status, approvedBy}</c>) as a pending/rejected event. The donor's
+    /// e-mail and location are never copied.
+    /// </summary>
+    public static DonationEvent TipDocument(JsonElement doc, string type)
+    {
+        var donation = doc.Child("donation") ?? default;
+        var donor = donation.ValueKind == JsonValueKind.Object ? donation.Child("user") ?? default : default;
+        var user = donor.ValueKind == JsonValueKind.Object ? donor.First("username", "name") : "";
+        if (user.Length == 0) user = "Anonymous";
+        var (amount, currency, formatted) = donation.ValueKind == JsonValueKind.Object ? Amount(donation) : (0, "", "");
+        var id = doc.Str("_id");
+        var message = donation.ValueKind == JsonValueKind.Object ? donation.Str("message") : "";
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["service"] = Service,
+            ["user"] = user,
+            ["userName"] = user,
+            ["message"] = message,
+            ["tipId"] = id,
+            ["provider"] = doc.Str("provider"),
+            ["platform"] = Service,
+            ["createdAt"] = doc.Str("createdAt"),
+            ["tipApproved"] = doc.Str("approved"),
+            ["tipStatus"] = doc.Str("status"),
+            ["approvedBy"] = doc.Str("approvedBy"),
+            ["tipUsername"] = user,
+            ["tipAmount"] = (decimal)amount,
+            ["tipCurrency"] = currency,
+            ["tipFormattedAmount"] = formatted,
+            ["tipMessage"] = message,
+            ["tipProvider"] = doc.Str("provider"),
+            ["isTest"] = false,
+        };
+        SetAmount(args, amount, currency, formatted);
+        return new DonationEvent(type, [$"{type}:{id}"], args);
     }
 
     private static DonationEvent Merch(JsonElement d, Dictionary<string, object?> args, List<string> keys)
@@ -103,11 +147,16 @@ internal static class StreamElementsEventMapper
 
     private static DonationEvent Redemption(JsonElement d, Dictionary<string, object?> args, List<string> keys)
     {
+        // The activity's data fields for redemptions are not documented; these are read leniently (see PROTOCOL.md).
         var item = d.First("itemName", "item", "redemption", "name");
         var cost = d.Number("amount");
         args["item"] = item;
         args["product"] = item;
         args["itemId"] = d.Str("itemId");
+        args["redemptionId"] = d.First("redemptionId", "redemption_id");
+        args["userInput"] = d.Child("input") is { ValueKind: JsonValueKind.Array } inputs
+            ? string.Join(", ", inputs.EnumerateArray().Select(x => x.ValueKind == JsonValueKind.String ? x.GetString() : x.GetRawText()))
+            : d.First("userInput", "input", "message");
         args["cost"] = cost;
         args["redeemer"] = d.First("redeemer") is { Length: > 0 } redeemer ? redeemer : args["user"];
         args["platform"] = Service;

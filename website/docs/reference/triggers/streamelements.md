@@ -3,6 +3,98 @@
 
 ![Adding a trigger: on the Actions page, click + Trigger and search for it](../../assets/screens/actions-trigger-picker.png)
 
+## Chat cleared (through StreamElements)
+
+Runs when the whole chat is cleared (Twitch, through StreamElements). Only with "Also receive chat through StreamElements" ticked.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%platform%` | Where |
+
+<small>Type id: `streamelements.chatCleared`</small>
+
+## Chat message (through StreamElements)
+
+Runs for each chat message StreamElements passes on (Twitch, YouTube, Kick, X). Only with "Also receive chat through StreamElements" ticked. Mostly useful for X chat.
+
+| Setting | What to put in |
+| --- | --- |
+| **Platforms** | Only run for these platforms, like "X". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who wrote it |
+| `%message%` | What they wrote |
+| `%platform%` | Where it was written |
+| `%messageId%` | The message's id |
+| `%isModerator%` | True for a moderator |
+| `%bits%` | Bits cheered in it (Twitch) |
+
+<small>Type id: `streamelements.chatMessage`</small>
+
+## Chat message deleted (through StreamElements)
+
+Runs when a chat message StreamElements passed on is deleted (Twitch and X). Only with "Also receive chat through StreamElements" ticked.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%messageId%` | The deleted message's id |
+| `%platform%` | Where |
+
+<small>Type id: `streamelements.chatMessageDeleted`</small>
+
+## Chat timeout or ban (through StreamElements)
+
+Runs when someone is timed out or banned in a chat StreamElements passes on. Only with "Also receive chat through StreamElements" ticked.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who |
+| `%duration%` | How many seconds (0 for a ban or when not known) |
+| `%isTimeout%` | True when a length was sent |
+| `%platform%` | Where |
+
+<small>Type id: `streamelements.chatUserCleared`</small>
+
+## Chatbot counter changed
+
+Runs when a StreamElements chatbot counter changes, like a death counter. Deleting or resetting one sends 0.
+
+| Setting | What to put in |
+| --- | --- |
+| **Counter** | Only run for these counters, like "deaths". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%counter%` | The counter's name |
+| `%value%` | Its new value |
+
+<small>Type id: `streamelements.counterChanged`</small>
+
+## Chatbot modded or banned
+
+Runs when the StreamElements bot is made a mod or un-modded, or banned or unbanned (Twitch only).
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%change%` | mod or banned |
+| `%isMod%` | True if it is a mod now (for mod changes) |
+| `%isBanned%` | True if it is banned now (for ban changes) |
+
+<small>Type id: `streamelements.botStatus`</small>
+
 ## Connected
 
 Runs when Cuebot connects to StreamElements. Handy for a quick "all good" message or to switch something on.
@@ -14,6 +106,49 @@ Runs when Cuebot connects to StreamElements. Handy for a quick "all good" messag
 | `%service%` | The name of the service |
 
 <small>Type id: `streamelements.connected`</small>
+
+## Contest bet placed
+
+Runs when a viewer bets points on a StreamElements contest.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%optionId%` | The option they bet on (its id) |
+| `%amount%` | How many points |
+| `%userId%` | The viewer's id |
+
+<small>Type id: `streamelements.contestBet`</small>
+
+## Contest state changed
+
+Runs when a StreamElements contest is created, starts, closes, completes or is refunded.
+
+| Setting | What to put in |
+| --- | --- |
+| **State** | Only run for these states, like "running, closed". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%state%` | The new state |
+| `%contestId%` | The contest's id (sent when it starts) |
+
+<small>Type id: `streamelements.contestStateChanged`</small>
+
+## Contest winner picked
+
+Runs when the winning option of a StreamElements contest is picked.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%winnerId%` | The winning option's id |
+
+<small>Type id: `streamelements.contestWinner`</small>
 
 ## Disconnected
 
@@ -27,6 +162,71 @@ Runs when Cuebot loses or ends its connection to StreamElements. Handy to warn y
 | `%reason%` | Why the connection ended |
 
 <small>Type id: `streamelements.disconnected`</small>
+
+## Emote combo broken
+
+Runs when someone breaks a StreamElements emote combo in chat.
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum combo** | Only run when the combo was at least this long. Leave 0 for any. Starts as: `0`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who broke it |
+| `%emote%` | The emote |
+| `%count%` | How long the combo was |
+
+<small>Type id: `streamelements.emoteCombo`</small>
+
+## Giveaway entry
+
+Runs when a viewer joins a StreamElements giveaway.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who joined |
+| `%tickets%` | How many tickets they have |
+| `%totalUsers%` | How many people are in |
+| `%isNew%` | True for a first entry |
+
+<small>Type id: `streamelements.giveawayEntered`</small>
+
+## Giveaway state changed
+
+Runs when a StreamElements giveaway starts, completes, closes or is refunded.
+
+| Setting | What to put in |
+| --- | --- |
+| **Event** | Only run for these, like "start, close". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%event%` | What happened |
+| `%state%` | The giveaway's state now |
+| `%giveawayId%` | The giveaway's id |
+
+<small>Type id: `streamelements.giveawayStateChanged`</small>
+
+## Giveaway winner
+
+Runs when a StreamElements giveaway picks a winner.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The winner |
+| `%tickets%` | Their tickets |
+| `%totalUsers%` | How many people were in |
+
+<small>Type id: `streamelements.giveawayWinner`</small>
 
 ## Merch
 
@@ -70,8 +270,76 @@ Runs for any other activity StreamElements passes on, such as a hype train start
 | `%user%` | Who it was about, if anyone |
 | `%amount%` | A number that came with it, if any |
 | `%message%` | A message that came with it, if any |
+| `%data.<name>%` | Every detail StreamElements sent, by name, like %data.tier% or %data.quantity% |
 
 <small>Type id: `streamelements.activity`</small>
+
+## Overlay broadcast
+
+Runs when StreamElements sends a custom event to your overlays, like the !kappagen emote explosion.
+
+| Setting | What to put in |
+| --- | --- |
+| **Event name** | Only run for this event name, like "emotesplosion-kappagen". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%event%` | The event name |
+| `%target%` | global, or the id of one overlay |
+| `%dataJson%` | Everything that came with it, as JSON text |
+| `%data.<name>%` | One detail that came with it, by name |
+
+<small>Type id: `streamelements.overlayBroadcast`</small>
+
+## Overlay changed
+
+Runs when one of your StreamElements overlays is changed and saved. Handy to know it is time to import it into Cuebot again.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%overlayId%` | The overlay's id |
+| `%overlayName%` | Its name |
+| `%widgetCount%` | How many widgets it has |
+
+<small>Type id: `streamelements.overlayUpdated`</small>
+
+## Overlay control used
+
+Runs when someone pauses, mutes, skips or reloads your StreamElements overlays, for example a mod in the dashboard.
+
+| Setting | What to put in |
+| --- | --- |
+| **Action** | Only run for these actions, like "pause, skip". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%action%` | What was done: pause, unpause, mute, unmute, skip, playNext, emptyHypeCup or reload |
+
+<small>Type id: `streamelements.overlayAction`</small>
+
+## Pyramid completed
+
+Runs when someone finishes an emote pyramid in chat (StreamElements bot module).
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum width** | Only run when the pyramid was at least this wide. Leave 0 for any. Starts as: `0`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who finished it |
+| `%word%` | The emote |
+| `%width%` | How wide it was |
+
+<small>Type id: `streamelements.pyramid`</small>
 
 ## Relayed charity donation
 
@@ -143,7 +411,7 @@ Runs when StreamElements passes on a new follower. Only runs if you tick the "Al
 
 ## Relayed host
 
-Runs when StreamElements passes on another streamer hosting you. Only runs if you tick the "Also publish..." box for StreamElements on the Donations page (off by default, because your streaming site already reports it).
+Runs when StreamElements passes on a host. Twitch has ended hosting, so this is legacy. Only runs if you tick the "Also publish..." box for StreamElements on the Donations page.
 
 **Variables you get**
 
@@ -225,6 +493,53 @@ Runs when StreamElements passes on a new YouTube channel member. Only runs if yo
 
 <small>Type id: `streamelements.sponsor`</small>
 
+## Session reset
+
+Runs when your StreamElements session starts over (by hand or on the automatic reset). The se.* globals are refilled.
+
+<small>Type id: `streamelements.sessionReset`</small>
+
+## Session value changed
+
+Runs when a StreamElements session value changes, like the latest follower or the tip goal. The values are also kept in globals like ~se.tipSession.amount~.
+
+| Setting | What to put in |
+| --- | --- |
+| **Session key** | Only run for these session keys, like "tip-goal, follower-latest". Leave empty for every change. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%key%` | Which session value changed, like tip-session |
+| `%variable%` | The start of its global names, like se.tipSession |
+| `%name%` | A name that came with it (for example the latest follower) |
+| `%amount%` | An amount that came with it |
+| `%count%` | A count that came with it |
+
+<small>Type id: `streamelements.sessionUpdated`</small>
+
+## Song request event
+
+Runs when something happens in your StreamElements song requests: a song is added, played, paused, skipped, the volume changes...
+
+| Setting | What to put in |
+| --- | --- |
+| **Event** | Only run for these, like "queue.add". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%event%` | What happened, like queue.add or song.next |
+| `%songTitle%` | The song's title, when one came with it |
+| `%songUrl%` | Its link |
+| `%user%` | Who asked for it |
+| `%volume%` | The new volume (for volume) |
+| `%songId%` | The song's id |
+
+<small>Type id: `streamelements.songRequest`</small>
+
 ## Store redemption
 
 Runs when a viewer spends loyalty points on an item in your StreamElements store.
@@ -243,12 +558,38 @@ Runs when a viewer spends loyalty points on an item in your StreamElements store
 | `%cost%` | How many points it cost |
 | `%message%` | Their message |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%redemptionId%` | The redemption's id, for the Complete or Refund store redemption steps (when StreamElements sends it) |
+| `%userInput%` | What the viewer typed, for items that ask for text |
 
 <small>Type id: `streamelements.redemption`</small>
 
+## Stream went live
+
+Runs when StreamElements sees your stream go live on any platform it watches. Also sets the global ~seIsLive~ to true.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%isLive%` | True |
+
+<small>Type id: `streamelements.streamOnline`</small>
+
+## Stream went offline
+
+Runs when StreamElements sees your last live stream end. Also sets the global ~seIsLive~ to false.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%isLive%` | False |
+
+<small>Type id: `streamelements.streamOffline`</small>
+
 ## Tip
 
-Runs when someone tips you through StreamElements. Great for a thank-you message or an alert.
+Runs when someone tips you through StreamElements. With "Wait for tip approval" on (the default), it runs only once StreamElements' tip moderation allows the tip.
 
 | Setting | What to put in |
 | --- | --- |
@@ -269,5 +610,77 @@ Runs when someone tips you through StreamElements. Great for a thank-you message
 | `%avatar%` | Their picture (web link) |
 | `%tipId%` | The number StreamElements gave this tip |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%tipApproved%` | allowed when a moderator (or no moderation) let it through; unknown when StreamElements did not say |
+| `%approvedBy%` | The moderator who approved it, if one did |
+| `%data.<name>%` | Any other detail StreamElements sent, like %data.tipId% |
 
 <small>Type id: `streamelements.tip`</small>
+
+## Tip rejected
+
+Runs when a moderator rejects a StreamElements tip. The normal Tip trigger never runs for it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who tipped |
+| `%amount%` | The amount as a number |
+| `%formattedAmount%` | The amount written nicely, like "$5.00" |
+| `%message%` | Their message |
+| `%tipId%` | StreamElements' id for the tip |
+| `%tipApproved%` | pending, allowed or rejected |
+| `%approvedBy%` | The moderator who decided, if any |
+
+<small>Type id: `streamelements.tipRejected`</small>
+
+## Tip waiting for approval
+
+Runs when a StreamElements tip waits for a moderator to approve it. Handy to remind your mods.
+
+| Setting | What to put in |
+| --- | --- |
+| **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | Who tipped |
+| `%amount%` | The amount as a number |
+| `%formattedAmount%` | The amount written nicely, like "$5.00" |
+| `%message%` | Their message |
+| `%tipId%` | StreamElements' id for the tip |
+| `%tipApproved%` | pending, allowed or rejected |
+| `%approvedBy%` | The moderator who decided, if any |
+
+<small>Type id: `streamelements.tipPending`</small>
+
+## Viewer queue event
+
+Runs when your StreamElements viewer queue opens, changes or closes, or someone joins, is picked or leaves.
+
+| Setting | What to put in |
+| --- | --- |
+| **Event** | Only run for these, like "member.selected". Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%event%` | What happened |
+| `%user%` | The viewer (for member events) |
+| `%position%` | Their place in the queue |
+| `%title%` | The queue's title (for queue events) |
+
+<small>Type id: `streamelements.viewerQueue`</small>

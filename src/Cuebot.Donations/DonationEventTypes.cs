@@ -42,6 +42,37 @@ public static class StreamElementsEventTypes
 
     /// <summary>Any other relayed activity type; <c>activityType</c> says which.</summary>
     public const string Activity = "streamelements.activity";
+
+    // Tip moderation (channel.tips / channel.tips.moderation).
+    public const string TipPending = "streamelements.tipPending";
+    public const string TipRejected = "streamelements.tipRejected";
+
+    // Other Astro topics.
+    public const string StreamOnline = "streamelements.streamOnline";
+    public const string StreamOffline = "streamelements.streamOffline";
+    public const string SessionUpdated = "streamelements.sessionUpdated";
+    public const string SessionReset = "streamelements.sessionReset";
+    public const string OverlayAction = "streamelements.overlayAction";
+    public const string OverlayUpdated = "streamelements.overlayUpdated";
+    public const string OverlayBroadcast = "streamelements.overlayBroadcast";
+    public const string CounterChanged = "streamelements.counterChanged";
+    public const string ContestBet = "streamelements.contestBet";
+    public const string ContestState = "streamelements.contestStateChanged";
+    public const string ContestWinner = "streamelements.contestWinner";
+    public const string GiveawayEntered = "streamelements.giveawayEntered";
+    public const string GiveawayWinner = "streamelements.giveawayWinner";
+    public const string GiveawayState = "streamelements.giveawayStateChanged";
+    public const string SongRequest = "streamelements.songRequest";
+    public const string ViewerQueue = "streamelements.viewerQueue";
+    public const string EmoteCombo = "streamelements.emoteCombo";
+    public const string Pyramid = "streamelements.pyramid";
+    public const string BotStatus = "streamelements.botStatus";
+
+    // Unified chat (channel.chat), only with the "receive chat" option.
+    public const string ChatMessage = "streamelements.chatMessage";
+    public const string ChatMessageDeleted = "streamelements.chatMessageDeleted";
+    public const string ChatUserCleared = "streamelements.chatUserCleared";
+    public const string ChatCleared = "streamelements.chatCleared";
 }
 
 /// <summary>Bot event types published by the TipeeeStream connection.</summary>

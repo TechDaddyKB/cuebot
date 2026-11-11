@@ -197,6 +197,11 @@ public sealed partial class OverlaysViewModel : PageViewModel
         _gallery = gallery;
         Polls = polls;
         _streamElements = streamElements;
+        if (streamElements is Cuebot.Donations.StreamElements.StreamElementsService se)
+        {
+            se.OverlayUpdated += (_, name) => OnUi(() => Status =
+                $"Your StreamElements overlay \"{name}\" changed. Use Import from StreamElements… to copy it into Cuebot again.");
+        }
         _store = store;
         _servers = servers;
         _widgets = widgets;

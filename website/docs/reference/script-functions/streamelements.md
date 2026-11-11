@@ -5,6 +5,28 @@ Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See 
 
 ![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
 
+## streamelements.addSong
+
+Adds a song to your StreamElements song request queue. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `video` | `video` | A YouTube link, video id or search words. Needed. |
+
+**Gives back:** The queued song: id, title and url.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.addSong", new { video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_add_song(video="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    ```
+
 ## streamelements.addUserPoints
 
 Gives a viewer StreamElements loyalty points. Use a minus number to take points away. Needs your StreamElements token; fails with an error otherwise.
@@ -28,6 +50,158 @@ Gives a viewer StreamElements loyalty points. Use a minus number to take points 
     answer = cb.streamelements_add_user_points(user="CoolViewer", amount=100)
     ```
 
+## streamelements.bulkPoints
+
+Adds (or sets) the same points for many viewers at once. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `users` | `users` | A list of names, or one text with names separated by commas or spaces. Needed. |
+| `amount` | `amount` | How many points, like 50. |
+| `mode` | `mode` | Optional. "add" (default) or "set". |
+
+**Gives back:** How many viewers were changed.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.bulkPoints", new { users = new[] { "anna", "ben" }, amount = 50 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_bulk_points(users=["anna", "ben"], amount=50)
+    ```
+
+## streamelements.completeRedemption
+
+Marks a StreamElements store redemption as done. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `redemptionId` | `redemption_id` | The redemption's id, like the trigger's redemptionId. Needed. |
+
+**Gives back:** true when done.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.completeRedemption", new { redemptionId = "5f0c0000000000000000abcd" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_complete_redemption(redemption_id="5f0c0000000000000000abcd")
+    ```
+
+## streamelements.createTip
+
+Adds a tip to your StreamElements tip list (for example one paid elsewhere) so goals and leaderboards count it. No money moves. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | Who gave it. Needed. |
+| `amount` | `amount` | How much, more than 0. Needed. |
+| `currency` | `currency` | Optional. 3-letter code, default "USD". |
+| `message` | `message` | Optional. Their message. |
+
+**Gives back:** The new tip's id.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.createTip", new { user = "CoolViewer", amount = 5, currency = "USD" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_create_tip(user="CoolViewer", amount=5, currency="USD")
+    ```
+
+## streamelements.getCheerLeaderboard
+
+Gets the people who cheered the most bits. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `count` | `count` | Optional. How many people. Default 5. |
+| `period` | `period` | Optional. "alltime" (default), "months", "weeks" or "session". |
+
+**Gives back:** A list. Each has user and total.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.getCheerLeaderboard", new { count = 3, period = "weeks" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_get_cheer_leaderboard(count=3, period="weeks")
+    ```
+
+## streamelements.getCounter
+
+Reads a StreamElements chatbot counter, like a death counter. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `counter` | `counter` | The counter's name, like "deaths". Needed. |
+
+**Gives back:** The counter's value as a number.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.getCounter", new { counter = "deaths" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_get_counter(counter="deaths")
+    ```
+
+## streamelements.getPendingTips
+
+Gets the StreamElements tips waiting for a moderator. Needs your StreamElements JWT token; fails with an error otherwise.
+
+**Gives back:** A list of tips. Each has id, user, amount, currency, formattedAmount and message.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.getPendingTips");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_get_pending_tips()
+    ```
+
+## streamelements.getPlayingSong
+
+Gets the StreamElements song request playing now. Needs your StreamElements JWT token; fails with an error otherwise.
+
+**Gives back:** id, title, url, user and duration, or null when nothing plays.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.getPlayingSong");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_get_playing_song()
+    ```
+
 ## streamelements.getPointsLeaderboard
 
 Gets the viewers with the most StreamElements loyalty points. Needs your StreamElements token; fails with an error otherwise.
@@ -48,6 +222,24 @@ Gets the viewers with the most StreamElements loyalty points. Needs your StreamE
 
     ```python
     answer = cb.streamelements_get_points_leaderboard(count=10)
+    ```
+
+## streamelements.getStoreItems
+
+Lists the items in your StreamElements loyalty store. Needs your StreamElements JWT token; fails with an error otherwise.
+
+**Gives back:** A list. Each has id, name, enabled, cost and stock (-1 for no limit).
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.getStoreItems");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_get_store_items()
     ```
 
 ## streamelements.getTipLeaderboard
@@ -116,6 +308,28 @@ Looks up how many StreamElements loyalty points a viewer has. Needs your StreamE
     answer = cb.streamelements_get_user_points(user="CoolViewer")
     ```
 
+## streamelements.getUserRank
+
+Looks up a viewer's place on your StreamElements points list. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `user` | `user` | The viewer's name. Needed. |
+
+**Gives back:** Their place as a number (1 is the top).
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.getUserRank", new { user = "CoolViewer" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_get_user_rank(user="CoolViewer")
+    ```
+
 ## streamelements.isConnected
 
 Checks whether Cuebot is connected to StreamElements right now.
@@ -132,6 +346,112 @@ Checks whether Cuebot is connected to StreamElements right now.
 
     ```python
     answer = cb.streamelements_is_connected()
+    ```
+
+## streamelements.isLive
+
+Checks whether StreamElements says your stream is live on any platform it watches. Works with the connection on.
+
+**Gives back:** true when live, false when offline, null before StreamElements has said.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.isLive");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_is_live()
+    ```
+
+## streamelements.overlayAction
+
+Controls your StreamElements overlays. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `action` | `action` | "pause", "play", "mute", "unmute" or "reload". Default "pause". |
+
+**Gives back:** true when done.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.overlayAction", new { action = "pause" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_overlay_action(action="pause")
+    ```
+
+## streamelements.refundRedemption
+
+Cancels a StreamElements store redemption and gives the points back. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `redemptionId` | `redemption_id` | The redemption's id. Needed. |
+
+**Gives back:** true when done.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.refundRedemption", new { redemptionId = "5f0c0000000000000000abcd" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_refund_redemption(redemption_id="5f0c0000000000000000abcd")
+    ```
+
+## streamelements.replayLatest
+
+Asks StreamElements to send its newest real event of a kind again, to test alerts end to end. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `type` | `type` | Optional. "tip" (default), "merch", "redemption", "cheer", "subscriber", "follow" or "raid". |
+
+**Gives back:** The replayed event's id, or "" when there was none.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.replayLatest", new { type = "tip" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_replay_latest(type="tip")
+    ```
+
+## streamelements.say
+
+Sends a chat message as the StreamElements bot. The bot must be in your chat. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `message` | `message` | What the bot should say. Needed. |
+
+**Gives back:** true when sent.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.say", new { message = "Thanks for watching!" });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_say(message="Thanks for watching!")
     ```
 
 ## streamelements.sendTestEvent
@@ -154,4 +474,53 @@ Fakes a StreamElements event inside Cuebot, so you can test your triggers. Nothi
 
     ```python
     answer = cb.streamelements_send_test_event(kind="tip")
+    ```
+
+## streamelements.setSessionValue
+
+Changes one StreamElements session value, like the tip goal. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `key` | `key` | The session key, like "tip-goal". Needed. |
+| `field` | `field` | Which part, like "amount". Needed. |
+| `value` | `value` | The new value, like 100. |
+
+**Gives back:** true when done.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.setSessionValue", new { key = "tip-goal", field = "amount", value = 100 });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_set_session_value(key="tip-goal", field="amount", value=100)
+    ```
+
+## streamelements.setStoreItem
+
+Changes a loyalty store item: on or off, its price or how many are left. Leave out what should stay. Needs your StreamElements JWT token; fails with an error otherwise.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `item` | `item` | The item's name or id. Needed. |
+| `enabled` | `enabled` | Optional. true or false. |
+| `cost` | `cost` | Optional. The new price in points. |
+| `stock` | `stock` | Optional. How many are left. |
+
+**Gives back:** The item after the change: id, name, enabled, cost and stock.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("streamelements.setStoreItem", new { item = "Hydrate!", enabled = false });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.streamelements_set_store_item(item="Hydrate!", enabled=False)
     ```

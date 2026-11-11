@@ -10,7 +10,11 @@ public sealed class StreamElementsApiException(string message, int status = 0) :
     public int Status { get; } = status;
 }
 
-public sealed record StreamElementsChannel(string Id, string Name, string DisplayName);
+public sealed record StreamElementsChannel(string Id, string Name, string DisplayName)
+{
+    /// <summary>The platform account the token belongs to (twitch, youtube, kick, ...), when StreamElements says.</summary>
+    public string Provider { get; init; } = "";
+}
 
 public sealed record StreamElementsPoints(string UserName, long Points, long PointsAllTime, int Rank);
 
@@ -25,7 +29,7 @@ public sealed record StreamElementsRank(string UserName, double Total);
 /// The StreamElements REST API (https://api.streamelements.com/kappa/v2), authenticated with the channel's JWT
 /// (<c>Authorization: Bearer &lt;jwt&gt;</c>). The token never appears in exceptions.
 /// </summary>
-internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
+internal sealed partial class StreamElementsApi(HttpClient http, Uri? baseUri = null)
 {
     public static readonly Uri Production = new("https://api.streamelements.com/kappa/v2/");
 
@@ -36,14 +40,16 @@ internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
         var json = await SendAsync(HttpMethod.Get, "channels/me", jwt, ct).ConfigureAwait(false);
         var id = json.Str("_id");
         if (id.Length == 0) throw new StreamElementsApiException("StreamElements did not return a channel for this token");
-        return new StreamElementsChannel(id, json.Str("username"), json.First("displayName", "alias", "username"));
+        return new StreamElementsChannel(id, json.Str("username"), json.First("displayName", "alias", "username")) { Provider = json.Str("provider") };
     }
 
     public async Task<StreamElementsPoints> GetUserPointsAsync(string jwt, string channel, string user, CancellationToken ct)
     {
         var json = await SendAsync(HttpMethod.Get, $"points/{Seg(channel)}/{Seg(user)}", jwt, ct).ConfigureAwait(false);
+        // The response has no documented schema; when it carries no rank, the dedicated rank endpoint is asked.
+        var rank = json.Has("rank") ? (int)json.Number("rank") : await GetUserRankAsync(jwt, channel, user, ct).ConfigureAwait(false);
         return new StreamElementsPoints(json.Str("username") is { Length: > 0 } name ? name : user,
-            (long)json.Number("points"), (long)json.Number("pointsAlltime"), (int)json.Number("rank"));
+            (long)json.Number("points"), (long)json.Number("pointsAlltime"), rank);
     }
 
     /// <summary>Adds (or, with a negative amount, removes) points; returns the user's new total.</summary>
@@ -66,12 +72,21 @@ internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
             .Select(u => new StreamElementsRank(u.Str("username"), u.Number("points"))).ToArray();
     }
 
-    /// <summary><c>GET tips/{channel}?limit&amp;offset&amp;sort=-createdAt</c> → <c>{docs:[…], total, limit, offset}</c>; deleted tips are skipped.</summary>
+    /// <summary>
+    /// <c>GET tips/{channel}?limit&amp;offset&amp;sort=-createdAt</c> → <c>{docs:[…], total, limit, offset}</c>. Deleted tips,
+    /// tips a moderator rejected or has not approved yet (<c>approved</c> other than <c>allowed</c>) and failed payments
+    /// (<c>status</c> other than <c>success</c>) are skipped; a tip without those fields counts as a good one.
+    /// </summary>
     public async Task<IReadOnlyList<StreamElementsTip>> GetTipsAsync(string jwt, string channel, int limit, CancellationToken ct)
     {
         var json = await SendAsync(HttpMethod.Get, $"tips/{Seg(channel)}?limit={Clamp(limit)}&offset=0&sort=-createdAt", jwt, ct).ConfigureAwait(false);
-        return json.Items("docs").Where(d => d.Child("deleted") is not { ValueKind: JsonValueKind.True }).Select(Tip).ToArray();
+        return json.Items("docs").Where(IsGoodTip).Select(Tip).ToArray();
     }
+
+    internal static bool IsGoodTip(JsonElement doc) =>
+        doc.Child("deleted") is not { ValueKind: JsonValueKind.True }
+        && doc.Str("approved") is "" or "allowed"
+        && doc.Str("status") is "" or "success";
 
     /// <summary>
     /// Top tippers: <c>GET tips/{channel}/top</c> → <c>[{username, first, last, count, total, email, average}]</c> (the
@@ -118,12 +133,17 @@ internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
 
     private static string Seg(string value) => Uri.EscapeDataString(value.Trim());
 
-    private async Task<JsonElement> SendAsync(HttpMethod method, string path, string jwt, CancellationToken ct)
+    private async Task<JsonElement> SendAsync(HttpMethod method, string path, string jwt, CancellationToken ct, object? content = null, int version = 2)
     {
         if (jwt.Trim().Length == 0) throw new StreamElementsApiException("Enter your StreamElements JWT token first");
-        using var request = new HttpRequestMessage(method, new Uri(_base, path));
+        using var request = new HttpRequestMessage(method, new Uri(version == 3 ? V3 : _base, path));
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt.Trim());
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (content is not null)
+        {
+            var text = content is JsonNode node ? node.ToJsonString() : JsonSerializer.Serialize(content);
+            request.Content = new StringContent(text, System.Text.Encoding.UTF8, "application/json");
+        }
         using var response = await http.SendAsync(request, ct).ConfigureAwait(false);
         var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         var json = JsonReaders.TryParse(body.Length == 0 ? "{}" : body);
@@ -134,6 +154,8 @@ internal sealed class StreamElementsApi(HttpClient http, Uri? baseUri = null)
             var text = status == 401 ? "StreamElements rejected the JWT token" : $"StreamElements API error {status}";
             throw new StreamElementsApiException(Secrets.Redact(detail.Length > 0 ? $"{text}: {detail}" : text, jwt), status);
         }
+        // Several write operations answer with plain text ("Created"); a success without JSON reads as {}.
+        if (json is null && method != HttpMethod.Get) return EmptyObject;
         return json ?? throw new StreamElementsApiException("StreamElements returned an unreadable response");
     }
 }

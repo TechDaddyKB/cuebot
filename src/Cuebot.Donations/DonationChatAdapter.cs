@@ -76,6 +76,8 @@ internal abstract class DonationChatAdapter(string platform, string prefix) : IC
         var a = e.Args;
         return e.Type switch
         {
+            StreamElementsEventTypes.TipPending => $"{Test(a)}{Get(a, "user")}'s {Get(a, "formattedAmount")} tip waits for approval",
+            StreamElementsEventTypes.TipRejected => $"{Test(a)}{Get(a, "user")}'s {Get(a, "formattedAmount")} tip was rejected",
             DonorDriveEventTypes.Incentive => $"{Test(a)}{Get(a, "user")} claimed the incentive \"{Get(a, "incentive.description")}\"",
             DonorDriveEventTypes.ProfileUpdated => $"{Test(a)}{Get(a, "profileName")}: {Get(a, "formattedRaised")} of {Get(a, "formattedGoal")} raised",
             _ => null,
