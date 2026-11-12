@@ -30,7 +30,7 @@ public sealed class ProfilesPageTests : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _host.DisposeAsync();
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dataDir);
         try { Directory.Delete(_dataDir, recursive: true); } catch (IOException) { }
     }
 

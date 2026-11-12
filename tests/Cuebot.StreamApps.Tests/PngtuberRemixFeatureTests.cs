@@ -59,6 +59,9 @@ internal sealed class FakeRemix
 
     public void Release() => _released.TrySetResult();
 
+    /// <summary>How late a request reaches PNGTuber Remix (a slow machine or network); zero for most.</summary>
+    public Func<JsonElement, TimeSpan>? Late { get; set; }
+
     /// <summary>Requests whose answer is dropped (as if a script error happened).</summary>
     public Func<JsonElement, bool>? Drop { get; set; }
 
@@ -98,6 +101,7 @@ internal sealed class FakeRemix
                 continue;
             }
             var message = JsonDocument.Parse(text).RootElement.Clone();
+            if (Late?.Invoke(message) is { } late && late > TimeSpan.Zero) await Task.Delay(late);
             Received.Enqueue((message, _clock.Elapsed.TotalSeconds));
             if (StallOn?.Invoke(message) == true) await _released.Task;
             if (Drop?.Invoke(message) == true) continue;
@@ -395,6 +399,18 @@ public sealed class PngtuberRemixFeatureTests : IAsyncLifetime
         await _remix.ShakeAsync("Hat", 1, 0);
         var moved = Assert.Single(fake.Times("move_sprite"));
         Assert.True(fake.Times("shake_sprite")[2] - moved >= 0.38, "waited for the move, the pause and the return");
+    }
+
+    [Fact]
+    public async Task An_effect_that_arrives_late_still_finishes_before_the_next_one_on_its_sprite()
+    {
+        // CI saw the shake reach PNGTuber Remix late and the bounce follow too soon: the wait counted from when the
+        // shake was asked for, not from when it got there.
+        var fake = await ConnectAsync(f => f.Late = m => m.Str("event") == "shake_sprite" ? TimeSpan.FromMilliseconds(250) : TimeSpan.Zero);
+        await Task.WhenAll(_remix.ShakeAsync("Head", 5, 0.3), _remix.BounceAsync("Head", 10, 0.2));
+        var shake = Assert.Single(fake.Times("shake_sprite"));
+        var bounce = Assert.Single(fake.Times("bounce_sprite"));
+        Assert.True(bounce - shake >= 0.38, $"the bounce waited for the late shake and its return ({bounce - shake:0.000} s)");
     }
 
     [Fact]

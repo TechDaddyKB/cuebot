@@ -32,7 +32,7 @@ public sealed class ViewerDataTests : IDisposable
 
     public void Dispose()
     {
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir);
         Directory.Delete(_dir, recursive: true);
     }
 

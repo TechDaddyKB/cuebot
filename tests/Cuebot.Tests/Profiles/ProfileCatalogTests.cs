@@ -13,12 +13,12 @@ public sealed class ProfileCatalogTests : IDisposable
     public ProfileCatalogTests()
     {
         Directory.CreateDirectory(_root);
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_root);
     }
 
     public void Dispose()
     {
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_root);
         Directory.Delete(_root, recursive: true);
     }
 
@@ -66,7 +66,7 @@ public sealed class ProfileCatalogTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_root, "python"));
         File.WriteAllText(Path.Combine(_root, "python", "keep.txt"), "shared");
         Assert.True(ProfileCatalog.NeedsMove(_root));
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_root);
 
         var catalog = ProfileCatalog.Open(_root);
 
@@ -79,7 +79,7 @@ public sealed class ProfileCatalogTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_root, "twitch.json")));
         Assert.True(File.Exists(Path.Combine(_root, "python", "keep.txt")));
         Assert.True(File.Exists(Path.Combine(_root, "app.json")));
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_root);
         Assert.Equal("TWITCH-TOKEN", Read(main, "twitch.json").Token);
         Assert.Equal("DRIVE-TOKEN", Read(_root, "app.json").Token);
     }
@@ -120,7 +120,7 @@ public sealed class ProfileCatalogTests : IDisposable
         Assert.True(File.Exists(Path.Combine(folder, "overlays", "widgets", "w.js")));
         Assert.False(File.Exists(Path.Combine(folder, "commands.json")));
         Assert.False(File.Exists(Path.Combine(folder, "twitch.json")));
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_root);
         Assert.Equal("OBS-PASSWORD", Read(folder, "obs.json").Token);
         Assert.Equal("main", catalog.Active.Id);   // making a profile does not switch to it
     }

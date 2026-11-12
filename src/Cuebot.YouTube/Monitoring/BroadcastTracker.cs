@@ -161,11 +161,21 @@ internal sealed class BroadcastTracker
         }
     }
 
-    /// <summary>Replaces a monitored broadcast's details (after Cuebot itself changed its title, for example).</summary>
+    /// <summary>
+    /// Replaces a monitored broadcast's details (after Cuebot itself changed its title, for example). An endpoint that
+    /// has not been read yet counts as having read the details from before the change, so its first, possibly stale
+    /// reading (YouTube serves the old title for a while) does not undo the change.
+    /// </summary>
     public void Replace(YouTubeBroadcast broadcast)
     {
         lock (_gate)
-            if (_active.ContainsKey(broadcast.Id)) _active[broadcast.Id] = broadcast;
+        {
+            if (!_active.TryGetValue(broadcast.Id, out var old)) return;
+            var before = ReadingOf(old);
+            _listedReadings.TryAdd(broadcast.Id, before);
+            _videoReadings.TryAdd(broadcast.Id, before);
+            _active[broadcast.Id] = broadcast;
+        }
     }
 
     private void EndLocked(string id, List<BroadcastChange> changes)

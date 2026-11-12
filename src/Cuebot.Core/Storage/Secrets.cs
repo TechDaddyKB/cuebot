@@ -111,8 +111,21 @@ public sealed class SecretStore
         return Stores.GetOrAdd(full, f => new SecretStore(f, ProtectorFor(f)));
     }
 
-    /// <summary>Forgets cached stores (tests that reuse a folder path).</summary>
-    public static void ResetCache() => Stores.Clear();
+    /// <summary>
+    /// Forgets the cached stores of <paramref name="root"/> and the folders inside it, as after a restart (tests).
+    /// Only those: tests running at the same time keep theirs, so their ids are not lost halfway through.
+    /// </summary>
+    public static void ResetCache(string root)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        foreach (var folder in Stores.Keys)
+        {
+            var trimmed = Path.TrimEndingDirectorySeparator(folder);
+            if (string.Equals(trimmed, full, StringComparison.Ordinal)
+                || trimmed.StartsWith(full + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                Stores.TryRemove(folder, out _);
+        }
+    }
 
     public string ProtectorName => _protector.Name;
 

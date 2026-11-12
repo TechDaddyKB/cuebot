@@ -34,6 +34,23 @@ public sealed class BroadcastTrackerTests
     }
 
     [Fact]
+    public void A_title_cuebot_set_survives_a_stale_first_video_reading()
+    {
+        // Set title replaces the broadcast before videos.list was ever read; that first read still has the old title.
+        var t = new BroadcastTracker();
+        t.UpdateActive([B("b1", "Dev testing")]);
+        t.Replace(t.Find("b1")! with { Title = "New title" });
+        Assert.Empty(t.ApplyVideo(V("b1", "Dev testing")));
+        Assert.Empty(t.UpdateActive([B("b1", "Dev testing")]));
+        Assert.Equal("New title", t.Latest!.Title);
+
+        // YouTube catching up is not a change; a rename made elsewhere still is.
+        Assert.Empty(t.ApplyVideo(V("b1", "New title")));
+        Assert.Equal([BroadcastChangeKind.Updated], Kinds(t.ApplyVideo(V("b1", "Renamed in Studio"))));
+        Assert.Equal("Renamed in Studio", t.Latest!.Title);
+    }
+
+    [Fact]
     public void Already_live_at_connect_starts_monitoring_without_started()
     {
         var t = new BroadcastTracker();

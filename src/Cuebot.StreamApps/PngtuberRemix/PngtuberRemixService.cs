@@ -54,7 +54,8 @@ public sealed partial class PngtuberRemixService : StreamAppConnection
     private readonly JsonFile<StreamAppsSettings> _settings;
     private readonly object _gate = new();
     private readonly List<PendingRequest> _pending = [];
-    private readonly Dictionary<string, long> _effectBusyUntil = new(StringComparer.Ordinal);
+    /// <summary>Per sprite: completes when the last effect queued for it is over (see RunEffectAsync).</summary>
+    private readonly Dictionary<string, Task> _effectDone = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, byte> _warned = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _sendGate = new(1, 1);
     private volatile IReadOnlyList<PngtuberRemixState> _states = [];
@@ -220,7 +221,7 @@ public sealed partial class PngtuberRemixService : StreamAppConnection
         _spritesKnown = false;
         lock (_gate)
         {
-            _effectBusyUntil.Clear();
+            _effectDone.Clear();
             _throwingPaused = null;
         }
         _warned.Clear();
@@ -681,21 +682,36 @@ public sealed partial class PngtuberRemixService : StreamAppConnection
     /// Runs one effect at a time per sprite. PNGTuber Remix remembers where a sprite was when an effect starts and
     /// returns it there at the end, saving that into the current state; an effect that starts while another still
     /// runs would remember a mid-way spot and leave the sprite (and the state) out of place. So a second effect on
-    /// the same sprite waits until the first is over.
+    /// the same sprite waits until the first is over. "Over" counts from when the first was actually sent (not from
+    /// when it was asked for), so a slow send never lets the next effect start early.
     /// </summary>
     private async Task RunEffectAsync(string identifier, double seconds, Func<Task> send, CancellationToken ct)
     {
         var key = Find(identifier)?.Id is { Length: > 0 } id ? id : identifier;
-        long wait;
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task previous;
         lock (_gate)
         {
-            var now = Environment.TickCount64;
-            var start = Math.Max(now, _effectBusyUntil.GetValueOrDefault(key));
-            _effectBusyUntil[key] = start + (long)(Math.Max(0, seconds) * 1000) + 50;
-            wait = start - now;
+            previous = _effectDone.GetValueOrDefault(key) ?? Task.CompletedTask;
+            _effectDone[key] = done.Task;
         }
-        if (wait > 0) await Task.Delay(TimeSpan.FromMilliseconds(wait), ct).ConfigureAwait(false);
-        await send().ConfigureAwait(false);
+        var length = TimeSpan.FromMilliseconds(Math.Ceiling(Math.Max(0, seconds) * 1000) + 50);
+        var sending = false;
+        try
+        {
+            await previous.WaitAsync(ct).ConfigureAwait(false);
+            sending = true;
+            await send().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Not sent (cancelled while waiting): the next effect waits only for the ones before. Failed while
+            // sending: part of it may be running, so count it as if it ran.
+            if (sending) _ = Task.Delay(length).ContinueWith(_ => done.TrySetResult(), TaskScheduler.Default);
+            else _ = previous.ContinueWith(_ => done.TrySetResult(), TaskScheduler.Default);
+            throw;
+        }
+        _ = Task.Delay(length).ContinueWith(_ => done.TrySetResult(), TaskScheduler.Default);
     }
 
     private static double NotNegative(double? value, string label) =>

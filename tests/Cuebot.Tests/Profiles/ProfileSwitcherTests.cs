@@ -32,7 +32,7 @@ public sealed class ProfileSwitcherTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _services.DisposeAsync();
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir.Path);
         _dir.Dispose();
     }
 

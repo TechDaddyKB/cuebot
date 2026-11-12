@@ -12,7 +12,7 @@ public sealed class SecretStoreTests : IDisposable
 
     public void Dispose()
     {
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir);
         Directory.Delete(_dir, recursive: true);
     }
 
@@ -58,7 +58,7 @@ public sealed class SecretStoreTests : IDisposable
         Assert.Contains(SecretJson.Prefix, text);
         Assert.DoesNotContain("TOP-SECRET", System.Text.Encoding.UTF8.GetString(File.ReadAllBytes(Path.Combine(_dir, SecretStore.FileName))));
 
-        SecretStore.ResetCache();   // as after a restart
+        SecretStore.ResetCache(_dir);   // as after a restart
         using var reopened = Open();
         var s = reopened.Value;
         Assert.Equal("TOP-SECRET-1", s.ClientSecret);
@@ -79,7 +79,7 @@ public sealed class SecretStoreTests : IDisposable
         }
         var text = File.ReadAllText(FilePath);
         Assert.DoesNotContain("OLD-PLAIN", text);
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir);
         using var reopened = Open();
         Assert.Equal("OLD-PLAIN-SECRET", reopened.Value.ClientSecret);
     }
@@ -117,10 +117,27 @@ public sealed class SecretStoreTests : IDisposable
             file.SaveNow();
         }
         File.WriteAllText(FilePath, backup);   // what a restore does
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir);
         using var restored = Open();
         Assert.Equal("public-id", restored.Value.ClientId);
         Assert.Equal("TOP-SECRET-1", restored.Value.ClientSecret);
+    }
+
+    [Fact]
+    public void Resetting_the_cache_of_one_folder_leaves_other_folders_alone()
+    {
+        var other = Path.Combine(_dir, "..", Path.GetFileName(_dir) + "-other");
+        var inside = Path.Combine(_dir, "profiles", "main");
+        var mine = SecretStore.For(_dir);
+        var nested = SecretStore.For(inside);
+        var theirs = SecretStore.For(other);
+
+        SecretStore.ResetCache(_dir);
+
+        Assert.NotSame(mine, SecretStore.For(_dir));
+        Assert.NotSame(nested, SecretStore.For(inside));
+        Assert.Same(theirs, SecretStore.For(other));   // another test's store keeps the ids it has loaded
+        SecretStore.ResetCache(other);
     }
 
     [Fact]
@@ -133,7 +150,7 @@ public sealed class SecretStoreTests : IDisposable
             file.Value.ClientSecret = "";
             file.SaveNow();
         }
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir);
         using var reopened = Open();
         Assert.Equal("", reopened.Value.ClientSecret);
         Assert.Equal("TOP-SECRET-2", reopened.Value.Bot.AccessToken);
@@ -148,7 +165,7 @@ public sealed class SecretStoreTests : IDisposable
             file.SaveNow();
         }
         File.Delete(Path.Combine(_dir, FileKeyProtector.FileName));   // the key is gone
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(_dir);
         var warnings = new List<string>();
         SecretStore.Warn = warnings.Add;
         try

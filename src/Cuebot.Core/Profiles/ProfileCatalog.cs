@@ -304,7 +304,7 @@ public sealed class ProfileCatalog
         foreach (var entry in entries) MoveInto(entry, Path.Combine(target, Path.GetFileName(entry)));
 
         // Stores opened before the move point at the old places.
-        SecretStore.ResetCache();
+        SecretStore.ResetCache(root);
         foreach (var shared in new[] { "app.json", ServerSettingsFile, "updates.json" })
             SecretStore.For(target).CopyFileTo(shared, SecretStore.For(root));
         return true;
