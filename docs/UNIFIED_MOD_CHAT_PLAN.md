@@ -34,15 +34,8 @@
 | YouTube | Ban, timeout, unban, delete message. A moderator's own token works. | Slow mode, members-only and subscribers-only chat, blocked words, held-message review, pins, "hide user". **Quota is the real limit:** a ban costs 200 of 10,000 daily units, so about 50 bans a day for the whole API project. |
 | Rumble | **Nothing.** The only official API is a read-only JSON feed. | All moderation. Rumble's website can delete, mute (5 minutes, this stream, or permanently) and pin, but only its internal, undocumented endpoints do that, and Rumble's terms forbid automated use without written permission. |
 
-**Top open questions for Kris** (full list in section 11)
-
-1. Rumble: read-only with a "moderate on Rumble" shortcut, or opt-in moderation through the unofficial endpoints
-   Cuebot already uses for reading and sending chat?
-2. YouTube quota: the built-in Google project's 10,000 units a day are shared by every Cuebot user. Apply for a quota
-   extension, or require streamers who moderate YouTube from Cuebot to use their own Google project?
-3. Is "the platform's own mod log shows the broadcaster, Cuebot's log shows the real mod" acceptable for the first
-   version, or is acting with each moderator's own token a requirement from the start?
-4. May a Standard Mod place linked bans, or only linked timeouts?
+**Decisions:** Kris answered all 12 open questions on 2026-11-12. They are in section 11 and override earlier
+recommendations where they differ.
 
 ## 2. What Cuebot has today
 
@@ -192,7 +185,7 @@ YouTube, Kick, Rumble."
 
 ### 4.1 Rumble
 
-Three choices; Kris decides (open question 1).
+Three choices. Decided: A by default with B as an opt-in (section 11, decision 1).
 
 | Option | What mods get | Risk |
 |---|---|---|
@@ -290,8 +283,8 @@ New or changed pieces:
 ## 6. Data model
 
 Stored in the Cuebot data folder. Cuebot has no database today. The log is append-heavy and queried by user, so the
-choice is between monthly append-only JSON Lines files with an in-memory index (no new dependency) and adding SQLite
-(open question 7). The fields are the same either way.
+choice was between monthly append-only JSON Lines files with an in-memory index (no new dependency) and adding SQLite.
+**Decided: SQLite** (section 11, decision 7): one database file in the data folder, included in backups.
 
 ### 6.1 `ModAction` (one row per platform call)
 
@@ -406,7 +399,7 @@ considered later for `verified` links only.
 
 | Risk | What could happen | Controls |
 |---|---|---|
-| Rogue moderator | Mass bans across four platforms in seconds; banning rivals through false links. | New permissions (below). Per-member rate limits (for example 10 bans and 30 timeouts per 10 minutes; linked bans 5 per hour), enforced in Cuebot. Linked permanent bans need a confirmed or verified link and, for Standard Mods, are downgraded to timeouts. The streamer is notified of every linked action and can undo an incident, or "undo everything this member did in the last hour", in one click. Removing the member ends all access at once. |
+| Rogue moderator | Mass bans across four platforms in seconds; banning rivals through false links. | New permissions (below). Per-member rate limits (for example 10 bans and 30 timeouts per 10 minutes; linked bans 5 per hour), enforced in Cuebot. Linked permanent bans need a confirmed or verified link. The streamer is notified of every linked action and can undo an incident, or "undo everything this member did in the last hour", in one click. Removing the member ends all access at once. |
 | False link as a weapon | A mod, or a viewer lying in chat, ties an innocent person to an offender. | One-sided claims never exceed `suggested`. A second person must confirm. Evidence is stored with the link. Unlink reverses what the link caused. |
 | Stolen mod session | Someone uses a mod's unlocked browser or phone. | Device keys are non-extractable and there is no bearer token (already built). Add: the 12-hour idle timeout the portal plan lists as not built; a fresh provider sign-in before the first linked ban of a session; the streamer's "sign out this device". |
 | Mod removed on the platform but still in the portal | A demoted mod keeps banning through the broadcaster's token. | Enforce the Twitch moderator check that is stored today and not enforced; extend it to YouTube (`liveChatModerators.list`, 50 units, owner token) and note that Kick and Rumble have no way to list moderators. The invite's role remains authoritative, as the portal plan decided. |
@@ -423,15 +416,19 @@ considered later for `verified` links only.
 |---|---|---|---|
 | View chat | Yes | Yes | Yes |
 | Delete messages, timeout | Yes | Yes | Yes |
-| Ban and unban | No (timeouts only), streamer can turn on | Yes | Yes |
+| Ban and unban | Yes | Yes | Yes |
 | Chat modes, clear chat, Shield Mode | No | Yes | Yes |
 | Blocked terms | No | Yes | Yes |
-| View mod log | Own actions | All | All |
+| View mod log | All | All | All |
 | Notes | Read and add | Read, add, delete | Read, add, delete |
 | Propose links | Yes | Yes | Yes |
 | Confirm links | No | Yes | Yes |
 | Linked timeouts | Yes | Yes | Yes |
-| Linked bans | No | Yes, second confirm | Yes, second confirm |
+| Linked bans | Yes | Yes | Yes |
+
+Defaults follow section 11 (decisions 4 and 10). The streamer can lower any member's rights. A linked ban still needs
+every link it uses to be `verified` or `confirmed`, and a link a mod asserts is only confirmed by a second person
+(decision 5).
 
 Moderation actions are not "changes" in the portal's approval sense: a timeout cannot wait for approval. They always
 apply at once and are always logged.
@@ -456,9 +453,10 @@ apply at once and are always logged.
 - **Minimisation.** Store ids, names at the time, and the minimum evidence. No IP addresses, no emails, no data from
   outside the streamer's own chats. No link suggestions from behavioural matching (writing style, timing): that is
   profiling, and Twitch's developer agreement forbids profiling users.
-- **Retention (proposed defaults, streamer can shorten):** deleted-message text 30 days; timeout rows 90 days; ban and
-  link rows while the ban or link stands plus 12 months; `suggested` links never confirmed 30 days; notes 12 months
-  after last edit. `DataRetention` already prunes logs and gets these rules.
+- **Retention (decided defaults, streamer can shorten):** deleted-message text 60 days; timeout rows 180 days; ban and
+  link rows while the ban or link stands plus 24 months; `suggested` links never confirmed 60 days; notes 24 months
+  after last edit. These are double the first proposal (section 11, decision 8); the reviewer (decision 12) should
+  confirm they are proportionate. `DataRetention` already prunes logs and gets these rules.
 - **Access and deletion on request.** Extend the existing "forget this viewer" (`ViewerData`): find the person by any
   linked account, export what is held, and erase. Erasure deletes links, notes and message text and blanks names in
   log rows; the row and the platform user id of an **active ban** are kept so the ban still works and the log stays
@@ -495,38 +493,35 @@ test bans, times out or messages a real viewer:** live checks use the project's 
 | Phase | Work | Files and modules | Tests |
 |---|---|---|---|
 | **0. Fixes and checks** | Enforce `RequireTwitchModerator`. YouTube bans go to the message's own chat. Persist YouTube ban ids. `ChatHub` consumes delete, ban and timeout events (and Rumble's `delete_messages`). Mark messages without a real id as not deletable. Confirm on a test channel: YouTube `banDurationSeconds` limits, a moderator token on YouTube, Kick's developer terms text. | `src/Cuebot.Portal/Members/PortalDirectory.cs`, `src/Cuebot.YouTube/YouTubeService.cs`, `src/Cuebot.Core/Chat/ChatHub.cs`, `ChatModel.cs`, the three chat adapters, `src/Cuebot.Rumble/Chat` | `Cuebot.Portal.Tests` (suspension when mod status is lost), `YouTubeServiceTests` (two broadcasts), `ChatHubTests`, `ChatPageTests` |
-| **1. Moderation core** | `IChatModerator` v2 with capability descriptors; unban, warn, clear, chat modes, pins; `ModerationService`; the mod log; `YouTubeQuotaBudget`; the desktop Chat page uses all of it and gains a Mod log view and user cards. | `src/Cuebot.Core/Chat/Moderation/*` (new `ModerationService.cs`, `ModLog.cs`, `ModerationCapabilities.cs`), `TwitchChat.cs`, `YouTubeChatModerator.cs`, `KickChatModerator.cs`, new `RumbleChatModerator.cs` (descriptors only), `src/Cuebot.App/ViewModels/ChatViewModel.cs`, `Storage/DataRetention.cs` | Per-platform moderator tests against HTTP fakes (limits, rounding, errors); log tests (append, hash chain, retention, undo pairing); quota budget tests; headless UI tests for each button state |
+| **1. Moderation core** | `IChatModerator` v2 with capability descriptors; unban, warn, clear, chat modes, pins; `ModerationService`; the mod log in SQLite; `YouTubeQuotaBudget` plus a setting for the streamer's own Google project; soft warnings on YouTube and Kick (a chat message, logged as a warning); Rumble delete and mute through the unofficial endpoints, opt-in and off by default, with a terms warning; the desktop Chat page uses all of it and gains a Mod log view and user cards. | `src/Cuebot.Core/Chat/Moderation/*` (new `ModerationService.cs`, `ModLog.cs`, `ModerationCapabilities.cs`), `TwitchChat.cs`, `YouTubeChatModerator.cs`, `KickChatModerator.cs`, new `RumbleChatModerator.cs` (read-only unless the opt-in is on), `src/Cuebot.App/ViewModels/ChatViewModel.cs`, `Storage/DataRetention.cs` | Per-platform moderator tests against HTTP fakes (limits, rounding, errors); log tests (append, hash chain, retention, undo pairing); quota budget tests; headless UI tests for each button state |
 | **2. Portal chat** | Push subscriptions on the portal link; `PortalChat` operations (subscribe, history, act, log); new permissions and default roles; the Chat page and pop-out in the portal UI; per-member rate limits and target protection. | `src/Cuebot.Portal/Relay/PortalRelayClient.cs`, new `src/Cuebot.Portal/Chat/PortalChat.cs`, `Members/PortalModel.cs`, `DefaultRoles.cs`, `PortalPolicy`, `portal/ui/pages/chat.tsx`, `portal/ui/api.ts`, `portal/src` loader (push frames), `portal/RELAY.md`; the Worker only if caps change | `Cuebot.Portal.Tests` (every op by role, rate limits, protected targets); vitest for the page; Worker tests for frame caps; `PortalUiLiveTests` with a fake chat source through the deployed relay; a load test with a fast chat |
 | **3. Twitch depth** | Full `channel.moderate` mapping into the log; Held (AutoMod) lane; Shield Mode, suspicious users, unban requests, blocked terms in the window. | `src/Cuebot.Twitch/EventSub/*`, `TwitchScopes.cs` (new scopes mean streamers re-authorize), `TwitchChat.cs`, portal and desktop UI | `Cuebot.Twitch.Tests` with recorded event fixtures; UI tests |
 | **4. Identity links** | The person model, user cards across platforms, propose, confirm, reject, unlink, `!link` verification, notes, the 30-day YouTube refresh, "forget viewer" and export. | New `src/Cuebot.Core/Users/IdentityLinks.cs`, `ViewerData.cs`, `UserRegistry.cs`, a command handler for `!link`, portal and desktop UI | Link rules (protected accounts, merges, two-person confirm), verification expiry and replay, erasure and export, refresh job |
-| **5. Linked bans** | The preview, per-platform execution, partial failure, manual rows, incident undo, later-arrival prompts, streamer notices, role limits. | `ModerationService.cs`, `PortalChat.cs`, UI dialogs on both clients, `website/docs/guides/mods/*` | Table-driven preview tests (every mix of capability, link status and quota), undo tests including a failed unban, UI tests for the dialog; a scripted end-to-end run against fakes for all four platforms |
-| **6. Options** | Decided by Kris: Cuebot blocked terms; moderator-owned tokens on Twitch (option C); Rumble option B; an automatic mirror for verified links. | Per option | Per option |
+| **5. Linked bans** | The preview; an opt-in streamer setting that mirrors a ban to `verified` and `confirmed` links without the preview; per-platform execution, partial failure, manual rows, incident undo, later-arrival prompts, streamer notices, role limits. | `ModerationService.cs`, `PortalChat.cs`, UI dialogs on both clients, `website/docs/guides/mods/*` | Table-driven preview tests (every mix of capability, link status and quota), undo tests including a failed unban, UI tests for the dialog; a scripted end-to-end run against fakes for all four platforms |
+| **6. Options** | Later: Cuebot blocked terms; moderator-owned tokens on Twitch (option C). Rumble option B moved to phase 1 and the automatic mirror to phase 5 (section 11). | Per option | Per option |
 | **Docs** (with each phase) | User guide for mods and streamers, the privacy notes and sample viewer wording, changelog, `docs/MOD_PORTAL_PLAN.md` updated to point here. | `website/docs/guides/mods/`, `docs/` | mkdocs strict |
 
-Rough order of size: phase 0 small; 1 and 2 large; 3 medium; 4 medium; 5 medium.
+Rough order of size: phase 0 small; 1 and 2 large; 3 medium; 4 medium; 5 medium. Phases 1 and 2 ship in the same release, so the desktop and portal Chat pages arrive together (section 11, decision 11). Phase 4 waits for the privacy review (decision 12).
 
-## 11. Open questions for Kris
+## 11. Decisions
 
-1. **Rumble:** option A (read-only, moderate on the website), B (opt-in, unofficial endpoints) or both with B off by
-   default? Should we email Rumble about permission or the partner API first?
-2. **YouTube quota:** the built-in Google project's 10,000 units a day are shared across all Cuebot users; one ban is
-   200. Apply for an extension (needs the compliance audit, after the pending OAuth verification), require a
-   streamer's own Google project for YouTube moderation, or both?
-3. **Attribution:** is the broadcaster's token with the mod's name in the reason and in Cuebot's log enough for the
-   first version, or must mods act with their own tokens on Twitch from the start?
-4. **Standard Mods:** timeouts only by default, or bans too? Linked timeouts but not linked bans?
-5. **Link confirmation:** is a second person always required for mod-asserted links, including for small teams where
-   that second person is always the streamer?
-6. **Automatic mirroring:** never, or allowed later for viewer-verified links?
-7. **Storage:** append-only JSON Lines files (no new dependency) or add SQLite for the log and links?
-8. **Retention defaults** in section 9.2: acceptable, and should deleted-message text be kept at all?
-9. **Soft warnings** on YouTube and Kick (a chat message standing in for Twitch's warn): wanted, or leave "not
-   available"?
-10. **Who sees the log:** may Standard Mods see other mods' actions, or only their own?
-11. **Should the streamer's desktop Chat page and the portal page ship together**, or the portal first since mods are
-    the ones with four tabs open?
-12. **Legal review:** the viewer-facing wording and the GDPR position should be checked by someone qualified before
-    identity links ship. Who?
+Kris answered the open questions on 2026-11-12. Where earlier sections give a different recommendation, these
+decisions win.
+
+| # | Question | Decision | What it changes |
+|---|---|---|---|
+| 1 | Rumble | **Read-only by default, plus opt-in moderation through the unofficial endpoints** (option B, off by default). Rumble replied that an official API is being built, with no date. | Phase 1 adds delete and mute behind a setting with a plain warning that Rumble's terms forbid automated use without permission. Switch to the official API when it ships. |
+| 2 | YouTube quota | **Both:** apply to Google for a higher limit after the OAuth verification, and let streamers use their own Google project meanwhile. | Phase 1 adds the own-project setting and shows the remaining daily budget. The extension application is a separate task for Kris. |
+| 3 | Attribution | **The streamer's token first.** The platform's log shows the streamer; Cuebot's log and the reason (`[mod: Sam] spam`) show the mod. | Option A in section 5.2. Mods' own Twitch tokens (option C) stay in phase 6. |
+| 4 | Standard Mod rights | **Everything, including linked bans,** by default. The streamer can lower it per member. | Permissions table in section 8 updated. The rate limits and the link confirmation rule (decision 5) remain the safeguards. |
+| 5 | Link confirmation | **A second person always confirms a link a mod asserts,** even on small teams, where that is the streamer. Links the viewer proves with `!link` need no second person. | Unchanged from section 7.1; now firm. |
+| 6 | Automatic mirroring | **Opt-in from the start,** for `verified` and `confirmed` links only. | Phase 5 adds the setting. Off by default; each mirrored action is logged, notified to the streamer and undoable as one incident. |
+| 7 | Storage | **SQLite.** | One new dependency; one database file in the data folder, covered by backups. |
+| 8 | Retention | **Double the first proposal;** deleted-message text is kept. | Section 9.2 updated: message text 60 days, timeouts 180 days, bans and links while active plus 24 months, unconfirmed suggestions 60 days, notes 24 months. The streamer can shorten all of them. |
+| 9 | Soft warnings | **Yes** on YouTube and Kick: a chat message that @-mentions the viewer, logged as a warning. | Phase 1. |
+| 10 | Who sees the log | **Every mod sees all actions.** | Permissions table updated. Private notes keep their own permission. |
+| 11 | Ship order | **The desktop and portal Chat pages ship together.** | Phases 1 and 2 land in one release. |
+| 12 | Legal review | **Kris arranges a qualified reviewer.** | Phase 4 (identity links) waits for the review of the viewer wording, the GDPR position and the retention periods. |
 
 ## 12. Sources
 
