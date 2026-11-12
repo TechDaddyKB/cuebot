@@ -39,7 +39,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [OBSBOT](obsbot.md) | 8 |
 | [Pally.gg](pally-gg.md) | 3 |
 | [Patreon](patreon.md) | 7 |
-| [PNGTuber Remix](pngtuber-remix.md) | 2 |
+| [PNGTuber Remix](pngtuber-remix.md) | 5 |
 | [Points](points.md) | 1 |
 | [Polls](polls.md) | 6 |
 | [PolyPop](polypop.md) | 3 |

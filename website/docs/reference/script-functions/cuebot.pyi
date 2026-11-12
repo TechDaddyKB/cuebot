@@ -1274,6 +1274,69 @@ class Cuebot:
         Gives back: true when the test tip was sent, false when the kind is unknown.
         Same as cb.call(\"pally.sendTestEvent\", ...).
         """
+    def pngtuber_remix_get_sprites(self) -> Any:
+        """Reads the sprites of your PNGTuber Remix model fresh.
+
+        Gives back: A list of objects with name, id, visible, parentId, children (names of the sprites attached directly) and attached (how many are attached, also through others).
+        Same as cb.call(\"pngtuberRemix.getSprites\", ...).
+        """
+    def pngtuber_remix_get_state(self) -> Any:
+        """Asks PNGTuber Remix which avatar state is showing right now.
+
+        Gives back: An object with name and number (1 is the first), or null when PNGTuber Remix has no states yet.
+        Same as cb.call(\"pngtuberRemix.getState\", ...).
+        """
+    def pngtuber_remix_get_states(self) -> Any:
+        """Lists the avatar states Cuebot last read (on connect, every few seconds while the checks are on, and after Reload).
+
+        Gives back: A list of objects with number, name and current (true for the one showing).
+        Same as cb.call(\"pngtuberRemix.getStates\", ...).
+        """
+    def pngtuber_remix_is_connected(self) -> Any:
+        """Tells whether Cuebot is connected to PNGTuber Remix right now.
+
+        Gives back: True or false.
+        Same as cb.call(\"pngtuberRemix.isConnected\", ...).
+        """
+    def pngtuber_remix_is_visible(self, sprite: Any) -> Any:
+        """Asks PNGTuber Remix whether a sprite is visible right now.
+
+        sprite: The sprite's exact name (or its sprite id).
+        Gives back: True or false.
+        Same as cb.call(\"pngtuberRemix.isVisible\", ...).
+        """
+    def pngtuber_remix_press_key(self, key: Any) -> Any:
+        """Presses one of your PNGTuber Remix key binds without touching the keyboard: sprites bound to that key toggle, and sprites with it as their hide key hide.
+
+        key: The key as Godot writes it, for example A, 1, F5 or Space.
+        Gives back: A list of what it did, like \"Hat (Toggle)\"; empty when no sprite uses that key.
+        Same as cb.call(\"pngtuberRemix.pressKey\", ...).
+        """
+    def pngtuber_remix_set_state(self, state: Any) -> Any:
+        """Switches your PNGTuber Remix avatar to another state, like pressing its state button. Capital letters are fixed for you when Cuebot knows the state.
+
+        state: The state's name, or its number (1 is the first state button).
+        Gives back: The name of the state now showing.
+        Same as cb.call(\"pngtuberRemix.setState\", ...).
+        """
+    def pngtuber_remix_set_visibility(self, sprite: Any, *, visible: Any = None) -> Any:
+        """Shows, hides or toggles a sprite. PNGTuber Remix does the same to everything attached to it.
+
+        sprite: The sprite's exact name (or its sprite id).
+        visible: Optional. true to show, false to hide, \"toggle\" (the default) for the opposite of now.
+        Gives back: True when it is now visible, false when hidden.
+        Same as cb.call(\"pngtuberRemix.setVisibility\", ...).
+        """
+    def pngtuber_remix_throw(self, *, item: Any = None, amount: Any = None, variance: Any = None, both_sides: Any = None) -> Any:
+        """Throws things at your avatar from your PNGTuber Remix throwables. The amount is lowered to the card's Most per throw.
+
+        item: Optional. The name of one throwable image; empty for random ones.
+        amount: Optional. How many. Empty: 1 named item, or PNGTuber Remix's own amount for random ones.
+        variance: Optional. How much the throws vary; empty uses PNGTuber Remix's own setting.
+        both_sides: Optional. true or false to throw from both sides; empty uses PNGTuber Remix's own setting.
+        Gives back: How many were sent, or null when PNGTuber Remix chose the amount.
+        Same as cb.call(\"pngtuberRemix.throw\", ...).
+        """
     def points_add(self, amount: Any, *, platform: Any = None, user: Any = None, user_id: Any = None, currency: Any = None) -> Any:
         """Gives a viewer points. A negative amount takes points away. The balance never goes below 0. Leave the user out for the person who triggered the action.
 

@@ -3,6 +3,28 @@
 
 ![Adding a trigger: on the Actions page, click + Trigger and search for it](../../assets/screens/actions-trigger-picker.png)
 
+## Avatar state changed
+
+Runs when your avatar switches to another state: with a PNGTuber Remix hotkey or state button, from a Cuebot step, or when another model is loaded. PNGTuber Remix does not announce this, so Cuebot checks every few seconds (set on its card; 0 turns the checks and this trigger off).
+
+| Setting | What to put in |
+| --- | --- |
+| **States** | Only these states (names or numbers, separated by commas). Empty means any state. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.state%` | The name of the state now showing |
+| `%pngtuberRemix.stateNumber%` | Its number (1 is the first) |
+| `%pngtuberRemix.previousState%` | The state that was showing before (empty if unknown) |
+| `%pngtuberRemix.previousStateNumber%` | Its number |
+| `%pngtuberRemix.changedBy%` | Cuebot when a Cuebot step changed it, otherwise PNGTuber Remix |
+| `%pngtuberRemix.host%` | The computer PNGTuber Remix runs on |
+| `%pngtuberRemix.port%` | The port number it uses |
+
+<small>Type id: `pngtuberRemix.stateChanged`</small>
+
 ## Connected
 
 Runs when Cuebot connects to PNGTuber Remix.
@@ -29,3 +51,38 @@ Runs when the connection to PNGTuber Remix drops, for example because you closed
 | `%reason%` | Why it dropped |
 
 <small>Type id: `pngtuberRemix.disconnected`</small>
+
+## Sprites changed (model loaded or edited)
+
+Runs when sprites were added, removed or renamed, for example after another model was loaded or you edited your model. Cuebot checks about every 10 seconds (with the checks on).
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.spriteCount%` | How many sprites there are now |
+| `%pngtuberRemix.previousSpriteCount%` | How many there were |
+| `%pngtuberRemix.added%` | Names of new sprites, separated by commas |
+| `%pngtuberRemix.removed%` | Names of sprites that are gone, separated by commas |
+| `%pngtuberRemix.host%` | The computer PNGTuber Remix runs on |
+| `%pngtuberRemix.port%` | The port number it uses |
+
+<small>Type id: `pngtuberRemix.spritesChanged`</small>
+
+## Throwing paused/resumed
+
+Runs when a Cuebot step pauses or resumes throwing. PNGTuber Remix cannot report its pause key, so pausing there does not run this.
+
+| Setting | What to put in |
+| --- | --- |
+| **Now** | Any, or only when throwing is now Paused or Running. Options: Any, Paused, Running. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.throwingPaused%` | True when throwing is now paused |
+| `%pngtuberRemix.host%` | The computer PNGTuber Remix runs on |
+| `%pngtuberRemix.port%` | The port number it uses |
+
+<small>Type id: `pngtuberRemix.throwingPausedChanged`</small>

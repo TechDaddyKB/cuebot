@@ -732,26 +732,65 @@ VRChat only through unit tests (it stopped at its terms page before OSC came up)
 
 ## VTuber apps: PNGTuber Remix, Animaze, VMC
 
-Added 2026-10-31. PNGTuber Remix 1.4.7 was checked live on Linux (every step, against its demo model). VMC was checked
+Added 2026-10-31. PNGTuber Remix 1.4.7 was checked live on Linux (every step, against its demo model); the 2026-11-11
+changes are covered by unit tests against a fake modelled on the app's handler, not re-checked live. VMC was checked
 live against VSeeFace 1.13.38c under Wine: VSeeFace received Cuebot's packets (a VMC head bone turned the avatar), but
 in that setup expressions did not visibly change, so blend shapes are covered by unit tests of the documented messages.
 Animaze is covered by unit tests only (it is Windows-only and installs through Steam).
 
 ### PNGTuber Remix (`PngtuberRemix/`)
 
-- Source: the WebSocket documentation PNGTuber Remix ships in-app (its "WebSocket documentation" button, also written
-  next to the program as `WebsocketDocumentation.txt`), confirmed live.
-- `ws://127.0.0.1:9321` (port set in the app's WebSocket tab; the server starts on Start or Auto-Start). Requests are
-  `{"event":<name>,..}`; each gets one answer, in order, with the same `event` and `result` `success`/`failed`
-  (`error`, `identifier`). Unknown or malformed requests answer `{"event":"error","message":..}`. Nothing is pushed.
-- Used: `list_states` (`states:[{id (1-based), name, is_current}]`, fails with "no state buttons found" while a model
-  loads), `list_sprites` (`sprites:[{name,id,visible,is_group,children,parent_id}]`), `state` (`state_name` or
-  `state_id`), `show|hide|toggle_sprite` (`sprite_name`; toggle answers `visibility`), `show|hide|toggle_group`
-  (`group_name`), `shake_sprite` (`intensity`, `duration`), `bounce_sprite` (`height`, `duration`), `move_sprite`
-  (`x`,`y`,`duration`,`reset`,`reset_delay`), `animate_sprite` (`scale`,`rotation`,...), `throw_item` (`item_name`,
-  `amount`), `throw_random` (`amount` optional), `toggle_throwables_pause` (`pause` optional; answers `is_paused`),
-  `load_model` (`file_path`). After `load_model` the state buttons appear a moment later, so states are re-read for up
-  to 2 s.
+- Sources: the WebSocket documentation PNGTuber Remix ships in-app (its "WebSocket documentation" button, also written
+  next to the program as `WebsocketDocumentation.txt`; no throwables), the official `OnlineDoc/websocket.md`
+  (github.com/MudkipWorld/PNGTuber-Remix, branch 1.4.x; adds `throw_item`, `throw_random`, `toggle_throwables_pause`,
+  `variance`/`both_sides`, `match_sprite`/`reverse`), and the app's own open-source server
+  `Main/Scripts/websocket_handler.gd` (same on 1.4.x, master and v1.4.7; last changed 2026-05-20) where the docs are
+  silent. Reviewed again 2026-11-11.
+- `ws://127.0.0.1:9321` (port set in the app's WebSocket tab; the server starts on Start or Auto-Start). TLS exists only
+  as a Godot export variable, not in the app's UI, so Cuebot uses `ws://` only. Requests are `{"event":<name>,..}`.
+  Each message is handled in order and answered only to its sender, with the same `event` and `result`
+  `success`/`failed` (`error`, `identifier`). `ping` is answered `{"event":"pong"}`; an unknown event or bad JSON
+  `{"event":"error","message":..}`. Nothing is pushed or broadcast.
+- **Not every request gets an answer.** A GDScript runtime error in a branch sends nothing: `general` without `key`,
+  `toggle_sprite`/`toggle_group` for a sprite that does not exist (the handler reads `result.visible` from
+  `{"success":false}`), and `match_sprite` with either sprite missing. Answers carry no request id. Cuebot keeps open
+  requests in send order and gives an answer to the oldest open request with the same event (`error` to the oldest of
+  all); requests before it will never be answered and fail at once. A timed-out request keeps its place so its late
+  answer is used up there (dropped after 4x the timeout). Two open requests with the same event cannot be told apart:
+  if the first is never answered, the second times out. Cuebot refuses sprites it knows do not exist (after one
+  re-read), so the no-answer cases above are not sent.
+- Godot parses JSON numbers as floats: `state_id: 2` arrives as `2.0` (the handler matches that on purpose) and
+  `list_sprites` ids may come back as `537693010870.0`; Cuebot sends ids as whole numbers. Name lookups are exact
+  (case-sensitive) and the first match wins; names are not unique. Cuebot resolves names against its cached lists and
+  sends the exact spelling; for duplicate sprite names it warns and offers `Name (id N)` suggestions.
+- Used: `list_states` (`states:[{id (1-based), name, is_current}]`, fails "no state buttons found" while a model
+  loads), `list_sprites` (`sprites:[{name,id,visible,is_group,children,parent_id}]`; `children` are direct children,
+  so `list_groups` is not needed), `state` (`state_name` or `state_id`), `show|hide|toggle_sprite` (`sprite_name`;
+  toggle answers `visibility`), `toggle_sprite|toggle_group` with `match_sprite` and `reverse` (target only / target
+  and attached sprites), `general` (`key`, a Godot key name for `OS.find_keycode_from_string`, plus `"0"`-`"9"`;
+  answers `actions_found:["Hat (Toggle)", ..]`), `shake_sprite` (`intensity`, `duration`), `bounce_sprite` (`height`,
+  `duration`), `move_sprite` (`x`,`y`,`duration`,`reset`,`reset_delay`), `animate_sprite` (`scale` or
+  `scale_x`/`scale_y`, `rotation` in degrees, same timing fields), `throw_item` (`item_name`, `amount`),
+  `throw_random` (`amount` optional; otherwise the app's per-trigger amount), both with optional `variance` (float;
+  -1 = app setting) and `both_sides` (bool; omitted = app setting), `toggle_throwables_pause` (`pause` optional;
+  answers `is_paused`; there is no read-only query), `load_model` (`file_path`, must end in `.pngRemix` or `.save`,
+  case-sensitive; any failure answers only "failed to load model").
+- `show|hide|toggle_sprite` and `*_group` call the same functions: both recurse into all attached sprites. Visibility,
+  moves, scale and rotation are written into the current state (`save_state(Global.current_state)`), so they last.
+- Effects capture the sprite's position/scale when the tween starts and save the state when it ends. Overlapping
+  effects on one sprite capture a mid-way value and leave it offset, so Cuebot runs effects one at a time per sprite
+  (shake = duration + 0.1 s return; bounce = 1.125 x duration; move/animate with reset = 2 x duration + reset_delay).
+- `move_sprite` and `animate_sprite` set absolute values with defaults 0 (x, y), 1 (scale) and 0 (rotation), and no
+  request reads a sprite's position, scale or rotation. So Cuebot requires X and Y together, and sends size and turn
+  together (empty = 1 / 0).
+- `throw_*` spawns one physics body per item, and fails "throwable spawner not active" when throwables are off. Cuebot
+  caps the amount (setting, default 50).
+- Polling: Cuebot reads `list_states` every 2 s (setting; 0 = off) and `list_sprites` every 5th time, for the "state
+  changed" and "sprites changed" triggers. With polling off it pings every 15 s. Two missed answers in a row end the
+  session (reconnects when that is on). The handler `print`s every message to its own log.
+- After `load_model` the old state buttons may still be listed for a moment, so Cuebot re-reads every 200 ms until the
+  states or sprites differ from before (2 s at most).
+- Not available: a list of throwables, a sprite's position/scale/rotation, any push event.
 
 ### Animaze (`Animaze/`)
 

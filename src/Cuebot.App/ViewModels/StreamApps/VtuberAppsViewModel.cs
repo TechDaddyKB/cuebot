@@ -406,6 +406,20 @@ public sealed partial class PngtuberRemixCardViewModel : StreamAppCardViewModel
         set { S.AutoReconnect = value; _remix.SaveSettings(); OnPropertyChanged(); }
     }
 
+    /// <summary>Seconds between checks for state changes; 0 = off.</summary>
+    public decimal? PollSeconds
+    {
+        get => (decimal)S.PollSeconds;
+        set { S.PollSeconds = value is { } v ? (double)Math.Clamp(v, 0, 3600) : 2; _remix.SaveSettings(); OnPropertyChanged(); }
+    }
+
+    /// <summary>The most items one throw sends.</summary>
+    public decimal? MaxThrowAmount
+    {
+        get => S.MaxThrowAmount;
+        set { S.MaxThrowAmount = value is { } v ? (int)Math.Clamp(v, 1, 10_000) : 50; _remix.SaveSettings(); OnPropertyChanged(); }
+    }
+
     public ObservableCollection<VtuberRowViewModel> States { get; } = [];
 
     public bool HasNoStates => States.Count == 0;

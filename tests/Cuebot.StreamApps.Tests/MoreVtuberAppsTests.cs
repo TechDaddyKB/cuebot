@@ -25,7 +25,8 @@ public sealed class PngtuberRemixServiceTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _remix = new PngtuberRemixService(_env.Settings, _env.Bus, _env.Log, _env.Server.Create, TestTimings.Fast);
+        _env.Settings.Value.PngtuberRemix.PollSeconds = 0; // these tests answer by hand: no polling, no ping
+        _remix = new PngtuberRemixService(_env.Settings, _env.Bus, _env.Log, _env.Server.Create, TestTimings.Fast) { PingInterval = TimeSpan.FromMinutes(10) };
         await _remix.ConnectAsync();
         _socket = await _env.Server.NextAsync();
         Assert.Equal("ws://127.0.0.1:9321/", _socket.Url!.ToString());
@@ -57,7 +58,7 @@ public sealed class PngtuberRemixServiceTests : IAsyncLifetime
     public async Task States_go_by_name_or_number_and_failures_are_explained()
     {
         var byName = _remix.SetStateAsync("smug");
-        Assert.Equal("smug", (await NextAsync("state")).GetProperty("state_name").GetString());
+        Assert.Equal("Smug", (await NextAsync("state")).GetProperty("state_name").GetString());   // PNGTuber Remix's own spelling
         _socket.Push("""{"event":"state","result":"success","state_id":2,"state_name":"Smug"}""");
         Assert.Equal("Smug", await byName);
         Assert.Equal("Smug", Assert.Single(_remix.States, st => st.IsCurrent).Name);   // the showing state follows
@@ -71,7 +72,7 @@ public sealed class PngtuberRemixServiceTests : IAsyncLifetime
         await NextAsync("state");
         _socket.Push("""{"available_states":2,"error":"state not found","event":"state","identifier":"zzz","result":"failed"}""");
         var ex = await Assert.ThrowsAsync<StreamAppRequestException>(() => missing);
-        Assert.Equal("PNGTuber Remix: state not found (zzz).", ex.Message);
+        Assert.Equal("PNGTuber Remix has no state 'zzz' (capital letters matter); its states are Idle, Smug.", ex.Message);
 
         var unknown = _remix.ThrowAsync("", null);
         await NextAsync("throw_random");
@@ -82,14 +83,14 @@ public sealed class PngtuberRemixServiceTests : IAsyncLifetime
     [Fact]
     public async Task Sprites_are_shown_toggled_and_moved()
     {
-        var show = _remix.SetVisibilityAsync("Hat", group: false, SwitchMode.On);
+        var show = _remix.SetVisibilityAsync("Hat", SwitchMode.On);
         Assert.Equal("Hat", (await NextAsync("show_sprite")).GetProperty("sprite_name").GetString());
         _socket.Push("""{"event":"show_sprite","result":"success","identifier":"Hat"}""");
         Assert.True(await show);
 
-        var toggle = _remix.SetVisibilityAsync("Head", group: true, SwitchMode.Toggle);
-        Assert.Equal("Head", (await NextAsync("toggle_group")).GetProperty("group_name").GetString());
-        _socket.Push("""{"event":"toggle_group","result":"success","identifier":"Head","visibility":"hidden"}""");
+        var toggle = _remix.SetVisibilityAsync("Head", SwitchMode.Toggle);
+        Assert.Equal("Head", (await NextAsync("toggle_sprite")).GetProperty("sprite_name").GetString());
+        _socket.Push("""{"event":"toggle_sprite","result":"success","identifier":"Head","visibility":"hidden"}""");
         Assert.False(await toggle);
 
         var shake = _remix.ShakeAsync("Head", null, 2);

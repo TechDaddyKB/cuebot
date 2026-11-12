@@ -16,13 +16,51 @@
         "pngtuberRemix.port": "The port number it uses",
         "reason": "Why it dropped"
       }
+    },
+    "pngtuberRemix.stateChanged": {
+      "description": "Runs when your avatar switches to another state: with a PNGTuber Remix hotkey or state button, from a Cuebot step, or when another model is loaded. PNGTuber Remix does not announce this, so Cuebot checks every few seconds (set on its card; 0 turns the checks and this trigger off).",
+      "fields": {
+        "state": "Only these states (names or numbers, separated by commas). Empty means any state."
+      },
+      "variables": {
+        "pngtuberRemix.state": "The name of the state now showing",
+        "pngtuberRemix.stateNumber": "Its number (1 is the first)",
+        "pngtuberRemix.previousState": "The state that was showing before (empty if unknown)",
+        "pngtuberRemix.previousStateNumber": "Its number",
+        "pngtuberRemix.changedBy": "Cuebot when a Cuebot step changed it, otherwise PNGTuber Remix",
+        "pngtuberRemix.host": "The computer PNGTuber Remix runs on",
+        "pngtuberRemix.port": "The port number it uses"
+      }
+    },
+    "pngtuberRemix.spritesChanged": {
+      "description": "Runs when sprites were added, removed or renamed, for example after another model was loaded or you edited your model. Cuebot checks about every 10 seconds (with the checks on).",
+      "fields": {},
+      "variables": {
+        "pngtuberRemix.spriteCount": "How many sprites there are now",
+        "pngtuberRemix.previousSpriteCount": "How many there were",
+        "pngtuberRemix.added": "Names of new sprites, separated by commas",
+        "pngtuberRemix.removed": "Names of sprites that are gone, separated by commas",
+        "pngtuberRemix.host": "The computer PNGTuber Remix runs on",
+        "pngtuberRemix.port": "The port number it uses"
+      }
+    },
+    "pngtuberRemix.throwingPausedChanged": {
+      "description": "Runs when a Cuebot step pauses or resumes throwing. PNGTuber Remix cannot report its pause key, so pausing there does not run this.",
+      "fields": {
+        "state": "Any, or only when throwing is now Paused or Running."
+      },
+      "variables": {
+        "pngtuberRemix.throwingPaused": "True when throwing is now paused",
+        "pngtuberRemix.host": "The computer PNGTuber Remix runs on",
+        "pngtuberRemix.port": "The port number it uses"
+      }
     }
   },
   "subActions": {
     "pngtuberRemix.setState": {
       "description": "Switches your PNGTuber Remix avatar to another state, like pressing one of its state buttons (for example Idle, Smug or Angry).",
       "fields": {
-        "state": "The state's name, or its number: 1 is the first state button, 2 the second and so on."
+        "state": "The state's name, or its number: 1 is the first state button, 2 the second and so on. Cuebot fixes capital letters for you when it knows the state."
       },
       "variables": {
         "pngtuberRemix.state": "The name of the state now showing"
@@ -38,18 +76,48 @@
       }
     },
     "pngtuberRemix.setVisibility": {
-      "description": "Shows or hides one sprite of your avatar, like a hat or glasses. Pick Group to also show or hide everything attached to it.",
+      "description": "Shows or hides one sprite of your avatar, like a hat or glasses. PNGTuber Remix always shows or hides everything attached to that sprite too (the name box shows how many, like Head (3 attached)). To show or hide a sprite on its own, use Match sprite visibility with Attached sprites follow off.",
       "fields": {
-        "sprite": "The sprite's name as in PNGTuber Remix's Sprites list (or its sprite ID).",
-        "what": "Just this sprite, or this sprite and everything attached to it.",
+        "sprite": "The sprite's name exactly as in PNGTuber Remix's Sprites list (or its sprite ID). If two sprites share a name, pick the one with its id from the suggestions.",
         "state": "Visible, Hidden, or Toggle (the opposite of now)."
       },
       "variables": {
         "pngtuberRemix.visible": "True when it is now visible, false when hidden"
       }
     },
+    "pngtuberRemix.matchVisibility": {
+      "description": "Makes one sprite visible when another one is, or the opposite, in one step. For example: show the glasses whenever the hat is hidden.",
+      "fields": {
+        "sprite": "The sprite to show or hide.",
+        "match": "The sprite it copies. Its visibility does not change.",
+        "opposite": "On: hidden when the other is visible, visible when it is hidden.",
+        "attached": "On: everything attached to the sprite follows. Off: only this sprite changes."
+      },
+      "variables": {
+        "pngtuberRemix.visible": "True when it is now visible, false when hidden"
+      }
+    },
+    "pngtuberRemix.getVisibility": {
+      "description": "Finds out whether a sprite is visible right now, so later steps (like If) can use it.",
+      "fields": {
+        "sprite": "The sprite's name exactly as in PNGTuber Remix's Sprites list (or its sprite ID)."
+      },
+      "variables": {
+        "pngtuberRemix.visible": "True when it is visible, false when hidden"
+      }
+    },
+    "pngtuberRemix.pressKey": {
+      "description": "Presses one of your PNGTuber Remix key binds without touching the keyboard: every sprite bound to that key toggles, and sprites with it as their hide key hide. Like PNGTuber Remix's own \"Trigger key binds\".",
+      "fields": {
+        "key": "The key as Godot writes it, for example A, 1, F5 or Space."
+      },
+      "variables": {
+        "pngtuberRemix.actionsFound": "What it did, like \"Hat (Toggle), Glasses (Hide)\"; empty when no sprite uses that key",
+        "pngtuberRemix.actionsFoundCount": "How many sprites it changed"
+      }
+    },
     "pngtuberRemix.shake": {
-      "description": "Shakes a sprite for a moment, for example your whole avatar when someone raids.",
+      "description": "Shakes a sprite for a moment, for example your whole avatar when someone raids. A second effect on the same sprite waits until this one is over.",
       "fields": {
         "sprite": "The sprite's name (pick the top sprite to shake the whole avatar).",
         "strength": "How far it shakes, in pixels. Empty means 10.",
@@ -58,7 +126,7 @@
       "variables": {}
     },
     "pngtuberRemix.bounce": {
-      "description": "Makes a sprite jump up once, like a little hop of joy.",
+      "description": "Makes a sprite jump up once, like a little hop of joy. A second effect on the same sprite waits until this one is over.",
       "fields": {
         "sprite": "The sprite's name.",
         "height": "How high it jumps, in pixels. Empty means 20.",
@@ -67,25 +135,31 @@
       "variables": {}
     },
     "pngtuberRemix.move": {
-      "description": "Moves a sprite somewhere, makes it bigger or smaller, or tilts it, smoothly. It can go back by itself afterwards.",
+      "description": "Moves a sprite somewhere, makes it bigger or smaller, stretches or tilts it, smoothly. It can go back by itself afterwards. Without Go back after, the change stays and is kept in the avatar state. A second effect on the same sprite waits until this one is over.",
       "fields": {
         "sprite": "The sprite's name.",
-        "x": "Where to move it, left (smaller) or right (bigger), in pixels. Leave X and Y empty to not move it.",
+        "x": "Where to move it, left (smaller) or right (bigger), in pixels. Set X and Y together: PNGTuber Remix moves it to that exact spot. Leave both empty to not move it.",
         "y": "Where to move it, up (smaller) or down (bigger), in pixels.",
-        "scale": "1 is normal size, 2 is twice as big, 0.5 half. Empty means keep the size.",
-        "rotation": "How many degrees to tilt it, for example 15. Empty means no tilt.",
+        "scale": "1 is normal size, 2 is twice as big, 0.5 half. Size and Turn are set together: when you set one, an empty Size means 1.",
+        "rotation": "How many degrees to tilt it, for example 15. An empty Turn means 0 (upright) when Size or a stretch is set.",
+        "scaleX": "Size left/right only, for example 1.3 to stretch it wide. Empty means the Size.",
+        "scaleY": "Size up/down only, for example 0.7 to squash it. Empty means the Size.",
         "seconds": "How long the change takes. Empty means 1 second.",
         "returnAfter": "Seconds before it goes back to how it was. Empty means it stays."
       },
       "variables": {}
     },
     "pngtuberRemix.throw": {
-      "description": "Throws things at your avatar, using the images you added as throwables in PNGTuber Remix. Great for bits or channel points.",
+      "description": "Throws things at your avatar, using the images you added as throwables in PNGTuber Remix. Great for bits or channel points. It fails with a clear message when throwables are not turned on in PNGTuber Remix.",
       "fields": {
-        "item": "The name of one throwable image. Leave empty for random ones.",
-        "amount": "How many to throw. It can use %arguments%, for example a number of bits."
+        "item": "The name of one throwable image (capital letters matter). Leave empty for random ones.",
+        "amount": "How many to throw. It can use %arguments%, for example a number of bits. Amounts above the card's Most per throw (50 unless changed) are lowered to it.",
+        "variance": "How much the throws vary. Empty uses PNGTuber Remix's own Variance setting.",
+        "bothSides": "Throw from both sides: App setting (PNGTuber Remix's own), Yes or No."
       },
-      "variables": {}
+      "variables": {
+        "pngtuberRemix.thrown": "How many were sent (empty when PNGTuber Remix chose the amount)"
+      }
     },
     "pngtuberRemix.pauseThrowing": {
       "description": "Pauses or resumes throwing, for example while you are on a break.",
@@ -99,7 +173,7 @@
     "pngtuberRemix.loadModel": {
       "description": "Opens another saved PNGTuber Remix model, for example a different outfit for a special stream.",
       "fields": {
-        "path": "The full path of the .pngRemix file, for example C:/Models/Party.pngRemix."
+        "path": "The full path of the .pngRemix (or .save) file, for example C:/Models/Party.pngRemix. The ending must be written exactly like that."
       },
       "variables": {}
     }

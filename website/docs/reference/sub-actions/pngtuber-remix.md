@@ -5,7 +5,7 @@
 
 ## Bounce sprite
 
-Makes a sprite jump up once, like a little hop of joy.
+Makes a sprite jump up once, like a little hop of joy. A second effect on the same sprite waits until this one is over.
 
 | Setting | What to put in |
 | --- | --- |
@@ -21,7 +21,7 @@ Switches your PNGTuber Remix avatar to another state, like pressing one of its s
 
 | Setting | What to put in |
 | --- | --- |
-| **State** | The state's name, or its number: 1 is the first state button, 2 the second and so on. |
+| **State** | The state's name, or its number: 1 is the first state button, 2 the second and so on. Cuebot fixes capital letters for you when it knows the state. |
 
 **Variables it adds**
 
@@ -45,27 +45,64 @@ Finds out which avatar state is showing right now, so later steps can use it.
 
 <small>Type id: `pngtuberRemix.getState`</small>
 
+## Get sprite visibility
+
+Finds out whether a sprite is visible right now, so later steps (like If) can use it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Sprite** | The sprite's name exactly as in PNGTuber Remix's Sprites list (or its sprite ID). |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.visible%` | True when it is visible, false when hidden |
+
+<small>Type id: `pngtuberRemix.getVisibility`</small>
+
 ## Load PNGTuber Remix model
 
 Opens another saved PNGTuber Remix model, for example a different outfit for a special stream.
 
 | Setting | What to put in |
 | --- | --- |
-| **Model file** | The full path of the .pngRemix file, for example C:/Models/Party.pngRemix. |
+| **Model file** | The full path of the .pngRemix (or .save) file, for example C:/Models/Party.pngRemix. The ending must be written exactly like that. |
 
 <small>Type id: `pngtuberRemix.loadModel`</small>
 
+## Match sprite visibility
+
+Makes one sprite visible when another one is, or the opposite, in one step. For example: show the glasses whenever the hat is hidden.
+
+| Setting | What to put in |
+| --- | --- |
+| **Sprite** | The sprite to show or hide. |
+| **Match sprite** | The sprite it copies. Its visibility does not change. |
+| **Opposite** | On: hidden when the other is visible, visible when it is hidden. Starts as: `false`. |
+| **Attached sprites follow** | On: everything attached to the sprite follows. Off: only this sprite changes. Starts as: `true`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.visible%` | True when it is now visible, false when hidden |
+
+<small>Type id: `pngtuberRemix.matchVisibility`</small>
+
 ## Move, grow or spin sprite
 
-Moves a sprite somewhere, makes it bigger or smaller, or tilts it, smoothly. It can go back by itself afterwards.
+Moves a sprite somewhere, makes it bigger or smaller, stretches or tilts it, smoothly. It can go back by itself afterwards. Without Go back after, the change stays and is kept in the avatar state. A second effect on the same sprite waits until this one is over.
 
 | Setting | What to put in |
 | --- | --- |
 | **Sprite** | The sprite's name. |
-| **X** | Where to move it, left (smaller) or right (bigger), in pixels. Leave X and Y empty to not move it. |
+| **X** | Where to move it, left (smaller) or right (bigger), in pixels. Set X and Y together: PNGTuber Remix moves it to that exact spot. Leave both empty to not move it. |
 | **Y** | Where to move it, up (smaller) or down (bigger), in pixels. |
-| **Size** | 1 is normal size, 2 is twice as big, 0.5 half. Empty means keep the size. |
-| **Turn (degrees)** | How many degrees to tilt it, for example 15. Empty means no tilt. |
+| **Size** | 1 is normal size, 2 is twice as big, 0.5 half. Size and Turn are set together: when you set one, an empty Size means 1. |
+| **Turn (degrees)** | How many degrees to tilt it, for example 15. An empty Turn means 0 (upright) when Size or a stretch is set. |
+| **Stretch wide** | Size left/right only, for example 1.3 to stretch it wide. Empty means the Size. |
+| **Stretch tall** | Size up/down only, for example 0.7 to squash it. Empty means the Size. |
 | **Seconds** | How long the change takes. Empty means 1 second. |
 | **Go back after (seconds)** | Seconds before it goes back to how it was. Empty means it stays. |
 
@@ -87,9 +124,26 @@ Pauses or resumes throwing, for example while you are on a break.
 
 <small>Type id: `pngtuberRemix.pauseThrowing`</small>
 
+## Press PNGTuber Remix key bind
+
+Presses one of your PNGTuber Remix key binds without touching the keyboard: every sprite bound to that key toggles, and sprites with it as their hide key hide. Like PNGTuber Remix's own "Trigger key binds".
+
+| Setting | What to put in |
+| --- | --- |
+| **Key** | The key as Godot writes it, for example A, 1, F5 or Space. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.actionsFound%` | What it did, like "Hat (Toggle), Glasses (Hide)"; empty when no sprite uses that key |
+| `%pngtuberRemix.actionsFoundCount%` | How many sprites it changed |
+
+<small>Type id: `pngtuberRemix.pressKey`</small>
+
 ## Shake sprite
 
-Shakes a sprite for a moment, for example your whole avatar when someone raids.
+Shakes a sprite for a moment, for example your whole avatar when someone raids. A second effect on the same sprite waits until this one is over.
 
 | Setting | What to put in |
 | --- | --- |
@@ -101,12 +155,11 @@ Shakes a sprite for a moment, for example your whole avatar when someone raids.
 
 ## Show/hide sprite
 
-Shows or hides one sprite of your avatar, like a hat or glasses. Pick Group to also show or hide everything attached to it.
+Shows or hides one sprite of your avatar, like a hat or glasses. PNGTuber Remix always shows or hides everything attached to that sprite too (the name box shows how many, like Head (3 attached)). To show or hide a sprite on its own, use Match sprite visibility with Attached sprites follow off.
 
 | Setting | What to put in |
 | --- | --- |
-| **Sprite** | The sprite's name as in PNGTuber Remix's Sprites list (or its sprite ID). |
-| **Also its children** | Just this sprite, or this sprite and everything attached to it. Options: Just this sprite, This sprite and everything attached to it. Starts as: `Just this sprite`. |
+| **Sprite** | The sprite's name exactly as in PNGTuber Remix's Sprites list (or its sprite ID). If two sprites share a name, pick the one with its id from the suggestions. |
 | **State** | Visible, Hidden, or Toggle (the opposite of now). Options: Visible, Hidden, Toggle. Starts as: `Toggle`. |
 
 **Variables it adds**
@@ -119,11 +172,19 @@ Shows or hides one sprite of your avatar, like a hat or glasses. Pick Group to a
 
 ## Throw things at avatar
 
-Throws things at your avatar, using the images you added as throwables in PNGTuber Remix. Great for bits or channel points.
+Throws things at your avatar, using the images you added as throwables in PNGTuber Remix. Great for bits or channel points. It fails with a clear message when throwables are not turned on in PNGTuber Remix.
 
 | Setting | What to put in |
 | --- | --- |
-| **Item** | The name of one throwable image. Leave empty for random ones. |
-| **How many** | How many to throw. It can use %arguments%, for example a number of bits. |
+| **Item** | The name of one throwable image (capital letters matter). Leave empty for random ones. |
+| **How many** | How many to throw. It can use %arguments%, for example a number of bits. Amounts above the card's Most per throw (50 unless changed) are lowered to it. |
+| **Variance** | How much the throws vary. Empty uses PNGTuber Remix's own Variance setting. |
+| **From both sides** | Throw from both sides: App setting (PNGTuber Remix's own), Yes or No. Options: App setting, Yes, No. Starts as: `App setting`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%pngtuberRemix.thrown%` | How many were sent (empty when PNGTuber Remix chose the amount) |
 
 <small>Type id: `pngtuberRemix.throw`</small>

@@ -57,7 +57,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="PNGTuber Remix" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="In PNGTuber Remix, open the WebSocket tab on the right (use the arrows next to the tabs to find it), tick Auto-Start and press Start. Then actions can switch your avatar state, show or hide sprites (like a hat), shake or bounce them, and throw things at your avatar." />
+                     Text="In PNGTuber Remix, open the WebSocket tab on the right (use the arrows next to the tabs to find it), tick Auto-Start and press Start. Then actions can switch your avatar state, show or hide sprites (like a hat), shake or bounce them, press its key binds, and throw things at your avatar." />
           <Grid ColumnDefinitions="Auto,*,Auto,140" RowDefinitions="Auto">
             <TextBlock Text="Host" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox Grid.Column="1" Name="RemixHost" Text="{Binding Host}" PlaceholderText="127.0.0.1"
@@ -69,6 +69,14 @@
           <CheckBox Content="Connect automatically on startup" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Connects to PNGTuber Remix as soon as Cuebot starts." />
           <CheckBox Content="Keep trying when PNGTuber Remix closes (or is not started yet)" IsChecked="{Binding AutoReconnect}"
                     ToolTip.Tip="Tries again by itself, so you can open PNGTuber Remix before or after Cuebot." />
+          <Grid ColumnDefinitions="Auto,140,Auto,140" RowDefinitions="Auto">
+            <TextBlock Text="Check for changes every (s)" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <NumericUpDown Grid.Column="1" Name="RemixPollSeconds" Value="{Binding PollSeconds}" Minimum="0" Maximum="3600" Increment="0.5" FormatString="0.#"
+                           ToolTip.Tip="PNGTuber Remix does not tell Cuebot when you change state with its hotkeys, so Cuebot asks every few seconds. Needed for the &quot;Avatar state changed&quot; trigger. 0 = off." />
+            <TextBlock Grid.Column="2" Text="Most per throw" VerticalAlignment="Center" Margin="12,0,8,0" />
+            <NumericUpDown Grid.Column="3" Name="RemixMaxThrow" Value="{Binding MaxThrowAmount}" Minimum="1" Maximum="10000" FormatString="0"
+                           ToolTip.Tip="A bigger amount (like %bits% from a big cheer) is lowered to this, so PNGTuber Remix does not freeze under thousands of items." />
+          </Grid>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects Cuebot to PNGTuber Remix." />
             <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Closes the connection to PNGTuber Remix." />

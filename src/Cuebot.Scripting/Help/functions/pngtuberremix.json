@@ -1,0 +1,84 @@
+{
+  "functions": {
+    "pngtuberRemix.isConnected": {
+      "description": "Tells whether Cuebot is connected to PNGTuber Remix right now.",
+      "parameters": {},
+      "returns": "True or false.",
+      "example": {}
+    },
+    "pngtuberRemix.setState": {
+      "description": "Switches your PNGTuber Remix avatar to another state, like pressing its state button. Capital letters are fixed for you when Cuebot knows the state.",
+      "parameters": {
+        "state": "The state's name, or its number (1 is the first state button)."
+      },
+      "returns": "The name of the state now showing.",
+      "example": {
+        "state": "Smug"
+      }
+    },
+    "pngtuberRemix.getState": {
+      "description": "Asks PNGTuber Remix which avatar state is showing right now.",
+      "parameters": {},
+      "returns": "An object with name and number (1 is the first), or null when PNGTuber Remix has no states yet.",
+      "example": {}
+    },
+    "pngtuberRemix.getStates": {
+      "description": "Lists the avatar states Cuebot last read (on connect, every few seconds while the checks are on, and after Reload).",
+      "parameters": {},
+      "returns": "A list of objects with number, name and current (true for the one showing).",
+      "example": {}
+    },
+    "pngtuberRemix.getSprites": {
+      "description": "Reads the sprites of your PNGTuber Remix model fresh.",
+      "parameters": {},
+      "returns": "A list of objects with name, id, visible, parentId, children (names of the sprites attached directly) and attached (how many are attached, also through others).",
+      "example": {}
+    },
+    "pngtuberRemix.setVisibility": {
+      "description": "Shows, hides or toggles a sprite. PNGTuber Remix does the same to everything attached to it.",
+      "parameters": {
+        "sprite": "The sprite's exact name (or its sprite id).",
+        "visible": "Optional. true to show, false to hide, \"toggle\" (the default) for the opposite of now."
+      },
+      "returns": "True when it is now visible, false when hidden.",
+      "example": {
+        "sprite": "Hat",
+        "visible": true
+      }
+    },
+    "pngtuberRemix.isVisible": {
+      "description": "Asks PNGTuber Remix whether a sprite is visible right now.",
+      "parameters": {
+        "sprite": "The sprite's exact name (or its sprite id)."
+      },
+      "returns": "True or false.",
+      "example": {
+        "sprite": "Hat"
+      }
+    },
+    "pngtuberRemix.pressKey": {
+      "description": "Presses one of your PNGTuber Remix key binds without touching the keyboard: sprites bound to that key toggle, and sprites with it as their hide key hide.",
+      "parameters": {
+        "key": "The key as Godot writes it, for example A, 1, F5 or Space."
+      },
+      "returns": "A list of what it did, like \"Hat (Toggle)\"; empty when no sprite uses that key.",
+      "example": {
+        "key": "H"
+      }
+    },
+    "pngtuberRemix.throw": {
+      "description": "Throws things at your avatar from your PNGTuber Remix throwables. The amount is lowered to the card's Most per throw.",
+      "parameters": {
+        "item": "Optional. The name of one throwable image; empty for random ones.",
+        "amount": "Optional. How many. Empty: 1 named item, or PNGTuber Remix's own amount for random ones.",
+        "variance": "Optional. How much the throws vary; empty uses PNGTuber Remix's own setting.",
+        "bothSides": "Optional. true or false to throw from both sides; empty uses PNGTuber Remix's own setting."
+      },
+      "returns": "How many were sent, or null when PNGTuber Remix chose the amount.",
+      "example": {
+        "item": "Tomato",
+        "amount": 5
+      }
+    }
+  }
+}

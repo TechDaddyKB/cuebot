@@ -12,4 +12,13 @@ public sealed class PngtuberRemixSettings
 
     /// <summary>Reconnect (with backoff) when PNGTuber Remix closes or its WebSocket is not started yet.</summary>
     public bool AutoReconnect { get; set; } = true;
+
+    /// <summary>
+    /// Seconds between re-reads of the avatar states (the sprites every 5th time), so a state changed with a PNGTuber
+    /// Remix hotkey is noticed; 0 = off (then a ping every 15 s checks the connection). PNGTuber Remix pushes nothing.
+    /// </summary>
+    public double PollSeconds { get; set; } = 2;
+
+    /// <summary>The most items one throw sends; a bigger amount (e.g. %bits%) is lowered to this.</summary>
+    public int MaxThrowAmount { get; set; } = 50;
 }
