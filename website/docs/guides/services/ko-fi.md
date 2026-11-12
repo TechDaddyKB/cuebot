@@ -1,7 +1,8 @@
 # Ko-fi
 
 Ko-fi tells Cuebot about every donation, membership payment, commission and shop order. Each one becomes a trigger,
-an item in the activity feed, a spoken event, an overlay alert and part of your totals, credits and goals.
+an item in the activity feed, a spoken event, an overlay alert (a tip, a **Subscriber** alert with the tier for a
+membership, a **Merch** alert for a shop order or commission) and part of your totals, credits and goals.
 
 Ko-fi reaches Cuebot through a relay. Set one up first: see [Webhooks](webhooks.md).
 
@@ -59,7 +60,7 @@ spaces do not matter.
 
 Payments your own relay kept while Cuebot was closed arrive when it starts, all at once. They have `%isReplay%` true.
 Tick **Skip late deliveries** on a trigger so you are not flooded with old thank-yous. Skipped or not, they still count
-in the activity feed, totals, credits and the Ko-fi goal. A payment counts once, even when Cuebot crashed before it
+in the activity feed, totals, credits and the Ko-fi goal, and the alert box does not pop them up (see [Missed alerts](../overlays/alerts.md#missed-alerts-catch-up)). A payment counts once, even when Cuebot crashed before it
 could tell the relay it was handled: Cuebot remembers the payments it handled for two days.
 
 ## Shop product names

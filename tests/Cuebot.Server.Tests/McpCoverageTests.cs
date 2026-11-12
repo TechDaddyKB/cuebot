@@ -121,6 +121,19 @@ public sealed class McpCoverageTests : IAsyncLifetime
         Assert.All(published.Where(e => e.Type.StartsWith("twitch.", StringComparison.Ordinal)),
             e => Assert.True(e.Args["isTest"] is true && e.Args["isEmulated"] is true, e.Type));   // feed shows tests; top spenders skip them
         await Fails("emulate_event", Args(("platform", "twitch"), ("kind", "superchat")));
+
+        // The newer services: found by list_emulated_events, sent as their real event types.
+        Assert.Equal("kofi.subscription", S(kinds["platforms"]!["kofi"]!["membership"]!["event"]));
+        Assert.Equal("Bronze", S(kinds["platforms"]!["kofi"]!["membership"]!["args"]!["tier"]));
+        Assert.Equal("patreon.pledgeUpdated", S(kinds["platforms"]!["patreon"]!["upgrade"]!["event"]));
+        Assert.Equal("fourthwall.giftPurchase", S(kinds["platforms"]!["fourthwall"]!["gifts"]!["event"]));
+        Assert.Equal("shopify.orderPaid", S(kinds["platforms"]!["shopify"]!["order"]!["event"]));
+        Assert.Equal("streamlabs.charityDonation", S(kinds["platforms"]!["donations"]!["charity"]!["event"]));
+        published.Clear();
+        await Ok("emulate_event", Args(("platform", "KoFi"), ("kind", "Membership"), ("target", "everything"), ("args", new JsonObject { ["amount"] = 15 })));
+        var membership = Assert.Single(published, e => e.Type == "kofi.subscription");
+        Assert.True(membership.Args["isTest"] is true && membership.Args["isEmulated"] is true);
+        Assert.Equal(15, Convert.ToInt32(membership.Args["amount"], System.Globalization.CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -292,6 +305,10 @@ public sealed class McpCoverageTests : IAsyncLifetime
         Assert.NotNull(raid["design"]!["duration"]);   // other design fields kept
         Assert.Equal("Big raid", S(raid["variations"]![0]!["name"]));
         Assert.False(updated["alerts"]!["types"]!["follower"]!["enabled"]!.GetValue<bool>());
+        // Catch-up alerts (missed while disconnected, delivered late) stay off screen unless the box shows them.
+        Assert.False(designs["alerts"]!["showCatchUp"]!.GetValue<bool>());
+        var shown = await Ok("update_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Alert box"), ("showCatchUp", true)));
+        Assert.True(shown["alerts"]!["showCatchUp"]!.GetValue<bool>());
         await Fails("update_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Alert box"), ("types", new JsonObject { ["dance"] = new JsonObject() })));
         await Fails("get_alert_designs", Args(("overlay", "Gameplay"), ("layer", "Clock")));
         await Fails("update_widget_settings", Args(("overlay", "Gameplay"), ("layer", "Alert box"), ("values", new JsonObject { ["alerts"] = new JsonObject() })));

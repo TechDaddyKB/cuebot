@@ -323,9 +323,11 @@
 
   var LABELS = {
     chat: "Chat", follow: "Follow", sub: "Sub", resub: "Resub", gift: "Gift subs", cheer: "Cheer", raid: "Raid",
-    kicks: "Kicks", tip: "Tip", superchat: "Super Chat"
+    kicks: "Kicks", tip: "Tip", superchat: "Super Chat", merch: "Merch", charity: "Charity", membership: "Membership",
+    shop: "Shop order", commission: "Commission", upgrade: "Upgrade", order: "Order", gifts: "Stream gifts"
   };
-  var NAMES = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", donations: "Donations" };
+  var NAMES = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", donations: "Donations", kofi: "Ko-fi",
+    patreon: "Patreon", fourthwall: "Fourthwall", shopify: "Shopify" };
 
   function renderEmulate() {
     var select = $("emulate-platform");

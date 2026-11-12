@@ -20,7 +20,8 @@
   };
   var OPS = { atLeast: "at least", exact: "exactly", between: "between", is: "is", contains: "contains" };
   var TIERS = { "1000": "Tier 1", "2000": "Tier 2", "3000": "Tier 3", prime: "Prime" };
-  var PLATFORMS = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", streamelements: "StreamElements" };
+  var PLATFORMS = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", streamelements: "StreamElements",
+    donations: "Donations", kofi: "Ko-fi", patreon: "Patreon", fourthwall: "Fourthwall", shopify: "Shopify" };
   var LAYOUTS = { above: "Image above text", side: "Image beside text", overlay: "Text over image" };
   var ENTER = ["none", "fadeIn", "fadeInUp", "fadeInDown", "fadeInLeft", "fadeInRight", "slideInUp", "slideInDown",
     "slideInLeft", "slideInRight", "zoomIn", "bounceIn"];
@@ -147,6 +148,7 @@
       list.appendChild(item);
     });
     $("random-pick").checked = bool(alerts.randomPick);
+    $("show-catch-up").checked = bool(alerts.showCatchUp);
   }
 
   function renderDesigns() {
@@ -484,9 +486,11 @@
 
   var LABELS = {
     follow: "Follow", sub: "Sub", resub: "Resub", gift: "Gift subs", cheer: "Cheer", raid: "Raid",
-    kicks: "Kicks", tip: "Tip", superchat: "Super Chat"
+    kicks: "Kicks", tip: "Tip", superchat: "Super Chat", merch: "Merch", charity: "Charity", membership: "Membership",
+    shop: "Shop order", commission: "Commission", upgrade: "Upgrade", order: "Order", gifts: "Stream gifts"
   };
-  var NAMES = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", donations: "Donations" };
+  var NAMES = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", donations: "Donations", kofi: "Ko-fi",
+    patreon: "Patreon", fourthwall: "Fourthwall", shopify: "Shopify" };
 
   function renderEmulate() {
     var select = $("emulate-platform");
@@ -563,6 +567,7 @@
   document.body.appendChild(voiceList);
 
   $("random-pick").addEventListener("change", function () { alerts.randomPick = $("random-pick").checked; changed(true); });
+  $("show-catch-up").addEventListener("change", function () { alerts.showCatchUp = $("show-catch-up").checked; changed(true); });
   $("mute").addEventListener("change", function () {
     sendToPreview({ type: "event", listener: "alertService:toggleSound", event: { muted: $("mute").checked } });
   });

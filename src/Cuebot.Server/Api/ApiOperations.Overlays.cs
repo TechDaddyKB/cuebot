@@ -362,14 +362,16 @@ public sealed partial class ApiOperations
 
     /// <summary>
     /// Changes alert designs: each given type's <c>enabled</c>, <c>design</c> fields (merged) and <c>variations</c>
-    /// (replaced when given); <c>randomPick</c> for the whole box.
+    /// (replaced when given); <c>randomPick</c> and <c>showCatchUp</c> (also pop up catch-up alerts: events missed while
+    /// disconnected or delivered late) for the whole box.
     /// </summary>
-    public JsonObject UpdateAlertDesigns(string overlay, string layer, JsonObject? types, bool? randomPick)
+    public JsonObject UpdateAlertDesigns(string overlay, string layer, JsonObject? types, bool? randomPick, bool? showCatchUp = null)
     {
         var (o, l) = FindAlertBox(overlay, layer);
         var alerts = AlertsOf(l);
         var all = alerts["types"] as JsonObject ?? throw ApiException.Unavailable("The alert box's designs are not readable");
         if (randomPick is { } pick) alerts["randomPick"] = pick;
+        if (showCatchUp is { } show) alerts["showCatchUp"] = show;
         foreach (var (type, change) in types ?? [])
         {
             if (all[type] is not JsonObject current)

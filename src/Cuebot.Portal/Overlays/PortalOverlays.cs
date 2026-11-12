@@ -418,7 +418,7 @@ public sealed class PortalOverlays(OverlayStore overlays, ElementStore elements,
         foreach (var (key, value) in alerts)
         {
             if (key == "types") continue;
-            if (key == "randomPick" && Bool(value) is { } random) result[key] = random;
+            if (key is "randomPick" or "showCatchUp" && Bool(value) is { } flag) result[key] = flag;
             else if (!JsonNode.DeepEquals(current[key], value)) problems.Add("Only the streamer can change how alerts are picked.");
         }
         if (alerts["types"] is not JsonObject types || result["types"] is not JsonObject resultTypes) return result;

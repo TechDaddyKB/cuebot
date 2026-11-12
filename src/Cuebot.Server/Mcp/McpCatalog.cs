@@ -286,7 +286,14 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
           {name, param (amount, tier, platform, name, gifted, bulk, currency, message), op (atLeast, exact, between, is, contains),
           value, value2, chance, design (only the fields that differ)}; the first match wins (randomPick picks among matches).
         - The custom type is used by actions with the "Show alert" sub-action (overlays.showAlert) for any trigger.
-        - emulate_event {platform: twitch, kind: raid} shows a sample on the overlays without running actions.
+        - emulate_event {platform: twitch, kind: raid} shows a sample on the overlays without running actions. Besides
+          twitch, kick, rumble and youtube there are donations (tip, merch, charity), kofi (tip, membership, resub, shop,
+          commission), patreon (follow = free member, membership = new pledge, upgrade), fourthwall (tip, order, gifts) and
+          shopify (order); list_emulated_events has each one's event and arguments.
+        - Catch-up alerts (isCatchUp: Streamlabs/StreamElements donations fetched after a reconnect, Ko-fi deliveries that
+          arrived late, Fourthwall/Shopify catch-up finds, Patreon's stale backlog) do not pop up unless the box has
+          showCatchUp (update_alert_designs {"showCatchUp": true}); event lists, goals and session totals count them anyway.
+          A Pally.gg "Replay Alert" is not a catch-up: it always plays.
 
         ## Alerts for other triggers
         To alert on something that is not a platform event (a channel point reward, a command, a hotkey), create an action

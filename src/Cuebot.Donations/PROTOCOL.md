@@ -122,7 +122,10 @@ Charity, merch, loyalty store and Prime gift shapes, and the "Send test event" s
   sends `welcome`). The token is used once. That `welcome` counts as subscribed (status Connected). After a reconnect
   that was **not** a resume, Cuebot back-fills: `GET activities/{channel}?after=<last activity createdAt>&before=<now>
   &limit=25&types=tip&types=merch&types=redemption&origin=feed&min*=0` and publishes what it missed (the
-  `activity:<id>` dedupe drops what was already seen).
+  `activity:<id>` dedupe drops what was already seen), marked `isBackfill` = true (false on live tips, merch and
+  redemptions). The Tip, Merch and Store redemption triggers have *Include … fetched after a reconnect* (on by
+  default); overlay alerts for them carry `isCatchUp` = true, so Cuebot's alert box skips them unless "show catch-up
+  alerts" is on, while event lists and session totals count them. Streamlabs' `isBackfill` donations are treated the same.
 
 **Topics** (docs.streamelements.com/websockets/topics; `channel.chat` only with "receive chat" on):
 
@@ -338,7 +341,8 @@ Still operating (treatstream.com answers, "© 2026", Twitch/YouTube/Kick logos; 
 - **Delivery:** each event goes once to the connections open at the time; there is **no replay** after a reconnect.
   "Replay Alert" in Pally's activity feed re-broadcasts a tip to every websocket on purpose, so tips are not
   deduplicated: a tip id seen before is published again with `isReplay` = true (the Campaign Tip trigger has an
-  *Include replayed alerts* option, on by default).
+  *Include replayed alerts* option, on by default). Unlike the catch-up flags of the other services, this replay is
+  deliberate: the overlay alert has `isCatchUp` = false and the alert box plays it again.
 - **Event:** `{"type":"campaigntip.notify","payload":{"campaignTip":{"id","createdAt","updatedAt","displayName",
   "message","grossAmountInCents","netAmountInCents","processingFeeInCents"},"page":{"id","slug","title","url"}}}`
   ("may contain additional/undocumented fields"). Amounts are US cents.

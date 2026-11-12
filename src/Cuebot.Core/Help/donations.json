@@ -185,7 +185,8 @@
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "includeBackfill": "Tick to also run for tips Cuebot fetched after the connection came back (they happened while it was down). Needs your StreamElements JWT token."
       },
       "variables": {
         "user": "Who tipped",
@@ -196,6 +197,7 @@
         "avatar": "Their picture (web link)",
         "tipId": "The number StreamElements gave this tip",
         "isTest": "True when this is a test event, not a real one",
+        "isBackfill": "True when Cuebot fetched this after a reconnect instead of hearing it live",
         "tipApproved": "allowed when a moderator (or no moderation) let it through; unknown when StreamElements did not say",
         "approvedBy": "The moderator who approved it, if one did",
         "data.<name>": "Any other detail StreamElements sent, like %data.tipId%"
@@ -207,7 +209,8 @@
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "includeBackfill": "Tick to also run for orders Cuebot fetched after the connection came back (they happened while it was down). Needs your StreamElements JWT token."
       },
       "variables": {
         "user": "Who bought",
@@ -217,14 +220,16 @@
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
         "merchQuantity": "How many things they bought in total",
         "message": "Their message",
-        "isTest": "True when this is a test event, not a real one"
+        "isTest": "True when this is a test event, not a real one",
+        "isBackfill": "True when Cuebot fetched this after a reconnect instead of hearing it live"
       }
     },
     "streamelements.redemption": {
       "description": "Runs when a viewer spends loyalty points on an item in your StreamElements store.",
       "fields": {
         "item": "Only run for this store item, typed as it is named in your store, like \"Hydrate!\". Leave empty for any item.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "includeBackfill": "Tick to also run for redemptions Cuebot fetched after the connection came back (they happened while it was down). Needs your StreamElements JWT token."
       },
       "variables": {
         "user": "Who bought it",
@@ -232,6 +237,7 @@
         "cost": "How many points it cost",
         "message": "Their message",
         "isTest": "True when this is a test event, not a real one",
+        "isBackfill": "True when Cuebot fetched this after a reconnect instead of hearing it live",
         "redemptionId": "The redemption's id, for the Complete or Refund store redemption steps (when StreamElements sends it)",
         "userInput": "What the viewer typed, for items that ask for text"
       }
@@ -1085,7 +1091,7 @@
         "campaignSlug": "The last part of that page's web address",
         "campaignUrl": "The page's web link",
         "tipNetAmount": "What you get after fees",
-        "isReplay": "True if this is an old tip shown again",
+        "isReplay": "True when you pressed \"Replay Alert\" in Pally.gg's activity feed (overlay alert boxes still play it)",
         "isTest": "True when this is a test event, not a real one"
       }
     },

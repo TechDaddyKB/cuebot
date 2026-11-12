@@ -28,6 +28,10 @@ Then:
 Each tip then starts triggers (look in the [trigger reference](../../reference/triggers/index.md) under the service's
 name), and shows up in your alerts, credits and spoken events.
 
+Pressing **Replay Alert** in Pally.gg's activity feed sends the tip again with `%isReplay%` = True. Cuebot's alert box
+plays it again, since that is what you asked for. Untick **Include replayed alerts** on the **Campaign tip** trigger if
+your actions should not run again.
+
 !!! warning "Partly checked"
     Streamlabs and StreamElements connected for real, and DonorDrive read a real Extra Life team. But no real tip or
     donation has come in through Cuebot yet. Use **Send test event** to check your actions, and please tell us if a

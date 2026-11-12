@@ -13,7 +13,8 @@ namespace Cuebot.Core.Overlays.Events;
 /// from the <see cref="EmoteService"/>;</item>
 /// <item>"chat.messageDeleted" becomes "delete-message" and "chat.userBanned" / "chat.userTimedOut" "delete-messages";</item>
 /// <item>platform events the adapters recognize become alerts ("follower-latest", "subscriber-latest", ...), each
-/// followed by the raw "event" listener <c>{type, provider, data}</c>.</item>
+/// followed by the raw "event" listener <c>{type, provider, data}</c>. Every alert has <c>isCatchUp</c> (see
+/// <see cref="IOverlayEventAdapter.IsCatchUp"/>).</item>
 /// </list>
 /// </summary>
 public sealed class OverlayEventBridge : IDisposable
@@ -80,6 +81,8 @@ public sealed class OverlayEventBridge : IDisposable
             if (adapter.ToAlert(e) is not { } alert) continue;
             // Which platform it came from, like chat messages' "service" (alert box variations can match on it).
             alert.Event["service"] = adapter.Service;
+            // Missed while disconnected, delivered late or a backlog: data widgets count it, alert boxes skip it by default.
+            alert.Event[OverlayAlerts.CatchUp] = adapter.IsCatchUp(e);
             var raw = new JsonObject
             {
                 ["type"] = alert.Event["type"]?.DeepClone(),

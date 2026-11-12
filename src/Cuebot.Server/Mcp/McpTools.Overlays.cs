@@ -92,8 +92,11 @@ public static partial class McpTools
             + "Try it with emulate_event.",
             Schema(["overlay", "layer"], ("overlay", Str(OverlayRef)), ("layer", Str(LayerRef)),
                 ("types", new JsonObject { ["type"] = "object", ["description"] = "Alert type → {enabled, design: {...}, variations: [...]}" }),
-                ("randomPick", Bool("Pick a random matching variation instead of the first"))), WriteHints,
-            (a, _) => Done(ops.UpdateAlertDesigns(ReqStr(a, "overlay"), ReqStr(a, "layer"), a["types"] as JsonObject, OptBool(a, "randomPick")))),
+                ("randomPick", Bool("Pick a random matching variation instead of the first")),
+                ("showCatchUp", Bool("Also pop up catch-up alerts (isCatchUp: donations, orders and pledges fetched after a reconnect or delivered late). "
+                    + "Off by default; event lists, goals and session totals count them either way"))), WriteHints,
+            (a, _) => Done(ops.UpdateAlertDesigns(ReqStr(a, "overlay"), ReqStr(a, "layer"), a["types"] as JsonObject, OptBool(a, "randomPick"),
+                OptBool(a, "showCatchUp")))),
 
         new("list_gallery", "List the community gallery", "Overlays and widgets shared in Cuebot's community gallery (each reviewed before it is listed).",
             Schema([]), new McpToolHints(ReadOnly: true, OpenWorld: true), async (_, ct) => await ops.GalleryAsync(ct).ConfigureAwait(false)),

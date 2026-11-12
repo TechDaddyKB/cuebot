@@ -31,6 +31,16 @@ public interface IOverlayEventAdapter
 
     /// <summary>Badge images for a chat message from this platform, from the platform event's arguments.</summary>
     IReadOnlyList<OverlayBadge> Badges(IReadOnlyDictionary<string, object?> platformArgs);
+
+    /// <summary>
+    /// True when the event is a catch-up rather than something that just happened: fetched after a reconnect
+    /// (Streamlabs and StreamElements <c>isBackfill</c>), delivered late or found by a catch-up poll (Ko-fi, Fourthwall,
+    /// Shopify <c>isReplay</c>) or a backlog after a paused webhook (Patreon <c>isStale</c>). The alert then carries
+    /// <see cref="OverlayAlerts.CatchUp"/> = true: alert boxes skip it unless told to show them, while event lists,
+    /// goals and session counts still take it. Not a catch-up: Pally.gg's <c>isReplay</c> (the streamer pressed
+    /// "Replay Alert" on purpose).
+    /// </summary>
+    bool IsCatchUp(BotEvent e) => false;
 }
 
 /// <summary>Builds StreamElements alert events (the fields of <c>*-latest</c> listeners) from Cuebot event arguments.</summary>
@@ -45,6 +55,12 @@ public static class OverlayAlerts
     public const string SuperChat = "superchat-latest";
     public const string Kicks = "kicks-latest";
     public const string CharityDonation = "charityCampaignDonation-latest";
+
+    /// <summary>
+    /// The alert field that marks a catch-up event (see <see cref="IOverlayEventAdapter.IsCatchUp"/>); every alert has it.
+    /// Cuebot's alert box skips those unless its "show catch-up alerts" setting (<c>alerts.showCatchUp</c>) is on.
+    /// </summary>
+    public const string CatchUp = "isCatchUp";
 
     /// <summary>Merch bought (StreamElements and Streamlabs merch, Fourthwall, Shopify and Ko-fi shop orders).</summary>
     public const string Merch = "merch-latest";

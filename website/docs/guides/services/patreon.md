@@ -74,6 +74,21 @@ A patron can hide their identity on Patreon. Then `%user%` is "An anonymous patr
 `%avatarUrl%` is empty. Their name is only in `%privateName%`: never put that on stream. Give overlays a fallback
 picture for an empty `%avatarUrl%`.
 
+## Overlay alerts
+
+Patreon reaches the overlay [alert box](../overlays/alerts.md) without an action:
+
+- A new paying patron (**Pledge Created**) is a **Subscriber** alert. `{name}` is the patron, the tier name and the
+  monthly price come along (`tierName`, `price`, `currency`). Patreon sends both `members:create` and
+  `members:pledge:create` for a new patron; only the pledge is an alert, so a join pops up once.
+- An **upgrade** to a higher pledge is a **Subscriber** alert too, with `upgrade: true`, `previousTier` and
+  `previousAmount` for a variation of its own. Patreon sends no message for monthly renewals, so there is no "resub";
+  a downgrade is no alert.
+- A free member joining (and a gifted membership or free trial, which get no pledge message) is a **Follow** alert.
+- A patron who hides their identity shows as "An anonymous patron" with no picture; their real name is never sent.
+
+Try them with **Emulate > Patreon** in the alert box's editor.
+
 ## Patron perks in chat
 
 When a patron linked Twitch or YouTube on Patreon, Cuebot tags that viewer with user variables: `isPatron`,
@@ -104,7 +119,7 @@ once. So that this does not set off a pile of old alerts mid-stream:
 
 - A new pledge that started and was charged longer ago than **Stale after (hours)** (6) is marked `%isStale%`. Every
   Patreon trigger has **Skip stale deliveries**, ticked by default. Stale pledges still count in the member list and
-  totals.
+  totals, and the alert box does not pop them up (see [Missed alerts](../overlays/alerts.md#missed-alerts-catch-up)).
 - With the API connected and a webhook Cuebot created, the card shows whether Patreon paused it, and **Resume
   webhook** un-pauses it. A webhook made by hand in the portal cannot be checked from Cuebot (Patreon does not allow
   it); resume it in the portal under **My Webhooks**.

@@ -320,7 +320,12 @@
     }
     if (!TYPES[listener] || mode === "goal" || mode === "chatbox") return;
     var detail = slEvent(listener, event);
-    if (mode === "alertbox") showAlert(detail, event);
+    if (mode === "alertbox") {
+      // Catch-up events (missed while disconnected, delivered late) are for lists and goals, not pop-ups, unless the
+      // widget's showCatchUp field is on.
+      if (event.isCatchUp === true && !(fieldData.showCatchUp === true || fieldData.showCatchUp === "true")) return;
+      showAlert(detail, event);
+    }
     else if (mode === "eventlist") { listEvent(detail); fire("onEventReceived", detail); }
     else fire("onEventReceived", detail);
   });

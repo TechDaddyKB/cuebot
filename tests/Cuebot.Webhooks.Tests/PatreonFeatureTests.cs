@@ -256,6 +256,79 @@ public sealed class PatreonFeatureTests : IDisposable
         Assert.Equal(3m, Last(PatreonEventTypes.PledgeUpdated).Args["patreonMonthly"]);
     }
 
+    // ---- overlays ----
+
+    private static WebhookOverlayAdapter Overlay => WebhookOverlayAdapter.All().Single(a => a.Service == "patreon");
+
+    /// <summary>The alerts the deliveries so far make, in order.</summary>
+    private List<Cuebot.Core.Overlays.Events.OverlayAlert> Alerts() =>
+        [.. _h.Published.Select(e => Overlay.ToAlert(e)).OfType<Cuebot.Core.Overlays.Events.OverlayAlert>()];
+
+    [Fact]
+    public void A_new_paying_patron_is_one_subscriber_alert_with_tier_and_monthly_price()
+    {
+        var pledge = Edit(Pledge, campaign: c => c["currency"] = "USD");
+        // A paying patron's join sends members:create and members:pledge:create; Patreon may resend either.
+        Assert.Equal(WebhookOutcome.Ignored, Send("members:create", pledge));
+        Assert.Equal(WebhookOutcome.Handled, Send("members:pledge:create", pledge));
+        Assert.Equal(WebhookOutcome.Ignored, Send("members:create", Edit(pledge, member: m => m["note"] = "resent")));
+        Assert.Equal(WebhookOutcome.Ignored, Send("members:pledge:create", Edit(pledge, member: m => m["note"] = "resent")));
+
+        var alert = Assert.Single(Alerts());
+        Assert.Equal(Cuebot.Core.Overlays.Events.OverlayAlerts.Subscriber, alert.Listener);
+        var a = alert.Event;
+        Assert.Equal(("Jane Patron", "Supporter", 5.0, "USD", 1), (a["name"]!.GetValue<string>(), a["tierName"]!.GetValue<string>(),
+            Cuebot.Core.Overlays.Events.OverlayAlerts.NumberOf(a["price"]), a["currency"]!.GetValue<string>(), a["amount"]!.GetValue<int>()));
+        Assert.Equal("https://c8.patreon.com/2/200/98765432", a["avatar"]!.GetValue<string>());
+        Assert.False(Overlay.IsCatchUp(_h.Events(PatreonEventTypes.PledgeCreated).Single()));
+    }
+
+    [Fact]
+    public void A_free_member_joining_is_a_follower_alert()
+    {
+        var free = Pledge.Replace("\"active_patron\"", "null", StringComparison.Ordinal);
+        Assert.Equal(WebhookOutcome.Handled, Send("members:create", free));
+        Assert.Equal(WebhookOutcome.Ignored, Send("members:create", Edit(free, member: m => m["note"] = "again")));
+        var alert = Assert.Single(Alerts());
+        Assert.Equal((Cuebot.Core.Overlays.Events.OverlayAlerts.Follower, "Jane Patron"), (alert.Listener, alert.Event["name"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void An_anonymous_patron_alert_never_carries_their_name_or_picture()
+    {
+        var hidden = Edit(Pledge, user: u =>
+        {
+            u["full_name"] = null;
+            u["image_url"] = null;
+            u["url"] = null;
+        });
+        Send("members:pledge:create", hidden);
+        var json = Assert.Single(Alerts()).Event.ToJsonString();
+        Assert.Contains(PatreonWebhookHandler.AnonymousName, json, StringComparison.Ordinal);
+        Assert.DoesNotContain("Jane", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("98765432", json, StringComparison.Ordinal);   // no picture, no user id
+    }
+
+    [Fact]
+    public void Only_an_upgrade_is_an_alert_and_a_stale_backlog_is_a_catch_up()
+    {
+        Send("members:pledge:create", Edit(Pledge, campaign: c => c["currency"] = "USD"));
+        Send("members:pledge:update", Edit(Pledge, member: m => m["currently_entitled_amount_cents"] = 1000));
+        Send("members:pledge:update", Edit(Pledge, member: m => m["currently_entitled_amount_cents"] = 300));
+        var alerts = Alerts();
+        Assert.Equal(2, alerts.Count);   // the new pledge and the upgrade; the downgrade is not celebrated
+        var upgrade = alerts[1].Event;
+        Assert.Equal((true, "Supporter", 5.0, 10.0), (upgrade["upgrade"]!.GetValue<bool>(), upgrade["previousTier"]!.GetValue<string>(),
+            Cuebot.Core.Overlays.Events.OverlayAlerts.NumberOf(upgrade["previousAmount"]), Cuebot.Core.Overlays.Events.OverlayAlerts.NumberOf(upgrade["price"])));
+
+        _clock.Advance(TimeSpan.FromDays(3));
+        Send("members:pledge:create", Edit(Pledge, member: m => m["pledge_relationship_start"] = "2026-10-01T00:00:00.000+00:00"));
+        var stale = Last(PatreonEventTypes.PledgeCreated);
+        Assert.Equal(true, stale.Args["isStale"]);
+        Assert.NotNull(Overlay.ToAlert(stale));   // still an alert for lists and totals...
+        Assert.True(Overlay.IsCatchUp(stale));    // ...that alert boxes skip by default
+    }
+
     // ---- API connection ----
 
     [Fact]

@@ -5,6 +5,7 @@
     "value": {
       "version": 1,
       "randomPick": false,
+      "showCatchUp": false,
       "types": {
         "follower": {
           "enabled": true,

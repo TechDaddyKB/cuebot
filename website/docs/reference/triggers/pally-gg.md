@@ -28,7 +28,7 @@ Runs when someone tips you on one of your Pally.gg pages. Great for a thank-you 
 | `%campaignSlug%` | The last part of that page's web address |
 | `%campaignUrl%` | The page's web link |
 | `%tipNetAmount%` | What you get after fees |
-| `%isReplay%` | True if this is an old tip shown again |
+| `%isReplay%` | True when you pressed "Replay Alert" in Pally.gg's activity feed (overlay alert boxes still play it) |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `pally.campaignTip`</small>

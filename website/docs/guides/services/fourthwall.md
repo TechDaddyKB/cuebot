@@ -109,7 +109,7 @@ says it is busy. If Fourthwall refuses the user name or password, Cuebot stops a
 A message can get lost: the relay was down, or the secret was wrong for a while. Every few minutes (**Catch up every**,
 10 by default) Cuebot asks Fourthwall which events it sent, and runs the ones that never reached it. They are marked
 `%isReplay%`. Tick **Skip caught-up events** on a trigger to keep, for example, a late alert off the screen; the money
-still counts. Catch-up only looks at events after you first connected, and at most 24 hours back.
+still counts, and the alert box does not pop them up (see [Missed alerts](../overlays/alerts.md#missed-alerts-catch-up)). Catch-up only looks at events after you first connected, and at most 24 hours back.
 
 ### Products widget
 

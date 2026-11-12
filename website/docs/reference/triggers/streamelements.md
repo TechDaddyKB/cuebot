@@ -238,6 +238,7 @@ Runs when someone buys from your StreamElements merch store. Handy to thank buye
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Include orders fetched after a reconnect** | Tick to also run for orders Cuebot fetched after the connection came back (they happened while it was down). Needs your StreamElements JWT token. Starts as: `true`. |
 
 **Variables you get**
 
@@ -251,6 +252,7 @@ Runs when someone buys from your StreamElements merch store. Handy to thank buye
 | `%merchQuantity%` | How many things they bought in total |
 | `%message%` | Their message |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isBackfill%` | True when Cuebot fetched this after a reconnect instead of hearing it live |
 
 <small>Type id: `streamelements.merch`</small>
 
@@ -548,6 +550,7 @@ Runs when a viewer spends loyalty points on an item in your StreamElements store
 | --- | --- |
 | **Item name** | Only run for this store item, typed as it is named in your store, like "Hydrate!". Leave empty for any item. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Include redemptions fetched after a reconnect** | Tick to also run for redemptions Cuebot fetched after the connection came back (they happened while it was down). Needs your StreamElements JWT token. Starts as: `true`. |
 
 **Variables you get**
 
@@ -558,6 +561,7 @@ Runs when a viewer spends loyalty points on an item in your StreamElements store
 | `%cost%` | How many points it cost |
 | `%message%` | Their message |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isBackfill%` | True when Cuebot fetched this after a reconnect instead of hearing it live |
 | `%redemptionId%` | The redemption's id, for the Complete or Refund store redemption steps (when StreamElements sends it) |
 | `%userInput%` | What the viewer typed, for items that ask for text |
 
@@ -597,6 +601,7 @@ Runs when someone tips you through StreamElements. With "Wait for tip approval" 
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Include tips fetched after a reconnect** | Tick to also run for tips Cuebot fetched after the connection came back (they happened while it was down). Needs your StreamElements JWT token. Starts as: `true`. |
 
 **Variables you get**
 
@@ -610,6 +615,7 @@ Runs when someone tips you through StreamElements. With "Wait for tip approval" 
 | `%avatar%` | Their picture (web link) |
 | `%tipId%` | The number StreamElements gave this tip |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isBackfill%` | True when Cuebot fetched this after a reconnect instead of hearing it live |
 | `%tipApproved%` | allowed when a moderator (or no moderation) let it through; unknown when StreamElements did not say |
 | `%approvedBy%` | The moderator who approved it, if one did |
 | `%data.<name>%` | Any other detail StreamElements sent, like %data.tipId% |

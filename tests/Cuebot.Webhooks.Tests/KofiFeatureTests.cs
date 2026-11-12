@@ -201,6 +201,9 @@ public sealed class KofiFeatureTests : IDisposable
         Assert.Equal(2, _h.Events(KofiEventTypes.Resubscription).Single().Args["months"]);
         var commission = Overlay.ToAlert(_h.Events(KofiEventTypes.Commission).Single())!;
         Assert.Equal(("merch-latest", "Commission"), (commission.Listener, commission.Event["items"]!.GetValue<string>()));
+        // Only the Ko-fi adapter claims it (the Fourthwall one is asked first and used to, making the alert "fourthwall").
+        Assert.All(WebhookOverlayAdapter.All().Where(a => a.Service != "kofi"),
+            a => Assert.Null(a.ToAlert(_h.Events(KofiEventTypes.Commission).Single())));
     }
 
     [Fact]

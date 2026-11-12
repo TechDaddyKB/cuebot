@@ -74,7 +74,9 @@ arguments: do not flatten the whole payload.
 the relay received it; the payment triggers' *Skip late deliveries* skips those while the feed, totals and goal count.
 
 **Overlays.** Donations → `tip-latest`; shop orders and commissions (`items: "Commission"`) → `merch-latest`;
-memberships → `subscriber-latest` with `amount` = `months`, `tier` "1000", `tierName`, `price`.
+memberships → `subscriber-latest` with `amount` = `months`, `tier` "1000", `tierName`, `price`. A late delivery
+(`isReplay`) gives an alert with `isCatchUp` = true: Cuebot's alert box skips it unless "show catch-up alerts" is on;
+event lists and session totals count it.
 
 **Kept by Cuebot (`kofi.json`, `KofiTracker`).** Only real, new payments change it (after the duplicate check; tests
 never). The goal (`KofiOptions.Goal`: title, target, start amount, currency filter, which types count) fires
@@ -134,7 +136,16 @@ only in `privateName`, and `avatarUrl` / `profileUrl` are empty. Overlays should
 failures Patreon pauses the webhook, and resuming it sends everything held back at once. A `members:pledge:create`
 whose `pledge_relationship_start` and `last_charge_date` are both older than `StaleHours` (6; 0 = off) gets
 `isStale` true (`ageHours` says how old); every Patreon trigger skips stale events unless "Skip stale deliveries" is
-unticked. They still update the member list and totals.
+unticked. They still update the member list and totals. Their overlay alert has `isCatchUp` = true (skipped by the
+alert box by default, counted by lists and totals).
+
+**Overlays** (`WebhookOverlayAdapter`, service `patreon`). `patreon.pledgeCreated` → `subscriber-latest` with `amount`
+1 (Patreon sends no renewals, so there is no month count), `tier` "1000", `tierName`, `price` (monthly), `currency`;
+`patreon.pledgeUpdated` with `direction` = `upgrade` → the same plus `upgrade: true`, `previousTier`,
+`previousAmount` (downgrades, `same` and an unknown direction are no alert); `patreon.followCreated` (free member,
+gift, free trial) → `follower-latest` with `isGifted` / `isFreeTrial`. A paying patron's `members:create` is already
+ignored, so a join alerts once. `name` is `user` ("An anonymous patron" when hidden), `avatar` is `avatarUrl` (empty
+when hidden), `providerId` is the user id (empty when hidden); `privateName` never reaches overlays.
 
 **API connection (optional).** The creator pastes their own client's Client ID, Client Secret, Creator's Access Token
 and Refresh Token (patreon.com/portal/registration/register-clients; a creator token has every v2 scope). All calls
@@ -221,7 +232,8 @@ domain), `GET /memberships/tiers` and `/memberships/members` (every 6 h; emails 
 `/collections/{id}/products` (showcase widget, after `PRODUCT_*` / `COLLECTION_UPDATED` and every 30 min),
 `GET/POST/PUT /webhooks` (set up / repair with every handled type; the shop's signing secret is not returned and is
 still pasted by hand), `GET /webhook-events` (catch-up: events newer than the first connection and the last 24 h are
-mapped like deliveries, deduped on `id`, marked `isReplay`; the event `body` may be the envelope or only its data),
+mapped like deliveries, deduped on `id`, marked `isReplay`, so their overlay alerts are catch-ups (`isCatchUp`); the
+event `body` may be the envelope or only its data),
 `PUT /streaming/start|end` (Twitch stream online / offline), `GET /gifting/config` (shows who runs draws),
 `PUT /gifting/draw/{id}/finish` (entrants from Twitch chat; Fourthwall picks the winners), `POST/GET/PUT /promotions`,
 `PUT /products/{id}/availability`, `PUT /collections/{id}/availability`, `GET /order` / `GET /donations` (totals),
@@ -265,7 +277,8 @@ name / Someone), `firstName`, `amount` (`total_price`, shop currency), `message`
 .productId / .price`, `presentmentAmount` / `presentmentCurrency` (`total_price_set.presentment_money`), and after the
 tracker: `wasCounted`, `shopifySales*`, `shopifyGoal*`. The name comes from `customer.first_name/last_name` (or the
 camelCase `firstName/lastName` of newer shapes), else `billing_address`. Catch-up replays add `isReplay` and
-`delaySeconds`.
+`delaySeconds`; their `merch-latest` alert has `isCatchUp` = true (skipped by the alert box unless "show catch-up
+alerts" is on, counted by lists and totals).
 
 **Privacy.** The order note is the checkout's free-text delivery instructions, so it is never `message` unless the
 user picks it. "Redact contact details" (default on) removes, at any depth, `email`, `contact_email`, `phone`,

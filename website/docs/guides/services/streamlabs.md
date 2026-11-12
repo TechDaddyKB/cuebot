@@ -66,7 +66,8 @@ Script functions: `streamlabs.alertQueue`, `streamlabs.createAlert`, `streamlabs
 With your app connected and **Fetch donations missed while the connection was down** ticked, Cuebot asks Streamlabs for
 the donations made while the socket was reconnecting (for example after a Wi-Fi blip) and runs them. They carry
 `isBackfill = true`, and the **Donation** trigger has an **Include donations fetched after a reconnect** box if you
-would rather skip them. Donations already heard live are never run twice.
+would rather skip them. Donations already heard live are never run twice. Event lists, goals and totals count them;
+the alert box does not pop them up (see [Missed alerts](../overlays/alerts.md#missed-alerts-catch-up)).
 
 ## Good to know
 

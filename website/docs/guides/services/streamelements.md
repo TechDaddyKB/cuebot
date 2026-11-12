@@ -45,6 +45,14 @@ If StreamElements says nothing about a tip's moderation within a few seconds, th
 `%tipApproved%` = unknown. Untick the box to run tips at once (a tip already known to be rejected still does not run).
 Cuebot never copies the donor's e-mail or location into variables.
 
+## Missed tips after a reconnect
+
+When the connection drops and comes back without resuming (with the JWT token), Cuebot asks StreamElements for the
+tips, merch and store redemptions made in between and runs them. They carry `%isBackfill%` = True, and the **Tip**,
+**Merch** and **Store redemption** triggers have an **Include … fetched after a reconnect** box (ticked) if you would
+rather skip them. One already heard live never runs twice. Event lists, goals and totals count them; the alert box
+does not pop them up (see [Missed alerts](../overlays/alerts.md#missed-alerts-catch-up)).
+
 ## Variables StreamElements keeps for you
 
 - `~seIsLive~` is true while StreamElements sees your stream live (any platform). **Stream went live** and

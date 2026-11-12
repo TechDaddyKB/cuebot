@@ -134,7 +134,7 @@ Cuebot stops asking and the card says so. When Shopify is busy, Cuebot waits and
 The shared relay drops what arrives while Cuebot is closed, and a webhook can fail for a while. Every few minutes
 (**Catch up every**, 10 by default) Cuebot asks Shopify for paid orders and runs **Order Paid** for those that never
 arrived, marked `%isReplay%`. Tick **Skip caught-up orders** on the trigger to keep a late alert off screen; the order
-still counts. Catch-up only looks at orders after you first connected, and at most 24 hours back.
+still counts, and the alert box does not pop them up (see [Missed alerts](../overlays/alerts.md#missed-alerts-catch-up)). Catch-up only looks at orders after you first connected, and at most 24 hours back.
 
 ### Products widget
 

@@ -4,22 +4,32 @@ using Cuebot.Core.Events;
 namespace Cuebot.Core.Overlays.Events;
 
 /// <summary>
-/// Sample events for trying widgets (the widget editor's Emulate buttons): a chat message or an alert as it would come
-/// from Twitch, Kick, Rumble, YouTube or a donation service, in the platform modules' own event names and arguments,
-/// so they go through the same conversion as real ones.
+/// Sample events for trying widgets (the widget editor's Emulate buttons, emulate_event): a chat message or an alert as it
+/// would come from Twitch, Kick, Rumble, YouTube, a donation service (StreamElements, Streamlabs), Ko-fi, Patreon,
+/// Fourthwall or Shopify, in the modules' own event names and arguments (as their handlers publish them), so they go
+/// through the same conversion as real ones. Never a catch-up: an emulated alert always plays.
 /// </summary>
 public static class OverlayEmulator
 {
-    public static readonly IReadOnlyList<string> Platforms = ["twitch", "kick", "rumble", "youtube", "donations"];
+    public static readonly IReadOnlyList<string> Platforms = ["twitch", "kick", "rumble", "youtube", "donations", "kofi", "patreon", "fourthwall", "shopify"];
 
-    /// <summary>What each platform can emulate.</summary>
+    /// <summary>What each platform can emulate (kinds are lower-case).</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Kinds = new Dictionary<string, IReadOnlyList<string>>
     {
         ["twitch"] = ["chat", "follow", "sub", "resub", "gift", "cheer", "raid"],
         ["kick"] = ["chat", "follow", "sub", "resub", "gift", "kicks", "raid"],
         ["rumble"] = ["chat", "follow", "sub", "gift", "tip"],
         ["youtube"] = ["chat", "follow", "sub", "resub", "gift", "superchat"],
-        ["donations"] = ["tip"],
+        // StreamElements tip and merch, Streamlabs charity donation.
+        ["donations"] = ["tip", "merch", "charity"],
+        // Ko-fi donation, first membership payment, a later one, shop order, commission.
+        ["kofi"] = ["tip", "membership", "resub", "shop", "commission"],
+        // A free member joining, a new paying pledge, an upgrade.
+        ["patreon"] = ["follow", "membership", "upgrade"],
+        // A completed donation, a purchase, stream gifts bought for viewers.
+        ["fourthwall"] = ["tip", "order", "gifts"],
+        // A paid order.
+        ["shopify"] = ["order"],
     };
 
     private static readonly string[] Names = ["PixelPanda", "NightOwl", "ChillVibes", "GGWarrior", "StarDust", "LazyLlama", "MoonWalker", "CozyCat"];
@@ -57,13 +67,67 @@ public static class OverlayEmulator
             ("youtube", "gift") => ("youtube.membershipGift", Args(("total", 5), ("levelName", "Member"))),
             ("youtube", "superchat") => ("youtube.superChat", Args(("amount", 10.0), ("currency", "USD"), ("amountText", "$10.00"),
                 ("message", "Love the stream"))),
-            _ => ("streamelements.tip", Args(("amount", 10.0), ("currency", "USD"), ("formattedAmount", "$10.00"), ("message", "Keep it up"),
+            ("donations", "tip") => ("streamelements.tip", Args(("amount", 10.0), ("currency", "USD"), ("formattedAmount", "$10.00"), ("message", "Keep it up"),
                 ("service", "StreamElements"), ("isTest", true))),
+            ("donations", "merch") => ("streamelements.merch", Args(("amount", 30.0), ("currency", "USD"), ("formattedAmount", "$30.00"),
+                ("message", "Love the design"), ("product", "Cuebot hoodie"), ("merchItems", 1), ("merchQuantity", 1), ("service", "StreamElements"),
+                ("platform", "StreamElements"), ("isBackfill", false))),
+            ("donations", "charity") => ("streamlabs.charityDonation", Args(("amount", 20.0), ("currency", "USD"), ("formattedAmount", "$20.00"),
+                ("message", "For a good cause"), ("charityName", "St. Jude Children's Research Hospital"), ("service", "Streamlabs"))),
+            ("kofi", "tip") => ("kofi.donation", Kofi("Donation", 3.0, "Good luck with the stream!")),
+            ("kofi", "membership") => ("kofi.subscription", Kofi("Subscription", 5.0, "Monthly coffee!", ("tier", "Bronze"), ("isFirstPayment", true),
+                ("isSubscriptionPayment", true), ("months", 1))),
+            ("kofi", "resub") => ("kofi.resubscription", Kofi("Subscription", 5.0, "", ("tier", "Bronze"), ("isFirstPayment", false),
+                ("isSubscriptionPayment", true), ("months", 3))),
+            ("kofi", "shop") => ("kofi.shopOrder", Kofi("Shop Order", 18.0, "", ("itemCount", 2), ("item0", "Sticker pack"), ("item0.quantity", 2.0),
+                ("item1", "Poster"), ("item1.quantity", 1.0))),
+            ("kofi", "commission") => ("kofi.commission", Kofi("Commission", 25.0, "A portrait of my cat please")),
+            ("patreon", "follow") => ("patreon.followCreated", Patreon(0, "", "", ("isGifted", false), ("isFreeTrial", false))),
+            ("patreon", "membership") => ("patreon.pledgeCreated", Patreon(5.0, "Supporter", "active_patron", ("isStale", false), ("ageHours", 0.0))),
+            ("patreon", "upgrade") => ("patreon.pledgeUpdated", Patreon(10.0, "Super Supporter", "active_patron", ("direction", "upgrade"),
+                ("previousAmount", 5m), ("previousTier", "Supporter"), ("updatedToTier", "Super Supporter"))),
+            ("fourthwall", "tip") => ("fourthwall.donation", Fourthwall(5.0, "Keep up the great work!", ("isCompleted", true), ("fw.status", "COMPLETED"))),
+            ("fourthwall", "order") => ("fourthwall.orderPlaced", Fourthwall(35.0, "", ("isPurchase", true), ("isCancelled", false), ("fw.status", "CONFIRMED"),
+                ("fw.items", "Cuebot T-shirt, Sticker pack"), ("fw.itemCount", 2.0), ("fw.source", "ORDER"))),
+            ("fourthwall", "gifts") => ("fourthwall.giftPurchase", Fourthwall(60.0, "Merch for chat!", ("fw.quantity", 3.0), ("fw.offer.name", "Cuebot T-shirt"))),
+            ("shopify", "order") => ("shopify.orderPaid", Args(("amount", 42.0m), ("currency", "USD"), ("formattedAmount", "$42.00"), ("message", ""),
+                ("items", "Cuebot mug, Sticker pack"), ("itemCount", 2), ("orderName", "#1001"), ("service", "Shopify"), ("isReplay", false))),
+            _ => throw new InvalidOperationException($"No sample for {platform} {kind}"),
         };
         args["user"] = user;
         args["userName"] = user.ToLowerInvariant();
         args["userId"] = "test-" + user.ToLowerInvariant();
         return new BotEvent(type, args);
+    }
+
+    /// <summary>A Ko-fi payment as KofiWebhookHandler publishes it (a public support, delivered on time).</summary>
+    private static Dictionary<string, object?> Kofi(string kofiType, double amount, string message, params (string Key, object? Value)[] more)
+    {
+        var args = Args(("amount", (decimal)amount), ("currency", "USD"), ("formattedAmount", FormattableString.Invariant($"${amount:0.00}")), ("message", message), ("service", "Ko-fi"),
+            ("kofiType", kofiType), ("isPublic", true), ("isSubscriptionPayment", false), ("isReplay", false), ("delaySeconds", 0L),
+            ("messageId", "test-" + Guid.NewGuid().ToString("N")[..12]), ("url", "https://ko-fi.com"));
+        foreach (var (key, value) in more) args[key] = value;
+        return args;
+    }
+
+    /// <summary>A Patreon member event as PatreonWebhookHandler publishes it: amount is the monthly pledge, never the patron's private name.</summary>
+    private static Dictionary<string, object?> Patreon(double monthly, string tier, string status, params (string Key, object? Value)[] more)
+    {
+        var args = Args(("amount", (decimal)monthly), ("monthlyAmount", (decimal)monthly), ("chargeAmount", (decimal)monthly), ("pledgeCadence", 1),
+            ("currency", "USD"), ("formattedAmount", FormattableString.Invariant($"${monthly:0.00}")), ("message", ""), ("service", "Patreon"), ("tier", tier),
+            ("tiers", tier.Length > 0 ? new List<string> { tier } : new List<string>()), ("patronStatus", status), ("isAnonymous", false),
+            ("privateName", ""), ("avatarUrl", ""), ("profileUrl", ""), ("isStale", false));
+        foreach (var (key, value) in more) args[key] = value;
+        return args;
+    }
+
+    /// <summary>A Fourthwall event as FourthwallWebhookHandler publishes it (a real, caught-live delivery).</summary>
+    private static Dictionary<string, object?> Fourthwall(double amount, string message, params (string Key, object? Value)[] more)
+    {
+        var args = Args(("amount", (decimal)amount), ("currency", "USD"), ("formattedAmount", FormattableString.Invariant($"${amount:0.00}")), ("message", message), ("service", "Fourthwall"),
+            ("fw.currency", "USD"), ("isAnonymous", false), ("isReplay", false), ("fw.testMode", false));
+        foreach (var (key, value) in more) args[key] = value;
+        return args;
     }
 
     /// <summary>

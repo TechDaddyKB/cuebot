@@ -11,7 +11,7 @@ a.button:hover { border-color: var(--accent); }
 
 .alerts-side { overflow: auto; }
 
-.types-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px 4px; }
+.types-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 8px; padding: 10px 12px 4px; }
 .types-head label { display: flex; gap: 6px; align-items: center; color: var(--muted); }
 
 .types { list-style: none; margin: 0; padding: 4px 8px 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }

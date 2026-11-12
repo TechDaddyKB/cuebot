@@ -451,12 +451,12 @@ There are 118 tools.
 
 ## emulate_event
 
-**Send a sample event.** Send a sample platform event with a made-up viewer, e.g. a Twitch follow to test the alert box. target "overlays" (default) shows it on every overlay only; "everything" publishes it as a real event so matching actions run too (they may post to chat). Events sent to everything are marked isTest: shown as tests in the feed and never counted in top spenders, while subathon timers and goals still count them.
+**Send a sample event.** Send a sample platform event with a made-up viewer, e.g. a Twitch follow or a Ko-fi membership to test the alert box. target "overlays" (default) shows it on every overlay only; "everything" publishes it as a real event so matching actions run too (they may post to chat). Events sent to everything are marked isTest: shown as tests in the feed and never counted in top spenders, while subathon timers and goals still count them.
 
 | Input | Type | What it is |
 | --- | --- | --- |
-| `platform` (required) | text | twitch, kick, rumble, youtube or donations |
-| `kind` (required) | text | follow, sub, resub, gift, cheer, raid, tip, superchat, kicks or chat |
+| `platform` (required) | text | twitch, kick, rumble, youtube, donations, kofi, patreon, fourthwall or shopify |
+| `kind` (required) | text | twitch/kick/rumble/youtube: follow, sub, resub, gift, cheer, raid, tip, superchat, kicks or chat; donations: tip, merch, charity; kofi: tip, membership, resub, shop, commission; patreon: follow (free member), membership (new pledge), upgrade; fourthwall: tip, order, gifts; shopify: order. list_emulated_events has them all |
 | `target` | one of `overlays`, `everything` |  |
 | `args` | object | Override the sample's arguments (names from list_emulated_events), e.g. {"viewers": 75} for a raid or {"user": "Alice"} |
 
@@ -711,7 +711,7 @@ It takes no inputs.
 
 ## list_emulated_events
 
-**List sample events.** The sample platform events emulate_event can send (follow, sub, cheer, raid, tip, chat...) with each one's arguments, which args can override (a raid's size is "viewers", a cheer's "bits"...).
+**List sample events.** The sample platform events emulate_event can send (follow, sub, cheer, raid, tip, chat...) by platform, including donation services, Ko-fi, Patreon, Fourthwall and Shopify, with each one's event type and arguments, which args can override (a raid's size is "viewers", a cheer's "bits", a tip's "amount"...).
 
 It takes no inputs.
 
@@ -1073,6 +1073,7 @@ It takes no inputs.
 | `layer` (required) | text | Layer id or name (get_overlay lists them) |
 | `types` | object | Alert type → {enabled, design: {...}, variations: [...]} |
 | `randomPick` | true/false | Pick a random matching variation instead of the first |
+| `showCatchUp` | true/false | Also pop up catch-up alerts (isCatchUp: donations, orders and pledges fetched after a reconnect or delivered late). Off by default; event lists, goals and session totals count them either way |
 
 ## update_command
 

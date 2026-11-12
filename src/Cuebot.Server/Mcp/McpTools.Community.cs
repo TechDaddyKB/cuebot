@@ -43,15 +43,19 @@ public static partial class McpTools
             new McpToolHints(ReadOnly: false, OpenWorld: true),
             async (a, ct) => await ops.TestTriggerAsync(ReqStr(a, "action"), OptStr(a, "trigger"), a["args"], ct).ConfigureAwait(false)),
         new("list_emulated_events", "List sample events",
-            "The sample platform events emulate_event can send (follow, sub, cheer, raid, tip, chat...) with each one's arguments, which args can override "
-            + "(a raid's size is \"viewers\", a cheer's \"bits\"...).",
+            "The sample platform events emulate_event can send (follow, sub, cheer, raid, tip, chat...) by platform, including donation services, "
+            + "Ko-fi, Patreon, Fourthwall and Shopify, with each one's event type and arguments, which args can override "
+            + "(a raid's size is \"viewers\", a cheer's \"bits\", a tip's \"amount\"...).",
             Schema([]), ReadOnlyHints, (_, _) => Done(ApiOperations.EmulatableEvents())),
         new("emulate_event", "Send a sample event",
-            "Send a sample platform event with a made-up viewer, e.g. a Twitch follow to test the alert box. target \"overlays\" (default) shows "
+            "Send a sample platform event with a made-up viewer, e.g. a Twitch follow or a Ko-fi membership to test the alert box. target \"overlays\" (default) shows "
             + "it on every overlay only; \"everything\" publishes it as a real event so matching actions run too (they may post to chat). "
             + "Events sent to everything are marked isTest: shown as tests in the feed and never counted in top spenders, while subathon "
             + "timers and goals still count them.",
-            Schema(["platform", "kind"], ("platform", Str("twitch, kick, rumble, youtube or donations")), ("kind", Str("follow, sub, resub, gift, cheer, raid, tip, superchat, kicks or chat")),
+            Schema(["platform", "kind"], ("platform", Str("twitch, kick, rumble, youtube, donations, kofi, patreon, fourthwall or shopify")),
+                ("kind", Str("twitch/kick/rumble/youtube: follow, sub, resub, gift, cheer, raid, tip, superchat, kicks or chat; "
+                    + "donations: tip, merch, charity; kofi: tip, membership, resub, shop, commission; patreon: follow (free member), membership "
+                    + "(new pledge), upgrade; fourthwall: tip, order, gifts; shopify: order. list_emulated_events has them all")),
                 ("target", Enum("overlays", "everything")),
                 ("args", new JsonObject { ["type"] = "object", ["description"] = "Override the sample's arguments (names from list_emulated_events), e.g. {\"viewers\": 75} for a raid or {\"user\": \"Alice\"}" })),
             WriteHints, (a, _) => Done(ops.Emulate(ReqStr(a, "platform"), ReqStr(a, "kind"), OptStr(a, "target"), a["args"] as JsonObject))),

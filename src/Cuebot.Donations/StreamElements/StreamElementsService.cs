@@ -107,9 +107,14 @@ public sealed partial class StreamElementsService : DonationServiceBase, IStream
     }
 
     /// <summary>Handles one activity (also used by tests and the reconnect back-fill).</summary>
-    internal bool HandleActivity(JsonElement activity)
+    /// <summary>
+    /// Handles one activity; <paramref name="backfill"/> marks one fetched after a reconnect (<c>isBackfill</c>), so
+    /// triggers can leave it out and overlay alert boxes skip it (event lists, goals and totals still count it).
+    /// </summary>
+    internal bool HandleActivity(JsonElement activity, bool backfill = false)
     {
         if (StreamElementsEventMapper.Map(activity) is not { } e) return false;
+        if (backfill && e.Args.ContainsKey("isBackfill")) e.Args["isBackfill"] = true;
         if (activity.Str("createdAt") is { Length: > 0 } created
             && DateTimeOffset.TryParse(created, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at))
         {
@@ -419,7 +424,10 @@ public sealed partial class StreamElementsService : DonationServiceBase, IStream
         await client.RunAsync(token, topics, ct).ConfigureAwait(false);
     }
 
-    /// <summary>After a reconnect that was not a resume: publishes tips, merch and redemptions missed while offline.</summary>
+    /// <summary>
+    /// After a reconnect that was not a resume: publishes tips, merch and redemptions missed while offline, marked
+    /// <c>isBackfill</c> (already-seen activity ids are dropped by the duplicate check).
+    /// </summary>
     private async Task BackfillAsync(CancellationToken ct)
     {
         DateTimeOffset since;
@@ -434,7 +442,7 @@ public sealed partial class StreamElementsService : DonationServiceBase, IStream
             var missed = await _api.GetActivitiesAsync(Settings.JwtToken, Settings.ChannelId, since, BackfillTypes, 25, ct).ConfigureAwait(false);
             var count = 0;
             foreach (var activity in missed.OrderBy(a => a.Str("createdAt"), StringComparer.Ordinal))
-                if (HandleActivity(activity)) count++;
+                if (HandleActivity(activity, backfill: true)) count++;
             if (count > 0) Log.Info(Name, $"Published {count} StreamElements activities missed while reconnecting");
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StreamElementsApiException)

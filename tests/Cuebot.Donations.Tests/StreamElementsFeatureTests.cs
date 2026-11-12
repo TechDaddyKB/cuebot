@@ -9,6 +9,7 @@ using Cuebot.Core.Storage;
 using Cuebot.Donations.StreamElements;
 using Cuebot.Donations.Tests.Support;
 using Cuebot.Donations.Transport;
+using Cuebot.Donations.Triggers;
 
 namespace Cuebot.Donations.Tests;
 
@@ -443,6 +444,18 @@ public sealed class StreamElementsFeatureTests : IAsyncLifetime
         Assert.Contains("types=merch", request.Uri.Query);
         await Task.Delay(100);
         Assert.Equal(2, Events(StreamElementsEventTypes.Tip).Length);   // the one already seen is not published again
+
+        // The missed one is marked, so triggers can leave it out and alert boxes do not pop it up late.
+        var tips = Events(StreamElementsEventTypes.Tip);
+        Assert.Equal([false, true], tips.Select(t => t.Args["isBackfill"]));
+        var trigger = new StreamElementsTriggers().GetTriggers().Single(t => t.TypeId == StreamElementsEventTypes.Tip);
+        bool Runs(BotEvent e, string include) => trigger.Matches(e, new TriggerDefinition(),
+            ParameterValues.From(trigger.Parameters, new Dictionary<string, string> { ["includeBackfill"] = include }), new Dictionary<string, object?>());
+        Assert.True(Runs(tips[1], "true"));
+        Assert.False(Runs(tips[1], "false"));
+        Assert.True(Runs(tips[0], "false"));
+        var overlay = new DonationOverlayAdapter();
+        Assert.Equal((false, true), (overlay.IsCatchUp(tips[0]), overlay.IsCatchUp(tips[1])));
     }
 
     // ---- F19: Overlay Token ----

@@ -12,10 +12,26 @@ It has a design for each alert type: **Follow**, **Subscriber**, **Tip / donatio
 **Super Chat**, **Kicks**, **Channel points**, **YouTube Jewels**, **Charity donation**, **Merch** and **Custom
 (actions)**. Each type can have **variations**, for example a bigger alert for 1000 bits.
 
+Alerts come from every platform and service Cuebot is connected to: Twitch, Kick, Rumble, YouTube, StreamElements,
+Streamlabs and the other donation services, Ko-fi (tips, memberships, shop orders, commissions), Patreon (a free member
+joining is a **Follow**, a new or upgraded pledge a **Subscriber** alert with the tier and monthly price; a downgrade
+is no alert), Fourthwall (donations, orders, stream gifts) and Shopify (paid orders).
+
+## Missed alerts (catch-up)
+
+When Cuebot was disconnected or closed, it catches up afterwards: Streamlabs and StreamElements donations it fetches
+after a reconnect, Ko-fi payments your relay kept, orders and donations Fourthwall or Shopify catch-up finds, and
+Patreon's backlog after a paused webhook. These still count in event lists, goals, stream totals and top spenders, but
+the alert box does **not** pop them up, so twenty old alerts never play in a row. To show them anyway, tick **Show
+catch-up alerts** at the top of the alert box's editor.
+
+A Pally.gg **Replay Alert** always plays: that is you asking to see it again.
+
 ## Try an alert
 
 Open the alert box's editor (**Edit…** on its row) and click **Test this design**. Test events only go to that
-preview, never to your live overlays.
+preview, never to your live overlays. The **Emulate** list there sends a sample event from any platform or service
+(for example a Ko-fi membership or a Shopify order) through the same steps as a real one.
 
 ## Pause, skip, mute
 

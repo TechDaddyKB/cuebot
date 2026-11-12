@@ -52,6 +52,8 @@ internal static class StreamElementsEventMapper
             "redemption" => Redemption(d, args, keys),
             _ => Relayed(type, d, args, keys),
         };
+        // StreamElements' own events can also be fetched after a reconnect (StreamElementsService.BackfillAsync sets it).
+        if (result is not null && type is "tip" or "merch" or "redemption") result.Args["isBackfill"] = false;
         return result;
     }
 

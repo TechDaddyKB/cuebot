@@ -28,6 +28,17 @@ internal static class DonationFilters
             && Money.CurrencyAllowed(s["currency"], Text(e.Args, "currency"));
     }
 
+    /// <summary>"Include … fetched after a reconnect" (on by default, so missed events still run their actions).</summary>
+    public static ParameterDescriptor Backfill(string what) =>
+        new("includeBackfill", $"Include {what} fetched after a reconnect", ParameterKind.Boolean)
+        {
+            DefaultValue = "true",
+            Help = "Untick to skip events Cuebot fetched after a reconnect (isBackfill = True), e.g. so a late alert never plays",
+        };
+
+    public static bool MatchesBackfill(BotEvent e, ParameterValues s) =>
+        s.GetBool("includeBackfill", true) || !(e.Args.TryGetValue("isBackfill", out var b) && b is true);
+
     public static bool MatchesTest(BotEvent e, ParameterValues s) =>
         s.GetBool("includeTests", true) || !(e.Args.TryGetValue("isTest", out var t) && t is true);
 
@@ -58,10 +69,8 @@ internal sealed class StreamlabsTriggers : ITriggerProvider
         Event(StreamlabsEventTypes.Connected, "Connected"),
         Event(StreamlabsEventTypes.Disconnected, "Disconnected"),
         Event(StreamlabsEventTypes.Donation, "Donation",
-            [.. DonationFilters.Amount,
-                new("includeBackfill", "Include donations fetched after a reconnect", ParameterKind.Boolean) { DefaultValue = "true" }],
-            (e, s) => DonationFilters.MatchesAmount(e, s)
-                && (s.GetBool("includeBackfill", true) || !(e.Args.TryGetValue("isBackfill", out var b) && b is true))),
+            [.. DonationFilters.Amount, DonationFilters.Backfill("donations")],
+            (e, s) => DonationFilters.MatchesAmount(e, s) && DonationFilters.MatchesBackfill(e, s)),
         Event(StreamlabsEventTypes.CharityDonation, "Charity donation", DonationFilters.Amount, DonationFilters.MatchesAmount),
         Event(StreamlabsEventTypes.Merch, "Merchandise", DonationFilters.TestsOnly, DonationFilters.MatchesTest),
         Event(StreamlabsEventTypes.LoyaltyStoreRedemption, "Loyalty store redemption", DonationFilters.TestsOnly, DonationFilters.MatchesTest),
@@ -98,11 +107,13 @@ internal sealed class StreamElementsTriggers : ITriggerProvider
     [
         Event(StreamElementsEventTypes.Connected, "Connected"),
         Event(StreamElementsEventTypes.Disconnected, "Disconnected"),
-        Event(StreamElementsEventTypes.Tip, "Tip", DonationFilters.Amount, DonationFilters.MatchesAmount),
-        Event(StreamElementsEventTypes.Merch, "Merch", DonationFilters.Amount, DonationFilters.MatchesAmount),
+        Event(StreamElementsEventTypes.Tip, "Tip", [.. DonationFilters.Amount, DonationFilters.Backfill("tips")],
+            (e, s) => DonationFilters.MatchesAmount(e, s) && DonationFilters.MatchesBackfill(e, s)),
+        Event(StreamElementsEventTypes.Merch, "Merch", [.. DonationFilters.Amount, DonationFilters.Backfill("orders")],
+            (e, s) => DonationFilters.MatchesAmount(e, s) && DonationFilters.MatchesBackfill(e, s)),
         Event(StreamElementsEventTypes.Redemption, "Store redemption",
-            [new("item", "Item name") { Help = "Leave empty for any item" }, .. DonationFilters.TestsOnly],
-            (e, s) => DonationFilters.MatchesTest(e, s) && (s["item"].Length == 0
+            [new("item", "Item name") { Help = "Leave empty for any item" }, .. DonationFilters.TestsOnly, DonationFilters.Backfill("redemptions")],
+            (e, s) => DonationFilters.MatchesTest(e, s) && DonationFilters.MatchesBackfill(e, s) && (s["item"].Length == 0
                 || string.Equals(Convert.ToString(e.Args.GetValueOrDefault("item"), CultureInfo.InvariantCulture), s["item"], StringComparison.OrdinalIgnoreCase))),
         Event(StreamElementsEventTypes.Follow, "Relayed follow"),
         Event(StreamElementsEventTypes.Subscriber, "Relayed subscriber"),

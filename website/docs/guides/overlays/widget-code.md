@@ -285,17 +285,17 @@ These are the `listener` names that come with `onEventReceived`.
 | `message` | A chat message from any platform. | No |
 | `delete-message` | A chat message was deleted: `{ msgId }` | No |
 | `delete-messages` | A viewer was banned or timed out: `{ userId }` | No |
-| `follower-latest` | A follow (Twitch, Kick, Rumble) or a new YouTube subscriber. | Yes |
-| `subscriber-latest` | A sub, resub, gift sub or membership. | Yes |
+| `follower-latest` | A follow (Twitch, Kick, Rumble), a new YouTube subscriber or a free Patreon member. | Yes |
+| `subscriber-latest` | A sub, resub, gift sub or membership (Ko-fi, a new or upgraded Patreon pledge). | Yes |
 | `cheer-latest` | Twitch bits. | Yes |
 | `raid-latest` | A Twitch raid or a Kick host. | Yes |
-| `tip-latest` | A tip (donation services, Rumble rants). | Yes |
+| `tip-latest` | A tip (donation services, Ko-fi, Fourthwall, Rumble rants). | Yes |
 | `superchat-latest` | A YouTube Super Chat or Super Sticker. | Yes |
 | `kicks-latest` | Kick Kicks. | Yes |
 | `jewels-latest` | YouTube Jewels (Cuebot only). | Yes |
 | `redemption-latest` | Channel points, or something bought in Cuebot's points store (Cuebot only). | Yes |
 | `charityCampaignDonation-latest` | A charity donation. | Yes |
-| `merch-latest` | Merch bought. | Yes |
+| `merch-latest` | Merch bought (StreamElements, Streamlabs, Ko-fi shop and commissions, Fourthwall, Shopify). | Yes |
 | `cuebot-alert` | An alert from the **Show alert** sub-action (see [below](#send-your-own-data-to-a-widget)). | Yes |
 | `event` | The raw form of each alert above: `{ type, provider, data }`. It comes right after the alert. | No |
 | `kvstore:update` | A widget saved something with `SE_API.store.set`. | No |
@@ -349,12 +349,21 @@ These are the `listener` names that come with `onEventReceived`.
   type: "follower",
   providerId: "…", avatar: "…", _id: "…",
   createdAt: "2026-11-01T18:30:00.0000000Z",
-  service: "twitch"       // where it came from
+  service: "twitch",      // where it came from: twitch, kick, rumble, youtube, donations, kofi, patreon, fourthwall, shopify
+  isCatchUp: false        // Cuebot only: true when it did not just happen (see below)
 }
 ```
 
 Some kinds add more: subs have `tier` (`"1000"`, `"2000"`, `"3000"` or `"prime"`), `gifted`, `sender`, `bulkGifted`
 and `isCommunityGift`. Money has `currency`. Channel points have `redemption` (the reward's name). Merch has `items`.
+Ko-fi and Patreon memberships have `tierName` and `price` (per month); a Patreon upgrade has `upgrade: true`,
+`previousTier` and `previousAmount`.
+
+**Catch-up alerts.** `isCatchUp` is true for an event Cuebot learnt about late: donations Streamlabs or StreamElements
+had while Cuebot was disconnected, a Ko-fi payment your relay kept while Cuebot was closed, an order or donation
+Fourthwall or Shopify catch-up found, or Patreon's backlog after a paused webhook. Lists, goals and totals should count
+it like any other. A widget that pops up alerts should skip it, as Cuebot's alert box does. A Pally.gg **Replay Alert**
+is not a catch-up: you asked to see it again.
 
 ### The alert queue and widgetDuration
 
@@ -540,7 +549,11 @@ Your live overlays in OBS never see them.
 | Kick | Chat, Follow, Sub, Resub, Gift subs, Kicks, Raid |
 | Rumble | Chat, Follow, Sub, Gift subs, Tip |
 | YouTube | Chat, Follow, Sub, Resub, Gift subs, Super Chat |
-| Donations | Tip |
+| Donations | Tip (StreamElements), Merch (StreamElements), Charity (Streamlabs) |
+| Ko-fi | Tip, Membership, Resub, Shop order, Commission |
+| Patreon | Follow (a free member), Membership (a new pledge), Upgrade |
+| Fourthwall | Tip, Order, Stream gifts |
+| Shopify | Order |
 
 Emulated events go through the same steps as real ones, so they look exactly like the real thing.
 

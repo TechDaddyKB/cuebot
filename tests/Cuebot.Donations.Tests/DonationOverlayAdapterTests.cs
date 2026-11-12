@@ -24,6 +24,16 @@ public sealed class DonationOverlayAdapterTests
     }
 
     [Fact]
+    public void Backfilled_donations_are_catch_ups_but_a_Pally_replay_alert_is_not()
+    {
+        Assert.True(_adapter.IsCatchUp(E(StreamlabsEventTypes.Donation, ("isBackfill", true))));
+        Assert.True(_adapter.IsCatchUp(E(StreamElementsEventTypes.Merch, ("isBackfill", true))));
+        Assert.False(_adapter.IsCatchUp(E(StreamlabsEventTypes.Donation, ("isBackfill", false))));
+        // "Replay Alert" in Pally.gg's activity feed: the streamer wants to see it again.
+        Assert.False(_adapter.IsCatchUp(E(PallyEventTypes.CampaignTip, ("isReplay", true))));
+    }
+
+    [Fact]
     public void Charity_donations_have_their_own_listener()
     {
         Assert.Equal("charityCampaignDonation-latest", _adapter.ToAlert(E(DonorDriveEventTypes.Donation, ("user", "Kris"), ("amount", 5)))!.Listener);

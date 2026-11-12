@@ -112,7 +112,11 @@ public sealed class StreamerBotClientNodeTests(ITestOutputHelper output)
 internal static class NodeClient
 {
     public static string? ClientDir { get; } = FindClientDir();
-    public static string? Executable { get; } = ClientDir is null ? null : FindNode();
+
+    /// <summary>node on PATH or CUEBOT_TEST_NODE, whether or not the client folder is there.</summary>
+    public static string? Node { get; } = FindNode();
+
+    public static string? Executable => ClientDir is null ? null : Node;
 
     private static string? FindClientDir()
     {
@@ -159,5 +163,14 @@ internal sealed class NodeClientFactAttribute : FactAttribute
             Skip = "Set CUEBOT_TEST_SBCLIENT to a folder where `npm install @streamerbot/client typescript` was run";
         else if (NodeClient.Executable is null)
             Skip = "No node found (put node on PATH or set CUEBOT_TEST_NODE)";
+    }
+}
+
+/// <summary>A fact that is skipped unless node is available (on PATH or CUEBOT_TEST_NODE).</summary>
+internal sealed class NodeFactAttribute : FactAttribute
+{
+    public NodeFactAttribute()
+    {
+        if (NodeClient.Node is null) Skip = "No node found (put node on PATH or set CUEBOT_TEST_NODE)";
     }
 }

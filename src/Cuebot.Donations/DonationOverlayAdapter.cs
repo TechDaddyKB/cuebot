@@ -8,6 +8,8 @@ namespace Cuebot.Donations;
 /// Donations from every donation service as StreamElements "tip-latest" alerts (charity donations as
 /// "charityCampaignDonation-latest", StreamElements and Streamlabs merch as "merch-latest"). Platform events the services relay (follows, subs...) are left to the platform
 /// modules, so an alert never plays twice. Test events from the Donations page are passed on, for trying overlays.
+/// Donations Streamlabs or StreamElements fetched after a reconnect (<c>isBackfill</c>) are catch-up alerts; a Pally.gg
+/// "Replay Alert" (<c>isReplay</c>) is not: the streamer asked to see it again.
 /// </summary>
 internal sealed class DonationOverlayAdapter : IOverlayEventAdapter
 {
@@ -15,6 +17,8 @@ internal sealed class DonationOverlayAdapter : IOverlayEventAdapter
     public string Service => "donations";
 
     public IReadOnlyList<OverlayBadge> Badges(IReadOnlyDictionary<string, object?> platformArgs) => [];
+
+    public bool IsCatchUp(BotEvent e) => Bool(e.Args, "isBackfill");
 
     public OverlayAlert? ToAlert(BotEvent e) => e.Type switch
     {

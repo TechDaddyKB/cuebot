@@ -2,7 +2,7 @@
 // chance. Built on the StreamElements widget API: the runtime holds the alert queue (widgetDuration) and each alert
 // releases it with SE_API.resumeQueue() once its exit animation has played. A design can have the alert read out by
 // Cuebot's speech (it goes into Cuebot's speech queue). Designs live in the hidden "alerts" field and are edited in
-// Cuebot's alert designer.
+// Cuebot's alert designer. Catch-up alerts (isCatchUp) are skipped unless alerts.showCatchUp is on.
 (function () {
   "use strict";
 
@@ -14,7 +14,8 @@
   var loadedFonts = {};
   var audioContext = null;
 
-  var PLATFORM_NAMES = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", streamelements: "StreamElements" };
+  var PLATFORM_NAMES = { twitch: "Twitch", kick: "Kick", rumble: "Rumble", youtube: "YouTube", streamelements: "StreamElements",
+    donations: "Donations", kofi: "Ko-fi", patreon: "Patreon", fourthwall: "Fourthwall", shopify: "Shopify" };
   var SYSTEM_FONTS = ["", "inherit", "sans-serif", "serif", "monospace", "system-ui", "Arial", "Helvetica", "Verdana",
     "Georgia", "Times New Roman", "Courier New", "Trebuchet MS", "Impact", "Segoe UI"];
   var VIDEO = /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i;
@@ -277,6 +278,12 @@
   }
 
   function onAlert(listener, event) {
+    // Catch-up events (missed while disconnected, delivered late, a backlog) count in event lists, goals and session
+    // totals but do not pop up, unless the box is set to show them. Emulated and test alerts are never catch-up.
+    if (bool(event.isCatchUp) && !bool(alerts.showCatchUp)) {
+      if (window.SE_API) SE_API.resumeQueue();
+      return;
+    }
     var design = choose(typeFor(listener, event), event);
     if (!design) {
       if (window.SE_API) SE_API.resumeQueue();
