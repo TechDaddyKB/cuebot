@@ -36,6 +36,8 @@ need to log in with the Spotify account you stream with.
 
 ## 2. Copy the Client ID into Cuebot
 
+![The Spotify song requests card with Client ID and Sign in](../../assets/screens/card-spotify-song-requests.png)
+
 1. Your new app opens on Spotify's site. Click **Settings**.
 2. Under **Basic Information** you see **Client ID**: 32 letters and numbers. Copy it.
 3. In Cuebot, paste it into **Client ID**.

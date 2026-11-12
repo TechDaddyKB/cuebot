@@ -22,6 +22,8 @@ A link works both ways, so only **one** side has to add the other. Here, **this*
     - **Its API token**: the token you copied.
 4. Click **Connect**. Tick **Connect with Cuebot** to connect by itself next time.
 
+![The Remote instances card with the + Instance button](../../assets/screens/card-remote-instances.png)
+
 **This instance's name** is the name the other Cuebots see. Leave it empty to use the computer's name.
 
 ## Sending signals

@@ -25,6 +25,8 @@ removes it.
 The **First words** trigger runs for a viewer's first chat message, handy for a "welcome in!". Tick **Reset when a
 stream goes live** so everyone can be welcomed once per stream, or click **Reset first words now** to start over.
 
+![The First words and Present viewers card](../../assets/screens/card-first-words.png)
+
 ## Present viewers
 
 The **Present viewers** trigger runs every few minutes with everyone who chatted recently, for example to give them

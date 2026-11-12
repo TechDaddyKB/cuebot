@@ -13,6 +13,8 @@ Nothing needs switching on in VNyan for this.
 3. Optional: under **Values** add lines like `user=%user%`. The node passes them on; if you type a dictionary name into
    the node, VNyan also stores the values there for other nodes to read.
 
+![The VNyan card with the Send test box](../../../assets/screens/card-vnyan.png)
+
 VNyan's API listens on port 8069. To check the connection, type the name in the VNyan card on the **VTuber apps** tab
 and press **Send test**. VNyan only says it got the message, not whether a node used it, so check that your node's
 name matches exactly (capital letters matter). The card lists the names your actions use and warns when two differ

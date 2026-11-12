@@ -1,134 +1,85 @@
 # How actions work
 
-Everything Cuebot does is built from three pieces. Once you know them, you know Cuebot.
+Everything Cuebot does is built from a few pieces. Once you know them, you know Cuebot. This page explains the ideas.
+The pages after it show you every button.
 
-![The Actions page: actions on the left, triggers in the middle, steps on the right](../../assets/screens/page-actions.png)
+![The Actions page: actions on the left, triggers in the middle, the steps of the selected action on the right](../../assets/screens/actions-sub-actions.png)
+
+## The three pieces
 
 | Piece | What it is | Stream example |
 | --- | --- | --- |
-| **Action** | A job, with a name. | "Thank new followers" |
-| **Sub-action** | One step of that job. An action has a list of them. | "Write *Thanks for the follow!* in chat" |
-| **Trigger** | What starts the job. | "Someone followed my channel" |
+| **Action** | A job, with a name. | "Welcome raiders" |
+| **Trigger** | *When* the job starts. | "Someone raided my channel" |
+| **Sub-action** | One *do this* step of the job. An action has a list of them. | "Write *Welcome, raiders!* in chat" |
 
 Think of a recipe card. The **action** is the card. The **sub-actions** are the steps written on it, done from top to
-bottom. The **trigger** is the moment you pick the card up.
+bottom. The **trigger** is the moment you pick the card up and start cooking.
 
 - One action can have **many triggers**. "Say thanks" could start on a follow *and* on a sub.
-- One trigger type can start **many actions**.
-- An action with **no trigger** only runs when you start it by hand, from a command, or from another action.
+- One kind of trigger can start **many actions**. A raid could start "Welcome raiders" *and* "Play raid sound".
+- An action with **no trigger** only runs when something starts it on purpose: you with the **Run** button, a
+  command, or another action (the **Run action** sub-action).
+- When one event matches two triggers of the same action, the action still runs only once.
 
 All of this lives in **Automation > Actions**.
 
-![The Actions page](../../assets/actions.png)
+## Steps run in order, and some steps choose
 
-## Building an action
+Sub-actions run from top to bottom. Each one waits for the one before it to finish. Some steps can make decisions:
+an **If** step asks a question and then runs either its **True** list or its **False** list. A **Group** keeps steps
+together like a folder. **Run at the same time** does several lists at once. These lists inside a step are called
+**branches**. When a branch is done, the action carries on with the next step under it.
 
-![A step selected in the action editor, with its settings below](../../assets/screens/actions-step-details.png)
+[Logic and branches](logic-and-branches.md) explains every step that decides, repeats, waits or picks at random.
 
-1. Go to **Automation > Actions** and click **+** (New action).
-2. Click the name at the top and give it a clear name, like `Thank new followers`.
-3. Optional: type a **Group** name, like `Alerts`. Groups are folders that keep the list tidy.
-4. On the **Sub-actions** tab click **+ Sub-action**. Type what you want to do, for example `chat`, `scene`, `sound`
-   or `speak`, pick one and click **Add**.
-5. Fill in its settings. Each setting has a short hint under it.
-6. Add more sub-actions the same way. A new one goes in **after the one you selected**.
-7. Click **+ Trigger** and pick what should start it, for example **Twitch › Follow**.
+## Variables: the %words%
 
-You can try an action at any time:
+A trigger hands your action some facts. A raid gives `%user%` (who raided) and `%viewers%` (how many came along).
+Type these words, with the `%` signs, into any sub-action text and Cuebot swaps in the real value when the action
+runs. So `Welcome %user% and your %viewers% friends!` becomes *Welcome Bob and your 25 friends!*
 
-- **Run** starts it right now.
-- **Test trigger…** (++f5++) starts it as if a trigger fired. You type pretend values, one `name=value` per line, like
-  `user=Bob`, and Cuebot uses them. Good for testing a follow alert without a real follower. The trigger's filters
-  are not checked, and the run waits in the action's queue like any other. Cuebot also hands the action
-  `%isTest%` = `true`, so a step can tell it is a test.
+Some sub-actions add new variables for the steps after them. Words in `~` signs, like `~deaths~`, are saved values
+that last between runs. [Variables, the %words%](variables.md) explains them all.
 
-!!! note "A test is real"
-    Tests really do the steps. A "send chat message" step really writes in your chat.
+## Queues: taking turns
 
-### Changing the list
+When ten people follow at once, the follow action is started ten times. A **queue** is a waiting line: the runs wait
+their turn, so the alerts play one after another instead of all at the same time. By default each action waits for
+its own earlier runs. [Queues](queues.md) explains the options.
 
-- **↑** and **↓** (or ++ctrl+up++ / ++ctrl+down++) move the selected sub-action.
-- The tick box on a sub-action turns it off without deleting it.
-- ++ctrl+z++ undoes, ++ctrl+y++ redoes. Each action has its own undo.
-- ++ctrl+c++ / ++ctrl+v++ copy and paste actions, triggers and sub-actions, even into another Cuebot.
-- ++ctrl+d++ makes a copy, ++delete++ deletes.
+## On and off
 
-### Turning things off
+Every action, trigger and sub-action has its own on/off switch.
 
-The **On** / **Off** buttons switch a whole action off. Each trigger also has its own on/off switch. An action that is
-off does nothing, even when its trigger happens.
+- An action that is **off** does nothing, even when its trigger happens. It looks faded in the list.
+- A trigger that is **off** no longer starts the action. Other triggers still do.
+- A sub-action that is **off** is skipped, together with everything inside it.
 
-## Triggers
+## Two ways to look at the same action
 
-Click a trigger in the list to see its settings. Many triggers have **filters**: settings that make them pickier.
-For example, a channel point trigger can be set to one reward only, like "Hydrate".
+The editor has two tabs. Both edit the **same** action. Change one and the other changes too.
 
-Open **Variables this gives your action** under a trigger. It lists the `%words%` you can use in your messages, like
-`%user%` for the viewer's name. See [Variables](variables.md).
-
-There are hundreds of triggers: chat messages, commands, follows, subs, cheers, raids, donations, OBS scene changes,
-Stream Deck buttons, hotkeys, timers and many more. The [trigger reference](../../reference/triggers/index.md) lists
-every one.
-
-## Decisions and repeats
-
-Sometimes a step should only happen *sometimes*. These sub-actions help. You find them in the **Logic** and **Core**
-groups of the list:
-
-| Sub-action | What it does | Example |
+| Tab | Looks like | Best for |
 | --- | --- | --- |
-| **If** | Checks something, then runs one of two lists. | If `%bits%` is more than 499, switch to the "Celebration" scene. Otherwise just say thanks. |
-| **Switch** | Picks one list out of many, by value. | A different sound for each reward name. |
-| **While** | Repeats a list while something is true. | |
-| **Loop break** / **Loop continue** | Stop a repeat early / skip to the next round. | |
-| **Delay** | Waits, in milliseconds (1000 = 1 second). | Show an alert, wait 5000, hide it. |
-| **Group** | Keeps several steps together, like a folder. | |
-| **Run at the same time** | Runs two or more lists (lanes) at once, then carries on when all are done. | Play a sound *and* wave the avatar, then say thanks. |
-| **Run action** | Starts another action. | Reuse one "play alert sound" action everywhere. |
-| **Stop action** | Stops here. | |
+| **Sub-actions** | A list, like a to-do list. | Adding steps and changing their settings. |
+| **Flowchart** | Boxes joined by lines, like a map. | Seeing decisions and branches at a glance, and dragging steps to another place. |
 
-When you select a step that has its own lists (like **If**), the word **BRANCH** shows up. New sub-actions then go
-into that list. After the list, the action carries on with the next step.
+## Where to go next
 
-The **Cheer reaction** action in the **Examples** group shows an **If** in use. It starts switched off.
+1. [Your first action](your-first-action.md): build a raid welcome, click by click, and test it.
+2. [The action editor](action-editor.md): every button, menu and shortcut of the list editor.
+3. [The flowchart editor](flowchart.md): the same action as boxes and lines.
+4. [Logic and branches](logic-and-branches.md): If, Switch, loops, groups, random picks and doing things at once.
+5. [Variables](variables.md) and [Queues](queues.md).
 
-![Run at the same time in the list: each lane holds its own steps](../../assets/screens/actions-parallel-list.png)
-
-**Run at the same time** shows its lanes in the list like an **If** shows True and False. Each lane's steps go one
-after another, but the lanes all start together. The step after it waits until every lane is done.
-[The flowchart editor](flowchart.md#doing-several-things-at-once-run-at-the-same-time) explains the rules.
-
-### More options
-
-The **More** button on an action has extra choices:
-
-- **Random action**: run only *one* step, picked at random. Each step gets a **Weight**: a bigger number means a bigger
-  chance. Great for "pick a random sound".
-- **Concurrent sub-actions**: run all steps at the same time instead of one after another. It does nothing while
-  **Random action** is ticked.
-- **Always run**: run even when the action's queue is paused.
-- **Exclude from history**: keep this action out of the **Pending** and **History** lists (handy for things that run
-  very often).
-- **Queue**: which waiting line the action uses. See [Queues](queues.md).
-- **Export to code**, then **C#** or **Python**: makes a copy of the action that runs as one script, and switches this
-  one off. You find it on the right-click menu of the action list too. See
-  [Turn an action into code](../developers/export-to-code.md).
-
-## Flowchart
-
-![The same action as a flowchart](../../assets/screens/actions-flowchart.png)
-
-The **Flowchart** tab shows the same action as boxes joined by lines. It is the same action, just drawn differently.
-Change one view and the other changes too. [The flowchart editor](flowchart.md) explains it all.
+There are hundreds of triggers and sub-actions. The [trigger reference](../../reference/triggers/index.md) and the
+[sub-action reference](../../reference/sub-actions/index.md) list every one, with all their settings.
 
 ## Scripts (for the curious)
-
-![A Python step in the action editor](../../assets/screens/actions-python-step.png)
 
 When no sub-action does what you want, a code step lets you write a little program in C# or Python. This is optional
 and needs some coding. The steps are in the **Code** group of the sub-action list; see the
 [Code sub-actions](../../reference/sub-actions/code.md). C# code written for Streamer.bot (the `CPH` methods) works in
-Cuebot too. [Writing code (C# and Python)](../developers/writing-code.md) walks you through it, with examples, and
-shows how **Automation > Scripting** sets up Python.
-
-Next: [Variables, the %words%](variables.md).
+Cuebot too. [Writing code (C# and Python)](../developers/writing-code.md) walks you through it, and
+[Turn an action into code](../developers/export-to-code.md) shows how Cuebot can write the script for you.

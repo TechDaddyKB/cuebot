@@ -33,6 +33,8 @@ Make a bot when you want to edit posts, give roles or use slash commands.
 
 ## 1. Make the bot in the Developer Portal
 
+![Step 1 card: create your bot](../../assets/screens/card-1-create-your-bot.png)
+
 1. Open [discord.com/developers/applications](https://discord.com/developers/applications) and sign in with your
    normal Discord account. (In Cuebot, **Apps > Apps & devices**, tab **Discord bot**, the button **Open the Developer
    Portal** opens the same page.)
@@ -49,6 +51,8 @@ Make a bot when you want to edit posts, give roles or use slash commands.
     to the **Bot** page and click **Reset Token** again: the old one stops working, and you paste the new one into Cuebot.
 
 ## 2. Turn on the extra switches (only if you need them)
+
+![Step 2 card: extra switches](../../assets/screens/card-2-extra-switches-only-if-you-need-them.png)
 
 Discord keeps two things private unless you switch them on. You only need them for some triggers:
 
@@ -71,6 +75,8 @@ reach 10,000 users.
 
 ## 3. Invite the bot to your server
 
+![Step 3 card: invite the bot and connect](../../assets/screens/card-3-invite-the-bot-and-connect.png)
+
 1. In Cuebot, click **Invite the bot to your server**. Your browser opens a Discord page.
 2. Pick your server under **Add to server** and click **Continue**.
 3. The permissions are already ticked: View Channels, Send Messages, Embed Links, Manage Messages, Read Message History,
@@ -83,6 +89,8 @@ reach 10,000 users.
     drag the bot's role (it has the bot's name) **above** the roles it should give, like *Live notifications*.
 
 ## 4. Slash commands
+
+![The Slash commands card with Add command, Register and Default reply](../../assets/screens/card-slash-commands.png)
 
 1. On the **Discord bot** tab, under **Slash commands**, click **Add command**.
 2. Type the name without the slash, like `socials`, and a short description, like `Shows my socials`.
@@ -152,4 +160,4 @@ the [trigger reference](../../reference/triggers/discord.md).
 ## IFTTT
 
 The **IFTTT > Notification** steps send an event to IFTTT's "Webhooks" service, so IFTTT can do something else, like
-send a phone notification. See the [IFTTT sub-actions](../../reference/sub-actions/ifttt.md).
+send a phone notification. See [IFTTT](ifttt.md) and the [IFTTT sub-actions](../../reference/sub-actions/ifttt.md).

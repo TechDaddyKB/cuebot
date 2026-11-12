@@ -34,7 +34,7 @@ See [the multiplier](subathon-timers.md#too-much-or-too-little-the-multiplier).
 
 ## Show it on stream
 
-Add the **Goal ladder** widget to an overlay (see [Overlays](../overlays/overlays.md)). In its settings, type the goal's
+Add the **Goal ladder** widget to an overlay (see [Goal ladder widget](../overlays/widgets/goal-ladder.md)). In its settings, type the goal's
 name, or leave it empty for the first one.
 
 The **Goal ladder** shows a bar to the next step, and a list of steps with a tick next to the ones reached.

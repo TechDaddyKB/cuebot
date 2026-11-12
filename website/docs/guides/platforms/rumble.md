@@ -17,6 +17,10 @@ Rumble works a little differently. Reading works with a "key link" from Rumble. 
 4. **To write in chat (optional):** under **Send chat (optional)**, type your Rumble username and password and click
    **Sign in**. Cuebot keeps only the login session, never your password.
 
+![The Connection card with the key link box](../../assets/screens/card-connection.png)
+
+![The Send chat (optional) card with the Rumble sign-in](../../assets/screens/card-send-chat-optional.png)
+
 !!! warning
     Rumble has no official way for apps to write in chat. Sending messages may stop working if Rumble changes its
     website. Reading followers, live state and chat was tried with a real Rumble channel; writing in chat is not

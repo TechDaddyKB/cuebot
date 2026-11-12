@@ -23,6 +23,8 @@ You need the Elgato Stream Deck app, version 7.1 or newer.
     The plugin has connected to Cuebot in the real Stream Deck app on Windows. Not every key, dial and touch action has
     been tried with real hardware yet. See [What's experimental](../help/experimental.md).
 
+![The Set up card on Input > Stream Deck, with Turn on the REST API and the Host, Port and API token to copy](../../assets/screens/card-set-up.png)
+
 ### Step 1: turn on the REST API
 
 The plugin talks to Cuebot through Cuebot's **REST API** (a door that other programs can knock on).
@@ -59,10 +61,14 @@ Cuebot lists connected Stream Deck apps under **Connected Stream Deck apps**.
 
 Each key has a **Button ID**: a name you choose, like `brb`. Cuebot's actions use it to find the key.
 
+![The Connected Stream Deck apps card with Refresh](../../assets/screens/card-connected-stream-deck-apps.png)
+
 ## Way 2: direct USB
 
 On Linux there is no Stream Deck app, so Cuebot drives the Stream Deck itself. On a Mac you can do the same instead of
 using the Stream Deck app: quit the Stream Deck app first (it keeps the deck for itself).
+
+![The Direct USB (no Stream Deck app) card with Use Stream Decks on USB and Scan now](../../assets/screens/card-direct-usb-no-stream-deck-app.png)
 
 1. Plug in your Stream Deck.
 2. Go to **Input > Stream Deck**. On the **Direct USB (no Stream Deck app)** card, make sure **Use Stream Decks on

@@ -21,7 +21,7 @@ Both have a time in seconds. 0 keeps voting (or betting) open until you click **
 
 ## Show it on stream
 
-Show it with the **Poll and prediction** widget on your [overlay](../overlays/overlays.md).
+Show it with the [**Poll and prediction** widget](../overlays/widgets/poll.md) on your [overlay](../overlays/overlays.md).
 
 ## Twitch's own polls
 

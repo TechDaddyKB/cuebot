@@ -3,6 +3,8 @@
 veadotube mini and veadotube are PNGTuber apps: your avatar is a set of pictures (states) that change when you talk. Cuebot can change your avatar state (also for a few seconds, or to a random one), turn push-to-talk on or off, and set Number nodes in full veadotube, and starts actions when the state, push-to-talk or a number changes. Cuebot finds veadotube by itself while it is open. Its card is on **Apps > Stream apps**, tab **VTuber apps**. New to this? See
 [VTuber apps](index.md) for what Cuebot can do with each app.
 
+![The veadotube card](../../../assets/screens/card-veadotube-mini-or-full.png)
+
 1. Open veadotube mini (or veadotube). Its WebSocket server must be on: it is by default (veadotube mini: in the
    program settings; veadotube: the **websocket server** panel). For push-to-talk from Cuebot, also tick **use
    websocket** in veadotube mini's push-to-talk settings.

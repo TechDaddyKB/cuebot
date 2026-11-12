@@ -8,7 +8,7 @@ another, in an overlay. Want Spotify songs instead? See [Song requests](song-req
 ## Set it up
 
 1. Go to **Overlays > Overlays & Widgets**, open your overlay (or make one) and add the **Media request player**
-   widget. See [Overlays](../overlays/overlays.md). The overlay must be in OBS as a browser source.
+   widget. See [Media request player](../overlays/widgets/media-player.md). The overlay must be in OBS as a browser source.
 2. Go to **Audio > Media Requests**. Under **Settings**, tick **Taking requests**. It starts switched off, so chat
    can't fill a queue before your player is set up.
 3. Viewers type `!sr` and a YouTube link, like `!sr https://youtu.be/dQw4w9WgXcQ` (or just the 11-letter video id at

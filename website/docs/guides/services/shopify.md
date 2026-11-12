@@ -41,6 +41,8 @@ trigger.
     straight away after such a change. If no Shopify delivery arrives for a week, **Shopify extras** says so: check
     the webhook is still there.
 
+![The Shopify card with the signing key box](../../assets/screens/card-shopify.png)
+
 ## Keep the Webhook API version current
 
 Shopify releases a new API version every three months and supports each one for a year. When a version is retired,
@@ -113,6 +115,8 @@ Shopify's stock message only has the item's id. With the API connected, `%item%`
 `%sku%` name it; without it, filter on the inventory item id (`%inventoryItemId%`).
 
 ## Connect the Shopify API (optional)
+
+![The Shopify extras card](../../assets/screens/card-shopify-extras.png)
 
 Webhooks alone work. Connecting the Admin API adds names in stock alerts, your products in the Products widget, sales
 totals from Shopify, catch-up of paid orders that never arrived, and the steps **Get Shopify sales totals**, **Get

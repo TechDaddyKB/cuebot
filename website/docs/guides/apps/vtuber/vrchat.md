@@ -7,6 +7,8 @@ Cuebot can set your VRChat avatar parameters, write in your chatbox and show the
     VRChat is only checked by Cuebot's own tests so far. The real test stopped at VRChat's terms page. See
     [What's experimental](../../help/experimental.md).
 
+![The VRChat (OSC) card with Send to, Listen on and a chatbox test](../../../assets/screens/card-vrchat-osc.png)
+
 1. In VRChat open the **Action Menu**, then **Options > OSC**, and make sure OSC is **Enabled**.
 2. In Cuebot press **Connect** in the VRChat card.
 3. Use the steps **VRChat > Set avatar parameter**, **Send chatbox message** or **Show typing bubble**.

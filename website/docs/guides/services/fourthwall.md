@@ -20,6 +20,8 @@ Fourthwall reaches Cuebot through a relay. Set one up first: see [Webhooks](webh
 5. In Fourthwall, click **Send test notification**. The card shows the last delivery, and the event is marked as a
    test.
 
+![The Fourthwall card with the webhook secret box](../../assets/screens/card-fourthwall.png)
+
 **Send test event** on the Fourthwall card makes a pretend event inside Cuebot only. There is one for every
 Fourthwall trigger, including an anonymous donation.
 
@@ -86,6 +88,8 @@ type it in Twitch chat until the draw's time is up. Cuebot then hands Fourthwall
 picks the winners. **Gift Draw Ended** follows with the winners.
 
 ## Connect the Fourthwall API (optional)
+
+![The Fourthwall extras card with the API connection buttons](../../assets/screens/card-fourthwall-extras.png)
 
 Webhooks alone work. Connecting the API adds tier names and the member list, your shop's products in the Products
 widget, catch-up of missed events, the webhook setup, the streaming status, gift draws, and these steps:

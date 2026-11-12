@@ -121,7 +121,7 @@ brackets.
 | --- | --- | --- |
 | **Decks** | Pages of buttons for your phone, tablet or an OBS dock. The phone app shows them too. | [Decks](../apps/decks.md), [The phone app](../mods/phone-app.md) |
 | **Stream Deck** | Elgato Stream Deck, with the Stream Deck app or straight over USB. | [Stream Deck](../apps/stream-deck.md) |
-| **Input** | MIDI controllers and game controllers. Tabs **MIDI** and **Game controllers**. | [Your buttons and controllers](../apps/controllers.md) |
+| **Input** | MIDI controllers and game controllers. Tabs **MIDI** and **Game controllers**. | [MIDI](../apps/midi.md), [Game controllers](../apps/game-controllers.md) |
 
 <div class="grid" markdown>
 
@@ -170,8 +170,8 @@ brackets.
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
-| **Stream apps** | OBS, Streamlabs Desktop and other stream apps. Tabs **OBS & Streamlabs Desktop**, **Meld & PolyPop**, **T.I.T.S.**, **Lumia Stream**, **OBSBOT**, **mtion**, **VTuber apps** and **StreamFog**. | [OBS Studio](../apps/obs.md), [Other stream apps](../apps/other-stream-apps.md), [VTuber apps](../apps/vtuber/index.md) |
-| **Apps & devices** | Lights, mixers, apps and your Discord bot. Tabs **Apps & services**, **Elgato lights & webcams**, **Wave Link**, **GoXLR** and **Discord bot**. | [Lights, mixers and other apps](../apps/lights-and-mixers.md), [Discord bot](../services/discord-bot.md) |
+| **Stream apps** | OBS, Streamlabs Desktop and other stream apps. Tabs **OBS & Streamlabs Desktop**, **Meld & PolyPop**, **T.I.T.S.**, **Lumia Stream**, **OBSBOT**, **mtion**, **VTuber apps** and **StreamFog**. | [OBS Studio](../apps/obs.md), [Other stream apps](../apps/other-stream-apps.md) (each app has its own page there), [VTuber apps](../apps/vtuber/index.md) |
+| **Apps & devices** | Lights, mixers, apps and your Discord bot. Tabs **Apps & services**, **Lights & cameras**, **Wave Link**, **GoXLR** and **Discord bot**. | [Lights, mixers and other apps](../apps/lights-and-mixers.md) (each device has its own page there), [Discord bot](../services/discord-bot.md) |
 | **Donations** | Tips and charity services. | [Tips and donations](../services/tips-and-donations.md) |
 | **Webhooks** | Events from web services, through your relay. Tabs **Services** and **Relay**. | [Webhooks](../services/webhooks.md) |
 | **Servers** | Doors that let other programs talk to Cuebot. **Pair a phone** connects the phone app. | [Cuebot's servers](../developers/servers.md), [The phone app](../mods/phone-app.md) |

@@ -3,7 +3,10 @@
 # The pages under docs/reference/triggers and docs/reference/sub-actions are generated from src/Cuebot.Core/Help
 # by tests/Cuebot.UiTests/ActionHelpTests.cs (CUEBOT_WRITE_REFERENCE=1); docs/reference/csharp, script-functions,
 # rest-api.md and mcp-tools.md by DeveloperReferenceTests.cs (see docs/WRITING_HELP.md). Do not edit them by hand.
-# The screenshots in docs/assets/screens come from tests/Cuebot.UiTests/DocsScreenshots.cs (CUEBOT_WRITE_SCREENSHOTS=1).
+# The screenshots in docs/assets/screens come from tests/Cuebot.UiTests/DocsScreenshots.cs (CUEBOT_WRITE_SCREENSHOTS=1: every
+# page, tab and card of the app) and DocsOverlayScreenshots.cs (CUEBOT_WRITE_OVERLAY_SCREENSHOTS=1: the overlay designer,
+# widget editors and alert designer, through tools/docs-shots/overlay-shots.mjs; needs Node.js, playwright-core and Chromium).
+# Then run tools/docs-shots/prune-unused.sh, so only the pictures a page uses are committed.
 site_name: Cuebot Docs
 site_description: Stream automation for Twitch, YouTube, Kick and Rumble, explained simply.
 site_url: https://techdaddykb.github.io/cuebot/
@@ -115,7 +118,10 @@ nav:
       - Actions and automation:
           - guides/actions/index.md
           - How actions work: guides/actions/how-actions-work.md
+          - Your first action: guides/actions/your-first-action.md
+          - The action editor: guides/actions/action-editor.md
           - The flowchart editor: guides/actions/flowchart.md
+          - Logic and branches: guides/actions/logic-and-branches.md
           - Variables, the %words%: guides/actions/variables.md
           - Queues: guides/actions/queues.md
           - Timers: guides/actions/timers.md
@@ -136,7 +142,30 @@ nav:
       - Overlays and alerts:
           - guides/overlays/index.md
           - Overlays: guides/overlays/overlays.md
+          - The overlay designer: guides/overlays/overlay-designer.md
+          - The widget editor: guides/overlays/widget-editor.md
           - Alerts: guides/overlays/alerts.md
+          - Widgets:
+              - guides/overlays/widgets/index.md
+              - Chat box: guides/overlays/widgets/chat-box.md
+              - Label: guides/overlays/widgets/label.md
+              - Goal bar: guides/overlays/widgets/goal-bar.md
+              - Event list: guides/overlays/widgets/event-list.md
+              - Credits roll: guides/overlays/widgets/credits-roll.md
+              - Top spenders: guides/overlays/widgets/top-spenders.md
+              - Subathon timer: guides/overlays/widgets/subathon-timer.md
+              - Goal ladder: guides/overlays/widgets/goal-ladder.md
+              - Countdown: guides/overlays/widgets/countdown.md
+              - Emote rain: guides/overlays/widgets/emote-rain.md
+              - Hype cup: guides/overlays/widgets/hype-cup.md
+              - Hype boss: guides/overlays/widgets/hype-boss.md
+              - Poll and prediction: guides/overlays/widgets/poll.md
+              - Giveaway: guides/overlays/widgets/giveaway.md
+              - Media request player: guides/overlays/widgets/media-player.md
+              - Charity campaign: guides/overlays/widgets/charity.md
+              - Product showcase: guides/overlays/widgets/product-showcase.md
+              - Seasonal effects: guides/overlays/widgets/seasonal-effects.md
+              - Blank custom widget: guides/overlays/widgets/custom-widget.md
           - Writing your own widgets: guides/overlays/widget-code.md
           - Streamlabs widgets: guides/overlays/streamlabs-widgets.md
       - Speech, sound and music:
@@ -151,11 +180,29 @@ nav:
       - Stream apps and devices:
           - guides/apps/index.md
           - OBS Studio: guides/apps/obs.md
-          - Other stream apps: guides/apps/other-stream-apps.md
+          - Other stream apps:
+              - guides/apps/other-stream-apps.md
+              - Streamlabs Desktop: guides/apps/streamlabs-desktop.md
+              - Meld Studio: guides/apps/meld-studio.md
+              - PolyPop: guides/apps/polypop.md
+              - T.I.T.S.: guides/apps/tits.md
+              - Lumia Stream: guides/apps/lumia-stream.md
+              - OBSBOT cameras: guides/apps/obsbot.md
+              - mtion studio: guides/apps/mtion-studio.md
+              - StreamFog: guides/apps/streamfog.md
           - Stream Deck: guides/apps/stream-deck.md
           - Decks: guides/apps/decks.md
-          - Buttons and controllers: guides/apps/controllers.md
-          - Lights, mixers and other apps: guides/apps/lights-and-mixers.md
+          - Buttons and controllers:
+              - guides/apps/controllers.md
+              - MIDI: guides/apps/midi.md
+              - Game controllers: guides/apps/game-controllers.md
+          - Lights, mixers and other apps:
+              - guides/apps/lights-and-mixers.md
+              - Elgato lights: guides/apps/elgato-lights.md
+              - Elgato cameras: guides/apps/elgato-cameras.md
+              - Wave Link: guides/apps/wave-link.md
+              - GoXLR: guides/apps/goxlr.md
+              - Voicemod: guides/apps/voicemod.md
           - VTuber apps:
               - guides/apps/vtuber/index.md
               - VTube Studio: guides/apps/vtuber/vtube-studio.md
@@ -170,14 +217,29 @@ nav:
               - VSeeFace and other 3D apps (VMC): guides/apps/vtuber/vmc.md
       - Donations and services:
           - guides/services/index.md
-          - Tips and donations: guides/services/tips-and-donations.md
-          - Streamlabs: guides/services/streamlabs.md
-          - StreamElements: guides/services/streamelements.md
-          - Webhooks (Ko-fi, Patreon…): guides/services/webhooks.md
-          - Ko-fi: guides/services/ko-fi.md
-          - Patreon: guides/services/patreon.md
-          - Fourthwall: guides/services/fourthwall.md
-          - Shopify: guides/services/shopify.md
+          - Tips and donations:
+              - guides/services/tips-and-donations.md
+              - Streamlabs: guides/services/streamlabs.md
+              - StreamElements: guides/services/streamelements.md
+              - TipeeeStream: guides/services/tipeeestream.md
+              - Pally.gg: guides/services/pally.md
+              - DonorDrive (Extra Life): guides/services/donordrive.md
+              - TreatStream: guides/services/treatstream.md
+          - Webhooks:
+              - guides/services/webhooks.md
+              - Ko-fi: guides/services/ko-fi.md
+              - Patreon: guides/services/patreon.md
+              - Fourthwall: guides/services/fourthwall.md
+              - Shopify: guides/services/shopify.md
+              - Throne: guides/services/throne.md
+              - Custom webhooks: guides/services/custom-webhooks.md
+          - IFTTT: guides/services/ifttt.md
+          - Heart rate:
+              - Pulsoid: guides/services/pulsoid.md
+              - HypeRate: guides/services/hyperate.md
+          - Viewer games:
+              - StreamLoots: guides/services/streamloots.md
+              - Crowd Control: guides/services/crowd-control.md
           - Discord bot: guides/services/discord-bot.md
           - Subathon timers: guides/services/subathon-timers.md
           - Goals: guides/services/goals.md

@@ -12,6 +12,8 @@ It also explains YouTube's daily limit, the quota.
 2. Google asks which account to use. Pick the channel you stream on.
 3. Allow Cuebot to manage your YouTube account.
 
+![The Accounts card with the browser and code sign-in buttons for broadcaster and bot](../../assets/screens/card-accounts.png)
+
 !!! note "\"Google hasn't verified this app\""
     While Google is still checking Cuebot, you may see this warning. Click **Advanced**, then **Go to Cuebot**.
 
@@ -28,6 +30,8 @@ Tick **Connect automatically on startup** so Cuebot connects every time it start
 YouTube gives every app a daily allowance of "units", and every request Cuebot makes uses some. The **Polling and
 quota** part of the page shows how much Cuebot expects to use and how much it used today. Checking less often makes the allowance last longer, but events arrive later. A few boxes there change how
 much Cuebot uses:
+
+![The Polling and quota card with the quota settings and the units used today](../../assets/screens/card-polling-and-quota.png)
 
 - **Stream live chat** gets chat messages as they are posted, for a small part of the quota.
 - **Check for new subscribers** looks for new subscribers. YouTube only shows public subscriptions.

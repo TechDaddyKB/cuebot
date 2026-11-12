@@ -36,6 +36,8 @@ Want viewers to pick the songs? See [Song requests](song-requests.md) (Spotify) 
 The **Previous**, **Play / pause** and **Next** buttons press the media keys of the player that plays now. Handy to
 test.
 
+![The Now playing card with Previous, Play / pause, Next and Watch what plays](../../assets/screens/card-now-playing.png)
+
 ### Put it on stream (OBS)
 
 1. On the Music page, tick **Write the song to a text file**.

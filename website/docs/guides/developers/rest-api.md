@@ -23,6 +23,8 @@ its own **Enabled** box. See [Cuebot's servers](servers.md) for letting other co
 
 Every request needs the token in a header: `Authorization: Bearer YOUR_TOKEN`. Without it, Cuebot answers `401`.
 
+![The REST API card with Enabled, Address, Port and Token](../../assets/screens/card-rest-api.png)
+
 ## Your first request
 
 Ask Cuebot how it is doing. Open a terminal (on Windows: **PowerShell**) and type:

@@ -15,6 +15,8 @@ Patreon reaches Cuebot through a relay. Set one up first: see [Webhooks](webhook
 4. Back in Cuebot, on the **Services** tab, paste it into the **Patreon** card and tick **Enabled**.
 5. In the portal, click **Send Test** next to an event. The card shows the last delivery.
 
+![The Patreon card with the webhook secret box](../../assets/screens/card-patreon.png)
+
 **Send test event** on the Patreon card makes a pretend event inside Cuebot only, so you can try actions without
 Patreon.
 
@@ -23,6 +25,8 @@ Patreon.
     webhook for the address on the Relay tab, with every event, and saves the secret for you.
 
 ## Connect the Patreon API (optional)
+
+![The Patreon extras card](../../assets/screens/card-patreon-extras.png)
 
 Webhooks alone work. Connecting the API adds your campaign's currency, your tier list, the patron count, the whole
 member list (so patron perks survive messages that were missed), upgrade/downgrade detection and the webhook's health.

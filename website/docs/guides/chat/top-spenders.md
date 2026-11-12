@@ -42,6 +42,8 @@ Bits, Kicks, Jewels and subs are not money, so Cuebot gives them a price in US d
 things are worth** if your prices are different. For example, a Twitch tier 1 sub is $4.99 and a bit is $0.01. A gift
 of 5 subs counts as 5 subs. A new price only counts for new purchases.
 
+![The Currency card with what a bit, a Kick and each sub are worth](../../assets/screens/card-currency.png)
+
 ## What is left out
 
 - **Charity donations** go to the charity, not to you. Tick **Count charity donations** to count them anyway.
@@ -67,7 +69,7 @@ You can also click **Start a new stream now**, or use the **Start a new stream f
 
 ## Show it on stream
 
-Add the **Top spenders** widget to an overlay (see [Overlays](../overlays/overlays.md)). In its settings, pick the
+Add the **Top spenders** widget to an overlay (see [Top spenders widget](../overlays/widgets/top-spenders.md)). In its settings, pick the
 **Period**, a **Platform** (or leave it empty for all) and **How many people** (3 at first, up to 10). **Layout**
 shows one person per line, or everyone on one line.
 

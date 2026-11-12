@@ -24,8 +24,12 @@ Under **Earning** (these are the starting values; change any of them):
 | **Raid bonus** | 0 | For raiding you. |
 | **Maximum balance (0 = none)** | 0 | The most points one viewer can have. 0 means no limit. |
 
+![The Earning card with the points settings](../../assets/screens/card-earning.png)
+
 **Multipliers** give some viewers more: for example set **VIPs** to `2` and VIPs earn double. You can also set a
 multiplier per group, like `Regulars=1.5`.
+
+![The Multipliers card](../../assets/screens/card-multipliers.png)
 
 **Never earn automatically (bots)**: list your bots here so they do not collect points.
 

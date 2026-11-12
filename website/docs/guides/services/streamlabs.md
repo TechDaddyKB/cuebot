@@ -5,7 +5,7 @@ gifts. If you also connect your own Streamlabs app, Cuebot can control your Stre
 custom alerts, alert profiles), spin the wheel, empty the tip jar, roll the credits, drive media share, read and change
 Cloudbot loyalty points, and fetch donations it missed while the connection was down.
 
-Streamlabs Desktop (the streaming app) is a separate connection: see [Other stream apps](../apps/other-stream-apps.md#streamlabs-desktop).
+Streamlabs Desktop (the streaming app) is a separate connection: see [Streamlabs Desktop](../apps/streamlabs-desktop.md).
 
 ## Connect (donations only)
 
@@ -13,6 +13,8 @@ Streamlabs Desktop (the streaming app) is a separate connection: see [Other stre
    sometimes moves this menu; if you cannot find it, connect your own app (below), which fills the token in for you.
 2. In Cuebot go to **Apps > Donations**, pick **Streamlabs**, paste the token and click **Connect**.
 3. Click **Send test event** to check that your actions react. Nothing is sent to Streamlabs.
+
+![The Streamlabs card with the Socket API token box and Connect button](../../assets/screens/card-streamlabs.png)
 
 That is all you need for the donation triggers. Tick **Also publish the Twitch/YouTube events Streamlabs relays** only
 if you do not connect Twitch or YouTube to Cuebot directly, or follows and subs may run twice.

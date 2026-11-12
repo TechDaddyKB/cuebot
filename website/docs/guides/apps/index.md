@@ -11,13 +11,17 @@ Nothing connects by itself until you set it up, and most pages have a box to con
 ## What's in here
 
 - [OBS Studio](obs.md): connect OBS, switch scenes and react to stream events.
-- [Other stream apps](other-stream-apps.md): Streamlabs Desktop, Meld Studio, PolyPop, T.I.T.S., Lumia Stream, OBSBOT
-  and mtion studio.
+- [Other stream apps](other-stream-apps.md): an overview of the rest.
+  - [Streamlabs Desktop](streamlabs-desktop.md), [Meld Studio](meld-studio.md), [PolyPop](polypop.md),
+    [T.I.T.S.](tits.md), [Lumia Stream](lumia-stream.md), [OBSBOT cameras](obsbot.md), [mtion studio](mtion-studio.md)
+    and [StreamFog](streamfog.md).
 - [Stream Deck](stream-deck.md): run actions from an Elgato Stream Deck.
 - [Decks](decks.md): buttons on your phone or tablet, in a web browser.
-- [Controllers and MIDI](controllers.md): MIDI pads, game controllers, hotkeys and your voice.
-- [Lights, mixers and other apps](lights-and-mixers.md): Elgato lights, Wave Link, GoXLR, VTube Studio, Voicemod and
-  more.
+- [Controllers and MIDI](controllers.md): an overview of buttons, pads and knobs.
+  - [MIDI](midi.md) and [Game controllers](game-controllers.md).
+- [Lights, mixers and other apps](lights-and-mixers.md): an overview of the apps and devices on your desk.
+  - [Elgato lights](elgato-lights.md), [Elgato cameras](elgato-cameras.md), [Wave Link](wave-link.md),
+    [GoXLR](goxlr.md) and [Voicemod](voicemod.md).
 - [VTuber apps](vtuber/index.md): make your avatar react, in veadotube, VNyan, VRChat, Warudo and others.
 
 ## On Linux

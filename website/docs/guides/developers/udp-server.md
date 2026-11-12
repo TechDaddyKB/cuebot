@@ -10,6 +10,8 @@ UDP sends one tiny message and does not wait for an answer. Some older tools and
 
 It listens on port 4242 on this computer. Other devices need [Allow LAN connections](servers.md#keeping-it-safe).
 
+![The UDP server card](../../assets/screens/card-udp-server.png)
+
 ## Sending a message
 
 Send this:

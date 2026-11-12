@@ -29,6 +29,8 @@ Each mod has a row under **Mods** on **Chat > Mod portal**:
   access here is paused too.
 - **Sign out** signs this mod out on every device. **Remove** takes away their access; a new invite lets them back.
 
+![The Mods card: each mod with Role, Their changes, Paused, Sign out and Remove](../../assets/screens/card-mods.png)
+
 **Sign everyone out** signs every mod out on every device. They keep their role and sign in again with their account.
 
 ## What your mods see
@@ -167,6 +169,8 @@ A role can also be limited to some **groups** of actions and commands, like "Mod
 
 ## Approving and undoing changes
 
+![The Waiting for your approval card with Approve and Reject](../../assets/screens/card-waiting-for-your-approval.png)
+
 - **Live**: the change applies at once.
 - **Live and tell me**: it applies at once, and you get a notice.
 - **Needs approval**: it waits under **Waiting for your approval** until you approve or reject it. A change nobody
@@ -177,6 +181,8 @@ Every role has one of these. You can set a different one for a single mod under 
 Under **Recent changes by mods**, **Undo** puts back what was there before. If it changed again since, Cuebot asks
 you to press Undo once more to be sure.
 
+![The Recent changes by mods card](../../assets/screens/card-recent-changes-by-mods.png)
+
 ### Approving from your phone
 
 You don't have to be at your computer to answer. The [Cuebot phone app](phone-app.md#approving-from-your-phone),
@@ -186,6 +192,8 @@ paired with this Cuebot, lists the changes waiting for you on its **Mods** tab, 
 2. Tap **Approve** to make a change live, or **Reject** to drop it.
 
 ## Invites
+
+![The Invite a mod card with Role, Works for (hours) and Make invite link](../../assets/screens/card-invite-a-mod.png)
 
 - An invite works **once**, for the hours you choose under **Works for (hours)** (24 by default, at most 30 days).
   The link is shown only once, so copy it with **Copy link** right away.

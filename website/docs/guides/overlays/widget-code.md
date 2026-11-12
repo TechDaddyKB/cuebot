@@ -39,7 +39,7 @@ The new widget is not empty: it starts as the [latest follower example](#a-compl
 can see how the parts fit together. Change or delete anything you like, then click **Save**.
 
 Move and size the widget with its **X**, **Y**, **W** and **H** boxes, or drag it in the
-[designer](overlays.md#the-designer).
+[designer](overlay-designer.md).
 
 ### Or add your files as a zip
 
@@ -61,7 +61,8 @@ A widget added from a zip covers the whole canvas at first. Change its **X**, **
 
 ## The widget editor
 
-The widget editor is where you type and change the code.
+The widget editor is where you type and change the code. (Every tab and button of it is explained in
+[The widget editor](widget-editor.md); this part is about the code.)
 
 - On the Overlays page, click **Edit…** on the widget's row.
 - Or, in the designer, select the widget and click **Edit widget…**.

@@ -5,6 +5,8 @@ to **Settings**, tab **Google Drive**.
 
 ## Setting it up
 
+![The Google Drive backups card with Sign in with Google](../../assets/screens/card-google-drive-backups.png)
+
 1. Click **Sign in with Google**, pick your account and allow access.
 2. Check that **Upload every new backup to Google Drive** is ticked (it is from the start). Cuebot puts them in a
    folder called **Cuebot Backups** and keeps the newest **10** there. You can change the number.

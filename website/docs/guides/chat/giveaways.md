@@ -22,4 +22,4 @@ click again within 5 seconds.
 
 ## Show it on stream
 
-Show it on stream with the **Giveaway** widget on your [overlay](../overlays/overlays.md).
+Show it on stream with the [**Giveaway** widget](../overlays/widgets/giveaway.md) on your [overlay](../overlays/overlays.md).

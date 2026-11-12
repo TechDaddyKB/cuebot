@@ -11,6 +11,8 @@ link or button, to put Cuebot's chat and event docks in OBS, to show your own fi
 
 It listens on `http://127.0.0.1:7474`. Other devices need [Allow LAN connections](servers.md#keeping-it-safe).
 
+![The HTTP server card with the OBS dock addresses](../../assets/screens/card-http-server.png)
+
 ## Run an action
 
 Send a `POST` to `/DoAction` (or `/api/DoAction`):

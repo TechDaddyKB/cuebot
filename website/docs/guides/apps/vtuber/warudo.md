@@ -6,6 +6,8 @@ can do with each app.
 
 Cuebot uses the same connection as Warudo's built-in Stream Deck support, so you need no mod.
 
+![The Warudo card](../../../assets/screens/card-warudo.png)
+
 1. In Warudo, open a blueprint and add one of these nodes. Type a **Receiver Name** into it, for example `Confetti`:
     - **On Stream Deck Trigger**: runs its **Exit** path once each time Cuebot sends it.
     - **On Stream Deck Toggle**: runs its **If Yes** path when it turns on and its **If No** path when it turns off,

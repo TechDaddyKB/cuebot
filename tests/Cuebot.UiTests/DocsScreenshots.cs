@@ -64,6 +64,38 @@ public sealed class DocsScreenshots : IAsyncDisposable
             Save(window, "page-" + Slug(page.Title));
         }
 
+        // Every tab of every page, so each integration's page in the guides can show its own tab:
+        // tab-<page>-<tab>.png. Only the page's own (top-level) tabs; tabs inside a tab are left to the list below.
+        // Every card with a heading (one per app or service on the integration pages) also goes in its own picture,
+        // card-<heading>.png, taken in a tall window so whole cards fit.
+        var cards = new HashSet<string>();
+        foreach (var page in vm.Pages)
+        {
+            vm.SelectedPage = page;
+            Settle();
+            // The page's own tabs only (not tabs inside them), and some headers change once picked ("Queue — empty").
+            var tabs = window.GetVisualDescendants().OfType<TabControl>().FirstOrDefault()?.Items.OfType<TabItem>()
+                .Where(t => t.Header is string && t.IsVisible).ToList() ?? [];
+            if (tabs.Count == 0) SaveCards(window, cards);
+            foreach (var tab in tabs)
+            {
+                var header = (string)tab.Header!;
+                tab.IsSelected = true;
+                Settle();
+                Save(window, "tab-" + FileSlug(page.Title) + "-" + FileSlug(header));
+                SaveCards(window, cards);
+            }
+            // Donations: one picture per service in its list.
+            if (window.GetVisualDescendants().OfType<ListBox>().FirstOrDefault(l => l.Name == "ServiceList") is { } services)
+                for (var i = 0; i < services.ItemCount; i++)
+                {
+                    services.SelectedIndex = i;
+                    Settle();
+                    var name = services.SelectedItem is Cuebot.App.ViewModels.Donations.DonationCardViewModel card ? card.Name : i.ToString();
+                    Save(window, "donations-" + FileSlug(name));
+                }
+        }
+
         // Pages whose guide talks about one tab.
         foreach (var (page, tab, name) in new[]
                  {
@@ -119,7 +151,67 @@ public sealed class DocsScreenshots : IAsyncDisposable
         raid.Selected = raid.Steps.Items.First();
         Settle();
         Save(window, "actions-step-details");
+        // A trigger's own settings, and the variables it gives the action.
+        raid.Selected = raid.Triggers.First();
+        Settle();
+        Save(window, "actions-trigger-details");
+        // A branch of an If: new steps go into it.
+        raid.Selected = raid.Steps.Items.First().Branches.First();
+        Settle();
+        Save(window, "actions-branch-selected");
+        // A step inside a branch: its settings and the variables it adds.
+        raid.Selected = raid.Steps.Items.First().Branches.First().Steps.Items.Last();
+        Settle();
+        Save(window, "actions-step-in-branch");
         raid.Selected = null;
+        // "Test trigger…": run the action as if a trigger fired, with made-up values.
+        actions.TestTriggerCommand.Execute(null);
+        Settle();
+        Save(window, "actions-test-trigger");
+        actions.Test.CancelCommand.Execute(null);
+        Settle();
+        // Switch, While and a random group, in the list.
+        var color = actions.Actions.Single(a => a.Name == "Light colour (!color)");
+        actions.SelectedAction = color;
+        color.Selected = color.Steps.Items[0];
+        Settle();
+        Save(window, "actions-switch");
+        color.Selected = color.Steps.Items[1];
+        Settle();
+        Save(window, "actions-while");
+        color.Selected = color.Steps.Items[2];
+        Settle();
+        Save(window, "actions-random-group");
+        color.Selected = null;
+        // The trigger with its variables opened.
+        actions.SelectedAction = raid;
+        raid.Selected = raid.Triggers.First();
+        Settle();
+        foreach (var expander in window.GetVisualDescendants().OfType<Expander>().Where(e => e.IsEffectivelyVisible)) expander.IsExpanded = true;
+        Settle();
+        Save(window, "actions-trigger-variables");
+        raid.Selected = null;
+        // Searching the actions list.
+        var search = window.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "Search actions");
+        search.Text = "alert";
+        Settle();
+        Save(window, "actions-search");
+        search.Text = "";
+        Settle();
+        // The narrow layout: triggers and sub-actions become tabs.
+        window.Width = 980;
+        Settle();
+        Save(window, "actions-narrow");
+        window.Width = 1360;
+        Settle();
+        // Random action: one top-level step runs, picked by weight.
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Random hype sound");
+        actions.SelectedAction.Selected = actions.SelectedAction.Steps.Items.First();
+        Settle();
+        Save(window, "actions-random-action");
+        actions.SelectedAction.Selected = null;
+        actions.SelectedAction = raid;
+        Settle();
 
         // The flowchart needs room: a wider window shows the whole raid action.
         window.Width = 1760;
@@ -127,12 +219,22 @@ public sealed class DocsScreenshots : IAsyncDisposable
         actions.IsGraphView = true;
         Settle();
         Save(window, "actions-flowchart");
+        // Click a node: its settings open beside the flowchart.
+        raid.Selected = raid.Steps.Items.First().Branches.First().Steps.Items.Last();
+        Settle();
+        Save(window, "actions-flowchart-selected");
+        raid.Selected = null;
+        Settle();
         SaveControl(window, window.GetVisualDescendants().OfType<Cuebot.App.Graph.FlowGraphControl>().Single(), "actions-flowchart-close");
         // Run at the same time: three lanes, joined before the chat message.
         actions.SelectedAction = actions.Actions.Single(a => a.Name == "Big entrance");
         actions.AutoArrangeCommand.Execute(null);
         Settle();
         SaveControl(window, window.GetVisualDescendants().OfType<Cuebot.App.Graph.FlowGraphControl>().Single(), "actions-flowchart-parallel");
+        actions.SelectedAction = actions.Actions.Single(a => a.Name == "Light colour (!color)");
+        actions.AutoArrangeCommand.Execute(null);
+        Settle();
+        SaveControl(window, window.GetVisualDescendants().OfType<Cuebot.App.Graph.FlowGraphControl>().Single(), "actions-flowchart-switch");
         window.Width = 1360;
         window.Height = 860;
         actions.IsGraphView = false;
@@ -210,6 +312,29 @@ public sealed class DocsScreenshots : IAsyncDisposable
 
     internal static string Slug(string title) =>
         string.Join('-', title.ToLowerInvariant().Split([' ', '&', '/', '.'], StringSplitOptions.RemoveEmptyEntries));
+
+    /// <summary>Saves every visible card that has a heading (class h2) as card-&lt;heading&gt;.png, once per run.</summary>
+    private static void SaveCards(Window window, HashSet<string> done)
+    {
+        var height = window.Height;
+        window.Height = 3600;
+        Settle();
+        foreach (var card in window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("card") && b.IsEffectivelyVisible).ToList())
+        {
+            var heading = card.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault(t => t.Classes.Contains("h2"))?.Text;
+            if (string.IsNullOrWhiteSpace(heading) || !done.Add(FileSlug(heading))) continue;
+            card.BringIntoView();
+            Pump();
+            if (card.Bounds.Width < 10 || card.Bounds.Height < 10) continue;
+            SaveControl(window, card, "card-" + FileSlug(heading));
+        }
+        window.Height = height;
+        Settle();
+    }
+
+    /// <summary>"OBS & Streamlabs Desktop" → "obs-streamlabs-desktop": letters and digits only, for file names.</summary>
+    internal static string FileSlug(string title) =>
+        string.Join('-', System.Text.RegularExpressions.Regex.Split(title.ToLowerInvariant(), "[^a-z0-9]+").Where(s => s.Length > 0));
 
     private static string RepoRoot()
     {
@@ -297,6 +422,31 @@ internal static class DocsDemoData
                 Group = "Stream",
                 SubActions = [new SubActionDefinition { Type = "core.log", Parameters = { ["message"] = name } }],
             });
+        profile.Profile.Actions.Add(ColorCommand());
+        // Random action: one of these three plays, the airhorn twice as often.
+        profile.Profile.Actions.Add(new ActionDefinition
+        {
+            Name = "Random hype sound",
+            Group = "Alerts",
+            RandomAction = true,
+            Triggers = [new TriggerDefinition { Type = "twitch.cheer" }],
+            SubActions =
+            [
+                new SubActionDefinition { Type = "audio.playSound", Parameters = { ["file"] = "C:\\Sounds\\airhorn.mp3" }, Weight = 2 },
+                new SubActionDefinition { Type = "audio.playSound", Parameters = { ["file"] = "C:\\Sounds\\drumroll.mp3" } },
+                new SubActionDefinition { Type = "audio.playSound", Parameters = { ["file"] = "C:\\Sounds\\tada.mp3" } },
+            ],
+        });
+        // Two overlays with a few widgets, so Overlays > Overlays & Widgets shows what a streamer's looks like.
+        var overlays = host.Get<Cuebot.Core.Overlays.OverlayStore>();
+        var widgets = host.Get<Cuebot.Core.Overlays.Widgets.WidgetLibrary>();
+        var main = overlays.Create("Main", 1920, 1080);
+        widgets.AddChatBox(main.Id);
+        widgets.AddAlertBox(main.Id);
+        widgets.AddBuiltIn(main.Id, "goal");
+        widgets.AddBuiltIn(main.Id, "label");
+        var vertical = overlays.Create("Vertical", 1080, 1920);
+        widgets.AddChatBox(vertical.Id);
         profile.Profile.Timers.Add(new TimerDefinition { Name = "Social links", IntervalSeconds = 900 });
         profile.Profile.Timers.Add(new TimerDefinition { Name = "Hydration reminder", IntervalSeconds = 1800 });
         profile.NotifyChanged();
@@ -383,6 +533,32 @@ internal static class DocsDemoData
                 check,
                 Celebration(),
             ],
+        };
+    }
+
+    /// <summary>!color: a Switch on the first word, a While that cheers three times, and a group that picks one random reply.</summary>
+    private static ActionDefinition ColorCommand()
+    {
+        var pick = new SubActionDefinition { Type = "core.switch", Parameters = { ["input"] = "%input0%", ["operator"] = "equals", ["cases"] = "red\nblue|navy\ngreen" } };
+        pick.Branch("red").Add(new SubActionDefinition { Type = "elgato.controlCenter.setColor", Parameters = { ["hue"] = "0", ["saturation"] = "100" } });
+        pick.Branch("blue|navy").Add(new SubActionDefinition { Type = "elgato.controlCenter.setColor", Parameters = { ["hue"] = "240", ["saturation"] = "100" } });
+        pick.Branch("green").Add(new SubActionDefinition { Type = "elgato.controlCenter.setColor", Parameters = { ["hue"] = "120", ["saturation"] = "100" } });
+        pick.Branch("Default").Add(new SubActionDefinition { Type = "twitch.sendMessage", Parameters = { ["message"] = "Try !color red, blue or green" } });
+        var cheer = new SubActionDefinition { Type = "core.while", Parameters = { ["left"] = "%loopIteration%", ["operator"] = "less than", ["right"] = "3", ["maxIterations"] = "100" } };
+        cheer.Branch("Body").Add(new SubActionDefinition { Type = "twitch.sendMessage", Parameters = { ["message"] = "Hype %loopIteration%!" } });
+        var replies = new SubActionDefinition { Type = "core.group", Parameters = { ["name"] = "One random reply", ["random"] = "true" } };
+        replies.Branch("Steps").AddRange(
+        [
+            new SubActionDefinition { Type = "twitch.sendMessage", Parameters = { ["message"] = "Nice pick, %user%!" }, Weight = 3 },
+            new SubActionDefinition { Type = "twitch.sendMessage", Parameters = { ["message"] = "Ooh, fancy." } },
+            new SubActionDefinition { Type = "twitch.sendMessage", Parameters = { ["message"] = "The lights obey you, %user%." } },
+        ]);
+        return new ActionDefinition
+        {
+            Name = "Light colour (!color)",
+            Group = "Examples",
+            Triggers = [new TriggerDefinition { Type = "twitch.command", Settings = { ["command"] = "!color" } }],
+            SubActions = [pick, cheer, replies],
         };
     }
 

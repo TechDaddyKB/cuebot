@@ -17,6 +17,8 @@ Other programs connect to it, and your actions answer.
 The triggers **WebSocket › Custom server: message** (and connection opened / closed) run when a program talks to it.
 The step **Custom server: send message** answers.
 
+![The Custom WebSocket servers card](../../assets/screens/card-custom-websocket-servers.png)
+
 ## Connecting to someone else's server
 
 Cuebot connects to another program's WebSocket server, and your actions hear what it sends.
@@ -25,6 +27,8 @@ Cuebot connects to another program's WebSocket server, and your actions hear wha
 2. Type its address, like `ws://127.0.0.1:9000/`. It starts with `ws://` or `wss://`.
 3. Click **Connect / disconnect**. Tick **Connect with Cuebot** to connect by itself next time, and **Reconnect** to
    keep trying when the connection drops.
+
+![The WebSocket clients card with the + Client button](../../assets/screens/card-websocket-clients.png)
 
 The trigger **WebSocket › Client: message** runs when that server sends something. The step **Client: send message**
 sends to it.

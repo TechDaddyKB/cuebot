@@ -40,6 +40,8 @@ You start with one profile, called **Main**. If you used Cuebot before profiles 
     - voices and voice control.
 4. Click **Make profile**.
 
+![The New profile card with Name, Colour and Start with](../../assets/screens/card-new-profile.png)
+
 !!! note "Sign-ins are never copied"
     A copy never takes the sign-ins of Twitch, YouTube, Kick, Rumble, the mod portal, donation services, webhooks or the
     Discord bot. So the new persona can never post as the old one by mistake. Switch to the new profile and sign in to
@@ -113,6 +115,8 @@ Only the open profile is connected. While **Night Owl** is open:
 
 **OBS**: overlay links belong to one profile. Give each persona its own OBS scene collection, with that persona's
 overlay links in its browser sources.
+
+![The Your profiles card with Switch to this profile and Delete profile](../../assets/screens/card-your-profiles.png)
 
 ## Rename, recolour or delete
 

@@ -11,6 +11,8 @@ a message with a voice, stop, pause, and switch speech on and off.
 
 Voices and aliases come from the [Text-to-speech](../sound/text-to-speech.md) page.
 
+![The Speaker.bot API card](../../assets/screens/card-speaker-bot-api.png)
+
 ## WebSocket messages
 
 They look like the [Streamer.bot ones](websocket-api.md):

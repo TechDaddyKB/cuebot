@@ -8,6 +8,8 @@ changes. Its card is on **Apps > Stream apps**, tab **VTuber apps**. New to this
 [PNGTuber Remix](https://mudkipworld.itch.io/pngremix) is a free PNGTuber app for Windows, Linux and (from 1.4.x)
 macOS.
 
+![The PNGTuber Remix card with Connect and Throw test](../../../assets/screens/card-pngtuber-remix.png)
+
 1. In PNGTuber Remix, look at the tabs on the right side (Properties, Movement and so on). Press the small arrow next to
    them until you see **WebSocket**, and open it.
 2. Tick **Auto-Start** (so you never have to do this again) and press **Start**.

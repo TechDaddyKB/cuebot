@@ -18,6 +18,8 @@ shortcut.
 | `--backend=wayland` / `--backend=x11` | Linux only: choose how the window is drawn. See [Linux](linux.md#wayland-and-x11). |
 | `--help` | List the options. |
 
+![The Startup switches list on Settings > About](../../assets/screens/card-startup-switches.png)
+
 **Settings > About** lists these switches too, under **Startup switches**.
 
 Every option also works with `/` instead of `--`, like Streamer.bot's `/headless` and `/resetwindow`. The one

@@ -20,6 +20,8 @@ bot (see [Broadcaster account and bot account](index.md#broadcaster-account-and-
 messages as the bot** and, if you like, **Send whispers as the bot**. Type a message under **Send a test message** and
 click **Send** to check it.
 
+![The Bot account (optional) card with Sign in bot](../../assets/screens/card-bot-account-optional.png)
+
 **Permissions:** the **Settings** tab lists every permission Cuebot asks Twitch for, under **Permissions (scopes)**. You
 can untick ones you do not want. Anything that needs a missing permission is skipped and a warning goes to the log.
 Sign in again on the **Accounts** tab after you change the list. Newer Cuebot versions ask for a few more permissions

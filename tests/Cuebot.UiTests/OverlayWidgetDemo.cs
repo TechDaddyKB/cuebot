@@ -253,7 +253,7 @@ public sealed class OverlayWidgetDemo
         .widget-EventList .tag { color: #4ea1ff; }
         """;
 
-    private static IEnumerable<BotEvent> Step(int i)
+    internal static IEnumerable<BotEvent> Step(int i)
     {
         var n = i + 1;
         switch (i % 8)

@@ -8,6 +8,8 @@ raids. It uses the voices you set up on **Audio > Speech**. New to voices? Start
 
 Open **Chat & commands** on **Audio > Speech**.
 
+![Audio > Speech > Chat & commands, with Read chat aloud and The !tts command](../../assets/screens/tab-speech-chat-commands.png)
+
 **Read chat aloud**: switch it **On**, then choose:
 
 - **Who is read aloud**: everyone, or only some roles, like subscribers.
@@ -27,6 +29,8 @@ To clean up what viewers write before it is spoken (bad words, links, emotes, "l
 [Filters](text-to-speech.md#filters).
 
 ## Reading events out loud
+
+![Audio > Speech > Events: Speak events and the Event kinds list](../../assets/screens/tab-speech-events.png)
 
 Open **Events**. Choose which follows, subs, gifts, raids, cheers and redemptions are spoken, and the text for each.
 In the text, `%name%` is the viewer, `%gift%` the number of gifted subs, `%title%` the reward and `%input%` what the

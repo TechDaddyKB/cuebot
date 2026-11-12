@@ -48,9 +48,9 @@ Logging out, or closing the terminal you started Cuebot from, closes Cuebot prop
   [Stream Deck](../apps/stream-deck.md#linux-the-permission-rule).
 - **Game controllers:** PlayStation and Switch pads need permission for rumble and lights. Install your distribution's
   `steam-devices` or `game-devices-udev` package.
-- **MIDI** works through ALSA, which almost every Linux desktop has. See [Your buttons and controllers](../apps/controllers.md).
+- **MIDI** works through ALSA, which almost every Linux desktop has. See [MIDI](../apps/midi.md).
 - **Elgato Facecam and webcams:** Cuebot can control them directly on Linux. See
-  [Lights, mixers and other apps](../apps/lights-and-mixers.md).
+  [Elgato cameras](../apps/elgato-cameras.md).
 
 ## The Flatpak
 

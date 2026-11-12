@@ -36,6 +36,8 @@ Click **Test** next to an engine to hear it.
     **UberDuck** are built and tested with pretend services, but not yet with the real ones. Piper, eSpeak NG and
     OpenAI were tried for real. See [What's experimental](../help/experimental.md).
 
+![Audio > Speech > Engines: the voices on this computer and the cloud engines](../../assets/screens/tab-speech-engines.png)
+
 ### Piper: free voices on your computer
 
 Piper is a free voice engine that runs on your own computer. It needs no account, costs nothing, and keeps working
@@ -78,6 +80,8 @@ secret". It costs a little money: reading a normal chat message out loud costs a
 A **voice alias** is a nickname for a voice and its settings, like "Narrator" or "Robot". Your actions use the alias,
 not the voice itself. Later you can change the voice behind "Narrator", and every action that uses it changes too.
 
+![Audio > Speech > Voice aliases, with the + Alias button](../../assets/screens/tab-speech-voice-aliases.png)
+
 1. Open **Voice aliases** and click **+ Alias**.
 2. Give it a **Name**, like `Narrator`.
 3. Under **Voices**, click **+ Voice** and pick a voice. (Add more than one and Cuebot picks between them by
@@ -99,6 +103,8 @@ The **Thank new followers** example action already uses **Speak**.
 
 ## Filters
 
+![Audio > Speech > Filters: filter profiles with bad words, links and emotes](../../assets/screens/tab-speech-filters.png)
+
 **Filters** clean up what viewers write before it is spoken: swap or skip bad words, links and emotes, and limit very
 long messages and "loooooool". You can make different filter profiles and pick one for reading chat, one for reading
 events, and one for a single **Speak** step.
@@ -107,6 +113,8 @@ events, and one for a single **Speak** step.
 
 Texts are spoken one after another, like a line at a shop. The **Overview** tab shows what is speaking now, what is
 waiting and what was spoken, with **Pause**, **Skip**, **Clear** and **Speak next**.
+
+![Audio > Speech > VoiceGate & queue](../../assets/screens/tab-speech-voicegate-queue.png)
 
 **VoiceGate** (on **VoiceGate & queue**) waits while *you* are talking into your microphone, so the computer voice does
 not talk over you. Pick your **Microphone** in a profile. The same tab sets how long the waiting line may get.

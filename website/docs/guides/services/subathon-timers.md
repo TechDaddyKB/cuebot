@@ -80,7 +80,7 @@ The [phone app](../mods/phone-app.md) shows an ended timer as **Ended**, and its
 
 ## Show it on stream
 
-Add the **Subathon timer** widget to an overlay (see [Overlays](../overlays/overlays.md)). In its settings, type the
+Add the **Subathon timer** widget to an overlay (see [Subathon timer widget](../overlays/widgets/subathon-timer.md)). In its settings, type the
 timer's name, or leave it empty for the first one.
 
 The **Subathon timer** shows the time left, and a `+5:00` that floats up when time is added. It says **Paused** when

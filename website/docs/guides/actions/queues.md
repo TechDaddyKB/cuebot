@@ -12,7 +12,7 @@ a time, in order. Perfect for alerts.
 
 1. Go to **Automation > Queues** and click **+ Queue**. Name it, for example `Alerts`, and tick **Blocking**.
 2. In each alert action, pick that queue under **More > Queue** (on **Automation > Actions**, see
-   [How actions work](how-actions-work.md#more-options)).
+   [Action settings: the More menu](action-editor.md#action-settings-the-more-menu)).
 
 ## Watching and controlling the line
 

@@ -8,6 +8,8 @@ a smile, an angry face, a surprised face and so on. Its card is on **Apps > Stre
     In a test, VSeeFace got Cuebot's messages and moved the avatar's head, but the expressions did not visibly change.
     So this may not work yet. See [What's experimental](../../help/experimental.md).
 
+![The VMC card](../../../assets/screens/card-vmc-vseeface-vmagicmirror-and-other-3d-apps.png)
+
 1. Switch on your app's **VMC receiver**:
     - **VSeeFace:** **Settings > General settings > VMC protocol > VMC receiver**. Then untick **Apply expressions**
       under it, or VSeeFace's own expressions cover Cuebot's.

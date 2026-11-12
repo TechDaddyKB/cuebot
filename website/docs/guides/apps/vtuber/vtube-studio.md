@@ -7,6 +7,8 @@ on **Apps > Apps & devices**, tab **Apps & services**.
 
 ## Connecting
 
+![The VTube Studio card](../../../assets/screens/card-vtube-studio.png)
+
 1. In VTube Studio open the settings and switch on **Start API (allow plugins)**. Leave the port at 8001.
 2. In Cuebot press **Connect** on the VTube Studio card, and tick **Connect automatically** so Cuebot reconnects
    every time.

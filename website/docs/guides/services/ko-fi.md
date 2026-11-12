@@ -19,6 +19,8 @@ Ko-fi reaches Cuebot through a relay. Set one up first: see [Webhooks](webhooks.
 **Send test event** on the Ko-fi card makes a pretend event inside Cuebot only, so you can try actions without Ko-fi.
 **privateDonation** pretends a supporter marked their support private.
 
+![The Ko-fi card with the verification token box and Send test event](../../assets/screens/card-ko-fi.png)
+
 !!! warning "Ko-fi sends payments only"
     Ko-fi sends a message when someone pays, and nothing else. It never says when a membership ends, and it has no
     way for apps to read your goal or past payments. If a message is lost, it is lost for good.
@@ -75,6 +77,8 @@ Ko-fi names a product only by its code (the end of its link) when it has no vari
 The picture link is optional. It ends up in `%item0.image%`.
 
 ## The Ko-fi goal
+
+![The Ko-fi extras card with the goal, product names and lapsed-membership setting](../../assets/screens/card-ko-fi-extras.png)
 
 Ko-fi's own goal bar lives only in Ko-fi's alert page. Cuebot keeps its own Ko-fi goal, counted from the payments it
 receives, so you can show it in your overlays and combine it with your actions.

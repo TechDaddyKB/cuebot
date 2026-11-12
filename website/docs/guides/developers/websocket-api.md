@@ -16,6 +16,8 @@ clients** on the card shows which tools are connected right now. Other computers
 
 The official `@streamerbot/client` JavaScript library works with Cuebot, and Cuebot's tests check that it does.
 
+![The WebSocket server (Streamer.bot API) card](../../assets/screens/card-websocket-server-streamer-bot-api.png)
+
 ## How the messages look
 
 Every message is JSON. You send a **request** with an `id` you make up, and Cuebot answers with the same `id`:

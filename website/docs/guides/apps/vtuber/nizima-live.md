@@ -10,6 +10,8 @@ Windows and Mac.
     nizima LIVE is only checked by Cuebot's own tests so far: nizima LIVE did not start on the test computer. See
     [What's experimental](../../help/experimental.md).
 
+![The nizima LIVE card](../../../assets/screens/card-nizima-live.png)
+
 1. In nizima LIVE open the **Plugin Manager** and switch the plug-in function on. It shows a port number, usually 22022.
 2. In Cuebot press **Connect** in the nizima LIVE card. The first time, **Cuebot** now appears in nizima LIVE's
    Plugin Manager: switch it on there. Cuebot remembers this, so you only do it once.

@@ -13,6 +13,8 @@ This page shows how to sign Cuebot in to Kick, so it can read your chat, see fol
 Cuebot looks up your channel by itself. If kick.com blocks that, the page shows how to copy two numbers from kick.com
 into the **Channel id** and **Chatroom id** boxes.
 
+![The Kick app and sign-in card with Sign in broadcaster and Sign in bot account](../../assets/screens/card-kick-app-and-sign-in.png)
+
 **Bot account:** click **Sign in bot account** (see
 [Broadcaster account and bot account](index.md#broadcaster-account-and-bot-account)).
 
@@ -28,6 +30,10 @@ tags**, separated by commas), and see how many subscribers you have. Channel rew
 one, **Refresh rewards** loads them from Kick. Like on Twitch, Cuebot can only change rewards it made itself; rewards
 made on kick.com are listed but cannot be changed.
 
+![The Channel card with Set title, Set category, Set tags and Send stream key to OBS](../../assets/screens/card-channel.png)
+
+![The Channel rewards card with Refresh rewards and Create reward](../../assets/screens/card-channel-rewards.png)
+
 **Send stream key to OBS** sets OBS to stream to your Kick channel. Cuebot reads your stream address and key from Kick
 and puts them straight into OBS's stream settings, so you never have to copy the key. OBS must be connected
 (**OBS** page) and not streaming.
@@ -37,6 +43,8 @@ and puts them straight into OBS's stream settings, so you never have to copy the
 In the **Ads** box, **Run ad break** starts an ad break of 7 to 90 seconds right now. **Check ads** shows how many ad
 breaks you have left; Kick decides how many you may run in a period. Your channel must be enrolled in Kick ads first:
 **Enroll in ads** does that once. Actions can do the same with the **Run ad break** and **Get ad status** sub-actions.
+
+![The Ads card with Run ad break, Check ads and Enroll in ads](../../assets/screens/card-ads.png)
 
 ## Kick's events
 

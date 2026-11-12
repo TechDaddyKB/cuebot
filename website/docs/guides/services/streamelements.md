@@ -20,6 +20,8 @@ and settings keep working.
 **No JWT?** You can paste the **Overlay Token** instead (same page). It only receives events: points, store, bot and
 the other steps need the JWT. Which events the Overlay Token may read is not documented by StreamElements.
 
+![Apps > Donations with StreamElements selected, showing the JWT token box and Connect](../../assets/screens/donations-streamelements.png)
+
 ### Nothing arrives?
 
 - YouTube activities only arrive while your stream is **public**.

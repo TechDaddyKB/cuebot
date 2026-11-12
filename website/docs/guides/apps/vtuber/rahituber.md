@@ -5,6 +5,8 @@ Cuebot can press your RahiTuber states, like their hotkeys: tap them, let go, or
 
 [RahiTuber](https://rahisaurus.itch.io/rahituber) is a free PNGTuber app for Windows and Linux.
 
+![The RahiTuber card](../../../assets/screens/card-rahituber.png)
+
 1. In RahiTuber press ++esc++ to open the menu, then **Preferences > Integration**, and tick **Control States via
    HTTP**. Leave the port at 8000.
 2. Optional, but it helps a lot: on the RahiTuber card in Cuebot, set **Folder** to the folder where RahiTuber's program

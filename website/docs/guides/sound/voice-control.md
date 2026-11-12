@@ -29,6 +29,8 @@ Each command has a few more settings:
 
 ## The Settings tab
 
+![Audio > Voice Control > Settings](../../assets/screens/tab-voice-control-settings.png)
+
 The **Settings** tab has more for fine-tuning:
 
 - **Auto Start Listen (when Cuebot starts)**: no need to click **Start Listening** every time.
