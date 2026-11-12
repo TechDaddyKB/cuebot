@@ -129,8 +129,9 @@ public partial class ActionsView : UserControl
             case Key.Z when command:
                 e.Handled = true;
                 if (vm.UndoCommand.CanExecute(null)) vm.UndoCommand.Execute(null);
+                else if (vm.SelectedAction is null && vm.RestoreDeletedCommand.CanExecute(null)) vm.RestoreDeletedCommand.Execute(null);
                 break;
-            case Key.Delete when !inActionList && ListEditor.IsKeyboardFocusWithin:
+            case Key.Delete when !inActionList && (ListEditor.IsKeyboardFocusWithin || TriggerPane.IsKeyboardFocusWithin):
                 e.Handled = true;
                 vm.DeleteItemCommand.Execute(null);
                 break;

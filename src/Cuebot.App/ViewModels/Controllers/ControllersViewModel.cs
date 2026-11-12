@@ -195,11 +195,12 @@ public sealed partial class ControllersViewModel : ObservableObject
         }
     }
 
+    /// <summary>The trigger's name as the trigger list shows it (see ControllerTriggers).</summary>
     private static string TriggerName(string type) => type switch
     {
         ControllerEvents.Button => "Controller Button",
-        ControllerEvents.Axis => "Controller Axis",
-        ControllerEvents.Hat => "Controller Hat / D-Pad",
+        ControllerEvents.Axis => "Controller stick or trigger",
+        ControllerEvents.Hat => "Controller D-pad",
         _ => type,
     };
 

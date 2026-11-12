@@ -15,7 +15,8 @@ namespace Cuebot.App.ViewModels.Actions;
 /// Copy/paste: actions, sub-actions (with branches and group children) and triggers go to an in-app clipboard as
 /// model JSON (<see cref="EditorClip"/>), and the same text to the system clipboard when the view connects one.
 /// Pasting assigns new ids. Undo/redo: each action keeps its own bounded history of JSON snapshots for the whole
-/// session (switching actions keeps it; deleting the action drops it), see <see cref="EditHistory"/>.
+/// session (switching actions keeps it), see <see cref="EditHistory"/>. Deleted actions go on a short stack, with their
+/// history, so "Undo delete" (or Ctrl+Z with no action selected) brings them back.
 /// </para>
 /// </summary>
 public sealed partial class ActionsViewModel : PageViewModel
@@ -267,16 +268,70 @@ public sealed partial class ActionsViewModel : PageViewModel
         EditStatus = $"Exported to '{copy.Name}'." + (wasEnabled ? $" '{source.Name}' is now off so it doesn't run twice." : "") + notes;
     }
 
+    /// <summary>How many deleted actions "Undo delete" can bring back.</summary>
+    public const int DeletedKept = 20;
+
+    private readonly List<(ActionDefinition Definition, int Index, EditHistory? History)> _deleted = [];
+
+    /// <summary>"Deleted 'Name'." while a deleted action can be brought back, else null (the notice is hidden).</summary>
+    public string? DeletedNotice => _deleted.Count == 0 ? null : $"Deleted '{_deleted[^1].Definition.Name}'.";
+
+    public bool CanRestoreDeleted => _deleted.Count > 0;
+
     [RelayCommand]
     private void DeleteAction()
     {
         if (SelectedAction is not { } action) return;
+        var index = _profile.Profile.Actions.IndexOf(action.Definition);
         _profile.Profile.Actions.Remove(action.Definition);
         _profile.NotifyChanged();
         _all.Remove(action);
+        _deleted.Add((action.Definition, index, _histories.GetValueOrDefault(action.Definition.Id)));
+        if (_deleted.Count > DeletedKept) _deleted.RemoveAt(0);
         _histories.Remove(action.Definition.Id);
         SelectedAction = null;
         ApplyFilter();
+        RaiseDeletedState();
+        EditStatus = $"Deleted '{action.Name}'.";
+    }
+
+    /// <summary>Brings back the most recently deleted action, in its old place, with its undo history.</summary>
+    [RelayCommand(CanExecute = nameof(CanRestoreDeleted))]
+    private void RestoreDeleted()
+    {
+        if (_deleted.Count == 0) return;
+        var (definition, index, history) = _deleted[^1];
+        _deleted.RemoveAt(_deleted.Count - 1);
+        if (_profile.Profile.Actions.Any(a => a.Id == definition.Id))
+        {
+            RaiseDeletedState();
+            return;   // already back (an import or the API added it again)
+        }
+        if (history is not null) _histories[definition.Id] = history;
+        var item = Wrap(definition);
+        _all.Add(item);
+        _profile.Profile.Actions.Insert(Math.Clamp(index, 0, _profile.Profile.Actions.Count), definition);
+        _profile.NotifyChanged();
+        if (Filter.Length > 0) Filter = "";
+        else ApplyFilter();
+        SelectedAction = item;
+        RaiseDeletedState();
+        EditStatus = $"Brought back '{definition.Name}'.";
+    }
+
+    /// <summary>Hides the "Deleted …" notice; the deleted actions are gone for good.</summary>
+    [RelayCommand]
+    private void ForgetDeleted()
+    {
+        _deleted.Clear();
+        RaiseDeletedState();
+    }
+
+    private void RaiseDeletedState()
+    {
+        OnPropertyChanged(nameof(DeletedNotice));
+        OnPropertyChanged(nameof(CanRestoreDeleted));
+        RestoreDeletedCommand.NotifyCanExecuteChanged();
     }
 
     private Guid? _deleteArmedFor;
@@ -284,7 +339,7 @@ public sealed partial class ActionsViewModel : PageViewModel
 
     /// <summary>
     /// The Delete key in the action list: the first press asks, a second press within 5 seconds deletes the action
-    /// (an action cannot be undone once deleted).
+    /// (it can still be brought back with Undo delete).
     /// </summary>
     public bool DeleteActionWithConfirm()
     {
@@ -510,7 +565,10 @@ public sealed partial class ActionsViewModel : PageViewModel
         }
     }
 
-    /// <summary>Duplicates the selected sub-action (with its children) or trigger next to it, else the whole action.</summary>
+    /// <summary>
+    /// Duplicates the selected sub-action (with its children) or trigger next to it; with nothing selected in the
+    /// editor, the whole action. A selected branch is part of its sub-action, so it is not copied on its own.
+    /// </summary>
     [RelayCommand]
     private void DuplicateItem()
     {
@@ -528,6 +586,9 @@ public sealed partial class ActionsViewModel : PageViewModel
                 EditorClip.NewIds(t, clearLayout: true);
                 action.AddTriggerDefinition(t, action.Triggers.IndexOf(trigger) + 1);
                 EditStatus = $"Duplicated trigger '{trigger.Title}'.";
+                break;
+            case BranchViewModel:
+                EditStatus = "Select a sub-action or trigger to duplicate (a branch is duplicated with its sub-action).";
                 break;
             default:
                 DuplicateAction();

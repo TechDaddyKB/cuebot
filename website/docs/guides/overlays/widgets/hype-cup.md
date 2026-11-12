@@ -63,11 +63,11 @@ Click **Edit…** on the widget's row.
 | **Add test balls** | Drops 4 balls of each kind. |
 | **Empty the cup** | Takes every ball out. |
 
-!!! warning "The test buttons change the real cup"
-    The cup is saved under its **Cup name**, and the preview uses the same saved cup as your overlay. So **Add test
-    balls** and the **Emulate** buttons really add balls, and **Empty the cup** really empties it. Your overlay in OBS
-    shows the change the next time it loads (for example when you click **Save**). After testing, click **Empty the
-    cup** if you want to start the stream with an empty cup.
+!!! note "Which buttons change the real cup"
+    The cup is saved under its **Cup name**. The preview starts from that saved cup, but **Add test balls** and the
+    **Emulate** buttons only fill the preview: your overlay in OBS keeps its real cup. **Empty the cup** is different:
+    it empties the real cup too, and your overlay in OBS shows that the next time it loads (for example when you click
+    **Save**).
 
 ## Try it
 
@@ -85,6 +85,6 @@ Then click **Empty the cup** (see the warning above).
 ## Troubleshooting
 
 - **Balls stopped coming.** The cup is full. Click **Empty the cup**.
-- **The cup is full after testing.** The test buttons fill the real cup. Click **Empty the cup** and **Save**.
+- **The cup is full in OBS.** Real events filled it. Click **Empty the cup** in the widget editor, then **Save**.
 - **Two cups fill together.** They have the same **Cup name**. Give each its own.
 - **Balls arrive late.** Overlay alerts may be paused; the cup waits with them.

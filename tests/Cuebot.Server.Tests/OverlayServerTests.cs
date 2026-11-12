@@ -57,6 +57,25 @@ public sealed class OverlayServerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Layers_lists_the_layers_with_their_exit_animation_and_needs_the_token()
+    {
+        var layer = new OverlayLayer { Name = "Title", Type = "text", Visible = false, Exit = new LayerAnimation { Name = "fadeOut", Duration = 2 } };
+        _bot.Overlays.Update(_overlay.Id, o => o.Layers.Add(layer));
+
+        using var response = await _http.GetAsync($"/o/{_overlay.Id}/layers?token={Uri.EscapeDataString(_overlay.Token)}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("no-store", response.Headers.CacheControl!.ToString());
+        var listed = Assert.Single(JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsArray())!;
+        Assert.Equal(layer.Id.ToString("D"), (string?)listed["id"]);
+        Assert.False((bool)listed["visible"]!);
+        Assert.Equal("fadeOut", (string?)listed["exit"]!["name"]);
+        Assert.Equal(2, (double)listed["exit"]!["duration"]!);
+
+        using var denied = await _http.GetAsync($"/o/{_overlay.Id}/layers?token=wrong");
+        Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
+    }
+
+    [Fact]
     public async Task Only_get_is_allowed()
     {
         using var post = await _http.PostAsync(OverlayServer.PathFor(_overlay), new StringContent(""));

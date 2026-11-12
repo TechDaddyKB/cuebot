@@ -78,9 +78,13 @@ public sealed class SessionDataStoreTests : IDisposable
         var tippers = data["tip-session-users"]!.AsArray().Select(u => (u!["name"]!.GetValue<string>(), OverlayAlerts.NumberOf(u["amount"]))).ToArray();
         Assert.Equal([("Alice", 8.0), ("Bob", 2.0)], tippers);   // first-seen order, amounts added up
         Assert.Equal("Cara", data["subscriber-session-users"]![0]!["name"]!.GetValue<string>());
+        Alert(store, "raid-latest", "Eve", 42);
+        var raiders = store.Snapshot()["raid-session-users"]!.AsArray();
+        Assert.Equal(42, OverlayAlerts.NumberOf(raiders.Single()!["amount"]));   // raids credit the viewers they brought
+        Assert.Equal(1, Count(store.Snapshot(), "raid-session"));                // but still count as one raid
         // Recents carry what event lists show: the currency and gift details.
         var recents = store.Recents();
-        Assert.Equal(("Dan", true), (recents[0]!["sender"]!.GetValue<string>(), recents[0]!["gifted"]!.GetValue<bool>()));
+        Assert.Equal(("Dan", true), (recents[1]!["sender"]!.GetValue<string>(), recents[1]!["gifted"]!.GetValue<bool>()));
         Assert.Equal("EUR", recents.Last()!["currency"]!.GetValue<string>());
 
         store.ResetSession();

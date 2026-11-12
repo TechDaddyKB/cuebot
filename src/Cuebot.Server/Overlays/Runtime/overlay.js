@@ -250,7 +250,7 @@
         break;
       case "command":
         if (message.command === "reload") {
-          location.reload();
+          reloadWithExits();
           return;
         }
         if (message.command === "mute" || message.command === "unmute") setMuted(message.command === "mute");
@@ -259,6 +259,39 @@
         break;
     }
     emit(message.type, message);
+  }
+
+  var reloading = false;
+
+  /**
+   * Reloads the page after the overlay changed. Layers that are now hidden or deleted (or the whole overlay, when it
+   * is gone) first play their exit animation; the page waits for the longest one, at most 10 seconds.
+   */
+  function reloadWithExits() {
+    if (reloading) return;
+    reloading = true;
+    fetch(base() + "/layers?" + token(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return null; })
+      .then(function (next) {
+        if (!Array.isArray(next)) {
+          location.reload();   // Cuebot could not be reached: reload as before
+          return;
+        }
+        var shown = {};
+        next.forEach(function (l) { if (l && l.visible) shown[l.id] = true; });
+        var wait = 0;
+        (config.layers || []).forEach(function (layer) {
+          var exit = layer.exit || {};
+          if (!layer.visible || shown[layer.id] || !/^[A-Za-z]+$/.test(exit.name || "") || exit.name === "none") return;
+          var box = document.querySelector('.cuebot-layer[data-layer="' + layer.id + '"]');
+          if (!box) return;
+          var seconds = Math.min(10, Number(exit.duration) || 1);
+          box.style.animation = "cuebot-" + exit.name + " " + seconds + "s both";
+          wait = Math.max(wait, seconds);
+        });
+        setTimeout(function () { location.reload(); }, wait * 1000);
+      });
   }
 
   function setMuted(value) {

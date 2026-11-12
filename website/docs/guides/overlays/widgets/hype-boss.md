@@ -68,15 +68,16 @@ The boss's profile picture shows when the platform sends one with the event; oth
 | **Test a hit** | A "Test hero" hits for a quarter of the boss's health. Four hits make Test hero the boss. |
 | **Start over with the first boss** | Back to the **First boss** with full health, level 1. |
 
-!!! warning "The test buttons change the real fight"
-    The fight is saved under its **Fight name**, and the preview uses the same saved fight as your overlay. So **Test a
-    hit** and the **Emulate** buttons really hit the boss. Your overlay in OBS shows the change the next time it loads
-    (for example when you click **Save**). After testing, click **Start over with the first boss**.
+!!! note "Which buttons change the real fight"
+    The fight is saved under its **Fight name**. The preview starts from that saved fight, but **Test a hit** and the
+    **Emulate** buttons only hit the boss in the preview: your overlay in OBS keeps the real fight. **Start over with
+    the first boss** is different: it restarts the real fight too, and your overlay in OBS shows that the next time it
+    loads (for example when you click **Save**).
 
 ## Try it
 
 Click **Test a hit** a few times, or pick a platform next to **Emulate** and click **Sub** or **Cheer**. Then click
-**Start over with the first boss** (see the warning above).
+**Start over with the first boss** only if you want the real fight to start over (see the note above).
 
 ## Ideas
 
@@ -86,7 +87,7 @@ Click **Test a hit** a few times, or pick a platform next to **Emulate** and cli
 
 ## Troubleshooting
 
-- **The boss is "Test hero".** The test buttons hit the real fight. Click **Start over with the first boss** and
+- **The real fight is stuck on an old boss.** Click **Start over with the first boss** in the widget editor, then
   **Save**.
 - **The boss does not take damage from someone.** That person is the boss: their support heals them.
 - **Two bosses fight together.** They have the same **Fight name**. Give each its own.

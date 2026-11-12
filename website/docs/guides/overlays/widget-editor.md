@@ -152,7 +152,10 @@ see-through parts.
 - It uses your **unsaved** changes, and updates half a second after you stop typing.
 - It gets your real stream data: this stream's totals, recent alerts, the current poll, giveaway and media requests. So
   a label or goal bar shows real numbers.
-- What happens in the preview stays in the preview. Your live overlays do not change until you click **Save**.
+- What happens in the preview stays in the preview. Your live overlays do not change until you click **Save**. That
+  includes what a widget remembers (a hype cup's balls, a boss's health): test buttons and **Emulate** change only the
+  preview's copy. A few **Controls** buttons are meant for the real widget, like **Empty the cup**, **Start over with
+  the first boss** and **Start the countdown again**; their pages say so.
 
 ## Emulate
 

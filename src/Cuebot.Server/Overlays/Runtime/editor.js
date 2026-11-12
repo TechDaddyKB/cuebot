@@ -155,6 +155,9 @@
       case "button":
         var button = el("button", { type: "button", text: f.label || key });
         button.addEventListener("click", function () {
+          // "saves": a control that changes the real widget (Empty the cup, Start over): what the widget stores
+          // while handling the click goes to Cuebot, not only to the preview (see previewStore).
+          if (f.saves) savesUntil = Date.now() + 3000;
           // As StreamElements' editor sends them: an emulated event whose listener is "widget-button".
           sendToPreview({ type: "event", listener: "event:test", event: { listener: "widget-button", field: key, value: f.value === undefined ? "" : f.value } });
         });
@@ -310,10 +313,27 @@
     });
   });
 
-  // SE_API requests from the preview.
+  // SE_API requests from the preview. Its SE_API.store writes stay in this page (previewStore), so testing a widget
+  // here (test buttons, Emulate) never changes what the overlay in OBS shows; reads see the preview's own writes
+  // first, then Cuebot's saved values. Buttons marked "saves" in fields.json (Empty the cup, Start over, Start the
+  // countdown again) are meant for the real widget: for a moment after one is clicked, writes go to Cuebot.
+  var previewStore = {};
+  var savesUntil = 0;
   window.addEventListener("message", function (e) {
     if (e.source !== frame.contentWindow || !e.data || e.data.cuebot !== "request") return;
     var request = e.data;
+    var key = request.data && typeof request.data.key === "string" ? request.data.key : null;
+    if (request.request === "store_set" && key !== null && Date.now() < savesUntil) {
+      delete previewStore[key];   // from now on the preview reads the saved value again
+    } else if (request.request === "store_set" && key !== null) {
+      previewStore[key] = JSON.parse(JSON.stringify(request.data.value === undefined ? null : request.data.value));
+      sendToPreview({ type: "response", id: request.id, result: null });
+      return;
+    }
+    if (request.request === "store_get" && key !== null && Object.prototype.hasOwnProperty.call(previewStore, key)) {
+      sendToPreview({ type: "response", id: request.id, result: previewStore[key] });
+      return;
+    }
     post(api + "/request?" + auth, { request: request.request, data: request.data })
       .then(function (json) { sendToPreview({ type: "response", id: request.id, result: json.result }); })
       .catch(function (err) { sendToPreview({ type: "response", id: request.id, error: err.message }); });

@@ -15,5 +15,5 @@
   "timeColor": { "type": "colorpicker", "label": "Time colour", "value": "#ffffff", "group": "Look" },
   "align": { "type": "dropdown", "label": "Align", "value": "center", "group": "Look",
     "options": { "left": "Left", "center": "Centre", "right": "Right" } },
-  "restart": { "type": "button", "label": "Start the countdown again", "value": "", "group": "Controls" }
+  "restart": { "type": "button", "label": "Start the countdown again", "value": "", "group": "Controls", "saves": true }
 }

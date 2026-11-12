@@ -100,6 +100,12 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
         "tip", "cheer", "superchat", "kicks", "jewels", "charityCampaignDonation", "merch",
     };
 
+    /// <summary>
+    /// Types whose session users (the Credits roll) add up the event's amount rather than counting events: the amount
+    /// types, plus raids, whose amount is the number of viewers that came along.
+    /// </summary>
+    private static readonly IReadOnlySet<string> UserAmountTypes = new HashSet<string>(AmountTypes, StringComparer.Ordinal) { "raid" };
+
     private static readonly string[] Periods = ["session", "weekly", "monthly", "alltime"];
 
     private readonly object _gate = new();
@@ -254,7 +260,7 @@ public sealed class SessionDataStore : IPeriodicService, IDisposable
             }
 
             if (name.Length > 0 && (t.SessionUsers.ContainsKey(name) || t.SessionUsers.Count < SessionUsersSize))
-                t.SessionUsers[name] = t.SessionUsers.GetValueOrDefault(name) + counted;
+                t.SessionUsers[name] = t.SessionUsers.GetValueOrDefault(name) + (UserAmountTypes.Contains(type) ? amount : counted);
 
             if (type == "subscriber" && alert.Count > 0)
             {

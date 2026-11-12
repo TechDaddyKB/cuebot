@@ -18,6 +18,8 @@ namespace Cuebot.Server.Overlays;
 /// <item><c>GET /o/{id}/ws?token=...</c>: its WebSocket; first a "hello" with the overlay, then everything the
 /// <see cref="OverlayFeed"/> publishes for it, in order. Widgets' <c>SE_API</c> requests come back over it.</item>
 /// <item><c>GET /o/{id}/l/{layerId}?token=...</c>: a layer's widget settings and the address of its document (JSON).</item>
+/// <item><c>GET /o/{id}/layers?token=...</c>: the overlay's layers as the page config lists them (JSON); before it
+/// reloads, the page uses it to play the exit animation of each layer that was hidden or removed.</item>
 /// <item><c>/edit/...?editor=...</c>: the widget editor (see <see cref="OverlayEditor"/>).</item>
 /// <item><c>/design/...?editor=...</c>: the overlay designer (see <see cref="OverlayDesigner"/>).</item>
 /// <item>On the widget port, <c>GET /w/{id}/{layerId}?key=...</c>: the widget document, which the page shows in a frame.
@@ -171,6 +173,12 @@ public sealed class OverlayServer : IAsyncDisposable
             case ["o", var id, "l", var layerId] when Authorize(id, request) is { } overlay
                                                     && overlay.Layers.FirstOrDefault(l => l.Id.ToString("D") == layerId) is { } layer:
                 await WriteLayerAsync(context, overlay, layer).ConfigureAwait(false);
+                return;
+            case ["o", var id, "layers"] when Authorize(id, request) is { } overlay:
+                response.ContentType = "application/json; charset=utf-8";
+                response.Headers.CacheControl = "no-store";
+                await response.WriteAsync(new JsonArray([.. overlay.Layers.Select(OverlayWidgetHost.LayerConfig)]).ToJsonString())
+                    .ConfigureAwait(false);
                 return;
             case ["runtime", var file] when RuntimeFiles.Contains(file):
                 await WriteRuntimeAsync(context, file).ConfigureAwait(false);

@@ -91,5 +91,3 @@ the look. The Emulate buttons do not add names: they do not change your stream t
   is empty.
 - **Last stream's names are gone.** This stream's list starts over 15 minutes after you went offline on every
   platform.
-- **A raid shows "1 viewers".** With **Show amounts**, raids count how many times someone raided, not how many viewers
-  they brought.

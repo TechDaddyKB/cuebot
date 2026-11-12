@@ -425,6 +425,57 @@ public sealed class ActionsUxTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void Delete_removes_a_trigger_ctrl_d_skips_branches_and_a_deleted_action_comes_back()
+    {
+        var definition = AddGroupedAction();
+        var (window, vm) = Open();
+        var actions = Page<ActionsViewModel>(vm);
+        vm.SelectedPage = actions;
+        var item = actions.SelectedAction = actions.Actions.Single(a => a.Name == "Grouped");
+        Pump();
+
+        // Delete with a trigger selected (the trigger pane has the focus) removes the trigger.
+        var trigger = item.Triggers.Single();
+        var triggerRow = window.GetVisualDescendants().OfType<Button>().First(b => b.DataContext == trigger);
+        triggerRow.Focus();
+        item.Selected = trigger;
+        window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, null);
+        Pump();
+        Assert.Empty(actions.SelectedAction!.Triggers);
+        Assert.Empty(definition.Triggers);
+
+        // Ctrl+D on a branch line duplicates nothing (it used to copy the whole action).
+        item = actions.SelectedAction!;
+        var count = Profile.Profile.Actions.Count;
+        var branch = item.Steps.Items[1].Branches.First();
+        window.GetVisualDescendants().OfType<Button>().First(b => b.DataContext == branch).Focus();
+        item.Selected = branch;
+        window.KeyPress(Key.D, RawInputModifiers.Control, PhysicalKey.D, "d");
+        Pump();
+        Assert.Equal(count, Profile.Profile.Actions.Count);
+        Assert.Equal(2, actions.SelectedAction!.Steps.Items.Count);
+
+        // The bin deletes at once, and Undo delete (or Ctrl+Z with no action selected) brings it back, same id.
+        Assert.Null(actions.DeletedNotice);
+        actions.DeleteActionCommand.Execute(null);
+        Pump();
+        Assert.DoesNotContain(Profile.Profile.Actions, a => a.Id == definition.Id);
+        Assert.Equal("Deleted 'Grouped'.", actions.DeletedNotice);
+        var undoDelete = window.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "Undo delete"));
+        Assert.True(undoDelete.IsEffectivelyVisible);
+        undoDelete.Focus();
+        Pump();
+        Assert.True(undoDelete.IsFocused);
+        window.KeyPress(Key.Z, RawInputModifiers.Control, PhysicalKey.Z, "z");
+        Pump();
+        Assert.Contains(Profile.Profile.Actions, a => a.Id == definition.Id);
+        Assert.Equal("Grouped", actions.SelectedAction!.Name);
+        Assert.Null(actions.DeletedNotice);
+        Assert.False(actions.RestoreDeletedCommand.CanExecute(null));
+        window.Close();
+    }
+
     // ---- Undo / redo ----
 
     [AvaloniaFact]

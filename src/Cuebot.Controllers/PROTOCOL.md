@@ -110,8 +110,8 @@ Joy-Con (L)/(R)/Pair, GameCube, Steam, Standard, Unknown, Joystick), `controller
 | Trigger | Settings | Parity |
 | --- | --- | --- |
 | Controller Button | controller, button (Any / list), When (Pressed, Released, Both) | Streamer.bot InputControllerButton |
-| Controller Axis | controller, axis, direction (Either/Positive/Negative), threshold %, Fire (Enter, Exit, While beyond, Any movement) | InputControllerAxis |
-| Controller Hat / D-Pad | controller, hat, direction (Any, 8 directions, Centered); cardinal directions include diagonals and fire when they become active | InputControllerHat |
+| Controller stick or trigger | controller, axis, direction (Either/Positive/Negative), threshold %, Fire (Enter, Exit, While beyond, Any movement) | InputControllerAxis |
+| Controller D-pad | controller, hat, direction (Any, 8 directions, Centered); cardinal directions include diagonals and fire when they become active | InputControllerHat |
 | Controller Button Combo | controller, buttons (`LB+RB`), no other buttons held | Cuebot extra |
 | Controller Connected / Disconnected | controller | Cuebot extra |
 

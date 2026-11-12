@@ -22,5 +22,5 @@
   "healColor": { "type": "colorpicker", "label": "Heal numbers", "value": "#2bd576", "group": "Look" },
 
   "testHit": { "type": "button", "label": "Test a hit", "value": "", "group": "Controls" },
-  "reset": { "type": "button", "label": "Start over with the first boss", "value": "", "group": "Controls" }
+  "reset": { "type": "button", "label": "Start over with the first boss", "value": "", "group": "Controls", "saves": true }
 }

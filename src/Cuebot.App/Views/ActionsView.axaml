@@ -230,7 +230,7 @@
                       AutomationProperties.Name="Duplicate action">
                 <controls:Icon Kind="copy" Width="14" Height="14" />
               </Button>
-              <Button Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Delete" Padding="6"
+              <Button Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" ToolTip.Tip="Delete the action (Undo delete brings it back)" Padding="6"
                       AutomationProperties.Name="Delete action">
                 <controls:Icon Kind="trash-2" Width="14" Height="14" />
               </Button>
@@ -240,6 +240,15 @@
               <TextBlock Text="{Binding ActionCount}" Classes="muted" FontSize="12" />
             </StackPanel>
           </DockPanel>
+          <Border DockPanel.Dock="Top" Classes="card" Padding="8,4" Margin="0,0,0,8" IsVisible="{Binding CanRestoreDeleted}">
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="×" Command="{Binding ForgetDeletedCommand}" Padding="6,2" Margin="4,0,0,0"
+                      ToolTip.Tip="Hide this; deleted actions can no longer be brought back" AutomationProperties.Name="Forget deleted actions" />
+              <Button DockPanel.Dock="Right" Content="Undo delete" Command="{Binding RestoreDeletedCommand}" Padding="8,2"
+                      ToolTip.Tip="Bring back the action you deleted last (Ctrl+Z when no action is selected)" />
+              <TextBlock Text="{Binding DeletedNotice}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+          </Border>
           <TextBox DockPanel.Dock="Top" PlaceholderText="Search actions" Text="{Binding Filter}" Margin="0,0,0,8" />
           <ListBox x:Name="ActionList" Classes="plain" ItemContainerTheme="{StaticResource ActionRowContainer}" ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Background="Transparent">
             <ListBox.ContextMenu>
@@ -363,8 +372,8 @@
                   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
                     <Button Content="↑" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up (Ctrl+Up)" />
                     <Button Content="↓" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down (Ctrl+Down)" />
-                    <Button Command="{Binding DeleteItemCommand}" ToolTip.Tip="Delete the selected sub-action (Delete)" Padding="8,5"
-                            AutomationProperties.Name="Delete the selected sub-action">
+                    <Button Command="{Binding DeleteItemCommand}" ToolTip.Tip="Delete the selected trigger or sub-action (Delete)" Padding="8,5"
+                            AutomationProperties.Name="Delete the selected trigger or sub-action">
                       <controls:Icon Kind="trash-2" Width="14" Height="14" />
                     </Button>
                     <Button Command="{Binding AddStepCommand}" Classes="accent" ToolTip.Tip="Inserted after the selected sub-action, or into the selected branch">

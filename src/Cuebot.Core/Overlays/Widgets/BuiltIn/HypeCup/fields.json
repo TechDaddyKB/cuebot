@@ -23,5 +23,5 @@
   "textColor": { "type": "colorpicker", "label": "Title colour", "value": "#ffffff", "group": "Look" },
 
   "testFill": { "type": "button", "label": "Add test balls", "value": "", "group": "Controls" },
-  "empty": { "type": "button", "label": "Empty the cup", "value": "", "group": "Controls" }
+  "empty": { "type": "button", "label": "Empty the cup", "value": "", "group": "Controls", "saves": true }
 }

@@ -29,11 +29,13 @@ like `4 of 12`.
 | --- | --- |
 | **+** (blue) | **New action**: adds an empty action called `New action` (or `New action 2`, ...) and selects it. |
 | Copy icon | **Duplicate** (++ctrl+d++): makes a full copy of the selected action, called `Name (copy)`. |
-| Bin icon | **Delete**: deletes the selected action **at once, without asking**. |
+| Bin icon | **Delete**: deletes the selected action at once. |
 
-!!! warning "Deleting an action cannot be undone"
-    Undo works *inside* an action, but a deleted action is gone. If you are unsure, switch it **Off** instead, or
-    copy it first (++ctrl+c++) so you can paste it back.
+!!! tip "Deleted by mistake?"
+    After you delete an action, a line above the search box says **Deleted 'Name'.** Click **Undo delete** (or press
+    ++ctrl+z++ while no action is selected) and it comes back in its old place, with its triggers, its sub-actions and
+    its undo history. Cuebot remembers the last 20 deleted actions until you close it. The **×** on that line hides it,
+    and then the deleted actions are gone for good.
 
 **Search actions** filters the list as you type. It looks at the action's name *and* its group, so typing `alerts`
 shows every action in the **Alerts** folder.
@@ -56,7 +58,7 @@ more than one. A **faded row** is an action that is switched off, like **Cheer r
 | **Paste** (++ctrl+v++) | Pastes what you copied. A copied action is added as a new action. |
 | **Duplicate action** (++ctrl+d++) | Same as the copy icon. |
 | **Export to code** › **C#** / **Python** | Makes a copy of the action that runs as one script, and switches this one off. See [Turn an action into code](../developers/export-to-code.md). |
-| **Delete action** | Deletes it (no undo). |
+| **Delete action** | Deletes it. **Undo delete** brings it back. |
 
 Keys while the list has the focus (click an action first):
 
@@ -159,8 +161,8 @@ firing. Tick **Always run** on a trigger to make it run anyway, even when a narr
 
 ### Remove, copy or move a trigger
 
-- **Delete**: select the trigger, then click the bin button above the sub-action list (it deletes whatever is
-  selected), or select its box on the **Flowchart** and press ++delete++.
+- **Delete**: select the trigger and press ++delete++, or click the bin button above the sub-action list (it deletes
+  whatever is selected). On the **Flowchart**, select its box and press ++delete++.
 - **Copy / Duplicate**: select it and press ++ctrl+c++ or ++ctrl+d++. A pasted trigger goes after the selected
   trigger, or at the end. You can paste triggers into another action, too.
 - The order of triggers does not matter: any one of them starts the action, so there is nothing to move.
@@ -287,7 +289,9 @@ ignored: only things Cuebot copied can be pasted.
 Pasting always makes fresh copies. A pasted action whose name is taken gets `(copy)`, `(copy 2)`, ... added.
 
 **Duplicate** (++ctrl+d++) copies and pastes in one go: a selected step is copied right under itself, a selected
-trigger right after itself, and otherwise the whole action is duplicated.
+trigger right after itself. A selected branch line (like **True** or **Steps**) is part of its sub-action, so
+++ctrl+d++ does nothing there: select the sub-action itself to copy it with all its branches. With nothing selected,
+the whole action is duplicated.
 
 ## Undo and redo
 
@@ -295,7 +299,7 @@ trigger right after itself, and otherwise the whole action is duplicated.
 - It remembers up to 100 changes, until you close Cuebot.
 - Typing in one box is merged into one undo step per pause. Ticking a box is one step each.
 - Moving boxes on the flowchart and **Auto-arrange** can be undone too.
-- Deleting a **whole action** cannot be undone.
+- A deleted **whole action** comes back with **Undo delete** (see [the actions list](#the-actions-list)).
 
 ## Keyboard shortcuts
 

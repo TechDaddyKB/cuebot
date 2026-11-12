@@ -260,8 +260,10 @@ The **Enter** animations are **fadeIn**, **fadeInUp**, **fadeInDown**, **fadeInL
 plays its enter animation each time the overlay page loads: when OBS starts the browser source, and after every saved
 change (each save reloads the page).
 
-The **Exit** list has the matching **fadeOut**, **slideOut…**, **zoomOut** and **bounceOut** animations. Cuebot saves
-your choice with the layer, but the overlay page does not play exit animations yet.
+The **Exit** list has the matching **fadeOut**, **slideOut…**, **zoomOut** and **bounceOut** animations. A layer plays
+its exit animation when it leaves a live overlay: you hide it (the eye) or delete it and save, or you delete the whole
+overlay. The overlay page waits for the longest exit animation (at most 10 seconds), then reloads. Layers that stay
+on the overlay do not play their exit animation; they simply reload and play their enter animation again.
 
 ### Text layers
 

@@ -14,7 +14,7 @@
       <TabItem Header="Apps &amp; services">
         <intv:IntegrationsView DataContext="{Binding Integrations}" />
       </TabItem>
-      <TabItem Header="Elgato lights &amp; webcams">
+      <TabItem Header="Lights &amp; cameras">
         <elgv:ElgatoView DataContext="{Binding Elgato}" />
       </TabItem>
       <TabItem Header="Wave Link">
