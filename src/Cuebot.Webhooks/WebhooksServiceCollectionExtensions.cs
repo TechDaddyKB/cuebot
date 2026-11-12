@@ -23,7 +23,13 @@ public static class WebhooksServiceCollectionExtensions
     public static IServiceCollection AddWebhooks(this IServiceCollection services)
     {
         services.AddSettingsFile<WebhooksSettings>("webhooks.json");
-        Add<KofiWebhookHandler>(services, (s, b, l) => new KofiWebhookHandler(s, b, l));
+        // Ids already handled, on disk so a delivery the own relay replays after a crash or quit is not counted twice.
+        services.AddSingleton(sp => new RecentIds(path: sp.GetRequiredService<AppPaths>().File("webhooks-seen.json")));
+        services.AddSingleton(sp => new KofiTracker(sp.GetRequiredService<JsonFile<WebhooksSettings>>(), sp.GetRequiredService<EventBus>(),
+            sp.GetRequiredService<AppLog>(), sp.GetRequiredService<AppPaths>().File("kofi.json")));
+        services.AddSingleton<Cuebot.Core.Overlays.Session.ISessionDataSource>(sp => sp.GetRequiredService<KofiTracker>());
+        services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<KofiTracker>());
+        Add<KofiWebhookHandler>(services, (s, b, l) => new KofiWebhookHandler(s, b, l), (sp, h) => h.Tracker = sp.GetRequiredService<KofiTracker>());
         Add<PatreonWebhookHandler>(services, (s, b, l) => new PatreonWebhookHandler(s, b, l));
         Add<FourthwallWebhookHandler>(services, (s, b, l) => new FourthwallWebhookHandler(s, b, l));
         Add<ShopifyWebhookHandler>(services, (s, b, l) => new ShopifyWebhookHandler(s, b, l));
@@ -39,6 +45,10 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton<ITriggerProvider, ThroneTriggers>();
         services.AddSingleton<ITriggerProvider, CustomWebhookTriggers>();
         services.AddSingleton<IScriptFunctionProvider, WebhooksScriptFunctions>();
+        services.AddSingleton<IScriptFunctionProvider>(sp => new KofiScriptFunctions(sp.GetRequiredService<KofiTracker>()));
+        services.AddSingleton(sp => new KofiSubActionSet(KofiSubActions.Create(sp.GetRequiredService<KofiTracker>())));
+        foreach (var typeId in KofiSubActionSet.TypeIds)
+            services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<KofiSubActionSet>().Get(typeId));
 
         // Outgoing webhooks: Discord Basic Webhook, IFTTT Notification (Basic / Advanced). One registration per
         // sub-action so the Registry sees each one.
@@ -51,12 +61,31 @@ public static class WebhooksServiceCollectionExtensions
         return services;
     }
 
-    private static void Add<T>(IServiceCollection services, Func<JsonFile<WebhooksSettings>, EventBus, AppLog, T> create)
+    private static void Add<T>(IServiceCollection services, Func<JsonFile<WebhooksSettings>, EventBus, AppLog, T> create,
+        Action<IServiceProvider, T>? setUp = null)
         where T : WebhookServiceBase
     {
-        services.AddSingleton(sp => create(sp.GetRequiredService<JsonFile<WebhooksSettings>>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton(sp =>
+        {
+            var handler = create(sp.GetRequiredService<JsonFile<WebhooksSettings>>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>());
+            handler.Seen = sp.GetRequiredService<RecentIds>();
+            setUp?.Invoke(sp, handler);
+            return handler;
+        });
         services.AddSingleton<IWebhookHandler>(sp => sp.GetRequiredService<T>());
     }
+}
+
+/// <summary>The Ko-fi sub-actions, made once so each DI registration hands out the same instance.</summary>
+internal sealed class KofiSubActionSet(IReadOnlyList<ISubActionHandler> steps)
+{
+    public static readonly string[] TypeIds =
+    [
+        "kofi.getGoal", "kofi.setGoal", "kofi.addToGoal", "kofi.resetGoal",
+        "kofi.addCommission", "kofi.completeCommission", "kofi.getCommissions", "kofi.clearCommissions",
+    ];
+
+    public ISubActionHandler Get(string typeId) => steps.Single(s => s.TypeId == typeId);
 }
 
 /// <summary>All webhook services, in page order (for the Webhooks page and script functions).</summary>

@@ -130,6 +130,7 @@ public static class StepRiskCatalog
         ["polls.*"] = L2, ["goals.*"] = L2, ["goals.get"] = L1, ["subathon.*"] = L2, ["subathon.get"] = L1,
         ["credits.*"] = L2, ["credits.get"] = L1, ["giveaways.*"] = L2, ["media.*"] = L2, ["spotify.*"] = L2,
         ["spending.*"] = L2, ["spending.getTop"] = L1, ["spending.newStream"] = L3,
+        ["kofi.*"] = L2, ["kofi.getGoal"] = L1, ["kofi.getCommissions"] = L1,
         ["streamlabs.*"] = L1, ["streamlabs.alertQueue"] = L2, ["streamlabs.createAlert"] = L2, ["streamlabs.setAlertProfile"] = L2,
         ["streamlabs.spinWheel"] = L2, ["streamlabs.emptyJar"] = L2, ["streamlabs.rollCredits"] = L2, ["streamlabs.mediaShare"] = L2,
         ["streamlabs.createDonation"] = L2, ["streamlabs.addPoints"] = L2,

@@ -27,7 +27,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Groups](groups.md) | 5 |
 | [HypeRate](hyperate.md) | 7 |
 | [Kick](kick.md) | 24 |
-| [Ko-fi](ko-fi.md) | 5 |
+| [Ko-fi](ko-fi.md) | 7 |
 | [Lumia Stream](lumia-stream.md) | 8 |
 | [Media requests](media-requests.md) | 3 |
 | [Meld Studio](meld-studio.md) | 14 |

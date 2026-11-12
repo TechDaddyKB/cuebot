@@ -1,0 +1,65 @@
+{
+  "functions": {
+    "kofi.goal": {
+      "description": "Reads the Ko-fi goal Cuebot keeps from Ko-fi payments (set it up on the Webhooks page).",
+      "parameters": {},
+      "returns": "title, current, target, percent, currency and reached (true once the target was reached).",
+      "example": {}
+    },
+    "kofi.setGoal": {
+      "description": "Changes the Ko-fi goal. Leave out anything you want to keep.",
+      "parameters": {
+        "title": "Optional. The goal's name.",
+        "target": "Optional. The target; 0 turns the goal off.",
+        "startAmount": "Optional. What your Ko-fi goal showed before Cuebot counted.",
+        "currency": "Optional. Only payments in this currency count, like \"USD\"."
+      },
+      "returns": "The goal after the change, like kofi.goal.",
+      "example": {
+        "target": 250
+      }
+    },
+    "kofi.addToGoal": {
+      "description": "Adds an amount to the Ko-fi goal by hand. A negative amount takes it away.",
+      "parameters": {
+        "amount": "How much to add, like 5."
+      },
+      "returns": "The goal after the change, like kofi.goal.",
+      "example": {
+        "amount": 5
+      }
+    },
+    "kofi.resetGoal": {
+      "description": "Starts the Ko-fi goal again from its start amount.",
+      "parameters": {
+        "clearStart": "Optional. true sets the start amount to 0 too."
+      },
+      "returns": "The goal after the reset, like kofi.goal.",
+      "example": {}
+    },
+    "kofi.commissions": {
+      "description": "Lists Ko-fi commissions, oldest first. Only open ones unless includeDone is true.",
+      "parameters": {
+        "includeDone": "Optional. true lists finished ones too."
+      },
+      "returns": "A list. Each has id, name, message, amount, currency, formattedAmount, time and done.",
+      "example": {}
+    },
+    "kofi.completeCommission": {
+      "description": "Marks a commission done.",
+      "parameters": {
+        "which": "Optional. Its id or its number in the open list (1 is the oldest). Leave out for the oldest."
+      },
+      "returns": "The finished commission (id, name, message), or null when there was none.",
+      "example": {
+        "which": "1"
+      }
+    },
+    "kofi.members": {
+      "description": "Lists the Ko-fi members Cuebot has seen pay, newest payment first. Ko-fi never says when a membership ends, so lapsed is an estimate.",
+      "parameters": {},
+      "returns": "A list. Each has name, tier, discordUserId, lastPayment, payments and lapsed.",
+      "example": {}
+    }
+  }
+}

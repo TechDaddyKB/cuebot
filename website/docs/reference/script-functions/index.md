@@ -45,6 +45,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [HypeRate](hyperate.md) | 1 |
 | [Keyboard and mouse](input.md) | 2 |
 | [Kick](kick.md) | 10 |
+| [Kofi](kofi.md) | 7 |
 | [Log](log.md) | 1 |
 | [Lumia Stream](lumia.md) | 13 |
 | [Meld Studio](meldstudio.md) | 19 |

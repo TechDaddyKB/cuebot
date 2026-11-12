@@ -775,95 +775,243 @@
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "visibility": "Supporters can tick \"make this private\" on Ko-fi. \"Public only\" runs just for public supports, \"Private only\" just for private ones, \"Any\" for both. Private ones arrive as \"Anonymous\" with no message unless you turn on showing them on the Webhooks page.",
+        "skipLate": "Tick to not run for payments that arrive late, because your own relay kept them while Cuebot was closed. They still count in the feed, totals and the Ko-fi goal, so you are not flooded with old thank-yous."
       },
       "variables": {
-        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "user": "Who supported you. \"Anonymous\" when they gave no name or marked the support private (unless you turned on showing private supporters)",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "message": "Their message. Empty when the support is private (unless you turned on showing private supporters)",
+        "isPublic": "False when the supporter marked the support private. Keep their name off stream then",
+        "privateName": "Only for private supports: the supporter's real Ko-fi name. For your own records only, never show it on stream",
+        "privateMessage": "Only for private supports: their real message. For your own records only",
+        "from": "The supporter's Ko-fi name as sent (empty for a hidden private support)",
         "url": "A web link to the Ko-fi page of this support",
+        "messageId": "Ko-fi's id for this delivery (the same when Ko-fi re-sends it)",
+        "transactionId": "Ko-fi's transaction id",
+        "timestamp": "When Ko-fi says the payment happened",
+        "kofiType": "Ko-fi's own name for the type: Donation, Subscription, Commission or Shop Order",
+        "isSubscriptionPayment": "True for a membership payment",
+        "isReplay": "True when the payment reached Cuebot late, because your own relay kept it while Cuebot was closed",
+        "delaySeconds": "How many seconds after the relay got it the payment reached Cuebot",
+        "discordUserId": "The supporter's Discord user id, when they linked Discord on Ko-fi. Put it in a Discord step's Member box to DM them",
+        "discordUsername": "The supporter's Discord name, when they linked Discord",
+        "discordMention": "Mentions them in a Discord channel message (<@id>), when they linked Discord",
+        "kofiGoalCurrent": "The Ko-fi goal's progress after this payment (see the Webhooks page)",
+        "kofiGoalTarget": "The Ko-fi goal's target (0 when there is no goal)",
+        "kofiGoalPercent": "The Ko-fi goal's progress in whole percent",
+        "kofiGoalTitle": "The Ko-fi goal's title",
+        "kofiGoalCurrency": "The currency the Ko-fi goal counts (empty = every currency)",
         "isTest": "True when this is a test event, not a real one"
       }
     },
     "kofi.subscription": {
       "description": "Runs when someone starts a new Ko-fi membership with you. Needs your Ko-fi webhook set up.",
       "fields": {
-        "tier": "Only run for this membership level, like \"Gold\". Type it as it appears on your page. Leave empty for any level.",
+        "tier": "Only run for these membership levels, like \"Gold\" or \"Gold, Silver\". Capitals and spaces do not matter. Leave empty for any level.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "visibility": "Supporters can tick \"make this private\" on Ko-fi. \"Public only\" runs just for public supports, \"Private only\" just for private ones, \"Any\" for both. Private ones arrive as \"Anonymous\" with no message unless you turn on showing them on the Webhooks page.",
+        "skipLate": "Tick to not run for payments that arrive late, because your own relay kept them while Cuebot was closed. They still count in the feed, totals and the Ko-fi goal, so you are not flooded with old thank-yous."
       },
       "variables": {
-        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "user": "Who supported you. \"Anonymous\" when they gave no name or marked the support private (unless you turned on showing private supporters)",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "message": "Their message. Empty when the support is private (unless you turned on showing private supporters)",
+        "isPublic": "False when the supporter marked the support private. Keep their name off stream then",
+        "privateName": "Only for private supports: the supporter's real Ko-fi name. For your own records only, never show it on stream",
+        "privateMessage": "Only for private supports: their real message. For your own records only",
+        "from": "The supporter's Ko-fi name as sent (empty for a hidden private support)",
         "url": "A web link to the Ko-fi page of this support",
+        "messageId": "Ko-fi's id for this delivery (the same when Ko-fi re-sends it)",
+        "transactionId": "Ko-fi's transaction id",
+        "timestamp": "When Ko-fi says the payment happened",
+        "kofiType": "Ko-fi's own name for the type: Donation, Subscription, Commission or Shop Order",
+        "isSubscriptionPayment": "True for a membership payment",
+        "isReplay": "True when the payment reached Cuebot late, because your own relay kept it while Cuebot was closed",
+        "delaySeconds": "How many seconds after the relay got it the payment reached Cuebot",
+        "discordUserId": "The supporter's Discord user id, when they linked Discord on Ko-fi. Put it in a Discord step's Member box to DM them",
+        "discordUsername": "The supporter's Discord name, when they linked Discord",
+        "discordMention": "Mentions them in a Discord channel message (<@id>), when they linked Discord",
+        "kofiGoalCurrent": "The Ko-fi goal's progress after this payment (see the Webhooks page)",
+        "kofiGoalTarget": "The Ko-fi goal's target (0 when there is no goal)",
+        "kofiGoalPercent": "The Ko-fi goal's progress in whole percent",
+        "kofiGoalTitle": "The Ko-fi goal's title",
+        "kofiGoalCurrency": "The currency the Ko-fi goal counts (empty = every currency)",
         "isTest": "True when this is a test event, not a real one",
-        "tier": "The membership level they joined"
+        "tier": "The membership level they joined",
+        "isFirstPayment": "True for the first payment of a membership",
+        "months": "How many membership payments Cuebot has seen from them (Ko-fi sends no month count; 1 for a new member)"
       }
     },
     "kofi.resubscription": {
       "description": "Runs when a Ko-fi member pays again for their membership. Needs your Ko-fi webhook set up.",
       "fields": {
-        "tier": "Only run for this membership level, like \"Gold\". Type it as it appears on your page. Leave empty for any level.",
+        "tier": "Only run for these membership levels, like \"Gold\" or \"Gold, Silver\". Capitals and spaces do not matter. Leave empty for any level.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "visibility": "Supporters can tick \"make this private\" on Ko-fi. \"Public only\" runs just for public supports, \"Private only\" just for private ones, \"Any\" for both. Private ones arrive as \"Anonymous\" with no message unless you turn on showing them on the Webhooks page.",
+        "skipLate": "Tick to not run for payments that arrive late, because your own relay kept them while Cuebot was closed. They still count in the feed, totals and the Ko-fi goal, so you are not flooded with old thank-yous."
       },
       "variables": {
-        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "user": "Who supported you. \"Anonymous\" when they gave no name or marked the support private (unless you turned on showing private supporters)",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "message": "Their message. Empty when the support is private (unless you turned on showing private supporters)",
+        "isPublic": "False when the supporter marked the support private. Keep their name off stream then",
+        "privateName": "Only for private supports: the supporter's real Ko-fi name. For your own records only, never show it on stream",
+        "privateMessage": "Only for private supports: their real message. For your own records only",
+        "from": "The supporter's Ko-fi name as sent (empty for a hidden private support)",
         "url": "A web link to the Ko-fi page of this support",
+        "messageId": "Ko-fi's id for this delivery (the same when Ko-fi re-sends it)",
+        "transactionId": "Ko-fi's transaction id",
+        "timestamp": "When Ko-fi says the payment happened",
+        "kofiType": "Ko-fi's own name for the type: Donation, Subscription, Commission or Shop Order",
+        "isSubscriptionPayment": "True for a membership payment",
+        "isReplay": "True when the payment reached Cuebot late, because your own relay kept it while Cuebot was closed",
+        "delaySeconds": "How many seconds after the relay got it the payment reached Cuebot",
+        "discordUserId": "The supporter's Discord user id, when they linked Discord on Ko-fi. Put it in a Discord step's Member box to DM them",
+        "discordUsername": "The supporter's Discord name, when they linked Discord",
+        "discordMention": "Mentions them in a Discord channel message (<@id>), when they linked Discord",
+        "kofiGoalCurrent": "The Ko-fi goal's progress after this payment (see the Webhooks page)",
+        "kofiGoalTarget": "The Ko-fi goal's target (0 when there is no goal)",
+        "kofiGoalPercent": "The Ko-fi goal's progress in whole percent",
+        "kofiGoalTitle": "The Ko-fi goal's title",
+        "kofiGoalCurrency": "The currency the Ko-fi goal counts (empty = every currency)",
         "isTest": "True when this is a test event, not a real one",
-        "tier": "Their membership level"
+        "tier": "Their membership level",
+        "isFirstPayment": "False here (a renewal)",
+        "months": "How many membership payments Cuebot has seen from them, at least 2"
       }
     },
     "kofi.commission": {
-      "description": "Runs when someone pays for a Ko-fi commission (a custom piece of work). Needs your Ko-fi webhook set up.",
+      "description": "Runs when someone pays for a Ko-fi commission (a custom piece of work). It is also added to the commission list. Needs your Ko-fi webhook set up.",
       "fields": {
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "visibility": "Supporters can tick \"make this private\" on Ko-fi. \"Public only\" runs just for public supports, \"Private only\" just for private ones, \"Any\" for both. Private ones arrive as \"Anonymous\" with no message unless you turn on showing them on the Webhooks page.",
+        "skipLate": "Tick to not run for payments that arrive late, because your own relay kept them while Cuebot was closed. They still count in the feed, totals and the Ko-fi goal, so you are not flooded with old thank-yous."
       },
       "variables": {
-        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "user": "Who supported you. \"Anonymous\" when they gave no name or marked the support private (unless you turned on showing private supporters)",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "message": "Their message. Empty when the support is private (unless you turned on showing private supporters)",
+        "isPublic": "False when the supporter marked the support private. Keep their name off stream then",
+        "privateName": "Only for private supports: the supporter's real Ko-fi name. For your own records only, never show it on stream",
+        "privateMessage": "Only for private supports: their real message. For your own records only",
+        "from": "The supporter's Ko-fi name as sent (empty for a hidden private support)",
         "url": "A web link to the Ko-fi page of this support",
-        "isTest": "True when this is a test event, not a real one"
+        "messageId": "Ko-fi's id for this delivery (the same when Ko-fi re-sends it)",
+        "transactionId": "Ko-fi's transaction id",
+        "timestamp": "When Ko-fi says the payment happened",
+        "kofiType": "Ko-fi's own name for the type: Donation, Subscription, Commission or Shop Order",
+        "isSubscriptionPayment": "True for a membership payment",
+        "isReplay": "True when the payment reached Cuebot late, because your own relay kept it while Cuebot was closed",
+        "delaySeconds": "How many seconds after the relay got it the payment reached Cuebot",
+        "discordUserId": "The supporter's Discord user id, when they linked Discord on Ko-fi. Put it in a Discord step's Member box to DM them",
+        "discordUsername": "The supporter's Discord name, when they linked Discord",
+        "discordMention": "Mentions them in a Discord channel message (<@id>), when they linked Discord",
+        "kofiGoalCurrent": "The Ko-fi goal's progress after this payment (see the Webhooks page)",
+        "kofiGoalTarget": "The Ko-fi goal's target (0 when there is no goal)",
+        "kofiGoalPercent": "The Ko-fi goal's progress in whole percent",
+        "kofiGoalTitle": "The Ko-fi goal's title",
+        "kofiGoalCurrency": "The currency the Ko-fi goal counts (empty = every currency)",
+        "isTest": "True when this is a test event, not a real one",
+        "commissionsOpen": "How many commissions are open now, this one included"
       }
     },
     "kofi.shopOrder": {
-      "description": "Runs when someone buys from your Ko-fi shop. Handy to thank buyers on stream. Needs your Ko-fi webhook set up.",
+      "description": "Runs when someone buys from your Ko-fi shop. Handy to thank buyers on stream. Needs your Ko-fi webhook set up. Ko-fi does not send the buyer's address to Cuebot's variables.",
       "fields": {
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "visibility": "Supporters can tick \"make this private\" on Ko-fi. \"Public only\" runs just for public supports, \"Private only\" just for private ones, \"Any\" for both. Private ones arrive as \"Anonymous\" with no message unless you turn on showing them on the Webhooks page.",
+        "skipLate": "Tick to not run for payments that arrive late, because your own relay kept them while Cuebot was closed. They still count in the feed, totals and the Ko-fi goal, so you are not flooded with old thank-yous."
       },
       "variables": {
-        "user": "Who supported you (\"Anonymous\" if hidden)",
+        "user": "Who supported you. \"Anonymous\" when they gave no name or marked the support private (unless you turned on showing private supporters)",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "message": "Their message. Empty when the support is private (unless you turned on showing private supporters)",
+        "isPublic": "False when the supporter marked the support private. Keep their name off stream then",
+        "privateName": "Only for private supports: the supporter's real Ko-fi name. For your own records only, never show it on stream",
+        "privateMessage": "Only for private supports: their real message. For your own records only",
+        "from": "The supporter's Ko-fi name as sent (empty for a hidden private support)",
         "url": "A web link to the Ko-fi page of this support",
+        "messageId": "Ko-fi's id for this delivery (the same when Ko-fi re-sends it)",
+        "transactionId": "Ko-fi's transaction id",
+        "timestamp": "When Ko-fi says the payment happened",
+        "kofiType": "Ko-fi's own name for the type: Donation, Subscription, Commission or Shop Order",
+        "isSubscriptionPayment": "True for a membership payment",
+        "isReplay": "True when the payment reached Cuebot late, because your own relay kept it while Cuebot was closed",
+        "delaySeconds": "How many seconds after the relay got it the payment reached Cuebot",
+        "discordUserId": "The supporter's Discord user id, when they linked Discord on Ko-fi. Put it in a Discord step's Member box to DM them",
+        "discordUsername": "The supporter's Discord name, when they linked Discord",
+        "discordMention": "Mentions them in a Discord channel message (<@id>), when they linked Discord",
+        "kofiGoalCurrent": "The Ko-fi goal's progress after this payment (see the Webhooks page)",
+        "kofiGoalTarget": "The Ko-fi goal's target (0 when there is no goal)",
+        "kofiGoalPercent": "The Ko-fi goal's progress in whole percent",
+        "kofiGoalTitle": "The Ko-fi goal's title",
+        "kofiGoalCurrency": "The currency the Ko-fi goal counts (empty = every currency)",
         "isTest": "True when this is a test event, not a real one",
         "itemCount": "How many different items were ordered",
-        "item0": "The first item's name (use item1, item2... for the next ones)",
+        "item0": "The first item: its name from the Webhooks page, else its variation, else \"item\" and its code (use item1, item2... for the next ones)",
+        "item0.code": "The first item's Ko-fi code (the end of the product link)",
+        "item0.variation": "The first item's variation, like a size",
+        "item0.image": "The picture link you gave the first item on the Webhooks page",
         "item0.quantity": "How many of the first item"
+      }
+    },
+    "kofi.goalReached": {
+      "description": "Runs once when the Ko-fi goal Cuebot keeps reaches its target. Set the goal on the Webhooks page. It can run again after a reset or a higher target.",
+      "fields": {},
+      "variables": {
+        "user": "Who made the payment that reached it (empty when you added to the goal by hand)",
+        "kofiGoalTitle": "The goal's title",
+        "kofiGoalCurrent": "The progress now",
+        "kofiGoalTarget": "The target",
+        "kofiGoalPercent": "The progress in whole percent",
+        "kofiGoalCurrency": "The currency the goal counts",
+        "service": "Ko-fi",
+        "isTest": "Always false (test events never count)"
+      }
+    },
+    "kofi.membershipLapsed": {
+      "description": "Runs once when a Ko-fi member has not paid for longer than the days set on the Webhooks page (35 by default). Ko-fi never says when a membership ends, so this is an estimate: a late payment simply starts the count again.",
+      "fields": {
+        "tier": "Only run for these membership levels, like \"Gold\" or \"Gold, Silver\". Capitals and spaces do not matter. Leave empty for any level."
+      },
+      "variables": {
+        "user": "The member's name (\"Anonymous\" for a private supporter)",
+        "tier": "Their membership level",
+        "amount": "What they paid last time",
+        "currency": "The currency code",
+        "lastPayment": "When they last paid",
+        "daysSincePayment": "Days since that payment",
+        "payments": "How many payments Cuebot saw from them",
+        "privateName": "Only for a private supporter: their real Ko-fi name, for your own records",
+        "discordUserId": "Their Discord user id, when linked",
+        "discordUsername": "Their Discord name, when linked",
+        "isEstimate": "Always true: Ko-fi never says when a membership ends",
+        "service": "Ko-fi",
+        "isTest": "Always false"
       }
     },
     "treatstream.authenticated": {
@@ -2207,6 +2355,105 @@
         "kind": "Which pretend event to make, like effectSuccess for a working effect or coinExchange for coins added."
       },
       "variables": {}
+    },
+    "kofi.getGoal": {
+      "description": "Reads the Ko-fi goal Cuebot keeps, so you can say it in chat or show it.",
+      "fields": {},
+      "variables": {
+        "kofiGoalTitle": "The goal's title",
+        "kofiGoalCurrent": "The progress",
+        "kofiGoalTarget": "The target",
+        "kofiGoalPercent": "The progress in whole percent",
+        "kofiGoalCurrency": "The currency the goal counts"
+      }
+    },
+    "kofi.setGoal": {
+      "description": "Changes the Ko-fi goal. Handy for a chat command that sets a new target. Empty boxes keep what is there.",
+      "fields": {
+        "title": "The goal's new name. Leave empty to keep it.",
+        "target": "The new target, like 200. 0 turns the goal off. Leave empty to keep it.",
+        "startAmount": "What your Ko-fi goal already showed before Cuebot counted. Leave empty to keep it.",
+        "currency": "Only payments in this currency count, like USD. Leave empty to keep it."
+      },
+      "variables": {
+        "kofiGoalTitle": "The goal's title",
+        "kofiGoalCurrent": "The progress",
+        "kofiGoalTarget": "The target",
+        "kofiGoalPercent": "The progress in whole percent",
+        "kofiGoalCurrency": "The currency the goal counts"
+      }
+    },
+    "kofi.addToGoal": {
+      "description": "Adds an amount to the Ko-fi goal by hand, like money that came in another way. A negative number takes it away.",
+      "fields": {
+        "amount": "How much to add, like 5. Use -5 to take 5 away."
+      },
+      "variables": {
+        "kofiGoalTitle": "The goal's title",
+        "kofiGoalCurrent": "The progress",
+        "kofiGoalTarget": "The target",
+        "kofiGoalPercent": "The progress in whole percent",
+        "kofiGoalCurrency": "The currency the goal counts"
+      }
+    },
+    "kofi.resetGoal": {
+      "description": "Starts the Ko-fi goal again from its start amount.",
+      "fields": {
+        "clearStart": "Tick to set the start amount to 0 too."
+      },
+      "variables": {
+        "kofiGoalTitle": "The goal's title",
+        "kofiGoalCurrent": "The progress",
+        "kofiGoalTarget": "The target",
+        "kofiGoalPercent": "The progress in whole percent",
+        "kofiGoalCurrency": "The currency the goal counts"
+      }
+    },
+    "kofi.addCommission": {
+      "description": "Adds a commission to the list by hand. Ko-fi commissions are added for you.",
+      "fields": {
+        "name": "Who it is for.",
+        "text": "What they asked for.",
+        "amount": "What they paid. Leave 0 if you like.",
+        "currency": "The currency code, like USD."
+      },
+      "variables": {
+        "commissionId": "The new commission's id",
+        "commissionsOpen": "How many commissions are open now"
+      }
+    },
+    "kofi.completeCommission": {
+      "description": "Marks a commission done, so it leaves the open list and overlays.",
+      "fields": {
+        "which": "Leave empty for the oldest open one. Or type its number in the list (1 is the oldest), or its id."
+      },
+      "variables": {
+        "commissionFound": "False when there was no such open commission",
+        "commissionName": "Who it was for",
+        "commissionText": "What they asked for",
+        "commissionsOpen": "How many are still open"
+      }
+    },
+    "kofi.getCommissions": {
+      "description": "Reads the open commissions, oldest first. Handy for a !queue chat command.",
+      "fields": {},
+      "variables": {
+        "commissionsOpen": "How many are open",
+        "commissionsText": "The list as one line, like \"1. Ana: a cat portrait; 2. Ben: a logo\"",
+        "commission0.name": "The oldest one's name (commission1... for the next)",
+        "commission0.text": "What they asked for",
+        "commission0.id": "Its id",
+        "commission0.amount": "What they paid"
+      }
+    },
+    "kofi.clearCommissions": {
+      "description": "Removes done commissions from the list.",
+      "fields": {
+        "all": "Tick to remove open ones too (empties the list)."
+      },
+      "variables": {
+        "commissionsCleared": "How many were removed"
+      }
     }
   }
 }

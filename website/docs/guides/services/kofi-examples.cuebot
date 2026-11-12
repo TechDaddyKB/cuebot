@@ -1,0 +1,230 @@
+{
+  "format": "cuebot.bundle",
+  "version": 1,
+  "header": {
+    "name": "Ko-fi examples",
+    "author": "Cuebot",
+    "description": "Seven Ko-fi actions: thank donors in chat (late, replayed payments skipped), clip tips of 10 or more on Twitch, DM new members on Discord when they linked it, !kofi, !kofigoal and !queue chat commands, and a message when the Ko-fi goal is reached. Change the Ko-fi link, amounts and texts to your own.",
+    "bundleVersion": "1",
+    "createdAt": "2026-11-11T00:00:00+00:00",
+    "generator": "Cuebot"
+  },
+  "actions": [
+    {
+      "id": "481702db-2fde-4f2f-b2d6-0647f95d33d0",
+      "name": "Ko-fi: thank donors in chat",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "5ccbacd1-1441-43f5-a315-e54fd41589c6",
+          "type": "kofi.donation",
+          "enabled": true,
+          "settings": {
+            "skipLate": "true"
+          }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "39c5edd2-6462-4c0b-a972-83540c073f30",
+          "type": "chat.send",
+          "enabled": true,
+          "parameters": {
+            "message": "Thank you %user% for the %formattedAmount% Ko-fi!"
+          }
+        }
+      ]
+    },
+    {
+      "id": "da9c0616-4a08-418a-b28b-ca120cc53e7f",
+      "name": "Ko-fi: clip big tips",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "f4ade063-5953-471a-ad25-1eca9e133685",
+          "type": "kofi.donation",
+          "enabled": true,
+          "settings": {
+            "minAmount": "10",
+            "skipLate": "true",
+            "includeTests": "false"
+          }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "a2b89f7c-690a-45bf-b328-e096be7d64ee",
+          "type": "twitch.createClip",
+          "enabled": true,
+          "parameters": {
+            "title": "Ko-fi tip from %user%",
+            "duration": "30"
+          }
+        }
+      ]
+    },
+    {
+      "id": "38d5e29b-0657-49c8-ada8-22429fd7df69",
+      "name": "Ko-fi: Discord thank-you DM for new members",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "83253aa7-0126-4ec9-b4dc-512895a4a511",
+          "type": "kofi.subscription",
+          "enabled": true,
+          "settings": {
+            "includeTests": "false"
+          }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "054cf050-89fa-4d39-822f-f82ab1731d80",
+          "type": "core.if",
+          "enabled": true,
+          "parameters": {
+            "left": "%discordUserId%",
+            "operator": "is not empty",
+            "right": ""
+          },
+          "branches": {
+            "True": [
+              {
+                "id": "b2f0ebd9-596e-4203-bf67-e9f3a321817d",
+                "type": "discord.sendDirectMessage",
+                "enabled": true,
+                "parameters": {
+                  "member": "%discordUserId%",
+                  "text": "Thank you for joining my Ko-fi membership (%tier%)! See you on stream."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "70811a58-d509-4aba-a141-9875d4005573",
+      "name": "Ko-fi: !kofi command",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "c1d0ce7a-d115-4b8d-8003-98a35bd67164",
+          "type": "twitch.command",
+          "enabled": true,
+          "settings": {
+            "command": "!kofi",
+            "globalCooldown": "30"
+          }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "34555f2e-06ba-4668-9c4c-60f5ba060fcb",
+          "type": "chat.send",
+          "enabled": true,
+          "parameters": {
+            "message": "Support the stream on Ko-fi: https://ko-fi.com/yourname",
+            "sameAsTrigger": "true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f42dabcd-bff5-4419-8f7a-3b88c46cfdc0",
+      "name": "Ko-fi: !kofigoal command",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "2d76c54c-fbf0-465c-ad6a-58a9ba5c204f",
+          "type": "twitch.command",
+          "enabled": true,
+          "settings": {
+            "command": "!kofigoal",
+            "globalCooldown": "30"
+          }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "0697b264-9b58-4ced-a88a-61b4f9b4f3e0",
+          "type": "kofi.getGoal",
+          "enabled": true,
+          "parameters": {}
+        },
+        {
+          "id": "b0fcf519-67b6-42f6-bbab-c9a4cdfd6bda",
+          "type": "chat.send",
+          "enabled": true,
+          "parameters": {
+            "message": "%kofiGoalTitle%: %kofiGoalCurrent% of %kofiGoalTarget% (%kofiGoalPercent%%)",
+            "sameAsTrigger": "true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "0647a765-46f8-44cc-bb52-5be0dc1fa25a",
+      "name": "Ko-fi: !queue for commissions",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "2d601706-dd08-48eb-9120-306409a09c0f",
+          "type": "twitch.command",
+          "enabled": true,
+          "settings": {
+            "command": "!queue",
+            "globalCooldown": "30"
+          }
+        }
+      ],
+      "subActions": [
+        {
+          "id": "465c5c03-42e5-4e1f-a87d-39c4c7831cbb",
+          "type": "kofi.getCommissions",
+          "enabled": true,
+          "parameters": {}
+        },
+        {
+          "id": "b3618f97-7a3f-40c2-bc97-b257e15e7e60",
+          "type": "chat.send",
+          "enabled": true,
+          "parameters": {
+            "message": "Open commissions (%commissionsOpen%): %commissionsText%",
+            "sameAsTrigger": "true"
+          }
+        }
+      ]
+    },
+    {
+      "id": "385e3699-fa32-4f6d-bc3f-2b05158d4c1e",
+      "name": "Ko-fi: goal reached",
+      "group": "Ko-fi",
+      "enabled": true,
+      "triggers": [
+        {
+          "id": "fc57a11d-c58e-477f-b8b2-0634bcc93cdd",
+          "type": "kofi.goalReached",
+          "enabled": true,
+          "settings": {}
+        }
+      ],
+      "subActions": [
+        {
+          "id": "3098966c-a4be-4df5-a864-4ee87208c8e5",
+          "type": "chat.send",
+          "enabled": true,
+          "parameters": {
+            "message": "We reached the Ko-fi goal %kofiGoalTitle%! Thank you all!"
+          }
+        }
+      ]
+    }
+  ]
+}

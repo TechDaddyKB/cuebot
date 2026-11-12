@@ -778,6 +778,56 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"kick.unban\", ...).
         """
+    def kofi_add_to_goal(self, amount: Any) -> Any:
+        """Adds an amount to the Ko-fi goal by hand. A negative amount takes it away.
+
+        amount: How much to add, like 5.
+        Gives back: The goal after the change, like kofi.goal.
+        Same as cb.call(\"kofi.addToGoal\", ...).
+        """
+    def kofi_commissions(self, *, include_done: Any = None) -> Any:
+        """Lists Ko-fi commissions, oldest first. Only open ones unless includeDone is true.
+
+        include_done: Optional. true lists finished ones too.
+        Gives back: A list. Each has id, name, message, amount, currency, formattedAmount, time and done.
+        Same as cb.call(\"kofi.commissions\", ...).
+        """
+    def kofi_complete_commission(self, *, which: Any = None) -> Any:
+        """Marks a commission done.
+
+        which: Optional. Its id or its number in the open list (1 is the oldest). Leave out for the oldest.
+        Gives back: The finished commission (id, name, message), or null when there was none.
+        Same as cb.call(\"kofi.completeCommission\", ...).
+        """
+    def kofi_goal(self) -> Any:
+        """Reads the Ko-fi goal Cuebot keeps from Ko-fi payments (set it up on the Webhooks page).
+
+        Gives back: title, current, target, percent, currency and reached (true once the target was reached).
+        Same as cb.call(\"kofi.goal\", ...).
+        """
+    def kofi_members(self) -> Any:
+        """Lists the Ko-fi members Cuebot has seen pay, newest payment first. Ko-fi never says when a membership ends, so lapsed is an estimate.
+
+        Gives back: A list. Each has name, tier, discordUserId, lastPayment, payments and lapsed.
+        Same as cb.call(\"kofi.members\", ...).
+        """
+    def kofi_reset_goal(self, *, clear_start: Any = None) -> Any:
+        """Starts the Ko-fi goal again from its start amount.
+
+        clear_start: Optional. true sets the start amount to 0 too.
+        Gives back: The goal after the reset, like kofi.goal.
+        Same as cb.call(\"kofi.resetGoal\", ...).
+        """
+    def kofi_set_goal(self, *, title: Any = None, target: Any = None, start_amount: Any = None, currency: Any = None) -> Any:
+        """Changes the Ko-fi goal. Leave out anything you want to keep.
+
+        title: Optional. The goal's name.
+        target: Optional. The target; 0 turns the goal off.
+        start_amount: Optional. What your Ko-fi goal showed before Cuebot counted.
+        currency: Optional. Only payments in this currency count, like \"USD\".
+        Gives back: The goal after the change, like kofi.goal.
+        Same as cb.call(\"kofi.setGoal\", ...).
+        """
     def lumia_chatbot_message(self, message: Any, *, platform: Any = None, as_self: Any = None) -> Any:
         """Sends a chat message through Lumia Stream's chat bot. Fails with an error when Lumia Stream is not connected.
 

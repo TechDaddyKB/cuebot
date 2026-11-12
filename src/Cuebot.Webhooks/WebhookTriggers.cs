@@ -60,24 +60,71 @@ internal static class WebhookFilters
         Event(category, eventType, displayName, TestsOnly, MatchesTest);
 }
 
-/// <summary>Ko-fi triggers (Streamer.bot: Commission, Donation, Resubscription, Shop Order, Subscription).</summary>
+/// <summary>
+/// Ko-fi triggers (Streamer.bot: Commission, Donation, Resubscription, Shop Order, Subscription; Cuebot adds Goal
+/// Reached and Membership Lapsed). The payment triggers can be limited to public or private supports and can skip late
+/// (relay-replayed) deliveries.
+/// </summary>
 internal sealed class KofiTriggers : ITriggerProvider
 {
     public const string Category = "Ko-fi";
 
+    internal const string AnyVisibility = "Any";
+    internal const string PublicOnly = "Public only";
+    internal const string PrivateOnly = "Private only";
+
     public IEnumerable<ITriggerType> GetTriggers() =>
     [
-        WebhookFilters.Paid(Category, KofiEventTypes.Donation, "Donation"),
-        Tiered(KofiEventTypes.Subscription, "Subscription"),
-        Tiered(KofiEventTypes.Resubscription, "Resubscription"),
-        WebhookFilters.Paid(Category, KofiEventTypes.Commission, "Commission"),
-        WebhookFilters.Paid(Category, KofiEventTypes.ShopOrder, "Shop Order"),
+        Payment(KofiEventTypes.Donation, "Donation"),
+        Payment(KofiEventTypes.Subscription, "Subscription", tiered: true),
+        Payment(KofiEventTypes.Resubscription, "Resubscription", tiered: true),
+        Payment(KofiEventTypes.Commission, "Commission"),
+        Payment(KofiEventTypes.ShopOrder, "Shop Order"),
+        WebhookFilters.Event(Category, KofiEventTypes.GoalReached, "Goal Reached"),
+        WebhookFilters.Event(Category, KofiEventTypes.MembershipLapsed, "Membership Lapsed",
+            [new("tier", "Tier name") { Help = "Leave empty for any tier; several with commas, e.g. Gold, Silver" }],
+            (e, s) => TierMatches(e, s)),
     ];
 
-    private static EventTriggerType Tiered(string type, string name) =>
+    private static IReadOnlyList<ParameterDescriptor> Extra { get; } =
+    [
+        new("visibility", "Supporter's choice", ParameterKind.Choice)
+        {
+            DefaultValue = AnyVisibility, Choices = [AnyVisibility, PublicOnly, PrivateOnly],
+            Help = "Private supports arrive as \"Anonymous\" with no message unless you turn on showing them",
+        },
+        new("skipLate", "Skip late deliveries", ParameterKind.Boolean)
+        {
+            DefaultValue = "false", Help = "Do not run for payments the relay kept while Cuebot was closed (they still count in totals and the goal)",
+        },
+    ];
+
+    private static EventTriggerType Payment(string type, string name, bool tiered = false) =>
         WebhookFilters.Event(Category, type, name,
-            [new("tier", "Tier name") { Help = "Leave empty for any tier" }, .. WebhookFilters.Amount],
-            (e, s) => WebhookFilters.MatchesAmount(e, s) && WebhookFilters.TextIs(e, s, "tier", "tier"));
+            tiered
+                ? [new("tier", "Tier name") { Help = "Leave empty for any tier; several with commas, e.g. Gold, Silver" }, .. WebhookFilters.Amount, .. Extra]
+                : [.. WebhookFilters.Amount, .. Extra],
+            (e, s) => WebhookFilters.MatchesAmount(e, s) && Visible(e, s) && !(s.GetBool("skipLate") && e.Args.TryGetValue("isReplay", out var r) && r is true)
+                && (!tiered || TierMatches(e, s)));
+
+    private static bool Visible(BotEvent e, ParameterValues s)
+    {
+        var isPublic = !(e.Args.TryGetValue("isPublic", out var p) && p is false);
+        return s["visibility"] switch
+        {
+            PublicOnly => isPublic,
+            PrivateOnly => !isPublic,
+            _ => true,
+        };
+    }
+
+    /// <summary>Empty matches any tier; otherwise one of the comma-separated names, ignoring case and spaces.</summary>
+    internal static bool TierMatches(BotEvent e, ParameterValues s)
+    {
+        static string Norm(string t) => string.Concat(t.Where(c => !char.IsWhiteSpace(c))).ToLowerInvariant();
+        var wanted = s["tier"].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Norm).Where(t => t.Length > 0).ToArray();
+        return wanted.Length == 0 || wanted.Contains(Norm(WebhookFilters.Text(e.Args, "tier")));
+    }
 }
 
 /// <summary>Patreon triggers (Streamer.bot's five plus member updated and post published).</summary>

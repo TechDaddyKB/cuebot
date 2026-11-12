@@ -14,9 +14,12 @@ time (`CryptographicOperations.FixedTimeEquals`), masked on the page and never l
 Every event carries `service` (display name), `user`, `amount` (major units, a double), `currency`,
 `formattedAmount`, `message` and `isTest`, plus the service-specific arguments below (Streamer.bot's names).
 
-**Dedupe.** Each event is remembered (last 1000) by the service's own id where there is one and always by the relay
-delivery id, so a service retry and a relay replay both publish once. Blank ids are ignored (a delivery without an id
-never looks like a duplicate of another one without an id). Local test events are never deduplicated.
+**Dedupe.** Each event is remembered (last 1000, at most 48 hours) by the service's own id where there is one and always
+by the relay delivery id, so a service retry and a relay replay both publish once. The app keeps these ids on disk
+(`webhooks-seen.json`, written before the event is published), so a delivery the own relay replays after Cuebot crashed
+or quit before acknowledging it is still dropped. 48 hours covers the own relay's 24-hour buffer. Blank ids are ignored
+(a delivery without an id never looks like a duplicate of another one without an id). Local test events are never
+deduplicated.
 
 **Test events.** Each service's *Send test event* (and the `webhooks.sendTestEvent(service, kind)` script function)
 publishes a built-in sample locally, marked `isTest`, without verification. Deliveries sent by a service's own test
@@ -25,7 +28,7 @@ Ko-fi's placeholder transaction id); Patreon and Throne test sends carry no test
 
 | Route | Verification | What the user enters |
 | --- | --- | --- |
-| `kofi` | Form field `data` holds JSON; its `verification_token` must equal the saved token | Ko-fi → Settings → API → Webhooks → Advanced → *Verification Token* |
+| `kofi` | Form field `data` holds JSON; its `verification_token` must equal the saved token | https://ko-fi.com/manage/webhooks (Settings → API → Webhooks) → Advanced → *Verification Token* |
 | `patreon` | `X-Patreon-Signature` = hex HMAC-MD5 of the raw body, keyed with the webhook secret | patreon.com/portal → My Webhooks → the webhook's *secret* |
 | `fourthwall` | `X-Fourthwall-Hmac-SHA256` and/or `X-Fourthwall-Hmac-Apps-SHA256` = base64 HMAC-SHA256 of the raw body; accepted when either verifies | Settings → For developers → Webhooks → *webhook secret key* |
 | `shopify` | `X-Shopify-Hmac-Sha256` = base64 HMAC-SHA256 of the raw body | Admin-created webhooks: the key under "Your webhooks will be signed with"; app webhooks: the app's client secret |
@@ -42,6 +45,11 @@ Ko-fi's placeholder transaction id); Patreon and Throne test sends carry no test
 
 ## Ko-fi
 
+Source: Ko-fi's help article "Does Ko-fi have an API or webhook?". Ko-fi sends a POST only when a payment is made:
+there is no cancellation, refund or goal event and no API to read payments back. It retries (same `message_id`) only
+when it gets no 200; the relay always answers 200, so a delivery the shared relay drops while Cuebot is closed is lost
+for good (the own relay buffers 24 h). There is no signature: the only check is the `verification_token` in the body.
+
 `application/x-www-form-urlencoded`, `data=<json>` (a raw JSON body is accepted too). Dedupe on `message_id` only:
 Ko-fi's retries reuse it. Ko-fi's test buttons all send the placeholder `kofi_transaction_id`
 `00000000-1111-2222-3333-444444444444` (with a fresh `message_id` each time), so deliveries with that transaction id
@@ -49,14 +57,29 @@ are marked `isTest` and every test click is published.
 
 | Ko-fi `type` | Event | Arguments |
 | --- | --- | --- |
-| `Donation` | `kofi.donation` | `amount`, `currency`, `from`, `isPublic`, `message`, `messageId`, `timestamp`, `url`, `transactionId`, `kofiType`, `discordUsername` / `discordUserId` (when Ko-fi sends `discord_username` / `discord_userid`) |
-| `Subscription` with `is_first_subscription_payment` | `kofi.subscription` | + `tier` (`tier_name`), `isFirstPayment` |
-| `Subscription` (later payments) | `kofi.resubscription` | same |
-| `Commission` | `kofi.commission` | as donation |
-| `Shop Order` | `kofi.shopOrder` | + `itemCount`, `item0..n` (variation name or link code), `item<n>.code`, `item<n>.quantity` (1 when missing) |
+| `Donation` | `kofi.donation` | `amount`, `currency`, `from`, `isPublic`, `message`, `messageId`, `timestamp`, `url`, `transactionId`, `kofiType`, `isSubscriptionPayment`, `isReplay`, `delaySeconds`, `discordUsername` / `discordUserId` / `discordMention` (when Ko-fi sends `discord_username` / `discord_userid`), `kofiGoal*` |
+| `Subscription` with `is_first_subscription_payment` | `kofi.subscription` | + `tier` (`tier_name`), `isFirstPayment`, `months` (payments Cuebot has seen) |
+| `Subscription` (later payments) | `kofi.resubscription` | same (`months` at least 2) |
+| `Commission` | `kofi.commission` | as donation, + `commissionsOpen` |
+| `Shop Order` | `kofi.shopOrder` | + `itemCount`, `item0..n` (product name from settings, else variation, else `item <code>`), `item<n>.code`, `item<n>.variation`, `item<n>.image`, `item<n>.quantity` (1 when missing) |
 
-Ko-fi asks that supports with `is_public: false` are not shown publicly: the activity feed (and so event speech and
-credits) shows "Someone" and no message for them; the trigger arguments keep the real values.
+**Private supports.** With `is_public: false` (a payload without the field counts as public) `user` is "Anonymous",
+`message` and `from` are empty everywhere (triggers, overlays, feed, speech, credits); the real values are only in
+`privateName` / `privateMessage`, plus `privateShown`. The opt-in `KofiOptions.ShowPrivateSupporters` puts them back in
+`user` / `message` (the feed and credits still say "Someone"). `email` and `shipping` are personal data and are never
+arguments: do not flatten the whole payload.
+
+**Late deliveries.** `isReplay` is true when the delivery reaches Cuebot more than `KofiOptions.LateMinutes` (10) after
+the relay received it; the payment triggers' *Skip late deliveries* skips those while the feed, totals and goal count.
+
+**Overlays.** Donations → `tip-latest`; shop orders and commissions (`items: "Commission"`) → `merch-latest`;
+memberships → `subscriber-latest` with `amount` = `months`, `tier` "1000", `tierName`, `price`.
+
+**Kept by Cuebot (`kofi.json`, `KofiTracker`).** Only real, new payments change it (after the duplicate check; tests
+never). The goal (`KofiOptions.Goal`: title, target, start amount, currency filter, which types count) fires
+`kofi.goalReached` once per crossing; members (key: Discord id, else lower-case Ko-fi name) fire
+`kofi.membershipLapsed` once when the last payment is older than `LapseDays` (35), an estimate; commissions form an
+open list. Overlay session data gets `kofi-goal` and `kofi-commissions`.
 
 ## Patreon
 

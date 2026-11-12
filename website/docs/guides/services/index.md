@@ -13,6 +13,7 @@ stored locked (encrypted) on your computer, and never written to the log.
 - [StreamElements](streamelements.md): tip moderation, going live, session data, the chatbot, store, contests,
   giveaways and song requests.
 - [Webhooks](webhooks.md): Ko-fi, Patreon, Throne, Fourthwall, Shopify and your own webhooks.
+- [Ko-fi](ko-fi.md): private supports, the Ko-fi goal, memberships and commissions.
 - [Discord bot](discord-bot.md): your own bot for "I'm live" posts, roles and slash commands.
 - [Subathon timers](subathon-timers.md): a countdown that subs, bits and tips add time to.
 - [Goals](goals.md): a ladder of steps that events add points to.

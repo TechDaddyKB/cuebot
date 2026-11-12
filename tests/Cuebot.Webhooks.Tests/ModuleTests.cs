@@ -25,7 +25,7 @@ public sealed class TriggerTests
     public void Trigger_lists_match_streamerbots_documented_triggers()
     {
         string[] Names(ITriggerProvider p) => p.GetTriggers().Select(t => t.DisplayName).Order().ToArray();
-        Assert.Equal(["Commission", "Donation", "Resubscription", "Shop Order", "Subscription"], Names(new KofiTriggers()));
+        Assert.Equal(["Commission", "Donation", "Goal Reached", "Membership Lapsed", "Resubscription", "Shop Order", "Subscription"], Names(new KofiTriggers()));
         Assert.Equal(["Follow Created", "Follow Deleted", "Member Updated", "Pledge Created", "Pledge Deleted", "Pledge Updated", "Post Published"],
             Names(new PatreonTriggers()));
         Assert.Equal(["Order Created", "Order Paid"], Names(new ShopifyTriggers()));
@@ -37,7 +37,7 @@ public sealed class TriggerTests
 
         foreach (var trigger in Providers.SelectMany(p => p.GetTriggers()))
             Assert.Equal(trigger.TypeId, Assert.Single(trigger.EventTypes));
-        Assert.Equal(31, Providers.SelectMany(p => p.GetTriggers()).Select(t => t.TypeId).Distinct().Count());
+        Assert.Equal(33, Providers.SelectMany(p => p.GetTriggers()).Select(t => t.TypeId).Distinct().Count());
     }
 
     private static BotEvent Money(string type, double amount, string currency, bool isTest = false, string tier = "") =>

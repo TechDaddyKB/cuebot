@@ -12,7 +12,6 @@ namespace Cuebot.Webhooks;
 public abstract class WebhookServiceBase : IWebhookHandler
 {
     private const int RecentSize = 50;
-    private readonly RecentIds _seen = new();
     private readonly LinkedList<WebhookRecord> _recent = new();
     private readonly object _gate = new();
 
@@ -22,6 +21,12 @@ public abstract class WebhookServiceBase : IWebhookHandler
         Bus = bus;
         Log = log;
     }
+
+    /// <summary>
+    /// Ids already handled. The app shares one store between the services and keeps it on disk (webhooks-seen.json, see
+    /// <see cref="WebhooksServiceCollectionExtensions.AddWebhooks"/>); by default it is in memory only.
+    /// </summary>
+    internal RecentIds Seen { get; set; } = new();
 
     private protected JsonFile<WebhooksSettings> SettingsFile { get; }
     private protected EventBus Bus { get; }
@@ -134,6 +139,12 @@ public abstract class WebhookServiceBase : IWebhookHandler
     /// <summary>The "last events" line for events the activity feed does not show.</summary>
     private protected virtual string Summarize(BotEvent e) => e.Type;
 
+    /// <summary>
+    /// Called once per new event (after the duplicate check, before it is published; also for local test events) so a
+    /// service can add arguments or keep totals. Returns follow-up events to publish after it (e.g. a goal reached).
+    /// </summary>
+    private protected virtual IReadOnlyList<BotEvent> BeforePublish(WebhookEvent e) => [];
+
     /// <summary>Name of the secret in messages ("verification token", "webhook secret"...).</summary>
     protected virtual string SecretName => "webhook secret";
 
@@ -141,7 +152,8 @@ public abstract class WebhookServiceBase : IWebhookHandler
     {
         e.Args["service"] = DisplayName;
         e.Args.TryAdd("isTest", false);
-        if (dedupe && !_seen.AddAll(e.Keys)) return false;
+        if (dedupe && !Seen.AddAll(e.Keys)) return false;
+        var followUps = BeforePublish(e);
         var bot = new BotEvent(e.Type, e.Args);
         var summary = WebhookChatAdapter.Describe(bot)?.Title ?? Summarize(bot);
         var isTest = e.Args["isTest"] is true;
@@ -151,6 +163,7 @@ public abstract class WebhookServiceBase : IWebhookHandler
             while (_recent.Count > RecentSize) _recent.RemoveLast();
         }
         Bus.Publish(bot);
+        foreach (var next in followUps) Bus.Publish(next);
         Changed?.Invoke();
         return true;
     }

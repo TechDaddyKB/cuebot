@@ -22,7 +22,7 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
         Services =
         [
             new WebhookCardViewModel(services.Kofi, services.Kofi.Settings, "Verification token",
-                "On ko-fi.com open Settings → API → Webhooks, paste the Cuebot webhook URL for Ko-fi, then open Advanced and copy the Verification Token here. Donations, subscriptions, commissions and shop orders become triggers."),
+                "Open ko-fi.com/manage/webhooks (Settings → API → Webhooks), paste the Cuebot webhook URL for Ko-fi, then open Advanced and copy the Verification Token here. Ko-fi's \"Send test\" buttons there arrive as test events. Donations, memberships, commissions and shop orders become triggers. Ko-fi sends payments only and never re-sends one that was dropped: with the shared relay, payments made while Cuebot is closed are lost for totals and goals (your own relay keeps them for 24 hours)."),
             new WebhookCardViewModel(services.Patreon, services.Patreon.Settings, "Webhook secret",
                 "On patreon.com/portal open My Webhooks, add the Cuebot URL for Patreon, tick the member and pledge events (and posts:publish if you like) and copy the webhook's secret here."),
             new WebhookCardViewModel(services.Fourthwall, services.Fourthwall.Settings, "Webhook secret",
@@ -34,6 +34,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
                 canGenerate: true, secretOptional: "No URL token — Throne's signature alone is checked"),
         ];
         Custom = new CustomHooksViewModel(services.Custom);
+        Kofi = new KofiOptionsViewModel(services.Kofi);
+        services.Kofi.Tracker.Changed += () => OnUi(Kofi.Refresh);
         foreach (var service in services.All) service.Changed += () => OnUi(Refresh);
         RefreshRecent();
     }
@@ -41,6 +43,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
     public IReadOnlyList<WebhookCardViewModel> Services { get; }
 
     public CustomHooksViewModel Custom { get; }
+
+    public KofiOptionsViewModel Kofi { get; }
 
     /// <summary>Newest first, all services.</summary>
     public ObservableCollection<WebhookRecordViewModel> RecentEvents { get; } = [];
@@ -264,4 +268,166 @@ public sealed partial class CustomHookViewModel(CustomHooksViewModel owner, Cust
 
     [RelayCommand]
     private void Remove() => owner.Remove(hook);
+}
+
+/// <summary>Ko-fi extras: private supporters, the goal Cuebot keeps, product names, membership lapse days.</summary>
+public sealed partial class KofiOptionsViewModel : ObservableObject
+{
+    private readonly KofiWebhookHandler _kofi;
+
+    public KofiOptionsViewModel(KofiWebhookHandler kofi)
+    {
+        _kofi = kofi;
+        _productsText = FormatProducts(kofi.Options.Products);
+    }
+
+    private KofiOptions Options => _kofi.Options;
+
+    private void Save() => _kofi.SaveSettings();
+
+    /// <summary>Shows private supporters' names and messages in triggers and overlays (off: "Anonymous", no message).</summary>
+    public bool ShowPrivateSupporters
+    {
+        get => Options.ShowPrivateSupporters;
+        set
+        {
+            if (value == Options.ShowPrivateSupporters) return;
+            Options.ShowPrivateSupporters = value;
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    public string GoalTitle
+    {
+        get => Options.Goal.Title;
+        set
+        {
+            value ??= "";
+            if (value == Options.Goal.Title) return;
+            _kofi.Tracker.SetGoal(title: value);
+            OnPropertyChanged();
+        }
+    }
+
+    public decimal? GoalTarget
+    {
+        get => (decimal)Options.Goal.Target;
+        set
+        {
+            _kofi.Tracker.SetGoal(target: (double)(value ?? 0));
+            OnPropertyChanged();
+        }
+    }
+
+    public decimal? GoalStart
+    {
+        get => (decimal)Options.Goal.StartAmount;
+        set
+        {
+            _kofi.Tracker.SetGoal(startAmount: (double)(value ?? 0));
+            OnPropertyChanged();
+        }
+    }
+
+    public string GoalCurrency
+    {
+        get => Options.Goal.Currency;
+        set
+        {
+            value ??= "";
+            if (value.Trim().Equals(Options.Goal.Currency, StringComparison.OrdinalIgnoreCase)) return;
+            _kofi.Tracker.SetGoal(currency: value);
+            OnPropertyChanged();
+        }
+    }
+
+    public bool CountDonations { get => Options.Goal.CountDonations; set => SetCount(value, v => Options.Goal.CountDonations = v); }
+    public bool CountMemberships { get => Options.Goal.CountMemberships; set => SetCount(value, v => Options.Goal.CountMemberships = v); }
+    public bool CountCommissions { get => Options.Goal.CountCommissions; set => SetCount(value, v => Options.Goal.CountCommissions = v); }
+    public bool CountShopOrders { get => Options.Goal.CountShopOrders; set => SetCount(value, v => Options.Goal.CountShopOrders = v); }
+
+    private void SetCount(bool value, Action<bool> set, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        set(value);
+        Save();
+        OnPropertyChanged(name);
+    }
+
+    public decimal? LapseDays
+    {
+        get => Options.LapseDays;
+        set
+        {
+            Options.LapseDays = Math.Max(1, (int)(value ?? 35));
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>"code = name | image URL" per line.</summary>
+    [ObservableProperty] private string _productsText;
+
+    partial void OnProductsTextChanged(string value)
+    {
+        Options.Products = ParseProducts(value ?? "");
+        Save();
+    }
+
+    public string GoalProgress
+    {
+        get
+        {
+            var g = _kofi.Tracker.Goal();
+            var money = (double v) => g.Currency.Length > 0 ? $"{v:0.##} {g.Currency}" : $"{v:0.##}";
+            return g.Target > 0
+                ? $"{money(g.Current)} of {money(g.Target)} ({g.Percent}%){(g.Reached ? " — reached" : "")}; {money(g.Raised)} counted by Cuebot"
+                : $"No target set; {money(g.Raised)} counted by Cuebot";
+        }
+    }
+
+    public string Summary
+    {
+        get
+        {
+            var members = _kofi.Tracker.Members();
+            var lapsed = members.Count(m => m.LapseReported);
+            return $"{members.Count} member(s) seen ({lapsed} probably lapsed), {_kofi.Tracker.Commissions().Count} open commission(s).";
+        }
+    }
+
+    internal void Refresh()
+    {
+        OnPropertyChanged(nameof(GoalProgress));
+        OnPropertyChanged(nameof(Summary));
+    }
+
+    [RelayCommand]
+    private void ResetGoal()
+    {
+        _kofi.Tracker.ResetGoal();
+        Refresh();
+    }
+
+    internal static string FormatProducts(IEnumerable<KofiProduct> products) =>
+        string.Join("\n", products.Select(p => p.ImageUrl.Length > 0 ? $"{p.Code} = {p.Name} | {p.ImageUrl}" : $"{p.Code} = {p.Name}"));
+
+    internal static List<KofiProduct> ParseProducts(string text) =>
+    [
+        .. text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line =>
+            {
+                var eq = line.IndexOf('=', StringComparison.Ordinal);
+                if (eq <= 0) return null;
+                var rest = line[(eq + 1)..];
+                var bar = rest.IndexOf('|', StringComparison.Ordinal);
+                return new KofiProduct
+                {
+                    Code = line[..eq].Trim(),
+                    Name = (bar >= 0 ? rest[..bar] : rest).Trim(),
+                    ImageUrl = bar >= 0 ? rest[(bar + 1)..].Trim() : "",
+                };
+            })
+            .OfType<KofiProduct>(),
+    ];
 }

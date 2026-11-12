@@ -279,16 +279,35 @@ internal static class Money
     }
 }
 
-/// <summary>Remembers the last few hundred event ids so a re-sent webhook is published once.</summary>
-internal sealed class RecentIds(int capacity = 1000)
+/// <summary>
+/// Remembers the last event ids (at most <c>capacity</c>, none older than <see cref="MaxAge"/>) so a re-sent webhook is
+/// published once. With a <c>path</c> the ids are also kept on disk (webhooks-seen.json) and written before the event is
+/// published, so a delivery the relay replays after Cuebot crashed or quit (before it could acknowledge it) is not
+/// counted twice in totals, goals and timers.
+/// </summary>
+internal sealed class RecentIds
 {
+    /// <summary>Longer than the own relay's 24-hour buffer, so every replay it can make is still recognised.</summary>
+    public static readonly TimeSpan MaxAge = TimeSpan.FromHours(48);
+
     private readonly HashSet<string> _set = new(StringComparer.Ordinal);
-    private readonly Queue<string> _order = new();
+    private readonly Queue<(string Key, DateTimeOffset Time)> _order = new();
     private readonly object _gate = new();
+    private readonly int _capacity;
+    private readonly string? _path;
+    private readonly TimeProvider _time;
+
+    public RecentIds(int capacity = 1000, string? path = null, TimeProvider? time = null)
+    {
+        _capacity = capacity;
+        _path = path;
+        _time = time ?? TimeProvider.System;
+        if (_path is not null) Load();
+    }
 
     /// <summary>
-    /// True when none of the (non-empty) keys was seen before; then all of them are remembered. An event without
-    /// keys is always new.
+    /// True when none of the (non-empty) keys was seen before; then all of them are remembered (and saved). An event
+    /// without keys is always new.
     /// </summary>
     public bool AddAll(IReadOnlyList<string> keys)
     {
@@ -297,12 +316,14 @@ internal sealed class RecentIds(int capacity = 1000)
         lock (_gate)
         {
             if (real.Any(_set.Contains)) return false;
+            var now = _time.GetUtcNow();
             foreach (var key in real)
             {
                 _set.Add(key);
-                _order.Enqueue(key);
+                _order.Enqueue((key, now));
             }
-            while (_order.Count > capacity) _set.Remove(_order.Dequeue());
+            Trim(now);
+            Save();
             return true;
         }
     }
@@ -310,5 +331,46 @@ internal sealed class RecentIds(int capacity = 1000)
     public bool Contains(string key)
     {
         lock (_gate) return _set.Contains(key);
+    }
+
+    private void Trim(DateTimeOffset now)
+    {
+        while (_order.Count > 0 && (_order.Count > _capacity || now - _order.Peek().Time > MaxAge)) _set.Remove(_order.Dequeue().Key);
+    }
+
+    private sealed record Entry(string Key, DateTimeOffset Time);
+
+    private void Load()
+    {
+        try
+        {
+            if (!File.Exists(_path)) return;
+            var entries = JsonSerializer.Deserialize<List<Entry>>(File.ReadAllText(_path!)) ?? [];
+            foreach (var e in entries.Where(e => !string.IsNullOrEmpty(e.Key)).OrderBy(e => e.Time))
+            {
+                if (_set.Add(e.Key)) _order.Enqueue((e.Key, e.Time));
+            }
+            Trim(_time.GetUtcNow());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            // A broken file only means a replay could be counted again; start empty.
+        }
+    }
+
+    /// <summary>Written synchronously (atomic rename): the file is small and must be on disk before the event goes out.</summary>
+    private void Save()
+    {
+        if (_path is null) return;
+        try
+        {
+            var temp = _path + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(_order.Select(e => new Entry(e.Key, e.Time))));
+            File.Move(temp, _path, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Not fatal: the in-memory set still drops replays until Cuebot restarts.
+        }
     }
 }

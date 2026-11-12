@@ -8,6 +8,14 @@ public static class KofiEventTypes
     public const string Resubscription = "kofi.resubscription";
     public const string Commission = "kofi.commission";
     public const string ShopOrder = "kofi.shopOrder";
+
+    /// <summary>Cuebot's Ko-fi goal reached its target (counted from webhooks; see <see cref="Services.KofiTracker"/>).</summary>
+    public const string GoalReached = "kofi.goalReached";
+
+    /// <summary>
+    /// A member's last payment is older than the lapse setting. An estimate: Ko-fi sends no cancellation, only payments.
+    /// </summary>
+    public const string MembershipLapsed = "kofi.membershipLapsed";
 }
 
 /// <summary>Bot events published for Patreon webhooks.</summary>

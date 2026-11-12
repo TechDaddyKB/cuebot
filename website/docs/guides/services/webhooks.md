@@ -25,6 +25,11 @@ The shared relay passes each message straight to your Cuebot, locked so that onl
 nothing. A message that arrives while Cuebot is closed is dropped, so you never get a flood of old alerts at the start
 of a stream. If you want missed messages delivered later, set up your own relay instead.
 
+!!! warning "Dropped means gone for Ko-fi"
+    Ko-fi does not send a payment again, and has no way to look it up later. A Ko-fi payment made while Cuebot is
+    closed is missing from your totals, goals, subathon timers and credits for good. Your own relay keeps it for 24
+    hours instead. See [Ko-fi](ko-fi.md).
+
 ## Or: your own relay
 
 Your own relay is a tiny program that runs on **your own free Cloudflare account**. The services send their messages to the
@@ -56,6 +61,9 @@ The full steps are in the
 
 On the **Services** tab, tick **Enabled** for the service, enter the secret or token it gives you (or use **Generate
 token** where there is one), and click **Send test event**.
+
+Ko-fi has its own page, with the setup steps, private supports, the Ko-fi goal, memberships and commissions:
+[Ko-fi](ko-fi.md).
 
 !!! warning "Partly checked"
     The relay was tried for real: a message sent to it reached Cuebot. Each service's own example messages were

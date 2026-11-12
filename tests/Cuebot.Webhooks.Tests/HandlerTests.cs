@@ -244,7 +244,7 @@ public sealed class HandlerTests : IDisposable
     {
         var kofi = new KofiWebhookHandler(_h.Settings, _h.Bus, _h.Log);
         Assert.False(kofi.IsConfigured);
-        Assert.Equal(["donation", "subscription", "resubscription", "commission", "shopOrder"], kofi.TestEventKinds);
+        Assert.Equal(["donation", "privateDonation", "subscription", "resubscription", "commission", "shopOrder"], kofi.TestEventKinds);
         Assert.True(kofi.SendTestEvent("donation"));
         Assert.True(kofi.SendTestEvent("donation"));
         Assert.False(kofi.SendTestEvent("nope"));

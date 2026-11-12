@@ -37,6 +37,42 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
+      <Border Classes="card" DataContext="{Binding Kofi}" x:DataType="vm:KofiOptionsViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Ko-fi extras" />
+          <CheckBox Content="Show private supporters' names and messages" IsChecked="{Binding ShowPrivateSupporters}"
+                    ToolTip.Tip="Off (best): when a supporter ticks 'make this private' on Ko-fi, triggers and overlays get &quot;Anonymous&quot; and no message. Their real name and message are only in %privateName% and %privateMessage%. The activity feed and credits always hide them." />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Ko-fi goal: Ko-fi has no way for apps to read the goal on your page, so Cuebot counts it from the payments it receives. Type what your Ko-fi goal already shows as the start amount. Test events never count." />
+          <Grid ColumnDefinitions="*,8,140,8,140,8,90">
+            <TextBox Text="{Binding GoalTitle}" PlaceholderText="Goal title" ToolTip.Tip="The goal's name, shown by goal widgets and in %kofiGoalTitle%." />
+            <NumericUpDown Grid.Column="2" Value="{Binding GoalTarget}" Minimum="0" FormatString="0.##" ToolTip.Tip="The goal's target. 0 means no goal." />
+            <NumericUpDown Grid.Column="4" Value="{Binding GoalStart}" Minimum="0" FormatString="0.##" ToolTip.Tip="What was raised before Cuebot started counting (copy it from your Ko-fi goal)." />
+            <TextBox Grid.Column="6" Text="{Binding GoalCurrency}" PlaceholderText="USD" ToolTip.Tip="Only payments in this currency count, because Cuebot does not convert. Leave empty to count every currency." />
+          </Grid>
+          <WrapPanel>
+            <CheckBox Content="Donations" IsChecked="{Binding CountDonations}" Margin="0,0,12,0" ToolTip.Tip="Donations count toward the goal." />
+            <CheckBox Content="Memberships" IsChecked="{Binding CountMemberships}" Margin="0,0,12,0" ToolTip.Tip="Membership payments count toward the goal." />
+            <CheckBox Content="Commissions" IsChecked="{Binding CountCommissions}" Margin="0,0,12,0" ToolTip.Tip="Commissions count toward the goal." />
+            <CheckBox Content="Shop orders" IsChecked="{Binding CountShopOrders}" ToolTip.Tip="Shop orders count toward the goal." />
+          </WrapPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Classes="muted" Text="{Binding GoalProgress}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <Button Content="Reset goal" Command="{Binding ResetGoalCommand}" ToolTip.Tip="Starts counting again from the start amount." />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Product names: Ko-fi names a product without variations only by its code (the end of its link). One per line: code = name | picture link (the picture is optional)." />
+          <TextBox Text="{Binding ProductsText}" AcceptsReturn="True" MinHeight="60" PlaceholderText="1a2b3c4d5e = Sticker pack | https://example.com/stickers.png"
+                   ToolTip.Tip="Gives shop items a name (and picture) in %item0%, %item0.image%, alerts and the feed." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Membership probably lapsed after (days)" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding LapseDays}" Minimum="1" Maximum="400" FormatString="0" Width="120"
+                           ToolTip.Tip="Ko-fi never says when a membership ends. When a member's last payment is older than this, the Membership Lapsed trigger runs once. It is an estimate." />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Summary}" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card" DataContext="{Binding Custom}" x:DataType="vm:CustomHooksViewModel">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Custom webhooks" />

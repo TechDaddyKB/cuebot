@@ -174,6 +174,7 @@ nav:
           - Streamlabs: guides/services/streamlabs.md
           - StreamElements: guides/services/streamelements.md
           - Webhooks (Ko-fi, Patreon…): guides/services/webhooks.md
+          - Ko-fi: guides/services/ko-fi.md
           - Discord bot: guides/services/discord-bot.md
           - Subathon timers: guides/services/subathon-timers.md
           - Goals: guides/services/goals.md

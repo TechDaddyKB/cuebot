@@ -15,13 +15,19 @@
 
   function num(value) { return Number(value) || 0; }
 
+  // The Ko-fi goal Cuebot keeps (Webhooks page): its own title, target, progress and currency.
+  function kofi() { return settings.type === "kofi" ? (data["kofi-goal"] || { current: 0, target: 0 }) : null; }
+
   function useAmount() {
+    if (kofi()) return true;
     if (settings.measure === "amount") return true;
     if (settings.measure === "count") return false;
     return !!AMOUNT[settings.type];
   }
 
   function progress() {
+    var k = kofi();
+    if (k) return num(k.current) + num(settings.start);
     var types = settings.type === "revenue" ? REVENUE : [settings.type || "follower"];
     var field = useAmount() ? "amount" : "count";
     var period = settings.period || "session";
@@ -32,8 +38,9 @@
   }
 
   function format(value) {
-    if (useAmount() && MONEY[settings.type]) {
-      try { return new Intl.NumberFormat(undefined, { style: "currency", currency: currency }).format(value); }
+    if (useAmount() && (MONEY[settings.type] || kofi())) {
+      var code = (kofi() && kofi().currency) || currency;
+      try { return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(value); }
       catch (err) { return String(value); }
     }
     return String(Math.round(value * 100) / 100);
@@ -41,11 +48,12 @@
 
   function render() {
     if (!root) return;
-    var goal = Math.max(1, num(settings.goal) || 100);
+    var k = kofi();
+    var goal = Math.max(1, (k && num(k.target)) || num(settings.goal) || 100);
     var value = progress();
     var percent = Math.min(100, Math.floor(value / goal * 100));
     var done = value >= goal;
-    root.querySelector(".title").textContent = settings.title || "";
+    root.querySelector(".title").textContent = settings.title || (k && k.title) || "";
     root.querySelector(".fill").style.width = Math.min(100, value / goal * 100) + "%";
     root.classList.toggle("done", done);
     var text;
