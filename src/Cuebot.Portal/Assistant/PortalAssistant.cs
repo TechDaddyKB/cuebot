@@ -5,6 +5,7 @@ using Cuebot.Core.Commands;
 using Cuebot.Core.Logging;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
+using Cuebot.Portal.Rewards;
 using Cuebot.Portal.Uploads;
 using Cuebot.Server.Api;
 using Cuebot.Server.Mcp;
@@ -27,7 +28,7 @@ namespace Cuebot.Portal.Assistant;
 /// </summary>
 public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? assistant, Func<Guid, JsonObject, Task<JsonObject>> api,
     PortalMediaStore? media = null, PortalChanges? changes = null, ProfileService? profile = null, CommandStore? commands = null,
-    AppLog? log = null, TimeProvider? time = null)
+    AppLog? log = null, TimeProvider? time = null, RewardArea? rewards = null)
 {
     private const string LogSource = "Mod portal";
     private readonly TimeProvider _time = time ?? TimeProvider.System;
@@ -205,6 +206,24 @@ public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? 
             new("list_uploads", "List uploads", "Uploaded sounds, pictures and videos a step can use, as \"upload:<id>\".",
                 Schema([], ("kind", Str("Sound, Image or Video"))), read,
                 async (args, ct) => Uploads(await Op("uploads.list")(args, ct).ConfigureAwait(false), Str(args, "kind"))),
+            new("list_rewards", "List rewards",
+                "The channel point rewards on Twitch and Kick: per platform whether the streamer is signed in, how many of the maximum are used, "
+                + "the title and description length limits, and each reward (id, title, description, cost, color, enabled, paused, userInput, "
+                + "skipQueue, maxPerStream, maxPerUserPerStream, cooldownSeconds, manageable). manageable false: made outside Cuebot, read-only.",
+                Schema([]), read, Op("rewards.list")),
+            new("save_reward", "Save reward",
+                "Creates (no id) or changes (with id) a channel point reward on \"twitch\" or \"kick\": {\"id\"?, \"title\", \"description\", "
+                + "\"cost\", \"color\" (#RRGGBB), \"enabled\", \"paused\", \"userInput\", \"skipQueue\", and on Twitch only \"maxPerStream\", "
+                + "\"maxPerUserPerStream\", \"cooldownSeconds\" (0 = off)}. Send every field when changing one (start from list_rewards). Answers live or pending.",
+                Schema(["platform", "reward"], ("platform", Str("twitch or kick")),
+                    ("reward", new JsonObject { ["type"] = "object", ["description"] = "The whole reward" })), write,
+                Op("rewards.save", a => new JsonObject { ["platform"] = Str(a, "platform"), ["reward"] = a["reward"]?.DeepClone() })),
+            new("delete_reward", "Delete reward", "Deletes a channel point reward (the mod is asked first).",
+                Schema(["platform", "id"], ("platform", Str("twitch or kick")), ("id", Str("Reward id from list_rewards"))), destructive,
+                Op("rewards.delete", a => new JsonObject { ["platform"] = Str(a, "platform"), ["id"] = Str(a, "id") }))
+            {
+                Confirmation = a => $"Delete the {RewardName(a)}",
+            },
             new("my_changes", "My changes", "The mod's recent changes and whether each is live, waiting for approval or rejected.",
                 Schema([]), read, Op("changes.mine", shape: a => new JsonObject { ["changes"] = new JsonArray([.. (a["changes"] as JsonArray ?? []).TakeLast(20).Select(c => c?.DeepClone())]) })),
         ];
@@ -213,6 +232,13 @@ public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? 
     private string ActionName(JsonObject args) =>
         Guid.TryParse(Str(args, "id"), out var id) && profile?.Snapshot.Actions.FirstOrDefault(a => a.Id == id) is { } action
             ? $"\"{action.Name}\"" : Str(args, "id");
+
+    private string RewardName(JsonObject args)
+    {
+        var platform = rewards?.Platform(Str(args, "platform"));
+        var reward = platform?.Cached.FirstOrDefault(r => r.Id == Str(args, "id"));
+        return reward is null ? $"{Str(args, "platform")} reward {Str(args, "id")}" : $"{platform!.Name} reward \"{reward.Title}\"";
+    }
 
     private string CommandName(JsonObject args) =>
         Guid.TryParse(Str(args, "id"), out var id) && commands?.Get(id) is { } command ? $"\"{command.Name}\"" : Str(args, "id");

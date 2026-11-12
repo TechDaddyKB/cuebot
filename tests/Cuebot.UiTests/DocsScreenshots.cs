@@ -101,7 +101,7 @@ public sealed class DocsScreenshots : IAsyncDisposable
                  {
                      ("Settings", "Profiles", "settings-profiles"), ("Settings", "Backups", "settings-backups"), ("Settings", "About", "settings-about"),
                      ("Support", "Updates", "support-updates"), ("Stream apps", "VTuber apps", "stream-apps-vtuber"),
-                     ("Apps & devices", "Discord bot", "apps-devices-discord"), ("Twitch", "Rewards", "twitch-rewards"),
+                     ("Apps & devices", "Discord bot", "apps-devices-discord"), ("Twitch", "Rewards", "twitch-rewards"), ("Twitch", "Power-ups", "twitch-power-ups"),
                      ("Twitch", "Polls & predictions", "twitch-polls"),
                      ("Twitch", "Channel", "twitch-channel"), ("Twitch", "Moderation", "twitch-moderation"), ("Twitch", "Settings", "twitch-settings"), ("Input", "Game controllers", "input-controllers"),
                      ("Webhooks", "Relay", "webhooks-relay"), ("History", "Trigger viewer", "history-trigger-viewer"),

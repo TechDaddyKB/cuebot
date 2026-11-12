@@ -120,6 +120,30 @@ public sealed class RewardsGroupsSevenTvTests : IAsyncLifetime
     // ---- rewards ----
 
     [Fact]
+    public async Task The_portal_adapter_lists_rewards_and_remembers_the_ones_Cuebot_made()
+    {
+        var rewards = new KickChannelRewards(_service);
+        Assert.Equal(50, rewards.Rules.MaxRewards);
+        var listed = await rewards.ListAsync();
+        Assert.Equal(["Hydrate", "Song request"], listed.Select(r => r.Title));
+        Assert.All(listed, r => Assert.Null(r.Manageable));   // Kick does not say who made a reward
+
+        var created = await rewards.CreateAsync(new Cuebot.Core.Rewards.ChannelReward("", "Created", "", 42, "", true, true, false, false, 0, 0, 0, null));
+        Assert.True(created.Manageable);
+        Assert.Contains("01NEW", _settings.Value.CreatedRewardIds);
+        var post = Body(_http.Requests.Last(r => r.Method == HttpMethod.Post && r.Path == "/public/v1/channels/rewards"));
+        Assert.False(post.TryGetProperty("is_paused", out _));   // Kick creates rewards unpaused
+
+        // A reward made on kick.com: Kick refuses the change.
+        var refused = await Assert.ThrowsAsync<KickApiException>(() => rewards.UpdateAsync(listed[0] with { Cost = 5 }));
+        Assert.Equal(403, refused.Status);
+
+        _settings.Value.CreatedRewardIds.Add("01REWARDA");
+        await rewards.DeleteAsync("01REWARDA");
+        Assert.DoesNotContain("01REWARDA", _settings.Value.CreatedRewardIds);
+    }
+
+    [Fact]
     public void Broadcaster_scopes_include_reward_management()
     {
         Assert.Contains("channel:rewards:read", KickScopes.Broadcaster);

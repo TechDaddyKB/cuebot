@@ -427,6 +427,8 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         if (Settings.Scopes.Contains(TwitchScopes.ReadHypeTrain))
             await SeedAsync("hype train", async () =>
                 _router.SeedHypeTrain((await Api.GetHypeTrainStatusAsync(ct).ConfigureAwait(false)).Current?.Level ?? 0)).ConfigureAwait(false);
+        if (Settings.Scopes.Contains(TwitchScopes.ReadRedemptions) || Settings.Scopes.Contains(TwitchScopes.ManageRedemptions))
+            await SeedAsync("channel point rewards", () => Api.GetRewardsAsync(ct)).ConfigureAwait(false);
         if (Settings.Scopes.Contains(TwitchScopes.ReadBits))
             await SeedAsync("custom power-ups", async () =>
                 CustomPowerUpTitles = (await Api.GetCustomPowerUpsAsync(ct).ConfigureAwait(false)).Select(p => p.Title).ToArray()).ConfigureAwait(false);

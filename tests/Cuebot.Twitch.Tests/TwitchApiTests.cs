@@ -43,12 +43,32 @@ public sealed class TwitchApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Custom_power_ups_carry_their_limits_and_cooldown()
+    {
+        _h.Settings.Value.Scopes = [TwitchScopes.ReadBits];
+        _h.On("GET /helix/bits/custom_power_ups", """
+            {"data":[{"id":"p1","title":"Confetti","prompt":"","bits":100,"background_color":"#9146FF","is_enabled":true,"is_paused":false,
+              "is_in_stock":true,"is_user_input_required":false,"image":null,"default_image":{"url_4x":"d.png"},
+              "max_per_stream_setting":{"is_enabled":true,"max_per_stream":5},
+              "max_per_user_per_stream_setting":{"is_enabled":false,"max_per_user_per_stream":3},
+              "global_cooldown_setting":{"is_enabled":true,"global_cooldown_seconds":120},
+              "redemptions_redeemed_current_stream":null,"cooldown_expires_at":null}]}
+            """);
+
+        var p = Assert.Single(await _h.Api.GetCustomPowerUpsAsync());
+        Assert.Equal(("Confetti", 100, "d.png", "#9146FF"), (p.Title, p.Bits, p.ImageUrl, p.BackgroundColor));
+        Assert.Equal((5, 0, 120), (p.MaxPerStream, p.MaxPerUserPerStream, p.GlobalCooldownSeconds));   // a limit that is off reads 0
+        Assert.Null(p.RedeemedThisStream);
+    }
+
+    [Fact]
     public async Task Rewards_are_readable_with_either_redemption_scope()
     {
         _h.Settings.Value.Scopes = [TwitchScopes.ReadRedemptions];
         _h.On("GET /helix/channel_points/custom_rewards", """{"data":[{"id":"r1","title":"T","cost":1}]}""");
 
         var rewards = await _h.Api.GetRewardsAsync();
+        Assert.Equal(["T"], _h.Api.RewardTitles);   // offered in the Channel point reward trigger
 
         Assert.False(Assert.Single(rewards).IsManageable);
         Assert.Single(_h.Http.Requests); // no "only manageable" query without the manage scope

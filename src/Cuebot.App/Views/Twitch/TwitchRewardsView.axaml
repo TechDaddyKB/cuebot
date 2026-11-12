@@ -11,9 +11,11 @@
         <Border Classes="card" VerticalAlignment="Top">
           <DockPanel>
             <TextBlock DockPanel.Dock="Top" Classes="h2" Text="Channel point rewards" />
+            <TextBlock DockPanel.Dock="Top" Name="UsedText" Classes="hint" Text="{Binding UsedText}" Margin="0,0,0,6"
+                       ToolTip.Tip="Twitch allows 50 channel point rewards per channel, counting enabled and disabled ones and the ones made on the Twitch website." />
             <WrapPanel DockPanel.Dock="Bottom" Classes="actions" Margin="0,8,0,0">
               <Button Content="Load from Twitch" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}" ToolTip.Tip="Fetches your channel point rewards from Twitch and refreshes this list." />
-              <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" ToolTip.Tip="Starts a new channel point reward. It is only created on Twitch when you press Save to Twitch." />
+              <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" IsEnabled="{Binding CanAdd}" ToolTip.Tip="Starts a new channel point reward. It is only created on Twitch when you press Save to Twitch." />
             </WrapPanel>
             <ListBox x:Name="RewardList" Classes="list" ItemsSource="{Binding Rewards}" SelectedItem="{Binding Selected}" MinHeight="240" MaxHeight="560">
               <ListBox.ItemTemplate>

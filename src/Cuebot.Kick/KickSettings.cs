@@ -50,6 +50,9 @@ public sealed class KickSettings
     /// <summary>Optional second account used for sending chat when "use bot" is chosen.</summary>
     public KickAccountTokens Bot { get; set; } = new();
 
+    /// <summary>Ids of the rewards Cuebot created: Kick lets only the app that made a reward change or delete it.</summary>
+    public List<string> CreatedRewardIds { get; set; } = [];
+
     /// <summary>Channel slug (from the official API after sign-in), e.g. "cuebotdev".</summary>
     public string ChannelSlug { get; set; } = "";
 

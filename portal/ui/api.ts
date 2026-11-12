@@ -10,7 +10,7 @@ export type { Answer };
 export type Permission =
   | "RunActions" | "CreateCommands" | "EditCommands" | "DeleteCommands" | "CreateActions" | "EditActions" | "DeleteActions"
   | "AudioLevels" | "StreamControl" | "ShowCritical" | "UploadSounds" | "UploadMedia" | "EditOverlays" | "CreateOverlays"
-  | "ViewActivity" | "ViewLogs" | "UndoOthers" | "UseAssistant";
+  | "ViewActivity" | "ViewLogs" | "UndoOthers" | "UseAssistant" | "ManageRewards";
 
 export interface Me {
   name: string;

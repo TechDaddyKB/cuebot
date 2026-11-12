@@ -35,6 +35,8 @@ public enum PortalPermission
     /// the role allows.
     /// </summary>
     UseAssistant,
+    /// <summary>Create, change and delete Twitch and Kick channel point rewards (ones Cuebot made).</summary>
+    ManageRewards,
 }
 
 /// <summary>Whether a member's changes go live at once.</summary>

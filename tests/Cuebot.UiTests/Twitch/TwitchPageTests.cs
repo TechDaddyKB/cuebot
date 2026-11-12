@@ -15,7 +15,7 @@ namespace Cuebot.UiTests.Twitch;
 /// <summary>The Twitch page: every tab renders in both themes with the real composition root, and the tabs write settings through.</summary>
 public sealed class TwitchPageTests : IAsyncDisposable
 {
-    private static readonly string[] TabNames = ["accounts", "channel", "rewards", "polls", "moderation", "settings"];
+    private static readonly string[] TabNames = ["accounts", "channel", "rewards", "power-ups", "polls", "moderation", "settings"];
 
     private readonly string _dataDir = Directory.CreateTempSubdirectory("cuebot-ui-twitchpage-").FullName;
     private readonly AppHost _host;

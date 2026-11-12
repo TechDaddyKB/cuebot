@@ -159,3 +159,9 @@ details.item > summary { cursor: pointer; }
 .assistant-compose .attached { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
 .assistant-compose .attached li { background: var(--panel-2); border-radius: 999px; padding: .1rem .6rem; font-size: .85rem; }
 label.button { display: inline-flex; align-items: center; cursor: pointer; padding: .45rem .9rem; background: var(--panel-2); border: 1px solid var(--line); border-radius: .5rem; }
+
+/* Rewards */
+.field-row { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+.field-row > .field { flex: 1; min-width: 9rem; }
+.badge.full { color: var(--danger); }
+input[type="color"] { width: 4rem; height: 2.2rem; padding: .1rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--panel-2); }

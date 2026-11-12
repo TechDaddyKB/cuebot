@@ -143,31 +143,54 @@ public sealed partial class TwitchRewardsViewModel(TwitchService twitch) : Twitc
 
     public bool HasSelection => Selected is not null;
 
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(UsedText), nameof(CanAdd))] private int? _savedCount;
+
+    /// <summary>"12 of 50 rewards used": Twitch allows 50 per channel, enabled and disabled, wherever they were made.</summary>
+    public string UsedText => SavedCount is { } n
+        ? $"{n} of {TwitchChannelRewards.MaxRewards} rewards used"
+        : $"Twitch allows up to {TwitchChannelRewards.MaxRewards} rewards";
+
+    public bool CanAdd => (SavedCount ?? 0) + Rewards.Count(r => r.IsNew) < TwitchChannelRewards.MaxRewards;
+
+    private void Count()
+    {
+        SavedCount = Rewards.Count(r => !r.IsNew);
+        OnPropertyChanged(nameof(CanAdd));
+    }
+
     [RelayCommand]
     private Task Reload() => Run(async () =>
     {
         var rewards = await Api.GetRewardsAsync();
         Rewards.Clear();
         foreach (var reward in rewards.OrderBy(r => r.Cost)) Rewards.Add(new TwitchRewardItem(reward, Api.Counters));
-        Info = $"{rewards.Count} rewards; {rewards.Count(r => r.IsManageable)} created by Cuebot can be edited here.";
+        Count();
+        Info = $"{rewards.Count(r => r.IsManageable)} of them were created by Cuebot and can be edited here.";
     });
 
     [RelayCommand]
     private void New()
     {
+        if (!CanAdd)
+        {
+            Error = $"Twitch allows {TwitchChannelRewards.MaxRewards} rewards per channel. Delete one first.";
+            return;
+        }
         var item = new TwitchRewardItem(counters: Api.Counters);
         Rewards.Add(item);
         Selected = item;
+        OnPropertyChanged(nameof(CanAdd));
     }
 
     /// <summary>Ctrl+D: a copy of the selected reward, saved to Twitch with Save.</summary>
     [RelayCommand]
     private void Duplicate()
     {
-        if (Selected is not { } source) return;
+        if (Selected is not { } source || !CanAdd) return;
         var copy = source.Duplicate();
         Rewards.Add(copy);
         Selected = copy;
+        OnPropertyChanged(nameof(CanAdd));
     }
 
     /// <summary>Ctrl+O: turns the selected reward on or off, saving it to Twitch when it is one Cuebot created.</summary>
@@ -186,6 +209,7 @@ public sealed partial class TwitchRewardsViewModel(TwitchService twitch) : Twitc
         if (!item.IsManageable) throw new InvalidOperationException("Twitch only lets an app change rewards it created.");
         var saved = item.IsNew ? await Api.CreateRewardAsync(item.ToUpdate()) : await Api.UpdateRewardAsync(item.Id, item.ToUpdate());
         item.Saved(saved);
+        Count();
     }, "Reward saved.");
 
     [RelayCommand]
@@ -195,5 +219,6 @@ public sealed partial class TwitchRewardsViewModel(TwitchService twitch) : Twitc
         if (!item.IsNew) await Api.DeleteRewardAsync(item.Id);
         Rewards.Remove(item);
         Selected = null;
+        Count();
     }, "Reward deleted.");
 }

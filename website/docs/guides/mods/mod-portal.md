@@ -44,6 +44,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer, or use the *
 | **Assistant** | Ask your Assistant to set things up for them, with only what their role allows (see [The Assistant for mods](#the-assistant-for-mods)) | Lead Mod, Tech Lead (new portals; see below) |
 | **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
 | **Commands** | Add and change chat commands | Everyone |
+| **Rewards** | Create, change and delete Twitch and Kick channel point rewards (see [Rewards](#rewards)) | Lead Mod, Tech Lead |
 | **Sounds** | Play the sounds your actions use, on stream | Everyone |
 | **Overlays** | Move, restyle, show and hide overlay layers, change widget settings and alert designs (see [Overlays](#overlays)) | Lead Mod changes; Tech Lead also adds and removes layers and overlays |
 | **Uploads** | Upload sounds, pictures, GIFs and videos for your actions (see [Uploads](#uploads)) | Everyone uploads sounds; Lead Mod and Tech Lead also pictures and video |
@@ -109,8 +110,25 @@ messages count against your AI account or API key. Two mods' answers are worked 
     no role has it yet: tick **Use the Assistant (on your AI account)** on the roles you want under **Roles**.
 
 !!! tip "Channel point redeems"
-    The Assistant attaches the action to a reward by its exact title. The reward itself must exist on Twitch: create
-    it there (or in Cuebot) first, or tell your mods its exact name.
+    A redeem is a reward plus an action. If the mod's role can manage rewards (see [Rewards](#rewards)), the
+    Assistant creates the reward too. Otherwise it attaches the action to an existing reward by its exact title.
+
+## Rewards
+
+Mods whose role has **Channel point rewards** get a **Rewards** page with your Twitch and Kick channel point rewards.
+They can add a reward, and change or delete the ones Cuebot made. Twitch and Kick only let the app that made a reward
+change it, so rewards you made on their websites are listed but read-only.
+
+- Each platform shows how many rewards are used out of its limit: **50 per channel** on both Twitch and Kick, enabled
+  and disabled together. At 50, mods cannot add more until one is deleted.
+- Twitch rewards also have a cooldown and per-stream limits; Kick rewards do not.
+- Reward changes follow the mod's role like everything else: live, live with a notice, or waiting for your approval.
+  They are listed in **Recent changes by mods** with Undo. Undoing a new reward deletes it; undoing a delete makes the
+  reward again (with a new id, so Cuebot keeps its counters apart).
+- Custom Power-ups (bits) are not in the portal: Twitch does not let apps change them.
+
+New portals give this permission to Lead Mod and Tech Lead. If your portal was set up before, tick **Channel point
+rewards (Twitch, Kick)** on the roles you want under **Roles**.
 
 ## Uploads
 
@@ -185,6 +203,7 @@ Cuebot starts with three roles. You can rename them, change them, or add your ow
 | Overlays | No | Change | Change, add, delete |
 | Their changes | Need your approval | Live, and you get a notice | Live |
 | Assistant | No | Yes | Yes |
+| Channel point rewards | No | Yes | Yes |
 
 The **level** decides which steps a mod may add or change:
 

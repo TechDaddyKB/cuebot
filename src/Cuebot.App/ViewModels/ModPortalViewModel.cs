@@ -282,6 +282,7 @@ public sealed partial class ModRoleViewModel : ObservableObject, IHasId
         PortalPermission.ViewLogs => "See logs and connection status",
         PortalPermission.UndoOthers => "Undo other mods' changes",
         PortalPermission.UseAssistant => "Use the Assistant (on your AI account)",
+        PortalPermission.ManageRewards => "Channel point rewards (Twitch, Kick)",
         _ => p.ToString(),
     };
 }

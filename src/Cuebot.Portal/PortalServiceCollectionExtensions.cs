@@ -13,6 +13,8 @@ using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Overlays;
 using Cuebot.Portal.Relay;
+using Cuebot.Portal.Rewards;
+using Cuebot.Core.Rewards;
 using Cuebot.Portal.SignIn;
 using Cuebot.Portal.Uploads;
 using Cuebot.Speech;
@@ -44,13 +46,16 @@ public static class PortalServiceCollectionExtensions
             var file = sp.GetRequiredService<JsonFile<PortalSettings>>();
             return new PortalDirectory(file.Value, file.ScheduleSave);
         });
+        services.AddSingleton(sp => new RewardArea(sp.GetServices<IChannelRewards>()));
+        services.AddSingleton(sp => new PortalRewards(sp.GetRequiredService<RewardArea>(), sp.GetRequiredService<PortalChanges>(), sp.GetService<AppLog>()));
         services.AddSingleton(sp =>
         {
             var file = sp.GetRequiredService<JsonFile<PortalChangeLog>>();
             IPortalArea[] areas = [new ActionArea(sp.GetRequiredService<ProfileService>()), new CommandArea(sp.GetRequiredService<CommandStore>()),
                 new UploadArea(sp.GetRequiredService<PortalMediaStore>()),
                 new OverlayArea(sp.GetRequiredService<OverlayStore>(), sp.GetRequiredService<ElementStore>(), sp.GetRequiredService<WidgetCodeStore>()),
-                new WidgetArea(sp.GetRequiredService<ElementStore>(), sp.GetRequiredService<WidgetCodeStore>())];
+                new WidgetArea(sp.GetRequiredService<ElementStore>(), sp.GetRequiredService<WidgetCodeStore>()),
+                sp.GetRequiredService<RewardArea>()];
             return new PortalChanges(file.Value, file.ScheduleSave, sp.GetRequiredService<PortalDirectory>(), areas);
         });
         services.AddSingleton<Cuebot.Core.Portal.IPortalApprovals>(sp => new PortalApprovals(sp.GetRequiredService<PortalChanges>()));
@@ -68,11 +73,11 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp => new PortalAssistant(sp.GetRequiredService<PortalDirectory>(), sp.GetService<ScopedAssistant>(),
             (member, request) => sp.GetRequiredService<PortalApi>().HandleAsync(member, request), sp.GetRequiredService<PortalMediaStore>(),
             sp.GetRequiredService<PortalChanges>(), sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(),
-            sp.GetService<AppLog>()));
+            sp.GetService<AppLog>(), rewards: sp.GetRequiredService<RewardArea>()));
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
             sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>(), sp.GetRequiredService<PortalUploads>(),
-            sp.GetRequiredService<PortalOverlays>(), sp.GetRequiredService<PortalAssistant>()));
+            sp.GetRequiredService<PortalOverlays>(), sp.GetRequiredService<PortalAssistant>(), sp.GetRequiredService<PortalRewards>()));
         services.AddSingleton<IPortalIdentityExchange>(sp => new PortalIdentityExchange(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp =>
         {

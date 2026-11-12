@@ -57,11 +57,26 @@ something with it, or **Skip the request queue** to approve it straight away. **
 off or on hold, and **Delete** removes it. Then **Save to Twitch**. Twitch only lets Cuebot change rewards Cuebot made:
 rewards you made on the Twitch website show here as read-only, but they still start your actions.
 
+Twitch allows **50 rewards per channel**, enabled and disabled, wherever they were made. Above the list Cuebot shows how
+many you use ("12 of 50 rewards used"); at 50, **+ Reward** turns off until you delete one.
+
+To run an action when a reward is redeemed, give it the **Channel point reward** trigger and pick the reward's title
+(the list offers your rewards; empty matches every reward). The trigger matches by title, so after renaming a reward,
+pick the new title in its trigger too.
+
 Cuebot also counts how often each reward was used (**Persist counter** keeps the count after a restart, **Persist
 per-user counters** does the same for each viewer's count). A reward's **Group** lets an action switch several rewards
 together. These last settings stay in Cuebot and are not sent to Twitch.
 
 ![Platforms > Twitch > Rewards](../../assets/screens/twitch-rewards.png)
+
+**Power-ups:** your custom Power-ups, the rewards viewers buy with bits. Twitch does not let apps create, change or
+delete them, so you make and edit them on your Twitch dashboard (Viewer Rewards, Power-ups). **Load from Twitch** lists
+them here with their bits price, state, limits and cooldown, and shows how many of Twitch's **50 custom Power-ups** you
+use. The **Custom power-up redemption** trigger starts an action when one is used. Loading them needs the Community
+(bits) permission when you sign in.
+
+![Platforms > Twitch > Power-ups](../../assets/screens/twitch-power-ups.png)
 
 **Polls & predictions:** start a Twitch poll or prediction, end it, and pick the winning outcome. See
 [Polls and predictions](../chat/polls-and-predictions.md).

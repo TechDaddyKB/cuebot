@@ -808,8 +808,15 @@ public sealed partial class TwitchApi
                 Q(("broadcaster_id", BroadcasterId), ("only_manageable_rewards", "true")), null, "Getting rewards", ct).ConfigureAwait(false);
             foreach (var r in mine.Items("data")) manageable.Add(r.Str("id"));
         }
-        return all.Items("data").Select(r => HelixParse.Reward(r, manageable.Contains(r.Str("id")))).ToArray();
+        var rewards = all.Items("data").Select(r => HelixParse.Reward(r, manageable.Contains(r.Str("id")))).ToArray();
+        _rewardTitles = [.. rewards.Select(r => r.Title)];
+        return rewards;
     }
+
+    private IReadOnlyList<string> _rewardTitles = [];
+
+    /// <summary>The channel's reward titles as last read or changed through Cuebot, offered in the reward trigger.</summary>
+    public IReadOnlyList<string> RewardTitles => _rewardTitles;
 
     /// <summary>Finds a reward by id or (case-insensitive) title.</summary>
     public async Task<TwitchReward> FindRewardAsync(string idOrTitle, CancellationToken ct = default)
@@ -828,7 +835,9 @@ public sealed partial class TwitchApi
         if (reward.Cost is null or < 1) throw new ArgumentException("A reward needs a cost of at least 1.");
         var json = await _helix.RequestAsync(HttpMethod.Post, "channel_points/custom_rewards", Q(("broadcaster_id", BroadcasterId)),
             RewardBody(reward), "Creating reward", ct).ConfigureAwait(false);
-        return HelixParse.Reward(json.Items("data").FirstOrDefault(), true);
+        var created = HelixParse.Reward(json.Items("data").FirstOrDefault(), true);
+        _rewardTitles = [.. _rewardTitles.Append(created.Title).Distinct(StringComparer.OrdinalIgnoreCase)];
+        return created;
     }
 
     public async Task<TwitchReward> UpdateRewardAsync(string rewardId, RewardUpdate update, CancellationToken ct = default)
@@ -836,7 +845,9 @@ public sealed partial class TwitchApi
         Require(TwitchScopes.ManageRedemptions);
         var json = await _helix.RequestAsync(HttpMethod.Patch, "channel_points/custom_rewards", Q(("broadcaster_id", BroadcasterId), ("id", rewardId)),
             RewardBody(update), "Updating reward (only rewards created by Cuebot can be changed)", ct).ConfigureAwait(false);
-        return HelixParse.Reward(json.Items("data").FirstOrDefault(), true);
+        var updated = HelixParse.Reward(json.Items("data").FirstOrDefault(), true);
+        if (update.Title is not null) _rewardTitles = [.. _rewardTitles.Append(updated.Title).Distinct(StringComparer.OrdinalIgnoreCase)];
+        return updated;
     }
 
     public Task DeleteRewardAsync(string rewardId, CancellationToken ct = default)

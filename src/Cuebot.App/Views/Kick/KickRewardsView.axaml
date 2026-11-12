@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Kick"
+             x:Class="Cuebot.App.Views.Kick.KickRewardsView"
+             x:DataType="vm:KickRewardsEditorViewModel">
+  <StackPanel Spacing="8">
+    <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <StackPanel Spacing="12">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Name="UsedText" Classes="hint" Text="{Binding UsedText}" Margin="0,0,0,6"
+                   ToolTip.Tip="Kick allows 50 rewards per channel, counting enabled and disabled ones and the ones made on kick.com." />
+        <WrapPanel DockPanel.Dock="Bottom" Classes="actions" Margin="0,8,0,0">
+          <Button Content="Load from Kick" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}" ToolTip.Tip="Fetches your channel rewards from Kick and refreshes this list." />
+          <Button Content="+ Reward" Classes="accent" Command="{Binding NewCommand}" IsEnabled="{Binding CanAdd}" ToolTip.Tip="Starts a new channel reward. It is only created on Kick when you press Save to Kick." />
+        </WrapPanel>
+        <ListBox x:Name="RewardList" Classes="list" ItemsSource="{Binding Rewards}" SelectedItem="{Binding Selected}" MinHeight="120" MaxHeight="300">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="vm:KickRewardItem">
+              <StackPanel>
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                <TextBlock Classes="hint" Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Classes="hint" TextWrapping="Wrap" IsVisible="{Binding !HasSelection}"
+                   Text="Load your rewards, or add one, then pick it to change it. Kick only lets the app that made a reward change or delete it, so rewards made on kick.com are listed but Kick refuses changes to them (they still start actions)." />
+        <ContentControl Content="{Binding Selected}" IsVisible="{Binding HasSelection}">
+          <ContentControl.ContentTemplate>
+            <DataTemplate DataType="vm:KickRewardItem">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="hint" TextWrapping="Wrap" IsVisible="{Binding MaybeReadOnly}"
+                           Text="Cuebot did not make this reward (or made it before it kept track), so Kick may refuse to change it. Cuebot's own settings below always work." />
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Title" />
+                  <TextBox Name="RewardTitle" Text="{Binding Title}" MaxLength="50" ToolTip.Tip="The name viewers see for this reward, up to 50 characters." />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,16,*" RowDefinitions="Auto,Auto">
+                  <TextBlock Classes="label" Text="Cost" />
+                  <NumericUpDown Grid.Row="1" Value="{Binding Cost}" Minimum="1" Maximum="100000000" FormatString="0" ToolTip.Tip="How many Kick points a viewer pays for this reward." />
+                  <TextBlock Grid.Column="2" Classes="label" Text="Colour" />
+                  <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding BackgroundColor}" ToolTip.Tip="The colour of the reward on Kick, written as # and six letters or numbers, like #00E701." />
+                </Grid>
+                <StackPanel>
+                  <TextBlock Classes="label" Text="Description" />
+                  <TextBox Text="{Binding Description}" MaxLength="200" TextWrapping="Wrap" ToolTip.Tip="A short explanation viewers see when they pick this reward, up to 200 characters. If viewers must type something, say what here." />
+                </StackPanel>
+                <WrapPanel>
+                  <CheckBox Content="Enabled" IsChecked="{Binding IsEnabled}" Margin="0,0,16,0" ToolTip.Tip="Untick to hide the reward from your viewers without deleting it." />
+                  <CheckBox Content="Paused" IsChecked="{Binding IsPaused}" IsEnabled="{Binding !IsNew}" Margin="0,0,16,0" ToolTip.Tip="Viewers still see the reward but cannot redeem it for now. Kick creates rewards unpaused, so this works after the first save." />
+                  <CheckBox Content="Viewer input required" IsChecked="{Binding IsUserInputRequired}" Margin="0,0,16,0" ToolTip.Tip="The viewer must type a message when they redeem it. Your action can read it as %input%." />
+                  <CheckBox Content="Skip the request queue" IsChecked="{Binding SkipQueue}" ToolTip.Tip="Kick normally keeps redemptions waiting for you to accept them. Tick this to mark them as done straight away." />
+                </WrapPanel>
+                <Separator />
+                <TextBlock Classes="hint" TextWrapping="Wrap"
+                           Text="Cuebot's own settings for this reward. They are saved right away and are not sent to Kick. The group lets actions switch several rewards together; the counters count how often the reward was redeemed." />
+                <Grid ColumnDefinitions="*,16,Auto" RowDefinitions="Auto,Auto">
+                  <TextBlock Classes="label" Text="Group" />
+                  <TextBox Grid.Row="1" Text="{Binding Group}" PlaceholderText="Not configured" ToolTip.Tip="A group name of your choice. Rewards with the same group name can be switched on or off together by an action." />
+                  <Button Grid.Column="2" Grid.Row="1" Content="Reset counters" Command="{Binding ResetCountersCommand}" ToolTip.Tip="Sets this reward's total counter and every viewer's own counter back to zero." />
+                </Grid>
+                <WrapPanel>
+                  <CheckBox Content="Persist counter" IsChecked="{Binding PersistCounter}" Margin="0,0,16,0" ToolTip.Tip="Keeps the reward's total count between streams. Unticked, it starts again from zero each time you go live." />
+                  <CheckBox Content="Persist per-user counters" IsChecked="{Binding PersistUserCounter}" ToolTip.Tip="Keeps each viewer's own count between streams. Unticked, they start again from zero each time you go live." />
+                </WrapPanel>
+                <TextBlock Classes="hint" Text="{Binding CounterSummary}" />
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.ContentTemplate>
+        </ContentControl>
+        <WrapPanel Classes="actions" IsVisible="{Binding HasSelection}">
+          <Button Content="Save to Kick" Classes="accent" Command="{Binding SaveCommand}" ToolTip.Tip="Creates this reward on Kick, or updates it if it already exists. Your viewers see the change." />
+          <Button Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Removes this reward from Kick for good." />
+        </WrapPanel>
+      </StackPanel>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

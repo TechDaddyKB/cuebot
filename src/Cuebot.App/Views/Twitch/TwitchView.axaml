@@ -83,6 +83,9 @@
       <TabItem Header="Rewards">
         <tv:TwitchRewardsView DataContext="{Binding Rewards}" />
       </TabItem>
+      <TabItem Header="Power-ups">
+        <tv:TwitchPowerUpsView DataContext="{Binding PowerUps}" />
+      </TabItem>
       <TabItem Header="Polls &amp; predictions">
         <tv:TwitchPollsView DataContext="{Binding Polls}" />
       </TabItem>

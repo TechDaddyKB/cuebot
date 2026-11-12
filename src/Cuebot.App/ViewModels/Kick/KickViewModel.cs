@@ -19,6 +19,7 @@ public sealed partial class KickViewModel : PageViewModel
     {
         _kick = kick;
         _obs = obs;
+        RewardEditor = new KickRewardsEditorViewModel(kick);
         kick.StatusChanged += () => OnUi(() => OnPropertyChanged(string.Empty));
     }
 
@@ -154,8 +155,6 @@ public sealed partial class KickViewModel : PageViewModel
     [ObservableProperty] private string _newCategory = "";
     [ObservableProperty] private string _testMessage = "";
     [ObservableProperty] private bool _testAsBot;
-    [ObservableProperty] private string _newRewardTitle = "";
-    [ObservableProperty] private decimal _newRewardCost = 100;
     [ObservableProperty] private string _newTags = "";
     [ObservableProperty] private decimal _adLength = 30;
     [ObservableProperty] private string _adStatus = "";
@@ -307,40 +306,8 @@ public sealed partial class KickViewModel : PageViewModel
 
     // ---- channel rewards ----
 
-    /// <summary>The channel's rewards as last read from Kick.</summary>
-    public IReadOnlyList<KickRewardRow> Rewards => _kick.Rewards.Select(r => new KickRewardRow(r, this)).ToArray();
-
-    public bool HasRewards => _kick.Rewards.Count > 0;
-
-    /// <summary>Cuebot's own reward settings (group, counter persistence), saved right away.</summary>
-    internal KickRewardCounters Counters => _kick.Counters;
-
-    [RelayCommand]
-    private Task RefreshRewards() => Run(async () =>
-    {
-        var rewards = await _kick.GetRewardsAsync();
-        Info = rewards.Count == 0 ? "This channel has no rewards yet." : $"{rewards.Count} reward(s).";
-    });
-
-    [RelayCommand]
-    private Task CreateReward() => Run(async () =>
-    {
-        if (NewRewardTitle.Trim().Length == 0) return;
-        var created = await _kick.CreateRewardAsync(new KickRewardUpdate { Title = NewRewardTitle, Cost = (int)Math.Max(1, NewRewardCost) });
-        NewRewardTitle = "";
-        Info = $"Reward \"{created.Title}\" created.";
-    });
-
-    internal Task ToggleReward(KickReward reward, bool pause) => Run(async () =>
-    {
-        await _kick.UpdateRewardAsync(reward.Id, pause ? new KickRewardUpdate { IsPaused = !reward.IsPaused } : new KickRewardUpdate { IsEnabled = !reward.IsEnabled });
-    });
-
-    internal Task DeleteReward(KickReward reward) => Run(async () =>
-    {
-        await _kick.DeleteRewardAsync(reward.Id);
-        Info = $"Reward \"{reward.Title}\" deleted.";
-    });
+    /// <summary>The rewards editor (its own card on the page).</summary>
+    public KickRewardsEditorViewModel RewardEditor { get; }
 
     private async Task Run(Func<Task> operation)
     {
@@ -358,44 +325,4 @@ public sealed partial class KickViewModel : PageViewModel
 
     private static long ParseId(string text) =>
         long.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) && id > 0 ? id : 0;
-}
-
-/// <summary>One reward on the Kick page, with its own buttons.</summary>
-public sealed partial class KickRewardRow(KickReward reward, KickViewModel owner)
-{
-    public string Title => reward.Title;
-    public string Details => $"{reward.Cost} points · {(reward.IsEnabled ? reward.IsPaused ? "paused" : "enabled" : "disabled")}"
-                             + (reward.IsUserInputRequired ? " · viewer input" : "") + (reward.SkipsRequestQueue ? " · skips queue" : "");
-    public string EnableLabel => reward.IsEnabled ? "Disable" : "Enable";
-
-    /// <summary>The reward's group for the reward group and Configure rewards sub-actions (empty: not configured).</summary>
-    public string Group
-    {
-        get => owner.Counters.GetGroup(reward.Id);
-        set => owner.Counters.SetGroup(reward.Id, value ?? "");
-    }
-
-    /// <summary>Keep the redemption counter when the stream goes live.</summary>
-    public bool PersistCounter
-    {
-        get => owner.Counters.GetPersistence(reward.Id).Counter;
-        set => owner.Counters.SetPersistence(reward.Id, value, PersistUserCounter);
-    }
-
-    /// <summary>Keep the per-user redemption counters when the stream goes live.</summary>
-    public bool PersistUserCounter
-    {
-        get => owner.Counters.GetPersistence(reward.Id).UserCounter;
-        set => owner.Counters.SetPersistence(reward.Id, PersistCounter, value);
-    }
-    public string PauseLabel => reward.IsPaused ? "Resume" : "Pause";
-
-    [RelayCommand]
-    private Task ToggleEnabled() => owner.ToggleReward(reward, pause: false);
-
-    [RelayCommand]
-    private Task TogglePaused() => owner.ToggleReward(reward, pause: true);
-
-    [RelayCommand]
-    private Task Delete() => owner.DeleteReward(reward);
 }

@@ -193,6 +193,12 @@ Every step type and trigger type declares a level. A test fails when a registere
 - **Assistant** (added 2026-11-12, `PortalPermission.UseAssistant`): the streamer's Assistant, with tools that are
   portal requests made as the member, so it can do exactly what the member's role allows. It runs on the streamer's
   AI, with a daily message limit per mod. Details in `docs/ASSISTANT.md`, "Mods' conversations".
+- **Rewards** (added 2026-11-12, `PortalPermission.ManageRewards`): Twitch and Kick channel point rewards through
+  `IChannelRewards` (Cuebot.Core.Rewards). Changes go through the change log as area `reward` (`RewardArea`): a reward's
+  key is a Guid made from platform and id, and a new reward's key is remembered in memory once the platform gives it an
+  id, so undoing a create made before a restart finds nothing to delete. Both platforms allow 50 rewards per channel
+  and let only the creating app change a reward; Kick does not say which app made one, so Cuebot keeps the ids it
+  created (`KickSettings.CreatedRewardIds`). Custom Power-ups are list-only in Twitch's API, so they are not in the portal.
 
 ## 7. Webhooks through the shared relay
 - Address: `https://hooks.techdaddydigital.com/<relay id>/<route secret>/<service>`.

@@ -8,7 +8,7 @@ namespace Cuebot.Kick.Triggers;
 /// Kick triggers (Streamer.bot's Kick list plus a few extras). First Words and Present Viewers listen to the
 /// core user registry's events, filtered to Kick.
 /// </summary>
-internal sealed class KickTriggers : ITriggerProvider
+internal sealed class KickTriggers(Func<IEnumerable<string>>? rewardTitles = null) : ITriggerProvider
 {
     public const string Category = "Kick";
 
@@ -26,7 +26,7 @@ internal sealed class KickTriggers : ITriggerProvider
         Event(KickEventTypes.ChannelUpdate, "Channel update"),
         Event(KickEventTypes.RewardRedemption, "Reward redemption",
             [
-                new("reward", "Reward title") { Help = "Leave empty for every reward" },
+                new("reward", "Reward title") { Help = "Leave empty for every reward", Suggestions = rewardTitles },
                 new("status", "Status", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "pending", "accepted", "rejected"] },
             ],
             (e, s) => (s["reward"].Length == 0 || string.Equals(e.Args.GetString("rewardTitle"), s["reward"].Trim(), StringComparison.OrdinalIgnoreCase))

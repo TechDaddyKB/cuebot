@@ -38,13 +38,14 @@ public static class KickServiceCollectionExtensions
             return kick;
         });
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<KickService>());
+        services.AddSingleton<Cuebot.Core.Rewards.IChannelRewards>(sp => new KickChannelRewards(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IEmoteChannelSource>(sp => new KickEmoteChannelSource(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatEventAdapter, KickChatAdapter>();
         services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, KickOverlayAdapter>();
         services.AddSingleton<IPresentViewersArgs>(sp => new KickPresentViewersArgs(sp.GetRequiredService<KickService>()));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new KickChatModerator(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatSender, KickChatSender>();
-        services.AddSingleton<ITriggerProvider, KickTriggers>();
+        services.AddSingleton<ITriggerProvider>(sp => new KickTriggers(() => sp.GetRequiredService<KickService>().Rewards.Select(r => r.Title)));
         services.AddSingleton<ISubActionHandler, SendMessageSubAction>();
         services.AddSingleton<ISubActionHandler, ReplyToMessageSubAction>();
         services.AddSingleton<ISubActionHandler, DeleteMessageSubAction>();

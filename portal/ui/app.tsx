@@ -10,6 +10,7 @@ import { CommandsPage } from "./pages/commands.js";
 import { HomePage } from "./pages/home.js";
 import { OverlaysPage } from "./pages/overlays.js";
 import { QueuesPage } from "./pages/queues.js";
+import { RewardsPage } from "./pages/rewards.js";
 import { ScenesPage } from "./pages/scenes.js";
 import { SoundsPage } from "./pages/sounds.js";
 import { SpeechPage } from "./pages/speech.js";
@@ -28,6 +29,7 @@ export const PAGES: PageInfo[] = [
   { id: "assistant", title: "Assistant", page: AssistantPage, needs: ["UseAssistant"] },
   { id: "actions", title: "Actions", page: ActionsPage, needs: ["RunActions", "CreateActions", "EditActions", "DeleteActions"] },
   { id: "commands", title: "Commands", page: CommandsPage, needs: ["CreateCommands", "EditCommands", "DeleteCommands"] },
+  { id: "rewards", title: "Rewards", page: RewardsPage, needs: ["ManageRewards"] },
   { id: "sounds", title: "Sounds", page: SoundsPage, needs: ["RunActions"] },
   { id: "overlays", title: "Overlays", page: OverlaysPage, needs: ["EditOverlays", "CreateOverlays"] },
   { id: "uploads", title: "Uploads", page: UploadsPage, needs: ["UploadSounds", "UploadMedia"] },

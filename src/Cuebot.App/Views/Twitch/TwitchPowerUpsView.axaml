@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tw="using:Cuebot.App.ViewModels.Twitch"
+             x:Class="Cuebot.App.Views.Twitch.TwitchPowerUpsView"
+             x:DataType="tw:TwitchPowerUpsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="0,12,0,24" MaxWidth="900" HorizontalAlignment="Left" Spacing="8">
+      <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Classes="info" Text="{Binding Info}" IsVisible="{Binding Info, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Custom Power-ups" />
+          <TextBlock Classes="hint" TextWrapping="Wrap"
+                     Text="Custom Power-ups are rewards your viewers buy with bits. Twitch does not let apps create, change or delete them, so make and edit them on your Twitch dashboard (Viewer Rewards, Power-ups). Cuebot lists them here, and the Custom power-up redemption trigger starts an action when one is used." />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Load from Twitch" Command="{Binding ReloadCommand}" IsEnabled="{Binding IsSignedIn}"
+                    ToolTip.Tip="Fetches your custom Power-ups from Twitch. Needs the Community permission (bits) when you signed in." />
+            <TextBlock Name="UsedText" Text="{Binding UsedText}" VerticalAlignment="Center" FontWeight="SemiBold"
+                       ToolTip.Tip="Twitch allows 50 custom Power-ups per channel, counting enabled and disabled ones." />
+          </DockPanel>
+          <ItemsControl ItemsSource="{Binding PowerUps}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="tw:TwitchPowerUpRow">
+                <StackPanel Margin="0,6">
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                  <TextBlock Classes="hint" Text="{Binding Details}" TextWrapping="Wrap" />
+                  <TextBlock Classes="hint" Text="{Binding Prompt}" TextWrapping="Wrap" IsVisible="{Binding HasPrompt}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

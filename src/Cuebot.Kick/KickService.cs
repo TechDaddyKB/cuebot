@@ -919,6 +919,9 @@ public sealed class KickService : IConnectable, IAsyncDisposable
 
     // ---- channel rewards ----
 
+    /// <summary>True for a reward Cuebot created (and so may change); Kick lets only the app that made a reward change it.</summary>
+    public bool MadeByCuebot(string rewardId) => Settings.CreatedRewardIds.Contains(rewardId);
+
     /// <summary>The rewards from the last <see cref="GetRewardsAsync"/>.</summary>
     public IReadOnlyList<KickReward> Rewards => _rewards;
 
@@ -965,6 +968,12 @@ public sealed class KickService : IConnectable, IAsyncDisposable
     {
         var created = await _api.CreateRewardAsync(reward, ct).ConfigureAwait(false);
         _rewards = [.. _rewards.Where(r => r.Id != created.Id), created];
+        // Kick does not say which rewards an app may change; remember the ones Cuebot made.
+        if (!Settings.CreatedRewardIds.Contains(created.Id))
+        {
+            Settings.CreatedRewardIds.Add(created.Id);
+            SaveSettings();
+        }
         _log.Info("Kick", $"Reward created: {created.Title}");
         StatusChanged?.Invoke();
         return created;
@@ -1012,6 +1021,7 @@ public sealed class KickService : IConnectable, IAsyncDisposable
         var target = await FindRewardAsync(reward, ct).ConfigureAwait(false);
         await _api.DeleteRewardAsync(target.Id, ct).ConfigureAwait(false);
         _rewards = _rewards.Where(r => r.Id != target.Id).ToArray();
+        if (Settings.CreatedRewardIds.Remove(target.Id)) SaveSettings();
         _log.Info("Kick", $"Reward deleted: {target.Title}");
         StatusChanged?.Invoke();
         return target;

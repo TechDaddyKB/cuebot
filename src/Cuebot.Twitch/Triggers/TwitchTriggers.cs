@@ -13,15 +13,17 @@ internal sealed class TwitchTriggers : ITriggerProvider
 
     private readonly CommandTriggerType _command;
     private readonly Func<IEnumerable<string>>? _powerUpTitles;
+    private readonly Func<IEnumerable<string>>? _rewardTitles;
 
     public TwitchTriggers() : this(TimeProvider.System)
     {
     }
 
-    internal TwitchTriggers(TimeProvider time, Func<IEnumerable<string>>? powerUpTitles = null)
+    internal TwitchTriggers(TimeProvider time, Func<IEnumerable<string>>? powerUpTitles = null, Func<IEnumerable<string>>? rewardTitles = null)
     {
         _command = new CommandTriggerType(new CooldownTracker(time));
         _powerUpTitles = powerUpTitles;
+        _rewardTitles = rewardTitles;
     }
 
     public IEnumerable<ITriggerType> GetTriggers() =>
@@ -125,11 +127,11 @@ internal sealed class TwitchTriggers : ITriggerProvider
 
         // Channel points
         Event(T.RewardRedemption, "Channel point reward",
-            [new("rewardTitle", "Reward title") { Help = "Leave empty to match every reward" }],
+            [new("rewardTitle", "Reward title") { Help = "Leave empty to match every reward", Suggestions = _rewardTitles }],
             (e, s) => Equal(e, "rewardTitle", s["rewardTitle"])),
         Event(T.RewardRedemptionUpdated, "Reward redemption updated",
             [
-                new("rewardTitle", "Reward title") { Help = "Leave empty to match every reward" },
+                new("rewardTitle", "Reward title") { Help = "Leave empty to match every reward", Suggestions = _rewardTitles },
                 new("status", "Status", ParameterKind.Choice) { DefaultValue = "Any", Choices = ["Any", "fulfilled", "canceled"] },
             ],
             (e, s) => Equal(e, "rewardTitle", s["rewardTitle"]) && (s["status"] == "Any" || Equal(e, "status", s["status"]))),

@@ -22,8 +22,10 @@ public static class TwitchServiceCollectionExtensions
             sp.GetRequiredService<EventBus>(),
             sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<TwitchService>());
+        services.AddSingleton<Cuebot.Core.Rewards.IChannelRewards>(sp => new TwitchChannelRewards(sp.GetRequiredService<TwitchService>()));
         services.AddSingleton<ITriggerProvider>(sp =>
-            new TwitchTriggers(TimeProvider.System, () => sp.GetRequiredService<TwitchService>().CustomPowerUpTitles));
+            new TwitchTriggers(TimeProvider.System, () => sp.GetRequiredService<TwitchService>().CustomPowerUpTitles,
+                () => sp.GetRequiredService<TwitchService>().Api.RewardTitles));
         foreach (var spec in TwitchSubActions.All)
             services.AddSingleton<ISubActionHandler>(sp => new TwitchSubAction(spec, () => sp.GetRequiredService<TwitchService>().Api));
         services.AddSingleton<IScriptFunctionProvider, TwitchScriptFunctions>();

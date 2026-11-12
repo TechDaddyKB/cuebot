@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels.Kick"
+             xmlns:kv="using:Cuebot.App.Views.Kick"
              x:Class="Cuebot.App.Views.Kick.KickView"
              x:DataType="vm:KickViewModel">
   <ScrollViewer Padding="24">
@@ -74,33 +75,8 @@
           <StackPanel Spacing="8">
             <TextBlock Classes="h2" Text="Channel rewards" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
-                       Text="Channel rewards are things your viewers can redeem with Kick points. Cuebot can only change, pause, delete or answer redemptions for rewards that Cuebot itself created. Rewards made on kick.com are listed here but cannot be changed. If you signed in before rewards worked, sign in again to give Cuebot permission. The group and counter settings below belong to Cuebot and are saved right away: the group is used by the reward group and Configure rewards sub-actions, and the counters start from zero each time you go live unless you tick Persist." />
-            <Button Content="Refresh rewards" Command="{Binding RefreshRewardsCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Loads your list of channel rewards from Kick again." />
-            <ItemsControl ItemsSource="{Binding Rewards}" IsVisible="{Binding HasRewards}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:KickRewardRow">
-                  <Grid ColumnDefinitions="*,8,Auto,8,Auto,8,Auto" RowDefinitions="Auto,Auto" Margin="0,2">
-                    <StackPanel VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-                      <TextBlock Classes="muted" Text="{Binding Details}" />
-                    </StackPanel>
-                    <Button Grid.Column="2" Content="{Binding EnableLabel}" Command="{Binding ToggleEnabledCommand}" ToolTip.Tip="Turns this reward on or off for your viewers." />
-                    <Button Grid.Column="4" Content="{Binding PauseLabel}" Command="{Binding TogglePausedCommand}" ToolTip.Tip="Pauses this reward so viewers cannot redeem it for now, or lets them redeem it again." />
-                    <Button Grid.Column="6" Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Deletes this reward from your Kick channel." />
-                    <WrapPanel Grid.Row="1" Grid.ColumnSpan="7" Margin="0,4,0,0">
-                      <TextBox Text="{Binding Group}" PlaceholderText="Group (not configured)" Width="200" Margin="0,0,16,0" ToolTip.Tip="A group name of your own to keep rewards together. Actions can turn a whole group on or off." />
-                      <CheckBox Content="Persist counter" IsChecked="{Binding PersistCounter}" Margin="0,0,16,0" ToolTip.Tip="Ticked: the count of how often this reward was redeemed is kept. Unticked: it starts at 0 each time you go live." />
-                      <CheckBox Content="Persist per-user counters" IsChecked="{Binding PersistUserCounter}" ToolTip.Tip="Ticked: each viewer's own redeem count is kept. Unticked: it starts at 0 each time you go live." />
-                    </WrapPanel>
-                  </Grid>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <Grid ColumnDefinitions="*,8,120,8,Auto">
-              <TextBox Text="{Binding NewRewardTitle}" PlaceholderText="New reward title" MaxLength="50" ToolTip.Tip="The name of the new reward, as viewers see it (up to 50 letters)." />
-              <NumericUpDown Grid.Column="2" Value="{Binding NewRewardCost}" Minimum="1" Increment="10" FormatString="0" ToolTip.Tip="How many Kick points the reward costs." />
-              <Button Grid.Column="4" Content="Create reward" Command="{Binding CreateRewardCommand}" IsEnabled="{Binding IsBroadcasterSignedIn}" ToolTip.Tip="Adds this reward to your Kick channel so viewers can redeem it." />
-            </Grid>
+                       Text="Channel rewards are things your viewers can redeem with Kick points. Cuebot can change, pause, delete or answer redemptions only for rewards that Cuebot itself created: Kick refuses changes to rewards made on kick.com. If you signed in before rewards worked, sign in again to give Cuebot permission." />
+            <kv:KickRewardsView DataContext="{Binding RewardEditor}" />
           </StackPanel>
         </Border>
 

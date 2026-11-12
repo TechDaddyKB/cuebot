@@ -58,7 +58,7 @@ public sealed class UxConfirmAndHintsTests : IAsyncDisposable
     public async Task Ban_needs_a_second_click_within_five_seconds()
     {
         TestApp.BindingErrors.Clear();
-        var vm = new TwitchViewModel(_host.Get<TwitchService>()) { SelectedTab = 4 };
+        var vm = new TwitchViewModel(_host.Get<TwitchService>()) { SelectedTab = 5 };
         var moderation = vm.Moderation;
         var now = new DateTime(2026, 10, 31, 12, 0, 0, DateTimeKind.Utc);
         moderation.BanConfirm.Clock = () => now;
@@ -200,7 +200,7 @@ public sealed class UxConfirmAndHintsTests : IAsyncDisposable
     public void Chat_mode_ticks_that_were_not_applied_say_so()
     {
         TestApp.BindingErrors.Clear();
-        var vm = new TwitchViewModel(_host.Get<TwitchService>()) { SelectedTab = 4 };
+        var vm = new TwitchViewModel(_host.Get<TwitchService>()) { SelectedTab = 5 };
         var moderation = vm.Moderation;
         var window = Show(new Cuebot.App.Views.TwitchView(), vm);
         const string pending = "Not sent yet: press Apply to change your chat.";

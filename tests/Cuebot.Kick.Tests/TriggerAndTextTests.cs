@@ -12,6 +12,17 @@ public sealed class TriggerTests
 
     private ITriggerType Get(string id) => _triggers.Single(t => t.TypeId == id);
 
+    [Fact]
+    public void The_reward_trigger_offers_the_channels_reward_titles_and_matches_by_title()
+    {
+        var trigger = new KickTriggers(() => ["Hydrate", "Bonk"]).GetTriggers().Single(t => t.TypeId == KickEventTypes.RewardRedemption);
+        Assert.Equal(["Hydrate", "Bonk"], trigger.Parameters.Single(p => p.Key == "reward").Suggestions!());
+        var e = new BotEvent(KickEventTypes.RewardRedemption, new Dictionary<string, object?> { ["rewardTitle"] = "Bonk", ["status"] = "pending" });
+        Assert.True(Matches(trigger, e, new() { ["reward"] = "bonk" }));
+        Assert.True(Matches(trigger, e));   // empty: every reward
+        Assert.False(Matches(trigger, e, new() { ["reward"] = "Hydrate" }));
+    }
+
     private static bool Matches(ITriggerType t, BotEvent e, Dictionary<string, string>? settings = null) =>
         t.EventTypes.Contains(e.Type) && t.Matches(e, new TriggerDefinition(), ParameterValues.From(t.Parameters, settings ?? []),
             new Dictionary<string, object?>());

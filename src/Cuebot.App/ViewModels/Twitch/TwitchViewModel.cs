@@ -15,16 +15,18 @@ public sealed partial class TwitchViewModel : PageViewModel
         Accounts = new TwitchAccountsViewModel(twitch);
         Channel = new TwitchChannelViewModel(twitch);
         Rewards = new TwitchRewardsViewModel(twitch);
+        PowerUps = new TwitchPowerUpsViewModel(twitch);
         Polls = new TwitchPollsViewModel(twitch);
         Moderation = new TwitchModerationViewModel(twitch);
         Settings = new TwitchSettingsViewModel(twitch);
-        Tabs = [Accounts, Channel, Rewards, Polls, Moderation, Settings];
+        Tabs = [Accounts, Channel, Rewards, PowerUps, Polls, Moderation, Settings];
         twitch.StatusChanged += () => OnUi(Refresh);
     }
 
     public TwitchAccountsViewModel Accounts { get; }
     public TwitchChannelViewModel Channel { get; }
     public TwitchRewardsViewModel Rewards { get; }
+    public TwitchPowerUpsViewModel PowerUps { get; }
     public TwitchPollsViewModel Polls { get; }
     public TwitchModerationViewModel Moderation { get; }
     public TwitchSettingsViewModel Settings { get; }

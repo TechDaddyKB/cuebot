@@ -26,13 +26,26 @@ your old sign-in did not allow. Click **Sign in broadcaster** once more and appr
 ## Your channel and rewards
 
 On the Kick page you can also set your stream title (**Set title**), category (**Set category**) and tags (**Set
-tags**, separated by commas), and see how many subscribers you have. Channel rewards: **Create reward** makes a new
-one, **Refresh rewards** loads them from Kick. Like on Twitch, Cuebot can only change rewards it made itself; rewards
-made on kick.com are listed but cannot be changed.
+tags**, separated by commas), and see how many subscribers you have.
+
+**Channel rewards** works like the Twitch rewards editor. **Load from Kick** lists your rewards; pick one to change its
+**Title** (up to 50 characters), **Cost**, **Colour** and **Description** (up to 200), and tick **Enabled**, **Paused**,
+**Viewer input required** or **Skip the request queue**. Then **Save to Kick**. **+ Reward** starts a new one, Ctrl+D
+copies the selected one, and **Delete** removes it. Kick has no cooldowns or per-stream limits for rewards.
+
+Kick allows **50 rewards per channel**, enabled and disabled. Above the list Cuebot shows how many you use ("12 of 50
+rewards used"); at 50, **+ Reward** turns off. Like on Twitch, Kick only lets the app that made a reward change it.
+Kick does not say which app made a reward, so Cuebot remembers the ones it made. Rewards made on kick.com are listed
+with a note, and Kick refuses changes to them, but they still start your actions. The group and counter settings
+belong to Cuebot and work for every reward.
+
+To run an action when a reward is redeemed, give it the Kick **Reward redemption** trigger and pick the reward's title
+(the list offers your rewards; empty matches every reward). It matches by title, so after renaming a reward, pick the
+new title in its trigger too.
 
 ![The Channel card with Set title, Set category, Set tags and Send stream key to OBS](../../assets/screens/card-channel.png)
 
-![The Channel rewards card with Refresh rewards and Create reward](../../assets/screens/card-channel-rewards.png)
+![The Channel rewards card: the reward list and the editor](../../assets/screens/card-channel-rewards.png)
 
 **Send stream key to OBS** sets OBS to stream to your Kick channel. Cuebot reads your stream address and key from Kick
 and puts them straight into OBS's stream settings, so you never have to copy the key. OBS must be connected

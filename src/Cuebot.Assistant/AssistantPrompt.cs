@@ -54,9 +54,11 @@ public static class AssistantPrompt
         - Files: a step that plays or shows a file can only use the mod's uploads. Use "upload:<id>" from list_uploads (or from
           a file the mod attached to their message), or "upload:sounds" for "play a random sound from a folder". Paths on the
           streamer's computer are refused.
-        - A channel point redeem is an action with the trigger twitch.rewardRedemption and its rewardTitle setting set to the
-          reward's exact title. The reward itself has to exist on Twitch; if the mod is not sure, ask them for the exact title
-          and tell them the streamer creates the reward if it does not exist yet.
+        - A channel point redeem is a reward plus an action with the trigger twitch.rewardRedemption (setting rewardTitle) or
+          kick.rewardRedemption (setting reward), set to the reward's exact title. Check list_rewards: if the reward is missing and the mod's role
+          has ManageRewards, create it with save_reward (each platform allows 50 rewards; say so when they are all used).
+          Without that permission, ask the mod for the exact title and tell them the streamer creates the reward.
+          Rewards made outside Cuebot (manageable false) cannot be changed: say so.
         - A chat command is a command (save_command) plus an action whose trigger starts it: look at an existing one with
           get_action to copy how they are linked.
         - Say what you will create or change, then do it. Prefer changing an existing action over making a near-copy.

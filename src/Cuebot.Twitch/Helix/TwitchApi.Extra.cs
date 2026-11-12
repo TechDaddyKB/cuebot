@@ -145,7 +145,18 @@ public sealed partial class TwitchApi
             "Getting custom power-ups", ct).ConfigureAwait(false);
         return json.Items("data").Select(p => new TwitchCustomPowerUp(p.Str("id"), p.Str("title"), p.Str("prompt"), p.Int("bits"),
             p.Bool("is_enabled"), p.Bool("is_paused"), p.Bool("is_in_stock"), p.Bool("is_user_input_required"),
-            (p.Child("image") ?? p.Child("default_image") ?? default).Str("url_4x"))).ToArray();
+            (p.Child("image") ?? p.Child("default_image") ?? default).Str("url_4x"))
+        {
+            BackgroundColor = p.Str("background_color"),
+            MaxPerStream = Setting(p, "max_per_stream_setting", "max_per_stream"),
+            MaxPerUserPerStream = Setting(p, "max_per_user_per_stream_setting", "max_per_user_per_stream"),
+            GlobalCooldownSeconds = Setting(p, "global_cooldown_setting", "global_cooldown_seconds"),
+            RedeemedThisStream = p.Child("redemptions_redeemed_current_stream") is null ? null : p.Int("redemptions_redeemed_current_stream"),
+        }).ToArray();
+
+        // A limit as Twitch sends it: {"is_enabled": true, "max_per_stream": 5}; 0 when it is off.
+        static int Setting(System.Text.Json.JsonElement p, string setting, string value) =>
+            p.Child(setting) is { } s && s.Bool("is_enabled") ? s.Int(value) : 0;
     }
 
     /// <summary>The donations of the running charity campaign, newest first as Twitch lists them.</summary>

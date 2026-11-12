@@ -213,7 +213,22 @@ public sealed record TwitchCreatorGoal(string Id, string Type, string Descriptio
 public sealed record TwitchLeaderboardEntry(int Rank, string UserId, string UserLogin, string UserName, int Score);
 
 public sealed record TwitchCustomPowerUp(string Id, string Title, string Prompt, int Bits, bool IsEnabled, bool IsPaused, bool IsInStock,
-    bool IsUserInputRequired, string ImageUrl);
+    bool IsUserInputRequired, string ImageUrl)
+{
+    public string BackgroundColor { get; init; } = "";
+
+    /// <summary>0 when off.</summary>
+    public int MaxPerStream { get; init; }
+
+    /// <summary>0 when off.</summary>
+    public int MaxPerUserPerStream { get; init; }
+
+    /// <summary>0 when off.</summary>
+    public int GlobalCooldownSeconds { get; init; }
+
+    /// <summary>Redeemed in the current stream (null when not live or not given).</summary>
+    public int? RedeemedThisStream { get; init; }
+}
 
 public sealed record TwitchCharityDonation(string Id, string UserId, string UserLogin, string UserName, string Amount, string Currency);
 
