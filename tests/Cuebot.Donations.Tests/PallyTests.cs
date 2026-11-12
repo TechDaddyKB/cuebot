@@ -99,6 +99,7 @@ public sealed class PallyServiceTests : IAsyncLifetime
         await _service.ConnectAsync();
         var socket = await _server.NextAsync();
         await Wait.UntilAsync(() => _service.State == ConnectionState.Connected, "connected");
+        await Wait.UntilAsync(() => Events(PallyEventTypes.Connected).Length > 0, "connected event");
         Assert.Single(Events(PallyEventTypes.Connected));
 
         Assert.Equal("ping", await socket.NextSentAsync());

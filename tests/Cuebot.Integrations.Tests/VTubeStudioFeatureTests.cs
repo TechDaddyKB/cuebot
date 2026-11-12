@@ -282,6 +282,7 @@ public sealed class VTubeStudioFeatureTests : IAsyncLifetime
             "PostProcessingUpdateRequest" => ("PostProcessingUpdateResponse", new { postProcessingActive = true, presetIsActive = true, activePreset = "Rain", activeEffectCount = 3 }),
             _ => null,
         });
+        await Wait.UntilAsync(() => _vts.VfxPresets.Count == 2 && _vts.VfxConfigIds.Count > 0, "effects listed");
         Assert.Equal(["Calm", "Rain"], _vts.VfxPresets);
         Assert.Equal(["Bloom_Strength"], _vts.VfxConfigIds);
 
