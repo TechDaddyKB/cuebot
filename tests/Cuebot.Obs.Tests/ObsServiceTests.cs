@@ -204,9 +204,13 @@ public sealed class ObsServiceTests : IAsyncLifetime
         // 100 ms doubling with jitter: about 6 attempts in 3 s instead of 30 with a fixed delay.
         var attempts = 0;
         _obs.Default.StatusChanged += () => { if (_obs.State == ConnectionState.Connecting) Interlocked.Increment(ref attempts); };
+        var started = System.Diagnostics.Stopwatch.StartNew();
         await _obs.StartAsync();
-        await Task.Delay(3000);
-        Assert.InRange(attempts, 2, 10);
+        // Windows takes about 2 s to refuse a loopback connection, so wait for the second attempt instead of a fixed window.
+        await WaitUntil(() => Volatile.Read(ref attempts) >= 2);
+        var rest = TimeSpan.FromSeconds(3) - started.Elapsed;
+        if (rest > TimeSpan.Zero) await Task.Delay(rest);
+        Assert.InRange(Volatile.Read(ref attempts), 2, 10);
     }
 
     private static async Task WaitUntil(Func<bool> condition)
