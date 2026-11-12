@@ -144,6 +144,29 @@ public sealed class ScopedTests
     }
 
     [Fact]
+    public async Task The_conversation_can_show_other_words_than_the_ai_is_sent()
+    {
+        await using var bot = new Bot();
+        var sent = new List<string>();
+        var provider = new ScriptedProvider((_, text, _) => Echo(text, sent));
+        await using var service = new AssistantService(null, [provider], bot.Manager, null, bot.Log);
+        await using var scoped = new ScopedAssistant(service);
+        var conversation = scoped.For("m", () => Scope([]), () => "");
+
+        Assert.Null(conversation.Send("make a redeem\n\nFiles I attached: upload:123", shown: "make a redeem\n📎 bonk.mp3"));
+        await Until(() => !conversation.Busy);
+        Assert.Equal(["make a redeem\n\nFiles I attached: upload:123"], sent);
+        Assert.Equal("make a redeem\n📎 bonk.mp3", conversation.Since(0).Single(l => l.Kind == "user").Text);
+
+        static async IAsyncEnumerable<AssistantUpdate> Echo(string text, List<string> sent)
+        {
+            sent.Add(text);
+            await Task.Yield();
+            yield return new AssistantText("ok");
+        }
+    }
+
+    [Fact]
     public async Task The_mcp_server_offers_a_scoped_token_only_its_tools_and_the_two_guides()
     {
         await using var bot = new Bot(requireConfirmation: false);

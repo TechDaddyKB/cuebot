@@ -85,6 +85,8 @@ Your mods can use the Assistant too, from the [mod portal](../mods/mod-portal.md
 conversations run on the AI you chose here, with only the tools their role allows, and each mod has a daily number
 of messages you set.
 
+![A mod using the Assistant in the mod portal](../../assets/screens/portal-assistant.png)
+
 ## The other way round
 
 Rather use your favourite AI app outside Cuebot, and let it work on Cuebot? See

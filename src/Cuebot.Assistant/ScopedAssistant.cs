@@ -131,7 +131,8 @@ public sealed class ScopedConversation : IAsyncDisposable
     /// Starts a turn in the background. Returns why it could not start (a turn already runs, the AI is busy with other
     /// conversations, the message is empty or too long), or null when it started.
     /// </summary>
-    public string? Send(string text)
+    /// <param name="shown">What the conversation shows as the person's message, when it differs from what the AI is sent.</param>
+    public string? Send(string text, string? shown = null)
     {
         text = text.Trim();
         if (text.Length == 0) return "Type a message first.";
@@ -143,7 +144,7 @@ public sealed class ScopedConversation : IAsyncDisposable
             if (!_owner.Slots.Wait(0)) return "The assistant is busy helping someone else. Try again in a minute.";
             turn = _turn = new CancellationTokenSource();
             LastUsed = _owner.Time.GetUtcNow();
-            Add("user", text);
+            Add("user", shown?.Trim() is { Length: > 0 } s ? s : text);
         }
         _ = Task.Run(() => RunAsync(text, turn.Token), CancellationToken.None);
         return null;

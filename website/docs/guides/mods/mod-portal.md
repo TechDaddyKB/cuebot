@@ -87,6 +87,8 @@ Mods can ask your [Assistant](../ai/assistant.md) to set things up for them on t
 words: *"Make a channel point redeem called Bonk that plays this sound."* They can attach a sound, picture or video to
 the message. It is uploaded the usual way (see [Uploads](#uploads)), and the Assistant uses it in the step it builds.
 
+![The Assistant in the mod portal: a mod asks for a Bonk redeem with a sound attached; the Assistant creates the reward and the action, then asks before playing it on stream](../../assets/screens/portal-assistant.png)
+
 The Assistant can only do what the mod's role allows:
 
 - It works through the same requests as the portal's own pages, and Cuebot checks each one against the mod's role:
@@ -118,6 +120,14 @@ messages count against your AI account or API key. Two mods' answers are worked 
 Mods whose role has **Channel point rewards** get a **Rewards** page with your Twitch and Kick channel point rewards.
 They can add a reward, and change or delete the ones Cuebot made. Twitch and Kick only let the app that made a reward
 change it, so rewards you made on their websites are listed but read-only.
+
+<div class="grid" markdown>
+
+![The Rewards page in the mod portal: Kick and Twitch rewards with how many of 50 are used](../../assets/screens/portal-rewards.png)
+
+![Changing a Twitch reward in the mod portal: title, prompt, cost, colour, limits and cooldown](../../assets/screens/portal-reward-editor.png)
+
+</div>
 
 - Each platform shows how many rewards are used out of its limit: **50 per channel** on both Twitch and Kick, enabled
   and disabled together. At 50, mods cannot add more until one is deleted.

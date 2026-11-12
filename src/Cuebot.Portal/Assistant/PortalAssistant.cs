@@ -60,7 +60,9 @@ public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? 
             case "assistant.send":
             {
                 var text = (string?)request["text"] ?? "";
-                var attached = Attachments(member, request["attachments"] as JsonArray);
+                var (attached, names) = Attachments(member, request["attachments"] as JsonArray);
+                // The AI gets the files' upload ids; the conversation shows the mod's words and the file names.
+                var shown = names.Count > 0 ? $"{text.Trim()}\n📎 {string.Join(", ", names)}" : null;
                 if (attached.Length > 0) text = text.Trim() + "\n\n" + attached;
                 var conversation = assistant.For(key, () => new McpScope(Tools(member.Id), AssistantPrompt.BuildForMod(member.Name)),
                     () => AssistantPrompt.BuildForMod(member.Name));
@@ -69,7 +71,7 @@ public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? 
                     var used = UsedToday(member.Id);
                     if (used >= directory.AssistantMessagesPerDay)
                         return Error($"You have used today's {directory.AssistantMessagesPerDay} messages. The count starts again tomorrow (UTC).");
-                    if (conversation.Send(text) is { } problem) return Error(problem);
+                    if (conversation.Send(text, shown) is { } problem) return Error(problem);
                     _used[member.Id] = (Today, used + 1);
                 }
                 log?.Info(LogSource, $"{member.Name} asked the assistant something.");
@@ -111,19 +113,26 @@ public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? 
     }
 
     /// <summary>A note for the AI about the uploads the member attached: ones in the library, or their own waiting for approval.</summary>
-    private string Attachments(PortalMember member, JsonArray? ids)
+    private (string Note, List<string> Names) Attachments(PortalMember member, JsonArray? ids)
     {
-        if (ids is null || ids.Count == 0) return "";
         var notes = new List<string>();
+        var names = new List<string>();
+        if (ids is null || ids.Count == 0) return ("", names);
         foreach (var node in ids.Take(10))
         {
             if (!Guid.TryParse((string?)node, out var id)) continue;
             if (media?.Get(id) is { } item)
+            {
                 notes.Add($"- \"{item.Name}\" ({item.Kind.ToString().ToLowerInvariant()}): ready, use \"{PortalFiles.Prefix}{item.Id}\"");
+                names.Add(item.Name);
+            }
             else if (changes?.Pending.FirstOrDefault(c => c.Area == UploadArea.AreaName && c.TargetId == id && c.MemberId == member.Id) is { } pending)
+            {
                 notes.Add($"- \"{pending.TargetName}\": waiting for the streamer's approval, so it cannot be used in a step yet");
+                names.Add(pending.TargetName);
+            }
         }
-        return notes.Count == 0 ? "" : "Files I attached (already uploaded):\n" + string.Join("\n", notes);
+        return (notes.Count == 0 ? "" : "Files I attached (already uploaded):\n" + string.Join("\n", notes), names);
     }
 
     private static JsonArray Lines(IEnumerable<ScopedLine> lines) => new([.. lines.Select(l => (JsonNode)new JsonObject

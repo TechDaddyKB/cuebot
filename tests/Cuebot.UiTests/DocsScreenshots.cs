@@ -57,6 +57,7 @@ public sealed class DocsScreenshots : IAsyncDisposable
 
         DocsDemoData.RunSome(_host);
         Settle();
+        DemoRewards(vm);
         foreach (var page in vm.Pages)
         {
             vm.SelectedPage = page;
@@ -295,6 +296,29 @@ public sealed class DocsScreenshots : IAsyncDisposable
     {
         Pump();
         TestApp.SaveFrame(window, Path.Combine(OutputDir, name + ".png"));
+    }
+
+    /// <summary>
+    /// A new, unsaved "Bonk" reward in the Twitch and Kick reward editors, so their pictures show the form (the demo has
+    /// no signed-in channel to load rewards from).
+    /// </summary>
+    private static void DemoRewards(MainWindowViewModel vm)
+    {
+        foreach (var page in vm.Pages)
+        {
+            if (page is TwitchViewModel twitch)
+            {
+                twitch.Rewards.NewCommand.Execute(null);
+                var r = twitch.Rewards.Selected!;
+                (r.Title, r.Cost, r.Prompt, r.GlobalCooldownSeconds) = ("Bonk", 250, "Bonk the streamer", 30);
+            }
+            else if (page is Cuebot.App.ViewModels.Kick.KickViewModel kick)
+            {
+                kick.RewardEditor.NewCommand.Execute(null);
+                var r = kick.RewardEditor.Selected!;
+                (r.Title, r.Cost, r.Description) = ("Bonk", 250, "Bonk the streamer");
+            }
+        }
     }
 
     /// <summary>Saves just one control of the window, for a close-up.</summary>
