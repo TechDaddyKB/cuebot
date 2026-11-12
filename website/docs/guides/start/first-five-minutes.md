@@ -19,7 +19,8 @@ are listed next to it.
 Two handy things:
 
 - Press ++ctrl+k++ (or click "Jump to a page…" at the top) and type a page name, like "timers", to jump there.
-- The top bar shows a small chip for each thing that is connected, like Twitch or OBS.
+- The top bar shows a small chip for each thing that is connected, like Twitch or OBS. With more than four, the chips
+  shrink to a coloured letter and a dot; hover one to see its name and status.
 
 Cuebot saves your changes by itself, a moment after you make them. ++ctrl+s++ saves everything right away.
 

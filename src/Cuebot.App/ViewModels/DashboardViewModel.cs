@@ -73,6 +73,14 @@ public sealed partial class DashboardViewModel : PageViewModel
 
     public bool HasSidebarConnections => SidebarConnections.Count > 0;
 
+    /// <summary>Chips with names fit the top bar up to this many; more are shown as small badges (name in the tooltip).</summary>
+    public const int FullChips = 4;
+
+    /// <summary>The top bar shows small badges instead of named chips (more than <see cref="FullChips"/> connections).</summary>
+    public bool CompactChips => SidebarConnections.Count > FullChips;
+
+    public bool FullChipsShown => HasSidebarConnections && !CompactChips;
+
     private void RefreshSidebar()
     {
         OnPropertyChanged(nameof(ConnectedCount));
@@ -83,6 +91,8 @@ public sealed partial class DashboardViewModel : PageViewModel
         SidebarConnections.Clear();
         foreach (var c in wanted) SidebarConnections.Add(c);
         OnPropertyChanged(nameof(HasSidebarConnections));
+        OnPropertyChanged(nameof(CompactChips));
+        OnPropertyChanged(nameof(FullChipsShown));
     }
 
     // ===== Status tiles =====

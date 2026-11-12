@@ -1,9 +1,15 @@
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
+using Cuebot.App;
+using Cuebot.App.Views;
 using Avalonia.Threading;
 using Cuebot.App.ViewModels;
 using Cuebot.Core;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Logging;
+using Cuebot.UiTests.Speech;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.UiTests;
@@ -52,5 +58,34 @@ public class SidebarConnectionsTests
         meld.Set(ConnectionState.Error);
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(["Twitch", "Meld Studio"], dashboard.SidebarConnections.Select(c => c.Name));
+    }
+
+    [AvaloniaFact]
+    public async Task Many_connections_become_small_badges_that_never_cover_the_title_or_the_search_box()
+    {
+        string[] names = ["Twitch", "YouTube", "Kick", "Rumble", "Streamlabs", "StreamElements", "VTube Studio", "Mod portal relay", "OBS"];
+        var fakes = names.Select(n => new FakeConnection(n)).ToArray();
+        var data = Directory.CreateTempSubdirectory("cuebot-chips-").FullName;
+        await using var host = AppHost.Create(new AppPaths(data), overrides: s =>
+        {
+            foreach (var f in fakes) s.AddSingleton<IConnectionStatus>(f);
+        });
+        var vm = new MainWindowViewModel(host);
+        var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
+        window.Show();
+        foreach (var f in fakes) f.Set(ConnectionState.Connected);
+        DocsScreenshots.Settle();
+
+        Assert.True(vm.Dashboard.CompactChips);
+        var compact = window.GetVisualDescendants().OfType<ItemsControl>().Single(i => i.Name == "CompactChips");
+        Assert.True(compact.IsEffectivelyVisible);
+        Assert.False(window.GetVisualDescendants().OfType<ItemsControl>().Single(i => i.Name == "Chips").IsEffectivelyVisible);
+        double Left(Visual v) => v.TranslatePoint(new Point(0, 0), window)!.Value.X;
+        var title = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "TddMark");
+        var jump = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == "Jump");
+        Assert.True(Left(title) + title.Bounds.Width <= Left(jump), "the search box covers the title");
+        Assert.True(Left(jump) + jump.Bounds.Width <= Left(compact), "the badges cover the search box");
+        UiPump.Save(window, "topbar-many-connections");
+        window.Close();
     }
 }

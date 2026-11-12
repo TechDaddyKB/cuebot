@@ -165,7 +165,8 @@ public sealed partial class TwitchRewardsViewModel(TwitchService twitch) : Twitc
         Rewards.Clear();
         foreach (var reward in rewards.OrderBy(r => r.Cost)) Rewards.Add(new TwitchRewardItem(reward, Api.Counters));
         Count();
-        Info = $"{rewards.Count(r => r.IsManageable)} of them were created by Cuebot and can be edited here.";
+        Info = rewards.Count == 0 ? "This channel has no rewards yet."
+            : $"{rewards.Count(r => r.IsManageable)} of them were created by Cuebot and can be edited here.";
     });
 
     [RelayCommand]

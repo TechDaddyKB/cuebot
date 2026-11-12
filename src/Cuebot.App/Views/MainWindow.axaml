@@ -181,8 +181,36 @@
               </Button.Flyout>
             </Button>
           </StackPanel>
-          <!-- Connection chips: only connections in use. -->
-          <ItemsControl x:Name="Chips" DockPanel.Dock="Right" ItemsSource="{Binding Dashboard.SidebarConnections}" VerticalAlignment="Center" Margin="0,0,12,0">
+          <!-- Connection chips: only connections in use. With many, small badges (the name is in the tooltip); what still does
+               not fit is cut off instead of drawn over the title. -->
+          <ItemsControl x:Name="CompactChips" DockPanel.Dock="Right" ItemsSource="{Binding Dashboard.SidebarConnections}" VerticalAlignment="Center"
+                        Margin="0,0,12,0" ClipToBounds="True" IsVisible="{Binding Dashboard.CompactChips}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ConnectionStatusViewModel">
+                <Border Background="{DynamicResource CuebotCard}" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="1" CornerRadius="7"
+                        Padding="6,5" AutomationProperties.Name="{Binding Name}">
+                  <ToolTip.Tip>
+                    <StackPanel>
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Message}" TextWrapping="Wrap" MaxWidth="320" />
+                    </StackPanel>
+                  </ToolTip.Tip>
+                  <StackPanel Orientation="Horizontal" Spacing="5">
+                    <Border Width="16" Height="16" CornerRadius="4" Background="{Binding Name, Converter={x:Static c:PlatformBrush.Instance}}">
+                      <TextBlock Text="{Binding Name, Converter={x:Static c:PlatformBrush.Initial}}" FontSize="9" FontWeight="Bold"
+                                 Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <Ellipse Classes="status" Classes.good="{Binding IsConnected}" Classes.bad="{Binding IsError}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <ItemsControl x:Name="Chips" DockPanel.Dock="Right" ItemsSource="{Binding Dashboard.SidebarConnections}" VerticalAlignment="Center" Margin="0,0,12,0"
+                        ClipToBounds="True" IsVisible="{Binding Dashboard.FullChipsShown}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
@@ -205,7 +233,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <AutoCompleteBox x:Name="Jump" Width="340" HorizontalAlignment="Center" VerticalAlignment="Center"
+          <AutoCompleteBox x:Name="Jump" MaxWidth="340" MinWidth="160" Margin="12,0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                            ItemsSource="{Binding JumpTargets}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
                            PlaceholderText="Jump to a page…   Ctrl+K" AutomationProperties.Name="Jump to a page"
                            ToolTip.Tip="Type part of a page name and press Enter to go straight there. Ctrl+K puts the cursor here." />

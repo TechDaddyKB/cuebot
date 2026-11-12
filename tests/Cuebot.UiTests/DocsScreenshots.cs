@@ -24,7 +24,8 @@ namespace Cuebot.UiTests;
 /// </summary>
 public sealed class DocsScreenshots : IAsyncDisposable
 {
-    private static readonly string OutputDir = Path.Combine(RepoRoot(), "website", "docs", "assets", "screens");
+    /// <summary>Where pictures go; <see cref="SignedInScreenshots"/> points it elsewhere.</summary>
+    internal static string OutputDir = Path.Combine(RepoRoot(), "website", "docs", "assets", "screens");
 
     private readonly string _dataDir = Directory.CreateTempSubdirectory("cuebot-docs-shots-").FullName;
     private readonly AppHost _host;
@@ -267,7 +268,7 @@ public sealed class DocsScreenshots : IAsyncDisposable
     }
 
     /// <summary>Opens the tab with this header on the current page (only that page is in the window). Fails when there is none, so the list stays right.</summary>
-    private static void SelectTab(Window window, string header)
+    internal static void SelectTab(Window window, string header)
     {
         var tab = window.GetVisualDescendants().OfType<TabItem>().FirstOrDefault(t => Equals(t.Header, header))
                   ?? throw new InvalidOperationException($"No tab \"{header}\" among: " + string.Join(", ",
@@ -338,7 +339,7 @@ public sealed class DocsScreenshots : IAsyncDisposable
         string.Join('-', title.ToLowerInvariant().Split([' ', '&', '/', '.'], StringSplitOptions.RemoveEmptyEntries));
 
     /// <summary>Saves every visible card that has a heading (class h2) as card-&lt;heading&gt;.png, once per run.</summary>
-    private static void SaveCards(Window window, HashSet<string> done)
+    internal static void SaveCards(Window window, HashSet<string> done)
     {
         var height = window.Height;
         window.Height = 3600;
