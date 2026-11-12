@@ -79,6 +79,12 @@ covered: check those yourself.
 Cuebot logs only the *names* of what the assistant did, not the details. The last conversation is saved in your data
 folder, so it is still there next time.
 
+## Letting your mods use it
+
+Your mods can use the Assistant too, from the [mod portal](../mods/mod-portal.md#the-assistant-for-mods). Their
+conversations run on the AI you chose here, with only the tools their role allows, and each mod has a daily number
+of messages you set.
+
 ## The other way round
 
 Rather use your favourite AI app outside Cuebot, and let it work on Cuebot? See

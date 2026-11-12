@@ -135,6 +135,27 @@ the AI is ready, and again whenever another provider is picked:
 | Antigravity CLI | `agy models` |
 | Local model | Ollama's `/api/tags` or the server's `/v1/models` |
 
+## Mods' conversations (mod portal)
+
+`ScopedAssistant` keeps conversations for others than the streamer: one per mod with `PortalPermission.UseAssistant`,
+apart from the Assistant page's conversation, on the same provider and model.
+
+- **Tools.** A scoped conversation gets an `McpScope` instead of Cuebot's MCP tools: `PortalAssistant.Tools` builds one
+  per mod, and each tool is a `PortalApi` request made as that mod (`actions.save`, `commands.delete`, `uploads.list`...).
+  So every call passes the same checks as the portal's pages: role, level, groups, uploads only, approval mode. The
+  scope also limits resources to the actions and variables guides and offers no prompts.
+- **AI apps** reach a scoped conversation through its own MCP token (`McpServer.RegisterAssistant(confirm, scope)`):
+  `tools/list` and `tools/call` see only the scope. API-key and local providers get `AssistantTools(mcp, scope)`.
+- **Confirmations.** Tools with a confirmation (delete, run on stream) always ask the mod, whatever the MCP
+  setting says. The question appears as a line in the conversation, and the portal answers with `assistant.answer`.
+- **Following a turn.** The relay link answers one request at a time, so turns run in the background and the portal
+  asks for lines changed since a sequence number (`assistant.poll`) every second while a turn runs.
+- **Limits.** At most 2 turns at once across all mods. Each mod has a daily message count
+  (`PortalSettings.AssistantMessagesPerDay`, default 30; 0 turns it off; the count is kept in memory and resets at
+  restart). A conversation unused for an hour is closed. AI apps run in `assistant/scoped/<member>` in the data folder.
+- **Attachments.** The portal uploads files the normal way, then sends their ids. Cuebot tells the AI about uploads
+  in the library (`upload:<id>`) and the mod's own uploads still waiting for approval; any other id is left out.
+
 ## Security
 
 - API keys are stored in `assistant.json` like other modules' keys, shown masked, never logged, never returned by the

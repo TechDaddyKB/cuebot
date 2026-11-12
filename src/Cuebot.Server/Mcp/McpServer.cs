@@ -32,8 +32,11 @@ public sealed class McpServer
     /// <summary>Asks the streamer about a destructive tool call (tool, summary); true to go ahead.</summary>
     public delegate Task<bool> AssistantConfirm(string tool, string summary, CancellationToken ct);
 
-    /// <summary>The <c>HttpContext.Items</c> key under which the API server passes an Assistant conversation's confirm.</summary>
+    /// <summary>The <c>HttpContext.Items</c> key under which the API server passes an Assistant conversation's access.</summary>
     internal const string ConfirmItem = "cuebot.mcp.assistant";
+
+    /// <summary>An Assistant conversation's confirm, and its own tools when it may not use Cuebot's.</summary>
+    internal sealed record AssistantAccess(AssistantConfirm Confirm, McpScope? Scope);
 
     public const string LatestProtocolVersion = "2025-06-18";
     public const string SessionHeader = "Mcp-Session-Id";
@@ -48,7 +51,7 @@ public sealed class McpServer
     private readonly Func<McpServerSettings> _settings;
     private readonly Dictionary<string, McpTool> _tools;
     private readonly ConcurrentDictionary<string, Session> _sessions = new();
-    private readonly ConcurrentDictionary<string, AssistantConfirm> _assistant = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, AssistantAccess> _assistant = new(StringComparer.Ordinal);
 
     public McpServer(ApiOperations operations, ServerServices services, Func<McpServerSettings> settings, McpConfirmations? confirmations = null)
     {
@@ -79,16 +82,21 @@ public sealed class McpServer
     /// registration is disposed. Destructive tools called with it ask the streamer through <paramref name="confirm"/>
     /// (Approve / Deny on the Assistant page) instead of answering with a confirmation token for the AI to relay.
     /// </summary>
-    public (string Token, IDisposable Registration) RegisterAssistant(AssistantConfirm confirm)
+    /// <param name="scope">
+    /// The only tools the conversation may use, instead of Cuebot's (a mod's conversation from the mod portal). Scoped
+    /// conversations also see only the actions and variables guides, no prompts, and every tool with a confirmation asks,
+    /// whatever the MCP setting says.
+    /// </param>
+    public (string Token, IDisposable Registration) RegisterAssistant(AssistantConfirm confirm, McpScope? scope = null)
     {
         var token = Api.ApiToken.Generate();
-        _assistant[token] = confirm;
+        _assistant[token] = new AssistantAccess(confirm, scope);
         return (token, new Unregister(() => _assistant.TryRemove(token, out _)));
     }
 
     /// <summary>The Assistant conversation a bearer token belongs to, or null.</summary>
-    internal AssistantConfirm? AssistantFor(string? token) =>
-        token is { Length: > 0 } && _assistant.TryGetValue(token, out var confirm) ? confirm : null;
+    internal AssistantAccess? AssistantFor(string? token) =>
+        token is { Length: > 0 } && _assistant.TryGetValue(token, out var access) ? access : null;
 
     private sealed class Unregister(Action action) : IDisposable
     {
@@ -101,9 +109,10 @@ public sealed class McpServer
 
     /// <summary>
     /// Handles one message or a batch and returns the response(s), or null when nothing is to be answered
-    /// (notifications and responses).
+    /// (notifications and responses). With <paramref name="scope"/>, only its tools exist (see <see cref="RegisterAssistant"/>).
     /// </summary>
-    public async Task<JsonNode?> HandleAsync(JsonNode? message, CancellationToken ct = default, AssistantConfirm? confirm = null)
+    public async Task<JsonNode?> HandleAsync(JsonNode? message, CancellationToken ct = default, AssistantConfirm? confirm = null,
+        McpScope? scope = null)
     {
         if (message is JsonArray batch)
         {
@@ -111,14 +120,14 @@ public sealed class McpServer
             var responses = new JsonArray();
             foreach (var item in batch)
             {
-                if (await HandleOneAsync(item, ct, confirm).ConfigureAwait(false) is { } response) responses.Add(response);
+                if (await HandleOneAsync(item, ct, confirm, scope).ConfigureAwait(false) is { } response) responses.Add(response);
             }
             return responses.Count == 0 ? null : responses;
         }
-        return await HandleOneAsync(message, ct, confirm).ConfigureAwait(false);
+        return await HandleOneAsync(message, ct, confirm, scope).ConfigureAwait(false);
     }
 
-    private async Task<JsonNode?> HandleOneAsync(JsonNode? message, CancellationToken ct, AssistantConfirm? confirm)
+    private async Task<JsonNode?> HandleOneAsync(JsonNode? message, CancellationToken ct, AssistantConfirm? confirm, McpScope? scope)
     {
         if (message is not JsonObject request || request["jsonrpc"]?.GetValueKind() != JsonValueKind.String
             || request["jsonrpc"]!.GetValue<string>() != "2.0")
@@ -143,7 +152,9 @@ public sealed class McpServer
 
         try
         {
-            var result = await DispatchAsync(method, parameters, ct, confirm).ConfigureAwait(false);
+            var result = scope is null
+                ? await DispatchAsync(method, parameters, ct, confirm).ConfigureAwait(false)
+                : await DispatchScopedAsync(method, parameters, ct, confirm, scope).ConfigureAwait(false);
             return new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["result"] = result };
         }
         catch (McpException ex)
@@ -198,6 +209,44 @@ public sealed class McpServer
         }
     }
 
+    /// <summary>A scoped conversation: its own tools, the two guides, nothing else.</summary>
+    private async Task<JsonNode> DispatchScopedAsync(string method, JsonObject p, CancellationToken ct, AssistantConfirm? confirm, McpScope scope)
+    {
+        switch (method)
+        {
+            case "initialize":
+            {
+                var answer = Initialize(p);
+                answer["instructions"] = scope.Instructions;
+                return answer;
+            }
+            case "ping": return new JsonObject();
+            case "tools/list": return new JsonObject { ["tools"] = new JsonArray([.. scope.Tools.Select(t => (JsonNode)t.ToJson())]) };
+            case "tools/call":
+            {
+                var name = Param(p, "name");
+                if (scope.Find(name) is not { } tool) throw new McpException(McpException.InvalidParams, $"Unknown tool: {name}");
+                return await CallAsync(tool, p, ct, confirm, alwaysConfirm: true).ConfigureAwait(false);
+            }
+            case "resources/list":
+            {
+                var all = Catalog.ListResources();
+                var guides = (all["resources"] as JsonArray ?? []).Where(r => McpScope.Guides.Contains((string?)r?["uri"] ?? "")).Select(r => r!.DeepClone());
+                return new JsonObject { ["resources"] = new JsonArray([.. guides]) };
+            }
+            case "resources/templates/list": return new JsonObject { ["resourceTemplates"] = new JsonArray() };
+            case "resources/read":
+            {
+                var uri = Param(p, "uri");
+                if (!McpScope.Guides.Contains(uri) || Catalog.ReadResource(uri) is not { } guide)
+                    throw new McpException(McpException.ResourceNotFound, "Resource not found", new JsonObject { ["uri"] = uri });
+                return guide;
+            }
+            case "prompts/list": return new JsonObject { ["prompts"] = new JsonArray() };
+            default: throw new McpException(McpException.MethodNotFound, $"Method not found: {method}");
+        }
+    }
+
     private static string Param(JsonObject p, string name) =>
         p[name] is JsonValue v && v.TryGetValue<string>(out var s) && s.Length > 0
             ? s
@@ -230,11 +279,17 @@ public sealed class McpServer
     {
         var name = Param(p, "name");
         if (!_tools.TryGetValue(name, out var tool)) throw new McpException(McpException.InvalidParams, $"Unknown tool: {name}");
+        return await CallAsync(tool, p, ct, confirm, alwaysConfirm: false).ConfigureAwait(false);
+    }
+
+    private async Task<JsonNode> CallAsync(McpTool tool, JsonObject p, CancellationToken ct, AssistantConfirm? confirm, bool alwaysConfirm)
+    {
+        var name = tool.Name;
         var args = p["arguments"] as JsonObject ?? [];
         _services.Log.Info(LogSource, $"Tool call: {name}");   // never the argument values
         try
         {
-            var needed = tool.Confirmation is { } describe && _settings().RequireConfirmation ? describe(args) : null;
+            var needed = tool.Confirmation is { } describe && (alwaysConfirm || _settings().RequireConfirmation) ? describe(args) : null;
             if (needed is { } summaryForAssistant && confirm is not null)
             {
                 // Cuebot's own Assistant: the streamer answers on the Assistant page while the call waits.
@@ -357,7 +412,8 @@ public sealed class McpServer
             return;
         }
 
-        var response = await HandleAsync(message, ct, context.Items[ConfirmItem] as AssistantConfirm).ConfigureAwait(false);
+        var access = context.Items[ConfirmItem] as AssistantAccess;
+        var response = await HandleAsync(message, ct, access?.Confirm, access?.Scope).ConfigureAwait(false);
         if (IsInitialize(message) && response is JsonObject { } init && init["result"]?["protocolVersion"] is JsonValue version)
         {
             var created = new Session(Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant(), version.GetValue<string>());

@@ -45,6 +45,14 @@ public sealed class AssistantService : IAsyncDisposable
 
     public AssistantSettings Settings => _file?.Value ?? _memorySettings;
 
+    /// <summary>Cuebot's servers (the MCP server conversations register with).</summary>
+    internal ServerManager Servers => _servers;
+
+    /// <summary>The folder AI CLIs run in; other conversations get folders inside it.</summary>
+    internal string WorkingDirectory => _workingDirectory;
+
+    internal AppLog Log => _log;
+
     public IReadOnlyList<IAssistantProvider> Providers { get; }
 
     public AssistantTools Tools { get; }

@@ -41,6 +41,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer, or use the *
 | Page | What it does | Who (default roles) |
 |---|---|---|
 | **Home** | Quick buttons for the actions they may run, and live activity (follows, subs, raids, tips) | Everyone |
+| **Assistant** | Ask your Assistant to set things up for them, with only what their role allows (see [The Assistant for mods](#the-assistant-for-mods)) | Lead Mod, Tech Lead (new portals; see below) |
 | **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
 | **Commands** | Add and change chat commands | Everyone |
 | **Sounds** | Play the sounds your actions use, on stream | Everyone |
@@ -78,6 +79,38 @@ text-to-speech. Each mod can press at most 30 such controls a minute.
       can run an action that only sends chat messages, but not one that changes the title. Actions with code,
       program or file steps never run from the portal. The portal marks the actions a mod can't run. To keep an
       action away from a role altogether, put it in a group the role cannot use (**Groups** on the role).
+
+## The Assistant for mods
+
+Mods can ask your [Assistant](../ai/assistant.md) to set things up for them on the **Assistant** page, in their own
+words: *"Make a channel point redeem called Bonk that plays this sound."* They can attach a sound, picture or video to
+the message. It is uploaded the usual way (see [Uploads](#uploads)), and the Assistant uses it in the step it builds.
+
+The Assistant can only do what the mod's role allows:
+
+- It works through the same requests as the portal's own pages, and Cuebot checks each one against the mod's role:
+  the level, the groups, uploads only for files, and never code, programs or files on your computer. If the role
+  says changes need your approval, the Assistant's changes wait for it too.
+- Its tools cover actions, commands, the step and trigger list, uploads and the mod's own changes. It cannot touch
+  your settings, sign-ins, overlays, scenes, or anything else.
+- Before it deletes something or runs an action on stream, the mod gets **Approve** and **Deny**.
+- Everything it changes is listed under the mod's name in **Recent changes by mods**, with Undo, like their other changes.
+
+Each mod has their own conversation, separate from yours and from other mods'. It is kept until Cuebot closes, or
+until an hour after they last used it.
+
+**It runs on your AI.** The Assistant uses the AI you set up on the [Assistant page](../ai/assistant.md), so your mods'
+messages count against your AI account or API key. Two mods' answers are worked on at a time, and each mod can send
+**30 messages a day** by default. Change the number under **Assistant messages per mod per day** at the top of the
+**Mod portal** page; 0 turns the Assistant off for all mods.
+
+!!! note "Turning it on"
+    New portals give **Use the Assistant** to Lead Mod and Tech Lead. If your portal was set up before this feature,
+    no role has it yet: tick **Use the Assistant (on your AI account)** on the roles you want under **Roles**.
+
+!!! tip "Channel point redeems"
+    The Assistant attaches the action to a reward by its exact title. The reward itself must exist on Twitch: create
+    it there (or in Cuebot) first, or tell your mods its exact name.
 
 ## Uploads
 
@@ -151,6 +184,7 @@ Cuebot starts with three roles. You can rename them, change them, or add your ow
 | Actions | Run | Create, change, delete | Create, change, delete |
 | Overlays | No | Change | Change, add, delete |
 | Their changes | Need your approval | Live, and you get a notice | Live |
+| Assistant | No | Yes | Yes |
 
 The **level** decides which steps a mod may add or change:
 

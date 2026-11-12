@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { useLoad, usePortal, type Answer } from "../api.js";
+import { useLoad, usePortal, type Answer, type Portal } from "../api.js";
 import { LoadError, Select } from "../widgets.js";
 
 export type UploadKind = "Sound" | "Image" | "Video";
@@ -45,6 +45,59 @@ function base64(bytes: Uint8Array): string {
   return btoa(text);
 }
 
+/** Where an upload ended: its id and whether it is live or waits for the streamer; null when it failed. */
+export interface Sent { id: string; state: "live" | "pending" }
+
+/**
+ * Sends one file in chunks, then waits while Cuebot checks and cleans it. Progress goes to `progress`; problems are shown
+ * with `notify`.
+ */
+export async function sendFile(call: Portal["call"], notify: Portal["notify"], file: File, kind: UploadKind,
+  limit: { maxBytes: number }, progress: (text: string) => void): Promise<Sent | null> {
+  if (file.size > limit.maxBytes) {
+    notify(`Files like this can be up to ${Math.round(limit.maxBytes / 1048576)} MB.`, "error");
+    return null;
+  }
+  progress("Reading the file…");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const start = await call("uploads.start", { kind, name: file.name, size: bytes.length, sha256 });
+  if (!start.ok) return null;
+  const id = start.id as string;
+  const size = start.chunkSize as number;
+  const count = Math.ceil(bytes.length / size);
+  let next = 0, sent = 0, failed = false;
+  const worker = async () => {
+    while (!failed && next < count) {
+      const index = next++;
+      const answer = await call("uploads.chunk", { id, index, data: base64(bytes.subarray(index * size, (index + 1) * size)) });
+      if (!answer.ok) failed = true;
+      progress(`Sending ${Math.round((++sent / count) * 100)}%`);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(PARALLEL, count) }, worker));
+  if (failed) {
+    void call("uploads.cancel", { id });
+    return null;
+  }
+  progress("Checking and cleaning the file…");
+  let status = await call("uploads.finish", { id });
+  while (status.ok && status.state === "cleaning") {
+    await new Promise((r) => setTimeout(r, 1000));
+    status = await call("uploads.status", { id });
+  }
+  if (status.state === "live") {
+    notify(`"${file.name}" is uploaded and ready.`);
+    return status.itemId ? { id: status.itemId as string, state: "live" } : null;
+  }
+  if (status.state === "pending") {
+    notify(`"${file.name}" is uploaded. The streamer approves it before it can be used.`);
+    return status.itemId ? { id: status.itemId as string, state: "pending" } : null;
+  }
+  if (status.ok && status.error) notify(status.error as string, "error");
+  return null;
+}
+
 export function UploadsPage() {
   const { call, notify } = usePortal();
   const [data, reload] = useLoad<Uploads>("uploads.list", 10000);
@@ -57,45 +110,12 @@ export function UploadsPage() {
   const upload = async (e: Event) => {
     e.preventDefault();
     if (!file || !chosen || !data?.limits) return;
-    const limit = data.limits[chosen];
-    if (file.size > limit.maxBytes) {
-      notify(`Files like this can be up to ${Math.round(limit.maxBytes / 1048576)} MB.`, "error");
-      return;
-    }
     try {
-      setProgress("Reading the file…");
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
-      const start = await call("uploads.start", { kind: chosen, name: file.name, size: bytes.length, sha256 });
-      if (!start.ok) return;
-      const id = start.id as string;
-      const size = start.chunkSize as number;
-      const count = Math.ceil(bytes.length / size);
-      let next = 0, sent = 0, failed = false;
-      const worker = async () => {
-        while (!failed && next < count) {
-          const index = next++;
-          const answer = await call("uploads.chunk", { id, index, data: base64(bytes.subarray(index * size, (index + 1) * size)) });
-          if (!answer.ok) failed = true;
-          setProgress(`Sending ${Math.round((++sent / count) * 100)}%`);
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(PARALLEL, count) }, worker));
-      if (failed) {
-        void call("uploads.cancel", { id });
-        return;
+      const done = await sendFile(call, notify, file, chosen, data.limits[chosen], setProgress);
+      if (done) {
+        setFile(null);
+        (document.getElementById("upload-file") as HTMLInputElement | null)?.form?.reset();
       }
-      setProgress("Checking and cleaning the file…");
-      let status = await call("uploads.finish", { id });
-      while (status.ok && status.state === "cleaning") {
-        await new Promise((r) => setTimeout(r, 1000));
-        status = await call("uploads.status", { id });
-      }
-      if (status.state === "live") notify(`"${file.name}" is uploaded and ready.`);
-      else if (status.state === "pending") notify(`"${file.name}" is uploaded. The streamer approves it before it can be used.`);
-      else if (status.ok && status.error) notify(status.error as string, "error");
-      setFile(null);
-      (document.getElementById("upload-file") as HTMLInputElement | null)?.form?.reset();
     } finally {
       setProgress(null);
       reload();

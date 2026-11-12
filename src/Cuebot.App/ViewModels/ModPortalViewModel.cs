@@ -63,6 +63,18 @@ public sealed partial class ModPortalViewModel : PageViewModel
 
     public string RelayStatus => _relay?.StatusMessage ?? "";
 
+    /// <summary>Assistant messages each mod may send per day (0: the portal's Assistant is off).</summary>
+    public decimal AssistantMessagesPerDay
+    {
+        get => _directory.AssistantMessagesPerDay;
+        set
+        {
+            if ((int)value == _directory.AssistantMessagesPerDay) return;
+            _directory.AssistantMessagesPerDay = (int)value;
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Which accounts mods can sign in with in this copy of Cuebot (built-in apps; none in a source build).</summary>
     public string SignInOptions
     {
@@ -269,6 +281,7 @@ public sealed partial class ModRoleViewModel : ObservableObject, IHasId
         PortalPermission.ViewActivity => "See the activity feed",
         PortalPermission.ViewLogs => "See logs and connection status",
         PortalPermission.UndoOthers => "Undo other mods' changes",
+        PortalPermission.UseAssistant => "Use the Assistant (on your AI account)",
         _ => p.ToString(),
     };
 }

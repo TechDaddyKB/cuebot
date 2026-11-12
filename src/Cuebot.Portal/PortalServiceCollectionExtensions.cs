@@ -7,6 +7,8 @@ using Cuebot.Core.Overlays;
 using Cuebot.Core.Overlays.Widgets;
 using Cuebot.Obs;
 using Cuebot.Core.Storage;
+using Cuebot.Assistant;
+using Cuebot.Portal.Assistant;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Overlays;
@@ -62,10 +64,15 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp => new PortalOverlays(sp.GetRequiredService<OverlayStore>(), sp.GetRequiredService<ElementStore>(),
             sp.GetRequiredService<WidgetCodeStore>(), sp.GetRequiredService<AssetStore>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<PortalMediaStore>()));
+        // The Assistant's tools are portal requests made as the mod; PortalApi is looked up when a tool runs (it needs this).
+        services.AddSingleton(sp => new PortalAssistant(sp.GetRequiredService<PortalDirectory>(), sp.GetService<ScopedAssistant>(),
+            (member, request) => sp.GetRequiredService<PortalApi>().HandleAsync(member, request), sp.GetRequiredService<PortalMediaStore>(),
+            sp.GetRequiredService<PortalChanges>(), sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(),
+            sp.GetService<AppLog>()));
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
             sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>(), sp.GetRequiredService<PortalUploads>(),
-            sp.GetRequiredService<PortalOverlays>()));
+            sp.GetRequiredService<PortalOverlays>(), sp.GetRequiredService<PortalAssistant>()));
         services.AddSingleton<IPortalIdentityExchange>(sp => new PortalIdentityExchange(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp =>
         {

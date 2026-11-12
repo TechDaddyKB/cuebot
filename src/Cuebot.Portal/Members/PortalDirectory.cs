@@ -87,6 +87,13 @@ public sealed class PortalDirectory
         set => Set(() => _settings.SharedWebhooks = value);
     }
 
+    /// <summary>Messages each mod may send the Assistant per day; 0 turns the portal's Assistant off.</summary>
+    public int AssistantMessagesPerDay
+    {
+        get { lock (_gate) return _settings.AssistantMessagesPerDay; }
+        set => Set(() => _settings.AssistantMessagesPerDay = Math.Clamp(value, 0, 1000));
+    }
+
     /// <summary>The relay address, or empty for the shared one.</summary>
     public string RelayUrl
     {

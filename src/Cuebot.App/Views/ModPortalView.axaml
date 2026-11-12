@@ -16,6 +16,12 @@
           <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding SignInOptions}" />
           <TextBlock Classes="muted" FontSize="12" Text="{Binding RelayId, StringFormat='Your portal address: {0}'}"
                      ToolTip.Tip="This Cuebot's address on the portal. It is made from a key kept on this computer and is not tied to your name." />
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+            <TextBlock Text="Assistant messages per mod per day" VerticalAlignment="Center" />
+            <NumericUpDown Name="AssistantMessagesPerDay" Value="{Binding AssistantMessagesPerDay}" Minimum="0" Maximum="1000" Increment="5"
+                           FormatString="0" Width="130"
+                           ToolTip.Tip="Mods whose role has &quot;Use the Assistant&quot; can ask your Assistant to set things up for them, with only what their role allows. It runs on the AI you set up on the Assistant page, so their messages count against your AI account. 0 turns it off for everyone." />
+          </StackPanel>
           <TextBlock Classes="muted" Text="{Binding Message}" TextWrapping="Wrap" />
         </StackPanel>
       </Border>

@@ -4,6 +4,8 @@
     <!-- Scenes and audio levels (OBS), text-to-speech and sounds for the portal's live controls. -->
     <ProjectReference Include="..\Cuebot.Obs\Cuebot.Obs.csproj" />
     <ProjectReference Include="..\Cuebot.Speech\Cuebot.Speech.csproj" />
+    <!-- The streamer's Assistant for mods (mod-scoped conversations through Cuebot's MCP server). -->
+    <ProjectReference Include="..\Cuebot.Assistant\Cuebot.Assistant.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- The mod portal UI, built from portal/ui (npm run build in portal/). -->

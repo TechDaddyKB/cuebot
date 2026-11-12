@@ -190,6 +190,9 @@ Every step type and trigger type declares a level. A test fails when a registere
 - **Phone app mod mode** (iOS and Android): join by invite link instead of the pairing QR; the same features through
   the same encrypted link.
 - Pages and buttons a member has no permission for are not shown; Cuebot re-checks every request anyway.
+- **Assistant** (added 2026-11-12, `PortalPermission.UseAssistant`): the streamer's Assistant, with tools that are
+  portal requests made as the member, so it can do exactly what the member's role allows. It runs on the streamer's
+  AI, with a daily message limit per mod. Details in `docs/ASSISTANT.md`, "Mods' conversations".
 
 ## 7. Webhooks through the shared relay
 - Address: `https://hooks.techdaddydigital.com/<relay id>/<route secret>/<service>`.

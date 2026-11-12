@@ -131,8 +131,9 @@ public sealed class LocalModelProvider(HttpClient http, Func<AssistantProviderSe
 
     private sealed class Session(LocalModelProvider provider, AssistantContext context, AssistantProviderSettings options) : IAssistantSession
     {
-        private readonly LocalToolSet _tools = new(context.Tools, options.AllTools);
-        private readonly JsonArray _messages = [new JsonObject { ["role"] = "system", ["content"] = context.Instructions + LocalToolSet.Instructions(options.AllTools) }];
+        // A scoped conversation (a mod's) has few tools: all of them are offered.
+        private readonly LocalToolSet _tools = new(context.Tools, options.AllTools || context.Tools.Scoped);
+        private readonly JsonArray _messages = [new JsonObject { ["role"] = "system", ["content"] = context.Instructions + LocalToolSet.Instructions(options.AllTools || context.Tools.Scoped) }];
         private (Uri Root, ServerKind Kind, string Model)? _server;
 
         public async IAsyncEnumerable<AssistantUpdate> SendAsync(string text, [EnumeratorCancellation] CancellationToken ct = default)

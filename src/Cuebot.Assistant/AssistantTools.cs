@@ -13,10 +13,13 @@ public sealed record AssistantToolResult(string Content, bool IsError);
 /// Cuebot's MCP tools called in process (API-key providers). Calls go through <see cref="McpServer"/>, so tool-call
 /// logging and the confirmation rule for destructive tools are the same as for MCP clients: when a tool answers with a
 /// confirmation token, <paramref name="confirm"/> asks the streamer and the call is repeated with the token only if
-/// they approve.
+/// they approve. With a <paramref name="scope"/> (a mod's conversation from the mod portal) only its tools exist.
 /// </summary>
-public sealed class AssistantTools(McpServer mcp)
+public sealed class AssistantTools(McpServer mcp, McpScope? scope = null)
 {
+    /// <summary>True when only a scope's tools exist (a mod's conversation), not all of Cuebot's.</summary>
+    public bool Scoped => scope is not null;
+
     /// <summary>
     /// MCP clients read Cuebot's guides as resources; API-key providers only have tools, so this one reads them.
     /// </summary>
@@ -26,7 +29,7 @@ public sealed class AssistantTools(McpServer mcp)
 
     public IReadOnlyList<AssistantToolDefinition> List() =>
     [
-        .. mcp.Tools.Select(t => new AssistantToolDefinition(t.Name, t.Description, (JsonObject)t.InputSchema.DeepClone())),
+        .. (scope?.Tools ?? mcp.Tools).Select(t => new AssistantToolDefinition(t.Name, t.Description, (JsonObject)t.InputSchema.DeepClone())),
         new AssistantToolDefinition(ReadDocTool,
             $"Read one of Cuebot's guides: {McpCatalog.ActionsDocUri} (how actions, triggers and sub-actions work) or "
             + $"{McpCatalog.VariablesUri} (variables and %arguments%). Read them before building actions.",
@@ -75,7 +78,7 @@ public sealed class AssistantTools(McpServer mcp)
             ["id"] = 1,
             ["method"] = "resources/read",
             ["params"] = new JsonObject { ["uri"] = uri },
-        }, ct).ConfigureAwait(false);
+        }, ct, scope: scope).ConfigureAwait(false);
         var text = response?["result"]?["contents"] is JsonArray { Count: > 0 } contents ? contents[0]?["text"]?.GetValue<string>() : null;
         return text is null
             ? new AssistantToolResult(new JsonObject { ["error"] = response?["error"]?["message"]?.DeepClone() ?? "Not found" }.ToJsonString(), true)
@@ -90,7 +93,7 @@ public sealed class AssistantTools(McpServer mcp)
             ["id"] = 1,
             ["method"] = "tools/call",
             ["params"] = new JsonObject { ["name"] = name, ["arguments"] = arguments.DeepClone() },
-        }, ct).ConfigureAwait(false);
+        }, ct, scope: scope).ConfigureAwait(false);
         if (response?["error"] is JsonObject error)
             return new JsonObject
             {

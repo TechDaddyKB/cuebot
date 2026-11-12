@@ -29,7 +29,7 @@ public static class DefaultRoles
             Permissions =
             [
                 RunActions, CreateCommands, EditCommands, DeleteCommands, CreateActions, EditActions, DeleteActions,
-                AudioLevels, StreamControl, ShowCritical, UploadSounds, UploadMedia, EditOverlays, ViewActivity, UndoOthers,
+                AudioLevels, StreamControl, ShowCritical, UploadSounds, UploadMedia, EditOverlays, ViewActivity, UndoOthers, UseAssistant,
             ],
         },
         new()

@@ -38,6 +38,8 @@ public static class AssistantServiceCollectionExtensions
         services.AddSingleton(sp => new AssistantService(sp.GetRequiredService<JsonFile<AssistantSettings>>(), sp.GetServices<IAssistantProvider>(),
             sp.GetRequiredService<ServerManager>(), sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>(),
             sp.GetRequiredService<JsonFile<AssistantHistoryFile>>()));
+        // Conversations for others than the streamer (mods in the mod portal), each with its own tools.
+        services.AddSingleton(sp => new ScopedAssistant(sp.GetRequiredService<AssistantService>()));
         return services;
     }
 

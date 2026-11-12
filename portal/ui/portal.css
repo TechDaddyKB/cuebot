@@ -143,3 +143,19 @@ fieldset.group { border: 1px solid var(--line); border-radius: .5rem; padding: .
 fieldset.group legend { font-weight: 600; padding: 0 .3rem; }
 details.item > summary { cursor: pointer; }
 .sticky-save { position: sticky; bottom: 0; background: var(--bg); padding: .6rem 0; border-top: 1px solid var(--line); }
+
+/* Assistant */
+.assistant-lines { display: flex; flex-direction: column; gap: .5rem; max-height: 60vh; overflow-y: auto; padding-bottom: .5rem; }
+.msg { white-space: pre-wrap; overflow-wrap: anywhere; padding: .5rem .75rem; border-radius: .6rem; max-width: 85%; }
+.msg.user { align-self: flex-end; background: var(--accent); color: var(--accent-text); }
+.msg.ai { align-self: flex-start; background: var(--panel-2); }
+.msg.tool { align-self: flex-start; font-size: .85rem; color: var(--muted); padding: .1rem .75rem; }
+.msg.tool.failed { color: var(--danger); }
+.msg.confirm { align-self: stretch; max-width: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem;
+  border: 1px solid var(--accent); }
+.msg.error { align-self: stretch; max-width: none; border: 1px solid var(--danger); color: var(--danger); }
+.msg.info { align-self: center; font-size: .85rem; padding: .1rem .5rem; }
+.assistant-compose textarea { width: 100%; box-sizing: border-box; }
+.assistant-compose .attached { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.assistant-compose .attached li { background: var(--panel-2); border-radius: 999px; padding: .1rem .6rem; font-size: .85rem; }
+label.button { display: inline-flex; align-items: center; cursor: pointer; padding: .45rem .9rem; background: var(--panel-2); border: 1px solid var(--line); border-radius: .5rem; }

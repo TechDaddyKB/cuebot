@@ -30,6 +30,11 @@ public enum PortalPermission
     ViewLogs,
     /// <summary>Undo changes other members made (everyone may undo their own).</summary>
     UndoOthers,
+    /// <summary>
+    /// Talk to the streamer's Assistant from the portal. It runs on the streamer's AI and can only do what the rest of
+    /// the role allows.
+    /// </summary>
+    UseAssistant,
 }
 
 /// <summary>Whether a member's changes go live at once.</summary>
@@ -145,6 +150,9 @@ public sealed class PortalSettings
 
     /// <summary>Receive webhooks through the shared relay (hooks.techdaddydigital.com), with or without mods.</summary>
     public bool SharedWebhooks { get; set; }
+
+    /// <summary>Messages each mod may send the Assistant per day (it runs on the streamer's AI account); 0 turns it off.</summary>
+    public int AssistantMessagesPerDay { get; set; } = 30;
 
     /// <summary>The path segment that makes this Cuebot's shared webhook addresses unguessable. Secret.</summary>
     [Secret]

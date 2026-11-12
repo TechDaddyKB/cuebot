@@ -3,6 +3,7 @@ import { useMemo, useState } from "preact/hooks";
 import type { PortalHost } from "../web/host.js";
 import { PortalContext, type Me, type Permission, type Portal } from "./api.js";
 import { ActionsPage } from "./pages/actions.js";
+import { AssistantPage } from "./pages/assistant.js";
 import { AudioPage } from "./pages/audio.js";
 import { ChangesPage } from "./pages/changes.js";
 import { CommandsPage } from "./pages/commands.js";
@@ -24,6 +25,7 @@ interface PageInfo {
 
 export const PAGES: PageInfo[] = [
   { id: "home", title: "Home", page: HomePage },
+  { id: "assistant", title: "Assistant", page: AssistantPage, needs: ["UseAssistant"] },
   { id: "actions", title: "Actions", page: ActionsPage, needs: ["RunActions", "CreateActions", "EditActions", "DeleteActions"] },
   { id: "commands", title: "Commands", page: CommandsPage, needs: ["CreateCommands", "EditCommands", "DeleteCommands"] },
   { id: "sounds", title: "Sounds", page: SoundsPage, needs: ["RunActions"] },

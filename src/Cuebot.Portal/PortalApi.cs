@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
+using Cuebot.Portal.Assistant;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Overlays;
@@ -17,7 +18,7 @@ namespace Cuebot.Portal;
 /// </summary>
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
     ActionEngine engine, Registry registry, PortalControls? controls = null, PortalUploads? uploads = null,
-    PortalOverlays? overlays = null)
+    PortalOverlays? overlays = null, PortalAssistant? assistant = null)
 {
     private readonly PortalFiles _files = new(uploads?.Store);
 
@@ -32,6 +33,8 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
             if (controls is not null && PortalControls.Handles(name)) return await controls.HandleAsync(member, role, name, request).ConfigureAwait(false);
             if (uploads is not null && PortalUploads.Handles(name)) return await uploads.HandleAsync(member, role, name, request).ConfigureAwait(false);
             if (overlays is not null && PortalOverlays.Handles(name)) return await overlays.HandleAsync(member, role, name, request).ConfigureAwait(false);
+            if (PortalAssistant.Handles(name))
+                return assistant is null ? Error("This Cuebot has no assistant.") : await assistant.HandleAsync(member, role, name, request).ConfigureAwait(false);
             return name switch
             {
                 "me" => Me(member, role),
