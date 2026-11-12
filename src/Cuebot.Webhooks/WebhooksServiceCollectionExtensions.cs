@@ -40,7 +40,21 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton<Cuebot.Core.Overlays.Session.ISessionDataSource>(sp => sp.GetRequiredService<PatreonTracker>());
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<PatreonTracker>());
         Add<PatreonWebhookHandler>(services, (s, b, l) => new PatreonWebhookHandler(s, b, l), (sp, h) => h.Tracker = sp.GetRequiredService<PatreonTracker>());
-        Add<FourthwallWebhookHandler>(services, (s, b, l) => new FourthwallWebhookHandler(s, b, l));
+        services.AddSingleton(sp => new FourthwallTracker(sp.GetRequiredService<JsonFile<WebhooksSettings>>(), sp.GetRequiredService<AppLog>(),
+            sp.GetService<HttpClient>(), sp.GetRequiredService<AppPaths>().File("fourthwall.json"))
+        {
+            Globals = sp.GetService<Cuebot.Core.Actions.GlobalVariables>(),
+        });
+        services.AddSingleton<Cuebot.Core.Overlays.Session.ISessionDataSource>(sp => sp.GetRequiredService<FourthwallTracker>());
+        services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<FourthwallTracker>());
+        Add<FourthwallWebhookHandler>(services, (s, b, l) => new FourthwallWebhookHandler(s, b, l), (sp, h) =>
+        {
+            var tracker = sp.GetRequiredService<FourthwallTracker>();
+            h.Tracker = tracker;
+            tracker.Replay = h.ReplayAsync;
+            // Gift draw entries from Twitch chat and the Twitch stream going live / offline.
+            sp.GetRequiredService<EventBus>().Subscribe(tracker.OnEvent);
+        });
         Add<ShopifyWebhookHandler>(services, (s, b, l) => new ShopifyWebhookHandler(s, b, l));
         Add<ThroneWebhookHandler>(services, (s, b, l) => new ThroneWebhookHandler(s, b, l));
         Add<CustomWebhookHandler>(services, (s, b, l) => new CustomWebhookHandler(s, b, l));
@@ -58,6 +72,10 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton(sp => new KofiSubActionSet(KofiSubActions.Create(sp.GetRequiredService<KofiTracker>())));
         foreach (var typeId in KofiSubActionSet.TypeIds)
             services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<KofiSubActionSet>().Get(typeId));
+        services.AddSingleton<IScriptFunctionProvider>(sp => new FourthwallScriptFunctions(sp.GetRequiredService<FourthwallTracker>()));
+        services.AddSingleton(sp => new FourthwallSubActionSet(FourthwallSubActions.Create(sp.GetRequiredService<FourthwallTracker>())));
+        foreach (var typeId in FourthwallSubActions.TypeIds)
+            services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<FourthwallSubActionSet>().Get(typeId));
         services.AddSingleton<IScriptFunctionProvider>(sp => new PatreonScriptFunctions(sp.GetRequiredService<PatreonTracker>()));
         services.AddSingleton(sp => new PatreonSubActionSet(PatreonSubActions.Create(sp.GetRequiredService<PatreonTracker>())));
         foreach (var typeId in PatreonSubActions.TypeIds)

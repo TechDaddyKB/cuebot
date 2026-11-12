@@ -1,0 +1,21 @@
+{
+  "testMode": false,
+  "id": "weve_promo_status",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "PROMOTION_STATUS_CHANGED",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-28T10:00:00.000+00:00",
+  "data": {
+    "type": "SHOP_MULTI",
+    "id": "prm_multi",
+    "title": "Raid codes",
+    "codes": [ { "id": "c1", "code": "RAID1", "usageCount": 1, "status": "AllUsed" }, { "id": "c2", "code": "RAID2", "usageCount": 1, "status": "AllUsed" } ],
+    "discount": { "type": "FLAT_RATE", "money": { "value": 5, "currency": "USD" }, "freeShipping": false },
+    "status": "AllUsed",
+    "requirements": {},
+    "limits": { "maximumUsesNumber": 2, "oneUsePerCustomer": true },
+    "usageCount": 2,
+    "appliesTo": { "type": "ENTIRE_ORDER" }
+  }
+}

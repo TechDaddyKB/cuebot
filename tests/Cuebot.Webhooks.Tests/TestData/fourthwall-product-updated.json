@@ -1,0 +1,26 @@
+{
+  "testMode": false,
+  "id": "weve_product_page",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "PRODUCT_UPDATED",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-27T16:00:00.000+00:00",
+  "data": {
+    "product": {
+      "results": [
+        { "id": "prod_public", "name": "Stream Hoodie", "slug": "stream-hoodie", "description": "Warm", "type": "STANDARD",
+          "state": { "type": "SOLD_OUT" }, "access": { "type": "PUBLIC" },
+          "thumbnailImage": { "id": "i1", "url": "https://cdn.fourthwall.com/hoodie.jpeg", "width": 1, "height": 1, "transformedUrl": "" },
+          "images": [],
+          "variants": [ { "id": "v1", "name": "M", "sku": "H-M", "unitPrice": { "value": 45, "currency": "USD" }, "attributes": { "description": "M" }, "stock": { "type": "LIMITED", "inStock": 0 } } ],
+          "createdAt": "2026-10-27T15:00:00.000+00:00", "updatedAt": "2026-10-27T16:00:00.000+00:00" },
+        { "id": "prod_secret", "name": "Unreleased Mug", "slug": "unreleased-mug", "description": "Shh", "type": "STANDARD",
+          "state": { "type": "AVAILABLE" }, "access": { "type": "HIDDEN" }, "images": [],
+          "variants": [ { "id": "v2", "name": "One size", "sku": "MUG", "unitPrice": { "value": 15, "currency": "USD" }, "attributes": { "description": "" }, "stock": { "type": "UNLIMITED" } } ],
+          "createdAt": "2026-10-27T15:00:00.000+00:00", "updatedAt": "2026-10-27T16:00:00.000+00:00" }
+      ],
+      "total": 2, "page": 0, "size": 2, "totalPages": 1
+    }
+  }
+}

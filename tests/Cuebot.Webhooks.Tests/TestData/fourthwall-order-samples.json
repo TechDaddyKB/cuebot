@@ -1,0 +1,32 @@
+{
+  "testMode": false,
+  "id": "weve_order_samples",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "ORDER_PLACED",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-27T15:30:00.000+00:00",
+  "data": {
+    "id": "ord_samples_1",
+    "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+    "friendlyId": "SAMP0001",
+    "checkoutId": "ch_redeem",
+    "status": "CONFIRMED",
+    "email": "winner@example.com",
+    "emailMarketingOptIn": false,
+    "username": "TheCreator",
+    "message": "",
+    "amounts": {
+      "subtotal": { "value": 0, "currency": "USD" }, "shipping": { "value": 0, "currency": "USD" }, "tax": { "value": 0, "currency": "USD" },
+      "donation": { "value": 0, "currency": "USD" }, "discount": { "value": 25, "currency": "USD" }, "total": { "value": 25, "currency": "USD" }
+    },
+    "offers": [
+      { "id": "b2c201d3-8104-4b2a-b2c9-1f6b335b650a", "name": "New T-shirt", "slug": "new-t-shirt", "description": "Soft tee",
+        "variant": { "id": "var_1", "name": "Black, M", "sku": "TEE-BM", "unitPrice": { "value": 25, "currency": "USD" },
+          "attributes": { "description": "Black, M" }, "quantity": 1, "price": { "value": 25, "currency": "USD" } } }
+    ],
+    "source": { "type": "SAMPLES_ORDER" },
+    "createdAt": "2026-10-27T15:30:00.000+00:00",
+    "updatedAt": "2026-10-27T15:30:00.000+00:00"
+  }
+}

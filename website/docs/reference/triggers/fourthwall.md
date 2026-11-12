@@ -3,56 +3,75 @@
 
 ![Adding a trigger: on the Actions page, click + Trigger and search for it](../../assets/screens/actions-trigger-picker.png)
 
-## Donation
+## Collection Updated
 
-Runs when someone donates to you on Fourthwall. Great for a thank-you. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when a collection in your Fourthwall shop changes, such as a drop being made available. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
-| **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
-| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
-| **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
+| **Only public ones** | Tick to skip hidden, private and archived collections. Starts as: `false`. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%fw.name%` | The collection's name |
+| `%fw.slug%` | The collection's short name in its web address |
+| `%fw.available%` | True when it can be bought |
+| `%fw.access%` | PUBLIC, HIDDEN, PRIVATE or ARCHIVED |
+| `%fw.isPublic%` | True when anyone can see it |
+| `%fw.productCount%` | How many products it holds |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
+
+<small>Type id: `fourthwall.collectionUpdated`</small>
+
+## Donation
+
+Runs when someone donates to you on Fourthwall. Great for a thank-you. By default only for completed donations: Fourthwall also reports donations that were started but never paid (open, abandoned, cancelled or failed), and those have amount 0 and never show in the feed, alerts or totals. Needs your Fourthwall webhook set up on the Webhooks page.
+
+| Setting | What to put in |
+| --- | --- |
+| **Donation status** | Which donations run this: Completed (the money arrived; the default), Not completed (open, abandoned, cancelled or failed), or Any. Options: Completed, Not completed, Any. Starts as: `Completed`. |
+| **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
 | `%message%` | Their message |
+| `%fw.status%` | The donation's status: COMPLETED, OPEN, ABANDONED, CANCELLED or FAILED |
+| `%isCompleted%` | True when the money arrived (COMPLETED) |
+| `%fw.amount%` | The amount Fourthwall names, even when the donation did not complete (amount is then 0) |
+| `%fw.donationId%` | Fourthwall's id for the donation |
+| `%fw.email%` | Their email address (private: do not show it on stream) |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.donation`</small>
 
 ## Gift Draw Ended
 
-Runs when a Fourthwall gift draw ends and the winners are known. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when a Fourthwall gift draw ends and the winners are known. Post the winners and their claim links in chat. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
-
-**Variables you get**
-
-| Variable | What it holds |
-| --- | --- |
-| `%fw.giftCount%` | How many gifts were drawn |
-| `%fw.offer.name%` | The name of the gift item |
-| `%fw.gifts[0].winner%` | The first winner (use 1, 2... for the next ones) |
-| `%isTest%` | True when this is a test event, not a real one |
-
-<small>Type id: `fourthwall.giftDrawEnded`</small>
-
-## Gift Draw Started
-
-Runs when a Fourthwall gift draw starts, where winners get picked. Needs your Fourthwall webhook set up on the Webhooks page.
-
-| Setting | What to put in |
-| --- | --- |
-| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
@@ -60,14 +79,49 @@ Runs when a Fourthwall gift draw starts, where winners get picked. Needs your Fo
 | --- | --- |
 | `%fw.giftCount%` | How many gifts are in the draw |
 | `%fw.offer.name%` | The name of the gift item |
+| `%fw.drawId%` | Fourthwall's id for the draw |
 | `%fw.durationSeconds%` | How long the draw lasts, in seconds |
+| `%fw.winners%` | The winners' names joined with commas ("Anonymous" for a blank name) |
+| `%fw.winnerCount%` | How many winners there are |
+| `%fw.gifts[0].winner%` | The first winner (use 1, 2... for the next ones) |
+| `%fw.gifts[0].redeemUri%` | The first winner's claim link from Fourthwall |
+| `%fw.gifts[0].selectedAt%` | When the first winner was picked |
+| `%fw.giftUrls%` | Claim links for every gift, separated by spaces (needs the shop address or the API) |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
+
+<small>Type id: `fourthwall.giftDrawEnded`</small>
+
+## Gift Draw Started
+
+Runs when a Fourthwall gift draw starts, where winners get picked. When Cuebot runs the draws (Webhooks page), viewers enter by typing the entry command in Twitch chat until the time is up: post it in chat from this trigger. Needs your Fourthwall webhook set up on the Webhooks page.
+
+| Setting | What to put in |
+| --- | --- |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%fw.giftCount%` | How many gifts are in the draw |
+| `%fw.offer.name%` | The name of the gift item |
+| `%fw.drawId%` | Fourthwall's id for the draw |
+| `%fw.durationSeconds%` | How long the draw lasts, in seconds |
+| `%fw.cuebotRunsDraw%` | True when Cuebot collects entries for this draw from Twitch chat |
+| `%fw.entryCommand%` | What viewers type to enter, like !enter |
+| `%fw.giftUrls%` | Where winners will claim the gifts (needs the shop address or the API) |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.giftDrawStarted`</small>
 
 ## Gift Purchase
 
-Runs when someone buys gifts on Fourthwall for viewers to win. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when someone buys gifts on Fourthwall for viewers to win. Shows as a merch alert (with gift set) in overlays. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
@@ -75,19 +129,31 @@ Runs when someone buys gifts on Fourthwall for viewers to win. Needs your Fourth
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
 | `%message%` | Their message |
-| `%isTest%` | True when this is a test event, not a real one |
 | `%fw.quantity%` | How many gifts were bought |
 | `%fw.offer.name%` | The name of the gift item |
+| `%fw.offer.imageUrl%` | A picture of the gift item (web link) |
+| `%fw.giftUrls%` | Where winners claim each gift (links separated by spaces; needs the shop address on the Webhooks page or the Fourthwall API) |
+| `%fw.giftUrl%` | The first claim link |
+| `%fw.gifts[0].id%` | The first gift's id (use 1, 2... for the next ones) |
+| `%fw.profit%` | What you earn from the gifts |
+| `%fw.donation%` | Always 0: gifts have no donation (kept for Streamer.bot) |
+| `%fw.discount%` | Always 0: gifts have no discount (kept for Streamer.bot) |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.giftPurchase`</small>
 
@@ -98,74 +164,107 @@ Runs when someone signs up for your Fourthwall newsletter. Needs your Fourthwall
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%fw.email%` | The email address they signed up with |
+| `%fw.email%` | The email address they signed up with (private: do not show it on stream) |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.newsletterSubscribed`</small>
 
 ## Order Placed
 
-Runs when someone orders from your Fourthwall shop. Good for thanking buyers. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when someone orders from your Fourthwall shop. Good for thanking buyers. By default only for purchases: your own samples orders and viewers claiming a gift do not run it, and they never show as purchases in the feed, alerts or totals (a claimed gift shows as "redeemed a gift"). Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
+| **Order kind** | Which orders run this: Purchases (real orders), Gift redemptions (a viewer claiming a stream gift or giveaway link), Samples (your own samples orders) or Any. Options: Purchases, Gift redemptions, Samples, Any. Starts as: `Purchases`. |
 | **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
 | `%message%` | Their message |
-| `%isTest%` | True when this is a test event, not a real one |
 | `%fw.items%` | What they ordered (names joined with commas) |
 | `%fw.itemCount%` | How many things they ordered |
 | `%fw.friendly%` | The short order number |
+| `%fw.source%` | What kind of order: ORDER (a purchase), SAMPLES_ORDER (your own samples), TWITCH_GIFT_REDEMPTION or GIVEAWAY_LINKS (a gift being claimed) |
+| `%isPurchase%` | True for a real purchase; false for samples and claimed gifts (amount is then 0) |
+| `%fw.giftId%` | For a claimed gift: the gift's id |
+| `%fw.giftPurchaseId%` | For a claimed stream gift: the gift purchase it came from |
+| `%fw.promotionId%` | The promotion (discount code) used, if any |
+| `%fw.status%` | The order's status, like CONFIRMED, SHIPPED or CANCELLED |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.orderPlaced`</small>
 
 ## Order Updated
 
-Runs when an order in your Fourthwall shop changes, such as being shipped. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when an order in your Fourthwall shop changes, such as being shipped or cancelled. Fourthwall may send an event more than once (Cuebot runs it once) and in any order. An Order Updated can even arrive before its Order Placed. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
+| **What changed** | What changed: STATUS (the order moved on), SHIPPING.ADDRESS, EMAIL, or Any. Options: Any, STATUS, SHIPPING.ADDRESS, EMAIL. Starts as: `Any`. |
+| **Order status** | Only run for these order statuses, like "SHIPPED, CANCELLED". Leave empty for any. |
+| **Order kind** | Which orders run this: Purchases (real orders), Gift redemptions (a viewer claiming a stream gift or giveaway link), Samples (your own samples orders) or Any. Options: Purchases, Gift redemptions, Samples, Any. Starts as: `Any`. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
 | `%message%` | Their message |
-| `%isTest%` | True when this is a test event, not a real one |
-| `%fw.updateType%` | What changed |
-| `%fw.status%` | The order's status |
+| `%fw.updateType%` | What changed: STATUS, SHIPPING.ADDRESS or EMAIL |
+| `%isCancelled%` | True when the order is cancelled |
+| `%fw.items%` | What they ordered (names joined with commas) |
+| `%fw.itemCount%` | How many things they ordered |
 | `%fw.friendly%` | The short order number |
+| `%fw.source%` | What kind of order: ORDER (a purchase), SAMPLES_ORDER (your own samples), TWITCH_GIFT_REDEMPTION or GIVEAWAY_LINKS (a gift being claimed) |
+| `%isPurchase%` | True for a real purchase; false for samples and claimed gifts (amount is then 0) |
+| `%fw.giftId%` | For a claimed gift: the gift's id |
+| `%fw.giftPurchaseId%` | For a claimed stream gift: the gift purchase it came from |
+| `%fw.promotionId%` | The promotion (discount code) used, if any |
+| `%fw.status%` | The order's status, like CONFIRMED, SHIPPED or CANCELLED |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.orderUpdated`</small>
 
 ## Product Created
 
-Runs when you add a new product to your Fourthwall shop. Handy to announce it. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when you add a new product to your Fourthwall shop. Handy to announce it; by default only once it is public. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
+| **Only public ones** | Leave ticked to skip hidden, private and archived products, so an announcement never shows something you have not released. Untick to run for every product. Starts as: `true`. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
@@ -174,17 +273,27 @@ Runs when you add a new product to your Fourthwall shop. Handy to announce it. N
 | `%fw.name%` | The product name |
 | `%fw.description%` | Its description |
 | `%fw.imageUrl%` | A picture of it (web link) |
+| `%fw.access%` | Who can see it: PUBLIC, HIDDEN, PRIVATE or ARCHIVED |
+| `%fw.isPublic%` | True when anyone can see it in your shop |
+| `%fw.state%` | AVAILABLE or SOLD_OUT |
+| `%fw.isSoldOut%` | True when it is sold out |
+| `%fw.price%` | The lowest price as a number |
+| `%fw.formattedPrice%` | The lowest price written nicely, like "$45.00" |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.productCreated`</small>
 
 ## Product Updated
 
-Runs when a product in your Fourthwall shop changes. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when a product in your Fourthwall shop changes. When one change touches several products, it runs once for each. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
+| **Only public ones** | Leave ticked to skip hidden, private and archived products, so an announcement never shows something you have not released. Untick to run for every product. Starts as: `true`. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
@@ -193,30 +302,138 @@ Runs when a product in your Fourthwall shop changes. Needs your Fourthwall webho
 | `%fw.name%` | The product name |
 | `%fw.description%` | Its description |
 | `%fw.imageUrl%` | A picture of it (web link) |
+| `%fw.access%` | Who can see it: PUBLIC, HIDDEN, PRIVATE or ARCHIVED |
+| `%fw.isPublic%` | True when anyone can see it in your shop |
+| `%fw.state%` | AVAILABLE or SOLD_OUT |
+| `%fw.isSoldOut%` | True when it is sold out |
+| `%fw.price%` | The lowest price as a number |
+| `%fw.formattedPrice%` | The lowest price written nicely, like "$45.00" |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.productUpdated`</small>
 
-## Subscription Changed
+## Promotion Created
 
-Runs when a Fourthwall member changes their membership. Needs your Fourthwall webhook set up on the Webhooks page.
+Runs when a promotion (discount code) is made in your Fourthwall shop, by you or by Cuebot's Create promo code step. Handy to post the code in chat. Needs your Fourthwall webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%fw.code%` | The code, like STREAM20 (the first one when there are several) |
+| `%fw.codes%` | Every code, joined with commas |
+| `%fw.title%` | The promotion's title, if it has one |
+| `%fw.status%` | Live, Ended, Archived or AllUsed |
+| `%fw.isAllUsed%` | True when every use of the code is taken |
+| `%fw.usageCount%` | How many times it was used |
+| `%fw.maxUses%` | How many uses it allows (0 = no limit) |
+| `%fw.discount%` | The discount in words, like "20% off" or "$5.00 off" |
+| `%fw.promotionId%` | Fourthwall's id for the promotion |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
+
+<small>Type id: `fourthwall.promotionCreated`</small>
+
+## Promotion Status Changed
+
+Runs when a Fourthwall promotion goes live, ends, is archived or is used up. Handy for "the code is all gone!". Needs your Fourthwall webhook set up on the Webhooks page.
+
+| Setting | What to put in |
+| --- | --- |
+| **New status** | Only for this new status: Live, Ended, AllUsed (every use taken), Archived, or Any. Options: Any, Live, Ended, AllUsed, Archived. Starts as: `Any`. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%fw.code%` | The code, like STREAM20 (the first one when there are several) |
+| `%fw.codes%` | Every code, joined with commas |
+| `%fw.title%` | The promotion's title, if it has one |
+| `%fw.status%` | Live, Ended, Archived or AllUsed |
+| `%fw.isAllUsed%` | True when every use of the code is taken |
+| `%fw.usageCount%` | How many times it was used |
+| `%fw.maxUses%` | How many uses it allows (0 = no limit) |
+| `%fw.discount%` | The discount in words, like "20% off" or "$5.00 off" |
+| `%fw.promotionId%` | Fourthwall's id for the promotion |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
+
+<small>Type id: `fourthwall.promotionStatusChanged`</small>
+
+## Promotion Updated
+
+Runs when a promotion (discount code) in your Fourthwall shop is changed. Needs your Fourthwall webhook set up on the Webhooks page.
+
+| Setting | What to put in |
+| --- | --- |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%fw.code%` | The code, like STREAM20 (the first one when there are several) |
+| `%fw.codes%` | Every code, joined with commas |
+| `%fw.title%` | The promotion's title, if it has one |
+| `%fw.status%` | Live, Ended, Archived or AllUsed |
+| `%fw.isAllUsed%` | True when every use of the code is taken |
+| `%fw.usageCount%` | How many times it was used |
+| `%fw.maxUses%` | How many uses it allows (0 = no limit) |
+| `%fw.discount%` | The discount in words, like "20% off" or "$5.00 off" |
+| `%fw.promotionId%` | Fourthwall's id for the promotion |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
+
+<small>Type id: `fourthwall.promotionUpdated`</small>
+
+## Subscription Changed
+
+Runs when a Fourthwall membership changes: a new tier, or a cancellation (Fourthwall sends this when a member cancels too). Use Change to pick. Upgrades and downgrades are known when Cuebot saw the member's earlier tier (an earlier webhook or a member sync). Needs your Fourthwall webhook set up on the Webhooks page.
+
+| Setting | What to put in |
+| --- | --- |
+| **Change** | Which changes run this: Cancellations, Not cancellations, Upgrades (a pricier tier), Downgrades, or Any. Options: Any, Cancellations, Not cancellations, Upgrades, Downgrades. Starts as: `Any`. |
+| **Tier name** | Only run for these tiers: names (needs the Fourthwall API) or tier ids, with commas. Leave empty for any tier. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
-| `%message%` | Their message |
+| `%fw.interval%` | How often they pay: MONTHLY or ANNUAL |
+| `%fw.tierId%` | Their tier's id |
+| `%tier%` | Their tier's name (needs the Fourthwall API connected) |
+| `%fw.state%` | The membership's state: ACTIVE, CANCELLED (ends at the end of the paid period), SUSPENDED or NONE |
+| `%fw.isCancelled%` | True when the member cancelled |
+| `%fw.monthlyAmount%` | The price per month (a yearly price divided by 12) |
+| `%fw.nickname%` | Their nickname |
+| `%direction%` | upgrade, downgrade, change (another tier at the same price), same, or empty when Cuebot did not know the earlier tier |
+| `%fw.previousTierId%` | The tier they had before (if Cuebot knew it) |
+| `%fw.previousTier%` | The name of the tier they had before |
+| `%fw.previousAmount%` | What they paid per month before |
 | `%isTest%` | True when this is a test event, not a real one |
-| `%fw.interval%` | How often they pay |
-| `%fw.tierId%` | Their tier |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.subscriptionChanged`</small>
 
@@ -227,19 +444,28 @@ Runs when a Fourthwall membership ends. Needs your Fourthwall webhook set up on 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
-| `%message%` | Their message |
+| `%fw.interval%` | How often they pay: MONTHLY or ANNUAL |
+| `%fw.tierId%` | Their tier's id |
+| `%tier%` | Their tier's name (needs the Fourthwall API connected) |
+| `%fw.state%` | The membership's state: ACTIVE, CANCELLED (ends at the end of the paid period), SUSPENDED or NONE |
+| `%fw.isCancelled%` | True when the member cancelled |
+| `%fw.monthlyAmount%` | The price per month (a yearly price divided by 12) |
+| `%fw.nickname%` | Their nickname |
 | `%isTest%` | True when this is a test event, not a real one |
-| `%fw.interval%` | How often they paid |
-| `%fw.tierId%` | Their tier |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.subscriptionExpired`</small>
 
@@ -249,23 +475,33 @@ Runs when someone starts a paid membership on Fourthwall. Great for a thank-you.
 
 | Setting | What to put in |
 | --- | --- |
+| **Tier name** | Only run for these tiers: names (needs the Fourthwall API) or tier ids, with commas. Leave empty for any tier. |
 | **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The person's name ("Anonymous" if unknown) |
+| `%user%` | The person's name ("Anonymous" if they left it blank, "A supporter" when you hide supporter names) |
+| `%isAnonymous%` | True when the person left their name blank |
+| `%fw.username%` | The name they typed (empty if blank), even when you hide supporter names |
 | `%amount%` | The amount as a number, like 5 or 12.5 |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
-| `%message%` | Their message |
+| `%fw.interval%` | How often they pay: MONTHLY or ANNUAL |
+| `%fw.tierId%` | Their tier's id |
+| `%tier%` | Their tier's name (needs the Fourthwall API connected) |
+| `%fw.state%` | The membership's state: ACTIVE, CANCELLED (ends at the end of the paid period), SUSPENDED or NONE |
+| `%fw.isCancelled%` | True when the member cancelled |
+| `%fw.monthlyAmount%` | The price per month (a yearly price divided by 12) |
+| `%fw.nickname%` | Their nickname |
 | `%isTest%` | True when this is a test event, not a real one |
-| `%fw.interval%` | How often they pay, like monthly |
-| `%fw.tierId%` | Which tier they joined |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.subscriptionPurchased`</small>
 
@@ -275,15 +511,20 @@ Runs when you send a thank-you to a Fourthwall supporter. Needs your Fourthwall 
 
 | Setting | What to put in |
 | --- | --- |
+| **For** | Only for thank-yous for this: ORDER, DONATION, GIFT_PURCHASE, MEMBERSHIP_PAYMENT_CHARGE (a membership payment), or Any. Options: Any, ORDER, DONATION, GIFT_PURCHASE, MEMBERSHIP_PAYMENT_CHARGE. Starts as: `Any`. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip caught-up events** | Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals. Starts as: `false`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | Who got the thank-you |
+| `%user%` | Who got the thank-you ("Anonymous" if unknown, "A supporter" when you hide supporter names) |
 | `%message%` | Their original message |
 | `%fw.mediaUrl%` | The thank-you video or picture (web link) |
+| `%fw.contributionType%` | What it thanks for: ORDER, DONATION, GIFT_PURCHASE or MEMBERSHIP_PAYMENT_CHARGE |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isReplay%` | True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up event: about how many seconds late it is |
 
 <small>Type id: `fourthwall.thankYouSent`</small>

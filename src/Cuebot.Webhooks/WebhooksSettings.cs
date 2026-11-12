@@ -24,6 +24,9 @@ public sealed class WebhooksSettings
     /// <summary>Fourthwall: the shop's webhook secret key (Settings → For developers → Webhooks).</summary>
     public WebhookServiceSettings Fourthwall { get; set; } = new();
 
+    /// <summary>Fourthwall choices beyond the webhook secret: names on stream, gift links and the optional Open API connection.</summary>
+    public FourthwallOptions FourthwallOptions { get; set; } = new();
+
     /// <summary>
     /// Shopify: the signing key. For webhooks created in the admin (Settings → Notifications → Webhooks) it is the key
     /// shown there ("Your webhooks will be signed with ..."); for an app's webhooks it is the app's client secret.
@@ -165,5 +168,60 @@ public sealed class PatreonOptions
     public bool LinkViewers { get; set; } = true;
 
     /// <summary>The webhook Cuebot created through the API (empty when it was made by hand in the portal).</summary>
+    public string WebhookId { get; set; } = "";
+}
+
+/// <summary>
+/// Fourthwall options (webhooks.json). The Open API connection is optional: the shop's API user from Settings → For
+/// developers → Open API (only a SUPER ADMIN can make one), sent as HTTP Basic auth. With it Cuebot reads the shop, the
+/// membership tiers and members, the products for the showcase widget, catches up on events no delivery brought, can set
+/// up the webhook, mark the shop live while you stream and run gift draws from Twitch chat. What it learnt is kept in
+/// fourthwall.json.
+/// </summary>
+public sealed class FourthwallOptions
+{
+    /// <summary>
+    /// Fourthwall's alerts guide suggests letting creators hide supporter names on stream: when on, %user% (feed,
+    /// speech, alerts) is "A supporter" for every order, donation, gift, membership and thank-you; %fw.username% keeps the
+    /// real name for private use.
+    /// </summary>
+    public bool HideSupporterNames { get; set; }
+
+    /// <summary>
+    /// The shop's address (like myshop.fourthwall.com or shop.example.com), for gift claim links
+    /// (https://&lt;shop&gt;/gifts/&lt;giftId&gt;). Learnt from the API when connected.
+    /// </summary>
+    public string ShopAddress { get; set; } = "";
+
+    /// <summary>The Open API user name (Settings → For developers → Open API). A secret.</summary>
+    [Secret]
+    public string ApiUser { get; set; } = "";
+
+    /// <summary>The Open API user's password. A secret.</summary>
+    [Secret]
+    public string ApiPassword { get; set; } = "";
+
+    /// <summary>Tell Fourthwall the shop is streaming on Twitch while the Twitch stream is live (needed for stream gifts).</summary>
+    public bool MarkStreamingLive { get; set; }
+
+    /// <summary>
+    /// Run Fourthwall gift draws in Cuebot: when a draw starts, viewers type <see cref="EntryCommand"/> in Twitch chat
+    /// during the draw and Cuebot hands Fourthwall the entrants when it ends. Needs the gifting platform set to Open API.
+    /// </summary>
+    public bool RunGiftDraws { get; set; }
+
+    /// <summary>What viewers type to enter a gift draw.</summary>
+    public string EntryCommand { get; set; } = "!enter";
+
+    /// <summary>
+    /// With the API connected, every this many minutes Cuebot asks Fourthwall which events it sent and replays those that
+    /// never arrived (relay down, wrong secret), marked isReplay. 0 = off.
+    /// </summary>
+    public int CatchUpMinutes { get; set; } = 10;
+
+    /// <summary>The collection (slug) the Products widget shows; empty = every public product.</summary>
+    public string ProductsCollection { get; set; } = "";
+
+    /// <summary>The webhook configuration Cuebot created or repaired through the API.</summary>
     public string WebhookId { get; set; } = "";
 }

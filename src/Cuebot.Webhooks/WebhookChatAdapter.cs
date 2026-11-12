@@ -74,9 +74,16 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid =>
                 Item(FeedKind.Other, $"{user} placed order {Get(a, "orderName")} ({amount})", amount, spend: "Shop order"),
 
+            // Only purchases are money spent: a redeemed stream gift or giveaway link gets its own line, the creator's samples none.
+            FourthwallEventTypes.OrderPlaced when !Flag(a, "isPurchase", true) =>
+                Get(a, "fw.source") is "TWITCH_GIFT_REDEMPTION" or "GIVEAWAY_LINKS"
+                    ? Item(FeedKind.Other, $"{user} redeemed a gift: {Get(a, "fw.items")}", withMessage: false)
+                    : null,
             FourthwallEventTypes.OrderPlaced => Item(FeedKind.Other, $"{user} bought {Get(a, "fw.items")} ({amount})", amount, spend: "Shop order"),
+            // OPEN, ABANDONED, CANCELLED and FAILED donations brought no money.
+            FourthwallEventTypes.Donation when !Flag(a, "isCompleted", true) => null,
             FourthwallEventTypes.Donation => Item(FeedKind.Tip, $"{user} donated {amount} on Fourthwall", amount, spend: "Donation"),
-            FourthwallEventTypes.SubscriptionPurchased => Item(FeedKind.Subscription, $"{user} became a member on Fourthwall", paid, spend: "Membership"),
+            FourthwallEventTypes.SubscriptionPurchased => Item(FeedKind.Subscription, $"{user} became a member on Fourthwall{tierText}", paid, spend: "Membership"),
             FourthwallEventTypes.GiftPurchase =>
                 Item(FeedKind.Other, $"{user} gifted {Get(a, "fw.quantity")} x {Get(a, "fw.offer.name")} ({amount})", amount, spend: "Gift"),
 
@@ -95,6 +102,10 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
         var text = Get(a, key);
         return text.Length == 0 ? "items" : text == "1" ? "1 item" : $"{text} items";
     }
+
+    /// <summary>A boolean argument; <paramref name="fallback"/> when it is missing (older events, other sources).</summary>
+    private static bool Flag(IReadOnlyDictionary<string, object?> a, string key, bool fallback) =>
+        a.TryGetValue(key, out var value) && value is bool b ? b : fallback;
 
     private static string Test(IReadOnlyDictionary<string, object?> a) =>
         a.TryGetValue("isTest", out var t) && t is true ? "[Test] " : "";

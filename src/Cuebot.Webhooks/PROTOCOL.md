@@ -161,23 +161,72 @@ that names a login rather than the numeric id is resolved through the viewers Cu
 
 ## Fourthwall
 
-Envelope `{ testMode, id, webhookId, shopId, type, apiVersion, createdAt, data }`; dedupe on `id`. Arguments use
-Streamer.bot's `fw.*` names (`fw.statmessageus` is kept as documented, `fw.message` is the same text). User text
-may arrive HTML-escaped (`&#39;`): `user` and `message` (the feed and speech) are HTML-decoded, the `fw.*` arguments
-keep the raw text (low confidence that this is needed; harmless when the text is not escaped).
+Envelope `{ testMode, id, webhookId, shopId, type, apiVersion, createdAt, data }`; dedupe on `id` (kept 48 h in
+webhooks-seen.json, so a Fourthwall retry that reaches the relay after Cuebot restarted is still recognised). Delivery
+is at least once and in no set order across topics (an `ORDER_UPDATED` can arrive before its `ORDER_PLACED`).
+`apiVersion` is never checked: the webhook-model example says `V1`, the spec `V1_BETA`. Arguments use Streamer.bot's
+`fw.*` names (`fw.statmessageus` is kept as documented, `fw.message` is the same text), each also without the `fw.`
+prefix (Streamer.bot 1.0.7's runs). User text may arrive HTML-escaped (`&#39;`): `user` and `message` (the feed and
+speech) are HTML-decoded, the `fw.*` arguments keep the raw text (low confidence that this is needed; harmless when the
+text is not escaped).
+
+Docs drift (2026-11-11): the Alerts guide says the signature is hex and that the secret comes back in the webhook create
+response; the signature-verification page and the OpenAPI spec say base64 HMAC-SHA256 with the shop-wide secret, which
+the API never returns. Cuebot follows the signature page and the spec. Webhook URLs must be https on port 443 with a
+hostname (`WEBHOOK_URI_IP_NOT_ALLOWED`, `WEBHOOK_URI_PORT_NOT_ALLOWED`, `WEBHOOK_URI_UNALLOWED_DOMAIN`): use the relay.
 
 | `type` | Event | Main arguments |
 | --- | --- | --- |
-| `ORDER_PLACED` / `ORDER_UPDATED` (`data.order`) | `fourthwall.orderPlaced` / `orderUpdated` | `fw.orderId`, `fw.friendly`, `fw.checkoutId`, `fw.status`, `fw.email`, `fw.username`, `fw.subtotal/shipping/tax/donation/discount/total`, `fw.currency`, `fw.source`, `fw.variants[i].id/name/sku/quantity/unitPrice/currencyCode/image/attributes.*`, `fw.updateType` |
-| `DONATION` | `fourthwall.donation` | `fw.donationId`, `fw.amount`, `fw.currency`, `fw.status`, `fw.username`, `fw.email`, `fw.message` |
-| `GIFT_PURCHASE` | `fourthwall.giftPurchase` | `fw.Id`, `fw.offer.*`, totals, `fw.quantity`, `fw.gifts[i].id/status/winner/...` |
-| `GIFT_DRAW_STARTED` / `_ENDED` | `fourthwall.giftDrawStarted` / `giftDrawEnded` | as gift + `fw.drawId`, `fw.giveawayId`, `fw.durationSeconds`; `fw.quantity` = number of gifts (draws send no quantity) |
-| `SUBSCRIPTION_PURCHASED` / `_CHANGED` / `_EXPIRED` | `fourthwall.subscription*` | `fw.id`, `fw.nickname`, `fw.email`, `fw.type`, `fw.interval`, `fw.tierId`, `fw.amount`, `fw.currency` |
+| `ORDER_PLACED` / `ORDER_UPDATED` (`data.order` + `data.update.type`) | `fourthwall.orderPlaced` / `orderUpdated` | `fw.orderId`, `fw.friendly`, `fw.checkoutId`, `fw.status`, `fw.email`, `fw.username`, `fw.subtotal/shipping/tax/donation/discount/total`, `fw.currency`, `fw.source`, `fw.giftId`, `fw.giftPurchaseId`, `fw.promotionId`, `fw.variants[i].id/name/sku/quantity/unitPrice/currencyCode/image/attributes.*`, `fw.updateType`, `isPurchase`, `isCancelled` |
+| `DONATION` | `fourthwall.donation` | `fw.donationId`, `fw.amount`, `fw.currency`, `fw.status`, `fw.username`, `fw.email`, `fw.message`, `isCompleted` |
+| `GIFT_PURCHASE` | `fourthwall.giftPurchase` | `fw.Id`, `fw.offer.*`, totals, `fw.quantity`, `fw.gifts[i].id/status/winner/redeemUri/selectedAt/url/...`, `fw.giftUrls`, `fw.giftUrl` |
+| `GIFT_DRAW_STARTED` / `_ENDED` | `fourthwall.giftDrawStarted` / `giftDrawEnded` | as gift + `fw.drawId`, `fw.giveawayId`, `fw.durationSeconds`, `fw.winners`, `fw.winnerCount`; `fw.quantity` = number of gifts (draws send no quantity); started: `fw.cuebotRunsDraw`, `fw.entryCommand` |
+| `SUBSCRIPTION_PURCHASED` / `_CHANGED` / `_EXPIRED` | `fourthwall.subscription*` | `fw.id`, `fw.nickname`, `fw.email`, `fw.type` = `fw.state`, `fw.isCancelled`, `fw.isSuspended`, `fw.isActive`, `fw.interval`, `fw.tierId`, `fw.tierName` = `tier`, `fw.amount`, `fw.monthlyAmount`, `fw.currency`, `fw.previousTierId/previousTier/previousAmount/previousState`, `direction` |
 | `NEWSLETTER_SUBSCRIBED` | `fourthwall.newsletterSubscribed` | `fw.email` |
-| `THANK_YOU_SENT` | `fourthwall.thankYouSent` | `fw.id`, `fw.mediaUrl`, `fw.contributionType/Id`, `fw.username`, `fw.message` |
-| `PRODUCT_CREATED` / `_UPDATED` | `fourthwall.productCreated` / `productUpdated` | `fw.id`, `fw.name`, `fw.slug`, `fw.type`, `fw.state`, `fw.variants[i].*` |
+| `THANK_YOU_SENT` | `fourthwall.thankYouSent` | `fw.id`, `fw.mediaUrl`, `fw.contributionType` (`ORDER`, `DONATION`, `GIFT_PURCHASE`, `MEMBERSHIP_PAYMENT_CHARGE`), `fw.contributionId`, `fw.username`, `fw.message` |
+| `PRODUCT_CREATED` (bare `OfferFullV1`) / `PRODUCT_UPDATED` (`{product:{results:[...]}}`, or bare) | `fourthwall.productCreated` / `productUpdated` (one event per product) | `fw.id`, `fw.name`, `fw.slug`, `fw.type`, `fw.state`, `fw.access`, `fw.isPublic`, `fw.isSoldOut`, `fw.imageUrl`, `fw.price`, `fw.formattedPrice`, `fw.variants[i].*` |
+| `PROMOTION_CREATED` / `_UPDATED` / `_STATUS_CHANGED` (`PromotionV1`) | `fourthwall.promotionCreated` / `promotionUpdated` / `promotionStatusChanged` (Cuebot extras) | `fw.promotionId`, `fw.promotionType`, `fw.title`, `fw.code`, `fw.codes`, `fw.status` (`Live`, `Ended`, `Archived`, `AllUsed`), `fw.isLive`, `fw.isAllUsed`, `fw.usageCount`, `fw.maxUses`, `fw.discountType`, `fw.percentage`, `fw.discount` (text) |
+| `COLLECTION_UPDATED` | `fourthwall.collectionUpdated` (Cuebot extra) | `fw.id`, `fw.name`, `fw.slug`, `fw.description`, `fw.available`, `fw.access`, `fw.isPublic`, `fw.productCount`, `fw.productIds` |
 
-Other types (promotions, carts, collections, app disconnected) are ignored.
+Ignored: `CART_ABANDONED_1H/24H/72H` (no streamer use), `PLATFORM_APP_DISCONNECTED` (OAuth apps only),
+`MEMBERSHIP_POST_UPSERTED`, `MEMBERSHIP_SERIES_UPSERTED/DELETED`, `MEMBERSHIP_TAG_CREATED/UPDATED/DELETED` and
+`MEMBERSHIP_TIER_UPSERTED/DELETED` (in `WebhookConfigurationV1.allowedTypes`, but the spec documents no payload for them).
+
+**Money.** Only money that arrived counts: a `DONATION` whose `status` is not `COMPLETED` (`OPEN`, `ABANDONED`,
+`CANCELLED`, `FAILED`; a missing status counts as completed) has `amount` 0 and `isCompleted` false, stays out of the
+feed, overlay alerts, top spenders and subathon time, and the Donation trigger skips it unless its status option says
+otherwise (`fw.amount` keeps the number Fourthwall sent). An order whose `source.type` is not `ORDER`
+(`SAMPLES_ORDER`, `GIVEAWAY_LINKS`, `TWITCH_GIFT_REDEMPTION`) has `amount` 0 and `isPurchase` false: samples are not
+shown, a redeemed gift shows as "redeemed a gift" with no amount (the gift already counted on `GIFT_PURCHASE`).
+Gift amounts are `subtotal, tax, total, profit, prepaidShipping` (draws: `subtotal, total`); `fw.donation` and
+`fw.discount` stay on gifts for Streamer.bot parity and are always 0. A gift purchase is a `merch-latest` alert with
+`gift: true`.
+
+**Names.** `username` / `nickname` are optional: a blank one is "Anonymous" with `isAnonymous` true. "Hide supporter
+names" (the Alerts guide recommends such a toggle) makes `user` "A supporter" for every supporter event; `fw.username`
+keeps the real name.
+
+**Memberships.** `subscription.type` is the membership's state (`ACTIVE`, `CANCELLED`, `SUSPENDED`, `NONE`), not what
+happened: `SUBSCRIPTION_CHANGED` with `CANCELLED` is a cancellation. No payload names the tier or what changed, so
+Cuebot keeps the last tier and monthly price per member id (fourthwall.json, from webhooks and the API's member list)
+for `fw.previous*` and `direction` (`upgrade`, `downgrade`, `change`, `same`, empty when unknown); tier names come from
+the API. Renewals send no webhook.
+
+**Open API (optional).** HTTP Basic with the shop's Open API user (Settings → For developers; SUPER ADMIN only) at
+`https://api.fourthwall.com/open-api/v1.0` (posts: `/open-api/v1.1/memberships/posts/*`). 100 requests / 10 s per shop;
+a 429 (`OPEN_API_TOO_MANY_REQUESTS`, no `Retry-After`) is retried after 2, 4 and 8 s; 401/403 stops periodic calls until
+the user connects again. Pages are `page` (0-based) / `size` (at most 100). Used for: `GET /shops/current` (gift link
+domain), `GET /memberships/tiers` and `/memberships/members` (every 6 h; emails stay in memory), `GET /products` or
+`/collections/{id}/products` (showcase widget, after `PRODUCT_*` / `COLLECTION_UPDATED` and every 30 min),
+`GET/POST/PUT /webhooks` (set up / repair with every handled type; the shop's signing secret is not returned and is
+still pasted by hand), `GET /webhook-events` (catch-up: events newer than the first connection and the last 24 h are
+mapped like deliveries, deduped on `id`, marked `isReplay`; the event `body` may be the envelope or only its data),
+`PUT /streaming/start|end` (Twitch stream online / offline), `GET /gifting/config` (shows who runs draws),
+`PUT /gifting/draw/{id}/finish` (entrants from Twitch chat; Fourthwall picks the winners), `POST/GET/PUT /promotions`,
+`PUT /products/{id}/availability`, `PUT /collections/{id}/availability`, `GET /order` / `GET /donations` (totals),
+`GET/POST /thank-you-contributions`, `POST /giveaway-links`, `POST /open-api/v1.1/memberships/posts/texts|video_embeds`.
+OAuth platform apps are not used (client secret in the binary, no documented loopback redirect, manual app review), so
+the separate `X-Fourthwall-Hmac-Apps-SHA256` app key is checked with the same shop secret.
 
 ## Shopify
 

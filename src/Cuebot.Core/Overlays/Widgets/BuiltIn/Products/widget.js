@@ -1,6 +1,8 @@
 // Cuebot product showcase: rotates through the products you enter (image, name, price) with where to buy them, and
 // shows who just bought merch when Cuebot hears of a purchase (StreamElements, Streamlabs, Fourthwall, Shopify, Ko-fi).
-// Works for any shop. Built on the StreamElements widget API, so it is edited like any other widget.
+// Works for any shop. "My Fourthwall shop" shows the products Cuebot read from Fourthwall (session data "fourthwall":
+// names, prices, pictures, sold out) and follows changes. Built on the StreamElements widget API, so it is edited like any
+// other widget.
 (function () {
   "use strict";
 
@@ -33,18 +35,42 @@
     catch (err) { return String(amount); }
   }
 
-  window.addEventListener("onWidgetLoad", function (obj) {
-    settings = obj.detail.fieldData || {};
-    root = document.getElementById("products");
-    products = [];
-    for (var i = 1; i <= 6; i++) {
-      var name = String(settings["product" + i + "Name"] || "").trim();
-      if (name) products.push({ name: name, price: settings["product" + i + "Price"] || "", image: settings["product" + i + "Image"] || "" });
-    }
+  function fromShop(data) {
+    var shop = (data && data.fourthwall && data.fourthwall.products) || [];
+    return shop.map(function (p) {
+      return { name: p.name || "", price: p.soldOut ? "Sold out" : (p.price || ""), image: p.image || "" };
+    }).filter(function (p) { return p.name; });
+  }
+
+  function start(list) {
+    var same = JSON.stringify(list) === JSON.stringify(products);
+    products = list;
+    if (same && rotateTimer) return;
     at = 0;
     show(0);
     clearInterval(rotateTimer);
+    rotateTimer = null;
     if (products.length > 1) rotateTimer = setInterval(function () { show(++at); }, Math.max(2, num(settings.rotateSeconds, 8)) * 1000);
+  }
+
+  window.addEventListener("onWidgetLoad", function (obj) {
+    settings = obj.detail.fieldData || {};
+    root = document.getElementById("products");
+    var list = [];
+    if (settings.source === "fourthwall") list = fromShop((obj.detail.session && obj.detail.session.data) || {});
+    else {
+      for (var i = 1; i <= 6; i++) {
+        var name = String(settings["product" + i + "Name"] || "").trim();
+        if (name) list.push({ name: name, price: settings["product" + i + "Price"] || "", image: settings["product" + i + "Image"] || "" });
+      }
+    }
+    products = [];
+    start(list);
+  });
+
+  window.addEventListener("onSessionUpdate", function (obj) {
+    if (settings.source !== "fourthwall" || !root) return;
+    start(fromShop(obj.detail.session || {}));
   });
 
   window.addEventListener("onEventReceived", function (obj) {

@@ -1,0 +1,58 @@
+{
+  "functions": {
+    "fourthwall.shop": {
+      "description": "Reads the Fourthwall shop Cuebot knows (the API connection is on the Webhooks page).",
+      "parameters": {},
+      "returns": "name, address (for gift links), connected, giftingPlatform (who runs stream gift draws), lastCatchUp and lastError.",
+      "example": {}
+    },
+    "fourthwall.tiers": {
+      "description": "Lists your Fourthwall membership tiers. Needs the Fourthwall API connected.",
+      "parameters": {},
+      "returns": "A list of tiers with id, name, monthly (price per month), currency and members (how many Cuebot knows).",
+      "example": {}
+    },
+    "fourthwall.members": {
+      "description": "Says how many Fourthwall members Cuebot knows, from webhooks and the API's member list.",
+      "parameters": {},
+      "returns": "count, perTier (tier name to count) and lastSync.",
+      "example": {}
+    },
+    "fourthwall.products": {
+      "description": "Lists the products the Products widget shows when it is set to your Fourthwall shop.",
+      "parameters": {},
+      "returns": "A list of products with name, price (written nicely), amount, currency, image, soldOut and url.",
+      "example": {}
+    },
+    "fourthwall.totals": {
+      "description": "Reads your Fourthwall sales over the last hours: purchases (not samples, claimed gifts or cancelled orders) and completed donations. Needs the Fourthwall API connected.",
+      "parameters": {
+        "hours": "Optional. How many hours back (default 24)."
+      },
+      "returns": "revenue, orders, donations, donationCount and currency; or null when the API call failed.",
+      "example": {
+        "hours": 4
+      }
+    },
+    "fourthwall.createPromo": {
+      "description": "Makes a percent-off discount code in your Fourthwall shop, usable once per customer. Needs the Fourthwall API connected.",
+      "parameters": {
+        "code": "Optional. The code; leave out for a random one like STREAM7K2QXP.",
+        "percent": "Optional. The percent off (default 10).",
+        "maxUses": "Optional. How many times it can be used in total (default: no limit)."
+      },
+      "returns": "The code, or null when Fourthwall refused it.",
+      "example": {
+        "code": "RAID20",
+        "percent": 20,
+        "maxUses": 10
+      }
+    },
+    "fourthwall.catchUp": {
+      "description": "Asks Fourthwall which events it sent and runs those that never reached Cuebot. Needs the Fourthwall API connected.",
+      "parameters": {},
+      "returns": "A status line, like \"Replayed 2 Fourthwall event(s) that never arrived.\"",
+      "example": {}
+    }
+  }
+}

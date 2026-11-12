@@ -176,6 +176,7 @@ nav:
           - Webhooks (Ko-fi, Patreon…): guides/services/webhooks.md
           - Ko-fi: guides/services/ko-fi.md
           - Patreon: guides/services/patreon.md
+          - Fourthwall: guides/services/fourthwall.md
           - Discord bot: guides/services/discord-bot.md
           - Subathon timers: guides/services/subathon-timers.md
           - Goals: guides/services/goals.md

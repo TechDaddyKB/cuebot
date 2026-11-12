@@ -57,6 +57,12 @@ public static class FourthwallEventTypes
     public const string ThankYouSent = "fourthwall.thankYouSent";
     public const string ProductCreated = "fourthwall.productCreated";
     public const string ProductUpdated = "fourthwall.productUpdated";
+
+    // Cuebot extras (Streamer.bot has no trigger for these Fourthwall webhooks).
+    public const string PromotionCreated = "fourthwall.promotionCreated";
+    public const string PromotionUpdated = "fourthwall.promotionUpdated";
+    public const string PromotionStatusChanged = "fourthwall.promotionStatusChanged";
+    public const string CollectionUpdated = "fourthwall.collectionUpdated";
 }
 
 /// <summary>Bot events published for Throne webhooks.</summary>

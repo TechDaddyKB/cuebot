@@ -29,15 +29,17 @@ public sealed class TriggerTests
         Assert.Equal(["Follow Created", "Follow Deleted", "Member Updated", "Pledge Created", "Pledge Deleted", "Pledge Updated", "Post Deleted", "Post Published", "Post Updated"],
             Names(new PatreonTriggers()));
         Assert.Equal(["Order Created", "Order Paid"], Names(new ShopifyTriggers()));
-        Assert.Equal(["Donation", "Gift Draw Ended", "Gift Draw Started", "Gift Purchase", "Newsletter Subscribed", "Order Placed", "Order Updated",
-            "Product Created", "Product Updated", "Subscription Changed", "Subscription Expired", "Subscription Purchased", "Thank You Sent"],
+        // Streamer.bot's 13 plus Cuebot's promotion and collection triggers.
+        Assert.Equal(["Collection Updated", "Donation", "Gift Draw Ended", "Gift Draw Started", "Gift Purchase", "Newsletter Subscribed", "Order Placed",
+            "Order Updated", "Product Created", "Product Updated", "Promotion Created", "Promotion Status Changed", "Promotion Updated",
+            "Subscription Changed", "Subscription Expired", "Subscription Purchased", "Thank You Sent"],
             Names(new FourthwallTriggers()));
         Assert.Equal(["Contribution Purchased", "Gift Crowdfunded", "Gift Purchased"], Names(new ThroneTriggers()));
         Assert.Equal(["Custom Webhook"], Names(new CustomWebhookTriggers()));
 
         foreach (var trigger in Providers.SelectMany(p => p.GetTriggers()))
             Assert.Equal(trigger.TypeId, Assert.Single(trigger.EventTypes));
-        Assert.Equal(35, Providers.SelectMany(p => p.GetTriggers()).Select(t => t.TypeId).Distinct().Count());
+        Assert.Equal(39, Providers.SelectMany(p => p.GetTriggers()).Select(t => t.TypeId).Distinct().Count());
     }
 
     private static BotEvent Money(string type, double amount, string currency, bool isTest = false, string tier = "") =>

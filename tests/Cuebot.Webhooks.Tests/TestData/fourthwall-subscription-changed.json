@@ -1,0 +1,16 @@
+{
+  "testMode": false,
+  "id": "weve_sub_changed",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "SUBSCRIPTION_CHANGED",
+  "apiVersion": "V1",
+  "createdAt": "2026-10-28T10:00:00.000+00:00",
+  "data": {
+    "id": "mem_1",
+    "email": "member@example.com",
+    "nickname": "NewMember",
+    "createdAt": "2026-10-27T15:05:10.000+00:00",
+    "subscription": { "type": "ACTIVE", "variant": { "id": "mtv_gold", "tierId": "mt_gold", "interval": "ANNUAL", "amount": { "value": 120, "currency": "USD" } } }
+  }
+}

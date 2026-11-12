@@ -26,7 +26,7 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
             new WebhookCardViewModel(services.Patreon, services.Patreon.Settings, "Webhook secret",
                 "On patreon.com/portal open My Webhooks, add the Cuebot URL for Patreon, tick the members:* and members:pledge:* events (and posts:* if you like) and copy the webhook's secret here. Or connect the Patreon API below and let Cuebot create the webhook and save its secret. If the URL stops working, Patreon pauses the webhook and later sends the backlog at once: Cuebot marks those deliveries stale."),
             new WebhookCardViewModel(services.Fourthwall, services.Fourthwall.Settings, "Webhook secret",
-                "In your Fourthwall admin open Settings → For developers → Webhooks, create a webhook with the Cuebot URL for Fourthwall for the events you want and copy the shop's webhook secret key here."),
+                "In your Fourthwall admin open Settings → For developers → Webhooks, create a webhook with the Cuebot URL for Fourthwall for the events you want and copy the shop's webhook secret key here (one key for the whole shop). Fourthwall only accepts an https address on port 443, so a direct local URL or a tunnel IP is refused: use the relay. Or connect the Fourthwall API below and let Cuebot set up the webhook (the secret still has to be copied by hand)."),
             new WebhookCardViewModel(services.Shopify, services.Shopify.Settings, "Signing key / client secret",
                 "In the Shopify admin open Settings → Notifications → Webhooks and create Order creation and Order payment webhooks with the Cuebot URL for Shopify. Choose the JSON format: XML webhooks are refused. Paste the key shown under 'Your webhooks will be signed with' (or your app's client secret)."),
             new WebhookCardViewModel(services.Throne, services.Throne.Settings, "URL token (optional)",
@@ -42,6 +42,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
             Patreon.Refresh();
             Services[1].RefreshSecret();
         });
+        Fourthwall = new FourthwallOptionsViewModel(services.Fourthwall);
+        services.Fourthwall.Tracker.Changed += () => OnUi(Fourthwall.Refresh);
         foreach (var service in services.All) service.Changed += () => OnUi(Refresh);
         RefreshRecent();
     }
@@ -53,6 +55,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
     public KofiOptionsViewModel Kofi { get; }
 
     public PatreonOptionsViewModel Patreon { get; }
+
+    public FourthwallOptionsViewModel Fourthwall { get; }
 
     /// <summary>Newest first, all services.</summary>
     public ObservableCollection<WebhookRecordViewModel> RecentEvents { get; } = [];
@@ -610,6 +614,197 @@ public sealed partial class PatreonOptionsViewModel : ObservableObject
     {
         Tracker.Disconnect();
         Info = "Disconnected: the tokens were removed. Webhooks keep working.";
+        Refresh();
+    }
+}
+
+/// <summary>
+/// Fourthwall extras: supporter names on stream, the shop address for gift links, and the optional Open API connection
+/// (the shop's API user) with webhook setup, catch-up, the streaming status, gift draws and the showcase products.
+/// </summary>
+public sealed partial class FourthwallOptionsViewModel : ObservableObject
+{
+    private readonly FourthwallWebhookHandler _fourthwall;
+
+    public FourthwallOptionsViewModel(FourthwallWebhookHandler fourthwall) => _fourthwall = fourthwall;
+
+    private FourthwallOptions Options => _fourthwall.Options;
+    private FourthwallTracker Tracker => _fourthwall.Tracker;
+
+    /// <summary>Gives the Cuebot URL for Fourthwall (from the relay tab) for "Set up webhook"; null while there is none.</summary>
+    public Func<string?> WebhookUrl { get; set; } = () => null;
+
+    private void Save() => _fourthwall.SaveSettings();
+
+    private void SetText(string? value, string current, Action<string> set, string? also = null,
+        [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        var trimmed = (value ?? "").Trim();
+        if (trimmed == current) return;
+        set(trimmed);
+        Save();
+        OnPropertyChanged(name);
+        if (also is not null) OnPropertyChanged(also);
+    }
+
+    private void SetFlag(bool value, bool current, Action<bool> set, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        if (value == current) return;
+        set(value);
+        Save();
+        OnPropertyChanged(name);
+    }
+
+    public bool HideSupporterNames
+    {
+        get => Options.HideSupporterNames;
+        set => SetFlag(value, Options.HideSupporterNames, v => Options.HideSupporterNames = v);
+    }
+
+    public string ShopAddress
+    {
+        get => Options.ShopAddress;
+        set => SetText(value, Options.ShopAddress, v => Options.ShopAddress = v);
+    }
+
+    public string ApiUser
+    {
+        get => Options.ApiUser;
+        set => SetText(value, Options.ApiUser, v => Options.ApiUser = v, nameof(SavedCredentials));
+    }
+
+    /// <summary>The view masks this (PasswordChar); the Saved line shows only the last characters.</summary>
+    public string ApiPassword
+    {
+        get => Options.ApiPassword;
+        set => SetText(value, Options.ApiPassword, v => Options.ApiPassword = v, nameof(SavedCredentials));
+    }
+
+    public string SavedCredentials =>
+        $"API user: {(Options.ApiUser.Length > 0 ? WebhookSecrets.Mask(Options.ApiUser) : "not saved")}. Password: {(Options.ApiPassword.Length > 0 ? WebhookSecrets.Mask(Options.ApiPassword) : "not saved")}.";
+
+    public bool MarkStreamingLive
+    {
+        get => Options.MarkStreamingLive;
+        set => SetFlag(value, Options.MarkStreamingLive, v => Options.MarkStreamingLive = v);
+    }
+
+    public bool RunGiftDraws
+    {
+        get => Options.RunGiftDraws;
+        set
+        {
+            SetFlag(value, Options.RunGiftDraws, v => Options.RunGiftDraws = v);
+            OnPropertyChanged(nameof(GiftingNote));
+        }
+    }
+
+    public string EntryCommand
+    {
+        get => Options.EntryCommand;
+        set => SetText(value, Options.EntryCommand, v => Options.EntryCommand = v);
+    }
+
+    public decimal? CatchUpMinutes
+    {
+        get => Options.CatchUpMinutes;
+        set
+        {
+            Options.CatchUpMinutes = Math.Max(0, (int)(value ?? 10));
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    public string ProductsCollection
+    {
+        get => Options.ProductsCollection;
+        set => SetText(value, Options.ProductsCollection, v => Options.ProductsCollection = v);
+    }
+
+    [ObservableProperty] private string _info = "";
+    [ObservableProperty] private bool _busy;
+
+    public string Status
+    {
+        get
+        {
+            if (!Tracker.HasCredentials) return "Not connected. Webhooks still work; tier names, gift links from the shop address above and everything else come from deliveries only.";
+            if (Tracker.NeedsReconnect) return Tracker.LastError;
+            var (count, _) = Tracker.MemberCounts();
+            var shop = Tracker.ShopName is { Length: > 0 } n ? n : "your shop";
+            var sync = Tracker.LastMemberSync is { } at ? $"members synced {at.ToLocalTime():g}" : "members not synced yet";
+            var catchUp = Tracker.LastCatchUp is { At: { } c } last ? $"; last catch-up {c.ToLocalTime():t} ({last.Count} replayed)" : "";
+            return $"{shop}: {Tracker.Tiers().Count} tier(s), {count} member(s), {Tracker.Products().Count} product(s) for the showcase; {sync}{catchUp}."
+                + (Tracker.LastError.Length > 0 ? " Last problem: " + Tracker.LastError : "");
+        }
+    }
+
+    public string WebhookHealth
+    {
+        get
+        {
+            if (!Tracker.HasCredentials) return "";
+            if (Tracker.WebhookUrl.Length == 0) return "No Fourthwall webhook checked yet. Press Check webhook or Set up webhook.";
+            var missing = Tracker.MissingWebhookTypes();
+            return missing.Count == 0 ? "The webhook sends every event Cuebot handles."
+                : $"The webhook does not send: {string.Join(", ", missing)}. Press Set up webhook to add them.";
+        }
+    }
+
+    public string GiftingNote => Options.RunGiftDraws && Tracker.GiftingPlatform is { Length: > 0 } p && p != "OPEN_API"
+        ? $"Fourthwall's stream gifting is run by {p}, not Open API, so Fourthwall will not wait for Cuebot's draw. Change it in Fourthwall's gifting settings."
+        : "";
+
+    internal void Refresh()
+    {
+        OnPropertyChanged(nameof(Status));
+        OnPropertyChanged(nameof(WebhookHealth));
+        OnPropertyChanged(nameof(GiftingNote));
+        OnPropertyChanged(nameof(SavedCredentials));
+        OnPropertyChanged(nameof(ApiUser));
+        OnPropertyChanged(nameof(ApiPassword));
+    }
+
+    private async Task Run(Func<Task<string>> work)
+    {
+        if (Busy) return;
+        Busy = true;
+        try { Info = await work(); }
+        catch (Exception ex) when (FourthwallTracker.IsApiError(ex))
+        {
+            Info = ex is FourthwallAuthException ? ex.Message : $"Fourthwall: {ex.Message}";
+        }
+        finally
+        {
+            Busy = false;
+            Refresh();
+        }
+    }
+
+    [RelayCommand]
+    private Task Connect() => Run(() => Tracker.ConnectAsync(WebhookUrl() ?? ""));
+
+    [RelayCommand]
+    private Task Sync() => Run(() => Tracker.SyncMembersAsync());
+
+    [RelayCommand]
+    private Task RefreshProducts() => Run(() => Tracker.RefreshProductsAsync());
+
+    [RelayCommand]
+    private Task SetUpWebhook() => Run(() => Tracker.SetUpWebhookAsync(WebhookUrl() ?? ""));
+
+    [RelayCommand]
+    private Task CheckWebhook() => Run(() => Tracker.CheckWebhookAsync(WebhookUrl() ?? ""));
+
+    [RelayCommand]
+    private Task CatchUp() => Run(() => Tracker.CatchUpAsync());
+
+    [RelayCommand]
+    private void Disconnect()
+    {
+        Tracker.Disconnect();
+        Info = "Disconnected: the API user was removed. Webhooks keep working.";
         Refresh();
     }
 }

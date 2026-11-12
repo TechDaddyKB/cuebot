@@ -1,4 +1,14 @@
 {
+  "source": {
+    "type": "dropdown",
+    "label": "Products",
+    "value": "manual",
+    "group": "Showcase",
+    "options": {
+      "manual": "The products entered below",
+      "fourthwall": "My Fourthwall shop (connect the Fourthwall API on the Webhooks page)"
+    }
+  },
   "shopText": {
     "type": "text",
     "label": "Shop line (where to buy)",

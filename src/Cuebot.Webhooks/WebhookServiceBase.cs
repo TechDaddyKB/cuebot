@@ -106,12 +106,28 @@ public abstract class WebhookServiceBase : IWebhookHandler
         }
         if (events.Count == 0) return (WebhookOutcome.Ignored, "Nothing to do for this event type.");
 
+        var published = await PublishNewAsync(events, delivery.Id, ct).ConfigureAwait(false);
+        return published > 0
+            ? (WebhookOutcome.Handled, string.Join(", ", events.Select(e => e.Type).Distinct()))
+            : (WebhookOutcome.Ignored, "Duplicate delivery (already handled).");
+    }
+
+    /// <summary>
+    /// Publishes the events not seen before (the duplicate check, enrichment and <see cref="BeforePublish"/> included);
+    /// returns how many were new. Also used for events a service's API reports that no delivery brought (Fourthwall's
+    /// catch-up), which have no delivery id.
+    /// </summary>
+    private protected async Task<int> PublishNewAsync(IReadOnlyList<WebhookEvent> events, string? deliveryId, CancellationToken ct)
+    {
         var published = 0;
-        foreach (var e in events)
+        for (var i = 0; i < events.Count; i++)
         {
+            var e = events[i];
             // Blank ids (a service that sent none) are dropped, so they never make unrelated deliveries look like duplicates.
+            // A delivery that carries several events (Fourthwall's PRODUCT_UPDATED page) keys each one separately.
+            var delivery = string.IsNullOrWhiteSpace(deliveryId) ? null : events.Count == 1 ? $"delivery:{deliveryId}" : $"delivery:{deliveryId}#{i}";
             var keys = e.Keys.Where(k => !string.IsNullOrWhiteSpace(k)).Select(k => $"{Service}:{k.Trim()}")
-                .Concat(string.IsNullOrWhiteSpace(delivery.Id) ? [] : [$"delivery:{delivery.Id}"]).ToArray();
+                .Concat(delivery is null ? [] : [delivery]).ToArray();
             var windowKeys = e.WindowKeys.Where(k => !string.IsNullOrWhiteSpace(k)).Select(k => $"{Service}:{k.Trim()}").ToArray();
             if (!Seen.AddAll(keys, windowKeys, e.Window)) continue;
             Prepare(e);
@@ -119,9 +135,7 @@ public abstract class WebhookServiceBase : IWebhookHandler
             Publish(e);
             published++;
         }
-        return published > 0
-            ? (WebhookOutcome.Handled, string.Join(", ", events.Select(e => e.Type).Distinct()))
-            : (WebhookOutcome.Ignored, "Duplicate delivery (already handled).");
+        return published;
     }
 
     /// <summary>

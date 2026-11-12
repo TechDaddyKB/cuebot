@@ -1413,197 +1413,410 @@
       }
     },
     "fourthwall.donation": {
-      "description": "Runs when someone donates to you on Fourthwall. Great for a thank-you. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when someone donates to you on Fourthwall. Great for a thank-you. By default only for completed donations: Fourthwall also reports donations that were started but never paid (open, abandoned, cancelled or failed), and those have amount 0 and never show in the feed, alerts or totals. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
+        "status": "Which donations run this: Completed (the money arrived; the default), Not completed (open, abandoned, cancelled or failed), or Any.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
         "message": "Their message",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.status": "The donation's status: COMPLETED, OPEN, ABANDONED, CANCELLED or FAILED",
+        "isCompleted": "True when the money arrived (COMPLETED)",
+        "fw.amount": "The amount Fourthwall names, even when the donation did not complete (amount is then 0)",
+        "fw.donationId": "Fourthwall's id for the donation",
+        "fw.email": "Their email address (private: do not show it on stream)",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.giftPurchase": {
-      "description": "Runs when someone buys gifts on Fourthwall for viewers to win. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when someone buys gifts on Fourthwall for viewers to win. Shows as a merch alert (with gift set) in overlays. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
         "message": "Their message",
-        "isTest": "True when this is a test event, not a real one",
         "fw.quantity": "How many gifts were bought",
-        "fw.offer.name": "The name of the gift item"
+        "fw.offer.name": "The name of the gift item",
+        "fw.offer.imageUrl": "A picture of the gift item (web link)",
+        "fw.giftUrls": "Where winners claim each gift (links separated by spaces; needs the shop address on the Webhooks page or the Fourthwall API)",
+        "fw.giftUrl": "The first claim link",
+        "fw.gifts[0].id": "The first gift's id (use 1, 2... for the next ones)",
+        "fw.profit": "What you earn from the gifts",
+        "fw.donation": "Always 0: gifts have no donation (kept for Streamer.bot)",
+        "fw.discount": "Always 0: gifts have no discount (kept for Streamer.bot)",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.giftDrawStarted": {
-      "description": "Runs when a Fourthwall gift draw starts, where winners get picked. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when a Fourthwall gift draw starts, where winners get picked. When Cuebot runs the draws (Webhooks page), viewers enter by typing the entry command in Twitch chat until the time is up: post it in chat from this trigger. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
         "fw.giftCount": "How many gifts are in the draw",
         "fw.offer.name": "The name of the gift item",
+        "fw.drawId": "Fourthwall's id for the draw",
         "fw.durationSeconds": "How long the draw lasts, in seconds",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.cuebotRunsDraw": "True when Cuebot collects entries for this draw from Twitch chat",
+        "fw.entryCommand": "What viewers type to enter, like !enter",
+        "fw.giftUrls": "Where winners will claim the gifts (needs the shop address or the API)",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.giftDrawEnded": {
-      "description": "Runs when a Fourthwall gift draw ends and the winners are known. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when a Fourthwall gift draw ends and the winners are known. Post the winners and their claim links in chat. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "fw.giftCount": "How many gifts were drawn",
+        "fw.giftCount": "How many gifts are in the draw",
         "fw.offer.name": "The name of the gift item",
+        "fw.drawId": "Fourthwall's id for the draw",
+        "fw.durationSeconds": "How long the draw lasts, in seconds",
+        "fw.winners": "The winners' names joined with commas (\"Anonymous\" for a blank name)",
+        "fw.winnerCount": "How many winners there are",
         "fw.gifts[0].winner": "The first winner (use 1, 2... for the next ones)",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.gifts[0].redeemUri": "The first winner's claim link from Fourthwall",
+        "fw.gifts[0].selectedAt": "When the first winner was picked",
+        "fw.giftUrls": "Claim links for every gift, separated by spaces (needs the shop address or the API)",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.orderPlaced": {
-      "description": "Runs when someone orders from your Fourthwall shop. Good for thanking buyers. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when someone orders from your Fourthwall shop. Good for thanking buyers. By default only for purchases: your own samples orders and viewers claiming a gift do not run it, and they never show as purchases in the feed, alerts or totals (a claimed gift shows as \"redeemed a gift\"). Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
+        "source": "Which orders run this: Purchases (real orders), Gift redemptions (a viewer claiming a stream gift or giveaway link), Samples (your own samples orders) or Any.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
         "message": "Their message",
-        "isTest": "True when this is a test event, not a real one",
         "fw.items": "What they ordered (names joined with commas)",
         "fw.itemCount": "How many things they ordered",
-        "fw.friendly": "The short order number"
+        "fw.friendly": "The short order number",
+        "fw.source": "What kind of order: ORDER (a purchase), SAMPLES_ORDER (your own samples), TWITCH_GIFT_REDEMPTION or GIVEAWAY_LINKS (a gift being claimed)",
+        "isPurchase": "True for a real purchase; false for samples and claimed gifts (amount is then 0)",
+        "fw.giftId": "For a claimed gift: the gift's id",
+        "fw.giftPurchaseId": "For a claimed stream gift: the gift purchase it came from",
+        "fw.promotionId": "The promotion (discount code) used, if any",
+        "fw.status": "The order's status, like CONFIRMED, SHIPPED or CANCELLED",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.orderUpdated": {
-      "description": "Runs when an order in your Fourthwall shop changes, such as being shipped. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when an order in your Fourthwall shop changes, such as being shipped or cancelled. Fourthwall may send an event more than once (Cuebot runs it once) and in any order. An Order Updated can even arrive before its Order Placed. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "updateType": "What changed: STATUS (the order moved on), SHIPPING.ADDRESS, EMAIL, or Any.",
+        "orderStatus": "Only run for these order statuses, like \"SHIPPED, CANCELLED\". Leave empty for any.",
+        "source": "Which orders run this: Purchases (real orders), Gift redemptions (a viewer claiming a stream gift or giveaway link), Samples (your own samples orders) or Any.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
         "message": "Their message",
+        "fw.updateType": "What changed: STATUS, SHIPPING.ADDRESS or EMAIL",
+        "isCancelled": "True when the order is cancelled",
+        "fw.items": "What they ordered (names joined with commas)",
+        "fw.itemCount": "How many things they ordered",
+        "fw.friendly": "The short order number",
+        "fw.source": "What kind of order: ORDER (a purchase), SAMPLES_ORDER (your own samples), TWITCH_GIFT_REDEMPTION or GIVEAWAY_LINKS (a gift being claimed)",
+        "isPurchase": "True for a real purchase; false for samples and claimed gifts (amount is then 0)",
+        "fw.giftId": "For a claimed gift: the gift's id",
+        "fw.giftPurchaseId": "For a claimed stream gift: the gift purchase it came from",
+        "fw.promotionId": "The promotion (discount code) used, if any",
+        "fw.status": "The order's status, like CONFIRMED, SHIPPED or CANCELLED",
         "isTest": "True when this is a test event, not a real one",
-        "fw.updateType": "What changed",
-        "fw.status": "The order's status",
-        "fw.friendly": "The short order number"
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.productCreated": {
-      "description": "Runs when you add a new product to your Fourthwall shop. Handy to announce it. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when you add a new product to your Fourthwall shop. Handy to announce it; by default only once it is public. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "publicOnly": "Leave ticked to skip hidden, private and archived products, so an announcement never shows something you have not released. Untick to run for every product.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
         "fw.name": "The product name",
         "fw.description": "Its description",
         "fw.imageUrl": "A picture of it (web link)",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.access": "Who can see it: PUBLIC, HIDDEN, PRIVATE or ARCHIVED",
+        "fw.isPublic": "True when anyone can see it in your shop",
+        "fw.state": "AVAILABLE or SOLD_OUT",
+        "fw.isSoldOut": "True when it is sold out",
+        "fw.price": "The lowest price as a number",
+        "fw.formattedPrice": "The lowest price written nicely, like \"$45.00\"",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.productUpdated": {
-      "description": "Runs when a product in your Fourthwall shop changes. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when a product in your Fourthwall shop changes. When one change touches several products, it runs once for each. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "publicOnly": "Leave ticked to skip hidden, private and archived products, so an announcement never shows something you have not released. Untick to run for every product.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
         "fw.name": "The product name",
         "fw.description": "Its description",
         "fw.imageUrl": "A picture of it (web link)",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.access": "Who can see it: PUBLIC, HIDDEN, PRIVATE or ARCHIVED",
+        "fw.isPublic": "True when anyone can see it in your shop",
+        "fw.state": "AVAILABLE or SOLD_OUT",
+        "fw.isSoldOut": "True when it is sold out",
+        "fw.price": "The lowest price as a number",
+        "fw.formattedPrice": "The lowest price written nicely, like \"$45.00\"",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.subscriptionPurchased": {
       "description": "Runs when someone starts a paid membership on Fourthwall. Great for a thank-you. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
+        "tier": "Only run for these tiers: names (needs the Fourthwall API) or tier ids, with commas. Leave empty for any tier.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "fw.interval": "How often they pay: MONTHLY or ANNUAL",
+        "fw.tierId": "Their tier's id",
+        "tier": "Their tier's name (needs the Fourthwall API connected)",
+        "fw.state": "The membership's state: ACTIVE, CANCELLED (ends at the end of the paid period), SUSPENDED or NONE",
+        "fw.isCancelled": "True when the member cancelled",
+        "fw.monthlyAmount": "The price per month (a yearly price divided by 12)",
+        "fw.nickname": "Their nickname",
         "isTest": "True when this is a test event, not a real one",
-        "fw.interval": "How often they pay, like monthly",
-        "fw.tierId": "Which tier they joined"
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.subscriptionChanged": {
-      "description": "Runs when a Fourthwall member changes their membership. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "description": "Runs when a Fourthwall membership changes: a new tier, or a cancellation (Fourthwall sends this when a member cancels too). Use Change to pick. Upgrades and downgrades are known when Cuebot saw the member's earlier tier (an earlier webhook or a member sync). Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "change": "Which changes run this: Cancellations, Not cancellations, Upgrades (a pricier tier), Downgrades, or Any.",
+        "tier": "Only run for these tiers: names (needs the Fourthwall API) or tier ids, with commas. Leave empty for any tier.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "fw.interval": "How often they pay: MONTHLY or ANNUAL",
+        "fw.tierId": "Their tier's id",
+        "tier": "Their tier's name (needs the Fourthwall API connected)",
+        "fw.state": "The membership's state: ACTIVE, CANCELLED (ends at the end of the paid period), SUSPENDED or NONE",
+        "fw.isCancelled": "True when the member cancelled",
+        "fw.monthlyAmount": "The price per month (a yearly price divided by 12)",
+        "fw.nickname": "Their nickname",
+        "direction": "upgrade, downgrade, change (another tier at the same price), same, or empty when Cuebot did not know the earlier tier",
+        "fw.previousTierId": "The tier they had before (if Cuebot knew it)",
+        "fw.previousTier": "The name of the tier they had before",
+        "fw.previousAmount": "What they paid per month before",
         "isTest": "True when this is a test event, not a real one",
-        "fw.interval": "How often they pay",
-        "fw.tierId": "Their tier"
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.subscriptionExpired": {
       "description": "Runs when a Fourthwall membership ends. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "The person's name (\"Anonymous\" if unknown)",
+        "user": "The person's name (\"Anonymous\" if they left it blank, \"A supporter\" when you hide supporter names)",
+        "isAnonymous": "True when the person left their name blank",
+        "fw.username": "The name they typed (empty if blank), even when you hide supporter names",
         "amount": "The amount as a number, like 5 or 12.5",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "Their message",
+        "fw.interval": "How often they pay: MONTHLY or ANNUAL",
+        "fw.tierId": "Their tier's id",
+        "tier": "Their tier's name (needs the Fourthwall API connected)",
+        "fw.state": "The membership's state: ACTIVE, CANCELLED (ends at the end of the paid period), SUSPENDED or NONE",
+        "fw.isCancelled": "True when the member cancelled",
+        "fw.monthlyAmount": "The price per month (a yearly price divided by 12)",
+        "fw.nickname": "Their nickname",
         "isTest": "True when this is a test event, not a real one",
-        "fw.interval": "How often they paid",
-        "fw.tierId": "Their tier"
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.newsletterSubscribed": {
       "description": "Runs when someone signs up for your Fourthwall newsletter. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "fw.email": "The email address they signed up with",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.email": "The email address they signed up with (private: do not show it on stream)",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "fourthwall.thankYouSent": {
       "description": "Runs when you send a thank-you to a Fourthwall supporter. Needs your Fourthwall webhook set up on the Webhooks page.",
       "fields": {
-        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+        "contributionType": "Only for thank-yous for this: ORDER, DONATION, GIFT_PURCHASE, MEMBERSHIP_PAYMENT_CHARGE (a membership payment), or Any.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
       },
       "variables": {
-        "user": "Who got the thank-you",
+        "user": "Who got the thank-you (\"Anonymous\" if unknown, \"A supporter\" when you hide supporter names)",
         "message": "Their original message",
         "fw.mediaUrl": "The thank-you video or picture (web link)",
-        "isTest": "True when this is a test event, not a real one"
+        "fw.contributionType": "What it thanks for: ORDER, DONATION, GIFT_PURCHASE or MEMBERSHIP_PAYMENT_CHARGE",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
+      }
+    },
+    "fourthwall.promotionCreated": {
+      "description": "Runs when a promotion (discount code) is made in your Fourthwall shop, by you or by Cuebot's Create promo code step. Handy to post the code in chat. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
+      },
+      "variables": {
+        "fw.code": "The code, like STREAM20 (the first one when there are several)",
+        "fw.codes": "Every code, joined with commas",
+        "fw.title": "The promotion's title, if it has one",
+        "fw.status": "Live, Ended, Archived or AllUsed",
+        "fw.isAllUsed": "True when every use of the code is taken",
+        "fw.usageCount": "How many times it was used",
+        "fw.maxUses": "How many uses it allows (0 = no limit)",
+        "fw.discount": "The discount in words, like \"20% off\" or \"$5.00 off\"",
+        "fw.promotionId": "Fourthwall's id for the promotion",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
+      }
+    },
+    "fourthwall.promotionUpdated": {
+      "description": "Runs when a promotion (discount code) in your Fourthwall shop is changed. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
+      },
+      "variables": {
+        "fw.code": "The code, like STREAM20 (the first one when there are several)",
+        "fw.codes": "Every code, joined with commas",
+        "fw.title": "The promotion's title, if it has one",
+        "fw.status": "Live, Ended, Archived or AllUsed",
+        "fw.isAllUsed": "True when every use of the code is taken",
+        "fw.usageCount": "How many times it was used",
+        "fw.maxUses": "How many uses it allows (0 = no limit)",
+        "fw.discount": "The discount in words, like \"20% off\" or \"$5.00 off\"",
+        "fw.promotionId": "Fourthwall's id for the promotion",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
+      }
+    },
+    "fourthwall.promotionStatusChanged": {
+      "description": "Runs when a Fourthwall promotion goes live, ends, is archived or is used up. Handy for \"the code is all gone!\". Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "promotionStatus": "Only for this new status: Live, Ended, AllUsed (every use taken), Archived, or Any.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
+      },
+      "variables": {
+        "fw.code": "The code, like STREAM20 (the first one when there are several)",
+        "fw.codes": "Every code, joined with commas",
+        "fw.title": "The promotion's title, if it has one",
+        "fw.status": "Live, Ended, Archived or AllUsed",
+        "fw.isAllUsed": "True when every use of the code is taken",
+        "fw.usageCount": "How many times it was used",
+        "fw.maxUses": "How many uses it allows (0 = no limit)",
+        "fw.discount": "The discount in words, like \"20% off\" or \"$5.00 off\"",
+        "fw.promotionId": "Fourthwall's id for the promotion",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
+      }
+    },
+    "fourthwall.collectionUpdated": {
+      "description": "Runs when a collection in your Fourthwall shop changes, such as a drop being made available. Needs your Fourthwall webhook set up on the Webhooks page.",
+      "fields": {
+        "publicOnly": "Tick to skip hidden, private and archived collections.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones.",
+        "skipReplays": "Tick to skip events Cuebot found later in Fourthwall's event list because no delivery brought them (catch-up, needs the Fourthwall API). They still count in totals."
+      },
+      "variables": {
+        "fw.name": "The collection's name",
+        "fw.slug": "The collection's short name in its web address",
+        "fw.available": "True when it can be bought",
+        "fw.access": "PUBLIC, HIDDEN, PRIVATE or ARCHIVED",
+        "fw.isPublic": "True when anyone can see it",
+        "fw.productCount": "How many products it holds",
+        "isTest": "True when this is a test event, not a real one",
+        "isReplay": "True when Cuebot found this event later in Fourthwall's event list (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up event: about how many seconds late it is"
       }
     },
     "shopify.orderCreated": {
@@ -2648,6 +2861,170 @@
         "patreonCurrency": "The campaign's currency, like USD",
         "patreonCampaign": "The campaign's name",
         "patreonSyncResult": "What happened, like \"Synced 12 Patreon member(s).\""
+      }
+    },
+    "fourthwall.createPromo": {
+      "description": "Makes a new discount code in your Fourthwall shop, for \"first 10 chatters get 20% off\", raid rewards or channel point redeems. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "code": "The code. Leave empty for a random one like STREAM7K2QXP.",
+        "kind": "Percent off, Amount off (in the currency below) or Free shipping.",
+        "value": "The percent, or the amount off.",
+        "currency": "The currency for Amount off, like USD.",
+        "maxUses": "How many times it can be used in total. 0 = no limit.",
+        "oncePerCustomer": "Tick so each customer can use it once."
+      },
+      "variables": {
+        "fw.code": "The new code",
+        "fw.promotionId": "Its id (End promo code can use it)",
+        "fw.promotionStatus": "Its status, like Live",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.endPromo": {
+      "description": "Ends a Fourthwall discount code (or makes it live again). Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "code": "The code, like STREAM20, or the promotion id. %fw.code% is the one Create promo code made.",
+        "live": "Tick to make the code live again instead of ending it."
+      },
+      "variables": {
+        "fw.promotionStatus": "Its status now",
+        "fw.usageCount": "How many times it was used",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.setAvailability": {
+      "description": "Shows or hides a Fourthwall product or collection, for a limited drop while you are live. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "target": "Product or Collection.",
+        "id": "The product's id, or the collection's id or slug (from its web address).",
+        "available": "Tick to show it, untick to hide it again."
+      },
+      "variables": {
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.setStreaming": {
+      "description": "Tells Fourthwall your shop is streaming on Twitch (or that the stream ended). Viewers can only buy stream gifts while it is. Cuebot can also do this by itself (Webhooks page). Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "online": "Tick for streaming now, untick for ended.",
+        "broadcasterId": "Your Twitch user id.",
+        "broadcasterLogin": "Your Twitch login name."
+      },
+      "variables": {
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.getMembers": {
+      "description": "Reads how many Fourthwall members you have, in total and per tier, and can check whether an email belongs to a member. Counts come from webhooks and, with the Fourthwall API connected, the member list.",
+      "fields": {
+        "email": "Optional. An email to check, for example from a form or a command. Needs the API's member list."
+      },
+      "variables": {
+        "fourthwallMemberCount": "How many active members",
+        "fourthwallTiers": "Each tier with its member count, like \"Gold (3), Silver (10)\"",
+        "fourthwallMembers.<tier>": "The member count of one tier, like %fourthwallMembers.Gold%",
+        "isFourthwallMember": "True when the email belongs to an active member",
+        "fourthwallMemberTier": "That member's tier",
+        "fourthwallMemberState": "That member's state, like ACTIVE",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.getTotals": {
+      "description": "Reads your Fourthwall sales since today, the last 24 hours, this stream or this month: purchases (not samples, claimed gifts or cancelled orders) and completed donations. Good for merch goals that survive a restart. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "period": "Since when: Today, Last 24 hours, This stream (the hours below) or This month.",
+        "hours": "For This stream: how many hours back."
+      },
+      "variables": {
+        "fourthwallRevenue": "What the orders came to",
+        "fourthwallOrders": "How many orders",
+        "fourthwallDonations": "What the donations came to",
+        "fourthwallDonationCount": "How many donations",
+        "fourthwallTotal": "Orders and donations added up",
+        "fourthwallFormattedTotal": "The total written nicely, like \"$120.00\"",
+        "fourthwallCurrency": "The currency, like USD",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.createPost": {
+      "description": "Posts to your Fourthwall members, for example \"I'm live!\" when the stream starts. With a video link it is a video post. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "title": "The post's title (at least 3 characters).",
+        "text": "The text of the post.",
+        "videoUrl": "Optional. A YouTube or Twitch link to embed.",
+        "access": "Who can see it: MembersOnly, Public or FreeAndPaidMembers.",
+        "notify": "Tick to notify members."
+      },
+      "variables": {
+        "fw.postId": "The new post's id",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.getThankYous": {
+      "description": "Lists supporters still waiting for a Fourthwall thank-you, to show or read out on stream. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "max": "At most this many."
+      },
+      "variables": {
+        "fourthwallThankYouCount": "How many are waiting (up to the maximum)",
+        "fourthwallThankYouNames": "Their names, joined with commas",
+        "thankYou0.id": "The first one's id, for Send thank-you video (use 1, 2... for the next ones)",
+        "thankYou0.name": "The first one's name",
+        "thankYou0.products": "What they bought",
+        "thankYou0.message": "Their message",
+        "thankYou0.amount": "What they paid",
+        "thankYou0.formattedAmount": "What they paid, written nicely",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.sendThankYou": {
+      "description": "Sends a video or picture as the thank-you to a Fourthwall supporter, for example an OBS replay you just saved. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "contributionId": "Which supporter: the id from Get thank-yous waiting.",
+        "file": "The video or picture file on this PC."
+      },
+      "variables": {
+        "fw.mediaUrl": "Where the thank-you is now",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.createGiveawayLinks": {
+      "description": "Makes Fourthwall giveaway links for a product: each link lets one person claim it for free. Send one to a winner by whisper or DM. Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {
+        "productId": "The product's id.",
+        "count": "How many links."
+      },
+      "variables": {
+        "fw.giveawayLinks": "The links, separated by spaces",
+        "fw.giveawayLink0": "The first link (use 1, 2... for the next ones)",
+        "fw.giveawayPackageId": "The id of this batch of links",
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.refreshProducts": {
+      "description": "Reads your Fourthwall products again for the Products widget (Cuebot also does it after a product change and every 30 minutes). Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {},
+      "variables": {
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "fourthwall.catchUp": {
+      "description": "Asks Fourthwall which events it sent and runs those that never reached Cuebot (relay down, wrong secret). Cuebot also does this every few minutes (Webhooks page). Needs the Fourthwall API connected on the Webhooks page.",
+      "fields": {},
+      "variables": {
+        "fourthwallOk": "True when Fourthwall did it",
+        "fourthwallResult": "What happened, or why it failed"
       }
     }
   }

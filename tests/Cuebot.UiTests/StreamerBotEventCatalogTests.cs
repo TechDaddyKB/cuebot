@@ -22,6 +22,7 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
         "CrowdControl.GameSessionPaused",
         "DonorDrive.Connected", "DonorDrive.Disconnected",
         "Elgato.ControlCenterColorChanged", "Elgato.ControlCenterDeviceOffline", "Elgato.ControlCenterDeviceOnline",
+        "Fourthwall.CollectionUpdated", "Fourthwall.PromotionCreated", "Fourthwall.PromotionStatusChanged", "Fourthwall.PromotionUpdated",
         "Kick.Host", "Kick.MessageDeleted", "Kick.UserUnbanned",
         "Kofi.GoalReached", "Kofi.MembershipLapsed",
         "Misc.FirstWords", "Misc.PresentViewers", "Misc.ProfileStarted", "Misc.ProfileStopping",

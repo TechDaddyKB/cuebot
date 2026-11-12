@@ -230,27 +230,179 @@ internal sealed class ShopifyTriggers : ITriggerProvider
     ];
 }
 
-/// <summary>Fourthwall triggers (all 13 Streamer.bot documents).</summary>
+/// <summary>
+/// Fourthwall triggers: the 13 Streamer.bot documents plus Promotion Created / Updated / Status Changed and Collection
+/// Updated. Donation runs for COMPLETED donations only unless told otherwise; Order Placed for purchases only (not the
+/// creator's samples or redeemed gifts); Product Created / Updated for public products only. Every trigger can skip events
+/// Cuebot replayed from Fourthwall's event list (isReplay). Fourthwall sends each event at least once and in no set order
+/// (an Order Updated can come before its Order Placed).
+/// </summary>
 internal sealed class FourthwallTriggers : ITriggerProvider
 {
     public const string Category = "Fourthwall";
 
+    internal const string Any = "Any";
+    internal const string Completed = "Completed";
+    internal const string NotCompleted = "Not completed";
+    internal const string Purchases = "Purchases";
+    internal const string GiftRedemptions = "Gift redemptions";
+    internal const string Samples = "Samples";
+    internal const string Cancellations = "Cancellations";
+    internal const string Upgrades = "Upgrades";
+    internal const string Downgrades = "Downgrades";
+    internal const string NotCancellations = "Not cancellations";
+
     public IEnumerable<ITriggerType> GetTriggers() =>
     [
-        WebhookFilters.Paid(Category, FourthwallEventTypes.Donation, "Donation"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.GiftDrawEnded, "Gift Draw Ended"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.GiftDrawStarted, "Gift Draw Started"),
-        WebhookFilters.Paid(Category, FourthwallEventTypes.GiftPurchase, "Gift Purchase"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.NewsletterSubscribed, "Newsletter Subscribed"),
-        WebhookFilters.Paid(Category, FourthwallEventTypes.OrderPlaced, "Order Placed"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.OrderUpdated, "Order Updated"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.ProductCreated, "Product Created"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.ProductUpdated, "Product Updated"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.SubscriptionChanged, "Subscription Changed"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.SubscriptionExpired, "Subscription Expired"),
-        WebhookFilters.Paid(Category, FourthwallEventTypes.SubscriptionPurchased, "Subscription Purchased"),
-        WebhookFilters.Plain(Category, FourthwallEventTypes.ThankYouSent, "Thank You Sent"),
+        Event(FourthwallEventTypes.Donation, "Donation",
+            [
+                new("status", "Donation status", ParameterKind.Choice)
+                {
+                    DefaultValue = Completed, Choices = [Completed, NotCompleted, Any],
+                    Help = "Fourthwall also reports donations that were started but not paid (open, abandoned, cancelled, failed); those have amount 0",
+                },
+                .. WebhookFilters.Amount,
+            ],
+            (e, s) => WebhookFilters.MatchesAmount(e, s) && StatusMatches(e, s["status"])),
+        Event(FourthwallEventTypes.GiftDrawEnded, "Gift Draw Ended", [.. WebhookFilters.TestsOnly], WebhookFilters.MatchesTest),
+        Event(FourthwallEventTypes.GiftDrawStarted, "Gift Draw Started", [.. WebhookFilters.TestsOnly], WebhookFilters.MatchesTest),
+        Event(FourthwallEventTypes.GiftPurchase, "Gift Purchase", [.. WebhookFilters.Amount], WebhookFilters.MatchesAmount),
+        Event(FourthwallEventTypes.NewsletterSubscribed, "Newsletter Subscribed", [.. WebhookFilters.TestsOnly], WebhookFilters.MatchesTest),
+        Event(FourthwallEventTypes.OrderPlaced, "Order Placed", [Source(Purchases), .. WebhookFilters.Amount],
+            (e, s) => WebhookFilters.MatchesAmount(e, s) && SourceMatches(e, s["source"])),
+        Event(FourthwallEventTypes.OrderUpdated, "Order Updated",
+            [
+                new("updateType", "What changed", ParameterKind.Choice)
+                {
+                    DefaultValue = Any, Choices = [Any, "STATUS", "SHIPPING.ADDRESS", "EMAIL"],
+                    Help = "STATUS: the order moved on (in production, shipped, delivered, cancelled...)",
+                },
+                new("orderStatus", "Order status") { Help = "Leave empty for any; several with commas, e.g. SHIPPED, CANCELLED" },
+                Source(Any),
+                .. WebhookFilters.TestsOnly,
+            ],
+            (e, s) => WebhookFilters.MatchesTest(e, s) && SourceMatches(e, s["source"])
+                && (s["updateType"] is "" or Any || string.Equals(WebhookFilters.Text(e.Args, "fw.updateType"), s["updateType"], StringComparison.OrdinalIgnoreCase))
+                && ListMatches(s["orderStatus"], WebhookFilters.Text(e.Args, "fw.status"))),
+        Event(FourthwallEventTypes.ProductCreated, "Product Created", [PublicOnly(true), .. WebhookFilters.TestsOnly], ProductMatches),
+        Event(FourthwallEventTypes.ProductUpdated, "Product Updated", [PublicOnly(true), .. WebhookFilters.TestsOnly], ProductMatches),
+        Event(FourthwallEventTypes.SubscriptionChanged, "Subscription Changed",
+            [
+                new("change", "Change", ParameterKind.Choice)
+                {
+                    DefaultValue = Any, Choices = [Any, Cancellations, NotCancellations, Upgrades, Downgrades],
+                    Help = "Fourthwall sends Subscription Changed when a member cancels too (state CANCELLED). Upgrades and downgrades need Cuebot to have seen the member's earlier tier (a webhook or a member sync)",
+                },
+                Tier,
+                .. WebhookFilters.TestsOnly,
+            ],
+            (e, s) => WebhookFilters.MatchesTest(e, s) && ChangeMatches(e, s["change"]) && TierMatches(e, s["tier"])),
+        Event(FourthwallEventTypes.SubscriptionExpired, "Subscription Expired", [.. WebhookFilters.TestsOnly], WebhookFilters.MatchesTest),
+        Event(FourthwallEventTypes.SubscriptionPurchased, "Subscription Purchased", [Tier, .. WebhookFilters.Amount],
+            (e, s) => WebhookFilters.MatchesAmount(e, s) && TierMatches(e, s["tier"])),
+        Event(FourthwallEventTypes.ThankYouSent, "Thank You Sent",
+            [
+                new("contributionType", "For", ParameterKind.Choice)
+                {
+                    DefaultValue = Any, Choices = [Any, "ORDER", "DONATION", "GIFT_PURCHASE", "MEMBERSHIP_PAYMENT_CHARGE"],
+                },
+                .. WebhookFilters.TestsOnly,
+            ],
+            (e, s) => WebhookFilters.MatchesTest(e, s)
+                && (s["contributionType"] is "" or Any || string.Equals(WebhookFilters.Text(e.Args, "fw.contributionType"), s["contributionType"], StringComparison.OrdinalIgnoreCase))),
+        Event(FourthwallEventTypes.PromotionCreated, "Promotion Created", [.. WebhookFilters.TestsOnly], WebhookFilters.MatchesTest),
+        Event(FourthwallEventTypes.PromotionUpdated, "Promotion Updated", [.. WebhookFilters.TestsOnly], WebhookFilters.MatchesTest),
+        Event(FourthwallEventTypes.PromotionStatusChanged, "Promotion Status Changed",
+            [
+                new("promotionStatus", "New status", ParameterKind.Choice)
+                {
+                    DefaultValue = Any, Choices = [Any, "Live", "Ended", "AllUsed", "Archived"], Help = "AllUsed: every use of the code is taken",
+                },
+                .. WebhookFilters.TestsOnly,
+            ],
+            (e, s) => WebhookFilters.MatchesTest(e, s) && (s["promotionStatus"] is "" or Any
+                || string.Equals(WebhookFilters.Text(e.Args, "fw.status"), s["promotionStatus"], StringComparison.OrdinalIgnoreCase))),
+        Event(FourthwallEventTypes.CollectionUpdated, "Collection Updated", [PublicOnly(false), .. WebhookFilters.TestsOnly], ProductMatches),
     ];
+
+    private static readonly ParameterDescriptor SkipReplays = new("skipReplays", "Skip caught-up events", ParameterKind.Boolean)
+    {
+        DefaultValue = "false",
+        Help = "Do not run for events Cuebot found later in Fourthwall's event list because no delivery brought them (they still count in totals)",
+    };
+
+    private static readonly ParameterDescriptor Tier = new("tier", "Tier name")
+    {
+        Help = "Leave empty for any tier; several with commas. Tier names need the Fourthwall API connected (otherwise use the tier id)",
+    };
+
+    private static ParameterDescriptor Source(string fallback) => new("source", "Order kind", ParameterKind.Choice)
+    {
+        DefaultValue = fallback, Choices = [Purchases, GiftRedemptions, Samples, Any],
+        Help = "Purchases: real orders. Gift redemptions: a viewer claiming a stream gift or giveaway link. Samples: your own samples orders",
+    };
+
+    private static ParameterDescriptor PublicOnly(bool on) => new("publicOnly", "Only public ones", ParameterKind.Boolean)
+    {
+        DefaultValue = on ? "true" : "false",
+        Help = "Skip hidden, private and archived ones, so an announcement never shows something you have not released",
+    };
+
+    private static EventTriggerType Event(string type, string name, IReadOnlyList<ParameterDescriptor> parameters, Func<BotEvent, ParameterValues, bool> filter) =>
+        WebhookFilters.Event(Category, type, name, [.. parameters, SkipReplays],
+            (e, s) => filter(e, s) && !(s.GetBool("skipReplays") && e.Args.TryGetValue("isReplay", out var r) && r is true));
+
+    private static bool Flag(BotEvent e, string key, bool fallback) => e.Args.TryGetValue(key, out var v) && v is bool b ? b : fallback;
+
+    internal static bool StatusMatches(BotEvent e, string setting) => setting switch
+    {
+        Any => true,
+        NotCompleted => !Flag(e, "isCompleted", true),
+        _ => Flag(e, "isCompleted", true),
+    };
+
+    internal static bool SourceMatches(BotEvent e, string setting)
+    {
+        var source = WebhookFilters.Text(e.Args, "fw.source");
+        return setting switch
+        {
+            Purchases => Services.FourthwallWebhookHandler.IsPurchaseSource(source),
+            GiftRedemptions => source is "TWITCH_GIFT_REDEMPTION" or "GIVEAWAY_LINKS",
+            Samples => source == "SAMPLES_ORDER",
+            _ => true,
+        };
+    }
+
+    private static bool ProductMatches(BotEvent e, ParameterValues s) =>
+        WebhookFilters.MatchesTest(e, s) && (!s.GetBool("publicOnly") || Flag(e, "fw.isPublic", true));
+
+    internal static bool ChangeMatches(BotEvent e, string setting)
+    {
+        var cancelled = Flag(e, "fw.isCancelled", false);
+        var direction = WebhookFilters.Text(e.Args, "direction");
+        return setting switch
+        {
+            Cancellations => cancelled,
+            NotCancellations => !cancelled,
+            Upgrades => !cancelled && direction == "upgrade",
+            Downgrades => !cancelled && direction == "downgrade",
+            _ => true,
+        };
+    }
+
+    /// <summary>Empty matches any; otherwise one of the comma-separated tier names or ids, ignoring case and spaces.</summary>
+    internal static bool TierMatches(BotEvent e, string setting)
+    {
+        static string Norm(string t) => string.Concat(t.Where(c => !char.IsWhiteSpace(c))).ToLowerInvariant();
+        var wanted = setting.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Norm).Where(t => t.Length > 0).ToArray();
+        return wanted.Length == 0 || wanted.Contains(Norm(WebhookFilters.Text(e.Args, "tier"))) || wanted.Contains(Norm(WebhookFilters.Text(e.Args, "fw.tierId")));
+    }
+
+    private static bool ListMatches(string setting, string value)
+    {
+        var wanted = setting.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return wanted.Length == 0 || wanted.Any(w => string.Equals(w, value, StringComparison.OrdinalIgnoreCase));
+    }
 }
 
 /// <summary>Throne triggers (Contribution Purchased, Gift Crowdfunded, Gift Purchased).</summary>

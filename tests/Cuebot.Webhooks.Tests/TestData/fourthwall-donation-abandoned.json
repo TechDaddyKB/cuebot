@@ -1,0 +1,19 @@
+{
+  "testMode": false,
+  "id": "weve_donation_abandoned",
+  "webhookId": "wcon_P-VkRfmJTBaC6_Tst22cew",
+  "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+  "type": "DONATION",
+  "apiVersion": "V1_BETA",
+  "createdAt": "2026-10-27T15:06:00.000+00:00",
+  "data": {
+    "id": "don_abandoned",
+    "shopId": "sh_7ad0c438-beda-4779-a885-0dc325a755c1",
+    "status": "ABANDONED",
+    "email": "maybe@example.com",
+    "message": "I will be back",
+    "amounts": { "total": { "value": 50, "currency": "USD" } },
+    "createdAt": "2026-10-27T15:05:59.000+00:00",
+    "updatedAt": "2026-10-27T15:05:59.000+00:00"
+  }
+}

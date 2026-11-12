@@ -108,6 +108,54 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" DataContext="{Binding Fourthwall}" x:DataType="vm:FourthwallOptionsViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Fourthwall extras" />
+          <CheckBox Content="Hide supporter names on stream" IsChecked="{Binding HideSupporterNames}"
+                    ToolTip.Tip="Shows &quot;A supporter&quot; instead of the name of anyone who orders, donates, gifts, joins or gets a thank-you (feed, speech, alerts, %user%). %fw.username% keeps the real name for private use." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Shop address" VerticalAlignment="Center" />
+            <TextBox Text="{Binding ShopAddress}" PlaceholderText="myshop.fourthwall.com" MinWidth="260"
+                     ToolTip.Tip="Your shop's web address, for the gift claim links in %fw.giftUrls% (https://&lt;shop&gt;/gifts/&lt;gift id&gt;). Filled in from the API when connected." />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Optional Fourthwall Open API connection. In your Fourthwall admin open Settings → For developers → Open API (a SUPER ADMIN can do this), create an API user and copy its user name and password here. Cuebot then knows tier names and members, fills the Products widget from your shop, catches up on events that never arrived, can set up the webhook, mark the shop live while you stream on Twitch and run gift draws from chat. The password is saved like the other secrets and never written to the log." />
+          <Grid ColumnDefinitions="*,8,*">
+            <TextBox Name="FourthwallApiUser" Text="{Binding ApiUser}" PasswordChar="•" PlaceholderText="API user name" ToolTip.Tip="The Open API user name. Hidden as dots." />
+            <TextBox Grid.Column="2" Name="FourthwallApiPassword" Text="{Binding ApiPassword}" PasswordChar="•" PlaceholderText="API password" ToolTip.Tip="The Open API user's password. Hidden as dots; keep it private." />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SavedCredentials}" />
+          <WrapPanel>
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" Margin="0,0,8,8" ToolTip.Tip="Reads your shop, tiers, members and products with the API user." />
+            <Button Content="Sync members" Command="{Binding SyncCommand}" Margin="0,0,8,8" ToolTip.Tip="Reads the member list now (Cuebot also does it every 6 hours)." />
+            <Button Content="Refresh products" Command="{Binding RefreshProductsCommand}" Margin="0,0,8,8" ToolTip.Tip="Reads the products the Products widget shows (also after every product change and every 30 minutes)." />
+            <Button Content="Set up webhook" Command="{Binding SetUpWebhookCommand}" Margin="0,0,8,8" ToolTip.Tip="Creates the Fourthwall webhook for the Cuebot URL shown on the Relay tab with every event Cuebot handles, or adds the missing ones. Copy the shop's webhook secret into the card above by hand: the API does not give it." />
+            <Button Content="Check webhook" Command="{Binding CheckWebhookCommand}" Margin="0,0,8,8" ToolTip.Tip="Asks Fourthwall which events the webhook sends." />
+            <Button Content="Catch up now" Command="{Binding CatchUpCommand}" Margin="0,0,8,8" ToolTip.Tip="Asks Fourthwall which events it sent and replays those that never reached Cuebot." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,8" ToolTip.Tip="Removes the API user. Webhooks keep working." />
+          </WrapPanel>
+          <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding WebhookHealth}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Catch up every (minutes)" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding CatchUpMinutes}" Minimum="0" Maximum="240" FormatString="0" Width="120"
+                           ToolTip.Tip="With the API connected, Cuebot checks Fourthwall's event list this often and replays events no delivery brought (marked isReplay). 0 turns this off." />
+            <TextBlock Text="Showcase collection" VerticalAlignment="Center" Margin="16,0,0,0" />
+            <TextBox Text="{Binding ProductsCollection}" PlaceholderText="every public product" MinWidth="180"
+                     ToolTip.Tip="The collection (its slug, from its web address) the Products widget shows. Leave empty for every public product." />
+          </StackPanel>
+          <CheckBox Content="Tell Fourthwall when I am live on Twitch" IsChecked="{Binding MarkStreamingLive}"
+                    ToolTip.Tip="When your Twitch stream goes live or offline, Cuebot sets the shop's streaming status. Viewers can only buy stream gifts while the shop is streaming." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <CheckBox Content="Run gift draws from Twitch chat with" IsChecked="{Binding RunGiftDraws}"
+                      ToolTip.Tip="When a Fourthwall gift draw starts, viewers type the command in Twitch chat until the draw's time is up; Cuebot then hands Fourthwall the entrants and Fourthwall picks the winners. Fourthwall's gifting must be set to Open API." />
+            <TextBox Text="{Binding EntryCommand}" Width="120" ToolTip.Tip="What viewers type to enter a gift draw." />
+          </StackPanel>
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding GiftingNote}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card" DataContext="{Binding Custom}" x:DataType="vm:CustomHooksViewModel">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Custom webhooks" />

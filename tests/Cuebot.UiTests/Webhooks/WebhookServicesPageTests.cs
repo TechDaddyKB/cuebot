@@ -123,6 +123,25 @@ public sealed class WebhookServicesPageTests : IAsyncDisposable
             Assert.Equal("", services.Patreon.Options.AccessToken);
             Assert.StartsWith("Not connected", patreon.Status, StringComparison.Ordinal);
 
+            // Fourthwall extras: the API user and password are masked, the card says the relay is needed.
+            var fourthwall = vm.Fourthwall;
+            fourthwall.ApiPassword = "  fw-password-QRST4321 ";
+            Assert.Equal("fw-password-QRST4321", services.Fourthwall.Options.ApiPassword);
+            Assert.Contains("••••••••4321", fourthwall.SavedCredentials, StringComparison.Ordinal);
+            fourthwall.HideSupporterNames = true;
+            Assert.True(services.Fourthwall.Options.HideSupporterNames);
+            fourthwall.EntryCommand = " !join ";
+            Assert.Equal("!join", services.Fourthwall.Options.EntryCommand);
+            UiPump.Pump();
+            var fwBoxes = window.GetVisualDescendants().OfType<TextBox>().Where(t => (t.Name ?? "").StartsWith("FourthwallApi", StringComparison.Ordinal)).ToArray();
+            Assert.Equal(2, fwBoxes.Length);
+            Assert.All(fwBoxes, b => Assert.Equal('•', b.PasswordChar));
+            Assert.DoesNotContain(window.GetVisualDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains("fw-password", StringComparison.Ordinal));
+            Assert.Contains("port 443", vm.Services.Single(c => c.Route == "fourthwall").Help, StringComparison.Ordinal);
+            fourthwall.DisconnectCommand.Execute(null);
+            Assert.Equal("", services.Fourthwall.Options.ApiPassword);
+            Assert.StartsWith("Not connected", fourthwall.Status, StringComparison.Ordinal);
+
             foreach (var (theme, name) in new[] { (ThemeVariant.Dark, "dark"), (ThemeVariant.Light, "light") })
             {
                 app.RequestedThemeVariant = theme;

@@ -36,6 +36,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [DonorDrive](donordrive.md) | 3 |
 | [Elgato](elgato.md) | 15 |
 | [Emotes](emotes.md) | 3 |
+| [Fourthwall](fourthwall.md) | 7 |
 | [Global variables](globals.md) | 6 |
 | [Goals](goals.md) | 6 |
 | [GoXLR](goxlr.md) | 20 |

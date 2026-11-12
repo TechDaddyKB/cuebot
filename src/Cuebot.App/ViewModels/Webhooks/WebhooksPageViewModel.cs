@@ -9,6 +9,7 @@ public sealed class WebhooksPageViewModel : PageViewModel
         Relay = relay;
         // "Create webhook" on the Patreon card registers the URL the relay tab shows.
         services.Patreon.WebhookUrl = () => relay.WebhookUrl(Cuebot.Webhooks.Services.PatreonWebhookHandler.Route);
+        services.Fourthwall.WebhookUrl = () => relay.WebhookUrl(Cuebot.Webhooks.Services.FourthwallWebhookHandler.Route);
     }
 
     public WebhookServicesViewModel Services { get; }

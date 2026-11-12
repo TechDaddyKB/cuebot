@@ -30,6 +30,10 @@ of a stream. If you want missed messages delivered later, set up your own relay 
     down, or the route was deleted), Patreon retries for up to a week and then pauses the webhook. Resuming it sends
     everything held back at once; Cuebot marks old pledges stale so alerts can skip them. See [Patreon](patreon.md).
 
+!!! note "Fourthwall can catch up"
+    Fourthwall keeps a list of the events it sent. With the Fourthwall API connected, Cuebot checks that list every few
+    minutes and runs the events that never arrived. See [Fourthwall](fourthwall.md).
+
 !!! warning "Dropped means gone for Ko-fi"
     Ko-fi does not send a payment again, and has no way to look it up later. A Ko-fi payment made while Cuebot is
     closed is missing from your totals, goals, subathon timers and credits for good. Your own relay keeps it for 24
@@ -72,6 +76,10 @@ Ko-fi has its own page, with the setup steps, private supports, the Ko-fi goal, 
 
 Patreon has its own page too, with the setup steps, the optional API connection, monthly amounts, upgrades and patron
 perks: [Patreon](patreon.md).
+
+Fourthwall has its own page, with the setup steps, unpaid donations and samples orders, hidden names, stream gift draws,
+discount codes and the optional API connection: [Fourthwall](fourthwall.md). Fourthwall only accepts an `https` address
+with a name on the normal port, so a direct local address or a tunnel's IP is refused: use the relay.
 
 !!! warning "Partly checked"
     The relay was tried for real: a message sent to it reached Cuebot. Each service's own example messages were

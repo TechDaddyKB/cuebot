@@ -353,6 +353,52 @@ class Cuebot:
         Gives back: How many emotes Cuebot knows now.
         Same as cb.call(\"emotes.refresh\", ...).
         """
+    def fourthwall_catch_up(self) -> Any:
+        """Asks Fourthwall which events it sent and runs those that never reached Cuebot. Needs the Fourthwall API connected.
+
+        Gives back: A status line, like \"Replayed 2 Fourthwall event(s) that never arrived.\"
+        Same as cb.call(\"fourthwall.catchUp\", ...).
+        """
+    def fourthwall_create_promo(self, *, code: Any = None, percent: Any = None, max_uses: Any = None) -> Any:
+        """Makes a percent-off discount code in your Fourthwall shop, usable once per customer. Needs the Fourthwall API connected.
+
+        code: Optional. The code; leave out for a random one like STREAM7K2QXP.
+        percent: Optional. The percent off (default 10).
+        max_uses: Optional. How many times it can be used in total (default: no limit).
+        Gives back: The code, or null when Fourthwall refused it.
+        Same as cb.call(\"fourthwall.createPromo\", ...).
+        """
+    def fourthwall_members(self) -> Any:
+        """Says how many Fourthwall members Cuebot knows, from webhooks and the API's member list.
+
+        Gives back: count, perTier (tier name to count) and lastSync.
+        Same as cb.call(\"fourthwall.members\", ...).
+        """
+    def fourthwall_products(self) -> Any:
+        """Lists the products the Products widget shows when it is set to your Fourthwall shop.
+
+        Gives back: A list of products with name, price (written nicely), amount, currency, image, soldOut and url.
+        Same as cb.call(\"fourthwall.products\", ...).
+        """
+    def fourthwall_shop(self) -> Any:
+        """Reads the Fourthwall shop Cuebot knows (the API connection is on the Webhooks page).
+
+        Gives back: name, address (for gift links), connected, giftingPlatform (who runs stream gift draws), lastCatchUp and lastError.
+        Same as cb.call(\"fourthwall.shop\", ...).
+        """
+    def fourthwall_tiers(self) -> Any:
+        """Lists your Fourthwall membership tiers. Needs the Fourthwall API connected.
+
+        Gives back: A list of tiers with id, name, monthly (price per month), currency and members (how many Cuebot knows).
+        Same as cb.call(\"fourthwall.tiers\", ...).
+        """
+    def fourthwall_totals(self, *, hours: Any = None) -> Any:
+        """Reads your Fourthwall sales over the last hours: purchases (not samples, claimed gifts or cancelled orders) and completed donations. Needs the Fourthwall API connected.
+
+        hours: Optional. How many hours back (default 24).
+        Gives back: revenue, orders, donations, donationCount and currency; or null when the API call failed.
+        Same as cb.call(\"fourthwall.totals\", ...).
+        """
     def globals_clear_temporary(self) -> Any:
         """Deletes every temporary global variable (the ones that are not saved). Saved ones stay.
 

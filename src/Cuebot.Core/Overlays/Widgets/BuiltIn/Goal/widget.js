@@ -24,9 +24,13 @@
       ? (data["patreon"] || { paidCount: 0, monthly: 0, currency: "" }) : null;
   }
 
+  // Fourthwall members Cuebot knows (Webhooks page; from webhooks and the API's member list).
+  function fourthwall() { return settings.type === "fourthwallMembers" ? (data["fourthwall"] || { memberCount: 0 }) : null; }
+
   function useAmount() {
     if (kofi()) return true;
     if (patreon()) return settings.type === "patreonMonthly";
+    if (fourthwall()) return false;
     if (settings.measure === "amount") return true;
     if (settings.measure === "count") return false;
     return !!AMOUNT[settings.type];
@@ -37,6 +41,8 @@
     if (k) return num(k.current) + num(settings.start);
     var p = patreon();
     if (p) return num(settings.type === "patreonMonthly" ? p.monthly : p.paidCount) + num(settings.start);
+    var f = fourthwall();
+    if (f) return num(f.memberCount) + num(settings.start);
     var types = settings.type === "revenue" ? REVENUE : [settings.type || "follower"];
     var field = useAmount() ? "amount" : "count";
     var period = settings.period || "session";

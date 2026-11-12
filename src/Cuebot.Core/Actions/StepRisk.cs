@@ -132,6 +132,9 @@ public static class StepRiskCatalog
         ["spending.*"] = L2, ["spending.getTop"] = L1, ["spending.newStream"] = L3,
         ["kofi.*"] = L2, ["kofi.getGoal"] = L1, ["kofi.getCommissions"] = L1,
         ["patreon.*"] = L2, ["patreon.getPatron"] = L1, ["patreon.getCampaign"] = L1,
+        // Fourthwall: discount codes, hiding products, posts and giveaway links change the shop; a thank-you uploads a local file.
+        ["fourthwall.*"] = L3, ["fourthwall.getMembers"] = L1, ["fourthwall.getTotals"] = L1, ["fourthwall.getThankYous"] = L1,
+        ["fourthwall.refreshProducts"] = L2, ["fourthwall.catchUp"] = L2, ["fourthwall.setStreaming"] = L2, ["fourthwall.sendThankYou"] = L4,
         ["streamlabs.*"] = L1, ["streamlabs.alertQueue"] = L2, ["streamlabs.createAlert"] = L2, ["streamlabs.setAlertProfile"] = L2,
         ["streamlabs.spinWheel"] = L2, ["streamlabs.emptyJar"] = L2, ["streamlabs.rollCredits"] = L2, ["streamlabs.mediaShare"] = L2,
         ["streamlabs.createDonation"] = L2, ["streamlabs.addPoints"] = L2,
