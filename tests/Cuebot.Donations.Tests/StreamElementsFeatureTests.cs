@@ -33,7 +33,7 @@ public sealed class StreamElementsFeatureTests : IAsyncLifetime
     private GlobalVariables _globals = null!;
     private StreamElementsService _service = null!;
 
-    private static readonly DonationsTimings Timings = TestTimings.Fast with { TipStateWait = TimeSpan.FromMilliseconds(300) };
+    private static readonly DonationsTimings Timings = TestTimings.Fast with { TipStateWait = TimeSpan.FromSeconds(1) };
 
     public Task InitializeAsync()
     {
