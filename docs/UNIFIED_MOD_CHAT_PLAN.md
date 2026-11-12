@@ -23,7 +23,8 @@
 3. **Keep the action log and the identity links on the streamer's PC only**, served to mods through the existing
    relay. No D1, no KV. The relay stores nothing today and that promise is worth more than offline access to a log.
 4. **Identity links have three confidence levels** (viewer-verified, confirmed by two people, suggested). A linked ban
-   is never automatic: it always shows a preview of every account it will touch, and it can be undone as one unit.
+   shows a preview of every account it will touch and can be undone as one unit. A streamer can opt in to automatic
+   mirroring for `verified` and `confirmed` links (section 11, decision 6); it is off by default.
 
 **Biggest platform gaps**
 
@@ -389,11 +390,13 @@ and confirmed by a second person.
    says so. Twitch warnings cannot be withdrawn. Undo is itself logged and costs YouTube quota (200 per unban).
 
 **Later arrivals.** If a new account is linked to a person who is banned elsewhere, Cuebot shows "This person is
-banned on Twitch and Kick. Apply here too?" It is a prompt, never automatic.
+banned on Twitch and Kick. Apply here too?" It is a prompt unless the streamer turned on automatic mirroring.
 
-**No automatic propagation in the first version.** A ban placed on Twitch's own website appears in the log (as
-`external`) and raises the same prompt for a mod to decide. A fully automatic "mirror every ban" switch can be
-considered later for `verified` links only.
+**Automatic mirroring is opt-in** (section 11, decision 6). Off by default: a ban placed on Twitch's own website
+appears in the log (as `external`) and raises the same prompt for a mod to decide. When the streamer turns it on, a
+ban on any platform, including one placed on the platform's own website, is applied to the person's `verified` and
+`confirmed` links without a preview, never through `suggested` links. Each mirrored action is logged, the streamer is
+notified, and the whole incident can be undone in one step.
 
 ## 8. Security and abuse risks
 
