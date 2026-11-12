@@ -21,6 +21,10 @@ internal static class ObsJson
     public static IEnumerable<JsonElement> GetArray(this JsonElement data, string property) =>
         data.TryGet(property, out var value) && value.ValueKind == JsonValueKind.Array ? value.EnumerateArray() : [];
 
+    /// <summary>The elements of an array value; empty when it is not an array.</summary>
+    public static IEnumerable<JsonElement> GetArrayItems(this JsonElement data) =>
+        data.ValueKind == JsonValueKind.Array ? data.EnumerateArray() : [];
+
     /// <summary>Converts a JSON value to what action arguments hold: string, double, bool, null or raw JSON text.</summary>
     public static object? ToArgValue(this JsonElement value) => value.ValueKind switch
     {

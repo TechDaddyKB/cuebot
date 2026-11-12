@@ -33,17 +33,24 @@ public sealed partial class ObsConnection
         return items;
     }
 
-    public async Task<int> GetSceneItemIdAsync(string sceneName, string sourceName, CancellationToken ct = default)
+    /// <summary>
+    /// The id of a source's scene item. When the source is in the scene more than once, OBS finds the bottom copy
+    /// (<paramref name="searchOffset"/> 0) unless told otherwise: -1 is the top copy, 1 the second from the bottom...
+    /// </summary>
+    public async Task<int> GetSceneItemIdAsync(string sceneName, string sourceName, CancellationToken ct = default, int searchOffset = 0)
     {
-        var item = await RequestAsync("GetSceneItemId", new { sceneName, sourceName }, ct).ConfigureAwait(false);
+        var item = await RequestAsync("GetSceneItemId",
+            searchOffset == 0 ? new { sceneName, sourceName } : new { sceneName, sourceName, searchOffset }, ct).ConfigureAwait(false);
         return item.GetProperty("sceneItemId").GetInt32();
     }
 
     /// <summary>Shows, hides or toggles a source in a scene. Returns whether the source is now visible.</summary>
+    /// <param name="copy">Which copy to change when the source is in the scene more than once.</param>
     public async Task<bool> SetSourceVisibilityAsync(string sceneName, string sourceName, VisibilityMode mode,
-        CancellationToken ct = default)
+        CancellationToken ct = default, ObsItemCopy copy = ObsItemCopy.Bottom)
     {
-        var sceneItemId = await GetSceneItemIdAsync(sceneName, sourceName, ct).ConfigureAwait(false);
+        if (copy == ObsItemCopy.All) return await SetAllCopiesVisibilityAsync(sceneName, sourceName, mode, ct).ConfigureAwait(false);
+        var sceneItemId = await GetSceneItemIdAsync(sceneName, sourceName, ct, copy == ObsItemCopy.Top ? -1 : 0).ConfigureAwait(false);
         var visible = mode switch
         {
             VisibilityMode.Visible => true,
@@ -55,6 +62,41 @@ public sealed partial class ObsConnection
         return visible;
     }
 
+    // Every copy of the source in the scene (or group), changed in the same frame. Toggle follows the top copy.
+    private async Task<bool> SetAllCopiesVisibilityAsync(string sceneName, string sourceName, VisibilityMode mode, CancellationToken ct)
+    {
+        var items = await GetItemsOfSceneOrGroupAsync(sceneName, ct).ConfigureAwait(false);
+        var copies = items.Where(i => i.SourceName == sourceName).ToArray();
+        if (copies.Length == 0) throw new ObsRequestException("GetSceneItemId", 600, $"No scene items were found in '{sceneName}' with the source '{sourceName}'.");
+        var visible = mode switch
+        {
+            VisibilityMode.Visible => true,
+            VisibilityMode.Hidden => false,
+            _ => !copies[0].Enabled,
+        };
+        await RequestAllAsync(copies.Select(i => SetEnabledRequest(sceneName, i.Id, visible)).ToArray(), ObsBatchExecution.SerialFrame, ct)
+            .ConfigureAwait(false);
+        return visible;
+    }
+
+    private async Task<IReadOnlyList<ObsSceneItem>> GetItemsOfSceneOrGroupAsync(string sceneName, CancellationToken ct)
+    {
+        try
+        {
+            return await GetSceneItemsAsync(sceneName, ct).ConfigureAwait(false);
+        }
+        catch (ObsRequestException)
+        {
+            return await GetSceneItemsAsync(sceneName, ct, group: true).ConfigureAwait(false);
+        }
+    }
+
+    private static object SetEnabledRequest(string sceneName, int sceneItemId, bool enabled) => new
+    {
+        requestType = "SetSceneItemEnabled",
+        requestData = new { sceneName, sceneItemId, sceneItemEnabled = enabled },
+    };
+
     public Task SetSceneItemEnabledAsync(string sceneName, int sceneItemId, bool enabled, CancellationToken ct = default) =>
         RequestAsync("SetSceneItemEnabled", new { sceneName, sceneItemId, sceneItemEnabled = enabled }, ct);
 
@@ -62,9 +104,10 @@ public sealed partial class ObsConnection
     public async Task<int> HideAllSourcesAsync(string sceneName, bool group = false, CancellationToken ct = default)
     {
         var items = await GetSceneItemsAsync(sceneName, ct, group).ConfigureAwait(false);
-        foreach (var item in items.Where(i => i.Enabled))
-            await SetSceneItemEnabledAsync(sceneName, item.Id, false, ct).ConfigureAwait(false);
-        return items.Count(i => i.Enabled);
+        var visible = items.Where(i => i.Enabled).ToArray();
+        await RequestAllAsync(visible.Select(i => SetEnabledRequest(sceneName, i.Id, false)).ToArray(), ObsBatchExecution.SerialFrame, ct)
+            .ConfigureAwait(false);
+        return visible.Length;
     }
 
     /// <summary>Shows one randomly chosen item of a scene (or group) and hides the others. Returns its source name.</summary>
@@ -73,11 +116,9 @@ public sealed partial class ObsConnection
         var items = await GetSceneItemsAsync(sceneName, ct, group).ConfigureAwait(false);
         if (items.Count == 0) return null;
         var chosen = items[Random.Shared.Next(items.Count)];
-        foreach (var item in items)
-        {
-            var show = item.Id == chosen.Id;
-            if (item.Enabled != show) await SetSceneItemEnabledAsync(sceneName, item.Id, show, ct).ConfigureAwait(false);
-        }
+        // One batch in one video frame: viewers never see two sources (or none) for a moment.
+        await RequestAllAsync(items.Where(i => i.Enabled != (i.Id == chosen.Id)).Select(i => SetEnabledRequest(sceneName, i.Id, i.Id == chosen.Id))
+            .ToArray(), ObsBatchExecution.SerialFrame, ct).ConfigureAwait(false);
         return chosen.SourceName;
     }
 
@@ -262,15 +303,13 @@ public sealed partial class ObsConnection
     /// <summary>Enables or disables every filter of a source or scene. Returns how many filters changed.</summary>
     public async Task<int> SetAllFiltersEnabledAsync(string sourceName, bool enabled, CancellationToken ct = default)
     {
-        var changed = 0;
-        foreach (var filter in await GetFiltersAsync(sourceName, ct).ConfigureAwait(false))
+        var changing = (await GetFiltersAsync(sourceName, ct).ConfigureAwait(false)).Where(f => f.Enabled != enabled).ToArray();
+        await RequestAllAsync(changing.Select(f => (object)new
         {
-            if (filter.Enabled == enabled) continue;
-            await RequestAsync("SetSourceFilterEnabled", new { sourceName, filterName = filter.Name, filterEnabled = enabled }, ct)
-                .ConfigureAwait(false);
-            changed++;
-        }
-        return changed;
+            requestType = "SetSourceFilterEnabled",
+            requestData = new { sourceName, filterName = f.Name, filterEnabled = enabled },
+        }).ToArray(), ObsBatchExecution.SerialFrame, ct).ConfigureAwait(false);
+        return changing.Length;
     }
 
     public Task SetFilterSettingsAsync(string sourceName, string filterName, object filterSettings, bool overlay = true,
@@ -376,9 +415,12 @@ public sealed partial class ObsConnection
     // ---- Misc ----
 
     /// <summary>Saves a screenshot of a source or scene (the current program scene when empty). Returns the file path.</summary>
+    /// <exception cref="ArgumentException"><paramref name="filePath"/> is not a full path (OBS would resolve it against its own working folder).</exception>
     public async Task<string> TakeScreenshotAsync(string? sourceName, string filePath, int? width = null, int? height = null,
         int quality = -1, CancellationToken ct = default)
     {
+        if (!ObsTransforms.IsFullPath(filePath))
+            throw new ArgumentException($"'{filePath}' is not a full path. Use a full path on the OBS computer, like C:\\Shots\\shot.png or /home/me/shot.png.");
         var source = string.IsNullOrWhiteSpace(sourceName) ? await GetCurrentSceneAsync(ct).ConfigureAwait(false) : sourceName;
         var request = new Dictionary<string, object>
         {
@@ -408,29 +450,35 @@ public sealed partial class ObsConnection
     /// A snapshot of the connection for action arguments: connected, streaming, recording (paused), replay buffer,
     /// virtual camera, studio mode and current scene. Outputs that this OBS does not offer read as false.
     /// </summary>
-    public async Task<Dictionary<string, object?>> GetStatusAsync(CancellationToken ct = default)
+    /// <remarks>Answered from the state Cuebot keeps up to date from OBS's events, so it costs no round trip.</remarks>
+    public Task<Dictionary<string, object?>> GetStatusAsync(CancellationToken ct = default)
     {
         var status = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["obsConnected"] = IsConnected };
-        if (!IsConnected) return status;
-        status["obsStreaming"] = await ActiveAsync("GetStreamStatus").ConfigureAwait(false);
-        var record = await TryRequestAsync("GetRecordStatus").ConfigureAwait(false);
-        status["obsRecording"] = record.GetBoolOrNull("outputActive") ?? false;
-        status["obsRecordingPaused"] = record.GetBoolOrNull("outputPaused") ?? false;
-        status["obsReplayBuffer"] = await ActiveAsync("GetReplayBufferStatus").ConfigureAwait(false);
-        status["obsVirtualCam"] = await ActiveAsync("GetVirtualCamStatus").ConfigureAwait(false);
-        status["obsStudioMode"] = (await TryRequestAsync("GetStudioModeEnabled").ConfigureAwait(false)).GetBoolOrNull("studioModeEnabled") ?? false;
+        if (!IsConnected) return Task.FromResult(status);
+        status["obsStreaming"] = IsStreaming;
+        status["obsRecording"] = IsRecording;
+        status["obsRecordingPaused"] = IsRecordingPaused;
+        status["obsReplayBuffer"] = IsReplayBufferActive;
+        status["obsVirtualCam"] = IsVirtualCamActive;
+        status["obsStudioMode"] = StudioModeEnabled;
         status["obsScene"] = CurrentScene ?? "";
         status["obsVersion"] = Version ?? "";
-        return status;
+        return Task.FromResult(status);
+    }
 
-        async Task<bool> ActiveAsync(string request) =>
-            (await TryRequestAsync(request).ConfigureAwait(false)).GetBoolOrNull("outputActive") ?? false;
+    // ---- Talking to other obs-websocket clients and plugins ----
 
-        async Task<JsonElement> TryRequestAsync(string request)
-        {
-            try { return await RequestAsync(request, ct: ct).ConfigureAwait(false); }
-            catch (ObsRequestException) { return default; }
-        }
+    /// <summary>Sends a CustomEvent to every obs-websocket client subscribed to General events (overlays, decks, other bots).</summary>
+    public Task BroadcastCustomEventAsync(object eventData, CancellationToken ct = default) =>
+        RequestAsync("BroadcastCustomEvent", new { eventData }, ct);
+
+    /// <summary>Calls a request that an OBS plugin registered (CallVendorRequest). Returns the plugin's responseData.</summary>
+    public async Task<JsonElement> CallVendorRequestAsync(string vendorName, string requestType, object? requestData,
+        CancellationToken ct = default)
+    {
+        var data = await RequestAsync("CallVendorRequest",
+            requestData is null ? new { vendorName, requestType } : new { vendorName, requestType, requestData }, ct).ConfigureAwait(false);
+        return data.TryGetProperty("responseData", out var response) ? response : default;
     }
 
     private async Task<bool> IsSceneItemEnabledAsync(string sceneName, int sceneItemId, CancellationToken ct)

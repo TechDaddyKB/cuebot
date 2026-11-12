@@ -76,7 +76,8 @@ public sealed class ObsFeatureTests : IAsyncLifetime
             "obs.setTransitionDuration", "obs.studioMode", "obs.studioTransition", "obs.streaming", "obs.recording",
             "obs.replayBuffer", "obs.virtualCam", "obs.createRecordChapter", "obs.getOutputState", "obs.screenshot",
             "obs.setProfile", "obs.setSceneCollection", "obs.triggerHotkey", "obs.getStats", "obs.getStatus", "obs.rawRequest",
-            "obs.rawBatch",
+            "obs.rawBatch", "obs.sendCustomEvent", "obs.callVendorRequest",
+            "obs.splitRecording", "obs.getRecordDirectory", "obs.setRecordDirectory", "obs.setAudioMonitor", "obs.setAudioBalance", "obs.setAudioSyncOffset", "obs.getAudioSettings", "obs.setSourceOrder", "obs.setSourceLocked", "obs.setBlendMode", "obs.createInput", "obs.removeInput", "obs.renameInput", "obs.addSceneItem", "obs.removeSceneItem", "obs.duplicateSceneItem", "obs.getSourceActive", "obs.createScene", "obs.removeScene", "obs.renameScene", "obs.setSceneTransitionOverride", "obs.createFilter", "obs.removeFilter", "obs.renameFilter", "obs.setFilterOrder", "obs.setTransitionSettings", "obs.getCurrentTransition", "obs.setTBar", "obs.screenshotToVariable", "obs.sendCaption", "obs.openProjector", "obs.openSourceDialog", "obs.triggerHotkeyKeys", "obs.setPersistentData", "obs.getPersistentData", "obs.createProfile", "obs.removeProfile", "obs.createSceneCollection", "obs.getProfileParameter", "obs.setProfileParameter", "obs.getVideoSettings", "obs.setVideoSettings", "obs.getStreamService", "obs.setStreamService", "obs.output", "obs.getOutputSettings", "obs.setOutputSettings", "obs.getSpecialInputs", "obs.getInputListItems", "obs.setDeinterlace",
         ];
         foreach (var id in subActions)
         {
@@ -92,6 +93,9 @@ public sealed class ObsFeatureTests : IAsyncLifetime
         var functions = _services.GetRequiredService<ScriptApi>().Functions.Select(f => f.Name).ToArray();
         Assert.Contains("obs.request", functions);
         Assert.Contains("obs.requestBatch", functions);
+        Assert.Contains("obs.status", functions);
+        Assert.Contains("obs.sendCustomEvent", functions);
+        Assert.Contains("obs.callVendorRequest", functions);
         Assert.Contains("slobs.call", functions);
         Assert.Contains(_services.GetServices<IConnectionStatus>(), s => s.Name == "Streamlabs Desktop");
     }
@@ -165,7 +169,7 @@ public sealed class ObsFeatureTests : IAsyncLifetime
         Assert.Equal("Fade", B.CurrentTransition);
         Assert.Equal(["Default", "Streaming"], B.Profiles);
         Assert.Equal(["Main", "Alt"], B.SceneCollections);
-        Assert.Equal("OBS 31.0.0 / obs-websocket 5.5.0", B.Version);
+        Assert.Equal("OBS 32.2.2 / obs-websocket 5.7.4", B.Version);
         Assert.Contains("+1/1 other connections", _obs.StatusMessage);
     }
 
@@ -428,7 +432,7 @@ public sealed class ObsFeatureTests : IAsyncLifetime
         Assert.False(request.TryGetProperty("imageHeight", out _));
 
         args = await Run("obs.rawRequest", new() { ["requestType"] = "GetVersion" });
-        Assert.Contains("31.0.0", (string)args["obsResult"]!);
+        Assert.Contains("32.2.2", (string)args["obsResult"]!);
 
         args = await Run("obs.rawBatch", new()
         {

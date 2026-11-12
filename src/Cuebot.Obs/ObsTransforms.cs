@@ -68,4 +68,31 @@ public static class ObsTransforms
         "tga" => "tga",
         _ => "png",
     };
+
+    /// <summary>
+    /// True for a full path on any OS OBS runs on: "C:\x", "C:/x", "\\server\share", "/home/x". OBS resolves anything
+    /// else against its own working folder, which is never what a streamer means.
+    /// </summary>
+    public static bool IsFullPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var p = path.Trim();
+        return p.StartsWith('/') || p.StartsWith(@"\\", StringComparison.Ordinal) ||
+               (p.Length >= 3 && char.IsAsciiLetter(p[0]) && p[1] == ':' && p[2] is '\\' or '/');
+    }
+
+    /// <summary>
+    /// The loudest channel of one InputVolumeMeters entry in dB: <c>inputLevelsMul</c> holds, per channel,
+    /// [magnitude, peak, input peak] as multipliers; the (post-fader) peak is used. -infinity when silent.
+    /// </summary>
+    public static double PeakDb(JsonElement input)
+    {
+        var peak = 0.0;
+        foreach (var channel in input.GetArray("inputLevelsMul"))
+        {
+            if (channel.ValueKind != JsonValueKind.Array || channel.GetArrayLength() < 2) continue;
+            if (channel[1].TryGetDouble(out var value)) peak = Math.Max(peak, value);
+        }
+        return peak > 0 ? 20 * Math.Log10(peak) : double.NegativeInfinity;
+    }
 }

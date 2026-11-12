@@ -5,7 +5,7 @@ using static Cuebot.Obs.SubActions.ObsSubActionSupport;
 namespace Cuebot.Obs.SubActions;
 
 /// <summary>Every OBS sub-action, as a table. Type ids are stored in actions.json and must never change.</summary>
-public static class ObsSubActionCatalog
+public static partial class ObsSubActionCatalog
 {
     public static IReadOnlyList<ISubActionHandler> Create(ObsService obs)
     {
@@ -26,9 +26,12 @@ public static class ObsSubActionCatalog
                 (c, _, v, ct) => c.SetPreviewSceneAsync(Require(v["scene"], "Scene"), ct)),
 
             // ---- Scene items ----
-            Make("obs.setSourceVisibility", "Set source visibility", [p.Scene(), p.Source(), p.Choice<VisibilityMode>("state", "State", VisibilityMode.Toggle)],
+            Make("obs.setSourceVisibility", "Set source visibility",
+                [p.Scene(), p.Source(), p.Choice<VisibilityMode>("state", "State", VisibilityMode.Toggle),
+                 p.Choice<ObsItemCopy>("copy", "Which copy", ObsItemCopy.Bottom) with { Help = "When the source is in the scene more than once" }],
                 (c, _, v, ct) => c.SetSourceVisibilityAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"),
-                    ParseChoice<VisibilityMode>(v["state"], "State"), ct)),
+                    ParseChoice<VisibilityMode>(v["state"], "State"), ct,
+                    string.IsNullOrWhiteSpace(v["copy"]) ? ObsItemCopy.Bottom : ParseChoice<ObsItemCopy>(v["copy"], "Which copy"))),
             Make("obs.hideSceneSources", "Hide all scene sources", [p.Scene()],
                 (c, _, v, ct) => c.HideAllSourcesAsync(Require(v["scene"], "Scene"), group: false, ct)),
             Make("obs.hideGroupSources", "Hide all group sources", [p.Group()],
@@ -162,7 +165,7 @@ public static class ObsSubActionCatalog
             // ---- Misc ----
             Make("obs.screenshot", "Take screenshot",
                 [p.Source("Source or scene") with { Help = "Leave empty for the current program scene" },
-                 new("file", "File") { Help = "Path on the OBS computer; the extension picks the format (png, jpg, bmp, webp)" },
+                 new("file", "File") { Help = "Full path on the OBS computer, like C:\\Shots\\shot.png; the extension picks the format (png, jpg, bmp, webp)" },
                  new("width", "Width") { Help = "Optional, 8-4096" }, new("height", "Height") { Help = "Optional, 8-4096" },
                  new("quality", "Quality", ParameterKind.Number) { DefaultValue = "-1", Help = "0-100, -1 for the default" },
                  p.Result("obsScreenshotPath")],
@@ -172,7 +175,7 @@ public static class ObsSubActionCatalog
                 (c, _, v, ct) => c.SetProfileAsync(Require(v["profile"], "Profile"), ct)),
             Make("obs.setSceneCollection", "Set scene collection", [new("sceneCollection", "Scene collection") { Suggestions = () => obs.All(c => c.SceneCollections) }],
                 (c, _, v, ct) => c.SetSceneCollectionAsync(Require(v["sceneCollection"], "Scene collection"), ct)),
-            Make("obs.triggerHotkey", "Trigger hotkey", [new("hotkey", "Hotkey name") { Help = "e.g. OBSBasic.StartStreaming (see GetHotkeyList)" }],
+            Make("obs.triggerHotkey", "Trigger hotkey", [new("hotkey", "Hotkey name") { Help = "e.g. OBSBasic.StartStreaming (see GetHotkeyList)", Suggestions = () => obs.All(c => c.Hotkeys) }],
                 (c, _, v, ct) => c.TriggerHotkeyAsync(Require(v["hotkey"], "Hotkey name"), ct)),
             Make("obs.getStats", "Get performance stats", [], async (c, ctx, _, ct) =>
             {
@@ -204,18 +207,50 @@ public static class ObsSubActionCatalog
             Make("obs.rawBatch", "Send several OBS commands (advanced)",
                 [new("requests", "Requests (JSON array)", ParameterKind.Multiline) { Help = """[{"requestType":"GetVersion"},{"requestType":"SetCurrentProgramScene","requestData":{"sceneName":"Main"}}]""" },
                  new("haltOnFailure", "Stop at the first failure", ParameterKind.Boolean) { DefaultValue = "false" },
+                 p.Choice<Protocol.ObsBatchExecution>("executionType", "Run them", Protocol.ObsBatchExecution.SerialRealtime),
                  p.Result("obsResult", "Save the results in variable")],
                 async (c, ctx, v, ct) =>
                 {
-                    var results = await c.RequestBatchAsync(RawRequestSubAction.ParseBatch(v["requests"]), v.GetBool("haltOnFailure"), ct)
+                    var execution = string.IsNullOrWhiteSpace(v["executionType"])
+                        ? Protocol.ObsBatchExecution.SerialRealtime
+                        : ParseChoice<Protocol.ObsBatchExecution>(v["executionType"], "Run them");
+                    var results = await c.RequestBatchAsync(RawRequestSubAction.ParseBatch(v["requests"]), v.GetBool("haltOnFailure"), ct, execution)
                         .ConfigureAwait(false);
                     Store(ctx, v["resultArgument"], results.GetRawText());
                 }),
+
+            // ---- Other obs-websocket clients and plugins ----
+            Make("obs.sendCustomEvent", "Send custom OBS event (JSON)",
+                [new("eventData", "Event (JSON object)", ParameterKind.Multiline) { Help = """e.g. {"type":"alert","user":"%user%"}""" }],
+                (c, _, v, ct) => c.BroadcastCustomEventAsync(ParseJson(v["eventData"], "Event") ?? throw new ArgumentException("Event is required."), ct)),
+            Make("obs.callVendorRequest", "Call OBS plugin request (advanced)",
+                [new("vendor", "Plugin (vendor) name") { Help = "The name the plugin registered with obs-websocket" },
+                 new("requestType", "Request type") { Help = "A request the plugin documents" },
+                 new("requestData", "Request data (JSON)", ParameterKind.Multiline) { Help = "A JSON object; leave empty for none" },
+                 p.Result("obsVendorResult", "Save the reply in variable")],
+                async (c, ctx, v, ct) =>
+                {
+                    var response = await c.CallVendorRequestAsync(Require(v["vendor"], "Plugin name"), Require(v["requestType"], "Request type"),
+                        ParseJson(v["requestData"], "Request data"), ct).ConfigureAwait(false);
+                    Store(ctx, v["resultArgument"], response.ValueKind == JsonValueKind.Undefined ? "{}" : response.GetRawText());
+                }),
+            .. Features(obs, p),
         ];
 
         ISubActionHandler Make(string typeId, string name, IEnumerable<ParameterDescriptor> parameters,
             Func<ObsConnection, ActionRunContext, ParameterValues, CancellationToken, Task> run) =>
-            new ObsSubAction(obs, typeId, name, parameters, run);
+            new ObsSubAction(obs, typeId, name, WithCanvas(typeId, parameters, p), run);
+    }
+
+    // Requests that switch the program/preview scene take no canvas in obs-websocket 5.7.
+    private static readonly HashSet<string> NoCanvas = new(StringComparer.Ordinal) { "obs.setScene", "obs.setPreviewScene" };
+
+    /// <summary>Steps that address a scene, group or source get an optional Canvas parameter (last).</summary>
+    internal static IEnumerable<ParameterDescriptor> WithCanvas(string typeId, IEnumerable<ParameterDescriptor> parameters, Params p)
+    {
+        var list = parameters.ToList();
+        if (!NoCanvas.Contains(typeId) && list.Any(d => d.Key is "scene" or "group" or "source")) list.Add(p.Canvas());
+        return list;
     }
 
     /// <summary>Transform fields "Set source transform" can change, as obs-websocket names them.</summary>
@@ -267,16 +302,26 @@ public static class ObsSubActionCatalog
     }
 
     /// <summary>Parameter descriptors shared by many sub-actions; suggestions span every connection.</summary>
-    private sealed class Params(ObsService obs)
+    internal sealed class Params(ObsService obs)
     {
         public ParameterDescriptor Scene() => new("scene", "Scene") { Suggestions = () => obs.All(c => c.Scenes) };
 
-        public ParameterDescriptor Group() => new("group", "Group") { Suggestions = () => obs.All(c => c.Inputs.Concat(c.Scenes)) };
+        public ParameterDescriptor Group() => new("group", "Group")
+        {
+            Suggestions = () => obs.All(c => c.Groups.Count > 0 ? c.Groups : c.Inputs.Concat(c.Scenes)),
+        };
 
         public ParameterDescriptor Source(string label = "Source") =>
             new("source", label) { Suggestions = () => obs.All(c => c.Inputs.Concat(c.Scenes)) };
 
         public ParameterDescriptor Input(string label = "Input") => new("input", label) { Suggestions = () => obs.All(c => c.Inputs) };
+
+        /// <summary>The canvas (OBS 32.1+) the scene or source is in; empty for the main canvas.</summary>
+        public ParameterDescriptor Canvas() => new(ObsSubAction.CanvasKey, "Canvas")
+        {
+            Suggestions = () => obs.All(c => c.Canvases.Select(x => x.Name)),
+            Help = "Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one",
+        };
 
         public ParameterDescriptor Result(string defaultArgument, string label = "Save the answer in variable") =>
             new("resultArgument", label) { DefaultValue = defaultArgument };

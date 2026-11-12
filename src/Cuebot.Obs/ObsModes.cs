@@ -31,3 +31,6 @@ public enum FlipAxis { Horizontal, Vertical }
 
 /// <summary>Which output <c>Get output state</c> reads.</summary>
 public enum ObsOutputKind { Stream, Record, ReplayBuffer, VirtualCam, Other }
+
+/// <summary>Which copy of a source a step changes when the source is in the scene more than once.</summary>
+public enum ObsItemCopy { Bottom, Top, All }

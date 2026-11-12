@@ -166,7 +166,7 @@
       "example": "string props = CPH.ObsGetSceneItemProperties(\"Gameplay\", \"Webcam\");\nCPH.LogInfo(props);"
     },
     "ObsSendBatchRaw": {
-      "description": "Sends several raw OBS requests at once, for advanced users. The data is a JSON list of {requestType, requestData}. Cuebot always runs them in order. haltOnFailure stops at the first one that fails.",
+      "description": "Sends several raw OBS requests at once, for advanced users. The data is a JSON list of {requestType, requestData}. haltOnFailure stops at the first one that fails. executionType: 0 one after the other, 1 in step with video frames (changes land in the same frame), 2 all at once.",
       "returns": "The answers from OBS as text in JSON format.",
       "example": "string answers = CPH.ObsSendBatchRaw(\"[{\\\"requestType\\\":\\\"GetVersion\\\"}]\");\nCPH.LogInfo(answers);"
     },

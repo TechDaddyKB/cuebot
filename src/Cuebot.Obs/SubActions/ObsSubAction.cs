@@ -10,6 +10,9 @@ public sealed class ObsSubAction : ISubActionHandler
 {
     public const string ConnectionKey = "connection";
 
+    /// <summary>Optional parameter: run the step's requests against another canvas (OBS 32.1+).</summary>
+    public const string CanvasKey = "canvas";
+
     private readonly ObsService _obs;
     private readonly Func<ObsConnection, ActionRunContext, ParameterValues, CancellationToken, Task> _run;
 
@@ -30,7 +33,9 @@ public sealed class ObsSubAction : ISubActionHandler
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        await _run(_obs.Get(p[ConnectionKey]), context, p, ct).ConfigureAwait(false);
+        var connection = _obs.Get(p[ConnectionKey]);
+        using (connection.UseCanvas(p[CanvasKey]))
+            await _run(connection, context, p, ct).ConfigureAwait(false);
         return SubActionResult.Next;
     }
 

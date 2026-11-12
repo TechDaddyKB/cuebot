@@ -113,7 +113,11 @@ public static class StepRiskCatalog
         // Broadcasting software: scenes and sources are stream control, going live is show-critical, raw requests never.
         ["obs.*"] = L2, ["obs.get*"] = L1, ["obs.streaming"] = L3, ["obs.recording"] = L3, ["obs.virtualCam"] = L3,
         ["obs.setProfile"] = L3, ["obs.setSceneCollection"] = L3, ["obs.triggerHotkey"] = L3, ["obs.setInputSettings"] = L4,
-        ["obs.rawRequest"] = No, ["obs.rawBatch"] = No, ["obs.screenshot"] = No,
+        ["obs.rawRequest"] = No, ["obs.rawBatch"] = No, ["obs.screenshot"] = No, ["obs.callVendorRequest"] = No,
+        ["obs.setStreamService"] = No, ["obs.setProfileParameter"] = No, ["obs.setOutputSettings"] = No, ["obs.setRecordDirectory"] = No,
+        ["obs.removeInput"] = L4, ["obs.removeScene"] = L4, ["obs.removeProfile"] = L4, ["obs.removeSceneItem"] = L4, ["obs.removeFilter"] = L4,
+        ["obs.createInput"] = L4, ["obs.setVideoSettings"] = L3, ["obs.createProfile"] = L3, ["obs.createSceneCollection"] = L3,
+        ["obs.renameInput"] = L3, ["obs.renameScene"] = L3, ["obs.triggerHotkeyKeys"] = L3, ["obs.output"] = L3,
         ["slobs.*"] = L2, ["slobs.get*"] = L1, ["slobs.streaming"] = L3, ["slobs.recording"] = L3,
         ["slobs.raw"] = No, ["slobs.notify"] = L1, ["slobs.setSceneCollection"] = L3,
         ["meldstudio.*"] = L2, ["meldstudio.get*"] = L1, ["meldstudio.streaming"] = L3, ["meldstudio.recording"] = L3,

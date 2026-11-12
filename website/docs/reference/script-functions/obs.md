@@ -5,6 +5,31 @@ Functions for C# (`Cb.Call`) and Python (a `cb` method each, or `cb.call`). See 
 
 ![A Run Python code step in the action editor](../../assets/screens/actions-python-step.png)
 
+## obs.callVendorRequest
+
+Asks an OBS plugin to do something, for plugins that offer requests through OBS's WebSocket server. Check the plugin's help for its name and requests. Fails with an error when OBS is not connected or the plugin refuses.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `vendorName` | `vendor_name` | The name the plugin uses for its requests. Needed. |
+| `requestType` | `request_type` | The request name from the plugin's help. Needed. |
+| `requestData` | `request_data` | Optional. Extra details for the request, as an object. |
+| `connection` | `connection` | Optional. The name of the OBS connection to use. Leave it out for your main OBS. |
+
+**Gives back:** The plugin's answer data.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("obs.callVendorRequest", new { vendorName = "some-plugin", requestType = "do_something", requestData = new { value = 1 } });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.obs_call_vendor_request(vendor_name="some-plugin", request_type="do_something", request_data={"value": 1})
+    ```
+
 ## obs.connections
 
 Lists every OBS connection you set up in Cuebot.
@@ -77,6 +102,7 @@ Sends several obs-websocket commands to OBS in one go. One failed command does n
 | --- | --- | --- |
 | `requests` | `requests` | A list of commands. Each one has a requestType and, if needed, requestData, like {"requestType": "GetVersion"}. Needed. |
 | `haltOnFailure` | `halt_on_failure` | Optional. true stops at the first command that fails. Default false. |
+| `executionType` | `execution_type` | Optional. How OBS runs them: "SerialRealtime" (or 0, the default) one after the other, "SerialFrame" (or 1) in step with video frames so changes land in the same frame, "Parallel" (or 2) all at once. |
 | `connection` | `connection` | Optional. The name of the OBS connection to use. Leave it out for your main OBS. |
 
 **Gives back:** A list with one result per command: its requestType, requestStatus (did it work) and responseData.
@@ -91,6 +117,29 @@ Sends several obs-websocket commands to OBS in one go. One failed command does n
 
     ```python
     answer = cb.obs_request_batch(requests=[{"requestType": "GetVersion"}, {"requestType": "SetCurrentProgramScene", "requestData": {"sceneName": "Gameplay"}}])
+    ```
+
+## obs.sendCustomEvent
+
+Sends your own message through OBS to every program connected to its WebSocket server, like overlays. Fails with an error when OBS is not connected.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `eventData` | `event_data` | The message, an object like {"type": "alert"}. Needed. |
+| `connection` | `connection` | Optional. The name of the OBS connection to use. Leave it out for your main OBS. |
+
+**Gives back:** Nothing.
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("obs.sendCustomEvent", new { eventData = new { type = "alert", user = "Kris" } });
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.obs_send_custom_event(event_data={"type": "alert", "user": "Kris"})
     ```
 
 ## obs.setScene
@@ -114,4 +163,26 @@ Switches OBS to another scene. Fails with an error when OBS is not connected.
 
     ```python
     answer = cb.obs_set_scene(scene_name="Gameplay")
+    ```
+
+## obs.status
+
+Tells you what Cuebot knows about OBS right now, without asking OBS: connected, streaming, recording, replay buffer, virtual camera, studio mode and the live scene.
+
+| Value | In Python | What to put in |
+| --- | --- | --- |
+| `connection` | `connection` | Optional. The name of the OBS connection to use. Leave it out for your main OBS. |
+
+**Gives back:** An object with obsConnected, obsStreaming, obsRecording, obsRecordingPaused, obsReplayBuffer, obsVirtualCam, obsStudioMode, obsScene and obsVersion (only obsConnected while OBS is not connected).
+
+=== "C#"
+
+    ```csharp
+    var answer = await Cb.Call("obs.status");
+    ```
+
+=== "Python"
+
+    ```python
+    answer = cb.obs_status()
     ```

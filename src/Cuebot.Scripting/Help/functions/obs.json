@@ -15,10 +15,39 @@
       "parameters": {
         "requests": "A list of commands. Each one has a requestType and, if needed, requestData, like {\"requestType\": \"GetVersion\"}. Needed.",
         "haltOnFailure": "Optional. true stops at the first command that fails. Default false.",
+        "executionType": "Optional. How OBS runs them: \"SerialRealtime\" (or 0, the default) one after the other, \"SerialFrame\" (or 1) in step with video frames so changes land in the same frame, \"Parallel\" (or 2) all at once.",
         "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
       },
       "returns": "A list with one result per command: its requestType, requestStatus (did it work) and responseData.",
       "example": { "requests": [ { "requestType": "GetVersion" }, { "requestType": "SetCurrentProgramScene", "requestData": { "sceneName": "Gameplay" } } ] }
+    },
+    "obs.status": {
+      "description": "Tells you what Cuebot knows about OBS right now, without asking OBS: connected, streaming, recording, replay buffer, virtual camera, studio mode and the live scene.",
+      "parameters": {
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "An object with obsConnected, obsStreaming, obsRecording, obsRecordingPaused, obsReplayBuffer, obsVirtualCam, obsStudioMode, obsScene and obsVersion (only obsConnected while OBS is not connected).",
+      "example": {}
+    },
+    "obs.sendCustomEvent": {
+      "description": "Sends your own message through OBS to every program connected to its WebSocket server, like overlays. Fails with an error when OBS is not connected.",
+      "parameters": {
+        "eventData": "The message, an object like {\"type\": \"alert\"}. Needed.",
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "Nothing.",
+      "example": { "eventData": { "type": "alert", "user": "Kris" } }
+    },
+    "obs.callVendorRequest": {
+      "description": "Asks an OBS plugin to do something, for plugins that offer requests through OBS's WebSocket server. Check the plugin's help for its name and requests. Fails with an error when OBS is not connected or the plugin refuses.",
+      "parameters": {
+        "vendorName": "The name the plugin uses for its requests. Needed.",
+        "requestType": "The request name from the plugin's help. Needed.",
+        "requestData": "Optional. Extra details for the request, as an object.",
+        "connection": "Optional. The name of the OBS connection to use. Leave it out for your main OBS."
+      },
+      "returns": "The plugin's answer data.",
+      "example": { "vendorName": "some-plugin", "requestType": "do_something", "requestData": { "value": 1 } }
     },
     "obs.setScene": {
       "description": "Switches OBS to another scene. Fails with an error when OBS is not connected.",

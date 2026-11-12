@@ -53,7 +53,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [MIDI](midi.md) | 12 |
 | [mtion studio](mtion.md) | 5 |
 | [Now playing](nowplaying.md) | 2 |
-| [OBS](obs.md) | 5 |
+| [OBS](obs.md) | 8 |
 | [OBSBOT](obsbot.md) | 8 |
 | [Pally.gg](pally.md) | 2 |
 | [Patreon](patreon.md) | 5 |

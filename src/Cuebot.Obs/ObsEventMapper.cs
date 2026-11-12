@@ -64,10 +64,89 @@ internal static class ObsEventMapper
             "CurrentProfileChanged" => Event(ObsEvents.ProfileChanged, ("profileName", Str(d, "profileName"))),
             "CurrentSceneCollectionChanged" => Event(ObsEvents.SceneCollectionChanged, ("sceneCollectionName", Str(d, "sceneCollectionName"))),
             "ScreenshotSaved" => Event(ObsEvents.ScreenshotSaved, ("savedScreenshotPath", Str(d, "savedScreenshotPath"))),
+            "ExitStarted" => Event(ObsEvents.Exiting),
+            "SceneTransitionVideoEnded" => Event(ObsEvents.TransitionVideoEnded, ("transitionName", Str(d, "transitionName"))),
+            "InputAudioMonitorTypeChanged" => Event(ObsEvents.AudioMonitorChanged, ("inputName", Str(d, "inputName")),
+                ("monitorType", ObsConnection.MonitorTypeFromName(d.GetStringOrNull("monitorType")))),
+            "InputAudioBalanceChanged" => Event(ObsEvents.AudioBalanceChanged, ("inputName", Str(d, "inputName")),
+                ("inputAudioBalance", d.GetDoubleOrNull("inputAudioBalance") ?? 0.5)),
+            "InputAudioSyncOffsetChanged" => Event(ObsEvents.AudioSyncOffsetChanged, ("inputName", Str(d, "inputName")),
+                ("inputAudioSyncOffset", d.GetDoubleOrNull("inputAudioSyncOffset") ?? 0)),
+            "InputAudioTracksChanged" => Event(ObsEvents.AudioTracksChanged, ("inputName", Str(d, "inputName")),
+                ("inputAudioTracks", RawJson(d, "inputAudioTracks"))),
+            "SceneItemListReindexed" => Event(ObsEvents.SourceOrderChanged, ("sceneName", Str(d, "sceneName"))),
+            "SourceFilterCreated" => Event(ObsEvents.FilterAdded, ("sourceName", Str(d, "sourceName")), ("filterName", Str(d, "filterName")),
+                ("filterKind", Str(d, "filterKind"))),
+            "SourceFilterRemoved" => Event(ObsEvents.FilterRemoved, ("sourceName", Str(d, "sourceName")), ("filterName", Str(d, "filterName"))),
+            "SourceFilterNameChanged" => Event(ObsEvents.FilterRenamed, ("sourceName", Str(d, "sourceName")),
+                ("oldFilterName", Str(d, "oldFilterName")), ("filterName", Str(d, "filterName"))),
+            "SourceFilterListReindexed" => Event(ObsEvents.FilterOrderChanged, ("sourceName", Str(d, "sourceName")), ("filters", RawJson(d, "filters"))),
+            "SourceFilterSettingsChanged" => Event(ObsEvents.FilterSettingsChanged, ("sourceName", Str(d, "sourceName")),
+                ("filterName", Str(d, "filterName")), ("filterSettings", RawJson(d, "filterSettings"))),
+            "InputSettingsChanged" => Event(ObsEvents.InputSettingsChanged, ("inputName", Str(d, "inputName")),
+                ("inputSettings", RawJson(d, "inputSettings"))),
+            "CurrentProfileChanging" => Event(ObsEvents.ProfileChanging, ("profileName", Str(d, "profileName"))),
+            "CurrentSceneCollectionChanging" => Event(ObsEvents.SceneCollectionChanging, ("sceneCollectionName", Str(d, "sceneCollectionName"))),
+            "InputActiveStateChanged" => Event(ObsEvents.SourceActiveChanged, ("inputName", Str(d, "inputName")),
+                ("videoActive", d.GetBoolOrNull("videoActive") ?? false)),
+            "InputShowStateChanged" => Event(ObsEvents.SourceShowChanged, ("inputName", Str(d, "inputName")),
+                ("videoShowing", d.GetBoolOrNull("videoShowing") ?? false)),
+            "CustomEvent" => CustomEvent(d),
             "VendorEvent" => Event(ObsEvents.VendorEvent, ("vendorName", Str(d, "vendorName")),
                 ("vendorEventType", Str(d, "eventType")), ("eventData", RawJson(d, "eventData"))),
             _ => null,
         };
+    }
+
+    /// <summary>A custom event: the raw JSON plus <c>customEvent.&lt;field&gt;</c> for each top-level field.</summary>
+    internal static BotEvent CustomEvent(JsonElement d)
+    {
+        var data = d.ValueKind == JsonValueKind.Object && d.TryGetProperty("eventData", out var inner) ? inner : d;
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["eventData"] = data.ValueKind == JsonValueKind.Undefined ? "{}" : data.GetRawText(),
+        };
+        if (data.ValueKind == JsonValueKind.Object)
+            foreach (var p in data.EnumerateObject())
+                args["customEvent." + p.Name] = p.Value.ValueKind switch
+                {
+                    JsonValueKind.String => p.Value.GetString(),
+                    JsonValueKind.Number => p.Value.GetDouble(),
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Null => "",
+                    _ => p.Value.GetRawText(),
+                };
+        return new BotEvent(ObsEvents.CustomEvent, args);
+    }
+
+    /// <summary>
+    /// The value at a dotted path ("scene", "user.name", "items.0") in a JSON object, as text; null when missing.
+    /// </summary>
+    internal static string? ValueAtPath(string json, string path)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var current = doc.RootElement;
+            foreach (var part in path.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (current.ValueKind == JsonValueKind.Object && current.TryGetProperty(part, out var next)) current = next;
+                else if (current.ValueKind == JsonValueKind.Array && int.TryParse(part, out var index) && index >= 0 &&
+                         index < current.GetArrayLength()) current = current[index];
+                else return null;
+            }
+            return current.ValueKind switch
+            {
+                JsonValueKind.String => current.GetString(),
+                JsonValueKind.Null => "",
+                _ => current.GetRawText(),
+            };
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The catch-all <see cref="ObsEvents.Event"/> for any obs-websocket event.</summary>
@@ -80,6 +159,13 @@ internal static class ObsEventMapper
     public static BotEvent SourceVisibilityChanged(string sceneName, string sourceName, int sceneItemId, bool visible) =>
         Event(ObsEvents.SourceVisibilityChanged, ("sceneName", sceneName), ("sourceName", sourceName),
             ("sceneItemId", sceneItemId), ("visible", visible));
+
+    public static BotEvent SourceLockChanged(string sceneName, string sourceName, int sceneItemId, bool locked) =>
+        Event(ObsEvents.SourceLockChanged, ("sceneName", sceneName), ("sourceName", sourceName), ("sceneItemId", sceneItemId), ("locked", locked));
+
+    public static BotEvent SourceTransformChanged(string sceneName, string sourceName, int sceneItemId, string transformJson) =>
+        Event(ObsEvents.SourceTransformChanged, ("sceneName", sceneName), ("sourceName", sourceName), ("sceneItemId", sceneItemId),
+            ("transform", transformJson));
 
     /// <summary>A copy of <paramref name="e"/> whose args also name the connection it came from.</summary>
     public static BotEvent WithConnection(BotEvent e, string connection) => WithConnection(e, new ObsSource(connection, "", "", ""));

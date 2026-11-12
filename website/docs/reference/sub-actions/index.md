@@ -40,7 +40,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [Network](network.md) | 2 |
 | [nizima LIVE](nizima-live.md) | 9 |
 | [Now playing](now-playing.md) | 2 |
-| [OBS](obs.md) | 47 |
+| [OBS](obs.md) | 99 |
 | [OBSBOT](obsbot.md) | 23 |
 | [Overlays](overlays.md) | 2 |
 | [Patreon](patreon.md) | 3 |

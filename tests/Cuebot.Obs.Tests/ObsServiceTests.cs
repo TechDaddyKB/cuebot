@@ -179,6 +179,46 @@ public sealed class ObsServiceTests : IAsyncLifetime
         Assert.Equal(ConnectionState.Connected, _obs.State);
     }
 
+    [Fact]
+    public async Task Wrong_password_stops_auto_reconnect_until_the_password_changes()
+    {
+        _obs.Settings.Password = "wrong";
+        _obs.Settings.AutoConnect = true;
+        await _obs.StartAsync();
+
+        await WaitUntil(() => _obs.State == ConnectionState.Error);
+        await Task.Delay(1500);   // without the stop: retries after ~0.1, 0.3, 0.7 s...
+        Assert.Equal(1, _server.HandshakeCount);
+        Assert.Contains("stops retrying", _obs.StatusMessage);
+
+        _obs.Settings.Password = "pw";
+        await _recorder.WaitForAsync(ObsEvents.Connected);
+        Assert.Equal(ConnectionState.Connected, _obs.State);
+    }
+
+    [Fact]
+    public async Task Reconnect_backs_off_while_obs_is_unreachable()
+    {
+        _obs.Settings.Port = 1;   // nothing listens there: every attempt is refused at once
+        _obs.Settings.AutoConnect = true;
+        // 100 ms doubling with jitter: about 6 attempts in 3 s instead of 30 with a fixed delay.
+        var attempts = 0;
+        _obs.Default.StatusChanged += () => { if (_obs.State == ConnectionState.Connecting) Interlocked.Increment(ref attempts); };
+        await _obs.StartAsync();
+        await Task.Delay(3000);
+        Assert.InRange(attempts, 2, 10);
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline) throw new TimeoutException("Condition not met within 10 s");
+            await Task.Delay(20);
+        }
+    }
+
     private FakeReply? Answer(string requestType, JsonElement data) => requestType switch
     {
         "GetSceneList" => FakeReply.Ok(new

@@ -15,7 +15,9 @@
         "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them."
       },
       "variables": {
-        "obsConnection": "The name of the OBS connection this came from"
+        "obsConnection": "The name of the OBS connection this came from",
+        "reason": "Why the connection ended, like \"OBS was closed.\"",
+        "obsClosing": "True when OBS said it was closing (you quit OBS), false when the connection broke"
       }
     },
     "obs.sceneChanged": {
@@ -347,13 +349,275 @@
       "description": "Runs for any message OBS sends, so you can react to things Cuebot has no special trigger for. For advanced users.",
       "fields": {
         "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
-        "eventType": "Only react to this kind of OBS message, like \"InputActiveStateChanged\". Leave empty to react to every message."
+        "eventType": "Only react to this kind of OBS message, like \"SceneItemLockStateChanged\". InputActiveStateChanged, InputShowStateChanged, InputVolumeMeters and SceneItemTransformChanged only arrive when typed here exactly."
       },
       "variables": {
         "obsConnection": "The name of the OBS connection this came from",
         "eventType": "The kind of OBS message",
         "eventData": "All the details OBS sent, as raw text",
         "obsEvent.event": "The kind of OBS message (same as eventType)"
+      }
+    },
+    "obs.sourceActiveChanged": {
+      "description": "Runs when a source starts or stops being part of what your viewers see, like a camera in a scene that just went live. Great for starting a timer when the BRB scene shows.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this source, typed exactly as OBS shows it, like \"Webcam\". Leave empty for any source.",
+        "state": "Pick Live for when it goes live, Not live for when it leaves the live output, or Any for both."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The name of the source",
+        "videoActive": "True when the source is now live"
+      }
+    },
+    "obs.sourceShowChanged": {
+      "description": "Runs when a source starts or stops showing anywhere in OBS: live, in the preview, in a projector or its properties window.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this source, typed exactly as OBS shows it. Leave empty for any source.",
+        "state": "Pick Showing, Not showing, or Any for both."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The name of the source",
+        "videoShowing": "True when the source is now showing somewhere"
+      }
+    },
+    "obs.talking": {
+      "description": "Runs when you start or stop talking, from the OBS volume meter of your microphone. Great for PNG-tuber style reactions.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Your microphone, exactly as OBS shows it in the audio mixer, like \"Mic/Aux\". Leave empty to listen to every audio source.",
+        "threshold": "How loud counts as talking, in dB, like -30. Closer to 0 means you have to be louder. The OBS mixer shows the level.",
+        "quietMs": "How long it must stay quieter before talking counts as stopped, in milliseconds, like 300. Stops short pauses from flickering.",
+        "state": "Started runs when you start talking, Stopped when you stop, Any for both."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The audio source that is talking",
+        "talking": "True when talking started, false when it stopped",
+        "levelDb": "How loud it was, in dB"
+      }
+    },
+    "obs.sourceTransformChanged": {
+      "description": "Runs when a source in a scene is moved, resized, rotated or cropped.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "scene": "Only react to this scene (or group), typed exactly as OBS shows it. Leave empty for any scene.",
+        "source": "Only react to this source, typed exactly as OBS shows it. Leave empty for any source."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sceneName": "The scene (or group) the source is in",
+        "sourceName": "The name of the source",
+        "transform": "Its new position, size, rotation and crop, as JSON text"
+      }
+    },
+    "obs.customEvent": {
+      "description": "Runs when an overlay, Stream Deck plugin or other tool sends a custom message through OBS's WebSocket server (or when Cuebot sends one).",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "field": "Only react when the message has this field, like \"type\" or \"user.name\". Leave empty for every custom message.",
+        "value": "Only react when that field has this value, like \"alert\". Leave empty to just need the field."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "eventData": "The whole message, as JSON text",
+        "customEvent.<field>": "Each top-level field of the message, like %customEvent.type%"
+      }
+    },
+    "obs.exiting": {
+      "description": "Runs when OBS starts closing, just before the connection ends. Handy for saving things or a goodbye message.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from"
+      }
+    },
+    "obs.transitionVideoEnded": {
+      "description": "Runs when a stinger transition's video finishes playing, which can be after the scene already changed.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "transition": "Only react to this transition. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "transitionName": "The transition"
+      }
+    },
+    "obs.audioMonitorChanged": {
+      "description": "Runs when the monitoring of an audio source changes (whether you hear it in your headphones).",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this audio source, typed exactly as OBS shows it. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The audio source",
+        "monitorType": "None, MonitorOnly or MonitorAndOutput"
+      }
+    },
+    "obs.audioBalanceChanged": {
+      "description": "Runs when the left/right balance of an audio source changes.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this audio source, typed exactly as OBS shows it. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The audio source",
+        "inputAudioBalance": "0 left, 0.5 middle, 1 right"
+      }
+    },
+    "obs.audioSyncOffsetChanged": {
+      "description": "Runs when the delay of an audio source changes.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this audio source, typed exactly as OBS shows it. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The audio source",
+        "inputAudioSyncOffset": "The delay in milliseconds"
+      }
+    },
+    "obs.audioTracksChanged": {
+      "description": "Runs when the audio tracks of a source are switched on or off.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this audio source, typed exactly as OBS shows it. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The audio source",
+        "inputAudioTracks": "Which tracks are on, as JSON text"
+      }
+    },
+    "obs.inputSettingsChanged": {
+      "description": "Runs when the settings of a source change, like the text of a text source. Needs OBS 30.1 or newer.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "input": "Only react to this source, typed exactly as OBS shows it. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "inputName": "The source",
+        "inputSettings": "Its changed settings, as JSON text"
+      }
+    },
+    "obs.sourceOrderChanged": {
+      "description": "Runs when the sources of a scene are put in a new order.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "scene": "Only react to this scene. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sceneName": "The scene"
+      }
+    },
+    "obs.sourceLockChanged": {
+      "description": "Runs when a source in a scene is locked or unlocked.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "scene": "Only react to this scene (or group). Leave empty for any.",
+        "source": "Only react to this source. Leave empty for any.",
+        "state": "Locked, Unlocked, or Any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sceneName": "The scene",
+        "sourceName": "The source",
+        "locked": "True when it is now locked"
+      }
+    },
+    "obs.filterAdded": {
+      "description": "Runs when a filter is added to a source or scene.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "source": "Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any.",
+        "filter": "Only react to this filter. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sourceName": "The source or scene",
+        "filterName": "The new filter",
+        "filterKind": "Its kind, like color_filter_v2"
+      }
+    },
+    "obs.filterRemoved": {
+      "description": "Runs when a filter is removed from a source or scene.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "source": "Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any.",
+        "filter": "Only react to this filter. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sourceName": "The source or scene",
+        "filterName": "The removed filter"
+      }
+    },
+    "obs.filterRenamed": {
+      "description": "Runs when a filter gets a new name.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "source": "Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any.",
+        "filter": "Only react to this new filter name. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sourceName": "The source or scene",
+        "oldFilterName": "The old name",
+        "filterName": "The new name"
+      }
+    },
+    "obs.filterOrderChanged": {
+      "description": "Runs when the filters of a source are put in a new order.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "source": "Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sourceName": "The source or scene",
+        "filters": "The filters in their new order, as JSON text"
+      }
+    },
+    "obs.filterSettingsChanged": {
+      "description": "Runs when the settings of a filter change. Needs OBS 30.1 or newer.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them.",
+        "source": "Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any.",
+        "filter": "Only react to this filter. Leave empty for any."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sourceName": "The source or scene",
+        "filterName": "The filter",
+        "filterSettings": "Its changed settings, as JSON text"
+      }
+    },
+    "obs.profileChanging": {
+      "description": "Runs just before OBS switches to another profile.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "profileName": "The profile OBS is leaving"
+      }
+    },
+    "obs.sceneCollectionChanging": {
+      "description": "Runs just before OBS switches to another scene collection.",
+      "fields": {
+        "connection": "Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them."
+      },
+      "variables": {
+        "obsConnection": "The name of the OBS connection this came from",
+        "sceneCollectionName": "The scene collection OBS is leaving"
       }
     }
   },
@@ -392,7 +656,8 @@
         "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
         "scene": "The scene the source is in, exactly as OBS shows it.",
         "source": "The source name exactly as OBS shows it, like \"Webcam\".",
-        "state": "Visible shows it, Hidden hides it, Toggle flips it to the opposite of what it is now."
+        "state": "Visible shows it, Hidden hides it, Toggle flips it to the opposite of what it is now.",
+        "copy": "If the source is in the scene more than once: Bottom changes the lowest copy in the OBS list, Top the highest, All every copy at once."
       },
       "variables": {}
     },
@@ -755,7 +1020,7 @@
       "fields": {
         "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
         "source": "The source or scene to photograph, exactly as OBS shows it. Leave empty for the scene that is live now.",
-        "file": "Where to save it, like \"C:\\Pictures\\shot.png\". The ending (png, jpg, bmp or webp) picks the picture type.",
+        "file": "Where to save it, as a full path on the OBS computer, like \"C:\\Pictures\\shot.png\". The ending (png, jpg, bmp or webp) picks the picture type.",
         "width": "Picture width in pixels, 8 to 4096. Leave empty to keep the normal size.",
         "height": "Picture height in pixels, 8 to 4096. Leave empty to keep the normal size.",
         "quality": "Picture quality from 0 to 100. Use -1 to let OBS decide.",
@@ -838,11 +1103,552 @@
         "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
         "requests": "A list of commands written as JSON, like [{\"requestType\":\"GetVersion\"}].",
         "haltOnFailure": "Tick to stop at the first command that fails. Untick to keep going.",
-        "resultArgument": "The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold all the answers as text. The default is obsResult."
+        "resultArgument": "The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold all the answers as text. The default is obsResult.",
+        "executionType": "SerialRealtime runs them one after the other. SerialFrame keeps them in step with OBS's video frames, so moves land in the same frame. Parallel runs them all at once, in any order."
       },
       "variables": {
         "obsResult": "All of OBS's answers as JSON text (or the name you chose above)"
       }
+    },
+    "obs.sendCustomEvent": {
+      "description": "Sends your own message through OBS to every program connected to its WebSocket server, like overlays that use obs-websocket-js. Cuebot gets it back too.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "eventData": "The message as a JSON object, like {\"type\":\"alert\",\"user\":\"%user%\"}."
+      },
+      "variables": {}
+    },
+    "obs.callVendorRequest": {
+      "description": "Asks an OBS plugin to do something through OBS's WebSocket server, for plugins that offer this (check the plugin's own help). For advanced users.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "vendor": "The name the plugin uses for its requests, from the plugin's help.",
+        "requestType": "The request name, from the plugin's help.",
+        "requestData": "Extra details for the request, written as a JSON object. Leave empty if it needs none.",
+        "resultArgument": "The name of the variable that will hold the plugin's answer as JSON text. Leave empty to not keep it. The default is obsVendorResult."
+      },
+      "variables": {
+        "obsVendorResult": "The plugin's answer as JSON text (or the name you chose above)"
+      }
+    },
+    "obs.splitRecording": {
+      "description": "Starts a new recording file right now without stopping the recording. Handy for one file per segment. Needs OBS 30.2 or newer.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS."
+      },
+      "variables": {}
+    },
+    "obs.getRecordDirectory": {
+      "description": "Finds out which folder OBS saves recordings to.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "resultArgument": "The name of the variable that will hold the folder. Leave empty to not keep it. The default is obsRecordDirectory."
+      },
+      "variables": {
+        "obsRecordDirectory": "The recording folder (or the name you chose above)"
+      }
+    },
+    "obs.setRecordDirectory": {
+      "description": "Changes the folder OBS saves recordings to, for example one folder per episode. Needs OBS 30 or newer.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "directory": "The folder as a full path on the OBS computer, like \"D:\\Videos\\Episode 12\"."
+      },
+      "variables": {}
+    },
+    "obs.setAudioMonitor": {
+      "description": "Chooses whether you hear an audio source in your headphones: great for alerts only you should hear.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The audio source exactly as OBS shows it, like \"Music\" or \"Mic/Aux\".",
+        "monitorType": "None: you do not hear it. MonitorOnly: only you hear it (not the stream). MonitorAndOutput: you and the stream hear it."
+      },
+      "variables": {}
+    },
+    "obs.setAudioBalance": {
+      "description": "Moves an audio source to the left or right speaker.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The audio source exactly as OBS shows it, like \"Music\" or \"Mic/Aux\".",
+        "balance": "0 is all left, 0.5 the middle, 1 all right."
+      },
+      "variables": {}
+    },
+    "obs.setAudioSyncOffset": {
+      "description": "Delays an audio source so it matches the video, in milliseconds.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The audio source exactly as OBS shows it, like \"Music\" or \"Mic/Aux\".",
+        "milliseconds": "The delay in milliseconds, from -950 to 20000. 0 is no delay."
+      },
+      "variables": {}
+    },
+    "obs.getAudioSettings": {
+      "description": "Reads every audio setting of a source at once: mute, volume, balance, delay, monitoring and tracks.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The audio source exactly as OBS shows it, like \"Music\" or \"Mic/Aux\"."
+      },
+      "variables": {
+        "obsAudioMuted": "True when it is muted",
+        "obsAudioVolumeDb": "The volume in dB",
+        "obsAudioBalance": "0 left, 0.5 middle, 1 right",
+        "obsAudioSyncOffset": "The delay in milliseconds",
+        "obsAudioMonitorType": "None, MonitorOnly or MonitorAndOutput",
+        "obsAudioTracks": "Which tracks are on, as JSON text"
+      }
+    },
+    "obs.setSourceOrder": {
+      "description": "Moves a source in front of or behind the others in its scene.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene, exactly as OBS shows it.",
+        "source": "The source, exactly as OBS shows it, like \"Webcam\".",
+        "order": "Top puts it in front of everything, Bottom behind everything, Up and Down move it one step, Position puts it at the number below.",
+        "position": "Only for Position: 0 is the very bottom (behind everything)."
+      },
+      "variables": {
+        "obsSourceIndex": "Its new position (0 is the bottom)"
+      }
+    },
+    "obs.setSourceLocked": {
+      "description": "Locks or unlocks a source in a scene, so it cannot be moved by accident.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene, exactly as OBS shows it.",
+        "source": "The source, exactly as OBS shows it, like \"Webcam\".",
+        "state": "Lock, Unlock, or Toggle to flip it."
+      },
+      "variables": {}
+    },
+    "obs.setBlendMode": {
+      "description": "Changes how a source mixes with what is behind it, like Screen or Multiply.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene, exactly as OBS shows it.",
+        "source": "The source, exactly as OBS shows it, like \"Webcam\".",
+        "blendMode": "Normal, Additive, Subtract, Screen, Multiply, Lighten or Darken."
+      },
+      "variables": {}
+    },
+    "obs.createInput": {
+      "description": "Creates a brand new source in a scene, like a browser source for a viewer card. Delete it again with Delete source.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene to put it in, exactly as OBS shows it.",
+        "name": "The name for the new source. It must not be used yet.",
+        "kind": "The kind of source, like \"browser_source\", \"image_source\" or \"color_source_v3\". The list shows what your OBS offers.",
+        "settings": "Its settings as a JSON object, like {\"url\":\"https://example.com\"}. Leave empty for the defaults.",
+        "visible": "Tick to show it right away.",
+        "resultArgument": "The name of the variable that will hold its number in the scene. Leave empty to not keep it. The default is obsSceneItemId."
+      },
+      "variables": {
+        "obsSceneItemId": "The number OBS gave it in the scene"
+      }
+    },
+    "obs.removeInput": {
+      "description": "Deletes a source from OBS and from every scene it is in. This cannot be undone.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The source to delete, exactly as OBS shows it."
+      },
+      "variables": {}
+    },
+    "obs.renameInput": {
+      "description": "Gives a source a new name.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The source to rename, exactly as OBS shows it.",
+        "newName": "Its new name."
+      },
+      "variables": {}
+    },
+    "obs.addSceneItem": {
+      "description": "Adds a source (or a scene) that already exists to a scene.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene to add it to.",
+        "source": "The source or scene to add, exactly as OBS shows it.",
+        "visible": "Tick to show it right away.",
+        "resultArgument": "The name of the variable that will hold its number in the scene. Leave empty to not keep it. The default is obsSceneItemId."
+      },
+      "variables": {
+        "obsSceneItemId": "The number OBS gave it in the scene"
+      }
+    },
+    "obs.removeSceneItem": {
+      "description": "Takes a source out of one scene. The source itself stays in OBS.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene, exactly as OBS shows it.",
+        "source": "The source, exactly as OBS shows it, like \"Webcam\"."
+      },
+      "variables": {}
+    },
+    "obs.duplicateSceneItem": {
+      "description": "Copies a source in a scene, with its position and crop, into the same or another scene.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene the source is in.",
+        "source": "The source, exactly as OBS shows it, like \"Webcam\".",
+        "destinationScene": "The scene to put the copy in. Leave empty for the same scene.",
+        "resultArgument": "The name of the variable that will hold the copy's number. Leave empty to not keep it. The default is obsSceneItemId."
+      },
+      "variables": {
+        "obsSceneItemId": "The number OBS gave the copy"
+      }
+    },
+    "obs.getSourceActive": {
+      "description": "Checks whether a source or scene is on your stream right now, and whether it shows anywhere in OBS.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "source": "The source or scene, exactly as OBS shows it."
+      },
+      "variables": {
+        "obsSourceActive": "True when it is on the live output",
+        "obsSourceShowing": "True when it shows anywhere (live, preview, projector)"
+      }
+    },
+    "obs.createScene": {
+      "description": "Creates a new, empty scene.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "name": "The name for the new scene."
+      },
+      "variables": {}
+    },
+    "obs.removeScene": {
+      "description": "Deletes a scene from OBS. This cannot be undone.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene to delete, exactly as OBS shows it."
+      },
+      "variables": {}
+    },
+    "obs.renameScene": {
+      "description": "Gives a scene a new name.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene to rename.",
+        "newName": "Its new name."
+      },
+      "variables": {}
+    },
+    "obs.setSceneTransitionOverride": {
+      "description": "Makes a scene always use a certain transition, like a 2 second fade into BRB.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "scene": "The scene, exactly as OBS shows it.",
+        "transition": "The transition to always use for this scene. Leave empty to remove the override.",
+        "milliseconds": "How long it takes, 50 to 20000 milliseconds. Leave empty to remove."
+      },
+      "variables": {}
+    },
+    "obs.createFilter": {
+      "description": "Adds a new filter to a source or scene.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "source": "The source or scene the filter is on, exactly as OBS shows it.",
+        "filter": "The name for the new filter.",
+        "kind": "The kind of filter, like \"color_filter_v2\". The list shows what your OBS offers (OBS 30.1+).",
+        "settings": "Its settings as a JSON object. Leave empty for the defaults."
+      },
+      "variables": {}
+    },
+    "obs.removeFilter": {
+      "description": "Removes a filter from a source or scene.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "source": "The source or scene the filter is on, exactly as OBS shows it.",
+        "filter": "The filter name exactly as OBS shows it."
+      },
+      "variables": {}
+    },
+    "obs.renameFilter": {
+      "description": "Gives a filter a new name.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "source": "The source or scene the filter is on, exactly as OBS shows it.",
+        "filter": "The filter name exactly as OBS shows it.",
+        "newName": "Its new name."
+      },
+      "variables": {}
+    },
+    "obs.setFilterOrder": {
+      "description": "Moves a filter up or down in the filter list of a source.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "source": "The source or scene the filter is on, exactly as OBS shows it.",
+        "filter": "The filter name exactly as OBS shows it.",
+        "position": "0 is the first filter in the list."
+      },
+      "variables": {}
+    },
+    "obs.setTransitionSettings": {
+      "description": "Changes the settings of the current transition, like a stinger's video file. For advanced users.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "settings": "The settings as a JSON object.",
+        "overlay": "Tick to change only these settings; untick to replace all of them."
+      },
+      "variables": {}
+    },
+    "obs.getCurrentTransition": {
+      "description": "Reads the current transition: its name, kind, length and settings.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS."
+      },
+      "variables": {
+        "obsTransitionName": "The transition name",
+        "obsTransitionKind": "Its kind, like fade_transition",
+        "obsTransitionDuration": "Its length in milliseconds",
+        "obsTransitionSettings": "Its settings as JSON text",
+        "obsTransitionCursor": "How far a running transition is, 0 to 1"
+      }
+    },
+    "obs.setTBar": {
+      "description": "Moves the studio mode T-bar, like dragging it with the mouse. OBS plans to replace this.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "position": "0 is the start, 1 the end.",
+        "release": "Tick to let go of the T-bar, so OBS finishes or cancels the transition."
+      },
+      "variables": {}
+    },
+    "obs.screenshotToVariable": {
+      "description": "Takes a picture of a source or scene and keeps it in a variable (as a data: link) instead of saving a file. Good for sending it to Discord.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "source": "The source or scene to photograph. Leave empty for the scene that is live now.",
+        "format": "The picture type: png, jpg, webp or bmp.",
+        "width": "Picture width in pixels, 8 to 4096. Leave empty for the normal size.",
+        "height": "Picture height in pixels, 8 to 4096. Leave empty for the normal size.",
+        "quality": "Picture quality from 0 to 100. Use -1 to let OBS decide.",
+        "resultArgument": "The name of the variable that will hold the picture. Leave empty to not keep it. The default is obsScreenshot."
+      },
+      "variables": {
+        "obsScreenshot": "The picture as a data: link (or the name you chose above)"
+      }
+    },
+    "obs.sendCaption": {
+      "description": "Sends caption text with your stream, for viewers who turn captions on. Only works while you stream.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "text": "The caption text, like what you just said."
+      },
+      "variables": {}
+    },
+    "obs.openProjector": {
+      "description": "Opens a fullscreen projector of your program, preview, multiview or one source on a monitor of the OBS computer.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "projector": "Program, Preview, Multiview, or Source for one source.",
+        "source": "Only for Source: the source or scene to show.",
+        "monitor": "0 is the first monitor, 1 the second. -1 opens a window instead."
+      },
+      "variables": {}
+    },
+    "obs.openSourceDialog": {
+      "description": "Opens the properties, filters or interact window of a source on the OBS computer, for a quick fix from a deck.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The source, exactly as OBS shows it.",
+        "dialog": "Properties, Filters, or Interact (for browser sources)."
+      },
+      "variables": {}
+    },
+    "obs.triggerHotkeyKeys": {
+      "description": "Presses a key combination inside OBS, as if you pressed an OBS hotkey on the keyboard.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "key": "The OBS key name, like \"OBS_KEY_F13\" or \"OBS_KEY_NUM1\".",
+        "shift": "Tick to hold Shift.",
+        "control": "Tick to hold Ctrl.",
+        "alt": "Tick to hold Alt.",
+        "command": "Tick to hold Cmd (Mac)."
+      },
+      "variables": {}
+    },
+    "obs.setPersistentData": {
+      "description": "Saves a value inside OBS that stays after a restart and that other OBS tools can read.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "realm": "Global keeps it for every profile, Profile only for the current OBS profile.",
+        "slot": "A name for the value, like \"deaths\".",
+        "value": "The value: text, a number, or JSON."
+      },
+      "variables": {}
+    },
+    "obs.getPersistentData": {
+      "description": "Reads a value saved inside OBS.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "realm": "Global or Profile, where it was saved.",
+        "slot": "The name of the value.",
+        "resultArgument": "The name of the variable that will hold the value. Leave empty to not keep it. The default is obsValue."
+      },
+      "variables": {
+        "obsValue": "The saved value (empty if nothing is saved)"
+      }
+    },
+    "obs.createProfile": {
+      "description": "Creates a new OBS profile and switches to it.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "profile": "The name for the new profile."
+      },
+      "variables": {}
+    },
+    "obs.removeProfile": {
+      "description": "Deletes an OBS profile. This cannot be undone.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "profile": "The profile to delete."
+      },
+      "variables": {}
+    },
+    "obs.createSceneCollection": {
+      "description": "Creates a new, empty scene collection and switches to it. Can take a while.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "sceneCollection": "The name for the new scene collection."
+      },
+      "variables": {}
+    },
+    "obs.getProfileParameter": {
+      "description": "Reads one setting of the current OBS profile, by its section and name in the profile file. For advanced users.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "category": "The section, like \"Output\".",
+        "name": "The setting name, like \"Mode\".",
+        "resultArgument": "The name of the variable that will hold the value. Leave empty to not keep it. The default is obsProfileValue."
+      },
+      "variables": {
+        "obsProfileValue": "The setting's value (empty if not set)"
+      }
+    },
+    "obs.setProfileParameter": {
+      "description": "Changes one setting of the current OBS profile. For advanced users: a wrong value can break the profile.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "category": "The section, like \"Output\".",
+        "name": "The setting name, like \"Mode\".",
+        "value": "The new value. Leave empty to delete the setting."
+      },
+      "variables": {}
+    },
+    "obs.getVideoSettings": {
+      "description": "Reads the canvas size, output size and frame rate.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS."
+      },
+      "variables": {
+        "obsVideoBaseWidth": "Canvas width",
+        "obsVideoBaseHeight": "Canvas height",
+        "obsVideoOutputWidth": "Output width",
+        "obsVideoOutputHeight": "Output height",
+        "obsVideoFpsNumerator": "Frames per second (with obsVideoFpsDenominator)"
+      }
+    },
+    "obs.setVideoSettings": {
+      "description": "Changes the canvas size, output size or frame rate. OBS refuses while streaming or recording.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "baseWidth": "Canvas width in pixels. Give the height too, or leave both empty.",
+        "baseHeight": "Canvas height in pixels.",
+        "outputWidth": "Output (scaled) width in pixels. Give the height too, or leave both empty.",
+        "outputHeight": "Output height in pixels.",
+        "fpsNumerator": "Frames per second, like 60. Leave empty to keep.",
+        "fpsDenominator": "Usually 1. Leave empty for 1."
+      },
+      "variables": {}
+    },
+    "obs.getStreamService": {
+      "description": "Reads where OBS streams to. The stream key is hidden, so it never shows up in your variables.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS."
+      },
+      "variables": {
+        "obsStreamServiceType": "rtmp_common (a listed service) or rtmp_custom",
+        "obsStreamServiceName": "The service name, like Twitch",
+        "obsStreamServer": "The server address",
+        "obsStreamService": "All settings as JSON text, with the key hidden"
+      }
+    },
+    "obs.setStreamService": {
+      "description": "Changes where OBS streams to, including the stream key. Treat this step like a password: never share actions that contain your key.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "serviceType": "rtmp_custom for your own server, rtmp_common for a listed service.",
+        "settings": "The settings as a JSON object, like {\"server\":\"rtmp://...\",\"key\":\"...\"}."
+      },
+      "variables": {}
+    },
+    "obs.output": {
+      "description": "Starts, stops or toggles one OBS output by name, like the extra stream of a plugin.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "output": "The output name. The list shows what your OBS has.",
+        "mode": "Start, Stop or Toggle."
+      },
+      "variables": {}
+    },
+    "obs.getOutputSettings": {
+      "description": "Reads the settings of one OBS output. Stream keys are hidden.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "output": "The output name.",
+        "resultArgument": "The name of the variable that will hold the settings. Leave empty to not keep it. The default is obsOutputSettings."
+      },
+      "variables": {
+        "obsOutputSettings": "The settings as JSON text (or the name you chose above)"
+      }
+    },
+    "obs.setOutputSettings": {
+      "description": "Changes the settings of one OBS output. For advanced users.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "output": "The output name.",
+        "settings": "The settings as a JSON object."
+      },
+      "variables": {}
+    },
+    "obs.getSpecialInputs": {
+      "description": "Finds the names of OBS's global audio sources: desktop audio and microphones.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS."
+      },
+      "variables": {
+        "obsDesktop1": "Desktop Audio",
+        "obsDesktop2": "Desktop Audio 2",
+        "obsMic1": "Mic/Aux",
+        "obsMic2": "Mic/Aux 2",
+        "obsMic3": "Mic/Aux 3",
+        "obsMic4": "Mic/Aux 4"
+      }
+    },
+    "obs.getInputListItems": {
+      "description": "Lists the choices of a list in a source's settings, like the displays of a display capture.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The source, exactly as OBS shows it.",
+        "property": "The setting's name, like \"monitor_id\".",
+        "resultArgument": "The name of the variable that will hold the list. Leave empty to not keep it. The default is obsListItems."
+      },
+      "variables": {
+        "obsListItems": "The choices as JSON text (itemName, itemValue, itemEnabled)",
+        "obsListItemCount": "How many choices there are"
+      }
+    },
+    "obs.setDeinterlace": {
+      "description": "Changes deinterlacing of a video source like a capture card. Needs OBS 31.1 or newer.",
+      "fields": {
+        "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
+        "input": "The video source, exactly as OBS shows it.",
+        "mode": "The deinterlacing mode, or Keep to leave it.",
+        "fieldOrder": "Top or Bottom field first, or Keep to leave it."
+      },
+      "variables": {}
     }
   }
 }

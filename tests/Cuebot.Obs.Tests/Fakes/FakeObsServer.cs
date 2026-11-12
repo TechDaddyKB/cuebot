@@ -13,6 +13,9 @@ internal sealed record FakeReply(bool Success = true, object? Data = null, int C
 {
     public TimeSpan Delay { get; init; }
 
+    /// <summary>Events the server sends before the reply (as OBS does for output state changes it starts).</summary>
+    public (string Type, object? Data)[] EventsBefore { get; init; } = [];
+
     public static FakeReply Ok(object? data = null) => new(Data: data);
     public static FakeReply Fail(int code, string comment) => new(false, null, code, comment);
 }
@@ -58,6 +61,28 @@ internal sealed class FakeObsServer : IAsyncDisposable
 
     /// <summary>The "d" payload of the most recent Identify message.</summary>
     public JsonElement? LastIdentify { get; private set; }
+
+    /// <summary>Subscription bits of the current session (Identify, then each Reidentify).</summary>
+    public int Subscriptions { get; private set; }
+
+    public int ReidentifyCount { get; private set; }
+
+    /// <summary>Request types of each batch, in arrival order.</summary>
+    public ConcurrentQueue<string[]> Batches { get; } = new();
+
+    /// <summary>Hello messages sent (one per connection attempt).</summary>
+    public int HandshakeCount => _handshakes;
+
+    private int _handshakes;
+
+    /// <summary>The executionType of the most recent batch (null when the client left it out).</summary>
+    public int? LastBatchExecutionType { get; private set; }
+
+    /// <summary>Version reported in Hello.</summary>
+    public string HelloVersion { get; set; } = "5.7.4";
+
+    /// <summary>negotiatedRpcVersion sent in Identified.</summary>
+    public int NegotiatedRpcVersion { get; set; } = 1;
 
     public int SessionCount { get; private set; }
 
@@ -112,8 +137,9 @@ internal sealed class FakeObsServer : IAsyncDisposable
         try
         {
             object hello = _password is null
-                ? new { obsWebSocketVersion = "5.0.0", rpcVersion = 1 }
-                : new { obsWebSocketVersion = "5.0.0", rpcVersion = 1, authentication = new { challenge = Challenge, salt = Salt } };
+                ? new { obsWebSocketVersion = HelloVersion, rpcVersion = 1 }
+                : new { obsWebSocketVersion = HelloVersion, rpcVersion = 1, authentication = new { challenge = Challenge, salt = Salt } };
+            Interlocked.Increment(ref _handshakes);
             await SendAsync(session, 0, hello);
 
             var identify = await ReceiveAsync(session);
@@ -124,7 +150,8 @@ internal sealed class FakeObsServer : IAsyncDisposable
                 await TryCloseAsync(session, (WebSocketCloseStatus)4009, "Authentication failed.");
                 return;
             }
-            await SendAsync(session, 2, new { negotiatedRpcVersion = 1 });
+            Subscriptions = LastIdentify.Value.TryGetProperty("eventSubscriptions", out var subs) ? subs.GetInt32() : 0;
+            await SendAsync(session, 2, new { negotiatedRpcVersion = NegotiatedRpcVersion });
             SessionCount++;
             _identified.TrySetResult(session);
 
@@ -133,6 +160,11 @@ internal sealed class FakeObsServer : IAsyncDisposable
                 var op = message.GetProperty("op").GetInt32();
                 if (op == 6) _ = Task.Run(() => AnswerAsync(session, message.GetProperty("d").Clone()));
                 else if (op == 8) _ = Task.Run(() => AnswerBatchAsync(session, message.GetProperty("d").Clone()));
+                else if (op == 3)
+                {
+                    Subscriptions = message.GetProperty("d").GetProperty("eventSubscriptions").GetInt32();
+                    ReidentifyCount++;
+                }
             }
         }
         catch (Exception)
@@ -149,13 +181,25 @@ internal sealed class FakeObsServer : IAsyncDisposable
     private async Task AnswerBatchAsync(WebSocket session, JsonElement batch)
     {
         var halt = batch.TryGetProperty("haltOnFailure", out var h) && h.GetBoolean();
+        LastBatchExecutionType = batch.TryGetProperty("executionType", out var execution) ? execution.GetInt32() : null;
+        Batches.Enqueue(batch.GetProperty("requests").EnumerateArray().Select(r => r.GetProperty("requestType").GetString()!).ToArray());
         var results = new List<object>();
         foreach (var request in batch.GetProperty("requests").EnumerateArray())
         {
             var requestType = request.GetProperty("requestType").GetString()!;
             var data = request.TryGetProperty("requestData", out var d) ? d : default;
             Requests.Enqueue((requestType, data));
-            var reply = Handler(requestType, data) ?? FakeReply.Fail(204, "No reply");
+            FakeReply reply;
+            if (requestType == "Sleep")
+            {
+                await Task.Delay(data.TryGetProperty("sleepMillis", out var ms) ? ms.GetInt32() : 0);
+                reply = FakeReply.Ok();
+            }
+            else
+            {
+                reply = Handler(requestType, data) ?? FakeReply.Fail(204, "No reply");
+            }
+            foreach (var (type, eventData) in reply.EventsBefore) await SendAsync(session, 5, new { eventType = type, eventIntent = 1, eventData });
             var status = new { result = reply.Success, code = reply.Code, comment = reply.Comment };
             results.Add(reply.Data is null ? new { requestType, requestStatus = status } : new { requestType, requestStatus = status, responseData = reply.Data });
             if (halt && !reply.Success) break;
@@ -172,6 +216,7 @@ internal sealed class FakeObsServer : IAsyncDisposable
 
         if (Handler(requestType, data) is not { } reply) return;
         if (reply.Delay > TimeSpan.Zero) await Task.Delay(reply.Delay);
+        foreach (var (type, eventData) in reply.EventsBefore) await SendAsync(session, 5, new { eventType = type, eventIntent = 1, eventData });
         var status = new { result = reply.Success, code = reply.Code, comment = reply.Comment };
         await SendAsync(session, 7, reply.Data is null
             ? new { requestType, requestId, requestStatus = status }

@@ -48,6 +48,7 @@
                   <TextBlock Text="Password" />
                   <TextBox Text="{Binding Password}" PasswordChar="•" ToolTip.Tip="The password from OBS (Tools → WebSocket Server Settings). Leave empty if you did not set one." />
                   <CheckBox Content="Connect automatically and reconnect when OBS restarts" IsChecked="{Binding AutoConnect}" ToolTip.Tip="Ticked: Cuebot connects when it starts and connects again by itself whenever OBS is closed and reopened." />
+                  <CheckBox Content="Follow renames in my actions" IsChecked="{Binding FollowRenames}" ToolTip.Tip="Ticked: when you rename a scene, source or filter in OBS, Cuebot changes the name in your OBS steps and triggers for this connection too, so they keep working." />
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" ToolTip.Tip="Connects to OBS now." />
                     <Button Content="Disconnect" Command="{Binding DisconnectCommand}" ToolTip.Tip="Disconnects from OBS." />
@@ -78,6 +79,7 @@
                   <TextBlock>
                     <Run Text="Program: " /><Run Text="{Binding CurrentScene}" FontWeight="SemiBold" /><Run Text="   Preview: " /><Run Text="{Binding PreviewScene}" FontWeight="SemiBold" />
                   </TextBlock>
+                  <TextBlock Classes="muted" Text="{Binding Outputs}" TextWrapping="Wrap" />
                   <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
               </Border>

@@ -1260,6 +1260,16 @@ class Cuebot:
         Gives back: found (false when no player is open), title, artist, album, player (its name), artUrl (cover picture link), duration in seconds, link and playing (true/false).
         Same as cb.call(\"nowplaying.get\", ...).
         """
+    def obs_call_vendor_request(self, vendor_name: Any, request_type: Any, *, request_data: Any = None, connection: Any = None) -> Any:
+        """Asks an OBS plugin to do something, for plugins that offer requests through OBS's WebSocket server. Check the plugin's help for its name and requests. Fails with an error when OBS is not connected or the plugin refuses.
+
+        vendor_name: The name the plugin uses for its requests. Needed.
+        request_type: The request name from the plugin's help. Needed.
+        request_data: Optional. Extra details for the request, as an object.
+        connection: Optional. The name of the OBS connection to use. Leave it out for your main OBS.
+        Gives back: The plugin's answer data.
+        Same as cb.call(\"obs.callVendorRequest\", ...).
+        """
     def obs_connections(self) -> Any:
         """Lists every OBS connection you set up in Cuebot.
 
@@ -1282,14 +1292,23 @@ class Cuebot:
         Gives back: OBS's answer data for that command (its responseData).
         Same as cb.call(\"obs.request\", ...).
         """
-    def obs_request_batch(self, requests: Any, *, halt_on_failure: Any = None, connection: Any = None) -> Any:
+    def obs_request_batch(self, requests: Any, *, halt_on_failure: Any = None, execution_type: Any = None, connection: Any = None) -> Any:
         """Sends several obs-websocket commands to OBS in one go. One failed command does not stop the rest, unless you ask it to. Fails with an error when OBS is not connected.
 
         requests: A list of commands. Each one has a requestType and, if needed, requestData, like {\"requestType\": \"GetVersion\"}. Needed.
         halt_on_failure: Optional. true stops at the first command that fails. Default false.
+        execution_type: Optional. How OBS runs them: \"SerialRealtime\" (or 0, the default) one after the other, \"SerialFrame\" (or 1) in step with video frames so changes land in the same frame, \"Parallel\" (or 2) all at once.
         connection: Optional. The name of the OBS connection to use. Leave it out for your main OBS.
         Gives back: A list with one result per command: its requestType, requestStatus (did it work) and responseData.
         Same as cb.call(\"obs.requestBatch\", ...).
+        """
+    def obs_send_custom_event(self, event_data: Any, *, connection: Any = None) -> Any:
+        """Sends your own message through OBS to every program connected to its WebSocket server, like overlays. Fails with an error when OBS is not connected.
+
+        event_data: The message, an object like {\"type\": \"alert\"}. Needed.
+        connection: Optional. The name of the OBS connection to use. Leave it out for your main OBS.
+        Gives back: Nothing.
+        Same as cb.call(\"obs.sendCustomEvent\", ...).
         """
     def obs_set_scene(self, scene_name: Any, *, connection: Any = None) -> Any:
         """Switches OBS to another scene. Fails with an error when OBS is not connected.
@@ -1298,6 +1317,13 @@ class Cuebot:
         connection: Optional. The name of the OBS connection to use. Leave it out for your main OBS.
         Gives back: Nothing.
         Same as cb.call(\"obs.setScene\", ...).
+        """
+    def obs_status(self, *, connection: Any = None) -> Any:
+        """Tells you what Cuebot knows about OBS right now, without asking OBS: connected, streaming, recording, replay buffer, virtual camera, studio mode and the live scene.
+
+        connection: Optional. The name of the OBS connection to use. Leave it out for your main OBS.
+        Gives back: An object with obsConnected, obsStreaming, obsRecording, obsRecordingPaused, obsReplayBuffer, obsVirtualCam, obsStudioMode, obsScene and obsVersion (only obsConnected while OBS is not connected).
+        Same as cb.call(\"obs.status\", ...).
         """
     def obsbot_connect(self) -> Any:
         """Starts connecting to OBSBOT Center. Cuebot keeps trying in the background until it works.

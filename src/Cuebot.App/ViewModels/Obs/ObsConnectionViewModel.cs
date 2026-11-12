@@ -98,6 +98,12 @@ public sealed partial class ObsConnectionViewModel : ObservableObject
         set { Connection.Settings.AutoConnect = value; Connection.SaveSettings(); OnPropertyChanged(); }
     }
 
+    public bool FollowRenames
+    {
+        get => Connection.Settings.FollowRenames;
+        set { Connection.Settings.FollowRenames = value; Connection.SaveSettings(); OnPropertyChanged(); }
+    }
+
     // ---- Status ----
 
     public string State => Connection.State.ToString();
@@ -109,6 +115,12 @@ public sealed partial class ObsConnectionViewModel : ObservableObject
     public string CurrentScene => Connection.CurrentScene ?? "—";
     public string PreviewScene => Connection.StudioModeEnabled ? Connection.PreviewScene ?? "—" : "studio mode off";
     public bool StudioModeEnabled => Connection.StudioModeEnabled;
+    public string Outputs =>
+        $"Stream: {OnOff(Connection.IsStreaming)} · Recording: {(Connection.IsRecordingPaused ? "paused" : OnOff(Connection.IsRecording))} · " +
+        $"Replay buffer: {OnOff(Connection.IsReplayBufferActive)} · Virtual camera: {OnOff(Connection.IsVirtualCamActive)}";
+
+    private static string OnOff(bool on) => on ? "on" : "off";
+
     public string Details => $"Profile: {Connection.CurrentProfile ?? "—"} · Scene collection: {Connection.CurrentSceneCollection ?? "—"} · Transition: {Connection.CurrentTransition ?? "—"}";
 
     [ObservableProperty] private string _error = "";
@@ -204,7 +216,7 @@ public sealed partial class ObsConnectionViewModel : ObservableObject
             _seenInputs = Connection.Inputs;   // the cache swaps in a new list whenever inputs are reloaded
             _ = RefreshAudioAsync();
         }
-        foreach (var property in new[] { nameof(Version), nameof(CurrentScene), nameof(PreviewScene), nameof(StudioModeEnabled), nameof(Details) })
+        foreach (var property in new[] { nameof(Version), nameof(CurrentScene), nameof(PreviewScene), nameof(StudioModeEnabled), nameof(Details), nameof(Outputs) })
             OnPropertyChanged(property);
     }
 

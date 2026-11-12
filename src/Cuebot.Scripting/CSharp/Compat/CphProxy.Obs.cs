@@ -189,7 +189,8 @@ public sealed partial class CphProxy
 
     /// <summary>
     /// Sends an obs-websocket v5 request batch: <paramref name="data"/> is a JSON array of {requestType, requestData}.
-    /// Cuebot runs batches in order, so <paramref name="executionType"/> is ignored. Returns the results array as JSON.
+    /// <paramref name="executionType"/>: 0 (or -1) one after the other, 1 in step with video frames (changes land in the
+    /// same frame, <c>Sleep</c> counts frames), 2 all at once. Returns the results array as JSON.
     /// </summary>
     public string ObsSendBatchRaw(string data, bool haltOnFailure = false, int executionType = 0, int connectionIdx = 0)
     {
@@ -197,9 +198,10 @@ public sealed partial class CphProxy
         var root = requests.RootElement.ValueKind == JsonValueKind.Object && requests.RootElement.TryGetProperty("requests", out var inner)
             ? inner
             : requests.RootElement;
+        var execution = executionType < 0 ? 0 : executionType;
         var result = connectionIdx == 0
-            ? Call("obs.requestBatch", new { requests = root, haltOnFailure })
-            : Call("obs.requestBatch", new { requests = root, haltOnFailure, connection = ObsConnectionName(connectionIdx) });
+            ? Call("obs.requestBatch", new { requests = root, haltOnFailure, executionType = execution })
+            : Call("obs.requestBatch", new { requests = root, haltOnFailure, executionType = execution, connection = ObsConnectionName(connectionIdx) });
         return result.GetRawText();
     }
 

@@ -547,7 +547,7 @@ CPH.LogInfo(props);
 
 ## ObsSendBatchRaw
 
-Sends several raw OBS requests at once, for advanced users. The data is a JSON list of {requestType, requestData}. Cuebot always runs them in order. haltOnFailure stops at the first one that fails.
+Sends several raw OBS requests at once, for advanced users. The data is a JSON list of {requestType, requestData}. haltOnFailure stops at the first one that fails. executionType: 0 one after the other, 1 in step with video frames (changes land in the same frame), 2 all at once.
 
 ```csharp
 string ObsSendBatchRaw(string data, bool haltOnFailure = false, int executionType = 0, int connectionIdx = 0)

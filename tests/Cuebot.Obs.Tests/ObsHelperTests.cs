@@ -59,7 +59,8 @@ public class ObsHelperTests
         var saved = ObsEventMapper.Map(new ObsEvent("ReplayBufferSaved", Json("""{"savedReplayPath":"/r.mkv"}""")))!;
         Assert.Equal("/r.mkv", saved.Args["savedReplayPath"]);
 
-        Assert.Null(ObsEventMapper.Map(new ObsEvent("InputActiveStateChanged", Json("{}"))));
+        Assert.Equal(ObsEvents.SourceActiveChanged, ObsEventMapper.Map(new ObsEvent("InputActiveStateChanged", Json("""{"inputName":"Cam","videoActive":true}""")))!.Type);
+        Assert.Null(ObsEventMapper.Map(new ObsEvent("SceneItemSelected", Json("{}"))));
         Assert.Equal("{}", ObsEventMapper.Generic(new ObsEvent("ExitStarted", default)).Args["eventData"]);
         Assert.Equal("X", ObsEventMapper.WithConnection(saved, "X").Args["obsConnection"]);
     }

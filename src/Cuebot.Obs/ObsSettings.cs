@@ -16,6 +16,12 @@ public class ObsConnectionSettings
 
     /// <summary>Connect on startup and keep reconnecting while OBS is unreachable.</summary>
     public bool AutoConnect { get; set; }
+
+    /// <summary>
+    /// When a scene, source or filter is renamed in OBS, change the name in saved OBS steps and triggers for this
+    /// connection too, so they keep working.
+    /// </summary>
+    public bool FollowRenames { get; set; } = true;
 }
 
 /// <summary>

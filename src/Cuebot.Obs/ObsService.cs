@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cuebot.Core;
+using Cuebot.Core.Actions;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
@@ -14,7 +15,8 @@ namespace Cuebot.Obs;
 /// </summary>
 public sealed class ObsService : IConnectable, IAsyncDisposable
 {
-    private static readonly TimeSpan DefaultReconnectDelay = TimeSpan.FromSeconds(5);
+    /// <summary>First retry delay; it doubles on each failure up to 30 s (see ObsConnection).</summary>
+    private static readonly TimeSpan DefaultReconnectDelay = TimeSpan.FromSeconds(2);
 
     private readonly JsonFile<ObsSettings> _settingsFile;
     private readonly EventBus _bus;
@@ -24,6 +26,7 @@ public sealed class ObsService : IConnectable, IAsyncDisposable
     private ObsConnection[] _connections;
     private bool _started;
     private int _disposed;
+    private ProfileService? _profile;
 
     public ObsService(JsonFile<ObsSettings> settings, EventBus bus, AppLog log)
         : this(settings, bus, log, DefaultReconnectDelay)
@@ -37,6 +40,15 @@ public sealed class ObsService : IConnectable, IAsyncDisposable
     public ObsService(JsonFile<ObsSettings> settings, EventBus bus, AppLog log, StreamlabsDesktopService streamlabsDesktop)
         : this(settings, bus, log, DefaultReconnectDelay) =>
         StreamlabsDesktop = streamlabsDesktop;
+
+    /// <summary>
+    /// DI constructor with the action profile: high-volume OBS events are subscribed only while an enabled trigger needs
+    /// them, and renamed scenes, sources and filters are followed in saved steps.
+    /// </summary>
+    public ObsService(JsonFile<ObsSettings> settings, EventBus bus, AppLog log, StreamlabsDesktopService streamlabsDesktop,
+        ProfileService profile)
+        : this(settings, bus, log, streamlabsDesktop) =>
+        AttachProfile(profile);
 
     /// <summary>The Streamlabs Desktop connection registered alongside OBS, when the module was added through DI.</summary>
     public StreamlabsDesktopService? StreamlabsDesktop { get; }
@@ -162,6 +174,7 @@ public sealed class ObsService : IConnectable, IAsyncDisposable
             started = _started;
         }
         SaveSettings();
+        UpdateSubscriptions();
         if (started) connection.StartAsync();
         ConnectionsChanged?.Invoke();
         StatusChanged?.Invoke();
@@ -196,6 +209,7 @@ public sealed class ObsService : IConnectable, IAsyncDisposable
             connection.Settings.Name = trimmed;
         }
         SaveSettings();
+        UpdateSubscriptions();
         ConnectionsChanged?.Invoke();
     }
 
@@ -203,6 +217,7 @@ public sealed class ObsService : IConnectable, IAsyncDisposable
     {
         // DI disposes this instance twice (as ObsService and as IConnectionStatus).
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
+        if (_profile is { } profile) profile.Changed -= UpdateSubscriptions;
         foreach (var connection in _connections) await connection.DisposeAsync().ConfigureAwait(false);
     }
 
@@ -220,6 +235,111 @@ public sealed class ObsService : IConnectable, IAsyncDisposable
         var connection = new ObsConnection(settings, SaveSettings, _bus, _log, _reconnectDelay, isDefault);
         connection.StatusChanged += () => StatusChanged?.Invoke();
         if (isDefault) connection.ScenesChanged += () => ScenesChanged?.Invoke();
+        connection.Renamed += rename => _ = FollowRenameAsync(connection, rename);
         return connection;
+    }
+
+    // ---- Profile-driven behaviour ----
+
+    /// <summary>Watches the action profile (tests attach one directly; DI uses the constructor that takes it).</summary>
+    internal void AttachProfile(ProfileService profile)
+    {
+        _profile = profile;
+        profile.Changed += UpdateSubscriptions;
+        UpdateSubscriptions();
+    }
+
+    /// <summary>
+    /// Works out, per connection, which high-volume obs-websocket events enabled triggers need (and the talking
+    /// detectors they ask for) and applies it; OBS is told through Reidentify, without reconnecting.
+    /// </summary>
+    internal void UpdateSubscriptions()
+    {
+        if (_profile is not { } profile) return;
+        var snapshot = profile.Snapshot;
+        foreach (var connection in _connections)
+        {
+            var triggers = snapshot.Actions.Where(a => a.Enabled)
+                .SelectMany(a => a.Triggers)
+                .Where(t => t.Enabled && t.Type.StartsWith("obs.", StringComparison.Ordinal) && TriggerTargets(t.Settings, connection))
+                .ToArray();
+            var plan = ObsTriggers.PlanSubscriptions(triggers);
+            connection.SetHighVolumeSubscriptions(plan.Bits, plan.PublishVolumeMeters);
+            connection.SetTalkingDetectors(plan.Talking);
+        }
+    }
+
+    /// <summary>A trigger listens to a connection when its connection setting is empty (any) or names it.</summary>
+    private static bool TriggerTargets(IReadOnlyDictionary<string, string> settings, ObsConnection connection) =>
+        !settings.TryGetValue(SubActions.ObsSubAction.ConnectionKey, out var name) || string.IsNullOrWhiteSpace(name) ||
+        string.Equals(name.Trim(), connection.Name, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A step (or trigger) is about a connection when its connection setting names it, or is empty and it is the default.</summary>
+    private static bool StepTargets(IReadOnlyDictionary<string, string> settings, ObsConnection connection) =>
+        !settings.TryGetValue(SubActions.ObsSubAction.ConnectionKey, out var name) || string.IsNullOrWhiteSpace(name)
+            ? connection.IsDefault
+            : string.Equals(name.Trim(), connection.Name, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// After OBS renamed a scene, source or filter, rewrites the old name in this connection's saved OBS steps and
+    /// triggers (exact matches only; values with %variables% are left alone). Off when the connection's
+    /// <see cref="ObsConnectionSettings.FollowRenames"/> is.
+    /// </summary>
+    internal async Task<int> FollowRenameAsync(ObsConnection connection, ObsRename rename)
+    {
+        if (_profile is not { } profile || !connection.Settings.FollowRenames) return 0;
+        string[] keys = rename.Kind switch
+        {
+            ObsRenameKind.Scene => ["scene", "group", "source", "destinationScene"],
+            ObsRenameKind.Input => ["source", "input", "group"],
+            _ => ["filter"],
+        };
+        // Count on the snapshot first, so an unrelated rename does not save the profile.
+        if (Rewrite(profile.Snapshot.Actions, dryRun: true) == 0) return 0;
+        var changed = 0;
+        try
+        {
+            await profile.EditAsync(p => changed = Rewrite(p.Actions, dryRun: false)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("OBS", $"Could not update steps after OBS renamed '{rename.OldName}': {ex.Message}");
+            return 0;
+        }
+        _log.Info("OBS", $"OBS renamed {rename.Kind.ToString().ToLowerInvariant()} '{rename.OldName}' to '{rename.NewName}'; updated {changed} step(s) and trigger(s).");
+        return changed;
+
+        int Rewrite(IEnumerable<ActionDefinition> actions, bool dryRun)
+        {
+            var count = 0;
+            foreach (var action in actions)
+            {
+                foreach (var trigger in action.Triggers.Where(t => t.Type.StartsWith("obs.", StringComparison.Ordinal)))
+                    count += Fix(trigger.Settings, dryRun);
+                count += Steps(action.SubActions, dryRun);
+            }
+            return count;
+        }
+
+        int Steps(IEnumerable<SubActionDefinition> steps, bool dryRun)
+        {
+            var count = 0;
+            foreach (var step in steps)
+            {
+                if (step.Type.StartsWith("obs.", StringComparison.Ordinal)) count += Fix(step.Parameters, dryRun);
+                foreach (var branch in step.Branches.Values) count += Steps(branch, dryRun);
+            }
+            return count;
+        }
+
+        int Fix(Dictionary<string, string> values, bool dryRun)
+        {
+            if (!StepTargets(values, connection)) return 0;
+            if (rename.Kind == ObsRenameKind.Filter &&
+                !(values.TryGetValue("source", out var source) && source == rename.SourceName)) return 0;
+            var hits = keys.Where(k => values.TryGetValue(k, out var value) && value == rename.OldName).ToArray();
+            if (!dryRun) foreach (var key in hits) values[key] = rename.NewName;
+            return hits.Length > 0 ? 1 : 0;
+        }
     }
 }

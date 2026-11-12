@@ -80,6 +80,78 @@ public static class ObsEvents
     /// <summary>A third-party plugin event. Args: vendorName, vendorEventType, eventData (raw JSON).</summary>
     public const string VendorEvent = "obs.vendorEvent";
 
+    /// <summary>
+    /// A source started or stopped showing on the live output (program), e.g. a camera in the scene that went live.
+    /// High-volume: subscribed only while such a trigger is enabled. Args: inputName, videoActive.
+    /// </summary>
+    public const string SourceActiveChanged = "obs.sourceActiveChanged";
+
+    /// <summary>A source started or stopped showing anywhere (program, preview, projector, properties). Args: inputName, videoShowing.</summary>
+    public const string SourceShowChanged = "obs.sourceShowChanged";
+
+    /// <summary>
+    /// Talking detection from the volume meters: an input went above the trigger's level, or stayed below it for the
+    /// trigger's quiet time. Args: inputName, talking, levelDb, thresholdDb, quietMs.
+    /// </summary>
+    public const string Talking = "obs.talking";
+
+    /// <summary>A source in a scene was moved, resized, rotated or cropped. Args: sceneName, sourceName, sceneItemId, transform (JSON).</summary>
+    public const string SourceTransformChanged = "obs.sourceTransformChanged";
+
+    /// <summary>A stinger's video finished (before the transition itself ends). Args: transitionName.</summary>
+    public const string TransitionVideoEnded = "obs.transitionVideoEnded";
+
+    /// <summary>Args: inputName, monitorType (None, MonitorOnly, MonitorAndOutput).</summary>
+    public const string AudioMonitorChanged = "obs.audioMonitorChanged";
+
+    /// <summary>Args: inputName, inputAudioBalance (0 left, 0.5 center, 1 right).</summary>
+    public const string AudioBalanceChanged = "obs.audioBalanceChanged";
+
+    /// <summary>Args: inputName, inputAudioSyncOffset (ms).</summary>
+    public const string AudioSyncOffsetChanged = "obs.audioSyncOffsetChanged";
+
+    /// <summary>Args: inputName, inputAudioTracks (JSON).</summary>
+    public const string AudioTracksChanged = "obs.audioTracksChanged";
+
+    /// <summary>The sources of a scene were reordered. Args: sceneName.</summary>
+    public const string SourceOrderChanged = "obs.sourceOrderChanged";
+
+    /// <summary>Args: sceneName, sourceName, sceneItemId, locked.</summary>
+    public const string SourceLockChanged = "obs.sourceLockChanged";
+
+    /// <summary>Args: sourceName, filterName, filterKind.</summary>
+    public const string FilterAdded = "obs.filterAdded";
+
+    /// <summary>Args: sourceName, filterName.</summary>
+    public const string FilterRemoved = "obs.filterRemoved";
+
+    /// <summary>Args: sourceName, oldFilterName, filterName.</summary>
+    public const string FilterRenamed = "obs.filterRenamed";
+
+    /// <summary>Args: sourceName, filters (JSON).</summary>
+    public const string FilterOrderChanged = "obs.filterOrderChanged";
+
+    /// <summary>Args: sourceName, filterName, filterSettings (JSON). OBS 30.1+.</summary>
+    public const string FilterSettingsChanged = "obs.filterSettingsChanged";
+
+    /// <summary>Args: inputName, inputSettings (JSON). OBS 30.1+.</summary>
+    public const string InputSettingsChanged = "obs.inputSettingsChanged";
+
+    /// <summary>OBS is about to switch profile. Args: profileName (the current one).</summary>
+    public const string ProfileChanging = "obs.profileChanging";
+
+    /// <summary>OBS is about to switch scene collection. Args: sceneCollectionName (the current one).</summary>
+    public const string SceneCollectionChanging = "obs.sceneCollectionChanging";
+
+    /// <summary>OBS announced that it is shutting down (ExitStarted); the connection closes right after.</summary>
+    public const string Exiting = "obs.exiting";
+
+    /// <summary>
+    /// A custom event another obs-websocket client (or Cuebot) broadcast through OBS. Args: eventData (raw JSON) and
+    /// customEvent.&lt;field&gt; per top-level field.
+    /// </summary>
+    public const string CustomEvent = "obs.customEvent";
+
     /// <summary>Any obs-websocket event. Args: eventType, eventData (raw JSON).</summary>
     public const string Event = "obs.event";
 }

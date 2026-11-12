@@ -3,6 +3,62 @@
 
 ![Adding a sub-action: on the Actions page, click + Sub-action and search for it](../../assets/screens/actions-sub-action-picker.png)
 
+## Add filter
+
+Adds a new filter to a source or scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Source or scene** | The source or scene the filter is on, exactly as OBS shows it. |
+| **New filter name** | The name for the new filter. |
+| **Filter kind** | The kind of filter, like "color_filter_v2". The list shows what your OBS offers (OBS 30.1+). |
+| **Settings (JSON)** | Its settings as a JSON object. Leave empty for the defaults. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.createFilter`</small>
+
+## Add source to scene
+
+Adds a source (or a scene) that already exists to a scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene to add it to. |
+| **Source** | The source or scene to add, exactly as OBS shows it. |
+| **Visible** | Tick to show it right away. Starts as: `true`. |
+| **Save the answer in variable** | The name of the variable that will hold its number in the scene. Leave empty to not keep it. The default is obsSceneItemId. Starts as: `obsSceneItemId`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsSceneItemId%` | The number OBS gave it in the scene |
+
+<small>Type id: `obs.addSceneItem`</small>
+
+## Call OBS plugin request (advanced)
+
+Asks an OBS plugin to do something through OBS's WebSocket server, for plugins that offer this (check the plugin's own help). For advanced users.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Plugin (vendor) name** | The name the plugin uses for its requests, from the plugin's help. |
+| **Request type** | The request name, from the plugin's help. |
+| **Request data (JSON)** | Extra details for the request, written as a JSON object. Leave empty if it needs none. |
+| **Save the reply in variable** | The name of the variable that will hold the plugin's answer as JSON text. Leave empty to not keep it. The default is obsVendorResult. Starts as: `obsVendorResult`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsVendorResult%` | The plugin's answer as JSON text (or the name you chose above) |
+
+<small>Type id: `obs.callVendorRequest`</small>
+
 ## Check if stream/recording is running
 
 Checks whether the stream, recording, replay buffer or virtual camera is running and keeps the details for later steps.
@@ -25,6 +81,17 @@ Checks whether the stream, recording, replay buffer or virtual camera is running
 
 <small>Type id: `obs.getOutputState`</small>
 
+## Create profile
+
+Creates a new OBS profile and switches to it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Profile name** | The name for the new profile. |
+
+<small>Type id: `obs.createProfile`</small>
+
 ## Create record chapter
 
 Adds a chapter marker to the recording you are making now. Needs OBS 30.2 or newer and the Hybrid MP4 recording format.
@@ -42,6 +109,106 @@ Adds a chapter marker to the recording you are making now. Needs OBS 30.2 or new
 
 <small>Type id: `obs.createRecordChapter`</small>
 
+## Create scene
+
+Creates a new, empty scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene name** | The name for the new scene. |
+
+<small>Type id: `obs.createScene`</small>
+
+## Create scene collection
+
+Creates a new, empty scene collection and switches to it. Can take a while.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene collection name** | The name for the new scene collection. |
+
+<small>Type id: `obs.createSceneCollection`</small>
+
+## Create source
+
+Creates a brand new source in a scene, like a browser source for a viewer card. Delete it again with Delete source.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene to put it in, exactly as OBS shows it. |
+| **New source name** | The name for the new source. It must not be used yet. |
+| **Kind** | The kind of source, like "browser_source", "image_source" or "color_source_v3". The list shows what your OBS offers. |
+| **Settings (JSON)** | Its settings as a JSON object, like {"url":"https://example.com"}. Leave empty for the defaults. |
+| **Visible** | Tick to show it right away. Starts as: `true`. |
+| **Save the answer in variable** | The name of the variable that will hold its number in the scene. Leave empty to not keep it. The default is obsSceneItemId. Starts as: `obsSceneItemId`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsSceneItemId%` | The number OBS gave it in the scene |
+
+<small>Type id: `obs.createInput`</small>
+
+## Delete profile
+
+Deletes an OBS profile. This cannot be undone.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Profile** | The profile to delete. |
+
+<small>Type id: `obs.removeProfile`</small>
+
+## Delete scene
+
+Deletes a scene from OBS. This cannot be undone.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene to delete, exactly as OBS shows it. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.removeScene`</small>
+
+## Delete source
+
+Deletes a source from OBS and from every scene it is in. This cannot be undone.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The source to delete, exactly as OBS shows it. |
+
+<small>Type id: `obs.removeInput`</small>
+
+## Duplicate source
+
+Copies a source in a scene, with its position and crop, into the same or another scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene the source is in. |
+| **Source** | The source, exactly as OBS shows it, like "Webcam". |
+| **Into scene** | The scene to put the copy in. Leave empty for the same scene. |
+| **Save the answer in variable** | The name of the variable that will hold the copy's number. Leave empty to not keep it. The default is obsSceneItemId. Starts as: `obsSceneItemId`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsSceneItemId%` | The number OBS gave the copy |
+
+<small>Type id: `obs.duplicateSceneItem`</small>
+
 ## Flip source
 
 Mirrors a source sideways or upside down.
@@ -52,8 +219,31 @@ Mirrors a source sideways or upside down.
 | **Scene** | The scene the source is in. |
 | **Source** | The source name exactly as OBS shows it. |
 | **Axis** | Horizontal mirrors left and right, Vertical turns it upside down. Options: Horizontal, Vertical. Starts as: `Horizontal`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.flipSource`</small>
+
+## Get audio settings
+
+Reads every audio setting of a source at once: mute, volume, balance, delay, monitoring and tracks.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The audio source exactly as OBS shows it, like "Music" or "Mic/Aux". |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsAudioMuted%` | True when it is muted |
+| `%obsAudioVolumeDb%` | The volume in dB |
+| `%obsAudioBalance%` | 0 left, 0.5 middle, 1 right |
+| `%obsAudioSyncOffset%` | The delay in milliseconds |
+| `%obsAudioMonitorType%` | None, MonitorOnly or MonitorAndOutput |
+| `%obsAudioTracks%` | Which tracks are on, as JSON text |
+
+<small>Type id: `obs.getAudioSettings`</small>
 
 ## Get current scene
 
@@ -74,6 +264,47 @@ Finds out which scene OBS is showing and keeps its name for later steps.
 
 <small>Type id: `obs.getCurrentScene`</small>
 
+## Get current transition
+
+Reads the current transition: its name, kind, length and settings.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsTransitionName%` | The transition name |
+| `%obsTransitionKind%` | Its kind, like fade_transition |
+| `%obsTransitionDuration%` | Its length in milliseconds |
+| `%obsTransitionSettings%` | Its settings as JSON text |
+| `%obsTransitionCursor%` | How far a running transition is, 0 to 1 |
+
+<small>Type id: `obs.getCurrentTransition`</small>
+
+## Get desktop and mic sources
+
+Finds the names of OBS's global audio sources: desktop audio and microphones.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsDesktop1%` | Desktop Audio |
+| `%obsDesktop2%` | Desktop Audio 2 |
+| `%obsMic1%` | Mic/Aux |
+| `%obsMic2%` | Mic/Aux 2 |
+| `%obsMic3%` | Mic/Aux 3 |
+| `%obsMic4%` | Mic/Aux 4 |
+
+<small>Type id: `obs.getSpecialInputs`</small>
+
 ## Get input settings
 
 Reads all the settings of a source and keeps them for later steps. For advanced users.
@@ -91,6 +322,24 @@ Reads all the settings of a source and keeps them for later steps. For advanced 
 | `%obsInputSettings%` | All settings of the source, as JSON text (or the name you chose above) |
 
 <small>Type id: `obs.getInputSettings`</small>
+
+## Get output settings
+
+Reads the settings of one OBS output. Stream keys are hidden.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Output** | The output name. |
+| **Save the answer in variable** | The name of the variable that will hold the settings. Leave empty to not keep it. The default is obsOutputSettings. Starts as: `obsOutputSettings`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsOutputSettings%` | The settings as JSON text (or the name you chose above) |
+
+<small>Type id: `obs.getOutputSettings`</small>
 
 ## Get performance stats
 
@@ -113,6 +362,42 @@ Reads how hard OBS is working (CPU, memory, frame rate, dropped frames) and keep
 
 <small>Type id: `obs.getStats`</small>
 
+## Get profile setting
+
+Reads one setting of the current OBS profile, by its section and name in the profile file. For advanced users.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Category** | The section, like "Output". |
+| **Name** | The setting name, like "Mode". |
+| **Save the answer in variable** | The name of the variable that will hold the value. Leave empty to not keep it. The default is obsProfileValue. Starts as: `obsProfileValue`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsProfileValue%` | The setting's value (empty if not set) |
+
+<small>Type id: `obs.getProfileParameter`</small>
+
+## Get recording folder
+
+Finds out which folder OBS saves recordings to.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Save the answer in variable** | The name of the variable that will hold the folder. Leave empty to not keep it. The default is obsRecordDirectory. Starts as: `obsRecordDirectory`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsRecordDirectory%` | The recording folder (or the name you chose above) |
+
+<small>Type id: `obs.getRecordDirectory`</small>
+
 ## Get scene item properties
 
 Reads where a source sits in a scene (position, size, rotation, crop and more) for later steps.
@@ -122,6 +407,7 @@ Reads where a source sits in a scene (position, size, rotation, crop and more) f
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Scene** | The scene the source is in. |
 | **Source** | The source name exactly as OBS shows it. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 **Variables it adds**
 
@@ -139,6 +425,26 @@ Reads where a source sits in a scene (position, size, rotation, crop and more) f
 | `%obsItemId%` | OBS's number for this source in the scene |
 
 <small>Type id: `obs.getSceneItemProperties`</small>
+
+## Get source list options
+
+Lists the choices of a list in a source's settings, like the displays of a display capture.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The source, exactly as OBS shows it. |
+| **Setting name** | The setting's name, like "monitor_id". |
+| **Save the answer in variable** | The name of the variable that will hold the list. Leave empty to not keep it. The default is obsListItems. Starts as: `obsListItems`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsListItems%` | The choices as JSON text (itemName, itemValue, itemEnabled) |
+| `%obsListItemCount%` | How many choices there are |
+
+<small>Type id: `obs.getInputListItems`</small>
 
 ## Get status
 
@@ -164,6 +470,64 @@ Checks what OBS is doing right now (streaming, recording and so on) and keeps it
 
 <small>Type id: `obs.getStatus`</small>
 
+## Get stream destination
+
+Reads where OBS streams to. The stream key is hidden, so it never shows up in your variables.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsStreamServiceType%` | rtmp_common (a listed service) or rtmp_custom |
+| `%obsStreamServiceName%` | The service name, like Twitch |
+| `%obsStreamServer%` | The server address |
+| `%obsStreamService%` | All settings as JSON text, with the key hidden |
+
+<small>Type id: `obs.getStreamService`</small>
+
+## Get value from OBS
+
+Reads a value saved inside OBS.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Where** | Global or Profile, where it was saved. Options: Global, Profile. Starts as: `Global`. |
+| **Name** | The name of the value. |
+| **Save the answer in variable** | The name of the variable that will hold the value. Leave empty to not keep it. The default is obsValue. Starts as: `obsValue`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsValue%` | The saved value (empty if nothing is saved) |
+
+<small>Type id: `obs.getPersistentData`</small>
+
+## Get video settings
+
+Reads the canvas size, output size and frame rate.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsVideoBaseWidth%` | Canvas width |
+| `%obsVideoBaseHeight%` | Canvas height |
+| `%obsVideoOutputWidth%` | Output width |
+| `%obsVideoOutputHeight%` | Output height |
+| `%obsVideoFpsNumerator%` | Frames per second (with obsVideoFpsDenominator) |
+
+<small>Type id: `obs.getVideoSettings`</small>
+
 ## Hide all group sources
 
 Hides every source inside a group at once.
@@ -172,6 +536,7 @@ Hides every source inside a group at once.
 | --- | --- |
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Group** | The name of the group, exactly as OBS shows it. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.hideGroupSources`</small>
 
@@ -183,8 +548,80 @@ Hides every source in a scene at once.
 | --- | --- |
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Scene** | The scene whose sources you want to hide. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.hideSceneSources`</small>
+
+## Is source live
+
+Checks whether a source or scene is on your stream right now, and whether it shows anywhere in OBS.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Source or scene** | The source or scene, exactly as OBS shows it. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsSourceActive%` | True when it is on the live output |
+| `%obsSourceShowing%` | True when it shows anywhere (live, preview, projector) |
+
+<small>Type id: `obs.getSourceActive`</small>
+
+## Lock source
+
+Locks or unlocks a source in a scene, so it cannot be moved by accident.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene, exactly as OBS shows it. |
+| **Source** | The source, exactly as OBS shows it, like "Webcam". |
+| **State** | Lock, Unlock, or Toggle to flip it. Options: Lock, Unlock, Toggle. Starts as: `Lock`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.setSourceLocked`</small>
+
+## Move T-bar (studio mode)
+
+Moves the studio mode T-bar, like dragging it with the mouse. OBS plans to replace this.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Position** | 0 is the start, 1 the end. Starts as: `1`. |
+| **Release** | Tick to let go of the T-bar, so OBS finishes or cancels the transition. Starts as: `true`. |
+
+<small>Type id: `obs.setTBar`</small>
+
+## Open projector
+
+Opens a fullscreen projector of your program, preview, multiview or one source on a monitor of the OBS computer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Projector** | Program, Preview, Multiview, or Source for one source. Options: Program, Preview, Multiview, Source. Starts as: `Program`. |
+| **Source** | Only for Source: the source or scene to show. |
+| **Monitor** | 0 is the first monitor, 1 the second. -1 opens a window instead. Starts as: `-1`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.openProjector`</small>
+
+## Open source window
+
+Opens the properties, filters or interact window of a source on the OBS computer, for a quick fix from a deck.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The source, exactly as OBS shows it. |
+| **Window** | Properties, Filters, or Interact (for browser sources). Options: Properties, Filters, Interact. Starts as: `Properties`. |
+
+<small>Type id: `obs.openSourceDialog`</small>
 
 ## Play / pause media
 
@@ -220,6 +657,71 @@ Reloads a browser source in OBS, like pressing refresh. Helps when an overlay go
 
 <small>Type id: `obs.refreshBrowser`</small>
 
+## Remove filter
+
+Removes a filter from a source or scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Source or scene** | The source or scene the filter is on, exactly as OBS shows it. |
+| **Filter** | The filter name exactly as OBS shows it. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.removeFilter`</small>
+
+## Remove source from scene
+
+Takes a source out of one scene. The source itself stays in OBS.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene, exactly as OBS shows it. |
+| **Source** | The source, exactly as OBS shows it, like "Webcam". |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.removeSceneItem`</small>
+
+## Rename filter
+
+Gives a filter a new name.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Source or scene** | The source or scene the filter is on, exactly as OBS shows it. |
+| **Filter** | The filter name exactly as OBS shows it. |
+| **New name** | Its new name. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.renameFilter`</small>
+
+## Rename scene
+
+Gives a scene a new name.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene to rename. |
+| **New name** | Its new name. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.renameScene`</small>
+
+## Rename source
+
+Gives a source a new name.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The source to rename, exactly as OBS shows it. |
+| **New name** | Its new name. |
+
+<small>Type id: `obs.renameInput`</small>
+
 ## Rotate source
 
 Turns a source by some degrees. Fun for spinning an image.
@@ -231,8 +733,22 @@ Turns a source by some degrees. Fun for spinning an image.
 | **Source** | The source name exactly as OBS shows it. |
 | **Degrees** | How many degrees to turn, like 90 (a quarter turn) or 180 (half turn). Starts as: `90`. |
 | **Add to the current rotation** | Tick to turn from where it is now. Untick to set the exact angle instead. Starts as: `true`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.rotateSource`</small>
+
+## Save value in OBS
+
+Saves a value inside OBS that stays after a restart and that other OBS tools can read.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Where** | Global keeps it for every profile, Profile only for the current OBS profile. Options: Global, Profile. Starts as: `Global`. |
+| **Name** | A name for the value, like "deaths". |
+| **Value** | The value: text, a number, or JSON. |
+
+<small>Type id: `obs.setPersistentData`</small>
 
 ## Seek media
 
@@ -246,6 +762,17 @@ Jumps to a spot in a video or sound in a media source.
 | **Milliseconds** | How many milliseconds (1000 = one second). For Offset, use a minus number to go back, like -5000. Starts as: `0`. |
 
 <small>Type id: `obs.mediaSeek`</small>
+
+## Send custom OBS event (JSON)
+
+Sends your own message through OBS to every program connected to its WebSocket server, like overlays that use obs-websocket-js. Cuebot gets it back too.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Event (JSON object)** | The message as a JSON object, like {"type":"alert","user":"%user%"}. |
+
+<small>Type id: `obs.sendCustomEvent`</small>
 
 ## Send OBS command (advanced)
 
@@ -285,6 +812,7 @@ Sends OBS several commands of your own in one go and keeps the answers. For adva
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Requests (JSON array)** | A list of commands written as JSON, like [{"requestType":"GetVersion"}]. |
 | **Stop at the first failure** | Tick to stop at the first command that fails. Untick to keep going. Starts as: `false`. |
+| **Run them** | SerialRealtime runs them one after the other. SerialFrame keeps them in step with OBS's video frames, so moves land in the same frame. Parallel runs them all at once, in any order. Options: SerialRealtime, SerialFrame, Parallel. Starts as: `SerialRealtime`. |
 | **Save the results in variable** | The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold all the answers as text. The default is obsResult. Starts as: `obsResult`. |
 
 **Variables it adds**
@@ -295,6 +823,17 @@ Sends OBS several commands of your own in one go and keeps the answers. For adva
 
 <small>Type id: `obs.rawBatch`</small>
 
+## Send stream caption
+
+Sends caption text with your stream, for viewers who turn captions on. Only works while you stream.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Caption text** | The caption text, like what you just said. |
+
+<small>Type id: `obs.sendCaption`</small>
+
 ## Set all filters state
 
 Turns every filter on a source or scene on, or all off at once.
@@ -304,8 +843,45 @@ Turns every filter on a source or scene on, or all off at once.
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Source or scene** | The source or scene whose filters to change, exactly as OBS shows it. |
 | **State** | Enable turns all filters on, Disable turns them all off. Options: Enable, Disable. Starts as: `Disable`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.setAllFiltersState`</small>
+
+## Set audio balance
+
+Moves an audio source to the left or right speaker.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The audio source exactly as OBS shows it, like "Music" or "Mic/Aux". |
+| **Balance** | 0 is all left, 0.5 the middle, 1 all right. Starts as: `0.5`. |
+
+<small>Type id: `obs.setAudioBalance`</small>
+
+## Set audio monitoring
+
+Chooses whether you hear an audio source in your headphones: great for alerts only you should hear.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The audio source exactly as OBS shows it, like "Music" or "Mic/Aux". |
+| **Monitoring** | None: you do not hear it. MonitorOnly: only you hear it (not the stream). MonitorAndOutput: you and the stream hear it. Options: None, MonitorOnly, MonitorAndOutput. Starts as: `MonitorOnly`. |
+
+<small>Type id: `obs.setAudioMonitor`</small>
+
+## Set audio sync offset
+
+Delays an audio source so it matches the video, in milliseconds.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The audio source exactly as OBS shows it, like "Music" or "Mic/Aux". |
+| **Offset (ms)** | The delay in milliseconds, from -950 to 20000. 0 is no delay. Starts as: `0`. |
+
+<small>Type id: `obs.setAudioSyncOffset`</small>
 
 ## Set browser source URL
 
@@ -331,6 +907,33 @@ Changes the color of a color source in OBS.
 
 <small>Type id: `obs.setColor`</small>
 
+## Set deinterlacing
+
+Changes deinterlacing of a video source like a capture card. Needs OBS 31.1 or newer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Input** | The video source, exactly as OBS shows it. |
+| **Mode** | The deinterlacing mode, or Keep to leave it. Options: Keep, Disable, Discard, Retro, Blend, Blend2x, Linear, Linear2x, Yadif, Yadif2x. Starts as: `Keep`. |
+| **Field order** | Top or Bottom field first, or Keep to leave it. Options: Keep, Top, Bottom. Starts as: `Keep`. |
+
+<small>Type id: `obs.setDeinterlace`</small>
+
+## Set filter order
+
+Moves a filter up or down in the filter list of a source.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Source or scene** | The source or scene the filter is on, exactly as OBS shows it. |
+| **Filter** | The filter name exactly as OBS shows it. |
+| **Position** | 0 is the first filter in the list. Starts as: `0`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.setFilterOrder`</small>
+
 ## Set filter settings (JSON)
 
 Changes the settings of one filter by sending OBS the settings as text. For advanced users who know the setting names.
@@ -342,6 +945,7 @@ Changes the settings of one filter by sending OBS the settings as text. For adva
 | **Filter** | The filter name exactly as OBS shows it. |
 | **Settings (JSON object)** | The settings to change, written as a JSON object, like {"brightness":0.2}. |
 | **Merge with existing settings** | Tick to only change the settings you list and keep the rest. Untick to replace all settings with only these. Starts as: `true`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.setFilterSettings`</small>
 
@@ -355,6 +959,7 @@ Turns a filter (an effect on a source) on or off.
 | **Source or scene** | The source or scene the filter is on, exactly as OBS shows it. |
 | **Filter** | The filter name exactly as OBS shows it, like "Color Correction". |
 | **State** | Enable turns it on, Disable turns it off, Toggle flips it. Options: Enable, Disable, Toggle. Starts as: `Toggle`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.setFilterState`</small>
 
@@ -420,6 +1025,18 @@ Swaps the video or sound file played by a media source.
 
 <small>Type id: `obs.setMediaFile`</small>
 
+## Set output settings (JSON)
+
+Changes the settings of one OBS output. For advanced users.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Output** | The output name. |
+| **Settings (JSON object)** | The settings as a JSON object. |
+
+<small>Type id: `obs.setOutputSettings`</small>
+
 ## Set preview scene (studio mode)
 
 Picks the scene shown on the preview side of OBS studio mode.
@@ -441,6 +1058,30 @@ Switches OBS to another profile (a saved set of settings).
 | **Profile** | The profile name exactly as OBS shows it. |
 
 <small>Type id: `obs.setProfile`</small>
+
+## Set profile setting
+
+Changes one setting of the current OBS profile. For advanced users: a wrong value can break the profile.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Category** | The section, like "Output". |
+| **Name** | The setting name, like "Mode". |
+| **Value** | The new value. Leave empty to delete the setting. |
+
+<small>Type id: `obs.setProfileParameter`</small>
+
+## Set recording folder
+
+Changes the folder OBS saves recordings to, for example one folder per episode. Needs OBS 30 or newer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Folder** | The folder as a full path on the OBS computer, like "D:\Videos\Episode 12". |
+
+<small>Type id: `obs.setRecordDirectory`</small>
 
 ## Set replay buffer state
 
@@ -482,6 +1123,20 @@ Switches OBS to another scene collection (a saved set of scenes).
 
 <small>Type id: `obs.setSceneCollection`</small>
 
+## Set scene transition override
+
+Makes a scene always use a certain transition, like a 2 second fade into BRB.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene, exactly as OBS shows it. |
+| **Transition** | The transition to always use for this scene. Leave empty to remove the override. |
+| **Duration (ms)** | How long it takes, 50 to 20000 milliseconds. Leave empty to remove. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.setSceneTransitionOverride`</small>
+
 ## Set source audio track state
 
 Turns one of the six OBS audio tracks on or off for a source. Useful to keep sounds out of your recording or stream.
@@ -494,6 +1149,41 @@ Turns one of the six OBS audio tracks on or off for a source. Useful to keep sou
 | **State** | Enable puts the source on that track, Disable takes it off, Toggle flips it. Options: Enable, Disable, Toggle. Starts as: `Toggle`. |
 
 <small>Type id: `obs.setAudioTrack`</small>
+
+## Set source blend mode
+
+Changes how a source mixes with what is behind it, like Screen or Multiply.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene, exactly as OBS shows it. |
+| **Source** | The source, exactly as OBS shows it, like "Webcam". |
+| **Blend mode** | Normal, Additive, Subtract, Screen, Multiply, Lighten or Darken. Options: Normal, Additive, Subtract, Screen, Multiply, Lighten, Darken. Starts as: `Normal`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+<small>Type id: `obs.setBlendMode`</small>
+
+## Set source order
+
+Moves a source in front of or behind the others in its scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Scene** | The scene, exactly as OBS shows it. |
+| **Source** | The source, exactly as OBS shows it, like "Webcam". |
+| **Move to** | Top puts it in front of everything, Bottom behind everything, Up and Down move it one step, Position puts it at the number below. Options: Top, Bottom, Up, Down, Position. Starts as: `Top`. |
+| **Position** | Only for Position: 0 is the very bottom (behind everything). Starts as: `0`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsSourceIndex%` | Its new position (0 is the bottom) |
+
+<small>Type id: `obs.setSourceOrder`</small>
 
 ## Set source transform
 
@@ -515,6 +1205,7 @@ Moves, resizes, turns or crops a source in a scene. Only the boxes you fill in a
 | **Crop bottom** | How many pixels to cut off the bottom. Leave empty to keep it as it is. |
 | **Bounds width** | Width of the box the source is fitted into, in pixels (only if the source uses a bounding box). Leave empty to keep it as it is. |
 | **Bounds height** | Height of the box the source is fitted into, in pixels (only if the source uses a bounding box). Leave empty to keep it as it is. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.setSourceTransform`</small>
 
@@ -528,6 +1219,8 @@ Shows or hides one source (like a camera or image) inside a scene.
 | **Scene** | The scene the source is in, exactly as OBS shows it. |
 | **Source** | The source name exactly as OBS shows it, like "Webcam". |
 | **State** | Visible shows it, Hidden hides it, Toggle flips it to the opposite of what it is now. Options: Visible, Hidden, Toggle. Starts as: `Toggle`. |
+| **Which copy** | If the source is in the scene more than once: Bottom changes the lowest copy in the OBS list, Top the highest, All every copy at once. Options: Bottom, Top, All. Starts as: `Bottom`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 <small>Type id: `obs.setSourceVisibility`</small>
 
@@ -541,6 +1234,7 @@ Picks one random filter on a source or scene and turns it on, off or flips it. F
 | **Source or scene** | The source or scene whose filters to pick from. |
 | **State** | What to do with the picked filter: Enable, Disable or Toggle. Options: Enable, Disable, Toggle. Starts as: `Enable`. |
 | **Save the answer in variable** | The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold the name of the filter. The default is obsFilterName. Starts as: `obsFilterName`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 **Variables it adds**
 
@@ -549,6 +1243,18 @@ Picks one random filter on a source or scene and turns it on, off or flips it. F
 | `%obsFilterName%` | The name of the filter that was picked (or the name you chose above) |
 
 <small>Type id: `obs.setRandomFilterState`</small>
+
+## Set stream destination
+
+Changes where OBS streams to, including the stream key. Treat this step like a password: never share actions that contain your key.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Service type** | rtmp_custom for your own server, rtmp_common for a listed service. Options: rtmp_custom, rtmp_common. Starts as: `rtmp_custom`. |
+| **Settings (JSON object)** | The settings as a JSON object, like {"server":"rtmp://...","key":"..."}. |
+
+<small>Type id: `obs.setStreamService`</small>
 
 ## Set studio mode
 
@@ -595,6 +1301,34 @@ Sets how long OBS scene transitions take.
 
 <small>Type id: `obs.setTransitionDuration`</small>
 
+## Set transition settings (JSON)
+
+Changes the settings of the current transition, like a stinger's video file. For advanced users.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Settings (JSON object)** | The settings as a JSON object. |
+| **Merge with existing settings** | Tick to change only these settings; untick to replace all of them. Starts as: `true`. |
+
+<small>Type id: `obs.setTransitionSettings`</small>
+
+## Set video settings
+
+Changes the canvas size, output size or frame rate. OBS refuses while streaming or recording.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Canvas width** | Canvas width in pixels. Give the height too, or leave both empty. |
+| **Canvas height** | Canvas height in pixels. |
+| **Output width** | Output (scaled) width in pixels. Give the height too, or leave both empty. |
+| **Output height** | Output height in pixels. |
+| **FPS** | Frames per second, like 60. Leave empty to keep. |
+| **FPS divider** | Usually 1. Leave empty for 1. |
+
+<small>Type id: `obs.setVideoSettings`</small>
+
 ## Show random group source
 
 Shows one randomly picked source in a group and hides the others.
@@ -604,6 +1338,7 @@ Shows one randomly picked source in a group and hides the others.
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Group** | The name of the group to pick from. |
 | **Save the answer in variable** | The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold the name of the picked source. The default is obsSourceName. Starts as: `obsSourceName`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 **Variables it adds**
 
@@ -622,6 +1357,7 @@ Shows one randomly picked source in a scene and hides the others. Fun for random
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Scene** | The scene to pick from. |
 | **Save the answer in variable** | The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold the name of the picked source. The default is obsSourceName. Starts as: `obsSourceName`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 **Variables it adds**
 
@@ -630,6 +1366,28 @@ Shows one randomly picked source in a scene and hides the others. Fun for random
 | `%obsSourceName%` | The name of the source that was picked (or the name you chose above) |
 
 <small>Type id: `obs.randomSceneSource`</small>
+
+## Split recording file
+
+Starts a new recording file right now without stopping the recording. Handy for one file per segment. Needs OBS 30.2 or newer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+
+<small>Type id: `obs.splitRecording`</small>
+
+## Start / stop output
+
+Starts, stops or toggles one OBS output by name, like the extra stream of a plugin.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Output** | The output name. The list shows what your OBS has. |
+| **Mode** | Start, Stop or Toggle. Options: Start, Stop, Toggle. Starts as: `Start`. |
+
+<small>Type id: `obs.output`</small>
 
 ## Streaming
 
@@ -650,11 +1408,12 @@ Saves a picture of a source or scene to a file on the OBS computer.
 | --- | --- |
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Source or scene** | The source or scene to photograph, exactly as OBS shows it. Leave empty for the scene that is live now. |
-| **File** | Where to save it, like "C:\Pictures\shot.png". The ending (png, jpg, bmp or webp) picks the picture type. |
+| **File** | Where to save it, as a full path on the OBS computer, like "C:\Pictures\shot.png". The ending (png, jpg, bmp or webp) picks the picture type. |
 | **Width** | Picture width in pixels, 8 to 4096. Leave empty to keep the normal size. |
 | **Height** | Picture height in pixels, 8 to 4096. Leave empty to keep the normal size. |
 | **Quality** | Picture quality from 0 to 100. Use -1 to let OBS decide. Starts as: `-1`. |
 | **Save the answer in variable** | The name of the variable that will hold the answer, so later steps can use it as %name%. Leave empty to not keep it. It will hold the file path. The default is obsScreenshotPath. Starts as: `obsScreenshotPath`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
 
 **Variables it adds**
 
@@ -663,6 +1422,29 @@ Saves a picture of a source or scene to a file on the OBS computer.
 | `%obsScreenshotPath%` | The file path of the saved picture (or the name you chose above) |
 
 <small>Type id: `obs.screenshot`</small>
+
+## Take screenshot into variable
+
+Takes a picture of a source or scene and keeps it in a variable (as a data: link) instead of saving a file. Good for sending it to Discord.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Source or scene** | The source or scene to photograph. Leave empty for the scene that is live now. |
+| **Format** | The picture type: png, jpg, webp or bmp. Options: png, jpg, webp, bmp. Starts as: `png`. |
+| **Width** | Picture width in pixels, 8 to 4096. Leave empty for the normal size. |
+| **Height** | Picture height in pixels, 8 to 4096. Leave empty for the normal size. |
+| **Quality** | Picture quality from 0 to 100. Use -1 to let OBS decide. Starts as: `-1`. |
+| **Save the answer in variable** | The name of the variable that will hold the picture. Leave empty to not keep it. The default is obsScreenshot. Starts as: `obsScreenshot`. |
+| **Canvas** | Only for a second canvas (OBS 32.1+, e.g. a vertical canvas from a plugin); leave empty for the main one |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsScreenshot%` | The picture as a data: link (or the name you chose above) |
+
+<small>Type id: `obs.screenshotToVariable`</small>
 
 ## Trigger hotkey
 
@@ -674,6 +1456,21 @@ Presses an OBS hotkey for you, by its internal name.
 | **Hotkey name** | The hotkey's internal OBS name, like "OBSBasic.StartStreaming". Advanced: look it up with the Send OBS command (advanced) step using GetHotkeyList. |
 
 <small>Type id: `obs.triggerHotkey`</small>
+
+## Trigger hotkey by keys
+
+Presses a key combination inside OBS, as if you pressed an OBS hotkey on the keyboard.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
+| **Key** | The OBS key name, like "OBS_KEY_F13" or "OBS_KEY_NUM1". |
+| **Shift** | Tick to hold Shift. Starts as: `false`. |
+| **Ctrl** | Tick to hold Ctrl. Starts as: `false`. |
+| **Alt** | Tick to hold Alt. Starts as: `false`. |
+| **Cmd (Mac)** | Tick to hold Cmd (Mac). Starts as: `false`. |
+
+<small>Type id: `obs.triggerHotkeyKeys`</small>
 
 ## Virtual camera
 

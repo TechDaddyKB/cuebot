@@ -10,7 +10,7 @@ Runs for any message OBS sends, so you can react to things Cuebot has no special
 | Setting | What to put in |
 | --- | --- |
 | **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
-| **Event type** | Only react to this kind of OBS message, like "InputActiveStateChanged". Leave empty to react to every message. |
+| **Event type** | Only react to this kind of OBS message, like "SceneItemLockStateChanged". InputActiveStateChanged, InputShowStateChanged, InputVolumeMeters and SceneItemTransformChanged only arrive when typed here exactly. |
 
 **Variables you get**
 
@@ -22,6 +22,82 @@ Runs for any message OBS sends, so you can react to things Cuebot has no special
 | `%obsEvent.event%` | The kind of OBS message (same as eventType) |
 
 <small>Type id: `obs.event`</small>
+
+## Audio balance changed
+
+Runs when the left/right balance of an audio source changes.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this audio source, typed exactly as OBS shows it. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The audio source |
+| `%inputAudioBalance%` | 0 left, 0.5 middle, 1 right |
+
+<small>Type id: `obs.audioBalanceChanged`</small>
+
+## Audio monitoring changed
+
+Runs when the monitoring of an audio source changes (whether you hear it in your headphones).
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this audio source, typed exactly as OBS shows it. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The audio source |
+| `%monitorType%` | None, MonitorOnly or MonitorAndOutput |
+
+<small>Type id: `obs.audioMonitorChanged`</small>
+
+## Audio sync offset changed
+
+Runs when the delay of an audio source changes.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this audio source, typed exactly as OBS shows it. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The audio source |
+| `%inputAudioSyncOffset%` | The delay in milliseconds |
+
+<small>Type id: `obs.audioSyncOffsetChanged`</small>
+
+## Audio tracks changed
+
+Runs when the audio tracks of a source are switched on or off.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this audio source, typed exactly as OBS shows it. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The audio source |
+| `%inputAudioTracks%` | Which tracks are on, as JSON text |
+
+<small>Type id: `obs.audioTracksChanged`</small>
 
 ## Connected
 
@@ -57,6 +133,26 @@ Runs when you pick a different transition type in OBS (not when a transition pla
 
 <small>Type id: `obs.transitionChanged`</small>
 
+## Custom OBS event (from overlays and other tools)
+
+Runs when an overlay, Stream Deck plugin or other tool sends a custom message through OBS's WebSocket server (or when Cuebot sends one).
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Field** | Only react when the message has this field, like "type" or "user.name". Leave empty for every custom message. |
+| **Value** | Only react when that field has this value, like "alert". Leave empty to just need the field. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%eventData%` | The whole message, as JSON text |
+| `%customEvent.<field>%` | Each top-level field of the message, like %customEvent.type% |
+
+<small>Type id: `obs.customEvent`</small>
+
 ## Disconnected
 
 Runs when Cuebot loses its connection to OBS, for example when you close OBS.
@@ -70,8 +166,112 @@ Runs when Cuebot loses its connection to OBS, for example when you close OBS.
 | Variable | What it holds |
 | --- | --- |
 | `%obsConnection%` | The name of the OBS connection this came from |
+| `%reason%` | Why the connection ended, like "OBS was closed." |
+| `%obsClosing%` | True when OBS said it was closing (you quit OBS), false when the connection broke |
 
 <small>Type id: `obs.disconnected`</small>
+
+## Filter added
+
+Runs when a filter is added to a source or scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Source** | Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any. |
+| **Filter** | Only react to this filter. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sourceName%` | The source or scene |
+| `%filterName%` | The new filter |
+| `%filterKind%` | Its kind, like color_filter_v2 |
+
+<small>Type id: `obs.filterAdded`</small>
+
+## Filter order changed
+
+Runs when the filters of a source are put in a new order.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Source** | Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sourceName%` | The source or scene |
+| `%filters%` | The filters in their new order, as JSON text |
+
+<small>Type id: `obs.filterOrderChanged`</small>
+
+## Filter removed
+
+Runs when a filter is removed from a source or scene.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Source** | Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any. |
+| **Filter** | Only react to this filter. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sourceName%` | The source or scene |
+| `%filterName%` | The removed filter |
+
+<small>Type id: `obs.filterRemoved`</small>
+
+## Filter renamed
+
+Runs when a filter gets a new name.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Source** | Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any. |
+| **Filter** | Only react to this new filter name. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sourceName%` | The source or scene |
+| `%oldFilterName%` | The old name |
+| `%filterName%` | The new name |
+
+<small>Type id: `obs.filterRenamed`</small>
+
+## Filter settings changed
+
+Runs when the settings of a filter change. Needs OBS 30.1 or newer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Source** | Only react to this source or scene, typed exactly as OBS shows it. Leave empty for any. |
+| **Filter** | Only react to this filter. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sourceName%` | The source or scene |
+| `%filterName%` | The filter |
+| `%filterSettings%` | Its changed settings, as JSON text |
+
+<small>Type id: `obs.filterSettingsChanged`</small>
 
 ## Filter state changed
 
@@ -190,6 +390,22 @@ Runs when a media source (a video or sound file) starts playing in OBS.
 
 <small>Type id: `obs.mediaStarted`</small>
 
+## OBS is closing
+
+Runs when OBS starts closing, just before the connection ends. Handy for saving things or a goodbye message.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+
+<small>Type id: `obs.exiting`</small>
+
 ## Plugin message (advanced)
 
 Runs when an OBS plugin sends its own message through OBS. For plugin fans; most people never need it.
@@ -228,6 +444,23 @@ Runs when the scene in the preview side of OBS studio mode changes. Only happens
 | `%sceneName%` | The new preview scene |
 
 <small>Type id: `obs.previewSceneChanged`</small>
+
+## Profile about to change
+
+Runs just before OBS switches to another profile.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%profileName%` | The profile OBS is leaving |
+
+<small>Type id: `obs.profileChanging`</small>
 
 ## Profile changed
 
@@ -399,6 +632,23 @@ Runs when OBS switches to another scene on the live output. Great for changing l
 
 <small>Type id: `obs.sceneChanged`</small>
 
+## Scene collection about to change
+
+Runs just before OBS switches to another scene collection.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sceneCollectionName%` | The scene collection OBS is leaving |
+
+<small>Type id: `obs.sceneCollectionChanging`</small>
+
 ## Scene collection changed
 
 Runs when you switch to a different OBS scene collection (a saved set of scenes).
@@ -433,6 +683,106 @@ Runs when OBS saves a screenshot.
 
 <small>Type id: `obs.screenshotSaved`</small>
 
+## Source locked / unlocked
+
+Runs when a source in a scene is locked or unlocked.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Scene** | Only react to this scene (or group). Leave empty for any. |
+| **Source** | Only react to this source. Leave empty for any. |
+| **State** | Locked, Unlocked, or Any. Options: Any, Locked, Unlocked. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sceneName%` | The scene |
+| `%sourceName%` | The source |
+| `%locked%` | True when it is now locked |
+
+<small>Type id: `obs.sourceLockChanged`</small>
+
+## Source moved or resized
+
+Runs when a source in a scene is moved, resized, rotated or cropped.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Scene** | Only react to this scene (or group), typed exactly as OBS shows it. Leave empty for any scene. |
+| **Source** | Only react to this source, typed exactly as OBS shows it. Leave empty for any source. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sceneName%` | The scene (or group) the source is in |
+| `%sourceName%` | The name of the source |
+| `%transform%` | Its new position, size, rotation and crop, as JSON text |
+
+<small>Type id: `obs.sourceTransformChanged`</small>
+
+## Source order changed
+
+Runs when the sources of a scene are put in a new order.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Scene** | Only react to this scene. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%sceneName%` | The scene |
+
+<small>Type id: `obs.sourceOrderChanged`</small>
+
+## Source settings changed
+
+Runs when the settings of a source change, like the text of a text source. Needs OBS 30.1 or newer.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this source, typed exactly as OBS shows it. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The source |
+| `%inputSettings%` | Its changed settings, as JSON text |
+
+<small>Type id: `obs.inputSettingsChanged`</small>
+
+## Source shown / hidden anywhere
+
+Runs when a source starts or stops showing anywhere in OBS: live, in the preview, in a projector or its properties window.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this source, typed exactly as OBS shows it. Leave empty for any source. |
+| **State** | Pick Showing, Not showing, or Any for both. Options: Any, Showing, Not showing. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The name of the source |
+| `%videoShowing%` | True when the source is now showing somewhere |
+
+<small>Type id: `obs.sourceShowChanged`</small>
+
 ## Source visibility changed
 
 Runs when a source (like a camera or image) is shown or hidden in a scene.
@@ -454,6 +804,44 @@ Runs when a source (like a camera or image) is shown or hidden in a scene.
 | `%visible%` | True when the source is now shown, false when hidden |
 
 <small>Type id: `obs.sourceVisibilityChanged`</small>
+
+## Source went live / left the live output
+
+Runs when a source starts or stops being part of what your viewers see, like a camera in a scene that just went live. Great for starting a timer when the BRB scene shows.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Only react to this source, typed exactly as OBS shows it, like "Webcam". Leave empty for any source. |
+| **State** | Pick Live for when it goes live, Not live for when it leaves the live output, or Any for both. Options: Any, Live, Not live. Starts as: `Any`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The name of the source |
+| `%videoActive%` | True when the source is now live |
+
+<small>Type id: `obs.sourceActiveChanged`</small>
+
+## Stinger video ended
+
+Runs when a stinger transition's video finishes playing, which can be after the scene already changed.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Transition** | Only react to this transition. Leave empty for any. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%transitionName%` | The transition |
+
+<small>Type id: `obs.transitionVideoEnded`</small>
 
 ## Stream started
 
@@ -504,6 +892,29 @@ Runs when you turn OBS studio mode (a preview screen before going live) on or of
 | `%studioModeEnabled%` | True when studio mode is now on |
 
 <small>Type id: `obs.studioModeChanged`</small>
+
+## Talking (input level)
+
+Runs when you start or stop talking, from the OBS volume meter of your microphone. Great for PNG-tuber style reactions.
+
+| Setting | What to put in |
+| --- | --- |
+| **Connection** | Only react to this OBS connection (type its name from your OBS settings in Cuebot). Leave empty to react to all of them. |
+| **Input** | Your microphone, exactly as OBS shows it in the audio mixer, like "Mic/Aux". Leave empty to listen to every audio source. |
+| **Level (dB)** | How loud counts as talking, in dB, like -30. Closer to 0 means you have to be louder. The OBS mixer shows the level. Starts as: `-30`. |
+| **Quiet time (ms)** | How long it must stay quieter before talking counts as stopped, in milliseconds, like 300. Stops short pauses from flickering. Starts as: `300`. |
+| **State** | Started runs when you start talking, Stopped when you stop, Any for both. Options: Any, Started, Stopped. Starts as: `Started`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%obsConnection%` | The name of the OBS connection this came from |
+| `%inputName%` | The audio source that is talking |
+| `%talking%` | True when talking started, false when it stopped |
+| `%levelDb%` | How loud it was, in dB |
+
+<small>Type id: `obs.talking`</small>
 
 ## Transition duration changed
 

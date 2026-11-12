@@ -4,6 +4,19 @@ using System.Text.Json;
 
 namespace Cuebot.Obs.Protocol;
 
+/// <summary>How OBS runs the requests of a batch (obs-websocket <c>RequestBatchExecutionType</c>).</summary>
+public enum ObsBatchExecution
+{
+    /// <summary>One after the other, as fast as possible (the default). <c>Sleep</c> uses <c>sleepMillis</c>.</summary>
+    SerialRealtime = 0,
+
+    /// <summary>One after the other in step with OBS's video frames: changes in one frame land together. <c>Sleep</c> uses <c>sleepFrames</c>.</summary>
+    SerialFrame = 1,
+
+    /// <summary>All at once on separate threads; order is not kept and <c>Sleep</c> is not allowed.</summary>
+    Parallel = 2,
+}
+
 /// <summary>
 /// One obs-websocket v5 session (RPC version 1). Subscribe to the events, call <see cref="ConnectAsync"/> once,
 /// then send requests. A closed client cannot be reused; create a new one to reconnect.
@@ -12,12 +25,36 @@ public sealed class ObsClient : IAsyncDisposable
 {
     public const string SubProtocol = "obswebsocket.json";
 
-    /// <summary>Every event category except the high-volume ones (volume meters, active state changes...).</summary>
-    internal const int AllLowVolumeEventSubscriptions = (1 << 11) - 1;
+    /// <summary>
+    /// Every low-volume event category (General ... Ui, plus Canvases on OBS 32.1+; older servers ignore the unknown
+    /// bit). The high-volume ones (volume meters, active/show state, transforms) are added on demand.
+    /// </summary>
+    internal const int AllLowVolumeEventSubscriptions = (1 << 12) - 1;
+
+    /// <summary>High-volume subscription bits (obs-websocket <c>EventSubscription</c>).</summary>
+    public const int InputVolumeMetersSubscription = 1 << 16;
+    public const int InputActiveStateChangedSubscription = 1 << 17;
+    public const int InputShowStateChangedSubscription = 1 << 18;
+    public const int SceneItemTransformChangedSubscription = 1 << 19;
 
     private const int RpcVersion = 1;
     private static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan CloseTimeout = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// Requests that block in OBS until a long job is done (switching or creating a scene collection or profile loads
+    /// every source), so they get more time than the normal request timeout.
+    /// </summary>
+    internal static readonly TimeSpan BlockingRequestTimeout = TimeSpan.FromSeconds(60);
+
+    private static readonly HashSet<string> BlockingRequests = new(StringComparer.Ordinal)
+    {
+        "SetCurrentSceneCollection", "CreateSceneCollection", "SetCurrentProfile", "CreateProfile", "RemoveProfile",
+    };
+
+    /// <summary>Worst case for <c>Sleep.sleepFrames</c>: OBS running at 20 fps.</summary>
+    private static readonly TimeSpan SlowestFrame = TimeSpan.FromMilliseconds(50);
+
     private static readonly JsonElement EmptyObject = JsonDocument.Parse("{}").RootElement.Clone();
     private static readonly JsonElement EmptyArray = JsonDocument.Parse("[]").RootElement.Clone();
 
@@ -42,13 +79,20 @@ public sealed class ObsClient : IAsyncDisposable
     /// <summary>The obs-websocket version OBS announced in its Hello message, once connected.</summary>
     public string? ServerVersion { get; private set; }
 
+    /// <summary>The RPC version OBS agreed to in Identified (always 1 today).</summary>
+    public int NegotiatedRpcVersion { get; private set; }
+
+    /// <summary>The event subscription bits currently in effect (set at Identify, changed by <see cref="ReidentifyAsync"/>).</summary>
+    public int EventSubscriptions { get; private set; } = AllLowVolumeEventSubscriptions;
+
     /// <summary>True between a successful handshake and the end of the session.</summary>
     public bool IsConnected => _receiveLoop is { IsCompleted: false } && _closeReason is null;
 
     /// <summary>Opens the WebSocket and completes the Hello / Identify / Identified handshake.</summary>
     /// <exception cref="ObsAuthenticationException">The password is wrong or missing.</exception>
     /// <exception cref="ObsConnectionException">OBS closed the connection, timed out or broke the protocol.</exception>
-    public async Task ConnectAsync(Uri uri, string password, CancellationToken ct = default)
+    /// <param name="eventSubscriptions">Subscription bits to identify with; default every low-volume category.</param>
+    public async Task ConnectAsync(Uri uri, string password, CancellationToken ct = default, int? eventSubscriptions = null)
     {
         if (Interlocked.Exchange(ref _connectStarted, 1) == 1)
             throw new InvalidOperationException("An ObsClient can only connect once.");
@@ -62,7 +106,9 @@ public sealed class ObsClient : IAsyncDisposable
         try
         {
             await webSocket.ConnectAsync(uri, handshake.Token).ConfigureAwait(false);
-            ServerVersion = await IdentifyAsync(socket, password, handshake.Token).ConfigureAwait(false);
+            EventSubscriptions = eventSubscriptions ?? AllLowVolumeEventSubscriptions;
+            (ServerVersion, NegotiatedRpcVersion) = await IdentifyAsync(socket, password, EventSubscriptions, handshake.Token)
+                .ConfigureAwait(false);
             if (_disposed == 1) throw new ObsConnectionException("Disconnected from OBS.");
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested && _disposed == 0)
@@ -83,8 +129,12 @@ public sealed class ObsClient : IAsyncDisposable
     /// <exception cref="ObsRequestException">OBS reported a failure status.</exception>
     /// <exception cref="ObsConnectionException">The session is not connected or ended before the answer.</exception>
     /// <exception cref="TimeoutException">OBS did not answer in time.</exception>
-    public async Task<JsonElement> RequestAsync(string requestType, object? requestData = null, CancellationToken ct = default)
+    /// <param name="timeout">How long to wait for the answer; default the client's request timeout, or 60 s for
+    /// requests that block in OBS (switching or creating scene collections and profiles).</param>
+    public async Task<JsonElement> RequestAsync(string requestType, object? requestData = null, CancellationToken ct = default,
+        TimeSpan? timeout = null)
     {
+        var wait = timeout ?? TimeoutFor(requestType);
         var socket = _socket;
         if (socket is null || !IsConnected) throw new ObsConnectionException(_closeReason ?? "Not connected to OBS.");
 
@@ -99,11 +149,11 @@ public sealed class ObsClient : IAsyncDisposable
             var payload = new Dictionary<string, object> { ["requestType"] = requestType, ["requestId"] = requestId };
             if (requestData is not null) payload["requestData"] = requestData;
             await socket.SendAsync(ObsOpCode.Request, payload, ct).ConfigureAwait(false);
-            return await response.Task.WaitAsync(_requestTimeout, ct).ConfigureAwait(false);
+            return await response.Task.WaitAsync(wait, ct).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {
-            throw new TimeoutException($"OBS did not answer '{requestType}' within {_requestTimeout.TotalSeconds:0.#} s.");
+            throw new TimeoutException($"OBS did not answer '{requestType}' within {wait.TotalSeconds:0.#} s.");
         }
         catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException)
         {
@@ -121,8 +171,9 @@ public sealed class ObsClient : IAsyncDisposable
     /// </summary>
     /// <param name="requests">Each item is <c>{ "requestType": ..., "requestData": ... }</c>, serialized as-is.</param>
     /// <param name="haltOnFailure">Stop processing the batch at the first failed request.</param>
+    /// <param name="executionType">How OBS runs the batch; only sent when it is not the default (SerialRealtime).</param>
     public async Task<JsonElement> RequestBatchAsync(IReadOnlyList<object> requests, bool haltOnFailure = false,
-        CancellationToken ct = default)
+        CancellationToken ct = default, ObsBatchExecution executionType = ObsBatchExecution.SerialRealtime)
     {
         var socket = _socket;
         if (socket is null || !IsConnected) throw new ObsConnectionException(_closeReason ?? "Not connected to OBS.");
@@ -137,8 +188,9 @@ public sealed class ObsClient : IAsyncDisposable
             {
                 ["requestId"] = requestId, ["haltOnFailure"] = haltOnFailure, ["requests"] = requests,
             };
+            if (executionType != ObsBatchExecution.SerialRealtime) payload["executionType"] = (int)executionType;
             await socket.SendAsync(ObsOpCode.RequestBatch, payload, ct).ConfigureAwait(false);
-            return await response.Task.WaitAsync(_requestTimeout * Math.Max(1, requests.Count), ct).ConfigureAwait(false);
+            return await response.Task.WaitAsync(BatchTimeout(requests), ct).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {
@@ -152,6 +204,60 @@ public sealed class ObsClient : IAsyncDisposable
         {
             _pending.TryRemove(requestId, out _);
         }
+    }
+
+    /// <summary>
+    /// Changes the event subscriptions of the running session (Reidentify, op 3), e.g. to add the high-volume
+    /// <c>InputVolumeMeters</c> only while a trigger needs it. OBS sends no answer.
+    /// </summary>
+    public async Task ReidentifyAsync(int eventSubscriptions, CancellationToken ct = default)
+    {
+        var socket = _socket;
+        if (socket is null || !IsConnected) throw new ObsConnectionException(_closeReason ?? "Not connected to OBS.");
+        try
+        {
+            await socket.SendAsync(ObsOpCode.Reidentify, new Dictionary<string, object> { ["eventSubscriptions"] = eventSubscriptions }, ct)
+                .ConfigureAwait(false);
+            EventSubscriptions = eventSubscriptions;
+        }
+        catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException)
+        {
+            throw new ObsConnectionException(_closeReason ?? "The connection to OBS was lost.", ex);
+        }
+    }
+
+    private TimeSpan TimeoutFor(string requestType) =>
+        BlockingRequests.Contains(requestType) && BlockingRequestTimeout > _requestTimeout ? BlockingRequestTimeout : _requestTimeout;
+
+    /// <summary>
+    /// The time a batch may take: each request's own timeout plus every <c>Sleep</c> in it (up to 50 s each), so a
+    /// long sleep does not make Cuebot give up while OBS is still running the batch.
+    /// </summary>
+    internal TimeSpan BatchTimeout(IReadOnlyList<object> requests)
+    {
+        var total = TimeSpan.Zero;
+        foreach (var request in requests)
+        {
+            JsonElement element;
+            try
+            {
+                element = request is JsonElement json ? json : JsonSerializer.SerializeToElement(request);
+            }
+            catch (NotSupportedException)
+            {
+                total += _requestTimeout;
+                continue;
+            }
+            var type = element.ValueKind == JsonValueKind.Object && element.TryGetProperty("requestType", out var t) &&
+                       t.ValueKind == JsonValueKind.String ? t.GetString() ?? "" : "";
+            total += TimeoutFor(type);
+            if (type != "Sleep" || !element.TryGetProperty("requestData", out var data) || data.ValueKind != JsonValueKind.Object) continue;
+            if (data.TryGetProperty("sleepMillis", out var ms) && ms.TryGetDouble(out var millis))
+                total += TimeSpan.FromMilliseconds(Math.Clamp(millis, 0, 50_000));
+            if (data.TryGetProperty("sleepFrames", out var frames) && frames.TryGetDouble(out var count))
+                total += SlowestFrame * Math.Clamp(count, 0, 10_000);
+        }
+        return total > TimeSpan.Zero ? total : _requestTimeout;
     }
 
     /// <summary>Closes the session gracefully (aborting it if OBS does not answer) and waits for it to end.</summary>
@@ -175,13 +281,14 @@ public sealed class ObsClient : IAsyncDisposable
         _shutdown.Dispose();
     }
 
-    private static async Task<string?> IdentifyAsync(ObsSocket socket, string password, CancellationToken ct)
+    private static async Task<(string? Version, int Rpc)> IdentifyAsync(ObsSocket socket, string password, int eventSubscriptions,
+        CancellationToken ct)
     {
         var hello = await ReceiveHandshakeMessageAsync(socket, ObsOpCode.Hello, ct).ConfigureAwait(false);
         var identify = new Dictionary<string, object>
         {
             ["rpcVersion"] = RpcVersion,
-            ["eventSubscriptions"] = AllLowVolumeEventSubscriptions,
+            ["eventSubscriptions"] = eventSubscriptions,
         };
         if (hello.Data.TryGetProperty("authentication", out var auth))
         {
@@ -191,10 +298,17 @@ public sealed class ObsClient : IAsyncDisposable
                 auth.GetProperty("salt").GetString() ?? "", auth.GetProperty("challenge").GetString() ?? "");
         }
         await socket.SendAsync(ObsOpCode.Identify, identify, ct).ConfigureAwait(false);
-        await ReceiveHandshakeMessageAsync(socket, ObsOpCode.Identified, ct).ConfigureAwait(false);
-        return hello.Data.TryGetProperty("obsWebSocketVersion", out var version) && version.ValueKind == JsonValueKind.String
-            ? version.GetString()
+        var identified = await ReceiveHandshakeMessageAsync(socket, ObsOpCode.Identified, ct).ConfigureAwait(false);
+        // Only RPC 1 exists; a server that agrees to anything else speaks a protocol Cuebot does not know.
+        var rpc = identified.Data.ValueKind == JsonValueKind.Object && identified.Data.TryGetProperty("negotiatedRpcVersion", out var n) &&
+                  n.TryGetInt32(out var negotiated) ? negotiated : RpcVersion;
+        if (rpc != RpcVersion)
+            throw new ObsConnectionException(
+                $"OBS agreed to obs-websocket RPC version {rpc}, but Cuebot only speaks version {RpcVersion}. Update Cuebot.");
+        var version = hello.Data.TryGetProperty("obsWebSocketVersion", out var v) && v.ValueKind == JsonValueKind.String
+            ? v.GetString()
             : null;
+        return (version, rpc);
     }
 
     private static async Task<ObsMessage> ReceiveHandshakeMessageAsync(ObsSocket socket, ObsOpCode expected, CancellationToken ct)
