@@ -105,6 +105,24 @@ public sealed class WebhookServicesPageTests : IAsyncDisposable
             UiPump.Pump();
             Assert.Equal(3, vm.RecentEvents.Count);
 
+            // Patreon extras: the API tokens are masked like the secrets, and nothing is called without a token.
+            var patreon = vm.Patreon;
+            patreon.AccessToken = "  patreon-access-token-WXYZ9876 ";
+            Assert.Equal("patreon-access-token-WXYZ9876", services.Patreon.Options.AccessToken);
+            Assert.Contains("••••••••9876", patreon.SavedTokens, StringComparison.Ordinal);
+            patreon.Currency = "eur";
+            Assert.Equal("EUR", services.Patreon.Options.Currency);
+            patreon.StaleHours = 12;
+            Assert.Equal(12, services.Patreon.Options.StaleHours);
+            UiPump.Pump();
+            var tokenBoxes = window.GetVisualDescendants().OfType<TextBox>().Where(t => (t.Name ?? "").StartsWith("Patreon", StringComparison.Ordinal)).ToArray();
+            Assert.Equal(3, tokenBoxes.Length);
+            Assert.All(tokenBoxes, b => Assert.Equal('•', b.PasswordChar));
+            Assert.DoesNotContain(window.GetVisualDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains("patreon-access-token", StringComparison.Ordinal));
+            patreon.DisconnectCommand.Execute(null);
+            Assert.Equal("", services.Patreon.Options.AccessToken);
+            Assert.StartsWith("Not connected", patreon.Status, StringComparison.Ordinal);
+
             foreach (var (theme, name) in new[] { (ThemeVariant.Dark, "dark"), (ThemeVariant.Light, "light") })
             {
                 app.RequestedThemeVariant = theme;

@@ -5,44 +5,82 @@
 
 ## Follow Created
 
-Runs when someone follows you on Patreon. Needs your Patreon webhook set up on the Webhooks page.
+Runs when someone joins your Patreon as a free member, or gets a gifted membership or a free trial (Patreon replaced following with free membership). Patreon may send this twice for the same person; Cuebot runs it once. Needs your Patreon webhook set up on the Webhooks page.
 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The patron's name ("A patron" if unknown) |
-| `%amount%` | Their monthly pledge as a number |
-| `%tier%` | Their tier name (several are joined with commas) |
-| `%patronStatus%` | Their status, like active_patron |
+| `%user%` | The patron's name ("A patron" if unknown, "An anonymous patron" if they hide their identity) |
+| `%amount%` | Their pledge per month as a number (a yearly pledge is divided by 12) |
+| `%currency%` | The campaign's currency, like USD (empty while Cuebot does not know it yet) |
+| `%formattedAmount%` | The monthly pledge written nicely, like "$5.00" |
+| `%monthlyAmount%` | The same as amount: the pledge per month |
+| `%chargeAmount%` | What one charge costs (for a yearly pledge, the whole year) |
+| `%formattedCharge%` | The charge written nicely, like "$60.00" |
+| `%pledgeCadence%` | Months between charges: 1 for monthly, 12 for yearly |
+| `%lifetimeSupport%` | Everything they paid this campaign so far |
+| `%tier%` | Their tier name (several are joined with commas; the Free tier is left out next to a paid one) |
+| `%tiers%` | Their tier names as a list |
+| `%tierIds%` | Their tiers' ids as a list |
+| `%patronStatus%` | Their status: active_patron, declined_patron, former_patron, or empty for a free member |
 | `%isFreeTrial%` | True if it is a free trial |
 | `%isGifted%` | True if someone gifted it |
+| `%isAnonymous%` | True if the patron hides their identity on Patreon. Then user is "An anonymous patron" and there is no picture or link |
+| `%privateName%` | The name of a patron who hides their identity. Do not show it on stream |
+| `%avatarUrl%` | Their Patreon picture (web link). Can be empty: use a fallback picture in overlays |
+| `%profileUrl%` | Their Patreon profile (web link). Can be empty |
+| `%isStale%` | True for a new pledge that started and was charged long ago: a backlog after a paused webhook |
+| `%ageHours%` | How many hours ago the pledge started or was last charged |
+| `%patreonPatronCount%` | How many patrons the campaign has |
+| `%patreonPaidCount%` | How many paying patrons Cuebot knows |
+| `%patreonMonthly%` | The paying patrons' pledges per month added up |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `patreon.followCreated`</small>
 
 ## Follow Deleted
 
-Runs when someone stops following you on Patreon. Needs your Patreon webhook set up.
+Runs when someone leaves your Patreon completely, free or paying. Needs your Patreon webhook set up.
 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The patron's name ("A patron" if unknown) |
-| `%amount%` | Their monthly pledge as a number |
-| `%tier%` | Their tier name (several are joined with commas) |
-| `%patronStatus%` | Their status, like active_patron |
+| `%user%` | The patron's name ("A patron" if unknown, "An anonymous patron" if they hide their identity) |
+| `%amount%` | Their pledge per month as a number (a yearly pledge is divided by 12) |
+| `%currency%` | The campaign's currency, like USD (empty while Cuebot does not know it yet) |
+| `%formattedAmount%` | The monthly pledge written nicely, like "$5.00" |
+| `%monthlyAmount%` | The same as amount: the pledge per month |
+| `%chargeAmount%` | What one charge costs (for a yearly pledge, the whole year) |
+| `%formattedCharge%` | The charge written nicely, like "$60.00" |
+| `%pledgeCadence%` | Months between charges: 1 for monthly, 12 for yearly |
+| `%lifetimeSupport%` | Everything they paid this campaign so far |
+| `%tier%` | Their tier name (several are joined with commas; the Free tier is left out next to a paid one) |
+| `%tiers%` | Their tier names as a list |
+| `%tierIds%` | Their tiers' ids as a list |
+| `%patronStatus%` | Their status: active_patron, declined_patron, former_patron, or empty for a free member |
 | `%isFreeTrial%` | True if it is a free trial |
 | `%isGifted%` | True if someone gifted it |
+| `%isAnonymous%` | True if the patron hides their identity on Patreon. Then user is "An anonymous patron" and there is no picture or link |
+| `%privateName%` | The name of a patron who hides their identity. Do not show it on stream |
+| `%avatarUrl%` | Their Patreon picture (web link). Can be empty: use a fallback picture in overlays |
+| `%profileUrl%` | Their Patreon profile (web link). Can be empty |
+| `%isStale%` | True for a new pledge that started and was charged long ago: a backlog after a paused webhook |
+| `%ageHours%` | How many hours ago the pledge started or was last charged |
+| `%patreonPatronCount%` | How many patrons the campaign has |
+| `%patreonPaidCount%` | How many paying patrons Cuebot knows |
+| `%patreonMonthly%` | The paying patrons' pledges per month added up |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `patreon.followDeleted`</small>
@@ -54,17 +92,36 @@ Runs when anything changes about one of your Patreon members. Needs your Patreon
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The patron's name ("A patron" if unknown) |
-| `%amount%` | Their monthly pledge as a number |
-| `%tier%` | Their tier name (several are joined with commas) |
-| `%patronStatus%` | Their status, like active_patron |
+| `%user%` | The patron's name ("A patron" if unknown, "An anonymous patron" if they hide their identity) |
+| `%amount%` | Their pledge per month as a number (a yearly pledge is divided by 12) |
+| `%currency%` | The campaign's currency, like USD (empty while Cuebot does not know it yet) |
+| `%formattedAmount%` | The monthly pledge written nicely, like "$5.00" |
+| `%monthlyAmount%` | The same as amount: the pledge per month |
+| `%chargeAmount%` | What one charge costs (for a yearly pledge, the whole year) |
+| `%formattedCharge%` | The charge written nicely, like "$60.00" |
+| `%pledgeCadence%` | Months between charges: 1 for monthly, 12 for yearly |
+| `%lifetimeSupport%` | Everything they paid this campaign so far |
+| `%tier%` | Their tier name (several are joined with commas; the Free tier is left out next to a paid one) |
+| `%tiers%` | Their tier names as a list |
+| `%tierIds%` | Their tiers' ids as a list |
+| `%patronStatus%` | Their status: active_patron, declined_patron, former_patron, or empty for a free member |
 | `%isFreeTrial%` | True if it is a free trial |
 | `%isGifted%` | True if someone gifted it |
+| `%isAnonymous%` | True if the patron hides their identity on Patreon. Then user is "An anonymous patron" and there is no picture or link |
+| `%privateName%` | The name of a patron who hides their identity. Do not show it on stream |
+| `%avatarUrl%` | Their Patreon picture (web link). Can be empty: use a fallback picture in overlays |
+| `%profileUrl%` | Their Patreon profile (web link). Can be empty |
+| `%isStale%` | True for a new pledge that started and was charged long ago: a backlog after a paused webhook |
+| `%ageHours%` | How many hours ago the pledge started or was last charged |
+| `%patreonPatronCount%` | How many patrons the campaign has |
+| `%patreonPaidCount%` | How many paying patrons Cuebot knows |
+| `%patreonMonthly%` | The paying patrons' pledges per month added up |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `patreon.memberUpdated`</small>
@@ -75,82 +132,144 @@ Runs when someone becomes a paying Patreon patron. Great for a thank-you. Needs 
 
 | Setting | What to put in |
 | --- | --- |
-| **Tier name** | Only run for this tier, like "Gold". Type it as it appears on Patreon. Leave empty for any tier. |
-| **Minimum amount** | The smallest monthly pledge that runs this. Example: 5 ignores pledges under 5. Leave 0 for any amount. Starts as: `0`. |
-| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
-| **Currencies** | Patreon does not say which currency a pledge is in, so this filter lets every Patreon pledge through. Most people leave it empty. |
+| **Tier** | Only run for these tiers. Pick one from the list (it keeps matching after you rename the tier), or type names with commas, like "Gold, Silver". Leave empty for any tier. |
+| **Minimum amount** | The smallest monthly pledge that runs this (a yearly pledge counts per month). Example: 5 ignores pledges under 5. Leave 0 for any amount. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest monthly pledge that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies, like "USD". Patreon pledges are in your campaign's currency; while Cuebot does not know it yet, every pledge passes. Most people leave it empty. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The patron's name ("A patron" if unknown) |
-| `%amount%` | Their monthly pledge as a number |
-| `%tier%` | Their tier name (several are joined with commas) |
-| `%patronStatus%` | Their status, like active_patron |
+| `%user%` | The patron's name ("A patron" if unknown, "An anonymous patron" if they hide their identity) |
+| `%amount%` | Their pledge per month as a number (a yearly pledge is divided by 12) |
+| `%currency%` | The campaign's currency, like USD (empty while Cuebot does not know it yet) |
+| `%formattedAmount%` | The monthly pledge written nicely, like "$5.00" |
+| `%monthlyAmount%` | The same as amount: the pledge per month |
+| `%chargeAmount%` | What one charge costs (for a yearly pledge, the whole year) |
+| `%formattedCharge%` | The charge written nicely, like "$60.00" |
+| `%pledgeCadence%` | Months between charges: 1 for monthly, 12 for yearly |
+| `%lifetimeSupport%` | Everything they paid this campaign so far |
+| `%tier%` | Their tier name (several are joined with commas; the Free tier is left out next to a paid one) |
+| `%tiers%` | Their tier names as a list |
+| `%tierIds%` | Their tiers' ids as a list |
+| `%patronStatus%` | Their status: active_patron, declined_patron, former_patron, or empty for a free member |
 | `%isFreeTrial%` | True if it is a free trial |
 | `%isGifted%` | True if someone gifted it |
+| `%isAnonymous%` | True if the patron hides their identity on Patreon. Then user is "An anonymous patron" and there is no picture or link |
+| `%privateName%` | The name of a patron who hides their identity. Do not show it on stream |
+| `%avatarUrl%` | Their Patreon picture (web link). Can be empty: use a fallback picture in overlays |
+| `%profileUrl%` | Their Patreon profile (web link). Can be empty |
+| `%isStale%` | True for a new pledge that started and was charged long ago: a backlog after a paused webhook |
+| `%ageHours%` | How many hours ago the pledge started or was last charged |
+| `%patreonPatronCount%` | How many patrons the campaign has |
+| `%patreonPaidCount%` | How many paying patrons Cuebot knows |
+| `%patreonMonthly%` | The paying patrons' pledges per month added up |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `patreon.pledgeCreated`</small>
 
 ## Pledge Deleted
 
-Runs when a patron stops paying on Patreon. Needs your Patreon webhook set up.
+Runs when a patron stops paying on Patreon. amount is the pledge that ended. Needs your Patreon webhook set up.
 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The patron's name ("A patron" if unknown) |
-| `%amount%` | Their monthly pledge as a number |
-| `%tier%` | Their tier name (several are joined with commas) |
-| `%patronStatus%` | Their status, like active_patron |
+| `%user%` | The patron's name ("A patron" if unknown, "An anonymous patron" if they hide their identity) |
+| `%amount%` | Their pledge per month as a number (a yearly pledge is divided by 12) |
+| `%currency%` | The campaign's currency, like USD (empty while Cuebot does not know it yet) |
+| `%formattedAmount%` | The monthly pledge written nicely, like "$5.00" |
+| `%monthlyAmount%` | The same as amount: the pledge per month |
+| `%chargeAmount%` | What one charge costs (for a yearly pledge, the whole year) |
+| `%formattedCharge%` | The charge written nicely, like "$60.00" |
+| `%pledgeCadence%` | Months between charges: 1 for monthly, 12 for yearly |
+| `%lifetimeSupport%` | Everything they paid this campaign so far |
+| `%tier%` | Their tier name (several are joined with commas; the Free tier is left out next to a paid one) |
+| `%tiers%` | Their tier names as a list |
+| `%tierIds%` | Their tiers' ids as a list |
+| `%patronStatus%` | Their status: active_patron, declined_patron, former_patron, or empty for a free member |
 | `%isFreeTrial%` | True if it is a free trial |
 | `%isGifted%` | True if someone gifted it |
+| `%isAnonymous%` | True if the patron hides their identity on Patreon. Then user is "An anonymous patron" and there is no picture or link |
+| `%privateName%` | The name of a patron who hides their identity. Do not show it on stream |
+| `%avatarUrl%` | Their Patreon picture (web link). Can be empty: use a fallback picture in overlays |
+| `%profileUrl%` | Their Patreon profile (web link). Can be empty |
+| `%isStale%` | True for a new pledge that started and was charged long ago: a backlog after a paused webhook |
+| `%ageHours%` | How many hours ago the pledge started or was last charged |
+| `%patreonPatronCount%` | How many patrons the campaign has |
+| `%patreonPaidCount%` | How many paying patrons Cuebot knows |
+| `%patreonMonthly%` | The paying patrons' pledges per month added up |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `patreon.pledgeDeleted`</small>
 
 ## Pledge Updated
 
-Runs when a patron changes their Patreon pledge, such as moving to another tier. Needs your Patreon webhook set up.
+Runs when a patron changes their Patreon pledge, such as moving to another tier. Can run only for upgrades. Needs your Patreon webhook set up.
 
 | Setting | What to put in |
 | --- | --- |
-| **Tier name** | Only run for this tier, like "Gold". Type it as it appears on Patreon. Leave empty for any tier. |
-| **Minimum amount** | The smallest monthly pledge that runs this. Example: 5 ignores pledges under 5. Leave 0 for any amount. Starts as: `0`. |
-| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
-| **Currencies** | Patreon does not say which currency a pledge is in, so this filter lets every Patreon pledge through. Most people leave it empty. |
+| **Tier** | Only run for these tiers. Pick one from the list (it keeps matching after you rename the tier), or type names with commas, like "Gold, Silver". Leave empty for any tier. |
+| **Change** | Any change, only upgrades, or only downgrades. Cuebot reads this from the pledge history when the Patreon API is connected, otherwise from the member list it keeps. Options: Any change, Upgrades only, Downgrades only. Starts as: `Any change`. |
+| **Minimum amount** | The smallest monthly pledge that runs this (a yearly pledge counts per month). Example: 5 ignores pledges under 5. Leave 0 for any amount. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest monthly pledge that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies, like "USD". Patreon pledges are in your campaign's currency; while Cuebot does not know it yet, every pledge passes. Most people leave it empty. |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The patron's name ("A patron" if unknown) |
-| `%amount%` | Their monthly pledge as a number |
-| `%tier%` | Their tier name (several are joined with commas) |
-| `%patronStatus%` | Their status, like active_patron |
+| `%user%` | The patron's name ("A patron" if unknown, "An anonymous patron" if they hide their identity) |
+| `%amount%` | Their pledge per month as a number (a yearly pledge is divided by 12) |
+| `%currency%` | The campaign's currency, like USD (empty while Cuebot does not know it yet) |
+| `%formattedAmount%` | The monthly pledge written nicely, like "$5.00" |
+| `%monthlyAmount%` | The same as amount: the pledge per month |
+| `%chargeAmount%` | What one charge costs (for a yearly pledge, the whole year) |
+| `%formattedCharge%` | The charge written nicely, like "$60.00" |
+| `%pledgeCadence%` | Months between charges: 1 for monthly, 12 for yearly |
+| `%lifetimeSupport%` | Everything they paid this campaign so far |
+| `%tier%` | Their tier name (several are joined with commas; the Free tier is left out next to a paid one) |
+| `%tiers%` | Their tier names as a list |
+| `%tierIds%` | Their tiers' ids as a list |
+| `%patronStatus%` | Their status: active_patron, declined_patron, former_patron, or empty for a free member |
 | `%isFreeTrial%` | True if it is a free trial |
 | `%isGifted%` | True if someone gifted it |
+| `%isAnonymous%` | True if the patron hides their identity on Patreon. Then user is "An anonymous patron" and there is no picture or link |
+| `%privateName%` | The name of a patron who hides their identity. Do not show it on stream |
+| `%avatarUrl%` | Their Patreon picture (web link). Can be empty: use a fallback picture in overlays |
+| `%profileUrl%` | Their Patreon profile (web link). Can be empty |
+| `%isStale%` | True for a new pledge that started and was charged long ago: a backlog after a paused webhook |
+| `%ageHours%` | How many hours ago the pledge started or was last charged |
+| `%patreonPatronCount%` | How many patrons the campaign has |
+| `%patreonPaidCount%` | How many paying patrons Cuebot knows |
+| `%patreonMonthly%` | The paying patrons' pledges per month added up |
 | `%isTest%` | True when this is a test event, not a real one |
 | `%updatedToTier%` | The tier they moved to |
+| `%direction%` | upgrade, downgrade, same, or empty when Cuebot cannot tell |
+| `%previousAmount%` | Their monthly pledge before the change (empty when unknown) |
+| `%previousTier%` | Their tier before the change (empty when unknown) |
 
 <small>Type id: `patreon.pledgeUpdated`</small>
 
-## Post Published
+## Post Deleted
 
-Runs when you publish a new post on Patreon. Handy to tell your chat. Needs your Patreon webhook set up.
+Runs when you delete a Patreon post. Needs your Patreon webhook set up with posts:delete.
 
 | Setting | What to put in |
 | --- | --- |
 | **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
 
 **Variables you get**
 
@@ -158,6 +277,56 @@ Runs when you publish a new post on Patreon. Handy to tell your chat. Needs your
 | --- | --- |
 | `%title%` | The post's title |
 | `%url%` | A web link to the post |
+| `%isPaid%` | True if the post is for paying patrons |
+| `%isPublic%` | True if everyone can see the post |
+| `%tierIds%` | The tiers that can see the post, as a list of ids (needs the Patreon API connected) |
+| `%tierNames%` | The tiers that can see the post, like "Gold, Silver" (needs the Patreon API connected) |
+| `%isTest%` | True when this is a test event, not a real one |
+
+<small>Type id: `patreon.postDeleted`</small>
+
+## Post Published
+
+Runs when you publish a new post on Patreon. Handy to tell your chat, like "new patron-only post for Gold". Needs your Patreon webhook set up.
+
+| Setting | What to put in |
+| --- | --- |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%title%` | The post's title |
+| `%url%` | A web link to the post |
+| `%isPaid%` | True if the post is for paying patrons |
+| `%isPublic%` | True if everyone can see the post |
+| `%tierIds%` | The tiers that can see the post, as a list of ids (needs the Patreon API connected) |
+| `%tierNames%` | The tiers that can see the post, like "Gold, Silver" (needs the Patreon API connected) |
 | `%isTest%` | True when this is a test event, not a real one |
 
 <small>Type id: `patreon.postPublished`</small>
+
+## Post Updated
+
+Runs when you edit a Patreon post. Needs your Patreon webhook set up with posts:update.
+
+| Setting | What to put in |
+| --- | --- |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+| **Skip stale deliveries** | Leave ticked to skip a backlog of old deliveries Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page). Untick to run for them too. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%title%` | The post's title |
+| `%url%` | A web link to the post |
+| `%isPaid%` | True if the post is for paying patrons |
+| `%isPublic%` | True if everyone can see the post |
+| `%tierIds%` | The tiers that can see the post, as a list of ids (needs the Patreon API connected) |
+| `%tierNames%` | The tiers that can see the post, like "Gold, Silver" (needs the Patreon API connected) |
+| `%isTest%` | True when this is a test event, not a real one |
+
+<small>Type id: `patreon.postUpdated`</small>

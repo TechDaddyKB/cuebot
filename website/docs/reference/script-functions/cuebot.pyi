@@ -1324,6 +1324,39 @@ class Cuebot:
         Gives back: true when the test tip was sent, false when the kind is unknown.
         Same as cb.call(\"pally.sendTestEvent\", ...).
         """
+    def patreon_campaign(self) -> Any:
+        """Reads your Patreon campaign as Cuebot knows it (from the API when connected, else from webhooks).
+
+        Gives back: name, currency, patronCount, paidCount, monthly (paying patrons' pledges per month added up), connected and lastSync.
+        Same as cb.call(\"patreon.campaign\", ...).
+        """
+    def patreon_members(self) -> Any:
+        """Says how many Patreon members Cuebot knows and whether the list came from a full sync.
+
+        Gives back: count, synced and lastSync.
+        Same as cb.call(\"patreon.members\", ...).
+        """
+    def patreon_patron(self, platform: Any, user_id: Any, *, user_name: Any = None) -> Any:
+        """Finds the Patreon patron linked to a viewer (patrons who linked Twitch, YouTube or Discord on Patreon).
+
+        platform: twitch, youtube or discord.
+        user_id: The viewer's user id.
+        user_name: Optional. The viewer's name, for Twitch links made by name.
+        Gives back: name, status, tier, monthly, currency, since and paying; or null when the viewer is not a known patron.
+        Same as cb.call(\"patreon.patron\", ...).
+        """
+    def patreon_sync(self) -> Any:
+        """Reads the Patreon member list now. Needs the Patreon API connected on the Webhooks page.
+
+        Gives back: A status line, like \"Synced 12 Patreon member(s).\"
+        Same as cb.call(\"patreon.sync\", ...).
+        """
+    def patreon_tiers(self) -> Any:
+        """Lists the Patreon tiers Cuebot knows.
+
+        Gives back: A list of tiers with id, title, amount and published.
+        Same as cb.call(\"patreon.tiers\", ...).
+        """
     def pngtuber_remix_get_sprites(self) -> Any:
         """Reads the sprites of your PNGTuber Remix model fresh.
 

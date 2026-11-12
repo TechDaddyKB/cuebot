@@ -24,7 +24,7 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
             new WebhookCardViewModel(services.Kofi, services.Kofi.Settings, "Verification token",
                 "Open ko-fi.com/manage/webhooks (Settings → API → Webhooks), paste the Cuebot webhook URL for Ko-fi, then open Advanced and copy the Verification Token here. Ko-fi's \"Send test\" buttons there arrive as test events. Donations, memberships, commissions and shop orders become triggers. Ko-fi sends payments only and never re-sends one that was dropped: with the shared relay, payments made while Cuebot is closed are lost for totals and goals (your own relay keeps them for 24 hours)."),
             new WebhookCardViewModel(services.Patreon, services.Patreon.Settings, "Webhook secret",
-                "On patreon.com/portal open My Webhooks, add the Cuebot URL for Patreon, tick the member and pledge events (and posts:publish if you like) and copy the webhook's secret here."),
+                "On patreon.com/portal open My Webhooks, add the Cuebot URL for Patreon, tick the members:* and members:pledge:* events (and posts:* if you like) and copy the webhook's secret here. Or connect the Patreon API below and let Cuebot create the webhook and save its secret. If the URL stops working, Patreon pauses the webhook and later sends the backlog at once: Cuebot marks those deliveries stale."),
             new WebhookCardViewModel(services.Fourthwall, services.Fourthwall.Settings, "Webhook secret",
                 "In your Fourthwall admin open Settings → For developers → Webhooks, create a webhook with the Cuebot URL for Fourthwall for the events you want and copy the shop's webhook secret key here."),
             new WebhookCardViewModel(services.Shopify, services.Shopify.Settings, "Signing key / client secret",
@@ -36,6 +36,12 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
         Custom = new CustomHooksViewModel(services.Custom);
         Kofi = new KofiOptionsViewModel(services.Kofi);
         services.Kofi.Tracker.Changed += () => OnUi(Kofi.Refresh);
+        Patreon = new PatreonOptionsViewModel(services.Patreon);
+        services.Patreon.Tracker.Changed += () => OnUi(() =>
+        {
+            Patreon.Refresh();
+            Services[1].RefreshSecret();
+        });
         foreach (var service in services.All) service.Changed += () => OnUi(Refresh);
         RefreshRecent();
     }
@@ -45,6 +51,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
     public CustomHooksViewModel Custom { get; }
 
     public KofiOptionsViewModel Kofi { get; }
+
+    public PatreonOptionsViewModel Patreon { get; }
 
     /// <summary>Newest first, all services.</summary>
     public ObservableCollection<WebhookRecordViewModel> RecentEvents { get; } = [];
@@ -155,6 +163,13 @@ public sealed partial class WebhookCardViewModel : ObservableObject
     [ObservableProperty] private string _generatedToken = "";
 
     internal void Refresh() => OnPropertyChanged(nameof(LastDelivery));
+
+    /// <summary>After the secret was saved elsewhere (Patreon's webhook set up through the API).</summary>
+    internal void RefreshSecret()
+    {
+        OnPropertyChanged(nameof(Secret));
+        OnPropertyChanged(nameof(MaskedSecret));
+    }
 
     [RelayCommand]
     private void SendTest()
@@ -430,4 +445,171 @@ public sealed partial class KofiOptionsViewModel : ObservableObject
             })
             .OfType<KofiProduct>(),
     ];
+}
+
+/// <summary>
+/// Patreon extras: the optional API connection (the creator's own tokens), the campaign currency fallback, the stale
+/// setting, viewer links, the webhook Cuebot can create and its health.
+/// </summary>
+public sealed partial class PatreonOptionsViewModel : ObservableObject
+{
+    private readonly PatreonWebhookHandler _patreon;
+
+    public PatreonOptionsViewModel(PatreonWebhookHandler patreon) => _patreon = patreon;
+
+    private PatreonOptions Options => _patreon.Options;
+    private PatreonTracker Tracker => _patreon.Tracker;
+
+    /// <summary>Gives the Cuebot URL for Patreon (from the relay tab) for "Create webhook"; null while there is none.</summary>
+    public Func<string?> WebhookUrl { get; set; } = () => null;
+
+    private void Save() => _patreon.SaveSettings();
+
+    public string ClientId
+    {
+        get => Options.ClientId;
+        set => SetText(value, Options.ClientId, v => Options.ClientId = v);
+    }
+
+    /// <summary>The view masks these (PasswordChar); the Saved line shows only the last characters.</summary>
+    public string ClientSecret
+    {
+        get => Options.ClientSecret;
+        set => SetText(value, Options.ClientSecret, v => Options.ClientSecret = v, nameof(SavedTokens));
+    }
+
+    public string AccessToken
+    {
+        get => Options.AccessToken;
+        set => SetText(value, Options.AccessToken, v => Options.AccessToken = v, nameof(SavedTokens));
+    }
+
+    public string RefreshToken
+    {
+        get => Options.RefreshToken;
+        set => SetText(value, Options.RefreshToken, v => Options.RefreshToken = v, nameof(SavedTokens));
+    }
+
+    private void SetText(string? value, string current, Action<string> set, string? also = null,
+        [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        var trimmed = (value ?? "").Trim();
+        if (trimmed == current) return;
+        set(trimmed);
+        Save();
+        OnPropertyChanged(name);
+        if (also is not null) OnPropertyChanged(also);
+    }
+
+    public string SavedTokens =>
+        $"Access token: {Saved(Options.AccessToken)}. Refresh token: {Saved(Options.RefreshToken)}. Client secret: {Saved(Options.ClientSecret)}.";
+
+    private static string Saved(string secret) => secret.Length > 0 ? WebhookSecrets.Mask(secret) : "not saved";
+
+    public string Currency
+    {
+        get => Options.Currency;
+        set => SetText((value ?? "").ToUpperInvariant(), Options.Currency, v => Options.Currency = v);
+    }
+
+    public decimal? StaleHours
+    {
+        get => Options.StaleHours;
+        set
+        {
+            Options.StaleHours = Math.Max(0, (int)(value ?? 6));
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    public bool LinkViewers
+    {
+        get => Options.LinkViewers;
+        set
+        {
+            if (value == Options.LinkViewers) return;
+            Options.LinkViewers = value;
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    [ObservableProperty] private string _info = "";
+    [ObservableProperty] private bool _busy;
+
+    public string Status
+    {
+        get
+        {
+            if (!Tracker.HasToken) return "Not connected. Webhooks still work; the currency and member list come from deliveries only.";
+            if (Tracker.NeedsReconnect) return Tracker.LastError;
+            var t = Tracker.Totals();
+            var campaign = Tracker.CampaignName is { Length: > 0 } n ? n : "your campaign";
+            var sync = Tracker.LastSync is { } at ? $"members synced {at.ToLocalTime():g}" : "members not synced yet";
+            return $"{campaign}: {t.PatronCount} patron(s), {t.PaidCount} paying, {t.Monthly:0.##} {t.Currency} a month; {Tracker.Tiers().Count} tier(s); {sync}."
+                + (Tracker.LastError.Length > 0 ? " Last problem: " + Tracker.LastError : "");
+        }
+    }
+
+    public string WebhookHealth => Tracker.WebhookHealth is { } h
+        ? h.Paused
+            ? $"Patreon PAUSED the webhook after {h.ConsecutiveFailures} failed deliveries (checked {h.CheckedAt.ToLocalTime():g}). Fix the relay, then press Resume: Patreon sends what it held back."
+            : $"Webhook active{(h.LastAttemptedAt is { } last ? $", last delivery {last.ToLocalTime():g}" : "")} (checked {h.CheckedAt.ToLocalTime():g})."
+        : "No webhook made by Cuebot. A webhook made by hand in the portal works too, but its health cannot be read from here.";
+
+    public bool CanResume => Tracker.WebhookHealth is { Paused: true };
+
+    internal void Refresh()
+    {
+        OnPropertyChanged(nameof(Status));
+        OnPropertyChanged(nameof(WebhookHealth));
+        OnPropertyChanged(nameof(CanResume));
+        OnPropertyChanged(nameof(SavedTokens));
+        OnPropertyChanged(nameof(AccessToken));
+        OnPropertyChanged(nameof(RefreshToken));
+    }
+
+    private async Task Run(Func<Task<string>> work)
+    {
+        if (Busy) return;
+        Busy = true;
+        try { Info = await work(); }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or FormatException or System.Text.Json.JsonException or PatreonAuthException)
+        {
+            Info = ex is PatreonAuthException ? ex.Message : $"Patreon: {ex.Message}";
+        }
+        finally
+        {
+            Busy = false;
+            Refresh();
+        }
+    }
+
+    [RelayCommand]
+    private Task Connect() => Run(() => Tracker.ConnectAsync());
+
+    [RelayCommand]
+    private Task Sync() => Run(() => Tracker.SyncMembersAsync());
+
+    [RelayCommand]
+    private Task CreateWebhook() => Run(() => Tracker.CreateWebhookAsync(WebhookUrl() ?? "", secret =>
+    {
+        _patreon.Settings.Secret = secret;
+        _patreon.SaveSettings();
+    }));
+
+    [RelayCommand]
+    private Task CheckWebhook() => Run(() => Tracker.CheckWebhookAsync());
+
+    [RelayCommand]
+    private Task ResumeWebhook() => Run(() => Tracker.ResumeWebhookAsync());
+
+    [RelayCommand]
+    private void Disconnect()
+    {
+        Tracker.Disconnect();
+        Info = "Disconnected: the tokens were removed. Webhooks keep working.";
+        Refresh();
+    }
 }

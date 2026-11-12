@@ -18,8 +18,15 @@
   // The Ko-fi goal Cuebot keeps (Webhooks page): its own title, target, progress and currency.
   function kofi() { return settings.type === "kofi" ? (data["kofi-goal"] || { current: 0, target: 0 }) : null; }
 
+  // Patreon totals Cuebot keeps (Webhooks page): paying patrons or the monthly pledges; the target is the Goal setting.
+  function patreon() {
+    return settings.type === "patreonPatrons" || settings.type === "patreonMonthly"
+      ? (data["patreon"] || { paidCount: 0, monthly: 0, currency: "" }) : null;
+  }
+
   function useAmount() {
     if (kofi()) return true;
+    if (patreon()) return settings.type === "patreonMonthly";
     if (settings.measure === "amount") return true;
     if (settings.measure === "count") return false;
     return !!AMOUNT[settings.type];
@@ -28,6 +35,8 @@
   function progress() {
     var k = kofi();
     if (k) return num(k.current) + num(settings.start);
+    var p = patreon();
+    if (p) return num(settings.type === "patreonMonthly" ? p.monthly : p.paidCount) + num(settings.start);
     var types = settings.type === "revenue" ? REVENUE : [settings.type || "follower"];
     var field = useAmount() ? "amount" : "count";
     var period = settings.period || "session";
@@ -38,8 +47,8 @@
   }
 
   function format(value) {
-    if (useAmount() && (MONEY[settings.type] || kofi())) {
-      var code = (kofi() && kofi().currency) || currency;
+    if (useAmount() && (MONEY[settings.type] || kofi() || patreon())) {
+      var code = (kofi() && kofi().currency) || (patreon() && patreon().currency) || currency;
       try { return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(value); }
       catch (err) { return String(value); }
     }

@@ -31,7 +31,7 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
         "Obs.ReplayBufferStopped", "Obs.SceneCollectionChanged", "Obs.ScreenshotSaved", "Obs.SourceVisibilityChanged",
         "Obs.StudioModeChanged", "Obs.TransitionChanged", "Obs.TransitionDurationChanged", "Obs.TransitionEnded",
         "Obs.TransitionStarted", "Obs.VirtualCamStarted", "Obs.VirtualCamStopped",
-        "Patreon.MemberUpdated", "Patreon.PostPublished",
+        "Patreon.MemberUpdated", "Patreon.PostPublished", "Patreon.PostUpdated", "Patreon.PostDeleted",
         "Pulsoid.Connected", "Pulsoid.Disconnected",
         "Quote.Removed", "Quote.Updated",
         "StreamElements.Activity", "StreamElements.CharityDonation", "StreamElements.Cheer",

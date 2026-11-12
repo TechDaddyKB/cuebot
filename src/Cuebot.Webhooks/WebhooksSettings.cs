@@ -18,6 +18,9 @@ public sealed class WebhooksSettings
     /// <summary>Patreon: the webhook's secret (patreon.com/portal → My Webhooks).</summary>
     public WebhookServiceSettings Patreon { get; set; } = new();
 
+    /// <summary>Patreon choices beyond the webhook secret: the optional API connection, currency and stale deliveries.</summary>
+    public PatreonOptions PatreonOptions { get; set; } = new();
+
     /// <summary>Fourthwall: the shop's webhook secret key (Settings → For developers → Webhooks).</summary>
     public WebhookServiceSettings Fourthwall { get; set; } = new();
 
@@ -118,4 +121,49 @@ public sealed class KofiGoalSettings
     public bool CountMemberships { get; set; } = true;
     public bool CountCommissions { get; set; } = true;
     public bool CountShopOrders { get; set; } = true;
+}
+
+/// <summary>
+/// Patreon options (webhooks.json). The API connection is optional: the creator's own tokens from
+/// patreon.com/portal/registration/register-clients. With it Cuebot reads the campaign (currency, tiers, patron count),
+/// syncs the member list, tells upgrades from downgrades and can create and watch the webhook. The campaign, tiers and
+/// members it learnt are kept in patreon.json.
+/// </summary>
+public sealed class PatreonOptions
+{
+    /// <summary>The client's Client ID (needed to refresh the access token).</summary>
+    public string ClientId { get; set; } = "";
+
+    /// <summary>The client's Client Secret (needed to refresh the access token). A secret.</summary>
+    [Secret]
+    public string ClientSecret { get; set; } = "";
+
+    /// <summary>The Creator's Access Token. A secret.</summary>
+    [Secret]
+    public string AccessToken { get; set; } = "";
+
+    /// <summary>The Creator's Refresh Token. A secret.</summary>
+    [Secret]
+    public string RefreshToken { get; set; } = "";
+
+    /// <summary>When the access token runs out, once Cuebot refreshed it (Patreon does not say for a pasted token).</summary>
+    public DateTimeOffset? TokenExpiresAt { get; set; }
+
+    /// <summary>
+    /// The campaign's currency (like USD) used when neither the delivery nor the API names it. Empty: unknown until
+    /// Cuebot learns it.
+    /// </summary>
+    public string Currency { get; set; } = "";
+
+    /// <summary>
+    /// A new pledge whose start and last charge are both older than this many hours is marked isStale (a backlog Patreon
+    /// sends after a paused webhook is resumed); the Patreon triggers skip stale events unless told otherwise. 0 = off.
+    /// </summary>
+    public int StaleHours { get; set; } = 6;
+
+    /// <summary>Tag linked Twitch / YouTube viewers with user variables (isPatron, patreonTier...).</summary>
+    public bool LinkViewers { get; set; } = true;
+
+    /// <summary>The webhook Cuebot created through the API (empty when it was made by hand in the portal).</summary>
+    public string WebhookId { get; set; } = "";
 }

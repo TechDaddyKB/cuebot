@@ -55,6 +55,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [OBS](obs.md) | 5 |
 | [OBSBOT](obsbot.md) | 8 |
 | [Pally.gg](pally.md) | 2 |
+| [Patreon](patreon.md) | 5 |
 | [Pngtuberremix](pngtuberremix.md) | 9 |
 | [Points](points.md) | 13 |
 | [PolyPop](polypop.md) | 2 |

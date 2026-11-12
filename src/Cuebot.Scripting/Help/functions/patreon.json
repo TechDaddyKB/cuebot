@@ -1,0 +1,42 @@
+{
+  "functions": {
+    "patreon.campaign": {
+      "description": "Reads your Patreon campaign as Cuebot knows it (from the API when connected, else from webhooks).",
+      "parameters": {},
+      "returns": "name, currency, patronCount, paidCount, monthly (paying patrons' pledges per month added up), connected and lastSync.",
+      "example": {}
+    },
+    "patreon.tiers": {
+      "description": "Lists the Patreon tiers Cuebot knows.",
+      "parameters": {},
+      "returns": "A list of tiers with id, title, amount and published.",
+      "example": {}
+    },
+    "patreon.patron": {
+      "description": "Finds the Patreon patron linked to a viewer (patrons who linked Twitch, YouTube or Discord on Patreon).",
+      "parameters": {
+        "platform": "twitch, youtube or discord.",
+        "userId": "The viewer's user id.",
+        "userName": "Optional. The viewer's name, for Twitch links made by name."
+      },
+      "returns": "name, status, tier, monthly, currency, since and paying; or null when the viewer is not a known patron.",
+      "example": {
+        "platform": "twitch",
+        "userId": "12345678",
+        "userName": "viewer"
+      }
+    },
+    "patreon.members": {
+      "description": "Says how many Patreon members Cuebot knows and whether the list came from a full sync.",
+      "parameters": {},
+      "returns": "count, synced and lastSync.",
+      "example": {}
+    },
+    "patreon.sync": {
+      "description": "Reads the Patreon member list now. Needs the Patreon API connected on the Webhooks page.",
+      "parameters": {},
+      "returns": "A status line, like \"Synced 12 Patreon member(s).\"",
+      "example": {}
+    }
+  }
+}

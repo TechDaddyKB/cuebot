@@ -25,6 +25,11 @@ The shared relay passes each message straight to your Cuebot, locked so that onl
 nothing. A message that arrives while Cuebot is closed is dropped, so you never get a flood of old alerts at the start
 of a stream. If you want missed messages delivered later, set up your own relay instead.
 
+!!! note "Patreon pauses a webhook it cannot deliver"
+    The relay always accepts messages, so Patreon is happy while it works. If the address stops working (the relay is
+    down, or the route was deleted), Patreon retries for up to a week and then pauses the webhook. Resuming it sends
+    everything held back at once; Cuebot marks old pledges stale so alerts can skip them. See [Patreon](patreon.md).
+
 !!! warning "Dropped means gone for Ko-fi"
     Ko-fi does not send a payment again, and has no way to look it up later. A Ko-fi payment made while Cuebot is
     closed is missing from your totals, goals, subathon timers and credits for good. Your own relay keeps it for 24
@@ -64,6 +69,9 @@ token** where there is one), and click **Send test event**.
 
 Ko-fi has its own page, with the setup steps, private supports, the Ko-fi goal, memberships and commissions:
 [Ko-fi](ko-fi.md).
+
+Patreon has its own page too, with the setup steps, the optional API connection, monthly amounts, upgrades and patron
+perks: [Patreon](patreon.md).
 
 !!! warning "Partly checked"
     The relay was tried for real: a message sent to it reached Cuebot. Each service's own example messages were

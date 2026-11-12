@@ -30,7 +30,16 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton<Cuebot.Core.Overlays.Session.ISessionDataSource>(sp => sp.GetRequiredService<KofiTracker>());
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<KofiTracker>());
         Add<KofiWebhookHandler>(services, (s, b, l) => new KofiWebhookHandler(s, b, l), (sp, h) => h.Tracker = sp.GetRequiredService<KofiTracker>());
-        Add<PatreonWebhookHandler>(services, (s, b, l) => new PatreonWebhookHandler(s, b, l));
+        services.AddSingleton(sp => new PatreonTracker(sp.GetRequiredService<JsonFile<WebhooksSettings>>(), sp.GetRequiredService<AppLog>(),
+            sp.GetService<HttpClient>(), sp.GetRequiredService<AppPaths>().File("patreon.json"))
+        {
+            Globals = sp.GetService<Cuebot.Core.Actions.GlobalVariables>(),
+            UserVariables = sp.GetService<Cuebot.Core.Variables.UserVariables>(),
+            Users = sp.GetService<Cuebot.Core.Users.UserRegistry>(),
+        });
+        services.AddSingleton<Cuebot.Core.Overlays.Session.ISessionDataSource>(sp => sp.GetRequiredService<PatreonTracker>());
+        services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<PatreonTracker>());
+        Add<PatreonWebhookHandler>(services, (s, b, l) => new PatreonWebhookHandler(s, b, l), (sp, h) => h.Tracker = sp.GetRequiredService<PatreonTracker>());
         Add<FourthwallWebhookHandler>(services, (s, b, l) => new FourthwallWebhookHandler(s, b, l));
         Add<ShopifyWebhookHandler>(services, (s, b, l) => new ShopifyWebhookHandler(s, b, l));
         Add<ThroneWebhookHandler>(services, (s, b, l) => new ThroneWebhookHandler(s, b, l));
@@ -39,7 +48,7 @@ public static class WebhooksServiceCollectionExtensions
         foreach (var adapter in WebhookChatAdapter.All()) services.AddSingleton<IChatEventAdapter>(adapter);
         foreach (var adapter in WebhookOverlayAdapter.All()) services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter>(adapter);
         services.AddSingleton<ITriggerProvider, KofiTriggers>();
-        services.AddSingleton<ITriggerProvider, PatreonTriggers>();
+        services.AddSingleton<ITriggerProvider>(sp => new PatreonTriggers(sp.GetRequiredService<PatreonTracker>()));
         services.AddSingleton<ITriggerProvider, ShopifyTriggers>();
         services.AddSingleton<ITriggerProvider, FourthwallTriggers>();
         services.AddSingleton<ITriggerProvider, ThroneTriggers>();
@@ -49,6 +58,10 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton(sp => new KofiSubActionSet(KofiSubActions.Create(sp.GetRequiredService<KofiTracker>())));
         foreach (var typeId in KofiSubActionSet.TypeIds)
             services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<KofiSubActionSet>().Get(typeId));
+        services.AddSingleton<IScriptFunctionProvider>(sp => new PatreonScriptFunctions(sp.GetRequiredService<PatreonTracker>()));
+        services.AddSingleton(sp => new PatreonSubActionSet(PatreonSubActions.Create(sp.GetRequiredService<PatreonTracker>())));
+        foreach (var typeId in PatreonSubActions.TypeIds)
+            services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<PatreonSubActionSet>().Get(typeId));
 
         // Outgoing webhooks: Discord Basic Webhook, IFTTT Notification (Basic / Advanced). One registration per
         // sub-action so the Registry sees each one.

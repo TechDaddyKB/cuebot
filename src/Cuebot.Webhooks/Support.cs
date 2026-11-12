@@ -271,11 +271,15 @@ internal static class Money
         return Symbols.TryGetValue(code, out var symbol) ? symbol + number : $"{number} {code}";
     }
 
-    /// <summary>True when <paramref name="currency"/> is in the comma/space separated <paramref name="allowed"/> list (empty allows all).</summary>
+    /// <summary>
+    /// True when <paramref name="currency"/> is in the comma/space separated <paramref name="allowed"/> list (empty allows
+    /// all). An event whose currency is unknown (a Patreon pledge before Cuebot learnt the campaign's currency) passes:
+    /// the filter cannot tell, and blocking it would silently break the trigger.
+    /// </summary>
     public static bool CurrencyAllowed(string allowed, string currency)
     {
         var list = allowed.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return list.Length == 0 || list.Any(c => string.Equals(c, currency, StringComparison.OrdinalIgnoreCase));
+        return list.Length == 0 || currency.Trim().Length == 0 || list.Any(c => string.Equals(c, currency, StringComparison.OrdinalIgnoreCase));
     }
 }
 
@@ -283,14 +287,15 @@ internal static class Money
 /// Remembers the last event ids (at most <c>capacity</c>, none older than <see cref="MaxAge"/>) so a re-sent webhook is
 /// published once. With a <c>path</c> the ids are also kept on disk (webhooks-seen.json) and written before the event is
 /// published, so a delivery the relay replays after Cuebot crashed or quit (before it could acknowledge it) is not
-/// counted twice in totals, goals and timers.
+/// counted twice in totals, goals and timers. "Window" keys only count as seen for a shorter time (e.g. Patreon's
+/// members:create, which may fire more than once for the same member with a different body).
 /// </summary>
 internal sealed class RecentIds
 {
     /// <summary>Longer than the own relay's 24-hour buffer, so every replay it can make is still recognised.</summary>
     public static readonly TimeSpan MaxAge = TimeSpan.FromHours(48);
 
-    private readonly HashSet<string> _set = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, DateTimeOffset> _times = new(StringComparer.Ordinal);
     private readonly Queue<(string Key, DateTimeOffset Time)> _order = new();
     private readonly object _gate = new();
     private readonly int _capacity;
@@ -309,17 +314,25 @@ internal sealed class RecentIds
     /// True when none of the (non-empty) keys was seen before; then all of them are remembered (and saved). An event
     /// without keys is always new.
     /// </summary>
-    public bool AddAll(IReadOnlyList<string> keys)
+    public bool AddAll(IReadOnlyList<string> keys) => AddAll(keys, [], TimeSpan.Zero);
+
+    /// <summary>
+    /// Like <see cref="AddAll(IReadOnlyList{string})"/>, plus <paramref name="windowKeys"/> that only count as seen when
+    /// they were added less than <paramref name="window"/> ago. All keys are (re)stamped when the event is new.
+    /// </summary>
+    public bool AddAll(IReadOnlyList<string> keys, IReadOnlyList<string> windowKeys, TimeSpan window)
     {
         var real = keys.Where(k => k.Length > 0).Distinct(StringComparer.Ordinal).ToArray();
-        if (real.Length == 0) return true;
+        var windowed = windowKeys.Where(k => k.Length > 0).Distinct(StringComparer.Ordinal).Except(real, StringComparer.Ordinal).ToArray();
+        if (real.Length == 0 && windowed.Length == 0) return true;
         lock (_gate)
         {
-            if (real.Any(_set.Contains)) return false;
             var now = _time.GetUtcNow();
-            foreach (var key in real)
+            if (real.Any(_times.ContainsKey)) return false;
+            if (windowed.Any(k => _times.TryGetValue(k, out var at) && now - at < window)) return false;
+            foreach (var key in real.Concat(windowed))
             {
-                _set.Add(key);
+                _times[key] = now;
                 _order.Enqueue((key, now));
             }
             Trim(now);
@@ -330,12 +343,17 @@ internal sealed class RecentIds
 
     public bool Contains(string key)
     {
-        lock (_gate) return _set.Contains(key);
+        lock (_gate) return _times.ContainsKey(key);
     }
 
     private void Trim(DateTimeOffset now)
     {
-        while (_order.Count > 0 && (_order.Count > _capacity || now - _order.Peek().Time > MaxAge)) _set.Remove(_order.Dequeue().Key);
+        while (_order.Count > 0 && (_order.Count > _capacity || now - _order.Peek().Time > MaxAge))
+        {
+            var (key, time) = _order.Dequeue();
+            // A key stamped again later has a newer entry further back in the queue; keep it until that one goes.
+            if (_times.TryGetValue(key, out var latest) && latest == time) _times.Remove(key);
+        }
     }
 
     private sealed record Entry(string Key, DateTimeOffset Time);
@@ -348,7 +366,8 @@ internal sealed class RecentIds
             var entries = JsonSerializer.Deserialize<List<Entry>>(File.ReadAllText(_path!)) ?? [];
             foreach (var e in entries.Where(e => !string.IsNullOrEmpty(e.Key)).OrderBy(e => e.Time))
             {
-                if (_set.Add(e.Key)) _order.Enqueue((e.Key, e.Time));
+                _times[e.Key] = e.Time;
+                _order.Enqueue((e.Key, e.Time));
             }
             Trim(_time.GetUtcNow());
         }
@@ -365,7 +384,8 @@ internal sealed class RecentIds
         try
         {
             var temp = _path + ".tmp";
-            File.WriteAllText(temp, JsonSerializer.Serialize(_order.Select(e => new Entry(e.Key, e.Time))));
+            File.WriteAllText(temp, JsonSerializer.Serialize(_order.Where(e => _times.TryGetValue(e.Key, out var t) && t == e.Time)
+                .Select(e => new Entry(e.Key, e.Time))));
             File.Move(temp, _path, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

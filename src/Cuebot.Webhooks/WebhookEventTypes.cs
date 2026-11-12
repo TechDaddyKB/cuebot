@@ -30,6 +30,8 @@ public static class PatreonEventTypes
     // Cuebot extras (Streamer.bot has no trigger for these Patreon events).
     public const string MemberUpdated = "patreon.memberUpdated";
     public const string PostPublished = "patreon.postPublished";
+    public const string PostUpdated = "patreon.postUpdated";
+    public const string PostDeleted = "patreon.postDeleted";
 }
 
 /// <summary>Bot events published for Shopify webhooks.</summary>
@@ -71,8 +73,18 @@ public static class CustomWebhookEventTypes
     public const string Received = "webhook.custom";
 }
 
-/// <summary>A mapped webhook, ready to publish. It is a duplicate when any of <see cref="Keys"/> was seen before.</summary>
-internal sealed record WebhookEvent(string Type, IReadOnlyList<string> Keys, Dictionary<string, object?> Args);
+/// <summary>
+/// A mapped webhook, ready to publish. It is a duplicate when any of <see cref="Keys"/> was seen before (within 48 hours),
+/// or any of <see cref="WindowKeys"/> within <see cref="Window"/>.
+/// </summary>
+internal sealed record WebhookEvent(string Type, IReadOnlyList<string> Keys, Dictionary<string, object?> Args)
+{
+    public IReadOnlyList<string> WindowKeys { get; init; } = [];
+    public TimeSpan Window { get; init; }
+
+    /// <summary>What the service read for its own bookkeeping (never published as arguments).</summary>
+    public object? State { get; init; }
+}
 
 /// <summary>A line in the Webhooks page's "last events" list.</summary>
 public sealed record WebhookRecord(DateTimeOffset Time, string Service, string Type, string Summary, bool IsTest);

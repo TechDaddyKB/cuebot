@@ -69,12 +69,9 @@ public abstract class WebhookServiceBase : IWebhookHandler
     /// <summary>The sample events for <paramref name="kind"/> (marked isTest), or null for an unknown kind.</summary>
     private protected abstract IReadOnlyList<WebhookEvent>? Sample(string kind);
 
-    public Task<WebhookOutcome> HandleAsync(WebhookDelivery delivery, CancellationToken ct) => Task.FromResult(Handle(delivery));
-
-    /// <summary>Synchronous core of <see cref="HandleAsync"/> (also used by tests).</summary>
-    public WebhookOutcome Handle(WebhookDelivery delivery)
+    public async Task<WebhookOutcome> HandleAsync(WebhookDelivery delivery, CancellationToken ct)
     {
-        var (outcome, detail) = Process(delivery);
+        var (outcome, detail) = await ProcessAsync(delivery, ct).ConfigureAwait(false);
         LastDelivery = new WebhookDeliveryInfo(delivery.ReceivedAt, outcome, detail);
         if (outcome is WebhookOutcome.Rejected or WebhookOutcome.Failed or WebhookOutcome.NotConfigured)
             Log.Warn(DisplayName, $"Webhook {outcome}: {detail}");
@@ -82,7 +79,13 @@ public abstract class WebhookServiceBase : IWebhookHandler
         return outcome;
     }
 
-    private (WebhookOutcome, string) Process(WebhookDelivery delivery)
+    /// <summary>
+    /// <see cref="HandleAsync"/> for callers without a task (tests). Services that never look anything up (see
+    /// <see cref="EnrichAsync"/>) complete synchronously.
+    /// </summary>
+    public WebhookOutcome Handle(WebhookDelivery delivery) => HandleAsync(delivery, CancellationToken.None).GetAwaiter().GetResult();
+
+    private async Task<(WebhookOutcome, string)> ProcessAsync(WebhookDelivery delivery, CancellationToken ct)
     {
         if (!IsConfiguredFor(delivery)) return (WebhookOutcome.NotConfigured, $"Enter the {SecretName} in Cuebot to accept {DisplayName} webhooks.");
         bool verified;
@@ -109,7 +112,12 @@ public abstract class WebhookServiceBase : IWebhookHandler
             // Blank ids (a service that sent none) are dropped, so they never make unrelated deliveries look like duplicates.
             var keys = e.Keys.Where(k => !string.IsNullOrWhiteSpace(k)).Select(k => $"{Service}:{k.Trim()}")
                 .Concat(string.IsNullOrWhiteSpace(delivery.Id) ? [] : [$"delivery:{delivery.Id}"]).ToArray();
-            if (Publish(e with { Keys = keys }, dedupe: true)) published++;
+            var windowKeys = e.WindowKeys.Where(k => !string.IsNullOrWhiteSpace(k)).Select(k => $"{Service}:{k.Trim()}").ToArray();
+            if (!Seen.AddAll(keys, windowKeys, e.Window)) continue;
+            Prepare(e);
+            await EnrichAsync(e, ct).ConfigureAwait(false);
+            Publish(e);
+            published++;
         }
         return published > 0
             ? (WebhookOutcome.Handled, string.Join(", ", events.Select(e => e.Type).Distinct()))
@@ -124,7 +132,11 @@ public abstract class WebhookServiceBase : IWebhookHandler
     {
         var events = Sample(kind);
         if (events is null) return false;
-        foreach (var e in events) Publish(e, dedupe: false);
+        foreach (var e in events)
+        {
+            Prepare(e);
+            Publish(e);
+        }
         return true;
     }
 
@@ -145,14 +157,23 @@ public abstract class WebhookServiceBase : IWebhookHandler
     /// </summary>
     private protected virtual IReadOnlyList<BotEvent> BeforePublish(WebhookEvent e) => [];
 
+    /// <summary>
+    /// Called once per new, real event after the duplicate check and before <see cref="BeforePublish"/>, to look up what
+    /// the delivery does not say (e.g. Patreon's pledge history). Must not throw; a slow lookup delays the event.
+    /// </summary>
+    private protected virtual Task EnrichAsync(WebhookEvent e, CancellationToken ct) => Task.CompletedTask;
+
     /// <summary>Name of the secret in messages ("verification token", "webhook secret"...).</summary>
     protected virtual string SecretName => "webhook secret";
 
-    private bool Publish(WebhookEvent e, bool dedupe)
+    private void Prepare(WebhookEvent e)
     {
         e.Args["service"] = DisplayName;
         e.Args.TryAdd("isTest", false);
-        if (dedupe && !Seen.AddAll(e.Keys)) return false;
+    }
+
+    private void Publish(WebhookEvent e)
+    {
         var followUps = BeforePublish(e);
         var bot = new BotEvent(e.Type, e.Args);
         var summary = WebhookChatAdapter.Describe(bot)?.Title ?? Summarize(bot);
@@ -165,7 +186,6 @@ public abstract class WebhookServiceBase : IWebhookHandler
         Bus.Publish(bot);
         foreach (var next in followUps) Bus.Publish(next);
         Changed?.Invoke();
-        return true;
     }
 
     /// <summary>Common arguments: who, how much, the message (used by the feed, speech and amount filters).</summary>

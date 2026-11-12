@@ -73,6 +73,41 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" DataContext="{Binding Patreon}" x:DataType="vm:PatreonOptionsViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Patreon extras" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Optional Patreon API connection. On patreon.com/portal/registration/register-clients create a client for yourself and copy its Client ID, Client Secret, Creator's Access Token and Creator's Refresh Token here. Cuebot then reads your campaign's currency, tiers and patron count, syncs the member list every 6 hours, tells upgrades from downgrades, and can create the webhook for you. Tokens are saved like the other secrets and never written to the log." />
+          <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto">
+            <TextBox Text="{Binding ClientId}" PlaceholderText="Client ID" ToolTip.Tip="Your Patreon client's Client ID. Needed to refresh the access token." />
+            <TextBox Grid.Column="2" Name="PatreonClientSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client Secret" ToolTip.Tip="Your Patreon client's Client Secret. Needed to refresh the access token. Hidden as dots; keep it private." />
+            <TextBox Grid.Row="2" Name="PatreonAccessToken" Text="{Binding AccessToken}" PasswordChar="•" PlaceholderText="Creator's Access Token" ToolTip.Tip="The Creator's Access Token of your client. Hidden as dots; keep it private." />
+            <TextBox Grid.Row="2" Grid.Column="2" Name="PatreonRefreshToken" Text="{Binding RefreshToken}" PasswordChar="•" PlaceholderText="Creator's Refresh Token" ToolTip.Tip="The Creator's Refresh Token. Cuebot uses it to get a new access token when the old one runs out. Hidden as dots; keep it private." />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SavedTokens}" />
+          <WrapPanel>
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" Margin="0,0,8,8" ToolTip.Tip="Reads your campaign, tiers and member list with the token." />
+            <Button Content="Sync members" Command="{Binding SyncCommand}" Margin="0,0,8,8" ToolTip.Tip="Reads the member list now (Cuebot also does it every 6 hours)." />
+            <Button Content="Create webhook" Command="{Binding CreateWebhookCommand}" Margin="0,0,8,8" ToolTip.Tip="Creates the Patreon webhook for the Cuebot URL shown on the Relay tab, with every member, pledge and post event, and saves its secret above." />
+            <Button Content="Check webhook" Command="{Binding CheckWebhookCommand}" Margin="0,0,8,8" ToolTip.Tip="Asks Patreon whether the webhook Cuebot created is working or paused." />
+            <Button Content="Resume webhook" Command="{Binding ResumeWebhookCommand}" IsVisible="{Binding CanResume}" Margin="0,0,8,8" ToolTip.Tip="Un-pauses the webhook. Patreon then sends the deliveries it held back; old ones are marked stale." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,8" ToolTip.Tip="Removes the tokens. Webhooks keep working." />
+          </WrapPanel>
+          <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding WebhookHealth}" />
+          <Grid ColumnDefinitions="Auto,8,90,24,Auto,8,90">
+            <TextBlock Text="Currency when unknown" VerticalAlignment="Center" />
+            <TextBox Grid.Column="2" Text="{Binding Currency}" PlaceholderText="USD" ToolTip.Tip="Your campaign's currency, used when neither the delivery nor the API names it. Leave empty to leave it unknown." />
+            <TextBlock Grid.Column="4" Text="Stale after (hours)" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="6" Value="{Binding StaleHours}" Minimum="0" Maximum="720" FormatString="0"
+                           ToolTip.Tip="A new pledge that started and was charged longer ago than this is marked stale: it is a backlog Patreon sent after a paused webhook was resumed. Patreon triggers skip stale deliveries unless you untick that. 0 turns this off." />
+          </Grid>
+          <CheckBox Content="Tag linked viewers as patrons" IsChecked="{Binding LinkViewers}"
+                    ToolTip.Tip="When a patron linked Twitch or YouTube on Patreon, Cuebot sets their user variables isPatron, patreonTier, patreonStatus, patreonAmount and patreonSince." />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card" DataContext="{Binding Custom}" x:DataType="vm:CustomHooksViewModel">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Custom webhooks" />

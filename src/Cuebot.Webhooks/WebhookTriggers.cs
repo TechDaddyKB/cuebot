@@ -127,27 +127,95 @@ internal sealed class KofiTriggers : ITriggerProvider
     }
 }
 
-/// <summary>Patreon triggers (Streamer.bot's five plus member updated and post published).</summary>
-internal sealed class PatreonTriggers : ITriggerProvider
+/// <summary>
+/// Patreon triggers (Streamer.bot's five plus member updated and post published / updated / deleted). Each skips
+/// stale deliveries (a backlog after a paused webhook) unless told otherwise; Pledge Updated can be limited to upgrades
+/// or downgrades; the tier filter picks from the tiers Cuebot knows ("Gold #1234": matched by id, so renaming a tier
+/// keeps the trigger working).
+/// </summary>
+internal sealed class PatreonTriggers(Services.PatreonTracker? tracker = null) : ITriggerProvider
 {
     public const string Category = "Patreon";
 
+    internal const string AnyChange = "Any change";
+    internal const string UpgradesOnly = "Upgrades only";
+    internal const string DowngradesOnly = "Downgrades only";
+
     public IEnumerable<ITriggerType> GetTriggers() =>
     [
-        WebhookFilters.Plain(Category, PatreonEventTypes.FollowCreated, "Follow Created"),
-        WebhookFilters.Plain(Category, PatreonEventTypes.FollowDeleted, "Follow Deleted"),
+        Plain(PatreonEventTypes.FollowCreated, "Follow Created"),
+        Plain(PatreonEventTypes.FollowDeleted, "Follow Deleted"),
         Tiered(PatreonEventTypes.PledgeCreated, "Pledge Created"),
-        Tiered(PatreonEventTypes.PledgeUpdated, "Pledge Updated"),
-        WebhookFilters.Plain(Category, PatreonEventTypes.PledgeDeleted, "Pledge Deleted"),
-        WebhookFilters.Plain(Category, PatreonEventTypes.MemberUpdated, "Member Updated"),
-        WebhookFilters.Plain(Category, PatreonEventTypes.PostPublished, "Post Published"),
+        Tiered(PatreonEventTypes.PledgeUpdated, "Pledge Updated", direction: true),
+        Plain(PatreonEventTypes.PledgeDeleted, "Pledge Deleted"),
+        Plain(PatreonEventTypes.MemberUpdated, "Member Updated"),
+        Plain(PatreonEventTypes.PostPublished, "Post Published"),
+        Plain(PatreonEventTypes.PostUpdated, "Post Updated"),
+        Plain(PatreonEventTypes.PostDeleted, "Post Deleted"),
     ];
 
-    private static EventTriggerType Tiered(string type, string name) =>
-        WebhookFilters.Event(Category, type, name,
-            [new("tier", "Tier name") { Help = "Leave empty for any tier" }, .. WebhookFilters.Amount],
-            (e, s) => WebhookFilters.MatchesAmount(e, s)
-                && (s["tier"].Trim().Length == 0 || WebhookFilters.Text(e.Args, "tier").Split(", ").Contains(s["tier"].Trim(), StringComparer.OrdinalIgnoreCase)));
+    private static readonly ParameterDescriptor SkipStale = new("skipStale", "Skip stale deliveries", ParameterKind.Boolean)
+    {
+        DefaultValue = "true",
+        Help = "Do not run for a backlog Patreon sends after a paused webhook is resumed (see the stale setting on the Webhooks page)",
+    };
+
+    private static bool Fresh(BotEvent e, ParameterValues s) =>
+        !(s.GetBool("skipStale", true) && e.Args.TryGetValue("isStale", out var stale) && stale is true);
+
+    private static EventTriggerType Plain(string type, string name) =>
+        WebhookFilters.Event(Category, type, name, [.. WebhookFilters.TestsOnly, SkipStale], (e, s) => WebhookFilters.MatchesTest(e, s) && Fresh(e, s));
+
+    private EventTriggerType Tiered(string type, string name, bool direction = false)
+    {
+        ParameterDescriptor tier = new("tier", "Tier")
+        {
+            Help = "Leave empty for any tier; pick one (matched by its id) or type names with commas",
+            Suggestions = tracker is null ? null : tracker.TierSuggestions,
+        };
+        ParameterDescriptor change = new("direction", "Change", ParameterKind.Choice)
+        {
+            DefaultValue = AnyChange, Choices = [AnyChange, UpgradesOnly, DowngradesOnly],
+            Help = "Upgrades and downgrades are known from the pledge history (with the Patreon API connected) or from the member list",
+        };
+        return WebhookFilters.Event(Category, type, name,
+            direction ? [tier, change, .. WebhookFilters.Amount, SkipStale] : [tier, .. WebhookFilters.Amount, SkipStale],
+            (e, s) => WebhookFilters.MatchesAmount(e, s) && Fresh(e, s) && TierMatches(e, s["tier"])
+                && (!direction || DirectionMatches(e, s["direction"])));
+    }
+
+    private static bool DirectionMatches(BotEvent e, string setting) => setting switch
+    {
+        UpgradesOnly => WebhookFilters.Text(e.Args, "direction") == "upgrade",
+        DowngradesOnly => WebhookFilters.Text(e.Args, "direction") == "downgrade",
+        _ => true,
+    };
+
+    /// <summary>
+    /// Empty matches any tier. Otherwise the whole setting may be one tier title (titles can contain commas), or a comma
+    /// list of titles, tier ids or "Title #id" picks (matched by id), ignoring case and spaces.
+    /// </summary>
+    internal static bool TierMatches(BotEvent e, string setting)
+    {
+        static string Norm(string t) => string.Concat(t.Where(c => !char.IsWhiteSpace(c))).ToLowerInvariant();
+        if (setting.Trim().Length == 0) return true;
+        var titles = e.Args.TryGetValue("tiers", out var list) && list is IEnumerable<string> l
+            ? l.Select(Norm).ToHashSet()
+            : WebhookFilters.Text(e.Args, "tier").Split(", ", StringSplitOptions.RemoveEmptyEntries).Select(Norm).ToHashSet();
+        var ids = e.Args.TryGetValue("tierIds", out var idList) && idList is IEnumerable<string> il ? il.ToHashSet(StringComparer.Ordinal) : [];
+        if (titles.Contains(Norm(setting))) return true;
+        foreach (var wanted in setting.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var hash = wanted.LastIndexOf('#');
+            if (hash >= 0 && wanted[(hash + 1)..].Trim() is { Length: > 0 } id && id.All(char.IsAsciiDigit))
+            {
+                if (ids.Contains(id)) return true;
+                continue;
+            }
+            if (ids.Contains(wanted) || titles.Contains(Norm(wanted))) return true;
+        }
+        return false;
+    }
 }
 
 /// <summary>Shopify triggers (Order Created, Order Paid).</summary>

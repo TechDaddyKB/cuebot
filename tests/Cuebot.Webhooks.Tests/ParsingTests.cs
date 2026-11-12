@@ -136,9 +136,9 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(PatreonEventTypes.PledgeDeleted, Patreon("members:pledge:delete", body).Type);
         Assert.Equal(PatreonEventTypes.MemberUpdated, Patreon("members:update", body).Type);
 
-        // members:create for a paying patron is covered by members:pledge:create; posts:update is not a trigger.
+        // members:create for a paying patron is covered by members:pledge:create; pledges:* are retired v1 triggers.
         var patreon = new PatreonWebhookHandler(_h.Settings, _h.Bus, _h.Log);
-        foreach (var topic in new[] { "members:create", "posts:update" })
+        foreach (var topic in new[] { "members:create", "pledges:create" })
             Assert.Equal(WebhookOutcome.Ignored, patreon.Handle(Harness.Delivery("patreon", body, new Dictionary<string, string>
             {
                 ["X-Patreon-Event"] = topic, ["X-Patreon-Signature"] = WebhookVerification.HmacMd5Hex("s", Encoding.UTF8.GetBytes(body)),

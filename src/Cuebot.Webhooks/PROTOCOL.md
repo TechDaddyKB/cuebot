@@ -84,26 +84,80 @@ open list. Overlay session data gets `kofi-goal` and `kofi-commissions`.
 ## Patreon
 
 `X-Patreon-Event` names the event. The body is JSON:API: `data` is the member, `included` holds the user, tiers and
-campaign. Patreon sends no event id, so dedupe uses event name + SHA-256 of the body. The v1 `pledges:*` triggers
-were retired on 2026-10-07; only the v2 `members:*` / `posts:*` triggers below exist.
+campaign. API v1 was retired on 2026-10-07; creators who were granted an extension keep the v1 `pledges:*` triggers
+until 2027-01-20. Cuebot ignores `pledges:*`, so tick the `members:pledge:*` triggers instead.
 
 | `X-Patreon-Event` | Event |
 | --- | --- |
-| `members:create` for a free member, or a gifted / free-trial member (`is_gifted` / `is_free_trial`: active patron with no pledge event) | `patreon.followCreated` (Streamer.bot's mapping; the feed shows gifted / trial members as a membership) |
+| `members:create` for a free member, or a gifted / free-trial member (`is_gifted` / `is_free_trial`: active patron with no pledge event) | `patreon.followCreated` (Streamer.bot's id; the feed says "joined as a free member", or a gifted membership / free trial) |
 | `members:create` for any other active patron (it also gets `members:pledge:create`) | ignored |
-| `members:delete` | `patreon.followDeleted` |
+| `members:delete` (a free or paying member who left completely) | `patreon.followDeleted` |
 | `members:pledge:create` / `:update` / `:delete` | `patreon.pledgeCreated` / `pledgeUpdated` / `pledgeDeleted` |
 | `members:update` | `patreon.memberUpdated` (Cuebot extra) |
-| `posts:publish` | `patreon.postPublished` (Cuebot extra; `title`, `url` made absolute with `https://www.patreon.com`) |
+| `posts:publish` / `posts:update` / `posts:delete` | `patreon.postPublished` / `postUpdated` / `postDeleted` (Cuebot extras; `title`, `url` made absolute with `https://www.patreon.com`, `isPaid`, `isPublic`) |
 
-Arguments follow Streamer.bot: `id`, `eventType`, `attributes.<member attribute>` (`patron_status`, `full_name`,
+Patreon documents that a gift gets no `members:pledge:create`; it does not say the same for a free trial. Cuebot treats
+a trial like a gift (members:create → followCreated). If live deliveries show a pledge event for trials too, the trial
+branch must go (to be confirmed live).
+
+**Dedupe.** Patreon sends no event id. Every delivery is keyed by event name + SHA-256 of the body (kept 48 h in
+webhooks-seen.json). `members:pledge:create` is also keyed by member id + `pledge_relationship_start`, so a re-sent new
+pledge with a changed body counts once. Patreon says `members:create` "may fire more than once per patron" with
+different bodies, so it is also keyed by member id for 10 minutes.
+
+**Arguments** follow Streamer.bot: `id`, `eventType`, `attributes.<member attribute>` (`patron_status`, `full_name`,
 `email`, `currently_entitled_amount_cents`, `last_charge_status`, `note`, ...), `user.id`, `user.type`,
-`user.Attributes.<user attribute>`, `entitledTiers[i].id/type/Attributes.<tier attribute>`, plus `tier` (titles),
-`patronStatus`, `isGifted`, `isFreeTrial`, `note`, and `amount` = entitled cents / 100. `attributes.note` is the
-creator's private note about the member, so it is never the `message` (which is empty for members). `tier` leaves out
-$0 tiers when a paid tier is also entitled (members of a paid tier usually hold the Free tier too); tiers referenced
-but missing from `included` keep their `entitledTiers[i].id` and add no title. Patreon does not name the currency in
-the member resource, so `currency` is empty.
+`user.Attributes.<user attribute>`, `entitledTiers[i].id/type/Attributes.<tier attribute>`. Deprecated fields are still
+forwarded for Streamer.bot parity but should not be used: `attributes.is_follower` (always false: following was
+replaced by free membership), `attributes.lifetime_support_cents` (use `campaign_lifetime_support_cents`, published as
+`lifetimeSupport`) and `user.Attributes.vanity` (use the campaign's vanity).
+
+Cuebot adds `tier` (titles joined with ", "; $0 tiers left out next to a paid one), `tiers` / `tierIds` (lists, used by
+the tier filter, so a title with a comma still matches), `patronStatus`, `isGifted`, `isFreeTrial`, `note` (the
+creator's private note, never the `message`), and the money:
+
+- `currency`: the campaign's currency. From `included` campaign `attributes.currency` (added to the API on 2026-03-09;
+  whether webhook payloads carry it is still to be checked live), else the currency the API connection or an earlier
+  delivery told Cuebot, else the "currency when unknown" setting, else empty (the currency filter then lets it pass).
+- `amount` = `monthlyAmount`: the pledge per month. The charge is `currently_entitled_amount_cents` (the current
+  period), else `will_pay_amount_cents`; `pledge_cadence` is the months between charges, so a yearly pledge of 60 is
+  `amount` 5. The raw charge is `chargeAmount` / `formattedCharge`, the cadence `pledgeCadence`. Filters, the feed,
+  top spenders and subathon time use the monthly value. On `members:pledge:delete` `amount` is the pledge that ended
+  (Patreon may keep the entitled amount until the period ends).
+
+Since 2026-05-26 a patron can hide their identity: the user's `full_name`, `image_url`, `url`... are then null. When
+the included user's `full_name` is null, `user` is "An anonymous patron", `isAnonymous` is true, the member's name is
+only in `privateName`, and `avatarUrl` / `profileUrl` are empty. Overlays should have a fallback picture anyway.
+
+**Stale backlog.** Failed deliveries are retried (about 30 s, 5 min, 15 min, 1 h, 3 h, 1 day, 1 week); after repeated
+failures Patreon pauses the webhook, and resuming it sends everything held back at once. A `members:pledge:create`
+whose `pledge_relationship_start` and `last_charge_date` are both older than `StaleHours` (6; 0 = off) gets
+`isStale` true (`ageHours` says how old); every Patreon trigger skips stale events unless "Skip stale deliveries" is
+unticked. They still update the member list and totals.
+
+**API connection (optional).** The creator pastes their own client's Client ID, Client Secret, Creator's Access Token
+and Refresh Token (patreon.com/portal/registration/register-clients; a creator token has every v2 scope). All calls
+send a User-Agent. A 401 refreshes the token once (`POST /api/oauth2/token`, `grant_type=refresh_token`); a refused
+refresh (or a 403) stops all calls until the user connects again, because Patreon's edge limiter blocks clients with
+many 4xx answers. Calls:
+
+| Call | Use |
+| --- | --- |
+| `GET /api/oauth2/v2/identity?include=campaign` | the campaign id |
+| `GET /api/oauth2/v2/campaigns/{id}?include=tiers&fields[campaign]=creation_name,currency,patron_count,vanity,url&fields[tier]=title,amount_cents,published` | currency, patron count, tiers (tier picker suggests "Title #id"; the filter matches the id, so renaming a tier keeps triggers working) |
+| `GET /api/oauth2/v2/campaigns/{id}/members?include=currently_entitled_tiers,user&...&page[count]=1000` (cursor `meta.pagination.cursors.next`) | member list on connect and every 6 h: totals, patron-to-viewer links |
+| `GET /api/oauth2/v2/members/{id}?include=pledge_history&fields[pledge-event]=type,amount_cents,currency_code,tier_title,date` | after `members:pledge:update` (5 s limit): `direction` (`pledge_upgrade` / `pledge_downgrade`), `previousAmount`, `previousTier`. Without the API the direction comes from the member list Cuebot keeps |
+| `GET /api/oauth2/v2/posts/{id}?fields[post]=title,url,is_paid,is_public,tiers,published_at` | after `posts:publish` / `posts:update`: `isPaid`, `isPublic`, `tierIds`, `tierNames` |
+| `GET` / `POST` / `PATCH /api/oauth2/v2/webhooks` | create the webhook for the relay URL with every `members:*` / `members:pledge:*` / `posts:*` trigger and save its `secret`; read `paused`, `num_consecutive_times_failed`, `last_attempted_at`; resume with `paused: false`. Patreon lists only webhooks made by the same client, so a webhook made by hand in the portal cannot be checked |
+
+Kept in patreon.json: campaign (name, vanity, url, currency, patron count), tiers, members (status, amount, cadence,
+tiers, since, linked Twitch / YouTube / Discord ids), last sync, webhook health. Totals: global variables
+`patreonPatronCount` (Patreon's count, else active members known), `patreonPaidCount` (active, amount > 0, not a gift
+or trial), `patreonMonthly` (their monthly pledges added up), `patreonCurrency`; overlay session data `patreon`; the
+Goal widget's "Patreon paying patrons" / "Patreon monthly pledges". Campaign `goals` are deprecated (always empty), so
+goals are set in Cuebot. Linked viewers (`user.attributes.social_connections.twitch.user_id` / `.url`, `youtube.user_id`)
+get the user variables `isPatron`, `patreonTier`, `patreonStatus`, `patreonAmount`, `patreonSince`; a Twitch link
+that names a login rather than the numeric id is resolved through the viewers Cuebot has seen in chat.
 
 ## Fourthwall
 
@@ -178,7 +232,7 @@ their own (never overwriting Cuebot's own names). Dedupe on the relay delivery i
 | --- | --- |
 | Ko-fi donation, Fourthwall donation, Throne gift / contribution | Tip (→ credits "Tips") |
 | Ko-fi (re)subscription, Patreon pledge created, Patreon gifted / free-trial member, Fourthwall subscription purchased | Subscription (→ credits "Subscriptions") |
-| Patreon follow created | Follow (→ credits "Follows") |
+| Patreon free member joined (followCreated) | Follow (→ credits "Follows") |
 | Ko-fi commission / shop order, Shopify orders, Fourthwall order / gift purchase, Patreon pledge updated, Throne crowdfunded | Other (no purchase kind exists; not in the credits) |
 
 ## Sources
@@ -186,7 +240,8 @@ their own (never overwriting Cuebot's own names). Dedupe on the relay delivery i
 - Ko-fi webhooks: https://help.ko-fi.com/hc/en-us/articles/360004162298, ko-fi.com/manage/webhooks, the official
   example payload image (help.ko-fi.com/hc/article_attachments/16595546601629); test payload shapes from
   github.com/rainbowdashlabs/reputation-bot (`dev/*.json`)
-- Patreon webhooks: https://docs.patreon.com/#webhooks; payload shapes from Zulip's Patreon fixtures
+- Patreon webhooks and API v2: https://docs.patreon.com/ (#webhooks, #triggers-v2, #robust-retries, #member, #campaign-v2,
+  #pledge-event, #apiv2-webhook-endpoints, #pagination, changelog, read 2026-11-11); payload shapes from Zulip's Patreon fixtures
   (github.com/zulip/zulip, `zerver/webhooks/patreon/fixtures`) and a captured portal test (patreon-api.ts issue 89)
 - Fourthwall: https://docs.fourthwall.com/webhooks/webhook-model, .../signature-verification, OpenAPI `openapi/platform.json` (`webhooks`)
 - Shopify: https://shopify.dev/docs/apps/build/webhooks (HMAC verification, `X-Shopify-Webhook-Id` dedupe, test

@@ -42,6 +42,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [OBS](obs.md) | 47 |
 | [OBSBOT](obsbot.md) | 23 |
 | [Overlays](overlays.md) | 2 |
+| [Patreon](patreon.md) | 3 |
 | [PNGTuber Remix](pngtuber-remix.md) | 12 |
 | [Points](points.md) | 18 |
 | [Polls](polls.md) | 4 |

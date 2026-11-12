@@ -24,8 +24,8 @@ internal static class Money
 
     /// <summary>
     /// True when <paramref name="currency"/> is in the comma/space separated <paramref name="allowed"/> list (empty allows
-    /// all). An event without a currency (Patreon never names one) passes: the filter cannot tell, and blocking every
-    /// such event would silently break the trigger.
+    /// all). An event without a currency (for example a Patreon pledge before Cuebot learnt the campaign's currency)
+    /// passes: the filter cannot tell, and blocking every such event would silently break the trigger.
     /// </summary>
     public static bool CurrencyAllowed(string allowed, string currency)
     {

@@ -7,7 +7,7 @@ namespace Cuebot.Webhooks;
 /// <summary>
 /// Shows webhook money events in the activity feed (and so in event speech, "chat.activity", and the credits):
 /// donations, tips and Throne contributions as <see cref="FeedKind.Tip"/>, memberships/pledges as
-/// <see cref="FeedKind.Subscription"/>, Patreon follows as <see cref="FeedKind.Follow"/>, and shop orders as
+/// <see cref="FeedKind.Subscription"/>, Patreon free members as <see cref="FeedKind.Follow"/>, and shop orders as
 /// <see cref="FeedKind.Other"/> (there is no purchase kind). Administrative events (product updates, newsletter,
 /// deletions, custom hooks) are not shown.
 /// </summary>
@@ -67,7 +67,8 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
                 Item(FeedKind.Subscription, $"{user} received a gifted Patreon membership{tierText}", withMessage: false),
             PatreonEventTypes.FollowCreated when a.TryGetValue("isFreeTrial", out var trial) && trial is true =>
                 Item(FeedKind.Subscription, $"{user} started a Patreon free trial{tierText}", withMessage: false),
-            PatreonEventTypes.FollowCreated => Item(FeedKind.Follow, $"{user} followed on Patreon", withMessage: false),
+            // Patreon replaced following with free membership; the trigger keeps Streamer.bot's "Follow Created" id.
+            PatreonEventTypes.FollowCreated => Item(FeedKind.Follow, $"{user} joined your Patreon as a free member", withMessage: false),
 
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid when a.TryGetValue("isRepeatOrder", out var rep) && rep is true => null,
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid =>
