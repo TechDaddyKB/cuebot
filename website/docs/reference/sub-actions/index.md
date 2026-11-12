@@ -53,6 +53,7 @@ A **sub-action** is one step of an action: the "then do this" part. An action ru
 | [RahiTuber](rahituber.md) | 1 |
 | [Remote](remote.md) | 2 |
 | [Rumble](rumble.md) | 1 |
+| [Shopify](shopify.md) | 7 |
 | [Speech](speech.md) | 11 |
 | [Spending](spending.md) | 4 |
 | [Spotify](spotify.md) | 5 |

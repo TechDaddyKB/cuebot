@@ -39,6 +39,16 @@ public static class ShopifyEventTypes
 {
     public const string OrderCreated = "shopify.orderCreated";
     public const string OrderPaid = "shopify.orderPaid";
+
+    // Cuebot extras (Streamer.bot has no trigger for these Shopify webhooks).
+    public const string OrderCancelled = "shopify.orderCancelled";
+    public const string RefundCreated = "shopify.refundCreated";
+    public const string LowStock = "shopify.lowStock";
+    public const string SoldOut = "shopify.soldOut";
+    public const string Restocked = "shopify.restocked";
+
+    /// <summary>This stream's merch goal (counted from paid orders, see <see cref="Services.ShopifyTracker"/>) reached its target.</summary>
+    public const string GoalReached = "shopify.goalReached";
 }
 
 /// <summary>Bot events published for Fourthwall webhooks.</summary>

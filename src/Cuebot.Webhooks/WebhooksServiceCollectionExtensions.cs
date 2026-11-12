@@ -55,7 +55,18 @@ public static class WebhooksServiceCollectionExtensions
             // Gift draw entries from Twitch chat and the Twitch stream going live / offline.
             sp.GetRequiredService<EventBus>().Subscribe(tracker.OnEvent);
         });
-        Add<ShopifyWebhookHandler>(services, (s, b, l) => new ShopifyWebhookHandler(s, b, l));
+        services.AddSingleton(sp => new ShopifyTracker(sp.GetRequiredService<JsonFile<WebhooksSettings>>(), sp.GetRequiredService<AppLog>(),
+            sp.GetService<HttpClient>(), sp.GetRequiredService<AppPaths>().File("shopify.json")));
+        services.AddSingleton<Cuebot.Core.Overlays.Session.ISessionDataSource>(sp => sp.GetRequiredService<ShopifyTracker>());
+        services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<ShopifyTracker>());
+        Add<ShopifyWebhookHandler>(services, (s, b, l) => new ShopifyWebhookHandler(s, b, l), (sp, h) =>
+        {
+            var tracker = sp.GetRequiredService<ShopifyTracker>();
+            h.Tracker = tracker;
+            tracker.Replay = h.ReplayAsync;
+            // A stream going live starts the merch counter again.
+            sp.GetRequiredService<EventBus>().Subscribe(tracker.OnEvent);
+        });
         Add<ThroneWebhookHandler>(services, (s, b, l) => new ThroneWebhookHandler(s, b, l));
         Add<CustomWebhookHandler>(services, (s, b, l) => new CustomWebhookHandler(s, b, l));
         services.AddSingleton<WebhookServices>();
@@ -76,6 +87,10 @@ public static class WebhooksServiceCollectionExtensions
         services.AddSingleton(sp => new FourthwallSubActionSet(FourthwallSubActions.Create(sp.GetRequiredService<FourthwallTracker>())));
         foreach (var typeId in FourthwallSubActions.TypeIds)
             services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<FourthwallSubActionSet>().Get(typeId));
+        services.AddSingleton<IScriptFunctionProvider>(sp => new ShopifyScriptFunctions(sp.GetRequiredService<ShopifyTracker>()));
+        services.AddSingleton(sp => new ShopifySubActionSet(ShopifySubActions.Create(sp.GetRequiredService<ShopifyTracker>())));
+        foreach (var typeId in ShopifySubActions.TypeIds)
+            services.AddSingleton<ISubActionHandler>(sp => sp.GetRequiredService<ShopifySubActionSet>().Get(typeId));
         services.AddSingleton<IScriptFunctionProvider>(sp => new PatreonScriptFunctions(sp.GetRequiredService<PatreonTracker>()));
         services.AddSingleton(sp => new PatreonSubActionSet(PatreonSubActions.Create(sp.GetRequiredService<PatreonTracker>())));
         foreach (var typeId in PatreonSubActions.TypeIds)

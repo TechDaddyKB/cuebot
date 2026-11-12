@@ -47,7 +47,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Quotes](quotes.md) | 4 |
 | [Remote](remote.md) | 3 |
 | [Rumble](rumble.md) | 8 |
-| [Shopify](shopify.md) | 2 |
+| [Shopify](shopify.md) | 8 |
 | [Speech](speech.md) | 3 |
 | [Spending](spending.md) | 2 |
 | [Store](store.md) | 3 |

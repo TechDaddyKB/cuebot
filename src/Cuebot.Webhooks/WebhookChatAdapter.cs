@@ -73,6 +73,12 @@ internal sealed class WebhookChatAdapter(string platform, string prefix) : IChat
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid when a.TryGetValue("isRepeatOrder", out var rep) && rep is true => null,
             ShopifyEventTypes.OrderCreated or ShopifyEventTypes.OrderPaid =>
                 Item(FeedKind.Other, $"{user} placed order {Get(a, "orderName")} ({amount})", amount, spend: "Shop order"),
+            // Cancellations and refunds are shown (so a "fake order" is visibly taken back) but are not spending.
+            ShopifyEventTypes.OrderCancelled =>
+                Item(FeedKind.Other, $"Order {Get(a, "orderName")} from {user} was cancelled ({amount})", amount, withMessage: false),
+            ShopifyEventTypes.RefundCreated =>
+                Item(FeedKind.Other, $"Refunded {amount} on {(Get(a, "orderName") is { Length: > 0 } on ? $"order {on}" : "an order")}"
+                    + (user is "" or "Someone" ? "" : $" ({user})"), amount, withMessage: false),
 
             // Only purchases are money spent: a redeemed stream gift or giveaway link gets its own line, the creator's samples none.
             FourthwallEventTypes.OrderPlaced when !Flag(a, "isPurchase", true) =>

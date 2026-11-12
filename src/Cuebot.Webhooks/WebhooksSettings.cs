@@ -29,9 +29,13 @@ public sealed class WebhooksSettings
 
     /// <summary>
     /// Shopify: the signing key. For webhooks created in the admin (Settings → Notifications → Webhooks) it is the key
-    /// shown there ("Your webhooks will be signed with ..."); for an app's webhooks it is the app's client secret.
+    /// shown there under the webhook list ("Your webhooks are signed with ..."), one per store. Only for webhooks an
+    /// existing custom app or a Dev Dashboard app subscribed itself is it the app's client secret.
     /// </summary>
     public WebhookServiceSettings Shopify { get; set; } = new();
+
+    /// <summary>Shopify choices beyond the signing key: privacy, the merch counter and goal, low stock and the optional Admin API.</summary>
+    public ShopifyOptions ShopifyOptions { get; set; } = new();
 
     /// <summary>
     /// Throne signs its webhooks (Ed25519, checked with Throne's public key), so no secret is needed. The secret here is
@@ -224,4 +228,85 @@ public sealed class FourthwallOptions
 
     /// <summary>The webhook configuration Cuebot created or repaired through the API.</summary>
     public string WebhookId { get; set; } = "";
+}
+
+/// <summary>
+/// Shopify options (webhooks.json). Privacy first: buyers are shown by first name, their order note is never read out
+/// unless asked for, and contact details (email, phone, addresses, IP) never reach actions, scripts or WebSocket clients.
+/// The Admin API connection is optional: a Dev Dashboard app installed on your own store (shop domain, client id, client
+/// secret: client credentials grant, 24-hour tokens Cuebot renews), or an Admin API access token an older custom app
+/// already has. Sales, goal and stock Cuebot learnt are kept in shopify.json.
+/// </summary>
+public sealed class ShopifyOptions
+{
+    public const string FirstName = "First name";
+    public const string FullName = "Full name";
+    public const string Someone = "Someone";
+
+    public const string NoMessage = "None";
+    public const string CartAttribute = "Cart attribute";
+    public const string OrderNote = "Order note";
+
+    /// <summary>How the buyer is named in %user% (feed, speech, alerts): <see cref="FirstName"/> (default), <see cref="FullName"/> or <see cref="Someone"/>.</summary>
+    public string NameOnStream { get; set; } = FirstName;
+
+    /// <summary>
+    /// Where %message% comes from. <see cref="NoMessage"/> (default): never, since the order note is the checkout's
+    /// delivery instructions (gate codes, phone numbers). <see cref="CartAttribute"/>: the cart attribute named
+    /// <see cref="MessageAttribute"/>, which a store can add as a "message for the stream" field.
+    /// <see cref="OrderNote"/>: the order note (only if your checkout asks for a stream message there).
+    /// </summary>
+    public string MessageSource { get; set; } = NoMessage;
+
+    /// <summary>The cart attribute (order <c>note_attributes</c> name) read as the stream message.</summary>
+    public string MessageAttribute { get; set; } = "Stream message";
+
+    /// <summary>
+    /// On (default): email, phone, addresses, IP, browser details and order-status links are removed from the
+    /// shopify.* arguments, %_json% and what the Streamer.bot-compatible WebSocket server forwards.
+    /// </summary>
+    public bool RedactContactDetails { get; set; } = true;
+
+    /// <summary>Start the merch counter again when a stream goes live.</summary>
+    public bool ResetSalesOnStreamStart { get; set; } = true;
+
+    /// <summary>Low Stock runs when a variant's stock falls to this many or fewer (0 = only Sold Out).</summary>
+    public int LowStockThreshold { get; set; } = 5;
+
+    public ShopifyGoalSettings Goal { get; set; } = new();
+
+    /// <summary>The store's myshopify.com address (like cue-shop.myshopify.com), for the Admin API.</summary>
+    public string ShopDomain { get; set; } = "";
+
+    /// <summary>The Dev Dashboard app's client id.</summary>
+    public string ClientId { get; set; } = "";
+
+    /// <summary>The Dev Dashboard app's client secret. A secret.</summary>
+    [Secret]
+    public string ClientSecret { get; set; } = "";
+
+    /// <summary>Instead of a client id and secret: an Admin API access token (shpat_…) an existing custom app has. A secret.</summary>
+    [Secret]
+    public string AccessToken { get; set; } = "";
+
+    /// <summary>
+    /// With the API connected, every this many minutes Cuebot asks Shopify for paid orders no delivery brought (relay
+    /// down, Cuebot closed) and runs Order Paid for them, marked isReplay. 0 = off.
+    /// </summary>
+    public int CatchUpMinutes { get; set; } = 10;
+}
+
+/// <summary>The merch goal Cuebot keeps from Shopify's paid orders (this stream's counter).</summary>
+public sealed class ShopifyGoalSettings
+{
+    public const string Items = "Items sold";
+    public const string Revenue = "Revenue";
+
+    public string Title { get; set; } = "Merch goal";
+
+    /// <summary>0 = no goal.</summary>
+    public double Target { get; set; }
+
+    /// <summary><see cref="Items"/> (default) or <see cref="Revenue"/>.</summary>
+    public string Measure { get; set; } = Items;
 }

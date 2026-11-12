@@ -132,6 +132,8 @@ public static class StepRiskCatalog
         ["spending.*"] = L2, ["spending.getTop"] = L1, ["spending.newStream"] = L3,
         ["kofi.*"] = L2, ["kofi.getGoal"] = L1, ["kofi.getCommissions"] = L1,
         ["patreon.*"] = L2, ["patreon.getPatron"] = L1, ["patreon.getCampaign"] = L1,
+        // Shopify: only reads the store; the counter and goal are Cuebot's own (like the Ko-fi goal).
+        ["shopify.*"] = L2, ["shopify.getSales"] = L1, ["shopify.getTotals"] = L1, ["shopify.getProducts"] = L1,
         // Fourthwall: discount codes, hiding products, posts and giveaway links change the shop; a thank-you uploads a local file.
         ["fourthwall.*"] = L3, ["fourthwall.getMembers"] = L1, ["fourthwall.getTotals"] = L1, ["fourthwall.getThankYous"] = L1,
         ["fourthwall.refreshProducts"] = L2, ["fourthwall.catchUp"] = L2, ["fourthwall.setStreaming"] = L2, ["fourthwall.sendThankYou"] = L4,

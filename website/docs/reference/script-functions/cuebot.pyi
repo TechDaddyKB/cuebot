@@ -1752,6 +1752,47 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"rumble.sendMessage\", ...).
         """
+    def shopify_goal(self) -> Any:
+        """Reads the Shopify merch goal set on the Webhooks page.
+
+        Gives back: title, measure (\"Items sold\" or \"Revenue\"), current, target, percent, currency and reached.
+        Same as cb.call(\"shopify.goal\", ...).
+        """
+    def shopify_products(self, *, search: Any = None) -> Any:
+        """Lists your Shopify products from the last refresh. Needs the Shopify API connected on the Webhooks page.
+
+        search: Optional. Only products whose name contains this.
+        Gives back: A list of products with name, price, formattedPrice, currency, url, image, soldOut and stock.
+        Same as cb.call(\"shopify.products\", ...).
+        """
+    def shopify_reset_sales(self) -> Any:
+        """Starts the Shopify merch counter and goal again from zero.
+
+        Gives back: The counter after the reset (like shopify.sales).
+        Same as cb.call(\"shopify.resetSales\", ...).
+        """
+    def shopify_sales(self) -> Any:
+        """Reads this stream's Shopify merch counter: paid orders, minus cancellations and refunds. Test events never count. No API needed.
+
+        Gives back: revenue, orders, items, refunded, currency, since (when the counter started) and products (product name to how many sold).
+        Same as cb.call(\"shopify.sales\", ...).
+        """
+    def shopify_set_goal(self, *, title: Any = None, target: Any = None, measure: Any = None) -> Any:
+        """Changes the Shopify merch goal. Leave out anything you want to keep.
+
+        title: Optional. The goal's new name.
+        target: Optional. The new target; 0 turns the goal off.
+        measure: Optional. \"Items sold\" or \"Revenue\".
+        Gives back: The goal after the change (like shopify.goal).
+        Same as cb.call(\"shopify.setGoal\", ...).
+        """
+    def shopify_totals(self, *, hours: Any = None) -> Any:
+        """Reads your paid Shopify orders over the last hours from Shopify itself (cancelled and test orders left out). Needs the Shopify API connected.
+
+        hours: Optional. How many hours back (default 24).
+        Gives back: revenue, orders, items, currency and since.
+        Same as cb.call(\"shopify.totals\", ...).
+        """
     def slobs_call(self, resource: Any, method: Any, *, args: Any = None) -> Any:
         """Sends any Remote Control command to Streamlabs Desktop and gives back its answer. For advanced users. Fails with an error when Streamlabs Desktop is not connected.
 

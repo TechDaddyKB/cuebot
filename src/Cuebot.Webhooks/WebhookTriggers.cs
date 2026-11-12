@@ -218,16 +218,88 @@ internal sealed class PatreonTriggers(Services.PatreonTracker? tracker = null) :
     }
 }
 
-/// <summary>Shopify triggers (Order Created, Order Paid).</summary>
+/// <summary>
+/// Shopify triggers: Streamer.bot's Order Created and Order Paid, plus Order Cancelled, Refund Created, Low Stock, Sold
+/// Out, Restocked and Merch Goal Reached. The order triggers can be limited to products (name contains), SKUs and
+/// discount codes; Order Created to a payment status (it also runs for orders that are never paid). Shopify sends each
+/// webhook at least once and in no set order: Order Created can arrive after Order Paid, so celebrate on Order Paid.
+/// </summary>
 internal sealed class ShopifyTriggers : ITriggerProvider
 {
     public const string Category = "Shopify";
 
     public IEnumerable<ITriggerType> GetTriggers() =>
     [
-        WebhookFilters.Paid(Category, ShopifyEventTypes.OrderCreated, "Order Created"),
-        WebhookFilters.Paid(Category, ShopifyEventTypes.OrderPaid, "Order Paid"),
+        Order(ShopifyEventTypes.OrderCreated, "Order Created",
+            [new("financialStatus", "Payment status") { Help = "Leave empty for any; several with commas, e.g. paid, pending. Order Created also runs for orders that are never paid" }]),
+        Order(ShopifyEventTypes.OrderPaid, "Order Paid", [SkipReplays]),
+        Order(ShopifyEventTypes.OrderCancelled, "Order Cancelled", []),
+        Order(ShopifyEventTypes.RefundCreated, "Refund Created", []),
+        Stock(ShopifyEventTypes.LowStock, "Low Stock"),
+        Stock(ShopifyEventTypes.SoldOut, "Sold Out"),
+        Stock(ShopifyEventTypes.Restocked, "Restocked"),
+        WebhookFilters.Event(Category, ShopifyEventTypes.GoalReached, "Merch Goal Reached"),
     ];
+
+    private static readonly ParameterDescriptor SkipReplays = new("skipReplays", "Skip caught-up orders", ParameterKind.Boolean)
+    {
+        DefaultValue = "false",
+        Help = "Do not run for paid orders Cuebot found later through the Shopify API because no delivery brought them (they still count in the merch counter)",
+    };
+
+    private static IReadOnlyList<ParameterDescriptor> ItemFilters { get; } =
+    [
+        new("product", "Product name contains") { Help = "Leave empty for any; several with commas, e.g. hoodie, tee. Runs when any item matches" },
+        new("sku", "SKU") { Help = "Leave empty for any; several with commas. Runs when any item has one of them" },
+        new("discountCode", "Discount code") { Help = "Leave empty for any; several with commas, e.g. your creator code" },
+    ];
+
+    private static EventTriggerType Order(string type, string name, IReadOnlyList<ParameterDescriptor> extra) =>
+        WebhookFilters.Event(Category, type, name, [.. ItemFilters, .. extra, .. WebhookFilters.Amount],
+            (e, s) => WebhookFilters.MatchesAmount(e, s) && ItemsMatch(e, s)
+                && ListMatches(s["discountCode"], WebhookFilters.Text(e.Args, "discountCodes").Split(',', StringSplitOptions.TrimEntries))
+                && ListMatches(s["financialStatus"], [WebhookFilters.Text(e.Args, "financialStatus")])
+                && !(s.GetBool("skipReplays") && e.Args.TryGetValue("isReplay", out var r) && r is true));
+
+    private static EventTriggerType Stock(string type, string name) =>
+        WebhookFilters.Event(Category, type, name,
+            [
+                new("product", "Product name contains") { Help = "Leave empty for any; several with commas. Product names need the Shopify API connected (otherwise use the SKU or inventory item id)" },
+                new("sku", "SKU or inventory item id") { Help = "Leave empty for any; several with commas" },
+                .. WebhookFilters.TestsOnly,
+            ],
+            (e, s) => WebhookFilters.MatchesTest(e, s) && Contains(s["product"], [WebhookFilters.Text(e.Args, "productName"), WebhookFilters.Text(e.Args, "item")])
+                && ListMatches(s["sku"], [WebhookFilters.Text(e.Args, "sku"), WebhookFilters.Text(e.Args, "inventoryItemId")]));
+
+    /// <summary>Product and SKU filters: any item of the order matches (empty settings match anything).</summary>
+    internal static bool ItemsMatch(BotEvent e, ParameterValues s)
+    {
+        var names = new List<string>();
+        var skus = new List<string>();
+        for (var i = 0; e.Args.ContainsKey($"item{i}.name"); i++)
+        {
+            names.Add(WebhookFilters.Text(e.Args, $"item{i}.name"));
+            names.Add(WebhookFilters.Text(e.Args, $"item{i}.variant"));
+            skus.Add(WebhookFilters.Text(e.Args, $"item{i}.sku"));
+        }
+        if (names.Count == 0) names.Add(WebhookFilters.Text(e.Args, "items"));
+        return Contains(s["product"], names) && ListMatches(s["sku"], skus);
+    }
+
+    private static string[] Wanted(string setting) =>
+        setting.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static bool Contains(string setting, IReadOnlyList<string> values)
+    {
+        var wanted = Wanted(setting);
+        return wanted.Length == 0 || wanted.Any(w => values.Any(v => v.Contains(w, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static bool ListMatches(string setting, IReadOnlyList<string> values)
+    {
+        var wanted = Wanted(setting);
+        return wanted.Length == 0 || wanted.Any(w => values.Any(v => string.Equals(v.Trim(), w, StringComparison.OrdinalIgnoreCase)));
+    }
 }
 
 /// <summary>

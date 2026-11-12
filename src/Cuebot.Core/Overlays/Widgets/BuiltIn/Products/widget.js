@@ -1,7 +1,7 @@
 // Cuebot product showcase: rotates through the products you enter (image, name, price) with where to buy them, and
 // shows who just bought merch when Cuebot hears of a purchase (StreamElements, Streamlabs, Fourthwall, Shopify, Ko-fi).
-// Works for any shop. "My Fourthwall shop" shows the products Cuebot read from Fourthwall (session data "fourthwall":
-// names, prices, pictures, sold out) and follows changes. Built on the StreamElements widget API, so it is edited like any
+// Works for any shop. "My Fourthwall shop" / "My Shopify store" show the products Cuebot read from Fourthwall or Shopify
+// (session data "fourthwall" / "shopify": names, prices, pictures, sold out) and follow changes. Built on the StreamElements widget API, so it is edited like any
 // other widget.
 (function () {
   "use strict";
@@ -36,7 +36,8 @@
   }
 
   function fromShop(data) {
-    var shop = (data && data.fourthwall && data.fourthwall.products) || [];
+    var source = settings.source === "shopify" ? "shopify" : "fourthwall";
+    var shop = (data && data[source] && data[source].products) || [];
     return shop.map(function (p) {
       return { name: p.name || "", price: p.soldOut ? "Sold out" : (p.price || ""), image: p.image || "" };
     }).filter(function (p) { return p.name; });
@@ -57,7 +58,7 @@
     settings = obj.detail.fieldData || {};
     root = document.getElementById("products");
     var list = [];
-    if (settings.source === "fourthwall") list = fromShop((obj.detail.session && obj.detail.session.data) || {});
+    if (settings.source === "fourthwall" || settings.source === "shopify") list = fromShop((obj.detail.session && obj.detail.session.data) || {});
     else {
       for (var i = 1; i <= 6; i++) {
         var name = String(settings["product" + i + "Name"] || "").trim();
@@ -69,7 +70,7 @@
   });
 
   window.addEventListener("onSessionUpdate", function (obj) {
-    if (settings.source !== "fourthwall" || !root) return;
+    if ((settings.source !== "fourthwall" && settings.source !== "shopify") || !root) return;
     start(fromShop(obj.detail.session || {}));
   });
 

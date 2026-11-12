@@ -34,6 +34,11 @@ of a stream. If you want missed messages delivered later, set up your own relay 
     Fourthwall keeps a list of the events it sent. With the Fourthwall API connected, Cuebot checks that list every few
     minutes and runs the events that never arrived. See [Fourthwall](fourthwall.md).
 
+!!! note "Shopify can catch up, and deletes failing webhooks"
+    With the Shopify API connected, Cuebot asks Shopify for paid orders every few minutes and runs those that never
+    arrived. Shopify deletes a webhook whose address keeps failing (without an email), so after changing your own
+    relay's route secret, update the address in Shopify straight away. See [Shopify](shopify.md).
+
 !!! warning "Dropped means gone for Ko-fi"
     Ko-fi does not send a payment again, and has no way to look it up later. A Ko-fi payment made while Cuebot is
     closed is missing from your totals, goals, subathon timers and credits for good. Your own relay keeps it for 24
@@ -80,6 +85,9 @@ perks: [Patreon](patreon.md).
 Fourthwall has its own page, with the setup steps, unpaid donations and samples orders, hidden names, stream gift draws,
 discount codes and the optional API connection: [Fourthwall](fourthwall.md). Fourthwall only accepts an `https` address
 with a name on the normal port, so a direct local address or a tunnel's IP is refused: use the relay.
+
+Shopify has its own page, with the setup steps, the Webhook API version, buyers' privacy, the merch counter and goal,
+stock alerts and the optional API connection: [Shopify](shopify.md).
 
 !!! warning "Partly checked"
     The relay was tried for real: a message sent to it reached Cuebot. Each service's own example messages were

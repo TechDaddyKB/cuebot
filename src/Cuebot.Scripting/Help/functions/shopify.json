@@ -1,0 +1,48 @@
+{
+  "functions": {
+    "shopify.sales": {
+      "description": "Reads this stream's Shopify merch counter: paid orders, minus cancellations and refunds. Test events never count. No API needed.",
+      "parameters": {},
+      "returns": "revenue, orders, items, refunded, currency, since (when the counter started) and products (product name to how many sold).",
+      "example": {}
+    },
+    "shopify.resetSales": {
+      "description": "Starts the Shopify merch counter and goal again from zero.",
+      "parameters": {},
+      "returns": "The counter after the reset (like shopify.sales).",
+      "example": {}
+    },
+    "shopify.goal": {
+      "description": "Reads the Shopify merch goal set on the Webhooks page.",
+      "parameters": {},
+      "returns": "title, measure (\"Items sold\" or \"Revenue\"), current, target, percent, currency and reached.",
+      "example": {}
+    },
+    "shopify.setGoal": {
+      "description": "Changes the Shopify merch goal. Leave out anything you want to keep.",
+      "parameters": {
+        "title": "Optional. The goal's new name.",
+        "target": "Optional. The new target; 0 turns the goal off.",
+        "measure": "Optional. \"Items sold\" or \"Revenue\"."
+      },
+      "returns": "The goal after the change (like shopify.goal).",
+      "example": { "target": 50, "measure": "Items sold" }
+    },
+    "shopify.products": {
+      "description": "Lists your Shopify products from the last refresh. Needs the Shopify API connected on the Webhooks page.",
+      "parameters": {
+        "search": "Optional. Only products whose name contains this."
+      },
+      "returns": "A list of products with name, price, formattedPrice, currency, url, image, soldOut and stock.",
+      "example": { "search": "hoodie" }
+    },
+    "shopify.totals": {
+      "description": "Reads your paid Shopify orders over the last hours from Shopify itself (cancelled and test orders left out). Needs the Shopify API connected.",
+      "parameters": {
+        "hours": "Optional. How many hours back (default 24)."
+      },
+      "returns": "revenue, orders, items, currency and since.",
+      "example": { "hours": 24 }
+    }
+  }
+}

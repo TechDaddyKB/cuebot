@@ -27,8 +27,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
                 "On patreon.com/portal open My Webhooks, add the Cuebot URL for Patreon, tick the members:* and members:pledge:* events (and posts:* if you like) and copy the webhook's secret here. Or connect the Patreon API below and let Cuebot create the webhook and save its secret. If the URL stops working, Patreon pauses the webhook and later sends the backlog at once: Cuebot marks those deliveries stale."),
             new WebhookCardViewModel(services.Fourthwall, services.Fourthwall.Settings, "Webhook secret",
                 "In your Fourthwall admin open Settings → For developers → Webhooks, create a webhook with the Cuebot URL for Fourthwall for the events you want and copy the shop's webhook secret key here (one key for the whole shop). Fourthwall only accepts an https address on port 443, so a direct local URL or a tunnel IP is refused: use the relay. Or connect the Fourthwall API below and let Cuebot set up the webhook (the secret still has to be copied by hand)."),
-            new WebhookCardViewModel(services.Shopify, services.Shopify.Settings, "Signing key / client secret",
-                "In the Shopify admin open Settings → Notifications → Webhooks and create Order creation and Order payment webhooks with the Cuebot URL for Shopify. Choose the JSON format: XML webhooks are refused. Paste the key shown under 'Your webhooks will be signed with' (or your app's client secret)."),
+            new WebhookCardViewModel(services.Shopify, services.Shopify.Settings, "Webhook signing key",
+                ShopifyHelp(ShopifyApiVersions.LatestStable(DateTimeOffset.UtcNow))),
             new WebhookCardViewModel(services.Throne, services.Throne.Settings, "URL token (optional)",
                 "On throne.com open Settings → Integrations → Webhooks and add the Cuebot URL for Throne. Throne signs every delivery and Cuebot checks that signature, so no secret is needed. Throne uses one signing key for every creator, though, so for extra safety you can generate a URL token and add /<token> to the URL (or ?token=<token>); once set, deliveries without it are refused.",
                 canGenerate: true, secretOptional: "No URL token — Throne's signature alone is checked"),
@@ -44,6 +44,8 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
         });
         Fourthwall = new FourthwallOptionsViewModel(services.Fourthwall);
         services.Fourthwall.Tracker.Changed += () => OnUi(Fourthwall.Refresh);
+        Shopify = new ShopifyOptionsViewModel(services.Shopify);
+        services.Shopify.Tracker.Changed += () => OnUi(Shopify.Refresh);
         foreach (var service in services.All) service.Changed += () => OnUi(Refresh);
         RefreshRecent();
     }
@@ -57,6 +59,12 @@ public sealed partial class WebhookServicesViewModel : PageViewModel
     public PatreonOptionsViewModel Patreon { get; }
 
     public FourthwallOptionsViewModel Fourthwall { get; }
+
+    public ShopifyOptionsViewModel Shopify { get; }
+
+    /// <summary>The Shopify card's setup steps: Order payment first, JSON, the latest Webhook API version, the store's signing key.</summary>
+    internal static string ShopifyHelp(string latestVersion) =>
+        $"In the Shopify admin open Settings → Notifications → Webhooks and create an Order payment webhook with the Cuebot URL for Shopify (Order cancellation, Refund create, Inventory level update and Product update are worth adding; Order creation is optional and also runs for orders that are never paid). Choose the JSON format (XML is refused) and the latest Webhook API version, {latestVersion}. Paste the signing key Shopify shows below the webhook list (\"Your webhooks are signed with …\", one per store). Only when an existing custom app or a Dev Dashboard app created the webhook is it that app's client secret. If you change the relay's route secret, update the URL in Shopify straight away: Shopify deletes a webhook that keeps failing, without an email.";
 
     /// <summary>Newest first, all services.</summary>
     public ObservableCollection<WebhookRecordViewModel> RecentEvents { get; } = [];
@@ -805,6 +813,261 @@ public sealed partial class FourthwallOptionsViewModel : ObservableObject
     {
         Tracker.Disconnect();
         Info = "Disconnected: the API user was removed. Webhooks keep working.";
+        Refresh();
+    }
+}
+
+/// <summary>Shopify options: name on stream, stream message, redaction, merch counter and goal, low stock and the optional Admin API.</summary>
+public sealed partial class ShopifyOptionsViewModel : ObservableObject
+{
+    private readonly ShopifyWebhookHandler _shopify;
+
+    public ShopifyOptionsViewModel(ShopifyWebhookHandler shopify) => _shopify = shopify;
+
+    private ShopifyOptions Options => _shopify.Options;
+    private ShopifyTracker Tracker => _shopify.Tracker;
+
+    private void Save() => _shopify.SaveSettings();
+
+    private void SetText(string? value, string current, Action<string> set, string? also = null,
+        [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        var trimmed = (value ?? "").Trim();
+        if (trimmed == current) return;
+        set(trimmed);
+        Save();
+        OnPropertyChanged(name);
+        if (also is not null) OnPropertyChanged(also);
+    }
+
+    private void SetFlag(bool value, bool current, Action<bool> set, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        if (value == current) return;
+        set(value);
+        Save();
+        OnPropertyChanged(name);
+    }
+
+    public IReadOnlyList<string> NameChoices { get; } = [ShopifyOptions.FirstName, ShopifyOptions.FullName, ShopifyOptions.Someone];
+
+    public string NameOnStream
+    {
+        get => Options.NameOnStream;
+        set => SetText(value, Options.NameOnStream, v => Options.NameOnStream = v);
+    }
+
+    public IReadOnlyList<string> MessageChoices { get; } = [ShopifyOptions.NoMessage, ShopifyOptions.CartAttribute, ShopifyOptions.OrderNote];
+
+    public string MessageSource
+    {
+        get => Options.MessageSource;
+        set => SetText(value, Options.MessageSource, v => Options.MessageSource = v, nameof(MessageNote));
+    }
+
+    public string MessageAttribute
+    {
+        get => Options.MessageAttribute;
+        set => SetText(value, Options.MessageAttribute, v => Options.MessageAttribute = v);
+    }
+
+    public string MessageNote => Options.MessageSource == ShopifyOptions.OrderNote
+        ? "The order note is the checkout's delivery instructions field: buyers write gate codes, addresses and phone numbers there. Only use it if your checkout asks for a stream message in the note."
+        : "";
+
+    public bool RedactContactDetails
+    {
+        get => Options.RedactContactDetails;
+        set => SetFlag(value, Options.RedactContactDetails, v => Options.RedactContactDetails = v);
+    }
+
+    public bool ResetSalesOnStreamStart
+    {
+        get => Options.ResetSalesOnStreamStart;
+        set => SetFlag(value, Options.ResetSalesOnStreamStart, v => Options.ResetSalesOnStreamStart = v);
+    }
+
+    public decimal? LowStockThreshold
+    {
+        get => Options.LowStockThreshold;
+        set
+        {
+            Options.LowStockThreshold = Math.Max(0, (int)(value ?? 5));
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    public IReadOnlyList<string> MeasureChoices { get; } = [ShopifyGoalSettings.Items, ShopifyGoalSettings.Revenue];
+
+    public string GoalTitle
+    {
+        get => Options.Goal.Title;
+        set
+        {
+            if ((value ?? "") == Options.Goal.Title) return;
+            Tracker.SetGoal(value ?? "", null, null);
+            OnPropertyChanged();
+        }
+    }
+
+    public decimal? GoalTarget
+    {
+        get => (decimal)Options.Goal.Target;
+        set
+        {
+            Tracker.SetGoal(null, (double)(value ?? 0), null);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SalesText));
+        }
+    }
+
+    public string GoalMeasure
+    {
+        get => Options.Goal.Measure;
+        set
+        {
+            if ((value ?? "") == Options.Goal.Measure || value is null) return;
+            Tracker.SetGoal(null, null, value);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SalesText));
+        }
+    }
+
+    public string SalesText
+    {
+        get
+        {
+            var s = Tracker.Sales();
+            var g = Tracker.Goal();
+            var goal = g.Target > 0 ? $" Goal: {g.Current:0.##} / {g.Target:0.##} ({g.Percent}%){(g.Reached ? ", reached" : "")}." : "";
+            var refunded = s.Refunded > 0 ? $", {ShopifyTracker.FormatMoney(s.Refunded, s.Currency)} refunded" : "";
+            return $"Since {s.Since.ToLocalTime():g}: {s.Items} item(s) in {s.Orders} paid order(s), {ShopifyTracker.FormatMoney(s.Revenue, s.Currency)}{refunded}.{goal}";
+        }
+    }
+
+    public string ShopDomain
+    {
+        get => Options.ShopDomain;
+        set => SetText(value, Options.ShopDomain, v => Options.ShopDomain = v, nameof(SavedCredentials));
+    }
+
+    public string ClientId
+    {
+        get => Options.ClientId;
+        set => SetText(value, Options.ClientId, v => Options.ClientId = v, nameof(SavedCredentials));
+    }
+
+    /// <summary>The view masks this (PasswordChar); the Saved line shows only the last characters.</summary>
+    public string ClientSecret
+    {
+        get => Options.ClientSecret;
+        set => SetText(value, Options.ClientSecret, v => Options.ClientSecret = v, nameof(SavedCredentials));
+    }
+
+    /// <summary>The view masks this (PasswordChar).</summary>
+    public string AccessToken
+    {
+        get => Options.AccessToken;
+        set => SetText(value, Options.AccessToken, v => Options.AccessToken = v, nameof(SavedCredentials));
+    }
+
+    public string SavedCredentials =>
+        $"Client secret: {(Options.ClientSecret.Length > 0 ? WebhookSecrets.Mask(Options.ClientSecret) : "not saved")}. Access token: {(Options.AccessToken.Length > 0 ? WebhookSecrets.Mask(Options.AccessToken) : "not saved")}.";
+
+    public decimal? CatchUpMinutes
+    {
+        get => Options.CatchUpMinutes;
+        set
+        {
+            Options.CatchUpMinutes = Math.Max(0, (int)(value ?? 10));
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    [ObservableProperty] private string _info = "";
+    [ObservableProperty] private bool _busy;
+
+    public string Status
+    {
+        get
+        {
+            if (!Tracker.HasCredentials) return "Not connected. Webhooks still work: the merch counter, goal and stock alerts need no API; product names for stock alerts, the Products widget, sales totals and catch-up do.";
+            if (Tracker.NeedsReconnect) return Tracker.LastError;
+            var shop = Tracker.ShopName is { Length: > 0 } n ? n : "your store";
+            var catchUp = Tracker.LastCatchUp is { At: { } c } last ? $"; last catch-up {c.ToLocalTime():t} ({last.Count} order(s) run)" : "";
+            return $"{shop}: {Tracker.Products().Count} product(s) for the showcase{catchUp}."
+                + (Tracker.LastError.Length > 0 ? " Last problem: " + Tracker.LastError : "");
+        }
+    }
+
+    /// <summary>The last delivery's Webhook API version (with advice when it is old) and a warning when Shopify has gone quiet.</summary>
+    public string WebhookHealth
+    {
+        get
+        {
+            var (at, version, shop) = Tracker.LastDelivery;
+            var lines = new List<string>();
+            if (at is { } t)
+            {
+                var check = ShopifyApiVersions.Check(version, DateTimeOffset.UtcNow);
+                lines.Add($"Last Shopify delivery {t.ToLocalTime():g}{(shop.Length > 0 ? $" from {shop}" : "")}"
+                    + (version.Length > 0 ? $", Webhook API version {version}." : ".") + (check.Advice.Length > 0 ? " " + check.Advice : ""));
+            }
+            if (Tracker.QuietWarningText() is { Length: > 0 } quiet) lines.Add(quiet);
+            return string.Join(" ", lines);
+        }
+    }
+
+    internal void Refresh()
+    {
+        OnPropertyChanged(nameof(Status));
+        OnPropertyChanged(nameof(WebhookHealth));
+        OnPropertyChanged(nameof(SalesText));
+        OnPropertyChanged(nameof(SavedCredentials));
+        OnPropertyChanged(nameof(ClientSecret));
+        OnPropertyChanged(nameof(AccessToken));
+        OnPropertyChanged(nameof(ClientId));
+    }
+
+    private async Task Run(Func<Task<string>> work)
+    {
+        if (Busy) return;
+        Busy = true;
+        try { Info = await work(); }
+        catch (Exception ex) when (ShopifyTracker.IsApiError(ex))
+        {
+            Info = ex is ShopifyAuthException ? ex.Message : $"Shopify: {ex.Message}";
+        }
+        finally
+        {
+            Busy = false;
+            Refresh();
+        }
+    }
+
+    [RelayCommand]
+    private Task Connect() => Run(() => Tracker.ConnectAsync());
+
+    [RelayCommand]
+    private Task RefreshProducts() => Run(() => Tracker.RefreshProductsAsync());
+
+    [RelayCommand]
+    private Task CatchUp() => Run(() => Tracker.CatchUpAsync());
+
+    [RelayCommand]
+    private void ResetSales()
+    {
+        Tracker.ResetSales();
+        Info = "The merch counter starts again from zero.";
+        Refresh();
+    }
+
+    [RelayCommand]
+    private void Disconnect()
+    {
+        Tracker.Disconnect();
+        Info = "Disconnected: the app credentials were removed. Webhooks keep working.";
         Refresh();
     }
 }

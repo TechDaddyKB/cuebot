@@ -23,7 +23,8 @@ deduplicated.
 
 **Test events.** Each service's *Send test event* (and the `webhooks.sendTestEvent(service, kind)` script function)
 publishes a built-in sample locally, marked `isTest`, without verification. Deliveries sent by a service's own test
-button are marked `isTest` where the service says so (Fourthwall `testMode`, Shopify `X-Shopify-Test` / `"test"`,
+button are marked `isTest` where the service says so (Fourthwall `testMode`, Shopify `"test": true` in the body — a
+documented sample-payload field — or an `X-Shopify-Test: true` header, seen in captured deliveries but not documented,
 Ko-fi's placeholder transaction id); Patreon and Throne test sends carry no test flag.
 
 | Route | Verification | What the user enters |
@@ -31,7 +32,7 @@ Ko-fi's placeholder transaction id); Patreon and Throne test sends carry no test
 | `kofi` | Form field `data` holds JSON; its `verification_token` must equal the saved token | https://ko-fi.com/manage/webhooks (Settings → API → Webhooks) → Advanced → *Verification Token* |
 | `patreon` | `X-Patreon-Signature` = hex HMAC-MD5 of the raw body, keyed with the webhook secret | patreon.com/portal → My Webhooks → the webhook's *secret* |
 | `fourthwall` | `X-Fourthwall-Hmac-SHA256` and/or `X-Fourthwall-Hmac-Apps-SHA256` = base64 HMAC-SHA256 of the raw body; accepted when either verifies | Settings → For developers → Webhooks → *webhook secret key* |
-| `shopify` | `X-Shopify-Hmac-Sha256` = base64 HMAC-SHA256 of the raw body | Admin-created webhooks: the key under "Your webhooks will be signed with"; app webhooks: the app's client secret |
+| `shopify` | `X-Shopify-Hmac-Sha256` = base64 HMAC-SHA256 of the raw body | Admin-created webhooks (Settings → Notifications → Webhooks): the store's key shown below the webhook list ("Your webhooks are signed with …", one per store). Only for webhooks an existing custom app or a Dev Dashboard app subscribed itself: that app's client secret |
 | `throne` | Ed25519: `X-Signature-Ed25519` (hex) over `X-Signature-Timestamp + "." + raw body`, Throne's public key; plus the optional Cuebot URL token when one is set | Nothing required. Optional: *Generate token* in Cuebot and add `/<token>` to the URL in Throne |
 | `custom/<name>` | The named hook's token as `?token=` or `X-Cuebot-Token` | *Add hook* in Cuebot (token generated) |
 
@@ -39,7 +40,7 @@ Ko-fi's placeholder transaction id); Patreon and Throne test sends carry no test
 
 - Ko-fi: ko-fi.com/manage/webhooks → the test buttons (donation, subscription, commission, shop order); all reuse one transaction id.
 - Patreon: patreon.com/portal → My Webhooks → *Send Test* next to each trigger (no test flag; `posts:publish` cannot be test-sent).
-- Shopify: Settings → Notifications → Webhooks → ⋯ next to the webhook → *Send test*.
+- Shopify: Settings → Notifications → Webhooks → ⋯ next to the webhook → *Send test* (whether it sets `"test": true`, the header, or both is not documented).
 - Fourthwall: Settings → For developers → Webhooks → *Send test notification* (arrives with `testMode: true`).
 - Throne: Settings → Integrations → Webhooks → the test button.
 
@@ -230,17 +231,66 @@ the separate `X-Fourthwall-Hmac-Apps-SHA256` app key is checked with the same sh
 
 ## Shopify
 
-`X-Shopify-Topic` `orders/create` → `shopify.orderCreated`, `orders/paid` → `shopify.orderPaid`; others ignored.
-Dedupe on `X-Shopify-Webhook-Id` (one per delivery, kept on retries: Shopify's documented dedupe key), else
-`<topic>:<X-Shopify-Event-Id>`. The order is flattened to `shopify.<field>`, `shopify.line_items[i].<field>` etc.,
-plus `shopify.event` (topic), `_json` (raw body), `orderName`, `itemCount`, `items`, `presentmentAmount` /
-`presentmentCurrency` (`total_price_set.presentment_money`, what the buyer paid in their currency); `user` is the
-customer's name. An order's second event (created, then paid) is not shown in the feed again (`isRepeatOrder`).
-Test deliveries (`X-Shopify-Test: true` or `"test": true`) are marked `isTest` and exempt from that rule: Shopify's
-*Send test* always uses the sample order 820982911946154508, so every test still shows.
+| `X-Shopify-Topic` | Event | Notes |
+| --- | --- | --- |
+| `orders/create` | `shopify.orderCreated` | Also for orders never paid (manual payment, fraud, cancelled): the setup hint recommends Order payment first |
+| `orders/paid` | `shopify.orderPaid` | Counted in the merch counter; key `paid:<order id>` |
+| `orders/cancelled` | `shopify.orderCancelled` | Takes a counted order back off; key `cancelled:<order id>`; `cancelReason`, `cancelledAt` |
+| `refunds/create` | `shopify.refundCreated` | `{id, order_id, note, restock, refund_line_items[{quantity, line_item}], transactions[{kind, status, amount, currency}]}`: amount = successful `refund` transactions (else line subtotals); buyer and order name from the order Cuebot saw; key `refund:<refund id>` |
+| `inventory_levels/update` | `shopify.lowStock` / `shopify.soldOut` / `shopify.restocked` | `{inventory_item_id, location_id, available}`; stock is summed over the locations Cuebot has seen; an event only when the total crosses the threshold, 0, or back above 0 |
+| `products/update` (create, delete) | none | Re-reads the showcase products (Admin API) |
+
+Others are ignored. `shopify.goalReached` follows the Order Paid that reaches the merch goal (once per counter).
+
+**Headers** (https://shopify.dev/docs/apps/build/webhooks/delivery-structure): `apiVersion` (`X-Shopify-API-Version`),
+`shopDomain` (`X-Shopify-Shop-Domain`), `triggeredAt` (`X-Shopify-Triggered-At`). The last-delivery line shows the API
+version; a version in its last 3 months of the 12-month window, retired (Shopify then "falls forward" to the oldest
+supported one) or newer than this quarter's stable release gets advice to pick this quarter's version, also logged once
+per version (`ShopifyApiVersions`, computed from `YYYY-MM`, no network). A Rejected delivery names its
+`X-Shopify-Shop-Domain` (each store signs with its own key).
+
+**Dedupe.** `X-Shopify-Webhook-Id` (one per delivery, kept on retries) **and** `<topic>:<X-Shopify-Event-Id>` (shared by
+all deliveries of one merchant action, so two admin webhooks for the same topic run once), plus the content keys above
+for real (non-test) paid / cancelled / refund events, which also dedupe Admin API catch-up against late deliveries.
+The order's second feed line (created, then paid) is suppressed with `isRepeatOrder`; the marker
+(`shopify:fed:<order id>`) lives in the shared, saved id store, so it survives a restart. Shopify does not guarantee
+ordering: Order Created can follow Order Paid.
+
+**Arguments.** The order is flattened to `shopify.<field>`, `shopify.line_items[i].<field>` etc., plus `shopify.event`
+(topic) and `_json`. Common args: `user` (the buyer's first name by default; "Name shown on stream": first name / full
+name / Someone), `firstName`, `amount` (`total_price`, shop currency), `message` (empty by default: see privacy),
+`orderNote`, `cartMessage` (the `note_attributes` entry named in the options, default "Stream message"), `orderId`,
+`orderName`, `orderUrl` (`https://admin.shopify.com/store/<handle>/orders/<id>`), `financialStatus`,
+`fulfillmentStatus`, `sourceName`, `discountCodes`, `items`, `itemCount`, `item{i}.name / .quantity / .variant / .sku /
+.productId / .price`, `presentmentAmount` / `presentmentCurrency` (`total_price_set.presentment_money`), and after the
+tracker: `wasCounted`, `shopifySales*`, `shopifyGoal*`. The name comes from `customer.first_name/last_name` (or the
+camelCase `firstName/lastName` of newer shapes), else `billing_address`. Catch-up replays add `isReplay` and
+`delaySeconds`.
+
+**Privacy.** The order note is the checkout's free-text delivery instructions, so it is never `message` unless the
+user picks it. "Redact contact details" (default on) removes, at any depth, `email`, `contact_email`, `phone`,
+`sms_marketing_phone`, `browser_ip`, `client_details`, `billing_address`, `shipping_address`, `default_address`,
+`addresses`, `destination`, `origin_address`, `note`, `order_status_url`, `token`, `cart_token` and `checkout_token`
+before flattening; `_json` is then the redacted body, which is also what the Streamer.bot-compatible WebSocket server
+forwards for `Shopify.OrderCreated` / `Shopify.OrderPaid`.
 
 Only JSON webhooks are read. A webhook created with the XML format fails with "Shopify webhook is set to XML; choose
-JSON in Shopify's webhook settings" (detected from `content-type` or a body starting with `<`).
+JSON in Shopify's webhook settings" (detected from `content-type` or a body starting with `<`). Test deliveries are
+exempt from the repeat rule and never count: Shopify's *Send test* always uses the sample order 820982911946154508.
+
+An admin-created webhook whose address keeps answering non-2xx is deleted by Shopify without an email (help center),
+so the user guide says to update the URL straight away after a relay route-secret change, and the page warns after 7
+days without a verified delivery (time kept in shopify.json). The relay answers 200 at once, well inside Shopify's
+5-second limit.
+
+**Optional Admin API** (`ShopifyApi`, GraphQL `2026-10`): a Dev Dashboard app installed on the user's own store, token
+from the client credentials grant (`POST https://{shop}/admin/oauth/access_token`, `grant_type=client_credentials`,
+24-hour token cached and renewed 5 minutes early or once after a 401), or a pasted `shpat_` token from an older custom
+app. Scopes `read_orders`, `read_products`, `read_inventory`. Calls: `shop`, `products(query:"status:active")`,
+`inventoryItem(id)` (names for stock events, cached), `orders(query:"financial_status:paid created_at:>'…'")` (catch-up
+every N minutes from the first connection, at most 24 h back, and sales totals). GraphQL orders are converted to the
+REST webhook shape and run through the same mapping. THROTTLED / 429 is retried after 2, 4, 8 s; 401/403 stops
+periodic calls until the user connects again. No public app, OAuth, webhook subscriptions or compliance webhooks.
 
 ## Throne
 
@@ -283,6 +333,7 @@ their own (never overwriting Cuebot's own names). Dedupe on the relay delivery i
 | Ko-fi (re)subscription, Patreon pledge created, Patreon gifted / free-trial member, Fourthwall subscription purchased | Subscription (→ credits "Subscriptions") |
 | Patreon free member joined (followCreated) | Follow (→ credits "Follows") |
 | Ko-fi commission / shop order, Shopify orders, Fourthwall order / gift purchase, Patreon pledge updated, Throne crowdfunded | Other (no purchase kind exists; not in the credits) |
+| Shopify order cancelled / refund created | Other, no spend (the spending ledger only adds; the merch counter takes them off) |
 
 ## Sources
 
@@ -293,8 +344,15 @@ their own (never overwriting Cuebot's own names). Dedupe on the relay delivery i
   #pledge-event, #apiv2-webhook-endpoints, #pagination, changelog, read 2026-11-11); payload shapes from Zulip's Patreon fixtures
   (github.com/zulip/zulip, `zerver/webhooks/patreon/fixtures`) and a captured portal test (patreon-api.ts issue 89)
 - Fourthwall: https://docs.fourthwall.com/webhooks/webhook-model, .../signature-verification, OpenAPI `openapi/platform.json` (`webhooks`)
-- Shopify: https://shopify.dev/docs/apps/build/webhooks (HMAC verification, `X-Shopify-Webhook-Id` dedupe, test
-  deliveries), captured test deliveries in github.com/hookdeck/webhook-samples (`providers/shopify/2026-07`)
+- Shopify (read 2026-11-11): https://shopify.dev/docs/apps/build/webhooks (ordering, reconciliation),
+  .../webhooks/delivery-structure (headers), .../webhooks/verify-deliveries (HMAC, 200 within 5 s, 8 retries over 4 h),
+  .../webhooks/troubleshoot, https://shopify.dev/docs/api/usage/versioning (quarterly versions, 12 months, fall
+  forward), https://help.shopify.com/en/manual/fulfillment/setup/notifications/webhooks (admin-created webhooks: JSON or
+  XML, Webhook API version, the store's signing key, deletion after repeated failures),
+  https://shopify.dev/docs/apps/build/authentication-authorization/client-credentials-grant,
+  https://shopify.dev/docs/api/admin-graphql (shop, products, inventoryItem, orders), the REST webhook sample payloads
+  for orders/*, refunds/create and inventory_levels/update; captured test deliveries in
+  github.com/hookdeck/webhook-samples (`providers/shopify/2026-07`)
 - Throne: https://help.throne.com/en/articles/15935990-how-do-i-set-up-webhook-integration (Ed25519, envelope);
   github.com/WolfwithSword/SubathonManager (`ThroneService.cs`) for the delivered format only
 - Streamer.bot trigger docs: https://docs.streamer.bot/api/triggers/integrations/{ko-fi,patreon,shopify,fourthwall,throne}

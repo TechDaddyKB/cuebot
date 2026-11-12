@@ -142,6 +142,32 @@ public sealed class WebhookServicesPageTests : IAsyncDisposable
             Assert.Equal("", services.Fourthwall.Options.ApiPassword);
             Assert.StartsWith("Not connected", fourthwall.Status, StringComparison.Ordinal);
 
+            // Shopify extras: privacy defaults, masked app credentials, the setup hint (Order payment, JSON, version, signing key).
+            var shopify = vm.Shopify;
+            Assert.Equal((Cuebot.Webhooks.ShopifyOptions.FirstName, Cuebot.Webhooks.ShopifyOptions.NoMessage, true),
+                (shopify.NameOnStream, shopify.MessageSource, shopify.RedactContactDetails));
+            shopify.MessageSource = Cuebot.Webhooks.ShopifyOptions.OrderNote;
+            Assert.Contains("gate codes", shopify.MessageNote, StringComparison.Ordinal);
+            shopify.MessageSource = Cuebot.Webhooks.ShopifyOptions.CartAttribute;
+            Assert.Equal(("", Cuebot.Webhooks.ShopifyOptions.CartAttribute), (shopify.MessageNote, services.Shopify.Options.MessageSource));
+            shopify.ClientSecret = "  shpss-secret-WXYZ9876 ";
+            Assert.Equal("shpss-secret-WXYZ9876", services.Shopify.Options.ClientSecret);
+            Assert.Contains("••••••••9876", shopify.SavedCredentials, StringComparison.Ordinal);
+            shopify.GoalTarget = 25;
+            Assert.Equal(25, services.Shopify.Options.Goal.Target);
+            Assert.Contains("0 / 25", shopify.SalesText, StringComparison.Ordinal);
+            UiPump.Pump();
+            var shopBoxes = window.GetVisualDescendants().OfType<TextBox>().Where(t => t.Name is "ShopifyClientSecret" or "ShopifyAccessToken").ToArray();
+            Assert.Equal(2, shopBoxes.Length);
+            Assert.All(shopBoxes, b => Assert.Equal('•', b.PasswordChar));
+            Assert.DoesNotContain(window.GetVisualDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains("shpss-secret", StringComparison.Ordinal));
+            var shopifyHelp = vm.Services.Single(c => c.Route == "shopify").Help;
+            foreach (var part in (string[])["Order payment", "JSON", Cuebot.Webhooks.Services.ShopifyApiVersions.LatestStable(DateTimeOffset.UtcNow), "signed with", "route secret"])
+                Assert.Contains(part, shopifyHelp, StringComparison.Ordinal);
+            shopify.DisconnectCommand.Execute(null);
+            Assert.Equal("", services.Shopify.Options.ClientSecret);
+            Assert.StartsWith("Not connected", shopify.Status, StringComparison.Ordinal);
+
             foreach (var (theme, name) in new[] { (ThemeVariant.Dark, "dark"), (ThemeVariant.Light, "light") })
             {
                 app.RequestedThemeVariant = theme;

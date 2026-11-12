@@ -125,10 +125,14 @@ public sealed class HandlerTests : IDisposable
         Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", "wh-1", "evt-9"))));   // retry
         // The same event id for another topic's subscription is a different delivery.
         Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", "wh-2", "evt-1"))));
-        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", null, "evt-1"))));
-        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", null, "evt-1"))));
-        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", null, "evt-1"))));
-        Assert.Equal(4, _h.Published.Count);
+        // A second webhook for the same topic (another webhook id, the same event id) is the same merchant action: once.
+        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", "wh-3", "evt-1"))));
+        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", null, "evt-1"))));
+        // A later create for the same order with a new event id runs (Shopify only promises the event id for duplicates)...
+        Assert.Equal(WebhookOutcome.Handled, shopify.Handle(Harness.Delivery("shopify", body, H("orders/create", null, "evt-2"))));
+        // ...but an order is only ever paid once, whatever the ids.
+        Assert.Equal(WebhookOutcome.Ignored, shopify.Handle(Harness.Delivery("shopify", body, H("orders/paid", "wh-4", "evt-3"))));
+        Assert.Equal(3, _h.Published.Count);
     }
 
     [Fact]

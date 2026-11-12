@@ -170,8 +170,9 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal("Aviator sunglasses", e.Args["shopify.line_items[0].name"]);
         Assert.Equal("89.99", e.Args["shopify.line_items[0].price_set.shop_money.amount"]);
         Assert.Equal(2L, e.Args["shopify.line_items[1].quantity"]);
-        Assert.Equal(body, e.Args["_json"]);
-        Assert.Equal("John Smith", e.Args["user"]);
+        // Contact details are removed by default (see ShopifyFeatureTests); the buyer is shown by first name.
+        Assert.DoesNotContain("@example.com", (string)e.Args["_json"]!, StringComparison.Ordinal);
+        Assert.Equal("John", e.Args["user"]);
         Assert.Equal(254.98m, e.Args["amount"]);
         Assert.Equal("#9999", e.Args["orderName"]);
         Assert.Equal(3.0, e.Args["itemCount"]);
@@ -431,7 +432,7 @@ public sealed class ParsingTests : IDisposable
         Assert.Equal(403.0m, e.Args["amount"]);
         Assert.Equal(403.0, e.Args["presentmentAmount"]);
         Assert.Equal("USD", e.Args["presentmentCurrency"]);
-        Assert.StartsWith("[Test] John Smith placed order #9999", WebhookChatAdapter.Describe(e)!.Title, StringComparison.Ordinal);
+        Assert.StartsWith("[Test] John placed order #9999", WebhookChatAdapter.Describe(e)!.Title, StringComparison.Ordinal);
 
         // The header alone marks a test, even when the body says test:false.
         Assert.Equal(true, ShopifyMapped(Harness.Data("shopify-order.json"), test: true).Args["isTest"]);

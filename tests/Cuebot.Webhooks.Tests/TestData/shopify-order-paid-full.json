@@ -1,0 +1,53 @@
+{
+  "id": 450789469,
+  "admin_graphql_api_id": "gid://shopify/Order/450789469",
+  "browser_ip": "203.0.113.7",
+  "buyer_accepts_marketing": false,
+  "cancel_reason": null,
+  "cancelled_at": null,
+  "cart_token": "68778783ad298f1c80c3bafcddeea02f",
+  "checkout_token": "bd5a8aa1ecd019dd3520ff791ee3a24c",
+  "client_details": { "accept_language": "en-US", "browser_ip": "203.0.113.7", "user_agent": "Mozilla/5.0" },
+  "contact_email": "bob.norman@example.com",
+  "created_at": "2026-11-11T11:00:00-05:00",
+  "currency": "USD",
+  "email": "bob.norman@example.com",
+  "financial_status": "paid",
+  "fulfillment_status": null,
+  "name": "#1001",
+  "note": "Gate code 4321, call 555-0100",
+  "note_attributes": [ { "name": "Gift wrap", "value": "yes" }, { "name": "Stream message", "value": "Hi chat, love the stream!" } ],
+  "order_number": 1001,
+  "order_status_url": "https://cue-shop.myshopify.com/690933842/orders/b1946ac92492d2347c6235b4d2611184/authenticate?key=imasecretipod",
+  "phone": "+15550100",
+  "presentment_currency": "USD",
+  "processed_at": "2026-11-11T11:00:00-05:00",
+  "source_name": "web",
+  "test": false,
+  "token": "b1946ac92492d2347c6235b4d2611184",
+  "total_price": "65.00",
+  "total_price_set": { "shop_money": { "amount": "65.00", "currency_code": "USD" }, "presentment_money": { "amount": "60.12", "currency_code": "EUR" } },
+  "discount_codes": [ { "code": "TECHDADDY10", "amount": "5.00", "type": "fixed_amount" } ],
+  "billing_address": {
+    "first_name": "Bob", "last_name": "Norman", "name": "Bob Norman", "address1": "Chestnut Street 92", "city": "Louisville", "zip": "40202",
+    "country": "United States", "phone": "+1(502)-459-2181"
+  },
+  "shipping_address": {
+    "first_name": "Bob", "last_name": "Norman", "name": "Bob Norman", "address1": "Chestnut Street 92", "city": "Louisville", "zip": "40202",
+    "country": "United States", "phone": "+1(502)-459-2181"
+  },
+  "customer": {
+    "id": 207119551, "email": "bob.norman@example.com", "first_name": "Bob", "last_name": "Norman", "phone": "+15550100",
+    "default_address": { "address1": "Chestnut Street 92", "city": "Louisville", "zip": "40202" }
+  },
+  "line_items": [
+    {
+      "id": 466157049, "name": "Cuebot hoodie - M / Black", "title": "Cuebot hoodie", "variant_title": "M / Black", "sku": "HOODIE-M-BLK",
+      "price": "50.00", "quantity": 1, "product_id": 632910392
+    },
+    {
+      "id": 518995019, "name": "Sticker pack", "title": "Sticker pack", "variant_title": null, "sku": "STICKERS",
+      "price": "10.00", "quantity": 2, "product_id": 921728736
+    }
+  ]
+}

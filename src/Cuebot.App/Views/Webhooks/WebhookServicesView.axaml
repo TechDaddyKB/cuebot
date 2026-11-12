@@ -156,6 +156,68 @@
         </StackPanel>
       </Border>
 
+      <Border Classes="card" DataContext="{Binding Shopify}" x:DataType="vm:ShopifyOptionsViewModel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Shopify extras" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Buyer's name on stream" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding NameChoices}" SelectedItem="{Binding NameOnStream}" MinWidth="140"
+                      ToolTip.Tip="What %user% (feed, speech, alerts) shows for a buyer: first name (best), full name, or &quot;Someone&quot;. %firstName% and the shopify.* arguments are unchanged." />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Stream message from" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding MessageChoices}" SelectedItem="{Binding MessageSource}" MinWidth="140"
+                      ToolTip.Tip="Where %message% (read out, shown in the feed and alerts) comes from. None (best): never. Cart attribute: a &quot;message for the stream&quot; field your store adds to the cart. Order note: the checkout's note, which buyers use for delivery instructions." />
+            <TextBox Text="{Binding MessageAttribute}" PlaceholderText="Stream message" MinWidth="160"
+                     ToolTip.Tip="The cart attribute's name (Shopify's note_attributes), for Cart attribute." />
+          </StackPanel>
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding MessageNote}" />
+          <CheckBox Content="Keep buyers' contact details out of actions and WebSocket clients" IsChecked="{Binding RedactContactDetails}"
+                    ToolTip.Tip="On (best): email, phone, addresses, IP address, browser details, the order note and order-status links are removed from the shopify.* arguments, %_json% and what Cuebot's Streamer.bot-compatible WebSocket server sends. %orderNote% keeps the note for actions that need it." />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Merch counter: Cuebot counts this stream's paid orders (Order payment webhook); a cancelled or refunded order is taken back off. Test events never count. The Goal widget's &quot;Shopify merch goal&quot; shows it." />
+          <Grid ColumnDefinitions="*,8,120,8,140">
+            <TextBox Text="{Binding GoalTitle}" PlaceholderText="Goal title" ToolTip.Tip="The merch goal's name, shown by the Goal widget and in %shopifyGoalTitle%." />
+            <NumericUpDown Grid.Column="2" Value="{Binding GoalTarget}" Minimum="0" FormatString="0.##" ToolTip.Tip="The goal's target (items or money). 0 means no goal." />
+            <ComboBox Grid.Column="4" ItemsSource="{Binding MeasureChoices}" SelectedItem="{Binding GoalMeasure}" ToolTip.Tip="Count items sold or the money taken." />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Classes="muted" Text="{Binding SalesText}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="560" />
+            <Button Content="Reset counter" Command="{Binding ResetSalesCommand}" ToolTip.Tip="Starts the merch counter and goal again from zero." />
+          </StackPanel>
+          <CheckBox Content="Start the counter again when a stream goes live" IsChecked="{Binding ResetSalesOnStreamStart}"
+                    ToolTip.Tip="When any connected platform reports the stream went live, the merch counter starts from zero." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Low stock at" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding LowStockThreshold}" Minimum="0" Maximum="10000" FormatString="0" Width="120"
+                           ToolTip.Tip="Low Stock runs when an item's stock (all locations) falls to this many or fewer. Needs the Inventory level update webhook. 0 = only Sold Out." />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Optional Shopify Admin API connection, for your own store only. In the Shopify Dev Dashboard create an app for your store (custom distribution) with the read_orders, read_products and read_inventory scopes, install it, and copy its client id and client secret here with the store's myshopify.com address. Or paste an Admin API access token an existing custom app already has. Cuebot then names items in stock alerts, fills the Products widget, totals sales and catches up on paid orders that never arrived. Secrets are saved like the others and never written to the log." />
+          <TextBox Text="{Binding ShopDomain}" PlaceholderText="your-store.myshopify.com" ToolTip.Tip="The store's myshopify.com address." />
+          <Grid ColumnDefinitions="*,8,*">
+            <TextBox Name="ShopifyClientId" Text="{Binding ClientId}" PlaceholderText="Client id" ToolTip.Tip="The Dev Dashboard app's client id." />
+            <TextBox Grid.Column="2" Name="ShopifyClientSecret" Text="{Binding ClientSecret}" PasswordChar="•" PlaceholderText="Client secret" ToolTip.Tip="The app's client secret. Hidden as dots; keep it private." />
+          </Grid>
+          <TextBox Name="ShopifyAccessToken" Text="{Binding AccessToken}" PasswordChar="•" PlaceholderText="Or: Admin API access token (shpat_…)" ToolTip.Tip="Only if you already have a custom app with an access token. Hidden as dots; keep it private." />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SavedCredentials}" />
+          <WrapPanel>
+            <Button Content="Connect" Classes="accent" Command="{Binding ConnectCommand}" Margin="0,0,8,8" ToolTip.Tip="Gets a token and reads your store and its products." />
+            <Button Content="Refresh products" Command="{Binding RefreshProductsCommand}" Margin="0,0,8,8" ToolTip.Tip="Reads the products the Products widget shows (also after a Product update webhook and every 30 minutes)." />
+            <Button Content="Catch up now" Command="{Binding CatchUpCommand}" Margin="0,0,8,8" ToolTip.Tip="Asks Shopify for recent paid orders and runs Order Paid for those that never reached Cuebot." />
+            <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,8" ToolTip.Tip="Removes the app credentials. Webhooks keep working." />
+          </WrapPanel>
+          <TextBlock TextWrapping="Wrap" Text="{Binding Status}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding WebhookHealth}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Catch up every (minutes)" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding CatchUpMinutes}" Minimum="0" Maximum="240" FormatString="0" Width="120"
+                           ToolTip.Tip="With the API connected, Cuebot asks Shopify this often for paid orders no delivery brought and runs Order Paid for them (marked isReplay). 0 turns this off." />
+          </StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Info}" />
+        </StackPanel>
+      </Border>
+
       <Border Classes="card" DataContext="{Binding Custom}" x:DataType="vm:CustomHooksViewModel">
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Custom webhooks" />

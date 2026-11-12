@@ -18,6 +18,13 @@
   // The Ko-fi goal Cuebot keeps (Webhooks page): its own title, target, progress and currency.
   function kofi() { return settings.type === "kofi" ? (data["kofi-goal"] || { current: 0, target: 0 }) : null; }
 
+  // The Shopify merch goal Cuebot keeps (Webhooks page): this stream's items sold or revenue, its own title and target.
+  function shopify() {
+    if (settings.type !== "shopify") return null;
+    var g = (data["shopify"] && data["shopify"].goal) || { current: 0, target: 0, measure: "Items sold" };
+    return { current: g.current, target: g.target, title: g.title, currency: g.currency, money: g.measure === "Revenue" };
+  }
+
   // Patreon totals Cuebot keeps (Webhooks page): paying patrons or the monthly pledges; the target is the Goal setting.
   function patreon() {
     return settings.type === "patreonPatrons" || settings.type === "patreonMonthly"
@@ -29,6 +36,7 @@
 
   function useAmount() {
     if (kofi()) return true;
+    if (shopify()) return shopify().money;
     if (patreon()) return settings.type === "patreonMonthly";
     if (fourthwall()) return false;
     if (settings.measure === "amount") return true;
@@ -39,6 +47,8 @@
   function progress() {
     var k = kofi();
     if (k) return num(k.current) + num(settings.start);
+    var s = shopify();
+    if (s) return num(s.current) + num(settings.start);
     var p = patreon();
     if (p) return num(settings.type === "patreonMonthly" ? p.monthly : p.paidCount) + num(settings.start);
     var f = fourthwall();
@@ -53,8 +63,8 @@
   }
 
   function format(value) {
-    if (useAmount() && (MONEY[settings.type] || kofi() || patreon())) {
-      var code = (kofi() && kofi().currency) || (patreon() && patreon().currency) || currency;
+    if (useAmount() && (MONEY[settings.type] || kofi() || patreon() || shopify())) {
+      var code = (kofi() && kofi().currency) || (patreon() && patreon().currency) || (shopify() && shopify().currency) || currency;
       try { return new Intl.NumberFormat(undefined, { style: "currency", currency: code }).format(value); }
       catch (err) { return String(value); }
     }
@@ -63,7 +73,7 @@
 
   function render() {
     if (!root) return;
-    var k = kofi();
+    var k = kofi() || shopify();
     var goal = Math.max(1, (k && num(k.target)) || num(settings.goal) || 100);
     var value = progress();
     var percent = Math.min(100, Math.floor(value / goal * 100));

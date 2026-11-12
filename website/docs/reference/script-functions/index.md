@@ -66,6 +66,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 | [Rahituber](rahituber.md) | 5 |
 | [Remote instances](remote.md) | 3 |
 | [Rumble](rumble.md) | 1 |
+| [Shopify](shopify.md) | 6 |
 | [Streamlabs Desktop](slobs.md) | 2 |
 | [Speech](speech.md) | 10 |
 | [Spending](spending.md) | 6 |

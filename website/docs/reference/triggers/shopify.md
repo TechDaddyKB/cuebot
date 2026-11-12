@@ -3,12 +3,62 @@
 
 ![Adding a trigger: on the Actions page, click + Trigger and search for it](../../assets/screens/actions-trigger-picker.png)
 
-## Order Created
+## Low Stock
 
-Runs when someone places an order in your Shopify shop, even before it is paid. Needs your Shopify webhook set up.
+Runs once when an item's stock falls to the low stock number on the Webhooks page (5 by default) or below, for "only 3 left!". Needs the Inventory level update webhook.
 
 | Setting | What to put in |
 | --- | --- |
+| **Product name contains** | Only run for products whose name contains one of these words. Product names need the Shopify API connected. |
+| **SKU or inventory item id** | Only run for these SKUs or inventory item ids (with commas). Leave empty for any. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%item%` | The product and variant, like "Cuebot hoodie (M / Black)" (needs the Shopify API; the SKU otherwise) |
+| `%productName%` | The product's name (needs the Shopify API) |
+| `%variantName%` | The size or colour (needs the Shopify API) |
+| `%sku%` | The SKU (needs the Shopify API) |
+| `%available%` | How many are left now, across your locations |
+| `%previousAvailable%` | How many there were before (-1 if Cuebot did not know) |
+| `%locationAvailable%` | How many are left at the location that changed |
+| `%threshold%` | The low stock number set on the Webhooks page |
+| `%inventoryItemId%` | Shopify's inventory item id |
+| `%locationId%` | The location's id |
+| `%isTest%` | True when this is a test event, not a real one |
+
+<small>Type id: `shopify.lowStock`</small>
+
+## Merch Goal Reached
+
+Runs once when this stream's Shopify merch goal (set on the Webhooks page) is reached. It can run again after the counter is reset or the target is raised.
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%shopifyGoalTitle%` | The goal's title |
+| `%shopifyGoalCurrent%` | The progress (items sold or money) |
+| `%shopifyGoalTarget%` | The target |
+| `%shopifyGoalPercent%` | The progress in whole percent |
+| `%shopifyGoalMeasure%` | Items sold or Revenue |
+| `%shopifyGoalReached%` | True when the target is reached |
+| `%service%` | Shopify |
+| `%isTest%` | Always false (test events never count) |
+
+<small>Type id: `shopify.goalReached`</small>
+
+## Order Cancelled
+
+Runs when an order in your Shopify shop is cancelled. If it was paid, it comes off the merch counter and goal, so a cancelled "fake order" does not stay counted. Needs the Order cancellation webhook.
+
+| Setting | What to put in |
+| --- | --- |
+| **Product name contains** | Only run when an item's name (or size / colour) contains one of these words, like "hoodie, tee". Leave empty for any order. |
+| **SKU** | Only run when an item has one of these SKUs (with commas). Leave empty for any. |
+| **Discount code** | Only run when the order used one of these discount codes, like your creator code. Leave empty for any. |
 | **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
@@ -18,26 +68,99 @@ Runs when someone places an order in your Shopify shop, even before it is paid. 
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The buyer's name ("Someone" if unknown) |
+| `%user%` | The buyer's first name (or the full name, or "Someone", as set on the Webhooks page) |
+| `%firstName%` | The buyer's first name |
 | `%amount%` | The order total as a number |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
-| `%message%` | The note the buyer left |
+| `%message%` | The stream message: empty unless you pick a cart attribute (or the order note) on the Webhooks page |
+| `%cartMessage%` | The cart attribute named on the Webhooks page ("Stream message" by default), when your store asks for one |
+| `%orderNote%` | The buyer's order note. It often holds delivery instructions, phone numbers or door codes: do not read it out |
+| `%orderId%` | Shopify's id for the order |
 | `%orderName%` | The order number, like #1001 |
+| `%orderUrl%` | The order in your Shopify admin, for a message only mods see |
 | `%items%` | What was ordered (names joined with commas) |
 | `%itemCount%` | How many things were ordered |
-| `%isRepeatOrder%` | True if you already saw this order |
+| `%item0.name%` | The first item's product name (item1.name for the second, and so on) |
+| `%item0.quantity%` | How many of the first item |
+| `%item0.variant%` | The first item's size or colour, like M / Black |
+| `%item0.sku%` | The first item's SKU |
+| `%discountCodes%` | The discount codes used, joined with commas |
+| `%financialStatus%` | Shopify's payment status, like paid, pending or refunded |
+| `%sourceName%` | Where the order came from, like web or pos |
 | `%presentmentAmount%` | The price in the buyer's own currency |
+| `%shopDomain%` | The store that sent it, like your-store.myshopify.com |
+| `%apiVersion%` | The webhook's API version, like 2026-10 (keep it at the latest one on the Webhooks page) |
+| `%triggeredAt%` | When Shopify sent it |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%cancelReason%` | Why: customer, fraud, inventory, declined or other |
+| `%cancelledAt%` | When it was cancelled |
+| `%wasCounted%` | True when it had been counted (and was taken back off) |
+| `%shopifySalesItems%` | Items sold this stream (the merch counter, after this order) |
+| `%shopifySalesRevenue%` | Money taken this stream |
+| `%shopifySalesOrders%` | Paid orders this stream |
+| `%shopifyGoalPercent%` | The merch goal's progress in whole percent |
+
+<small>Type id: `shopify.orderCancelled`</small>
+
+## Order Created
+
+Runs when someone places an order in your Shopify shop, even before it is paid, and also for orders that are never paid (bank deposit, cash on delivery, cancelled). Use Order Paid to thank buyers. Needs the Order creation webhook (optional).
+
+| Setting | What to put in |
+| --- | --- |
+| **Product name contains** | Only run when an item's name (or size / colour) contains one of these words, like "hoodie, tee". Leave empty for any order. |
+| **SKU** | Only run when an item has one of these SKUs (with commas). Leave empty for any. |
+| **Discount code** | Only run when the order used one of these discount codes, like your creator code. Leave empty for any. |
+| **Payment status** | Only run for these payment statuses, like "paid, pending". Leave empty for any. |
+| **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The buyer's first name (or the full name, or "Someone", as set on the Webhooks page) |
+| `%firstName%` | The buyer's first name |
+| `%amount%` | The order total as a number |
+| `%currency%` | The currency code, like USD |
+| `%formattedAmount%` | The amount written nicely, like "$5.00" |
+| `%message%` | The stream message: empty unless you pick a cart attribute (or the order note) on the Webhooks page |
+| `%cartMessage%` | The cart attribute named on the Webhooks page ("Stream message" by default), when your store asks for one |
+| `%orderNote%` | The buyer's order note. It often holds delivery instructions, phone numbers or door codes: do not read it out |
+| `%orderId%` | Shopify's id for the order |
+| `%orderName%` | The order number, like #1001 |
+| `%orderUrl%` | The order in your Shopify admin, for a message only mods see |
+| `%items%` | What was ordered (names joined with commas) |
+| `%itemCount%` | How many things were ordered |
+| `%item0.name%` | The first item's product name (item1.name for the second, and so on) |
+| `%item0.quantity%` | How many of the first item |
+| `%item0.variant%` | The first item's size or colour, like M / Black |
+| `%item0.sku%` | The first item's SKU |
+| `%discountCodes%` | The discount codes used, joined with commas |
+| `%financialStatus%` | Shopify's payment status, like paid, pending or refunded |
+| `%sourceName%` | Where the order came from, like web or pos |
+| `%presentmentAmount%` | The price in the buyer's own currency |
+| `%shopDomain%` | The store that sent it, like your-store.myshopify.com |
+| `%apiVersion%` | The webhook's API version, like 2026-10 (keep it at the latest one on the Webhooks page) |
+| `%triggeredAt%` | When Shopify sent it |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%isRepeatOrder%` | True if Order Paid for this order was already shown |
 
 <small>Type id: `shopify.orderCreated`</small>
 
 ## Order Paid
 
-Runs when an order in your Shopify shop has been paid. Best for thanking buyers. Needs your Shopify webhook set up.
+Runs when an order in your Shopify shop has been paid. Best for thanking buyers and merch alerts. Shopify sends webhooks in no set order, so Order Created can come after this. Needs the Order payment webhook set up.
 
 | Setting | What to put in |
 | --- | --- |
+| **Product name contains** | Only run when an item's name (or size / colour) contains one of these words, like "hoodie, tee". Leave empty for any order. |
+| **SKU** | Only run when an item has one of these SKUs (with commas). Leave empty for any. |
+| **Discount code** | Only run when the order used one of these discount codes, like your creator code. Leave empty for any. |
+| **Skip caught-up orders** | Tick to skip paid orders Cuebot found later through the Shopify API because no delivery brought them (catch-up). They still count in the merch counter. Starts as: `false`. |
 | **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
 | **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
 | **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
@@ -47,16 +170,135 @@ Runs when an order in your Shopify shop has been paid. Best for thanking buyers.
 
 | Variable | What it holds |
 | --- | --- |
-| `%user%` | The buyer's name ("Someone" if unknown) |
+| `%user%` | The buyer's first name (or the full name, or "Someone", as set on the Webhooks page) |
+| `%firstName%` | The buyer's first name |
 | `%amount%` | The order total as a number |
 | `%currency%` | The currency code, like USD |
 | `%formattedAmount%` | The amount written nicely, like "$5.00" |
-| `%message%` | The note the buyer left |
+| `%message%` | The stream message: empty unless you pick a cart attribute (or the order note) on the Webhooks page |
+| `%cartMessage%` | The cart attribute named on the Webhooks page ("Stream message" by default), when your store asks for one |
+| `%orderNote%` | The buyer's order note. It often holds delivery instructions, phone numbers or door codes: do not read it out |
+| `%orderId%` | Shopify's id for the order |
 | `%orderName%` | The order number, like #1001 |
+| `%orderUrl%` | The order in your Shopify admin, for a message only mods see |
 | `%items%` | What was ordered (names joined with commas) |
 | `%itemCount%` | How many things were ordered |
-| `%isRepeatOrder%` | True if you already saw this order |
+| `%item0.name%` | The first item's product name (item1.name for the second, and so on) |
+| `%item0.quantity%` | How many of the first item |
+| `%item0.variant%` | The first item's size or colour, like M / Black |
+| `%item0.sku%` | The first item's SKU |
+| `%discountCodes%` | The discount codes used, joined with commas |
+| `%financialStatus%` | Shopify's payment status, like paid, pending or refunded |
+| `%sourceName%` | Where the order came from, like web or pos |
 | `%presentmentAmount%` | The price in the buyer's own currency |
+| `%shopDomain%` | The store that sent it, like your-store.myshopify.com |
+| `%apiVersion%` | The webhook's API version, like 2026-10 (keep it at the latest one on the Webhooks page) |
+| `%triggeredAt%` | When Shopify sent it |
 | `%isTest%` | True when this is a test event, not a real one |
+| `%isRepeatOrder%` | True if Order Created for this order was already shown |
+| `%wasCounted%` | True when it was added to the merch counter (false for tests and orders already counted) |
+| `%isReplay%` | True when Cuebot found this order through the Shopify API (catch-up) instead of receiving it |
+| `%delaySeconds%` | For a caught-up order: about how many seconds late it is |
+| `%shopifySalesItems%` | Items sold this stream (the merch counter, after this order) |
+| `%shopifySalesRevenue%` | Money taken this stream |
+| `%shopifySalesOrders%` | Paid orders this stream |
+| `%shopifyGoalPercent%` | The merch goal's progress in whole percent |
 
 <small>Type id: `shopify.orderPaid`</small>
+
+## Refund Created
+
+Runs when you refund (part of) an order in your Shopify shop. The refunded money and items come off the merch counter and goal. Needs the Refund create webhook.
+
+| Setting | What to put in |
+| --- | --- |
+| **Product name contains** | Only run when an item's name (or size / colour) contains one of these words, like "hoodie, tee". Leave empty for any order. |
+| **SKU** | Only run when an item has one of these SKUs (with commas). Leave empty for any. |
+| **Discount code** | Only run when the order used one of these discount codes, like your creator code. Leave empty for any. |
+| **Minimum amount** | The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies. Starts as: `0`. |
+| **Maximum amount (0 = no limit)** | The biggest amount that runs this. Leave 0 for no upper limit. Starts as: `0`. |
+| **Currencies** | Only run for these currencies. Type the short codes with commas, like "USD, EUR". Leave empty for every currency. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%user%` | The buyer's name, when Cuebot saw the order earlier ("Someone" otherwise) |
+| `%amount%` | How much was refunded |
+| `%currency%` | The currency code, like USD |
+| `%formattedAmount%` | The amount written nicely |
+| `%refundId%` | Shopify's id for the refund |
+| `%orderId%` | The order's id |
+| `%orderName%` | The order number, when Cuebot saw the order earlier |
+| `%orderUrl%` | The order in your Shopify admin |
+| `%refundNote%` | The note you wrote on the refund |
+| `%restock%` | True when the items go back into stock |
+| `%items%` | What was refunded |
+| `%itemCount%` | How many things were refunded |
+| `%item0.name%` | The first refunded item's name |
+| `%wasCounted%` | True when the order was in the merch counter |
+| `%apiVersion%` | The webhook's API version |
+| `%isTest%` | True when this is a test event, not a real one |
+| `%shopifySalesItems%` | Items sold this stream (the merch counter, after this order) |
+| `%shopifySalesRevenue%` | Money taken this stream |
+| `%shopifySalesOrders%` | Paid orders this stream |
+| `%shopifyGoalPercent%` | The merch goal's progress in whole percent |
+
+<small>Type id: `shopify.refundCreated`</small>
+
+## Restocked
+
+Runs once when a sold-out item is back in stock. Needs the Inventory level update webhook.
+
+| Setting | What to put in |
+| --- | --- |
+| **Product name contains** | Only run for products whose name contains one of these words. Product names need the Shopify API connected. |
+| **SKU or inventory item id** | Only run for these SKUs or inventory item ids (with commas). Leave empty for any. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%item%` | The product and variant, like "Cuebot hoodie (M / Black)" (needs the Shopify API; the SKU otherwise) |
+| `%productName%` | The product's name (needs the Shopify API) |
+| `%variantName%` | The size or colour (needs the Shopify API) |
+| `%sku%` | The SKU (needs the Shopify API) |
+| `%available%` | How many are left now, across your locations |
+| `%previousAvailable%` | How many there were before (-1 if Cuebot did not know) |
+| `%locationAvailable%` | How many are left at the location that changed |
+| `%threshold%` | The low stock number set on the Webhooks page |
+| `%inventoryItemId%` | Shopify's inventory item id |
+| `%locationId%` | The location's id |
+| `%isTest%` | True when this is a test event, not a real one |
+
+<small>Type id: `shopify.restocked`</small>
+
+## Sold Out
+
+Runs once when an item sells out (no stock left at any location Cuebot knows). Needs the Inventory level update webhook.
+
+| Setting | What to put in |
+| --- | --- |
+| **Product name contains** | Only run for products whose name contains one of these words. Product names need the Shopify API connected. |
+| **SKU or inventory item id** | Only run for these SKUs or inventory item ids (with commas). Leave empty for any. |
+| **Include test events** | Tick to also run for test events (made with a "send test" button). Untick to run only for real ones. Starts as: `true`. |
+
+**Variables you get**
+
+| Variable | What it holds |
+| --- | --- |
+| `%item%` | The product and variant, like "Cuebot hoodie (M / Black)" (needs the Shopify API; the SKU otherwise) |
+| `%productName%` | The product's name (needs the Shopify API) |
+| `%variantName%` | The size or colour (needs the Shopify API) |
+| `%sku%` | The SKU (needs the Shopify API) |
+| `%available%` | How many are left now, across your locations |
+| `%previousAvailable%` | How many there were before (-1 if Cuebot did not know) |
+| `%locationAvailable%` | How many are left at the location that changed |
+| `%threshold%` | The low stock number set on the Webhooks page |
+| `%inventoryItemId%` | Shopify's inventory item id |
+| `%locationId%` | The location's id |
+| `%isTest%` | True when this is a test event, not a real one |
+
+<small>Type id: `shopify.soldOut`</small>

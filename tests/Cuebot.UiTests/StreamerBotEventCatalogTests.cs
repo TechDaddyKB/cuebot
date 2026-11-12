@@ -35,6 +35,7 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
         "Patreon.MemberUpdated", "Patreon.PostPublished", "Patreon.PostUpdated", "Patreon.PostDeleted",
         "Pulsoid.Connected", "Pulsoid.Disconnected",
         "Quote.Removed", "Quote.Updated",
+        "Shopify.GoalReached", "Shopify.LowStock", "Shopify.OrderCancelled", "Shopify.RefundCreated", "Shopify.Restocked", "Shopify.SoldOut",
         "StreamElements.Activity", "StreamElements.CharityDonation", "StreamElements.Cheer",
         "StreamElements.CommunityGift", "StreamElements.Follow", "StreamElements.Host", "StreamElements.Raid",
         "StreamElements.Redemption", "StreamElements.Sponsor", "StreamElements.Subscriber", "StreamElements.Superchat",

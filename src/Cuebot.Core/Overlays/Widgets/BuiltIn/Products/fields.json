@@ -6,7 +6,8 @@
     "group": "Showcase",
     "options": {
       "manual": "The products entered below",
-      "fourthwall": "My Fourthwall shop (connect the Fourthwall API on the Webhooks page)"
+      "fourthwall": "My Fourthwall shop (connect the Fourthwall API on the Webhooks page)",
+      "shopify": "My Shopify store (connect the Shopify API on the Webhooks page)"
     }
   },
   "shopText": {

@@ -1820,47 +1820,249 @@
       }
     },
     "shopify.orderCreated": {
-      "description": "Runs when someone places an order in your Shopify shop, even before it is paid. Needs your Shopify webhook set up.",
+      "description": "Runs when someone places an order in your Shopify shop, even before it is paid, and also for orders that are never paid (bank deposit, cash on delivery, cancelled). Use Order Paid to thank buyers. Needs the Order creation webhook (optional).",
       "fields": {
+        "product": "Only run when an item's name (or size / colour) contains one of these words, like \"hoodie, tee\". Leave empty for any order.",
+        "sku": "Only run when an item has one of these SKUs (with commas). Leave empty for any.",
+        "discountCode": "Only run when the order used one of these discount codes, like your creator code. Leave empty for any.",
+        "financialStatus": "Only run for these payment statuses, like \"paid, pending\". Leave empty for any.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
         "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
       },
       "variables": {
-        "user": "The buyer's name (\"Someone\" if unknown)",
+        "user": "The buyer's first name (or the full name, or \"Someone\", as set on the Webhooks page)",
+        "firstName": "The buyer's first name",
         "amount": "The order total as a number",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "The note the buyer left",
+        "message": "The stream message: empty unless you pick a cart attribute (or the order note) on the Webhooks page",
+        "cartMessage": "The cart attribute named on the Webhooks page (\"Stream message\" by default), when your store asks for one",
+        "orderNote": "The buyer's order note. It often holds delivery instructions, phone numbers or door codes: do not read it out",
+        "orderId": "Shopify's id for the order",
         "orderName": "The order number, like #1001",
+        "orderUrl": "The order in your Shopify admin, for a message only mods see",
         "items": "What was ordered (names joined with commas)",
         "itemCount": "How many things were ordered",
-        "isRepeatOrder": "True if you already saw this order",
+        "item0.name": "The first item's product name (item1.name for the second, and so on)",
+        "item0.quantity": "How many of the first item",
+        "item0.variant": "The first item's size or colour, like M / Black",
+        "item0.sku": "The first item's SKU",
+        "discountCodes": "The discount codes used, joined with commas",
+        "financialStatus": "Shopify's payment status, like paid, pending or refunded",
+        "sourceName": "Where the order came from, like web or pos",
         "presentmentAmount": "The price in the buyer's own currency",
-        "isTest": "True when this is a test event, not a real one"
+        "shopDomain": "The store that sent it, like your-store.myshopify.com",
+        "apiVersion": "The webhook's API version, like 2026-10 (keep it at the latest one on the Webhooks page)",
+        "triggeredAt": "When Shopify sent it",
+        "isTest": "True when this is a test event, not a real one",
+        "isRepeatOrder": "True if Order Paid for this order was already shown"
       }
     },
     "shopify.orderPaid": {
-      "description": "Runs when an order in your Shopify shop has been paid. Best for thanking buyers. Needs your Shopify webhook set up.",
+      "description": "Runs when an order in your Shopify shop has been paid. Best for thanking buyers and merch alerts. Shopify sends webhooks in no set order, so Order Created can come after this. Needs the Order payment webhook set up.",
       "fields": {
+        "product": "Only run when an item's name (or size / colour) contains one of these words, like \"hoodie, tee\". Leave empty for any order.",
+        "sku": "Only run when an item has one of these SKUs (with commas). Leave empty for any.",
+        "discountCode": "Only run when the order used one of these discount codes, like your creator code. Leave empty for any.",
+        "skipReplays": "Tick to skip paid orders Cuebot found later through the Shopify API because no delivery brought them (catch-up). They still count in the merch counter.",
         "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
         "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
         "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
         "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
       },
       "variables": {
-        "user": "The buyer's name (\"Someone\" if unknown)",
+        "user": "The buyer's first name (or the full name, or \"Someone\", as set on the Webhooks page)",
+        "firstName": "The buyer's first name",
         "amount": "The order total as a number",
         "currency": "The currency code, like USD",
         "formattedAmount": "The amount written nicely, like \"$5.00\"",
-        "message": "The note the buyer left",
+        "message": "The stream message: empty unless you pick a cart attribute (or the order note) on the Webhooks page",
+        "cartMessage": "The cart attribute named on the Webhooks page (\"Stream message\" by default), when your store asks for one",
+        "orderNote": "The buyer's order note. It often holds delivery instructions, phone numbers or door codes: do not read it out",
+        "orderId": "Shopify's id for the order",
         "orderName": "The order number, like #1001",
+        "orderUrl": "The order in your Shopify admin, for a message only mods see",
         "items": "What was ordered (names joined with commas)",
         "itemCount": "How many things were ordered",
-        "isRepeatOrder": "True if you already saw this order",
+        "item0.name": "The first item's product name (item1.name for the second, and so on)",
+        "item0.quantity": "How many of the first item",
+        "item0.variant": "The first item's size or colour, like M / Black",
+        "item0.sku": "The first item's SKU",
+        "discountCodes": "The discount codes used, joined with commas",
+        "financialStatus": "Shopify's payment status, like paid, pending or refunded",
+        "sourceName": "Where the order came from, like web or pos",
         "presentmentAmount": "The price in the buyer's own currency",
+        "shopDomain": "The store that sent it, like your-store.myshopify.com",
+        "apiVersion": "The webhook's API version, like 2026-10 (keep it at the latest one on the Webhooks page)",
+        "triggeredAt": "When Shopify sent it",
+        "isTest": "True when this is a test event, not a real one",
+        "isRepeatOrder": "True if Order Created for this order was already shown",
+        "wasCounted": "True when it was added to the merch counter (false for tests and orders already counted)",
+        "isReplay": "True when Cuebot found this order through the Shopify API (catch-up) instead of receiving it",
+        "delaySeconds": "For a caught-up order: about how many seconds late it is",
+        "shopifySalesItems": "Items sold this stream (the merch counter, after this order)",
+        "shopifySalesRevenue": "Money taken this stream",
+        "shopifySalesOrders": "Paid orders this stream",
+        "shopifyGoalPercent": "The merch goal's progress in whole percent"
+      }
+    },
+    "shopify.orderCancelled": {
+      "description": "Runs when an order in your Shopify shop is cancelled. If it was paid, it comes off the merch counter and goal, so a cancelled \"fake order\" does not stay counted. Needs the Order cancellation webhook.",
+      "fields": {
+        "product": "Only run when an item's name (or size / colour) contains one of these words, like \"hoodie, tee\". Leave empty for any order.",
+        "sku": "Only run when an item has one of these SKUs (with commas). Leave empty for any.",
+        "discountCode": "Only run when the order used one of these discount codes, like your creator code. Leave empty for any.",
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The buyer's first name (or the full name, or \"Someone\", as set on the Webhooks page)",
+        "firstName": "The buyer's first name",
+        "amount": "The order total as a number",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely, like \"$5.00\"",
+        "message": "The stream message: empty unless you pick a cart attribute (or the order note) on the Webhooks page",
+        "cartMessage": "The cart attribute named on the Webhooks page (\"Stream message\" by default), when your store asks for one",
+        "orderNote": "The buyer's order note. It often holds delivery instructions, phone numbers or door codes: do not read it out",
+        "orderId": "Shopify's id for the order",
+        "orderName": "The order number, like #1001",
+        "orderUrl": "The order in your Shopify admin, for a message only mods see",
+        "items": "What was ordered (names joined with commas)",
+        "itemCount": "How many things were ordered",
+        "item0.name": "The first item's product name (item1.name for the second, and so on)",
+        "item0.quantity": "How many of the first item",
+        "item0.variant": "The first item's size or colour, like M / Black",
+        "item0.sku": "The first item's SKU",
+        "discountCodes": "The discount codes used, joined with commas",
+        "financialStatus": "Shopify's payment status, like paid, pending or refunded",
+        "sourceName": "Where the order came from, like web or pos",
+        "presentmentAmount": "The price in the buyer's own currency",
+        "shopDomain": "The store that sent it, like your-store.myshopify.com",
+        "apiVersion": "The webhook's API version, like 2026-10 (keep it at the latest one on the Webhooks page)",
+        "triggeredAt": "When Shopify sent it",
+        "isTest": "True when this is a test event, not a real one",
+        "cancelReason": "Why: customer, fraud, inventory, declined or other",
+        "cancelledAt": "When it was cancelled",
+        "wasCounted": "True when it had been counted (and was taken back off)",
+        "shopifySalesItems": "Items sold this stream (the merch counter, after this order)",
+        "shopifySalesRevenue": "Money taken this stream",
+        "shopifySalesOrders": "Paid orders this stream",
+        "shopifyGoalPercent": "The merch goal's progress in whole percent"
+      }
+    },
+    "shopify.refundCreated": {
+      "description": "Runs when you refund (part of) an order in your Shopify shop. The refunded money and items come off the merch counter and goal. Needs the Refund create webhook.",
+      "fields": {
+        "product": "Only run when an item's name (or size / colour) contains one of these words, like \"hoodie, tee\". Leave empty for any order.",
+        "sku": "Only run when an item has one of these SKUs (with commas). Leave empty for any.",
+        "discountCode": "Only run when the order used one of these discount codes, like your creator code. Leave empty for any.",
+        "minAmount": "The smallest amount that runs this. Example: 5 ignores anything under 5. Leave 0 to run for any amount. Amounts are not converted between currencies.",
+        "maxAmount": "The biggest amount that runs this. Leave 0 for no upper limit.",
+        "currency": "Only run for these currencies. Type the short codes with commas, like \"USD, EUR\". Leave empty for every currency.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "user": "The buyer's name, when Cuebot saw the order earlier (\"Someone\" otherwise)",
+        "amount": "How much was refunded",
+        "currency": "The currency code, like USD",
+        "formattedAmount": "The amount written nicely",
+        "refundId": "Shopify's id for the refund",
+        "orderId": "The order's id",
+        "orderName": "The order number, when Cuebot saw the order earlier",
+        "orderUrl": "The order in your Shopify admin",
+        "refundNote": "The note you wrote on the refund",
+        "restock": "True when the items go back into stock",
+        "items": "What was refunded",
+        "itemCount": "How many things were refunded",
+        "item0.name": "The first refunded item's name",
+        "wasCounted": "True when the order was in the merch counter",
+        "apiVersion": "The webhook's API version",
+        "isTest": "True when this is a test event, not a real one",
+        "shopifySalesItems": "Items sold this stream (the merch counter, after this order)",
+        "shopifySalesRevenue": "Money taken this stream",
+        "shopifySalesOrders": "Paid orders this stream",
+        "shopifyGoalPercent": "The merch goal's progress in whole percent"
+      }
+    },
+    "shopify.lowStock": {
+      "description": "Runs once when an item's stock falls to the low stock number on the Webhooks page (5 by default) or below, for \"only 3 left!\". Needs the Inventory level update webhook.",
+      "fields": {
+        "product": "Only run for products whose name contains one of these words. Product names need the Shopify API connected.",
+        "sku": "Only run for these SKUs or inventory item ids (with commas). Leave empty for any.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "item": "The product and variant, like \"Cuebot hoodie (M / Black)\" (needs the Shopify API; the SKU otherwise)",
+        "productName": "The product's name (needs the Shopify API)",
+        "variantName": "The size or colour (needs the Shopify API)",
+        "sku": "The SKU (needs the Shopify API)",
+        "available": "How many are left now, across your locations",
+        "previousAvailable": "How many there were before (-1 if Cuebot did not know)",
+        "locationAvailable": "How many are left at the location that changed",
+        "threshold": "The low stock number set on the Webhooks page",
+        "inventoryItemId": "Shopify's inventory item id",
+        "locationId": "The location's id",
         "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "shopify.soldOut": {
+      "description": "Runs once when an item sells out (no stock left at any location Cuebot knows). Needs the Inventory level update webhook.",
+      "fields": {
+        "product": "Only run for products whose name contains one of these words. Product names need the Shopify API connected.",
+        "sku": "Only run for these SKUs or inventory item ids (with commas). Leave empty for any.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "item": "The product and variant, like \"Cuebot hoodie (M / Black)\" (needs the Shopify API; the SKU otherwise)",
+        "productName": "The product's name (needs the Shopify API)",
+        "variantName": "The size or colour (needs the Shopify API)",
+        "sku": "The SKU (needs the Shopify API)",
+        "available": "How many are left now, across your locations",
+        "previousAvailable": "How many there were before (-1 if Cuebot did not know)",
+        "locationAvailable": "How many are left at the location that changed",
+        "threshold": "The low stock number set on the Webhooks page",
+        "inventoryItemId": "Shopify's inventory item id",
+        "locationId": "The location's id",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "shopify.restocked": {
+      "description": "Runs once when a sold-out item is back in stock. Needs the Inventory level update webhook.",
+      "fields": {
+        "product": "Only run for products whose name contains one of these words. Product names need the Shopify API connected.",
+        "sku": "Only run for these SKUs or inventory item ids (with commas). Leave empty for any.",
+        "includeTests": "Tick to also run for test events (made with a \"send test\" button). Untick to run only for real ones."
+      },
+      "variables": {
+        "item": "The product and variant, like \"Cuebot hoodie (M / Black)\" (needs the Shopify API; the SKU otherwise)",
+        "productName": "The product's name (needs the Shopify API)",
+        "variantName": "The size or colour (needs the Shopify API)",
+        "sku": "The SKU (needs the Shopify API)",
+        "available": "How many are left now, across your locations",
+        "previousAvailable": "How many there were before (-1 if Cuebot did not know)",
+        "locationAvailable": "How many are left at the location that changed",
+        "threshold": "The low stock number set on the Webhooks page",
+        "inventoryItemId": "Shopify's inventory item id",
+        "locationId": "The location's id",
+        "isTest": "True when this is a test event, not a real one"
+      }
+    },
+    "shopify.goalReached": {
+      "description": "Runs once when this stream's Shopify merch goal (set on the Webhooks page) is reached. It can run again after the counter is reset or the target is raised.",
+      "fields": {},
+      "variables": {
+        "shopifyGoalTitle": "The goal's title",
+        "shopifyGoalCurrent": "The progress (items sold or money)",
+        "shopifyGoalTarget": "The target",
+        "shopifyGoalPercent": "The progress in whole percent",
+        "shopifyGoalMeasure": "Items sold or Revenue",
+        "shopifyGoalReached": "True when the target is reached",
+        "service": "Shopify",
+        "isTest": "Always false (test events never count)"
       }
     },
     "streamloots.connected": {
@@ -3025,6 +3227,126 @@
       "variables": {
         "fourthwallOk": "True when Fourthwall did it",
         "fourthwallResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.getSales": {
+      "description": "Reads this stream's Shopify merch counter (paid orders minus cancellations and refunds) and goal, for a !merch command. No API needed.",
+      "fields": {},
+      "variables": {
+        "shopifySalesItems": "Items sold this stream",
+        "shopifySalesOrders": "Paid orders this stream",
+        "shopifySalesRevenue": "Money taken this stream",
+        "shopifySalesFormattedRevenue": "The money written nicely, like \"$130.00\"",
+        "shopifySalesRefunded": "Money refunded this stream",
+        "shopifySalesSince": "When the counter started",
+        "shopifyTopProduct": "The product sold most this stream",
+        "shopifySalesProductsText": "Every product sold this stream, like \"3 x Sticker pack, 1 x Hoodie\"",
+        "shopifyGoalTitle": "The goal's title",
+        "shopifyGoalCurrent": "The progress (items sold or money)",
+        "shopifyGoalTarget": "The target",
+        "shopifyGoalPercent": "The progress in whole percent",
+        "shopifyGoalMeasure": "Items sold or Revenue",
+        "shopifyGoalReached": "True when the target is reached",
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.resetSales": {
+      "description": "Starts the Shopify merch counter and goal again from zero (Cuebot also does it when a stream goes live, if that is ticked on the Webhooks page).",
+      "fields": {},
+      "variables": {
+        "shopifySalesItems": "Items sold this stream",
+        "shopifySalesOrders": "Paid orders this stream",
+        "shopifySalesRevenue": "Money taken this stream",
+        "shopifySalesFormattedRevenue": "The money written nicely, like \"$130.00\"",
+        "shopifySalesRefunded": "Money refunded this stream",
+        "shopifySalesSince": "When the counter started",
+        "shopifyTopProduct": "The product sold most this stream",
+        "shopifySalesProductsText": "Every product sold this stream, like \"3 x Sticker pack, 1 x Hoodie\"",
+        "shopifyGoalTitle": "The goal's title",
+        "shopifyGoalCurrent": "The progress (items sold or money)",
+        "shopifyGoalTarget": "The target",
+        "shopifyGoalPercent": "The progress in whole percent",
+        "shopifyGoalMeasure": "Items sold or Revenue",
+        "shopifyGoalReached": "True when the target is reached",
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.setGoal": {
+      "description": "Changes the Shopify merch goal. Empty boxes keep what is there.",
+      "fields": {
+        "title": "The goal's new name. Leave empty to keep it.",
+        "target": "The new target (items or money). 0 turns the goal off. Leave empty to keep it.",
+        "measure": "Count items sold or the money taken. Keep leaves it as it is."
+      },
+      "variables": {
+        "shopifySalesItems": "Items sold this stream",
+        "shopifySalesOrders": "Paid orders this stream",
+        "shopifySalesRevenue": "Money taken this stream",
+        "shopifySalesFormattedRevenue": "The money written nicely, like \"$130.00\"",
+        "shopifySalesRefunded": "Money refunded this stream",
+        "shopifySalesSince": "When the counter started",
+        "shopifyTopProduct": "The product sold most this stream",
+        "shopifySalesProductsText": "Every product sold this stream, like \"3 x Sticker pack, 1 x Hoodie\"",
+        "shopifyGoalTitle": "The goal's title",
+        "shopifyGoalCurrent": "The progress (items sold or money)",
+        "shopifyGoalTarget": "The target",
+        "shopifyGoalPercent": "The progress in whole percent",
+        "shopifyGoalMeasure": "Items sold or Revenue",
+        "shopifyGoalReached": "True when the target is reached",
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.getTotals": {
+      "description": "Reads your Shopify sales from Shopify itself (paid orders, not cancelled or test ones). Needs the Shopify API connected on the Webhooks page.",
+      "fields": {
+        "since": "This stream (since the merch counter started), today, or the last hours below.",
+        "hours": "How many hours back, for \"The last hours below\"."
+      },
+      "variables": {
+        "shopifyRevenue": "The money taken",
+        "shopifyFormattedRevenue": "The money written nicely",
+        "shopifyOrders": "How many paid orders",
+        "shopifyItems": "How many items",
+        "shopifyCurrency": "The currency code",
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.getProducts": {
+      "description": "Lists your Shopify products (from the last refresh through the Shopify API), for a \"what merch is there\" command.",
+      "fields": {
+        "search": "Only products whose name contains this. Leave empty for all."
+      },
+      "variables": {
+        "shopifyProductCount": "How many were found",
+        "shopifyProductsText": "Names and prices joined with semicolons",
+        "product0.name": "The first product's name (product1.name for the second, and so on)",
+        "product0.price": "Its price written nicely",
+        "product0.url": "Its page in your online store",
+        "product0.image": "Its picture",
+        "product0.soldOut": "True when it is sold out",
+        "product0.stock": "How many are in stock",
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.refreshProducts": {
+      "description": "Reads your Shopify products again for the Products widget and Get Shopify products. Needs the Shopify API connected.",
+      "fields": {},
+      "variables": {
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
+      }
+    },
+    "shopify.catchUp": {
+      "description": "Asks Shopify for recently paid orders and runs Order Paid for those that never reached Cuebot (marked isReplay). Needs the Shopify API connected.",
+      "fields": {},
+      "variables": {
+        "shopifyOk": "True when it worked",
+        "shopifyResult": "What happened, or why it failed"
       }
     }
   }

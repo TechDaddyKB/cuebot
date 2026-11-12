@@ -72,6 +72,7 @@ public abstract class WebhookServiceBase : IWebhookHandler
     public async Task<WebhookOutcome> HandleAsync(WebhookDelivery delivery, CancellationToken ct)
     {
         var (outcome, detail) = await ProcessAsync(delivery, ct).ConfigureAwait(false);
+        detail = DescribeDelivery(delivery, outcome, detail);
         LastDelivery = new WebhookDeliveryInfo(delivery.ReceivedAt, outcome, detail);
         if (outcome is WebhookOutcome.Rejected or WebhookOutcome.Failed or WebhookOutcome.NotConfigured)
             Log.Warn(DisplayName, $"Webhook {outcome}: {detail}");
@@ -161,6 +162,12 @@ public abstract class WebhookServiceBase : IWebhookHandler
     /// A reason a verified delivery cannot be read at all (e.g. Shopify set to XML), reported as Failed; null when fine.
     /// </summary>
     private protected virtual string? Unsupported(WebhookDelivery delivery) => null;
+
+    /// <summary>
+    /// The last-delivery line for the Webhooks page and the log (e.g. Shopify adds the webhook's API version, or the
+    /// shop a rejected delivery came from). Must never include secrets.
+    /// </summary>
+    private protected virtual string DescribeDelivery(WebhookDelivery delivery, WebhookOutcome outcome, string detail) => detail;
 
     /// <summary>The "last events" line for events the activity feed does not show.</summary>
     private protected virtual string Summarize(BotEvent e) => e.Type;

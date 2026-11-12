@@ -172,6 +172,8 @@ internal static class JsonReaders
     public static IEnumerable<JsonElement> Items(this JsonElement element, string name) =>
         element.Child(name) is { ValueKind: JsonValueKind.Array } array ? array.EnumerateArray() : [];
 
+    public static IEnumerable<JsonElement> Items(this JsonElement? element, string name) => element is { } e ? e.Items(name) : [];
+
     public static string Text(JsonElement value) => value.ValueKind switch
     {
         JsonValueKind.String => value.GetString() ?? "",
